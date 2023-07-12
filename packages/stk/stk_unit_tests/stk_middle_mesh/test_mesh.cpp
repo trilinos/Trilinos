@@ -4,10 +4,10 @@
 #include <fstream>
 #include <set>
 
-#include "create_mesh.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "util/meshes.hpp"
-#include "utils.hpp"
+#include "stk_middle_mesh/utils.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -1232,6 +1232,61 @@ TEST(Mesh, GetRemoteSharedEntity)
 
   EXPECT_ANY_THROW(mesh::get_remote_shared_entity(vert, 0));
   EXPECT_ANY_THROW(mesh::get_remote_shared_entity(vert, 3));
+}
+
+
+TEST(Mesh, ErrorRemotesNonSymmetric)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+    GTEST_SKIP();
+
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+  if (utils::impl::comm_rank(MPI_COMM_WORLD) == 0)
+  {
+    auto v1 = mesh->create_vertex(0, 0, 0);
+    auto v2 = mesh->create_vertex(0, 1, 0);
+    auto v3 = mesh->create_vertex(-1, 0.5);
+    mesh->create_triangle_from_verts(v1, v2, v3);
+
+    v1->add_remote_shared_entity({1, 0});
+  } else
+  {
+    auto v1 = mesh->create_vertex(0, 0,   0);
+    auto v2 = mesh->create_vertex(1, 0.5, 0);
+    auto v3 = mesh->create_vertex(0, 1,   0);
+    mesh->create_triangle_from_verts(v1, v2, v3);
+
+    v3->add_remote_shared_entity({0, 2});
+  }
+
+  EXPECT_ANY_THROW(check_topology(mesh));
+}
+
+TEST(Mesh, ErrorRemotesNotUnique)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(0, 1, 0);
+  auto v3 = mesh->create_vertex(-1, 0.5);
+  mesh->create_triangle_from_verts(v1, v2, v3);
+
+  v1->add_remote_shared_entity({1, 0});
+  v1->add_remote_shared_entity({1, 0});
+
+  EXPECT_ANY_THROW(check_topology(mesh));
+}
+
+TEST(Mesh, AnnulusRemotes)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) > 4)
+    GTEST_SKIP();
+
+  // Note: 2x2 doesnt work, find out why
+  std::shared_ptr<mesh::Mesh> mesh1 = make_annulus_mesh(4, 4, 0.5, 1.5, 0);
+  mesh::check_topology(mesh1);
 }
 
 } // namespace impl

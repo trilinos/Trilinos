@@ -102,7 +102,7 @@ public:
 
   bool triangulate(const InterfaceGeometry & interfaceGeometry); //return value indicates if any changes were made
   void decompose(const InterfaceGeometry & interfaceGeometry);
-  void cut_sharp_features();
+  void cut_sharp_features(const InterfaceGeometry & interfaceGeometry);
   void snap_nearby_intersections_to_nodes(const InterfaceGeometry & interfaceGeometry, NodeToCapturedDomainsMap & domainsAtNodes);
   void set_phase_of_uncut_elements(const InterfaceGeometry & interfaceGeometry);
 
@@ -124,6 +124,7 @@ public:
   const FieldRef get_cdfem_displacements_field() const { return my_cdfem_support.get_cdfem_displacements_field(); }
   const FieldSet & get_ale_prolongation_fields() const { return my_cdfem_support.get_ale_prolongation_fields(); }
   const FieldSet & get_interpolation_fields() const { return my_cdfem_support.get_interpolation_fields(); }
+  const FieldSet & get_edge_interpolation_fields() const { return my_cdfem_support.get_edge_interpolation_fields(); }
   const FieldSet & get_zeroed_fields() const { return my_cdfem_support.get_zeroed_fields(); }
   const FieldSet & get_element_fields() const { return my_cdfem_support.get_element_fields(); }
   const CDFEM_Snapper & get_snapper() const { return my_cdfem_support.get_snapper(); }
@@ -181,7 +182,7 @@ public:
   void get_parent_nodes_and_weights(stk::mesh::Entity child, stk::mesh::Entity & parent0, stk::mesh::Entity & parent1, double & position) const;
   stk::mesh::Entity get_parent_element(stk::mesh::Entity elem_mesh_obj) const;
 
-  double compute_cdfem_cfl(const Interface_CFL_Length_Scale lengthScaleType, const std::function<Vector3d(stk::mesh::Entity)> & get_side_displacement) const;
+  double compute_cdfem_cfl(const Interface_CFL_Length_Scale lengthScaleType, const std::function<stk::math::Vector3d(stk::mesh::Entity)> & get_side_displacement) const;
   double compute_cdfem_displacement_cfl() const;
   double compute_non_rebased_cdfem_displacement_cfl() const;
   double compute_interface_velocity_cfl(const FieldRef velocityField, const double dt) const;
@@ -209,6 +210,7 @@ public:
 public: // for unit testing
   void update_adaptivity_parent_entities();
   void determine_conformal_parts(stk::mesh::Entity entity, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
+  void clear();
 
 private:
   //: Default constructor not allowed
@@ -219,6 +221,9 @@ private:
 
   template <class MESH_FIXTURE>
   friend class AnalyticDecompositionFixture;
+
+  template <class MESH_FIXTURE, class LS_FIELD_POLICY>
+  friend class DecompositionFixture;
 
   void build_parallel_hanging_edge_nodes();
   void handle_hanging_children(const InterfaceID & interface);
@@ -244,12 +249,12 @@ private:
   void clear_prolongation_trees() const;
   void build_prolongation_trees() const;
 
-  void clear();
   void clear_prolongation_data() const;
 
   Mesh_Element * create_mesh_element(stk::mesh::Entity mesh_obj);
   SubElementMeshNode * add_managed_mesh_node( std::unique_ptr<SubElementMeshNode> node );
 
+  void store_child_node_parent_ids_and_weights_fields() const;
   bool modify_mesh();
   void handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideDescription> & side_requests);
   void create_subelement_mesh_entities(const Mesh_Element & elem,
@@ -280,15 +285,16 @@ private:
   void generate_sorted_child_elements();
   void cache_node_ids();
 
-  stk::mesh::Part & get_child_edge_node_part() const { return my_cdfem_support.get_child_edge_node_part(); }
+  stk::mesh::Part & get_child_edge_node_part() const { return my_cdfem_support.get_child_node_part(); }
   FieldRef get_parent_node_ids_field() const { return my_cdfem_support.get_parent_node_ids_field(); }
+  FieldRef get_parent_node_weights_field() const { return my_cdfem_support.get_parent_node_weights_field(); }
 
   void rebuild_child_part();
   void rebuild_parent_and_active_parts_using_nonconformal_and_child_parts();
   void restore_subelements();
-  const SubElementNode * build_subelement_edge_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
-  const SubElementNode * find_or_build_subelement_edge_node_with_id(const stk::mesh::EntityId nodeId, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
-  const SubElementNode * find_or_build_subelement_edge_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
+  const SubElementNode * build_subelement_child_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
+  const SubElementNode * find_or_build_subelement_node_with_id(const stk::mesh::EntityId nodeId, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
+  const SubElementNode * find_or_build_subelement_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
   void find_or_build_midside_nodes(const stk::topology & elemTopo, const Mesh_Element & ownerMeshElem, const stk::mesh::Entity * elemNodes, const NodeVec & subelemNodes);
 
   stk::mesh::MetaData& my_meta;

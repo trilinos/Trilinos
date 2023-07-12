@@ -853,7 +853,7 @@ function(tribits_add_test EXE_NAME)
   elseif (PARSE_POSTFIX_AND_ARGS_0)
     # We will use this list instead
   else()
-    # Niether 'ARGS' nor 'POSTFIX_AND_ARGS' was selected so just assume one
+    # Neither 'ARGS' nor 'POSTFIX_AND_ARGS' was selected so just assume one
     # empty arg
     set(PARSE_ARGS " ")
     set(NUM_PARSE_ARGS 1)

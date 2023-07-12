@@ -13,8 +13,9 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-/// @file KokkosKernels_Preconditioner.hpp
-//
+
+/// @file KokkosSparse_Preconditioner.hpp
+
 #ifndef KK_PREC_HPP
 #define KK_PREC_HPP
 
@@ -27,11 +28,7 @@ namespace Experimental {
 
 /// \class Preconditioner
 /// \brief Interface for KokkosKernels preconditioners
-/// \tparam ScalarType Type of the matrix's entries
-/// \tparam Layout Kokkos layout of vectors X and Y to which
-///         the preconditioner is applied
-/// \tparam EXSP Execution space for the preconditioner apply
-/// \tparam Ordinal Type of the matrix's indices;
+/// \tparam CRS Type of the compressed matrix
 ///
 /// Preconditioner provides the following methods
 ///   - initialize() performs all operations based on the graph of the

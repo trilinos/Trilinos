@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -19,7 +19,7 @@
 #include <utility> // for make_pair, pair
 
 namespace {
-  bool entity_is_omitted(Ioss::GroupingEntity *block)
+  bool entity_is_omitted(const Ioss::GroupingEntity *block)
   {
     bool omitted = block->get_optional_property("omitted", 0) == 1;
     return omitted;
@@ -35,8 +35,8 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
   size_t part_count = part_mesh.size();
   for (size_t p = 0; p < part_count; p++) {
     bool has_omissions        = part_mesh[p]->get_property("block_omission_count").get_int() > 0;
-    Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
-    size_t           loc_size = nb->entity_count();
+    const Ioss::NodeBlock *nb = part_mesh[p]->get_node_blocks()[0];
+    size_t                 loc_size = nb->entity_count();
     if (has_omissions) {
       // If there are any omitted element blocks for this part, don't
       // map the nodes that are only connected to omitted element
@@ -93,8 +93,8 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
 
   size_t tot_size = 0;
   for (size_t p = 0; p < part_count; p++) {
-    Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
-    size_t           loc_size = nb->entity_count();
+    const Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
+    size_t                 loc_size = nb->entity_count();
     tot_size += loc_size;
     global_nodes[p].resize(loc_size);
   }
@@ -103,7 +103,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
   size_t offset            = 0;
   bool   any_omitted_nodes = false;
   for (size_t p = 0; p < part_count; p++) {
-    Ioss::NodeBlock *nb = part_mesh[p]->get_node_blocks()[0];
+    const Ioss::NodeBlock *nb = part_mesh[p]->get_node_blocks()[0];
     nb->get_field_data("ids", global_nodes[p]);
 
     // If there are any omitted element blocks for this part, set
@@ -217,8 +217,8 @@ void build_local_element_map(RegionVector &part_mesh, std::vector<INT> &local_el
     Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
 
     while (i != ebs.end()) {
-      Ioss::ElementBlock *eb       = *i++;
-      size_t              num_elem = eb->entity_count();
+      const auto *eb       = *i++;
+      size_t      num_elem = eb->entity_count();
       if (entity_is_omitted(eb)) {
         // Fill local_element_map with -1 for the omitted elements.
         for (size_t j = 0; j < num_elem; j++) {

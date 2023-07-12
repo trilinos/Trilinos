@@ -295,6 +295,18 @@ public:
    */
     int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double, global_ordinal_type), double parameter1, global_ordinal_type parameter2);
 
+    //! Set a parameter that takes an int then a double.
+    /*!
+    \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.
+    \param *pt2Func (In) -The function that sets the parameter. It must set parameters for the type of solver or preconditioner that was created.
+      An example is if the solver is BoomerAMG, the function to set relaxation weight for a given level would be &HYPRE_BoomerAMGSetLevelRelaxWt
+    \param parameter1 (In) -The int parameter being set.
+    \param parameter2 (In) - The double parameter being set.
+
+    \return Integer error code, set to 0 if successful.
+   */
+    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, double), global_ordinal_type parameter1, double parameter2);
+
     //! Set a parameter that takes two int parameters.
     /*!
     \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.

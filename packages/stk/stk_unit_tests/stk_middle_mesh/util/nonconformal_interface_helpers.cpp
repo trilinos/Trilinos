@@ -1,6 +1,6 @@
-#include "nonconformal_interface_helpers.hpp"
-#include "element_operations_2d.hpp"
-#include "field.hpp"
+#include "util/nonconformal_interface_helpers.hpp"
+#include "stk_middle_mesh/element_operations_2d.hpp"
+#include "stk_middle_mesh/field.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

@@ -15,6 +15,8 @@ class Mesh;
 template <typename T>
 class VariableSizeField : public impl::FieldBase
 {
+ 
+
   public:
     VariableSizeField(const FieldShape& fshape, const impl::EntityCount count, std::shared_ptr<Mesh> mesh)
       : m_fshape(fshape)
@@ -36,16 +38,34 @@ class VariableSizeField : public impl::FieldBase
       return m_fields[get_type_dimension(entity->get_type())].operator()(entity, node, component);
     }
 
+    impl::IteratorRange<T> operator()(MeshEntityPtr entity, int node)
+    {
+      assert(is_entity_on_mesh(entity));
+      return m_fields[get_type_dimension(entity->get_type())].operator()(entity, node);
+    }    
+
     const T& operator()(MeshEntityPtr entity, int node, int component) const
     {
       assert(is_entity_on_mesh(entity));
       return m_fields[get_type_dimension(entity->get_type())].operator()(entity, node, component);
     }
 
+    impl::ConstIteratorRange<T> operator()(MeshEntityPtr entity, int node) const
+    {
+      assert(is_entity_on_mesh(entity));
+      return m_fields[get_type_dimension(entity->get_type())].operator()(entity, node);
+    }  
+
     void insert(MeshEntityPtr entity, int node, const T& val = T())
     {
       assert(is_entity_on_mesh(entity));
       return m_fields[get_type_dimension(entity->get_type())].insert(entity, node, val);
+    }
+
+    void resize(MeshEntityPtr entity, int node, int newSize, const T& val=T())
+    {
+      assert(is_entity_on_mesh(entity));
+      return m_fields[get_type_dimension(entity->get_type())].resize(entity, node, newSize, val);
     }
 
     void clear(int dim) { m_fields[dim].clear(); }

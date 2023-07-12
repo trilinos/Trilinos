@@ -318,13 +318,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     xpetraYYY->doImport(*temp, *Importer, Xpetra::INSERT);
 
     Teuchos::RCP<MultiVector> coordinates = MultiVectorFactory::Build(LapMap,2);
-    Teuchos::ArrayRCP< const Scalar > srcX = xpetraXXX->getData(0);
-    Teuchos::ArrayRCP< const Scalar > srcY = xpetraYYY->getData(0);
-    Teuchos::ArrayRCP< Scalar > dataX = coordinates->getDataNonConst(0);
-    Teuchos::ArrayRCP< Scalar > dataY = coordinates->getDataNonConst(1);
-    for(decltype(coordinates->getLocalLength()) i = 0; i < coordinates->getLocalLength(); i++) {
-      dataX[i] = srcX[i];
-      dataY[i] = srcY[i];
+    // GH: scope data manipulation because we should not let a pointer to this data live once we call MueLu
+    {  
+      Teuchos::ArrayRCP< const Scalar > srcX = xpetraXXX->getData(0);
+      Teuchos::ArrayRCP< const Scalar > srcY = xpetraYYY->getData(0);
+      Teuchos::ArrayRCP< Scalar > dataX = coordinates->getDataNonConst(0);
+      Teuchos::ArrayRCP< Scalar > dataY = coordinates->getDataNonConst(1);
+      for(decltype(coordinates->getLocalLength()) i = 0; i < coordinates->getLocalLength(); i++) {
+        dataX[i] = srcX[i];
+        dataY[i] = srcY[i];
+      }
     }
 
     // read in matrix
@@ -484,7 +487,6 @@ int main(int argc, char* argv[]) {
     }
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
       if (node == "") {
         typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
@@ -605,9 +607,6 @@ int main(int argc, char* argv[]) {
       } else {
         throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
       }
-#else
-      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

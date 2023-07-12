@@ -291,7 +291,7 @@ TEST_F(StkIoSideset_legacy, field_QuadAndTriSides)
 {
   if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   bool createQuadBlockFirst = true;
   create_parts_and_fields(createQuadBlockFirst);
@@ -304,7 +304,7 @@ TEST_F(StkIoSideset_legacy, field_TriAndQuadSides)
 {
   if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   bool createQuadBlockFirst = false;
   create_parts_and_fields(createQuadBlockFirst);
@@ -317,7 +317,7 @@ TEST_F(StkIoSideset_legacy, field_QuadAndTriSides_restart)
 {
   if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   bool createQuadBlockFirst = true;
   create_parts_and_fields(createQuadBlockFirst);
@@ -331,7 +331,7 @@ TEST_F(StkIoSideset_legacy, field_TriAndQuadSides_restart)
 {
   if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   bool createQuadBlockFirst = false;
   create_parts_and_fields(createQuadBlockFirst);
@@ -970,7 +970,7 @@ TEST_F(StkIoSideset, field_QuadAndTriSides)
 {
   if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   bool createQuadBlockFirst = true;
   create_parts_and_fields(createQuadBlockFirst);
@@ -983,7 +983,7 @@ TEST_F(StkIoSideset, field_TriAndQuadSides)
 {
   if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   bool createQuadBlockFirst = false;
   create_parts_and_fields(createQuadBlockFirst);
@@ -996,7 +996,7 @@ TEST_F(StkIoSideset, field_QuadAndTriSides_restart)
 {
   if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   bool createQuadBlockFirst = true;
   create_parts_and_fields(createQuadBlockFirst);
@@ -1010,7 +1010,7 @@ TEST_F(StkIoSideset, field_TriAndQuadSides_restart)
 {
   if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   bool createQuadBlockFirst = false;
   create_parts_and_fields(createQuadBlockFirst);

@@ -27,7 +27,7 @@ namespace krino{
 BoundingBoxMesh::BoundingBoxMesh(stk::topology element_topology, const std::vector<std::string> & entity_rank_names)
 : m_element_topology(element_topology), m_nx(0), m_ny(0), m_nz(0)
 {
-  ThrowRequire(element_topology == stk::topology::TRIANGLE_3_2D ||
+  STK_ThrowRequire(element_topology == stk::topology::TRIANGLE_3_2D ||
       element_topology == stk::topology::QUADRILATERAL_4_2D ||
       element_topology == stk::topology::TETRAHEDRON_4 ||
       element_topology == stk::topology::HEXAHEDRON_8);
@@ -50,7 +50,7 @@ void
 BoundingBoxMesh::set_domain(const BoundingBoxType & mesh_bbox, const double mesh_size, const int pad_size)
 {
   m_mesh_bbox = mesh_bbox;
-  const Vector3d padding(0.5*mesh_size*pad_size, 0.5*mesh_size*pad_size, 0.5*mesh_size*pad_size);
+  const stk::math::Vector3d padding(0.5*mesh_size*pad_size, 0.5*mesh_size*pad_size, 0.5*mesh_size*pad_size);
   m_mesh_bbox = BoundingBoxType(mesh_bbox.get_min() - padding, mesh_bbox.get_max() + padding);
 
   const typename BoundingBoxType::VecType min = m_mesh_bbox.get_min();
@@ -81,7 +81,7 @@ void BoundingBoxMesh::set_is_cell_edge_function_for_cell_based_mesh() const
 {
   const std::array<size_t,3> N = {m_nx, m_ny, m_nz};
   const int dim = m_meta->spatial_dimension();
-  ThrowRequireMsg(m_mesh, "Cannot call set_is_cell_edge_function() before BulkData is created.");
+  STK_ThrowRequireMsg(m_mesh, "Cannot call set_is_cell_edge_function() before BulkData is created.");
   const stk::mesh::BulkData & mesh = *m_mesh;
 
   auto is_cell_edge = [N,dim,&mesh](stk::mesh::Entity node0, stk::mesh::Entity node1)
@@ -116,7 +116,7 @@ void BoundingBoxMesh::set_is_cell_edge_function_for_BCC_mesh() const
 void
 BoundingBoxMesh::populate_mesh(stk::ParallelMachine pm, const stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 { /* %TRACE[ON]% */ Trace trace__("krino::BoundingBoxMesh::populate_mesh()"); /* %TRACE% */
-  ThrowRequireMsg(m_mesh_bbox.valid(), "Must call set_domain() before populate_mesh()");
+  STK_ThrowRequireMsg(m_mesh_bbox.valid(), "Must call set_domain() before populate_mesh()");
   m_mesh = stk::mesh::MeshBuilder(pm).set_aura_option(auto_aura_option).create(m_meta);
   if (CUBIC_BOUNDING_BOX_MESH == myMeshStructureType)
     populate_cell_based_mesh();
@@ -125,7 +125,7 @@ BoundingBoxMesh::populate_mesh(stk::ParallelMachine pm, const stk::mesh::BulkDat
   else if (BCC_BOUNDING_BOX_MESH == myMeshStructureType || FLAT_WALLED_BCC_BOUNDING_BOX_MESH == myMeshStructureType)
     populate_BCC_mesh();
   else
-    ThrowRequireMsg(false, "Unsupported or unrecognized mesh structure type " << myMeshStructureType);
+    STK_ThrowRequireMsg(false, "Unsupported or unrecognized mesh structure type " << myMeshStructureType);
 }
 
 enum BCCNode { BCC_NODE=8, BCC_NODE_XMINUS=9, BCC_NODE_XPLUS=10, BCC_NODE_YMINUS=11, BCC_NODE_YPLUS=12, BCC_NODE_ZMINUS=13, BCC_NODE_ZPLUS=14 };
@@ -236,14 +236,14 @@ void fill_triangle_lattice_node_indices(const size_t ix, const size_t iy, std::a
 void
 BoundingBoxMesh::populate_2D_triangular_lattice_based_mesh()
 { /* %TRACE[ON]% */ Trace trace__("krino::BoundingBoxMesh::populate_2D_triangular_lattice_based_mesh()"); /* %TRACE% */
-  ThrowRequire(m_mesh);
+  STK_ThrowRequire(m_mesh);
 
   const int p_size = m_mesh->parallel_size();
   const int p_rank = m_mesh->parallel_rank();
   stk::mesh::FieldBase const* coord_field = m_meta->coordinate_field();
   my_coord_mapping = std::make_unique<CartesianCoordinateMapping>(m_nx, m_ny, m_nz, m_mesh_bbox);
 
-  ThrowRequire(m_element_topology == stk::topology::TRIANGLE_3_2D);
+  STK_ThrowRequire(m_element_topology == stk::topology::TRIANGLE_3_2D);
   const bool flattenBoundaries = FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH == myMeshStructureType;
 
   const size_t NelemPerSlabInY = (2*m_nx+1);
@@ -295,7 +295,7 @@ BoundingBoxMesh::populate_2D_triangular_lattice_based_mesh()
 void
 BoundingBoxMesh::populate_BCC_mesh()
 { /* %TRACE[ON]% */ Trace trace__("krino::BoundingBoxMesh::populate_BCC_mesh()"); /* %TRACE% */
-  ThrowRequire(m_mesh);
+  STK_ThrowRequire(m_mesh);
   set_is_cell_edge_function_for_BCC_mesh();
 
   const int p_size = m_mesh->parallel_size();
@@ -377,7 +377,7 @@ BoundingBoxMesh::populate_BCC_mesh()
 void
 BoundingBoxMesh::populate_cell_based_mesh()
 { /* %TRACE[ON]% */ Trace trace__("krino::BoundingBoxMesh::populate_cell_based_mesh()"); /* %TRACE% */
-  ThrowRequire(m_mesh);
+  STK_ThrowRequire(m_mesh);
   set_is_cell_edge_function_for_cell_based_mesh();
 
   const int p_size = m_mesh->parallel_size();
@@ -521,7 +521,7 @@ BoundingBoxMesh::declare_domain_side_parts(const stk::mesh::Part & blockPart)
 
 void BoundingBoxMesh::require_has_flat_boundaries() const
 {
-  ThrowRequireMsg(has_flat_boundaries(), "Domain sides can only be added for CUBIC or FLAT_WALLED_BC generated meshes.");
+  STK_ThrowRequireMsg(has_flat_boundaries(), "Domain sides can only be added for CUBIC or FLAT_WALLED_BC generated meshes.");
 }
 
 static bool equal_within_tol(const double x1, const double x2, const double tol)
@@ -541,7 +541,7 @@ BoundingBoxMesh::create_domain_sides()
   stk::mesh::create_exposed_block_boundary_sides(*m_mesh, m_meta->universal_part(), {&aux_meta.exposed_boundary_part()});
 
   stk::topology side_topology = m_element_topology.side_topology();
-  ThrowRequire(mySideParts.size() >= m_meta->spatial_dimension()*2);
+  STK_ThrowRequire(mySideParts.size() >= m_meta->spatial_dimension()*2);
 
   std::vector<stk::mesh::Entity> sides;
   stk::mesh::get_selected_entities( aux_meta.exposed_boundary_part() & m_meta->locally_owned_part(), m_mesh->buckets( m_meta->side_rank() ), sides );
@@ -567,12 +567,12 @@ BoundingBoxMesh::create_domain_sides()
       {
         if (equal_within_tol(coords[i],min[i],tol[i]))
         {
-          ThrowRequire(domainSide[i] != 1);
+          STK_ThrowRequire(domainSide[i] != 1);
           if (domainSide[i] == -2) domainSide[i] = -1;
         }
         else if (equal_within_tol(coords[i],max[i],tol[i]))
         {
-          ThrowRequire(domainSide[i] != -1);
+          STK_ThrowRequire(domainSide[i] != -1);
           if (domainSide[i] == -2) domainSide[i] = 1;
         }
         else
@@ -583,7 +583,7 @@ BoundingBoxMesh::create_domain_sides()
     }
 
     const int num_sides_set = ((domainSide[0]==-1||domainSide[0]==1) ? 1 : 0) + ((domainSide[1]==-1||domainSide[1]==1) ? 1 : 0) + ((domainSide[2]==-1||domainSide[2]==1) ? 1 : 0);
-    ThrowRequire(num_sides_set == 1);
+    STK_ThrowRequire(num_sides_set == 1);
     stk::mesh::Part * side_part = nullptr;
     if (domainSide[0] == -1) side_part = mySideParts[0];
     else if (domainSide[0] ==  1) side_part = mySideParts[1];

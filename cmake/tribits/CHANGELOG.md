@@ -2,6 +2,17 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2023-5-03:
+
+* **Added:** Added support for non-fully TriBITS-compatible external packages.
+  Now, a `<Package>Config.cmake` file need not define
+  `<UpstreamPkg>::all_libs` targets for all of its upstream dependencies.  The
+  updated macro `tribits_process_enabled_tpls()` will find any missing
+  upstream external packages/TPLs as needed (see updated documentation in the
+  section "TriBITS-Compliant External Packages" in the "TriBITS Users Guide"
+  and the section "Processing of external packages/TPLs and TriBITS-compliant
+  external packages" in the "TriBITS Maintainers Guide").
+
 ## 2023-02-24:
 
 * **Changed:** Upgraded minimum required CMake version from 3.17 to 3.23.
@@ -214,9 +225,9 @@ ChangeLog for TriBITS
   macro `tribits_extpkg_define_dependencies()` that sets
   `<tplName>_LIB_ALL_DEPENDENCIES`.  Now `<tplName>_LIB_ENABLED_DEPENDENCIES`
   is automatically set from `<tplName>_LIB_ALL_DEPENDENCIES` based on what
-  TPLs are actaully enabled.  This avoids the problem described below from
+  TPLs are actually enabled.  This avoids the problem described below from
   directly setting `<tplName>_LIB_ENABLED_DEPENDENCIES` without reguard to
-  what TPLs are actaully enabled.  This maintains backward compatibility for
+  what TPLs are actually enabled.  This maintains backward compatibility for
   existing configure scripts where an upstream TPL may not be enabled in some
   strange configure scripts (see
   [TriBITSPub/TriBITS#494](https://github.com/TriBITSPub/TriBITS/issues/494)).

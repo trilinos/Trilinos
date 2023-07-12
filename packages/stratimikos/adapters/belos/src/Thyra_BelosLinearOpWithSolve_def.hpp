@@ -432,13 +432,12 @@ void BelosLinearOpWithSolve<Scalar>::describe(
   RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch (verbLevel) {
+    case Teuchos::VERB_DEFAULT: // fall-through
     case Teuchos::VERB_LOW:
-      break;
-    case Teuchos::VERB_DEFAULT:
-    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_MEDIUM: // fall-through
       *out << this->description() << std::endl;
       break;
-    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_HIGH: // fall-through
     case Teuchos::VERB_EXTREME:
     {
       *out

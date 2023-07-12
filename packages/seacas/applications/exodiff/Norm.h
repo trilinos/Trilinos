@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -19,9 +19,7 @@ public:
     if (order == 2) {
       return std::sqrt(l2_norm_d);
     }
-    else {
-      return 0.0;
-    }
+    return 0.0;
   }
 
   double left(int order) const
@@ -32,9 +30,7 @@ public:
     if (order == 2) {
       return std::sqrt(l2_norm_1);
     }
-    else {
-      return 0.0;
-    }
+    return 0.0;
   }
 
   double right(int order) const
@@ -45,9 +41,7 @@ public:
     if (order == 2) {
       return std::sqrt(l2_norm_2);
     }
-    else {
-      return 0.0;
-    }
+    return 0.0;
   }
 
   double relative(int order) const

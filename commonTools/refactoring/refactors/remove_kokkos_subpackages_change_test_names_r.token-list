@@ -1,0 +1,4 @@
+KokkosCore_UnitTest                 Kokkos_CoreUnitTest
+KokkosContainers_UnitTest           Kokkos_ContainersUnitTest
+KokkosAlgorithms_UnitTest           Kokkos_AlgorithmsUnitTest
+KokkosContainers_PerformanceTest    Kokkos_ContainersPerformanceTest

@@ -1,6 +1,6 @@
-#include "active_vert_data.hpp"
-#include "create_mesh.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/active_vert_data.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "gtest/gtest.h"
 
 #include <limits>
@@ -32,6 +32,13 @@ mesh::MeshEntityPtr find_closest_vert(std::shared_ptr<mesh::Mesh> mesh, const ut
   return minVert;
 }
 
+void expect_near(const utils::Point& lhs, const utils::Point& rhs, double tol)
+{
+  for (int i=0; i < 3; ++i)
+    EXPECT_NEAR(lhs[i], rhs[i], tol);
+}
+
+
 } // namespace
 
 TEST(ActiveVertData, Mesh2x2)
@@ -53,7 +60,7 @@ TEST(ActiveVertData, Mesh2x2)
 
   mesh::MeshEntityPtr vert = find_closest_vert(mesh1, utils::Point(0.5, 0.5));
 
-  opt::impl::ActiveVertData active(vert);
+  opt::impl::ActiveVertData active(mesh1, vert);
 
   EXPECT_EQ(active.get_num_verts(), 9);
   EXPECT_EQ(active.get_num_elements(), 12);
@@ -79,8 +86,10 @@ TEST(ActiveVertData, Mesh2x2)
   vert_counts[v] = 0;
   */
 
-  for (auto& v : active.get_unique_verts())
+  const std::vector<utils::Point>& verts = active.get_unique_verts();
+  for (auto& pt : verts)
   {
+    mesh::MeshEntityPtr v = find_closest_vert(mesh1, pt);
     EXPECT_EQ(vertCounts.count(v), static_cast<unsigned int>(1));
     vertCounts[v] += 1;
   }
@@ -92,7 +101,9 @@ TEST(ActiveVertData, Mesh2x2)
   {
     auto vertsI = active.get_element_verts(i);
     for (int j = 0; j < 3; ++j)
-      EXPECT_EQ(vertCounts.count(vertsI[j]), static_cast<unsigned int>(1));
+    {
+      EXPECT_EQ(vertCounts.count(find_closest_vert(mesh1, vertsI[j])), static_cast<unsigned int>(1));
+    }
   }
 
   // check current vertex
@@ -101,8 +112,93 @@ TEST(ActiveVertData, Mesh2x2)
   {
     auto vertsI = active.get_element_verts(i);
     int idx     = active.get_current_vert_idx(i);
-    EXPECT_EQ(vertsI[idx], vert);
+    for (int j=0; j < 3; ++j)
+      EXPECT_EQ(vertsI[idx][j], vert->get_point_orig(0)[j]);
   }
+}
+
+TEST(ActiveVertData, RemoteElements)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  mesh::impl::MeshSpec spec;
+  spec.numelX = 2;
+  spec.numelY = 2;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;
+
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<mesh::Mesh> mesh1 = create_mesh(spec, func);
+
+  mesh::MeshEntityPtr centerVert = find_closest_vert(mesh1, utils::Point(0.5, 0.5));
+
+  opt::impl::ActiveVertData active(mesh1, centerVert);
+
+  int numLocalVerts = 9;
+  int numLocalTris = 12;
+  EXPECT_EQ(active.get_num_verts(), numLocalVerts);
+  EXPECT_EQ(active.get_num_elements(), numLocalTris);
+
+  active.add_remote_vert({1, 0});
+  active.add_remote_vert({1, 1});
+  active.add_remote_element({0, 9, 10});
+  int numVerts = 11;
+  int numTris = 13;
+
+  active.get_unique_verts()[numLocalVerts]   = {1, 0, 0};
+  active.get_unique_verts()[numLocalVerts+1] = {0, 1, 0};
+  active.finish_initialization();
+
+  EXPECT_EQ(active.get_num_verts(), numVerts);
+  EXPECT_EQ(active.get_num_elements(), numTris);
+  EXPECT_EQ(active.get_current_vert_idx(numTris-1), 0);  //TODO: is current vert indices getting updated?
+  std::array<int, 3> expectedIds = {0, 9, 10}; 
+  EXPECT_EQ(active.get_element_vert_ids(numTris-1), expectedIds);
+  std::array<utils::Point, 3> expectedPts = { utils::Point{0.5, 0.5}, utils::Point{1, 0}, utils::Point{0, 1}};
+  EXPECT_EQ(active.get_element_verts(numTris-1), expectedPts);
+  expectedPts = std::array<utils::Point, 3>{ utils::Point{0.5, 0.5}, utils::Point{1, 0}, utils::Point{0, 1}};
+  EXPECT_EQ(active.get_element_verts_orig(numTris-1), expectedPts);
+
+  // modify local coordinates
+  // check get_element_verts/get_element_verts/orig
+  auto& localVerts = active.get_local_verts();
+  for (auto& vert : localVerts)
+    vert->set_point_orig(0, vert->get_point_orig(0) + utils::Point(0.5, 0.5));
+
+  for (int tri=0; tri < numLocalTris; ++tri)
+  {
+    std::array<int, 3> vertIndices  = active.get_element_vert_ids(tri);
+    std::array<utils::Point, 3> pts = active.get_element_verts(tri);
+
+    for (int i=0; i < 3; ++i)
+    {
+      expect_near(pts[i], localVerts[vertIndices[i]]->get_point_orig(0), 1e-13);
+    }
+  }
+
+  active.get_unique_verts()[numLocalVerts] = utils::Point(2, 0);
+  active.get_unique_verts()[numLocalVerts+1] = utils::Point(0, 2);
+
+  std::array<utils::Point, 3> pts      = active.get_element_verts(numTris-1);
+  std::array<utils::Point, 3> pts_orig = active.get_element_verts_orig(numTris-1);
+
+  expect_near(pts[1], {2, 0}, 1e-13);
+  expect_near(pts[2], {0, 2}, 1e-13);
+  expect_near(pts_orig[1], {1, 0}, 1e-13);
+  expect_near(pts_orig[2], {0, 1}, 1e-13);
+
+
+  for (int i=0; i < numLocalVerts; ++i)
+    EXPECT_EQ(active.get_vert_owner(i), get_owner_remote(mesh1, localVerts[i]));
+
+  mesh::RemoteSharedEntity remote1{1, 0};
+  mesh::RemoteSharedEntity remote2{1, 1};
+  EXPECT_EQ(active.get_vert_owner(numLocalVerts), remote1);
+  EXPECT_EQ(active.get_vert_owner(numLocalVerts + 1), remote2);
 }
 
 } // namespace impl

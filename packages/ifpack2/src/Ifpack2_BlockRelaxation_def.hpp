@@ -103,6 +103,7 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   IsComputed_ (false),
   NumInitialize_ (0),
   NumCompute_ (0),
+  TimerForApply_(true),
   NumApply_ (0),
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
@@ -169,6 +170,7 @@ getValidParameters () const
                                    typename MatrixType::global_ordinal_type,
                                    typename MatrixType::node_type> > dummy;
   validParams->set("partitioner: coordinates",dummy);
+  validParams->set("timer for apply", true);
 
   return validParams;
 }
@@ -178,7 +180,7 @@ void
 BlockRelaxation<MatrixType,ContainerType>::
 setParameters (const Teuchos::ParameterList& pl)
 {
-  // CAG: Copied form Relaxation
+  // CAG: Copied from Relaxation
   // FIXME (aprokop 18 Oct 2013) Casting away const is bad here.
   // but otherwise, we will get [unused] in pl
   this->setParametersImpl(const_cast<Teuchos::ParameterList&>(pl));
@@ -351,6 +353,9 @@ setParametersImpl (Teuchos::ParameterList& List)
     "Ifpack2::BlockRelaxation:setParameters: Setting the \"relaxation: "
     "backward mode\" parameter to true is not yet supported.");
 
+  if(List.isParameter("timer for apply"))
+    TimerForApply_ = List.get<bool>("timer for apply");
+
   // copy the list as each subblock's constructor will
   // require it later
   List_ = List;
@@ -516,15 +521,21 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     "the case beta == 0.  You specified beta = " << beta << ".");
 
   const std::string timerName ("Ifpack2::BlockRelaxation::apply");
-  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
-  if (timer.is_null ()) {
-    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  Teuchos::RCP<Teuchos::Time> timer;
+  if (TimerForApply_) {
+    timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+    if (timer.is_null ()) {
+      timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+    }
   }
 
-  double startTime = timer->wallTime();
+  Teuchos::Time time = Teuchos::Time(timerName);
+  double startTime = time.wallTime();
 
   {
-    Teuchos::TimeMonitor timeMon (*timer);
+    Teuchos::RCP<Teuchos::TimeMonitor> timeMon;
+    if (TimerForApply_)
+      timeMon = Teuchos::rcp(new Teuchos::TimeMonitor(*timer));
 
     // If X and Y are pointing to the same memory location,
     // we need to create an auxiliary vector, Xcopy
@@ -567,7 +578,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     }
   }
 
-  ApplyTime_ += (timer->wallTime() - startTime);
+  ApplyTime_ += (time.wallTime() - startTime);
   ++NumApply_;
 }
 

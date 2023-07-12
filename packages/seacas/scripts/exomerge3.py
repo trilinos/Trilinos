@@ -1,7 +1,7 @@
 """
 Exomerge is a lightweight Python interface for manipulating ExodusII files.
 
-Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -7710,7 +7710,13 @@ class ExodusModel(object):
         else:
             self.info_records.append('Discarded title from the '
                                      'following file:')
-            self.info_records.append(filename)
+            # split filename string if filename is larger than 79 characters
+            filename_wrap_list = textwrap.fill(filename, width=79).split('\n')
+            # append interpreter continuation char "\\" to end of continuation line while splitting
+            for i in range(len(filename_wrap_list) - 1):
+                filename_wrap_list[i] += "\\"
+            # append multiple split list to records
+            self.info_records.extend(filename_wrap_list)
             self.info_records.append(exodus_file.title())
         # run a check on the model to ensure arrays are correct sizes
         self._verify()

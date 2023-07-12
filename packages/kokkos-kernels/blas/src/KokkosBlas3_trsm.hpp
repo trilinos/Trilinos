@@ -30,20 +30,26 @@ namespace KokkosBlas {
 /// \brief Solve triangular linear system with multiple RHSs:
 ///        op(A)*X = alpha*B if side == "L" or "l"
 ///        X*op(A) = alpha*B if side == "R" or "r"
+/// This function is currently blocking when running the native implementation
+/// which only has a serial implementation.
 ///
+/// \tparam execution_space a Kokkos execution space to run the kernels on.
 /// \tparam AViewType Input matrix, as a 2-D Kokkos::View
 /// \tparam BViewType Input(RHS)/Output(solution) M-by-N matrix, as a 2-D
 /// Kokkos::View
 ///
-/// \param side  [in] "L" or "l" indicates matrix A is on the left of X
+/// \param space [in] an execution space instance that may contain a stream
+/// or a queue to execute the kernel on, this only works with TPLs at the
+/// moment. \param side  [in] "L" or "l" indicates matrix A is on the left of X
 ///                   "R" or "r" indicates matrix A is on the right of X
 /// \param uplo  [in] "U" or "u" indicates matrix A upper part is stored, the
 /// other part is not referenced
 ///                   "L" or "l" indicates matrix A lower part is stored, the
 ///                   other part is not referenced
 /// \param trans [in] "N" or "n" for non-transpose, "T" or "t" for transpose,
-/// "C" or "c" for conjugate transpose. \param diag  [in] "U" or "u" indicates
-/// the diagonal of A is assumed to be unit
+/// "C" or "c" for conjugate transpose.
+/// \param diag  [in] "U" or "u" indicates the diagonal of A is assumed to be
+/// unit
 //                    "N" or "n" indicated the diagonal of A is assumed to be
 //                    non-unit
 /// \param alpha [in] Input coefficient used for multiplication with B
@@ -53,10 +59,11 @@ namespace KokkosBlas {
 /// \param B [in,out] Input/Output matrix, as a 2-D Kokkos::View
 ///                   On entry, M-by-N matrix of multile RHS
 ///                   On exit, overwritten with the solution X
-template <class AViewType, class BViewType>
-void trsm(const char side[], const char uplo[], const char trans[],
-          const char diag[], typename BViewType::const_value_type& alpha,
-          const AViewType& A, const BViewType& B) {
+template <class execution_space, class AViewType, class BViewType>
+void trsm(const execution_space& space, const char side[], const char uplo[],
+          const char trans[], const char diag[],
+          typename BViewType::const_value_type& alpha, const AViewType& A,
+          const BViewType& B) {
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<BViewType>::value,
@@ -140,9 +147,44 @@ void trsm(const char side[], const char uplo[], const char trans[],
                            typename BViewType::device_type,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  KokkosBlas::Impl::TRSM<AVT, BVT>::trsm(side, uplo, trans, diag, alpha, A, B);
+  KokkosBlas::Impl::TRSM<execution_space, AVT, BVT>::trsm(
+      space, side, uplo, trans, diag, alpha, A, B);
 }
 
+/// \brief Solve triangular linear system with multiple RHSs:
+///        op(A)*X = alpha*B if side == "L" or "l"
+///        X*op(A) = alpha*B if side == "R" or "r"
+///
+/// \tparam AViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam BViewType Input(RHS)/Output(solution) M-by-N matrix, as a 2-D
+/// Kokkos::View
+///
+/// \param side  [in] "L" or "l" indicates matrix A is on the left of X
+///                   "R" or "r" indicates matrix A is on the right of X
+/// \param uplo  [in] "U" or "u" indicates matrix A upper part is stored, the
+/// other part is not referenced
+///                   "L" or "l" indicates matrix A lower part is stored, the
+///                   other part is not referenced
+/// \param trans [in] "N" or "n" for non-transpose, "T" or "t" for transpose,
+/// "C" or "c" for conjugate transpose.
+/// \param diag  [in] "U" or "u" indicates the diagonal of A is assumed to be
+/// unit
+//                    "N" or "n" indicated the diagonal of A is assumed to be
+//                    non-unit
+/// \param alpha [in] Input coefficient used for multiplication with B
+/// \param A [in]     Input matrix, as a 2-D Kokkos::View
+///                   If side == "L" or "l", matrix A is a M-by-M triangular
+///                   matrix; otherwise, matrix A is a N-by-N triangular matrix
+/// \param B [in,out] Input/Output matrix, as a 2-D Kokkos::View
+///                   On entry, M-by-N matrix of multile RHS
+///                   On exit, overwritten with the solution X
+template <class AViewType, class BViewType>
+void trsm(const char side[], const char uplo[], const char trans[],
+          const char diag[], typename BViewType::const_value_type& alpha,
+          const AViewType& A, const BViewType& B) {
+  trsm(typename AViewType::execution_space{}, side, uplo, trans, diag, alpha, A,
+       B);
+}
 }  // namespace KokkosBlas
 
 #endif  // KOKKOS_BLAS3_TRSM_HPP_

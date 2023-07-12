@@ -219,7 +219,7 @@ void MgCycle(const int levelID, ///< ID of current level
 
       if (coarseSolverType == "direct")
       {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_AMESOS2)
 
         using DirectCoarseSolver = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >;
         RCP<DirectCoarseSolver> coarseSolver = coarseSolverData->get<RCP<DirectCoarseSolver> >("direct solver object");

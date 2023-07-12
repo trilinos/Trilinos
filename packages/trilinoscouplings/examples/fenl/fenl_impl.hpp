@@ -121,7 +121,7 @@ public:
   typedef Device DeviceType;
   typedef BoxElemFixture< Device , ElemOrder >  FixtureType ;
 
-  typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type  Magnitude;
+  typedef typename Kokkos::ArithTraits<Scalar>::mag_type  Magnitude;
 
   typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode< Device >  NodeType;
 
@@ -253,7 +253,7 @@ public:
     , g_nodal_residual( RowMap, 1 )
     , g_nodal_delta(    RowMap, 1 )
     , g_nodal_solution_no_overlap (g_nodal_solution, RowMap)
-    , g_jacobian( RowMap, ColMap, LocalMatrixType( "jacobian" , mesh_to_graph.graph ) )
+    , g_jacobian( RowMap, ColMap, LocalMatrixType( "jacobian" , mesh_to_graph.graph , maximum_entry(mesh_to_graph.graph) + 1 ) )
     , perf()
     , num_sensitivities(num_sens)
     {
@@ -740,7 +740,7 @@ Perf fenl(
   Teuchos::Array<Scalar>& response_gradient,
   const QuadratureData<Device>& qd = QuadratureData<Device>() )
 {
-  typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type  Magnitude;
+  typedef typename Kokkos::ArithTraits<Scalar>::mag_type  Magnitude;
 
   const unsigned  newton_iteration_limit =
     fenlParams->get("Max Nonlinear Iterations", 10) ;

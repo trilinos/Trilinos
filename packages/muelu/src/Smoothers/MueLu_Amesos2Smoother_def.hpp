@@ -49,7 +49,7 @@
 #include <algorithm>
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_AMESOS2)
 #include <Xpetra_Matrix.hpp>
 
 #include <Amesos2_config.h>
@@ -355,5 +355,5 @@ namespace MueLu {
   }
 } // namespace MueLu
 
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
+#endif // HAVE_MUELU_AMESOS2
 #endif // MUELU_AMESOS2SMOOTHER_DEF_HPP

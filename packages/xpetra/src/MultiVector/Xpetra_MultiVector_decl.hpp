@@ -311,15 +311,15 @@ class MultiVector
     virtual void Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal);
 
 
-    using impl_scalar_type     = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+    using impl_scalar_type     = typename Kokkos::ArithTraits<Scalar>::val_type;
     using dual_view_type       = Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutStride, typename node_type::device_type, Kokkos::MemoryUnmanaged>;
     using dual_view_type_const = Kokkos::DualView<const impl_scalar_type**, Kokkos::LayoutStride, typename node_type::device_type, Kokkos::MemoryUnmanaged>;
     using host_execution_space = typename dual_view_type::host_mirror_space;
     using dev_execution_space  = typename dual_view_type::t_dev::execution_space;
 
-    virtual typename dual_view_type::t_host_const_um getHostLocalView (Access::ReadOnlyStruct)  const
+    virtual typename dual_view_type::t_host_const_um getHostLocalView(Access::ReadOnlyStruct)  const
     {
-      throw std::runtime_error("Dummy function getHostLocalView, should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
+      throw std::runtime_error("Dummy function getHostLocalView(Access::ReadOnlyStruct), should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
 #ifndef __NVCC__
       typename dual_view_type::t_host_um test;
 #endif
@@ -329,16 +329,16 @@ class MultiVector
 
     virtual typename dual_view_type::t_dev_const_um  getDeviceLocalView(Access::ReadOnlyStruct) const
     {
-      throw std::runtime_error("Dummy function getHostLocalView, should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
+      throw std::runtime_error("Dummy function getDeviceLocalView(Access::ReadOnlyStruct), should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
 #ifndef __NVCC__
       typename dual_view_type::t_dev_um test;
 #endif
       TEUCHOS_UNREACHABLE_RETURN(test);
     }
 
-    virtual typename dual_view_type::t_host_um getHostLocalView (Access::OverwriteAllStruct)  const
+    virtual typename dual_view_type::t_host_um getHostLocalView(Access::OverwriteAllStruct)  const
     {
-      throw std::runtime_error("Dummy function getHostLocalView, should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
+      throw std::runtime_error("Dummy function getHostLocalView(Access::OverwriteAllStruct), should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
 #ifndef __NVCC__
       typename dual_view_type::t_host_um test;
 #endif
@@ -348,16 +348,16 @@ class MultiVector
 
     virtual typename dual_view_type::t_dev_um  getDeviceLocalView(Access::OverwriteAllStruct) const
     {
-      throw std::runtime_error("Dummy function getHostLocalView, should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
+      throw std::runtime_error("Dummy function getDeviceLocalView(Access::OverwriteAllStruct), should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
 #ifndef __NVCC__
       typename dual_view_type::t_dev_um test;
 #endif
       TEUCHOS_UNREACHABLE_RETURN(test);
     }
 
-    virtual typename dual_view_type::t_host_um getHostLocalView (Access::ReadWriteStruct)  const
+    virtual typename dual_view_type::t_host_um getHostLocalView(Access::ReadWriteStruct)  const
     {
-      throw std::runtime_error("Dummy function getHostLocalView, should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
+      throw std::runtime_error("Dummy function getHostLocalView(Access::ReadWriteStruct), should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
 #ifndef __NVCC__
       typename dual_view_type::t_host_um test;
 #endif
@@ -367,7 +367,7 @@ class MultiVector
 
     virtual typename dual_view_type::t_dev_um  getDeviceLocalView(Access::ReadWriteStruct) const
     {
-      throw std::runtime_error("Dummy function getHostLocalView, should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
+      throw std::runtime_error("Dummy function getDeviceLocalView(Access::ReadWriteStruct), should be overwritten at"+std::string(__FILE__)+":"+std::to_string(__LINE__));
 #ifndef __NVCC__
       typename dual_view_type::t_dev_um test;
 #endif

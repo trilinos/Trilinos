@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "predicates/edge_intersection_primitive.hpp"
+#include "stk_middle_mesh/predicates/edge_intersection_primitive.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -535,6 +535,22 @@ TEST(EdgeIntersectionPrimitive, QuadraticbVertexgInteriorOneSolutionIntersection
   EXPECT_TRUE(result.intersection1_found());
   EXPECT_NEAR(result.get_beta1(), 0.5, 1e-13);
   EXPECT_NEAR(result.get_alpha1(), 0, 1e-13);
+}
+
+TEST(EdgeIntersectionPrimitive, Regression)
+{
+  // from James Overfelt, 5/25/2023
+  const stk::middle_mesh::utils::Point edge1Pt1  (1.0000000000000002, 0, 0.39999999999999997);
+  const stk::middle_mesh::utils::Point edge1Pt2  (1, 0.20000000000000107, 0.40000000000000019);
+  const stk::middle_mesh::utils::Point edge2Pt1  (1, -3.388131789017199e-18, 0.44999999999999996);
+  const stk::middle_mesh::utils::Point edge2Pt2  (1.0000000000000002, -1.3552527156068807e-18, 0.41999999999999998);
+  const stk::middle_mesh::utils::Point pt1Normal (0.031079502397333692, -2.091728074970464e-16, 1.1501726385137537e-16);
+  const stk::middle_mesh::utils::Point pt2Normal (0.02493346738921879, -0.016448179238063677, 1.0961226633804594e-16);
+  EdgeIntersectionResult result = stk::middle_mesh::predicates::impl::compute_edge_intersection(edge1Pt1, edge1Pt2, edge2Pt1, edge2Pt2,
+                                                                                                pt1Normal, pt2Normal, 1e-12, 0.25);
+
+  EXPECT_TRUE(result.intersection1_found());
+  EXPECT_FALSE(result.intersection2_found());
 }
 
 } // namespace impl

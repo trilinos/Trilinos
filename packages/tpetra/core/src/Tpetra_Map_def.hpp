@@ -1714,8 +1714,13 @@ namespace Tpetra {
       auto lgMapHost =
         Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
-      Kokkos::deep_copy (execution_space(), lgMapHost, lgMap);
+      auto exec_instance = execution_space();
+      Kokkos::deep_copy (exec_instance, lgMapHost, lgMap);
 
+      // There's a non-trivial chance we'll grab this on the host,
+      // so let's make sure the copy finishes
+      exec_instance.fence();
+      
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
       lgMapHost_ = lgMapHost;
@@ -1984,7 +1989,7 @@ namespace Tpetra {
       // The disabled code here throws the following exception in
       // Map's replaceCommWithSubset test:
       //
-      // Throw test that evaluated to true: static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::Details::ArithTraits<ValueType>::max ())
+      // Throw test that evaluated to true: static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::ArithTraits<ValueType>::max ())
       // 10:
       // 10:   Tpetra::Details::FixedHashTable: The number of keys -3 is greater than the maximum representable ValueType value 2147483647.  This means that it is not possible to use this constructor.
       // 10:   Process 3: origComm->replaceCommWithSubset(subsetComm) threw an exception: /scratch/prj/Trilinos/Trilinos/packages/tpetra/core/src/Tpetra_Details_FixedHashTable_def.hpp:1044:

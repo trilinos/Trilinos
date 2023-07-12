@@ -60,10 +60,6 @@
 #include "Piro_Epetra_AdaptiveSolutionManager.hpp"
 #endif /* HAVE_PIRO_NOX */
 
-#ifdef HAVE_PIRO_RYTHMOS
-#include "Rythmos_IntegrationObserverBase.hpp"
-#endif /* HAVE_PIRO_RYTHMOS */
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -91,7 +87,6 @@ public:
    *  - Piro::Epetra::LOCAAdaptiveSolver (<tt>"LOCA Adaptive"</tt>)
    *  - Piro::Epetra::TrapezoidRuleSolver (<tt>"Trapezoid Rule"</tt>)
    *  - Piro::Epetra::VelocityVerletSolver (<tt>"Velocity Verlet"</tt>)
-   *  - Piro::Epetra::RythmosSolver (<tt>"Rythmos"</tt>)
    */
   Teuchos::RCP<EpetraExt::ModelEvaluator>
   createSolver(
@@ -111,7 +106,6 @@ public:
    *  - LOCA::SaveEigenData::AbstractStrategy
    *  - LOCA::StatusTest::Abstract
    *  - Piro::Epetra::AdaptiveSolutionManager
-   *  - Rythmos::IntegrationObserverBase<double>
    */
   template <typename T>
   void setSource(const Provider<T> &p);
@@ -134,10 +128,6 @@ private:
   Provider<LOCA::StatusTest::Abstract> statusTestSource_;
   Provider<Piro::Epetra::AdaptiveSolutionManager> adaptSolMgrSource_;
 #endif /* HAVE_PIRO_NOX */
-
-#ifdef HAVE_PIRO_RYTHMOS
-  Provider<Rythmos::IntegrationObserverBase<double> > rythmosObserverSource_;
-#endif /* HAVE_PIRO_RYTHMOS */
 };
 
 template <typename T>

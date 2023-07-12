@@ -4,7 +4,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -377,7 +377,8 @@ namespace {
     }
 
 #if IOSS_DEBUG_OUTPUT
-    fmt::print("CGNS DatabaseIO has decomp flag? {}\n", has_decomp_flag);
+    fmt::print("[{}] CGNS DatabaseIO has decomp flag? {}; names? {}\n", myProcessor,
+               has_decomp_flag, has_decomp_names);
 #endif
 
     for (int i = 0; i < nconn; i++) {
@@ -399,12 +400,14 @@ namespace {
         is_from_decomp = has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1);
       }
       else {
-#if IOSS_DEBUG_OUTPUT
-        fmt::print("Name: {}, decomp? = {}\n", connectname, name_is_decomp(connectname));
-#endif
         is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor &&
                          (!has_decomp_names || name_is_decomp(connectname));
       }
+#if IOSS_DEBUG_OUTPUT
+      fmt::print(
+          "[{}] ZGC Name: {}, Has decomp descriptor: {}. Name is decomp: {}.  Is_from_decomp: {}\n",
+          myProcessor, connectname, has_decomp_flag, name_is_decomp(connectname), is_from_decomp);
+#endif
 
       if (is_from_decomp) {
         // See if the descriptor named "Decomp" exists as a child of this ZGC.
@@ -555,7 +558,7 @@ namespace Iocgns {
 
   DatabaseIO::~DatabaseIO()
   {
-    for (auto &gtb : m_globalToBlockLocalNodeMap) {
+    for (const auto &gtb : m_globalToBlockLocalNodeMap) {
       delete gtb.second;
     }
     try {
@@ -663,7 +666,7 @@ namespace Iocgns {
   {
     if (m_cgnsFilePtr > 0) {
       CGCHECKM(cg_close(m_cgnsFilePtr));
-      closeDW();
+      close_dw();
       m_cgnsFilePtr = -1;
     }
   }
@@ -1248,7 +1251,7 @@ namespace Iocgns {
 
     // If parallel, then all need to update the donor offset field since that was not known
     // at time of definition...
-    for (auto &block : blocks) {
+    for (const auto &block : blocks) {
       for (auto &conn : block->m_zoneConnectivity) {
         if (conn.m_donorZone < 0) {
           auto donor_iter = m_zoneNameMap.find(conn.m_donorName);
@@ -1363,8 +1366,8 @@ namespace Iocgns {
                                 donor_datatype, donors.data()));
 
           // Fill in entries in m_blockLocalNodeMap for the shared nodes...
-          auto &donor_map = m_blockLocalNodeMap[(*donor_iter).second];
-          auto &block_map = m_blockLocalNodeMap[zone];
+          const auto &donor_map = m_blockLocalNodeMap[(*donor_iter).second];
+          auto       &block_map = m_blockLocalNodeMap[zone];
           for (int j = 0; j < npnts; j++) {
             cgsize_t point       = points[j];
             cgsize_t donor       = donors[j];

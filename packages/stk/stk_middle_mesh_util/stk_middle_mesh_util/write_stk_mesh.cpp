@@ -1,7 +1,7 @@
 #ifdef STK_BUILT_IN_SIERRA
 
 #include "write_stk_mesh.hpp"
-#include "field.hpp"
+#include "stk_middle_mesh/field.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -119,7 +119,7 @@ void StkMeshWriter::write_gid_field(std::shared_ptr<nonconformal::impl::Nonconfo
       auto stkFaceL = (*pmesh1.stkEls)(meshElL, 0, 0);
       auto stkFaceR = (*pmesh2.stkEls)(meshElR, 0, 0);
 
-      FieldScalarType* gidField = stk::mesh::field_data(*m_gidField, stkEl);
+      VertIdType* gidField = stk::mesh::field_data(*m_gidField, stkEl);
       // Note: stk local face ids are zero-based, but Exodus is 1-based,
       gidField[0] = m_bulkDataIn.identifier(stkFaceL.element);
       gidField[1] = stkFaceL.side + 1;

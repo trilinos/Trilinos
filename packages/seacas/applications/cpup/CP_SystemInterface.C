@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -189,6 +189,12 @@ void Cpup::SystemInterface::enroll_options()
                   "0");
 
 #endif
+  options_.enroll(
+      "minimize_open_files", GetLongOption::NoValue,
+      "Keep only one input file open at a time.\n"
+      "\t\tUsed when number of files exceeds the maximum number of open files on a system.",
+      nullptr);
+
   options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
                   nullptr);
 
@@ -315,6 +321,8 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
   omitSidesets_ = options_.retrieve("omit_sidesets") != nullptr;
 #endif
 
+  minimizeOpenFiles_ = options_.retrieve("minimize_open_files") != nullptr;
+
   if (options_.retrieve("copyright") != nullptr) {
     if (myRank_ == 0) {
       fmt::print("{}", copyright("2010-2022"));
@@ -433,7 +441,7 @@ void Cpup::SystemInterface::dump(std::ostream & /*unused*/) const {}
 
 std::string Cpup::SystemInterface::output_suffix() const
 {
-  if (outExtension_ == "") {
+  if (outExtension_.empty()) {
     return inExtension_;
   }
   return outExtension_;
@@ -470,17 +478,13 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
     if (strchr(tokens, ':') != nullptr) {
       // The string contains a separator
 
-      int vals[3];
-      vals[0] = stepMin_;
-      vals[1] = stepMax_;
-      vals[2] = stepInterval_;
+      std::array<int, 3> vals{stepMin_, stepMax_, stepInterval_};
 
       int j = 0;
       for (auto &val : vals) {
         // Parse 'i'th field
         char tmp_str[128];
-        ;
-        int k = 0;
+        int  k = 0;
 
         while (tokens[j] != '\0' && tokens[j] != ':') {
           tmp_str[k++] = tokens[j++];
@@ -577,7 +581,7 @@ namespace {
     if (tokens != nullptr) {
       std::string        token_string(tokens);
       Cpup::StringVector var_list = SLIB::tokenize(token_string, ",");
-      for (auto &var : var_list) {
+      for (const auto &var : var_list) {
         std::string low_var = LowerCase(var);
         (*variable_list).push_back(low_var);
       }

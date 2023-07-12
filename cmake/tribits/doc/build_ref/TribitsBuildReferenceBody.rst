@@ -516,7 +516,7 @@ example::
 
 The above will enable the package test suites for ``<TRIBITS_PACKGE_1>`` and
 ``<TRIBITS_PACKGE_3>`` but **not** for ``<TRIBITS_PACKAGE_2>`` (or any other
-packages that might get implicitly enabled).  One might use this approch if
+packages that might get implicitly enabled).  One might use this approach if
 one wants to build and install package ``<TRIBITS_PACKAGE_2>`` but does not
 want to build and run the test suite for that package.
 
@@ -1994,9 +1994,10 @@ external packages has several consequences:
   (Otherwise, a configure error will result from the mismatch.)
 
 * The definition of any TriBITS external packages/TPLs that are enabled
-  upstream dependencies from any of these internally defined packages being
-  treated as external packages will be defined by the calls to
-  ``find_package(<TRIBITS_PACKAGE>)`` and will **not** be found again.
+  upstream dependencies from any of these external packages should be defined
+  automatically and will **not** be found again. (But there can be exceptions
+  for non-fully TriBITS-compliant external packages; see the section
+  "TriBITS-Compliant External Packages" in the "TriBITS Users Guide".)
 
 The logic for treating internally defined packages as external packages will
 be printed in the CMake configure output in the section ``Adjust the set of
@@ -2016,21 +2017,34 @@ the terminal TriBITS-compliant external packages.  This is shown in the CMake
 output in the section ``Getting information for all enabled TriBITS-compliant
 or upstream external packages/TPLs`` and looks like::
 
-  Getting information for all enabled TriBITS-compliant or upstream external packages/TPLs ...
+  Getting information for all enabled TriBITS-compliant or upstream external packages/TPLs in reverse order ...
 
-  Processing enabled external package/TPL: <TPL1> (...)
-  -- The external package/TPL <TPL1> will be read in by a downstream TriBITS-compliant external package
-  Processing enabled external package/TPL: <TPL2> (...)
-  -- The external package/TPL <TPL2> will be read in by a downstream TriBITS-compliant external package
-  Processing enabled external package/TPL: <PKG1> (...)
-  -- The external package/TPL <PKG1> will be read in by a downstream TriBITS-compliant external package
   Processing enabled external package/TPL: <PKG2> (...)
   -- Calling find_package(<PKG2> for TriBITS-compliant external package
+  Processing enabled external package/TPL: <PKG1> (...)
+  -- The external package/TPL <PKG1> was defined by a downstream TriBITS-compliant external package already processed
+  Processing enabled external package/TPL: <TPL2> (...)
+  -- The external package/TPL <TPL2> was defined by a downstream TriBITS-compliant external package already processed
+  Processing enabled external package/TPL: <TPL1> (...)
+  -- The external package/TPL <TPL1> was defined by a downstream TriBITS-compliant external package already processed
 
 In the above example ``<TPL1>``, ``<TPL2>`` and ``<PKG1>`` are all direct or
 indirect dependencies of ``<PKG2>`` and therefore calling just
 ``find_package(<PKG2>)`` fully defines those TriBITS-compliant external
 packages as well.
+
+All remaining TPLs that are not defined in that first reverse loop are defined
+in a second forward loop over regular TPLs::
+
+  Getting information for all remaining enabled external packages/TPLs ...
+
+NOTE: The case is also supported where a TriBITS-compliant external package
+like ``<PKG2>`` does not define all of it upstream dependencies (i.e. does not
+define the ``<TPL2>::all_libs`` target) and these external packages/TPLs will
+be found again.  This allows the possibility of finding different/inconsistent
+upstream dependencies but this is allowed to accommodate some packages with
+non-TriBITS CMake build systems that don't create fully TriBITS-compliant
+external packages.
 
 
 xSDK Configuration Options

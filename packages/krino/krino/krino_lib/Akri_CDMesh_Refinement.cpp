@@ -191,7 +191,7 @@ resolve_fine_features(const stk::mesh::BulkData& mesh,
   if (!CDFEM_Support::is_active(mesh.mesh_meta_data()))
     return;
 
-  ThrowRequireMsg(false, "Unfinished capability resolve_fine_features");
+  STK_ThrowRequireMsg(false, "Unfinished capability resolve_fine_features");
   const std::vector<InterfaceID> activeInterfaceIds; // = cdmesh.active_interface_ids(surfaceIdentifiers); // FIXME: This should look at the actual edge intersections, right?
 
   const auto & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
@@ -272,14 +272,39 @@ mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
   }
 }
 
+void
+mark_elements_that_intersect_interval(const stk::mesh::BulkData& mesh,
+      const RefinementInterface & refinement,
+      const InterfaceGeometry & interfaceGeometry,
+      const RefinementSupport & refinementSupport,
+      const int numRefinements)
+{
+  // This refinement strategy cuts elements by the user-specified number of adapt levels
+
+  const FieldRef elementMarkerField = refinement.get_marker_field();
+  const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
+
+  stk::mesh::field_fill(static_cast<int>(Refinement_Marker::COARSEN), elementMarkerField);
+
+  std::vector<stk::mesh::Entity> elements = interfaceGeometry.get_elements_that_intersect_interval(mesh, refinementSupport.get_refinement_interval());
+  for( auto&& elem : elements )
+  {
+    int & marker = *field_data<int>(elementMarkerField, elem);
+    const int elementRefineLevel = refinement.fully_refined_level(elem);
+    constexpr bool doesIntersectInterval = true;
+    marker = determine_refinement_marker(doesIntersectInterval, numRefinements, interfaceMinRefineLevel, elementRefineLevel);
+  }
+}
+
+
 double compute_edge_length(const FieldRef coordsField, const stk::topology elemTopology, const stk::mesh::Entity * const elemNodes, const unsigned iEdge)
 {
   std::array<stk::mesh::Entity,3> edgeNodes;
 
   elemTopology.edge_nodes(elemNodes, iEdge, edgeNodes.data());
 
-  const Vector3d edge_node1_coords(field_data<double>(coordsField, edgeNodes[0]), elemTopology.dimension());
-  const Vector3d edge_node2_coords(field_data<double>(coordsField, edgeNodes[1]), elemTopology.dimension());
+  const stk::math::Vector3d edge_node1_coords(field_data<double>(coordsField, edgeNodes[0]), elemTopology.dimension());
+  const stk::math::Vector3d edge_node2_coords(field_data<double>(coordsField, edgeNodes[1]), elemTopology.dimension());
   return (edge_node2_coords-edge_node1_coords).length();
 }
 
@@ -298,7 +323,7 @@ void write_refinement_level_sizes(const stk::mesh::BulkData& mesh,
     if (!refinement.is_transition(elem))
     {
       const int elementRefineLevel = refinement.fully_refined_level(elem);
-      ThrowRequire(elementRefineLevel < maxNumRefinementLevels);
+      STK_ThrowRequire(elementRefineLevel < maxNumRefinementLevels);
       const stk::topology elemTopology = mesh.bucket(elem).topology();
       const stk::mesh::Entity * const elemNodes = mesh.begin(elem, stk::topology::NODE_RANK);
 
@@ -410,13 +435,13 @@ refine_edges_with_unsnappable_nodes(const stk::mesh::BulkData& mesh,
 
 static unsigned determine_parent_element_part_ordinal_based_on_child_element_part_ordinals(const stk::mesh::BulkData& mesh, const Phase_Support & phaseSupport, const std::set<unsigned> & childElemPartOrdinals)
 {
-  ThrowRequire(!childElemPartOrdinals.empty());
+  STK_ThrowRequire(!childElemPartOrdinals.empty());
   const stk::mesh::Part & firstChildElementPart = mesh.mesh_meta_data().get_part(*childElemPartOrdinals.begin());
 
   if (childElemPartOrdinals.size() > 1 || phaseSupport.is_nonconformal(&firstChildElementPart))
   {
     const stk::mesh::Part * parentElementPart = phaseSupport.find_nonconformal_part(firstChildElementPart);
-    ThrowAssert(nullptr != parentElementPart);
+    STK_ThrowAssert(nullptr != parentElementPart);
     return parentElementPart->mesh_meta_data_ordinal();
   }
   return firstChildElementPart.mesh_meta_data_ordinal();

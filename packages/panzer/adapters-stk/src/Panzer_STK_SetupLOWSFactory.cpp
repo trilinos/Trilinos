@@ -70,11 +70,6 @@
 #include "Xpetra_MultiVectorFactory.hpp"
 #endif
 
-#ifdef PANZER_HAVE_IFPACK2
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
-#include "Tpetra_CrsMatrix_decl.hpp"
-#endif
-
 namespace panzer_stk {
 
 namespace {
@@ -187,15 +182,6 @@ namespace {
       #endif
     }
     #endif // MUELU
-    #ifdef PANZER_HAVE_IFPACK2
-    {
-      typedef Thyra::PreconditionerFactoryBase<double> Base;
-      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::GlobalOrdinal,panzer::TpetraNodeType> > Impl;
-
-      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-    }
-    #endif // MUELU
-
 
     #ifdef PANZER_HAVE_TEKO
     RCP<Teko::RequestHandler> reqHandler_local = reqHandler;

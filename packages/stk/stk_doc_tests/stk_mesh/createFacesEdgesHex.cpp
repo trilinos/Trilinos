@@ -366,7 +366,7 @@ void writeExodusFile(Iogn::GeneratedMesh *generatedMesh, const std::string &exod
   Ioss::Region* io_region = new Ioss::Region(database);
   stk::io::StkMeshIoBroker meshData;
   meshData.use_simple_fields();
-  Teuchos::RCP<Ioss::Region> junk; junk.reset(io_region, false);
+  std::shared_ptr<Ioss::Region> junk(io_region, [](auto pointerWeWontDelete){});
   meshData.add_mesh_database(junk);
   meshData.create_input_mesh();
   meshData.populate_bulk_data();

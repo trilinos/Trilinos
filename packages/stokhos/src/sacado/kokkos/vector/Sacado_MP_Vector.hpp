@@ -288,6 +288,12 @@ namespace Sacado {
       KOKKOS_DEFAULTED_FUNCTION
       ~Vector() = default;
 
+      // Allow explicit casting to integral types, since we don't have an
+      // integral ensemble type.
+      template <typename T, typename Enabled = typename std::enable_if<std::is_integral<T>::value>::type>
+      KOKKOS_INLINE_FUNCTION
+      explicit operator T() const { return static_cast<T>(val()); }
+
       //! Initialize coefficients to value
       KOKKOS_INLINE_FUNCTION
       void init(const value_type& v) { s.init(v); }

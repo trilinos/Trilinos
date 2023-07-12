@@ -762,7 +762,7 @@ IF (Stokhos_ENABLE_Sacado)
     ENDIF()
   ENDIF()
 
-  IF (Stokhos_ENABLE_KokkosAlgorithms)
+  IF (Stokhos_ENABLE_Kokkos)
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/algorithms)
       LIST(APPEND SACADO_HEADERS

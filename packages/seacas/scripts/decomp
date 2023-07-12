@@ -4,7 +4,6 @@
 # NTESS, the U.S. Government retains certain rights in this software.
 #
 # See packages/seacas/LICENSE for details
-
 ########################################################################
 function usage {
   if [ $OLDGETOPT -eq 1 ] ; then
@@ -29,10 +28,10 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
  --spectral:  [2] use eigenvectors of a matrix constructed from the
                   graph to partition the graph.
  --hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
- --rib:       [?] Recursive Inertial Bisection (uses Zoltan)
+ --rib:       [?] (default) Recursive Inertial Bisection (uses Zoltan)
  --rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
  --rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan), ignoring the z dimension coordinates
- --inertial:  [1] (default) vertices divided into sets of equal mass by planes
+ --inertial:  [1] vertices divided into sets of equal mass by planes
                   orthogonal to the principle axis. Good, fast, medium memory
  --linear:    [0] vertices in order first n/p to proc 0, next to proc 1.
                   (fast and sometimes good).
@@ -47,24 +46,24 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
        For example "--multikl" is the same as "-l multikl"
 
 Other options:
---help             Print this message (-h)
---launch <cmd>     Prefix nem_slice call with this command to run it.
-                   The cmd argument must be quoted if it contains options
-                   for cmd.
---nolaunch         Prevent decomp from searching for launch script.
---noop             Only echo the nem_slice and nem_spread commands.
---nodal            Nodal Decomposition (-N)
---elemental        Elemental Decomposition (default, -E)
---input            Optional nem_slice input file (-i)
---weight  <spec>   Specification of weighting options (-w)
---viz_mesh         Output mesh showing processor distribution of elements. (-V)
---spheres_linear   Decompose sphere elements using linear method (matches old behavior) (-s)
---processors #p    Specify number of processors (-p, -j)
---root root_dir    Root directory to begin the path to on the separate disks (-R)
---subdir sub_dir   Continuation of the path on the separate disks to the files (-S)
---spread_suffix x  Suffix for parallel files (default: meshfile suffix) (-X)
---64               Force creation of 64-bit integer decomposed files (-6)
--n options         Specify additional nem_slice options
+--help              Print this message (-h)
+--launch <cmd>      Prefix nem_slice call with this command to run it.
+                    The cmd argument must be quoted if it contains options
+                    for cmd.
+--nolaunch          Prevent decomp from searching for launch script.
+--noop              Only echo the nem_slice and nem_spread commands.
+--nodal             Nodal Decomposition (-N)
+--elemental         Elemental Decomposition (default, -E)
+--input <file>      Optional nem_slice input file (-i)
+--weight  <spec>    Specification of weighting options (-w)
+--viz_mesh          Output mesh showing processor distribution of elements. (-V)
+--spheres_linear    Decompose sphere elements using linear method (matches old behavior) (-s)
+--processors <#p>   Specify number of processors (-p, -j)
+--root <root_dir>   Root directory to begin the path to on the separate disks (-R)
+--subdir <sub_dir>  Continuation of the path on the separate disks to the files (-S)
+--spread_suffix <x> Suffix for parallel files (default: meshfile suffix) (-X)
+--64                Force creation of 64-bit integer decomposed files (-6)
+-n <options>        Specify additional nem_slice options
 
    Documentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#decomp"
    help-email: sierra-help@sandia.gov
@@ -88,10 +87,10 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
  -l spectral:  [2] use eigenvectors of a matrix constructed from the
                   graph to partition the graph.
  -l hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
- -l rib:       [?] Recursive Inertial Bisection (uses Zoltan)
+ -l rib:       [?] (default) Recursive Inertial Bisection (uses Zoltan)
  -l rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
  -l rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan) ignoring the z dimension coordinates
- -l inertial:  [1] (default) vertices divided into sets of equal mass by planes
+ -l inertial:  [1] vertices divided into sets of equal mass by planes
                   orthogonal to the principle axis. Good, fast, medium memory
  -l linear:    [0] vertices in order first n/p to proc 0, next to proc 1.
                   (fast and sometimes good).
@@ -172,11 +171,11 @@ function execute_loadbalance {
         return -1
     fi
 
-    date=`date '+%m/%d/%y'`
-    time=`date '+%H:%M:%S'`
-    prob_dir=`pwd | sed "s/.*\///g"`
+    date=$(date '+%m/%d/%y')
+    time=$(date '+%H:%M:%S')
+    prob_dir=$(pwd | sed "s/.*\///g")
 
-    if [ -n "$input" -a -e "$input" ]
+    if [ -n "$input" ] && [ -e "$input" ]
     then
         echo ${txtblu}
         echo "Executing:"
@@ -290,26 +289,26 @@ basename=''
 processors=''
 debug_level='0'
 decomp_type="-e"
-decomp_method="-l inertial"
+decomp_method="-l rib"
 nem_slice_flag="-c"
 weighting=''
-rootdir="`pwd`/"
+rootdir="$(pwd)/"
 subdir="."
 suffix_spread=''
 spheres="-S"
 do_viz=""
-curdir=`pwd`
+curdir=$(pwd)
 use64=""
 
-ACCESSBIN="`dirname \"$0\"`"
-ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
+ACCESSBIN=$(dirname "$0")
+ACCESSBIN=$(cd "${ACCESSBIN}" && pwd)
 NEM_SLICE=${ACCESSBIN}/nem_slice
 NEM_SPREAD=${ACCESSBIN}/nem_spread
 NOOP=
 
 ########################################################################
 # Test that the getopt being used will handle the long options...
-TEST=`getopt -T`
+TEST=$(getopt -T)
 if [ $? != 4 ] ; then
   old_getopt
   OLDGETOPT=1
@@ -324,7 +323,7 @@ fi
 ########################################################################
 # decomp options:
 if [ $OLDGETOPT -eq 1 ] ; then
-   TEMP=$(getopt Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: $*)
+   TEMP=$(getopt Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: "$@")
 else
    TEMP=$(getopt -o Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd:w: -a \
        --long input: \
@@ -385,7 +384,7 @@ while true ; do
     (-i|--input)
         input=$2 ; shift 2 ;;
     (-w|--weight)
-	weighting="-w $2" ; shift 2 ;;
+        weighting="-w $2" ; shift 2 ;;
     (-p|-j|--processors)
         processors=$2 ; shift 2 ;;
     (-R|--rootdir)

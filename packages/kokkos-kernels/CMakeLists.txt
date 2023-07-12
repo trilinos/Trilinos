@@ -10,8 +10,8 @@ SET(KOKKOSKERNELS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(KokkosKernels_VERSION_MAJOR 4)
-SET(KokkosKernels_VERSION_MINOR 0)
-SET(KokkosKernels_VERSION_PATCH 0)
+SET(KokkosKernels_VERSION_MINOR 1)
+SET(KokkosKernels_VERSION_PATCH 00)
 SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
 #Set variables for config file
@@ -40,10 +40,8 @@ INCLUDE(GNUInstallDirs)
 IF (KOKKOSKERNELS_HAS_TRILINOS)
  SET(TRILINOS_INCDIR ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
  SET(KOKKOSKERNELS_HEADER_INSTALL_DIR ${TRILINOS_INCDIR})
- SET(KOKKOS_ENABLE_CUDA_UVM ${Kokkos_ENABLE_CUDA_UVM})
 ELSEIF(KOKKOSKERNELS_HAS_PARENT)
  SET(KOKKOSKERNELS_HEADER_INSTALL_DIR "${CMAKE_INSTALL_INCLUDEDIR}/kokkos-kernels")
- SET(KOKKOS_ENABLE_CUDA_UVM ${Kokkos_ENABLE_CUDA_UVM})
 ELSE()
  SET(KOKKOSKERNELS_HEADER_INSTALL_DIR "${CMAKE_INSTALL_INCLUDEDIR}")
 ENDIF()
@@ -88,6 +86,10 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
     include_directories(tpls/rajaperf/src)
     set(KokkosKernels_ENABLE_PERFTESTS ON CACHE BOOL "Whether to build tests including Perfsuite. Default: OFF" FORCE)
   ENDIF()
+  IF(KokkosKernels_ENABLE_BENCHMARK)
+    SET(KOKKOSKERNELS_ENABLE_BENCHMARK ON CACHE BOOL "Benchmark enabled")
+    INCLUDE(cmake/kokkoskernels_benchmarks.cmake)
+  ENDIF()
 ENDIF ()
 
 KOKKOSKERNELS_ADD_OPTION(
@@ -115,6 +117,7 @@ IF (KokkosKernels_INSTALL_TESTING)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(blas/unit_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(graph/unit_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(sparse/unit_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(ode/unit_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
   KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
 ELSE()
@@ -124,7 +127,6 @@ ELSE()
    # This is a standalone build
    FIND_PACKAGE(Kokkos REQUIRED)
    MESSAGE(STATUS "Found Kokkos at ${Kokkos_DIR}")
-   KOKKOS_CHECK(OPTIONS CUDA_UVM RETURN_VALUE KOKKOS_ENABLE_CUDA_UVM)
   ENDIF()
 
   INCLUDE(cmake/kokkos_backends.cmake)
@@ -236,6 +238,7 @@ ELSE()
   MESSAGE("   BLAS:      ${KokkosKernels_ENABLE_COMPONENT_BLAS}")
   MESSAGE("   GRAPH:     ${KokkosKernels_ENABLE_COMPONENT_GRAPH}")
   MESSAGE("   SPARSE:    ${KokkosKernels_ENABLE_COMPONENT_SPARSE}")
+  MESSAGE("   ODE:       ${KokkosKernels_ENABLE_COMPONENT_ODE}")
   MESSAGE("")
   MESSAGE("Kokkos Kernels TPLs")
   IF(KOKKOSKERNELS_TPL_LIST)
@@ -283,6 +286,9 @@ ELSE()
   IF (KokkosKernels_ENABLE_COMPONENT_SPARSE)
     INCLUDE(sparse/CMakeLists.txt)
   ENDIF()
+  IF (KokkosKernels_ENABLE_COMPONENT_ODE)
+    INCLUDE(ode/CMakeLists.txt)
+  ENDIF()
 
   FOREACH(DIR ${KK_INCLUDE_DIRS})
     KOKKOSKERNELS_INCLUDE_DIRECTORIES(${DIR})
@@ -299,7 +305,6 @@ ELSE()
   # This doesn't change pre-existing behavior before the ETI changes
   #LIST(APPEND HEADERS ${ETI_HEADERS})
   #-----------------------------------------------------------------------------
-
   KOKKOSKERNELS_ADD_LIBRARY(
     kokkoskernels
     HEADERS ${HEADERS}
@@ -315,12 +320,21 @@ ELSE()
     #no linking commands required - tribits does this
   ELSE()
     ADD_LIBRARY(Kokkos::kokkoskernels ALIAS kokkoskernels)
+    # Address kokkos/kokkos-kernels#1749
+    ADD_LIBRARY(KokkosKernels::kokkoskernels ALIAS kokkoskernels)
+    # all_libs target is required for TriBITS-compliance
+    ADD_LIBRARY(KokkosKernels::all_libs ALIAS kokkoskernels)
     TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC Kokkos::kokkos)
     FOREACH(DIR ${KK_INCLUDE_DIRS})
       TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC $<BUILD_INTERFACE:${DIR}>)
     ENDFOREACH()
     TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC
       $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
+
+    IF(KokkosKernels_ENABLE_BENCHMARK)
+      INCLUDE(cmake/kokkoskernels_version_info.cmake)
+      check_version_info()
+    ENDIF()
   ENDIF()
 
   # FIXME_SYCL waiting for compiler support
@@ -389,6 +403,9 @@ ELSE()
   ENDIF()
   IF (KokkosKernels_ENABLE_COMPONENT_SPARSE)
     KOKKOSKERNELS_ADD_TEST_DIRECTORIES(sparse/unit_test)
+  ENDIF()
+  IF (KokkosKernels_ENABLE_COMPONENT_ODE)
+    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(ode/unit_test)
   ENDIF()
   IF (KOKKOSKERNELS_ALL_COMPONENTS_ENABLED)
     IF (KokkosKernels_ENABLE_PERFTESTS)

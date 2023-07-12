@@ -72,7 +72,7 @@ MeshClone &
 MeshClone::get(const stk::mesh::BulkData & mesh)
 { /* %TRACE[ON]% */ Trace trace__("krino::MeshClone::update_cloned_fields(stk::mesh::BulkData & mesh)"); /* %TRACE% */
   MeshClone * clone = const_cast<MeshClone*>(mesh.mesh_meta_data().get_attribute<MeshClone>());
-  ThrowRequireMsg(clone != nullptr, "Could not find MeshClone.");
+  STK_ThrowRequireMsg(clone != nullptr, "Could not find MeshClone.");
   return *clone;
 }
 
@@ -124,7 +124,7 @@ void MeshClone::restore(const unsigned step_count)
 
   clone_mesh(in_mesh, out_mesh, false);
 
-  ThrowRequire(step_count == my_step_count);
+  STK_ThrowRequire(step_count == my_step_count);
   mark_mesh_as_up_to_date();
 }
 
@@ -140,7 +140,7 @@ void MeshClone::clone_mesh(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
     // I don't think you can start with clone_parallel because you can't know where something goes unless you know about it locally.
     // Therefore I don't think that creation can go before deletion because you can't know if it already exists.
     // Best to just delete everything wrong and then rebuild.
-    ThrowRequireMsg(out_mesh.modification_begin(), "MeshClone::restore must not be called within a modification cycle.");
+    STK_ThrowRequireMsg(out_mesh.modification_begin(), "MeshClone::restore must not be called within a modification cycle.");
     delete_extraneous_entities(in_mesh, out_mesh);
     // Occasionally, there is an issue with deleting and recreating the same entity within the same modification cycle,
     // so we need to end here and begin again for the creation.
@@ -182,9 +182,9 @@ MeshClone::clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta,
     else
     {
       more_to_do = ipart < in_parts.size();
-      ThrowRequire(in_part->primary_entity_rank() == stk::topology::INVALID_RANK);
+      STK_ThrowRequire(in_part->primary_entity_rank() == stk::topology::INVALID_RANK);
       stk::mesh::Part & out_part = out_meta.declare_part(in_part->name());
-      ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
+      STK_ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
     }
   }
 
@@ -196,7 +196,7 @@ MeshClone::clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta,
         (in_part->primary_entity_rank() == stk::topology::INVALID_RANK) ?
         out_meta.declare_part(in_part->name()) :
         out_meta.declare_part(in_part->name(), in_part->primary_entity_rank(), in_part->force_no_induce());
-    ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
+    STK_ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
     if (stk::io::is_part_io_part(*in_part))
     {
       stk::io::put_io_part_attribute(out_part);
@@ -280,7 +280,7 @@ MeshClone::delete_extraneous_entities(const stk::mesh::BulkData & in_mesh, stk::
 
       if (delete_entity)
       {
-        ThrowRequireMsg(disconnect_and_destroy_entity(out_mesh, out_entity), "Could not destroy entity " << out_mesh.entity_key(out_entity) << debug_entity(out_mesh, out_entity));
+        STK_ThrowRequireMsg(disconnect_and_destroy_entity(out_mesh, out_entity), "Could not destroy entity " << out_mesh.entity_key(out_entity) << debug_entity(out_mesh, out_entity));
       }
     }
   }
@@ -294,7 +294,7 @@ MeshClone::delete_extraneous_entities(const stk::mesh::BulkData & in_mesh, stk::
       const unsigned num_nodes = out_mesh.bucket(out_entity).topology().num_nodes();
       if (out_mesh.count_valid_connectivity(out_entity, stk::topology::NODE_RANK) != num_nodes)
       {
-        ThrowRequireMsg(disconnect_and_destroy_entity(out_mesh, out_entity), "Could not destroy entity " << out_mesh.entity_key(out_entity));
+        STK_ThrowRequireMsg(disconnect_and_destroy_entity(out_mesh, out_entity), "Could not destroy entity " << out_mesh.entity_key(out_entity));
       }
     }
   }
@@ -314,7 +314,7 @@ MeshClone::delete_all_entities(stk::mesh::BulkData & mesh)
 
     for (auto && entity : entities)
     {
-      ThrowRequireMsg(mesh.destroy_entity(entity), "Could not destroy entity " << mesh.entity_key(entity));
+      STK_ThrowRequireMsg(mesh.destroy_entity(entity), "Could not destroy entity " << mesh.entity_key(entity));
     }
   }
 }
@@ -456,7 +456,7 @@ MeshClone::copy_field_data(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
   out_field.modify_on_host();
 
   stk::mesh::EntityRank entity_rank = out_field.entity_rank();
-  ThrowRequire(in_field.entity_rank() == entity_rank);
+  STK_ThrowRequire(in_field.entity_rank() == entity_rank);
 
   stk::mesh::MetaData & out_meta = out_mesh.mesh_meta_data();
   stk::mesh::Selector field_selector =
@@ -478,8 +478,8 @@ MeshClone::copy_field_data(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
       stk::mesh::Entity out_entity = b[ib];
       stk::mesh::Entity in_entity = in_mesh.get_entity( entity_rank, out_mesh.identifier(out_entity) );
       const auto in_length = stk::mesh::field_bytes_per_entity(in_field, in_entity);
-      ThrowRequireMsg(in_mesh.is_valid(in_entity), "Missing entity " << out_mesh.entity_key(out_entity));
-      ThrowRequireMsg(in_length == out_length,
+      STK_ThrowRequireMsg(in_mesh.is_valid(in_entity), "Missing entity " << out_mesh.entity_key(out_entity));
+      STK_ThrowRequireMsg(in_length == out_length,
           "Mismatched field size for field " << in_field.name() << " in_length = " << in_length << " out_length = " << out_length << "\n"
           << " for input entity " << debug_entity(in_mesh, in_entity) << " on " << in_mesh.parallel_owner_rank(in_entity)
           << " and output entity " << debug_entity(out_mesh, out_entity) << " on " << out_mesh.parallel_owner_rank(out_entity) );
@@ -501,7 +501,7 @@ MeshClone::copy_field_data(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
 
   const stk::mesh::FieldVector & in_fields = in_meta.get_fields();
   const stk::mesh::FieldVector & out_fields = out_meta.get_fields();
-  ThrowAssert(in_fields.size() == out_fields.size());
+  STK_ThrowAssert(in_fields.size() == out_fields.size());
 
   const bool out_mesh_aura_from_communication = out_mesh.is_automatic_aura_on() && !in_mesh.is_automatic_aura_on();
 

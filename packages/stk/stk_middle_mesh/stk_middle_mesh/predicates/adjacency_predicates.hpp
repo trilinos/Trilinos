@@ -52,6 +52,7 @@ class AdjacencyPredicates
 
     PointClassifierNormalWrapper m_classifier;
     mesh::FieldPtr<utils::Point> m_normalField;
+    double m_edgeTol = 1e-6;
 };
 
 } // namespace impl

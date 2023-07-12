@@ -21,6 +21,38 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
 )
 
+# Supported Kokkos version in Trilinos
+# NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
+# compatibility with external Kokkos
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.1.00")
+
+
+# Option to allow developers to ignore incompatible Kokkos versions
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_IGNORE_KOKKOS_COMPATIBILITY
+  ""
+  "If true, disables the Kokkos version compatibility checking in Tpetra"
+  OFF
+)
+# Kokkos version checking
+ASSERT_DEFINED (Tpetra_IGNORE_KOKKOS_COMPATIBILITY)
+IF(TPL_ENABLE_Kokkos)
+  # If we're using external Kokkos, we check the supported version, unless the cmake option says otherwise
+  IF(DEFINED Kokkos_VERSION)
+    IF(Kokkos_VERSION VERSION_EQUAL Tpetra_SUPPORTED_KOKKOS_VERSION)
+      MESSAGE(STATUS "Tpetra: Detected compatible external Kokkos version: ${Kokkos_VERSION}")
+    ELSEIF(Tpetra_IGNORE_KOKKOS_COMPATIBILITY)
+      MESSAGE(WARNING "Tpetra: Ignoring Kokkos compatibility between external Kokkos version (${Kokkos_VERSION}) and Trilinos supported version (${Tpetra_SUPPORTED_KOKKOS_VERSION}) at user request.  This may lead to problems in Trilinos.")
+    ELSE()
+      MESSAGE(FATAL_ERROR "Tpetra: Incompatible external Kokkos version ${Kokkos_VERSION}.  Tpetra requires ${Tpetra_SUPPORTED_KOKKOS_VERSION}")
+    ENDIF()      
+  ENDIF()
+ELSE()
+  # If we're using the snapshot, we don't need to check the version
+  MESSAGE(STATUS "Tpetra: Using internal Kokkos")
+ENDIF()
+
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
   TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
@@ -35,14 +67,10 @@ ELSE ()
   MESSAGE(STATUS "Tpetra: Disabling deprecated code")
 ENDIF ()
 
+
+
 # Asserts for Accelerator support.
 ASSERT_DEFINED(TPL_ENABLE_CUDA)
-ASSERT_DEFINED(Kokkos_ENABLE_OPENMP)
-ASSERT_DEFINED(Kokkos_ENABLE_THREADS)
-ASSERT_DEFINED(Kokkos_ENABLE_SERIAL)
-ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
-ASSERT_DEFINED(Kokkos_ENABLE_SYCL)
-ASSERT_DEFINED(Kokkos_ENABLE_HIP)
 
 # Support for "ENABLE" Cuda, rather than "INST"
 INCLUDE(CMakeCuda.txt)

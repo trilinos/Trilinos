@@ -144,9 +144,6 @@ public:
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
    */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2023
-STK_DEPRECATED unsigned max_size( EntityRank ent_rank) const;
-#endif
   unsigned max_size() const;
 
   //----------------------------------------
@@ -601,7 +598,7 @@ inline size_t get_total_ngp_field_allocation_bytes(const FieldBase & f) {
   const Selector selector = stk::mesh::selectField(f);
   const BucketVector & buckets = f.get_mesh().get_buckets(f.entity_rank(), selector);
   const size_t numBuckets = buckets.size();
-  const size_t bucketCapacity = (buckets.empty()) ? 0 : buckets[0]->capacity();
+  const size_t bucketCapacity = (buckets.empty()) ? 0 : f.get_mesh().get_maximum_bucket_capacity();
   const size_t numPerEntity = f.max_size();
   const size_t bytesPerScalar = f.data_traits().size_of;
 

@@ -3638,10 +3638,10 @@ def CheckForParallelVector(vec1, vec2):
 def GetMaximumDimensionFromBounds(inBounds):
   maxDim = inBounds[1] - inBounds[0]
   testDim = inBounds[3] - inBounds[2]
-  if(testDim > testDim):
+  if(testDim > maxDim):
     maxDim = testDim
   testDim = inBounds[5] - inBounds[4]
-  if(testDim > testDim):
+  if(testDim > maxDim):
     maxDim = testDim
   return maxDim
 
@@ -6163,7 +6163,7 @@ class PhactoriUserPointInfo:
     self.mInputNameToUseForMinMaxVariable = None
     self.mInputPvSourceToUseForMinMaxVariable = None
 
-  def UserPointHasValidDisplacementInfo():
+  def UserPointHasValidDisplacementInfo(self):
     return self.mHasDisplacedInfoFlag
 
   def ParseIdAndDisplacement(self, inDisplacementFlag, inJson, inKey):
@@ -9287,7 +9287,7 @@ class PhactoriNearestPointsOperation(PhactoriOperationSpecifics):
 
     if 'number of points per process' in inJson:
       self.mNumPointsPerProcess = inJson['number of points per process']
-    elif 'number of points per process' in inJson:
+    elif 'number_of_points_per_process' in inJson:
       self.mNumPointsPerProcess = inJson['number_of_points_per_process']
     if 'number of points to find' in inJson:
       self.mNumPointsToFind = inJson['number of points to find']
@@ -16414,7 +16414,7 @@ class PhactoriSegment:
     return math.sqrt(self.FindDistanceSquaredToPoint(testPoint))
 
   def FindDistanceToPointProjected(self, testPoint, projectionAxis):
-    return math.sqrt(self.FindDistanceSquaredToPoint(testPoint), projectionAxis)
+    return math.sqrt(self.FindDistanceSquaredToPointProjected(testPoint, projectionAxis))
 
   def FindNearestPointOnSegmentToPoint(self, testPoint):
     if self.lengthSquared == 0.0:

@@ -1,12 +1,12 @@
 #ifndef APPLICATION_INTERFACE_H
 #define APPLICATION_INTERFACE_H
 
-// TODO: consider moving the options structure to their own files, so
-//       we can include only the struct and not the class
 #include "incremental_mesh_boundary_snapper_opts.hpp"
 #include "mesh_quality_improver_opts.hpp"
 #include "mesh_snapper_opts.hpp"
 #include "nonconformal4_opts.hpp"
+#include "stk_middle_mesh/application_interface.hpp"
+
 
 namespace stk {
 namespace middle_mesh {

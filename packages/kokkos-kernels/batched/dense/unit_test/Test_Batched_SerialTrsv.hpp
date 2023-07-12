@@ -74,7 +74,7 @@ template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_trsv(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ScalarType alpha(1.5);

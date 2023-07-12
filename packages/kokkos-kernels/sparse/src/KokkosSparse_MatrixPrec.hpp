@@ -13,7 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-/// @file KokkosKernels_MatrixPrec.hpp
+
+/// @file KokkosSparse_MatrixPrec.hpp
 
 #ifndef KK_MATRIX_PREC_HPP
 #define KK_MATRIX_PREC_HPP
@@ -27,18 +28,15 @@ namespace KokkosSparse {
 
 namespace Experimental {
 
+/// @file KokkosSparse_MatrixPrec.hpp
 /// \class MatrixPrec
 /// \brief  This is a simple class to use if one
 ///         already has a matrix representation of their
 ///         preconditioner M.  The class applies an
 ///         SpMV with M as the preconditioning step.
-/// \tparam ScalarType Type of the matrix's entries
-/// \tparam Layout Kokkos layout of vectors X and Y to which
-///         the preconditioner is applied
-/// \tparam EXSP Execution space for the preconditioner apply
-/// \tparam Ordinal Type of the matrix's indices;
+/// \tparam CRS the type of compressed matrix
 ///
-/// Preconditioner provides the following methods
+/// MatrixPrec provides the following methods
 ///   - initialize() Does nothing; Matrix initialized upon object construction.
 ///   - isInitialized() returns true
 ///   - compute() Does nothing; Matrix initialized upon object construction.
@@ -47,10 +45,7 @@ namespace Experimental {
 template <class CRS>
 class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  private:
-  CRS A;
-
-  bool isInitialized_ = true;
-  bool isComputed_    = true;
+  CRS _A;
 
  public:
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
@@ -60,7 +55,7 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
 
   //! Constructor:
   template <class CRSArg>
-  MatrixPrec(const CRSArg &mat) : A(mat) {}
+  MatrixPrec(const CRSArg &mat) : _A(mat) {}
 
   //! Destructor.
   virtual ~MatrixPrec() {}
@@ -86,7 +81,7 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
       const Kokkos::View<ScalarType *, Kokkos::Device<EXSP, MEMSP>> &Y,
       const char transM[] = "N", ScalarType alpha = karith::one(),
       ScalarType beta = karith::zero()) const {
-    KokkosSparse::spmv(transM, alpha, A, X, beta, Y);
+    KokkosSparse::spmv(transM, alpha, _A, X, beta, Y);
   }
   //@}
 
@@ -96,12 +91,12 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   void initialize() {}
 
   //! True if the preconditioner has been successfully initialized, else false.
-  bool isInitialized() const { return isInitialized_; }
+  bool isInitialized() const { return true; }
 
   void compute() {}
 
   //! True if the preconditioner has been successfully computed, else false.
-  bool isComputed() const { return isComputed_; }
+  bool isComputed() const { return true; }
 
   //! True if the preconditioner implements a transpose operator apply.
   bool hasTransposeApply() const { return true; }

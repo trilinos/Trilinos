@@ -78,7 +78,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>
     block_crs_matrix_type;
   typedef typename block_crs_matrix_type::impl_scalar_type IST;
-  typedef Kokkos::Details::ArithTraits<IST> KAT;
+  typedef Kokkos::ArithTraits<IST> KAT;
   typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
   typedef typename block_crs_matrix_type::little_block_type little_blk_type;
 
@@ -493,7 +493,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   using std::endl;
   typedef Tpetra::BlockCrsMatrix<> matrix_type;
   typedef matrix_type::impl_scalar_type SC;
-  typedef Kokkos::Details::ArithTraits<SC> KAT;
+  typedef Kokkos::ArithTraits<SC> KAT;
   typedef Tpetra::Map<>::local_ordinal_type LO;
 
   // mfh 02 Jun 2016: Prefer Kokkos::Serial to the HostMirror as the

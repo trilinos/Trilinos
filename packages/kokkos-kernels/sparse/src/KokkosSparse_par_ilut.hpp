@@ -20,9 +20,13 @@
 /// This file provides KokkosSparse::par_ilut.  This function performs a
 /// local (no MPI) sparse ILU(t) on matrices stored in
 /// compressed row sparse ("Crs") format. It is expected that symbolic
-/// is called before numeric. The numeric function offers a deterministic
-/// flag that will force the function to have deterministic results. This
-/// is useful for testing but incurs a big performance penalty.
+/// is called before numeric. The handle offers an async_update
+/// flag that controls whether asynchronous updates are allowed while computing
+/// L U factors. This is useful for testing as it allows for repeatable
+/// (deterministic) results but may cause the algorithm to take longer (more
+/// iterations) to converge. The par_ilut algorithm will repeat (iterate) until
+/// max_iters is hit or the improvement in the residual from iter to iter drops
+/// below a certain threshold.
 ///
 /// This algorithm is described in the paper:
 /// PARILUT - A New Parallel Threshold ILU Factorization - Anzt, Chow, Dongarra
@@ -44,6 +48,28 @@ namespace Experimental {
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
 
+/// @brief Performs the symbolic phase of par_ilut.
+///        This is a non-blocking function.
+///
+/// The sparsity pattern of A will be analyzed and L_rowmap and U_rowmap will be
+/// populated with the L (lower triangular) and U (upper triagular) non-zero
+/// counts respectively. Having a separate symbolic phase allows for reuse when
+/// dealing with multiple matrices with the same sparsity pattern. This routine
+/// will set some values on handle for symbolic info (row count, nnz counts).
+///
+/// @tparam KernelHandle Template for the KernelHandle type
+/// @tparam ARowMapType Template for A_rowmap type
+/// @tparam AEntriesType Template for A_entries type
+/// @tparam LRowMapType Template for L_rowmap type
+/// @tparam URowMapType Template for U_rowmap type
+/// @param handle The kernel handle. It is expected that create_par_ilut_handle
+/// has been called on it
+/// @param A_rowmap The row map (row nnz offsets) for the A CSR (Input)
+/// @param A_entries The entries (column ids) for the A CSR (Input)
+/// @param L_rowmap The row map for the L CSR, should already be sized correctly
+/// (numRows+1) (Output)
+/// @param U_rowmap The row map for the U CSR, should already be sized correctly
+/// (numRows+1) (Output)
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename LRowMapType, typename URowMapType>
 void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
@@ -114,6 +140,13 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
       "par_ilut_symbolic: KernelHandle and Views have different execution "
       "spaces.");
 
+  if (A_rowmap.extent(0) != 0) {
+    KK_REQUIRE_MSG(A_rowmap.extent(0) == L_rowmap.extent(0),
+                   "L row map size does not match A row map");
+    KK_REQUIRE_MSG(A_rowmap.extent(0) == U_rowmap.extent(0),
+                   "U row map size does not match A row map");
+  }
+
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
   using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;
@@ -165,6 +198,34 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
 
 }  // par_ilut_symbolic
 
+/// @brief Performs the numeric phase (for specific CSRs, not reusable) of the
+/// par_ilut
+///        algorithm (described in the header). This is a non-blocking
+///        functions. It is expected that par_ilut_symbolic has already been
+///        called for the
+//         provided KernelHandle.
+///
+/// @tparam KernelHandle Template for the handle type
+/// @tparam ARowMapType Template for the A_rowmap type
+/// @tparam AEntriesType Template for the A_entries type
+/// @tparam AValuesType Template for the A_values type
+/// @tparam LRowMapType Template for the L_rowmap type
+/// @tparam LEntriesType Template for the L_entries type
+/// @tparam LValuesType Template for the L_values type
+/// @tparam URowMapType Template for the U_rowmap type
+/// @tparam UEntriesType Template for the U_entries type
+/// @tparam UValuesType Template for the U_values type
+/// @param handle The kernel handle. It is expected that create_par_ilut_handle
+/// has been called on it
+/// @param A_rowmap The row map (row nnz offsets) for the A CSR (Input)
+/// @param A_entries The entries (column ids) for the A CSR (Input)
+/// @param A_values The values (non-zero matrix values) for the A CSR (Input)
+/// @param L_rowmap The row map (row nnz offsets) for the L CSR (Input/Output)
+/// @param L_entries The entries (column ids) for the L CSR (Output)
+/// @param L_values The values (non-zero matrix values) for the L CSR (Output)
+/// @param U_rowmap The row map (row nnz offsets) for the U CSR (Input/Output)
+/// @param U_entries The entries (column ids) for the U CSR (Output)
+/// @param U_values The values (non-zero matrix values) for the U CSR (Output)
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename AValuesType, typename LRowMapType, typename LEntriesType,
           typename LValuesType, typename URowMapType, typename UEntriesType,
@@ -173,8 +234,7 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
                       AEntriesType& A_entries, AValuesType& A_values,
                       LRowMapType& L_rowmap, LEntriesType& L_entries,
                       LValuesType& L_values, URowMapType& U_rowmap,
-                      UEntriesType& U_entries, UValuesType& U_values,
-                      bool deterministic) {
+                      UEntriesType& U_entries, UValuesType& U_values) {
   using size_type    = typename KernelHandle::size_type;
   using ordinal_type = typename KernelHandle::nnz_lno_t;
   using scalar_type  = typename KernelHandle::nnz_scalar_t;
@@ -348,6 +408,11 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
+  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(L_rowmap, L_entries),
+                 "L is not sorted");
+  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(U_rowmap, U_entries),
+                 "U is not sorted");
+
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
   using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;
@@ -432,11 +497,16 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
   KokkosSparse::Impl::PAR_ILUT_NUMERIC<
       const_handle_type, ARowMap_Internal, AEntries_Internal, AValues_Internal,
       LRowMap_Internal, LEntries_Internal, LValues_Internal, URowMap_Internal,
-      UEntries_Internal,
-      UValues_Internal>::par_ilut_numeric(&tmp_handle, A_rowmap_i, A_entries_i,
-                                          A_values_i, L_rowmap_i, L_entries_i,
-                                          L_values_i, U_rowmap_i, U_entries_i,
-                                          U_values_i, deterministic);
+      UEntries_Internal, UValues_Internal>::par_ilut_numeric(&tmp_handle,
+                                                             A_rowmap_i,
+                                                             A_entries_i,
+                                                             A_values_i,
+                                                             L_rowmap_i,
+                                                             L_entries_i,
+                                                             L_values_i,
+                                                             U_rowmap_i,
+                                                             U_entries_i,
+                                                             U_values_i);
 
   // These may have been resized
   L_entries = L_entries_i;

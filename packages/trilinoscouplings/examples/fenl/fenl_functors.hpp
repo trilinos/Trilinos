@@ -367,7 +367,7 @@ public:
   void init( unsigned & update ) const { update = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile unsigned & update , const volatile unsigned & input ) const { update += input ; }
+  void join( unsigned & update , const unsigned & input ) const { update += input ; }
 
   //------------------------------------
 };
@@ -1237,7 +1237,8 @@ public:
   {
     Teuchos::Array<scalar_type> response(value_count, 0.0);
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
-    Kokkos::parallel_reduce( solution.extent(0) , *this , &response[0] );
+    Kokkos::View<scalar_type*, Kokkos::HostSpace> resp_view(&response[0], value_count);
+    Kokkos::parallel_reduce( solution.extent(0) , *this , resp_view );
     return response[0];
   }
 
@@ -1245,7 +1246,8 @@ public:
   {
     Teuchos::Array<scalar_type> response(value_count, 0.0);
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
-    Kokkos::parallel_reduce( solution.extent(0) , *this , &response[0] );
+    Kokkos::View<scalar_type*, Kokkos::HostSpace> resp_view(&response[0], value_count);
+    Kokkos::parallel_reduce( solution.extent(0) , *this , resp_view );
     return response;
   }
 
@@ -1377,8 +1379,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile value_type response ,
-             volatile const value_type input ) const {
+  void join( value_type response ,
+             const value_type input ) const {
      for (unsigned j=0; j<value_count; ++j)
        response[j] += input[j] ;
   }

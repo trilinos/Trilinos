@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_CRSGRAPH_DECL_HPP
 #define TPETRA_CRSGRAPH_DECL_HPP
 
@@ -1155,6 +1156,12 @@ public:
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
+  // clang-format on
+  using dist_object_type::
+      copyAndPermute; /// DistObject copyAndPermute has multiple overloads --
+                      /// use copyAndPermutes for anything we don't override
+  // clang-format off
+
     virtual void
     copyAndPermute
     (const SrcDistObject& source,
@@ -1225,6 +1232,13 @@ public:
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
       size_t& constantNumPackets) override;
 
+  // clang-format on
+  using dist_object_type::packAndPrepare; ///< DistObject overloads
+                                          ///< packAndPrepare. Explicitly use
+                                          ///< DistObject's packAndPrepare for
+                                          ///< anything we don't override
+  // clang-format off
+
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
           Teuchos::Array<global_ordinal_type>& exports,
@@ -1245,6 +1259,13 @@ public:
                        Kokkos::DualView<size_t*,
                          buffer_device_type> numPacketsPerLID,
                        size_t& constantNumPackets) const;
+
+  // clang-format on
+  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
+                                            ///< unpackAndCombine, use the
+                                            ///< DistObject's implementation for
+                                            ///< anything we don't override.
+  // clang-format off
 
     virtual void
     unpackAndCombine
@@ -2108,6 +2129,7 @@ public:
     global_size_t globalMaxNumRowEntries_ =
       Teuchos::OrdinalTraits<global_size_t>::invalid();
 
+  private:
     // Replacement for device view k_rowPtrs_
     // Device view rowPtrsUnpacked_dev_ takes place of k_rowPtrs_ 
     // Host view rowPtrsUnpacked_host_ takes place of copies and use of getEntryOnHost
@@ -2120,28 +2142,102 @@ public:
     // When OptimizedStorage, rowPtrsUnpacked_ = k_rowPtrsPacked_
 
     row_ptrs_device_view_type rowPtrsUnpacked_dev_;
-    row_ptrs_host_view_type rowPtrsUnpacked_host_;
+    mutable row_ptrs_host_view_type rowPtrsUnpacked_host_;
 
-    void setRowPtrsUnpacked(const row_ptrs_device_view_type &dview) {
-      rowPtrsUnpacked_dev_ = dview;
-      rowPtrsUnpacked_host_ = 
-           Kokkos::create_mirror_view_and_copy(
-                          typename row_ptrs_device_view_type::host_mirror_space(),
-                          dview);
-    }
-
-    // Row offsets into the actual graph local indices 
+    // Row offsets into the actual graph local indices
     // Device view rowPtrsUnpacked_dev_ takes place of lclGraph_.row_map
 
     row_ptrs_device_view_type rowPtrsPacked_dev_;
-    row_ptrs_host_view_type rowPtrsPacked_host_;
+    mutable row_ptrs_host_view_type rowPtrsPacked_host_;
+
+    //! Whether the unpacked and packed row pointers hvae identical contents
+    bool packedUnpackedRowPtrsMatch_ = false;
+
+  protected:
+    void setRowPtrsUnpacked(const row_ptrs_device_view_type &dview) {
+      packedUnpackedRowPtrsMatch_ = false;
+      rowPtrsUnpacked_dev_ = dview;
+      //Make sure stale host rowptrs are not kept
+      rowPtrsUnpacked_host_ = row_ptrs_host_view_type();
+    }
+
+    //! Get the unpacked row pointers on device
+    const row_ptrs_device_view_type& getRowPtrsUnpackedDevice() const
+    {
+      return rowPtrsUnpacked_dev_;
+    }
+
+    //! Get the unpacked row pointers on host. Lazily make a copy from device.
+    const row_ptrs_host_view_type& getRowPtrsUnpackedHost() const
+    {
+      if(rowPtrsUnpacked_host_.extent(0) != rowPtrsUnpacked_dev_.extent(0))
+      {
+        //NOTE: not just using create_mirror_view here, because
+        //we do want host/device to be in different memory, even if we're using a SharedSpace.
+        //This is so that reads will never trigger a host-device transfer.
+        //The exception is when 'device' views are HostSpace, then don't make another copy.
+        if constexpr(std::is_same_v<typename Node::memory_space, Kokkos::HostSpace>)
+        {
+          rowPtrsUnpacked_host_ = rowPtrsUnpacked_dev_;
+        }
+        else
+        {
+          //Have to make this temporary because rowptrs are const-valued
+          typename row_ptrs_host_view_type::non_const_type rowPtrsTemp(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowPtrsUnpacked_host_"), rowPtrsUnpacked_dev_.extent(0));
+          Kokkos::deep_copy(rowPtrsTemp, rowPtrsUnpacked_dev_);
+          rowPtrsUnpacked_host_= rowPtrsTemp;
+        }
+        //Also keep packed/unpacked views in sync, if they are known to have the same contents
+        if(packedUnpackedRowPtrsMatch_)
+        {
+          rowPtrsPacked_host_ = rowPtrsUnpacked_host_;
+        }
+      }
+      return rowPtrsUnpacked_host_;
+    }
 
     void setRowPtrsPacked(const row_ptrs_device_view_type &dview) {
+      packedUnpackedRowPtrsMatch_ = false;
       rowPtrsPacked_dev_ = dview;
-      rowPtrsPacked_host_ = 
-           Kokkos::create_mirror_view_and_copy(
-                       typename row_ptrs_device_view_type::host_mirror_space(),
-                       dview);
+      //Make sure stale host rowptrs are not kept
+      rowPtrsPacked_host_ = row_ptrs_host_view_type();
+    }
+
+    //! Get the packed row pointers on device
+    const row_ptrs_device_view_type& getRowPtrsPackedDevice() const
+    {
+      return rowPtrsPacked_dev_;
+    }
+
+    //! Get the packed row pointers on host. Lazily make a copy from device.
+    const row_ptrs_host_view_type& getRowPtrsPackedHost() const
+    {
+      if(rowPtrsPacked_host_.extent(0) != rowPtrsPacked_dev_.extent(0))
+      {
+        //NOTE: not just using create_mirror_view here, because
+        //we do want host/device to be in different memory, even if we're using a SharedSpace.
+        //This is so that reads will never trigger a host-device transfer.
+        //The exception is when 'device' views are HostSpace, then don't make another copy.
+        if constexpr(std::is_same_v<typename Node::memory_space, Kokkos::HostSpace>)
+        {
+          rowPtrsPacked_host_ = rowPtrsPacked_dev_;
+        }
+        else
+        {
+          //Have to make this temporary because rowptrs are const-valued
+          typename row_ptrs_host_view_type::non_const_type rowPtrsTemp(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowPtrsPacked_host_"), rowPtrsPacked_dev_.extent(0));
+          Kokkos::deep_copy(rowPtrsTemp, rowPtrsPacked_dev_);
+          rowPtrsPacked_host_= rowPtrsTemp;
+        }
+        //Also keep packed/unpacked views in sync, if they are known to have the same contents
+        if(packedUnpackedRowPtrsMatch_)
+        {
+          rowPtrsUnpacked_host_ = rowPtrsPacked_host_;
+        }
+      }
+      return rowPtrsPacked_host_;
     }
 
     // There are common cases where both packed and unpacked views are set to the same array.
@@ -2149,9 +2245,12 @@ public:
     // removing a deep_copy from device to host.
 
     void setRowPtrs(const row_ptrs_device_view_type &dview) {
-      setRowPtrsUnpacked(dview);
-      rowPtrsPacked_dev_ = rowPtrsUnpacked_dev_;
-      rowPtrsPacked_host_ = rowPtrsUnpacked_host_;
+      packedUnpackedRowPtrsMatch_ = true;
+      rowPtrsUnpacked_dev_ = dview;
+      rowPtrsPacked_dev_ = dview;
+      //Make sure stale host rowptrs are not kept
+      rowPtrsUnpacked_host_ = row_ptrs_host_view_type();
+      rowPtrsPacked_host_ = row_ptrs_host_view_type();
     }
     
     //TODO:  Make private -- matrix shouldn't access directly the guts of graph

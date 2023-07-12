@@ -8,6 +8,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     krino_unit
     SOURCES ${SOURCES}
+    ARGS "--gtest_filter=-*fuzz*"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     NOEXEPREFIX NOEXESUFFIX

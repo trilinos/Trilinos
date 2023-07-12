@@ -14,6 +14,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <Akri_InterfaceGeometry.hpp>
 #include <Akri_Phase_Support.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -36,27 +37,27 @@ public:
     { myElementInterfaceCutter->fill_interior_intersections(intersectionPointFilter, intersections); }
   virtual std::vector<InterfaceID> get_sorted_cutting_interfaces() const override
     { std::vector<InterfaceID> interfaces; myElementInterfaceCutter->fill_interfaces_with_cutting_surface(interfaces); return interfaces; }
-  virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<Vector3d> & elemNodesCoords,
+  virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const override;
-  virtual void fill_tetrahedron_face_interior_intersections(const std::array<Vector3d,3> & faceNodes,
+  virtual void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
     const InterfaceID & interface1,
     const InterfaceID & interface2,
     const ElementIntersectionPointFilter & intersectionPointFilter,
     std::vector<ElementIntersection> & intersections) const override
     { myElementInterfaceCutter->fill_tetrahedron_face_interior_intersections(faceNodes, interface1, interface2, intersectionPointFilter, intersections); }
   virtual std::string visualize(const stk::mesh::BulkData & mesh) const override;
-  virtual bool have_crossing(const InterfaceID interface, const Segment3d & edge) const override
-    { return myElementInterfaceCutter->have_crossing(interface, edge); }
-  virtual double interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const override
-    { return myElementInterfaceCutter->interface_crossing_position(interface, edge); }
-  virtual int sign_at_position(const InterfaceID interface, const Vector3d & paramCoords) const override
+  virtual bool have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override
+    { return myElementInterfaceCutter->have_crossing(interface, edgeNodeCoords); }
+  virtual double interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override
+    { return myElementInterfaceCutter->interface_crossing_position(interface, edgeNodeCoords); }
+  virtual int sign_at_position(const InterfaceID interface, const stk::math::Vector3d & paramCoords) const override
     { return myElementInterfaceCutter->sign_at_position(interface, paramCoords); }
   virtual int get_starting_phase_for_cutting_surfaces() const override
     { return myElementInterfaceCutter->get_starting_phase_for_cutting_surfaces(); }
 
   PhaseTag get_starting_phase(const Phase_Support & phaseSupport, const std::vector<LS_Field> & LSFields) const;
   void update_edge_crossings(const unsigned iEdge, const std::vector<std::vector<double>> & nodesIsovar);
-  void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<Vector3d> & elemNodesCoords,
+  void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings) const
     { return myElementInterfaceCutter->add_interfaces_with_uncaptured_intersection_within_element(elemNodesCoords, elemNodesSnappedDomains, interfacesWithUncapturedCrossings); }
@@ -85,6 +86,8 @@ public:
 
   virtual ~LevelSetInterfaceGeometry() {}
 
+  virtual bool might_have_interior_or_face_intersections() const override { return mySurfaceIdentifiers.size() > 1; }
+
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
@@ -92,6 +95,7 @@ public:
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
 
   virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
+  virtual std::vector<stk::mesh::Entity> get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const override;
 
   virtual bool snapped_elements_may_have_new_intersections() const override;
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,

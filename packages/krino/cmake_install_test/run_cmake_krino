@@ -43,7 +43,6 @@ cmake \
 -DTPL_ENABLE_yaml-cpp=${enable_yaml} \
 -Dyaml-cpp_INCLUDE_DIRS=${yaml_install_dir}/include \
 -Dyaml-cpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
--DSTK_ENABLE_SEACASAprepro_lib:BOOL=${enable_yaml} \
 -DTPL_ENABLE_Netcdf:BOOL=ON \
 -DTPL_ENABLE_HDF5:BOOL=ON \
 ${trilinos_src_dir}/

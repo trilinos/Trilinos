@@ -49,9 +49,9 @@
 #  include "mpi.h"
 #endif
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 #  include "Kokkos_Core.hpp"
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
 
 
@@ -63,13 +63,13 @@ bool GlobalMPISession::mpiIsFinalized_ = false;
 int GlobalMPISession::rank_ = 0 ;
 int GlobalMPISession::nProc_ = 1 ;
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 
 // We have to invoke the std::vector's constructor here,
 // because it's a class (static) variable.
 std::vector<std::string> GlobalMPISession::argvCopy_;
 
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
 
 GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
@@ -152,7 +152,7 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 
 #endif
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
   // mfh 15/16 Apr 2016: This is the one chance we get to save the
   // command-line arguments, so that we can (later) initialize Kokkos
   // with the correct number of threads as specified by (e.g.,) the
@@ -172,22 +172,22 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   for (int c = 0; c < numArgs; ++c) {
     argvCopy_[c] = std::string ((*argv)[c]); // deep copy
   }
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 }
 
   
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE  
+#ifdef HAVE_TEUCHOSCORE_KOKKOS  
 std::vector<std::string> GlobalMPISession::getArgv ()
 {
   return argvCopy_;
 }
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE  
+#endif // HAVE_TEUCHOSCORE_KOKKOS  
 
   
 GlobalMPISession::~GlobalMPISession()
 {
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
   try {
     if (Kokkos::is_initialized())
       Kokkos::finalize();

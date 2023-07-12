@@ -17,7 +17,7 @@ public:
   CDFEM_Snapper() : my_cdfem_edge_tol(default_edge_tol) {}
 
   void set_edge_tolerance(double edge_tol) { my_cdfem_edge_tol = edge_tol; }
-  double get_edge_tolerance() const { ThrowRequireMsg(my_cdfem_edge_tol < 0.5, "Should not be requesting tolerance when always snapping."); return my_cdfem_edge_tol; }
+  double get_edge_tolerance() const { STK_ThrowRequireMsg(my_cdfem_edge_tol < 0.5, "Should not be requesting tolerance when always snapping."); return my_cdfem_edge_tol; }
   bool always_snap() const { return my_cdfem_edge_tol > 0.5; }
   bool snap_lo(double crossingVal) const { return always_snap() ? (crossingVal <= 0.5) : (crossingVal < get_edge_tolerance()); }
   bool snap_hi(double crossingVal) const { return always_snap() ? (crossingVal > 0.5) : (crossingVal > 1.0-get_edge_tolerance()); }

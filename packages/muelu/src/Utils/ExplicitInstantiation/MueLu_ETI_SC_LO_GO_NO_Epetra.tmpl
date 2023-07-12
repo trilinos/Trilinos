@@ -56,17 +56,15 @@
 
 // We need to define these typedefs as it is not possible to properly expand
 // macros with colons in them
-#if defined(HAVE_MUELU_TPETRA)
-# include <TpetraCore_config.h>
-#endif
+#include <TpetraCore_config.h>
 #if defined(HAVE_MUELU_EPETRA)
 # include <Epetra_config.h>
 #endif
 
-#if   (defined(HAVE_MUELU_EPETRA) &&  defined(EPETRA_HAVE_OMP) && (!defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT)))
+#if   (defined(HAVE_MUELU_EPETRA) &&  defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT)))
   // Epetra is enabled with OpenMP node, but Tpetra is a) not enabled, or b) is not instantiated on OpenMP, or c) is not instantiated on OpenMP with <double,int,int>
   typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode EpetraNode;
-#elif (defined(HAVE_MUELU_EPETRA) && !defined(EPETRA_HAVE_OMP) && (!defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)))
+#elif (defined(HAVE_MUELU_EPETRA) && !defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)))
   // Epetra is enabled with Serial node, but Tpetra is a) not enabled, or b) is not instantiated on Serial, or c) is not instantiated on Serial with <double,int,int>
   typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode EpetraNode;
 #endif

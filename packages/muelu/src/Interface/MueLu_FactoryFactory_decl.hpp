@@ -96,6 +96,7 @@
 #include "MueLu_FineLevelInputDataFactory.hpp"
 #include "MueLu_GeneralGeometricPFactory.hpp"
 #include "MueLu_ReplicatePFactory.hpp"
+#include "MueLu_CombinePFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_GeometricInterpolationPFactory.hpp"
 #include "MueLu_InterfaceAggregationFactory.hpp"
@@ -256,6 +257,7 @@ namespace MueLu {
       if (factoryName == "FineLevelInputDataFactory")             return Build2<FineLevelInputDataFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeneralGeometricPFactory")              return Build2<GeneralGeometricPFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ReplicatePFactory")                     return Build2<ReplicatePFactory>                     (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CombinePFactory")                       return Build2<CombinePFactory>                       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                       return Build2<GenericRFactory>                       (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeometricInterpolationPFactory")        return Build2<GeometricInterpolationPFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "HybridAggregationFactory")              return Build2<HybridAggregationFactory>              (paramList, factoryMapIn, factoryManagersIn);
@@ -312,6 +314,10 @@ namespace MueLu {
       if (factoryName == "TentativePFactory_kokkos")              return Build2<TentativePFactory_kokkos>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixFreeTentativePFactory")           return Build2<MatrixFreeTentativePFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
+
+      // Handle removed Kokkos factories
+      if (factoryName == "CoarseMapFactory_kokkos")               return Build2<CoarseMapFactory>                      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CoordinatesTransferFactory_kokkos")     return Build2<CoordinatesTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);
 
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -818,17 +824,17 @@ namespace MueLu {
     }
 #endif
 
-    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& /* paramList */, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
-      //if (paramList.begin() == paramList.end())
+    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
+      if (paramList.numParams() == 0)
         return rcp(new SmootherFactory(rcp(new BlockedDirectSolver())));
 
-      /*TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "DirectSolver", Exceptions::RuntimeError, "");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedDirectSolver", Exceptions::RuntimeError, "FactoryFactory::BuildBlockedDirectSolver: Generating factory needs to be a BlockedDirectSolver.");
 
       std::string type;              if(paramList.isParameter("type"))          type = paramList.get<std::string>("type");
       // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
-      return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));*/
+      return rcp(new SmootherFactory(rcp(new BlockedDirectSolver(type, params))));
     }
 
     //RCP<FactoryBase> BuildBlockedPFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {

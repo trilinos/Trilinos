@@ -1,5 +1,5 @@
 """
-exodus.py v 1.20.21 (seacas-py3) is a python wrapper of some of the exodus library
+exodus.py v 1.21.1 (seacas-py3) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -51,7 +51,7 @@ of global variables. Although these examples correspond to typical FE
 applications, the data format is flexible enough to accommodate a
 spectrum of uses.
 
-Copyright(C) 1999-2022 National Technology & Engineering Solutions
+Copyright(C) 1999-2023 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -70,12 +70,12 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.20.21 (seacas-py3)"
+EXODUS_PY_VERSION = "1.21.1 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.20.21 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.21.1 (seacas-py3), a python wrapper of some of the exodus library.
 
-Copyright (c) 2013-2022 National Technology &
+Copyright (c) 2013-2023 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
 Contract DE-NA0003525 with NTESS, the U.S. Government retains certain
 rights in this software.
@@ -114,19 +114,16 @@ def getExodusVersion():
     Parse the exodusII.h header file and return the version number or 0 if not
     found.
     """
-    version_major = -1
-    version_minor = -1
-    with open(f"{ACCESS}/@SEACAS_INCLUDEDIR@/exodusII.h") as header_file:
-        for line in header_file:
-            fields = line.split()
-            if len(fields) == 3 and fields[0] == '#define':
-                if fields[1] == 'EXODUS_VERSION_MAJOR':
-                    version_major = int(fields[2])
-                if fields[1] == 'EXODUS_VERSION_MINOR':
-                    version_minor = int(fields[2])
-            if (version_major > 0 and version_minor >= 0):
-                return 100 * version_major + version_minor
-    return 0
+
+    return _parse_exodus_version('@EXODUS_VERSION@')
+
+
+def _parse_exodus_version(version_string):
+    if version_string:
+        assert version_string.startswith("#define EXODUS_VERSION "), "Received a incorrectly formated verstion string. Please check the CMakeLists.txt"
+        return int(version_string.strip().split()[-1].strip('"').replace('.', ''))
+    else:
+        return 0
 
 
 try:
@@ -164,7 +161,12 @@ if os.uname()[0] == 'Darwin':
     EXODUS_SO = f"{ACCESS}/@SEACAS_LIBDIR@/libexodus.dylib"
 else:
     EXODUS_SO = f"{ACCESS}/@SEACAS_LIBDIR@/libexodus.so"
-EXODUS_LIB = ctypes.cdll.LoadLibrary(EXODUS_SO)
+pip_path = os.path.dirname(__file__)
+pip_so_path = os.path.join(pip_path, "libexodus.so")
+try:
+    EXODUS_LIB = ctypes.cdll.LoadLibrary(pip_so_path)
+except Exception:
+    EXODUS_LIB = ctypes.cdll.LoadLibrary(EXODUS_SO)
 
 MAX_STR_LENGTH = 32      # match exodus default
 MAX_NAME_LENGTH = 256     # match exodus default
@@ -1576,6 +1578,114 @@ class exodus:
 
     # --------------------------------------------------------------------
 
+    def get_num_map(self, mapType, idx):
+        """
+        get user-defined map of exodus element/node/edge/face index to user- or
+        application- defined element/node/edge/face values. Map values are arbitary integers
+
+        >>> elem_num_map = exo.get_num_map('EX_ELEM_MAP', 1)
+
+        Parameters
+        ----------
+            mapType   : ex_entity_type
+                        type of map being queried ('EX_ELEM_MAP', 'EX_NODE_MAP', 'EX_FACE_MAP', 'EX_EDGE_MAP')
+            idx       : int
+                        which map to return (1-based).  Use `inquire(mapType)` to get number of maps stored on database.
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<int>>  num_map
+
+            if array_type == 'numpy':
+              <np_array<int>>  num_map
+
+
+        Usage
+        -----
+        >>> em_cnt = exo.inquire('EX_INQ_ELEM_MAP')
+        >>> em     = exo.get_names('EX_ELEM_MAP')
+        >>> map    = exo.get_num_map('EX_ELEM_MAP', 2)
+
+        """
+        return self.__ex_get_num_map(mapType, idx)
+
+    # --------------------------------------------------------------------
+
+    def put_num_map(self, mapType, idx, num_map):
+        """
+        put user-defined map of exodus element/node/edge/face index to user- or
+        application- defined element/node/edge/face values. Map values are arbitary integers
+
+
+        Parameters
+        ----------
+            mapType   : ex_entity_type
+                        type of map being written ('EX_ELEM_MAP', 'EX_NODE_MAP', 'EX_FACE_MAP', 'EX_EDGE_MAP')
+            idx       : int
+                        which map to write (1-based).  Use `put_map_param(node_map_cnt, elem_map_cnt)` prior to this
+                        function to define number of maps on the database.
+            <list<int>>  elem_id_map
+
+
+        Usage
+        -----
+
+        >>> exo.put_map_param(nm_cnt, em_cnt)
+        >>> nm[0] = "My_Node_Map"
+        >>> exo.put_names('EX_NODE_MAP', nm);
+        >>> exo.put_num_map('EX_NODE_MAP', 1, scale_map)
+
+        """
+        return self.__ex_put_num_map(mapType, idx, num_map)
+
+    def put_map_param(self, node_map_cnt, elem_map_cnt):
+        """
+        Define number of node and element maps that will be written to the database
+
+        Parameters
+        ----------
+        node_map_cnt  : int
+                        number of node maps
+        elem_map_cnt  : int
+                        number of element maps
+
+        """
+        return self.__ex_put_map_param(node_map_cnt, elem_map_cnt)
+
+    # --------------------------------------------------------------------
+
+    def get_id_map(self, mapType):
+        """
+        get mapping of exodus element/node/edge/face index to user- or
+        application- defined element/node/edge/face id; id_map is ordered by the
+        *INDEX* ordering, a 1-based system going from 1 to
+        exo.num_???s(), used by exodus for storage and input/output
+        of array data stored on the elements/nodes/edges/faces; a user or application
+        can optionally use a separate *ID* numbering system,
+        so the id_map points to the element/node/edge/face *ID* for each
+        *INDEX*
+
+        >>> elem_id_map = exo.get_id_map('EX_ELEM_MAP')
+
+        Parameters
+        ----------
+            mapType   : ex_entity_type
+                        type of map being queried ('EX_ELEM_MAP', 'EX_NODE_MAP', 'EX_FACE_MAP', 'EX_EDGE_MAP')
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<int>>  id_map
+
+            if array_type == 'numpy':
+              <np_array<int>>  id_map
+
+        """
+        return self.__ex_get_id_map(mapType)
+
+    # --------------------------------------------------------------------
+
     def get_elem_id_map(self):
         """
         get mapping of exodus element index to user- or application-
@@ -1625,6 +1735,34 @@ class exodus:
             True = successful execution
         """
         return self.__ex_put_id_map('EX_ELEM_MAP', id_map)
+
+    # --------------------------------------------------------------------
+
+    def put_id_map(self, map_type, id_map):
+        """
+        store mapping of exodus entity index to user- or application-
+        defined entity id; id_map is ordered by the entity
+        *INDEX* ordering, a 1-based system going from 1 to
+        exo.num_XXX(), used by exodus for storage and input/output
+        of array data stored on the entities; a user or application
+        can optionally use a separate entity *ID* numbering system,
+        so the elem_id_map points to the entity *ID* for each
+        entity *INDEX*
+
+        >>> status = exo.put_id_map('EX_ELEM_MAP', elem_id_map)
+
+        Parameters
+        ----------
+            ex_entity_type   map_type
+                        type of map being queried ('EX_ELEM_MAP', 'EX_NODE_MAP', 'EX_FACE_MAP', 'EX_EDGE_MAP')
+            <list<int>>  elem_id_map
+
+        Returns
+        -------
+        status : bool
+            True = successful execution
+        """
+        return self.__ex_put_id_map(map_type, id_map)
 
     # --------------------------------------------------------------------
 
@@ -1708,54 +1846,6 @@ class exodus:
 
     # Generic (objType) get/put/query...
     # --------------------------------------------------------------------
-
-    def put_id_map(self, objType, id_map):
-        """
-        store mapping of exodus node index to user- or application-
-        defined node id; node_id_map is ordered the same as the nodal
-        coordinate arrays returned by exo.get_coords() -- this ordering
-        follows the exodus node *INDEX* order, a 1-based system going
-        from 1 to exo.num_nodes(); a user or application can optionally
-        use a separate node *ID* numbering system, so the node_id_map
-        points to the node *ID* for each node *INDEX*
-
-        >>> status = exo.put_node_id_map(node_id_map)
-
-        Parameters
-        ----------
-            <list<int>>  node_id_map
-
-        Returns
-        -------
-        status : bool
-            True = successful execution
-        """
-        return self.__ex_put_id_map(objType, id_map)
-
-    # --------------------------------------------------------------------
-
-    def get_id_map(self, objType):
-        """
-        get mapping of exodus node index to user- or application-
-        defined node id; node_id_map is ordered the same as the nodal
-        coordinate arrays returned by exo.get_coords() -- this ordering
-        follows the exodus node *INDEX* order, a 1-based system going
-        from 1 to exo.num_nodes(); a user or application can optionally
-        use a separate node *ID* numbering system, so the node_id_map
-        points to the node *ID* for each node *INDEX*
-
-        >>> node_id_map = exo.get_node_id_map()
-
-        Returns
-        -------
-
-            if array_type == 'ctype':
-              <list<int>>  node_id_map
-
-            if array_type == 'numpy':
-              <np_array<int>>  node_id_map
-        """
-        return self.__ex_get_id_map(objType)
 
     # --------------------------------------------------------------------
 
@@ -2400,9 +2490,9 @@ class exodus:
         """
         reads the blob parameters and blob data for one blob
         """
-        assem = ex_blob(id=object_id)
-        self.__ex_get_blob(assem)
-        return assem
+        blob = ex_blob(id=object_id)
+        self.__ex_get_blob(blob)
+        return blob
 
     def num_blks(self):
         """
@@ -5405,6 +5495,53 @@ class exodus:
             idMap = self.np.array(idMap)
         return idMap
 
+    def __ex_get_num_map(self, objType, idx):
+        inqType = ex_obj_to_inq(objType)
+        map_id = ctypes.c_longlong(idx)
+        obj_type = ctypes.c_int(get_entity_type(objType))
+        inq_type = ctypes.c_int(ex_inquiry_map(inqType))
+        num_objs = ctypes.c_int(self.__ex_inquire_int(inq_type))
+        numObjs = num_objs.value
+        if EXODUS_LIB.ex_int64_status(self.fileId) & EX_IDS_INT64_API:
+            id_map = (ctypes.c_longlong * numObjs)()
+        else:
+            id_map = (ctypes.c_int * numObjs)()
+        EXODUS_LIB.ex_get_num_map(self.fileId, obj_type, map_id, ctypes.byref(id_map))
+        idMap = [id_map[i] for i in range(numObjs)]
+        if self.use_numpy:
+            idMap = self.np.array(idMap)
+        return idMap
+
+    def __ex_put_map_param(self, nodeMapCnt, elemMapCnt):
+        node_map_cnt = ctypes.c_int(nodeMapCnt)
+        elem_map_cnt = ctypes.c_int(elemMapCnt)
+        errorInt = EXODUS_LIB.ex_put_map_param(
+            self.fileId, node_map_cnt, elem_map_cnt)
+        if errorInt != 0:
+            print(("ERROR code =", errorInt))
+            raise Exception(
+                "ERROR: ex_put_map_param had problems.")
+        return True
+
+    def __ex_put_num_map(self, objType, idx, numMap):
+        inqType = ex_obj_to_inq(objType)
+        map_id = ctypes.c_longlong(idx)
+        obj_type = ctypes.c_int(get_entity_type(objType))
+        inq_type = ctypes.c_int(ex_inquiry_map(inqType))
+        num_objs = ctypes.c_int(self.__ex_inquire_int(inq_type))
+        numObjs = num_objs.value
+        assert numObjs == len(numMap)
+        if EXODUS_LIB.ex_int64_status(self.fileId) & EX_IDS_INT64_API:
+            num_map = (ctypes.c_longlong * numObjs)()
+            for i in range(numObjs):
+                num_map[i] = ctypes.c_longlong(numMap[i])
+        else:
+            num_map = (ctypes.c_int * numObjs)()
+            for i in range(numObjs):
+                num_map[i] = ctypes.c_int(numMap[i])
+        EXODUS_LIB.ex_put_num_map(self.fileId, obj_type, map_id, ctypes.byref(num_map))
+        return True
+
     def __ex_get_block_id_map(self, obj_type, id):
         obj_type = ctypes.c_int(get_entity_type(obj_type))
         entity_id = ctypes.c_longlong(id)
@@ -5416,7 +5553,10 @@ class exodus:
         EXODUS_LIB.ex_get_block_id_map(self.fileId, obj_type, entity_id, id_map)
         if self.use_numpy:
             id_map = ctype_to_numpy(self, id_map)
-        return id_map
+            return id_map
+        else:
+            idMap = [id_map[i] for i in range(numObjs)]
+            return idMap
 
     def __ex_put_id_map(self, objType, idMap):
         inqType = ex_obj_to_inq(objType)

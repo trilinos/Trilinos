@@ -76,6 +76,7 @@ class ChebyshevKernel; // forward declaration
 /// <ol>
 /// <li> A direct imitation of Ifpack's implementation </li>
 /// <li> A textbook version of the algorithm </li>
+/// <li> Chebyshev polynomials of the 4th kind, using optimal coefficients </li>
 /// </ol>
 ///
 /// All implemented variants use the diagonal of the matrix to
@@ -88,7 +89,9 @@ class ChebyshevKernel; // forward declaration
 /// Linear Systems," 2nd edition.  Experiments show that the Ifpack
 /// imitation is much less sensitive to the eigenvalue bounds than the
 /// textbook version, so users should prefer it.  (In fact, it is the
-/// default.)
+/// default.) Variant #3 is an experimental implementation of Chebyshev
+/// polynomials of the 4th kind with optimal coefficients,
+/// from https://arxiv.org/pdf/2202.08830.pdf.
 ///
 /// We require that the matrix A be real valued and symmetric positive
 /// definite.  If users could provide the ellipse parameters ("d" and
@@ -403,8 +406,9 @@ private:
 
   /// \brief In ifpackApplyImpl(): Iteration update MultiVector.
   ///
-  /// We cache this multivector here to avoid creating it on each call.
+  /// We cache these multivectors here to avoid creating them on each call.
   Teuchos::RCP<MV> W_;
+  Teuchos::RCP<MV> W2_;
 
   /// \brief Estimate that we compute for maximum eigenvalue of A.
   ///
@@ -506,8 +510,8 @@ private:
   /// which we have not yet computed before.
   bool assumeMatrixUnchanged_;
 
-  //! Whether to use the textbook version of the algorithm.
-  bool textbookAlgorithm_;
+  //! Chebyshev type
+  std::string chebyshevAlgorithm_;
 
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
@@ -552,6 +556,14 @@ private:
   /// created MultiVector as W_.  Caching optimizes the common case of
   /// calling apply() many times.
   Teuchos::RCP<MV> makeTempMultiVector (const MV& B);
+
+  /// \brief Set W2 to temporary MultiVector with the same Map as B.
+  ///
+  /// This is an optimization for apply(). This method caches the
+  /// created MultiVector as W2_. Caching optimizes the common case of
+  /// calling apply() many times. This is used by fourth kind
+  /// Chebyshev as two temporary multivectors are needed.
+  Teuchos::RCP<MV> makeSecondTempMultiVector (const MV& B);
 
   //! W = alpha*D_inv*B and X = 0 + W.
   void
@@ -633,6 +645,35 @@ private:
                      const ST lambdaMin,
                      const ST eigRatio,
                      const V& D_inv) const;
+
+  /// \brief Solve AX=B for X with Chebyshev iteration with left
+  ///   diagonal scaling, using the fourth kind Chebyshev polynomials
+  ///   (optionally) with optimal weights, see:
+  ///    https://arxiv.org/pdf/2202.08830.pdf
+  ///   for details.
+  ///
+  /// \pre A must be real-valued and symmetric positive definite.
+  /// \pre numIters <= 16 if using the opt. 4th-kind Chebyshev smoothers
+  ///      -- this is an arbitrary distinction,
+  ///      but the weights are currently hard-coded from the
+  ///      MATLAB scripts from https://arxiv.org/pdf/2202.08830.pdf.
+  /// \pre 0 < lambdaMax
+  /// \pre All entries of D_inv are positive.
+  ///
+  /// \param A [in] The matrix A in the linear system to solve.
+  /// \param B [in] Right-hand side(s) in the linear system to solve.
+  /// \param X [in] Initial guess(es) for the linear system to solve.
+  /// \param numIters [in] Number of Chebyshev iterations.
+  /// \param lambdaMax [in] Estimate of max eigenvalue of A.
+  /// \param D_inv [in] Vector of diagonal entries of A.  It must have
+  ///   the same distribution as B.
+  void
+  fourthKindApplyImpl (const op_type& A,
+                       const MV& B,
+                       MV& X,
+                       const int numIters,
+                       const ST lambdaMax,
+                       const V& D_inv);
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, imitating Ifpack's implementation.

@@ -40,6 +40,7 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/FieldDataManager.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
@@ -74,14 +75,16 @@ public:
 
   void setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::AutomaticAuraOption auraOption,
                                                 stk::mesh::FieldDataManager & fieldDataManager,
-                                                unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
+                                                unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                                                unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity())
   {
     stk::mesh::MeshBuilder builder(communicator);
     builder.set_spatial_dimension(m_spatialDim);
     builder.set_entity_rank_names(m_entityRankNames);
     builder.set_aura_option(auraOption);
     builder.set_field_data_manager(&fieldDataManager);
-    builder.set_bucket_capacity(bucketCapacity);
+    builder.set_initial_bucket_capacity(initialBucketCapacity);
+    builder.set_maximum_bucket_capacity(maximumBucketCapacity);
 
         if(nullptr == metaData) {
           metaData = builder.create_meta_data();
@@ -91,7 +94,8 @@ public:
         if(nullptr == bulkData) {
           bulkData = builder.create(metaData);
           m_auraOption = auraOption;
-          m_bucketCapacity = bucketCapacity;
+          m_initialBucketCapacity = initialBucketCapacity;
+          m_maximumBucketCapacity = maximumBucketCapacity;
         }
   }
 

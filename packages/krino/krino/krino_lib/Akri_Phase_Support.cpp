@@ -34,7 +34,7 @@ stk::mesh::Part * get_parent_sideset(const stk::mesh::Part & part)
     {
       if (stk::io::is_part_io_part(superset) && !stk::io::is_part_assembly_io_part(*superset))
       {
-        ThrowRequireMsg(result == nullptr, "krino::Akri_Phase_Support: Part has more than 1 parent IO part");
+        STK_ThrowRequireMsg(result == nullptr, "krino::Akri_Phase_Support: Part has more than 1 parent IO part");
         result = superset;
       }
     }
@@ -75,19 +75,19 @@ std::string build_part_name(const krino::Phase_Support & ps,
   std::string io_part_name = part.name();
   const std::set<stk::mesh::PartOrdinal> touching_block_ordinals = ps.get_input_block_surface_connectivity().get_blocks_touching_surface(part.mesh_meta_data_ordinal());
 
-  ThrowRequireMsg(touching_block_ordinals.size() > 0, 
+  STK_ThrowRequireMsg(touching_block_ordinals.size() > 0, 
       "krino::Akri_Phase_Support: Side block must be touching at least 1 block");
   stk::topology block_topo = part.mesh_meta_data().get_part(*touching_block_ordinals.begin()).topology();
   for(auto b : touching_block_ordinals)
   {
-    ThrowRequireMsg(block_topo == part.mesh_meta_data().get_part(b).topology(), 
+    STK_ThrowRequireMsg(block_topo == part.mesh_meta_data().get_part(b).topology(), 
       "krino::Akri_Phase_Support: Touching blocks do not all have same topology");
   }
   Ioss::ElementTopology *ioss_side_topo = Ioss::ElementTopology::factory(part.topology().name());
-  ThrowRequireMsg(ioss_side_topo != nullptr, 
+  STK_ThrowRequireMsg(ioss_side_topo != nullptr, 
       "krino::Akri_Phase_Support: IOSS topology factory must return a topology type");
   Ioss::ElementTopology *ioss_block_topo = Ioss::ElementTopology::factory(block_topo.name());
-  ThrowRequireMsg(ioss_block_topo != nullptr, 
+  STK_ThrowRequireMsg(ioss_block_topo != nullptr, 
       "krino::Akri_Phase_Support: IOSS topology factory must return a topology type");
 
   //Figure out if this side block was split by element block or topology. Ideally need a
@@ -101,7 +101,7 @@ std::string build_part_name(const krino::Phase_Support & ps,
   else 
   {
     //Split by element block
-    ThrowRequireMsg(touching_block_ordinals.size() == 1, 
+    STK_ThrowRequireMsg(touching_block_ordinals.size() == 1, 
       "krino::Akri_Phase_Support: Side blocks split by element block should touch exactly 1 block");
     stk::mesh::Part & touching_block = part.mesh_meta_data().get_part(*touching_block_ordinals.begin());
     auto conformal_block = ps.find_conformal_io_part(touching_block, ls_phase_tag);
@@ -142,7 +142,7 @@ void Phase_Support::check_phase_parts() const
       }
     }
   }
-  ThrowErrorMsgIf(error, "Error: Phases are not defined correctly.");
+  STK_ThrowErrorMsgIf(error, "Error: Phases are not defined correctly.");
 }
 
 std::vector<unsigned> Phase_Support::get_negative_levelset_interface_ordinals(const Surface_Identifier levelSetIdentifier) const
@@ -152,6 +152,42 @@ std::vector<unsigned> Phase_Support::get_negative_levelset_interface_ordinals(co
     if (phasePart.is_interface() && phasePart.get_touching_phase().contain(levelSetIdentifier, -1))
       negLevelsetInterfaceOrdinals.push_back(phasePart.get_conformal_part_ordinal());
   return negLevelsetInterfaceOrdinals;
+}
+
+std::vector<unsigned> Phase_Support::get_negative_levelset_block_ordinals(const Surface_Identifier levelSetIdentifier) const
+{
+  std::vector<unsigned> negLevelsetBlockOrdinals;
+  for (auto&& phasePart : my_phase_parts)
+  {
+    if (!phasePart.is_interface() && phasePart.get_phase().contain(levelSetIdentifier, -1))
+    {
+      const stk::mesh::Part & conformingPart = meta().get_part(phasePart.get_conformal_part_ordinal());
+      if (conformingPart.primary_entity_rank() == stk::topology::ELEMENT_RANK)
+        negLevelsetBlockOrdinals.push_back(phasePart.get_conformal_part_ordinal());
+    }
+  }
+  return negLevelsetBlockOrdinals;
+}
+
+static stk::mesh::Selector select_union_from_part_ordinals(const stk::mesh::MetaData & meta, const std::vector<unsigned> & partOrdinals)
+{
+  const stk::mesh::PartVector & allParts = meta.get_parts();
+  stk::mesh::PartVector parts;
+  for (auto && partOrdinal : partOrdinals)
+    parts.push_back(allParts[partOrdinal]);
+  return stk::mesh::selectUnion(parts);
+}
+
+stk::mesh::Selector
+Phase_Support::get_negative_levelset_interface_selector(const Surface_Identifier levelSetIdentifier) const
+{
+  return select_union_from_part_ordinals(meta(), get_negative_levelset_interface_ordinals(levelSetIdentifier));
+}
+
+stk::mesh::Selector
+Phase_Support::get_negative_levelset_block_selector(const Surface_Identifier levelSetIdentifier) const
+{
+  return select_union_from_part_ordinals(meta(), get_negative_levelset_block_ordinals(levelSetIdentifier));
 }
 
 Phase_Support::Phase_Support()
@@ -178,7 +214,7 @@ void Phase_Support::associate_FEModel_and_metadata(const std::string & FEModelNa
 {
   Phase_Support * existingSupportOnMeta = const_cast<Phase_Support *>(meta.get_attribute<Phase_Support>());
   Phase_Support * support = &get_or_create(FEModelName);
-  ThrowRequireMsg(nullptr == existingSupportOnMeta || existingSupportOnMeta == support,
+  STK_ThrowRequireMsg(nullptr == existingSupportOnMeta || existingSupportOnMeta == support,
     "krino::Phase_Support already set on stk::mesh::MetaData and it doesn't match the one associated with the FEModel " << FEModelName);
   meta.declare_attribute_no_delete<Phase_Support>(support);
 
@@ -190,7 +226,7 @@ Phase_Support &
 Phase_Support::get(const stk::mesh::MetaData & meta)
 {
   Phase_Support * support = const_cast<Phase_Support *>(meta.get_attribute<Phase_Support>());
-  ThrowRequireMsg(nullptr != support, "No Phase_Support found for MetaData.");
+  STK_ThrowRequireMsg(nullptr != support, "No Phase_Support found for MetaData.");
   return *support;
 }
 
@@ -238,7 +274,7 @@ Phase_Support::addPhasePart(stk::mesh::Part & io_part, PhasePartSet & phase_part
   std::string nonconf_name = build_part_name(*this, io_part, PhaseTag(), nonconf_suffix);
 
   stk::mesh::Part & conformal_io_part = aux_meta().declare_io_part(phase_part_name, io_part.primary_entity_rank());
-  ThrowAssert(phase_name != "" || conformal_io_part.mesh_meta_data_ordinal() == io_part.mesh_meta_data_ordinal());
+  STK_ThrowAssert(phase_name != "" || conformal_io_part.mesh_meta_data_ordinal() == io_part.mesh_meta_data_ordinal());
   std::string topology_name = "INVALID_TOPOLOGY";
   if (stk::topology::INVALID_TOPOLOGY != io_part.topology())
   {
@@ -412,24 +448,24 @@ Phase_Support::subset_and_alias_surface_phase_parts(const PhaseVec& ls_phases,
         const PhaseTag & ls_phase = ls_phase_entry.tag();
         //FIXME: remove const_cast's
         stk::mesh::Part * conformal_iopart = const_cast<stk::mesh::Part *>(find_conformal_io_part(*io_part, ls_phase));
-        ThrowRequire(NULL != conformal_iopart);
+        STK_ThrowRequire(NULL != conformal_iopart);
 
         stk::mesh::Part * nonconformal_iopart = const_cast<stk::mesh::Part *>(find_nonconformal_part(*io_part));
-        ThrowRequire(NULL != nonconformal_iopart);
+        STK_ThrowRequire(NULL != nonconformal_iopart);
 
         for (auto && io_part_subset : io_part->subsets())
         {
-          ThrowRequire(NULL != io_part_subset);
+          STK_ThrowRequire(NULL != io_part_subset);
 
           addPhasePart(*io_part_subset, my_phase_parts, ls_phase_entry);
           stk::mesh::Part * conformal_iopart_subset = const_cast<stk::mesh::Part *>(find_conformal_io_part(*io_part_subset, ls_phase));
-          ThrowRequire(NULL != conformal_iopart_subset);
+          STK_ThrowRequire(NULL != conformal_iopart_subset);
 
           if(krinolog.shouldPrint(LOG_PARTS)) krinolog << "Adding " << conformal_iopart_subset->name() << " as subset of " << conformal_iopart->name() << stk::diag::dendl;
           meta().declare_part_subset(*conformal_iopart, *conformal_iopart_subset);
 
           stk::mesh::Part * nonconformal_iopart_subset = const_cast<stk::mesh::Part *>(find_nonconformal_part(*io_part_subset));
-          ThrowRequire(NULL != nonconformal_iopart_subset);
+          STK_ThrowRequire(NULL != nonconformal_iopart_subset);
 
           if(krinolog.shouldPrint(LOG_PARTS)) krinolog << "Adding " << nonconformal_iopart_subset->name() << " as subset of " << nonconformal_iopart->name() << stk::diag::dendl;
           meta().declare_part_subset(*nonconformal_iopart, *nonconformal_iopart_subset);
@@ -458,7 +494,7 @@ Phase_Support::update_touching_parts_for_phase_part(const stk::mesh::Part & orig
   {
     stk::mesh::Part & origTouchingBlock = meta().get_part(origTouchingBlockOrdinal);
     const stk::mesh::Part * phaseTouchingBlock = (phase.empty()) ? find_nonconformal_part(origTouchingBlock) : find_conformal_io_part(origTouchingBlock, phase);
-    ThrowRequire(phaseTouchingBlock);
+    STK_ThrowRequire(phaseTouchingBlock);
 
     if (std::find(phaseTouchingBlocks.begin(), phaseTouchingBlocks.end(), phaseTouchingBlock) == phaseTouchingBlocks.end())
       phaseTouchingBlocks.push_back(phaseTouchingBlock);
@@ -492,7 +528,7 @@ Phase_Support::build_decomposed_block_surface_connectivity()
     if (phase_part->is_interface())
     {
       const stk::mesh::Part * conformal_touching_block = find_conformal_io_part(origPart, phase_part->get_touching_phase());
-      ThrowRequire(conformal_touching_block);
+      STK_ThrowRequire(conformal_touching_block);
       if(krinolog.shouldPrint(LOG_PARTS)) krinolog << "Interface surface " << part->name() << " touches block " << conformal_touching_block->name() << "\n";
       std::vector<const stk::mesh::Part*> touching_blocks = meta().get_blocks_touching_surface(part);
       if (std::find(touching_blocks.begin(), touching_blocks.end(), conformal_touching_block) == touching_blocks.end())
@@ -543,12 +579,12 @@ Phase_Support::create_interface_phase_parts(
         interface_phases.push_back(phase_pair);
       }
     }
-    ThrowRequire((int) interface_phases.size() == num_interfaces);
+    STK_ThrowRequire((int) interface_phases.size() == num_interfaces);
 
     for (int i = 0; i < num_interfaces; ++i)
     {
       const int name_compare = ls_phases[interface_phases[i].first].name().compare(ls_phases[interface_phases[i].second].name());
-      ThrowRequire(name_compare != 0);
+      STK_ThrowRequire(name_compare != 0);
       // form phase intersection
       const auto & phase0 = (name_compare < 0) ? ls_phases[interface_phases[i].first] : ls_phases[interface_phases[i].second];
       const auto & phase1 = (name_compare < 0) ? ls_phases[interface_phases[i].second] : ls_phases[interface_phases[i].first];
@@ -572,7 +608,7 @@ Phase_Support::create_interface_phase_parts(
 
         for (auto * io_part : decomposed_ioparts)
         {
-          ThrowRequire(NULL != io_part);
+          STK_ThrowRequire(NULL != io_part);
           // only handle blocks for now -> creating interfacial surface "phases"
           if (io_part->primary_entity_rank() == stk::topology::ELEMENT_RANK)
           {
@@ -583,7 +619,7 @@ Phase_Support::create_interface_phase_parts(
             meta().declare_part_subset(superset_phase_part, subset_phase_part);
 
             const stk::mesh::Part * const nonconf_part = find_nonconformal_part(*io_part);
-            ThrowRequire(NULL != nonconf_part);
+            STK_ThrowRequire(NULL != nonconf_part);
 
             if(krinolog.shouldPrint(LOG_PARTS))
             {
@@ -670,7 +706,7 @@ Phase_Support::determine_block_phases(const std::set<std::string> & FEmodel_bloc
 {
   if (myMeshPhases.empty()) return;
 
-  ThrowAssertMsg(my_mesh_block_phases.empty(), "determine_block_phases should only be called once per mesh");
+  STK_ThrowAssertMsg(my_mesh_block_phases.empty(), "determine_block_phases should only be called once per mesh");
 
   for (auto && part : meta().get_parts())
   {
@@ -698,7 +734,7 @@ Phase_Support::determine_block_phases()
 {
   if (myMeshPhases.empty()) return;
 
-  ThrowAssertMsg(my_mesh_block_phases.empty(), "determine_block_phases should only be called once per mesh");
+  STK_ThrowAssertMsg(my_mesh_block_phases.empty(), "determine_block_phases should only be called once per mesh");
 
   if (myMeshBlockPhasesByName.empty())
   {
@@ -907,7 +943,7 @@ Phase_Support::get_iopart_roots(const stk::mesh::Part & iopart, std::vector<cons
   {
     for (stk::mesh::PartVector::const_iterator subset = iopart.subsets().begin(); subset != iopart.subsets().end() ; ++subset )
     {
-      ThrowRequire(stk::io::is_part_io_part(**subset));
+      STK_ThrowRequire(stk::io::is_part_io_part(**subset));
       get_iopart_roots(**subset, subsets);
     }
   }
@@ -981,7 +1017,7 @@ Phase_Support::is_nonconformal(const stk::mesh::Part * io_part) const
 bool
 Phase_Support::is_interface(const stk::mesh::Part * io_part) const
 {
-  ThrowAssert(io_part);
+  STK_ThrowAssert(io_part);
   auto phase_part = find_conformal_phase_part(*io_part);
   return phase_part && phase_part->is_interface();
 }
@@ -1112,7 +1148,7 @@ CDFEM_Irreversible_Phase_Support &
 CDFEM_Irreversible_Phase_Support::get(const stk::mesh::MetaData & meta)
 {
   CDFEM_Irreversible_Phase_Support * support = get_if_present(meta);
-  ThrowRequireMsg(nullptr != support, "Could not find CDFEM_Irreversible_Phase_Support attribute on MetaData.");
+  STK_ThrowRequireMsg(nullptr != support, "Could not find CDFEM_Irreversible_Phase_Support attribute on MetaData.");
   return *support;
 }
 //--------------------------------------------------------------------------------
@@ -1140,12 +1176,12 @@ CDFEM_Inequality_Spec * CDFEM_Irreversible_Phase_Support::add_death_spec(const s
   {
     has_irreversible_phase_change = true;
   }
-  ThrowInvalidArgMsgIf(has_death && has_irreversible_phase_change,
+  STK_ThrowInvalidArgMsgIf(has_death && has_irreversible_phase_change,
     "Cannot have both CDFEM death and CDFEM irreversible phase change in the same problem.");
 
   for (auto&& death_spec : my_death_specs)
   {
-    ThrowInvalidArgMsgIf(death_spec.name() == death_name,
+    STK_ThrowInvalidArgMsgIf(death_spec.name() == death_name,
       "Only one CDFEM death specification with the same name is allowed per mesh (" << death_name << "). ");
   }
   my_death_specs.push_back(CDFEM_Inequality_Spec(death_name));
@@ -1241,14 +1277,14 @@ void CDFEM_Inequality_Spec::sanity_check(const std::vector<std::string> mesh_ele
 {
   /* %TRACE[ON]% */ Trace trace__("krino::CDFEM_Death_Spec::sanity_check()"); /* %TRACE% */
 
-  ThrowErrorMsgIf(CDFEM_Inequality_Spec::INEQUALITY_CRITERION_TYPE_UNDEFINED == my_criterion_compare_type,
+  STK_ThrowErrorMsgIf(CDFEM_Inequality_Spec::INEQUALITY_CRITERION_TYPE_UNDEFINED == my_criterion_compare_type,
    "CDFEM Death is not properly setup.  Was the death criterion specified?");
 
   const std::vector<std::string> & volume_names = get_element_volume_names();
 
   for (auto && block_name : volume_names)
   {
-    ThrowErrorMsgIf(
+    STK_ThrowErrorMsgIf(
         std::find(mesh_elem_blocks.begin(), mesh_elem_blocks.end(), block_name) == mesh_elem_blocks.end(),
         "Could not find an element volume named '"
         << block_name << "' that was specified in the "
@@ -1261,7 +1297,7 @@ void CDFEM_Inequality_Spec::create_levelset(stk::mesh::MetaData & meta, stk::dia
 {
   /* %TRACE[ON]% */ Trace trace__("krino::CDFEM_Death_Spec::create_levelset()"); /* %TRACE% */
 
-  ThrowInvalidArgMsgIf(
+  STK_ThrowInvalidArgMsgIf(
       Surface_Manager::get(meta).has_levelset(my_name),
       "Region already has a LevelSet named " << my_name);
 

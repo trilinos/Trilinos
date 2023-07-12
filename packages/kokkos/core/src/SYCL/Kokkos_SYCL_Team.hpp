@@ -337,10 +337,11 @@ class SYCLTeamMember {
   // Private for the driver
 
   KOKKOS_INLINE_FUNCTION
-  SYCLTeamMember(sycl::local_ptr<void> shared, const int shared_begin,
-                 const int shared_size,
+  SYCLTeamMember(sycl::local_ptr<void> shared, const std::size_t shared_begin,
+                 const std::size_t shared_size,
                  sycl::device_ptr<void> scratch_level_1_ptr,
-                 const int scratch_level_1_size, const sycl::nd_item<2> item)
+                 const std::size_t scratch_level_1_size,
+                 const sycl::nd_item<2> item)
       : m_team_reduce(shared),
         m_team_shared(static_cast<sycl::local_ptr<char>>(shared) + shared_begin,
                       shared_size, scratch_level_1_ptr, scratch_level_1_size),
@@ -578,8 +579,8 @@ KOKKOS_INLINE_FUNCTION void parallel_scan(
     const FunctorType& lambda) {
   // Extract value_type from lambda
   using value_type = typename Kokkos::Impl::FunctorAnalysis<
-      Kokkos::Impl::FunctorPatternInterface::SCAN, void,
-      FunctorType>::value_type;
+      Kokkos::Impl::FunctorPatternInterface::SCAN, void, FunctorType,
+      void>::value_type;
 
   const auto start     = loop_bounds.start;
   const auto end       = loop_bounds.end;
@@ -774,7 +775,8 @@ parallel_scan(const Impl::ThreadVectorRangeBoundariesStruct<
                   iType, Impl::SYCLTeamMember>& loop_boundaries,
               const Closure& closure, const ReducerType& reducer) {
   using value_type = typename Kokkos::Impl::FunctorAnalysis<
-      Kokkos::Impl::FunctorPatternInterface::SCAN, void, Closure>::value_type;
+      Kokkos::Impl::FunctorPatternInterface::SCAN, void, Closure,
+      void>::value_type;
 
   value_type accum;
   reducer.init(accum);
@@ -843,7 +845,8 @@ KOKKOS_INLINE_FUNCTION void parallel_scan(
         loop_boundaries,
     const Closure& closure) {
   using value_type = typename Kokkos::Impl::FunctorAnalysis<
-      Kokkos::Impl::FunctorPatternInterface::SCAN, void, Closure>::value_type;
+      Kokkos::Impl::FunctorPatternInterface::SCAN, void, Closure,
+      void>::value_type;
   value_type dummy;
   parallel_scan(loop_boundaries, closure, Kokkos::Sum<value_type>{dummy});
 }

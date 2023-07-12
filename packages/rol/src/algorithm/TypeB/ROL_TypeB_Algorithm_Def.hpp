@@ -258,16 +258,16 @@ void Algorithm<Real>::run( Vector<Real>          &x,
 
 template<typename Real>
 void Algorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(10) << std::left << "#fval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(10) << std::left << "#fval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
@@ -277,36 +277,36 @@ void Algorithm<Real>::writeName( std::ostream &os ) const {
 
 template<typename Real>
 void Algorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( write_header ) writeHeader(os);
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::endl;
   }
   else {
-    hist << "  "; 
-    hist << std::setw(6)  << std::left << state_->iter;  
-    hist << std::setw(15) << std::left << state_->value; 
-    hist << std::setw(15) << std::left << state_->gnorm; 
-    hist << std::setw(15) << std::left << state_->snorm; 
-    hist << std::setw(10) << std::left << state_->nfval;              
-    hist << std::setw(10) << std::left << state_->ngrad;              
-    hist << std::endl;
+    os << "  "; 
+    os << std::setw(6)  << std::left << state_->iter;  
+    os << std::setw(15) << std::left << state_->value; 
+    os << std::setw(15) << std::left << state_->gnorm; 
+    os << std::setw(15) << std::left << state_->snorm; 
+    os << std::setw(10) << std::left << state_->nfval;              
+    os << std::setw(10) << std::left << state_->ngrad;              
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void Algorithm<Real>::writeExitStatus( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << "Optimization Terminated with Status: ";
-  hist << EExitStatusToString(state_->statusFlag);
-  hist << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << "Optimization Terminated with Status: ";
+  os << EExitStatusToString(state_->statusFlag);
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>

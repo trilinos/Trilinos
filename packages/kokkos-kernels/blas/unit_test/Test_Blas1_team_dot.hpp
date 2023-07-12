@@ -39,44 +39,20 @@ void impl_test_team_dot(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
 
-  typedef Kokkos::View<
-      ScalarA * [2],
-      typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeA;
-  typedef Kokkos::View<
-      ScalarB * [2],
-      typename std::conditional<std::is_same<typename ViewTypeB::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeB;
-
-  BaseTypeA b_a("A", N);
-  BaseTypeB b_b("B", N);
-
-  ViewTypeA a = Kokkos::subview(b_a, Kokkos::ALL(), 0);
-  ViewTypeB b = Kokkos::subview(b_b, Kokkos::ALL(), 0);
-
-  typename BaseTypeA::HostMirror h_b_a = Kokkos::create_mirror_view(b_a);
-  typename BaseTypeB::HostMirror h_b_b = Kokkos::create_mirror_view(b_b);
-
-  typename ViewTypeA::HostMirror h_a = Kokkos::subview(h_b_a, Kokkos::ALL(), 0);
-  typename ViewTypeB::HostMirror h_b = Kokkos::subview(h_b_b, Kokkos::ALL(), 0);
+  view_stride_adapter<ViewTypeA> a("a", N);
+  view_stride_adapter<ViewTypeB> b("b", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
-  Kokkos::fill_random(b_a, rand_pool, ScalarA(10));
-  Kokkos::fill_random(b_b, rand_pool, ScalarB(10));
+  Kokkos::fill_random(a.d_view, rand_pool, ScalarA(10));
+  Kokkos::fill_random(b.d_view, rand_pool, ScalarB(10));
 
-  Kokkos::deep_copy(h_b_a, b_a);
-  Kokkos::deep_copy(h_b_b, b_b);
+  Kokkos::deep_copy(a.h_base, a.d_base);
+  Kokkos::deep_copy(b.h_base, b.d_base);
 
   ScalarA expected_result = 0;
-  for (int i = 0; i < N; i++) expected_result += h_a(i) * h_b(i);
+  for (int i = 0; i < N; i++) expected_result += a.h_view(i) * b.h_view(i);
 
   Kokkos::View<ScalarB *, Kokkos::HostSpace> r("PartialDots", M);
   Kokkos::View<ScalarB *, Device> d_r("PartialDots", M);
@@ -91,13 +67,15 @@ void impl_test_team_dot(int N) {
         d_r(teamId)      = KokkosBlas::Experimental::dot(
             teamMember,
             Kokkos::subview(
-                a, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                a.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             Kokkos::subview(
-                b, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                b.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < M; k++) nonconst_nonconst_result += r(k);
@@ -106,10 +84,6 @@ void impl_test_team_dot(int N) {
   EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result,
                  eps * expected_result);
 
-  typename ViewTypeA::const_type c_a = a;
-  typename ViewTypeB::const_type c_b = b;
-
-  // ScalarA const_const_result = KokkosBlas::dot(c_a,c_b);
   ScalarA const_const_result = 0;
 
   Kokkos::parallel_for(
@@ -119,13 +93,15 @@ void impl_test_team_dot(int N) {
         d_r(teamId)      = KokkosBlas::Experimental::dot(
             teamMember,
             Kokkos::subview(
-                c_a, Kokkos::make_pair(
-                         teamId * team_data_siz,
-                         (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                a.d_view_const,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             Kokkos::subview(
-                c_b, Kokkos::make_pair(
-                         teamId * team_data_siz,
-                         (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                b.d_view_const,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < M; k++) const_const_result += r(k);
@@ -142,13 +118,15 @@ void impl_test_team_dot(int N) {
         d_r(teamId)      = KokkosBlas::Experimental::dot(
             teamMember,
             Kokkos::subview(
-                a, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                a.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             Kokkos::subview(
-                c_b, Kokkos::make_pair(
-                         teamId * team_data_siz,
-                         (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                b.d_view_const,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < M; k++) nonconst_const_result += r(k);
@@ -165,13 +143,15 @@ void impl_test_team_dot(int N) {
         d_r(teamId)      = KokkosBlas::Experimental::dot(
             teamMember,
             Kokkos::subview(
-                c_a, Kokkos::make_pair(
-                         teamId * team_data_siz,
-                         (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                a.d_view_const,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             Kokkos::subview(
-                b, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                b.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < M; k++) const_nonconst_result += r(k);
@@ -190,40 +170,23 @@ void impl_test_team_dot_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-  typedef multivector_layout_adapter<ViewTypeB> vfB_type;
-
-  typename vfA_type::BaseType b_a("A", N, K);
-  typename vfB_type::BaseType b_b("B", N, K);
-
-  ViewTypeA a = vfA_type::view(b_a);
-  ViewTypeB b = vfB_type::view(b_b);
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-  typedef multivector_layout_adapter<typename ViewTypeB::HostMirror> h_vfB_type;
-
-  typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
-  typename h_vfB_type::BaseType h_b_b = Kokkos::create_mirror_view(b_b);
-
-  typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
-  typename ViewTypeB::HostMirror h_b = h_vfB_type::view(h_b_b);
+  view_stride_adapter<ViewTypeA> a("A", N, K);
+  view_stride_adapter<ViewTypeB> b("B", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
-  Kokkos::fill_random(b_a, rand_pool, ScalarA(10));
-  Kokkos::fill_random(b_b, rand_pool, ScalarB(10));
+  Kokkos::fill_random(a.d_view, rand_pool, ScalarA(10));
+  Kokkos::fill_random(b.d_view, rand_pool, ScalarB(10));
 
-  Kokkos::deep_copy(h_b_a, b_a);
-  Kokkos::deep_copy(h_b_b, b_b);
-
-  typename ViewTypeA::const_type c_a = a;
-  typename ViewTypeB::const_type c_b = b;
+  Kokkos::deep_copy(a.h_base, a.d_base);
+  Kokkos::deep_copy(b.h_base, b.d_base);
 
   ScalarA *expected_result = new ScalarA[K];
   for (int j = 0; j < K; j++) {
     expected_result[j] = ScalarA();
-    for (int i = 0; i < N; i++) expected_result[j] += h_a(i, j) * h_b(i, j);
+    for (int i = 0; i < N; i++)
+      expected_result[j] += a.h_view(i, j) * b.h_view(i, j);
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
@@ -237,8 +200,8 @@ void impl_test_team_dot_mv(int N, int K) {
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         d_r(teamId)      = KokkosBlas::Experimental::dot(
-            teamMember, Kokkos::subview(a, Kokkos::ALL(), teamId),
-            Kokkos::subview(b, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(a.d_view, Kokkos::ALL(), teamId),
+            Kokkos::subview(b.d_view, Kokkos::ALL(), teamId));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < K; k++) {
@@ -253,8 +216,8 @@ void impl_test_team_dot_mv(int N, int K) {
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         d_r(teamId)      = KokkosBlas::Experimental::dot(
-            teamMember, Kokkos::subview(c_a, Kokkos::ALL(), teamId),
-            Kokkos::subview(c_b, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(a.d_view_const, Kokkos::ALL(), teamId),
+            Kokkos::subview(b.d_view_const, Kokkos::ALL(), teamId));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < K; k++) {
@@ -269,8 +232,8 @@ void impl_test_team_dot_mv(int N, int K) {
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         d_r(teamId)      = KokkosBlas::Experimental::dot(
-            teamMember, Kokkos::subview(a, Kokkos::ALL(), teamId),
-            Kokkos::subview(c_b, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(a.d_view, Kokkos::ALL(), teamId),
+            Kokkos::subview(b.d_view_const, Kokkos::ALL(), teamId));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < K; k++) {
@@ -285,8 +248,8 @@ void impl_test_team_dot_mv(int N, int K) {
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         d_r(teamId)      = KokkosBlas::Experimental::dot(
-            teamMember, Kokkos::subview(c_a, Kokkos::ALL(), teamId),
-            Kokkos::subview(b, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(a.d_view_const, Kokkos::ALL(), teamId),
+            Kokkos::subview(b.d_view, Kokkos::ALL(), teamId));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < K; k++) {
@@ -323,8 +286,7 @@ int test_team_dot() {
   // Test::impl_test_team_dot<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutStride, Device> view_type_b_ls;
@@ -369,8 +331,7 @@ int test_team_dot_mv() {
   // Device>(132231,5);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutStride, Device> view_type_b_ls;

@@ -35,7 +35,7 @@ CDFEM_Support &
 CDFEM_Support::get(const stk::mesh::MetaData & meta)
 {
   CDFEM_Support * support = const_cast<CDFEM_Support *>(meta.get_attribute<CDFEM_Support>());
-  ThrowRequireMsg(nullptr != support, "Could not find CDFEM_Support attribute on MetaData.");
+  STK_ThrowRequireMsg(nullptr != support, "Could not find CDFEM_Support attribute on MetaData.");
   return *support;
 }
 
@@ -82,18 +82,18 @@ void CDFEM_Support::create_parts()
   if (my_aux_meta.using_fmwk())
   {
     const bool restartOnlyIOPart = true;
-    my_child_edge_node_part = &my_aux_meta.declare_io_part_with_topology("CDFEM_EDGE_NODE_2_PARENTS", stk::topology::NODE, restartOnlyIOPart);
+    myChildNodePart = &my_aux_meta.declare_io_part_with_topology("CDFEM_CHILD_NODE", stk::topology::NODE, restartOnlyIOPart);
   }
   else
   {
     // Currently no need to output nodeset for krino usage
-    my_child_edge_node_part = &my_meta.declare_part_with_topology("CDFEM_EDGE_NODE_2_PARENTS", stk::topology::NODE);
+    myChildNodePart = &my_meta.declare_part_with_topology("CDFEM_CHILD_NODE", stk::topology::NODE);
   }
 }
 
 void CDFEM_Support::register_cdfem_mesh_displacements_field()
 {
-  ThrowRequireMsg(my_meta.spatial_dimension() > 1, "Spatial dimension must be set and equal to 2 or 3.");
+  STK_ThrowRequireMsg(my_meta.spatial_dimension() > 1, "Spatial dimension must be set and equal to 2 or 3.");
 
   const FieldType & vec_type = (my_meta.spatial_dimension() == 3) ? FieldType::VECTOR_3D : FieldType::VECTOR_2D;
   FieldRef cdfem_disp_field = my_aux_meta.register_field(cdfem_mesh_displacements_field_name(), vec_type, stk::topology::NODE_RANK, 2, 1, get_universal_part());
@@ -103,9 +103,12 @@ void CDFEM_Support::register_cdfem_mesh_displacements_field()
 void CDFEM_Support::register_parent_node_ids_field()
 {
   FieldType id_field_type = (my_aux_meta.get_assert_32bit_flag()) ? FieldType::UNSIGNED_INTEGER : FieldType::UNSIGNED_INTEGER_64;
-  my_parent_node_ids_field = my_aux_meta.register_field("CDFEM_2_PARENT_NODE_IDS",
+  myParentNodeIdsField = my_aux_meta.register_field("CDFEM_UP_4_PARENT_NODE_IDS",
       id_field_type, stk::topology::NODE_RANK, 1,
-      2, *my_child_edge_node_part);
+      4, *myChildNodePart);
+  myParentNodeWtsField = my_aux_meta.register_field("CDFEM_UP_4_PARENT_NODE_WTS",
+      FieldType::REAL, stk::topology::NODE_RANK, 1,
+      4, *myChildNodePart);
 }
 
 stk::mesh::Selector
@@ -150,8 +153,9 @@ CDFEM_Support::setup_fields()
 void
 CDFEM_Support::add_ale_prolongation_field(const FieldRef field)
 {
-  ThrowAssert(field.valid());
-  ThrowRequireMsg(!is_interpolation_field(field), "Cannot add " << field.name() << " as ALE prolongation field because it is already an interpolation field.");
+  STK_ThrowAssert(field.valid());
+  STK_ThrowRequireMsg(!is_interpolation_field(field), "Cannot add " << field.name() << " as ALE prolongation field because it is already an interpolation field.");
+  STK_ThrowRequireMsg(!is_edge_interpolation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an edge interpolation field.");
   for ( unsigned is = 0; is < field.number_of_states(); ++is )
   {
     const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
@@ -162,8 +166,9 @@ CDFEM_Support::add_ale_prolongation_field(const FieldRef field)
 void
 CDFEM_Support::add_interpolation_field(const FieldRef field)
 {
-  ThrowAssert(field.valid());
-  ThrowRequireMsg(!is_ale_prolongation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an ALE prolongation field.");
+  STK_ThrowAssert(field.valid());
+  STK_ThrowRequireMsg(!is_ale_prolongation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an ALE prolongation field.");
+  STK_ThrowRequireMsg(!is_edge_interpolation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an edge interpolation field.");
   for ( unsigned is = 0; is < field.number_of_states(); ++is )
   {
     const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
@@ -172,9 +177,23 @@ CDFEM_Support::add_interpolation_field(const FieldRef field)
 }
 
 void
+CDFEM_Support::add_edge_interpolation_field(const FieldRef field)
+{
+  STK_ThrowAssert(field.valid());
+  STK_ThrowRequireMsg(!is_ale_prolongation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an ALE prolongation field.");
+  STK_ThrowRequireMsg(!is_interpolation_field(field), "Cannot add " << field.name() << " as ALE prolongation field because it is already an interpolation field.");
+  for ( unsigned is = 0; is < field.number_of_states(); ++is )
+  {
+    const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
+    my_edge_interpolation_fields.insert(field.field_state(state));
+  }
+}
+
+void
 CDFEM_Support::set_snap_fields()
 {
   mySnapFields = get_interpolation_fields();
+  mySnapFields.insert(my_edge_interpolation_fields.begin(), my_edge_interpolation_fields.end());
 
   FieldRef cdfemSnapField = get_cdfem_snap_displacements_field();
   if (cdfemSnapField.valid())
@@ -223,7 +242,7 @@ CDFEM_Support::finalize_fields()
     if (initial_prolong_field_name_entry != my_initial_prolongation_field_name_map.end())
     {
       const std::string & src_field_name = initial_prolong_field_name_entry->second;
-      ThrowErrorMsgIf(!my_aux_meta.has_field(stk::topology::NODE_RANK, src_field_name),
+      STK_ThrowErrorMsgIf(!my_aux_meta.has_field(stk::topology::NODE_RANK, src_field_name),
           "Error: Could not find initial prolongation field with name " << src_field_name);
 
       // If the src field does not have the desired state, use StateNone (which is the same as StateNew).
@@ -249,12 +268,17 @@ CDFEM_Support::finalize_fields()
       krinolog << field.name() << " will use interpolation." << stk::diag::dendl;
       continue;
     }
+    else if(is_edge_interpolation_field(field))
+    {
+      krinolog << field.name() << " will use edge interpolation." << stk::diag::dendl;
+      continue;
+    }
     else if(is_ale_prolongation_field(field))
     {
       krinolog << field.name() << " will use ALE prolongation." << stk::diag::dendl;
       continue;
     }
-    else if (field.name() == "node_registry")
+    else if (field.name() == "node_registry" || field.name() == "CDFEM_UP_4_PARENT_NODE_WTS")
     {
       krinolog << field.name() << " will not be modified." << stk::diag::dendl;
       continue;
@@ -296,8 +320,8 @@ CDFEM_Support::get_initial_prolongation_field(const FieldRef field) const
 void
 CDFEM_Support::set_simplex_generation_method(const Simplex_Generation_Method & method)
 {
-  ThrowAssert(method < MAX_SIMPLEX_GENERATION_METHOD);
-  ThrowRequireMsg(3 == my_meta.spatial_dimension() || method != CUT_QUADS_BY_NEAREST_EDGE_CUT, "Simplex generation method CUT_QUADS_BY_NEAREST_EDGE_CUT only supported in 3d.");
+  STK_ThrowAssert(method < MAX_SIMPLEX_GENERATION_METHOD);
+  STK_ThrowRequireMsg(3 == my_meta.spatial_dimension() || method != CUT_QUADS_BY_NEAREST_EDGE_CUT, "Simplex generation method CUT_QUADS_BY_NEAREST_EDGE_CUT only supported in 3d.");
   my_simplex_generation_method = method;
 }
 

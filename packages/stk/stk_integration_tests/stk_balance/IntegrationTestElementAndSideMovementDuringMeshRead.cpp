@@ -52,7 +52,7 @@ public:
 
     bool i_started_modification_cycle = bulk_data().modification_begin("Mesh Read - step 1");
 
-    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
+    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get();
     bool ints64bit = stk::io::db_api_int_size(region) == 8;
     if (ints64bit) {
       stk::io::process_nodeblocks<int64_t>(*region,    bulk_data());

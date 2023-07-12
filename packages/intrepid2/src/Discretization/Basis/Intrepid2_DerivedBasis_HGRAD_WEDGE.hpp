@@ -52,6 +52,7 @@
 #define Intrepid2_DerivedBasis_HGRAD_WEDGE_h
 
 #include "Intrepid2_TensorBasis.hpp"
+#include "Intrepid2_DerivedBasis_HGRAD_QUAD.hpp"
 
 namespace Intrepid2
 {
@@ -137,27 +138,29 @@ namespace Intrepid2
     Teuchos::RCP<BasisBase>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override
     {
-      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Method not yet implemented");
-      if(subCellDim == 2) {
-        switch(subCellOrd) {
-            // TODO: check this subcell numbering -- which are the tris, and which are the quads?
-            // (one way: use the shards CellTopology to look this up…)
-          case 0:
-          case 1:
-            return Teuchos::rcp( new TriBasis(order_xy_, pointType_) );
-          case 2:
-          case 3:
-          case 4:
-            // TODO: check what order the poly order arguments should go in...
-            // (one way: use the shards CellTopology to look this up…)
-            // TODO: define QuadBasis somehow, somewhere.  (Probably use DerivedBasis_HGRAD_QUAD.)
-//            return Teuchos::rcp( new QuadBasis(order_xy_, order_z_, pointType_) );
-            return Teuchos::null;
-        }
-        return Teuchos::null;
+      if(subCellDim == 1) {
+        if(subCellOrd < 6)  //edges associated to basal and upper triagular faces
+          return Teuchos::rcp( new LineBasis(order_xy_, pointType_) );
+        else
+          return Teuchos::rcp( new LineBasis(order_z_, pointType_) );
       }
-
-      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+      else if(subCellDim == 2) {
+        switch(subCellOrd) {
+        case 0:
+          return Teuchos::rcp( new Intrepid2::Basis_Derived_HGRAD_QUAD<LineBasis>(order_xy_, order_z_, pointType_) );
+        case 1:
+          return Teuchos::rcp( new Intrepid2::Basis_Derived_HGRAD_QUAD<LineBasis>(order_xy_, order_z_, pointType_) );
+        case 2:
+          return Teuchos::rcp( new Intrepid2::Basis_Derived_HGRAD_QUAD<LineBasis>(order_z_, order_xy_, pointType_) );
+        case 3:
+          return Teuchos::rcp( new TriBasis(order_xy_, pointType_) );
+        case 4:
+          return Teuchos::rcp( new TriBasis(order_xy_, pointType_) );
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"subCellOrd is out of bounds");
+        }
+      } 
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"subCellDim is out of bounds");
     }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.

@@ -69,6 +69,7 @@ IF (Piro_ENABLE_NOX)
   APPEND_SET(HEADERS
     Piro_SteadyStateSolver.hpp
     Piro_SteadyStateSolver_Def.hpp
+    Piro_ProductModelEval.hpp
     Piro_NOXSolver.hpp
     Piro_NOXSolver_Def.hpp
     Piro_LOCASolver.hpp
@@ -113,23 +114,6 @@ IF(PIRO_HAVE_EPETRA_STACK)
     )
 ENDIF()
 ENDIF()
-# Optional Rythmos Dependency
-IF (Piro_ENABLE_Rythmos)
-  APPEND_SET(HEADERS
-    Piro_RythmosSolver.hpp
-    Piro_RythmosStepperFactory.hpp
-    Piro_RythmosStepControlFactory.hpp
-    Piro_RythmosSolver_Def.hpp
-    Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
-    Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp
-    )
-IF(PIRO_HAVE_EPETRA_STACK)
-  APPEND_SET(HEADERS
-    Piro_Epetra_RythmosSolver.hpp
-  )
-  APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
-ENDIF()
-ENDIF()
 IF (Piro_ENABLE_Tempus)
   APPEND_SET(HEADERS
     Piro_TempusSolver.hpp
@@ -142,10 +126,6 @@ IF (Piro_ENABLE_Tempus)
     Piro_TempusStepControlFactory.hpp
     Piro_ObserverToTempusIntegrationObserverAdapter.hpp 
     Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp) 
-ENDIF()
-
-IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX)
-  APPEND_SET(HEADERS Piro_RythmosNOX_RowSumUpdater.hpp)
 ENDIF()
 
 # Optional StochasticGalerkin capability, depending upon Stokhos and NOX
@@ -182,11 +162,6 @@ ENDIF()
 #
 # B.2) Analysis Tools
 #
-
-IF (Piro_ENABLE_TriKota)
-  ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
-ENDIF()
-
 APPEND_SET(HEADERS
   Piro_PerformSolve.hpp
   Piro_PerformSolve_Def.hpp
@@ -202,11 +177,6 @@ ENDIF()
 
 APPEND_SET(HEADERS Piro_PerformAnalysis.hpp)
 APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
-
-IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND PIRO_HAVE_EPETRA_STACK)
-  APPEND_SET(HEADERS TriKota_MPDirectApplicInterface.hpp)
-  APPEND_SET(SOURCES TriKota_MPDirectApplicInterface.cpp)
-ENDIF()
 
 #
 # C) Define the targets for package's library(s)

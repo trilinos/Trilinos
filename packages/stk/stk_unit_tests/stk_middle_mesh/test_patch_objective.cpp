@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "create_mesh.hpp"
-#include "patch_distortion_objective.hpp"
-#include "patch_energy_objective.hpp"
-#include "regularized_distortion_metric.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/patch_distortion_objective.hpp"
+#include "stk_middle_mesh/patch_energy_objective.hpp"
+#include "stk_middle_mesh/regularized_distortion_metric.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -118,9 +118,9 @@ TEST(PatchObjective, computeDeriv)
 
   std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
   MeshEntityPtr vert         = find_closest_vert(mesh, utils::Point(0.5, 0.5));
-  opt::impl::ActiveVertData active(vert);
+  opt::impl::ActiveVertData active(mesh, vert);
 
-  auto metric = std::make_shared<RegularizedDistortionMetric>();
+  auto metric = std::make_shared<RegularizedDistortionMetric<double>>();
   PatchDistortionObjective obj(metric);
   opt::impl::PatchEnergyObjective obj2;
   // evaluate somewhere other than the initial position
@@ -149,9 +149,9 @@ TEST(PatchObjective, computeHessian)
 
   std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
   MeshEntityPtr vert         = find_closest_vert(mesh, utils::Point(0.5, 0.5));
-  opt::impl::ActiveVertData active(vert);
+  opt::impl::ActiveVertData active(mesh, vert);
 
-  auto metric = std::make_shared<RegularizedDistortionMetric>();
+  auto metric = std::make_shared<RegularizedDistortionMetric<double>>();
   PatchDistortionObjective obj(metric);
 
   opt::impl::PatchEnergyObjective obj2;
@@ -180,9 +180,9 @@ TEST(PatchObjective, Parameterization)
 
   std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
   MeshEntityPtr vert         = find_closest_vert(mesh, utils::Point(0.5, 0.5));
-  opt::impl::ActiveVertData active(vert);
+  opt::impl::ActiveVertData active(mesh, vert);
 
-  auto metric = std::make_shared<RegularizedDistortionMetric>();
+  auto metric = std::make_shared<RegularizedDistortionMetric<double>>();
   // auto f = [](MeshEntityPtr) { return true; };
   PatchDistortionObjective obj(metric);
   obj.set_active_patch(active);

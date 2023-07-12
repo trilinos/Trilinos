@@ -66,6 +66,10 @@
 #ifdef HAVE_STRATIMIKOS_IFPACK
 #  include "Thyra_IfpackPreconditionerFactory.hpp"
 #endif
+#ifdef HAVE_STRATIMIKOS_IFPACK2
+#  include "Thyra_Ifpack2PreconditionerFactory.hpp"
+#  include "Tpetra_CrsMatrix.hpp"
+#endif
 #ifdef HAVE_STRATIMIKOS_ML
 #  include "Thyra_MLPreconditionerFactory.hpp"
 #endif
@@ -94,12 +98,13 @@ namespace Stratimikos {
 
 template<class Scalar>
 LinearSolverBuilder<Scalar>::LinearSolverBuilder(
-  const std::string    &paramsXmlFileName_in
-  ,const std::string   &extraParamsXmlString_in
-  ,const std::string   &paramsUsedXmlOutFileName_in
-  ,const std::string   &paramsXmlFileNameOption_in
-  ,const std::string   &extraParamsXmlStringOption_in
-  ,const std::string   &paramsUsedXmlOutFileNameOption_in
+  const std::string &paramsXmlFileName_in,
+  const std::string &extraParamsXmlString_in,
+  const std::string &paramsUsedXmlOutFileName_in,
+  const std::string &paramsXmlFileNameOption_in,
+  const std::string &extraParamsXmlStringOption_in,
+  const std::string &paramsUsedXmlOutFileNameOption_in,
+  const bool &replaceDuplicateFactories_in
   )
   :paramsXmlFileName_(paramsXmlFileName_in)
   ,extraParamsXmlString_(extraParamsXmlString_in)
@@ -107,6 +112,7 @@ LinearSolverBuilder<Scalar>::LinearSolverBuilder(
   ,paramsXmlFileNameOption_(paramsXmlFileNameOption_in)
   ,extraParamsXmlStringOption_(extraParamsXmlStringOption_in)
   ,paramsUsedXmlOutFileNameOption_(paramsUsedXmlOutFileNameOption_in)
+  ,replaceDuplicateFactories_(replaceDuplicateFactories_in)
   ,enableDelayedSolverConstruction_(EnableDelayedSolverConstruction_default)
 {
   this->initializeDefaults();
@@ -133,8 +139,17 @@ void LinearSolverBuilder<Scalar>::setLinearSolveStrategyFactory(
   const bool makeDefault
   )
 {
-  validLowsfNames_.push_back(solveStrategyName);
-  lowsfArray_.push_back(solveStrategyFactory);
+  const int existingNameIdx =
+    this->getAndAssertExistingFactoryNameIdx("setLinearSolveStrategyFactory()",
+      validLowsfNames_(), solveStrategyName);
+  if (existingNameIdx >= 0) {
+    validLowsfNames_[existingNameIdx] = solveStrategyName;
+    lowsfArray_[existingNameIdx] = solveStrategyFactory;
+  }
+  else {
+    validLowsfNames_.push_back(solveStrategyName);
+    lowsfArray_.push_back(solveStrategyFactory);
+  }
   validParamList_ = Teuchos::null;
   if (makeDefault) {
     setDefaultLinearSolveStrategyFactoryName(solveStrategyName);
@@ -152,14 +167,23 @@ void LinearSolverBuilder<Scalar>::setDefaultLinearSolveStrategyFactoryName(
 
 template<class Scalar>
 void LinearSolverBuilder<Scalar>::setPreconditioningStrategyFactory(
-  const RCP<const AbstractFactory<Thyra::PreconditionerFactoryBase<Scalar> > >
-  &precStrategyFactory,
+  const RCP<const AbstractFactory<Thyra::PreconditionerFactoryBase<Scalar>>>
+    &precStrategyFactory,
   const std::string &precStrategyName,
   const bool makeDefault
   )
 {
-  validPfNames_.push_back(precStrategyName);
-  pfArray_.push_back(precStrategyFactory);
+  const int existingNameIdx =
+    this->getAndAssertExistingFactoryNameIdx("setPreconditioningStrategyFactory()",
+      validPfNames_(), precStrategyName);
+  if (existingNameIdx >= 0) {
+    validPfNames_[existingNameIdx] = precStrategyName;
+    pfArray_[existingNameIdx-1] = precStrategyFactory; // We offset by -1 since "None" is first!
+  }
+  else {
+    validPfNames_.push_back(precStrategyName);
+    pfArray_.push_back(precStrategyFactory);
+  }
   validParamList_ = Teuchos::null;
   if (makeDefault) {
     setDefaultPreconditioningStrategyFactoryName(precStrategyName);
@@ -517,6 +541,15 @@ void LinearSolverBuilder<Scalar>::initializeDefaults()
     );
 #endif
 
+#ifdef HAVE_STRATIMIKOS_IFPACK2
+  setPreconditioningStrategyFactory(
+    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
+    Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),
+    "Ifpack2", true
+    );
+#endif
+
+
   // Note: Above, the last PF object set will be the default!
 
 }
@@ -591,6 +624,14 @@ void LinearSolverBuilder<double>::initializeDefaults()
     );
 #endif
 
+#ifdef HAVE_STRATIMIKOS_IFPACK2
+  setPreconditioningStrategyFactory(
+    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
+    Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),
+    "Ifpack2", true
+    );
+#endif
+
 #ifdef HAVE_STRATIMIKOS_IFPACK
   setPreconditioningStrategyFactory(
     abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
@@ -603,6 +644,7 @@ void LinearSolverBuilder<double>::initializeDefaults()
 
 }
 
+
 template<class Scalar>
 void LinearSolverBuilder<Scalar>::justInTimeInitialize() const
 {
@@ -611,6 +653,25 @@ void LinearSolverBuilder<Scalar>::justInTimeInitialize() const
     // Create the validators
     this->getValidParameters();
   }
+}
+
+
+template<class Scalar>
+int LinearSolverBuilder<Scalar>::getAndAssertExistingFactoryNameIdx(
+  const std::string &setFunctionName, const Teuchos::ArrayView<std::string> namesArray,
+  const std::string &name) const
+{
+  const int existingNameIdx =
+    LinearSolverBuilderHelpers::existingNameIndex(namesArray, name);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (!replaceDuplicateFactories_ && existingNameIdx >= 0), std::logic_error,
+    "ERROR: "<<setFunctionName<<": the name='"<<name<<"' already exists"
+    << " at index="<<existingNameIdx<<"!\n"
+    << "\n"
+    << "TIP: To allow duplicates, change the property replaceDuplicateFactories from"
+    << " false to true by calling <thisObject>.replaceDuplicateFactories(true)"
+    << " where <thisObject> is of type Stratimikos::LinearSolverBuilder<Scalar>!");
+  return existingNameIdx;
 }
 
 

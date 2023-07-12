@@ -50,11 +50,11 @@ void output_field_with_mesh(const stk::mesh::BulkData & mesh, const stk::mesh::P
 
 std::string create_file_name(const std::string & fileBaseName, const int fileIndex)
 {
-  ThrowAssert(fileIndex >= 0);
+  STK_ThrowAssert(fileIndex >= 0);
   if (fileIndex < 1)
     return fileBaseName + ".e";
 
-  ThrowAssert(fileIndex <= 9998);
+  STK_ThrowAssert(fileIndex <= 9998);
   char counterChar[32] = {'\0'};
   std::snprintf(counterChar, 32, "%.4d", fileIndex+1);
   const std::string filename = fileBaseName + ".e-s" + std::string(counterChar);
@@ -139,7 +139,7 @@ write_facets( const int dim, const Faceted_Surface & facetedSurface, const std::
 
     for ( auto&& facet : facets ) {
       for ( int j = 0; j < nodes_per_elem; ++j ) {
-        const Vector3d & vert = facet->facet_vertex(j);
+        const stk::math::Vector3d & vert = facet->facet_vertex(j);
         xyz.push_back(vert[0]);
         xyz.push_back(vert[1]);
         if (3 == dim) xyz.push_back(vert[2]);

@@ -53,7 +53,7 @@
 #include "MueLu_Level.hpp"
 
 #include <MueLu_AmalgamationInfo.hpp>
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 
@@ -155,7 +155,7 @@ namespace MueLuTests {
     level.Request(*dropFact);
     dropFact->Build(level);
     graph = level.Get<RCP<LWGraph_kokkos> >("Graph", dropFact.get());
-    RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(*graph));
+    RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
     GO numAggs = aggregates->GetNumAggregates();
     ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs);
     ArrayRCP<LO> aggStart;

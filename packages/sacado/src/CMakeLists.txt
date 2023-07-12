@@ -252,8 +252,6 @@ ENDIF()
 #mpl
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mpl)
 SET(HEADERS ${HEADERS}
-  mpl/Sacado_mpl_is_same.hpp
-  mpl/Sacado_mpl_is_convertible.hpp
   mpl/Sacado_mpl_enable_if.hpp
   mpl/Sacado_mpl_disable_if.hpp
   mpl/Sacado_mpl_if.hpp
@@ -283,7 +281,6 @@ SET(HEADERS ${HEADERS}
   mpl/Sacado_mpl_type_wrap.hpp
   mpl/Sacado_mpl_is_placeholder.hpp
   mpl/Sacado_mpl_integral_nonzero_constant.hpp
-  mpl/Sacado_mpl_void.hpp
   mpl/Sacado_mpl_has_equal_to.hpp
   )
 

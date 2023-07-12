@@ -89,11 +89,7 @@ int main(int argc, char *argv[]) {
       Piro::providerFromReferenceAcceptingConstructor<SaveEigenData_Epetra>());
 #endif /* HAVE_PIRO_NOX */
 
-#ifdef HAVE_PIRO_RYTHMOS
-  int numTests=5;
-#else
   int numTests=3;
-#endif
   for (int iTest=0; iTest<numTests; iTest++) {
 
     if (doAll) {
@@ -101,8 +97,6 @@ int main(int argc, char *argv[]) {
        case 0: inputFile="input_Solve_NOX_1.xml"; break;
        case 1: inputFile="input_Solve_NOX_Adjoint.xml"; break;
        case 2: inputFile="input_Solve_LOCA_1.xml"; break;
-       case 3: inputFile="input_Solve_Rythmos_1.xml"; break;
-       case 4: inputFile="input_Solve_Rythmos_1new.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }

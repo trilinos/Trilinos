@@ -65,7 +65,7 @@
 #include "MueLu_BelosSmoother_fwd.hpp"
 #endif
 
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_STRATIMIKOS)
 #include "MueLu_StratimikosSmoother_fwd.hpp"
 #endif
 

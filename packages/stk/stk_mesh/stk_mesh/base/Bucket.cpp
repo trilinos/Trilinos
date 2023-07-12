@@ -183,6 +183,9 @@ void setup_connectivity(stk::topology bucket_topology,
 
 namespace impl {
 
+static const unsigned default_initial_bucket_capacity = 512;
+static const unsigned default_maximum_bucket_capacity = 512;
+
 struct OverwriteEntityFunctor
 {
   OverwriteEntityFunctor(unsigned old_ordinal, unsigned new_ordinal) : m_old_ordinal(old_ordinal), m_new_ordinal(new_ordinal) {}
@@ -207,6 +210,10 @@ struct OverwriteEntityFunctor
 }
 
 //----------------------------------------------------------------------
+
+unsigned get_default_bucket_capacity() { return impl::default_maximum_bucket_capacity; }
+unsigned get_default_initial_bucket_capacity() { return impl::default_initial_bucket_capacity; }
+unsigned get_default_maximum_bucket_capacity() { return impl::default_maximum_bucket_capacity; }
 
 bool raw_part_equal( const unsigned * lhs , const unsigned * rhs )
 {
@@ -240,22 +247,24 @@ bool BucketLess::operator()( const unsigned * lhs ,
 
 //----------------------------------------------------------------------
 
-Bucket::Bucket(BulkData & arg_mesh,
-               EntityRank arg_entity_rank,
-               const std::vector<unsigned> & arg_key,
-               size_t arg_capacity,
-               unsigned bucket_id)
-  : m_mesh(arg_mesh),
-    m_entity_rank(arg_entity_rank),
+Bucket::Bucket(BulkData & mesh,
+               EntityRank entityRank,
+               const std::vector<unsigned> & key,
+               unsigned initialCapacity,
+               unsigned maximumCapacity,
+               unsigned bucketId)
+  : m_mesh(mesh),
+    m_entity_rank(entityRank),
     m_topology(),
-    m_key(arg_key),
+    m_key(key),
     m_partOrdsBeginEnd(m_key.data()+1,m_key.data()+m_key[0]),
-    m_capacity(arg_capacity),
+    m_capacity(initialCapacity),
+    m_maxCapacity(maximumCapacity),
     m_size(0),
-    m_bucket_id(bucket_id),
+    m_bucket_id(bucketId),
     m_ngp_bucket_id(INVALID_BUCKET_ID),
     m_is_modified(true),
-    m_entities(arg_capacity),
+    m_entities(maximumCapacity),
     m_partition(nullptr),
     m_node_kind(INVALID_CONNECTIVITY_TYPE),
     m_edge_kind(INVALID_CONNECTIVITY_TYPE),
@@ -265,23 +274,24 @@ Bucket::Bucket(BulkData & arg_mesh,
     m_fixed_edge_connectivity(),
     m_fixed_face_connectivity(),
     m_fixed_element_connectivity(),
-    m_dynamic_node_connectivity(arg_entity_rank, &m_mesh),
-    m_dynamic_edge_connectivity(arg_entity_rank, &m_mesh),
-    m_dynamic_face_connectivity(arg_entity_rank, &m_mesh),
-    m_dynamic_element_connectivity(arg_entity_rank, &m_mesh),
-    m_dynamic_other_connectivity(arg_entity_rank, &m_mesh),
+    m_dynamic_node_connectivity(entityRank, &m_mesh),
+    m_dynamic_edge_connectivity(entityRank, &m_mesh),
+    m_dynamic_face_connectivity(entityRank, &m_mesh),
+    m_dynamic_element_connectivity(entityRank, &m_mesh),
+    m_dynamic_other_connectivity(entityRank, &m_mesh),
     m_owned(has_superset(*this, m_mesh.mesh_meta_data().locally_owned_part())),
     m_shared(has_superset(*this, m_mesh.mesh_meta_data().globally_shared_part())),
     m_aura(has_superset(*this, m_mesh.mesh_meta_data().aura_part()))
 {
-  STK_ThrowAssertMsg(arg_capacity != 0, "Buckets should never have zero capacity");
+  STK_ThrowAssertMsg(initialCapacity != 0, "Buckets should never have zero capacity");
+  STK_ThrowAssertMsg(initialCapacity <= maximumCapacity, "Initial capacity cannot exceed the maximum capacity");
 
-  m_topology = get_topology(m_mesh.mesh_meta_data(), arg_entity_rank, superset_part_ordinals());
+  m_topology = get_topology(m_mesh.mesh_meta_data(), entityRank, superset_part_ordinals());
 
-  setup_connectivity(m_topology, arg_entity_rank, stk::topology::NODE_RANK, m_node_kind, m_fixed_node_connectivity);
-  setup_connectivity(m_topology, arg_entity_rank, stk::topology::EDGE_RANK, m_edge_kind, m_fixed_edge_connectivity);
-  setup_connectivity(m_topology, arg_entity_rank, stk::topology::FACE_RANK, m_face_kind, m_fixed_face_connectivity);
-  setup_connectivity(m_topology, arg_entity_rank, stk::topology::ELEMENT_RANK, m_element_kind, m_fixed_element_connectivity);
+  setup_connectivity(m_topology, entityRank, stk::topology::NODE_RANK, m_node_kind, m_fixed_node_connectivity);
+  setup_connectivity(m_topology, entityRank, stk::topology::EDGE_RANK, m_edge_kind, m_fixed_edge_connectivity);
+  setup_connectivity(m_topology, entityRank, stk::topology::FACE_RANK, m_face_kind, m_fixed_face_connectivity);
+  setup_connectivity(m_topology, entityRank, stk::topology::ELEMENT_RANK, m_element_kind, m_fixed_element_connectivity);
 
   m_parts.reserve(m_key.size());
   supersets(m_parts);
@@ -309,6 +319,13 @@ size_t Bucket::memory_size_in_bytes() const
   bytes += m_dynamic_element_connectivity.heap_memory_in_bytes();
   bytes += m_dynamic_other_connectivity.heap_memory_in_bytes();
   return bytes;
+}
+
+void
+Bucket::grow_capacity()
+{
+  STK_ThrowAssert(m_capacity < std::numeric_limits<unsigned>::max()/2);
+  m_capacity = std::min(2 * m_capacity, m_maxCapacity);
 }
 
 void Bucket::change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
@@ -675,6 +692,11 @@ void Bucket::reset_entity_location(Entity entity, unsigned to_ordinal, const Fie
                                      from_bucket.m_bucket_id, from_ordinal, fields);
 }
 
+void Bucket::reset_empty_space(const FieldVector & fields)
+{
+  m_mesh.reset_empty_field_data_callback(m_entity_rank, m_bucket_id, m_size, m_capacity, fields);
+}
+
 void Bucket::add_entity(Entity entity)
 {
   STK_ThrowAssert(m_size < m_capacity);
@@ -688,7 +710,7 @@ void Bucket::add_entity(Entity entity)
     mesh().set_mesh_index(entity, this, m_size);
   }
 
-  this->mesh().add_entity_callback(entity_rank(), bucket_id(), m_size);
+  this->mesh().add_entity_callback(entity_rank(), bucket_id(), capacity(), m_size);
   ++m_size;
 
   AddEntityFunctor functor;
@@ -739,7 +761,7 @@ void Bucket::copy_entity(Entity entity)
   Bucket* old_bucket = mesh().bucket_ptr(entity);
   const unsigned old_ordinal = mesh().bucket_ordinal(entity);
 
-  this->mesh().add_entity_callback(this->entity_rank(), this->bucket_id(), m_size);
+  mesh().add_entity_callback(entity_rank(), bucket_id(), capacity(), m_size);
   reset_entity_location(entity, m_size);
 
   ++m_size;

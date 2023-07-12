@@ -211,6 +211,5 @@ struct SPADD_NUMERIC<KernelHandle, a_size_view_t, a_lno_view_t, a_scalar_view_t,
       false, true>;
 
 #include <KokkosSparse_spadd_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spadd_numeric_eti_spec_decl.hpp>
 
 #endif

@@ -32,7 +32,7 @@ AuxMetaData &
 AuxMetaData::get(const stk::mesh::MetaData & stk_meta)
 {
   AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
-  ThrowRequireMsg(nullptr != aux_meta, "AuxMetaData not found on MetaData.");
+  STK_ThrowRequireMsg(nullptr != aux_meta, "AuxMetaData not found on MetaData.");
   return *aux_meta;
 }
 
@@ -46,7 +46,7 @@ AuxMetaData &
 AuxMetaData::create(stk::mesh::MetaData & stk_meta)
 {
   AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
-  ThrowRequireMsg(nullptr == aux_meta, "AuxMetaData::create should be caled only once per MetaData.");
+  STK_ThrowRequireMsg(nullptr == aux_meta, "AuxMetaData::create should be caled only once per MetaData.");
   if (nullptr == aux_meta)
   {
     aux_meta = new AuxMetaData(stk_meta);
@@ -73,8 +73,8 @@ AuxMetaData::AuxMetaData(stk::mesh::MetaData & stk_meta)
   }
   else
   {
-    ThrowRequireMsg(my_meta.spatial_dimension() > 0, "For non-Fmwk usage, AuxMetaData cannot be created until after the spatial_dimension is set on the stk::mesh::MetaData.");
-    ThrowRequireMsg(!my_meta.is_commit(), "For non-Fmwk usage, AuxMetaData must be created before the stk::mesh::MetaData is committed.");
+    STK_ThrowRequireMsg(my_meta.spatial_dimension() > 0, "For non-Fmwk usage, AuxMetaData cannot be created until after the spatial_dimension is set on the stk::mesh::MetaData.");
+    STK_ThrowRequireMsg(!my_meta.is_commit(), "For non-Fmwk usage, AuxMetaData must be created before the stk::mesh::MetaData is committed.");
     my_active_part           = &my_meta.declare_part("ACTIVE_CONTEXT_BIT");
     my_exposed_boundary_part = &my_meta.declare_part("EXPOSED_BOUNDARY_CONTEXT_BIT", my_meta.side_rank());
     my_block_boundary_part   = &my_meta.declare_part("BLOCK_BOUNDARY_CONTEXT_BIT", my_meta.side_rank());
@@ -126,12 +126,12 @@ AuxMetaData::set_inducer_functions(
 
 stk::mesh::Part & AuxMetaData::block_boundary_part() const
 {
-  ThrowAssert(nullptr != my_block_boundary_part); return *my_block_boundary_part;
+  STK_ThrowAssert(nullptr != my_block_boundary_part); return *my_block_boundary_part;
 }
 
 stk::mesh::Part & AuxMetaData::exposed_boundary_part() const
 {
-  ThrowAssert(nullptr != my_exposed_boundary_part); return *my_exposed_boundary_part;
+  STK_ThrowAssert(nullptr != my_exposed_boundary_part); return *my_exposed_boundary_part;
 }
 
 bool
@@ -152,7 +152,7 @@ FieldRef
 AuxMetaData::get_field( const stk::mesh::EntityRank obj_type, const std::string& name ) const
 {
   stk::mesh::FieldBase* field_ptr = my_meta.get_field(obj_type, name);
-  ThrowRequireMsg(NULL != field_ptr, "Field \"" << name << "\" not found.");
+  STK_ThrowRequireMsg(NULL != field_ptr, "Field \"" << name << "\" not found.");
   return FieldRef(field_ptr);
 }
 
@@ -190,7 +190,7 @@ AuxMetaData::get_part( const std::string& name ) const
   stk::mesh::Part * part = my_meta.get_part(name);
   // If the part is not found see if the name is actually a Fmwk alias
   if (!part && is_fmwk) part = fmwk_get_iopart(name);
-  ThrowRequireMsg(part, "Could not find part " << name;);
+  STK_ThrowRequireMsg(part, "Could not find part " << name;);
   return *part;
 }
 
@@ -312,7 +312,7 @@ AuxMetaData::declare_field(
   else if (value_type == typeid(uint64_t))
     field = &my_meta.declare_field<uint64_t>(entity_rank, fld_name, num_states);
   else {
-    ThrowRequireMsg(false, "Unhandled primitive type " << value_type.name());
+    STK_ThrowRequireMsg(false, "Unhandled primitive type " << value_type.name());
   }
 
   return FieldRef(field);
@@ -402,7 +402,7 @@ FieldRef AuxMetaData::get_current_coordinates() const
   if (!my_current_coordinates.valid())
   {
     const stk::mesh::FieldBase * meta_coords = my_meta.coordinate_field();
-    ThrowRequireMsg(nullptr != meta_coords, "Coordinates must be defined before calling AuxMetaData::get_current_coordinates().");
+    STK_ThrowRequireMsg(nullptr != meta_coords, "Coordinates must be defined before calling AuxMetaData::get_current_coordinates().");
     my_current_coordinates = FieldRef(meta_coords);
   }
   return my_current_coordinates;

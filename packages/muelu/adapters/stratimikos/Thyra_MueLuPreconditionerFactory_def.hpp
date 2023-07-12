@@ -52,10 +52,9 @@
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
 // This is not as general as possible, but should be good enough for most builds.
-#if (defined(HAVE_MUELU_TPETRA) && \
-     ((defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
-      (!defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
-      (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))))
+#if((defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+    (!defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+    (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)))
 # define MUELU_CAN_USE_MIXED_PRECISION
 #endif
 
@@ -85,17 +84,15 @@ namespace Thyra {
     // typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
     // typedef Thyra::SpmdVectorSpaceBase<Scalar>                               ThyVSBase;
 
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>         TpCrsMat;
     typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>       tOp;
     typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>         tV;
     typedef Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       thyTpV;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>    tMV;
     typedef Tpetra::MultiVector<Magnitude, LocalOrdinal, GlobalOrdinal, Node> tMagMV;
-# if defined(MUELU_CAN_USE_MIXED_PRECISION)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
     typedef typename Teuchos::ScalarTraits<Magnitude>::halfPrecision          HalfMagnitude;
     typedef Tpetra::MultiVector<HalfMagnitude, LocalOrdinal, GlobalOrdinal, Node> tHalfMagMV;
-# endif
 #endif
 
     if (paramList.isParameter(parameterName)) {
@@ -126,7 +123,6 @@ namespace Thyra {
         paramList.set<RCP<XpMagMultVec> >(parameterName, X);
         return true;
       }
-#ifdef HAVE_MUELU_TPETRA
       else if (paramList.isType<RCP<TpCrsMat> >(parameterName)) {
         RCP<TpCrsMat> tM = paramList.get<RCP<TpCrsMat> >(parameterName);
         paramList.remove(parameterName);
@@ -159,7 +155,6 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
         return true;
       }
-# endif
 #endif
       else if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName) ||
                (paramList.isType<RCP<const ThyLinOpBase> >(parameterName) && !
@@ -173,13 +168,11 @@ namespace Thyra {
         RCP<const Thyra::VectorBase<Scalar> > diag = thyM->getDiag();
 
         RCP<const XpVec> xpDiag;
-#ifdef HAVE_MUELU_TPETRA
         if (!rcp_dynamic_cast<const thyTpV>(diag).is_null()) {
           RCP<const tV> tDiag = Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(diag);
           if (!tDiag.is_null())
             xpDiag = Xpetra::toXpetra(tDiag);
         }
-#endif
         TEUCHOS_ASSERT(!xpDiag.is_null());
         RCP<XpMat> M = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(xpDiag);
         paramList.set<RCP<XpMat> >(parameterName, M);
@@ -236,7 +229,6 @@ namespace Thyra {
     typedef Thyra::DiagonalLinearOpBase<Scalar>                              ThyDiagLinOpBase;
     typedef Thyra::SpmdVectorSpaceBase<Scalar>                               ThyVSBase;
 
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>         TpCrsMat;
     typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>       tOp;
     typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>         tV;
@@ -246,7 +238,6 @@ namespace Thyra {
 #if defined(MUELU_CAN_USE_MIXED_PRECISION)
     typedef typename Teuchos::ScalarTraits<Magnitude>::halfPrecision          HalfMagnitude;
     typedef Tpetra::MultiVector<HalfMagnitude, LocalOrdinal, GlobalOrdinal, Node> tHalfMagMV;
-# endif
 #endif
 #if defined(HAVE_MUELU_EPETRA)
     typedef Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>                  XpEpCrsMat;
@@ -280,7 +271,6 @@ namespace Thyra {
         paramList.set<RCP<XpMagMultVec> >(parameterName, X);
         return true;
       }
-#ifdef HAVE_MUELU_TPETRA
       else if (paramList.isType<RCP<TpCrsMat> >(parameterName)) {
         RCP<TpCrsMat> tM = paramList.get<RCP<TpCrsMat> >(parameterName);
         paramList.remove(parameterName);
@@ -313,7 +303,6 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
         return true;
       }
-# endif
 #endif
 #ifdef HAVE_MUELU_EPETRA
       else if (paramList.isType<RCP<Epetra_CrsMatrix> >(parameterName)) {
@@ -348,13 +337,11 @@ namespace Thyra {
         RCP<const Thyra::VectorBase<Scalar> > diag = thyM->getDiag();
 
         RCP<const XpVec> xpDiag;
-#ifdef HAVE_MUELU_TPETRA
         if (!rcp_dynamic_cast<const thyTpV>(diag).is_null()) {
           RCP<const tV> tDiag = Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(diag);
           if (!tDiag.is_null())
             xpDiag = Xpetra::toXpetra(tDiag);
         }
-#endif
 #ifdef HAVE_MUELU_EPETRA
         if (xpDiag.is_null()) {
           RCP<const Epetra_Comm> comm = Thyra::get_Epetra_Comm(*rcp_dynamic_cast<const ThyVSBase>(thyM->range())->getComm());
@@ -416,14 +403,11 @@ namespace Thyra {
   bool MueLuPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isCompatible(const LinearOpSourceBase<Scalar>& fwdOpSrc) const {
     const RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc.getOp();
 
-#ifdef HAVE_MUELU_TPETRA
     if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isTpetra(fwdOp)) return true;
-#endif
 
 #ifdef HAVE_MUELU_EPETRA
-      if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
+    if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
 #endif
-
 
     if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isBlockedOperator(fwdOp)) return true;
 

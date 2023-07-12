@@ -4,7 +4,7 @@ IF(Trilinos_ENABLE_STKUtil)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_util)
 ENDIF()
 
-IF(Trilinos_ENABLE_KokkosCore)
+IF(Trilinos_ENABLE_Kokkos)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_math)
 ENDIF()
 
@@ -35,12 +35,20 @@ IF(Trilinos_ENABLE_STKSearch)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_search)
 ENDIF()
 
+IF(Trilinos_ENABLE_STKSearchUtil)
+TRIBITS_ADD_TEST_DIRECTORIES(stk_search_util)
+ENDIF()
+
 IF(Trilinos_ENABLE_STKMiddle_mesh)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_middle_mesh)
 ENDIF()
 
 IF(Trilinos_ENABLE_STKTransfer)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_transfer)
+ENDIF()
+
+IF(Trilinos_ENABLE_STKTransferUtil AND Trilinos_ENABLE_STKIO)
+TRIBITS_ADD_TEST_DIRECTORIES(stk_transfer_util)
 ENDIF()
 
 IF(Trilinos_ENABLE_STKBalance)

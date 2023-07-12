@@ -23,82 +23,66 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
-  ViewTypeA a("A", N);
-
-  typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
+  view_stride_adapter<ViewTypeA> a("a", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(1.0, randStart, randEnd);
-  Kokkos::fill_random(a, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
-  Kokkos::deep_copy(h_a, a);
+  Kokkos::deep_copy(a.h_base, a.d_base);
 
-  typename ViewTypeA::const_type c_a = a;
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   typename AT::mag_type expected_result = 0;
   for (int i = 0; i < N; i++) {
-    expected_result += AT::abs(h_a(i)) * AT::abs(h_a(i));
+    expected_result += AT::abs(a.h_view(i)) * AT::abs(a.h_view(i));
   }
-  expected_result = Kokkos::Details::ArithTraits<typename AT::mag_type>::sqrt(
-      expected_result);
+  expected_result =
+      Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result);
 
-  typename AT::mag_type nonconst_result = KokkosBlas::nrm2(a);
+  typename AT::mag_type nonconst_result = KokkosBlas::nrm2(a.d_view);
   EXPECT_NEAR_KK(nonconst_result, expected_result, eps * expected_result);
 
-  typename AT::mag_type const_result = KokkosBlas::nrm2(c_a);
+  typename AT::mag_type const_result = KokkosBlas::nrm2(a.d_view_const);
   EXPECT_NEAR_KK(const_result, expected_result, eps * expected_result);
 }
 
 template <class ViewTypeA, class Device>
 void impl_test_nrm2_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-
-  typename vfA_type::BaseType b_a("A", N, K);
-
-  ViewTypeA a = vfA_type::view(b_a);
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-
-  typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
-
-  typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
+  view_stride_adapter<ViewTypeA> a("A", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(1.0, randStart, randEnd);
-  Kokkos::fill_random(b_a, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
-  Kokkos::deep_copy(h_b_a, b_a);
-
-  typename ViewTypeA::const_type c_a = a;
+  Kokkos::deep_copy(a.h_base, a.d_base);
 
   typename AT::mag_type* expected_result = new typename AT::mag_type[K];
   for (int j = 0; j < K; j++) {
     expected_result[j] = typename AT::mag_type();
     for (int i = 0; i < N; i++) {
-      expected_result[j] += AT::abs(h_a(i, j)) * AT::abs(h_a(i, j));
+      expected_result[j] += AT::abs(a.h_view(i, j)) * AT::abs(a.h_view(i, j));
     }
     expected_result[j] =
-        Kokkos::Details::ArithTraits<typename AT::mag_type>::sqrt(
-            expected_result[j]);
+        Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   Kokkos::View<typename AT::mag_type*, Kokkos::HostSpace> r("Dot::Result", K);
 
-  KokkosBlas::nrm2(r, a);
+  KokkosBlas::nrm2(r, a.d_view);
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     typename AT::mag_type nonconst_result = r(k);
@@ -106,7 +90,7 @@ void impl_test_nrm2_mv(int N, int K) {
                    eps * expected_result[k]);
   }
 
-  KokkosBlas::nrm2(r, c_a);
+  KokkosBlas::nrm2(r, a.d_view_const);
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     typename AT::mag_type const_result = r(k);
@@ -139,17 +123,14 @@ int test_nrm2() {
   // Test::impl_test_nrm2<view_type_a_lr, Device>(132231);
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
-    Test::impl_test_nrm2<view_type_a_ls, Device>(0);
-    Test::impl_test_nrm2<view_type_a_ls, Device>(13);
-    Test::impl_test_nrm2<view_type_a_ls, Device>(1024);
-    // Test::impl_test_nrm2<view_type_a_ls, Device>(132231);
-  #endif
-  */
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+  Test::impl_test_nrm2<view_type_a_ls, Device>(0);
+  Test::impl_test_nrm2<view_type_a_ls, Device>(13);
+  Test::impl_test_nrm2<view_type_a_ls, Device>(1024);
+  // Test::impl_test_nrm2<view_type_a_ls, Device>(132231);
+#endif
 
   return 1;
 }
@@ -178,18 +159,15 @@ int test_nrm2_mv() {
   // Test::impl_test_nrm2_mv<view_type_a_lr, Device>(132231,5);
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
-  view_type_a_ls; Test::impl_test_nrm2_mv<view_type_a_ls, Device>(0, 5);
-    Test::impl_test_nrm2_mv<view_type_a_ls, Device>(13, 5);
-    Test::impl_test_nrm2_mv<view_type_a_ls, Device>(1024, 5);
-    Test::impl_test_nrm2_mv<view_type_a_ls, Device>(789, 1);
-    // Test::impl_test_nrm2_mv<view_type_a_ls, Device>(132231,5);
-  #endif
-  */
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
+  Test::impl_test_nrm2_mv<view_type_a_ls, Device>(0, 5);
+  Test::impl_test_nrm2_mv<view_type_a_ls, Device>(13, 5);
+  Test::impl_test_nrm2_mv<view_type_a_ls, Device>(1024, 5);
+  Test::impl_test_nrm2_mv<view_type_a_ls, Device>(789, 1);
+  // Test::impl_test_nrm2_mv<view_type_a_ls, Device>(132231,5);
+#endif
 
   return 1;
 }

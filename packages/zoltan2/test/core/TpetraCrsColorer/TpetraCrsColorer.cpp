@@ -15,7 +15,7 @@ public:
   using execution_space_t = typename matrix_t::device_type::execution_space;
 
   ///////////////////////////////////////////////////////////
-  // Construct the test:  
+  // Construct the test:
   //   Read or generate a matrix (JBlock) with default range and domain maps
   //   Construct identical matrix (JCyclic) with cyclic range and domain maps
 
@@ -28,28 +28,27 @@ public:
 
     // Process command line arguments
     bool distributeInput = true;
-    std::string filename = "";
     size_t xdim = 10, ydim = 11, zdim = 12;
 
     Teuchos::CommandLineProcessor cmdp(false, false);
-    cmdp.setOption("file", &filename, 
+    cmdp.setOption("file", &matrixFileName,
                    "Name of the Matrix Market file to use");
-    cmdp.setOption("xdim", &xdim, 
+    cmdp.setOption("xdim", &xdim,
                    "Number of nodes in x-direction for generated matrix");
-    cmdp.setOption("ydim", &ydim, 
+    cmdp.setOption("ydim", &ydim,
                    "Number of nodes in y-direction for generated matrix");
-    cmdp.setOption("zdim", &zdim, 
+    cmdp.setOption("zdim", &zdim,
                    "Number of nodes in z-direction for generated matrix");
-    cmdp.setOption("distribute", "no-distribute", &distributeInput, 
+    cmdp.setOption("distribute", "no-distribute", &distributeInput,
                    "Should Zoltan2 distribute the matrix as it is read?");
     cmdp.setOption("symmetric", "non-symmetric", &symmetric,
                    "Is the matrix symmetric?");
     cmdp.parse(narg, arg);
 
     // Get and store a matrix
-    if (filename != "") {
+    if (matrixFileName != "") {
       // Read from a file
-      UserInputForTests uinput(".", filename, comm, true, distributeInput);
+      UserInputForTests uinput(".", matrixFileName, comm, true, distributeInput);
       JBlock = uinput.getUITpetraCrsMatrix();
     }
     else {
@@ -67,7 +66,7 @@ public:
                                JBlock->getGlobalNumRows());
     Teuchos::Array<gno_t> indices(nIndices);
 
-    Teuchos::RCP<const map_t> vMapCyclic = 
+    Teuchos::RCP<const map_t> vMapCyclic =
                  getCyclicMap(JBlock->getGlobalNumCols(), indices, np-1, comm);
     Teuchos::RCP<const map_t> wMapCyclic =
                  getCyclicMap(JBlock->getGlobalNumRows(), indices, np-2, comm);
@@ -75,12 +74,12 @@ public:
     // Fill JBlock with random numbers for a better test.
     JBlock->resumeFill();
 
-    using IST = typename Kokkos::Details::ArithTraits<zscalar_t>::val_type;
-    using pool_type = 
+    using IST = typename Kokkos::ArithTraits<zscalar_t>::val_type;
+    using pool_type =
           Kokkos::Random_XorShift64_Pool<execution_space_t>;
     pool_type rand_pool(static_cast<uint64_t>(me));
 
-    Kokkos::fill_random(JBlock->getLocalMatrixDevice().values, rand_pool, 
+    Kokkos::fill_random(JBlock->getLocalMatrixDevice().values, rand_pool,
                         static_cast<IST>(1.), static_cast<IST>(9999.));
     JBlock->fillComplete();
 
@@ -103,21 +102,31 @@ public:
   }
 
   ////////////////////////////////////////////////////////////////
-  bool run(const char* testname, Teuchos::ParameterList &params) {
+  bool run(const char *testname, Teuchos::ParameterList &params) {
 
     bool ok = true;
 
     params.set("symmetric", symmetric);
+    params.set("library", "zoltan");
 
     // test with default maps
     ok = buildAndCheckSeedMatrix(testname, params, true);
 
     // test with cyclic maps
     ok &= buildAndCheckSeedMatrix(testname, params, false);
+    // if (matrixFileName != "west0067") {
+
+      params.set("library", "zoltan2");
+      // test with default maps
+      ok = buildAndCheckSeedMatrix(testname, params, true);
+
+      // test with cyclic maps
+      ok &= buildAndCheckSeedMatrix(testname, params, false);
+    // }
 
     return ok;
   }
-    
+
   ///////////////////////////////////////////////////////////////
   bool buildAndCheckSeedMatrix(
     const char *testname,
@@ -131,7 +140,7 @@ public:
     Teuchos::RCP<matrix_t> J = (useBlock ? JBlock : JCyclic);
     int me = J->getRowMap()->getComm()->getRank();
 
-    std::cout << "Running " << testname << " with "
+    std::cout << params.get("library", "zoltan2") << " Running " << testname << " with "
               << (useBlock ? "Block maps" : "Cyclic maps")
               << std::endl;
 
@@ -161,7 +170,7 @@ public:
     // To test the result...
     // Compute the compressed matrix W
     multivector_t W(J->getRangeMap(), numColors);
-  
+
     J->apply(V, W);
 
     // Reconstruct matrix from compression vector
@@ -180,13 +189,13 @@ public:
       Kokkos::RangePolicy<execution_space_t>(0, num_local_nz),
       KOKKOS_LAMBDA(const size_t nz, int &errorcnt) {
         if (J_local_matrix.values(nz) != Jp_local_matrix.values(nz)) {
-          printf("Error in nonzero comparison %zu:  %g != %g", 
+          printf("Error in nonzero comparison %zu:  %g != %g",
                   nz, J_local_matrix.values(nz), Jp_local_matrix.values(nz));
           errorcnt++;
         }
-      }, 
+      },
       ierr);
-   
+
 
     if (ierr > 0) {
       std::cout << testname << " FAILED on rank " << me << " with "
@@ -197,15 +206,15 @@ public:
 
     return (ierr == 0);
   }
-  
+
 private:
 
   ////////////////////////////////////////////////////////////////
   // Return a map that is cyclic (like dealing rows to processors)
   Teuchos::RCP<const map_t> getCyclicMap(
-    size_t nIndices, 
+    size_t nIndices,
     Teuchos::Array<gno_t> &indices,
-    int mapNumProc, 
+    int mapNumProc,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   {
     size_t cnt = 0;
@@ -214,7 +223,7 @@ private:
     if (mapNumProc > np) mapNumProc = np; // corner case: bad input
     if (mapNumProc <= 0) mapNumProc = 1;  // corner case: np is too small
 
-    for (size_t i = 0; i < nIndices; i++) 
+    for (size_t i = 0; i < nIndices; i++)
       if (me == int(i % np)) indices[cnt++] = i;
 
     Tpetra::global_size_t dummy =
@@ -228,6 +237,7 @@ private:
   bool symmetric;               // User can specify whether matrix is symmetric
   Teuchos::RCP<matrix_t> JBlock;   // has Trilinos default domain and range maps
   Teuchos::RCP<matrix_t> JCyclic;  // has cyclic domain and range maps
+  std::string matrixFileName;
 };
 
 
@@ -278,7 +288,7 @@ int main(int narg, char **arg)
 
   int gerr;
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
-  if (comm->getRank() == 0) { 
+  if (comm->getRank() == 0) {
     if (gerr == 0)
       std::cout << "TEST PASSED" << std::endl;
     else
@@ -292,11 +302,11 @@ int main(int narg, char **arg)
 //-  read from file:  symmetric matrix and non-symmetric matrix
 
 //Through code ...
-//Test with fitted and non-fitted maps 
+//Test with fitted and non-fitted maps
 //Call regular and fitted versions of functions
 
 //Through code ...
-//Test both with and without Symmetrize -- 
+//Test both with and without Symmetrize --
 //test both to exercise both sets of callbacks in Zoltan
 // --matrixType = Jacobian/Hessian
 // --symmetric, --no-symmetric

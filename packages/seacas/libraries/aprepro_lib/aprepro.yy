@@ -8,13 +8,16 @@
 #include "apr_util.h"
 #include "apr_array.h"
 
+#if defined FMT_SUPPORT
+#include <fmt/format.h>
+#endif
+#include <cerrno>
+#include <cfenv>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <stdlib.h>
-#include <cmath>
-#include <cerrno>
-#include <cstring>
-#include <cstdio>
-#include <cfenv>
 
 namespace {
   void reset_error()
@@ -128,10 +131,20 @@ input:  /* empty rule */
 
 line:     '\n'                  { if (echo) aprepro.lexer->LexerOutput("\n", 1); }
         | LBRACE exp RBRACE     { if (echo) {
-                                     static char tmpstr[512];
                                      SEAMS::symrec *format = aprepro.getsym("_FORMAT");
-                                     int len = snprintf(tmpstr, 512, format->value.svar.c_str(), $2);
-                                     aprepro.lexer->LexerOutput(tmpstr, len);
+                                     if (format->value.svar.empty()) {
+#if defined FMT_SUPPORT
+                                        auto tmpstr = fmt::format("{}", $2);
+                                        aprepro.lexer->LexerOutput(tmpstr.c_str(), tmpstr.size());
+#else
+                                        yyerror(aprepro, "Empty _FORMAT string -- no output will be printed. Optional Lib::FMT dependency is not enabled.");
+#endif
+                                     }
+                                     else {
+                                        static char    tmpstr[512];
+                                        int len = snprintf(tmpstr, 512, format->value.svar.c_str(), $2);
+                                        aprepro.lexer->LexerOutput(tmpstr, len);
+                                     }
                                    }
                                 }
         | LBRACE sexp RBRACE    { if (echo && $2 != NULL) {

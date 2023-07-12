@@ -20,33 +20,33 @@
 
 namespace krino {
 
-static int surface_sign_at_position(const Surface & surface, const Vector3d & pt)
+static int surface_sign_at_position(const Surface & surface, const stk::math::Vector3d & pt)
 {
   const double phi = surface.point_signed_distance(pt);
   return ( (phi < 0.) ? -1 : 1 ); // GOMA sign convention
 }
 
-static std::function<double(const double)> build_edge_distance_function(const Surface & surface, const Segment3d & edge)
+static std::function<double(const double)> build_edge_distance_function(const Surface & surface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords)
 {
   std::function<double(const double)> distanceFunction =
-    [&surface, &edge](const double x)
+    [&surface, &edgeNodeCoords](const double x)
     {
-      return surface.point_signed_distance((1.-x)*edge.GetNode(0) + x*edge.GetNode(1));
+      return surface.point_signed_distance((1.-x)*edgeNodeCoords[0] + x*edgeNodeCoords[1]);
     };
   return distanceFunction;
 }
 
-static double find_crossing_position(const Surface & surface, const Segment3d & edge, const double edgeTol)
+static double find_crossing_position(const Surface & surface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords, const double edgeTol)
 {
-  const double phi0 = surface.point_signed_distance(edge.GetNode(0));
-  const double phi1 = surface.point_signed_distance(edge.GetNode(1));
+  const double phi0 = surface.point_signed_distance(edgeNodeCoords[0]);
+  const double phi1 = surface.point_signed_distance(edgeNodeCoords[1]);
   const int maxIters = 100;
-  const auto result = find_root(build_edge_distance_function(surface, edge), 0., 1., phi0, phi1, maxIters, edgeTol);
-  ThrowRequire(result.first);
+  const auto result = find_root(build_edge_distance_function(surface, edgeNodeCoords), 0., 1., phi0, phi1, maxIters, edgeTol);
+  STK_ThrowRequire(result.first);
   return result.second;
 }
 
-static int compute_element_sign(const Surface & surface, const std::vector<Vector3d> & elemNodesCoords)
+static int compute_element_sign(const Surface & surface, const std::vector<stk::math::Vector3d> & elemNodesCoords)
 {
   int crossingState = 0;
   for(auto && nodeCoords : elemNodesCoords)
@@ -54,11 +54,11 @@ static int compute_element_sign(const Surface & surface, const std::vector<Vecto
     crossingState = crossingState | ((surface.point_signed_distance(nodeCoords) < 0.) ? 1 : 2);
     if (crossingState == 3) return 0;
   }
-  ThrowAssert(crossingState == 1 || crossingState == 2);
+  STK_ThrowAssert(crossingState == 1 || crossingState == 2);
   return (crossingState == 1) ? -1 : 1;
 }
 
-static void compute_element_signs(const std::vector<const Surface *> & surfaces, const std::vector<Vector3d> & elemNodesCoords, std::vector<int> & elementSigns)
+static void compute_element_signs(const std::vector<const Surface *> & surfaces, const std::vector<stk::math::Vector3d> & elemNodesCoords, std::vector<int> & elementSigns)
 {
   elementSigns.clear();
   elementSigns.reserve(surfaces.size());
@@ -68,9 +68,9 @@ static void compute_element_signs(const std::vector<const Surface *> & surfaces,
 }
 
 
-static Vector3d get_centroid(const std::vector<Vector3d> & elemNodesCoords)
+static stk::math::Vector3d get_centroid(const std::vector<stk::math::Vector3d> & elemNodesCoords)
 {
-  Vector3d centroid = Vector3d::ZERO;
+  stk::math::Vector3d centroid = stk::math::Vector3d::ZERO;
   for(auto && nodeCoords : elemNodesCoords)
   {
     centroid += nodeCoords;
@@ -103,37 +103,37 @@ std::vector<InterfaceID> SurfaceElementCutter::get_sorted_cutting_interfaces() c
 
 const Surface & SurfaceElementCutter::get_surface(const InterfaceID interface) const
 {
-  ThrowAssert(interface.is_single_ls());
+  STK_ThrowAssert(interface.is_single_ls());
   const int lsIndex = interface.first_ls();
-  ThrowAssert(lsIndex < (int)mySurfaces.size());
+  STK_ThrowAssert(lsIndex < (int)mySurfaces.size());
   return *mySurfaces[lsIndex];
 }
 
-bool SurfaceElementCutter::have_crossing(const InterfaceID interface, const Segment3d & edge) const
+bool SurfaceElementCutter::have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
   const Surface & surface = get_surface(interface);
-  return surface_sign_at_position(surface, parametric_to_global_coordinates(edge.GetNode(0))) !=
-         surface_sign_at_position(surface, parametric_to_global_coordinates(edge.GetNode(1)));
+  return surface_sign_at_position(surface, parametric_to_global_coordinates(edgeNodeCoords[0])) !=
+         surface_sign_at_position(surface, parametric_to_global_coordinates(edgeNodeCoords[1]));
 }
 
-double SurfaceElementCutter::interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const
+double SurfaceElementCutter::interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
   const Surface & surface = get_surface(interface);
-  const Segment3d globalEdge(parametric_to_global_coordinates(edge.GetNode(0)), parametric_to_global_coordinates(edge.GetNode(1)));
+  const std::array<stk::math::Vector3d,2> globalEdge{parametric_to_global_coordinates(edgeNodeCoords[0]), parametric_to_global_coordinates(edgeNodeCoords[1])};
   return find_crossing_position(surface, globalEdge, myEdgeCrossingTol);
 }
 
-int SurfaceElementCutter::sign_at_position(const InterfaceID interface, const Vector3d & paramCoords) const
+int SurfaceElementCutter::sign_at_position(const InterfaceID interface, const stk::math::Vector3d & paramCoords) const
 {
   const Surface & surface = get_surface(interface);
   return surface_sign_at_position(surface, parametric_to_global_coordinates(paramCoords));
 }
 
-Vector3d SurfaceElementCutter::parametric_to_global_coordinates(const Vector3d & pCoords) const
+stk::math::Vector3d SurfaceElementCutter::parametric_to_global_coordinates(const stk::math::Vector3d & pCoords) const
 {
   std::vector<double> nodalShapeFunctions(myMasterElem.num_nodes());
   myMasterElem.shape_fcn(1, pCoords.data(), nodalShapeFunctions.data());
-  Vector3d pt(Vector3d::ZERO);
+  stk::math::Vector3d pt(stk::math::Vector3d::ZERO);
   for (unsigned n=0; n<myMasterElem.num_nodes(); ++n)
     pt += nodalShapeFunctions[n] * myElementNodeCoords[n];
   return pt;
@@ -170,14 +170,15 @@ static void append_surface_edge_intersection_points(const stk::mesh::BulkData & 
       if (iter == edgesAlreadyChecked.end() || edgeNodeIds != *iter)
       {
         edgesAlreadyChecked.insert(iter, edgeNodeIds);
-        const Vector3d node0Coords(field_data<double>(coordsField, node0), dim);
-        const Vector3d node1Coords(field_data<double>(coordsField, node1), dim);
+        const stk::math::Vector3d node0Coords(field_data<double>(coordsField, node0), dim);
+        const stk::math::Vector3d node1Coords(field_data<double>(coordsField, node1), dim);
         const double phi0 = surface.point_signed_distance(node0Coords);
         const double phi1 = surface.point_signed_distance(node1Coords);
         const bool haveCrossing = (phi0 < 0.) ? (phi1 >= 0.) : (phi1 < 0.);
         if (haveCrossing)
         {
-          const double location = find_crossing_position(surface, Segment3d(node0Coords, node1Coords), edgeCrossingTol);
+          const std::array<stk::math::Vector3d,2> edgeNodeCoords{node0Coords, node1Coords};
+          const double location = find_crossing_position(surface, edgeNodeCoords, edgeCrossingTol);
           interface.fill_sorted_domains(intersectionPointSortedDomains);
           const std::vector<stk::mesh::Entity> intersectionPointNodes{node0,node1};
           if (intersectionPointFilter(intersectionPointNodes, intersectionPointSortedDomains))
@@ -198,7 +199,7 @@ static BoundingBox compute_nodal_bounding_box(const stk::mesh::BulkData & mesh)
   {
     double *coord = field_data<double>(coordsField, *bucket);
     for (size_t n = 0; n < bucket->size(); ++n)
-      nodeBbox.accommodate( Vector3d(coord+n*nDim, nDim) );
+      nodeBbox.accommodate( stk::math::Vector3d(coord+n*nDim, nDim) );
   }
 
   return nodeBbox;
@@ -233,14 +234,14 @@ void AnalyticSurfaceInterfaceGeometry::prepare_to_process_elements(const stk::me
   prepare_to_compute_with_surface(mesh, mySurfaces);
 }
 
-static bool edge_is_possibly_cut(const std::array<Vector3d,2> & edgeNodeCoords, const std::array<double,2> & edgeNodeDist)
+static bool edge_is_possibly_cut(const std::array<stk::math::Vector3d,2> & edgeNodeCoords, const std::array<double,2> & edgeNodeDist)
 {
   const double edgeLength = (edgeNodeCoords[1]-edgeNodeCoords[0]).length();
 
   return std::abs(edgeNodeDist[0]) < edgeLength && std::abs(edgeNodeDist[1]) < edgeLength;
 }
 
-static bool element_has_possibly_cut_edge(stk::topology elemTopology, const std::vector<Vector3d> & elemNodeCoords, const std::vector<double> & elemNodeDist)
+static bool element_has_possibly_cut_edge(stk::topology elemTopology, const std::vector<stk::math::Vector3d> & elemNodeCoords, const std::vector<double> & elemNodeDist)
 {
   const unsigned numEdges = elemTopology.num_edges();
   for(unsigned i=0; i < numEdges; ++i)
@@ -252,14 +253,14 @@ static bool element_has_possibly_cut_edge(stk::topology elemTopology, const std:
   return false;
 }
 
-static void fill_point_distances(const Surface & surface, const std::vector<Vector3d> & points, std::vector<double> & pointDist)
+static void fill_point_distances(const Surface & surface, const std::vector<stk::math::Vector3d> & points, std::vector<double> & pointDist)
 {
   pointDist.clear();
   for (auto && point : points)
     pointDist.push_back(surface.point_signed_distance(point));
 }
 
-static bool element_has_possibly_cut_edge(stk::topology elemTopology, const std::vector<const Surface*> surfaces, const std::vector<Vector3d> & elemNodeCoords, std::vector<double> & elemNodeDistWorkspace)
+static bool element_has_possibly_cut_edge(stk::topology elemTopology, const std::vector<const Surface*> surfaces, const std::vector<stk::math::Vector3d> & elemNodeCoords, std::vector<double> & elemNodeDistWorkspace)
 {
   for (auto && surface : surfaces)
   {
@@ -276,7 +277,7 @@ std::vector<stk::mesh::Entity> AnalyticSurfaceInterfaceGeometry::get_possibly_cu
   prepare_to_process_elements(mesh, nodesToSnappedDomains);
 
   std::vector<stk::mesh::Entity> possibleCutElements;
-  std::vector<Vector3d> elementNodeCoords;
+  std::vector<stk::math::Vector3d> elementNodeCoords;
   std::vector<double> elementNodeDist;
   const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
 
@@ -294,6 +295,43 @@ std::vector<stk::mesh::Entity> AnalyticSurfaceInterfaceGeometry::get_possibly_cu
 
   return possibleCutElements;
 }
+
+static bool element_intersects_interval(const std::vector<const Surface*> surfaces, const std::vector<stk::math::Vector3d> & elemNodeCoords, const std::array<double,2> & loAndHi, std::vector<double> & elemNodeDistWorkspace)
+{
+  for (auto && surface : surfaces)
+  {
+    fill_point_distances(*surface, elemNodeCoords, elemNodeDistWorkspace);
+    if (InterfaceGeometry::element_with_nodal_distance_intersects_interval(elemNodeDistWorkspace, loAndHi))
+      return true;
+  }
+  return false;
+}
+
+std::vector<stk::mesh::Entity> AnalyticSurfaceInterfaceGeometry::get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const
+{
+  NodeToCapturedDomainsMap nodesToSnappedDomains;
+  prepare_to_process_elements(mesh, nodesToSnappedDomains);
+
+  std::vector<stk::mesh::Entity> elementsThaIntersectInterval;
+  std::vector<stk::math::Vector3d> elementNodeCoords;
+  std::vector<double> elementNodeDist;
+  const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
+
+  const stk::mesh::Selector activeLocallyOwned = myActivePart & (mesh.mesh_meta_data().locally_owned_part());
+
+  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeLocallyOwned))
+  {
+    for(const auto & elem : *bucketPtr)
+    {
+      fill_element_node_coordinates(mesh, elem, coordsField, elementNodeCoords);
+      if (element_intersects_interval(mySurfaces, elementNodeCoords, loAndHi, elementNodeDist))
+        elementsThaIntersectInterval.push_back(elem);
+    }
+  }
+
+  return elementsThaIntersectInterval;
+}
+
 
 static bool all_nodes_of_element_will_be_snapped(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,
@@ -319,7 +357,7 @@ static void set_domains_for_element_if_it_will_be_uncut_after_snapping(const stk
     if (all_nodes_of_element_will_be_snapped(mesh, element, snapNode, nodesToCapturedDomains))
     {
       const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
-      std::vector<Vector3d> elemNodesCoords;
+      std::vector<stk::math::Vector3d> elemNodesCoords;
       fill_element_node_coordinates(mesh, element, coordsField, elemNodesCoords);
       const int elementSign = surface_sign_at_position(surface, get_centroid(elemNodesCoords));
 
@@ -336,7 +374,7 @@ AnalyticSurfaceInterfaceGeometry::AnalyticSurfaceInterfaceGeometry(const stk::me
     myPhaseSupport(phaseSupport)
 {
   myEdgeCrossingTol = std::min(1.e-6, 0.1*cdfemSupport.get_snapper().get_edge_tolerance());
-  ThrowRequireMsg(myEdgeCrossingTol > 0., "Invalid minimum edge crossing tolerance " << myEdgeCrossingTol);
+  STK_ThrowRequireMsg(myEdgeCrossingTol > 0., "Invalid minimum edge crossing tolerance " << myEdgeCrossingTol);
 }
 
 AnalyticSurfaceInterfaceGeometry::AnalyticSurfaceInterfaceGeometry(const std::vector<Surface_Identifier> & surfaceIdentifiers,
@@ -364,7 +402,7 @@ void AnalyticSurfaceInterfaceGeometry::store_phase_for_elements_that_will_be_unc
   const bool oneLSPerPhase = mySurfaceIdentifiers.size() > 1 && myPhaseSupport.has_one_levelset_per_phase();
   if (!oneLSPerPhase && mySurfaceIdentifiers.size() > 1)
     return; //FIXME: Fix for more than one ls per interface
-  ThrowAssert(mySurfaces.size() == 1);
+  STK_ThrowAssert(mySurfaces.size() == 1);
   const Surface & surface = *mySurfaces[0];
 
   for (auto && snapInfo : snapInfos)
@@ -418,7 +456,7 @@ std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_c
 PhaseTag AnalyticSurfaceInterfaceGeometry::get_starting_phase(const ElementCutter * cutter) const
 {
   const SurfaceElementCutter * surfaceCutter = dynamic_cast<const SurfaceElementCutter *>(cutter);
-  ThrowRequire(surfaceCutter);
+  STK_ThrowRequire(surfaceCutter);
 
   const auto & elementSigns = surfaceCutter->get_element_signs();
 

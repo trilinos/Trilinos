@@ -62,11 +62,6 @@
 
 #include "Piro_InvertMassMatrixDecorator.hpp"
 
-#ifdef HAVE_PIRO_IFPACK2
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#endif
-
 #ifdef HAVE_PIRO_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
@@ -492,11 +487,6 @@ void Piro::TempusSolverForwardOnly<Scalar>::evalModelImpl(
       std::cout << "Final Solution\n" << *finalSolution << std::endl;
 
   }
-
-  //
-  // Removed the "computing sensitivities" section that was copied from Piro_RythmosSolver.hpp,
-  // as did not need to convert it for Charon needs.
-  //
 
   *out << "\nF) Check the solution to the forward problem ...\n";
 

@@ -12,7 +12,7 @@ namespace impl {
 
 class MiddleGridConstraintGenerator
 {
-    std::set<int> m_vertIds = {21, 1815, 1817, 1818, 1816}; // TODO: DEBUGGING
+    std::set<int> m_vertIds = {2486, 2810}; // TODO: DEBUGGING
 
   public:
     MiddleGridConstraintGenerator(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,

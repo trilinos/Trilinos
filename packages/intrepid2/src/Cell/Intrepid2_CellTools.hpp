@@ -316,7 +316,8 @@ public:
                  const Kokkos::DynRankView<pointValueType,pointProperties...>       points,
                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                  const shards::CellTopology cellTopo ) {
-    auto basis = createHGradBasis<pointValueType,pointValueType>(cellTopo);
+    using nonConstPointValueType = std::remove_const_t<pointValueType>;
+    auto basis = createHGradBasis<nonConstPointValueType,nonConstPointValueType>(cellTopo);
     setJacobian(jacobian, 
                 points, 
                 worksetCell, 
@@ -397,6 +398,17 @@ public:
     template<class PointScalar>
     static void setJacobianInv( Data<PointScalar,DeviceType> & jacobianInv,
                                const Data<PointScalar,DeviceType> & jacobian);
+    
+    /** \brief  Multiplies the Jacobian with shape (C,P,D,D) by the reciprocals of the determinants, with shape (C,P), entrywise.
+
+        \param  jacobianDividedByDet   [out]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobian   [in]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobianDetInv          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+    */
+    template<class PointScalar>
+    static void setJacobianDividedByDet( Data<PointScalar,DeviceType> & jacobianDividedByDet,
+                                        const Data<PointScalar,DeviceType> & jacobian,
+                                        const Data<PointScalar,DeviceType> & jacobianDetInv);
     
     //============================================================================================//
     //                                                                                            //
@@ -1072,7 +1084,8 @@ public:
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
-      auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
+    using nonConstRefPointValueType = std::remove_const_t<refPointValueType>;
+    auto basis = createHGradBasis<nonConstRefPointValueType,nonConstRefPointValueType>(cellTopo);
       mapToPhysicalFrame(physPoints, 
                          refPoints, 
                          worksetCell, 

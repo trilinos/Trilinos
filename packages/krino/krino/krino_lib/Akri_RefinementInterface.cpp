@@ -13,6 +13,7 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
+#include <Akri_ParallelErrorMessage.hpp>
 #include "Akri_DiagWriter.hpp"
 #include "Akri_MeshHelpers.hpp"
 #include "Akri_ReportHandler.hpp"
@@ -179,43 +180,11 @@ void fill_all_children(const RefinementInterface & refinement, const stk::mesh::
   fill_all_children(refinement, children, all_children);
 }
 
-template<class RefinementClass>
-void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const RefinementClass * refinement)
-{
-  bool error = false;
-  std::string msg = "Error: leaf child without parent owned by same processor";
-  auto buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part());
-  for(auto bucket : buckets)
-  {
-    for(auto && elem : *bucket)
-    {
-      if(refinement->is_child(elem) && !refinement->is_parent(elem))
-      {
-        auto parent = refinement->get_parent(elem);
-        if(!mesh.is_valid(parent))
-        {
-          error = true;
-          msg +=  " " + debug_entity(mesh, elem);
-          break;
-        }
-        else if(!mesh.bucket(parent).owned())
-        {
-          error = true;
-          msg +=  " " + debug_entity(mesh, elem);
-          break;
-        }
-      }
-    }
-    if(error == true) break;
-  }
-  ParallelThrowRequireMsg(mesh.parallel(), !error, msg);
-}
-
 PerceptRefinement &
 PerceptRefinement::get(const stk::mesh::MetaData & meta)
 {
   PerceptRefinement * refinement = const_cast<PerceptRefinement*>(meta.get_attribute<PerceptRefinement>());
-  ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
+  STK_ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
   return *refinement;
 }
 
@@ -230,7 +199,7 @@ PerceptRefinement &
 PerceptRefinement::create(stk::mesh::MetaData & meta)
 {
   PerceptRefinement * refinement = const_cast<PerceptRefinement*>(meta.get_attribute<PerceptRefinement>());
-  ThrowRequireMsg(nullptr == refinement, "PerceptRefinement::create should be called only once per MetaData.");
+  STK_ThrowRequireMsg(nullptr == refinement, "PerceptRefinement::create should be called only once per MetaData.");
   if (nullptr == refinement)
   {
     refinement = new PerceptRefinement(meta);
@@ -311,7 +280,7 @@ stk::mesh::Entity PerceptRefinement::get_parent(const stk::mesh::Entity entity) 
 std::pair<stk::mesh::EntityId,int> PerceptRefinement::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
 {
   stk::mesh::Entity parent = get_parent(child);
-  ThrowAssert(myMeta.mesh_bulk_data().is_valid(parent));
+  STK_ThrowAssert(myMeta.mesh_bulk_data().is_valid(parent));
   return {myMeta.mesh_bulk_data().identifier(parent), myMeta.mesh_bulk_data().parallel_owner_rank(parent)};
 }
 
@@ -319,7 +288,7 @@ static stk::mesh::Part & get_percept_refinement_inactive_part(const stk::mesh::M
 {
   const std::string inactive_part_name = "refine_inactive_elements_part_"+std::to_string((int)rank);
   stk::mesh::Part* inactive_part = meta.get_part(inactive_part_name);
-  ThrowRequireMsg(nullptr != inactive_part, "Inactive (parent) part not found: " << inactive_part_name);
+  STK_ThrowRequireMsg(nullptr != inactive_part, "Inactive (parent) part not found: " << inactive_part_name);
   return *inactive_part;
 }
 
@@ -327,7 +296,7 @@ static stk::mesh::Part & get_percept_refinement_active_part(const stk::mesh::Met
 {
   const std::string active_part_name = "refine_active_elements_part_"+std::to_string((int)rank);
   stk::mesh::Part* active_part = meta.get_part(active_part_name);
-  ThrowRequireMsg(nullptr != active_part, "Active (child) part not found: " << active_part_name);
+  STK_ThrowRequireMsg(nullptr != active_part, "Active (child) part not found: " << active_part_name);
   return *active_part;
 }
 
@@ -424,7 +393,7 @@ int PerceptRefinement::fully_refined_level(const stk::mesh::Entity elem) const
 
 FieldRef PerceptRefinement::get_marker_field() const
 {
-  ThrowRequireMsg(myElementMarkerField.valid(), "PerceptRefinement created without setting the hadapt function, which is needed in get_marker_field().  Is this a unit test?");
+  STK_ThrowRequireMsg(myElementMarkerField.valid(), "PerceptRefinement created without setting the hadapt function, which is needed in get_marker_field().  Is this a unit test?");
   return myElementMarkerField;
 }
 
@@ -446,21 +415,44 @@ void PerceptRefinement::set_uniform_refinement_function(const std::function<void
 
 void PerceptRefinement::do_refinement(const int debugLevel)
 {
-  ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_adaptive_refinement_function, which is needed in do_adaptive_refinement().");
+  STK_ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_adaptive_refinement_function, which is needed in do_adaptive_refinement().");
   myAdaptiveRefinement(myElementMarkerField.name(), debugLevel);
 }
 
 void PerceptRefinement::do_uniform_refinement(const int numUniformRefinementLevels)
 {
-  ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_uniform_refinement_function, which is needed in do_uniform_refinement().");
+  STK_ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_uniform_refinement_function, which is needed in do_uniform_refinement().");
   myUniformRefinement(numUniformRefinementLevels);
+}
+
+std::string PerceptRefinement::locally_check_leaf_children_have_parents_on_same_proc() const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  std::ostringstream localErrorMsg;
+  auto buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part());
+  for(auto bucket : buckets)
+  {
+    for(auto && elem : *bucket)
+    {
+      if(is_child(elem) && !is_parent(elem))
+      {
+        auto parent = get_parent(elem);
+        if(!mesh.is_valid(parent) || !mesh.bucket(parent).owned())
+        {
+          localErrorMsg << debug_entity_1line(mesh, elem) << "\n";
+          return localErrorMsg.str();
+        }
+      }
+    }
+  }
+  return localErrorMsg.str();
 }
 
 KrinoRefinement &
 KrinoRefinement::get(const stk::mesh::MetaData & meta)
 {
   KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
-  ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
+  STK_ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
   return *refinement;
 }
 
@@ -468,7 +460,7 @@ KrinoRefinement &
 KrinoRefinement::create(stk::mesh::MetaData & meta)
 {
   KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
-  ThrowRequireMsg(nullptr == refinement, "KrinoRefinement::create should be called only once per MetaData.");
+  STK_ThrowRequireMsg(nullptr == refinement, "KrinoRefinement::create should be called only once per MetaData.");
   if (nullptr == refinement)
   {
     AuxMetaData & auxMeta = AuxMetaData::get(meta);
@@ -571,6 +563,11 @@ void KrinoRefinement::fill_child_element_ids(const stk::mesh::Entity parent, std
   myRefinement.fill_child_element_ids(parent, childElemIds);
 }
 
+std::string KrinoRefinement::locally_check_leaf_children_have_parents_on_same_proc() const
+{
+  return myRefinement.locally_check_leaf_children_have_parents_on_same_proc();
+}
+
 void KrinoRefinement::fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
 {
   dependents.clear();
@@ -650,7 +647,7 @@ bool KrinoRefinement::is_transition(const stk::mesh::Entity elem) const
 TransitionElementEdgeMarker & KrinoRefinement::get_marker() const
 {
   setup_marker();
-  ThrowRequireMsg(myMarker, "Logic error.  Marker should have already been setup.");
+  STK_ThrowRequireMsg(myMarker, "Logic error.  Marker should have already been setup.");
   return *myMarker;
 }
 
@@ -741,6 +738,9 @@ void KrinoRefinement::restore_after_restart()
   ParallelThrowAssert(myMeta.mesh_bulk_data().parallel(), check_face_and_edge_relations(myMeta.mesh_bulk_data()));
 }
 
-template void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const RefinementInterface * refinement);
-template void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const Refinement * refinement);
+void check_leaf_children_have_parents_on_same_proc(const stk::ParallelMachine comm, const RefinementInterface & refinement)
+{
+  RequireEmptyErrorMsg(comm, refinement.locally_check_leaf_children_have_parents_on_same_proc(), "Leaf child without parent owned on same proc.");
+}
+
 }

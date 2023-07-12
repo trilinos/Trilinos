@@ -23,35 +23,20 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_asum(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
   typedef Kokkos::ArithTraits<typename AT::mag_type> MAT;
 
-  typedef Kokkos::View<
-      ScalarA * [2],
-      typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeA;
-
-  BaseTypeA b_a("A", N);
-
-  ViewTypeA a = Kokkos::subview(b_a, Kokkos::ALL(), 0);
-
-  typename BaseTypeA::HostMirror h_b_a = Kokkos::create_mirror_view(b_a);
-
-  typename ViewTypeA::HostMirror h_a = Kokkos::subview(h_b_a, Kokkos::ALL(), 0);
+  view_stride_adapter<ViewTypeA> a("A", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(10.0, randStart, randEnd);
-  Kokkos::fill_random(b_a, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
-  Kokkos::deep_copy(h_b_a, b_a);
+  Kokkos::deep_copy(a.h_base, a.d_base);
 
-  typename ViewTypeA::const_type c_a = a;
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   typename AT::mag_type expected_result = 0;
@@ -61,13 +46,14 @@ void impl_test_asum(int N) {
     // parts.
     //
     // This is safe; ArithTraits<T>::imag is 0 if T is real.
-    expected_result += MAT::abs(AT::real(h_a(i))) + MAT::abs(AT::imag(h_a(i)));
+    expected_result +=
+        MAT::abs(AT::real(a.h_view(i))) + MAT::abs(AT::imag(a.h_view(i)));
   }
 
-  typename AT::mag_type nonconst_result = KokkosBlas::asum(a);
+  typename AT::mag_type nonconst_result = KokkosBlas::asum(a.d_view);
   EXPECT_NEAR_KK(nonconst_result, expected_result, eps * expected_result);
 
-  typename AT::mag_type const_result = KokkosBlas::asum(c_a);
+  typename AT::mag_type const_result = KokkosBlas::asum(a.d_view_const);
   EXPECT_NEAR_KK(const_result, expected_result, eps * expected_result);
 }
 
@@ -95,8 +81,7 @@ int test_asum() {
   // Test::impl_test_asum<view_type_a_lr, Device>(132231);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_asum<view_type_a_ls, Device>(0);

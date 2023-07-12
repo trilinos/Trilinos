@@ -423,7 +423,7 @@ protected:
       throw;
     }
 
-    Teuchos::RCP<Ioss::Region> io = Teuchos::rcp(region);
+    std::shared_ptr<Ioss::Region> io = std::shared_ptr<Ioss::Region>(region);
 
     size_t db_index = broker.add_mesh_database(io);
 
@@ -988,7 +988,7 @@ protected:
       throw;
     }
 
-    Teuchos::RCP<Ioss::Region> io = Teuchos::rcp(region);
+    std::shared_ptr<Ioss::Region> io = std::shared_ptr<Ioss::Region>(region);
 
     size_t db_index = broker.add_mesh_database(io);
 

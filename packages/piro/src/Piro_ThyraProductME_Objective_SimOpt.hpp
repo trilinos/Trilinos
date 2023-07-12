@@ -50,6 +50,7 @@
 #include "ROL_Types.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Piro_ROL_ObserverBase.hpp"
+#include "Piro_ProductModelEval.hpp"
 
 namespace Piro {
 
@@ -59,10 +60,10 @@ class ThyraProductME_Objective_SimOpt : public ROL::Objective_SimOpt<Real> {
 public:
 
 
-  ThyraProductME_Objective_SimOpt(const Teuchos::RCP<const Thyra::ModelEvaluator<Real>>& thyra_model, int g_index, const std::vector<int>& p_indices,
+  ThyraProductME_Objective_SimOpt(const Teuchos::RCP<const Thyra::ModelEvaluator<Real>>& thyra_model, int g_index,
       Teuchos::ParameterList& piroParams, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
       Teuchos::RCP<ROL_ObserverBase<Real>> observer = Teuchos::null) :
-        thyra_model_(thyra_model), g_index_(g_index), p_indices_(p_indices),
+        thyra_model_(thyra_model), g_index_(g_index),
         optParams_(piroParams.sublist("Optimization Status")),
         out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
         verbosityLevel_(verbLevel), observer_(observer)  {
@@ -90,14 +91,13 @@ public:
     unew->set(u);
     const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
     Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model_->get_g_space(g_index_));
-    Teuchos::RCP<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
 
     outArgs.set_g(g_index_, g);
-    for(std::size_t i=0; i<p_indices_.size(); ++i)
-      inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
+    inArgs.set_p(0, thyra_p.getVector());
+
     inArgs.set_x(thyra_x.getVector());
 
     thyra_model_->evalModel(inArgs, outArgs);
@@ -143,13 +143,11 @@ public:
     unew->set(u);
     const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
 
-    Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
     ROL::ThyraVector<Real>  & thyra_dgdx = dynamic_cast<ROL::ThyraVector<Real>&>(g);
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
 
-    for(std::size_t i=0; i<p_indices_.size(); ++i)
-      inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
+    inArgs.set_p(0, thyra_p.getVector());
     inArgs.set_x(thyra_x.getVector());
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
@@ -215,15 +213,11 @@ public:
     unew->set(u);
     const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
 
-    Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
     ROL::ThyraVector<Real>  & thyra_dgdp = dynamic_cast<ROL::ThyraVector<Real>&>(g);
-
-    Teuchos::RCP< Thyra::ProductMultiVectorBase<Real> > prodvec_dgdp_p = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_dgdp.getVector());
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
 
-    for(std::size_t i=0; i<p_indices_.size(); ++i)
-      inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
+    inArgs.set_p(0, thyra_p.getVector());
     inArgs.set_x(thyra_x.getVector());
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
@@ -237,20 +231,44 @@ public:
       outArgs.set_g(g_index_, thyra_g);
     }
 
-    for(std::size_t i=0; i<p_indices_.size(); ++i) {
-      const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
-          outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index_, p_indices_[i]);
-      Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient;
-      if (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM))
-        dgdp_orient = Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM;
-      else if(dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM))
-        dgdp_orient = Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
-      else {
-        ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
-            "Piro::ThyraProductME_Objective::gradient_2, DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
-      }
+    Teuchos::RCP<Thyra::ProductMultiVectorBase<Real> > prodvec_dgdp =
+        Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_dgdp.getVector());
+    if ( !thyra_dgdp.getVector().is_null()) {
+      if ( !prodvec_dgdp.is_null()) {
+        Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> model_PME = 
+          Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(thyra_model_);
+        if (model_PME.is_null()) {
+          Teuchos::RCP<const Thyra::ModelEvaluatorDelegatorBase<Real>> model_MEDB =
+            Teuchos::rcp_dynamic_cast<const Thyra::ModelEvaluatorDelegatorBase<Real>>(thyra_model_);
+          if (!model_MEDB.is_null()) {
+            model_PME = Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(model_MEDB->getUnderlyingModel());
+          }
+        }
 
-      outArgs.set_DgDp(g_index_,p_indices_[i], Thyra::ModelEvaluatorBase::DerivativeMultiVector<Real>(prodvec_dgdp_p->getNonconstMultiVectorBlock(i), dgdp_orient));
+        if ( !model_PME.is_null()) {
+          Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dgdp_op =
+              Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(model_PME->create_DgDp_op(g_index_, 0, prodvec_dgdp));
+          Thyra::ModelEvaluatorBase::Derivative<Real> dgdp_der(Teuchos::rcp_dynamic_cast<Thyra::LinearOpBase<Real>>(dgdp_op));
+          outArgs.set_DgDp(g_index_, 0, dgdp_der);
+        }
+        else {
+          ROL_TEST_FOR_EXCEPTION( true, std::logic_error, "Piro::ThyraProductME_Objective: dgdp is not supported for the used ModelEvaluator.");
+        }
+      }
+      else {
+        const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+            outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index_, 0);
+        Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient;
+        if (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM))
+          dgdp_orient = Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM;
+        else if(dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM))
+          dgdp_orient = Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
+        else {
+          ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
+              "Piro::ThyraProductME_Objective: DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
+        }
+        outArgs.set_DgDp(g_index_, 0, Thyra::ModelEvaluatorBase::DerivativeMultiVector<Real>(thyra_dgdp.getVector(), dgdp_orient));
+      }
     }
     thyra_model_->evalModel(inArgs, outArgs);
 
@@ -271,50 +289,6 @@ public:
     objectiveStr_.isGradient2Valid_ = true;
   }
 
-  void block_diagonal_hessian_22(const Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> H,
-                  const ROL::Vector<Real> &u,
-                  const ROL::Vector<Real> &z,
-                  const int g_idx) {
-    if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-      *out_ << "Piro::ThyraProductME_Objective_SimOpt::hessian_22" << std::endl;
-
-    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
-    bool supports_deriv = true;
-    for(std::size_t i=0; i<p_indices_.size(); ++i)
-      supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_indices_[i], p_indices_[i]);
-    
-    ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp is not supported");
-
-    const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
-    ROL::Ptr<ROL::Vector<Real>> unew = u.clone();
-    unew->set(u);
-    const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
-
-    Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
-
-    Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
-
-    H->beginBlockFill(p_indices_.size(), p_indices_.size());
-
-    for(std::size_t i=0; i<p_indices_.size(); ++i) {
-      inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
-    }
-    inArgs.set_x(thyra_x.getVector());
-
-    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model_->get_g_multiplier_space(g_idx));
-    Thyra::put_scalar(1.0, multiplier_g.ptr());
-    inArgs.set_g_multiplier(g_idx, multiplier_g);
-
-    for(std::size_t i=0; i<p_indices_.size(); ++i) {
-      Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model_->create_hess_g_pp(g_idx, p_indices_[i], p_indices_[i]);
-      outArgs.set_hess_g_pp(g_idx, p_indices_[i], p_indices_[i], hess_g_pp);
-      H->setBlock(i, i, hess_g_pp);
-    }
-    H->endBlockFill();
-
-    thyra_model_->evalModel(inArgs, outArgs);
-  }
-
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
       const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
@@ -332,14 +306,11 @@ public:
       const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
       const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
 
-      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
       ROL::ThyraVector<Real>  & thyra_hv = dynamic_cast<ROL::ThyraVector<Real>&>(hv);
 
       Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
-      }
+      inArgs.set_p(0, thyra_p.getVector());
       inArgs.set_x(thyra_x.getVector());
       inArgs.set_x_direction(thyra_v.getVector());
 
@@ -386,9 +357,7 @@ public:
       *out_ << "Piro::ThyraProductME_Objective_SimOpt::hessVec_12" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
-    bool supports_deriv = true;
-    for(std::size_t j=0; j<p_indices_.size(); ++j)
-      supports_deriv =  supports_deriv && outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xp, g_index_, p_indices_[j]);
+    bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xp, g_index_, 0);
 
     if(supports_deriv) { //use derivatives computed by model evaluator
       const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
@@ -397,38 +366,25 @@ public:
       const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
       const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
 
-      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
-      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_v = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_v.getVector());
       ROL::ThyraVector<Real>  & thyra_hv = dynamic_cast<ROL::ThyraVector<Real>&>(hv);
 
       Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
-        inArgs.set_p_direction(p_indices_[i], thyra_prodvec_v->getVectorBlock(i));
-      }
+      inArgs.set_p(0, thyra_p.getVector());
+      inArgs.set_p_direction(0, thyra_v.getVector());
       inArgs.set_x(thyra_x.getVector());
 
       Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model_->get_g_multiplier_space(g_index_));
       Thyra::put_scalar(1.0, multiplier_g.ptr());
       inArgs.set_g_multiplier(g_index_, multiplier_g);
 
-      std::vector<Teuchos::RCP< Thyra::MultiVectorBase<Real> > > hv_vec(p_indices_.size());
+      Teuchos::RCP< Thyra::MultiVectorBase<Real> >  hv_vec = thyra_hv.getVector();
 
-      hv_vec[0] = thyra_hv.getVector();
-      for(std::size_t j=1; j<p_indices_.size(); ++j) {
-        hv_vec[j] = thyra_hv.getVector()->clone_v();
-      }
+      ROL_TEST_FOR_EXCEPTION( !outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xp, g_index_, 0), 
+        std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_xp product vector is not supported");
+      outArgs.set_hess_vec_prod_g_xp(g_index_,0, hv_vec);
 
-      for(std::size_t j=0; j<p_indices_.size(); ++j) {
-        bool supports_deriv_j =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xp, g_index_, p_indices_[j]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv_j, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_xp product vector is not supported");
-        outArgs.set_hess_vec_prod_g_xp(g_index_,p_indices_[j], hv_vec[j]);
-      }
       thyra_model_->evalModel(inArgs, outArgs);
-
-      for(std::size_t j=1; j<p_indices_.size(); ++j)
-        hv_vec[0]->update(1.0, *hv_vec[j]);
 
     } else { //compute derivatives with 2nd-order finite differences
 
@@ -466,9 +422,7 @@ public:
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
 
-    bool supports_deriv = true;
-    for(std::size_t i=0; i<p_indices_.size(); ++i)
-      supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_px, g_index_, p_indices_[i]);
+    bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_px, g_index_, 0);
 
 
     if(supports_deriv) { //use derivatives computed by model evaluator
@@ -478,16 +432,11 @@ public:
       const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
       const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
 
-      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
       ROL::ThyraVector<Real>  & thyra_hv = dynamic_cast<ROL::ThyraVector<Real>&>(hv);
-
-      Teuchos::RCP< Thyra::ProductMultiVectorBase<Real> > prodvec_hv = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_hv.getVector());
 
       Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
-      }
+      inArgs.set_p(0, thyra_p.getVector());
       inArgs.set_x(thyra_x.getVector());
       inArgs.set_x_direction(thyra_v.getVector());
 
@@ -495,11 +444,10 @@ public:
       Thyra::put_scalar(1.0, multiplier_g.ptr());
       inArgs.set_g_multiplier(g_index_, multiplier_g);
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        bool supports_deriv_j =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_px, g_index_, p_indices_[i]);
-        ROL_TEST_FOR_EXCEPTION( !supports_deriv_j, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_px product vector is not supported");
-        outArgs.set_hess_vec_prod_g_px(g_index_,p_indices_[i], prodvec_hv->getNonconstMultiVectorBlock(i));
-      }
+      ROL_TEST_FOR_EXCEPTION( !outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_px, g_index_, 0), 
+        std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_px product vector is not supported");
+      outArgs.set_hess_vec_prod_g_px(g_index_,0, thyra_hv.getVector());
+
       thyra_model_->evalModel(inArgs, outArgs);
 
     } else { //compute derivatives with 2nd-order finite differences
@@ -536,10 +484,7 @@ public:
       *out_ << "Piro::ThyraProductME_Objective_SimOpt::hessVec_22" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
-    bool supports_deriv = true;
-    for(std::size_t i=0; i<p_indices_.size(); ++i)
-      for(std::size_t j=0; j<p_indices_.size(); ++j)
-        supports_deriv =  supports_deriv && outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index_, p_indices_[i], p_indices_[j]);
+    bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index_, 0, 0);
 
     if(supports_deriv) { //use derivatives computed by model evaluator
       const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
@@ -548,47 +493,24 @@ public:
       const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
       const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
 
-      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
-      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_v = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_v.getVector());
       ROL::ThyraVector<Real>  & thyra_hv = dynamic_cast<ROL::ThyraVector<Real>&>(hv);
-
-      Teuchos::RCP< Thyra::ProductMultiVectorBase<Real> > prodvec_hv = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_hv.getVector());
 
       Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        inArgs.set_p(p_indices_[i], thyra_prodvec_p->getVectorBlock(i));
-        inArgs.set_p_direction(p_indices_[i], thyra_prodvec_v->getVectorBlock(i));
-      }
+      inArgs.set_p(0, thyra_p.getVector());
+      inArgs.set_p_direction(0, thyra_v.getVector());
       inArgs.set_x(thyra_x.getVector());
       Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model_->get_g_multiplier_space(g_index_));
       Thyra::put_scalar(1.0, multiplier_g.ptr());
       inArgs.set_g_multiplier(g_index_, multiplier_g);
 
-      std::vector<std::vector<Teuchos::RCP< Thyra::MultiVectorBase<Real> > > > hv_vec(p_indices_.size());
+      ROL_TEST_FOR_EXCEPTION( !outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index_, 0, 0), 
+        std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp product vector is not supported");
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        hv_vec[i].resize(p_indices_.size());
-        hv_vec[i][0] = prodvec_hv->getNonconstMultiVectorBlock(i);
-        for(std::size_t j=1; j<p_indices_.size(); ++j) {
-          hv_vec[i][j] = hv_vec[i][0]->clone_mv();
-        }
-      }
+      outArgs.set_hess_vec_prod_g_pp(g_index_,0, 0, thyra_hv.getVector());
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        for(std::size_t j=0; j<p_indices_.size(); ++j) {
-          bool supports_deriv_j =   outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index_, p_indices_[i], p_indices_[j]);
-          ROL_TEST_FOR_EXCEPTION( !supports_deriv_j, std::logic_error, "Piro::ThyraProductME_Objective_SimOpt: H_pp product vector is not supported");
-
-          outArgs.set_hess_vec_prod_g_pp(g_index_,p_indices_[i], p_indices_[j], hv_vec[i][j]);
-        }
-      }
       thyra_model_->evalModel(inArgs, outArgs);
 
-      for(std::size_t i=0; i<p_indices_.size(); ++i) {
-        for(std::size_t j=1; j<p_indices_.size(); ++j)
-          hv_vec[i][0]->update(1.0, *hv_vec[i][j]);
-      }
     } else { //compute derivatives with 2nd-order finite differences
 
       Real gtol = std::sqrt(ROL::ROL_EPSILON<Real>());
@@ -702,7 +624,6 @@ private:
 
   const Teuchos::RCP<const Thyra::ModelEvaluator<Real>> thyra_model_;
   const int g_index_;
-  const std::vector<int> p_indices_;
   Real objectiveRecoveryValue_;
   bool useObjectiveRecoveryValue_;
   ROL::UpdateType updateType_;

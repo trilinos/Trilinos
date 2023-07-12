@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "change_of_basis.hpp"
+#include "stk_middle_mesh/change_of_basis.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -93,7 +93,7 @@ TEST(ChangeOfBasis, singleAxis)
 TEST(ChangeOfBasis, twoAxis)
 {
   // test cases where the normal vector is along two coordinate axes
-  utils::Point norm, p0;
+  utils::Point norm;
   std::array<utils::Point, 3> basis;
 
   // xy

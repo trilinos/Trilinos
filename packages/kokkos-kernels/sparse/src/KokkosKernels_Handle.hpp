@@ -418,15 +418,15 @@ class KokkosKernelsHandle {
     return this->my_exec_space;
   }
 
-  /**
-   * \brief Returns the suggested team work size. If set with
-   * set_team_work_size, it will return the set value. Otherwise it will return
-   * the teamsize. \param team_size: input, team size used by the kernel. \param
-   * concurrency: input, the number of threads overall. Not used currently.
-   * \param overall_work_size: The overall work size.
-   */
-  int get_team_work_size(const int team_size, const int /* concurrency */,
-                         const nnz_lno_t /* overall_work_size */) {
+  /// \brief Returns the suggested team work size. If set with
+  /// set_team_work_size, it will return the set value. Otherwise it will return
+  /// the teamsize.
+  /// \param team_size input, team size used by the kernel.
+  /// \param concurrency filler for concurrency
+  /// \param overall_work_size filler for overall_work_size
+  int get_team_work_size(const int team_size,
+                         [[maybe_unused]] const int concurrency,
+                         [[maybe_unused]] const nnz_lno_t overall_work_size) {
     if (this->team_work_size != -1) {
       return this->team_work_size;
     } else {
@@ -453,11 +453,10 @@ class KokkosKernelsHandle {
    */
   bool is_dynamic_scheduling() { return this->use_dynamic_scheduling; }
 
-  /**
-   * \brief sets the shared memory size to be used by the kernels using shared
-   * memory on GPUs. \param shared_memory_size: input, shared memory size to be
-   * used by the kernel.   *
-   */
+  /// \brief sets the shared memory size to be used by the kernels using shared
+  /// memory on GPUs.
+  /// \param shared_memory_size_ input, shared memory size to be used by the
+  /// kernel.
   void set_shmem_size(const size_t shared_memory_size_) {
     this->shared_memory_size = shared_memory_size_;
   }
@@ -500,10 +499,9 @@ class KokkosKernelsHandle {
 
   int get_set_suggested_team_size() { return this->suggested_team_size; }
 
-  /**
-   * \brief Returns the team size, either set by the user or suggested by the
-   * handle. \param vector_size: suggested vector size by the handle.
-   */
+  /// \brief Returns the team size, either set by the user or suggested by the
+  /// handle.
+  /// \param vector_size_ suggested vector size by the handle.
   int get_suggested_team_size(const int vector_size_) {
     if (this->suggested_team_size != -1) {
       return this->suggested_team_size;
@@ -871,12 +869,17 @@ class KokkosKernelsHandle {
   }
 
   PAR_ILUTHandleType *get_par_ilut_handle() { return this->par_ilutHandle; }
-  void create_par_ilut_handle(const size_type nrows, const size_type nnzL = 0,
-                              const size_type nnzU     = 0,
-                              const size_type max_iter = 1) {
+  void create_par_ilut_handle(
+      const size_type max_iter = 20,
+      const typename PAR_ILUTHandleType::float_t residual_norm_delta_stop =
+          1e-2,
+      const typename PAR_ILUTHandleType::float_t fill_in_limit = 0.75,
+      const bool async_update = false, const bool verbose = false) {
     this->destroy_par_ilut_handle();
     this->is_owner_of_the_par_ilut_handle = true;
-    this->par_ilutHandle = new PAR_ILUTHandleType(nrows, nnzL, nnzU, max_iter);
+    this->par_ilutHandle =
+        new PAR_ILUTHandleType(max_iter, residual_norm_delta_stop,
+                               fill_in_limit, async_update, verbose);
     this->par_ilutHandle->set_team_size(this->team_work_size);
     this->par_ilutHandle->set_vector_size(this->vector_size);
   }

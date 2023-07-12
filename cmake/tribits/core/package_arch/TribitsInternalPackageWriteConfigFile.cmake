@@ -525,25 +525,35 @@ function(tribits_append_dependent_package_config_file_includes_and_enables_str p
   # Include configurations of dependent packages
   string(APPEND configFileStr
     "\n# Include configuration of dependent packages\n")
+   set(DOLLAR "$")
+  set(externalPkgsDir
+    "${DOLLAR}{CMAKE_CURRENT_LIST_DIR}/../../${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
   foreach(depPkg IN LISTS ${packageName}_LIB_ENABLED_DEPENDENCIES)
-    set(packageConfigBaseDir "") # Initially, no add include()
+    set(findDepPkgCode "")  # Start out not including anything
     if (${depPkg}_PACKAGE_BUILD_STATUS STREQUAL "INTERNAL")
-      set(packageConfigBaseDir "\${CMAKE_CURRENT_LIST_DIR}/../${depPkg}")
+      set(findDepPkgCode
+        "  include(\"${DOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${depPkg}/${depPkg}Config.cmake\")\n")
     elseif (${depPkg}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL")
       if (NOT "${${depPkg}_TRIBITS_COMPLIANT_PACKAGE_CONFIG_FILE_DIR}" STREQUAL "")
-        set(packageConfigBaseDir "${${depPkg}_TRIBITS_COMPLIANT_PACKAGE_CONFIG_FILE_DIR}")
+        set(findDepPkgCode
+          "  include(\"${${depPkg}_TRIBITS_COMPLIANT_PACKAGE_CONFIG_FILE_DIR}/${depPkg}Config.cmake\")\n")
+      elseif (${depPkg}_FINDMOD STREQUAL "TRIBITS_PKG")
+        assert_defined(${depPkg}_CONFIG)
+        string(APPEND findDepPkgCode
+          "  include(\"${${depPkg}_CONFIG}\")\n"
+	  "  set(${depPkg}_CONFIG \"${${depPkg}_CONFIG}\")\n")
       else()
-        set(packageConfigBaseDir
-          "\${CMAKE_CURRENT_LIST_DIR}/../../${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}/${depPkg}")
+        set(findDepPkgCode
+          "  include(\"${externalPkgsDir}/${depPkg}/${depPkg}Config.cmake\")\n")
       endif()
     else()
       message(FATAL_ERROR "ERROR:"
         " ${depPkg}_PACKAGE_BUILD_STATUS='${${depPkg}_PACKAGE_BUILD_STATUS}' invalid!")
     endif()
-    if (packageConfigBaseDir)
+    if (findDepPkgCode)
       string(APPEND configFileStr
         "if (NOT TARGET ${depPkg}::all_libs)\n"
-        "  include(\"${packageConfigBaseDir}/${depPkg}Config.cmake\")\n"
+	"${findDepPkgCode}"
         "endif()\n"
         )
     endif()

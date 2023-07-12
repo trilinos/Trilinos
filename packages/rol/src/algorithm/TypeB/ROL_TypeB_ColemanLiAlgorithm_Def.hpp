@@ -419,97 +419,97 @@ void ColemanLiAlgorithm<Real>::applyPrecond(Vector<Real> &hv,
 
 template<typename Real>
 void ColemanLiAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
+  std::ios_base::fmtflags osFlags(os.flags());
   if (verbosity_ > 1) {
-    hist << std::string(114,'-') << std::endl;
-    hist << " Coleman-Li affine-scaling trust-region method status output definitions" << std::endl << std::endl;
-    hist << "  iter    - Number of iterates (steps taken)" << std::endl;
-    hist << "  value   - Objective function value" << std::endl;
-    hist << "  gnorm   - Norm of the gradient" << std::endl;
-    hist << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  delta   - Trust-Region radius" << std::endl;
-    hist << "  #fval   - Number of times the objective function was evaluated" << std::endl;
-    hist << "  #grad   - Number of times the gradient was computed" << std::endl;
-    hist << "  #hess   - Number of times the Hessian was applied" << std::endl;
-    hist << "  #proj   - Number of times the projection was applied" << std::endl;
-    hist << std::endl;
-    hist << "  tr_flag - Trust-Region flag" << std::endl;
+    os << std::string(114,'-') << std::endl;
+    os << " Coleman-Li affine-scaling trust-region method status output definitions" << std::endl << std::endl;
+    os << "  iter    - Number of iterates (steps taken)" << std::endl;
+    os << "  value   - Objective function value" << std::endl;
+    os << "  gnorm   - Norm of the gradient" << std::endl;
+    os << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
+    os << "  delta   - Trust-Region radius" << std::endl;
+    os << "  #fval   - Number of times the objective function was evaluated" << std::endl;
+    os << "  #grad   - Number of times the gradient was computed" << std::endl;
+    os << "  #hess   - Number of times the Hessian was applied" << std::endl;
+    os << "  #proj   - Number of times the projection was applied" << std::endl;
+    os << std::endl;
+    os << "  tr_flag - Trust-Region flag" << std::endl;
     for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
-      hist << "    " << NumberToString(flag) << " - "
-           << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
+      os << "    " << NumberToString(flag) << " - "
+         << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
     }
-    hist << std::endl;
-    hist << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
-    hist << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
+    os << std::endl;
+    os << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
+    os << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
     for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
-      hist << "    " << NumberToString(flag) << " - "
-           << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
+      os << "    " << NumberToString(flag) << " - "
+         << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
     }
-    hist << std::string(114,'-') << std::endl;
+    os << std::string(114,'-') << std::endl;
   }
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(15) << std::left << "delta";
-  hist << std::setw(10) << std::left << "#fval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(10) << std::left << "#hess";
-  hist << std::setw(10) << std::left << "#proj";
-  hist << std::setw(10) << std::left << "tr_flag";
-  hist << std::setw(10) << std::left << "iterCG";
-  hist << std::setw(10) << std::left << "flagCG";
-  hist << std::endl;
-  os << hist.str();
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(15) << std::left << "delta";
+  os << std::setw(10) << std::left << "#fval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(10) << std::left << "#hess";
+  os << std::setw(10) << std::left << "#proj";
+  os << std::setw(10) << std::left << "tr_flag";
+  os << std::setw(10) << std::left << "iterCG";
+  os << std::setw(10) << std::left << "flagCG";
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void ColemanLiAlgorithm<Real>::writeName( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << std::endl << "Coleman-Li Affine-Scaling Trust-Region Method (Type B, Bound Constraints)" << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::endl << "Coleman-Li Affine-Scaling Trust-Region Method (Type B, Bound Constraints)" << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void ColemanLiAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << nhess_;
-    hist << std::setw(10) << std::left << state_->nproj;
-    hist << std::setw(10) << std::left << "---";
-    hist << std::setw(10) << std::left << "---";
-    hist << std::setw(10) << std::left << "---";
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << nhess_;
+    os << std::setw(10) << std::left << state_->nproj;
+    os << std::setw(10) << std::left << "---";
+    os << std::setw(10) << std::left << "---";
+    os << std::setw(10) << std::left << "---";
+    os << std::endl;
   }
   else {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << state_->snorm;
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << nhess_;
-    hist << std::setw(10) << std::left << state_->nproj;
-    hist << std::setw(10) << std::left << TRflag_;
-    hist << std::setw(10) << std::left << SPiter_;
-    hist << std::setw(10) << std::left << SPflag_;
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << nhess_;
+    os << std::setw(10) << std::left << state_->nproj;
+    os << std::setw(10) << std::left << TRflag_;
+    os << std::setw(10) << std::left << SPiter_;
+    os << std::setw(10) << std::left << SPflag_;
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 
 } // namespace TypeB

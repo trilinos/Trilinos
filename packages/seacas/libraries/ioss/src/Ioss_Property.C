@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -191,7 +191,7 @@ Ioss::Property &Ioss::Property::operator=(Ioss::Property rhs)
 
 bool Ioss::Property::operator==(const Ioss::Property &rhs) const
 {
-  if (this->name_.compare(rhs.name_) != 0) {
+  if (this->name_ == rhs.name_) {
     return false;
   }
 
@@ -243,7 +243,7 @@ bool Ioss::Property::operator==(const Ioss::Property &rhs) const
     std::string s_lhs, s_rhs;
     this->get_value(&s_lhs);
     rhs.get_value(&s_rhs);
-    if (s_lhs.compare(s_rhs) != 0) {
+    if (s_lhs == s_rhs) {
       return false;
     }
     break;
@@ -340,7 +340,7 @@ void *Ioss::Property::get_pointer() const
 
 bool Ioss::Property::get_value(int64_t *value) const
 {
-  bool valid_request = type_ == INTEGER ? true : false;
+  bool valid_request = type_ == INTEGER;
   if (is_explicit()) {
     *value = data_.ival;
   }
@@ -354,7 +354,7 @@ bool Ioss::Property::get_value(int64_t *value) const
 
 bool Ioss::Property::get_value(double *value) const
 {
-  bool valid_request = type_ == REAL ? true : false;
+  bool valid_request = type_ == REAL;
   if (is_explicit()) {
     *value = data_.rval;
   }
@@ -368,7 +368,7 @@ bool Ioss::Property::get_value(double *value) const
 
 bool Ioss::Property::get_value(std::string *value) const
 {
-  bool valid_request = type_ == STRING ? true : false;
+  bool valid_request = type_ == STRING;
   if (is_explicit()) {
     *value = *(data_.sval);
   }
@@ -382,7 +382,7 @@ bool Ioss::Property::get_value(std::string *value) const
 
 bool Ioss::Property::get_value(std::vector<int> *value) const
 {
-  bool valid_request = type_ == VEC_INTEGER ? true : false;
+  bool valid_request = type_ == VEC_INTEGER;
   if (is_explicit()) {
     std::copy(data_.ivec->begin(), data_.ivec->end(), std::back_inserter(*value));
   }
@@ -396,7 +396,7 @@ bool Ioss::Property::get_value(std::vector<int> *value) const
 
 bool Ioss::Property::get_value(std::vector<double> *value) const
 {
-  bool valid_request = type_ == VEC_DOUBLE ? true : false;
+  bool valid_request = type_ == VEC_DOUBLE;
   if (is_explicit()) {
     std::copy(data_.dvec->begin(), data_.dvec->end(), std::back_inserter(*value));
   }
@@ -410,7 +410,7 @@ bool Ioss::Property::get_value(std::vector<double> *value) const
 
 bool Ioss::Property::get_value(void *&value) const
 {
-  bool valid_request = type_ == POINTER ? true : false;
+  bool valid_request = type_ == POINTER;
   if (is_explicit()) {
     value = data_.pval;
   }

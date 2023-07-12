@@ -263,9 +263,9 @@ display_help_text() {
       echo "                 ZEN             = AMD Zen-Core CPU"
       echo "                 ZEN2            = AMD Zen2-Core CPU"
       echo "               [AMD: GPU]"
-      echo "                 VEGA900         = AMD GPU MI25 GFX900"
       echo "                 VEGA906         = AMD GPU MI50/MI60 GFX906"
-      echo "                 VEGA908         = AMD GPU"
+      echo "                 VEGA908         = AMD GPU MI100 GFX908"
+      echo "                 VEGA90A         = AMD GPU MI200 series GFX90A"
       echo "               [ARM]"
       echo "                 ARMV80          = ARMv8.0 Compatible CPU"
       echo "                 ARMV81          = ARMv8.1 Compatible CPU"
@@ -358,17 +358,17 @@ display_help_text() {
 #      echo "--with-hpx-options=[OPT]:     Additional options to HPX:"
 #      echo "                                enable_async_dispatch"
       echo "--no-default-eti:  Do not include default ETI types for Kokkos Kernels"
+      echo "--disable-test-eti-only:  Do not restrict testing to ETI types for Kokkos Kernels"
       echo "--gcc-toolchain=/Path/To/GccRoot:  Set the gcc toolchain to use with clang (e.g. /usr)"
       echo "--kokkos-make-j=[NUM]:        Set -j parallel level for kokkos install"
       echo "                                Default: j == 4"
-      echo "--enable-tests: build Kokkos Kernels unit tests"
-      echo "--disable-tests: Do not build Kokkos Kernels unit tests"
-      echo "--disable-perftests: Do not build Kokkos Kernels performance tests"
-      echo "--enable-perftests: build Kokkos Kernels performance tests (default)"
+      echo "--enable-tests:               build Kokkos Kernels unit tests"
+      echo "--disable-tests:              Do not build Kokkos Kernels unit tests"
+      echo "--disable-perftests:          Do not build Kokkos Kernels performance tests"
+      echo "--enable-perftests:           build Kokkos Kernels performance tests (default)"
       echo "--deprecated-code             Enable deprecated code (disabled by default)"
-      echo "--enable-perfsuite: build Kokkos Kernels performance tests with
-RAJAPerf Suite"
-
+      echo "--export-compile-commands:    export cmake compile_commands.json file"
+      echo "--enable-docs:                build the Kokkos Kernels developer documentation (requires sphinx, doxygen)"
 
 }
 
@@ -380,6 +380,9 @@ KOKKOSKERNELS_DO_TESTS=ON
 KOKKOSKERNELS_DO_PERFTESTS=ON
 KOKKOSKERNELS_DO_PERFSUITE=OFF
 KOKKOSKERNELS_DO_EXAMPLES=ON
+KOKKOSKERNELS_DO_DOCS=OFF
+
+CMAKE_EXPORT_COMPILE_COMMANDS=OFF
 
 #Build static libraries by default
 BUILD_SHARED_LIBRARIES=OFF
@@ -511,6 +514,9 @@ do
     --no-default-eti)
       KERNELS_DEFAULT_ETI_OPTION="-DKokkosKernels_ADD_DEFAULT_ETI=OFF"
       ;;
+    --disable-test-eti-only)
+      KERNELS_DEFAULT_TEST_ETI_ONLY_OPTION="-DKokkosKernels_TEST_ETI_ONLY=OFF"
+      ;;
     --kokkos-release)
       KOKKOS_RELEASE=ON
       ;;
@@ -539,6 +545,9 @@ do
       # This is the default
       KOKKOSKERNELS_DO_TESTS=ON
       ;;
+    --export-compile-commands)
+      CMAKE_EXPORT_COMPILE_COMMANDS=ON
+      ;;
     --enable-perfsuite)
       KOKKOSKERNELS_DO_PERFSUITE=ON
       ;;
@@ -564,6 +573,9 @@ do
       ;;
     --deprecated-code)
       KOKKOS_DEPRECATED_CODE=ON
+      ;;
+    --enable-docs)
+      KOKKOSKERNELS_DO_DOCS=ON
       ;;
     --compiler*)
       COMPILER="${key#*=}"
@@ -812,6 +824,6 @@ cd $STORE_KOKKOSKERNELS_BUILD_PATH
 
 # Configure kokkos-kernels
 echo ""
-echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS=\"${KOKKOS_CXXFLAGS}\" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_PERFTESTS=${KOKKOSKERNELS_DO_PERFTESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} -DCMAKE_EXE_LINKER_FLAGS=\"${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_PARSED}\" ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_COMPONENTS_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
+echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS=\"${KOKKOS_CXXFLAGS}\" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_PERFTESTS=${KOKKOSKERNELS_DO_PERFTESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=${CMAKE_EXPORT_COMPILE_COMMANDS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} -DCMAKE_EXE_LINKER_FLAGS=\"${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_PARSED}\" ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_COMPONENTS_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KERNELS_DEFAULT_TEST_ETI_ONLY_OPTION} -DKokkosKernels_ENABLE_DOCS=${KOKKOSKERNELS_DO_DOCS} ${KOKKOSKERNELS_PATH}
 echo ""
-cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_PERFTESTS=${KOKKOSKERNELS_DO_PERFTESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} -DCMAKE_EXE_LINKER_FLAGS="${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_PARSED//\"}" ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_COMPONENTS_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
+cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_PERFTESTS=${KOKKOSKERNELS_DO_PERFTESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=${CMAKE_EXPORT_COMPILE_COMMANDS} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} -DCMAKE_EXE_LINKER_FLAGS="${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_PARSED//\"}" ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_COMPONENTS_CMD} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KERNELS_DEFAULT_TEST_ETI_ONLY_OPTION} -DKokkosKernels_ENABLE_DOCS=${KOKKOSKERNELS_DO_DOCS} ${KOKKOSKERNELS_PATH}

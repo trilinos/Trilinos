@@ -172,17 +172,17 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 {
   const auto & meta = bulk_data.mesh_meta_data();
 
-  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
 
   auto weights_base = meta.get_field(stk::topology::ELEMENT_RANK, element_weights_field_name);
-  ThrowRequireMsg(weights_base,
+  STK_ThrowRequireMsg(weights_base,
       "Failed to find element rank field " << element_weights_field_name
       << " to use for rebalance weights.");
   const auto element_weights_field = static_cast<stk::mesh::Field<double> *>(weights_base);
 
   update_parent_child_rebalance_weights(bulk_data, *element_weights_field, refinement, cdmesh);
 
-  ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
+  STK_ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
   CDFEMRebalance balancer(bulk_data,
       refinement,
@@ -197,9 +197,9 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 
   if(AuxMetaData::has(meta))
     fix_node_owners_to_assure_active_owned_element_for_node(bulk_data, AuxMetaData::get(meta).active_part());
-  ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
+  STK_ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
-  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
 
   if(cdmesh)
   {
@@ -220,13 +220,13 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 {
   const auto & meta = bulk_data.mesh_meta_data();
 
-  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
 
   std::vector<stk::mesh::Field<double> *> weights_fields;
   for (auto && field_name : element_weights_field_names)
   {
     auto weights_base = meta.get_field(stk::topology::ELEMENT_RANK, field_name);
-    ThrowRequireMsg(weights_base,
+    STK_ThrowRequireMsg(weights_base,
         "Failed to find element rank field " << field_name << " to use for rebalance weights.");
     const auto element_weights_field = static_cast<stk::mesh::Field<double> *>(weights_base);
 
@@ -234,7 +234,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
     weights_fields.push_back(element_weights_field);
   }
 
-  ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
+  STK_ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
   CDFEMRebalance balancer(bulk_data,
       refinement,
@@ -250,9 +250,9 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 
   if(AuxMetaData::has(meta))
     fix_node_owners_to_assure_active_owned_element_for_node(bulk_data, AuxMetaData::get(meta).active_part());
-  ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
+  STK_ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
-  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
 
   if (cdmesh)
   {

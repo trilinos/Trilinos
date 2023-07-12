@@ -45,6 +45,7 @@
 
 #include "MockModelEval_A_Tpetra.hpp"
 #include "MockModelEval_B_Tpetra.hpp"
+#include "MockModelEval_B_Tpetra_2_parameters.hpp"
 //#include "ObserveSolution_Epetra.hpp"
 
 #include "Piro_SolverFactory.hpp"
@@ -61,10 +62,7 @@
 #include "Piro_StratimikosUtils.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Tpetra_Core.hpp"
-
-#ifdef HAVE_PIRO_IFPACK2
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#endif
+#include "Piro_ProductModelEval.hpp"
 
 #ifdef HAVE_PIRO_MUELU
 #include "Stratimikos_MueLuHelpers.hpp"
@@ -96,7 +94,7 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<7; iTest++) {
+  for (int iTest=0; iTest<8; iTest++) {
 
     if (doAll) {
       switch (iTest) {
@@ -107,6 +105,7 @@ int main(int argc, char *argv[]) {
        case 4: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml"; break;
        case 5: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml"; break;
        case 6: inputFile="input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml"; break;
+       case 7: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct_2_parameters.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -117,8 +116,15 @@ int main(int argc, char *argv[]) {
 
     try {
 
-      std::vector<std::string> mockModels = {"MockModelEval_A_Tpetra", "MockModelEval_B_Tpetra"};
+      std::vector<std::string> mockModels = {"MockModelEval_A_Tpetra", "MockModelEval_B_Tpetra", "MockModelEval_B_Tpetra_2_parameters"};
       for (auto mockModel : mockModels) {
+
+        if (mockModel=="MockModelEval_B_Tpetra_2_parameters" && iTest < 7) {
+          continue;
+        }
+        if (mockModel!="MockModelEval_B_Tpetra_2_parameters" && iTest > 6) {
+          continue;
+        }
 
         // BEGIN Builder
         const RCP<Teuchos::ParameterList> appParams = rcp(new Teuchos::ParameterList("Application Parameters"));
@@ -134,22 +140,45 @@ int main(int argc, char *argv[]) {
         bool adjoint = (piroParams->get("Sensitivity Method", "Forward") == "Adjoint");
         bool explicitAdjointME = adjoint && piroParams->get("Explicit Adjoint Model Evaluator", false);
         RCP<Thyra::ModelEvaluator<double>> model, adjointModel(Teuchos::null);
+
+        int num_parameters = piroParams->sublist("Analysis").sublist("ROL").get<int>("Number Of Parameters", 1);
+        std::vector<int> p_indices(num_parameters);
+
+        for(int i=0; i<num_parameters; ++i) {
+          std::ostringstream ss; ss << "Parameter Vector Index " << i;
+          p_indices[i] = piroParams->sublist("Analysis").sublist("ROL").get<int>(ss.str(), i);
+        }
+
         if (mockModel=="MockModelEval_A_Tpetra") {
           if(boundConstrained) {
-            model = rcp(new MockModelEval_A_Tpetra(appComm,false,probParams,true));
-            if(explicitAdjointME)
-              adjointModel = rcp(new MockModelEval_A_Tpetra(appComm,true));
+            RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm,false,probParams,true));
+            model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
+            if(explicitAdjointME) {
+              RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,true));
+              adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
+            }
             modelName = "A";
           } else   // optimization of problem A often diverges when the parameters are not constrained
             continue;
         }
-        else {//if (mockModel=="MockModelEval_B_Tpetra") 
-          model = rcp(new MockModelEval_B_Tpetra(appComm,false,probParams,true));
-          if(explicitAdjointME)
-            adjointModel = rcp(new MockModelEval_B_Tpetra(appComm,true));
+        else if (mockModel=="MockModelEval_B_Tpetra") {
+          RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_B_Tpetra(appComm,false,probParams,true));
+          model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
+          if(explicitAdjointME) {
+            RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_B_Tpetra(appComm,true));
+            adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
+          }
           modelName = "B";
         }
-
+        else if (mockModel=="MockModelEval_B_Tpetra_2_parameters") {
+          RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_B_Tpetra_2_parameters(appComm,false,probParams,true));
+          model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
+          if(explicitAdjointME) {
+            RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_B_Tpetra_2_parameters(appComm,true));
+            adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
+          }
+          modelName = "B_2";
+        }
         if (Proc==0)
           std::cout << "=======================================================================================================\n"
                     << "======  Solving Problem " << modelName << " with input file "<< iTest <<": "<< inputFile <<"\n"
@@ -158,13 +187,6 @@ int main(int argc, char *argv[]) {
         
 
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-
-  #ifdef HAVE_PIRO_IFPACK2
-        typedef Thyra::PreconditionerFactoryBase<double>              Base;
-        typedef Thyra::Ifpack2PreconditionerFactory<Tpetra_CrsMatrix> Impl;
-        linearSolverBuilder.setPreconditioningStrategyFactory(
-            Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-  #endif
 
   #ifdef HAVE_PIRO_MUELU
         using scalar_type = Tpetra::CrsMatrix<>::scalar_type;
@@ -203,6 +225,10 @@ int main(int argc, char *argv[]) {
           if (mockModel=="MockModelEval_B_Tpetra") {
             p_exact[0] = 6;
             p_exact[1] = 4;
+          }
+          if (mockModel=="MockModelEval_B_Tpetra_2_parameters") {
+            p_exact[0] = 4;
+            p_exact[1] = 6;
           }
           double tol = 1e-5;
 

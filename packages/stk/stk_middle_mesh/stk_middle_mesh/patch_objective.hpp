@@ -7,6 +7,8 @@
 #include "change_of_basis.hpp"
 #include "matrix.hpp"
 #include "taylor_patch.hpp"
+#include "distortion_metric.hpp"
+
 
 namespace stk {
 namespace middle_mesh {
@@ -61,7 +63,8 @@ class PatchObjective
 
     // get the data for the patch under the given parameterization,
     // setting the current vert position to the given coordinates
-    void compute_parameterization(const utils::Point& pt, utils::impl::Matrix<utils::Point>& triPts,
+    template <typename T>
+    void compute_parameterization(const utils::PointT<T>& pt, utils::impl::Matrix<utils::PointT<T>>& triPts,
                                   std::vector<utils::impl::Mat2x2<double>>& wMats);
 
     ActiveVertData* m_data = nullptr;
@@ -76,6 +79,29 @@ class PatchObjective
     utils::impl::ChangeOfBasis m_proj;
     utils::impl::TaylorPatch m_patch;
 };
+
+template <typename T>
+void PatchObjective::compute_parameterization(const utils::PointT<T>& pt, utils::impl::Matrix<utils::PointT<T>>& triPts,
+                                              std::vector<utils::impl::Mat2x2<double>>& wMats)
+{
+  triPts.resize(m_data->get_num_elements(), 3);
+  wMats.resize(m_data->get_num_elements());
+
+  for (int i = 0; i < m_data->get_num_elements(); ++i)
+  {
+    auto pts     = m_data->get_element_verts(i);
+    auto ptsOrig = m_data->get_element_verts_orig(i);
+    for (int j = 0; j < 3; ++j)
+    {
+      triPts(i, j) = m_proj.project_forward(pts[j]);
+      ptsOrig[j]   = m_proj.project_forward(ptsOrig[j]);
+    }
+    triPts(i, m_data->get_current_vert_idx(i)) = pt;
+
+    wMats[i] = mesh::impl::DistortionMetric<double>::compute_w(ptsOrig);
+    // W_mats[i] = m_data->getW(i, m_proj);
+  }
+}
 
 } // namespace impl
 

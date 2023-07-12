@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -81,8 +81,10 @@ C ... Need to read the nodes/element array for this element block...
           nnpe(i) = nnpe(i) + nnpe(i-1)
         end do
 
-        do 100 ix=1, nlisel
+        nprnt = 0
+        do ix=1, numel - iel0
           IEL = LISEL(IX)
+          if (iel .eq. 0) cycle
           NE = IEL - IEL0
           NLINKS = NNPE(NE-1)
           NLINK  = NNPE(NE) - NLINKS
@@ -108,28 +110,42 @@ C ... Need to read the nodes/element array for this element block...
      &          NE, ID, (LINK(NLINKS+I), I=1,NLINK)
             end if
           END IF
- 100    continue
+          nprnt = nprnt + 1
+          if (nprnt .ge. nlisel) exit
+       end do
       END IF
 
       if (doatr) then
 C     ... See if all attributes are the same
         allsam = .true.
-        do 180 ia = 1, natr
-          iel = lisel(1)-iel0
+        ifrst = 0
+        do i=1, numel
+           if (lisel(i) .gt. 0) then
+              ifrst = i
+              exit
+           end if
+        end do
+
+        if (ifrst .eq. 0) return
+
+        do ia = 1, natr
+          iel = lisel(ifrst)-iel0
           aval = atrib(ia, iel)
-          do 170 ix = 2, nlisel
-            iel = lisel(ix) - iel0
-            if (aval .ne. atrib(ia, iel)) then
+          do ix = ifrst+1, numel - iel0
+             iel = lisel(ix)
+            if (iel .eq. 0) cycle
+            ne = iel - iel0
+            if (aval .ne. atrib(ia, ne)) then
               allsam = .false.
               go to 190
             end if
- 170      continue
- 180    continue
+         end do
+       end do
 
 C     ... Print either all values (if not all same), or the common values
  190    continue
         if (allsam) then
-          ne = lisel(1) - iel0
+          ne = lisel(ifrst) - iel0
           IF (NOUT .GT. 0) THEN
             WRITE (NOUT, 10025, IOSTAT=IDUM)
      &        (ATRIB(I,NE), I=1,NATR)
@@ -138,8 +154,9 @@ C     ... Print either all values (if not all same), or the common values
      &        (ATRIB(I,NE), I=1,NATR)
           END IF
         else
-          DO 200 IX = 1, NLISEL
+          DO IX = ifrst, numel - iel0
             IEL = LISEL(IX)
+            if (iel .eq. 0) cycle
             NE = IEL - IEL0
             IF (NOUT .GT. 0) THEN
               WRITE (NOUT, 10020, IOSTAT=IDUM)
@@ -148,7 +165,7 @@ C     ... Print either all values (if not all same), or the common values
               WRITE (*, 10020, IOSTAT=IDUM)
      &          NE, IEL, (ATRIB(I,NE), I=1,NATR)
             END IF
- 200      CONTINUE
+         end do
         end if
       end if
 

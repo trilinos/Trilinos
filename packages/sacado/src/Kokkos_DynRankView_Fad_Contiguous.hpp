@@ -35,7 +35,7 @@
 // This file is setup to always work even when KokkosContainers (which contains
 // Kokkos::DynRankView) isn't enabled.
 
-#if defined(HAVE_SACADO_KOKKOSCONTAINERS)
+#if defined(HAVE_SACADO_KOKKOS)
 
 #include "Kokkos_DynRankView.hpp"
 
@@ -832,6 +832,6 @@ public:
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCONTAINERS)
+#endif // defined(HAVE_SACADO_KOKKOS)
 
 #endif /* #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP */

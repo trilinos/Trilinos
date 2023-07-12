@@ -946,7 +946,6 @@ void setup_mesh_with_hinge_ring(stk::mesh::BulkData& bulk)
   coordNode127[0] = coordNode27[0] - EPS;
   coordNode127[1] = coordNode27[1] - EPS;
   coordNode127[2] = coordNode27[2];
-  // stk::io::write_mesh("output.e", bulk);
 }
 
 stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge(stk::mesh::BulkData& bulk)
@@ -2181,7 +2180,6 @@ stk::mesh::PartVector setup_mesh_6block_6quad(stk::mesh::BulkData& bulk)
   EXPECT_EQ(8u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6}));
   EXPECT_EQ(12u, get_num_total_nodes(bulk));
 
-  bulk.dump_mesh_per_proc("dump");
   output_mesh(bulk, "initial.g");
 
   return {&block1, &block2, &block3, &block4, &block5, &block6};
@@ -2235,7 +2233,6 @@ stk::mesh::PartVector setup_mesh_9block_9quad(stk::mesh::BulkData& bulk)
   EXPECT_EQ(12u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9}));
   EXPECT_EQ(16u, get_num_total_nodes(bulk));
 
-  bulk.dump_mesh_per_proc("dump");
   output_mesh(bulk, "initial.g");
 
   return {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9};

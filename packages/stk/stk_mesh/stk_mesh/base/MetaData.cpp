@@ -54,6 +54,7 @@
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/string_case_compare.hpp>
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 
 namespace stk {
 namespace mesh {
@@ -520,7 +521,7 @@ void MetaData::commit()
   set_mesh_on_fields(m_bulk_data);
 
 #ifdef STK_VERBOSE_OUTPUT
-  dump_all_meta_info(std::cout);
+  impl::dump_all_meta_info(*this, std::cout);
 #endif
 }
 
@@ -1470,34 +1471,6 @@ FieldBase* get_field_by_name( const std::string& name, const MetaData & metaData
   }
 
   return field;
-}
-
-void MetaData::dump_all_meta_info(std::ostream& out) const
-{
-  out << "MetaData info...(ptr=" << this << ")\n";
-
-  out << "spatial dimension = " << m_spatial_dimension << "\n";
-
-  out << "  Entity rank names:\n";
-  for (size_t i = 0, e = m_entity_rank_names.size(); i != e; ++i) {
-    out << "    " << i << ": " << m_entity_rank_names[i] << "\n";
-  }
-  out << "  Special Parts:\n";
-  out << "    Universal part ord = " << m_universal_part->mesh_meta_data_ordinal() << "\n";
-  out << "    Owns part ord = " << m_owns_part->mesh_meta_data_ordinal() << "\n";
-  out << "    Shared part ord = " << m_shares_part->mesh_meta_data_ordinal() << "\n";
-
-  out << "  All parts:\n";
-  const PartVector& all_parts = m_part_repo.get_all_parts();
-  for(const Part* part : all_parts) {
-    print(out, "    ", *part);
-  }
-
-  out << "  All fields:\n";
-  const FieldVector& all_fields = m_field_repo.get_fields();
-  for(const FieldBase* field : all_fields) {
-     print(out, "    ", *field);
-  }
 }
 
 void sync_to_host_and_mark_modified(const MetaData& meta)

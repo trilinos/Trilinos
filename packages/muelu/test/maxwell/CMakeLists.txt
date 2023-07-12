@@ -31,37 +31,33 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
     COMM serial mpi
     )
 
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-Tpetra"
+      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
+      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
+      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
+      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
 
-    IF (${PACKAGE_NAME}_ENABLE_Amesos2)
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-Tpetra"
-        ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
-        ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
-        ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
-        ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-        )
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-GMHD"
+      ARGS "--linAlgebra=Tpetra --xml=gmhd.xml --SM=GMHD_curlcurlBlk.dat --D0=GMHD_D0.dat --precType=MueLu-Maxwell1  --belos_xml=Belos.xml --tol=1e9 --coords=GMHD_nodalCoords.dat --GmhdA=GMHD.dat --belosSolverType=\"Block GMRES\" "
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
 
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-GMHD"
-        ARGS "--linAlgebra=Tpetra --xml=gmhd.xml --SM=GMHD_curlcurlBlk.dat --D0=GMHD_D0.dat --precType=MueLu-Maxwell1  --belos_xml=Belos.xml --tol=1e9 --coords=GMHD_nodalCoords.dat --GmhdA=GMHD.dat --belosSolverType=\"Block GMRES\" "
-        COMM serial mpi
-        NUM_MPI_PROCS 1
-        )
-
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-GMHD"
-        ARGS "--linAlgebra=Tpetra --xml=gmhd.xml --SM=GMHD_curlcurlBlk.dat --D0=GMHD_D0.dat --precType=MueLu-Maxwell1  --belos_xml=Belos.xml --tol=1e9 --coords=GMHD_nodalCoords.dat --GmhdA=GMHD.dat --belosSolverType=\"Block GMRES\" "
-        COMM serial mpi
-        NUM_MPI_PROCS 2
-        )
-
-    ENDIF()
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-GMHD"
+      ARGS "--linAlgebra=Tpetra --xml=gmhd.xml --SM=GMHD_curlcurlBlk.dat --D0=GMHD_D0.dat --precType=MueLu-Maxwell1  --belos_xml=Belos.xml --tol=1e9 --coords=GMHD_nodalCoords.dat --GmhdA=GMHD.dat --belosSolverType=\"Block GMRES\" "
+      COMM serial mpi
+      NUM_MPI_PROCS 2
+      )
 
     IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_ENABLE_Epetra)
       TRIBITS_ADD_TEST(

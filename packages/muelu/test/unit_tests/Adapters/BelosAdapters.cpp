@@ -151,7 +151,7 @@ namespace MueLuTests {
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #endif
 
-#if !defined(HAVE_MUELU_TPETRA) or !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
+#if !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
 
@@ -255,7 +255,7 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     RCP<TestProblem<Scalar,LocalOrdinal,GlobalOrdinal,Node> > p = rcp (new TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lib));
 
@@ -279,7 +279,6 @@ namespace MueLuTests {
   }
 
 // Instantiate the Tpetra and Xpetra based tests
-#if defined(HAVE_MUELU_TPETRA)
   // run Xpetra based tests
 # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_XpetraMV, Scalar, LO, GO, Node)
@@ -309,8 +308,6 @@ namespace MueLuTests {
   typedef long long int LongLong;
   typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode OpenMPNode;
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_TpetraMV, double, int, LongLong, OpenMPNode)
-#endif
-
 #endif
 
 

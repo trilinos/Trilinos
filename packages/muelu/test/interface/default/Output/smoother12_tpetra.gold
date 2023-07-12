@@ -4,6 +4,7 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 1
@@ -38,6 +39,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 5
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 2
@@ -72,6 +74,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 4
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 3
@@ -106,6 +109,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99461
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 4
@@ -140,6 +144,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99194
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 5
@@ -193,15 +198,15 @@ level  rows  nnz    nnz/row  c ratio  procs
   4  124   370    2.98     2.99         1  
   5  42    124    2.95     2.95         1  
 
-Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 5, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 5, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 4, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
+Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 4, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
-Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2.99461, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [371, 371], Global nnz: 1111}
+Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2.99461, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [371, 371], Global nnz: 1111}
 
-Smoother (level 4) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2.99194, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [124, 124], Global nnz: 370}
+Smoother (level 4) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 2.99194, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [124, 124], Global nnz: 370}
 
 Smoother (level 5) pre  : <Direct> solver interface
 Smoother (level 5) post : no smoother

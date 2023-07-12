@@ -266,7 +266,7 @@ void MeshGatherToRoot::unpack_info(utils::impl::ParallelExchange<ElementInfo>& e
   int nprocs           = utils::impl::comm_size(m_comm);
   for (int splitCommRank = 0; splitCommRank < nprocs; ++splitCommRank)
   {
-    int inputCommRank   = get_rank_on_input_comm(splitCommRank);
+    int inputCommRank   = utils::impl::get_rank_on_other_comm(m_comm, m_inputComm, splitCommRank);
     const auto& recvBuf = exchanger.get_recv_buffer(splitCommRank);
 
     for (auto& elInfo : recvBuf)
@@ -293,18 +293,6 @@ void MeshGatherToRoot::unpack_info(utils::impl::ParallelExchange<ElementInfo>& e
       elementOrigins(el, 0, 0) = RemoteSharedEntity{inputCommRank, elInfo.elementLocalId};
     }
   }
-}
-
-int MeshGatherToRoot::get_rank_on_input_comm(int splitCommRank)
-{
-  MPI_Group inputCommGroup, splitCommGroup;
-  MPI_Comm_group(m_inputComm, &inputCommGroup);
-  MPI_Comm_group(m_comm, &splitCommGroup);
-
-  int inputCommRank;
-  MPI_Group_translate_ranks(splitCommGroup, 1, &splitCommRank, inputCommGroup, &inputCommRank);
-
-  return inputCommRank;
 }
 
 } // namespace impl

@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_CRSMATRIX_DECL_HPP
 #define TPETRA_CRSMATRIX_DECL_HPP
 
@@ -51,6 +52,7 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
+#include "Tpetra_Details_ExecutionSpacesUser.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -423,8 +425,17 @@ namespace Tpetra {
             class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
+    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
+    public Details::Spaces::User
   {
+  // clang-format on
+private:
+  using dist_object_type =
+      DistObject<char, LocalOrdinal, GlobalOrdinal,
+                 Node>; ///< Type of the DistObject specialization from which
+                        ///< this class inherits.
+  // clang-format off
+
   public:
     //! @name Typedefs
     //@{
@@ -2403,6 +2414,9 @@ namespace Tpetra {
     /// zeros count as "entries."
     size_t getLocalMaxNumRowEntries () const override;
 
+    //! The number of degrees of freedom per mesh point.
+    virtual LocalOrdinal getBlockSize () const override { return 1; }
+
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const override;
 
@@ -2973,6 +2987,13 @@ public:
       const size_t numPermutes);
 
   protected:
+
+  // clang-format on
+  using dist_object_type::
+      copyAndPermute; /// DistObject copyAndPermute has multiple overloads --
+                      /// use copyAndPermutes for anything we don't override
+  // clang-format off
+
     virtual void
     copyAndPermute
     (const SrcDistObject& source,
@@ -2994,6 +3015,13 @@ public:
      Kokkos::DualView<char*, buffer_device_type>& exports,
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
      size_t& constantNumPackets) override;
+
+  // clang-format on
+  using dist_object_type::packAndPrepare; ///< DistObject overloads
+                                          ///< packAndPrepare. Explicitly use
+                                          ///< DistObject's packAndPrepare for
+                                          ///< anything we don't override
+                                          // clang-format off
 
   private:
     /// \brief Unpack the imported column indices and values, and
@@ -3036,6 +3064,13 @@ public:
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
      const size_t constantNumPackets,
      const CombineMode CM) override;
+
+  // clang-format on
+  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
+                                            ///< unpackAndCombine, use the
+                                            ///< DistObject's implementation for
+                                            ///< anything we don't override.
+                                            // clang-format off
 
     /// \brief Pack this object's data for an Import or Export.
     ///
@@ -3706,14 +3741,11 @@ public:
                             const ELocalGlobal lg,
                             const ELocalGlobal I);
 
-    //! Type of the DistObject specialization from which this class inherits.
-    typedef DistObject<char, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
-
   protected:
     // useful typedefs
     typedef Teuchos::OrdinalTraits<LocalOrdinal> OTL;
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
-    typedef Kokkos::Details::ArithTraits<mag_type> STM;
+    typedef Kokkos::ArithTraits<impl_scalar_type> STS;
+    typedef Kokkos::ArithTraits<mag_type> STM;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>      V;
     typedef crs_graph_type Graph;

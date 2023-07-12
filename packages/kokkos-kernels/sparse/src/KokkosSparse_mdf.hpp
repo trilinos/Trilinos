@@ -34,7 +34,7 @@ namespace KokkosSparse {
 namespace Experimental {
 
 template <class crs_matrix_type, class MDF_handle>
-void mdf_symbolic(crs_matrix_type& A, MDF_handle& handle) {
+void mdf_symbolic(const crs_matrix_type& A, MDF_handle& handle) {
   using size_type    = typename crs_matrix_type::size_type;
   using ordinal_type = typename crs_matrix_type::ordinal_type;
 
@@ -63,12 +63,13 @@ void mdf_symbolic(crs_matrix_type& A, MDF_handle& handle) {
 }  // mdf_symbolic
 
 template <class crs_matrix_type, class MDF_handle>
-void mdf_numeric(crs_matrix_type& A, MDF_handle& handle) {
+void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
   using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
       entries_type::non_const_type;
-  using values_type  = typename crs_matrix_type::values_type::non_const_type;
-  using ordinal_type = typename crs_matrix_type::ordinal_type;
-  using value_type   = typename crs_matrix_type::value_type;
+  using values_mag_type =
+      typename KokkosSparse::Impl::MDF_types<crs_matrix_type>::values_mag_type;
+  using ordinal_type   = typename crs_matrix_type::ordinal_type;
+  using value_mag_type = typename values_mag_type::value_type;
 
   using execution_space   = typename crs_matrix_type::execution_space;
   using range_policy_type = Kokkos::RangePolicy<ordinal_type, execution_space>;
@@ -82,14 +83,14 @@ void mdf_numeric(crs_matrix_type& A, MDF_handle& handle) {
   crs_matrix_type Atmp      = crs_matrix_type("A fill", A);
   crs_matrix_type At = KokkosSparse::Impl::transpose_matrix<crs_matrix_type>(A);
   KokkosSparse::sort_crs_matrix<crs_matrix_type>(At);
-  values_type discarded_fill("discarded fill", A.numRows());
+  values_mag_type discarded_fill("discarded fill", A.numRows());
   col_ind_type deficiency("deficiency", A.numRows());
   col_ind_type update_list_length("update list length", 1);
   typename col_ind_type::HostMirror update_list_length_host =
       Kokkos::create_mirror_view(update_list_length);
   col_ind_type update_list("update list", A.numRows());
   col_ind_type factored("factored rows", A.numRows());
-  Kokkos::deep_copy(discarded_fill, Kokkos::ArithTraits<value_type>::max());
+  Kokkos::deep_copy(discarded_fill, Kokkos::ArithTraits<value_mag_type>::max());
   Kokkos::deep_copy(deficiency, Kokkos::ArithTraits<ordinal_type>::max());
 
   KokkosSparse::Impl::MDF_discarded_fill_norm<crs_matrix_type> MDF_df_norm(

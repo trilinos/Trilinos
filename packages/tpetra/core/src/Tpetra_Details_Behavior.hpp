@@ -275,7 +275,18 @@ public:
   /// <tt>TPETRA_OVERLAP</tt> environment variable.
   static bool overlapCommunicationAndComputation();
 
-
+  /// \brief Add Teuchos timers for all host calls to Kokkos::deep_copy().
+  /// This is especially useful for identifying host/device data transfers
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY</tt> environment variable.
+  static bool timeKokkosDeepCopy();
+  
+  /// \brief Warn if more than this many Kokkos spaces are accessed.
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_SPACE_ID_WARN_LIMIT</tt> environment variable.
+  static size_t spacesIdWarnLimit();
 };
 
 } // namespace Details

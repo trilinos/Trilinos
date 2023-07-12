@@ -50,7 +50,7 @@
 #include <Xpetra_Matrix_fwd.hpp>
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_MATLAB)
+#if defined(HAVE_MUELU_MATLAB)
 #include <Tpetra_CrsMatrix.hpp>
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_MatlabSmoother_fwd.hpp"
@@ -208,5 +208,5 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_MATLABSMOOTHER_SHORT
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_MATLAB
+#endif // HAVE_MUELU_MATLAB
 #endif // MUELU_MATLABSMOOTHER_DECL_HPP

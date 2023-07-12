@@ -3,13 +3,13 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_DiagWriter.hpp>
 
 namespace krino {
 
-static void replace_coordinates_of_node_with_new_location(const StkMeshEntities & elemNodes, const stk::mesh::Entity node, const Vector3d & newNodeLoc, std::vector<Vector3d> & elemNodeCoords)
+static void replace_coordinates_of_node_with_new_location(const StkMeshEntities & elemNodes, const stk::mesh::Entity node, const stk::math::Vector3d & newNodeLoc, std::vector<stk::math::Vector3d> & elemNodeCoords)
 {
   for (size_t n=0; n<elemNodes.size(); ++n)
   {
@@ -19,7 +19,7 @@ static void replace_coordinates_of_node_with_new_location(const StkMeshEntities 
       return;
     }
   }
-  ThrowRequireMsg(false, "Did not find the expected node in replace_coordinates_of_node_with_new_location");
+  STK_ThrowRequireMsg(false, "Did not find the expected node in replace_coordinates_of_node_with_new_location");
 }
 
 static double compute_relative_volume_change(const stk::mesh::BulkData & mesh,
@@ -27,8 +27,8 @@ static double compute_relative_volume_change(const stk::mesh::BulkData & mesh,
     const VolumePreservingSnappingLimiter::ElementToBlockConverter & elementToBlockConverter,
     const stk::mesh::Part & blockPart,
     const stk::mesh::Entity node,
-    const Vector3d & newNodeLoc,
-    std::vector<Vector3d> & elemNodeCoordsWorkspace)
+    const stk::math::Vector3d & newNodeLoc,
+    std::vector<stk::math::Vector3d> & elemNodeCoordsWorkspace)
 {
   const int dim = mesh.mesh_meta_data().spatial_dimension();
 
@@ -83,7 +83,7 @@ std::set<stk::mesh::Part*> VolumePreservingSnappingLimiter::get_blocks_to_consid
   return blocksToConsider;
 }
 
-bool VolumePreservingSnappingLimiter::is_snap_allowed(const stk::mesh::Entity node, const Vector3d & snapLocation) const
+bool VolumePreservingSnappingLimiter::is_snap_allowed(const stk::mesh::Entity node, const stk::math::Vector3d & snapLocation) const
 {
   const std::set<stk::mesh::Part*> blocksToConsider = get_blocks_to_consider(node);
   if (blocksToConsider.size() == 1 && !myMesh.bucket(node).member(myAuxMeta.exposed_boundary_part()))

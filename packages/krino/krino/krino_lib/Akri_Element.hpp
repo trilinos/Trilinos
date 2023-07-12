@@ -20,7 +20,7 @@
 #include <Akri_InterfaceGeometry.hpp>
 #include <Akri_InterfaceID.hpp>
 #include <Akri_MasterElement.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 
 namespace krino {
@@ -44,7 +44,7 @@ public:
   static bool is_less(const ElementObj * elem0,const ElementObj * elem1) { return (elem0->entityId() < elem1->entityId()); }
 
   static int evaluate_quad(const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, const SubElementNode * n3);
-  static int evaluate_quad(const Vector3d & x0, const Vector3d & x1, const Vector3d & x2, const Vector3d & x3);
+  static int evaluate_quad(const stk::math::Vector3d & x0, const stk::math::Vector3d & x1, const stk::math::Vector3d & x2, const stk::math::Vector3d & x3);
   static bool determine_diagonal_for_internal_quad_of_cut_tet_from_owner_nodes(const SubElementNode * pn0, const SubElementNode * pn1, const SubElementNode * pn2, const SubElementNode * pn3);
   static bool determine_diagonal_for_internal_quad_of_cut_tet_from_edge_nodes(const Simplex_Generation_Method simplexMethod, const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, const SubElementNode * n3,
       const bool face0, const bool face1, const bool face2, const bool face3);
@@ -71,8 +71,8 @@ public:
     sierra::ArrayContainer<double,NINT> & det_J,
     const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords ) const { std_intg_pts(intg_pt_locations, intg_weights, det_J, coords, my_master_elem); }
 
-  void fill_node_owner_coords(const Mesh_Element * owner, std::vector<Vector3d> & coords) const;
-  Vector3d compute_local_coords_from_owner_coordinates(const Mesh_Element * owner, const Vector3d & coords) const;
+  void fill_node_owner_coords(const Mesh_Element * owner, std::vector<stk::math::Vector3d> & coords) const;
+  stk::math::Vector3d compute_local_coords_from_owner_coordinates(const Mesh_Element * owner, const stk::math::Vector3d & coords) const;
 
   static void integration_weights(
     std::vector<double> & intg_weights, // includes both gauss point weight and detJ
@@ -86,7 +86,7 @@ public:
     const std::vector<double> & mesh_coords,
     const MasterElement & me) { integration_weights(intg_weights, numCoordDims, mesh_coords, me, me); }
   static void integration_locations(
-    std::vector<Vector3d> & intg_pt_locations,
+    std::vector<stk::math::Vector3d> & intg_pt_locations,
     const MasterElement & me);
   static void gather_nodal_field(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef field, std::vector<double> & result, unsigned dim = 1, unsigned npe = 0);
   static double volume(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coords_field);
@@ -94,7 +94,7 @@ public:
   static PhaseTag update_phase(const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & startPhase, const std::vector<InterfaceID> & interfaces, const std::vector<int> & interfaceSigns);
 
   const MasterElement* get_evaluation_master_element(const FieldRef field) const;
-  void evaluate_prolongation_field(const CDMesh & mesh, const FieldRef field, const unsigned field_length, const Vector3d & p_coords, double * result) const;
+  void evaluate_prolongation_field(const CDMesh & mesh, const FieldRef field, const unsigned field_length, const stk::math::Vector3d & p_coords, double * result) const;
 
   void add_subelement(std::unique_ptr<SubElement> subelem);
   void get_subelements( std::vector<const SubElement *> & subelems ) const;
@@ -103,9 +103,9 @@ public:
   unsigned num_subelements() const { return my_subelements.size(); }
   bool have_refined_edges() const;
 
-  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs) { ThrowRequire(false); }
-  virtual void cut_interior_intersection_point(CDMesh & mesh, const Vector3d & pCoords, const std::vector<int> & sortedDomains);
-  virtual void cut_face_intersection_point(const int iFace, const Vector3d & pCoords, const std::vector<int> & sortedDomains);
+  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs) { STK_ThrowRequire(false); }
+  virtual void cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains);
+  virtual void cut_face_intersection_point(const int iFace, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains);
   bool have_edges_with_children() const;
   bool captures_intersection_point_domains(const std::vector<int> & intersectionPointDomains) const;
   bool face_captures_intersection_point_domains(const int iFace, const std::vector<int> & intersectionPointDomains) const;
@@ -139,8 +139,8 @@ public:
   static bool is_supported_topology(stk::topology elem_topology) { return determine_subelement_topology(elem_topology).first != stk::topology::INVALID_TOPOLOGY; }
   static std::pair<stk::topology, unsigned> determine_subelement_topology(stk::topology elem_topology);
 
-  Vector3d get_node_parametric_coords( const int lnn ) const;
-  Vector3d get_node_parametric_coords( const SubElementNode * node ) const;
+  stk::math::Vector3d get_node_parametric_coords( const int lnn ) const;
+  stk::math::Vector3d get_node_parametric_coords( const SubElementNode * node ) const;
 
   const MasterElement & coord_master_elem() const { return my_master_elem; }
 
@@ -150,7 +150,7 @@ public:
   int subelement_order() const { return my_subelement_order; }
 
   std::string visualize(const CDMesh & mesh) const;
-  double interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const;
+  double interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const;
   int interface_node_sign(const InterfaceID interface, const SubElementNode * node) const;
   void fill_face_interior_intersections(const NodeVec & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, std::vector<ElementIntersection> & faceIntersectionPoints) const;
   double interface_crossing_position(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2) const;
@@ -160,9 +160,9 @@ public:
   ElementCutter * get_cutter() { return myCutter.get(); }
 
   bool is_prolonged() const;
-  Vector3d coordinates( const Vector3d & p_coords ) const;
+  stk::math::Vector3d coordinates( const stk::math::Vector3d & p_coords ) const;
 
-  PhaseTag determine_phase_at_location(const Vector3d & location) const;
+  PhaseTag determine_phase_at_location(const stk::math::Vector3d & location) const;
   bool have_interface() const { return my_have_interface; }
   bool have_interface(const InterfaceID interface) const { return std::binary_search(myCuttingInterfaces.begin(), myCuttingInterfaces.end(), interface); }
   int get_num_interfaces() const { return myCuttingInterfaces.size(); }
@@ -182,13 +182,13 @@ public:
   std::vector<int> get_interface_signs_based_on_crossings(const NodeVec & nodes) const;
   void cut_interior_intersection_points(CDMesh & mesh);
 
-  void find_child_coordinates_at_owner_coordinates(const Vector3d & ownerCoordinates, const ElementObj *& child, Vector3d & child_p_coords) const;
+  void find_child_coordinates_at_owner_coordinates(const stk::math::Vector3d & ownerCoordinates, const ElementObj *& child, stk::math::Vector3d & child_p_coords) const;
 
   bool is_single_coincident() const;
 
 private:
   Mesh_Element() = delete;
-  Vector3d get_intersection_point_parametric_coordinates(const IntersectionPoint & intersectionPoint) const;
+  stk::math::Vector3d get_intersection_point_parametric_coordinates(const IntersectionPoint & intersectionPoint) const;
   std::vector<double> gather_nodal_coordinates() const;
 
   int my_subelement_order;

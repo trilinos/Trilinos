@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -420,9 +420,9 @@ namespace SEAMS {
 
     add_variable("_C_", comment, false, true);
 
-    std::string version = SEAMS::Aprepro::version();
-    auto        tokens  = tokenize(version, " ");
-    double      ver     = std::stod(tokens[0]);
+    std::string ap_version = SEAMS::Aprepro::version();
+    auto        tokens     = tokenize(ap_version, " ");
+    double      ver        = std::stod(tokens[0]);
     add_variable("_VERSION_", ver, true, true);
   }
 } // namespace SEAMS

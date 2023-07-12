@@ -12,9 +12,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(HEADERS ${BDIR}/MueLu_ExplicitInstantiation.hpp)
 ENDIF()
 
-if (${PACKAGE_NAME}_ENABLE_Tpetra)
-  ASSERT_DEFINED(Tpetra_INST_INT_INT)
-ENDIF()
+ASSERT_DEFINED(Tpetra_INST_INT_INT)
 #
 # Belos
 #
@@ -54,35 +52,31 @@ ENDIF()
 #
 # Tpetra
 #
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
 
-   TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
+APPEND_SET(HEADERS
+  tpetra/MueLu_CreateTpetraPreconditioner.hpp
+  tpetra/MueLu_TpetraOperator_decl.hpp
+  tpetra/MueLu_TpetraOperator_def.hpp
+  tpetra/MueLu_TpetraOperatorAsRowMatrix.hpp
+)
 
-   APPEND_SET(HEADERS
-     tpetra/MueLu_CreateTpetraPreconditioner.hpp
-     tpetra/MueLu_TpetraOperator_decl.hpp
-     tpetra/MueLu_TpetraOperator_def.hpp
-     tpetra/MueLu_TpetraOperatorAsRowMatrix.hpp
-   )
+IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT AND ${PACKAGE_NAME}_ENABLE_Experimental)
 
-   IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT AND ${PACKAGE_NAME}_ENABLE_Experimental)
-
-     APPEND_SET(HEADERS
-       tpetra/MueLu_ShiftedLaplacian_decl.hpp
-       tpetra/MueLu_ShiftedLaplacian_def.hpp
-       tpetra/MueLu_ShiftedLaplacianOperator_decl.hpp
-       tpetra/MueLu_ShiftedLaplacianOperator_def.hpp
-     )
-
-   ENDIF()
-
-   # TAW 1/20/2016
-   # it seems that the *.hpp files are automatically generated
-   # out of the *_decl.hpp and *_def.hpp files. So we do not have
-   # to call the CREATE_CLIENT_TEMPLATE_HEADERS routine again
-   #### TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+  APPEND_SET(HEADERS
+    tpetra/MueLu_ShiftedLaplacian_decl.hpp
+    tpetra/MueLu_ShiftedLaplacian_def.hpp
+    tpetra/MueLu_ShiftedLaplacianOperator_decl.hpp
+    tpetra/MueLu_ShiftedLaplacianOperator_def.hpp
+  )
 
 ENDIF()
+
+# TAW 1/20/2016
+# it seems that the *.hpp files are automatically generated
+# out of the *_decl.hpp and *_def.hpp files. So we do not have
+# to call the CREATE_CLIENT_TEMPLATE_HEADERS routine again
+#### TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 #
 # Stratimikos

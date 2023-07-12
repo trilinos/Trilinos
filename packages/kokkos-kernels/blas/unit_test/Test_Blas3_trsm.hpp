@@ -19,6 +19,8 @@
 #include <KokkosBlas3_trsm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
+#include <chrono>
+
 namespace Test {
 
 template <class ViewTypeA, class ExecutionSpace>
@@ -54,7 +56,7 @@ struct trsm_VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -102,7 +104,7 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
                     typename ViewTypeA::value_type alpha) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using APT             = Kokkos::Details::ArithTraits<ScalarA>;
+  using APT             = Kokkos::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
   double machine_eps = APT::epsilon();
@@ -121,7 +123,8 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
   typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror_view(B);
   typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view(X0);
 
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   if ((diag[0] == 'U') || (diag[0] == 'u')) {

@@ -1,7 +1,171 @@
 # Change Log
 
-## [4.0.0](https://github.com/kokkos/kokkos-kernels/tree/4.0.0) (2023-21-02)
-[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.7.01...4.0.0)
+## [4.1.00](https://github.com/kokkos/kokkos-kernels/tree/4.1.00) (2023-06-16)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.0.01...4.1.00)
+
+### New Features
+
+#### BLAS updates
+- Adding interface with execution space instance argument to support execution of BLAS on stream
+  - Norms on stream [\#1795](https://github.com/kokkos/kokkos-kernels/pull/1795)
+  - Blas1 on stream [\#1803](https://github.com/kokkos/kokkos-kernels/pull/1803)
+  - Blas2 and 3 on stream [\#1812](https://github.com/kokkos/kokkos-kernels/pull/1812)
+- Improving BLAS level 2 support by adding native implementation and TPL for GER, HER and SYR
+  - Implementation for BLAS2 ger [\#1756](https://github.com/kokkos/kokkos-kernels/pull/1756)
+  - Implement BLAS2 syr() and her() functionalities under kokkos-kernels syr() [\#1837](https://github.com/kokkos/kokkos-kernels/pull/1837)
+
+#### Batched updates
+- Optimizing algorithms for single input data
+  - Add calls to KokkosBlas Dot and Axpy for team batched kernels when m==1 [\#1753](https://github.com/kokkos/kokkos-kernels/pull/1753)
+  - Add calls to KokkosBlas Gemv and Spmv for team batched kernels when m==1 [\#1770](https://github.com/kokkos/kokkos-kernels/pull/1770)
+
+#### Sparse updates
+- Adding stream support to ILUK/SPTRSV and sort/merge
+  - Streams interface for SPILUK numeric [\#1728](https://github.com/kokkos/kokkos-kernels/pull/1728)
+  - Stream interface for SPTRSV solve [\#1820](https://github.com/kokkos/kokkos-kernels/pull/1820)
+  - Add exec instance support to sort/sort_and_merge utils [\#1744](https://github.com/kokkos/kokkos-kernels/pull/1744)
+- Add BsrMatrix SpMV in rocSparse TPL, rewrite BsrMatrix SpMV unit tests [\#1769](https://github.com/kokkos/kokkos-kernels/pull/1769)
+- sparse: Add coo2crs, crs2coo and CooMatrix [\#1686](https://github.com/kokkos/kokkos-kernels/pull/1686)
+- Adds team- and thread-based lower-bound and upper-bound search and predicates [\#1711](https://github.com/kokkos/kokkos-kernels/pull/1711)
+- Adds KokkosKernels::Impl::Iota, a view-like where iota(i) = i + offset [\#1710](https://github.com/kokkos/kokkos-kernels/pull/1710)
+
+#### Misc updates
+- ODE: explicit integration methods [\#1754](https://github.com/kokkos/kokkos-kernels/pull/1754)
+
+### Enhancements:
+
+#### BLAS
+- refactor blas3 tests to use benchmark library [\#1751](https://github.com/kokkos/kokkos-kernels/pull/1751)
+
+#### Batched
+- batched/eti: ETI host-level interfaces [\#1783](https://github.com/kokkos/kokkos-kernels/pull/1783)
+- batched/dense: Add gesv DynRankView runtime checks [\#1850](https://github.com/kokkos/kokkos-kernels/pull/1850)
+
+#### Sparse
+- Add support for complex data types in MDF [\#1776](https://github.com/kokkos/kokkos-kernels/pull/1776)
+- Sort and merge improvements [\#1773](https://github.com/kokkos/kokkos-kernels/pull/1773)
+- spgemm handle: check that A,B,C graphs never change [\#1742](https://github.com/kokkos/kokkos-kernels/pull/1742)
+- Fix/enhance backend issues on spadd perftest [\#1672](https://github.com/kokkos/kokkos-kernels/pull/1672)
+- Spgemm perf test enhancements [\#1664](https://github.com/kokkos/kokkos-kernels/pull/1664)
+- add explicit tests of opt-in algorithms in SpMV [\#1712](https://github.com/kokkos/kokkos-kernels/pull/1712)
+
+#### Common utilities
+- Added TplsVersion file and print methods [\#1693](https://github.com/kokkos/kokkos-kernels/pull/1693)
+- Add basis skeleton for KokkosKernels::print_configuration [\#1665](https://github.com/kokkos/kokkos-kernels/pull/1665)
+- Add git information to benchmark context [\#1722](https://github.com/kokkos/kokkos-kernels/pull/1722)
+- Test mixed scalars: more fixes related to mixed scalar tests [\#1694](https://github.com/kokkos/kokkos-kernels/pull/1694)
+- PERF TESTS: adding utilities and instantiation wrapper [\#1676](https://github.com/kokkos/kokkos-kernels/pull/1676)
+
+#### TPL support
+- Refactor MKL TPL for both CPU and GPU usage [\#1779](https://github.com/kokkos/kokkos-kernels/pull/1779)
+- MKL: support indices properly [\#1868](https://github.com/kokkos/kokkos-kernels/pull/1868)
+- Use rocsparse_spmv_ex for rocm >= 5.4.0 [\#1701](https://github.com/kokkos/kokkos-kernels/pull/1701)
+
+
+### Build System:
+- Do not change memory spaces instantiation defaults based on Kokkos_ENABLE_CUDA_UVM [\#1835](https://github.com/kokkos/kokkos-kernels/pull/1835)
+- KokkosKernels: Remove TriBITS Kokkos subpackages (trilinos/Trilinos#11545) [\#1817](https://github.com/kokkos/kokkos-kernels/pull/1817)
+- CMakeLists.txt: Add alias to match what is exported from Trilinos [\#1855](https://github.com/kokkos/kokkos-kernels/pull/1855)
+- KokkosKernels: Don't list include for non-existant 'batched' build dir (trilinos/Trilinos#11966) [\#1867](https://github.com/kokkos/kokkos-kernels/pull/1867)
+- Remove non-existant subdir kokkos-kernels/common/common (#11921, #11863) [\#1854](https://github.com/kokkos/kokkos-kernels/pull/1854)
+- KokkosKernels: Remove non-existent common/src/[impl,tpls] include dirs (trilinos/Trilinos#11545) [\#1844](https://github.com/kokkos/kokkos-kernels/pull/1844)
+
+### Documentation and Testing:
+- Enable sphinx werror [\#1856](https://github.com/kokkos/kokkos-kernels/pull/1856)
+- Update cmake option naming in docs/comments [\#1849](https://github.com/kokkos/kokkos-kernels/pull/1849)
+- docs/developer: Add Experimental namespace [\#1852](https://github.com/kokkos/kokkos-kernels/pull/1852)
+- docs: Add profiling for compile times [\#1843](https://github.com/kokkos/kokkos-kernels/pull/1843)
+- Ger: adding documentation stubs in apidocs [\#1822](https://github.com/kokkos/kokkos-kernels/pull/1822)
+- .github/workflows: Summarize github-DOCS errors and warnings [\#1814](https://github.com/kokkos/kokkos-kernels/pull/1814)
+- Blas1: docs update for PR #1803 [\#1805](https://github.com/kokkos/kokkos-kernels/pull/1805)
+- apt-get update in hosted runner docs check [\#1797](https://github.com/kokkos/kokkos-kernels/pull/1797)
+- scripts: Fix github-DOCS [\#1796](https://github.com/kokkos/kokkos-kernels/pull/1796)
+- Add --enable-docs option to cm_generate_makefile [\#1785](https://github.com/kokkos/kokkos-kernels/pull/1785)
+- docs: Add stubs for some sparse APIs [\#1768](https://github.com/kokkos/kokkos-kernels/pull/1768)
+- .github: Update to actions/checkout@v3 [\#1767](https://github.com/kokkos/kokkos-kernels/pull/1767)
+- docs: Include BatchedGemm [\#1765](https://github.com/kokkos/kokkos-kernels/pull/1765)
+- .github: Automation reminder [\#1726](https://github.com/kokkos/kokkos-kernels/pull/1726)
+- Allow an HTML-only docs build [\#1723](https://github.com/kokkos/kokkos-kernels/pull/1723)
+- SYCL CI: Specify the full path to the compiler [\#1670](https://github.com/kokkos/kokkos-kernels/pull/1670)
+- Add github DOCS ci check & disable Kokkos tests [\#1647](https://github.com/kokkos/kokkos-kernels/pull/1647)
+- Add rocsparse,rocblas, to enabled TPLs in cm_test_all_sandia when --spot-check-tpls [\#1841](https://github.com/kokkos/kokkos-kernels/pull/1841)
+- cm_test_all_sandia: update to add caraway queues for MI210, MI250 [\#1840](https://github.com/kokkos/kokkos-kernels/pull/1840)
+- Support rocSparse in rocm 5.2.0 [\#1833](https://github.com/kokkos/kokkos-kernels/pull/1833)
+- Add KokkosKernels_PullRequest_VEGA908_Tpls_ROCM520 support, only enable KokkosBlas::gesv where supported [\#1816](https://github.com/kokkos/kokkos-kernels/pull/1816)
+- scripts: Include OMP settings [\#1801](https://github.com/kokkos/kokkos-kernels/pull/1801)
+- Print the patch that clang-format-8 wants to apply [\#1714](https://github.com/kokkos/kokkos-kernels/pull/1714)
+
+### Benchmarks:
+- Benchmark cleanup for par_ilut and spmv [\#1853](https://github.com/kokkos/kokkos-kernels/pull/1853)
+- SpMV: adding benchmark for spmv [\#1821](https://github.com/kokkos/kokkos-kernels/pull/1821)
+- New performance test for par_ilut, ginkgo::par_ilut, and spill [\#1799](https://github.com/kokkos/kokkos-kernels/pull/1799)
+- Include OpenMP environment variables in benchmark context [\#1789](https://github.com/kokkos/kokkos-kernels/pull/1789)
+- Re-enable and clean up triangle counting perf test [\#1752](https://github.com/kokkos/kokkos-kernels/pull/1752)
+- Include google/benchmark lib version in benchmark output [\#1750](https://github.com/kokkos/kokkos-kernels/pull/1750)
+- Refactor blas2 test for benchmark feature [\#1733](https://github.com/kokkos/kokkos-kernels/pull/1733)
+- Adds a better parilut test with gmres [\#1661](https://github.com/kokkos/kokkos-kernels/pull/1661)
+- Refactor blas1 test for benchmark feature [\#1636](https://github.com/kokkos/kokkos-kernels/pull/1636)
+
+### Cleanup:
+- Drop outdated workarounds for backward compatibility with Kokkos [\#1836](https://github.com/kokkos/kokkos-kernels/pull/1836)
+- Remove dead code guarded [\#1834](https://github.com/kokkos/kokkos-kernels/pull/1834)
+- Remove decl ETI files [\#1824](https://github.com/kokkos/kokkos-kernels/pull/1824)
+- Reorganize par_ilut performance test [\#1818](https://github.com/kokkos/kokkos-kernels/pull/1818)
+- Deprecate Kokkos::Details::ArithTraits [\#1748](https://github.com/kokkos/kokkos-kernels/pull/1748)
+- Drop obsolete workaround #ifdef KOKKOS_IF_ON_HOST [\#1720](https://github.com/kokkos/kokkos-kernels/pull/1720)
+- Drop pre Kokkos 3.6 workaround [\#1653](https://github.com/kokkos/kokkos-kernels/pull/1653)
+- View::Rank -> View::rank [\#1703](https://github.com/kokkos/kokkos-kernels/pull/1703)
+- Prefer Kokkos::View::{R->r}ank [\#1679](https://github.com/kokkos/kokkos-kernels/pull/1679)
+- Call concurrency(), not impl_thread_pool_size() [\#1666](https://github.com/kokkos/kokkos-kernels/pull/1666)
+- Kokkos moves ALL_t out of Impl namespace [\#1658](https://github.com/kokkos/kokkos-kernels/pull/1658)
+- Add KokkosKernels::Impl::are_integral_v helper variable template and quit using Kokkos::Impl::are_integral trait [\#1652](https://github.com/kokkos/kokkos-kernels/pull/1652)
+
+### Bug Fixes:
+- Kokkos 4 compatibility: modifying the preprocessor logic [\#1827](https://github.com/kokkos/kokkos-kernels/pull/1827)
+- blas/tpls: Fix gemm include guard typo [\#1848](https://github.com/kokkos/kokkos-kernels/pull/1848)
+- spmv cusparse version check modified for cuda/11.1 [\#1828](https://github.com/kokkos/kokkos-kernels/pull/1828)
+- Workaround for #1777 - cusparse spgemm test hang [\#1811](https://github.com/kokkos/kokkos-kernels/pull/1811)
+- Fix 1798 [\#1800](https://github.com/kokkos/kokkos-kernels/pull/1800)
+- BLAS: fixes and testing for LayoutStride [\#1794](https://github.com/kokkos/kokkos-kernels/pull/1794)
+- Fix 1786: check that work array is contiguous in SVD [\#1793](https://github.com/kokkos/kokkos-kernels/pull/1793)
+- Fix unused variable warnings [\#1790](https://github.com/kokkos/kokkos-kernels/pull/1790)
+- Use KOKKOS_IMPL_DO_NOT_USE_PRINTF in Test_Common_UpperBound.hpp [\#1784](https://github.com/kokkos/kokkos-kernels/pull/1784)
+- Batched Gesv: initializing variable to make compiler happy [\#1778](https://github.com/kokkos/kokkos-kernels/pull/1778)
+- perf test utils: fix device ID parsing [\#1739](https://github.com/kokkos/kokkos-kernels/pull/1739)
+- Fix OOB and improve comments in BsrMatrix COO constructor [\#1732](https://github.com/kokkos/kokkos-kernels/pull/1732)
+- batched/unit_test: Disable simd dcomplex4 test in for intel > 19.05 and <= 2021. [\#1857](https://github.com/kokkos/kokkos-kernels/pull/1857)
+- rocsparse spmv tpl: Fix rocsparse_spmv call for rocm < 5.4.0 [\#1716](https://github.com/kokkos/kokkos-kernels/pull/1716)
+- compatibility with 4.0.0 [\#1709](https://github.com/kokkos/kokkos-kernels/pull/1709)
+- team mult: fix type issue in max_error calculation [\#1706](https://github.com/kokkos/kokkos-kernels/pull/1706)
+- cast Kokkos::Impl::integral_constant to int [\#1697](https://github.com/kokkos/kokkos-kernels/pull/1697)
+
+
+## [4.0.01](https://github.com/kokkos/kokkos-kernels/tree/4.0.01) (2023-04-19)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.0.00...4.0.01)
+
+### Bug Fixes:
+- Use the options ENABLE_PERFTEST, ENABLE_EXAMPLES [\#1667](https://github.com/kokkos/kokkos-kernels/pull/1667)
+- Introduce KOKKOSKERNELS_ALL_COMPONENTS_ENABLED variable [\#1691](https://github.com/kokkos/kokkos-kernels/pull/1691)
+- Kokkos Kernels version: need to use upper case variables [\#1707](https://github.com/kokkos/kokkos-kernels/pull/1707)
+- CUSPARSE_MM_ALG_DEFAULT deprecated by cuSparse 11.1 [\#1698](https://github.com/kokkos/kokkos-kernels/pull/1698)
+- blas1: Fix a couple documentation typos [\#1704](https://github.com/kokkos/kokkos-kernels/pull/1704)
+- CUDA 11.4: fixing some -Werror [\#1727](https://github.com/kokkos/kokkos-kernels/pull/1727)
+- Remove unused variable in KokkosSparse_spgemm_numeric_tpl_spec_decl.hpp [\#1734](https://github.com/kokkos/kokkos-kernels/pull/1734)
+- Reduce BatchedGemm test coverage time [\#1737](https://github.com/kokkos/kokkos-kernels/pull/1737)
+- Fix kk_generate_diagonally_dominant_sparse_matrix hang [\#1689](https://github.com/kokkos/kokkos-kernels/pull/1689)
+- Temporary spgemm workaround matching Trilinos 11663 [\#1757](https://github.com/kokkos/kokkos-kernels/pull/1757)
+- MDF: Minor changes to interface for ifpack2 impl [\#1759](https://github.com/kokkos/kokkos-kernels/pull/1759)
+- Rocm TPL support upgrade [\#1763](https://github.com/kokkos/kokkos-kernels/pull/1763)
+- Fix BLAS cmake check for complex types [\#1762](https://github.com/kokkos/kokkos-kernels/pull/1762)
+- ParIlut: Adds a better parilut test with gmres [\#1661](https://github.com/kokkos/kokkos-kernels/pull/1661)
+- GMRES: fixing some type issues related to memory space instantiation (partial) [\#1719](https://github.com/kokkos/kokkos-kernels/pull/1719)
+- ParIlut: create and destroy spgemm handle for each usage [\#1736](https://github.com/kokkos/kokkos-kernels/pull/1736)
+- ParIlut: remove par ilut limitations [\#1755](https://github.com/kokkos/kokkos-kernels/pull/1755)
+- ParIlut: make Ut_values view atomic in compute_l_u_factors [\#1781](https://github.com/kokkos/kokkos-kernels/pull/1781)
+
+
+## [4.0.0](https://github.com/kokkos/kokkos-kernels/tree/4.0.00) (2023-21-02)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.7.01...4.0.00)
 
 ### Features:
 - Copyright update 4.0 [\#1657](https://github.com/kokkos/kokkos-kernels/pull/1657)

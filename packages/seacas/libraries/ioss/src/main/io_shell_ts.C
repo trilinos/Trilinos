@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,6 +8,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DataPool.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshType.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_ScopeGuard.h>
@@ -16,8 +17,8 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Transform.h>
 #include <Ioss_Utils.h>
-#include <transform/Iotr_Factory.h>
 #include <fmt/format.h>
+#include <transform/Iotr_Factory.h>
 
 #include <algorithm>
 #include <cassert>
@@ -175,8 +176,8 @@ int main(int argc, char *argv[])
                  fmt::group_digits(hwmax / MiB), fmt::group_digits(hwavg / MiB));
     }
 #else
-    int64_t mem = Ioss::Utils::get_memory_info();
-    int64_t hwm = Ioss::Utils::get_hwm_memory_info();
+    int64_t mem = Ioss::MemoryUtils::get_memory_info();
+    int64_t hwm = Ioss::MemoryUtils::get_hwm_memory_info();
     if (rank == 0) {
       fmt::print(stderr,
                  "\n\tCurrent Memory:    {}M\n"
@@ -630,7 +631,7 @@ namespace {
                   << "\n";
       }
 
-      auto nb = new Ioss::NodeBlock(*inb);
+      auto *nb = new Ioss::NodeBlock(*inb);
       output_region.add(nb);
 
       if (output_region.get_database()->needs_shared_node_information()) {
@@ -665,11 +666,11 @@ namespace {
 
   void *transfer_fields_ts(void *varg)
   {
-    param *arg           = static_cast<param *>(varg);
-    auto   entity        = arg->entity;
-    auto   output_region = arg->output_region;
-    auto   interFace     = arg->interFace;
-    auto   role          = arg->role;
+    auto *arg           = static_cast<param *>(varg);
+    auto  entity        = arg->entity;
+    auto  output_region = arg->output_region;
+    auto  interFace     = arg->interFace;
+    auto  role          = arg->role;
 
     const std::string &name = entity->name();
     if (interFace->debug) {
@@ -714,11 +715,11 @@ namespace {
 
   void *transfer_field_data_ts(void *varg)
   {
-    param *arg           = static_cast<param *>(varg);
-    auto   entity        = arg->entity;
-    auto   output_region = arg->output_region;
-    auto   interFace     = arg->interFace;
-    auto   role          = arg->role;
+    auto *arg           = static_cast<param *>(varg);
+    auto  entity        = arg->entity;
+    auto  output_region = arg->output_region;
+    auto  interFace     = arg->interFace;
+    auto  role          = arg->role;
 
     const std::string &name = entity->name();
 
@@ -765,11 +766,10 @@ namespace {
         if (debug) {
           DO_OUTPUT << name << ", ";
         }
-        std::string type  = iblock->topology()->name();
-        size_t      count = iblock->entity_count();
+        size_t count = iblock->entity_count();
         total_entities += count;
 
-        auto block = new T(*iblock);
+        auto *block = new T(*iblock);
         output_region.add(block);
       }
       if (!debug) {
@@ -810,15 +810,15 @@ namespace {
         DO_OUTPUT << name << ", ";
       }
 
-      auto surf = new Ioss::SideSet(*ss);
+      auto *surf = new Ioss::SideSet(*ss);
       output_region.add(surf);
 
       // Fix up the optional 'owner_block' in copied SideBlocks...
       const auto &fbs = ss->get_side_blocks();
       for (const auto &ifb : fbs) {
         if (ifb->parent_block() != nullptr) {
-          auto  fb_name = ifb->parent_block()->name();
-          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(
+          const auto &fb_name = ifb->parent_block()->name();
+          auto       *parent  = dynamic_cast<Ioss::EntityBlock *>(
               output_region.get_entity(fb_name, Ioss::ELEMENTBLOCK));
           if (parent == nullptr) {
             parent = dynamic_cast<Ioss::EntityBlock *>(
@@ -850,7 +850,7 @@ namespace {
         }
         size_t count = set->entity_count();
         total_entities += count;
-        auto o_set = new T(*set);
+        auto *o_set = new T(*set);
         output_region.add(o_set);
       }
 
@@ -897,7 +897,7 @@ namespace {
         const std::string &name = ics->name();
         DO_OUTPUT << name << ", ";
       }
-      auto cs = new Ioss::CommSet(*ics);
+      auto *cs = new Ioss::CommSet(*ics);
       output_region.add(cs);
     }
     if (debug) {

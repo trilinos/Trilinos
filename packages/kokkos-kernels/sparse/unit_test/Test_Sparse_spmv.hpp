@@ -159,8 +159,8 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv(
-    crsMat_t input_mat, x_vector_type x, y_vector_type y,
-    typename y_vector_type::non_const_value_type alpha,
+    const Controls &controls, crsMat_t input_mat, x_vector_type x,
+    y_vector_type y, typename y_vector_type::non_const_value_type alpha,
     typename y_vector_type::non_const_value_type beta, char mode,
     typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type
         max_val) {
@@ -183,7 +183,7 @@ void check_spmv(
   bool threw = false;
   std::string msg;
   try {
-    KokkosSparse::spmv(&mode, alpha, input_mat, x, beta, y);
+    KokkosSparse::spmv(controls, &mode, alpha, input_mat, x, beta, y);
     Kokkos::fence();
   } catch (std::exception &e) {
     threw = true;
@@ -422,9 +422,10 @@ Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag) {
   return Kokkos::complex<float>(mag, mag);
 }
 
-template <typename scalar_t, typename lno_t, typename size_type, class Device>
-void test_spmv(lno_t numRows, size_type nnz, lno_t bandwidth,
-               lno_t row_size_variance, bool heavy) {
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename Device>
+void test_spmv(const Controls &controls, lno_t numRows, size_type nnz,
+               lno_t bandwidth, lno_t row_size_variance, bool heavy) {
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
@@ -479,8 +480,8 @@ void test_spmv(lno_t numRows, size_type nnz, lno_t bandwidth,
       for (double beta : testAlphaBeta) {
         mag_t max_error =
             beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
-        Test::check_spmv(input_mat, input_x, output_y, alpha, beta, mode,
-                         max_error);
+        Test::check_spmv(controls, input_mat, input_x, output_y, alpha, beta,
+                         mode, max_error);
       }
     }
   }
@@ -490,10 +491,28 @@ void test_spmv(lno_t numRows, size_type nnz, lno_t bandwidth,
         // hoping the transpose won't have a long column...
         mag_t max_error =
             beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
-        Test::check_spmv(input_mat, input_xt, output_yt, alpha, beta, mode,
-                         max_error);
+        Test::check_spmv(controls, input_mat, input_xt, output_yt, alpha, beta,
+                         mode, max_error);
       }
     }
+  }
+}
+
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename Device>
+void test_spmv_algorithms(lno_t numRows, size_type nnz, lno_t bandwidth,
+                          lno_t row_size_variance, bool heavy) {
+  {
+    Controls controls;
+    test_spmv<scalar_t, lno_t, size_type, Device>(
+        controls, numRows, nnz, bandwidth, row_size_variance, heavy);
+  }
+
+  {
+    Controls controls;
+    controls.setParameter("algorithm", "native");
+    test_spmv<scalar_t, lno_t, size_type, Device>(
+        controls, numRows, nnz, bandwidth, row_size_variance, heavy);
   }
 }
 
@@ -899,13 +918,13 @@ void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
 // check that the controls are flowing down correctly in the spmv kernel
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spmv_controls(lno_t numRows, size_type nnz, lno_t bandwidth,
-                        lno_t row_size_variance) {
+                        lno_t row_size_variance,
+                        const Controls &controls = Controls()) {
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
   using x_vector_type = scalar_view_t;
   using y_vector_type = scalar_view_t;
-  using Controls      = KokkosKernels::Experimental::Controls;
   using mag_t         = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
   constexpr mag_t max_x   = static_cast<mag_t>(10);
@@ -931,8 +950,6 @@ void test_spmv_controls(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   const mag_t max_error = max_y + bandwidth * max_val * max_x;
 
-  Controls controls;
-
   Test::check_spmv_controls(controls, input_mat, input_x, output_y, 1.0, 0.0,
                             max_error);
   Test::check_spmv_controls(controls, input_mat, input_x, output_y, 0.0, 1.0,
@@ -940,6 +957,15 @@ void test_spmv_controls(lno_t numRows, size_type nnz, lno_t bandwidth,
   Test::check_spmv_controls(controls, input_mat, input_x, output_y, 1.0, 1.0,
                             max_error);
 }  // test_spmv_controls
+
+// test the native algorithm
+template <typename scalar_t, typename lno_t, typename size_type, class Device>
+void test_spmv_native(lno_t numRows, size_type nnz, lno_t bandwidth,
+                      lno_t row_size_variance) {
+  Controls controls;
+  controls.setParameter("algorithm", "native");
+  test_spmv_controls(numRows, nnz, bandwidth, row_size_variance, controls);
+}  // test_spmv_native
 
 // call it if ordinal int and, scalar float and double are instantiated.
 template <class DeviceType>
@@ -1577,15 +1603,18 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
 #define EXECUTE_TEST_FN(SCALAR, ORDINAL, OFFSET, DEVICE)                       \
   TEST_F(TestCategory,                                                         \
          sparse##_##spmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {       \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 3, 200, 10, true); \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 3, 100, 10, true); \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 20, 100, 5, true); \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 3, 20, 10,       \
-                                               false);                         \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 3, 100, 10,      \
-                                               false);                         \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 2, 100, 5,       \
-                                               false);                         \
+    test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 3, 200, \
+                                                          10, true);           \
+    test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 3, 100, \
+                                                          10, true);           \
+    test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 20,     \
+                                                          100, 5, true);       \
+    test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 3,    \
+                                                          20, 10, false);      \
+    test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 3,    \
+                                                          100, 10, false);     \
+    test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 2,    \
+                                                          100, 5, false);      \
     test_spmv_controls<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 20,     \
                                                         100, 5);               \
   }

@@ -56,6 +56,12 @@ float SIERRA_FORTRAN(sasum)(const int * n,const float * x,const int * incx);
 void SIERRA_FORTRAN(sswap)(const int* n, float* s, const int* inc, float* s1, const int* inc1); // switch s1 , s // D.N.E.
 int SIERRA_FORTRAN(isamax)(const int *n, const float *vect, const int *inc);
 
+void SIERRA_FORTRAN(dgemm)(const char* transa, const char* transb,
+                           const int* m, const int* n, const int* k,
+                           const double* alpha, const double* a,
+                           const int* lda, const double* b, const int* ldb,
+                           const double* beta, double* c, const int* ldc);
+
 void SIERRA_FORTRAN(dgemv)(const char* trans, const int* m, const int* n,
                            const double* alpha, const double* a, const int* lda,
                            const double* x, const int* incx, const double* beta,
@@ -88,6 +94,20 @@ void SIERRA_FORTRAN(dormqr)(const char* side, const char* tran, const int* m,
                             const int* lda, double* tau, double* c,
                             const int* ldc, double* work, const int* lwork,
                             int* info);
+
+void SIERRA_FORTRAN(dgecon)(const char* NORM,const int* N, const double* A, const int* LDA,
+                            const double* ANORM, double* RCOND, double* WORK, int* IWORK, int* INFO );
+
+void SIERRA_FORTRAN(dgesvd)(const char* jobu, const char* jobvt, const int* m,
+                            const int* n, double* a, const int* lda, double* s,
+                            double* u, const int* ldu, double* vt, const int* ldvt,
+                            double* work, const int* lwork, int* info );   
+                            
+void SIERRA_FORTRAN(dgeqp3)(int* m, int* n, double* A, int* lda, int* jpvt, double* tau, double* work, int* lwork, int* info);
+
+#elif !defined(_MKL_LAPACK_H_)
+
+void SIERRA_FORTRAN(dgeqp3)(int* m, int* n, double* A, int* lda, int* jpvt, double* tau, double* work, int* lwork, int* info);
 
 #endif
 }

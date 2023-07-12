@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -295,6 +295,64 @@ namespace {
       entity->field_erase(role);
     }
   }
+
+  template <typename T>
+  Ioss::Field::RoleType
+  verify_field_exists_on_any_entity_group(const std::string &field_name, const Ioss::Region &region,
+                                          const std::vector<T *> &entity_container,
+                                          const std::string      &inout)
+  {
+    bool                  found = false;
+    Ioss::Field::RoleType role  = Ioss::Field::RoleType::INTERNAL;
+
+    for (const T *entity : entity_container) {
+      if (entity->field_exists(field_name)) {
+        Ioss::Field field = entity->get_field(field_name);
+
+        if (found == true && field.get_role() != role) {
+          std::string        filename = region.get_database()->get_filename();
+          std::ostringstream errmsg;
+          fmt::print(errmsg,
+                     "\nERROR: On database '{}', Field '{}' does not have a consistent role across "
+                     "element blocks on {}\n\n",
+                     filename, field_name, region.name());
+          IOSS_ERROR(errmsg);
+        }
+
+        found = true;
+        role  = field.get_role();
+      }
+    }
+
+    if (!found) {
+      std::string        filename = region.get_database()->get_filename();
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "\nERROR: On database '{}', Field '{}' does not exist for any {} element blocks "
+                 "on {} {}\n\n",
+                 filename, field_name, inout, region.type_string(), region.name());
+      IOSS_ERROR(errmsg);
+    }
+
+    return role;
+  }
+
+  template <typename T>
+  size_t get_all_block_field_data_count(const std::string      &field_name,
+                                        const std::vector<T *> &entity_container)
+  {
+    size_t count = 0;
+
+    for (const T *entity : entity_container) {
+      if (entity->field_exists(field_name)) {
+        Ioss::Field field = entity->get_field(field_name);
+
+        count += entity->entity_count() * field.raw_storage()->component_count();
+      }
+    }
+
+    return count;
+  }
 } // namespace
 
 namespace Ioss {
@@ -362,55 +420,55 @@ namespace Ioss {
     // Region owns all sub-grouping entities it contains...
     try {
       IOSS_FUNC_ENTER(m_);
-      for (auto &nb : nodeBlocks) {
+      for (const auto &nb : nodeBlocks) {
         delete (nb);
       }
 
-      for (auto &eb : edgeBlocks) {
+      for (const auto &eb : edgeBlocks) {
         delete (eb);
       }
 
-      for (auto &fb : faceBlocks) {
+      for (const auto &fb : faceBlocks) {
         delete (fb);
       }
 
-      for (auto &eb : elementBlocks) {
+      for (const auto &eb : elementBlocks) {
         delete (eb);
       }
 
-      for (auto &sb : structuredBlocks) {
+      for (const auto &sb : structuredBlocks) {
         delete (sb);
       }
 
-      for (auto &ss : sideSets) {
+      for (const auto &ss : sideSets) {
         delete (ss);
       }
 
-      for (auto &ns : nodeSets) {
+      for (const auto &ns : nodeSets) {
         delete (ns);
       }
 
-      for (auto &es : edgeSets) {
+      for (const auto &es : edgeSets) {
         delete (es);
       }
 
-      for (auto &fs : faceSets) {
+      for (const auto &fs : faceSets) {
         delete (fs);
       }
 
-      for (auto &es : elementSets) {
+      for (const auto &es : elementSets) {
         delete (es);
       }
 
-      for (auto &cs : commSets) {
+      for (const auto &cs : commSets) {
         delete (cs);
       }
 
-      for (auto &as : assemblies) {
+      for (const auto &as : assemblies) {
         delete (as);
       }
 
-      for (auto &bl : blobs) {
+      for (const auto &bl : blobs) {
         delete (bl);
       }
 
@@ -440,7 +498,7 @@ namespace Ioss {
     return MeshType::UNSTRUCTURED;
   }
 
-  const std::string Region::mesh_type_string() const
+  std::string Region::mesh_type_string() const
   {
     switch (mesh_type()) {
     case MeshType::UNKNOWN: return "Unknown";
@@ -468,7 +526,7 @@ namespace Ioss {
     int64_t total_sides = 0;
     {
       const Ioss::SideSetContainer &sss = get_sidesets();
-      for (auto &fs : sss) {
+      for (const auto &fs : sss) {
         total_sides += get_entity_count(fs->get_side_blocks());
       }
     }
@@ -518,7 +576,7 @@ namespace Ioss {
     size_t                        num_ss_vars = 0;
     Ioss::NameList                names;
     const Ioss::SideSetContainer &sss = get_sidesets();
-    for (auto &ss : sss) {
+    for (const auto &ss : sss) {
       const auto &sbs = ss->get_side_blocks();
       for (const auto &sb : sbs) {
         sb->field_describe(Ioss::Field::TRANSIENT, &names);
@@ -1080,7 +1138,7 @@ namespace Ioss {
       // than one block; use default for first block (or user-defined
       // values)
       if (!structuredBlocks.empty()) {
-        auto   prev_block = structuredBlocks.back();
+        auto  *prev_block = structuredBlocks.back();
         size_t num_node   = prev_block->get_property("node_count").get_int();
         size_t num_cell   = prev_block->get_property("cell_count").get_int();
         num_node += prev_block->get_node_offset();
@@ -1674,7 +1732,7 @@ namespace Ioss {
 
   bool Region::add_alias(const std::string &db_name, const std::string &alias)
   {
-    auto entity = get_entity(db_name);
+    auto *entity = get_entity(db_name);
     IOSS_FUNC_ENTER(m_);
     if (entity != nullptr) {
       return add_alias__(db_name, alias, entity->type());
@@ -1769,25 +1827,25 @@ namespace Ioss {
     if (io_type == NODESET) {
       return get_nodeset(my_name);
     }
-    else if (io_type == EDGESET) {
+    if (io_type == EDGESET) {
       return get_edgeset(my_name);
     }
-    else if (io_type == FACESET) {
+    if (io_type == FACESET) {
       return get_faceset(my_name);
     }
-    else if (io_type == ELEMENTSET) {
+    if (io_type == ELEMENTSET) {
       return get_elementset(my_name);
     }
-    else if (io_type == COMMSET) {
+    if (io_type == COMMSET) {
       return get_commset(my_name);
     }
-    else if (io_type == SIDEBLOCK) {
+    if (io_type == SIDEBLOCK) {
       return get_sideblock(my_name);
     }
-    else if (io_type == ASSEMBLY) {
+    if (io_type == ASSEMBLY) {
       return get_assembly(my_name);
     }
-    else if (io_type == BLOB) {
+    if (io_type == BLOB) {
       return get_blob(my_name);
     }
     return nullptr;
@@ -1883,7 +1941,8 @@ namespace Ioss {
       std::ostringstream errmsg;
       fmt::print(
           errmsg,
-          "ERROR: There are multiple ({}) blocks and/or sets with the name '{}' defined in the "
+          "ERROR: There are multiple ({}) blocks, sets, assemblies and/or blobs with the name '{}' "
+          "defined in the "
           "database file '{}'.\n"
           "\tThis is allowed in general, but this application uses an API function (get_entity) "
           "that does not support duplicate names.",
@@ -1923,22 +1982,22 @@ namespace Ioss {
     if (io_type == NODESET) {
       return get_entity_internal(id, get_nodesets());
     }
-    else if (io_type == EDGESET) {
+    if (io_type == EDGESET) {
       return get_entity_internal(id, get_edgesets());
     }
-    else if (io_type == FACESET) {
+    if (io_type == FACESET) {
       return get_entity_internal(id, get_facesets());
     }
-    else if (io_type == ELEMENTSET) {
+    if (io_type == ELEMENTSET) {
       return get_entity_internal(id, get_elementsets());
     }
-    else if (io_type == COMMSET) {
+    if (io_type == COMMSET) {
       return get_entity_internal(id, get_commsets());
     }
-    else if (io_type == ASSEMBLY) {
+    if (io_type == ASSEMBLY) {
       return get_entity_internal(id, get_assemblies());
     }
-    else if (io_type == BLOB) {
+    if (io_type == BLOB) {
       return get_entity_internal(id, get_blobs());
     }
     return nullptr;
@@ -1956,7 +2015,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     Assembly *ge = nullptr;
-    for (auto &as : assemblies) {
+    for (const auto &as : assemblies) {
       if (db_hash == as->hash() && as->name() == db_name) {
         ge = as;
         break;
@@ -1977,7 +2036,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     Blob *ge = nullptr;
-    for (auto &bl : blobs) {
+    for (const auto &bl : blobs) {
       if (db_hash == bl->hash() && bl->name() == db_name) {
         ge = bl;
         break;
@@ -1998,7 +2057,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     NodeBlock *ge = nullptr;
-    for (auto &nb : nodeBlocks) {
+    for (const auto &nb : nodeBlocks) {
       if (db_hash == nb->hash() && nb->name() == db_name) {
         ge = nb;
         break;
@@ -2019,7 +2078,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     EdgeBlock *ge = nullptr;
-    for (auto &eb : edgeBlocks) {
+    for (const auto &eb : edgeBlocks) {
       if (db_hash == eb->hash() && eb->name() == db_name) {
         ge = eb;
         break;
@@ -2040,7 +2099,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     FaceBlock *ge = nullptr;
-    for (auto &fb : faceBlocks) {
+    for (const auto &fb : faceBlocks) {
       if (db_hash == fb->hash() && fb->name() == db_name) {
         ge = fb;
         break;
@@ -2061,7 +2120,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     ElementBlock *ge = nullptr;
-    for (auto &eb : elementBlocks) {
+    for (const auto &eb : elementBlocks) {
       if (db_hash == eb->hash() && eb->name() == db_name) {
         ge = eb;
         break;
@@ -2082,7 +2141,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     StructuredBlock *ge = nullptr;
-    for (auto &sb : structuredBlocks) {
+    for (const auto &sb : structuredBlocks) {
       if (db_hash == sb->hash() && sb->name() == db_name) {
         ge = sb;
         break;
@@ -2103,7 +2162,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     SideSet *ge = nullptr;
-    for (auto &ss : sideSets) {
+    for (const auto &ss : sideSets) {
       if (db_hash == ss->hash() && ss->name() == db_name) {
         ge = ss;
         break;
@@ -2121,7 +2180,7 @@ namespace Ioss {
   {
     IOSS_FUNC_ENTER(m_);
     SideBlock *ge = nullptr;
-    for (auto &ss : sideSets) {
+    for (const auto &ss : sideSets) {
       ge = ss->get_side_block(my_name);
       if (ge != nullptr) {
         break;
@@ -2142,7 +2201,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     NodeSet *ge = nullptr;
-    for (auto &ns : nodeSets) {
+    for (const auto &ns : nodeSets) {
       if (db_hash == ns->hash() && ns->name() == db_name) {
         ge = ns;
         break;
@@ -2163,7 +2222,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     EdgeSet *ge = nullptr;
-    for (auto &es : edgeSets) {
+    for (const auto &es : edgeSets) {
       if (db_hash == es->hash() && es->name() == db_name) {
         ge = es;
         break;
@@ -2184,7 +2243,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     FaceSet *ge = nullptr;
-    for (auto &fs : faceSets) {
+    for (const auto &fs : faceSets) {
       if (db_hash == fs->hash() && fs->name() == db_name) {
         ge = fs;
         break;
@@ -2205,7 +2264,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     ElementSet *ge = nullptr;
-    for (auto &es : elementSets) {
+    for (const auto &es : elementSets) {
       if (db_hash == es->hash() && es->name() == db_name) {
         ge = es;
         break;
@@ -2226,7 +2285,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     CommSet *ge = nullptr;
-    for (auto &cs : commSets) {
+    for (const auto &cs : commSets) {
       if (db_hash == cs->hash() && cs->name() == db_name) {
         ge = cs;
         break;
@@ -2243,7 +2302,7 @@ namespace Ioss {
   const CoordinateFrame &Region::get_coordinate_frame(int64_t id) const
   {
     IOSS_FUNC_ENTER(m_);
-    for (auto &coor_frame : coordinateFrames) {
+    for (const auto &coor_frame : coordinateFrames) {
       if (coor_frame.id() == id) {
         return coor_frame;
       }
@@ -2268,79 +2327,79 @@ namespace Ioss {
     // If found, then set 'type' (if non-nullptr) to the type of the entity
     // (the 'type' values are from client code that was developed prior
     // to this function, so they are somewhat exodusII specific...).
-    if (((io_type & NODEBLOCK) != 0u) && get_node_block(my_name) != nullptr) {
+    if (((io_type & NODEBLOCK) != 0U) && get_node_block(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "NODE_BLOCK";
       }
       return true;
     }
-    if (((io_type & ASSEMBLY) != 0u) && get_assembly(my_name) != nullptr) {
+    if (((io_type & ASSEMBLY) != 0U) && get_assembly(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "ASSEMBLY";
       }
       return true;
     }
-    if (((io_type & BLOB) != 0u) && get_blob(my_name) != nullptr) {
+    if (((io_type & BLOB) != 0U) && get_blob(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "BLOB";
       }
       return true;
     }
-    if (((io_type & EDGEBLOCK) != 0u) && get_edge_block(my_name) != nullptr) {
+    if (((io_type & EDGEBLOCK) != 0U) && get_edge_block(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "EDGE_BLOCK";
       }
       return true;
     }
-    if (((io_type & FACEBLOCK) != 0u) && get_face_block(my_name) != nullptr) {
+    if (((io_type & FACEBLOCK) != 0U) && get_face_block(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "FACE_BLOCK";
       }
       return true;
     }
-    if (((io_type & ELEMENTBLOCK) != 0u) && get_element_block(my_name) != nullptr) {
+    if (((io_type & ELEMENTBLOCK) != 0U) && get_element_block(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "ELEMENT_BLOCK";
       }
       return true;
     }
-    if (((io_type & STRUCTUREDBLOCK) != 0u) && get_structured_block(my_name) != nullptr) {
+    if (((io_type & STRUCTUREDBLOCK) != 0U) && get_structured_block(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "STRUCTURED_BLOCK";
       }
       return true;
     }
-    if (((io_type & SIDESET) != 0u) && get_sideset(my_name) != nullptr) {
+    if (((io_type & SIDESET) != 0U) && get_sideset(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "SURFACE";
       }
       return true;
     }
-    else if (((io_type & NODESET) != 0u) && get_nodeset(my_name) != nullptr) {
+    if (((io_type & NODESET) != 0U) && get_nodeset(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "NODESET";
       }
       return true;
     }
-    else if (((io_type & EDGESET) != 0u) && get_edgeset(my_name) != nullptr) {
+    if (((io_type & EDGESET) != 0U) && get_edgeset(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "EDGESET";
       }
       return true;
     }
-    else if (((io_type & FACESET) != 0u) && get_faceset(my_name) != nullptr) {
+    if (((io_type & FACESET) != 0U) && get_faceset(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "FACESET";
       }
       return true;
     }
-    else if (((io_type & ELEMENTSET) != 0u) && get_elementset(my_name) != nullptr) {
+    if (((io_type & ELEMENTSET) != 0U) && get_elementset(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "ELEMENTSET";
       }
       return true;
     }
-    else if (((io_type & COMMSET) != 0u) && get_commset(my_name) != nullptr) {
+    if (((io_type & COMMSET) != 0U) && get_commset(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "COMMSET";
       }
@@ -2361,7 +2420,7 @@ namespace Ioss {
   ElementBlock *Region::get_element_block(size_t local_id) const
   {
     IOSS_FUNC_ENTER(m_);
-    for (auto &eb : elementBlocks) {
+    for (const auto &eb : elementBlocks) {
       if (eb->contains(local_id)) {
         return eb;
       }
@@ -2384,7 +2443,7 @@ namespace Ioss {
   StructuredBlock *Region::get_structured_block(size_t global_offset) const
   {
     IOSS_FUNC_ENTER(m_);
-    for (auto &sb : structuredBlocks) {
+    for (const auto &sb : structuredBlocks) {
       if (sb->contains(global_offset)) {
         return sb;
       }
@@ -2482,7 +2541,7 @@ namespace Ioss {
 
     if (my_name == "element_count") {
       int64_t count = 0;
-      for (auto &eb : elementBlocks) {
+      for (const auto &eb : elementBlocks) {
         count += eb->entity_count();
       }
       return Property(my_name, count);
@@ -2490,7 +2549,7 @@ namespace Ioss {
 
     if (my_name == "cell_count") {
       int64_t count = 0;
-      for (auto &eb : structuredBlocks) {
+      for (const auto &eb : structuredBlocks) {
         count += eb->get_property("cell_count").get_int();
       }
       return Property(my_name, count);
@@ -2498,7 +2557,7 @@ namespace Ioss {
 
     if (my_name == "face_count") {
       int64_t count = 0;
-      for (auto &fb : faceBlocks) {
+      for (const auto &fb : faceBlocks) {
         count += fb->entity_count();
       }
       return Property(my_name, count);
@@ -2506,7 +2565,7 @@ namespace Ioss {
 
     if (my_name == "edge_count") {
       int64_t count = 0;
-      for (auto &eb : edgeBlocks) {
+      for (const auto &eb : edgeBlocks) {
         count += eb->entity_count();
       }
       return Property(my_name, count);
@@ -2514,7 +2573,7 @@ namespace Ioss {
 
     if (my_name == "node_count") {
       int64_t count = 0;
-      for (auto &nb : nodeBlocks) {
+      for (const auto &nb : nodeBlocks) {
         count += nb->entity_count();
       }
       return Property(my_name, count);
@@ -2538,6 +2597,12 @@ namespace Ioss {
   int64_t Region::internal_put_field_data(const Field &field, void *data, size_t data_size) const
   {
     return get_database()->put_field(this, field, data, data_size);
+  }
+
+  int64_t Region::internal_get_zc_field_data(const Field &field, void **data,
+                                             size_t *data_size) const
+  {
+    return get_database()->get_zc_field(this, field, data, data_size);
   }
 
   /** \brief Transfer all relevant aliases from this region to another region
@@ -2726,13 +2791,51 @@ namespace Ioss {
         int64_t            id2      = old_ge->get_optional_property(id_str(), 0);
         std::ostringstream errmsg;
         fmt::print(errmsg,
-                   "ERROR: There are multiple blocks or sets with the same name defined in the "
+                   "ERROR: There are multiple blocks, sets, assemblies, and/or blobs with the same "
+                   "name defined in the "
                    "database file '{}'.\n"
                    "\tBoth {} {} and {} {} are named '{}'.  All names must be unique.",
                    filename, entity->type_string(), id1, old_ge->type_string(), id2, name);
         IOSS_ERROR(errmsg);
       }
     }
+  }
+
+  std::vector<size_t> Region::internal_get_all_block_field_data(const std::string &field_name,
+                                                                void *data, size_t data_size) const
+  {
+    return get_database()->get_all_block_field_data(field_name, data, data_size);
+  }
+
+  template IOSS_EXPORT std::vector<size_t>
+                       Region::get_all_block_field_data(const std::string &field_name,
+                                                        std::vector<int>  &field_data) const;
+  template IOSS_EXPORT std::vector<size_t>
+                       Region::get_all_block_field_data(const std::string    &field_name,
+                                                        std::vector<int64_t> &field_data) const;
+  template IOSS_EXPORT std::vector<size_t>
+                       Region::get_all_block_field_data(const std::string   &field_name,
+                                                        std::vector<double> &field_data) const;
+
+  template <typename T>
+  std::vector<size_t> Region::get_all_block_field_data(const std::string &field_name,
+                                                       std::vector<T>    &field_data) const
+  {
+    const Ioss::ElementBlockContainer &elem_blocks = get_element_blocks();
+
+    verify_field_exists_on_any_entity_group(field_name, *this, elem_blocks, "input");
+
+    size_t field_count = get_all_block_field_data_count(field_name, elem_blocks);
+    field_data.resize(field_count);
+
+    size_t data_size = field_count * sizeof(T);
+    std::vector<size_t> offsets =
+        internal_get_all_block_field_data(field_name, field_data.data(), data_size);
+
+    assert(offsets.size() == (elem_blocks.size() + 1));
+    assert(offsets[elem_blocks.size()] == field_count);
+
+    return offsets;
   }
 
 } // namespace Ioss

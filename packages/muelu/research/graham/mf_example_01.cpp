@@ -60,6 +60,7 @@
 #include <stdio.h>
 #include <random>
 #include <unistd.h>
+#include <cmath>
 
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"
@@ -90,7 +91,27 @@
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_Parameters.hpp"
 
-// Belos includes
+// MueLu headers
+#include "MueLu_Level.hpp"
+#include "MueLu_Hierarchy.hpp"
+#include "MueLu_HierarchyManager.hpp"
+#include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_ParameterListInterpreter.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_AggregationExportFactory.hpp"
+#include "MueLu_Factory.hpp"
+
+// Belos includes (this is the only package which may be disabled in some configurations)
+#ifdef HAVE_MUELU_BELOS
+#include "BelosConfigDefs.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosXpetraAdapter.hpp" // this header defines Belos::XpetraOp()
+#include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
 #include "BelosTpetraAdapter.hpp"
 #include "BelosTpetraOperator.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
@@ -104,35 +125,7 @@
 #include "BelosPseudoBlockTFQMRSolMgr.hpp"
 #include "BelosRCGSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
-
-// MueLu headers
-#include "MueLu_Level.hpp"
-#include "MueLu_Hierarchy.hpp"
-#include "MueLu_HierarchyManager.hpp"
-#include "MueLu_ParameterListInterpreter.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_CoordinatesTransferFactory.hpp"
-#include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_AggregationExportFactory.hpp"
-#include "MueLu_Factory.hpp"
-
-// Kokkos typedefs
-typedef Kokkos::Serial HostExec;
-typedef Kokkos::HostSpace HostMem;
-typedef Kokkos::Device<HostExec,HostMem> HostDevice;
-typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode HostNode;
-#ifdef DREAM_USE_CUDA
-  typedef Kokkos::Cuda DeviceExec;
-  typedef Kokkos::CudaSpace DeviceMem;
-  typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode DeviceNode;
-#else
-  typedef Kokkos::Serial DeviceExec;
-  typedef Kokkos::HostSpace DeviceMem;
-  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode DeviceNode;
 #endif
-typedef Kokkos::Device<DeviceExec,DeviceMem> DeviceDevice;
-
-#define PI 3.141592653589793238463
 
 // some things like multivectors are "2D views" but only appear as 1D in practice, so we macro a print statement
 #define PRINT_VIEW2_LINEAR(view)                                                               \
@@ -528,85 +521,99 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       auto rhs_1d = Kokkos::subview (rhs_2d, Kokkos::ALL(), 0);
       SC x = x_left;
       for(size_t i=0; i<n_local; ++i) {
-        rhs_1d(i) = 4*h*h*PI*PI*sin(2*PI*x);
+        rhs_1d(i) = 4*h*h*M_PI*M_PI*sin(2*M_PI*x);
         x += h;
       }
     }
 
     if(!do_multigrid) {
-      // TODO: Artifact of the Tpetra->Xpetra switch
-      // std::cout << "Creating Belos solver..." << std::endl;
+      std::cout << "Creating Belos solver..." << std::endl;
 
-      // // Create the solver
-      // std::string solver_name = "Tpetra CG";
-      // Teuchos::RCP<Belos::SolverManager<SC, Tpetra::MultiVector<SC,LO,GO,NO>, Tpetra::Operator<SC,LO,GO,NO>> solver;
-      // Belos::SolverFactory<SC, Tpetra::MultiVector<SC,LO,GO,NO>, Tpetra::Operator<SC,LO,GO,NO>> factory;
-      // solver = factory.create(solver_name, Teuchos::null);
+      // Create solver settings
+      Teuchos::RCP<Teuchos::ParameterList> belos_settings = Teuchos::parameterList("Belos");
+      belos_settings->set("Verbosity", belos_verbose ? 1 : 0);
+      belos_settings->set("Output Style", 1);
+      belos_settings->set("Maximum Iterations",    max_iterations);
+      //belos_settings->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
+      //belos_settings->set("Output Frequency",      1);
+      //belos_settings->set("Output Style",          Belos::Brief);
 
-      // // Add settings to the solver
-      // Teuchos::RCP<Teuchos::ParameterList> belos_settings = Teuchos::parameterList("Belos");
-      // belos_settings->set("Verbosity", belos_verbose ? 1 : 0);
-      // belos_settings->set("Output Style", 1);
-      // belos_settings->set("Maximum Iterations",    max_iterations);
-      // //belos_settings->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-      // //belos_settings->set("Output Frequency",      1);
-      // //belos_settings->set("Output Style",          Belos::Brief);
-      // solver->setParameters(belos_settings);
+      // Define and set the linear problem
+      Teuchos::RCP<Belos::OperatorT<MV>> belos_operator = Teuchos::rcp(new Belos::XpetraOp<SC,LO,GO,NO>(matrix)); // Turns a Xpetra::Operator object into a Belos operator
+      Teuchos::RCP<Belos::LinearProblem<SC,MV,Belos::OperatorT<MV>>> belos_problem = Teuchos::rcp(new Belos::LinearProblem<SC,MV,Belos::OperatorT<MV>>(belos_operator, solution, rhs));
+      bool set = belos_problem->setProblem();
+      if (set == false) {
+        if (comm->getRank() == 0)
+          std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+        return EXIT_FAILURE;
+      }
 
-      // // Define the linear problem
-      // Teuchos::RCP<Belos::LinearProblem<SC, MV, OP>> lp = 
-      //   Teuchos::rcp(new Belos::LinearProblem<SC, MV, OP>(matrix, solution, rhs));
-      // lp->setProblem();
+      // Solve the problem
+      std::cout << "Solving the problem..." << std::endl;
+      Teuchos::RCP<Belos::SolverManager<SC,MV,Belos::OperatorT<MV>>> solver = Teuchos::rcp(new Belos::BlockCGSolMgr<SC,MV,Belos::OperatorT<MV>>(belos_problem, belos_settings));
+      const Belos::ReturnType belos_result = solver->solve();
 
-      // // Solve the problem
-      // std::cout << "Solving the problem..." << std::endl;
-      // solver->setProblem(lp);
-      // const Belos::ReturnType belos_result = solver->solve();
-
-      // if(my_rank == 0) {
-      //   std::cout << "Belos solver wrapper results: "
-      //             << (belos_result == Belos::Converged ? "Converged" : "Unconverged")
-      //             << std::endl
-      //             << "Number of iterations: " << solver->getNumIters()
-      //             << std::endl;
-      // }
+      if(my_rank == 0) {
+        std::cout << "Belos solver wrapper results: "
+                  << (belos_result == Belos::Converged ? "Converged" : "Unconverged")
+                  << std::endl
+                  << "Number of iterations: " << solver->getNumIters()
+                  << std::endl;
+      }
     } else {
       std::cout << "Generating multigrid objects..." << std::endl;
+
+      Teuchos::ParameterList params;
+      params.set("coarse: max size", 1);
+      params.set("max levels", 2);
+      params.set("transpose: use implicit", true);
       
       // generate coarse matrix-free operator
       Teuchos::RCP<TridiagonalOperator<SC,LO,GO,NO>> coarse_matrix = Teuchos::rcp(new TridiagonalOperator<SC,LO,GO,NO>(n/3, comm));
       Teuchos::RCP<MFProlongatorOperator<SC,LO,GO,NO>> P = Teuchos::rcp(new MFProlongatorOperator<SC,LO,GO,NO>(matrix->getDomainMap()));
 
       // create MueLu hierarchy and levels
-      Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO>> H = Teuchos::rcp(new typename MueLu::Hierarchy<SC,LO,GO,NO>());
-      Teuchos::RCP<MueLu::Level> fineLevel = H->GetLevel(0);
-      fineLevel->Set("A", matrix);
+      Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO>> hierarchy = Teuchos::rcp(new typename MueLu::Hierarchy<SC,LO,GO,NO>());
+      hierarchy->SetProcRankVerbose(matrix->getDomainMap()->getComm()->getRank());
+      Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO>> hierarchyManager = Teuchos::rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(params,matrix->getDomainMap()->getComm()));
+      Teuchos::RCP<MueLu::FactoryManager<SC,LO,GO,NO>> factoryManager = Teuchos::rcp(new MueLu::FactoryManager<SC,LO,GO,NO>());
       
-      H->AddNewLevel();
-      Teuchos::RCP<MueLu::Level> coarseLevel = H->GetLevel(1);
-      coarseLevel->Set("P", P);
-      //coarseLevel->Set("A", coarse_matrix);
+      // set A on fine level
+      Teuchos::RCP<MueLu::Level> fineLevel = hierarchy->GetLevel(0);
+      fineLevel->SetFactoryManager(factoryManager);
+      Teuchos::RCP<Xpetra::Operator<SC,LO,GO,NO>> matrix_op = matrix;
+      fineLevel->Set("A", matrix_op);
+      
+      // handle the smoother
+      std::string ifpackType = "RELAXATION";
+      Teuchos::ParameterList ifpackList;
+      ifpackList.set("relaxation: sweeps", (LO) 1);
+      ifpackList.set("relaxation: damping factor", (SC) 1.0);
+      Teuchos::RCP<MueLu::SmootherPrototype<SC,LO,GO,NO>> smootherPrototype = Teuchos::rcp(new MueLu::TrilinosSmoother<SC,LO,GO,NO>(ifpackType, ifpackList));
+      Teuchos::RCP<MueLu::SmootherFactory<SC,LO,GO,NO>> smootherFact = Teuchos::rcp(new MueLu::SmootherFactory<SC,LO,GO,NO>(smootherPrototype));
+      factoryManager->SetFactory("Smoother", smootherFact);
 
-      Teuchos::ParameterList params;
-      params.set("coarse: max size", 1);
-      params.set("max levels", 2);
-      params.set("transpose: use implicit", true);
+      // work on the next level
+      // hierarchy->AddNewLevel();
+      // Teuchos::RCP<MueLu::Level> coarseLevel = hierarchy->GetLevel(1);
+      // coarseLevel->Set("P", P);
+      // coarseLevel->Set("A", coarse_matrix);
 
-      Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO>> mueLuFactory = Teuchos::rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(params,matrix->getDomainMap()->getComm()));
-      //H->setlib(matrix->getDomainMap()->lib());
-      H->SetProcRankVerbose(matrix->getDomainMap()->getComm()->getRank());
-      //mueLuFactory->SetupHierarchy(*H);
+      // hierarchyManager->SetupHierarchy(*hierarchy);
+      //hierarchy->Setup(factoryManager,fineLevel,coarseLevel);
+      //hierarchy->setlib(matrix->getDomainMap()->lib());
+      //hierarchyManager->SetupHierarchy(*hierarchy);
 
       std::cout << "Finished hierarchy!" << std::endl;
 
       Teuchos::ParameterList status;
-      //status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+      //status = hierarchy->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
       if (comm->getRank() == 0) {
         std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
         status.print(std::cout, Teuchos::ParameterList::PrintOptions().indent(2));
       }
 
-      //H->Iterate(*rhs, *solution, max_iterations);
+      //hierarchy->Iterate(*rhs, *solution, max_iterations);
     }
 
     // output the RHS and solution for validation
@@ -619,6 +626,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       PRINT_VIEW2_LINEAR(solution_2d) 
     }
     
+    // can't dump MatrixMarket if it's not a matrix
     if(dump_matrix_market) {
       //Xpetra::MatrixMarket::Writer<vector_type>::writeDenseFile("example_01_solution.mm", *solution);
       //Xpetra::MatrixMarket::Writer<vector_type>::writeDenseFile("example_01_rhs.mm", *rhs);

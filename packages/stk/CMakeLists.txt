@@ -45,8 +45,8 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # B) Set up package-specific options
 #
 
-IF (${${PROJECT_NAME}_ENABLE_KokkosCore})
-  SET(STK_HAVE_KOKKOSCORE ON)
+IF (${${PROJECT_NAME}_ENABLE_Kokkos})
+  SET(STK_HAVE_KOKKOS ON)
 ENDIF()
 
 IF (TPL_ENABLE_Boost)
@@ -88,8 +88,8 @@ ELSEIF("${FC_FN_UNDERSCORE}" STREQUAL "UNDER")
 ELSEIF("${FC_FN_UNDERSCORE}" STREQUAL "SECOND_UNDER")
   SET(FORTRAN_TWO_UNDERSCORES ON)
 ELSE()
-  MESSAGE("Could not determine the Fortran mangling defaulting to no underscore.")
-  SET(FORTRAN_NO_UNDERSCORE ON)
+  MESSAGE("Could not determine the Fortran mangling; defaulting to one underscore.")
+  SET(FORTRAN_ONE_UNDERSCORE ON)
 ENDIF()
 
 TRIBITS_CONFIGURE_FILE(STK_Trilinos_config.h)

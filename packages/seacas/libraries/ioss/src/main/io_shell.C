@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,6 +9,7 @@
 #include <Ioss_Compare.h>
 #include <Ioss_CopyDatabase.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_MeshType.h>
 #include <Ioss_ParallelUtils.h>
@@ -34,7 +35,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "6.1 (2021/09/09)";
+  std::string version = "6.2 (2023/05/12)";
 
   bool mem_stats = false;
 
@@ -46,6 +47,9 @@ namespace {
   {
     Ioss::MeshCopyOptions options{};
     options.selected_times    = interFace.selected_times;
+    options.rel_tolerance     = interFace.rel_tolerance;
+    options.abs_tolerance     = interFace.abs_tolerance;
+    options.tol_floor         = interFace.tol_floor;
     options.verbose           = !interFace.quiet;
     options.output_summary    = true;
     options.memory_statistics = interFace.memory_statistics;
@@ -105,8 +109,10 @@ int main(int argc, char *argv[])
     if (interFace.compare) {
       fmt::print(stderr,
                  "Input 1:   '{}', Type: {}\n"
-                 "Input 2:   '{}', Type: {}\n\n",
-                 in_file, interFace.inFiletype, out_file, interFace.outFiletype);
+                 "Input 2:   '{}', Type: {}\n"
+                 "\tTolerances: Absolute = {}, Relative = {}, Floor = {}\n\n",
+                 in_file, interFace.inFiletype, out_file, interFace.outFiletype,
+                 interFace.abs_tolerance, interFace.rel_tolerance, interFace.tol_floor);
     }
     else {
       fmt::print(stderr,
@@ -167,8 +173,8 @@ int main(int argc, char *argv[])
                  fmt::group_digits(hwmax / MiB), fmt::group_digits(hwavg / MiB));
     }
 #else
-    int64_t mem = Ioss::Utils::get_memory_info();
-    int64_t hwm = Ioss::Utils::get_hwm_memory_info();
+    int64_t mem = Ioss::MemoryUtils::get_memory_info();
+    int64_t hwm = Ioss::MemoryUtils::get_hwm_memory_info();
     if (rank == 0) {
       fmt::print(stderr,
                  "\n\tCurrent Memory:    {}M\n"
@@ -634,6 +640,10 @@ namespace {
 
     if (interFace.debug) {
       properties.add(Ioss::Property("LOGGING", 1));
+    }
+
+    if (interFace.detect_nans) {
+      properties.add(Ioss::Property("NAN_DETECTION", 1));
     }
 
     if (interFace.memory_statistics) {

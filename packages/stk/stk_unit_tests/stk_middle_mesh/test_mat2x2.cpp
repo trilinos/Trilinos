@@ -1,11 +1,13 @@
 #include "gtest/gtest.h"
 
-#include "complex_utils.hpp"
-#include "mat2x2.hpp"
+#include "stk_middle_mesh/complex_utils.hpp"
+#include "stk_middle_mesh/mat2x2.hpp"
 
 namespace stk {
 namespace middle_mesh {
 namespace impl {
+
+namespace {
 
 using Complex = std::complex<double>;
 
@@ -29,6 +31,14 @@ Mat2x2<T> compute_fd(Mat2x2<T>& a, Tfunc func, double eps = 1e-7)
   return b;
 }
 
+void expect_near(const Complex& a, const Complex& b, double tol)
+{
+  EXPECT_NEAR(a.real(), b.real(), tol);
+  EXPECT_NEAR(a.imag(), b.imag(), tol);
+}
+
+}
+
 TEST(Mat2x2, Addition)
 {
   // scalar
@@ -49,34 +59,32 @@ TEST(Mat2x2, Addition)
 
   // matrix
   {
-    // Mat2x2<double> A = {1, 2, 3, 4};
-    // Mat2x2<double> B = {5, 6, 7, 8};
-
-    Mat2x2<double> a, b;
+    Mat2x2<double> a;
     a(0, 0) = 1;
     a(0, 1) = 2;
     a(1, 0) = 3;
     a(1, 1) = 4;
 
-    b(0, 0) = 5;
-    b(0, 1) = 6;
-    b(1, 0) = 7;
-    b(1, 1) = 8;
+    Mat2x2<Complex> b;
+    b(0, 0) = {5, 6};
+    b(0, 1) = {7, 8};
+    b(1, 0) = {9, 10};
+    b(1, 1) = {11, 12};
 
-    // std::cout << "A = " << A << std::endl;
-    // std::cout << "B = " << B << std::endl;
+    static_assert(std::is_same_v<decltype(a+b), Mat2x2<Complex>>);
     auto c = a + b;
-    // std::cout << "C = " << C << std::endl;
-    EXPECT_FLOAT_EQ(c(0, 0), 6);
-    EXPECT_FLOAT_EQ(c(0, 1), 8);
-    EXPECT_FLOAT_EQ(c(1, 0), 10);
-    EXPECT_FLOAT_EQ(c(1, 1), 12);
+    expect_near(c(0, 0), {6, 6}, 1e-13);
+    expect_near(c(0, 1), {9, 8}, 1e-13);
+    expect_near(c(1, 0), {12, 10}, 1e-13);
+    expect_near(c(1, 1), {15, 12}, 1e-13);
+
 
     auto d = b + a;
-    EXPECT_FLOAT_EQ(d(0, 0), 6);
-    EXPECT_FLOAT_EQ(d(0, 1), 8);
-    EXPECT_FLOAT_EQ(d(1, 0), 10);
-    EXPECT_FLOAT_EQ(d(1, 1), 12);
+    static_assert(std::is_same_v<decltype(b+a), Mat2x2<Complex>>);
+    expect_near(d(0, 0), {6, 6}, 1e-13);
+    expect_near(d(0, 1), {9, 8}, 1e-13);
+    expect_near(d(1, 0), {12, 10}, 1e-13);
+    expect_near(d(1, 1), {15, 12}, 1e-13);    
   }
 }
 
@@ -101,18 +109,31 @@ TEST(Mat2x2, Subtraction)
   // matrix
   {
     Mat2x2<double> a = {1, 2, 3, 4};
-    Mat2x2<double> b = {6, 8, 10, 12};
-    auto c           = a - b;
-    EXPECT_FLOAT_EQ(c(0, 0), -5);
-    EXPECT_FLOAT_EQ(c(0, 1), -6);
-    EXPECT_FLOAT_EQ(c(1, 0), -7);
-    EXPECT_FLOAT_EQ(c(1, 1), -8);
+    Mat2x2<Complex> b;
+    b(0, 0) = {5, 6};
+    b(0, 1) = {7, 8};
+    b(1, 0) = {9, 10};
+    b(1, 1) = {11, 12};    
 
-    auto d = -a;
-    EXPECT_FLOAT_EQ(d(0, 0), -1);
-    EXPECT_FLOAT_EQ(d(0, 1), -2);
-    EXPECT_FLOAT_EQ(d(1, 0), -3);
-    EXPECT_FLOAT_EQ(d(1, 1), -4);
+    static_assert(std::is_same_v<decltype(a-b), Mat2x2<Complex>>);
+    auto c           = a - b;
+    expect_near(c(0, 0), {-4, -6}, 1e-13);
+    expect_near(c(0, 1), {-5, -8}, 1e-13);
+    expect_near(c(1, 0), {-6, -10}, 1e-13);
+    expect_near(c(1, 1), {-7, -12}, 1e-13);
+
+    static_assert(std::is_same_v<decltype(b-a), Mat2x2<Complex>>);
+    auto d           = b - a;    
+    expect_near(d(0, 0), {4, 6}, 1e-13);
+    expect_near(d(0, 1), {5, 8}, 1e-13);
+    expect_near(d(1, 0), {6, 10}, 1e-13);
+    expect_near(d(1, 1), {7, 12}, 1e-13);
+
+    auto e = -a;
+    EXPECT_FLOAT_EQ(e(0, 0), -1);
+    EXPECT_FLOAT_EQ(e(0, 1), -2);
+    EXPECT_FLOAT_EQ(e(1, 0), -3);
+    EXPECT_FLOAT_EQ(e(1, 1), -4);
   }
 }
 
@@ -137,12 +158,17 @@ TEST(Mat2x2, Multiplication)
   // matrix
   {
     Mat2x2<double> a = {1, 2, 3, 4};
-    Mat2x2<double> b = {5, 6, 7, 8};
+    Mat2x2<Complex> b;
+    b(0, 0) = {5, 6};
+    b(0, 1) = {7, 8};
+    b(1, 0) = {9, 10};
+    b(1, 1) = {11, 12}; 
+    static_assert(std::is_same_v<decltype(a*b), Mat2x2<Complex>>);
     auto c           = a * b;
-    EXPECT_FLOAT_EQ(c(0, 0), 19);
-    EXPECT_FLOAT_EQ(c(0, 1), 22);
-    EXPECT_FLOAT_EQ(c(1, 0), 43);
-    EXPECT_FLOAT_EQ(c(1, 1), 50);
+    expect_near(c(0, 0), {23, 26}, 1e-13);
+    expect_near(c(0, 1), {29, 32}, 1e-13);
+    expect_near(c(1, 0), {51, 58}, 1e-13);
+    expect_near(c(1, 1), {65, 72}, 1e-13);
   }
 }
 
@@ -173,12 +199,13 @@ TEST(Mat2x2, Inverse)
   }
 
   {
-    Mat2x2<double> a = {1, 2, 3, 4};
-    double x[2], b[2] = {1.0, 2.0};
+    Mat2x2<Complex> a = {{1, 0}, {2, 0}, {3, 0}, {4, 0}};
+    double b[2] = {1.0, 2.0};
+    Complex x[2];
     matsolve2x2(a, x, b);
 
-    EXPECT_FLOAT_EQ(x[0], 0.0);
-    EXPECT_FLOAT_EQ(x[1], 0.5);
+    expect_near(x[0], {0, 0}, 1e-13);
+    expect_near(x[1], {0.5, 0}, 1e-13);
   }
 
   {
@@ -260,14 +287,14 @@ TEST(Mat2x2, solve_dot)
 
 TEST(Mat2x2, MatVec)
 {
-  Mat2x2<double> a = {1, 2, 3, 4};
+  Mat2x2<Complex> a = {{1, 0}, {2, 0}, {3, 0}, {4, 0}};
   double x[2]      = {1, 2};
-  double b[2];
+  Complex b[2];
 
   matvec2x2(a, x, b);
 
-  EXPECT_FLOAT_EQ(b[0], 5.0);
-  EXPECT_FLOAT_EQ(b[1], 11.0);
+  expect_near(b[0], {5, 0}, 1e-13);
+  expect_near(b[1], {11, 0}, 1e-13);
 }
 
 TEST(Mat2x2, Norm_F)
@@ -276,16 +303,16 @@ TEST(Mat2x2, Norm_F)
 
   EXPECT_FLOAT_EQ(norm_f(a), std::sqrt(30.0));
 
-  Mat2x2<double> aBar({0, 0, 0, 0});
+  Mat2x2<Complex> aBar({0, 0, 0, 0});
   double nBar = 2;
   utils::impl::norm_f_rev(a, aBar, nBar);
   Mat2x2<double> aBarFd = compute_fd(a, utils::impl::norm_f<double>);
 
   double tol = 1e-6;
-  EXPECT_NEAR(aBar(0, 0), nBar * aBarFd(0, 0), tol);
-  EXPECT_NEAR(aBar(0, 1), nBar * aBarFd(0, 1), tol);
-  EXPECT_NEAR(aBar(1, 0), nBar * aBarFd(1, 0), tol);
-  EXPECT_NEAR(aBar(1, 1), nBar * aBarFd(1, 1), tol);
+  expect_near(aBar(0, 0), nBar * aBarFd(0, 0), tol);
+  expect_near(aBar(0, 1), nBar * aBarFd(0, 1), tol);
+  expect_near(aBar(1, 0), nBar * aBarFd(1, 0), tol);
+  expect_near(aBar(1, 1), nBar * aBarFd(1, 1), tol);
 }
 
 TEST(Mat2x2, Det)

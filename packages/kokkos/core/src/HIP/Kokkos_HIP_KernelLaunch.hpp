@@ -24,7 +24,6 @@
 #include <HIP/Kokkos_HIP_Error.hpp>
 #include <HIP/Kokkos_HIP_Instance.hpp>
 #include <HIP/Kokkos_HIP_Space.hpp>
-#include <HIP/Kokkos_HIP_Locks.hpp>
 
 // Must use global variable on the device with HIP-Clang
 #ifdef __HIP__
@@ -415,7 +414,8 @@ struct HIPParallelLaunchKernelInvoker<DriverType, LaunchBounds,
 
     // Copy functor (synchronously) to staging buffer in pinned host memory
     unsigned long *staging = hip_instance->constantMemHostStaging;
-    std::memcpy(staging, &driver, sizeof(DriverType));
+    std::memcpy(static_cast<void *>(staging),
+                static_cast<const void *>(&driver), sizeof(DriverType));
 
     // Copy functor asynchronously from there to constant memory on the device
     KOKKOS_IMPL_HIP_SAFE_CALL(hipMemcpyToSymbolAsync(
@@ -462,7 +462,7 @@ struct HIPParallelLaunch<
             "HIPParallelLaunch FAILED: shared memory request is too large");
       }
 
-      KOKKOS_ENSURE_HIP_LOCK_ARRAYS_ON_DEVICE();
+      desul::ensure_hip_lock_arrays_on_device();
 
       // Invoke the driver function on the device
       base_t::invoke_kernel(driver, grid, block, shmem, hip_instance);

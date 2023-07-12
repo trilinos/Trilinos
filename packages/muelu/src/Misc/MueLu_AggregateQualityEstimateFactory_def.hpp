@@ -151,7 +151,7 @@ namespace MueLu {
     const LO LO_ONE = Teuchos::OrdinalTraits<LO>::one();
 
     LO numAggs = aggs->GetNumAggregates();
-    aggSizes = aggs->ComputeAggregateSizes();
+    aggSizes = aggs->ComputeAggregateSizesArrayRCP();
 
     aggsToIndices = ArrayRCP<LO>(numAggs+LO_ONE,LO_ZERO);
 

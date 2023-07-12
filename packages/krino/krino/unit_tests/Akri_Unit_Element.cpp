@@ -20,7 +20,7 @@
 #include <Akri_LevelSetInterfaceGeometry.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -62,6 +62,7 @@ public:
   }
 
   void generate_nonconformal_elements() {
+    krino_mesh.clear();
     krino_mesh.generate_nonconformal_elements();
   }
   void triangulate()
@@ -77,7 +78,7 @@ public:
     Mesh_Element & meshElem = get_mesh_element();
     meshElem.create_cutter(krino_mesh, *interfaceGeometry);
     LevelSetElementCutter * cutter = dynamic_cast<LevelSetElementCutter *>(meshElem.get_cutter());
-    ThrowRequire(cutter);
+    STK_ThrowRequire(cutter);
     return *cutter;
   }
 
@@ -133,11 +134,11 @@ public:
     return {{nodes[edge_node_ordinals[0]], nodes[edge_node_ordinals[1]]}};
   }
 
-  Segment3d get_edge_segment(const unsigned edge_ord)
+  std::array<stk::math::Vector3d,2> get_edge_segment(const unsigned edge_ord)
   {
     const auto & edgeNodes = get_edge_nodes(edge_ord);
-    return Segment3d(get_mesh_element().get_node_parametric_coords(edgeNodes[0]),
-                     get_mesh_element().get_node_parametric_coords(edgeNodes[1]));
+    return std::array<stk::math::Vector3d,2>{get_mesh_element().get_node_parametric_coords(edgeNodes[0]),
+                                  get_mesh_element().get_node_parametric_coords(edgeNodes[1])};
   }
 
   SingleElementFixture elem_fixture;
@@ -433,12 +434,12 @@ TEST_F(Mesh_Element_Tri3_Three_LS, One_Interface)
   const NodeVec & mesh_nodes = mesh_elem.get_nodes();
   EXPECT_EQ(3u, mesh_nodes.size());
 
-  const Vector3d node0_coords = mesh_nodes[0]->owner_coords(&mesh_elem);
-  const Vector3d node1_coords = mesh_nodes[1]->owner_coords(&mesh_elem);
-  const Vector3d node2_coords = mesh_nodes[2]->owner_coords(&mesh_elem);
-  const Segment3d edge0(node0_coords, node1_coords);
-  const Segment3d edge1(node1_coords, node2_coords);
-  const Segment3d edge2(node2_coords, node0_coords);
+  const stk::math::Vector3d node0_coords = mesh_nodes[0]->owner_coords(&mesh_elem);
+  const stk::math::Vector3d node1_coords = mesh_nodes[1]->owner_coords(&mesh_elem);
+  const stk::math::Vector3d node2_coords = mesh_nodes[2]->owner_coords(&mesh_elem);
+  const std::array<stk::math::Vector3d,2> edge0{node0_coords, node1_coords};
+  const std::array<stk::math::Vector3d,2> edge1{node1_coords, node2_coords};
+  const std::array<stk::math::Vector3d,2> edge2{node2_coords, node0_coords};
 
   krino_mesh.determine_node_signs(iface01);
 
@@ -514,12 +515,12 @@ TEST_F(Mesh_Element_Tri3_Three_LS, Handle_Hanging_Child)
   const NodeVec & mesh_nodes = mesh_elem.get_nodes();
   EXPECT_EQ(3u, mesh_nodes.size());
 
-  const Vector3d node0_coords = mesh_nodes[0]->owner_coords(&mesh_elem);
-  const Vector3d node1_coords = mesh_nodes[1]->owner_coords(&mesh_elem);
-  const Vector3d node2_coords = mesh_nodes[2]->owner_coords(&mesh_elem);
-  const Segment3d edge0(node0_coords, node1_coords);
-  const Segment3d edge1(node1_coords, node2_coords);
-  const Segment3d edge2(node2_coords, node0_coords);
+  const stk::math::Vector3d node0_coords = mesh_nodes[0]->owner_coords(&mesh_elem);
+  const stk::math::Vector3d node1_coords = mesh_nodes[1]->owner_coords(&mesh_elem);
+  const stk::math::Vector3d node2_coords = mesh_nodes[2]->owner_coords(&mesh_elem);
+  const std::array<stk::math::Vector3d,2> edge0{node0_coords, node1_coords};
+  const std::array<stk::math::Vector3d,2> edge1{node1_coords, node2_coords};
+  const std::array<stk::math::Vector3d,2> edge2{node2_coords, node0_coords};
 
   krino_mesh.determine_node_signs(iface01);
 
@@ -602,12 +603,12 @@ TEST_F(Mesh_Element_Tri3_Three_LS, Zero_Crossings_For_Phases_Present_Bug)
   const NodeVec & mesh_nodes = mesh_elem.get_nodes();
   EXPECT_EQ(3u, mesh_nodes.size());
 
-  const Vector3d node0_coords = mesh_nodes[0]->owner_coords(&mesh_elem);
-  const Vector3d node1_coords = mesh_nodes[1]->owner_coords(&mesh_elem);
-  const Vector3d node2_coords = mesh_nodes[2]->owner_coords(&mesh_elem);
-  const Segment3d edge0(node0_coords, node1_coords);
-  const Segment3d edge1(node1_coords, node2_coords);
-  const Segment3d edge2(node2_coords, node0_coords);
+  const stk::math::Vector3d node0_coords = mesh_nodes[0]->owner_coords(&mesh_elem);
+  const stk::math::Vector3d node1_coords = mesh_nodes[1]->owner_coords(&mesh_elem);
+  const stk::math::Vector3d node2_coords = mesh_nodes[2]->owner_coords(&mesh_elem);
+  const std::array<stk::math::Vector3d,2> edge0{node0_coords, node1_coords};
+  const std::array<stk::math::Vector3d,2> edge1{node1_coords, node2_coords};
+  const std::array<stk::math::Vector3d,2> edge2{node2_coords, node0_coords};
 
   krino_mesh.determine_node_signs(iface01);
 
@@ -624,7 +625,81 @@ TEST_F(Mesh_Element_Tri3_Three_LS, Zero_Crossings_For_Phases_Present_Bug)
   EXPECT_ANY_THROW(mesh_elem.interface_crossing_position(iface12, edge2));
 }
 
-typedef Mesh_Element_Fixture<stk::topology::TET_4> Mesh_Element_Tet4;
+class Mesh_Element_Tet4 : public Mesh_Element_Fixture<stk::topology::TET_4>
+{
+protected:
+  void test_node_signs(const std::vector<int> & gold)
+  {
+    const NodeVec & mesh_nodes = get_mesh_element().get_nodes();
+    ASSERT_EQ(4u, gold.size());
+    ASSERT_EQ(4u, mesh_nodes.size());
+    for (int n=0; n<4; ++n)
+    {
+      EXPECT_EQ(gold[n], mesh_nodes[n]->get_node_sign());
+    }
+  }
+
+  void test_node_score_rank(const std::vector<unsigned> & goldNodeRankHiToLow)
+  {
+    const NodeVec & mesh_nodes = get_mesh_element().get_nodes();
+    ASSERT_EQ(4u, goldNodeRankHiToLow.size());
+    ASSERT_EQ(4u, mesh_nodes.size());
+    for (int n1=0; n1<4; ++n1)
+    {
+      for (int n2=n1+1; n2<4; ++n2)
+      {
+        if (goldNodeRankHiToLow[n1] > goldNodeRankHiToLow[n2])
+          EXPECT_LT(mesh_nodes[n1]->get_node_score(), mesh_nodes[n2]->get_node_score());
+        else if (goldNodeRankHiToLow[n1] < goldNodeRankHiToLow[n2])
+          EXPECT_GT(mesh_nodes[n1]->get_node_score(), mesh_nodes[n2]->get_node_score());
+        else
+          EXPECT_EQ(mesh_nodes[n1]->get_node_score(), mesh_nodes[n2]->get_node_score());
+      }
+    }
+  }
+
+  template<typename VEC>
+  VEC permute(const VEC & input, const int permutation)
+  {
+    VEC output;
+    output.resize(input.size());
+    stk::topology topo = stk::topology::TETRAHEDRON_4;
+    topo.permutation_nodes(input.data(), permutation, output.data());
+    return output;
+  }
+
+  void set_ls_and_test_node_signs_and_scores(const std::vector<double> & nodeLsValues, const std::vector<int> & goldNodeSigns, const std::vector<unsigned> & goldNodeRankHiToLo, const int permutation)
+  {
+    const InterfaceID iface(0,0);
+    krino_mesh.add_interface_id(iface);
+    Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
+
+    const auto permutedNodeLsValues = permute(nodeLsValues, permutation);
+    const auto permutedGoldNodeSigns = permute(goldNodeSigns, permutation);
+    const auto permutedGoldNodeRankHiToLow = permute(goldNodeRankHiToLo, permutation);
+
+    generate_mesh_element_and_cutter(permutedNodeLsValues);
+    krino_mesh.determine_node_signs(iface);
+
+    EXPECT_TRUE(get_mesh_element().have_interface());
+
+    test_node_signs(permutedGoldNodeSigns);
+
+    krino_mesh.decompose_edges(iface);
+    krino_mesh.determine_node_scores(iface);
+
+    test_node_score_rank(permutedGoldNodeRankHiToLow);
+  }
+
+  void set_ls_and_test_node_signs_and_scores_for_all_permutations(const std::vector<double> & nodeLsValues, const std::vector<int> & goldNodeSigns, const std::vector<unsigned> & goldNodeRankHiToLo)
+  {
+    for (int iperm=0; iperm<12; ++iperm)
+    {
+      set_ls_and_test_node_signs_and_scores(nodeLsValues, goldNodeSigns, goldNodeRankHiToLo, iperm);
+    }
+  }
+};
+
 TEST_F(Mesh_Element_Tet4, generate)
 {
   generate_nonconformal_elements();
@@ -639,70 +714,22 @@ TEST_F(Mesh_Element_Tet4, generate)
   }
 }
 
-TEST_F(Mesh_Element_Tet4, OneInterfaceCheckNodeScore)
+TEST_F(Mesh_Element_Tet4, OneInterfaceCheckNodeScore_allPermutations)
 {
-  const InterfaceID iface(0,0);
-  krino_mesh.add_interface_id(iface);
-  Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
+  set_ls_and_test_node_signs_and_scores_for_all_permutations({1., -0.2, -0.5, -0.8}, {+1, -1, -1, -1}, {0,3,2,1});
+}
 
-  std::vector<double> node_LS_values(4);
-  node_LS_values[0] = 1.;
-  node_LS_values[1] = -0.2;
-  node_LS_values[2] = -0.5;
-  node_LS_values[3] = -0.8;
-
-  generate_mesh_element_and_cutter(node_LS_values);
-  krino_mesh.determine_node_signs(iface);
-
-  Mesh_Element & mesh_elem = get_mesh_element();
-  EXPECT_TRUE(mesh_elem.have_interface());
-  const NodeVec & mesh_nodes = mesh_elem.get_nodes();
-  ASSERT_EQ(4u, mesh_nodes.size());
-  EXPECT_EQ(+1, mesh_nodes[0]->get_node_sign());
-  EXPECT_EQ(-1, mesh_nodes[1]->get_node_sign());
-  EXPECT_EQ(-1, mesh_nodes[2]->get_node_sign());
-  EXPECT_EQ(-1, mesh_nodes[3]->get_node_sign());
-
-  krino_mesh.decompose_edges(iface);
-  krino_mesh.determine_node_scores(iface);
-
-  EXPECT_GT(mesh_nodes[0]->get_node_score(), mesh_nodes[3]->get_node_score());
-  EXPECT_GT(mesh_nodes[3]->get_node_score(), mesh_nodes[2]->get_node_score());
-  EXPECT_GT(mesh_nodes[2]->get_node_score(), mesh_nodes[1]->get_node_score());
+TEST_F(Mesh_Element_Tet4, OneInterfaceCheckNodeScore_onlyQuadNodesGetScore)
+{
+  set_ls_and_test_node_signs_and_scores_for_all_permutations({0.2, -0.2, -0.5, -0.8}, {+1, -1, -1, -1}, {0,3,2,1});
 }
 
 TEST_F(Mesh_Element_Tet4, OneInterfaceCheckNodeScore_ScoreBasedOnAngleNotPosition)
 {
   krino_mesh.get_cdfem_support().set_simplex_generation_method(CUT_QUADS_BY_LARGEST_ANGLE);
-
-  const InterfaceID iface(0,0);
-  krino_mesh.add_interface_id(iface);
-  Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
-
-  std::vector<double> node_LS_values(4);
-  node_LS_values[0] = -1.0;
-  node_LS_values[1] = -1.01;
-  node_LS_values[2] = -1.02;
-  node_LS_values[3] =  1.0;
-
-  generate_mesh_element_and_cutter(node_LS_values);
-  krino_mesh.determine_node_signs(iface);
-
-  Mesh_Element & mesh_elem = get_mesh_element();
-  EXPECT_TRUE(mesh_elem.have_interface());
-  const NodeVec & mesh_nodes = mesh_elem.get_nodes();
-  ASSERT_EQ(4u, mesh_nodes.size());
-  EXPECT_EQ(-1, mesh_nodes[0]->get_node_sign());
-  EXPECT_EQ(-1, mesh_nodes[1]->get_node_sign());
-  EXPECT_EQ(-1, mesh_nodes[2]->get_node_sign());
-  EXPECT_EQ(+1, mesh_nodes[3]->get_node_sign());
-
-  krino_mesh.decompose_edges(iface);
-  krino_mesh.determine_node_scores(iface);
-
-  EXPECT_GT(mesh_nodes[0]->get_node_score(), mesh_nodes[1]->get_node_score());
-  EXPECT_GT(mesh_nodes[0]->get_node_score(), mesh_nodes[2]->get_node_score());
-  EXPECT_GT(mesh_nodes[2]->get_node_score(), mesh_nodes[1]->get_node_score());
+  set_ls_and_test_node_signs_and_scores({-1.0, -1.01, -1.02, 1.0}, {-1, -1, -1, +1}, {1,3,2,0}, 0);
+  set_ls_and_test_node_signs_and_scores({-1.0, -1.01, -1.02, 1.0}, {-1, -1, -1, +1}, {1,3,2,0}, 3);
+  set_ls_and_test_node_signs_and_scores({-1.0, -1.01, -1.02, 1.0}, {-1, -1, -1, +1}, {1,3,2,0}, 6);
 }
 
 }

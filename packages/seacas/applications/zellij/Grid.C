@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -160,7 +160,7 @@ bool Grid::initialize(size_t i, size_t j, const std::string &key)
   if (unit_cells().find(key) == unit_cells().end()) {
     return false;
   }
-  auto &unit_cell = unit_cells()[key];
+  const auto &unit_cell = unit_cells()[key];
   SMART_ASSERT(unit_cell->m_region != nullptr)(i)(j)(key);
 
   auto &cell = get_cell(i, j);
@@ -174,7 +174,7 @@ void Grid::add_unit_cell(const std::string &key, const std::string &unit_filenam
   if (!minimize_open_files(Minimize::UNIT) && unit_cells().size() >= open_files) {
     // Just hit the limit...  Close all previous unit_cell files and set the minimize_open_files
     // behavior to UNIT.
-    for (auto &unit_cell : m_unitCells) {
+    for (const auto &unit_cell : m_unitCells) {
       unit_cell.second->m_region->get_database()->closeDatabase();
     }
     fmt::print(stderr, fmt::fg(fmt::color::yellow),
@@ -302,7 +302,7 @@ void Grid::set_sideset_names(const std::string &names)
     // Update the name in the list of generated sideset names...
     auto index = axis_index(axis);
     SMART_ASSERT(index >= 0)(axis)(index);
-    generated_surface_names[index] = ss_name;
+    generated_surface_names[index] = std::move(ss_name);
   }
 }
 
@@ -329,35 +329,35 @@ void Grid::categorize_processor_boundaries()
     for (size_t i = 0; i < II(); i++) {
       auto &cell = get_cell(i, j);
       if (i > 0) {
-        auto &left = get_cell(i - 1, j);
+        const auto &left = get_cell(i - 1, j);
         cell.set_rank(Loc::L, left.rank(Loc::C));
         if (j > 0) {
-          auto &BL = get_cell(i - 1, j - 1);
+          const auto &BL = get_cell(i - 1, j - 1);
           cell.set_rank(Loc::BL, BL.rank(Loc::C));
         }
         if (j < JJ() - 1) {
-          auto &TL = get_cell(i - 1, j + 1);
+          const auto &TL = get_cell(i - 1, j + 1);
           cell.set_rank(Loc::TL, TL.rank(Loc::C));
         }
       }
       if (i < II() - 1) {
-        auto &right = get_cell(i + 1, j);
+        const auto &right = get_cell(i + 1, j);
         cell.set_rank(Loc::R, right.rank(Loc::C));
         if (j > 0) {
-          auto &BR = get_cell(i + 1, j - 1);
+          const auto &BR = get_cell(i + 1, j - 1);
           cell.set_rank(Loc::BR, BR.rank(Loc::C));
         }
         if (j < JJ() - 1) {
-          auto &TR = get_cell(i + 1, j + 1);
+          const auto &TR = get_cell(i + 1, j + 1);
           cell.set_rank(Loc::TR, TR.rank(Loc::C));
         }
       }
       if (j > 0) {
-        auto &B = get_cell(i, j - 1);
+        const auto &B = get_cell(i, j - 1);
         cell.set_rank(Loc::B, B.rank(Loc::C));
       }
       if (j < JJ() - 1) {
-        auto &T = get_cell(i, j + 1);
+        const auto &T = get_cell(i, j + 1);
         cell.set_rank(Loc::T, T.rank(Loc::C));
       }
     }
@@ -380,7 +380,7 @@ void Grid::categorize_processor_boundaries()
 void Grid::generate_sidesets()
 {
   if (m_generatedSideSets != 0) {
-    for (auto &unit_cell : m_unitCells) {
+    for (const auto &unit_cell : m_unitCells) {
       unit_cell.second->generate_boundary_faces(m_generatedSideSets);
     }
   }
@@ -465,7 +465,7 @@ template <typename INT> void Grid::output_model(INT /*dummy*/)
   for (int r = m_startRank; r < m_startRank + m_rankCount; r++) {
     for (size_t j = 0; j < JJ(); j++) {
       for (size_t i = 0; i < II(); i++) {
-        auto &cell = get_cell(i, j);
+        const auto &cell = get_cell(i, j);
         if (cell.rank(Loc::C) == r) {
           output_nodal_coordinates(cell);
         }
@@ -605,7 +605,7 @@ template <typename INT> void Grid::output_generated_surfaces(Cell &cell, INT /*d
 
   int rank = cell.rank(Loc::C);
 
-  std::array<int, 6> boundary_rank{
+  const std::array<int, 6> boundary_rank{
       cell.rank(Loc::L), cell.rank(Loc::R), cell.rank(Loc::B), cell.rank(Loc::T), -1, -1};
   std::array<enum Flg, 6> boundary_flag{Flg::MIN_I, Flg::MAX_I, Flg::MIN_J,
                                         Flg::MAX_J, Flg::MIN_K, Flg::MAX_K};
@@ -617,7 +617,7 @@ template <typename INT> void Grid::output_generated_surfaces(Cell &cell, INT /*d
       // Find surface on output mesh...
       auto *osurf = output_region(rank)->get_sideset(generated_surface_names[face]);
       SMART_ASSERT(osurf != nullptr);
-      auto &oblocks = osurf->get_side_blocks();
+      const auto &oblocks = osurf->get_side_blocks();
       SMART_ASSERT(oblocks.size() == 1)(oblocks.size());
 
       auto            &boundary = cell.unit()->boundary_blocks[face];
@@ -627,9 +627,9 @@ template <typename INT> void Grid::output_generated_surfaces(Cell &cell, INT /*d
       elements.reserve(count);
       faces.reserve(count);
 
-      for (auto &block_faces : boundary.m_faces) {
-        auto &block_name = block_faces.first;
-        auto &bnd_faces  = block_faces.second;
+      for (const auto &block_faces : boundary.m_faces) {
+        const auto &block_name = block_faces.first;
+        const auto &bnd_faces  = block_faces.second;
 
         // This is the offset within this element block -- i.e., the 'element_offsetth' element in
         // this block.
@@ -638,7 +638,7 @@ template <typename INT> void Grid::output_generated_surfaces(Cell &cell, INT /*d
         // the output file.
         size_t global_offset = output_region(rank)->get_element_block(block_name)->get_offset();
 
-        for (auto &bface : bnd_faces) {
+        for (const auto &bface : bnd_faces) {
           elements.push_back(bface / 10 + element_offset + global_offset);
           faces.push_back(bface % 10 + 1);
         }
@@ -959,7 +959,7 @@ namespace {
 
         const auto &element_blocks = cell.region()->get_element_blocks();
         for (const auto *block : element_blocks) {
-          auto &blk                         = block->name();
+          const auto &blk                   = block->name();
           cell.m_globalElementIdOffset[blk] = global_element_block_elem_count[blk];
           cell.m_localElementIdOffset[blk]  = element_block_elem_count[rank][blk];
 
@@ -996,7 +996,7 @@ namespace {
     // Define the element blocks in the output database...
     for (int rank = start_rank; rank < start_rank + rank_count; rank++) {
       for (auto &blk : output_element_blocks) {
-        auto *block = new Ioss::ElementBlock(*blk.second.get());
+        auto *block = new Ioss::ElementBlock(*blk.second);
         block->property_update("entity_count", element_block_elem_count[rank][block->name()]);
         block->property_update("global_entity_count", global_block_element_count[block->name()]);
         grid.output_region(rank)->property_add(
@@ -1038,7 +1038,7 @@ namespace {
     for (int i = start_rank; i < start_rank + rank_count; i++) {
       std::string block_name        = "nodeblock_1";
       int         spatial_dimension = 3;
-      auto        block = new Ioss::NodeBlock(grid.output_region(i)->get_database(), block_name,
+      auto       *block = new Ioss::NodeBlock(grid.output_region(i)->get_database(), block_name,
                                               local_node_count[i], spatial_dimension);
       block->property_add(Ioss::Property("id", 1));
       grid.output_region(i)->add(block);
@@ -1099,7 +1099,7 @@ namespace {
 
         const auto &surfaces = cell.region()->get_sidesets();
         for (const auto *surface : surfaces) {
-          auto &surf                      = surface->name();
+          const auto &surf                = surface->name();
           cell.m_localSurfaceOffset[surf] = local_surface_offset[rank][surf];
 
           const auto &blocks = surface->get_side_blocks();
@@ -1157,9 +1157,9 @@ namespace {
 
     for (size_t j = 0; j < grid.JJ(); j++) {
       for (size_t i = 0; i < grid.II(); i++) {
-        auto              &cell = grid.get_cell(i, j);
-        auto               rank = cell.rank(Loc::C);
-        std::array<int, 6> boundary_rank{
+        auto                    &cell = grid.get_cell(i, j);
+        auto                     rank = cell.rank(Loc::C);
+        const std::array<int, 6> boundary_rank{
             cell.rank(Loc::L), cell.rank(Loc::R), cell.rank(Loc::B), cell.rank(Loc::T), -1, -1};
 
         for (int face = 0; face < 6; face++) {

@@ -58,17 +58,13 @@ import path ;
 
 import os ;
 
-local stk_emend-root-inc ;
-stk_emend-root-inc = [ ifuserbuild $(sierra-root)/stk/stk_emend/include ]
-                     [ ifdevbuild $(stk_emend-root) ] ;
-
 project votd
   : requirements
     $(sierra-warnings)
-    <include>$(stk_emend-root-inc)
+    <include>$(stk_emend-root)
     <address-model>64:<define>Build64
   : usage-requirements
-    <include>$(stk_emend-root-inc)
+    <include>$(stk_emend-root)
     <address-model>64:<define>Build64
   : build-dir $(stk_emend-builddir)
   ;
@@ -162,21 +158,21 @@ rule bjam-features-rule ( properties * )
   return  $(result) ;
 }
 
-alias independent_set_lib
-  : # No sources defined for header-only libraries
-  : # No build requirements
-  : # No default build
+alias stk_independent_set_lib
+  : 
+  : 
+  : 
   :
   ;
 
 exe stk_emend_independent_set_utest
   :
     [ glob $(stk_emend-root)/stk_emend/independent_set/unit_tests/*.cpp ]
-    independent_set_lib
+    stk_independent_set_lib
     /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
-    <include>$(stk_emend-root-inc)/stk_emend/independent_set/unit_tests
+    <include>$(stk_emend-root)/stk_emend/independent_set/unit_tests
     [ ifdevbuild
         <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]

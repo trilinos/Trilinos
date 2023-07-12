@@ -114,8 +114,7 @@ struct PAR_ILUT_NUMERIC {
                                const AValuesType &A_values,
                                LRowMapType &L_row_map, LEntriesType &L_entries,
                                LValuesType &L_values, URowMapType &U_row_map,
-                               UEntriesType &U_entries, UValuesType &U_values,
-                               bool deterministic = false);
+                               UEntriesType &U_entries, UValuesType &U_values);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -135,15 +134,14 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
                                const AValuesType &A_values,
                                LRowMapType &L_row_map, LEntriesType &L_entries,
                                LValuesType &L_values, URowMapType &U_row_map,
-                               UEntriesType &U_entries, UValuesType &U_values,
-                               bool deterministic = false) {
+                               UEntriesType &U_entries, UValuesType &U_values) {
     auto par_ilut_handle = handle->get_par_ilut_handle();
     using Ilut           = Experimental::IlutWrap<
         typename std::remove_pointer<decltype(par_ilut_handle)>::type>;
 
     Ilut::ilut_numeric(*handle, *par_ilut_handle, A_row_map, A_entries,
                        A_values, L_row_map, L_entries, L_values, U_row_map,
-                       U_entries, U_values, deterministic);
+                       U_entries, U_values);
   }
 };
 
@@ -241,6 +239,5 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
       false, true>;
 
 #include <KokkosSparse_par_ilut_numeric_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_par_ilut_numeric_eti_spec_decl.hpp>
 
 #endif

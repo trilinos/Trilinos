@@ -217,7 +217,8 @@ TEST(StkEdgeIo, ParallelWriteMesh)
     EXPECT_EQ(expectedVal, numLocalEdges);
   }
 
-  unlink(filename.c_str());
+  std::string pllFileName = filename+"."+std::to_string(stk::parallel_machine_size(MPI_COMM_WORLD))+"."+std::to_string(stk::parallel_machine_rank(MPI_COMM_WORLD));
+  unlink(pllFileName.c_str());
 }
 
 TEST(StkEdgeIo, ParallelWriteMeshWithFace)
@@ -279,5 +280,6 @@ TEST(StkEdgeIo, ParallelWriteMeshWithFace)
     EXPECT_EQ(4u, bulk.num_edges(faces[0]));
   }
 
-  unlink(filename.c_str());
+  std::string pllFileName = filename+"."+std::to_string(stk::parallel_machine_size(MPI_COMM_WORLD))+"."+std::to_string(stk::parallel_machine_rank(MPI_COMM_WORLD));
+  unlink(pllFileName.c_str());
 }

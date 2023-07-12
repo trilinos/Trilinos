@@ -41,7 +41,7 @@
 
 #include "Sacado_mpl_has_equal_to.hpp"
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Error.hpp"
 #endif
@@ -1933,7 +1933,7 @@ namespace Sacado {
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
     typename mpl::disable_if<
-      mpl::is_same< typename T::value_type,
+      std::is_same< typename T::value_type,
                     typename T::scalar_type >,
       IfThenElseOp< CondT, typename T::scalar_type,
                     typename Expr<T>::derived_type,
@@ -1952,7 +1952,7 @@ namespace Sacado {
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
     typename mpl::disable_if<
-      mpl::is_same< typename T::value_type,
+      std::is_same< typename T::value_type,
                     typename T::scalar_type >,
       IfThenElseOp< CondT, typename Expr<T>::derived_type,
                     typename T::scalar_type,
@@ -2200,7 +2200,7 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 //-------------------------- Atomic Operators -----------------------
 
@@ -2242,6 +2242,6 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#endif // HAVE_SACADO_KOKKOSCORE
+#endif // HAVE_SACADO_KOKKOS
 
 #endif // SACADO_FAD_OPS_HPP

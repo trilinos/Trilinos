@@ -13,6 +13,7 @@
 #include <Ioss_CopyDatabase.h>
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_Region.h>
 #include <Ioss_SubSystem.h>
@@ -73,7 +74,7 @@ namespace {
       auto                          now  = std::chrono::steady_clock::now();
       std::chrono::duration<double> diff = now - start;
       fmt::print(stderr, " [{:.2f} - {}]\t{}\n", diff.count(),
-                 fmt::group_digits(Ioss::Utils::get_memory_info()), output);
+                 fmt::group_digits(Ioss::MemoryUtils::get_memory_info()), output);
     }
   }
 
@@ -139,8 +140,8 @@ namespace {
     // The chain / line data will be stored as an element map...
     const auto &blocks = region.get_element_blocks();
     for (const auto &block : blocks) {
-      Ioss::Field field{"chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP};
-      field.set_index(1);
+      auto field =
+          Ioss::Field("chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP).set_index(1);
       block->field_add(field);
     }
   }
@@ -167,12 +168,13 @@ namespace {
     // The chain / line data will be stored as an element map...
     const auto &blocks = region.get_element_blocks();
     for (const auto &block : blocks) {
-      Ioss::Field field{decomp_variable_name, Ioss::Field::INT32, IOSS_SCALAR(), Ioss::Field::MAP};
-      field.set_index(1);
+      auto field =
+          Ioss::Field(decomp_variable_name, Ioss::Field::INT32, IOSS_SCALAR(), Ioss::Field::MAP)
+              .set_index(1);
       block->field_add(field);
       if (add_chain_info) {
-        Ioss::Field ch_field{"chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP};
-        ch_field.set_index(2);
+        auto ch_field =
+            Ioss::Field("chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP).set_index(2);
         block->field_add(ch_field);
       }
     }
@@ -447,7 +449,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
   fmt::print(stderr, "\nHigh-Water Memory Use: {} bytes\n",
-             fmt::group_digits(Ioss::Utils::get_hwm_memory_info()));
+             fmt::group_digits(Ioss::MemoryUtils::get_hwm_memory_info()));
   fmt::print(stderr, "Total execution time = {:.5}\n", seacas_timer() - begin);
   fmt::print(stderr, "\nSlice execution successful.\n");
   return EXIT_SUCCESS;
@@ -570,7 +572,7 @@ namespace {
         idx_t              common     = get_common_node_count(region);
         idx_t              proc_count = interFace.processor_count();
         idx_t              obj_val    = 0;
-        std::vector<idx_t> options(METIS_NOPTIONS);
+        std::vector<idx_t> options((METIS_NOPTIONS));
         METIS_SetDefaultOptions(&options[0]);
         if (interFace.decomposition_method() == "kway") {
           options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY;
@@ -638,7 +640,7 @@ namespace {
       // Get all element blocks and cycle through each reading the
       // values for the processor...
       const auto &blocks   = region.get_element_blocks();
-      auto        c_region = (Ioss::Region *)(&region);
+      auto       *c_region = (Ioss::Region *)(&region);
       c_region->begin_state(1);
       for (const auto &block : blocks) {
         if (!block->field_exists(elem_variable)) {
@@ -785,7 +787,7 @@ namespace {
         if (tokens.empty()) {
           break;
         }
-        else if (tokens.size() == 1) {
+        if (tokens.size() == 1) {
           // Just a processor specification for the next element...
           proc = std::stoi(tokens[0]);
           elem_to_proc.push_back(proc);
@@ -851,10 +853,10 @@ namespace {
       }
 
       std::vector<INT> chain_proc_count(proc_count);
-      auto            &chain_elements = chain.second;
+      const auto      &chain_elements = chain.second;
 
       // * get processors used by elements in the chain...
-      for (auto &element : chain_elements) {
+      for (const auto &element : chain_elements) {
         auto proc = elem_to_proc[element - 1];
         chain_proc_count[proc]++;
       }
@@ -870,7 +872,7 @@ namespace {
 
       // * Assign all elements in the chain to `max_proc`.
       // * Update the deltas for all processors that gain/lose elements...
-      for (auto &element : chain_elements) {
+      for (const auto &element : chain_elements) {
         if (elem_to_proc[element - 1] != max_proc) {
           auto old_proc             = elem_to_proc[element - 1];
           elem_to_proc[element - 1] = max_proc;
@@ -918,12 +920,12 @@ namespace {
     // and defines corresponding sidesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto  &ss        = region.get_sidesets();
-    size_t set_count = ss.size();
+    const auto &ss        = region.get_sidesets();
+    size_t      set_count = ss.size();
 
     for (size_t s = 0; s < set_count; s++) {
-      auto *gss     = ss[s];
-      auto &ss_name = gss->name();
+      auto       *gss     = ss[s];
+      const auto &ss_name = gss->name();
 
       std::vector<Ioss::SideSet *> sset(proc_count);
       for (size_t p = 0; p < proc_count; p++) {
@@ -931,8 +933,8 @@ namespace {
         proc_region[p]->add(sset[p]);
       }
 
-      auto &side_blocks = gss->get_side_blocks();
-      for (auto &gsb : side_blocks) {
+      const auto &side_blocks = gss->get_side_blocks();
+      for (const auto &gsb : side_blocks) {
         std::vector<INT> ss_elems;
         gsb->get_field_data("element_side_raw", ss_elems);
 
@@ -943,9 +945,9 @@ namespace {
           pss[p]++;
         }
 
-        auto &name      = gsb->name();
-        auto &side_type = gsb->topology()->name();
-        auto &elem_type = gsb->parent_element_topology()->name();
+        const auto &name      = gsb->name();
+        const auto &side_type = gsb->topology()->name();
+        const auto &elem_type = gsb->parent_element_topology()->name();
 
         for (size_t p = 0; p < proc_count; p++) {
           auto *side_block = new Ioss::SideBlock(proc_region[p]->get_database(), name, side_type,
@@ -966,24 +968,24 @@ namespace {
     // and outputs the sidesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto  &ss        = region.get_sidesets();
-    size_t set_count = ss.size();
+    const auto &ss        = region.get_sidesets();
+    size_t      set_count = ss.size();
 
     for (size_t s = 0; s < set_count; s++) {
       if (debug_level & 4) {
         progress("\tSideset " + std::to_string(s + 1));
       }
       Ioss::SideSet *gss     = ss[s];
-      auto          &ss_name = gss->name();
+      const auto    &ss_name = gss->name();
 
       std::vector<Ioss::SideSet *> proc_ss(proc_count);
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
         proc_ss[p] = proc_region[p]->get_sideset(ss_name);
       }
 
-      auto &side_blocks = gss->get_side_blocks();
-      for (auto &gsb : side_blocks) {
-        auto &sb_name = gsb->name();
+      const auto &side_blocks = gss->get_side_blocks();
+      for (const auto &gsb : side_blocks) {
+        const auto &sb_name = gsb->name();
 
         std::vector<Ioss::SideBlock *> proc_sb(proc_count);
         std::vector<std::vector<INT>>  psb_elems(proc_count);
@@ -1059,7 +1061,7 @@ namespace {
     progress("border_node_proc_map fully populated");
     size_t proc_count = proc_region.size();
     for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
-      auto &commset = proc_region[p]->get_commsets()[0];
+      const auto &commset = proc_region[p]->get_commsets()[0];
       commset->put_field_data("entity_processor", border_node_proc_map[p - proc_begin]);
       border_node_proc_map[p - proc_begin].clear();
       proc_progress(p, proc_count);
@@ -1161,8 +1163,8 @@ namespace {
     // and defines corresponding nodesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto  &ns        = region.get_nodesets();
-    size_t set_count = ns.size();
+    const auto &ns        = region.get_nodesets();
+    size_t      set_count = ns.size();
 
     for (size_t s = 0; s < set_count; s++) {
       std::vector<INT> pns(proc_count);
@@ -1181,7 +1183,7 @@ namespace {
         }
       }
 
-      auto &name = ns[s]->name();
+      const auto &name = ns[s]->name();
       if (debug_level & 2) {
         fmt::print(stderr, "\tNodeset {}--", name);
       }
@@ -1209,8 +1211,8 @@ namespace {
     // and defines corresponding nodesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto  &ns        = region.get_nodesets();
-    size_t set_count = ns.size();
+    const auto &ns        = region.get_nodesets();
+    size_t      set_count = ns.size();
 
     for (size_t s = 0; s < set_count; s++) {
       if (debug_level & 4) {

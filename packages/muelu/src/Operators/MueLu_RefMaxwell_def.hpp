@@ -438,6 +438,16 @@ namespace MueLu {
 
           // }
 
+          if (parameterList_.get<bool>("refmaxwell: fill communicator", false)) {
+            int temp;
+            temp  = std::nearbyint(Teuchos::as<double>(numProcsAH  * numProcs) / Teuchos::as<double>(numProcsAH+numProcsA22));
+            numProcsA22 = std::nearbyint(Teuchos::as<double>(numProcsA22 * numProcs) / Teuchos::as<double>(numProcsAH+numProcsA22));
+            numProcsAH = temp;
+            if (numProcsAH+numProcsA22 == numProcs+1)
+              numProcsA22 -= 1;
+            TEUCHOS_ASSERT(numProcsAH + numProcsA22 == numProcs);
+          }
+
           if ((numProcsAH < 0) || (numProcsA22 < 0) || (numProcsAH + numProcsA22 > numProcs)) {
             GetOStream(Warnings0) << "RefMaxwell::compute(): Disabling rebalancing of subsolves, since partition heuristic resulted "
                                   << "in undesirable number of partitions: " << numProcsAH << ", " << numProcsA22 << std::endl;
@@ -890,7 +900,6 @@ namespace MueLu {
         rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->replaceDomainMapAndImporter(Importer22_->getTargetMap(), ImporterD0);
       }
 
-#ifdef HAVE_MUELU_TPETRA
       if ((!D0_T_Matrix_.is_null()) &&
           (!R11_.is_null()) &&
           (!rcp_dynamic_cast<CrsMatrixWrap>(D0_T_Matrix_)->getCrsMatrix()->getCrsGraph()->getImporter().is_null()) &&
@@ -899,7 +908,6 @@ namespace MueLu {
           (R11_->getColMap()->lib() == Xpetra::UseTpetra))
         D0_T_R11_colMapsMatch_ = D0_T_Matrix_->getColMap()->isSameAs(*R11_->getColMap());
       else
-#endif
         D0_T_R11_colMapsMatch_ = false;
       if (D0_T_R11_colMapsMatch_)
         GetOStream(Runtime0) << "RefMaxwell::compute(): D0_T and R11 have matching colMaps" << std::endl;
@@ -1227,6 +1235,10 @@ namespace MueLu {
         UncoupledAggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(minAggSize));
         int maxAggSize = parameterList_.get("aggregation: max agg size",-1);
         UncoupledAggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(maxAggSize));
+        bool matchMLbehavior = parameterList_.get("aggregation: match ML phase2a",MasterList::getDefault<bool>("aggregation: match ML phase2a"));
+        UncoupledAggFact->SetParameter("aggregation: match ML phase2a",Teuchos::ParameterEntry(matchMLbehavior));
+        bool avoidSingletons = parameterList_.get("aggregation: phase3 avoid singletons",true);
+        UncoupledAggFact->SetParameter("aggregation: phase3 avoid singletons",Teuchos::ParameterEntry(avoidSingletons));
 
         coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
 
@@ -2095,7 +2107,6 @@ namespace MueLu {
           D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
         }
       } else {
-#ifdef MUELU_HAVE_TPETRA
         if (D0_T_R11_colMapsMatch_) {
           // Column maps of D0_T and R11 match, and we're running Tpetra
           {
@@ -2110,9 +2121,7 @@ namespace MueLu {
             RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
             rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix())->getTpetra_CrsMatrix()->localApply(toTpetra(*D0TR11Tmp_),toTpetra(*P11res_),Teuchos::NO_TRANS);
           }
-        } else
-#endif
-        {
+        } else {
           {
             RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
             R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);

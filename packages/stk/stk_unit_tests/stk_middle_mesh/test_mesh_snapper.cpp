@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "create_mesh.hpp"
-#include "mesh_snapper.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_snapper.hpp"
 
 namespace stk {
 namespace middle_mesh {

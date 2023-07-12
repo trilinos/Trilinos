@@ -18,7 +18,7 @@ namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),lpp(10),useStackedTimer(false){}
+  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),useStackedTimer(false),overlapCommAndComp(false){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -28,9 +28,16 @@ struct CmdLineArgs {
   int numIters;
   double tol;
   int nx;
-  int lpp;
+  int ny;
+  int nz;
+  int mx;
+  int my;
+  int mz;
+  int sublinesPerLine;
   bool useStackedTimer;
+  bool overlapCommAndComp;
   std::string problemName;
+  std::string matrixType;
 };
 
 // Read in values of command-line arguments.
@@ -49,11 +56,19 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("blockSize", &args.blockSize, "Size of block to use");
   cmdp.setOption ("numIters", &args.numIters, "Number of iterations");
   cmdp.setOption ("tol", &args.tol, "Solver tolerance");
-  cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction per proc");
-  cmdp.setOption ("lpp", &args.lpp, "If using inline meshing, number of lines per proc");
+  cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction");
+  cmdp.setOption ("ny", &args.ny, "If using inline meshing, number of nodes in the y direction");
+  cmdp.setOption ("nz", &args.nz, "If using inline meshing, number of nodes in the z direction");
+  cmdp.setOption ("mx", &args.mx, "If using inline meshing, number of procs in the x direction");
+  cmdp.setOption ("my", &args.my, "If using inline meshing, number of procs in the y direction");
+  cmdp.setOption ("mz", &args.mz, "If using inline meshing, number of procs in the z direction");
+  cmdp.setOption ("sublinesPerLine", &args.sublinesPerLine, "If using inline meshing, number of sublines per mesh x line. If set to -1 the block Jacobi algorithm is used.");
   cmdp.setOption ("withStackedTimer", "withoutStackedTimer", &args.useStackedTimer,
       "Whether to run with a StackedTimer and print the timer tree at the end (and try to output Watchr report)");
+  cmdp.setOption ("withOverlapCommAndComp", "withoutOverlapCommAndComp", &args.overlapCommAndComp,
+		  "Whether to run with overlapCommAndComp)");
   cmdp.setOption("problemName", &args.problemName, "Human-readable problem name for Watchr plot");
+  cmdp.setOption("matrixType", &args.matrixType, "matrixType");
   auto result = cmdp.parse (argc, argv);
   return result == Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL;
 }
@@ -96,23 +111,25 @@ static Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > BuildMatrix(Teuchos::Parameter
   nz = matrixList.get("nz", nz);
   
   std::string matrixType = matrixList.get("matrixType","Laplace1D");
-  GO numGlobalElements; //global_size_t
+  RCP<const Map> map;
   if (matrixType == "Laplace1D")
-    numGlobalElements = nx;
+    map = Galeri::Xpetra::CreateMap<LO,GO,NO>(lib, "Cartesian1D", comm, matrixList);
   else if (matrixType == "Laplace2D" || matrixType == "Star2D" || matrixType == "Cross2D")
-    numGlobalElements = nx*ny;
-  else if(matrixType == "Elasticity2D")
-    numGlobalElements = 2*nx*ny;
+    map = Galeri::Xpetra::CreateMap<LO,GO,NO>(lib, "Cartesian2D", comm, matrixList);
+  else if(matrixType == "Elasticity2D") {
+    GO numGlobalElements = 2*nx*ny;
+    map = MapFactory::Build(lib, numGlobalElements, 0, comm);
+  }
   else if (matrixType == "Laplace3D" || matrixType == "Brick3D")
-    numGlobalElements = nx*ny*nz;
-  else if  (matrixType == "Elasticity3D")
-    numGlobalElements = 3*nx*ny*nz;
+    map = Galeri::Xpetra::CreateMap<LO,GO,NO>(lib, "Cartesian3D", comm, matrixList);
+  else if  (matrixType == "Elasticity3D") {
+    GO numGlobalElements = 3*nx*ny*nz;
+    map = MapFactory::Build(lib, numGlobalElements, 0, comm);
+  }
   else {
     std::string msg = matrixType + " is unsupported (in unit testing)";
     throw std::runtime_error(msg);
   }
-  
-  RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
   RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
     Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, matrixList);
   RCP<Matrix> Op = Pr->BuildMatrix();
@@ -128,50 +145,116 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  // Thanks for the code, Travis!
-  
   // Make the graph
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > FirstMatrix = BuildMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(matrixList,comm);
   RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > FGraph = FirstMatrix->getCrsGraph();
   
-  int blocksize = 3;
+  const int blocksize = matrixList.get("blockSize", 3);
   RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(FGraph);
   RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > TTGraph = TGraph->getTpetra_CrsGraph();
   
-  RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bcrsmatrix = rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (*TTGraph, blocksize));
+  using BCRS = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  RCP<BCRS> bcrsmatrix = rcp(new BCRS (*TTGraph, blocksize));
   
-  const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& meshRowMap = *bcrsmatrix->getRowMap();
   const Scalar zero   = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar one   = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar two   = one+one;
   const Scalar three = two+one;
   
   Teuchos::Array<Scalar> basematrix(blocksize*blocksize, zero);
-  basematrix[0] = two;
-  basematrix[2] = three;
-  basematrix[3] = three;
-  basematrix[4] = two;
-  basematrix[7] = three;
-  basematrix[8] = two;
   Teuchos::Array<Scalar> offmatrix(blocksize*blocksize, zero);
-  offmatrix[0]=offmatrix[4]=offmatrix[8]=-1;
-  
-  Teuchos::Array<LocalOrdinal> lclColInds(1);
-  for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
-    lclColInds[0] = lclRowInd;
-    bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
-    
-    // Off diagonals
-    if(lclRowInd > meshRowMap.getMinLocalIndex ()) {
-      lclColInds[0] = lclRowInd - 1;
-      bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &offmatrix[0], 1);
+  int entryIdx = 0;
+  for(int rowIdx = 0; rowIdx < blocksize; ++rowIdx) {
+    for(int colIdx = 0; colIdx < blocksize; ++colIdx) {
+      entryIdx = rowIdx*blocksize + colIdx;
+      basematrix[entryIdx] = ((entryIdx % 2) == 0 ? one : two);
     }
-    if(lclRowInd < meshRowMap.getMaxLocalIndex ()) {
-      lclColInds[0] = lclRowInd + 1;
-      bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &offmatrix[0], 1);
-    }
-    
+    // We enforce that the block matrix is SPD by setting the diagonal value
+    // to a value which is greater than the sum of the absolute value of all the
+    // entries on the corresponding row knowing that the off diagonal blocks are
+    // set to minus identity.
+    basematrix[rowIdx*blocksize + rowIdx] = three + 26 * one + blocksize * two;
+
+    offmatrix[rowIdx*blocksize + rowIdx] = -one;
   }
+
+  const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& meshRowMap = *bcrsmatrix->getRowMap();
+  const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& meshColMap = *bcrsmatrix->getColMap();
+
+  LocalOrdinal localNumRows = bcrsmatrix->getLocalNumRows();
+
+#ifdef VERBOSE_OUTPUT
+  std::stringstream streamI, streamJ, streamV;
+
+  streamI << "I" << comm->getRank() << " = array([ ";
+  streamJ << "J" << comm->getRank() << " = array([ ";
+  streamV << "V" << comm->getRank() << " = array([ ";
+  bool firstPrint = true;
+
+#endif
+  for (LocalOrdinal localRowInd = 0; localRowInd < localNumRows; ++localRowInd) {
+    // Get a view of the current row.
+    // You may modify the values, but not the column indices.
+    typename BCRS::local_inds_host_view_type localColInds;
+    typename BCRS::nonconst_values_host_view_type vals;
+
+    LocalOrdinal numEntries = bcrsmatrix->getNumEntriesInLocalRow(localRowInd);
+    if (numEntries == 0) {
+      continue;
+    }
+    bcrsmatrix->getLocalRowViewNonConst (localRowInd, localColInds, vals);
+    // Modify the entries in the current row.
+    for (LocalOrdinal k = 0; k < numEntries; ++k) {
+      LocalOrdinal offset = blocksize * blocksize * k;
+#ifdef VERBOSE_OUTPUT
+      if (bcrsmatrix->getGlobalNumRows() <= 100) {
+        if (!firstPrint) {
+          streamI << ", ";
+          streamJ << ", ";
+          streamV << ", ";
+        } else {
+          firstPrint = false;
+        }
+        streamI << meshRowMap.getGlobalElement(localRowInd);
+        streamJ << meshColMap.getGlobalElement(localColInds(k));
+        streamV << "1.";
+      }
+#endif
+      if ( meshRowMap.getGlobalElement(localRowInd) == meshColMap.getGlobalElement(localColInds(k)) ) {
+        // Blocks are stored in row-major format.
+        for (LocalOrdinal j = 0; j < blocksize; ++j) {
+          for (LocalOrdinal i = 0; i < blocksize; ++i) {
+            vals(offset + i + j * blocksize) = basematrix[i + j * blocksize];
+          }
+        }
+      } else {
+        // Blocks are stored in row-major format.
+        for (LocalOrdinal j = 0; j < blocksize; ++j) {
+          for (LocalOrdinal i = 0; i < blocksize; ++i) {
+            vals(offset + i + j * blocksize) = offmatrix[i + j * blocksize];
+          }
+        }
+      }
+    }
+  }
+
+#ifdef VERBOSE_OUTPUT
+  if (bcrsmatrix->getGlobalNumRows() <= 100) {
+    streamI << "])";
+    streamJ << "])";
+    streamV << "])";
+
+    std::ofstream graph_file( "log_graph_"+std::to_string(comm->getRank())+".txt" );
+    
+    graph_file << streamI.str() << std::endl;
+    graph_file << streamJ.str() << std::endl;
+    graph_file << streamV.str() << std::endl;
+
+    graph_file << "A" << comm->getRank() << " = sparse.coo_matrix((V" << comm->getRank() << ",(I" << comm->getRank() << ",J" << comm->getRank() << ")),shape=("<< bcrsmatrix->getGlobalNumRows() <<","<< bcrsmatrix->getGlobalNumCols() <<")).tocsr()" << std::endl;
+
+    graph_file.close();
+  }
+#endif
 
   return bcrsmatrix; 
 } // BuildBlockMatrix()
@@ -242,7 +325,6 @@ main (int argc, char* argv[])
      args.mapFilename   = "";
      args.rhsFilename  = "";
      args.lineFilename = "";
-     args.blockSize = 3; 
      inline_matrix = true;
   }
 #endif
@@ -278,23 +360,84 @@ main (int argc, char* argv[])
   if(args.matrixFilename == "") {
     // matrix
     Teuchos::ParameterList plist;
-    plist.set("matrixType","Laplace1D");    
-    plist.set("nx", (GO)args.nx*comm->getSize());
+    if(args.matrixType == "") {
+      plist.set("matrixType","Laplace1D");
+    } else {
+      plist.set("matrixType", args.matrixType);
+      plist.set("nx", (GO)args.nx);
+      plist.set("mx", (GO)args.mx);
+      if(args.mx == 1 && args.ny == -1)
+        plist.set("mx", (GO)comm->getSize());
+      else if(args.mx != comm->getSize() && args.ny == -1) {
+        std::string msg = "mx is not consistent with comm->getSize";
+        throw std::runtime_error(msg);
+      }
+      else if(args.mx != 1) {
+        std::string msg = "mx != 1 is not yet supported";
+        throw std::runtime_error(msg);
+      }
+      if(args.ny > -1) {
+        plist.set("ny", (GO)args.ny);
+        plist.set("my", (GO)args.my);
+        if(args.mx*args.my == 1 && args.nz == -1)
+          plist.set("my", (GO)comm->getSize());
+        else if(args.mx*args.my != comm->getSize() && args.nz == -1) {
+          std::string msg = "mx and my are not consistent with comm->getSize";
+          throw std::runtime_error(msg);
+        }
+      }
+      if(args.nz > -1) {
+        plist.set("nz", (GO)args.nz);
+        plist.set("mz", (GO)args.mz);
+        if(args.mx*args.my*args.mz == 1)
+          plist.set("mz", (GO)comm->getSize());
+        else if(args.mx*args.my*args.mz != comm->getSize()) {
+          std::string msg = "mx, my, and mz are not consistent with comm->getSize";
+          throw std::runtime_error(msg);
+        }
+      }
+    }
+    if(0 < args.blockSize) {
+      plist.set("blockSize", args.blockSize);
+    }
     Ablock = BuildBlockMatrix<SC,LO,GO,NO>(plist,comm);
+    std::cout << "p=" << comm->getRank() << " | Ablock, local size: " << Ablock->getLocalNumRows() << std::endl;
 
     //rhs 
     B = rcp(new MV(Ablock->getRangeMap(),1));
     B->putScalar(Teuchos::ScalarTraits<SC>::one());
 
-    // line info (lpp lines per proc)
-    int line_length = std::max(1, args.nx  / args.lpp);
+    // line info (sublinesPerLine lines per proc along direction x)
+    if ( args.sublinesPerLine < 1 && args.sublinesPerLine != -1) {
+      std::string msg = "the value of sublinesPerLine = " + std::to_string(args.sublinesPerLine) + " is not supported";
+      throw std::runtime_error(msg);
+    }
+
+    int line_length = std::max(1, (int) std::ceil(args.nx  / args.sublinesPerLine));
+    // We compute the number of lines oriented along the x direction of the mesh.
+    // This number is called line_per_x_fiber where a fiber refers to an initial
+    // x line in the mesh before dividing it in sublines.
+    int line_per_x_fiber = std::ceil(args.nx  / line_length);
     line_info = rcp(new IV(Ablock->getRowMap()));
     auto line_ids = line_info->get1dViewNonConst();
-    for(LO i=0; i<(LO)line_ids.size(); i++)
-      line_ids[i] = i / line_length;     
+    std::cout << "line_ids.size()=" << line_ids.size()
+	      << ", args.nx*args.ny*args.nz/comm->getSize()=" << args.nx*args.ny*args.nz/comm->getSize() << std::endl;
+    for(LO i=0; i<(LO)line_ids.size(); i++) {
+      LO fiber_id = std::floor(i / args.nx);
+      line_ids[i] = line_per_x_fiber * fiber_id + std::floor( (i % args.nx) / line_length );
+    }
 
-    if(rank0)
-      std::cout<<"Using block_size = "<<args.blockSize<<" # lines per proc= "<<args.lpp<<" and average line length = "<<line_length<<std::endl;
+    if(rank0) {
+      std::cout << "Using matrixType = " << plist.get<std::string>("matrixType")
+		<< " nx = " << plist.get<GO>("nx")
+		<< " ny = " << plist.get<GO>("ny")
+		<< " nz = " << plist.get<GO>("nz")
+		<< std::endl;
+      std::cout<< "Using block_size = " << args.blockSize
+	       << " # lines per proc (input provided by the user) = " << args.sublinesPerLine //*args.ny*args.nz
+         << " # lines per fiber = " << line_per_x_fiber
+	       << " and average line length = " << line_length<<std::endl;
+    }
   }
   else
 #endif 
@@ -313,7 +456,7 @@ main (int argc, char* argv[])
       // Read matrix
       if(rank0) std::cout<<"Reading matrix (as point)..."<<std::endl;
       RCP<const map_type> dummy_col_map;
-      if (comm->getSize() == 0)
+      if (comm->getSize() == 1)
         A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
       else {
         if(rank0) std::cout<<"Using per-rank reader..."<<std::endl;
@@ -427,13 +570,14 @@ main (int argc, char* argv[])
 
   {
     Teuchos::TimeMonitor precSetupTimeMon (*precSetupTime);
-    precond = rcp(new BTDC(Ablock,parts));
+    precond = rcp(new BTDC(Ablock,parts,args.overlapCommAndComp));
 
     if(rank0) std::cout<<"Initializing preconditioner..."<<std::endl;
     precond->initialize ();
 
     if(rank0) std::cout<<"Computing preconditioner..."<<std::endl;
     precond->compute ();
+    Kokkos::DefaultExecutionSpace().fence();
   }
 
   // Solver Parameters
@@ -441,7 +585,7 @@ main (int argc, char* argv[])
   ap.zeroStartingSolution = true;
   ap.tolerance            = args.tol;
   ap.maxNumSweeps         = args.numIters;
-  ap.checkToleranceEvery  = 1;
+  ap.checkToleranceEvery  = 10;
  
 
   // Solve
@@ -450,6 +594,7 @@ main (int argc, char* argv[])
   {
     Teuchos::TimeMonitor solveTimeMon (*solveTime);
     nits = precond->applyInverseJacobi(*B,*X,ap); 
+    Kokkos::DefaultExecutionSpace().fence(); 
   }
 
   auto norm0 = precond->getNorms0();

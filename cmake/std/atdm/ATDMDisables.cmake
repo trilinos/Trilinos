@@ -253,16 +253,16 @@ ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManage
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
 
 # Disable Kokkos timing based test. See #8545.
-ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaTimingBased_MPI_1_DISABLE ON)
+ATDM_SET_ENABLE(Kokkos_CoreUnitTest_CudaTimingBased_MPI_1_DISABLE ON)
 
 # Disable serial.Random_XorShift64 due to random failures. See #3282.
-ATDM_SET_CACHE(KokkosAlgorithms_UnitTest_MPI_1_EXTRA_ARGS
+ATDM_SET_CACHE(Kokkos_AlgorithmsUnitTest_MPI_1_EXTRA_ARGS
   "--gtest_filter=-*Random_XorShift64:-*Random_XorShift1024" CACHE STRING)
 
 IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
 
   # Disable ctest DISABLED test (otherwise, this shows up on CDash as "NotRun")
-  ATDM_SET_ENABLE(KokkosContainers_PerformanceTest_OpenMP_DISABLE ON)
+  ATDM_SET_ENABLE(Kokkos_ContainersPerformanceTest_OpenMP_DISABLE ON)
 
 ENDIF()
 
@@ -272,13 +272,13 @@ IF ("${ATDM_CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
   ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedPoissonExample-ConvTest-Hex-Order-3_DISABLE ON)
 
   # Too expensive for full debug builds after Kokkos 2.99 upgrade
-  ATDM_SET_ENABLE(KokkosCore_UnitTest_Serial_MPI_1_DISABLE ON)
+  ATDM_SET_ENABLE(Kokkos_CoreUnitTest_Serial_MPI_1_DISABLE ON)
   ATDM_SET_ENABLE(KokkosKernels_blas_serial_MPI_1_DISABLE ON)
 
   IF (ATDM_USE_OPENMP)
 
     # Too expensive for full debug builds after Kokkos 2.99 upgrade
-    ATDM_SET_ENABLE(KokkosCore_UnitTest_OpenMP_MPI_1_DISABLE ON)
+    ATDM_SET_ENABLE(Kokkos_CoreUnitTest_OpenMP_MPI_1_DISABLE ON)
     ATDM_SET_ENABLE(KokkosKernels_blas_openmp_MPI_1_DISABLE ON)
 
   ENDIF()
@@ -313,11 +313,11 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
   ATDM_SET_ENABLE(Zoltan_ch_simple_zoltan_parallel_DISABLE ON)
 
   # Disable ctest DISABLED test (otherwise, this shows up on CDash as "NotRun")
-  ATDM_SET_ENABLE(KokkosContainers_PerformanceTest_Cuda_DISABLE ON)
+  ATDM_SET_ENABLE(Kokkos_ContainersPerformanceTest_Cuda_DISABLE ON)
 
-  # Disable a couple of unit tests in test KokkosCore_UnitTest_Cuda_MPI_1
+  # Disable a couple of unit tests in test Kokkos_CoreUnitTest_Cuda_MPI_1
   # (#6799)
-  ATDM_SET_CACHE(KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
+  ATDM_SET_CACHE(Kokkos_CoreUnitTest_Cuda_MPI_1_EXTRA_ARGS
     "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
     CACHE STRING )
 
@@ -326,9 +326,9 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
   # that this Kokkos inter operability test runs in serial, we ensure that the
   # GPU ID is not swapped upon initialize resulting in an invalid Cuda stream.
   # See #8544.
-  ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaInterOpStreams_MPI_1_SET_RUN_SERIAL ON)
+  ATDM_SET_ENABLE(Kokkos_CoreUnitTest_CudaInterOpStreams_MPI_1_SET_RUN_SERIAL ON)
   # See #8543.
-  ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaInterOpInit_MPI_1_SET_RUN_SERIAL ON)
+  ATDM_SET_ENABLE(Kokkos_CoreUnitTest_CudaInterOpInit_MPI_1_SET_RUN_SERIAL ON)
 
   # Attempt to address intermittent timeouts reported in #6805
   ATDM_SET_ENABLE(KokkosKernels_sparse_cuda_MPI_1_SET_RUN_SERIAL ON)

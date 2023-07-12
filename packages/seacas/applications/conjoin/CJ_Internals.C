@@ -102,7 +102,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh, const std::vector<Bl
   // the block id and not the block order, so we don't need to fix
   // them.
   for (size_t i = 0; i < blocks.size(); i++) {
-    const_cast<Excn::Block &>(blocks[i]).position_ = i;
+    blocks[i].position_ = i;
   }
 
   // Check whether current order is consistent.  The problem with just
@@ -122,7 +122,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh, const std::vector<Bl
   // nonzero element count are in the correct order.
   size_t last_offset = 0;
   bool   order_ok    = true;
-  for (auto &block : blocks) {
+  for (const auto &block : blocks) {
     if (block.elementCount > 0) {
       if (block.offset_ < last_offset) {
         order_ok = false;
@@ -138,8 +138,8 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh, const std::vector<Bl
 
     // Now, update the position_ field based on the sorted order.
     for (size_t i = 0; i < blocks.size(); i++) {
-      size_t orig_position                                       = sorted_blocks[i].position_;
-      const_cast<Excn::Block &>(blocks[orig_position]).position_ = i;
+      size_t orig_position            = sorted_blocks[i].position_;
+      blocks[orig_position].position_ = i;
       SMART_ASSERT(blocks[orig_position].id == sorted_blocks[i].id);
     }
   }
@@ -208,7 +208,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh, const std::vector<Bl
     }
 
     size_t name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
-    auto   names     = new char *[max_entity];
+    auto  *names     = new char *[max_entity];
     for (size_t i = 0; i < max_entity; i++) {
       names[i] = new char[name_size + 1];
     }
@@ -578,8 +578,8 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
 
     // store element type as attribute of connectivity variable
     status = nc_put_att_text(exodusFilePtr, connid, ATT_NAME_ELB,
-                             static_cast<int>(std::strlen(blocks[iblk].elType)) + 1,
-                             blocks[iblk].elType);
+                             static_cast<int>(std::strlen(blocks[iblk].elType.c_str())) + 1,
+                             blocks[iblk].elType.c_str());
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       errmsg = fmt::format("Error: failed to store element type name {} in file id {}",

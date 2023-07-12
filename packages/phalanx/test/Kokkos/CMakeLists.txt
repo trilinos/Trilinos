@@ -48,3 +48,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TESTONLYLIBS phalanx_unit_test_main phalanx_test_utilities
   NUM_MPI_PROCS 1
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tKokkosScalarFunctionsFad
+  SOURCES tKokkosScalarFunctionsFad.cpp
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tKokkosFencing
+  SOURCES tKokkosFencing.cpp
+  TESTONLYLIBS phalanx_test_utilities
+  NUM_MPI_PROCS 1
+  )

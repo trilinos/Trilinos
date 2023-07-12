@@ -457,7 +457,7 @@ class TrilinosPRConfigurationBase(object):
 
         Nightly, Continuous, Experimental
         """
-        if self.arg_pullrequest_cdash_track == "Pull Request":
+        if self.arg_pullrequest_cdash_track in ["Pull Request", "Experimental"]:
             return "Experimental"
         return "Nightly"
 
@@ -649,36 +649,6 @@ class TrilinosPRConfigurationBase(object):
         return 0
 
 
-    def validate_branch_constraints(self):
-        """
-        Verify that the source branch is allowed.
-
-        For the `master` branch, we only allow the source branch to be
-        a protected branch named with the scheme `master_merge_YYYYMMDD_HHMMSS`
-        """
-        print("")
-        print("Validate target branch constraints:")
-        print("--- Target branch is '{}'".format(self.args.target_branch_name))
-
-        re_master_merge_source = "master_merge_[0-9]{8}_[0-9]{6}"
-        if "master" == self.args.target_branch_name:
-            print("--- Target branch is 'master'. Checking source branch constraints...")
-            if not re.match(re_master_merge_source, self.args.source_branch_name):
-                message  = "+" + "="*78 + "+\n"
-                message += "ERROR: Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS\n"
-                message += "       This violates Trilinos policy for pull requests into the master\n"
-                message += "       branch.\n"
-                message += "       Source branch provided is {}\n".format(self.args.source_branch_name)
-                message += "       Perhaps you forgot to set `develop` as the target in your PR?\n"
-                message += "+" + "="*78 + "+\n"
-                #print(message)
-                sys.exit(message)
-
-        print("--- target branch constraints OK")
-        print("")
-        return 0
-
-
     def prepare_test(self):
         """
         Prepares a test environment for exeution.
@@ -686,9 +656,6 @@ class TrilinosPRConfigurationBase(object):
         This includes tasks like determining the # of cores to use, setting
         environment variables, loading environment modules, etc.
         """
-        # Validate the branch constraints (i.e., if target_branch_name is master, then
-        # source_branch_name must be master_merge_YYYYMMDD_HHMMSS)
-        self.validate_branch_constraints()
 
         self.message("+" + "-"*78 + "+")
         self.message("Configuration Parameters")

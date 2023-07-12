@@ -367,10 +367,12 @@ template<class Scalar>
 std::string BelosLinearOpWithSolveFactory<Scalar>::description() const
 {
   std::ostringstream oss;
-  oss << "Thyra::BelosLinearOpWithSolveFactory";
-  //oss << "{";
-  // ToDo: Fill this in some!
-  //oss << "}";
+  oss << Teuchos::Describable::description();
+  oss << "{";
+  if (nonnull(precFactory_)) {
+    oss << precFactory_->description();
+  }
+  oss << "}";
   return oss.str();
 }
 

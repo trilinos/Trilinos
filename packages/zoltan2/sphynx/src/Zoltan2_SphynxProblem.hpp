@@ -171,10 +171,6 @@ static void setSphynxValidatorsInList(
         sphynxParams_->validateParametersAndSetDefaults(validParams, 0);
         this->env_->convertStringToInt(*sphynxParams_.get());
         
-        //std::cout << "DEBUG: Past validateParameters." << std::endl;
-
-        //std::cout << "params_ is " << params_ << std::endl;
-
         int nparts = -1;
         const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");
         //std::cout << "DEBUG: got past getEntryPtr." << std::endl;
@@ -306,6 +302,7 @@ static void setSphynxValidatorsInList(
   {
     eigenVectors_ = userEvects; 
   }
+
   ///////////////////////////////////////////////////////////////////////////
   // Returns an RCP containing a deep copy of the eigenvectors used by Sphynx.
   ///////////////////////////////////////////////////////////////////////////

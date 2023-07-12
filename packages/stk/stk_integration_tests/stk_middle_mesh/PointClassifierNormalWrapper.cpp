@@ -1,6 +1,7 @@
-#include "create_mesh.hpp"
-#include "mesh_io.hpp"
-#include "predicates/point_classifier_normal_wrapper.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_io.hpp"
+#include "stk_middle_mesh/predicates/point_classifier_normal_wrapper.hpp"
+#include "stk_middle_mesh/utils.hpp"
 #include "gtest/gtest.h"
 
 namespace {
@@ -58,6 +59,9 @@ void check_records_uniqueness(const std::vector<PointRecord>& records)
 
 TEST(PointClassifierNormalWrapper, EigthSphere)
 {
+  if (stk::middle_mesh::utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
   // when projecting from a sphere to another sphere with larger
   // radius, each point should project onto exactly 1 point on
   // the larger sphere

@@ -40,25 +40,50 @@
 // @HEADER
 
 #include "Teuchos_VerbosityLevel.hpp"
-#include "Teuchos_Array.hpp"
+#include "Teuchos_Tuple.hpp"
 #include "Teuchos_as.hpp"
 
 
-namespace {
+Teuchos::ArrayView<const Teuchos::EVerbosityLevel> Teuchos::getValidVerbLevels()
+{
+  static const Tuple<Teuchos::EVerbosityLevel, EVerbosityLevel_size>
+    verbLevelArray = tuple<Teuchos::EVerbosityLevel>(
+      Teuchos::VERB_DEFAULT,
+      Teuchos::VERB_NONE,
+      Teuchos::VERB_LOW,
+      Teuchos::VERB_MEDIUM,
+      Teuchos::VERB_HIGH,
+      Teuchos::VERB_EXTREME
+      );
+  return verbLevelArray();
+}
 
 
-const Teuchos::Array<Teuchos::EVerbosityLevel> verbLevelArray =
-  Teuchos::tuple<Teuchos::EVerbosityLevel>(
-    Teuchos::VERB_NONE,
-    Teuchos::VERB_LOW,
-    Teuchos::VERB_MEDIUM,
-    Teuchos::VERB_HIGH,
-    Teuchos::VERB_EXTREME
-    );
+Teuchos::ArrayView<const std::string> Teuchos::getValidVerbLevelsNames()
+{
+  static const Tuple<std::string, EVerbosityLevel_size>
+    verbLevelNamesArray = tuple<std::string>(
+      "VERB_DEFAULT",
+      "VERB_NONE",
+      "VERB_LOW",
+      "VERB_MEDIUM",
+      "VERB_HIGH",
+      "VERB_EXTREME"
+      );
+  return verbLevelNamesArray();
+}
 
 
-} // namespace
-
+Teuchos::ArrayView<const char * const> Teuchos::getValidVerbLevelsNamesRawStrings()
+{
+  ArrayView<const std::string> verbLevelNamesArray = getValidVerbLevelsNames();
+  static const Tuple<const char*, EVerbosityLevel_size>
+    verbLevelNamesRawStringsArray;
+  for (int i = 0; i < EVerbosityLevel_size; ++i) {
+    verbLevelNamesRawStringsArray[i] = verbLevelNamesArray[i].c_str();
+  }
+  return verbLevelNamesRawStringsArray();
+}
 
 
 std::string Teuchos::toString(const EVerbosityLevel verbLevel)
@@ -128,5 +153,5 @@ Teuchos::incrVerbLevel(
   else if (intVerbLevel > as<int>(VERB_EXTREME))
     return VERB_EXTREME;
   // If we get here, then intVerbLevel is a valid verbosity level.
-  return verbLevelArray[intVerbLevel];
+  return getValidVerbLevels()[intVerbLevel];
 }

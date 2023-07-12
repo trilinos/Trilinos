@@ -146,6 +146,10 @@ void check_topology_up(const std::vector<MeshEntityPtr>& entities, const std::ve
 
 void check_edge_orientation_parallel(std::shared_ptr<Mesh> mesh);
 
+void check_remotes_symmetric(std::shared_ptr<Mesh> mesh);
+
+void check_remotes_unique(std::shared_ptr<Mesh> mesh);
+
 void check_coordinate_field(std::shared_ptr<Mesh> mesh);
 
 void apply_orientation(EntityOrientation flag, MeshEntityPtr* down, const int n);
@@ -159,6 +163,9 @@ int get_upward(MeshEntityPtr e, int dim, std::vector<MeshEntityPtr>& up);
 int get_bridge_adjacent(MeshEntityPtr e, const int viaDim, const int targetDim, std::vector<MeshEntityPtr>& entities);
 
 int get_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
+
+RemoteSharedEntity get_owner_remote(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
+bool check_is_entity_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
 
 RemoteSharedEntity get_remote_shared_entity(MeshEntityPtr entity, int rank);
 

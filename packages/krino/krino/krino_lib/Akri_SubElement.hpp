@@ -21,7 +21,7 @@
 #include <Akri_Element.hpp>
 #include <Akri_Facet.hpp>
 #include <Akri_InterfaceID.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -108,7 +108,7 @@ public:
 
   virtual void determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key) override;
-  virtual void cut_interior_intersection_point(CDMesh & mesh, const Vector3d & pCoords, const std::vector<int> & sortedDomains) override;
+  virtual void cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains) override;
 
 protected:
   void perform_decomposition(CDMesh & mesh, const InterfaceID interface_key, const std::array<int,3> & node_signs);
@@ -160,13 +160,13 @@ public:
 
   virtual void determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key) override;
-  virtual void cut_interior_intersection_point(CDMesh & mesh, const Vector3d & pCoords, const std::vector<int> & sortedDomains) override;
+  virtual void cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains) override;
 
 protected:
   void perform_decomposition(CDMesh & mesh, const InterfaceID interface_key, const std::array<int,4> & node_signs);
   void determine_node_scores_on_face( const CDMesh & mesh, const InterfaceID interface, const int i0, const int i1, const int i2 );
   static const unsigned ** get_permutation_side_ordinals();
-  static double tet_volume(const std::array<Vector3d,4> & nodes);
+  static double tet_volume(const std::array<stk::math::Vector3d,4> & nodes);
 
   bool is_degenerate( NodeVec & lnodes,
                       const int i0, const int i1, const int i2, const int i3 );
@@ -223,7 +223,7 @@ public:
   virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const = 0;
   virtual void prolongate_fields(const CDMesh & mesh) const = 0;
 
-  void get_parent_entities(std::vector<stk::mesh::Entity*> & parent_entities) const;
+  void fill_parent_entity_pointers(std::vector<stk::mesh::Entity*> & parentEntities) const;
 
   void set_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity in_node_obj) const { my_entity = in_node_obj; my_entityId = mesh.identifier(my_entity); }
   void set_entity(stk::mesh::Entity nodeEntity, stk::mesh::EntityId nodeEntityId) const { my_entity = nodeEntity; my_entityId = nodeEntityId; }
@@ -236,9 +236,9 @@ public:
   bool check_entity(const stk::mesh::BulkData & mesh) const { return (my_entityId == 0) ? (my_entity == stk::mesh::Entity()) : (my_entityId == mesh.identifier(my_entity)); }
   stk::mesh::Entity & entity() const { return my_entity; }
   stk::mesh::EntityId entityId() const { return my_entityId; }
-  void set_entityId_from_entity(const stk::mesh::BulkData & mesh) const { ThrowAssert(mesh.is_valid(my_entity)); my_entityId = mesh.identifier(my_entity); }
+  void set_entityId_from_entity(const stk::mesh::BulkData & mesh) const { STK_ThrowAssert(mesh.is_valid(my_entity)); my_entityId = mesh.identifier(my_entity); }
 
-  const Vector3d & owner_coords( const Mesh_Element * in_owner ) const {
+  const stk::math::Vector3d & owner_coords( const Mesh_Element * in_owner ) const {
     if ( in_owner != my_cached_owner ) {
       // call derived types function for recomputing owner_coords
       my_cached_owner = in_owner;
@@ -259,17 +259,17 @@ public:
   static bool less_by_coordinates_then_by_entity_id(const SubElementNode & a, const SubElementNode & b);
   bool node_sign_is_set() const { return my_node_sign != -2; }
   void set_node_sign(const int sign) const { my_node_sign = (my_node_sign == 0 || my_node_sign == -sign) ? 0 : sign; }
-  int get_node_sign() const { ThrowRequire(node_sign_is_set()); return my_node_sign; }
+  int get_node_sign() const { STK_ThrowRequire(node_sign_is_set()); return my_node_sign; }
   void clear_node_sign() const { my_node_sign = -2; }
   void clear_node_score() const { my_node_score = 1.; }
   bool node_score_is_set() const { return my_node_score != 1.; }
   void set_node_score(const double score) const { my_node_score = std::min(my_node_score, score); }
-  double get_node_score() const { ThrowRequire(node_sign_is_set()); return my_node_score; }
+  double get_node_score() const { STK_ThrowRequire(node_sign_is_set()); return my_node_score; }
 
   // pure virtual function for recomputing local coordinates
-  virtual Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const = 0;
+  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const = 0;
 
-  const Vector3d & coordinates() const { return my_global_coords; }
+  const stk::math::Vector3d & coordinates() const { return my_global_coords; }
 
   void add_child(const SubElementNode* child) const { my_children.push_back(child); }
   static const SubElementNode * common_child( const NodeVec & parents );
@@ -293,12 +293,12 @@ protected:
   mutable stk::mesh::Entity my_entity;
   mutable stk::mesh::EntityId my_entityId;
   mutable bool my_is_prolonged_flag;
-  Vector3d my_global_coords;
+  stk::math::Vector3d my_global_coords;
   mutable signed char my_node_sign;
   mutable double my_node_score;
 
   mutable const Mesh_Element * my_cached_owner;
-  mutable Vector3d my_cached_owner_coords;
+  mutable stk::math::Vector3d my_cached_owner_coords;
 
   mutable std::vector<const SubElementNode*> my_children;
   mutable std::vector<int> my_sorted_node_domains;
@@ -317,7 +317,7 @@ public:
   virtual ~SubElementChildNode() {}
   virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override;
   virtual void prolongate_fields(const CDMesh & mesh) const override;
-  virtual Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const override;
+  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const override;
 
   virtual NodeVec get_parents() const override { return my_parents; }
   virtual size_t get_num_parents() const override { return my_parents.size(); }
@@ -326,6 +326,7 @@ public:
 private:
   void prolong_ale_fields(const CDMesh & mesh, const ProlongationPointData * prolong_data) const;
   void prolong_interpolation_fields(const CDMesh & mesh) const;
+  void prolong_edge_interpolation_fields(const FieldSet & edgeInterpFields) const;
 
   NodeVec my_parents;
   std::vector<double> my_weights;
@@ -342,7 +343,7 @@ public:
   virtual ~SubElementSteinerNode() {}
   virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override { return false; }
   virtual void prolongate_fields(const CDMesh & mesh) const override;
-  virtual Vector3d compute_owner_coords( const Mesh_Element * owner ) const override {
+  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * owner ) const override {
     throw std::runtime_error("Incorrect usage of SubElementSteinerNode.  The type of node only has one owner.");
   }
 };
@@ -357,8 +358,8 @@ public:
 
   virtual ~SubElementEdgeNode() {}
 
-  double get_position() const { ThrowAssert(get_num_parents() == 2); return get_parent_weights()[1]; }
-  double get_position(const SubElementNode *parent1, const SubElementNode *parent2) const { ThrowAssert(check_parents(parent1,parent2)); return ((parent1==get_parents()[0]) ? get_parent_weights()[1] : get_parent_weights()[0]); }
+  double get_position() const { STK_ThrowAssert(get_num_parents() == 2); return get_parent_weights()[1]; }
+  double get_position(const SubElementNode *parent1, const SubElementNode *parent2) const { STK_ThrowAssert(check_parents(parent1,parent2)); return ((parent1==get_parents()[0]) ? get_parent_weights()[1] : get_parent_weights()[0]); }
 
 private:
   bool check_parents(const SubElementNode *parent1, const SubElementNode *parent2) const {
@@ -381,14 +382,14 @@ public:
   virtual ~SubElementMidSideNode() {}
   virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override { return false; }
   virtual void prolongate_fields(const CDMesh & mesh) const override;
-  virtual Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const override {
+  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const override {
     return 0.5 * my_parent1->owner_coords(in_owner) + 0.5 * my_parent2->owner_coords(in_owner);
   }
   virtual bool is_mesh_node() const override { return my_is_mesh_node; }
 
-  virtual NodeVec get_parents() const override { ThrowRequire(!my_is_mesh_node); return NodeVec{my_parent1,my_parent2}; }
+  virtual NodeVec get_parents() const override { return NodeVec{my_parent1,my_parent2}; }
   virtual size_t get_num_parents() const override { return 2; }
-  virtual std::vector<double> get_parent_weights() const override { ThrowRequire(!my_is_mesh_node); return std::vector<double>{0.5,0.5}; }
+  virtual std::vector<double> get_parent_weights() const override { return std::vector<double>{0.5,0.5}; }
 
 protected:
   bool my_is_mesh_node;
@@ -398,6 +399,7 @@ protected:
 private:
   void prolong_ale_fields(const CDMesh & mesh) const;
   void prolong_interpolation_fields(const CDMesh & mesh) const;
+  void prolong_edge_interpolation_fields(const FieldSet & edgeInterpFields) const;
   bool is_mesh_node_that_needs_to_be_prolonged(const CDMesh & mesh) const;
 };
 
@@ -408,14 +410,14 @@ public:
   SubElementMeshNode( const Mesh_Element * owner,
       stk::mesh::Entity nodeEntity,
       stk::mesh::EntityId nodeEntityId,
-      const Vector3d & owner_coords,
-      const Vector3d & global_coords );
+      const stk::math::Vector3d & owner_coords,
+      const stk::math::Vector3d & global_coords );
 
   virtual ~SubElementMeshNode() {}
 
   virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override;
   virtual void prolongate_fields(const CDMesh & mesh) const override;
-  virtual Vector3d compute_owner_coords( const Mesh_Element * owner ) const override { return owner->get_node_parametric_coords(this); }
+  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * owner ) const override { return owner->get_node_parametric_coords(this); }
   virtual bool is_mesh_node() const override { return true; }
 protected:
 

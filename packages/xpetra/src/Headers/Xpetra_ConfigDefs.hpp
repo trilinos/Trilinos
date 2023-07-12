@@ -242,7 +242,7 @@ namespace Xpetra {
   // Xpetra functor objects
   // inspired by SGI-specific project2nd, project1st
   template <class Arg1, class Arg2>
-  class firstArg : std::binary_function<Arg1,Arg2,Arg1> {
+  class firstArg {
   public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
@@ -251,7 +251,7 @@ namespace Xpetra {
   };
 
   template <class Arg1, class Arg2>
-  class secondArg : std::binary_function<Arg1,Arg2,Arg2> {
+  class secondArg {
   public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;

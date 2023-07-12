@@ -39,25 +39,19 @@ import path ;
 
 local stk_middle_mesh-root-inc ;
 if $(RTenv-arg) = "user" {
-  stk_middle_mesh-root-inc = $(stk_middle_mesh-root)/stk_middle_mesh ;
+  stk_middle_mesh-root-inc = $(stk_middle_mesh-root) ;
 } else {
-  stk_middle_mesh-root-inc = $(stk_middle_mesh-root)/stk_middle_mesh ;
+  stk_middle_mesh-root-inc = $(stk_middle_mesh-root) ;
 }
 
 project votd
   : requirements
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
-    <include>$(stk_middle_mesh-root)
     <include>$(stk_middle_mesh-root-inc)
-    <include>$(stk_middle_mesh-root-inc)/stk
-    <include>$(stk_middle_mesh-root-inc)/predicates
   : usage-requirements
     <define>STK_BUILT_IN_SIERRA
-    <include>$(stk_middle_mesh-root)
     <include>$(stk_middle_mesh-root-inc)
-    <include>$(stk_middle_mesh-root-inc)/stk
-    <include>$(stk_middle_mesh-root-inc)/predicates
   : build-dir $(stk_middle_mesh-builddir)
   ;
 
@@ -73,8 +67,8 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files =
   stk_middle_mesh_utest
+  stk_middle_mesh_docs_tests
   stk_middle_mesh_integration_tester
-  stk_nc_generator
   ;
 
 #
@@ -164,6 +158,14 @@ exe stk_middle_mesh_utest
     <tag>@sierra-exec-tag
   ;
 
+exe stk_middle_mesh_docs_tests
+  :
+    [ glob $(stk_mesh-root)/../stk_doc_tests/stk_middle_mesh/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+  : <tag>@sierra-exec-tag
+    <include>$(stk_mesh-root)/../stk_doc_tests/stk_mesh
+  ;
+
 exe stk_middle_mesh_integration_tester
   :
     [ glob $(stk_middle_mesh-root)/../stk_integration_tests/stk_middle_mesh/*.cpp ]
@@ -177,15 +179,6 @@ exe stk_middle_mesh_integration_tester
     <tag>@sierra-exec-tag
   ;
 
-exe stk_nc_generator
-  :
-    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/nc_generator.cpp ]
-    stk_middle_mesh
-  :
-    <tag>@sierra-exec-tag
-  ;
-
-
 lib stk_middle_mesh
   :
     [ ifdevbuild
@@ -197,8 +190,10 @@ lib stk_middle_mesh
     ]
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_util
+    /sierra/stk_search//stk_search
     /mpi//mpi
     /tpl/cdt//cdt_header_only_libs
+    /tpl/lapack//lapack_interface
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -235,5 +230,5 @@ lib stk_middle_mesh_test_util
     ]
   :
     <include>$(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh
-    <include>$(stk_middle_mesh-root-inc)
+    <include>$(stk_middle_mesh-root)/stk_middle_mesh
   ;

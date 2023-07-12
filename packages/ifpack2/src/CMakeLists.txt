@@ -228,6 +228,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Chebyshev
     Container
     BandedContainer
+    DatabaseSchwarz
     DenseContainer
     Diagonal
     DiagonalFilter
@@ -239,6 +240,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     LinePartitioner
     LocalFilter
     LocalSparseTriangularSolver
+    MDF
     OverlappingRowMatrix
     Relaxation
     ReorderFilter

@@ -1,7 +1,7 @@
-#include "field_output_adaptor.hpp"
+#include "stk_middle_mesh_util/field_output_adaptor.hpp"
 #include "gtest/gtest.h"
 #include "stk_middle_mesh_util/exodus_writer.hpp"
-#include "stk_interface.hpp"
+#include "stk_middle_mesh_util/stk_interface.hpp"
 #include "stk_middle_mesh/create_mesh.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_topology/topology.hpp"
@@ -32,7 +32,6 @@ void read_stk_mesh(const std::string& fname, stk::mesh::BulkData& bulkData)
   reader.populate_mesh();
   reader.populate_field_data();
   reader.read_defined_input_fields(1);
-
 }
 
 int count_entities(stk::mesh::BulkData& bulkData, stk::mesh::EntityRank rank)

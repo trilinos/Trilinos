@@ -464,6 +464,9 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   // if smallest == true, nMax is the rightmost value in continuous that we matched against
   // if smallest == false, nMax is the leftmost value in continuous that we matched against
 
+  // Clean up.
+  delete [] lambdasorted;
+
   // Define the exact discrete eigenvectors
   int localSize = Map->NumMyElements();
   double *vQ = new (std::nothrow) double[(nMax+2)*localSize];

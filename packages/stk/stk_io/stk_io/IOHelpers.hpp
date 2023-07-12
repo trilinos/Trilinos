@@ -39,7 +39,6 @@
 #include <Ioss_Field.h>                            // for Field, etc
 #include <Ioss_PropertyManager.h>                  // for PropertyManager
 #include <stddef.h>                                // for size_t
-#include <Teuchos_RCP.hpp>                         // for RCP::RCP<T>, etc
 #include <algorithm>                               // for swap
 #include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
 #include <stk_io/IossBridge.hpp>
@@ -50,7 +49,6 @@
 #include <stk_util/util/ParameterList.hpp>         // for Type
 #include <string>                                  // for string
 #include <vector>                                  // for vector
-#include "Teuchos_RCPDecl.hpp"                     // for RCP
 #include "mpi.h"                                   // for MPI_Comm, etc
 #include "stk_mesh/base/Types.hpp"                 // for FieldVector
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
@@ -72,59 +70,8 @@ inline bool fieldOrdinalSort(const stk::io::FieldAndName& f1, const stk::io::Fie
   return f1.field()->mesh_meta_data_ordinal() < f2.field()->mesh_meta_data_ordinal();
 }
 
-template <typename DataType>
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           DataType globalVarData);
-
-template <typename DataType>
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           std::vector<DataType> &globalVarData);
-
-bool internal_has_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName);
-
-template <typename DataType>
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          DataType &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found);
-
-template <typename DataType>
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          std::vector<DataType> &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found);
-
-void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-                              const std::string &name, const std::any &any_value,
-                              stk::util::ParameterType::Type type);
-
-void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-                              const std::string &name, const stk::util::Parameter &param);
-
-void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
+void write_defined_global_any_fields(std::shared_ptr<Ioss::Region> region,
                                      std::vector<stk::io::GlobalAnyVariable> &global_any_fields);
-
-bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
-                             const std::string &globalVarName,
-                             std::any &any_value, stk::util::ParameterType::Type type,
-                             bool abort_if_not_found);
-
-bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
-                             const std::string &globalVarName,
-                             stk::util::Parameter& param,
-                             bool abort_if_not_found);
-
-void internal_add_global(Teuchos::RCP<Ioss::Region> region,
-                         const std::string &globalVarName,
-                         const std::string &storage,
-                         Ioss::Field::BasicType dataType,
-                         int copies = 1,
-                         Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
-
-void internal_add_global(Teuchos::RCP<Ioss::Region> region,
-                         const std::string &globalVarName,
-                         int component_count,
-                         Ioss::Field::BasicType dataType,
-                         int copies = 1,
-                         Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
 
 size_t get_entities(const stk::mesh::Part &part,
                     const stk::mesh::BulkData &bulk,
@@ -146,12 +93,6 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk);
 
 void process_sidesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk);
 
-void internal_fill_output_entities(Ioss::GroupingEntity *io_entity,
-                                 stk::mesh::Part *part,
-                                 stk::mesh::EntityRank part_type,
-                                 OutputParams &params,
-                                 std::vector<stk::mesh::Entity> &entities);
-
 void put_field_data(OutputParams &params,
                   stk::mesh::Part &part,
                   stk::mesh::EntityRank part_type,
@@ -167,7 +108,66 @@ void put_field_data(OutputParams &params,
                   const std::vector<stk::io::FieldAndName> &namedFields,
                   const stk::mesh::FieldState *state=nullptr);
 
+namespace impl {
 
+template <typename DataType>
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           DataType globalVarData);
+
+template <typename DataType>
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           std::vector<DataType> &globalVarData);
+
+bool has_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName);
+
+template <typename DataType>
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          DataType &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found);
+
+template <typename DataType>
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          std::vector<DataType> &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found);
+
+void write_parameter(std::shared_ptr<Ioss::Region> output_region,
+                              const std::string &name, const std::any &any_value,
+                              stk::util::ParameterType::Type type);
+
+void write_parameter(std::shared_ptr<Ioss::Region> output_region,
+                              const std::string &name, const stk::util::Parameter &param);
+
+bool read_parameter(std::shared_ptr<Ioss::Region> input_region,
+                             const std::string &globalVarName,
+                             std::any &any_value, stk::util::ParameterType::Type type,
+                             bool abort_if_not_found);
+
+bool read_parameter(std::shared_ptr<Ioss::Region> input_region,
+                             const std::string &globalVarName,
+                             stk::util::Parameter& param,
+                             bool abort_if_not_found);
+
+void add_global(std::shared_ptr<Ioss::Region> region,
+                         const std::string &globalVarName,
+                         const std::string &storage,
+                         Ioss::Field::BasicType dataType,
+                         int copies = 1,
+                         Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
+
+void add_global(std::shared_ptr<Ioss::Region> region,
+                         const std::string &globalVarName,
+                         int component_count,
+                         Ioss::Field::BasicType dataType,
+                         int copies = 1,
+                         Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
+
+void fill_output_entities(Ioss::GroupingEntity *io_entity,
+                                 stk::mesh::Part *part,
+                                 stk::mesh::EntityRank part_type,
+                                 OutputParams &params,
+                                 std::vector<stk::mesh::Entity> &entities);
+
+}
 }
 }
 #endif

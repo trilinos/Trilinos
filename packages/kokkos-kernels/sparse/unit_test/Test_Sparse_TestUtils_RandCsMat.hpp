@@ -19,24 +19,25 @@
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  auto expected_min    = ScalarType(1.0);
-  int64_t expected_nnz = 0;
+  auto expected_min   = ScalarType(1.0);
+  size_t expected_nnz = 0;
   RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cm(m, n, min_val, max_val);
 
-  for (int64_t i = 0; i < cm.get_nnz(); ++i)
+  for (size_t i = 0; i < cm.get_nnz(); ++i)
     ASSERT_GE(cm(i), expected_min) << cm.info;
 
   auto map_d = cm.get_map();
   auto map   = Kokkos::create_mirror_view(map_d);
   Kokkos::deep_copy(map, map_d);
 
+  // Here we treat 'cm' as a Ccs matrix
   for (int64_t j = 0; j < cm.get_dim1(); ++j) {
-    int64_t row_len = j < static_cast<int64_t>(m) ? (map(j + 1) - map(j)) : 0;
-    for (int64_t i = 0; i < row_len; ++i) {
-      int64_t row_start = j < static_cast<int64_t>(m) ? map(j) : 0;
-      ASSERT_FLOAT_EQ(cm(row_start + i), cm(expected_nnz + i)) << cm.info;
+    int64_t col_len = j < static_cast<int64_t>(m) ? (map(j + 1) - map(j)) : 0;
+    for (int64_t i = 0; i < col_len; ++i) {
+      int64_t col_start = j < static_cast<int64_t>(m) ? map(j) : 0;
+      ASSERT_FLOAT_EQ(cm(col_start + i), cm(expected_nnz + i)) << cm.info;
     }
-    expected_nnz += row_len;
+    expected_nnz += col_len;
   }
   ASSERT_EQ(cm.get_nnz(), expected_nnz) << cm.info;
 
@@ -45,10 +46,12 @@ void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   ASSERT_EQ(vals.extent(0), cm.get_nnz() + 1) << cm.info;
 
   auto row_ids = cm.get_ids();
-  ASSERT_EQ(row_ids.extent(0), cm.get_dim1() * cm.get_dim2() + 1) << cm.info;
+  ASSERT_EQ(row_ids.extent(0), cm.get_nnz()) << cm.info;
 
   auto col_map = cm.get_map();
   ASSERT_EQ(col_map.extent(0), cm.get_dim1() + 1);
+
+  ASSERT_EQ(map(cm.get_dim1()), expected_nnz) << cm.info;
 }
 
 template <class ExeSpaceType>

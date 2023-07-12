@@ -84,6 +84,8 @@ void ElementMeshClassifier::get_mesh2_element_classification(int numConstraintEd
       {
         std::cout << "element mesh el id = " << elementMeshEl->get_id() << std::endl;
         std::cout << "mesh1 el id = " << m_elementMeshData.el1->get_id() << std::endl;
+        std::cout << "mesh1 el = " << m_elementMeshData.el1 << std::endl;
+        std::cout << "meshIn El = " << meshInEl << std::endl;
         std::cout << "number of element mesh verts = " << m_elementMeshData.elementMeshIn->get_vertices().size()
                   << std::endl;
         // std::cout << "element mesh vert id 96 maps to vert_in id " <<
@@ -216,7 +218,16 @@ mesh::MeshEntityPtr ElementMeshClassifier::classification_pass1(const std::vecto
   for (auto& el2 : mesh2Els)
   {
     if (M_OUTPUT)
+    {
       std::cout << "el2 = " << el2->get_id() << ", " << el2 << std::endl;
+
+      std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> el2Verts;
+      mesh::get_downward(el2, 0, el2Verts.data());
+      std::cout << "  el2 vert ids = ";
+      for (int i=0; i < 4; ++i)
+        std::cout << el2Verts[i]->get_id() << ", ";
+      std::cout << std::endl;
+    }
     vertsIn.clear();
 
     get_verts_in(m_elementMeshData.el1, el2, vertsIn);

@@ -52,7 +52,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
                      bool invert_offdiag, bool u_in_csr, int loop) {
   using ordinal_type = int;
   using size_type    = int;
-  using STS          = Kokkos::Details::ArithTraits<scalar_type>;
+  using STS          = Kokkos::ArithTraits<scalar_type>;
   using mag_type     = typename STS::mag_type;
 
   // Default spaces

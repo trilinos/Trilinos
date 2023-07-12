@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,9 +47,6 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   size_t length;
   int    cur_num_elem_blk, nelnoddim, numelbdim, numattrdim, connid, numelemdim, numnodedim;
   char   errmsg[MAX_ERR_LENGTH];
-#if NC_HAS_HDF5
-  int fill = NC_FILL_CHAR;
-#endif
 
   EX_FUNC_ENTER();
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
@@ -274,9 +271,8 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-#if NC_HAS_HDF5
+      int fill = NC_FILL_CHAR;
       nc_def_var_fill(exoid, temp, 0, &fill);
-#endif
       eb_array[iblk] = temp;
 
       dims[0] = numelbdim;

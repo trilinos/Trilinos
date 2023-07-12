@@ -11,8 +11,8 @@
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_topology/topology.hpp"
 
-#include "mesh.hpp"
-#include "nonconformal_abstract.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/nonconformal_abstract.hpp"
 #include "create_stk_mesh.hpp"
 
 namespace stk {
@@ -25,7 +25,7 @@ class StkMeshWriter
     using MeshFieldPtr = StkMeshCreator::MeshFieldPtr;
 
   public:
-    using FieldScalarType = StkMeshCreator::FieldScalarType;
+    using VertIdType = StkMeshCreator::VertIdType;
     using FieldType       = StkMeshCreator::FieldType;
 
     StkMeshWriter(stk::mesh::MetaData& metaDataIn, stk::mesh::BulkData& bulkDataIn, stk::mesh::MetaData& metaDataOut,

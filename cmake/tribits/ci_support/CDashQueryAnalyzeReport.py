@@ -40,9 +40,11 @@
 try:
   # Python 2
   from urllib2 import urlopen
+  from urllib2 import quote as urlquote
 except ImportError:
   # Python 3
   from urllib.request import urlopen
+  from urllib.parse import quote as urlquote
 
 import sys
 import hashlib
@@ -723,41 +725,45 @@ def getAndCacheCDashQueryDataOrReadFromCache(
   return cdashQueryData
 
 
+def normalizeUrlStrings(*args):
+  return [urlquote(x) for x in args]
+
+
 # Construct full cdash/api/v1/index.php query URL to pull data down given the
 # pieces
 def getCDashIndexQueryUrl(cdashUrl, projectName, date, filterFields):
+  # for legacy reasons, this function assumes we normalized projectName
+  projectName, = normalizeUrlStrings(projectName,)
   if date: dateArg = "&date="+date
   else: dateArg = ""
   return cdashUrl+"/api/v1/index.php?project="+projectName+dateArg \
-    + "&"+filterFields
+      + "&"+filterFields
 
 
 # Construct full cdash/index.php browser URL given the pieces
 def getCDashIndexBrowserUrl(cdashUrl, projectName, date, filterFields):
+  # for legacy reasons, this function assumes we normalized projectName
+  projectName, = normalizeUrlStrings(projectName,)
   if date: dateArg = "&date="+date
   else: dateArg = ""
   return cdashUrl+"/index.php?project="+projectName+dateArg \
-    + "&"+filterFields
+      + "&"+filterFields
 
 
 # Construct full cdash/api/v1/queryTests.php query URL given the pieces
 def getCDashQueryTestsQueryUrl(cdashUrl, projectName, date, filterFields):
+  # for legacy reasons, this function assumes we normalized projectName
+  projectName, = normalizeUrlStrings(projectName,)
   if date: dateArg = "&date="+date
   else: dateArg = ""
   cdashTestUrl = cdashUrl+"/api/v1/queryTests.php?project="+projectName+dateArg+"&"+filterFields
-  return replaceNonUrlCharsInUrl(cdashTestUrl)
-
-
-# Replace non-URL chars and return new URL string
-def replaceNonUrlCharsInUrl(url):
-  urlNew = url
-  urlNew = urlNew.replace(' ', '%20')
-  # ToDo: Replace other chars as needed
-  return urlNew
+  return cdashTestUrl
 
 
 # Construct full cdash/queryTests.php browser URL given the pieces
 def getCDashQueryTestsBrowserUrl(cdashUrl, projectName, date, filterFields):
+  # for legacy reasons, this function assumes we normalized projectName
+  projectName, = normalizeUrlStrings(projectName,)
   if date: dateArg = "&date="+date
   else: dateArg = ""
   return cdashUrl+"/queryTests.php?project="+projectName+dateArg+"&"+filterFields
@@ -1708,29 +1714,33 @@ class AddTestHistoryToTestDictFunctor(object):
     dateRangeEndDateStr = self.__date
     beginEndUrlFields = "begin="+dateRangeBeginDateStr+"&end="+dateRangeEndDateStr
 
+    # normalize names for query
+    projectName_url, buildName_url, testname_url, site_url = normalizeUrlStrings(
+      projectName, buildName, testname, site)
+
     # Define queryTests.php query filters for test history
     testHistoryQueryFilters = \
       beginEndUrlFields+"&"+\
       "filtercombine=and&filtercombine=&filtercount=3&showfilters=1&filtercombine=and"+\
-      "&field1=buildname&compare1=61&value1="+buildName+\
-      "&field2=testname&compare2=61&value2="+testname+\
-      "&field3=site&compare3=61&value3="+site
+      "&field1=buildname&compare1=61&value1="+buildName_url+\
+      "&field2=testname&compare2=61&value2="+testname_url+\
+      "&field3=site&compare3=61&value3="+site_url
 
     # URL used to get the history of the test in JSON form
     testHistoryQueryUrl = \
-      getCDashQueryTestsQueryUrl(cdashUrl, projectName, None, testHistoryQueryFilters)
+      getCDashQueryTestsQueryUrl(cdashUrl, projectName_url, None, testHistoryQueryFilters)
 
     # URL to embed in email to show the history of the test to humans
     testHistoryBrowserUrl = \
-      getCDashQueryTestsBrowserUrl(cdashUrl, projectName, None, testHistoryQueryFilters)
+      getCDashQueryTestsBrowserUrl(cdashUrl, projectName_url, None, testHistoryQueryFilters)
 
     # URL for to the build summary on index.php page
     buildHistoryEmailUrl = getCDashIndexBrowserUrl(
-      cdashUrl, projectName, None,
+      cdashUrl, projectName_url, None,
       beginEndUrlFields+"&"+\
       "filtercombine=and&filtercombine=&filtercount=2&showfilters=1&filtercombine=and"+\
-      "&field1=buildname&compare1=61&value1="+buildName+\
-      "&field2=site&compare2=61&value2="+site
+      "&field1=buildname&compare1=61&value1="+buildName_url+\
+      "&field2=site&compare2=61&value2="+site_url
       )
     # ToDo: Replace this with the the URL to just this one build the index.php
     # page.  To do that, get the build stamp from the list of builds on CDash
@@ -2109,7 +2119,7 @@ class DictSortFunctor(object):
 #
 # limitRowsToDisplay [in]: The max number of rows to display.  The default is
 # None which will result in no limit to the number of rows displayed.  The top
-# limitRowsToDisplay items will be dispalyed after the list is sorted.
+# limitRowsToDisplay items will be displayed after the list is sorted.
 #
 def sortAndLimitListOfDicts(listOfDicts, sortKeyList = None,
    limitRowsToDisplay = None\
@@ -2412,7 +2422,7 @@ def getCDashDataSummaryHtmlTableTitleStr(dataTitle, dataCountAcronym, numItems,
 #
 # limitRowsToDisplay [in]: The max number of rows to display.  The default is
 # None which will result in no limit to the number of rows displayed.  The top
-# limitRowsToDisplay items will be dispalyed after the list is sorted.
+# limitRowsToDisplay items will be displayed after the list is sorted.
 #
 # htmlStyle [in]: The HTML style data (between <style></style>.  If None is
 # passed in then a default style is provided internally (see
@@ -2699,7 +2709,7 @@ class SingleBuildsetReporter(object):
   #
   #   verbose [in] If set to True then some more verbose info is printed to
   #   STDOUT.  If False, then nothing is printed to STDOUT (which is useful
-  #   for unit testsing). The default is True.
+  #   for unit testing). The default is True.
   #
   # On output, self.cdashReportData data will be updated with the summary and
   # table of this given build-set.  In particular, the following

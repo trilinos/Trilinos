@@ -81,7 +81,7 @@ ContourElement::debug_output() const
   for (unsigned node_index=0; node_index<npe_coords; ++node_index)
   {
     os << "  Node #" << lnn++;
-    Vector3d coords(Vector3d::ZERO);
+    stk::math::Vector3d coords(stk::math::Vector3d::ZERO);
     for ( int d = 0; d < dim; d++ )
       coords[d] = my_coords(d,coord_counter);
     os << ", coords = (" << coords[0] << ","
@@ -96,17 +96,17 @@ ContourElement::debug_output() const
 }
 
 double
-ContourElement::distance( const Vector3d & p_coords ) const
+ContourElement::distance( const stk::math::Vector3d & p_coords ) const
   { /* %TRACE% */  /* %TRACE% */
     double dist;
     my_dist_master_elem.interpolate_point(my_spatial_dim, p_coords.data(), 1, my_dist.ptr(), &dist);
     return dist;
   }
 
-Vector3d
-ContourElement::coordinates( const Vector3d & p_coords ) const
+stk::math::Vector3d
+ContourElement::coordinates( const stk::math::Vector3d & p_coords ) const
   { /* %TRACE% */  /* %TRACE% */
-    Vector3d coords(Vector3d::ZERO);
+    stk::math::Vector3d coords(stk::math::Vector3d::ZERO);
     my_coords_master_elem.interpolate_point(my_spatial_dim, p_coords.data(), my_spatial_dim, my_coords.ptr(), coords.data());
     return coords;
   }
@@ -132,7 +132,7 @@ double ContourElement::compute_domain_integral(const int signOfDomain) const // 
     }
     return 0;
   }
-  ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling gather_intg_pts().");
+  STK_ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling gather_intg_pts().");
 
   if (signOfDomain == 0)
   {
@@ -153,7 +153,7 @@ double ContourElement::compute_signed_volume(const int signOfVolume) const
 }
 
 double
-ContourElement::determinant( const Vector3d & p_coords ) const
+ContourElement::determinant( const stk::math::Vector3d & p_coords ) const
   { /* %TRACE% */  /* %TRACE% */
     double detJ, detJ_error;
 
@@ -178,8 +178,8 @@ ContourElement::determinant( const Vector3d & p_coords ) const
     return detJ;
   }
 
-Vector3d
-ContourElement::distance_gradient( const Vector3d & p_coords ) const
+stk::math::Vector3d
+ContourElement::distance_gradient( const stk::math::Vector3d & p_coords ) const
   { /* %TRACE% */  /* %TRACE% */
     const int dim = my_spatial_dim;
     const int num_coord_dofs = my_coords.dimension<NPE_COORD>();
@@ -194,7 +194,7 @@ ContourElement::distance_gradient( const Vector3d & p_coords ) const
     d_shapef_coords.resize(dim, num_coord_dofs);
     d_shapef_dist.resize(dim, num_dist_dofs);
     grad_op.resize(dim, num_dist_dofs);
-    Vector3d grad_dist( Vector3d::ZERO );
+    stk::math::Vector3d grad_dist( stk::math::Vector3d::ZERO );
     double det_J;
 
     // pointers to array data
@@ -280,9 +280,9 @@ ContourElement::compute_distance_gradient( const sierra::Array<const double,DIM,
   }
 
 template<int NDIM, int NNODES>
-std::array<Vector3d,NNODES> get_nodal_parametric_coords_array(const MasterElement & me)
+std::array<stk::math::Vector3d,NNODES> get_nodal_parametric_coords_array(const MasterElement & me)
 {
-  std::array<Vector3d,NNODES> paramCoords;
+  std::array<stk::math::Vector3d,NNODES> paramCoords;
   const double * paramCoordsArray = me.nodal_parametric_coordinates();
   int paramCoordsCounter = 0;
   for ( int i = 0; i < NNODES; ++i )
@@ -364,7 +364,7 @@ int ContourElement::compute_linear_distance_sign(const double snapTol, const uns
       hasPos = true;
     }
   }
-  ThrowAssert(!(hasNeg && hasPos));
+  STK_ThrowAssert(!(hasNeg && hasPos));
   return (hasNeg ? -1 : 1);
 }
 
@@ -435,7 +435,7 @@ ContourElement::compute_subelement_decomposition(const double in_length_scale, c
     {
       my_base_subelement = std::make_unique<ContourSubElement_Tri_6>( get_nodal_parametric_coords_array<2,6>(my_dist_master_elem), get_side_ids_array<3>(), this );
     }
-    ThrowErrorMsgIf(!my_base_subelement, "Element with topology " << topology.name() << " not supported.");
+    STK_ThrowErrorMsgIf(!my_base_subelement, "Element with topology " << topology.name() << " not supported.");
 
     if ( krinolog.shouldPrint(LOG_SUBELEMENT) )
       {
@@ -453,14 +453,14 @@ ContourElement::compute_subelement_decomposition(const double in_length_scale, c
 static double tet_volume(const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords)
 {
   const double * arrayData = coords.ptr();
-  const std::array<Vector3d,4> tetNodeCoords = {Vector3d(arrayData), Vector3d(arrayData+3), Vector3d(arrayData+6), Vector3d(arrayData+9)};
+  const std::array<stk::math::Vector3d,4> tetNodeCoords = {stk::math::Vector3d(arrayData), stk::math::Vector3d(arrayData+3), stk::math::Vector3d(arrayData+6), stk::math::Vector3d(arrayData+9)};
   return compute_tet_volume(tetNodeCoords);
 }
 
 static double tri_volume(const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords)
 {
   const double * arrayData = coords.ptr();
-  const std::array<Vector2d,3> triNodeCoords = {Vector2d(arrayData), Vector2d(arrayData+2), Vector2d(arrayData+4)};
+  const std::array<stk::math::Vector2d,3> triNodeCoords = {stk::math::Vector2d(arrayData), stk::math::Vector2d(arrayData+2), stk::math::Vector2d(arrayData+4)};
   return compute_tri_volume(triNodeCoords);
 }
 
@@ -524,7 +524,7 @@ ContourElement::dump_subelement_structure() const
   { /* %TRACE% */  /* %TRACE% */
     if (my_sign == 0)
     {
-      ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling dump_subelement_structure().");
+      STK_ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling dump_subelement_structure().");
       krinolog << "***********************************************\n";
       krinolog << *this;
       krinolog << "Subelement structure:\n";
@@ -538,7 +538,7 @@ ContourElement::dump_subelement_details() const
   { /* %TRACE% */  /* %TRACE% */
     if (my_sign == 0)
     {
-      ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling dump_subelement_details().");
+      STK_ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling dump_subelement_details().");
       krinolog << "***********************************************\n";
       krinolog << *this;
       krinolog << "Subelement details:\n";
@@ -552,7 +552,7 @@ ContourElement::build_subelement_facets( Faceted_Surface & facets )
 {
   if (my_sign == 0)
   {
-    ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling build_subelement_facets().");
+    STK_ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling build_subelement_facets().");
     my_base_subelement->build_facets( facets );
   }
 }
@@ -575,7 +575,7 @@ ContourElement::gather_intg_pts( const int intg_pt_sign,
     determinants.resize(0u);
     return 0;
   }
-  ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling gather_intg_pts().");
+  STK_ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling gather_intg_pts().");
 
   const int num_intg_pts = my_base_subelement->num_intg_pts(intg_pt_sign);
 
@@ -650,42 +650,79 @@ ContourElement::std_intg_pts( sierra::ArrayContainer<double,DIM,NINT> & intg_pt_
 }
 
 int
+ContourElement::std_intg_pts( const MasterElement & evalMasterElem,
+  const MasterElement & coordMasterElem,
+  const sierra::Array<double,DIM,NPE_COORD> & coords,
+  sierra::Array<const double,DIM,NINT> & intg_pt_locations,
+  sierra::Array<const double,NINT> & intg_weights,
+  sierra::ArrayContainer<double,NINT> & det_J)
+{
+  const int dim = coords.dimension(0);
+  const int num_intg_pts         = evalMasterElem.num_intg_pts();
+  const double * intg_pt_loc_ptr = evalMasterElem.intg_pt_locations();
+  const double * intg_wt_ptr     = evalMasterElem.intg_weights();
+
+  intg_pt_locations.set(intg_pt_loc_ptr,dim,num_intg_pts);
+  intg_weights.set(intg_wt_ptr,num_intg_pts);
+  det_J.resize( num_intg_pts );
+
+  double det_J_error;
+
+  if ( evalMasterElem.get_topology() == coordMasterElem.get_topology() )
+  {
+    coordMasterElem.determinant( dim, 1, coords.ptr(), det_J.ptr(), &det_J_error );
+  }
+  else
+  {
+    const int num_coord_dofs = coordMasterElem.get_topology().num_nodes();
+    sierra::ArrayContainer<double,DIM,NPE_COORD,NINT> d_shapef_coords(dim, num_coord_dofs, num_intg_pts);
+    coordMasterElem.shape_fcn_deriv(num_intg_pts, intg_pt_locations.ptr(), d_shapef_coords.ptr());
+    coordMasterElem.determinant(
+        dim,                    // Number of coordinate dimensions
+        num_intg_pts,           // Number of target points
+        num_coord_dofs,         // Number of coord shape functions
+        d_shapef_coords.ptr(),  // Mesh shape function derivatives
+        1,                      // Number of elements
+        coords.ptr(),           // Mesh coordinate values
+        det_J.ptr(),            // Determinant of the transformation Jacobian for each element (output)
+        &det_J_error );         // Determinant error (output)
+  }
+
+  return( num_intg_pts );
+}
+
+int
 ContourElement::std_intg_pts( sierra::Array<const double,DIM,NINT> & intg_pt_locations,
 		       sierra::Array<const double,NINT> & intg_weights,
 		       sierra::ArrayContainer<double,NINT> & det_J,
 		       const MasterElement & me ) const
-  {
-    const int num_intg_pts       = me.num_intg_pts();
-    const double * intg_pt_loc_ptr = me.intg_pt_locations();
-    const double * intg_wt_ptr     = me.intg_weights();
+{
+  return std_intg_pts(me, my_coords_master_elem, my_coords, intg_pt_locations, intg_weights, det_J);
+}
 
-    intg_pt_locations.set(intg_pt_loc_ptr,my_spatial_dim,num_intg_pts);
-    intg_weights.set(intg_wt_ptr,num_intg_pts);
-    det_J.resize( num_intg_pts );
+int
+ContourElement::std_side_intg_pts( const int iside,
+  sierra::Array<const double,DIM,NINT> & intg_pt_locations,
+  sierra::Array<const double,NINT> & intg_weights,
+  sierra::ArrayContainer<double,NINT> & det_J,
+  const MasterElement & me ) const
+{
+  const stk::topology coordTopo = my_coords_master_elem.get_topology();
+  const stk::topology coordSideTopo = coordTopo.side_topology(iside);
+  const auto & coordSideMasterElement = MasterElementDeterminer::getMasterElement(coordSideTopo);
+  const int numSideNodes = coordSideTopo.num_nodes();
+  const unsigned * const lnn = get_side_node_ordinals(coordTopo, iside );
 
-    double det_J_error;
+  sierra::ArrayContainer<double,DIM,NPE_COORD> sideNodeCoords(my_spatial_dim, numSideNodes);  // temp array
+  for ( int i = 0; i < numSideNodes; i++ )
+    for ( int d = 0; d < my_spatial_dim; d++ )
+      sideNodeCoords(d,i) = my_coords(d, lnn[i]);
 
-    if ( me.get_topology() == my_coords_master_elem.get_topology() )
-      {
-	my_coords_master_elem.determinant( my_spatial_dim, 1, my_coords.ptr(), det_J.ptr(), &det_J_error );
-      }
-    else
-      {
-	const int num_coord_dofs = coord_topology().num_nodes();
-	sierra::ArrayContainer<double,DIM,NPE_COORD,NINT> d_shapef_coords(my_spatial_dim, num_coord_dofs, num_intg_pts);
-	my_coords_master_elem.shape_fcn_deriv(num_intg_pts, intg_pt_locations.ptr(), d_shapef_coords.ptr());
-	my_coords_master_elem.determinant(
-	    my_spatial_dim,         // Number of coordinate dimensions
-	    num_intg_pts,           // Number of target points
-            num_coord_dofs,         // Number of coord shape functions
-            d_shapef_coords.ptr(),// Mesh shape function derivatives
-            1,                      // Number of elements
-            my_coords.ptr(),        // Mesh coordinate values
-            det_J.ptr(),            // Determinant of the transformation Jacobian for each element (output)
-            &det_J_error );         // Determinant error (output)
-      }
+  const auto & evalSideMasterElement = (me.get_topology() == my_coords_master_elem.get_topology()) ?
+      coordSideMasterElement :
+      MasterElementDeterminer::getMasterElement(me.get_topology().side_topology(iside));
 
-    return( num_intg_pts );
-  }
+  return std_intg_pts(evalSideMasterElement, coordSideMasterElement, sideNodeCoords, intg_pt_locations, intg_weights, det_J);
+}
 
 } // namespace krino

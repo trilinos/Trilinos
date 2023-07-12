@@ -593,7 +593,7 @@ namespace Belos {
       }
       else {
         MVT::MvDot(*T,*T,tT);
-        MVT::MvDot(*T,*S,tS);
+        MVT::MvDot(*S,*T,tS);
       }
       for(i=0; i<numRHS_; i++) {
         if (SCT::magnitude(tT[i]) < MT::sfmin())

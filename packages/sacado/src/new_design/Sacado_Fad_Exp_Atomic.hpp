@@ -31,7 +31,7 @@
 #define SACADO_FAD_EXP_ATOMIC_HPP
 
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 #include "Sacado_Fad_Exp_ViewFad.hpp"
 #include "Kokkos_Atomic.hpp"
@@ -314,7 +314,7 @@ namespace Sacado {
           desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
           return_type return_val = *dest;
           *dest                  = op.apply(return_val, val);
-          desul:atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+          desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
           if (threadIdx.x == 0)
             desul::Impl::unlock_address_hip((void*)dest_val, scope);
           return return_val;
@@ -566,5 +566,5 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#endif // HAVE_SACADO_KOKKOSCORE
+#endif // HAVE_SACADO_KOKKOS
 #endif // SACADO_FAD_EXP_VIEWFAD_HPP

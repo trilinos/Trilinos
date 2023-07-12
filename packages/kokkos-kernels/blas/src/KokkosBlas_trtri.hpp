@@ -28,6 +28,7 @@
 namespace KokkosBlas {
 
 /// \brief Find the inverse of the triangular matrix, A
+///
 ///        A = inv(A)
 ///
 /// \tparam AViewType Input matrix, as a 2-D Kokkos::View

@@ -20,12 +20,11 @@ std::shared_ptr<MeshQualityImprover>
 make_standard_improver(std::shared_ptr<Mesh> mesh, Tfunc filter,
                        const MeshQualityImproverOpts& opts = MeshQualityImproverOpts())
 {
-  // std::shared_ptr<RegularizedDistortionMetric> metric(delta);
-  auto metric     = std::make_shared<RegularizedDistortionMetric>(opts.delta);
+  auto metric     = std::make_shared<RegularizedDistortionMetric<double>>(opts.delta);
   auto qualityObj = std::make_shared<PatchDistortionObjective>(metric);
   auto qualityOpt = std::make_shared<opt::impl::OptimizationStepHessian>(qualityObj);
 
-  return std::make_shared<MeshQualityImprover>(mesh, filter, opts.nlayers, qualityOpt, opts.maxDeltaX, opts.itermax);
+  return std::make_shared<MeshQualityImprover>(mesh, filter, opts.nlayers, qualityOpt, opts.maxDeltaX, opts.itermax, opts.verboseOutput);
 }
 
 } // namespace impl

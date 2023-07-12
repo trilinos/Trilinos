@@ -43,11 +43,8 @@
 
 #include "MueLu_Details_registerLinearSolverFactory.hpp"
 #include "MueLu_Details_LinearSolverFactory.hpp"
-// TODO amk: Does MueLu have a required dependency on Tpetra?
-#ifdef HAVE_MUELU_TPETRA
-#  include "Tpetra_MultiVector.hpp"
-#  include "Tpetra_Operator.hpp"
-#endif // HAVE_MUELU_TPETRA
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Operator.hpp"
 #ifdef HAVE_MUELU_EPETRA
 #  include "Epetra_MultiVector.h"
 #  include "Epetra_Operator.h"

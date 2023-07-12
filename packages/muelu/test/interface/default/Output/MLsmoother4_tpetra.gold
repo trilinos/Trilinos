@@ -6,6 +6,7 @@ smoother ->
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 1
@@ -43,6 +44,7 @@ smoother ->
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 2
@@ -82,6 +84,7 @@ smoother ->
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 3
@@ -121,6 +124,7 @@ smoother ->
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 4
@@ -177,13 +181,13 @@ level  rows  nnz    nnz/row  c ratio  procs
   3  371   1111   2.99     2.99         1  
   4  124   370    2.98     2.99         1  
 
-Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
+Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
-Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1}, Global matrix dimensions: [371, 371], Global nnz: 1111}
+Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [371, 371], Global nnz: 1111}
 
 Smoother (level 4) pre  : <Direct> solver interface
 Smoother (level 4) post : no smoother

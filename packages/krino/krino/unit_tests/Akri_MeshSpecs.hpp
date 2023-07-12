@@ -23,6 +23,21 @@ struct RegularTri
     std::vector<std::array<unsigned, 3>> allElementConn{TriConn};
 };
 
+struct RightTri
+{
+    RightTri() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.0,  0.0 },
+        { 1.0,  0.0 },
+        { 0.0,  1.0 },
+    }};
+
+    std::array<unsigned,3> TriConn{{0, 1, 2}};
+    std::vector<std::array<unsigned, 3>> allElementConn{TriConn};
+};
+
 struct UMRRegularTri
 {
     UMRRegularTri() = default;
@@ -98,6 +113,29 @@ struct TwoTri306090
     std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn};
 };
 
+struct TwoRightTrisSharingDiagonal
+{
+   //   3---2
+   //   |\ 2|
+   //   | \ |
+   //   |1 \|
+   //   0---1
+
+    TwoRightTrisSharingDiagonal() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.000,  0.000 },
+        { 1.000,  0.000 },
+        { 1.000,  1.000 },
+        { 0.000,  1.000 }
+    }};
+
+    std::array<unsigned,3> Tri1Conn{{0, 1, 3}};
+    std::array<unsigned,3> Tri2Conn{{1, 2, 3}};
+    std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn};
+};
+
 struct QuadSplit4Tri
 {
     QuadSplit4Tri() = default;
@@ -118,6 +156,35 @@ struct QuadSplit4Tri
     std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn };
 };
 
+struct FourDisconnectedTris
+{
+    FourDisconnectedTris() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 1.1,  0.0 },
+        { 2.1,  0.0 },
+        { 2.1,  1.0 },
+
+        { 2.2,  0.0 },
+        { 3.2,  0.0 },
+        { 3.2,  1.0 },
+
+        { 3.3,  0.0 },
+        { 4.3,  0.0 },
+        { 4.3,  1.0 },
+
+        { 4.4,  0.0 },
+        { 5.4,  0.0 },
+        { 5.4,  1.0 },
+    }};
+
+    std::array<unsigned,3> Tri1Conn{{0, 1, 2}};
+    std::array<unsigned,3> Tri2Conn{{3, 4, 5}};
+    std::array<unsigned,3> Tri3Conn{{6, 7, 8}};
+    std::array<unsigned,3> Tri4Conn{{9,10,11}};
+    std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn};
+};
 
 struct RegularTet
 {
@@ -281,6 +348,26 @@ struct TwoRightTets
     std::vector<std::array<unsigned, 4>> allElementConn{Tet1Conn, Tet2Conn};
 };
 
+struct TwoRegularTetsSharingNodeAtOrigin
+{
+    TwoRegularTetsSharingNodeAtOrigin() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.0, 0.0, 0.0 },
+        { 0.0, 1.0, 1.0 },
+        { 1.0, 0.0, 1.0 },
+        { 1.0, 1.0, 0.0 },
+        { 0.0,-1.0,-1.0 },
+        {-1.0,-1.0, 0.0 },
+        {-1.0, 0.0,-1.0 },
+    }};
+
+    std::array<unsigned,4> Tet1Conn{{0, 1, 2, 3}};
+    std::array<unsigned,4> Tet2Conn{{0, 4, 5, 6}};
+    std::vector<std::array<unsigned, 4>> allElementConn{Tet1Conn, Tet2Conn};
+};
+
 struct TwoRightTris
 {
     TwoRightTris() = default;
@@ -315,6 +402,30 @@ struct TwoQuads
     std::array<unsigned,4> Quad1Conn{{0, 1, 2, 3}};
     std::array<unsigned,4> Quad2Conn{{0, 3, 4, 5}};
     std::vector<std::array<unsigned, 4>> allElementConn{Quad1Conn, Quad2Conn};
+};
+
+struct PatchOfRegularTrisAroundNode
+{
+    PatchOfRegularTrisAroundNode() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.0, 0.0 },
+        { std::cos(0.), std::sin(0.) },
+        { std::cos(1./3.*M_PI), std::sin(1./3.*M_PI) },
+        { std::cos(2./3.*M_PI), std::sin(2./3.*M_PI) },
+        { std::cos(M_PI), std::sin(M_PI) },
+        { std::cos(4./3.*M_PI), std::sin(4./3.*M_PI) },
+        { std::cos(5./3.*M_PI), std::sin(5./3.*M_PI) }
+    }};
+
+    std::array<unsigned,3> Tri1Conn{{0, 1, 2}};
+    std::array<unsigned,3> Tri2Conn{{0, 2, 3}};
+    std::array<unsigned,3> Tri3Conn{{0, 3, 4}};
+    std::array<unsigned,3> Tri4Conn{{0, 4, 5}};
+    std::array<unsigned,3> Tri5Conn{{0, 5, 6}};
+    std::array<unsigned,3> Tri6Conn{{0, 6, 1}};
+    std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn, Tri5Conn, Tri6Conn};
 };
 
 }

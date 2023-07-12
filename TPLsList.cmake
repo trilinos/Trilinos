@@ -157,8 +157,6 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   RTlib           "cmake/TPLs/"    ST
   DLlib           "cmake/TPLs/"    ST
   AmgX            "cmake/TPLs/"    EX
-  CGAL            "cmake/TPLs/"    EX
-  CGALCore        "cmake/TPLs/"    EX
   VTune           "cmake/TPLs/"    ST
   TASMANIAN       "cmake/TPLs/"    EX
   ArrayFireCPU    "cmake/TPLs/"    EX
@@ -177,6 +175,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Check           "cmake/TPLs/"    EX
   SARMA           "cmake/TPLs/"    EX
   CDT             "cmake/TPLs/"    EX
+  mpi_advance     "cmake/TPLs/"    EX
   )
 
 # NOTES:
