@@ -66,7 +66,6 @@ public :
   typedef typename InterpolateClass::MeshB                MeshB;
   typedef typename InterpolateClass::EntityKeyA           EntityKeyA;
   typedef typename InterpolateClass::EntityKeyB           EntityKeyB;
-  typedef typename InterpolateClass::EntityKeyMap         EntityKeyMap;
 
   typedef typename InterpolateClass::EntityProcA          EntityProcA;
   typedef typename InterpolateClass::EntityProcB          EntityProcB;

@@ -69,7 +69,6 @@ local installed-developer-files =
   stk_middle_mesh_utest
   stk_middle_mesh_docs_tests
   stk_middle_mesh_integration_tester
-  stk_nc_generator
   ;
 
 #
@@ -180,15 +179,6 @@ exe stk_middle_mesh_integration_tester
     <tag>@sierra-exec-tag
   ;
 
-exe stk_nc_generator
-  :
-    [ glob $(stk_middle_mesh-root)/stk_middle_mesh/executables/nc_generator.cpp ]
-    stk_middle_mesh
-  :
-    <tag>@sierra-exec-tag
-  ;
-
-
 lib stk_middle_mesh
   :
     [ ifdevbuild
@@ -203,6 +193,7 @@ lib stk_middle_mesh
     /sierra/stk_search//stk_search
     /mpi//mpi
     /tpl/cdt//cdt_header_only_libs
+    /tpl/lapack//lapack_interface
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -239,5 +230,5 @@ lib stk_middle_mesh_test_util
     ]
   :
     <include>$(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh
-    <include>$(stk_middle_mesh-root-inc)
+    <include>$(stk_middle_mesh-root)/stk_middle_mesh
   ;

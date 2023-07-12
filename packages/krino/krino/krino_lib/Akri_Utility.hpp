@@ -46,20 +46,6 @@ namespace utility {
   inline void
   free_all(std::vector<T> & vec) {std::vector<T> empty_vec; vec.swap(empty_vec);}
 
-  template<class T>
-  inline size_t
-  storage_size(const std::vector<T*> & vec) {return (sizeof(std::vector<T*>) + vec.size()*sizeof(T*)); }
-
-  // linear cost, requires T::storage_size
-  template<class T>
-  inline size_t
-  storage_size(const std::vector<std::unique_ptr<T>> & autovec)
-  {
-    size_t store_size = sizeof(std::vector<std::unique_ptr<T>>) + autovec.size()*sizeof(std::unique_ptr<T>);
-    for (auto && entry : autovec) store_size += entry->storage_size();
-    return store_size;
-  }
-
 } // namespace utility
 } // namespace krino
 

@@ -266,6 +266,7 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
 {
     uint num_nodes = mesh.num_nodes(entity);
     EntityRank entity_rank = mesh.entity_rank(entity);
+    stk::topology baseEntityTopology = mesh.bucket(entity).topology();
 
     // scratch space
     stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
@@ -291,6 +292,9 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
           nodes_of_this_side.resize(entity_top.num_nodes());
           upward_entity_topology.face_nodes(upward_entity_nodes, k, nodes_of_this_side.data());
         }
+
+        if (baseEntityTopology != entity_top) continue;
+
         if ( entity_top.is_equivalent(nodes, nodes_of_this_side.data()).is_equivalent )
         {
             entity_ordinal = k;

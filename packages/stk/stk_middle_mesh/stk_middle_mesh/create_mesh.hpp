@@ -34,6 +34,8 @@ inline std::ostream& operator<<(std::ostream& os, const MeshSpec& spec)
   return os;
 }
 
+class EdgeNeighborData;
+
 class MeshGenerator
 {
   public:
@@ -128,6 +130,10 @@ class MeshGenerator
 
     int get_process_rank(const std::array<int, 2>& gridIndices);
 
+    bool is_x_periodic_local();
+
+    bool is_y_periodic_local();
+
     MeshSpec compute_local_mesh_spec();
 
     std::pair<int, double> get_num_el_in_direction(int numelGlobal, double coordMin, double coordMax, int numProcs,
@@ -147,6 +153,12 @@ class MeshGenerator
     void set_remote_shared_entities(std::shared_ptr<Mesh> mesh, std::vector<MeshEntityPtr>& verts);
 
     void set_edge_adjacent_block_shared_entities(std::shared_ptr<Mesh> mesh, std::vector<MeshEntityPtr>& verts);
+
+    void get_y_shared_entities(EdgeNeighborData& leftEdge, EdgeNeighborData& rightEdge,
+                               std::vector<MeshEntityPtr>& verts);
+
+    void get_x_shared_entities(EdgeNeighborData& bottomEdge, EdgeNeighborData& topEdge,
+                               std::vector<MeshEntityPtr>& verts);
 
     void set_corner_adjacent_block_shared_entities(std::shared_ptr<Mesh> mesh, std::vector<MeshEntityPtr>& verts);
 

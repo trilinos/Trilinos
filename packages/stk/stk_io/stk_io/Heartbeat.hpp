@@ -37,13 +37,10 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include <Ioss_Field.h>                     // for Field, Field::TRANSIENT
-#include <Teuchos_RCP.hpp>                  // for RCP::~RCP<T>, RCP::RCP<T>
 #include <stk_io/IossBridge.hpp>            // for GlobalAnyVariable
 #include <stk_util/util/ParameterList.hpp>  // for Type
 #include <string>                           // for string
 #include <vector>                           // for vector
-#include "Teuchos_RCPDecl.hpp"              // for RCP
-#include "Teuchos_RCPStdSharedPtrConversions.hpp"
 #include "mpi.h"                            // for MPI_Comm
 namespace Ioss { class PropertyManager; }
 namespace Ioss { class Region; }
@@ -110,11 +107,6 @@ public:
     void process_output_post_write(int step, double time);
 
     void flush_output() const;
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after Apr 2023
-    STK_DEPRECATED_MSG("This function has been renamed get_heartbeat_ioss_region() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::Region> get_heartbeat_io_region() {
-        return Teuchos::rcp(m_region);
-    }
-#endif
 
     std::shared_ptr<Ioss::Region> get_heartbeat_ioss_region() {
         return m_region;

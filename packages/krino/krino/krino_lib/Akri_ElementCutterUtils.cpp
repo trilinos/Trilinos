@@ -16,7 +16,7 @@
 
 namespace krino {
 
-static void fill_nodal_shape_functions(const MasterElement & masterElement, const Vector3d & elementParametricCoords, std::vector<double> & nodalShapeFunctions)
+static void fill_nodal_shape_functions(const MasterElement & masterElement, const stk::math::Vector3d & elementParametricCoords, std::vector<double> & nodalShapeFunctions)
 {
   const int npe = masterElement.num_nodes();
   nodalShapeFunctions.resize(npe);
@@ -67,7 +67,7 @@ static void append_intersection_points_from_element_face(const MasterElement & e
   elementMasterElement.get_topology().face_node_ordinals(iFace, faceNodeOrdinals.data());
   const std::vector<stk::mesh::Entity> faceNodes{elementNodes[faceNodeOrdinals[0]], elementNodes[faceNodeOrdinals[1]], elementNodes[faceNodeOrdinals[2]]};
   const double * elemNodeParamCoords = elementMasterElement.nodal_parametric_coordinates();
-  const std::array<Vector3d,3> faceNodeCoordinates = {{Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[0]), Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[1]), Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[2])}};
+  const std::array<stk::math::Vector3d,3> faceNodeCoordinates = {{stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[0]), stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[1]), stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[2])}};
 
   const MasterElement & faceMasterElement = MasterElementDeterminer::getMasterElement(elementMasterElement.get_topology().face_topology(iFace));
   const ElementIntersectionPointFilter faceIntersectionPointFilter = build_element_intersection_filter(faceNodes, intersectionPointFilter);

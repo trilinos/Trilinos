@@ -41,7 +41,6 @@
 #include <cstddef>                        // for size_t
 #include <algorithm>                      // for transform, max
 #include <cctype>                         // for tolower, isspace, toupper
-#include <functional>                     // for binary_function
 #include <iterator>                       // for distance
 #include <limits>                         // for numeric_limits, numeric_limits<>::digits
 #include <sstream>                        // for operator<<, ostringstream, ostream, basic_ostream

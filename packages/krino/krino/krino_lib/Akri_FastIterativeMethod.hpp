@@ -10,7 +10,7 @@
 #define KRINO_KRINO_KRINO_LIB_AKRI_FASTITERATIVEMETHOD_HPP_
 
 #include <Akri_FieldRef.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <stk_util/diag/Timer.hpp>
 
 namespace krino {
