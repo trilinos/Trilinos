@@ -165,7 +165,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     Test TrilinsoPRConfigurationBase class
     """
     def setUp(self):
-        #os.environ["TRILINOS_SOURCE_BRANCH"]  = "trilinos_source_branch_value"
         #os.environ["TRILINOS_SOURCE_REPO"]    = "trilinos_source_repo_value"
         #os.environ["TRILINOS_SOURCE_SHA"]     = "trilinos_source_sha_value"
         #os.environ["TRILINOS_TARGET_BRANCH"]  = "trilinos_target_branch_value"
@@ -209,7 +208,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         output = argparse.Namespace(
             source_repo_url="https://github.com/trilinos/Trilinos",
-            source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
@@ -275,7 +273,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.target_branch_name = "master"
-        args.source_branch_name = "master_merge_20200101_000000"
         return args
 
 
@@ -286,7 +283,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.target_branch_name = "master"
-        args.source_branch_name = "invalid_source_branch_name"
         return args
 
 
@@ -324,28 +320,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertGreaterEqual(pr_config.concurrency_build, 1)
 
         self.assertEqual(pr_config.concurrency_test, 3)
-
-
-    def test_TrilinosPRConfigurationValidateBranchNameDevelop(self):
-        args = self.dummy_args()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        pr_config.validate_branch_constraints()
-
-
-    def test_TrilinosPRConfigurationValidateBranchNameMasterPASS(self):
-        args = self.dummy_args_master_pass()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        pr_config.validate_branch_constraints()
-
-
-    def test_TrilinosPRConfigurationValidateBranchNameMasterFAIL(self):
-        args = self.dummy_args_master_fail()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            with patch('sys.exit', side_effect=mock_early_return) as m:
-                pr_config.validate_branch_constraints()
-                m.assert_called_once()
-                self.assertTrue( "ERROR:" in fake_out.getvalue())
 
 
     def test_TrilinosPRConfigurationCDashTrack(self):
