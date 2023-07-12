@@ -484,7 +484,7 @@ namespace SEAMS {
     else if (match_option(option, "dumpvars_json", "J", 13)) {
       ap_options.dumpvars_json = true;
     }
-    if (match_option(option, "dumpvars", "D", 4)) {
+    else if (match_option(option, "dumpvars", "D", 4)) {
       ap_options.dumpvars = true;
     }
     else if (match_option(option, "version", "v", 3)) {
