@@ -18,7 +18,7 @@ namespace middle_mesh {
 using namespace nonconformal4::impl;
 using namespace utils::impl;
 using namespace mesh::impl;
-using namespace stk_interface::impl;
+using stk_interface::StkMeshCreator;
 
 TEST(Interface, EigthSphereNew)
 {
@@ -44,6 +44,7 @@ TEST(Interface, EigthSphereNew)
     double eps = 1e-12;
     MiddleGridOpts opts;
     opts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
+    opts.normalProjectionOpts.classifierTolerances.normalInterpolationTolerances.pointClassifierTol = 1e-8;
     opts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
     auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, mesh1, mesh2,
                                                    MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
@@ -66,6 +67,9 @@ TEST(Interface, EigthSphereNew)
 
 TEST(Interface, RefiningNew)
 {
+  if (comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
   std::cout << std::setprecision(16) << std::endl;
   int nmeshes = 60;
 
@@ -127,6 +131,9 @@ TEST(Interface, RefiningNew)
 
 TEST(Interface, AnnulusRotationNew)
 {
+  if (comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
   // project coordinates onto sector of a sphere.  Change the size of
   // the mesh2 sector to test different kinds of topology interactions
 
@@ -170,6 +177,8 @@ TEST(Interface, AnnulusRotationNew)
 
 TEST(Interface, EllipsoidNew)
 {
+  if (comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();  
   // project coordinates onto an ellipsoid
 
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
@@ -245,7 +254,6 @@ TEST(Interface, EllipsoidNew)
 TEST(Interface, EllipsoidFromCADNew)
 {
   // project coordinates onto an ellipsoid
-
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
     GTEST_SKIP();
 
@@ -261,10 +269,10 @@ TEST(Interface, EllipsoidFromCADNew)
   {
     //ssssssdouble tStart = MPI_Wtime();
     std::cout << "mesh " << i << " / " << nmeshes << std::endl;
-    StkMeshCreator creator1(meshPath + fnames[0]);
+    stk_interface::StkMeshCreator creator1(meshPath + fnames[0]);
     std::shared_ptr<mesh::Mesh> mesh1 = creator1.create_mesh_from_part("block_1").mesh;
 
-    StkMeshCreator creator2(meshPath + fnames[i]);
+    stk_interface::StkMeshCreator creator2(meshPath + fnames[i]);
     std::shared_ptr<mesh::Mesh> mesh2 = creator2.create_mesh_from_part("block_1").mesh;
 
     std::cout << "mesh2 number of elements = " << mesh2->get_elements().size() << std::endl;
@@ -299,8 +307,11 @@ TEST(Interface, EllipsoidFromCADNew)
 
 TEST(Interface, AnnulusRefiningNew)
 {
+  if (comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+      
   std::cout << std::setprecision(16) << std::endl;
-  int nmeshes = 20;
+  int nmeshes = 20; // 20;
 
   for (int i = 1 /*1 */; i < nmeshes; ++i)
   {
@@ -316,6 +327,7 @@ TEST(Interface, AnnulusRefiningNew)
     MiddleGridOpts opts;
     opts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
     opts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
+
     auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, mesh1, mesh2,
                                                    MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
                                                    VolumeSnapOpts(),
@@ -334,6 +346,8 @@ TEST(Interface, AnnulusRefiningNew)
     test_util::test_area_per_element(mesh1, mesh1InverseClassification);    
   }
 }
+
+
 } // namespace middle_mesh
 } // namespace stk
 

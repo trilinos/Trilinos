@@ -34,9 +34,6 @@ void mark_based_on_indicator_field(const stk::mesh::BulkData & mesh,
     const int currentRefinementLevel,
     const uint64_t targetElemCount);
 
-template<class RefinementClass>
-void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const RefinementClass * refinement);
-
 void fill_leaf_children(const RefinementInterface & refinement, const stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & leaf_children);
 void fill_leaf_children(const RefinementInterface & refinement, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & leaf_children);
 void fill_all_children(const RefinementInterface & refinement, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & all_children);
@@ -65,6 +62,7 @@ public:
   virtual int fully_refined_level(const stk::mesh::Entity elem) const = 0;
   virtual FieldRef get_marker_field() const = 0;
   virtual bool require_post_refinement_fixups() const = 0;
+  virtual std::string locally_check_leaf_children_have_parents_on_same_proc() const = 0;
 
   virtual void do_refinement(const int debugLevel = 0) = 0;
   virtual void do_uniform_refinement(const int numUniformRefinementLevels) = 0;
@@ -95,6 +93,7 @@ public:
   virtual int fully_refined_level(const stk::mesh::Entity elem) const override;
   virtual FieldRef get_marker_field() const override;
   virtual bool require_post_refinement_fixups() const override { return true; };
+  virtual std::string locally_check_leaf_children_have_parents_on_same_proc() const override;
 
   virtual void do_refinement(const int debugLevel = 0) override;
   virtual void do_uniform_refinement(const int numUniformRefinementLevels) override;
@@ -136,6 +135,7 @@ public:
   virtual bool has_rebalance_constraint(const stk::mesh::Entity entity) const override;
   virtual int fully_refined_level(const stk::mesh::Entity elem) const override;
   int partially_refined_level(const stk::mesh::Entity elem) const;
+  virtual std::string locally_check_leaf_children_have_parents_on_same_proc() const override;
 
   virtual FieldRef get_marker_field() const override;
   virtual bool require_post_refinement_fixups() const override { return false; };
@@ -157,6 +157,8 @@ private:
   FieldRef myElementMarkerField;
   mutable std::unique_ptr<TransitionElementEdgeMarker> myMarker;
 };
+
+void check_leaf_children_have_parents_on_same_proc(const stk::ParallelMachine comm, const RefinementInterface & refinement);
 
 } // namespace krino
 

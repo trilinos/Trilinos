@@ -48,7 +48,7 @@ public:
     auto & vec_type = fixture.meta_data().spatial_dimension() == 2 ? FieldType::VECTOR_2D : FieldType::VECTOR_3D;
     coord_field = aux_meta.register_field("coordinates", vec_type, stk::topology::NODE_RANK, 1u, 1u, fixture.meta_data().universal_part());
     cdfemSupport.set_coords_field(coord_field);
-    cdfemSupport.add_interpolation_field(coord_field);
+    cdfemSupport.add_edge_interpolation_field(coord_field);
 
     cdfemSupport.set_prolongation_model(INTERPOLATION);
   }
@@ -86,11 +86,12 @@ public:
       const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
       nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
           krino_mesh->get_active_part(),
-          cdfemSupport.get_interpolation_fields(),
+          cdfemSupport.get_snap_fields(),
           interfaceGeometry,
           cdfemSupport.get_global_ids_are_parallel_consistent(),
           cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
-          minIntPtWeightForEstimatingCutQuality);
+          minIntPtWeightForEstimatingCutQuality,
+          cdfemSupport.get_max_edge_snap());
     }
     interfaceGeometry.prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
 
@@ -183,12 +184,12 @@ protected:
   const InterfaceGeometry & get_interface_geometry() const { return *mySphereGeometry; }
   typename BoundingBoxMesh::BoundingBoxType get_domain() const
   {
-    const Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? Vector3d(1.,1.,0.) : Vector3d(1.,1.,1.);
+    const stk::math::Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? stk::math::Vector3d(1.,1.,0.) : stk::math::Vector3d(1.,1.,1.);
     typename BoundingBoxMesh::BoundingBoxType domain(-0.5*extents, 0.5*extents);
     return domain;
   }
   double get_mesh_size() const { return 1./6.; }
-  Sphere mySphere{"test sphere",  Vector3d::ZERO, 0.35};
+  Sphere mySphere{"test sphere",  stk::math::Vector3d::ZERO, 0.35};
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> mySphereGeometry;
 };
 
@@ -225,7 +226,7 @@ public:
   CubeDecompositionFixture()
   {
     const double x = 0.25;
-    const std::array<Vector3d,8> cubeVerts =
+    const std::array<stk::math::Vector3d,8> cubeVerts =
       {{
         {-x,-x,-x}, {+x,-x,-x}, {+x,+x,-x}, {-x,+x,-x},
         {-x,-x,+x}, {+x,-x,+x}, {+x,+x,+x}, {-x,+x,+x}
@@ -252,7 +253,7 @@ protected:
   const InterfaceGeometry & get_interface_geometry() const { return *myCubeGeometry; }
   typename BoundingBoxMesh::BoundingBoxType get_domain() const
   {
-    const Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? Vector3d(1.,1.,0.) : Vector3d(1.,1.,1.);
+    const stk::math::Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? stk::math::Vector3d(1.,1.,0.) : stk::math::Vector3d(1.,1.,1.);
     typename BoundingBoxMesh::BoundingBoxType domain(-0.5*extents, 0.5*extents);
     return domain;
   }

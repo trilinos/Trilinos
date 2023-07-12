@@ -37,7 +37,6 @@
 
 #include "stk_util/diag/StringUtil.hpp"  // for less_nocase
 #include "stk_util/util/Fortran.hpp"     // for SIERRA_FORTRAN
-#include <functional>                    // for binary_function
 #include <iosfwd>                        // for ostream
 #include <map>                           // for map, map<>::value_compare
 #include <string>                        // for string

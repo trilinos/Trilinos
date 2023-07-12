@@ -50,14 +50,6 @@ int BalanceSettings::getGraphVertexWeight(stk::topology type) const
   return 1;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
-double BalanceSettings::getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
-{
-  return 1.0;
-}
-#endif
-
 double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const
 {
     const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
@@ -179,14 +171,6 @@ bool BalanceSettings::isMultiCriteriaRebalance() const
 {
   return false;
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use setVertexWeightFieldName() and setVertexWeightMethod(VertexWeightMethod::FIELD) instead")
-bool BalanceSettings::areVertexWeightsProvidedViaFields() const
-{
-  return false;
-}
-#endif
 
 void BalanceSettings::setVertexWeightFieldName(std::string field_name, unsigned criteria_index)
 {
@@ -513,14 +497,6 @@ double GraphCreationSettings::getGraphEdgeWeight(stk::topology element1Topology,
 
   return weightTable[element1Index][element2Index];
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
-double GraphCreationSettings::getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
-{
-  return 1.0;
-}
-#endif
 
 int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
 {
