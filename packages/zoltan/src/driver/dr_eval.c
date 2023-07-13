@@ -78,7 +78,7 @@ ZOLTAN_ID_TYPE gsumcuts, gmaxcuts, gmincuts, elemcount;
 ZOLTAN_ID_TYPE gsumelems, gmaxelems, gminelems;
 double gsumload, gmaxload, gminload;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+  MPI_Comm_rank(zoltan_get_global_comm(), &proc);
 
   for (i = 0; i < mesh->necmap; i++) {
     cuts += mesh->ecmap_cnt[i];
@@ -89,19 +89,19 @@ double gsumload, gmaxload, gminload;
     load += mesh->elements[i].cpu_wgt[0];
   }
 
-  MPI_Allreduce(&cuts, &gsumcuts, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(&cuts, &gmaxcuts, 1, ZOLTAN_ID_MPI_TYPE, MPI_MAX, MPI_COMM_WORLD);
-  MPI_Allreduce(&cuts, &gmincuts, 1, ZOLTAN_ID_MPI_TYPE, MPI_MIN, MPI_COMM_WORLD);
+  MPI_Allreduce(&cuts, &gsumcuts, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, zoltan_get_global_comm());
+  MPI_Allreduce(&cuts, &gmaxcuts, 1, ZOLTAN_ID_MPI_TYPE, MPI_MAX, zoltan_get_global_comm());
+  MPI_Allreduce(&cuts, &gmincuts, 1, ZOLTAN_ID_MPI_TYPE, MPI_MIN, zoltan_get_global_comm());
 
   elemcount = mesh->num_elems - mesh->blank_count;
 
-  MPI_Allreduce(&elemcount, &gsumelems, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(&elemcount, &gmaxelems, 1, ZOLTAN_ID_MPI_TYPE, MPI_MAX, MPI_COMM_WORLD);
-  MPI_Allreduce(&elemcount, &gminelems, 1, ZOLTAN_ID_MPI_TYPE, MPI_MIN, MPI_COMM_WORLD);
+  MPI_Allreduce(&elemcount, &gsumelems, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, zoltan_get_global_comm());
+  MPI_Allreduce(&elemcount, &gmaxelems, 1, ZOLTAN_ID_MPI_TYPE, MPI_MAX, zoltan_get_global_comm());
+  MPI_Allreduce(&elemcount, &gminelems, 1, ZOLTAN_ID_MPI_TYPE, MPI_MIN, zoltan_get_global_comm());
 
-  MPI_Allreduce(&load, &gsumload, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(&load, &gmaxload, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  MPI_Allreduce(&load, &gminload, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+  MPI_Allreduce(&load, &gsumload, 1, MPI_DOUBLE, MPI_SUM, zoltan_get_global_comm());
+  MPI_Allreduce(&load, &gmaxload, 1, MPI_DOUBLE, MPI_MAX, zoltan_get_global_comm());
+  MPI_Allreduce(&load, &gminload, 1, MPI_DOUBLE, MPI_MIN, zoltan_get_global_comm());
 
   if (proc == 0) {
     printf("DRIVER EVAL:  load:  max %f  min %f  sum %f\n", 
