@@ -79,6 +79,68 @@ if (removeInstall_name)
 endif()
 
 
+################################################################################
+
+
+tribits_add_advanced_test(reduced_tarball
+  OVERALL_NUM_MPI_PROCS 1
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  HOSTTYPE Linux
+  EXCLUDE_IF_NOT_TRUE ${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE
+    ${CMAKE_PROJECT_NAME}_ENABLE_Kokkos
+
+  TEST_0
+    MESSAGE "Create the reduced tarball for the enabled packages"
+    CMND "${CMAKE_COMMAND}"
+    ARGS
+      --build ../../.. --target package_source
+    PASS_REGULAR_EXPRESSION_ALL
+      "trilinos-${Trilinos_VERSION}-Source[.]tar[.]gz generated"
+      "trilinos-${Trilinos_VERSION}-Source[.]tar[.]bz2 generated"
+    ALWAYS_FAIL_ON_NONZERO_RETURN
+
+  TEST_1
+    MESSAGE "Untar reduced tarball"
+    CMND tar
+    ARGS -xzf ../../../trilinos-${Trilinos_VERSION}-Source.tar.gz
+
+  TEST_2
+    MESSAGE "Configure the reduced tarball (CTEST_FULL_OUTPUT)"
+    WORKING_DIRECTORY trilinos-${Trilinos_VERSION}-Source_build
+    CMND "${CMAKE_COMMAND}"
+    ARGS
+      -D${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE=${${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_Fortan_COMPILER=${CMAKE_Fortran_COMPILER}
+      -D${CMAKE_PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON
+      -D${CMAKE_PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES=OFF
+      ../trilinos-${Trilinos_VERSION}-Source
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final set of non-enabled top-level packages:  0"
+      "-- Configuring done"
+      "-- Generating done"
+    ALWAYS_FAIL_ON_NONZERO_RETURN
+
+  )
+# NOTE: The above test makes sure that you can create the reduced tarball for
+# the given set of enabled packages.
+#
+# NOTE: We only add the test if the configuration options are passed through a
+# ${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE file.  (Does not work if you to
+# include them with -C <cache-file>.cmake.  You can only pass through
+# configure options through ${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE since
+# the CMake project knows these.)
+#
+# NOTE: Since the configuration of Trilinos requires the existence of some
+# files under packages/kokkos/ so we don't try to bother creating a reduced
+# Trilinos tarball when Kokkos is not enabled.  Otherwise, the configuration
+# of the untarred Trilinos directory will fail since it is missing Kokkos.
+
+
+################################################################################
+
+
 tribits_add_advanced_test(simpleBuildAgainstTrilinos_by_package_build_tree
   OVERALL_NUM_MPI_PROCS 1
   OVERALL_WORKING_DIRECTORY TEST_NAME
@@ -137,6 +199,9 @@ if (simpleBuildAgainstTrilinos_by_package_build_tree_name)
 endif()
 
 
+################################################################################
+
+
 tribits_add_advanced_test(doInstall
   OVERALL_NUM_MPI_PROCS 1
 
@@ -166,6 +231,9 @@ if (doInstall_name)
     FIXTURES_REQUIRED  removeInstall_passed
     FIXTURES_SETUP  doInstall_passed )
 endif()
+
+
+################################################################################
 
 
 tribits_add_advanced_test(find_package_Trilinos
@@ -198,6 +266,9 @@ if (find_package_Trilinos_name)
 endif()
 # NOTE: Above, only attempt to run the find_package() test if the install
 # command passed or it is guaranteed to fail.
+
+
+################################################################################
 
 
 tribits_add_advanced_test(simpleBuildAgainstTrilinos

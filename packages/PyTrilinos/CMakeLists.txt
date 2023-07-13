@@ -296,10 +296,5 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 # Add the example scripts
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
-#
-# Exclude files for source package.
-#
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
 # Execute the package postprocessing
 TRIBITS_PACKAGE_POSTPROCESS()

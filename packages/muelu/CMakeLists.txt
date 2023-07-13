@@ -453,12 +453,6 @@ ADD_SUBDIRECTORY(research)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 #
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-#
 # D) Do standard postprocessing
 #
 
