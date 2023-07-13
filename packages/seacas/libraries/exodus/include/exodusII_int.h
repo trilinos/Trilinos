@@ -65,6 +65,10 @@
 extern "C" {
 #endif
 
+#if NC_VERSION_MAJOR > 4 || (NC_VERSION_MAJOR == 4 && NC_VERSION_MINOR >= 6) || NC_HAS_HDF5
+#define EX_CAN_USE_NC_DEF_VAR_FILL 1
+#endif
+
 /**
  * \defgroup Internal Internal Functions and Defines
  * \internal

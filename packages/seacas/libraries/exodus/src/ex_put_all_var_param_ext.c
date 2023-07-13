@@ -382,8 +382,10 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
     }
   }
   ex__set_compact_storage(exoid, variable);
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
   int fill = NC_FILL_CHAR;
   nc_def_var_fill(exoid, variable, 0, &fill);
+#endif
   return (status);
 }
 

@@ -193,8 +193,10 @@ int ex_put_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
     ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret; /* exit define mode and return */
   }
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
   int fill = NC_FILL_CHAR;
   nc_def_var_fill(exoid, varid, 0, &fill);
+#endif
 
   /* leave define mode  */
   if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
