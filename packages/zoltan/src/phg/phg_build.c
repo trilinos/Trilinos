@@ -883,7 +883,7 @@ End:
       fflush(stdout);
     }
   
-    rc = MPI_Barrier(MPI_COMM_WORLD);
+    rc = MPI_Barrier(zoltan_get_global_comm());
   }
 #endif
 
