@@ -361,9 +361,9 @@ struct AssignRank2Rank1Kernel {
                          const OutputViewType v2,
                          const size_type col) :
     m_v1(v1), m_v2(v2), m_col(col) {
-    static_assert( unsigned(InputViewType::Rank) == 2 ,
+    static_assert( unsigned(InputViewType::rank) == 2 ,
                    "Require rank-2 input view" );
-    static_assert( unsigned(OutputViewType::Rank) == 1 ,
+    static_assert( unsigned(OutputViewType::rank) == 1 ,
                    "Require rank-1 output view" );
   };
 
