@@ -75,11 +75,11 @@ public:
 
   // Constructor
 
-  Zoltan (const MPI_Comm &communicator = MPI_COMM_WORLD) 
+  Zoltan (const MPI_Comm &communicator = zoltan_get_global_comm()) 
   {
-  this->ZZ_Ptr = Zoltan_Create(communicator);
+    this->ZZ_Ptr = Zoltan_Create(communicator);
 
-  // int fail = (this->ZZ_Ptr == NULL);  should catch this exception
+    // int fail = (this->ZZ_Ptr == NULL);  should catch this exception
   }
 
   // Copy constructor

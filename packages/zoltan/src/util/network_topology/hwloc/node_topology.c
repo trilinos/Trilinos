@@ -96,8 +96,8 @@ int i, j, p;
 int rc, num;
 
   MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(zoltan_get_global_comm(), &size);
+  MPI_Comm_rank(zoltan_get_global_comm(), &rank);
 
   /* allocate & initialize topology object */
 
@@ -145,7 +145,7 @@ int rc, num;
     }
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
 
   if (!have_my_cpu && (rank == 0)){
     printf("Warning: Unable to identify each MPI process with its CPU\n");
@@ -161,7 +161,7 @@ int rc, num;
   if (have_my_cpu){
 
     hwloc_cpuset_snprintf(mask, MAX_NAME_LEN-1, binding);
-    MPI_Gather(mask, MAX_NAME_LEN, MPI_CHAR, recvbuf, MAX_NAME_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Gather(mask, MAX_NAME_LEN, MPI_CHAR, recvbuf, MAX_NAME_LEN, MPI_CHAR, 0, zoltan_get_global_comm());
  
     if (rank == 0){
       cpuset = (hwloc_cpuset_t*)malloc(sizeof(hwloc_cpuset_t) * size);
