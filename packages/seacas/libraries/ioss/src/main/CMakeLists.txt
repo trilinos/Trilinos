@@ -279,6 +279,20 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
 endif()
 
 TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g"
+  NAME io_shell_compare_same_database
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns"
+  NAME io_shell_compare_same_database_cgns
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
   io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_null
   NOEXEPREFIX NOEXESUFFIX
