@@ -347,7 +347,7 @@ Ioss::ElementTopology *Ioss::ElementTopology::boundary_type(int bnd_number) cons
 
 bool Ioss::ElementTopology::equal_(const Ioss::ElementTopology &rhs, bool quiet) const
 {
-  if (this->name_ == rhs.name_) {
+  if (this->name_ != rhs.name_) {
     if (!quiet) {
       fmt::print(Ioss::OUTPUT(), "Element Topology: NAME mismatch ({} vs. {})\n",
                  this->name_.c_str(), rhs.name_.c_str());
@@ -355,7 +355,7 @@ bool Ioss::ElementTopology::equal_(const Ioss::ElementTopology &rhs, bool quiet)
     return false;
   }
 
-  if (this->masterElementName_ == rhs.masterElementName_) {
+  if (this->masterElementName_ != rhs.masterElementName_) {
     if (!quiet) {
       fmt::print(Ioss::OUTPUT(), "Element Topology: MASTER ELEMENT NAME mismatch ({} vs. {})\n",
                  this->masterElementName_.c_str(), rhs.masterElementName_.c_str());

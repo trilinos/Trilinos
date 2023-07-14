@@ -1019,7 +1019,7 @@ namespace {
         continue;
       }
 
-      if (in_qa_record_1 == *it) {
+      if (in_qa_record_1 != *it) {
         fmt::print(buf, VALUE_MISMATCH, "QA RECORD", in_qa_record_1, (*it));
         printed        = true;
         overall_result = false;

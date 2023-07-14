@@ -191,7 +191,7 @@ Ioss::Property &Ioss::Property::operator=(Ioss::Property rhs)
 
 bool Ioss::Property::operator==(const Ioss::Property &rhs) const
 {
-  if (this->name_ == rhs.name_) {
+  if (this->name_ != rhs.name_) {
     return false;
   }
 
@@ -243,7 +243,7 @@ bool Ioss::Property::operator==(const Ioss::Property &rhs) const
     std::string s_lhs, s_rhs;
     this->get_value(&s_lhs);
     rhs.get_value(&s_rhs);
-    if (s_lhs == s_rhs) {
+    if (s_lhs != s_rhs) {
       return false;
     }
     break;

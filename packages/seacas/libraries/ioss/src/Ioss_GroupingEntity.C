@@ -390,7 +390,7 @@ void Ioss::GroupingEntity::property_update(const std::string &property,
 bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, bool quiet) const
 {
   bool same = true;
-  if (this->entityName == rhs.entityName) {
+  if (this->entityName != rhs.entityName) {
     if (quiet) {
       return false;
     }
