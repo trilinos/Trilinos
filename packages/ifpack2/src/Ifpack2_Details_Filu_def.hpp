@@ -137,6 +137,7 @@ computeLocalPrec()
 
   localPrec_->verify(*localPrec2_);
   std::cout << "JGF VERIFICATION OF COMPUTE COMPLETE!" << std::endl;
+  exit(0);
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>

@@ -216,6 +216,7 @@ initialize()
           // This block has at least one nnz in this row
           curr_active_row[row_block_idx] = true;
           ++row_itr;
+          if (row_itr == row_end) break;
           curr_nnz_col = localColInds_(row_itr);
         }
       }
