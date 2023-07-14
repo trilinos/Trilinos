@@ -598,8 +598,6 @@ namespace {
         typedef typename Array<Scalar>::size_type size_type;
         for (size_type k = 0; k < static_cast<size_type> (tgtNumEntries); ++k) {
           TEST_EQUALITY(tgtRowInds[k], tgt2RowInds[k]);
-          out << "JHU: tgtRowInds[" << k << "]=" << tgtRowInds[k]
-              << ", tgt2RowInds[" << k << "] = " << tgt2RowInds[k] << std::endl;
           // The "out" and "success" variables should have been
           // automatically defined by the unit test framework, in case
           // you're wondering where they came from.
@@ -2385,6 +2383,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
     Kokkos::View<char*, Kokkos::HostSpace> importsView(imports.data(), imports.size());
     distor.doPostsAndWaits(exports.view_host(),numExportPackets(),importsView,numImportPackets());
+    auto importsView_d = Kokkos::create_mirror_view(Node::device_type::memory_space(), importsView);
+    deep_copy(importsView_d,importsView);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with 4-arg doPostsAndWaits" << std::endl;
@@ -2393,33 +2393,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 
     ::Tpetra::Details::Behavior::enable_verbose_behavior ();
 
-    // Run the count... which should get the same NNZ as the traditional import
-    using Tpetra::Details::unpackAndCombineWithOwningPIDsCount;
-    size_t nnz2 =
-      unpackAndCombineWithOwningPIDsCount<Scalar, LO, GO, Node> (*A, Importer->getRemoteLIDs (),
-                                                                 imports (), numImportPackets (),
-                                                                 constantNumPackets,
-                                                                 Tpetra::INSERT,
-                                                                 Importer->getNumSameIDs (),
-                                                                 Importer->getPermuteToLIDs (),
-                                                                 Importer->getPermuteFromLIDs ());
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Done with unpackAndCombineWithOwningPIDsCount; "
-        "nnz1=" << nnz1 << ", nnz2=" << nnz2 << std::endl;
-      std::cerr << os.str ();
-    }
-
-    if(nnz1!=nnz2) test_err++;
-    total_err+=test_err;
-
     /////////////////////////////////////////////////////////
     // Test #2: Actual combine test
     /////////////////////////////////////////////////////////
-    Teuchos::Array<size_t>  rowptr (MapTarget->getLocalNumElements () + 1);
-    Teuchos::Array<GO>      colind (nnz2);
-    Teuchos::Array<Scalar>  vals (nnz2);
-    Teuchos::Array<int>     TargetPids;
+    Teuchos::ArrayRCP<size_t>  rowptr;
+    Teuchos::ArrayRCP<GO>      colind;
+    Teuchos::ArrayRCP<Scalar>  vals;
+    Teuchos::Array<int>        TargetPids;
 
     if (verbose) {
       std::ostringstream os;
@@ -2427,30 +2407,39 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       std::cerr << os.str ();
     }
 
+    auto numImportPacketsView_d = Kokkos::create_mirror_view(Node::device_type::memory_space(),numImportPacketsView);
+    deep_copy(numImportPacketsView_d,numImportPacketsView);
+
+
+    const Kokkos::View<LO const *, typename Node::device_type> RemoteLIDs_d = Importer->getRemoteLIDs_dv().view_device();
+    const Kokkos::View<LO const *, typename Node::device_type> PermuteToLIDs_d = Importer->getPermuteToLIDs_dv().view_device();
+    const Kokkos::View<LO const *, typename Node::device_type> PermuteFromLIDs_d = Importer->getPermuteFromLIDs_dv().view_device();
+
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
-    //JHU FIXME
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
       *A,
-      Importer->getRemoteLIDs (),
-      imports (),
-      numImportPackets (),
-      constantNumPackets,
-      Tpetra::INSERT,
+      RemoteLIDs_d,
+      importsView_d,
+      numImportPacketsView_d,
       Importer->getNumSameIDs (),
-      Importer->getPermuteToLIDs (),
-      Importer->getPermuteFromLIDs (),
+      PermuteToLIDs_d,
+      PermuteFromLIDs_d,
       MapTarget->getLocalNumElements (),
-      nnz2,
       MyPID,
-      rowptr (),
-      colind (),
-      Teuchos::av_reinterpret_cast<IST> (vals ()),
+      rowptr,
+      colind,
+      vals,
       SourcePids (),
       TargetPids);
 
+    size_t nnz2 = vals.size();
+    if(nnz1!=nnz2) test_err++;
+    total_err+=test_err;
+
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Done with unpackAndCombineIntoCrsArrays" << std::endl;
+      os << *prefix << "Done with unpackAndCombineIntoCrsArrays; "
+        "nnz1=" << nnz1 << ", nnz2=" << nnz2 << std::endl;
       std::cerr << os.str ();
     }
 

@@ -1422,16 +1422,17 @@ unpackAndCombineWithOwningPIDsCount (
 /// Note: The TargetPids vector (on output) will contain owning PIDs
 /// for each entry in the matrix, with the "-1 for local" for locally
 /// owned entries.
+
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
 unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-    const Kokkos::View<const char*, typename Node::device_type>& imports_d,
-    const Kokkos::View<const size_t*, typename Node::device_type>& num_packets_per_lid_d,
+    const Kokkos::View<LocalOrdinal const *, typename Node::device_type> import_lids_d,
+    const Kokkos::View<const char*, typename Node::device_type> imports_d,
+    const Kokkos::View<const size_t*, typename Node::device_type> num_packets_per_lid_d,
     const size_t numSameIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
+    const Kokkos::View<LocalOrdinal const *, typename Node::device_type> permute_to_lids_d,
+    const Kokkos::View<LocalOrdinal const *, typename Node::device_type> permute_from_lids_d,
     size_t TargetNumRows,
     const int MyTargetPID,
     Teuchos::ArrayRCP<size_t>& CRS_rowptr,
@@ -1468,9 +1469,9 @@ unpackAndCombineIntoCrsArrays (
   using Kokkos::MemoryUnmanaged;
 
   TEUCHOS_TEST_FOR_EXCEPTION
-    (permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
-     prefix << "permuteToLIDs.size() = " << permuteToLIDs.size () << " != "
-     "permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
+    (permute_to_lids_d.size () != permute_from_lids_d.size (), std::invalid_argument,
+     prefix << "permute_to_lids_d.size() = " << permute_to_lids_d.size () << " != "
+     "permute_from_lids_d.size() = " << permute_from_lids_d.size() << ".");
   // FIXME (mfh 26 Jan 2015) If there are no entries on the calling
   // process, then the matrix is neither locally nor globally indexed.
   const bool locallyIndexed = sourceMatrix.isLocallyIndexed ();
@@ -1478,16 +1479,11 @@ unpackAndCombineIntoCrsArrays (
     (! locallyIndexed, std::invalid_argument, prefix << "The input "
     "CrsMatrix 'sourceMatrix' must be locally indexed.");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (((size_t)importLIDs.size ()) != num_packets_per_lid_d.size (), std::invalid_argument,
-     prefix << "importLIDs.size() = " << importLIDs.size () << " != "
+    (((size_t)import_lids_d.size ()) != num_packets_per_lid_d.size (), std::invalid_argument,
+     prefix << "import_lids_d.size() = " << import_lids_d.size () << " != "
      "num_packets_per_lid_d.size() = " << num_packets_per_lid_d.size () << ".");
 
   auto local_matrix = sourceMatrix.getLocalMatrixDevice ();
-  auto permute_from_lids_d =
-    create_mirror_view_from_raw_host_array (DT (),
-                                            permuteFromLIDs.getRawPtr (),
-                                            permuteFromLIDs.size (), true,
-                                            "permute_from_lids");
 
   // TargetNumNonzeros is number of nonzeros in local matrix.
 # ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1513,9 +1509,9 @@ unpackAndCombineIntoCrsArrays (
 # endif
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
-    prefix << "permuteToLIDs.size() = " << permuteToLIDs.size ()
-    << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
+    permute_to_lids_d.size () != permute_from_lids_d.size (), std::invalid_argument,
+    prefix << "permuteToLIDs.size() = " << permute_to_lids_d.size ()
+    << "!= permute_from_lids_d.size() = " << permute_from_lids_d.size () << ".");
 
   // Preseed TargetPids with -1 for local
   if (static_cast<size_t> (TargetPids.size ()) != TargetNumNonzeros) {
@@ -1531,13 +1527,6 @@ unpackAndCombineIntoCrsArrays (
 # endif
   // Convert input arrays to Kokkos::Views
   DT outputDevice;
-  auto import_lids_d =
-    create_mirror_view_from_raw_host_array(outputDevice, importLIDs.getRawPtr(),
-        importLIDs.size(), true, "import_lids");
-
-  auto permute_to_lids_d =
-    create_mirror_view_from_raw_host_array(outputDevice, permuteToLIDs.getRawPtr(),
-        permuteToLIDs.size(), true, "permute_to_lids");
 
   auto crs_rowptr_d =
     create_mirror_view_from_raw_host_array(outputDevice, CRS_rowptr.getRawPtr(),
@@ -1691,12 +1680,12 @@ unpackAndCombineIntoCrsArrays (
   template void \
   Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT> &, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Kokkos::View<const char*, typename NT::device_type>&, \
-    const Kokkos::View<const size_t*, typename NT::device_type>&, \
+    const Kokkos::View<LO const *, typename NT::device_type>, \
+    const Kokkos::View<const char*, typename NT::device_type>, \
+    const Kokkos::View<const size_t*, typename NT::device_type>, \
     const size_t, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Teuchos::ArrayView<const LO>&, \
+    const Kokkos::View<LO const *, typename NT::device_type>, \
+    const Kokkos::View<LO const *, typename NT::device_type>, \
     size_t, \
     const int, \
     Teuchos::ArrayRCP<size_t>&, \

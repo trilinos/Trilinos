@@ -7919,12 +7919,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const size_t NumSameIDs = rowTransfer.getNumSameIDs();
     ArrayView<const LO> ExportLIDs = reverseMode ?
       rowTransfer.getRemoteLIDs () : rowTransfer.getExportLIDs ();
-    ArrayView<const LO> RemoteLIDs = reverseMode ?
-      rowTransfer.getExportLIDs () : rowTransfer.getRemoteLIDs ();
-    ArrayView<const LO> PermuteToLIDs = reverseMode ?
-      rowTransfer.getPermuteFromLIDs () : rowTransfer.getPermuteToLIDs ();
-    ArrayView<const LO> PermuteFromLIDs = reverseMode ?
-      rowTransfer.getPermuteToLIDs () : rowTransfer.getPermuteFromLIDs ();
+    auto RemoteLIDs = reverseMode ?
+      rowTransfer.getExportLIDs_dv() : rowTransfer.getRemoteLIDs_dv();
+    auto PermuteToLIDs = reverseMode ?
+      rowTransfer.getPermuteFromLIDs_dv() : rowTransfer.getPermuteToLIDs_dv();
+    auto PermuteFromLIDs = reverseMode ?
+      rowTransfer.getPermuteToLIDs_dv() : rowTransfer.getPermuteFromLIDs_dv();
     Distributor& Distor = rowTransfer.getDistributor ();
 
     // Owning PIDs
@@ -8119,14 +8119,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
     if (constantNumPackets == 0) {
       destMat->reallocArraysForNumPacketsPerLid (ExportLIDs.size (),
-                                                 RemoteLIDs.size ());
+                                                 RemoteLIDs.view_host().size ());
     }
     else {
       // There are a constant number of packets per element.  We
       // already know (from the number of "remote" (incoming)
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
-      const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
+      const size_t rbufLen = RemoteLIDs.view_host().size() * constantNumPackets;
       destMat->reallocImportsIfNeeded (rbufLen, false, nullptr);
     }
     }
@@ -8478,14 +8478,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          "input Kokkos::DualView was most recently modified on host, but TAFC "
          "needs the device view of the data to be the most recently modified.");
 
+    const Kokkos::View<LO const *, typename Node::device_type> RemoteLIDs_d = RemoteLIDs.view_device();
+    const Kokkos::View<LO const *, typename Node::device_type> PermuteToLIDs_d = PermuteToLIDs.view_device();
+    const Kokkos::View<LO const *, typename Node::device_type> PermuteFromLIDs_d = PermuteFromLIDs.view_device();
+    //auto PermuteToLIDs_d = PermuteToLIDs.view_device(); //FAILS
     Details::unpackAndCombineIntoCrsArrays(
                                    *this, 
-                                   RemoteLIDs,
+                                   RemoteLIDs_d,
                                    destMat->imports_.view_device(),                //hostImports
                                    destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
                                    NumSameIDs,
-                                   PermuteToLIDs,
-                                   PermuteFromLIDs,
+                                   PermuteToLIDs_d,
+                                   PermuteFromLIDs_d,
                                    N,
                                    MyPID,
                                    CSR_rowptr,
