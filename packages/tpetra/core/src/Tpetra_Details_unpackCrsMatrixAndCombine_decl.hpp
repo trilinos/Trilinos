@@ -225,16 +225,17 @@ unpackAndCombineWithOwningPIDsCount (
 /// Note: This method does the work previously done in unpackAndCombineWithOwningPIDsCount,
 /// namely, calculating the local number of nonzeros, and allocates CRS
 /// arrays of the correct sizes.
+
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
 unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-    const Kokkos::View<const char*, typename Node::device_type>& imports_d,
-    const Kokkos::View<const size_t*, typename Node::device_type>& num_packets_per_lid_d,
+    const Kokkos::View<LocalOrdinal const *, typename Node::device_type>,
+    const Kokkos::View<const char*, typename Node::device_type>,
+    const Kokkos::View<const size_t*, typename Node::device_type>,
     const size_t numSameIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
+    const Kokkos::View<LocalOrdinal const *, typename Node::device_type>,
+    const Kokkos::View<LocalOrdinal const *, typename Node::device_type>,
     size_t TargetNumRows,
     const int MyTargetPID,
     Teuchos::ArrayRCP<size_t>& CRS_rowptr,
