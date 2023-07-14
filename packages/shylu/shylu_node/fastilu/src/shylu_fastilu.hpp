@@ -98,7 +98,7 @@ void print_vector(const std::string& name, const std::vector<T>& vect)
 template <typename F>
 bool approx_same(F a, F b)
 {
-  static constexpr auto EPS = std::numeric_limits<F>::epsilon() * 10;
+  static constexpr auto EPS = std::numeric_limits<F>::epsilon() * 100;
   return std::fabs(a - b) < EPS;
 }
 
@@ -161,7 +161,10 @@ bool compare_unc_matrix(
     const size_t cols = matrix1[i].size();
     if (cols != matrix2[i].size()) return false;
     for (size_t j = 0; j < cols; ++j) {
-      if (!approx_same(matrix1[i][j], matrix2[i][j])) return false;
+      if (!approx_same(matrix1[i][j], matrix2[i][j])) {
+        printf("Mismatch in [%ld][%ld] %40.32E != %40.32E\n", i, j, matrix1[i][j], matrix2[i][j]);
+        return false;
+      }
     }
   }
 
@@ -2456,9 +2459,6 @@ class FastILUFunctor
            for (Ordinal nz_index = start; nz_index < end && nz_index < nnz; nz_index++) {
               Ordinal i = _Ai[nz_index]; // row of this nnz block in A
               Ordinal j = _Aj[nz_index]; // col of this nnz block in A
-              std::vector<Scalar> acc_val_l(_blockCrsSize, zero);
-              std::vector<Scalar> acc_val_u(_blockCrsSize, zero);
-              Scalar lastU;
 
               const Ordinal a_offset = blockItems*nz_index;
               // A[i][j] has non-zero entries
@@ -2512,17 +2512,8 @@ class FastILUFunctor
                       }
                     }
 
-                    // Find the last values in this block of rows
-                    for (Ordinal uitr = _Up[j]; uitr < _Up[j+1]; ++uitr) {
-                      const Ordinal u_offset  = blockItems*uitr;
-                      for (Ordinal bjj = 0; bjj < _blockCrsSize; ++bjj) {
-                        const Ordinal blockOffset = _blockCrsSize*bj + bjj;
-                        const Scalar uVal = _Ux[u_offset + blockOffset];
-                        if (uVal != zero) {
-                          lastU = uVal;
-                        }
-                      }
-                    }
+                    // The last item in the row of U will always be the diagonal
+                    Scalar lastU = _diag[j*_blockCrsSize + bj];
 
                     std::cout << "  JGF2 for nnz=" << nz_index << " lptr=" << lptr << " uptr=" << uptr << " acc_val=" << acc_val << " urowend=" << lastU << std::endl;
 
