@@ -59,8 +59,10 @@ static int ex__prepare_result_var(int exoid, int num_vars, char *type_name, char
     }
     return (EX_FATAL); /* exit define mode and return */
   }
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
   int fill = NC_FILL_CHAR;
   nc_def_var_fill(exoid, varid, 0, &fill);
+#endif
   return (EX_NOERR);
 }
 /*! \endcond */
