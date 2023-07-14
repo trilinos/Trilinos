@@ -8460,93 +8460,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
     destMat->numImportPacketsPerLID_.modify_host(); //FIXME
 
-#define TPETRA_NEW_TAFC_UNPACK_AND_COMBINE
-#ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize"))));
-#endif
-    destMat->numImportPacketsPerLID_.sync_host ();
-    Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
-      getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
-    destMat->imports_.sync_host ();
-    Teuchos::ArrayView<const char> hostImports =
-      getArrayViewFromDualView (destMat->imports_);
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "Calling unpackAndCombineWithOwningPIDsCount"
-         << std::endl;
-      std::cerr << os.str ();
-    }
-    size_t mynnz =
-      unpackAndCombineWithOwningPIDsCount (*this,
-                                           RemoteLIDs,
-                                           hostImports,
-                                           numImportPacketsPerLID,
-                                           constantNumPackets,
-                                           INSERT,
-                                           NumSameIDs,
-                                           PermuteToLIDs,
-                                           PermuteFromLIDs);
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "unpackAndCombineWithOwningPIDsCount returned "
-         << mynnz << std::endl;
-      std::cerr << os.str ();
-    }
-    size_t N = BaseRowMap->getLocalNumElements ();
-
-    // Allocations
-    ArrayRCP<size_t> CSR_rowptr(N+1);
-    ArrayRCP<GO> CSR_colind_GID;
-    ArrayRCP<LO> CSR_colind_LID;
-    ArrayRCP<Scalar> CSR_vals;
-    CSR_colind_GID.resize (mynnz);
-    CSR_vals.resize (mynnz);
-
-    // If LO and GO are the same, we can reuse memory when
-    // converting the column indices from global to local indices.
-    if (typeid (LO) == typeid (GO)) {
-      CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO> (CSR_colind_GID);
-    }
-    else {
-      CSR_colind_LID.resize (mynnz);
-    }
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    tmCopySPRdata = Teuchos::null;
-    tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC copy same-perm-remote data"))));
-#endif
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "Calling unpackAndCombineIntoCrsArrays"
-         << std::endl;
-      std::cerr << os.str ();
-    }
-    // FIXME (mfh 15 May 2014) Why can't we abstract this out as an
-    // unpackAndCombine method on a "CrsArrays" object?  This passing
-    // in a huge list of arrays is icky.  Can't we have a bit of an
-    // abstraction?  Implementing a concrete DistObject subclass only
-    // takes five methods.
-    unpackAndCombineIntoCrsArrays (*this, 
-                                   RemoteLIDs,
-                                   hostImports,
-                                   numImportPacketsPerLID,
-                                   constantNumPackets,
-                                   INSERT,
-                                   NumSameIDs,
-                                   PermuteToLIDs,
-                                   PermuteFromLIDs,
-                                   N,
-                                   mynnz,
-                                   MyPID,
-                                   CSR_rowptr (),
-                                   CSR_colind_GID (),
-                                   Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
-                                   SourcePids (),
-                                   TargetPids);
-#else
 #  ifdef HAVE_TPETRA_MMM_TIMINGS
     RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
 #  endif
@@ -8565,7 +8478,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          "input Kokkos::DualView was most recently modified on host, but TAFC "
          "needs the device view of the data to be the most recently modified.");
 
-    Details::unpackAndCombineIntoCrsArrays_new(
+    Details::unpackAndCombineIntoCrsArrays(
                                    *this, 
                                    RemoteLIDs,
                                    destMat->imports_.view_device(),                //hostImports
@@ -8591,11 +8504,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     CSR_colind_LID.resize (CSR_colind_GID.size());
     size_t mynnz = CSR_vals.size();
-#endif //ifndef TPETRA_NEW_TAFC_UNPACK_AND_COMBINE ... else
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.
-    // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays_new with a parallel_for.
+    // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays with a parallel_for.
     for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
     {
       if(TargetPids[i] == -1) TargetPids[i] = MyPID;

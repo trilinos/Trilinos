@@ -1427,203 +1427,6 @@ void
 unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
     const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-    const Teuchos::ArrayView<const char>& imports,
-    const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    const size_t /* constantNumPackets */,
-    const CombineMode /* combineMode */,
-    const size_t numSameIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
-    size_t TargetNumRows,
-    size_t TargetNumNonzeros,
-    const int MyTargetPID,
-    const Teuchos::ArrayView<size_t>& CRS_rowptr,
-    const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
-    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals,
-    const Teuchos::ArrayView<const int>& SourcePids,
-    Teuchos::Array<int>& TargetPids)
-{
-  using execution_space = typename Node::execution_space;
-  using Tpetra::Details::PackTraits;
-
-  using Kokkos::View;
-  using Kokkos::deep_copy;
-
-  using Teuchos::ArrayView;
-  using Teuchos::outArg;
-  using Teuchos::REDUCE_MAX;
-  using Teuchos::reduceAll;
-
-  typedef LocalOrdinal LO;
-
-  typedef typename Node::device_type DT;
-
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-  typedef typename matrix_type::impl_scalar_type ST;
-  typedef typename ArrayView<const LO>::size_type size_type;
-
-  const char prefix[] = "Tpetra::Details::unpackAndCombineIntoCrsArrays: ";
-
-  std::cout << "PID " << MyTargetPID << ": " << "CRS_rowptr.size() = " << CRS_rowptr.size () << ", TargetNumRows+1 = " << TargetNumRows+1 << std::endl;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    TargetNumRows + 1 != static_cast<size_t> (CRS_rowptr.size ()),
-    std::invalid_argument, prefix << "CRS_rowptr.size() = " <<
-    CRS_rowptr.size () << "!= TargetNumRows+1 = " << TargetNumRows+1 << ".");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
-    prefix << "permuteToLIDs.size() = " << permuteToLIDs.size ()
-    << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
-  const size_type numImportLIDs = importLIDs.size ();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numImportLIDs != numPacketsPerLID.size (), std::invalid_argument,
-    prefix << "importLIDs.size() = " << numImportLIDs << " != "
-    "numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
-
-  // Preseed TargetPids with -1 for local
-  if (static_cast<size_t> (TargetPids.size ()) != TargetNumNonzeros) {
-    TargetPids.resize (TargetNumNonzeros);
-  }
-  TargetPids.assign (TargetNumNonzeros, -1);
-
-  // Grab pointers for sourceMatrix
-  auto local_matrix = sourceMatrix.getLocalMatrixDevice();
-  auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
-
-  // Convert input arrays to Kokkos::View
-  DT outputDevice;
-  auto import_lids_d =
-    create_mirror_view_from_raw_host_array(outputDevice, importLIDs.getRawPtr(),
-        importLIDs.size(), true, "import_lids");
-
-  auto imports_d =
-    create_mirror_view_from_raw_host_array(outputDevice, imports.getRawPtr(),
-        imports.size(), true, "imports");
-
-  auto num_packets_per_lid_d =
-    create_mirror_view_from_raw_host_array(outputDevice, numPacketsPerLID.getRawPtr(),
-        numPacketsPerLID.size(), true, "num_packets_per_lid");
-
-  auto permute_from_lids_d =
-    create_mirror_view_from_raw_host_array(outputDevice, permuteFromLIDs.getRawPtr(),
-        permuteFromLIDs.size(), true, "permute_from_lids");
-
-  auto permute_to_lids_d =
-    create_mirror_view_from_raw_host_array(outputDevice, permuteToLIDs.getRawPtr(),
-        permuteToLIDs.size(), true, "permute_to_lids");
-
-  auto crs_rowptr_d =
-    create_mirror_view_from_raw_host_array(outputDevice, CRS_rowptr.getRawPtr(),
-        CRS_rowptr.size(), true, "crs_rowptr");
-
-  auto crs_colind_d =
-    create_mirror_view_from_raw_host_array(outputDevice, CRS_colind.getRawPtr(),
-        CRS_colind.size(), true, "crs_colidx");
-
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  static_assert (! std::is_same<
-      typename std::remove_const<
-        typename std::decay<
-          decltype (CRS_vals)
-        >::type::value_type
-      >::type,
-      std::complex<double> >::value,
-    "CRS_vals::value_type is std::complex<double>; this should never happen"
-    ", since std::complex does not work in Kokkos::View objects.");
-#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
-
-  auto crs_vals_d =
-    create_mirror_view_from_raw_host_array(outputDevice, CRS_vals.getRawPtr(),
-        CRS_vals.size(), true, "crs_vals");
-
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  static_assert (! std::is_same<
-      typename decltype (crs_vals_d)::non_const_value_type,
-      std::complex<double> >::value,
-    "crs_vals_d::non_const_value_type is std::complex<double>; this should "
-    "never happen, since std::complex does not work in Kokkos::View objects.");
-#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
-
-  auto src_pids_d =
-    create_mirror_view_from_raw_host_array(outputDevice, SourcePids.getRawPtr(),
-        SourcePids.size(), true, "src_pids");
-
-  auto tgt_pids_d =
-    create_mirror_view_from_raw_host_array(outputDevice, TargetPids.getRawPtr(),
-        TargetPids.size(), true, "tgt_pids");
-
-  size_t bytes_per_value = 0;
-  if (PackTraits<ST>::compileTimeSize) {
-    // assume that ST is default constructible
-    bytes_per_value = PackTraits<ST>::packValueCount(ST());
-  }
-  else {
-    // Since the packed data come from the source matrix, we can use the source
-    // matrix to get the number of bytes per Scalar value stored in the matrix.
-    // This assumes that all Scalar values in the source matrix require the same
-    // number of bytes.  If the source matrix has no entries on the calling
-    // process, then we hope that some process does have some idea how big
-    // a Scalar value is.  Of course, if no processes have any entries, then no
-    // values should be packed (though this does assume that in our packing
-    // scheme, rows with zero entries take zero bytes).
-    size_t bytes_per_value_l = 0;
-    if (local_matrix.values.extent(0) > 0) {
-      const ST& val = local_matrix.values(0);
-      bytes_per_value_l = PackTraits<ST>::packValueCount(val);
-    } else {
-      const ST& val = crs_vals_d(0);
-      bytes_per_value_l = PackTraits<ST>::packValueCount(val);
-    }
-    Teuchos::reduceAll<int, size_t>(*(sourceMatrix.getComm()),
-                                    Teuchos::REDUCE_MAX,
-                                    bytes_per_value_l,
-                                    outArg(bytes_per_value));
-  }
-
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  static_assert (! std::is_same<
-      typename decltype (crs_vals_d)::non_const_value_type,
-      std::complex<double> >::value,
-    "crs_vals_d::non_const_value_type is std::complex<double>; this should "
-    "never happen, since std::complex does not work in Kokkos::View objects.");
-#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
-
-  UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsArrays(
-      local_matrix, local_col_map, import_lids_d, imports_d,
-      num_packets_per_lid_d, permute_to_lids_d, permute_from_lids_d,
-      crs_rowptr_d, crs_colind_d, crs_vals_d, src_pids_d, tgt_pids_d,
-      numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID,
-      bytes_per_value);
-
-  // Copy outputs back to host
-  typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
-      CRS_rowptr.getRawPtr(), CRS_rowptr.size());
-  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), crs_rowptr_h, crs_rowptr_d);
-
-  typename decltype(crs_colind_d)::HostMirror crs_colind_h(
-      CRS_colind.getRawPtr(), CRS_colind.size());
-  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), crs_colind_h, crs_colind_d);
-
-  typename decltype(crs_vals_d)::HostMirror crs_vals_h(
-      CRS_vals.getRawPtr(), CRS_vals.size());
-  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), crs_vals_h, crs_vals_d);
-
-  typename decltype(tgt_pids_d)::HostMirror tgt_pids_h(
-      TargetPids.getRawPtr(), TargetPids.size());
-  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), tgt_pids_h, tgt_pids_d);
-} //unpackAndCombineIntoCrsArrays (Teuchos::Array version)
-
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void
-unpackAndCombineIntoCrsArrays_new (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
     const Kokkos::View<const char*, typename Node::device_type>& imports_d,
     const Kokkos::View<const size_t*, typename Node::device_type>& num_packets_per_lid_d,
     const size_t numSameIDs,
@@ -1852,7 +1655,7 @@ unpackAndCombineIntoCrsArrays_new (
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), tgt_pids_h, tgt_pids_d);
 
-} //unpackAndCombineIntoCrsArrays_new
+} //unpackAndCombineIntoCrsArrays
 
 } // namespace Details
 } // namespace Tpetra
@@ -1874,25 +1677,6 @@ unpackAndCombineIntoCrsArrays_new (
     const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const size_t, \
     const CombineMode); \
-  template void \
-  Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
-    const CrsMatrix<ST, LO, GO, NT> &, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Teuchos::ArrayView<const char>&, \
-    const Teuchos::ArrayView<const size_t>&, \
-    const size_t, \
-    const CombineMode, \
-    const size_t, \
-    const Teuchos::ArrayView<const LO>&, \
-    const Teuchos::ArrayView<const LO>&, \
-    size_t, \
-    size_t, \
-    const int, \
-    const Teuchos::ArrayView<size_t>&, \
-    const Teuchos::ArrayView<GO>&, \
-    const Teuchos::ArrayView<CrsMatrix<ST, LO, GO, NT>::impl_scalar_type>&, \
-    const Teuchos::ArrayView<const int>&, \
-    Teuchos::Array<int>&); \
   template size_t \
   Details::unpackAndCombineWithOwningPIDsCount<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT> &, \
@@ -1905,7 +1689,7 @@ unpackAndCombineIntoCrsArrays_new (
     const Teuchos::ArrayView<const LO>&, \
     const Teuchos::ArrayView<const LO>&); \
   template void \
-  Details::unpackAndCombineIntoCrsArrays_new<ST, LO, GO, NT> ( \
+  Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT> &, \
     const Teuchos::ArrayView<const LO>&, \
     const Kokkos::View<const char*, typename NT::device_type>&, \
