@@ -278,12 +278,14 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   )
 endif()
 
+IF (NOT TPL_ENABLE_MPI OR TPL_Netcdf_Enables_PNetcdf)
 TRIBITS_ADD_TEST(
   io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g"
   NAME io_shell_compare_same_database
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
  )
+ENDIF()
 
 TRIBITS_ADD_TEST(
   io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns"
