@@ -216,7 +216,7 @@ namespace Impl {
       using ::Tpetra::FILL;
       using ::Tpetra::SCAL;
       using ::Tpetra::GEMV;
-      using Kokkos::Details::ArithTraits;
+      using Kokkos::ArithTraits;
       // I'm not writing 'using Kokkos::make_pair;' here, because that
       // may break builds for users who make the mistake of putting
       // 'using namespace std;' in the global namespace.  Please don't
@@ -374,7 +374,7 @@ namespace Impl {
 
       const local_ordinal_type lclRow = member.league_rank();
 
-      using Kokkos::Details::ArithTraits;
+      using Kokkos::ArithTraits;
       // I'm not writing 'using Kokkos::make_pair;' here, because that
       // may break builds for users who make the mistake of putting
       // 'using namespace std;' in the global namespace.  Please don't

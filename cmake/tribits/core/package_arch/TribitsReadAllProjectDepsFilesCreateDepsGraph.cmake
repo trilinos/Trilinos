@@ -44,6 +44,7 @@ include(TribitsProcessExtraRepositoriesList)
 include(TribitsProcessPackagesAndDirsLists)
 include(TribitsProcessTplsLists)
 include(TribitsReadDepsFilesCreateDepsGraph)
+include(TribitsConfigureTiming)
 
 # Standard TriBITS utilities includes
 include(TimingUtils)

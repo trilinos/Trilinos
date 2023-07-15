@@ -69,4 +69,4 @@ TEUCHOS_UNIT_TEST(Stepper_ErrorNorm, errorNorm)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

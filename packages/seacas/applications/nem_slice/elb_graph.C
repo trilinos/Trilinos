@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -25,10 +25,6 @@
 #include <fmt/ostream.h>
 #include <sstream>
 #include <vector> // for vector
-
-extern int is_hex(E_Type etype);
-extern int is_tet(E_Type etype);
-extern int is_3d_element(E_Type etype);
 
 /* Local function prototypes */
 namespace {

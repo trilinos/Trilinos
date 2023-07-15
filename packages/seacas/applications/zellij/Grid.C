@@ -302,7 +302,7 @@ void Grid::set_sideset_names(const std::string &names)
     // Update the name in the list of generated sideset names...
     auto index = axis_index(axis);
     SMART_ASSERT(index >= 0)(axis)(index);
-    generated_surface_names[index] = ss_name;
+    generated_surface_names[index] = std::move(ss_name);
   }
 }
 
@@ -617,7 +617,7 @@ template <typename INT> void Grid::output_generated_surfaces(Cell &cell, INT /*d
       // Find surface on output mesh...
       auto *osurf = output_region(rank)->get_sideset(generated_surface_names[face]);
       SMART_ASSERT(osurf != nullptr);
-      auto &oblocks = osurf->get_side_blocks();
+      const auto &oblocks = osurf->get_side_blocks();
       SMART_ASSERT(oblocks.size() == 1)(oblocks.size());
 
       auto            &boundary = cell.unit()->boundary_blocks[face];
@@ -959,7 +959,7 @@ namespace {
 
         const auto &element_blocks = cell.region()->get_element_blocks();
         for (const auto *block : element_blocks) {
-          auto &blk                         = block->name();
+          const auto &blk                   = block->name();
           cell.m_globalElementIdOffset[blk] = global_element_block_elem_count[blk];
           cell.m_localElementIdOffset[blk]  = element_block_elem_count[rank][blk];
 
@@ -996,7 +996,7 @@ namespace {
     // Define the element blocks in the output database...
     for (int rank = start_rank; rank < start_rank + rank_count; rank++) {
       for (auto &blk : output_element_blocks) {
-        auto *block = new Ioss::ElementBlock(*blk.second.get());
+        auto *block = new Ioss::ElementBlock(*blk.second);
         block->property_update("entity_count", element_block_elem_count[rank][block->name()]);
         block->property_update("global_entity_count", global_block_element_count[block->name()]);
         grid.output_region(rank)->property_add(
@@ -1038,7 +1038,7 @@ namespace {
     for (int i = start_rank; i < start_rank + rank_count; i++) {
       std::string block_name        = "nodeblock_1";
       int         spatial_dimension = 3;
-      auto        block = new Ioss::NodeBlock(grid.output_region(i)->get_database(), block_name,
+      auto       *block = new Ioss::NodeBlock(grid.output_region(i)->get_database(), block_name,
                                               local_node_count[i], spatial_dimension);
       block->property_add(Ioss::Property("id", 1));
       grid.output_region(i)->add(block);
@@ -1099,7 +1099,7 @@ namespace {
 
         const auto &surfaces = cell.region()->get_sidesets();
         for (const auto *surface : surfaces) {
-          auto &surf                      = surface->name();
+          const auto &surf                = surface->name();
           cell.m_localSurfaceOffset[surf] = local_surface_offset[rank][surf];
 
           const auto &blocks = surface->get_side_blocks();

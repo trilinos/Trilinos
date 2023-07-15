@@ -54,7 +54,6 @@ class TrilinosJenkinsEnvTest(TestCase):
     """
     def setUp(self):
 
-        os.environ["TRILINOS_SOURCE_BRANCH"]  = "trilinos_source_branch_value"
         os.environ["TRILINOS_SOURCE_REPO"]    = "trilinos_source_repo_value"
         os.environ["TRILINOS_SOURCE_SHA"]     = "trilinos_source_sha_value"
         os.environ["TRILINOS_TARGET_BRANCH"]  = "trilinos_target_branch_value"
@@ -68,7 +67,6 @@ class TrilinosJenkinsEnvTest(TestCase):
 
 
     def tearDown(self):
-        del os.environ["TRILINOS_SOURCE_BRANCH"]
         del os.environ["TRILINOS_SOURCE_REPO"]
         del os.environ["TRILINOS_SOURCE_SHA"]
         del os.environ["TRILINOS_TARGET_BRANCH"]
@@ -78,11 +76,6 @@ class TrilinosJenkinsEnvTest(TestCase):
         del os.environ["PULLREQUEST_CDASH_TRACK"]
         del os.environ["FORCE_CLEAN"]
 
-
-
-    def test_trilinos_source_branch(self):
-        value = self._envvar_helper.trilinos_source_branch
-        self.assertEqual(value, "trilinos_source_branch_value")
 
 
     def test_trilinos_source_repo(self):

@@ -70,8 +70,6 @@
 #include "Ioss_VariableType.h"                       // for VariableType
 #include "ProcessSetsOrBlocks.hpp"                   // for process_edge_blocks
 #include "StkIoUtils.hpp"                            // for IossBlockMembership
-#include "Teuchos_RCP.hpp"                           // for RCP::operator->
-#include "Teuchos_RCPStdSharedPtrConversions.hpp"
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose
 #include "stk_io/Heartbeat.hpp"                      // for Heartbeat, Heart...
 #include "stk_io/MeshField.hpp"                      // for MeshField, MeshF...
@@ -231,13 +229,6 @@ bool StkMeshIoBroker::get_filter_empty_input_entity_blocks(size_t input_file_ind
   return !retainEmptyBlocks;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
- STK_DEPRECATED_MSG("This function has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.")size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region)
-{
-    return add_mesh_database(Teuchos::get_shared_ptr(ioss_input_region));
-}
-#endif
-
 size_t StkMeshIoBroker::add_mesh_database(std::shared_ptr<Ioss::Region> ioss_input_region)
 {
     auto input_file = std::make_shared<InputFile>(ioss_input_region);
@@ -349,17 +340,6 @@ size_t StkMeshIoBroker::add_mesh_database(const std::string &filename,
     copy_property_manager(properties);
     return add_mesh_database(filename, type,purpose);
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-STK_DEPRECATED_MSG("This function has been renamed get_input_ioss_region() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region() const
-{
-    if (is_index_valid(m_inputFiles, m_activeMeshIndex)) {
-        return Teuchos::rcp(m_inputFiles[m_activeMeshIndex]->get_input_ioss_region());
-    } else {
-        return Teuchos::RCP<Ioss::Region>();
-    }
-}
-#endif
 
 std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_input_ioss_region() const
 {

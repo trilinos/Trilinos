@@ -71,7 +71,7 @@ namespace Iotm {
 
       void get_newline() { read_next_token(); }
 
-      bool has_token() const { return m_token != ""; }
+      bool has_token() const { return !m_token.empty(); }
       bool has_newline() const { return m_token == "\n"; }
       bool has_number() const { return has_token() && m_isNumber; }
       bool has_string() const { return has_token() && !has_number() && !has_newline(); }

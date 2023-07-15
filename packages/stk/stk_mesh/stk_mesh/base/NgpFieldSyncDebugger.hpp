@@ -58,7 +58,7 @@ class EmptyNgpFieldSyncDebugger
 public:
   using StkFieldSyncDebuggerType = EmptyStkFieldSyncDebugger;
 
-  KOKKOS_DEFAULTED_FUNCTION EmptyNgpFieldSyncDebugger(StkFieldSyncDebuggerType *) {}
+  KOKKOS_FUNCTION EmptyNgpFieldSyncDebugger(StkFieldSyncDebuggerType *) {}
   KOKKOS_DEFAULTED_FUNCTION ~EmptyNgpFieldSyncDebugger() = default;
 
   KOKKOS_DEFAULTED_FUNCTION EmptyNgpFieldSyncDebugger(const EmptyNgpFieldSyncDebugger &) = default;

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -274,23 +274,23 @@ namespace Iogs {
       }
       else if (field.get_name() == "cell_node_ids") {
         if (field.get_type() == Ioss::Field::INT64) {
-          int64_t *idata = static_cast<int64_t *>(data);
+          auto *idata = static_cast<int64_t *>(data);
           sb->get_cell_node_ids(idata, true);
         }
         else {
           assert(field.get_type() == Ioss::Field::INT32);
-          int *idata = static_cast<int *>(data);
+          auto *idata = static_cast<int *>(data);
           sb->get_cell_node_ids(idata, true);
         }
       }
       else if (field.get_name() == "cell_ids") {
         if (field.get_type() == Ioss::Field::INT64) {
-          int64_t *idata = static_cast<int64_t *>(data);
+          auto *idata = static_cast<int64_t *>(data);
           sb->get_cell_ids(idata, true);
         }
         else {
           assert(field.get_type() == Ioss::Field::INT32);
-          int *idata = static_cast<int *>(data);
+          auto *idata = static_cast<int *>(data);
           sb->get_cell_ids(idata, true);
         }
       }
@@ -331,13 +331,13 @@ namespace Iogs {
         std::vector<int64_t> elem_side;
         m_generatedMesh->sideset_elem_sides(id, elem_side);
         if (field.is_type(Ioss::Field::INTEGER)) {
-          int *ids = static_cast<int *>(data);
+          auto *ids = static_cast<int *>(data);
           for (size_t i = 0; i < num_to_get; i++) {
             ids[i] = 10 * elem_side[2 * i + 0] + elem_side[2 * i + 1] + 1;
           }
         }
         else {
-          int64_t *ids = static_cast<int64_t *>(data);
+          auto *ids = static_cast<int64_t *>(data);
           for (size_t i = 0; i < num_to_get; i++) {
             ids[i] = 10 * elem_side[2 * i + 0] + elem_side[2 * i + 1] + 1;
           }
@@ -357,14 +357,14 @@ namespace Iogs {
         }
 
         if (field.is_type(Ioss::Field::INTEGER)) {
-          int *element_side = static_cast<int *>(data);
+          auto *element_side = static_cast<int *>(data);
           for (size_t i = 0; i < num_to_get; i++) {
             element_side[2 * i + 0] = elem_side[2 * i + 0];
             element_side[2 * i + 1] = elem_side[2 * i + 1] + 1;
           }
         }
         else {
-          int64_t *element_side = static_cast<int64_t *>(data);
+          auto *element_side = static_cast<int64_t *>(data);
           for (size_t i = 0; i < num_to_get; i++) {
             element_side[2 * i + 0] = elem_side[2 * i + 0];
             element_side[2 * i + 1] = elem_side[2 * i + 1] + 1;
@@ -432,7 +432,7 @@ namespace Iogs {
           }
         }
         else {
-          int64_t *entity_proc = static_cast<int64_t *>(data);
+          auto *entity_proc = static_cast<int64_t *>(data);
 
           size_t j = 0;
           for (size_t i = 0; i < entity_count; i++) {
@@ -596,8 +596,8 @@ namespace Iogs {
     size_t           var_count    = m_generatedMesh->get_variable_count(type);
     for (size_t i = 0; i < var_count; i++) {
       std::string var_name = entity->type_string() + "_" + std::to_string(i + 1);
-      entity->field_add(
-          Ioss::Field(var_name, Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT, entity_count));
+      entity->field_add(Ioss::Field(std::move(var_name), Ioss::Field::REAL, "scalar",
+                                    Ioss::Field::TRANSIENT, entity_count));
     }
   }
 } // namespace Iogs

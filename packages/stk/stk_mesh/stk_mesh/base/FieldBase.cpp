@@ -371,26 +371,6 @@ unsigned FieldBase::length(const stk::mesh::Part& part) const
   return restriction.num_scalars_per_entity();
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2023
-STK_DEPRECATED unsigned FieldBase::max_size( EntityRank ent_rank) const
-{
-  unsigned max = 0 ; 
-
-  if (entity_rank() == ent_rank)
-  {   
-      const FieldRestrictionVector & rMap = restrictions();
-      const FieldRestrictionVector::const_iterator ie = rMap.end() ;
-            FieldRestrictionVector::const_iterator i = rMap.begin();
-
-      for ( ; i != ie ; ++i ) { 
-          const unsigned len = i->num_scalars_per_entity();
-          if ( max < len ) { max = len ; } 
-      }   
-  }   
-  return max ;
-}
-#endif
-
 unsigned FieldBase::max_size() const
 {
   FieldRestriction::size_type max = 0 ; 

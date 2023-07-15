@@ -52,7 +52,8 @@
 #include "Intrepid2_DeviceAssert.hpp"
 #include "Intrepid2_ViewIterator.hpp"
 
-#include "Kokkos_Vector.hpp"
+#include <Kokkos_Core.hpp>
+
 #include <vector>
 
 namespace Intrepid2

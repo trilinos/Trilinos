@@ -27,15 +27,15 @@ public:
      {}
   void get_node_coordinates(double * node_coords, const int spatial_dim, const std::array<size_t, 3> & ijk) const
   {
-    const Vector3d & min = m_bbox.get_min();
-    const Vector3d & max = m_bbox.get_max();
+    const stk::math::Vector3d & min = m_bbox.get_min();
+    const stk::math::Vector3d & max = m_bbox.get_max();
     for (int i=0; i < spatial_dim; ++i)
       node_coords[i] = min[i] + (max[i]-min[i])*ijk[i]/m_N[i];
   }
   void get_triangle_lattice_node_coordinates(double * node_coords, const bool flattenBoundaries, const std::array<size_t, 2> & ij) const
   {
-    const Vector3d & min = m_bbox.get_min();
-    const Vector3d & max = m_bbox.get_max();
+    const stk::math::Vector3d & min = m_bbox.get_min();
+    const stk::math::Vector3d & max = m_bbox.get_max();
     const double offset = ij[1]%2==0 ? 0.0 : -0.5;
     node_coords[0] = min[0] + (max[0]-min[0])/m_N[0] * (ij[0]+offset);
     if (flattenBoundaries)
@@ -44,8 +44,8 @@ public:
   }
   void get_BCC_node_coordinates(double * node_coords, const int spatial_dim, const bool flattenBoundaries, const std::array<size_t, 3> & ijk, const std::array<int, 3> & dijk) const
   {
-    const Vector3d & min = m_bbox.get_min();
-    const Vector3d & max = m_bbox.get_max();
+    const stk::math::Vector3d & min = m_bbox.get_min();
+    const stk::math::Vector3d & max = m_bbox.get_max();
     for (int i=0; i < spatial_dim; ++i)
     {
       node_coords[i] = min[i] + (max[i]-min[i])*(0.5+ijk[i]+dijk[i])/m_N[i];

@@ -123,7 +123,7 @@ namespace Ioss {
 
     // Create the variable.  Note that the 'true' argument means Ioss will delete
     // the pointer.
-    auto var_type = new NamedSuffixVariableType(low_name, count, true);
+    auto *var_type = new NamedSuffixVariableType(low_name, count, true);
 
     for (size_t i = 0; i < count; i++) {
       var_type->add_suffix(i + 1, suffices[i]);
@@ -284,7 +284,7 @@ namespace Ioss {
     // and see if the basename is a valid variable type and the count is a
     // valid integer.
     size_t len      = type.length() + 1;
-    auto   typecopy = new char[len];
+    auto  *typecopy = new char[len];
     Utils::copy_string(typecopy, typestr, len);
 
     char *base = std::strtok(typecopy, "[]");

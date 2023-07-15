@@ -144,9 +144,6 @@ public:
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
    */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2023
-STK_DEPRECATED unsigned max_size( EntityRank ent_rank) const;
-#endif
   unsigned max_size() const;
 
   //----------------------------------------

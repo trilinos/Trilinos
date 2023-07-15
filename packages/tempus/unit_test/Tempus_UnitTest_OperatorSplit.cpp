@@ -496,4 +496,4 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_ModifierX)
   TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-14);
 }
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

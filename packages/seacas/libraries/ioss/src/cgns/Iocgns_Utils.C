@@ -12,6 +12,7 @@
 #include <Ioss_Hex20.h>
 #include <Ioss_Hex27.h>
 #include <Ioss_Hex8.h>
+#include <Ioss_IOFactory.h>
 #include <Ioss_Node.h>
 #include <Ioss_Pyramid13.h>
 #include <Ioss_Pyramid14.h>
@@ -34,6 +35,7 @@
 #include <Ioss_Wedge18.h>
 #include <Ioss_Wedge6.h>
 
+#include <fmt/chrono.h>
 #include <fmt/color.h>
 #include <fmt/ostream.h>
 #include <numeric>
@@ -54,9 +56,11 @@
 #include <cgns/Iocgns_Defines.h>
 
 #define CGERR(funcall)                                                                             \
-  if ((funcall) != CG_OK) {                                                                        \
-    Iocgns::Utils::cgns_error(file_ptr, __FILE__, __func__, __LINE__, -1);                         \
-  }
+  do {                                                                                             \
+    if ((funcall) != CG_OK) {                                                                      \
+      Iocgns::Utils::cgns_error(file_ptr, __FILE__, __func__, __LINE__, -1);                       \
+    }                                                                                              \
+  } while (0)
 
 namespace {
 #if defined(__IOSS_WINDOWS__)
@@ -317,9 +321,9 @@ namespace {
         }
       }
       else {
-        offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[2*i];
+        offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[2 * i];
       }
-      const auto &nb = block->get_node_block();
+      const auto    &nb          = block->get_node_block();
       Ioss::NameList node_fields = nb.field_describe(Ioss::Field::TRANSIENT);
       if (!node_fields.empty()) {
         for (const auto &field_name : node_fields) {
@@ -332,7 +336,7 @@ namespace {
         }
       }
       else {
-        offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[2*i+1];
+        offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[2 * i + 1];
       }
     }
 
@@ -345,7 +349,7 @@ namespace {
     offset = 0;
     for (size_t i = 0; i < sblocks.size(); i++) {
       auto &block = sblocks[i];
-      if (block->field_count(Ioss::Field::TRANSIENT) != (size_t)fld_count[2*i]) {
+      if (block->field_count(Ioss::Field::TRANSIENT) != (size_t)fld_count[2 * i]) {
         // Verify that either has 0 or correct number of fields...
         assert(block->field_count(Ioss::Field::TRANSIENT) == 0);
 
@@ -356,17 +360,17 @@ namespace {
           std::string fld_type(&fld_names[offset]);
           offset += CGNS_MAX_NAME_LENGTH + 1;
 
-          block->field_add(
-              Ioss::Field(fld_name, Ioss::Field::DOUBLE, fld_type, Ioss::Field::TRANSIENT, 0));
+          block->field_add(Ioss::Field(std::move(fld_name), Ioss::Field::DOUBLE, fld_type,
+                                       Ioss::Field::TRANSIENT, 0));
         }
       }
       else {
-	offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[2*i];
+        offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[2 * i];
       }
       assert(block->field_count(Ioss::Field::TRANSIENT) == (size_t)fld_count[2 * i]);
 
       auto &nb = block->get_node_block();
-      if (nb.field_count(Ioss::Field::TRANSIENT) != (size_t)fld_count[2*i + 1]) {
+      if (nb.field_count(Ioss::Field::TRANSIENT) != (size_t)fld_count[2 * i + 1]) {
         // Verify that either has 0 or correct number of fields...
         assert(nb.field_count(Ioss::Field::TRANSIENT) == 0);
 
@@ -382,7 +386,7 @@ namespace {
         }
       }
       else {
-	offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[2*i+1];
+        offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[2 * i + 1];
       }
       assert(nb.field_count(Ioss::Field::TRANSIENT) == (size_t)fld_count[2 * i + 1]);
     }
@@ -1056,8 +1060,27 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   CGERR(cg_base_write(file_ptr, "Base", phys_dimension, phys_dimension, &base));
 
   CGERR(cg_goto(file_ptr, base, "end"));
-  std::string version = "IOSS: CGNS Writer version " + std::string{__DATE__} + ", " +
-                        Ioss::Utils::platform_information();
+  std::time_t t    = std::time(nullptr);
+  std::string date = fmt::format("{:%Y/%m/%d}", fmt::localtime(t));
+  std::string time = fmt::format("{:%H:%M:%S}", fmt::localtime(t));
+
+  std::string code_version = region.get_optional_property("code_version", "unknown");
+  std::string code_name    = region.get_optional_property("code_name", "unknown");
+
+  std::string mpi_version = "";
+#if CG_BUILD_PARALLEL
+  {
+    char version[MPI_MAX_LIBRARY_VERSION_STRING];
+    int  length = 0;
+    MPI_Get_library_version(version, &length);
+    mpi_version = fmt::format("MPI Version: {}", version);
+  }
+#endif
+
+  std::string config  = Iocgns::Utils::show_config();
+  auto        version = fmt::format(
+      "Written by `{}-{}` on {} at {}\n{}{}\nIOSS: CGNS Writer version {}\nPlatform: {}", code_name,
+      code_version, date, time, config, mpi_version, __DATE__, Ioss::Utils::platform_information());
 
 #if CG_BUILD_PARALLEL
   if (is_parallel_io) {
@@ -1076,7 +1099,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   CGERR(cg_dataclass_write(CGNS_ENUMV(Dimensional)));
   CGERR(cg_units_write(CGNS_ENUMV(MassUnitsUserDefined), CGNS_ENUMV(LengthUnitsUserDefined),
                        CGNS_ENUMV(TimeUnitsUserDefined), CGNS_ENUMV(TemperatureUnitsUserDefined),
-                       CGNS_ENUMV(AngleUnitsUserDefined)))
+                       CGNS_ENUMV(AngleUnitsUserDefined)));
 
   // Output the sidesets as Family_t nodes
   region.get_database()->progress("\tOutput Sidesets");
@@ -2902,7 +2925,7 @@ int Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones, d
     }
 
     // Revert `zones` back to original version (with no zones split)
-    zones       = original_zones;
+    zones       = std::move(original_zones);
     new_zone_id = pre_split(zones, avg_work, new_load_balance, proc_rank, proc_count, verbose);
   }
   return new_zone_id;

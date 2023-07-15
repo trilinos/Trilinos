@@ -269,7 +269,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
                 {
                     isElement2InSelector = remoteSkinSelector[graphEdge.elem2()];
                     if(!isElement2InSelector) continue;
-                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge.elem2()], scratchOrdinals1);
+                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge.elem2()].elementPartOrdinals, scratchOrdinals1);
                 }
                 else
                 {

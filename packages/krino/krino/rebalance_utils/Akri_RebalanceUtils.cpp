@@ -172,7 +172,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 {
   const auto & meta = bulk_data.mesh_meta_data();
 
-  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
 
   auto weights_base = meta.get_field(stk::topology::ELEMENT_RANK, element_weights_field_name);
   STK_ThrowRequireMsg(weights_base,
@@ -199,7 +199,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
     fix_node_owners_to_assure_active_owned_element_for_node(bulk_data, AuxMetaData::get(meta).active_part());
   STK_ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
-  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
 
   if(cdmesh)
   {
@@ -220,7 +220,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 {
   const auto & meta = bulk_data.mesh_meta_data();
 
-  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
 
   std::vector<stk::mesh::Field<double> *> weights_fields;
   for (auto && field_name : element_weights_field_names)
@@ -252,7 +252,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
     fix_node_owners_to_assure_active_owned_element_for_node(bulk_data, AuxMetaData::get(meta).active_part());
   STK_ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
-  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data, refinement);
+  if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
 
   if (cdmesh)
   {

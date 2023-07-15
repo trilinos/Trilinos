@@ -890,4 +890,4 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Cast_Composite)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

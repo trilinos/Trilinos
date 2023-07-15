@@ -316,6 +316,7 @@ lib stk_util_util
     /mpi//mpi
     /tpl/trilinos//kokkoscore
     /tpl/boost//boost_header_only_libs
+    /tpl/lapack//lapack_interface
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -359,5 +360,5 @@ alias stk_util_ngp
   : # No sources defined for header-only libraries.
   : # No build requirements
   : # No default build
-  : <include>$(stk_util_ngp-root-inc)
+  : <include>$(stk_util-root)/stk_util/ngp
   ;

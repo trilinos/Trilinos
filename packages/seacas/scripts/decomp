@@ -300,8 +300,8 @@ do_viz=""
 curdir=$(pwd)
 use64=""
 
-ACCESSBIN="$(dirname \"$0\")
-ACCESSBIN="$(( cd \"${ACCESSBIN}\" && pwd ))"
+ACCESSBIN=$(dirname "$0")
+ACCESSBIN=$(cd "${ACCESSBIN}" && pwd)
 NEM_SLICE=${ACCESSBIN}/nem_slice
 NEM_SPREAD=${ACCESSBIN}/nem_spread
 NOOP=

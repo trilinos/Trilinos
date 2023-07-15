@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -61,7 +61,7 @@ C   --   VAREL - IN - the selected element variables for the time step
         end if
       end if
 
-      do 90 i=1, lisev(0)
+      do i=1, lisev(0)
         irow = ((i-1)/5)+1
         icol = i - (irow-1)*5
         IF (NOUT .GT. 0) THEN
@@ -69,32 +69,34 @@ C   --   VAREL - IN - the selected element variables for the time step
         ELSE
            WRITE (*, 10010) irow, icol, NAMEEV(LISEV(I))
         END IF
- 90   continue
+      end do
 
-      DO 130 IELB = 1, NELBLK
+      DO IELB = 1, NELBLK
          IF (NLISEL(IELB) .GT. 0) THEN
 
             IX0 = LENE(IELB-1)
-            DO 120 IX = 1, NLISEL(IELB)
+            IXB = LENE(IELB) - LENE(IELB-1) 
+            DO IX = 1, IXB
                IEL = LISEL(IX0+IX)
+               IF (iel .eq. 0) cycle
                if (domap) then
                  id = map(iel)
                else
                  id = iel
                end if
 
-               DO 110 IVAR = 1, LISEV(0), 5
+               DO IVAR = 1, LISEV(0), 5
                   MINVAL = IVAR
                   MAXVAL = MIN (LISEV(0), IVAR+5-1)
                   NVAL = MAXVAL - MINVAL + 1
-                  DO 100 I = MINVAL, MAXVAL
+                  DO I = MINVAL, MAXVAL
                      IF (ISEVOK (LISEV(I),IELB) .NE. 0) THEN
                           WRITE (CVAL(I-MINVAL+1), FMT20, IOSTAT=IDUM)
      &                     VAREL(IEL, LISEV(I))
                      ELSE
                         CVAL(I-MINVAL+1) = '-----------'
                      END IF
-  100             CONTINUE
+                  end do
 
                   IF (IVAR .LE. 1) THEN
                      IF (NOUT .GT. 0) THEN
@@ -113,10 +115,10 @@ C   --   VAREL - IN - the selected element variables for the time step
      &                     (CVAL(I), I=1,NVAL)
                      END IF
                   END IF
-  110          CONTINUE
-  120       CONTINUE
+               end do
+            end do
          END IF
-  130 CONTINUE
+      end do
 
       RETURN
 
@@ -125,5 +127,5 @@ C   --   VAREL - IN - the selected element variables for the time step
 10010  FORMAT (1X, 'Row ',I4,', Column ',I1,' is variable ',A)
  20   FORMAT('(1PE',I2.2,'.',I2.2,')')
  30   FORMAT('(1X, ''Element'', I12, 5(2X,A',I2,'))')
- 40   FORMAT('(18X, 5 (2X, A',I2,'))')
+ 40   FORMAT('(20X, 5 (2X, A',I2,'))')
       END

@@ -48,4 +48,4 @@ TEUCHOS_UNIT_TEST(ERK_3Stage3rdOrderHeun, AppAction)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

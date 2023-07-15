@@ -15,8 +15,6 @@
 #include "MockMeshUtils.hpp"
 #include "StkSendAdapter.hpp"
 #include "StkRecvAdapter.hpp"
-#include "EmptySendAdapter.hpp"
-#include "EmptyRecvAdapter.hpp"
 #include "SendInterpolate.hpp"
 #include "RecvInterpolate.hpp"
 #include <iostream>
@@ -25,9 +23,9 @@
 class MockAria
 {
   using SendTransfer = stk::transfer::ReducedDependencyGeometricTransfer<
-                                 mock::SendInterpolate<mock::StkSendAdapter, mock::EmptyRecvAdapter>>;
+                                 mock::SendInterpolate<mock::StkSendAdapter, mock::StkRecvAdapter>>;
   using RecvTransfer = stk::transfer::ReducedDependencyGeometricTransfer<
-                                 mock::RecvInterpolate<mock::EmptySendAdapter, mock::StkRecvAdapter>>;
+                                 mock::RecvInterpolate<mock::StkSendAdapter, mock::StkRecvAdapter>>;
 public:
   MockAria()
   : m_appName("Mock-Aria"),
@@ -232,8 +230,8 @@ public:
       m_mesh->set_stk_field_values(m_sendFieldName, 9.9);
       std::shared_ptr<mock::StkSendAdapter> sendAdapter =
          std::make_shared<mock::StkSendAdapter>(parentComm, *m_mesh, m_sendFieldName);
-      std::shared_ptr<mock::EmptyRecvAdapter> recvAdapter;
-      m_sendTransfer.reset(new SendTransfer(sendAdapter, recvAdapter, "MockAriaSendTransfer", parentComm));
+      std::shared_ptr<mock::StkRecvAdapter> nullRecvAdapter;
+      m_sendTransfer.reset(new SendTransfer(sendAdapter, nullRecvAdapter, "MockAriaSendTransfer", parentComm));
 
       m_sendTransfer->coarse_search();
       m_sendTransfer->communication();
@@ -241,13 +239,13 @@ public:
     }
 
     if (m_doingRecvTransfer) {
-      std::shared_ptr<mock::EmptySendAdapter> sendAdapter;
+      std::shared_ptr<mock::StkSendAdapter> nullSendAdapter;
       std::shared_ptr<mock::StkRecvAdapter> recvAdapter1 =
          std::make_shared<mock::StkRecvAdapter>(parentComm, *m_mesh, m_recvFieldName1);
       std::shared_ptr<mock::StkRecvAdapter> recvAdapter2 =
          std::make_shared<mock::StkRecvAdapter>(parentComm, *m_mesh, m_recvFieldName2);
-      m_recvTransfer1.reset(new RecvTransfer(sendAdapter, recvAdapter1, "MockAriaRecvTransfer1", parentComm));
-      m_recvTransfer2.reset(new RecvTransfer(sendAdapter, recvAdapter2, "MockAriaRecvTransfer2", parentComm));
+      m_recvTransfer1.reset(new RecvTransfer(nullSendAdapter, recvAdapter1, "MockAriaRecvTransfer1", parentComm));
+      m_recvTransfer2.reset(new RecvTransfer(nullSendAdapter, recvAdapter2, "MockAriaRecvTransfer2", parentComm));
 
       m_recvTransfer1->coarse_search();
       m_recvTransfer1->communication();
