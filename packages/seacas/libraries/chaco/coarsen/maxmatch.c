@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,17 +14,15 @@
 int maxmatch(struct vtx_data **graph,       /* array of vtx data for graph */
              int               nvtxs,       /* number of vertices in graph */
              int               nedges,      /* number of edges in graph */
-             int *             mflag,       /* flag indicating vtx selected or not */
+             int              *mflag,       /* flag indicating vtx selected or not */
              int               using_ewgts, /* are edge weights being used? */
              int               igeom,       /* geometric dimensionality */
-             float **          coords       /* coordinates for each vertex */
+             float           **coords       /* coordinates for each vertex */
 )
 {
   extern int DEBUG_COARSEN; /* debug output for coarsening? */
   extern int MATCH_TYPE;    /* which matching routine to use */
   int        nmerged = 0;   /* number of matching edges found */
-  int        maxmatch1(), maxmatch2(), maxmatch3(), maxmatch4();
-  int        maxmatch5(), maxmatch9();
 
   if (MATCH_TYPE == 1 || (MATCH_TYPE == 5 && coords == NULL)) {
     /* Dumb, fast routine. */

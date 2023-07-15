@@ -1,67 +1,61 @@
-#ifndef COMPLEX_UTILS_H
-#define COMPLEX_UTILS_H
+#ifndef STK_MIDDLE_MESH_COMPLEX_UTILS_H
+#define STK_MIDDLE_MESH_COMPLEX_UTILS_H
 
 #include <complex>
 
-namespace stk {
-namespace middle_mesh {
-namespace utils {
-namespace impl {
-
-// the standard library does not support mixed integer-std::complex
-// arithmetic, add that support here
-
-template <typename T>
-std::complex<T> operator+(const std::complex<T>& v1, const int& v2)
+namespace std
 {
-  return std::complex<T>(v1.real() + v2, v1.imag());
+//-----------------------------------------------------------------------------
+// The standard library doesn't have overloads for std::complex and integer operations
+
+template <typename T, typename T2, std::enable_if_t<std::is_integral_v<T2>, bool> = true>
+std::complex<T> operator+(const std::complex<T>& a, T2 b)
+{
+  return {a.real() + b, a.imag()};
 }
 
-template <typename T>
-std::complex<T> operator+(const int& v1, const std::complex<T>& v2)
+template <typename T, typename T2, std::enable_if_t<std::is_integral_v<T2>, bool> = true>
+std::complex<T> operator+(T2 b, const std::complex<T>& a)
 {
-  return v2 + v1;
+  return {a.real() + b, a.imag()};
 }
 
-template <typename T>
-std::complex<T> operator-(const std::complex<T>& v1, const int& v2)
+template <typename T, typename T2, std::enable_if_t<std::is_integral_v<T2>, bool> = true>
+std::complex<T> operator-(const std::complex<T>& a, T2 b)
 {
-  return std::complex<T>(v1.real() - v2, v1.imag());
+  return {a.real() - b, a.imag()};
 }
 
-template <typename T>
-std::complex<T> operator-(const int& v1, const std::complex<T>& v2)
+template <typename T, typename T2, std::enable_if_t<std::is_integral_v<T2>, bool> = true>
+std::complex<T> operator-(T2 b, const std::complex<T>& a)
 {
-  return std::complex<T>(v1 - v2.real(), -v2.imag());
+  return {b - a.real(), -a.imag()};
 }
 
-template <typename T>
-std::complex<T> operator*(const std::complex<T>& v1, const int& v2)
+template <typename T, typename T2, std::enable_if_t<std::is_integral_v<T2>, bool> = true>
+std::complex<T> operator*(const std::complex<T>& a, T2 b)
 {
-  return std::complex<T>(v1.real() * v2, v1.imag() * v2);
+  return {a.real() * b, a.imag() * b};
 }
 
-template <typename T>
-std::complex<T> operator*(const int& v1, const std::complex<T>& v2)
+template <typename T, typename T2, std::enable_if_t<std::is_integral_v<T2>, bool> = true>
+std::complex<T> operator*(T2 b, const std::complex<T>& a)
 {
-  return v2 * v1;
+  return {a.real() * b, a.imag() * b};
 }
 
-template <typename T>
-std::complex<T> operator/(const std::complex<T>& v1, const int& v2)
+template <typename T, typename T2, std::enable_if_t<std::is_integral_v<T2>, bool> = true>
+std::complex<T> operator/(const std::complex<T>& a, T2 b)
 {
-  return std::complex<T>(v1.real() / v2, v1.imag() / v2);
+  return {a.real() / b, a.imag() / b};
 }
 
-template <typename T>
-std::complex<T> operator/(const int& v1, const std::complex<T>& v2)
+template <typename T, typename T2, std::enable_if_t<std::is_integral_v<T2>, bool> = true>
+std::complex<T> operator/(T2 b, const std::complex<T>& a)
 {
-  return std::complex<T>(v1, 0) / v2;
+  return std::complex<T>(b, 0) / a;
 }
 
-} // namespace impl
 
-} // namespace utils
-} // namespace middle_mesh
-} // namespace stk
+}
 #endif

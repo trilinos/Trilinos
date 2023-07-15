@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -436,8 +436,8 @@ namespace {
 
     // Now do the same for element blocks...
     {
-      const Ioss::ElementBlockContainer          &ebs = region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator I   = ebs.begin();
+      const auto &ebs = region.get_element_blocks();
+      auto        I   = ebs.cbegin();
 
       while (I != ebs.end()) {
         const std::string &name = (*I)->name();
@@ -462,8 +462,8 @@ namespace {
 
     // Node Sets
     {
-      const Ioss::NodeSetContainer          &nss = region.get_nodesets();
-      Ioss::NodeSetContainer::const_iterator I   = nss.begin();
+      const auto &nss = region.get_nodesets();
+      auto        I   = nss.cbegin();
       while (I != nss.end()) {
         const std::string &name = (*I)->name();
         if (globals.debug) {
@@ -485,8 +485,8 @@ namespace {
 
     // Comm Sets
     {
-      const Ioss::CommSetContainer          &css = region.get_commsets();
-      Ioss::CommSetContainer::const_iterator I   = css.begin();
+      const auto &css = region.get_commsets();
+      auto        I   = css.cbegin();
       while (I != css.end()) {
         const std::string &name = (*I)->name();
         if (globals.debug) {
@@ -509,8 +509,8 @@ namespace {
 
     // Side Sets
     if (!globals.do_normals) {
-      const Ioss::SideSetContainer          &fss = region.get_sidesets();
-      Ioss::SideSetContainer::const_iterator I   = fss.begin();
+      const auto &fss = region.get_sidesets();
+      auto        I   = fss.cbegin();
       while (I != fss.end()) {
         const std::string &name = (*I)->name();
         if (globals.debug) {
@@ -524,8 +524,8 @@ namespace {
           transfer_field_data(*I, ofs, Ioss::Field::MESH);
           transfer_field_data(*I, ofs, Ioss::Field::ATTRIBUTE);
 
-          const Ioss::SideBlockContainer          &fbs = (*I)->get_side_blocks();
-          Ioss::SideBlockContainer::const_iterator J   = fbs.begin();
+          const auto &fbs = (*I)->get_side_blocks();
+          auto        J   = fbs.cbegin();
           while (J != fbs.end()) {
 
             // Find matching output sideblock
@@ -600,8 +600,8 @@ namespace {
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::NodeBlockContainer          &nbs = region.get_node_blocks();
-    Ioss::NodeBlockContainer::const_iterator i   = nbs.begin();
+    const auto &nbs = region.get_node_blocks();
+    auto        i   = nbs.cbegin();
     while (i != nbs.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -629,9 +629,9 @@ namespace {
 
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::ElementBlockContainer          &ebs            = region.get_element_blocks();
-    Ioss::ElementBlockContainer::const_iterator i              = ebs.begin();
-    int                                         total_elements = 0;
+    const auto &ebs            = region.get_element_blocks();
+    auto        i              = ebs.cbegin();
+    int         total_elements = 0;
     while (i != ebs.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -661,9 +661,9 @@ namespace {
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::SideSetContainer          &fss         = region.get_sidesets();
-    Ioss::SideSetContainer::const_iterator i           = fss.begin();
-    int                                    total_sides = 0;
+    const auto &fss         = region.get_sidesets();
+    auto        i           = fss.cbegin();
+    int         total_sides = 0;
     while (i != fss.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -671,8 +671,8 @@ namespace {
       }
       auto surf = new Ioss::SideSet(output_region.get_database(), name);
 
-      const Ioss::SideBlockContainer          &fbs = (*i)->get_side_blocks();
-      Ioss::SideBlockContainer::const_iterator j   = fbs.begin();
+      const auto &fbs = (*i)->get_side_blocks();
+      auto        j   = fbs.cbegin();
       while (j != fbs.end()) {
         const std::string &fbname = (*j)->name();
         if (debug) {
@@ -708,9 +708,9 @@ namespace {
 
   void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::NodeSetContainer          &nss         = region.get_nodesets();
-    Ioss::NodeSetContainer::const_iterator i           = nss.begin();
-    int                                    total_nodes = 0;
+    const auto &nss         = region.get_nodesets();
+    auto        i           = nss.cbegin();
+    int         total_nodes = 0;
     while (i != nss.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -736,8 +736,8 @@ namespace {
 
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::CommSetContainer          &css = region.get_commsets();
-    Ioss::CommSetContainer::const_iterator i   = css.begin();
+    const auto &css = region.get_commsets();
+    auto        i   = css.cbegin();
     while (i != css.end()) {
       const std::string &name = (*i)->name();
       if (debug) {

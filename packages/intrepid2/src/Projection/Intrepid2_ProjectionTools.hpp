@@ -635,21 +635,22 @@ public:
     ordinal_type srcBasisCardinality = srcBasis->getCardinality();
     ordinal_type fieldDimension = (srcBasis->getFunctionSpace() == Intrepid2::FUNCTION_SPACE_HCURL || srcBasis->getFunctionSpace() == Intrepid2::FUNCTION_SPACE_HDIV) ? dim : 1;
 
-    Kokkos::DynRankView<typename srcBasisType::scalarType, DeviceType> evaluationPoints("evaluationPoints", numCells, numPoints, dim);
+    typename Kokkos::DynRankView<typename srcBasisType::PointValueType, DeviceType> evaluationPoints("evaluationPoints", numCells, numPoints, dim);
     getL2EvaluationPoints(evaluationPoints,
         cellOrientations,
         dstBasis,
         &projStruct);
 
-    srcViewType srcAtEvalPoints, refBasisAtEvalPoints, basisAtEvalPoints;
+    using outViewType = Kokkos::DynRankView<typename srcBasisType::OutputValueType, DeviceType>;
+    outViewType srcAtEvalPoints, refBasisAtEvalPoints, basisAtEvalPoints;
     if(fieldDimension == dim) {
-      srcAtEvalPoints = srcViewType("srcAtEvalPoints", numCells, numPoints, dim);
-      refBasisAtEvalPoints = srcViewType("refBasisAtEvalPoints", numCells, srcBasisCardinality, numPoints, dim);
-      basisAtEvalPoints = srcViewType("basisAtEvalPoints", numCells, srcBasisCardinality, numPoints, dim);
+      srcAtEvalPoints = outViewType("srcAtEvalPoints", numCells, numPoints, dim);
+      refBasisAtEvalPoints = outViewType("refBasisAtEvalPoints", numCells, srcBasisCardinality, numPoints, dim);
+      basisAtEvalPoints = outViewType("basisAtEvalPoints", numCells, srcBasisCardinality, numPoints, dim);
     } else {
-      srcAtEvalPoints = srcViewType("srcAtEvalPoints", numCells, numPoints);
-      refBasisAtEvalPoints = srcViewType("refBasisAtEvalPoints", numCells, srcBasisCardinality, numPoints);
-      basisAtEvalPoints = srcViewType("basisAtEvalPoints", numCells, srcBasisCardinality, numPoints);
+      srcAtEvalPoints = outViewType("srcAtEvalPoints", numCells, numPoints);
+      refBasisAtEvalPoints = outViewType("refBasisAtEvalPoints", numCells, srcBasisCardinality, numPoints);
+      basisAtEvalPoints = outViewType("basisAtEvalPoints", numCells, srcBasisCardinality, numPoints);
     }
     
     for(ordinal_type icell  = 0; icell < numCells; ++icell)
@@ -918,8 +919,8 @@ public:
           value_type work[2];
           lapack.GELS('N', 
                       numRows, numRows, numCells,
-                      nullptr, numRows,
-                      nullptr, numRows,
+                      nullptr, std::max(1,numRows),
+                      nullptr, std::max(1,numRows),
                       &work[0], lwork,
                       &info);
           lwork = work[0];
@@ -942,8 +943,8 @@ public:
           ordinal_type info(0);
           lapack.GELS('N', 
                       numRows, numRows, numCells,
-                      A.data(), numRows,
-                      C.data(), numRows,
+                      A.data(), std::max(1,numRows),
+                      C.data(), std::max(1,numRows),
                       work.data(), lwork,
                       &info);
           INTREPID2_TEST_FOR_EXCEPTION
@@ -968,8 +969,8 @@ public:
           value_type work[2];
           lapack.GELS('N', 
                       numRows, numRows, 1,
-                      nullptr, numRows,
-                      nullptr, numRows,
+                      nullptr, std::max(1,numRows),
+                      nullptr, std::max(1,numRows),
                       &work[0], lwork,
                       &info);
           lwork = work[0];
@@ -1006,8 +1007,8 @@ public:
             ordinal_type info(0);
             lapack.GELS('N', 
                         numRows, numRows, 1,
-                        A.data(), numRows,
-                        c.data(), numRows,
+                        A.data(), std::max(1,numRows),
+                        c.data(), std::max(1,numRows),
                         work.data(), lwork,
                         &info);
             INTREPID2_TEST_FOR_EXCEPTION

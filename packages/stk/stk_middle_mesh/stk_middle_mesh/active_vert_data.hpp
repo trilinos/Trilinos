@@ -32,8 +32,12 @@ class ActiveVertData
     // gives number of (unique) vertices
     int get_num_verts() const { return m_allPoints.size(); }
 
+    // gives number of unique verts that are present (but not necessarily owned) on this process
+    int get_num_local_verts() const { return m_localVertsUnique.size(); }
+
     // gives number of elements
     int get_num_elements() const { return m_triVertIndices.extent0(); };
+
 
     // returns the verts of the ith element
     std::array<stk::middle_mesh::utils::Point, 3> get_element_verts(const int tri)
@@ -85,6 +89,8 @@ class ActiveVertData
     }
 
     const std::vector<MeshEntityPtr>& get_local_verts() const { return m_localVertsUnique; }
+
+    std::vector<MeshEntityPtr>& get_local_verts() { return m_localVertsUnique; }
 
     // returns the coordinates of the unique verts when the patch
     // was first created

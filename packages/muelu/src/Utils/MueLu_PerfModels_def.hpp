@@ -73,7 +73,7 @@ namespace MueLu {
     template<class Scalar,class Node>
     double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {      
       // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
-      using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      using impl_scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
       
       using exec_space   = typename Node::execution_space;
       using memory_space = typename Node::memory_space;
@@ -114,7 +114,7 @@ namespace MueLu {
     template<class Scalar,class Node>
     double stream_vector_copy(int KERNEL_REPEATS, int VECTOR_SIZE) {      
       // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
-      using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      using impl_scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
 
       using exec_space   = typename Node::execution_space;
       using memory_space = typename Node::memory_space;

@@ -171,7 +171,7 @@ readComplexData (std::istream& istr,
 /// \tparam isComplex Whether SC is a complex-valued type.
 template<class SC,
          class GO,
-         const bool isComplex = ::Kokkos::Details::ArithTraits<SC>::is_complex>
+         const bool isComplex = ::Kokkos::ArithTraits<SC>::is_complex>
 struct ReadLine {
   /// \brief Take a line from the Matrix Market file or input stream,
   ///   and process the sparse matrix entry in that line.
@@ -240,7 +240,7 @@ struct ReadLine<SC, GO, true> {
             const bool debug = false)
   {
     using ::Teuchos::MatrixMarket::checkCommentLine;
-    typedef typename ::Kokkos::Details::ArithTraits<SC>::mag_type real_type;
+    typedef typename ::Kokkos::ArithTraits<SC>::mag_type real_type;
     using std::endl;
 
     GO rowInd, colInd;

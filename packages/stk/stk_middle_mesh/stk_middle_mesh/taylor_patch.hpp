@@ -53,9 +53,9 @@ class TaylorPatch : public SurfacePatch
     // computes the coefficient matrix used to solve for f and ints derivatives
     void compute_taylor_matrix(const std::vector<Point>& pts, utils::impl::Matrix<double>& a);
 
-    // solves least squares problem for the function values and derivatives
-    // used in the Taylor series
-    void compute_taylor_derivs(const std::vector<Point>& pts);
+    void compute_taylor_derivs_rank_revealing_qr(const std::vector<Point>& pts);
+
+    int compute_number_singular_values(const Matrix<double>& a, double tol);
 
     using IntF = int; // integer to use for factorial
 

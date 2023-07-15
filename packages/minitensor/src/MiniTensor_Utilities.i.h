@@ -133,7 +133,7 @@ typename Sacado::ScalarType<T>::type
 not_a_number()
 {
   using S = typename Sacado::ScalarType<T>::type;
-  return Kokkos::Details::ArithTraits<S>::nan();
+  return Kokkos::ArithTraits<S>::nan();
 }
 
 //
@@ -148,7 +148,7 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon()
 {
   using S = typename Sacado::ScalarType<T>::type;
-  return Kokkos::Details::ArithTraits<S>::epsilon();
+  return Kokkos::ArithTraits<S>::epsilon();
 }
 
 //

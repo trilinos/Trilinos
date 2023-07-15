@@ -230,7 +230,7 @@ namespace Iocgns {
 #endif
       CGCHECKM(cgp_pio_mode(CGP_COLLECTIVE));
       Ioss::DatabaseIO::openDatabase__();
-      int ierr = cgp_open(get_dwname().c_str(), mode, &m_cgnsFilePtr);
+      int ierr = cgp_open(get_dw_name().c_str(), mode, &m_cgnsFilePtr);
 
       if (do_timer) {
         double t_end    = Ioss::Utils::timer();
@@ -317,7 +317,7 @@ namespace Iocgns {
                      duration);
         }
       }
-      closeDW();
+      close_dw();
       m_cgnsFilePtr = -1;
     }
   }

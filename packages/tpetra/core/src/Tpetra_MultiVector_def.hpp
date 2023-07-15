@@ -204,7 +204,7 @@ namespace { // (anonymous)
         // won't hurt anything because by setting zeroOut=false, users
         // already agreed that they don't care about the contents of
         // the MultiVector.
-        const ST nan = Kokkos::Details::ArithTraits<ST>::nan ();
+        const ST nan = Kokkos::ArithTraits<ST>::nan ();
         KokkosBlas::fill (d_view, nan);
       }
     }
@@ -2322,9 +2322,9 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // necessarily be thrown on all processes consistently.  We should
     // instead pass along error state with the inner product.  We
     // could do this by setting an extra slot to
-    // Kokkos::Details::ArithTraits<dot_type>::one() on error.  The
+    // Kokkos::ArithTraits<dot_type>::one() on error.  The
     // final sum should be
-    // Kokkos::Details::ArithTraits<dot_type>::zero() if not error.
+    // Kokkos::ArithTraits<dot_type>::zero() if not error.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       lclNumRows != A.getLocalLength (), std::runtime_error,
       "MultiVectors do not have the same local length.  "
@@ -2438,9 +2438,9 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // keep them for now, because MultiVector's unit tests insist on
     // them.  In the future, we should instead pass along error state
     // with the inner product.  We could do this by setting an extra
-    // slot to Kokkos::Details::ArithTraits<dot_type>::one() on error.
+    // slot to Kokkos::ArithTraits<dot_type>::one() on error.
     // The final sum should be
-    // Kokkos::Details::ArithTraits<dot_type>::zero() if not error.
+    // Kokkos::ArithTraits<dot_type>::zero() if not error.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (lclNumRows != A.getLocalLength (), std::runtime_error,
        "MultiVectors do not have the same local length.  "
@@ -2551,7 +2551,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
+    typedef Kokkos::ArithTraits<impl_scalar_type> ATS;
 
     const size_t lclNumRows = this->getLocalLength ();
     const size_t numVecs = this->getNumVectors ();
@@ -2664,7 +2664,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   randomize ()
   {
     typedef impl_scalar_type IST;
-    typedef Kokkos::Details::ArithTraits<IST> ATS;
+    typedef Kokkos::ArithTraits<IST> ATS;
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
     typedef typename pool_type::generator_type generator_type;
 

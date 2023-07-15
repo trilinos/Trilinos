@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,7 +12,19 @@
 #include <stdio.h>  // for printf, NULL, fprintf, etc
 #include <string.h> // for strcmp, strlen
 
-static int read_intTF(), read_long(), read_double(), read_string();
+static int read_intTF(char *ptr, /* pointer to string to parse */
+                      int  *val  /* value returned */
+);
+
+static int read_double(char   *ptr, /* pointer to string to parse */
+                       double *val  /* value returned */
+);
+static int read_long(char *ptr, /* pointer to string to parse */
+                     long *val  /* value returned */
+);
+static int read_string(char *ptr, /* pointer to string to parse */
+                       char *val  /* value returned */
+);
 
 int    SIMULATOR         = 0;     /* Run simulator? In what mode? */
 int    SIMULATION_ITNS   = 1;     /* # iterations simulator is to imitate. */

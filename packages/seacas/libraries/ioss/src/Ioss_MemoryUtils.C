@@ -140,4 +140,3 @@ size_t Ioss::MemoryUtils::get_hwm_memory_info()
 #endif
   return memory_usage;
 }
-

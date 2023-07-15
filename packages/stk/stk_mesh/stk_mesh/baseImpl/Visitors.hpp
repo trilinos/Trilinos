@@ -197,18 +197,6 @@ struct OnlyVisitOnce {
     std::vector<bool> already_visited;
 };
 
-struct OnlyVisitUnchanged
-{
-    OnlyVisitUnchanged(BulkData & mesh_in) : mesh(mesh_in) {}
-    bool operator()(Entity entity){
-        if (mesh.state(entity) == Unchanged) {
-            return true;
-        }
-        return false;
-    }
-    BulkData & mesh;
-};
-
 struct OnlyVisitLocallyOwnedOnce {
     OnlyVisitLocallyOwnedOnce(const BulkData & mesh_in) : mesh(mesh_in), ovo(mesh_in) {}
     bool operator()(Entity entity)
@@ -216,17 +204,6 @@ struct OnlyVisitLocallyOwnedOnce {
         return ovo(entity) && mesh.bucket(entity).owned();
     }
     const BulkData& mesh;
-    OnlyVisitOnce ovo;
-};
-
-struct OnlyVisitSharedOnce {
-    OnlyVisitSharedOnce(const BulkData & mesh_in) : mesh(mesh_in), ovo(mesh_in) {}
-    bool operator()(Entity entity)
-    {
-        if (ovo(entity) && !mesh.in_shared(mesh.entity_key(entity))) { return true; }
-        return false;
-    }
-    const BulkData & mesh;
     OnlyVisitOnce ovo;
 };
 
@@ -277,7 +254,6 @@ void VisitUpwardClosureGeneral(
         if (mesh.is_valid(entity_of_interest)) {
             EntityRank endRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
             EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
-            EntityVector entities_of_rank_up;
             for (EntityRank rank_up = EntityRank(endRank-1) ; rank_up > entity_of_interest_rank ; --rank_up) {
                 size_t num_entities_of_rank_up = mesh.num_connectivity(entity_of_interest,rank_up);
                 const Entity * entity_up_it = mesh.begin(entity_of_interest,rank_up);
@@ -366,6 +342,34 @@ struct StoreEntity
 };
 
 template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, typename FORWARD_ITERATOR, class DESIRED_ENTITY>
+void VisitUpDownClosureGeneral(
+        const BulkData & mesh,
+        const FORWARD_ITERATOR & start,
+        const FORWARD_ITERATOR & finish,
+        DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this,
+        DESIRED_ENTITY & desired_entity)
+{
+    StoreEntity visitedEntityTracker(mesh);
+    EntityVector entityTmpSpace;
+    VisitUpwardClosure(mesh,start,finish,visitedEntityTracker);
+    visitedEntityTracker.store_visited_entities_in_vec(entityTmpSpace);
+
+    VisitClosureGeneral(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),do_this,desired_entity);
+}
+
+template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE>
+void VisitUpDownClosure(
+        const BulkData & mesh,
+        Entity entity_of_interest,
+        DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this)
+{
+    OnlyVisitOnce ovo(mesh);
+    const Entity * start = &entity_of_interest;
+    const Entity * finish = start+1;
+    VisitUpDownClosureGeneral(mesh,start,finish,do_this,ovo);
+}
+
+template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, typename FORWARD_ITERATOR, class DESIRED_ENTITY>
 void VisitAuraClosureGeneral(
         const BulkData & mesh,
         const FORWARD_ITERATOR & start,
@@ -380,7 +384,6 @@ void VisitAuraClosureGeneral(
 
     VisitUpwardClosure(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),visitedEntityTracker);
     visitedEntityTracker.store_visited_entities_in_vec(entityTmpSpace);
-
     VisitClosureGeneral(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),do_this,desired_entity);
 }
 

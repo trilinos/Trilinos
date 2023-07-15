@@ -673,14 +673,14 @@ public:
   void
   buildCrs (::Kokkos::View<OffsetType*, device_type>& rowOffsets,
             ::Kokkos::View<GO*, device_type>& gblColInds,
-            ::Kokkos::View<typename ::Kokkos::Details::ArithTraits<SC>::val_type*, device_type>& vals)
+            ::Kokkos::View<typename ::Kokkos::ArithTraits<SC>::val_type*, device_type>& vals)
   {
     static_assert (std::is_integral<OffsetType>::value,
                    "OffsetType must be a built-in integer type.");
     using ::Kokkos::create_mirror_view;
     using ::Kokkos::deep_copy;
     using ::Kokkos::View;
-    typedef typename ::Kokkos::Details::ArithTraits<SC>::val_type ISC;
+    typedef typename ::Kokkos::ArithTraits<SC>::val_type ISC;
 
     const std::size_t numEnt = this->getLclNumEntries ();
 

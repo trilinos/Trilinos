@@ -122,7 +122,7 @@ TEST_F(TriangleWithTriplePoint, givenCutter_haveExpectedInterfaces)
   EXPECT_TRUE(cutter->have_cutting_surface(iface12));
 }
 
-static bool is_nearly_eq(const Vector3d & v0, const Vector3d & v1, const double relativeTol=1.e-6)
+static bool is_nearly_eq(const stk::math::Vector3d & v0, const stk::math::Vector3d & v1, const double relativeTol=1.e-6)
 {
   const double absoluteTol = relativeTol * (v0.length() + v1.length());
   for (int i=0; i<3; ++i)
@@ -168,7 +168,7 @@ TEST_F(TriangleWithTriplePoint, whenFindingIntersectionPoints_findPointAtCentroi
   std::vector<ElementIntersection> triangleIntersections;
   cutter->fill_interior_intersections(triangleIntersections);
 
-  const std::vector<ElementIntersection> goldIntersections{ {Vector3d{1./3.,1./3.,0.}, std::vector<int>{0,1,2}} };
+  const std::vector<ElementIntersection> goldIntersections{ {stk::math::Vector3d{1./3.,1./3.,0.}, std::vector<int>{0,1,2}} };
   expect_intersections(goldIntersections, triangleIntersections);
 }
 
@@ -181,7 +181,7 @@ TEST_F(TriangleWithFakeTriplePoint, whenFindingIntersectionPoints_findCorrectPoi
 
   expect_num_interfaces_with_cutting_surface(4u, *cutter);
 
-  const std::vector<ElementIntersection> goldIntersections{ {Vector3d{4./9., 4./9., 0.}, std::vector<int>{0,1,3}} };
+  const std::vector<ElementIntersection> goldIntersections{ {stk::math::Vector3d{4./9., 4./9., 0.}, std::vector<int>{0,1,3}} };
   expect_intersections(goldIntersections, triangleIntersections);
 }
 

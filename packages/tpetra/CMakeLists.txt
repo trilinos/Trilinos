@@ -1265,7 +1265,6 @@ TRIBITS_PACKAGE_DEF()
 #
 # Identify what files to exclude when making a source tarball.
 #
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 TRIBITS_EXCLUDE_FILES(
   core/doc/CodingGuidelines

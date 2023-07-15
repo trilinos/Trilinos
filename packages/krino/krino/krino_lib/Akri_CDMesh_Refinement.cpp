@@ -303,8 +303,8 @@ double compute_edge_length(const FieldRef coordsField, const stk::topology elemT
 
   elemTopology.edge_nodes(elemNodes, iEdge, edgeNodes.data());
 
-  const Vector3d edge_node1_coords(field_data<double>(coordsField, edgeNodes[0]), elemTopology.dimension());
-  const Vector3d edge_node2_coords(field_data<double>(coordsField, edgeNodes[1]), elemTopology.dimension());
+  const stk::math::Vector3d edge_node1_coords(field_data<double>(coordsField, edgeNodes[0]), elemTopology.dimension());
+  const stk::math::Vector3d edge_node2_coords(field_data<double>(coordsField, edgeNodes[1]), elemTopology.dimension());
   return (edge_node2_coords-edge_node1_coords).length();
 }
 

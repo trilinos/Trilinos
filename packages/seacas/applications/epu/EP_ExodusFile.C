@@ -286,7 +286,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   std::string file_prefix   = si.basename();
   std::string output_suffix = si.output_suffix();
 
-  outputFilename_ = file_prefix;
+  outputFilename_ = std::move(file_prefix);
   if (!output_suffix.empty()) {
     outputFilename_ += "." + output_suffix;
   }
