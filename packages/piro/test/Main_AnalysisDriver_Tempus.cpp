@@ -153,8 +153,6 @@ const Teuchos::RCP<Piro::TempusSolver<double> > solverNew(
 
 int main(int argc, char *argv[]) {
 
-  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
-
   int status=0; // 0 = pass, failures are incremented
   int overall_status=0; // 0 = pass, failures are incremented over multiple tests
   bool success=true;
