@@ -165,7 +165,7 @@ namespace MueLu {
         // Reuse pattern if available (multiple solve)
         RCP<ParameterList> APparams = rcp(new ParameterList);
         if(pL.isSublist("matrixmatrix: kernel params"))
-          APparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
+          *APparams = pL.sublist("matrixmatrix: kernel params");
 
         // By default, we don't need global constants for A*P
         APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
@@ -190,7 +190,7 @@ namespace MueLu {
         // Reuse coarse matrix memory if available (multiple solve)
         RCP<ParameterList> RAPparams = rcp(new ParameterList);
         if(pL.isSublist("matrixmatrix: kernel params"))
-          RAPparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
+          *RAPparams = pL.sublist("matrixmatrix: kernel params");
 
         if (coarseLevel.IsAvailable("RAP reuse data", this)) {
           GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
@@ -267,7 +267,7 @@ namespace MueLu {
       } else {
         RCP<ParameterList> RAPparams = rcp(new ParameterList);
         if(pL.isSublist("matrixmatrix: kernel params"))
-          RAPparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
+          *RAPparams = pL.sublist("matrixmatrix: kernel params");
 
         if (coarseLevel.IsAvailable("RAP reuse data", this)) {
           GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
