@@ -81,7 +81,7 @@
 #include "Zoltan2_AlgMultiJagged.hpp"
 
 #include "AnasaziLOBPCGSolMgr.hpp"
-//#include "AnasaziRandomizedSolMgr.hpp" //TODO: Uncomment when randomized solver available. 
+#include "AnasaziRandomizedSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziTpetraAdapter.hpp"
 
@@ -436,7 +436,8 @@ namespace Zoltan2 {
       // Create the Laplacian matrix using the input graph and with the new values
       Teuchos::RCP<matrix_t> laplacian (new matrix_t(graph_, newVal));
       laplacian->fillComplete (graph_->getDomainMap(), graph_->getRangeMap());
-
+      
+      // Create the Laplacian maatrix using the input graph and with the new values
       return laplacian;
     }
 
@@ -621,6 +622,7 @@ namespace Zoltan2 {
               " is less than number of Eigenvectors needed for partition." );
       }
     }
+    //std::cout << "DEBUG: going to call eigenvecsToCoords." << std::endl;
 
     // Transform the eigenvectors into coordinates 
     Teuchos::RCP<mvector_t> coordinates;
@@ -661,7 +663,7 @@ namespace Zoltan2 {
     // Information to output in a verbose run
     int numfailed = 0;
     int iter = 0;
-    double solvetime = 0;
+    //double solvetime = 0;
 
     // Set Anasazi verbosity level
     int anasaziVerbosity = Anasazi::Errors + Anasazi::Warnings;
@@ -725,6 +727,7 @@ namespace Zoltan2 {
     if(solverType_ == "LOBPCG"){
 
     // Set preconditioner
+    //std::cout << "DEBUG: Setting LOBPCG preconditioner." << std::endl;
     Sphynx::setPreconditioner(problem);
 
     if(problemType_ == Sphynx::GENERALIZED)
@@ -743,9 +746,7 @@ namespace Zoltan2 {
       solver = Teuchos::rcp(new Anasazi::LOBPCGSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
     }
     else{
-      //solver = Teuchos::rcp(new Anasazi::Experimental::RandomizedSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
-      //TODO: Uncomment when randomized solver available. 
-      throw std::runtime_error("\nInvalid solver type.\n");
+      solver = Teuchos::rcp(new Anasazi::Experimental::RandomizedSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
     }
 
     if (verbosity_ > 0 && comm_->getRank() == 0)
@@ -761,11 +762,11 @@ namespace Zoltan2 {
       ++numfailed;
     }
     iter = solver->getNumIters();
-    solvetime = (solver->getTimers()[0])->totalElapsedTime();
-
+    //solvetime = (solver->getTimers()[0])->totalElapsedTime();
 
     // Retrieve the solution
     using solution_t = Anasazi::Eigensolution<scalar_t, mvector_t>;
+    //std::cout << "DEBUG: about to call problem->getSolution" << std::endl;
     solution_t sol = problem->getSolution();
     eigenVectors_ = sol.Evecs;
     int numev = sol.numVecs;
@@ -776,7 +777,7 @@ namespace Zoltan2 {
       std::cout << "ANASAZI SUMMARY" << std::endl;
       std::cout << "Failed to converge:    " << numfailed << std::endl;
       std::cout << "No of iterations :     " << iter << std::endl;
-      std::cout << "Solve time:            " << solvetime << std::endl;
+      std::cout << "Solve time:            " << std::endl; // solvetime << std::endl;
       std::cout << "No of comp. vecs. :    " << numev << std::endl;
     }
     std::cout << "Returning from Anasazi Wrapper." << std::endl;
