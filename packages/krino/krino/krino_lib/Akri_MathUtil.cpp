@@ -8,14 +8,14 @@
 
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MathUtil.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <boost/math/tools/toms748_solve.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <vector>
 
 namespace krino {
 
-double compute_parametric_square_distance(const Vector3d childPCoords)
+double compute_parametric_square_distance(const stk::math::Vector3d childPCoords)
 {
   double dist2 = 0.0;
   if (childPCoords[0] < 0.0) dist2 += childPCoords[0]*childPCoords[0];
@@ -26,14 +26,14 @@ double compute_parametric_square_distance(const Vector3d childPCoords)
   return dist2;
 }
 
-Vector3d
-get_parametric_coordinates_of_point(const std::vector<Vector3d> & nodeCoords, const Vector3d & pt)
+stk::math::Vector3d
+get_parametric_coordinates_of_point(const std::vector<stk::math::Vector3d> & nodeCoords, const stk::math::Vector3d & pt)
 {
   if (nodeCoords.size() == 3)
   {
-    const Vector3d relativeCoords1 = nodeCoords[1] - nodeCoords[0];
-    const Vector3d relativeCoords2 = nodeCoords[2] - nodeCoords[0];
-    const Vector3d relativeCoords = pt - nodeCoords[0];
+    const stk::math::Vector3d relativeCoords1 = nodeCoords[1] - nodeCoords[0];
+    const stk::math::Vector3d relativeCoords2 = nodeCoords[2] - nodeCoords[0];
+    const stk::math::Vector3d relativeCoords = pt - nodeCoords[0];
 
     const double a00 = relativeCoords1[0];
     const double a01 = relativeCoords2[0];
@@ -44,14 +44,14 @@ get_parametric_coordinates_of_point(const std::vector<Vector3d> & nodeCoords, co
     const double det = a00*a11-a01*a10;
     const double x = (b0*a11-b1*a01)/det;
     const double y = (-b0*a10+b1*a00)/det;
-    return Vector3d(x,y,0.);
+    return stk::math::Vector3d(x,y,0.);
   }
   else
   {
-    const Vector3d relativeCoords1 = nodeCoords[1] - nodeCoords[0];
-    const Vector3d relativeCoords2 = nodeCoords[2] - nodeCoords[0];
-    const Vector3d relativeCoords3 = nodeCoords[3] - nodeCoords[0];
-    const Vector3d relativeCoords = pt - nodeCoords[0];
+    const stk::math::Vector3d relativeCoords1 = nodeCoords[1] - nodeCoords[0];
+    const stk::math::Vector3d relativeCoords2 = nodeCoords[2] - nodeCoords[0];
+    const stk::math::Vector3d relativeCoords3 = nodeCoords[3] - nodeCoords[0];
+    const stk::math::Vector3d relativeCoords = pt - nodeCoords[0];
     const double a00 = relativeCoords1[0];
     const double a01 = relativeCoords2[0];
     const double a02 = relativeCoords3[0];
@@ -68,7 +68,7 @@ get_parametric_coordinates_of_point(const std::vector<Vector3d> & nodeCoords, co
     const double x =( b0*(a22*a11-a21*a12)-b1*(a22*a01-a21*a02)+b2*(a12*a01-a11*a02))/det;
     const double y =(-b0*(a22*a10-a20*a12)+b1*(a22*a00-a20*a02)-b2*(a12*a00-a10*a02))/det;
     const double z =( b0*(a21*a10-a20*a11)-b1*(a21*a00-a20*a01)+b2*(a11*a00-a10*a01))/det;
-    return Vector3d(x,y,z);
+    return stk::math::Vector3d(x,y,z);
   }
 }
 

@@ -105,6 +105,10 @@ IF(Trilinos_ENABLE_STKMesh)
   ADD_SUBDIRECTORY(stk_mesh_fixtures)
 ENDIF()
 
+IF(Trilinos_ENABLE_STKTransfer AND Trilinos_ENABLE_STKMiddle_mesh)
+  ADD_SUBDIRECTORY(stk_transfer_fixtures)
+ENDIF()
+
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/)
     

@@ -331,7 +331,7 @@ namespace Tpetra {
     ///
     /// Note that this type does not always correspond to the
     /// <tt>Scalar</tt> template parameter of subclasses.
-    using packet_type = typename ::Kokkos::Details::ArithTraits<Packet>::val_type;
+    using packet_type = typename ::Kokkos::ArithTraits<Packet>::val_type;
     //! The type of local indices.
     using local_ordinal_type = LocalOrdinal;
     //! The type of global indices.

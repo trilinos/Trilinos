@@ -43,6 +43,7 @@ include(TribitsExternalPackageWithImportedTargetsFindTplModuleHelpers)
 include(TribitsExternalPackageWriteConfigFile)
 include(TribitsTplFindIncludeDirsAndLibraries)
 include(TribitsGeneralMacros)
+include(TribitsConfigureTiming)
 
 # Standard TriBITS utilities includes
 include(AppendStringVar)
@@ -190,13 +191,19 @@ function(tribits_get_enabled_tpl_processing_string  TPL_NAME  tplProcessingStrin
 endfunction()
 
 
-# Process an enabled TPL defined using a TriBITS-compliant external
-# packages <tplName>Config.cmake file
+# Process an enabled TPL defined using a TriBITS-compliant external package
+# <tplName>Config.cmake file
 #
 macro(tribits_process_enabled_tribits_compliant_tpl  TPL_NAME)
   message("-- "
     "Calling find_package(${TPL_NAME}) for TriBITS-compliant external package")
   find_package(${TPL_NAME} CONFIG REQUIRED)
+  if (${TPL_NAME}_DIR)
+    message("-- " "Found ${TPL_NAME}_DIR='${${TPL_NAME}_DIR}'")
+  else()
+    message(FATAL_ERROR
+      "ERROR! Failed to find TriBITS-compliant external package ${TPL_NAME}!")
+  endif()
 endmacro()
 
 

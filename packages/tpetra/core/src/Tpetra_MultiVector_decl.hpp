@@ -407,7 +407,7 @@ namespace Tpetra {
     /// MultiVector's data, its entries have type \c impl_scalar_type,
     /// not \c scalar_type.
     using impl_scalar_type =
-      typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      typename Kokkos::ArithTraits<Scalar>::val_type;
 
     //! The type of the Map specialization used by this class.
     using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;

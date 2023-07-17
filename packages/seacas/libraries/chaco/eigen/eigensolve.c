@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -73,12 +73,6 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
   int           prev_maxitns = 0;         /* LANCZOS_MAXITNS value above this routine */
   int           autoset_srestol;          /* set SRESTOL automatically? */
   double        prev_srestol = 0;         /* SRESTOL value above this routine */
-
-  double seconds(void);
-  void   coarsen(), lanczos_FO(), lanczos_SO(), vecout(), vecnorm();
-  void   lanczos_SO_float(), strout(char *msg);
-  void   perturb_init(), perturb_clear(), x2y(), y2x();
-  int    lanczos_ext(), lanczos_ext_float();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering eigensolve, nvtxs = %d, nedges = %d>\n", nvtxs, nedges);

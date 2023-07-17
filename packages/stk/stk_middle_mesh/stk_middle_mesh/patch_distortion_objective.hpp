@@ -17,7 +17,7 @@ namespace impl {
 class PatchDistortionObjective : public opt::impl::PatchObjective
 {
   public:
-    explicit PatchDistortionObjective(std::shared_ptr<DistortionMetric> metric)
+    explicit PatchDistortionObjective(std::shared_ptr<DistortionMetric<double>> metric)
       : m_metric(metric)
     {}
 
@@ -36,7 +36,19 @@ class PatchDistortionObjective : public opt::impl::PatchObjective
     utils::impl::Mat2x2<double> compute_hessian(const utils::Point& ptIn) override;
 
   private:
-    std::shared_ptr<DistortionMetric> m_metric;
+
+    template <typename T>
+    T compute_qualityT(std::shared_ptr<DistortionMetric<T>> metric, const utils::PointT<T>& ptIn);
+
+    template <typename T>
+    utils::PointT<T> compute_quality_revT(std::shared_ptr<DistortionMetric<T>> metric, const utils::PointT<T>& ptIn, T q3Bar = 1);
+
+    template <typename T>
+    utils::impl::Mat2x2<T> compute_hessianT(std::shared_ptr<DistortionMetric<T>> metric, const utils::PointT<T>& ptIn);
+
+    void set_min_denominator(const utils::Point& ptIn);
+
+    std::shared_ptr<DistortionMetric<double>> m_metric;
 };
 
 } // namespace impl

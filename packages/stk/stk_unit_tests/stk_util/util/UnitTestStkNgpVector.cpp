@@ -1,7 +1,9 @@
+#include <cstddef>  // for size_t
+#include <string>   // for string
+
+#include "Kokkos_Core.hpp"
 #include "gtest/gtest.h"
 #include "stk_util/util/StkNgpVector.hpp"  // for NgpVector, NgpVector<>::DeviceType
-#include <cstddef>                         // for size_t
-#include <string>                          // for string
 
 namespace {
 
@@ -138,6 +140,41 @@ TEST(StkVectorTest, ninePushBacks_sizeIsNineCapacityIsSixteen)
     EXPECT_EQ(16u, vec.capacity());
 }
 
+namespace
+{
+template <typename DeviceView>
+void check_device_view(const stk::NgpVector<double> &vec, const DeviceView &view_device)
+{
+  EXPECT_EQ(vec.size(), view_device.extent(0));
+
+  unsigned num_err = 0;
+  using execution_space = typename DeviceView::execution_space;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<execution_space>(0, vec.size()),
+      KOKKOS_LAMBDA(size_t i, unsigned &cnt_err) {
+        if (vec.device_get(i) != view_device[i]) ++cnt_err;
+      },
+      num_err);
+  EXPECT_EQ(num_err, 0u);
+}
+}  // namespace
+TEST(StkVectorTest, ninePushBacks_checkDeviceView)
+{
+  stk::NgpVector<double> vec;
+  push_back_num_things(vec, 9);
+  EXPECT_LT(vec.size(), vec.capacity());
+  check_device_view(vec, vec.view_device());
+}
+TEST(StkVectorTest, ninePushBacks_checkHostView)
+{
+  stk::NgpVector<double> vec;
+  push_back_num_things(vec, 9);
+  EXPECT_LT(vec.size(), vec.capacity());
+  const auto view_host = vec.view_host();
+  EXPECT_EQ(vec.size(), view_host.extent(0));
+
+  for (unsigned i = 0; i < vec.size(); ++i) EXPECT_EQ(vec[i], view_host[i]) << "For entry " << i;
+}
 TEST(StkVectorTest, specifySizeAndValue_haveNumValues)
 {
     stk::NgpVector<double> vec(4, 3.0);

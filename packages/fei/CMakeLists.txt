@@ -35,12 +35,6 @@ TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-#
 # D) Do standard postprocessing
 #
 

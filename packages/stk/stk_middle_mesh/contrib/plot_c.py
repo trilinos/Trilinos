@@ -36,4 +36,4 @@ for i in range(edges.shape[0]):
 
 fig.savefig(fname + ".png", dpi=300)
 
-plt.show()
+#plt.show()

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -65,7 +65,7 @@ namespace Iogn {
     std::vector<std::vector<int>>         sidesetConnectivity;
     std::vector<std::vector<std::string>> sidesetTouchingBlocks;
 
-    ExodusData() {}
+    ExodusData() = default;
     ExodusData(std::vector<double> coords, std::vector<std::vector<int>> elemBlockConnectivity,
                std::vector<int> globalNumOfElemsInBlock, std::vector<int> localNumOfElemsInBlock,
                std::vector<Topology> blockTopoData, int globalNumNodes,

@@ -25,7 +25,7 @@ class StkMeshWriter
     using MeshFieldPtr = StkMeshCreator::MeshFieldPtr;
 
   public:
-    using FieldScalarType = StkMeshCreator::FieldScalarType;
+    using VertIdType = StkMeshCreator::VertIdType;
     using FieldType       = StkMeshCreator::FieldType;
 
     StkMeshWriter(stk::mesh::MetaData& metaDataIn, stk::mesh::BulkData& bulkDataIn, stk::mesh::MetaData& metaDataOut,

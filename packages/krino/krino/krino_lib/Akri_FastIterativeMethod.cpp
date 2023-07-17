@@ -174,7 +174,7 @@ FastIterativeMethod::update_triangle(const stk::mesh::Entity * elemNodes, int no
 {
   static constexpr double far = std::numeric_limits<double>::max();
   const std::array<int,3> lnn = get_oriented_nodes_triangle(nodeToUpdate);
-  const std::array<Vector3d,3> x{Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[0]]),2), Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[1]]),2), Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[2]]),2)};
+  const std::array<stk::math::Vector3d,3> x{stk::math::Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[0]]),2), stk::math::Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[1]]),2), stk::math::Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[2]]),2)};
   const std::array<double,2> d{*field_data<double>(myDistance, elemNodes[lnn[0]]), *field_data<double>(myDistance, elemNodes[lnn[1]])};
   const int sign = LevelSet::sign(*field_data<double>(myDistance, elemNodes[lnn[2]]));
   return eikonal_solve_triangle(x, d, sign, far, speed);
@@ -185,7 +185,7 @@ FastIterativeMethod::update_tetrahedron(const stk::mesh::Entity * elemNodes, int
 {
   static constexpr double far = std::numeric_limits<double>::max();
   const std::array<int,4> lnn = get_oriented_nodes_tetrahedron(nodeToUpdate);
-  const std::array<Vector3d,4> x{field_data<double>(myCoordinates, elemNodes[lnn[0]]), field_data<double>(myCoordinates, elemNodes[lnn[1]]), field_data<double>(myCoordinates, elemNodes[lnn[2]]), field_data<double>(myCoordinates, elemNodes[lnn[3]])};
+  const std::array<stk::math::Vector3d,4> x{field_data<double>(myCoordinates, elemNodes[lnn[0]]), field_data<double>(myCoordinates, elemNodes[lnn[1]]), field_data<double>(myCoordinates, elemNodes[lnn[2]]), field_data<double>(myCoordinates, elemNodes[lnn[3]])};
   const std::array<double,3> d{*field_data<double>(myDistance, elemNodes[lnn[0]]), *field_data<double>(myDistance, elemNodes[lnn[1]]), *field_data<double>(myDistance, elemNodes[lnn[2]])};
   const int sign = LevelSet::sign(*field_data<double>(myDistance, elemNodes[lnn[3]]));
   return eikonal_solve_tetrahedron(x, d, sign, far, speed);

@@ -112,13 +112,13 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, Factor, ST, LO )
   {
     using Teuchos::Array;
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
     typedef Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace> block_type;
     typedef Kokkos::View<LO*, Kokkos::HostSpace> int_vec_type;
     typedef Kokkos::View<IST*, Kokkos::HostSpace> scalar_vec_type;
 
-    const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
+    const auto tol = 10.0 * Kokkos::ArithTraits<IST>::eps ();
 
     TEST_ASSERT( Kokkos::is_initialized () );
     if (! Kokkos::is_initialized ()) {
@@ -209,13 +209,13 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, FactorPivot, ST, LO )
   {
     using Teuchos::Array;
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
     typedef Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace> block_type;
     typedef Kokkos::View<LO*, Kokkos::HostSpace> int_vec_type;
     typedef Kokkos::View<IST*, Kokkos::HostSpace> scalar_vec_type;
 
-    const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
+    const auto tol = 10.0 * Kokkos::ArithTraits<IST>::eps ();
 
     TEST_ASSERT( Kokkos::is_initialized () );
     if (! Kokkos::is_initialized ()) {
@@ -306,7 +306,7 @@ namespace {
   // problem (the identity matrix).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, SolveIdentity, ST, LO )
   {
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
     typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> block_type;
     typedef Kokkos::View<IST*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> vec_type;
     typedef Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> piv_type;
@@ -365,7 +365,7 @@ namespace {
   // calling GEQRF compiles.
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, GEQRF, ST, LO )
   {
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
     typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> block_type;
     const IST zero = static_cast<IST> (0.0);
     const IST one = static_cast<IST> (1.0);
@@ -410,7 +410,7 @@ namespace {
       if (info != 0) {
         continue; // workspace query failed; skip the rest
       }
-      lwork = static_cast<int> (Kokkos::Details::ArithTraits<IST>::real (workView[0]));
+      lwork = static_cast<int> (Kokkos::ArithTraits<IST>::real (workView[0]));
       TEST_ASSERT( lwork >= 0 );
       if (lwork < 0) {
         continue; // workspace query failed; skip the rest
@@ -544,7 +544,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, SCAL, ST, LO )
   {
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
     typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> blk_type;
     typedef Kokkos::View<IST*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> vec_type;
 
@@ -623,7 +623,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, COPY, ST, LO )
   {
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
     typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> blk_type;
     typedef Kokkos::View<IST*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> vec_type;
 
@@ -695,7 +695,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, AXPY, ST, LO )
   {
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
     typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> blk_type;
     typedef Kokkos::View<IST*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> vec_type;
 

@@ -24,33 +24,114 @@
 namespace Tempus {
 
 /** \brief Solution state for integrators and steppers.
- *  SolutionState contains the metadata for solutions and the solutions
- *  themselves.
  *
- *  For simple time integration, the SolutionState is sufficient for
- *  checkpointing, restart and undo operations (i.e., it is the Memento
- *  object).
+ *  \section SolutionState_Description SolutionState Description
+ *
+ *  The SolutionState object contains all the information and
+ *  functions related to solution variables at a particular state or
+ *  time, \f$x(t)\f$.  The member data is simply the solution variables,
+ *  \f$x(t)\f$; optionally the solution time derivatives, \f$\dot{x}(t)\f$ and
+ *  \f$\ddot{x}(t)\f$; and all associated metadata (more on this shortly).
+ *  The primary driver for this definition is the requirement that the
+ *  SolutionState has all the information necessary to restart the
+ *  time integration, e.g., from a failed time step, a checkpointed
+ *  solution, and/or for adjoint sensitivity analysis.  Additionally,
+ *  by having all the solution and metadata incapsulated, it allows
+ *  easy passing via a single object, and many SolutionStates forming
+ *  a history (see SolutionHistory) can be easily used for multi-step
+ *  methods, solution interpolation, adjoint sensitivities, etc.
+ *
+ *  \subsection SolutionState_Variables Solution Variables
+ *
+ *  The solution variables, \f$x(t)\f$, \f$\dot{x}(t)\f$, and
+ *  which allows us to use all of its functionalities, e.g., norms.
+ *  At a minimum, the solution, \f$x(t)\f$, needs to have a valid
+ *  RCP of a Thyra::Vector, and a Teuchos::null indicates the
+ *  SolutionState is not fully constructed.  The solution time
+ *  derivatives, \f$\dot{x}(t)\f$ and \f$\ddot{x}(t)\f$, are optional.
+ *  All Tempus steppers (Tempus::Stepper) will efficiently work with
+ *  just \f$x(t)\f$ available (i.e., steppers will maintain an
+ *  \f$\dot{x}\f$ and/or \f$\ddot{x}\f$ as needed for efficiency).
+ *  The primary decision on whether to have the time derivatives as
+ *  part of the SolutionState is related to memory usage versus
+ *  recomputing \f$\dot{x}(t)\f$ and \f$\ddot{x}(t)\f$.  If the user
+ *  needs readily available access to the time derivatives (e.g.,
+ *  in their ModelEvaluator, diagnostics or output), then they should
+ *  likely be added to the SolutionState.  Otherwise, the user should
+ *  just store the solution, \f$x(t)\f$, and recompute the time
+ *  derivatives as needed.
+ *
+ *  \subsection Solution_State_Consistency Solution State Consistency
+ *
+ *  There are two important concepts for the SolutionState related
+ *  to the solution, \f$x(t)\f$ and its time derivatives,
+ *  \f$\dot{x}(t)\f$ and \f$\ddot{x}(t)\f$.  The first concept is
+ *  a solution and its time derivatives are said to be consistent
+ *  with respect to its governing equation, if it satisfies its
+ *  explicit ODE, \f$\dot{x}(t) = f(x(t), t)\f$ or \f$\ddot{x}(t)
+ *  = f(x(t), \dot{x}(t), t)\f$, or its implicit ODE \f$F(x(t),
+ *  \dot{x}(t), \ddot{x}(t) = 0\f$.  Thus, there is a relationship
+ *  between the solution and its time derivatives, such that they
+ *  satisfy its governing equation.  Obviously, there are times
+ *  when the solution is not consistent with its time derivatives,
+ *  e.g., initial guess for the nonlinear solve and interpolated
+ *  solutions.  Additionally, because of the discrete representation,
+ *  this relationship is also dependent on the particular stepper,
+ *  e.g., for Forward Euler, it is defined via \f$\dot{x}^{n+1} =
+ *  (x^{n+1} - x^n)/dt\f$, so would not be consistent for another
+ *  stepper such as the Trapezoidal Rule, where the time derivative
+ *  is defined as \f$\dot{x}^{n+1} = (x^{n+1} - x^n)/(dt/2) -
+ *  \dot{x}^n\f$.
+ *
+ *  Consistency is a very important attribute of a solution to be
+ *  able to use it for initial conditions and restart.  At the cost
+ *  of a solve, a SolutionState can be made consistent for the
+ *  Stepper being used by resetting the time derivatives,
+ *  \f$\dot{x}(t)\f$ and \f$\ddot{x}(t)\f$, to match the solution,
+ *  \f$x(t)\f$ (see Tempus::Stepper::setInitialConditions).
+ *
+ *  \subsection Solution_State_Synchronization Solution State Synchronization
+ *
+ *  The second concept for the SolutionState is the idea of the
+ *  solution, \f$x(t)\f$ and its time derivatives, \f$\dot{x}(t)\f$
+ *  and \f$\ddot{x}(t)\f$ of being synchronized.  During the
+ *  time-integration process (loop), the solution and its time
+ *  derivatives may not be at the same time level, e.g., \f$t =
+ *  t_n\f$.  This is common for Leapfrog time integration, where
+ *  the solution, \f$x(t_{n+1})\f$; the first time derivative,
+ *  \f$\dot{x}(t_{n+1/2})\f$; and the second time derivative,
+ *  \f$\ddot{x}(t_n)\f$ are all at different time levels, thus they
+ *  are termed unsynchronized.  Of course, there are methods to
+ *  synchronize them to the same time level, \f$t_n\f$.  Synchronization
+ *  is important to ensure accuracy for output, visualization, and
+ *  verification.  All Tempus::Steppers can ensure the SolutionState
+ *  is synchronized at the end of the time step, if needed.  Otherwise,
+ *  the unsynchronized SolutionState can be maintained for efficiency
+ *  reasons.  (see Tempus::SolutionState::getIsSynced()).
+ *
+ *  \subsection Solution_State_Additional_Features Additional Features
  *
  *  For more complex time integration where the physics has additional
- *  state information or the time integrator is not a one-step method
- *  (i.e., can not accurately start from a single time step), this class
- *  can be inherited and the physics state or additional time-integration
- *  parameters can be managed.
+ *  state information or the time integrator is not a one-step
+ *  method (i.e., cannot accurately start from a single time step),
+ *  this class can be inherited and the physics state (PhysicsState)
+ *  or additional time-integration parameters can be managed.
  *
- *  SolutionStates can be interpolated to generate solutions at various
- *  times (see SolutionHistory).  However not all metadata or state
- *  information can be interpolated.  Thus interpolated solutions may not
- *  be suitable for checkpointing, restart and undo operations, but may
- *  be useful for adjoint sensitivities.
+ *  SolutionStates can be interpolated to generate solutions at
+ *  various times (see SolutionHistory).  However not all metadata
+ *  or state information can be interpolated.  Thus interpolated
+ *  solutions may not be suitable for checkpointing, restart and
+ *  undo operations, but may be useful for diagnostics, output
+ *  and/or adjoint sensitivities.
  *
- *  The solution vectors, \f$x\f$, \f$\dot{x}\f$, and \f$\ddot{x}\f$, in
- *  SolutionState can be null pointers.  This indicates that the
- *  application does not need them, so do not storage them.  This can be
- *  a huge savings when saving many states in the solution history.
- *  Some Steppers will need temporary memory to store time derivative(s)
- *  (\f$\dot{x}\f$, or \f$\ddot{x}\f$) for evaluation of the ODE/DAE
- *  (\f$f(x, \dot{x}, \ddot{x},t)\f$), but each individual Stepper will
- *  manage that.
+ *  The solution vectors, \f$x\f$, \f$\dot{x}\f$, and \f$\ddot{x}\f$,
+ *  in SolutionState can be null pointers.  This indicates that the
+ *  application does not need them, so do not storage them.  This
+ *  can be a huge savings when saving many states in the solution
+ *  history.  Some Steppers will need temporary memory to store
+ *  time derivative(s) (\f$\dot{x}\f$, or \f$\ddot{x}\f$) for
+ *  evaluation of the ODE/DAE (\f$f(x, \dot{x}, \ddot{x},t)\f$),
+ *  but each individual Stepper manages that.
  */
 template<class Scalar>
 class SolutionState :
@@ -255,25 +336,25 @@ public:
     /// Less than comparison for sorting based on time
     bool operator< (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time
+    /// Less than or equal to comparison for sorting based on time
     bool operator<= (const SolutionState<Scalar>& ss) const;
 
     /// Less than comparison for sorting based on time
     bool operator< (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time
+    /// Less than or equal to comparison for sorting based on time
     bool operator<= (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time
+    /// Greater than comparison for sorting based on time
     bool operator> (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time
+    /// Greater than or equal to comparison for sorting based on time
     bool operator>= (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time
+    /// Greater than comparison for sorting based on time
     bool operator> (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time
+    /// Greater than or equal to comparison for sorting based on time
     bool operator>= (const Scalar& t) const;
 
     /// Equality comparison for matching

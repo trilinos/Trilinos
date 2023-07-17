@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -54,7 +54,7 @@ namespace Ioex {
   struct CommunicationMetaData;
 
   // Used for variable name index mapping
-  using VariableNameMap = std::map<std::string, int, std::less<std::string>>;
+  using VariableNameMap = std::map<std::string, int, std::less<>>;
   using VNMValuePair    = VariableNameMap::value_type;
 
   // Used to store reduction variables
@@ -80,7 +80,7 @@ namespace Ioex {
 
     ~BaseDatabaseIO() override;
 
-    const std::string get_format() const override { return "Exodus"; }
+    std::string get_format() const override { return "Exodus"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -201,7 +201,7 @@ namespace Ioex {
     void closeDatabase__() const override
     {
       free_file_pointer();
-      closeDW();
+      close_dw();
     }
 
     int get_file_pointer() const override = 0; // Open file and set exodusFilePtr.

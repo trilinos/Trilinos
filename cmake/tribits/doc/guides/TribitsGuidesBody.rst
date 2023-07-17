@@ -1379,7 +1379,7 @@ The variable ``HAVE_SIMPLECXX___INT64`` is set up in the base file
 ``SimpleCxx/CMakeLists.txt`` (see `<packageDir>/CMakeLists.txt`_ below).  For
 an explanation of ``HAVE_SIMPLECXX_DEBUG``, see `tribits_add_debug_option()`_.
 For an explanation of ``HAVE_SIMPLECXX_SIMPLETPL``, see `How to add a new
-TriBITS external package/TPL dependency`_.  For an explanation of
+TriBITS Package dependency`_.  For an explanation of
 ``@SIMPLECXX_DEPRECATED_DECLARATIONS@``, see `Setting up support for
 deprecated code handling`_.
 
@@ -1617,7 +1617,7 @@ are defined before a Package's ``CMakeLists.txt`` file is processed:
 
     **NOTE:** The value of this variable also determines the value of the
     macro define variable name
-    `HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>`_.
+    `HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>`_.
 
   .. _${PACKAGE_NAME}_ENABLE_TESTS:
 
@@ -1643,23 +1643,23 @@ The following local **TriBITS Package Optional Dependency Macro Variables**
 are defined in the top-level project scope before a Package's
 ``CMakeLists.txt`` file is processed:
 
-  .. _HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>:
+  .. _HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>:
 
-  ``HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>``
+  ``HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>``
 
     Set to ``ON`` if support for optional upstream package
     ``${OPTIONAL_DEP_PACKAGE}`` is enabled in downstream package
     ``${PACKAGE_NAME}``
     (i.e. `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ = ``ON``) and
     is set to ``FALSE`` otherwise.  Here, ``<PACKAGE_NAME_UC>`` and
-    ``<OPTIONAL_DEP_PACKAGE_NAME_UC>`` are the upper-case names for the packages
+    ``<UPSTREAM_PACKAGE_NAME_UC>`` are the upper-case names for the packages
     ``${PACKAGE_NAME}`` and ``${OPTIONAL_DEP_PACKAGE_NAME}``, respectively.
     For example, if optional support for upstream package ``Triutils`` is
     enabled in downstream package ``EpetraExt`` in `ReducedMockTrilinos`_,
     then ``EpetraExt_ENABLE_TriUtils=ON`` and ``HAVE_EPETRAEXT_TRIUTILS=ON``.
     This variable is meant to be used in::
 
-      #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+      #cmakedefine HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>
 
     in configured header files
     (e.g. `<packageDir>/cmake/<packageName>_config.h.in`_).  For example, for
@@ -2728,13 +2728,13 @@ The requirements for **TriBITS-compliant external packages** are:
 
 NOTE: TriBITS-compliant external packages that provide TriBITS-compliant
 external packages for all of their upstream dependencies are said to be *fully
-TriBITS-compliant external packages* while those that don't are said to be
-*non-fully TriBITS-compliant external packages*.  The TriBITS external
-package/TPL system is robust enough to deal with non-fully TriBITS-compliant
-external packages.  Any TriBITS external packages/TPLs upstream from a
-non-fully TriBITS-compliant external package will be found again in the
-current TriBITS project.  (In these cases, it is up to the user to make sure
-that the same upstream packages are found.)
+TriBITS-compliant external packages* while those that support the minimal
+requirements are said to be *minimally TriBITS-compliant external packages*.
+The TriBITS external package/TPL system is robust enough to deal with
+minimally TriBITS-compliant external packages.  Any TriBITS external
+packages/TPLs upstream from a minimally TriBITS-compliant external package
+will be found again in the current TriBITS project.  (In these cases, it is up
+to the user to make sure that the same upstream packages are found.)
 
 
 Example TriBITS Projects
@@ -5970,14 +5970,14 @@ links.
 
 
 How to add a new TriBITS Package dependency
-----------------------------------------------
+-------------------------------------------
 
 It is often the case where one will want to add a new dependency for an
-existing `downstream`_ package to an existing `upstream`_ `TriBITS Package`_.
-This can either be a required dependency or an optional dependency.  Here, we
-will refer to the downstream package as ``<packageName>`` with base directory
-``<packageDir>`` and will refer to the upstream package as
-``<upstreamPackageName>``.
+existing `downstream`_ package to an existing `upstream`_ (internal or
+external) `TriBITS Package`_.  This can either be a required dependency or an
+optional dependency.  Here, we will refer to the downstream package as
+``<packageName>`` with base directory ``<packageDir>`` and will refer to the
+upstream (internal or external) package as ``<upstreamPackageName>``.
 
 The process for adding a new dependency to an existing upstream package is
 as follows:
@@ -6002,9 +6002,9 @@ as follows:
    typically a C/C++ processor macro will be added to the package's configured
    `<packageDir>/cmake/<packageName>_config.h.in`_ file using the line::
 
-     #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+     #cmakedefine HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>
 
-   (see `HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>`_.)
+   (see `HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>`_.)
 
    .. _Warning, do not add optional defines for tests/examples to configured header files:
 
@@ -6033,21 +6033,29 @@ as follows:
 
      #include "<packageName>_config.h"
 
-     #if HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+     #if HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>
      #  include "<upstreamPackageName>_<fileName>"
      #endif
 
 4) **For an optional dependency, use CMake if() statements based on
-   ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:** When a package
+   ${PACKAGE_NAME}_ENABLE_<upstreamPackageName>:** When a package
    ``PACKAGE_NAME`` has an optional dependency on an upstream package
-   ``OPTIONAL_DEP_PACKAGE_NAME`` and needs to put in optional logic in a
-   CMakeLists.txt file, then the if() statements should use the variable
-   `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ and **not** the
-   variable ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}``.  For
-   example, to optionally enable a test that depends on the enable of the
-   optional upstream dep package, one would use::
+   ``<upstreamPackageName>`` and needs to put in optional logic in a
+   ``CMakeLists.txt`` file, then the ``if()`` statements should use the
+   variable ``${PACKAGE_NAME}_ENABLE_<upstreamPackageName>`` and **not** the
+   variable ``${PROJECT_NAME}_ENABLE_<upstreamPackageName>`` or
+   ``TPL_ENABLE_<upstreamPackageName>`` (if ``<upstreamPackageName>`` is an
+   external package/TPL).  For example, to optionally enable a test that
+   depends on the enable of the optional upstream dependent package
+   ``<upstreamPackageName>``, one would use::
 
-     if (${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME})
+     tribits_add_test( ...
+       EXCLUDE_IF_NOT_TRUE  ${PACKAGE_NAME}_ENABLE_<upstreamPackageName>
+       )
+
+   or::
+
+     if (${PACKAGE_NAME}_ENABLE_<upstreamPackageName>)
        tribits_add_test( ... )
      endif()
 
@@ -6061,100 +6069,13 @@ package library and executable links.  See documentation in the functions
 argument to these functions, for more details.
 
 
-How to add a new TriBITS external package/TPL dependency
---------------------------------------------------------
-
-It is often the case where one will want to add a new dependency for an
-existing `downstream`_ package to an existing `upstream`_ `TriBITS external
-package/TPL`_.  This can either be a required dependency or an optional
-dependency.  Here, we will refer to the downstream package as
-``<packageName>`` with base directory ``<packageDir>`` and will refer to the
-upstream TPL as ``<tplName>``.
-
-The process for adding a new dependency to an existing upstream TPL is as
-follows:
-
-1) **Add the name of the upstream TPL to the downstream package's
-   Dependencies.cmake file:** Add ``<tplName>`` to the call of
-   `tribits_package_define_dependencies()`_ in the downstream package's
-   `<packageDir>/cmake/Dependencies.cmake`_ file.  If this is to be a required
-   library dependency, then ``<tplName>`` is added to the
-   ``LIB_REQUIRED_TPLs`` argument.  Alternatively, if this is to be an
-   optional library dependency, then ``<tplName>`` is added to the
-   ``LIB_OPTIONAL_TPL`` argument.  (For example, see the file
-   ``packages/Teuchos/cmake/Dependencies.cmake`` file in the
-   `ReducedMockTrilinos`_ project.)  If only the test and/or example sources,
-   and not the package's core library sources, will have the required or
-   optional dependency, then ``<tplName>`` is added to the arguments
-   ``TEST_REQUIRED_TPLs`` or ``TEST_OPTIONAL_TPLS``, respectively.
-
-2) **For an optional dependency, add `HAVE_` preprocessor macro to the
-   package's configured header file:** If this is an optional dependency,
-   typically a C/C++ processor macro will be added to the package's configured
-   `<packageDir>/cmake/<packageName>_config.h.in`_ file using the line::
-
-     #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
-
-   (see `HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>`_.)
-
-   **WARNING:** If this is a test-only and/or example-only dependency then
-   please do **not** add a ``#cmakedefine`` to the package's core
-   `<packageDir>/cmake/<packageName>_config.h.in`_ file.  See `Warning, do not
-   add optional defines for tests/examples to configured header files`_.
-
-3) **Use the features of the upstream TPL in the source files of the
-   downstream package sources and/or tests/examples:** Usage of the features
-   of the upstream package ``<tplName>`` in the downstream package
-   ``<packageName>`` will typically involve adding ``#include
-   <tplName>_<fileName>`` in the package's C/C++ source (or test/example)
-   files (or the equivalent in Fortran).  If it is an optional dependency,
-   then these includes will typically be protected using preprocessor ifdefs,
-   for example, as::
-
-     #include "<packageName>_config.h"
-
-     #if HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
-     #  include "<upstreamPackageName>_<fileName>"
-     #endif
-
-4) **For an optional dependency, use CMake if() statements based on
-   ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:** When a package
-   ``PACKAGE_NAME`` has an optional dependency on TPL
-   ``OPTIONAL_DEP_PACKAGE_NAME`` and needs to put in optional logic in a
-   CMakeLists.txt file, then the if() statements should use the variable
-   `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ and **not** the
-   variable ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}``.  For
-   example, to optionally enable a test that depends on the enable of the
-   optional TPL, one could use::
-
-     if (${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME})
-       tribits_add_test( ... )
-     endif()
-
-   or::
-
-     tribits_add_test( <testName>
-       EXCLUDE_IF_NOT_TRUE  ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}
-       [other args]
-       )
-
-  .. ToDo: Find an example to point to in TribitsExampleProject.
-
-NOTE: TriBITS will automatically add the include directories for the upstream
-TPL to the compile lines for the downstream package source builds and will add
-the libraries for the upstream TPL to the link lines to the downstream package
-library and executable links.  See documentation in the functions
-`tribits_add_library()`_ and `tribits_add_executable()`_, and the ``DEPLIBS``
-argument to these functions, for more details.
-
-
 How to tentatively enable an external package/TPL
 -------------------------------------------------
 
 A TriBITS package can request the tentative enable of any of its optional
-external packagse/TPLs (see `How to add a new TriBITS external package/TPL
-dependency`_).  This is done by calling `tribits_tpl_tentatively_enable()`_ in
-the package's `<packageDir>/cmake/Dependencies.cmake`_ file.  For example::
+external packagse/TPLs (see `How to add a new TriBITS Package dependency`_).
+This is done by calling `tribits_tpl_tentatively_enable()`_ in the package's
+`<packageDir>/cmake/Dependencies.cmake`_ file.  For example::
 
   tribits_package_define_dependencies(
     ...

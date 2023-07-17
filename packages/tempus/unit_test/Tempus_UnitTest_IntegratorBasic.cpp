@@ -270,5 +270,5 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, PL_ME_Creation)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test
 

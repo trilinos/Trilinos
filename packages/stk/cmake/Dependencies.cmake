@@ -15,11 +15,11 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Tools           stk_tools            PT  OPTIONAL
   Balance         stk_balance          PT  OPTIONAL
   Unit_test_utils stk_unit_test_utils  PT  OPTIONAL
+  ExprEval        stk_expreval         PT  OPTIONAL
   SearchUtil      stk_search_util      EX  OPTIONAL
   TransferUtil    stk_transfer_util    EX  OPTIONAL
   Unit_tests      stk_unit_tests       PT  OPTIONAL
   Doc_tests       stk_doc_tests        PT  OPTIONAL
-  ExprEval        stk_expreval         PT  OPTIONAL
   Emend           stk_emend            PT  OPTIONAL
 )
 

@@ -57,11 +57,6 @@ public:
   /** \brief  Query the upper bound on the number of mesh entities
     *         that may be associated with a single bucket.
     */
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after April 3, 2023
-  STK_DEPRECATED_MSG("Please use stk::mesh::get_default_bucket_capacity() from stk_mesh/base/Bucket.hpp instead")
-  static const unsigned default_bucket_capacity = 512;
-#endif
-
   BucketRepository(
       BulkData & mesh,
       unsigned entity_rank_count,

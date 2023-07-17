@@ -1,6 +1,5 @@
 #include "ConservativeTransfer.hpp"
 
-
 namespace stk {
 namespace transfer {
 
@@ -154,7 +153,7 @@ int ConservativeTransfer::check_number_of_points(std::shared_ptr<stk::middle_mes
   const int commRank = utils::impl::comm_rank(m_unionComm);
   const int commSize = utils::impl::comm_size(m_unionComm);
 
-  int npts = xiCoords ? xiCoords->get_xi_coords(type).size() : -1;
+  int npts = xiCoords ? static_cast<int>(xiCoords->get_xi_coords(type).size()) : -1;
   std::vector<int> nptsGathered;
   if (commRank == rootRank)
   {

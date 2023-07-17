@@ -42,6 +42,8 @@
 
 
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <PanzerAdaptersSTK_config.hpp>
 
 #include "Panzer_STK_ExodusReaderFactory.hpp"
@@ -255,7 +257,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    // (-1 is the last time step)
    int restartIndex = restartIndex_;
    if(restartIndex<0) {
-     std::pair<int,double> lastTimeStep = meshData->get_input_io_region()->get_max_time();
+     std::pair<int,double> lastTimeStep = meshData->get_input_ioss_region()->get_max_time();
      restartIndex = 1+restartIndex+lastTimeStep.first;
    }
 
@@ -286,7 +288,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    }
 
    if(restartIndex>0) // process_input_request is a no-op if restartIndex<=0 ... thus there would be no inital time
-      mesh.setInitialStateTime(meshData->get_input_io_region()->get_state_time(restartIndex));
+      mesh.setInitialStateTime(meshData->get_input_ioss_region()->get_state_time(restartIndex));
    else
       mesh.setInitialStateTime(0.0); // no initial time to speak, might as well use 0.0
 
@@ -444,7 +446,7 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
    // here we use the Ioss interface because they don't add
    // "bonus" element blocks and its easier to determine
    // "real" element blocks versus STK-only blocks
-   const Ioss::ElementBlockContainer & elem_blocks = meshData.get_input_io_region()->get_element_blocks();
+   const Ioss::ElementBlockContainer & elem_blocks = meshData.get_input_ioss_region()->get_element_blocks();
    for(Ioss::ElementBlockContainer::const_iterator itr=elem_blocks.begin();itr!=elem_blocks.end();++itr) {
       Ioss::GroupingEntity * entity = *itr;
       const std::string & name = entity->name();
@@ -544,7 +546,7 @@ void STK_ExodusReaderFactory::registerEdgeBlocks(STK_Interface & mesh,stk::io::S
     * This will add the edge block as a subset of the element
     * block in the STK mesh.
     */
-   const Ioss::EdgeBlockContainer & edge_blocks = meshData.get_input_io_region()->get_edge_blocks();
+   const Ioss::EdgeBlockContainer & edge_blocks = meshData.get_input_ioss_region()->get_edge_blocks();
    for(Ioss::EdgeBlockContainer::const_iterator ebc_iter=edge_blocks.begin();ebc_iter!=edge_blocks.end();++ebc_iter) {
       Ioss::GroupingEntity * entity = *ebc_iter;
       const stk::mesh::Part * edgeBlockPart = metaData->get_part(entity->name());
@@ -574,7 +576,7 @@ void STK_ExodusReaderFactory::registerFaceBlocks(STK_Interface & mesh,stk::io::S
     * This will add the face block as a subset of the element
     * block in the STK mesh.
     */
-   const Ioss::FaceBlockContainer & face_blocks = meshData.get_input_io_region()->get_face_blocks();
+   const Ioss::FaceBlockContainer & face_blocks = meshData.get_input_ioss_region()->get_face_blocks();
    for(Ioss::FaceBlockContainer::const_iterator fbc_itr=face_blocks.begin();fbc_itr!=face_blocks.end();++fbc_itr) {
       Ioss::GroupingEntity * entity = *fbc_itr;
       const stk::mesh::Part * faceBlockPart = metaData->get_part(entity->name());

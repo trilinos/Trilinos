@@ -1152,5 +1152,50 @@ TEST_F(AuraSharedSideMods, sharedFaceDeleteElemRecreateElem_declareRelation)
   verify_nodes_shared({5, 6, 7, 8});
 }
 
+class AuraTetSide : public TestTextMeshAura
+{
+public:
+  void delete_side_on_p0()
+  {
+    get_bulk().modification_begin();
+
+    stk::mesh::Entity elem2577 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2577);
+    stk::mesh::Entity elem2579 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2579);
+    stk::mesh::Entity face25772 = get_bulk().get_entity(stk::topology::FACE_RANK, 25772);
+    EXPECT_TRUE(get_bulk().is_valid(elem2577));
+    EXPECT_TRUE(get_bulk().is_valid(elem2579));
+    EXPECT_TRUE(get_bulk().is_valid(face25772));
+
+    if (get_bulk().parallel_rank() == 0) {
+      stk::mesh::ConnectivityOrdinal ord = 1;
+      EXPECT_TRUE(get_bulk().destroy_relation(elem2577, face25772, ord));
+      EXPECT_TRUE(get_bulk().destroy_relation(elem2579, face25772, ord));
+      EXPECT_TRUE(get_bulk().destroy_entity(face25772));
+
+      stk::mesh::Entity elem2587 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2587);
+      stk::mesh::Entity node484 = get_bulk().get_entity(stk::topology::NODE_RANK, 484);
+      stk::mesh::Entity node494 = get_bulk().get_entity(stk::topology::NODE_RANK, 494);
+      EXPECT_TRUE(get_bulk().state(elem2587) == stk::mesh::Modified);
+      EXPECT_TRUE(get_bulk().state(node484) == stk::mesh::Unchanged);
+      EXPECT_TRUE(get_bulk().state(node494) == stk::mesh::Unchanged);
+    }
+    
+    get_bulk().modification_end();
+  }
+};
+
+TEST_F(AuraTetSide, removeAuraSideOnOwner_checkMarking)
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 2579, TET_4, 91,452,474,464\n"
+                         "0, 2577, TET_4, 50,452,464,474\n"
+                         "0, 2587, TET_4, 50,452,484,494\n"
+                         "1, 2601, TET_4, 91, 50, 60, 70|sideset:data=2577,2";
+  setup_text_mesh(meshDesc);
+
+  delete_side_on_p0();
+}
+
 } // empty namespace
 

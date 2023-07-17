@@ -584,7 +584,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const Size k) const {
-    const auto zero = Kokkos::Details::ArithTraits<Scalar>::zero();
+    const auto zero = Kokkos::ArithTraits<Scalar>::zero();
     auto D_curBlk = Kokkos::subview(D_, k, Kokkos::ALL (), Kokkos::ALL ());
     const auto num_vecs = X_.extent(1);
     for (Size i = 0; i < num_vecs; ++i) {
@@ -663,7 +663,7 @@ public:
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef Kokkos::pair<LO, LO> range_type;
-    typedef Kokkos::Details::ArithTraits<Scalar> KAT;
+    typedef Kokkos::ArithTraits<Scalar> KAT;
 
     // We only have to implement the alpha != 0 case.
 
