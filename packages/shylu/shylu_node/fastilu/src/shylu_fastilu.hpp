@@ -1707,7 +1707,7 @@ class FastILUPrec
 
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
                     aRowMap, aRowIdx, aColIdx, aVal,
-                    lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega, blockCrsSize);
+                    lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega, blockCrsSize, level);
             Ordinal extent = aRowMap_[nRows]/blkSzILU;
             if (aRowMap_[nRows]%blkSzILU != 0)
             {
@@ -2333,22 +2333,32 @@ class FastILUFunctor
                 ordinal_array_type Ap, ordinal_array_type Ai, ordinal_array_type Aj, scalar_array_type Ax,
                 ordinal_array_type Lp, ordinal_array_type Li, scalar_array_type Lx,
                 ordinal_array_type Up, ordinal_array_type Ui, scalar_array_type Ux,
-                scalar_array_type diag, Scalar omega, Ordinal blockCrsSize)
+                scalar_array_type diag, Scalar omega, Ordinal blockCrsSize, Ordinal level)
             :
                 nnz(nNZ), blk_size(bs), _Ap(Ap), _Ai(Ai), _Aj(Aj),  _Lp(Lp), _Li(Li),_Up(Up),
                 _Ui(Ui), _Ax(Ax), _Lx(Lx), _Ux(Ux), _diag(diag), _omega(omega), _blockCrsSize(blockCrsSize)
         {
-              std::cout << "JGF starting a new Functor" << std::endl;
+              std::cout << "JGF starting a new Functor at level " << level << " with block size " << blockCrsSize << std::endl;
               auto unc_a = decompress_matrix(Ap, Aj, Ax, blockCrsSize);
               auto unc_l = decompress_matrix(Lp, Li, Lx, blockCrsSize);
               auto unc_u = decompress_matrix(Up, Ui, Ux, blockCrsSize);
 
               std::cout << "JGF A" << std::endl;
               print_matrix(unc_a);
+              print_view("Ap", Ap);
+              print_view("Aj", Aj);
+              print_view("Ax", Ax);
               std::cout << "JGF L" << std::endl;
               print_matrix(unc_l);
+              print_view("Lp", Lp);
+              print_view("Li", Li);
+              print_view("Lx", Lx);
               std::cout << "JGF U" << std::endl;
               print_matrix(unc_u);
+              print_view("Up", Up);
+              print_view("Ui", Ui);
+              print_view("Ux", Ux);
+
               print_view("JGF Diag elems diag", diag);
         }
 
