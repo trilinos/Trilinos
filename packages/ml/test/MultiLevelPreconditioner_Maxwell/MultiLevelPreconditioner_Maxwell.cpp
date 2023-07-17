@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList MLList;
   ML_Epetra::SetDefaults("maxwell", MLList);
 
-  MLList.set("ML output", 0);
+  MLList.set("ML output", 10);
 
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);
@@ -127,6 +127,8 @@ int main(int argc, char *argv[])
   ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*Epetra_Ke, *Epetra_T, *Epetra_Kn,
 					    MLList);
+
+  MLPrec->Print(-1);
 
   Epetra_Vector LHS(Epetra_Ke->DomainMap()); LHS.Random();
   Epetra_Vector RHS(Epetra_Ke->DomainMap()); RHS.PutScalar(1.0);

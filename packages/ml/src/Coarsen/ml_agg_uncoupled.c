@@ -460,7 +460,16 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
 #endif
    }
-   
+
+   // CMS
+   {
+     char name[80];
+     static int cms_ct=0;
+     sprintf(name,"A_graph_dropped_%d",cms_ct);
+     ML_Operator_Print_UsingGlobalOrdering(Cmatrix, name, NULL,NULL);
+     cms_ct++;
+   }
+
    ML_Operator_Destroy(&Cmatrix);
    ML_free(csr_data);
    ML_free( bdry_array );
@@ -1214,7 +1223,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    /*    not exceed a given threshold                               */
    /*    (max_neigh_selected = 0 ===> Vanek's scheme)               */
    /* ============================================================= */
-
+   printf("CMS: Aggregation ordering =  %d min/max_nodes_per_aggregate = %d/%d max_neigh_selected = %d\n",ordering,min_nodes_per_aggregate,-1, max_neigh_selected);
    if ( ordering == 1 )       /* random ordering */
    {
       nbytes = Nrows * sizeof(int);
@@ -1341,9 +1350,12 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          }
          else
          {
+
+           //           printf("CMS: Accepting root %d with %d neighbors, nodes:",inode2-1,count);
             for ( j = 0; j < supernode->length; j++ )
             {
                jnode = supernode->list[j];
+               //               printf("%d ",jnode);//CMS
                aggr_stat[jnode] = ML_AGGR_SELECTED;
                aggr_index[jnode] = aggr_count;
                if ( ordering == 2 ) /* if graph ordering */
@@ -1367,6 +1379,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                   }
                }
             }
+            //            printf("\n");//CMS
             supernode->next = NULL;
             supernode->index = aggr_count;
             if ( aggr_count == 0 )
@@ -1393,6 +1406,13 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          }
       }
    }
+
+   
+   printf("CMS: after phase 1 = ");
+   for(int i=0; i<Nrows; i++)
+     printf("%d ",aggr_index[i]);
+   printf("\n");   
+
    if ( ordering == 1 ) ML_memory_free((void**) &randomVector);
    else if ( ordering == 2 )
    {
@@ -1549,6 +1569,11 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       printf("Aggregation(UC) : Phase 2 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 2 - total aggregates = %d \n",j);
    }
+
+   printf("CMS: after phase 2 = ");
+   for(int i=0; i<Nrows; i++)
+     printf("%d ",aggr_index[i]);
+   printf("\n");  
 
    /* ============================================================= */
    /* Phase 3 : for the un-aggregated nodes, form a new aggregate   */
