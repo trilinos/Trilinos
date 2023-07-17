@@ -915,10 +915,6 @@ namespace MueLu {
     r->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
 
 
-    printf("\nr0 = ");
-    for(int i=0; i<(int) r->getData(0).size(); i++)
-      printf("%22.16e ",r->getData(0)[i]);
-      
     // Get the sqrt of the input diagonal
     // FIXME: Kokkosify this
     RCP<Vector> scaleVec;
@@ -928,10 +924,6 @@ namespace MueLu {
       Teuchos::ArrayRCP<Scalar> out_data = scaleVec->getDataNonConst(0);
       for(LO i=0; i<(LO) in_data.size(); i++)
         out_data[i] = sqrt(in_data[i]);
-      {
-        scaleVec->norm2(temp());
-        printf("CMS: Generating scaleVec w/ norm %6.4e\n",temp[0]);
-      }
     }
     
 
@@ -944,6 +936,7 @@ namespace MueLu {
       Teuchos::ArrayRCP<Scalar> r_data  = r->getDataNonConst(0);
       Teuchos::ArrayRCP<Scalar> scale_data  = scaleVec->getDataNonConst(0);
       Teuchos::ArrayRCP<const Scalar> out_data = output->getData(0);
+
       // FIXME: Kokkosify this
       for(LO i=0; i<(LO)r_data.size(); i++) {
         if(r_data[i] == out_data[i]) {
@@ -957,24 +950,16 @@ namespace MueLu {
       // Try to detect Dirichlet BCs using a SPMV
       printf("CMS: Trying do use SPMV no-diag\n");
       RCP<Vector> output = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
-      printf("apply started\n");fflush(stdout);
       A.apply(*r,*output);
-
-      printf("apply finished\n");fflush(stdout);
 
       Teuchos::ArrayRCP<Scalar> r_data  = r->getDataNonConst(0);
       Teuchos::ArrayRCP<const Scalar> out_data = output->getData(0);
-
-      printf("sizes = %d %d\n",(int)r_data.size(),(int)out_data.size());fflush(stdout);
 
       // FIXME: Kokkosify this
       for(LO i=0; i<(LO)r_data.size(); i++) {
         if(r_data[i] == out_data[i]) r_data[i]=zero;
       }
     }
-
-
-
 
       
     r->dot(*r,temp); rnorm_array[0]=sqrt(temp[0]);
@@ -1012,7 +997,6 @@ namespace MueLu {
       p->dot(*Ap,temp); sigma=temp[0];
       alpha_array[iter] = sigma;
       if(abs(sigma) < 1e-12) {
-        printf("\n[%d] CMS: Breaking on sigma = %6.4e < 1e-12 \n",iter,sigma);
         iter++;
         break;
       }
@@ -1024,21 +1008,11 @@ namespace MueLu {
       rnorm_array[iter+1]=sqrt(temp[0]);
 
       if(rnorm_array[iter+1] < tolerance * rnorm_array[0]) {
-        printf("\n[%d] CMS Breaking on rnowm = %6.4e < % 6.4e * %6.4e \n",iter,rnorm_array[iter+1],tolerance,rnorm_array[0]);
         iter++;
         break;
       }
 
     }
-
-    printf("\ninit_Tdiag = ");
-    for(int i=0; i<iter; i++)
-      printf("%22.16e ",Tdiag[i]);
-    printf("\ninit_Tsubdiag = ");
-    for(int i=0; i<iter-1; i++)
-      printf("%22.16e ",Tsubdiag[i]);
-    printf("\n");
-
 
     
     // Build T
@@ -1056,38 +1030,13 @@ namespace MueLu {
         Tsubdiag[i] = Tsubdiag[i] * rnorm_array[i] * rnorm_array[i+1];
     }
 
-
-
-    printf("\nrnorm_array = ");
-    for(int i=0; i<(int) iter; i++)
-      printf("%22.16e ",rnorm_array[i]);
-
-    printf("\nalpha_array = ");
-    for(int i=0; i<iter; i++)
-      printf("%22.16e ",alpha_array[i]);
-  
-
-
-    printf("\nfinal_Tdiag = ");
-    for(int i=0; i<iter; i++)
-      printf("%22.16e ",Tdiag[i]);
-    printf("\nfinal_Tsubdiag = ");
-    for(int i=0; i<iter-1; i++)
-      printf("%22.16e ",Tsubdiag[i]);
-    printf("\n");
-
-
     // Get the eigenvalues
+    // Unlike ML's interface, Teuchos' LAPACK interface seems to keep the largest eigenvalu
+    // at the end.
     LocalOrdinal info;
     Teuchos::LAPACK<LocalOrdinal,Scalar> lapack;
     lapack.STEQR('N',iter,Tdiag.data(),Tsubdiag.data(), NULL, one, NULL, &info);
     
-    printf("info = %d iter = %d\n",info,iter);
-    printf("\nLAPACK = ");
-    for(int i=0; i<iter; i++)
-      printf("%22.16e ",Tdiag[i]);
-    printf("\n");
-
     if(iter == 0) 
       return zero;
     else
