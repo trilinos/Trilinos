@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_IntegratedLegendreBasis_HGRAD_PYR.hpp
-    \brief  H(grad) basis on the tetrahedon based on integrated Legendre polynomials.
+    \brief  H(grad) basis on the pyramid based on integrated Legendre polynomials.
     \author Created by N.V. Roberts.
  */
 
@@ -57,6 +57,8 @@
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TRI.hpp"
 #include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Utils.hpp"
+
+#include "Teuchos_RCP.hpp"
 
 namespace Intrepid2
 {
@@ -225,7 +227,7 @@ namespace Intrepid2
             }
           }
           
-          // TODO: implement pyramid face functions (copied from HGRAD_TET)
+          // TODO: implement pyramid face functions (below is copied from HGRAD_TET)
           
           // quadrilateral face
           // mu_0 * phi_i(mu_0^{xi_1},mu_1^{xi_1}) * phi_j(mu_0^{xi_2},mu_1^{xi_2})
@@ -378,7 +380,7 @@ namespace Intrepid2
               
               for (int d=0; d<3; d++)
               {
-                OutputScalar grad_Li_d = P_i_minus_1(i-1) * nuGrad[1][a-1][d] + R_i_minus_1 * nuGrad[0][a-1][d] + nuGrad[1][a-1][d];
+                OutputScalar grad_Li_d = P_i_minus_1(i-1) * nuGrad[1][a-1][d] + R_i_minus_1(i-1) * nuGrad[0][a-1][d] + nuGrad[1][a-1][d];
                 output_(fieldOrdinalOffset,pointOrdinal,d) = muGrad[c][b-1][d] * L_i(i) + mu[c][b-1] * grad_Li_d;
               }
               fieldOrdinalOffset++;
@@ -461,6 +463,116 @@ namespace Intrepid2
       lambdaGrad[4][0] = 0;
       lambdaGrad[4][1] = 0;
       lambdaGrad[4][2] = 1;
+    }
+    
+    //! See Fuentes et al, Appendix E.9. (Pyramid), definition of mu^{zeta,\xi_j}_i.  Here, the indices to the mu array are [i][j-1], and [i][2] corresponds to mu^{\zeta}_i.  Below, for clarity we use x,y,z as coordinate labels, rather than xi_1, xi_2, zeta.
+    KOKKOS_INLINE_FUNCTION
+    void computeMu(Kokkos::Array<Kokkos::Array<OutputScalar,3>,2> &mu,
+                   Kokkos::Array<PointScalar,3>  &coords) const
+    {
+      const auto & x = coords[0];
+      const auto & y = coords[1];
+      // (1 - z) goes in denominator -- so we check for z=0
+      const double epsilon = 1e-12;
+      PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon;
+      PointScalar scaling = 1. / (1. - z);
+      mu[0][0]  = 1. - x * scaling;
+      mu[0][1]  = 1. - y * scaling;
+      mu[0][2]  = 1. - z;
+      mu[1][0]  =      x * scaling;
+      mu[1][1]  =      y * scaling;
+      mu[1][2]  =      z;
+    }
+    
+    //! See Fuentes et al, Appendix E.9. (Pyramid), definition of mu^{zeta,\xi_j}_i.  Here, the indices to the mu array are [i][j-1], and [i][2] corresponds to mu^{\zeta}_i.  Below, for clarity we use x,y,z as coordinate labels, rather than xi_1, xi_2, zeta.
+    KOKKOS_INLINE_FUNCTION
+    void computeMuGrad(Kokkos::Array<Kokkos::Array<Kokkos::Array<OutputScalar,3>,3>,2> &muGrad,
+                       Kokkos::Array<PointScalar,3>  &coords) const
+    {
+      const auto & x = coords[0];
+      const auto & y = coords[1];
+      // (1 - z) goes in denominator -- so we check for z=0
+      const PointScalar epsilon = 1e-12;
+      PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon; // avoid division by zero
+      PointScalar scaling = 1. / (1. - z);
+      PointScalar lambda0_x = 1. - x - z;
+      PointScalar lambda0_y = 1. - y - z;
+      muGrad[0][0][0]  = -(1. - z);
+      muGrad[0][0][1]  =     0.   ;
+      muGrad[0][0][2]  =    - x   ;
+      
+      muGrad[0][1][0]  =     0.   ;
+      muGrad[0][1][1]  = -(1. - z);
+      muGrad[0][1][2]  =    - y   ;
+      
+      muGrad[0][2][0]  =     0.   ;
+      muGrad[0][2][1]  =     0.   ;
+      muGrad[0][2][2]  =    -1.   ;
+      
+      muGrad[1][0][0]  =   1. - z ;
+      muGrad[1][0][1]  =     0.   ;
+      muGrad[1][0][2]  =      x   ;
+      
+      muGrad[1][1][0]  =     0.   ;
+      muGrad[1][1][1]  =   1. - z ;
+      muGrad[1][1][2]  =      y   ;
+      
+      muGrad[1][2][0]  =     0.   ;
+      muGrad[1][2][1]  =     0.   ;
+      muGrad[1][2][2]  =     1.   ;
+    }
+    
+    //! See Fuentes et al, Appendix E.9. (Pyramid), definition of nu^{zeta,\xi_j}_j.  Here, the indices to the nu array are [i][j-1].  Below, for clarity we use x,y,z as coordinate labels, rather than xi_1, xi_2, zeta.
+    KOKKOS_INLINE_FUNCTION
+    void computeNu(Kokkos::Array<Kokkos::Array<OutputScalar,2>,3> &nu,
+                   Kokkos::Array<PointScalar,3>  &coords) const
+    {
+      const auto & x = coords[0];
+      const auto & y = coords[1];
+      // (1 - z) goes in denominator -- so we check for z=0
+      const double epsilon = 1e-12;
+      const PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon;
+      nu[0][0]  = 1. - x - z; // nu_0^{\zeta,\xi_1}
+      nu[0][1]  = 1. - y - z; // nu_0^{\zeta,\xi_2}
+      nu[1][0]  =      x    ; // nu_1^{\zeta,\xi_1}
+      nu[1][1]  =      y    ; // nu_1^{\zeta,\xi_2}
+      nu[2][0]  =      z    ; // nu_2^{\zeta,\xi_1}
+      nu[2][1]  =      z    ; // nu_2^{\zeta,\xi_2}
+    }
+    
+    //! See Fuentes et al, Appendix E.9. (Pyramid), definition of nu^{zeta,\xi_j}_j.  Here, the indices to the nu array are [i][j-1].  Below, for clarity we use x,y,z as coordinate labels, rather than xi_1, xi_2, zeta.
+    KOKKOS_INLINE_FUNCTION
+    void computeNuGrad(Kokkos::Array<Kokkos::Array<Kokkos::Array<OutputScalar,3>,2>,3> &nuGrad,
+                       Kokkos::Array<PointScalar,3>  &coords) const
+    {
+      const auto & x = coords[0];
+      const auto & y = coords[1];
+      // (1 - z) goes in denominator -- so we check for z=0
+      const PointScalar epsilon = 1e-12;
+      const PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon; // avoid division by zero
+      nuGrad[0][0][0]  = -1. ; // nu_0^{\zeta,\xi_1}_dxi_1
+      nuGrad[0][0][1]  =  0. ; // nu_0^{\zeta,\xi_1}_dxi_2
+      nuGrad[0][0][2]  = -1. ; // nu_0^{\zeta,\xi_1}_dzeta
+      
+      nuGrad[0][1][0]  =  0. ; // nu_0^{\zeta,\xi_2}_dxi_1
+      nuGrad[0][1][1]  = -1. ; // nu_0^{\zeta,\xi_2}_dxi_2
+      nuGrad[0][1][2]  = -1. ; // nu_0^{\zeta,\xi_2}_dzeta
+      
+      nuGrad[1][0][0]  =  1. ; // nu_1^{\zeta,\xi_1}_dxi_1
+      nuGrad[1][0][1]  =  0. ; // nu_1^{\zeta,\xi_1}_dxi_2
+      nuGrad[1][0][2]  =  0. ; // nu_1^{\zeta,\xi_1}_dzeta
+      
+      nuGrad[1][1][0]  =  0. ; // nu_1^{\zeta,\xi_2}_dxi_1
+      nuGrad[1][1][1]  =  1. ; // nu_1^{\zeta,\xi_2}_dxi_2
+      nuGrad[1][1][2]  =  0. ; // nu_1^{\zeta,\xi_2}_dzeta
+      
+      nuGrad[2][0][0]  =  0. ; // nu_2^{\zeta,\xi_1}_dxi_1
+      nuGrad[2][0][1]  =  0. ; // nu_2^{\zeta,\xi_1}_dxi_2
+      nuGrad[2][0][2]  =  1. ; // nu_2^{\zeta,\xi_1}_dzeta
+      
+      nuGrad[2][1][0]  =  0. ; // nu_2^{\zeta,\xi_2}_dxi_1
+      nuGrad[2][1][1]  =  0. ; // nu_2^{\zeta,\xi_2}_dxi_2
+      nuGrad[2][1][2]  =  1. ; // nu_2^{\zeta,\xi_2}_dzeta
     }
     
     // Provide the shared memory capacity.
