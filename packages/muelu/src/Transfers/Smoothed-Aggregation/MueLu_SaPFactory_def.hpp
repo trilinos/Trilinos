@@ -79,6 +79,7 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: rowsumabs diagonal replacement value");
     SET_VALID_ENTRY("sa: rowsumabs replace single entry row with zero");
     SET_VALID_ENTRY("sa: rowsumabs use automatic diagonal tolerance");
+    SET_VALID_ENTRY("sa: eigen-analysis type");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -176,11 +177,17 @@ namespace MueLu {
     const Magnitude diagonalReplacementTolerance = (dTol == as<double>(-1) ? Teuchos::ScalarTraits<Scalar>::eps()*100 : as<Magnitude>(pL.get<double>("sa: rowsumabs diagonal replacement tolerance")));
     const SC diagonalReplacementValue =  as<SC>(pL.get<double>("sa: rowsumabs diagonal replacement value"));
     const bool replaceSingleEntryRowWithZero = pL.get<bool>("sa: rowsumabs replace single entry row with zero");
-    const bool useAutomaticDiagTol =       pL.get<bool>("sa: rowsumabs use automatic diagonal tolerance");
+    const bool useAutomaticDiagTol =     pL.get<bool>("sa: rowsumabs use automatic diagonal tolerance");
+    const std::string eigenAnalysis =    pL.get<std::string>("sa: eigen-analysis type");
+    
+
 
     // Sanity checking
     TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && enforceConstraints,Exceptions::RuntimeError,
-                               "MueLu::TentativePFactory::MakeTentative: cannot use 'enforce constraints' and 'calculate qr' at the same time");
+                               "MueLu::SaPFactory::BuildP: cannot use 'enforce constraints' and 'calculate qr' at the same time");
+    TEUCHOS_TEST_FOR_EXCEPTION(eigenAnalysis != "power-method" && eigenAnalysis != "cg",Exceptions::RuntimeError,
+                               "MueLu::SaPFactory::BuildP: 'sa: eigen-analysis type' needs to be 'cg' or 'power-method'");
+
 
     if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
 
@@ -192,7 +199,7 @@ namespace MueLu {
         lambdaMax = A->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations <<
-          ( (useAbsValueRowSum) ?  ", use rowSumAbs diagonal)" :  ", use point diagonal)") << std::endl;
+            ( (useAbsValueRowSum) ?  ", use rowSumAbs diagonal) with " :  ", use point diagonal) with ") <<eigenAnalysis << std::endl;
           Coordinate stopTol = 1e-4;
           if (useAbsValueRowSum) {
             const bool returnReciprocal=true;
@@ -203,9 +210,16 @@ namespace MueLu {
                                                         useAutomaticDiagTol);
             TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
-            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
-          } else
-            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
+            if(eigenAnalysis == "cg")
+              lambdaMax = Utilities::CG(*A, invDiag, maxEigenIterations, stopTol);
+            else
+              lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
+          } else {
+            if(eigenAnalysis == "cg") 
+              lambdaMax = Utilities::CG(*A, true, maxEigenIterations, stopTol);
+            else
+              lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
+          }
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;

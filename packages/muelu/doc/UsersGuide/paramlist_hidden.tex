@@ -281,6 +281,8 @@
         
 \cbb{sa: calculate eigenvalue estimate}{bool}{false}{Force calculation of eigenvalue estimate during prolongator smoothing.}
         
+\cbb{sa: eigen-analysis type}{string}{power-method}{Algorithm for eigen-analysis for SA.  Options: "power-method" (default) or "cg".}
+        
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
         
 \cbb{sa: use rowsumabs diagonal scaling}{bool}{false}{Use the row sums of the absolute values of the matrix as the diagonal wherever inverse(D) is required.}

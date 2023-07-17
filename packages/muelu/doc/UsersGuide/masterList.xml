@@ -1271,6 +1271,15 @@
     </parameter>
 
     <parameter>
+      <name>sa: eigen-analysis type</name>
+      <type>string</type>
+      <default>power-method</default>
+      <description>Algorithm for eigen-analysis for SA.  Options: "power-method" (default) or "cg".</description>
+      <visible>false</visible>
+    </parameter>
+
+
+    <parameter>
       <name>sa: eigenvalue estimate num iterations</name>
       <type>int</type>
       <default>10</default>

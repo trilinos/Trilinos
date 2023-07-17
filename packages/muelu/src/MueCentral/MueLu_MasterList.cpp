@@ -133,6 +133,7 @@ namespace MueLu {
     if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: use filtered matrix") { ss << "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: eigen-analysis type") { ss << "<Parameter name=\"sa: eigen-analysis type\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: use rowsumabs diagonal scaling") { ss << "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -301,6 +302,7 @@ namespace MueLu {
   "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33\"/>"
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"sa: eigen-analysis type\" type=\"string\" value=\"power-method\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=\"false\"/>"
@@ -821,6 +823,8 @@ namespace MueLu {
          ("aggregation aux: enable","sa: use filtered matrix")
       
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
+      
+         ("sa: eigen-analysis type","sa: eigen-analysis type")
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
       
