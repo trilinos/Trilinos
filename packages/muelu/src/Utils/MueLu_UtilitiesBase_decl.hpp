@@ -246,6 +246,34 @@ namespace MueLu {
     static Scalar PowerMethod(const Matrix& A, const RCP<Vector> &diagInvVec,
                               LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123);
 
+
+    /*! @brief Maximum eigenvalue estimation via CG (for ML compatibility)
+
+      @param A matrix
+      @param diagInvVec reciprocal of matrix diagonal
+      @param niters maximum number of iterations
+      @verbose if true, print iteration information
+      @seed  seed for randomizing initial guess
+
+      (Shamelessly grabbed from tpetra/examples.)
+    */
+    static Scalar CG(const Matrix& A, bool scaleByDiag = true,
+                     LocalOrdinal niters = 10, Magnitude tolerance = 1e-8, bool verbose = false, unsigned int seed = 123);
+
+
+    /*! @brief Maximum eigenvalue estimation via CG (for ML compatibility)
+
+      @param A matrix
+      @param diagInvVec reciprocal of matrix diagonal
+      @param niters maximum number of iterations
+      @verbose if true, print iteration information
+      @seed  seed for randomizing initial guess
+
+      (Shamelessly grabbed from tpetra/examples.)
+    */
+    static Scalar CG(const Matrix& A, const RCP<Vector> &diagInvVec,
+                     LocalOrdinal niters = 10, Magnitude tolerance = 1e-8, bool verbose = false, unsigned int seed = 123);
+
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os);
 
     /*! @brief Squared distance between two rows in a multivector

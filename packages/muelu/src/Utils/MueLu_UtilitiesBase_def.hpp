@@ -72,6 +72,7 @@
 #include <KokkosKernels_Handle.hpp>
 #include <KokkosGraph_RCM.hpp>
 
+#include <Teuchos_LAPACK.hpp>
 
 namespace MueLu {
 
@@ -857,6 +858,244 @@ namespace MueLu {
     }
     return lambda;
   }
+
+
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar
+  UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CG(const Matrix& A, bool scaleByDiag,
+              LocalOrdinal niters,  typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose, unsigned int seed) {
+    TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
+                               "Utils::CG: operator must have domain and range maps that are equivalent.");
+
+    // power iteration
+    RCP<Vector> diagInvVec;
+    if (scaleByDiag) {
+      RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+      A.getLocalDiagCopy(*diagVec);
+      diagInvVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+      diagInvVec->reciprocal(*diagVec);
+    }
+
+    Scalar lambda = CG(A, diagInvVec, niters, tolerance, verbose, seed);
+    return lambda;
+  }
+
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar
+  UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CG(const Matrix& A, const RCP<Vector> &diagInvVec,
+              LocalOrdinal niters,  typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose, unsigned int seed) {
+    TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
+                               "Utils::CG: operator must have domain and range maps that are equivalent.");
+
+    using STS = Teuchos::ScalarTraits<Scalar>;    
+    using MT = typename STS::magnitudeType;
+    const Scalar one = STS::one();
+    const Scalar zero = STS::zero();
+    Scalar rho = zero, rho_minus_one, alpha, beta,sigma;
+    Teuchos::Array<MT> Tdiag(niters+1,one), Tsubdiag(niters+1,zero), alpha_array(niters+1),rnorm_array(niters+1);
+    Teuchos::Array<Scalar> temp(1);;
+  
+    RCP<Vector> r =  Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
+    RCP<Vector> p =  Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
+    RCP<Vector> Ap = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
+    RCP<Vector> u;
+
+    if(!diagInvVec.is_null())
+      u =  Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
+    
+
+    // Generate random initial guess
+    r->setSeed(seed);  // seed random number generator
+    r->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
+
+
+    printf("\nr0 = ");
+    for(int i=0; i<(int) r->getData(0).size(); i++)
+      printf("%22.16e ",r->getData(0)[i]);
+      
+    // Get the sqrt of the input diagonal
+    // FIXME: Kokkosify this
+    RCP<Vector> scaleVec;
+    if(!diagInvVec.is_null()) {
+      scaleVec= Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(diagInvVec->getMap());
+      Teuchos::ArrayRCP<const Scalar> in_data  = diagInvVec->getData(0);
+      Teuchos::ArrayRCP<Scalar> out_data = scaleVec->getDataNonConst(0);
+      for(LO i=0; i<(LO) in_data.size(); i++)
+        out_data[i] = sqrt(in_data[i]);
+      {
+        scaleVec->norm2(temp());
+        printf("CMS: Generating scaleVec w/ norm %6.4e\n",temp[0]);
+      }
+    }
+    
+
+    // Get the initial guess right for the Dirichlet BCs
+    if(!scaleVec.is_null()) {
+      // Modify the initial guess and the scale based on a SPMV
+      // Not quite what ML does but is hopefully close
+      RCP<Vector> output = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(diagInvVec->getMap());
+      A.apply(*r,*output);
+      Teuchos::ArrayRCP<Scalar> r_data  = r->getDataNonConst(0);
+      Teuchos::ArrayRCP<Scalar> scale_data  = scaleVec->getDataNonConst(0);
+      Teuchos::ArrayRCP<const Scalar> out_data = output->getData(0);
+      // FIXME: Kokkosify this
+      for(LO i=0; i<(LO)r_data.size(); i++) {
+        if(r_data[i] == out_data[i]) {
+          r_data[i]=zero;
+          scale_data[i] = zero;
+        }
+      }
+
+    }
+    else {
+      // Try to detect Dirichlet BCs using a SPMV
+      printf("CMS: Trying do use SPMV no-diag\n");
+      RCP<Vector> output = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
+      printf("apply started\n");fflush(stdout);
+      A.apply(*r,*output);
+
+      printf("apply finished\n");fflush(stdout);
+
+      Teuchos::ArrayRCP<Scalar> r_data  = r->getDataNonConst(0);
+      Teuchos::ArrayRCP<const Scalar> out_data = output->getData(0);
+
+      printf("sizes = %d %d\n",(int)r_data.size(),(int)out_data.size());fflush(stdout);
+
+      // FIXME: Kokkosify this
+      for(LO i=0; i<(LO)r_data.size(); i++) {
+        if(r_data[i] == out_data[i]) r_data[i]=zero;
+      }
+    }
+
+
+
+
+      
+    r->dot(*r,temp); rnorm_array[0]=sqrt(temp[0]);
+    p->putScalar(zero);
+    
+    int iter; // So we can detect early termination
+    for (iter = 0; iter < niters; ++iter) {
+      // rho = ||r||
+      rho_minus_one = rho;
+      r->dot(*r,temp()); rho=temp[0];
+
+      if(iter ==0) 
+        beta = zero;
+      else {
+        beta = rho / rho_minus_one;
+        Tsubdiag[iter-1] = -beta;
+      }
+      
+      //p = beta*p + r
+      p->update(one,*r,beta);//this = beta*this + alpha*A. 
+      
+      // u = p.*scale
+      // Ap = A*u    
+      // Ap = Ap.*scale  
+      if (scaleVec != Teuchos::null) {     
+        u->elementWiseMultiply(one, *scaleVec, *p, zero);//C(i,j) = scalarThis * C(i,j) + scalarAB * B(i,j) * A(i,1);
+        A.apply(*u,*Ap);
+        Ap->elementWiseMultiply(one, *scaleVec, *Ap, zero);
+      }
+      else {
+        A.apply (*p, *Ap);
+      }
+
+      // sigma = p*Ap
+      p->dot(*Ap,temp); sigma=temp[0];
+      alpha_array[iter] = sigma;
+      if(abs(sigma) < 1e-12) {
+        printf("\n[%d] CMS: Breaking on sigma = %6.4e < 1e-12 \n",iter,sigma);
+        iter++;
+        break;
+      }
+      alpha  = rho / sigma;
+
+      // r -= alpha * Ap
+      r->update(-alpha, *Ap, one);//this = beta*this + alpha*A. 
+      r->dot(*r,temp()); 
+      rnorm_array[iter+1]=sqrt(temp[0]);
+
+      if(rnorm_array[iter+1] < tolerance * rnorm_array[0]) {
+        printf("\n[%d] CMS Breaking on rnowm = %6.4e < % 6.4e * %6.4e \n",iter,rnorm_array[iter+1],tolerance,rnorm_array[0]);
+        iter++;
+        break;
+      }
+
+    }
+
+    printf("\ninit_Tdiag = ");
+    for(int i=0; i<iter; i++)
+      printf("%22.16e ",Tdiag[i]);
+    printf("\ninit_Tsubdiag = ");
+    for(int i=0; i<iter-1; i++)
+      printf("%22.16e ",Tsubdiag[i]);
+    printf("\n");
+
+
+    
+    // Build T
+    // NOTE: Only iterate up to the last actual iteration
+    Tdiag[0]=alpha_array[0];
+    for (int i = 1; i < iter; i++ )
+      Tdiag[i] = alpha_array[i]+alpha_array[i-1]*Tsubdiag[i-1]*Tsubdiag[i-1];
+    for (int i = 0; i < iter; i++ ) {
+      Tsubdiag[i] *= alpha_array[i];
+      rnorm_array[i] = 1.0 / rnorm_array[i];
+    }
+    for (int i = 0; i < iter; i++ ) {
+     Tdiag[i] *= rnorm_array[i] * rnorm_array[i];
+     if (i != iter-1)
+        Tsubdiag[i] = Tsubdiag[i] * rnorm_array[i] * rnorm_array[i+1];
+    }
+
+
+
+    printf("\nrnorm_array = ");
+    for(int i=0; i<(int) iter; i++)
+      printf("%22.16e ",rnorm_array[i]);
+
+    printf("\nalpha_array = ");
+    for(int i=0; i<iter; i++)
+      printf("%22.16e ",alpha_array[i]);
+  
+
+
+    printf("\nfinal_Tdiag = ");
+    for(int i=0; i<iter; i++)
+      printf("%22.16e ",Tdiag[i]);
+    printf("\nfinal_Tsubdiag = ");
+    for(int i=0; i<iter-1; i++)
+      printf("%22.16e ",Tsubdiag[i]);
+    printf("\n");
+
+
+    // Get the eigenvalues
+    LocalOrdinal info;
+    Teuchos::LAPACK<LocalOrdinal,Scalar> lapack;
+    lapack.STEQR('N',iter,Tdiag.data(),Tsubdiag.data(), NULL, one, NULL, &info);
+    
+    printf("info = %d iter = %d\n",info,iter);
+    printf("\nLAPACK = ");
+    for(int i=0; i<iter; i++)
+      printf("%22.16e ",Tdiag[i]);
+    printf("\n");
+
+    if(iter == 0) 
+      return zero;
+    else
+      return Tdiag[iter-1];
+  }
+
+
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Teuchos::FancyOStream>

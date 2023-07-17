@@ -50,6 +50,7 @@
 #include <MueLu_Version.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_IO.hpp>
 
@@ -341,10 +342,79 @@ namespace MueLuTests {
 
   } //SaPFactory_ConstrainRowOptimalScalarPDE
 
+
+ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, PowerMethodVsCG, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+
+    typedef Teuchos::ScalarTraits<SC> STS;
+    using MT  = typename STS::magnitudeType;
+    using TMT = Teuchos::ScalarTraits<MT>;
+
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    
+    // generate problem
+    GlobalOrdinal nEle = 63;
+    const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
+    Teuchos::ParameterList matrixParameters;
+    matrixParameters.set("nx",nEle);
+    
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,CrsMatrixWrap,MultiVector>("Laplace1D", map, matrixParameters);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    
+
+    LO niters= 100;
+    MT tol = STS::eps()*100;
+    
+    {
+      // Unscaled
+      // Power Method
+      MT lambda_pm = Utilities::PowerMethod(*A,false,niters,tol);
+
+      // CG
+      MT lambda_cg = Utilities::CG(*A,false,niters,tol);
+
+      TEST_FLOATING_EQUALITY(lambda_pm,lambda_cg, 1e-2);
+    }
+
+    {
+      // Auto-scaled
+      // Power Method
+      MT lambda_pm = Utilities::PowerMethod(*A,true,niters,tol);
+
+      // CG
+      MT lambda_cg = Utilities::CG(*A,true,niters,tol);
+
+      TEST_FLOATING_EQUALITY(lambda_pm,lambda_cg, 1e-2);
+    }
+
+    {
+      // Manually scaled
+      RCP<Vector> D = VectorFactory::Build(map);
+      RCP<Vector> Dinv = VectorFactory::Build(map);
+      A->getLocalDiagCopy(*D);
+      Dinv->reciprocal(*D);
+
+      // Power Method
+      MT lambda_pm = Utilities::PowerMethod(*A,Dinv,niters,tol);
+
+      // CG
+      MT lambda_cg = Utilities::CG(*A,Dinv,niters,tol);
+
+      TEST_FLOATING_EQUALITY(lambda_pm,lambda_cg, 1e-2);      
+    }
+
+
+  }
+
+
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, Test0, SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, EpetraVsTpetra, SC, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, ConstrainRowOptimalScalarPDE, SC, LO, GO, Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, ConstrainRowOptimalScalarPDE, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, PowerMethodVsCG, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
