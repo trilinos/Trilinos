@@ -191,7 +191,7 @@ namespace MueLu {
               level->Set(name, mat, NoFactory::get());
             }
           }
-          else if (name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix") {
+          else if (name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix" || name == "Graph") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             if (levelListEntry->second.isType<RCP<Operator> >())
               level->Set(name, Teuchos::getValue<RCP<Operator> >   (levelListEntry->second), NoFactory::get());
