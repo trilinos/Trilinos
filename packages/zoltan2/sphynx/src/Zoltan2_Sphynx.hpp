@@ -762,7 +762,7 @@ namespace Zoltan2 {
       ++numfailed;
     }
     iter = solver->getNumIters();
-    solvetime = (solver->getTimers()[0])->totalElapsedTime();
+    //solvetime = (solver->getTimers()[0])->totalElapsedTime();
 
     // Retrieve the solution
     using solution_t = Anasazi::Eigensolution<scalar_t, mvector_t>;
@@ -777,7 +777,7 @@ namespace Zoltan2 {
       std::cout << "ANASAZI SUMMARY" << std::endl;
       std::cout << "Failed to converge:    " << numfailed << std::endl;
       std::cout << "No of iterations :     " << iter << std::endl;
-      std::cout << "Solve time:            "; //<< solvetime << std::endl;
+      std::cout << "Solve time:            " << std::endl; // solvetime << std::endl;
       std::cout << "No of comp. vecs. :    " << numev << std::endl;
     }
     std::cout << "Returning from Anasazi Wrapper." << std::endl;
