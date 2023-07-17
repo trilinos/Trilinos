@@ -290,6 +290,12 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
 
     TEST_ASSERT(v_of_v.isInitialized());
 
+    // For UVM=ON builds, need to fence here. The outer views are
+    // being accessed before the initialization is completed on
+    // device. The failure only shows up if you overload the cuda card
+    // with multiple tests to slow down the initialization.
+    streams[3].fence(); // PHX_UVM_ON_FENCE
+
     v_of_v.addView(a,0,0);
     v_of_v.addView(b,0,1);
     v_of_v.addView(c,1,0);
@@ -362,6 +368,12 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
     TEST_ASSERT(!v_of_v.isInitialized());
     v_of_v.initialize(streams[3],"outer host",2,2);
     TEST_ASSERT(v_of_v.isInitialized());
+
+    // For UVM=ON builds, need to fence here. The outer views are
+    // being accessed before the initialization is completed on
+    // device. The failure only shows up if you overload the cuda card
+    // with multiple tests to slow down the initialization.
+    streams[3].fence(); // PHX_UVM_ON_FENCE
 
     v_of_v.addView(a,0,0);
     v_of_v.addView(b,0,1);

@@ -116,8 +116,10 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
       int fill = NC_FILL_CHAR;
       nc_def_var_fill(exoid, varid, 0, &fill);
+#endif
 
       /* determine number of nodes */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES, &dimid)) != NC_NOERR) {
@@ -185,9 +187,10 @@ int ex_put_map_param(int exoid, int num_node_maps, int num_elem_maps)
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
       int fill = NC_FILL_CHAR;
       nc_def_var_fill(exoid, varid, 0, &fill);
-
+#endif
       /* determine number of elements */
       if ((status = nc_inq_dimid(exoid, DIM_NUM_ELEM, &dimid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,

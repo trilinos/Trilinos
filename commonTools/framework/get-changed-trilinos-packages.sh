@@ -176,13 +176,21 @@ CHANGED_PACKAGES_FULL_LIST=`$TRIBITS_DIR/ci_support/get-tribits-packages-from-fi
 echo "CHANGED_PACKAGES_FULL_LIST='$CHANGED_PACKAGES_FULL_LIST'"
 
 echo
-echo "D) Filter list of changed packages to get only the PT packages"
+echo "D) Filter list of changed packages"
 echo
 CHANGED_PACKAGES_ST_LIST=$(trilinos_filter_packages_to_test "${CHANGED_PACKAGES_FULL_LIST}")
 echo "CHANGED_PACKAGES_ST_LIST='${CHANGED_PACKAGES_ST_LIST}'"
 
 echo
-echo "E) Generate the ${CMAKE_PACKAGE_ENABLES_OUT} enables file"
+echo "E) Enable Trilinos installation tests if any Trilinos packages are changed"
+echo
+if [[ "${CHANGED_PACKAGES_ST_LIST}" != "" ]] ; then
+  export CHANGED_PACKAGES_ST_LIST=${CHANGED_PACKAGES_ST_LIST},TrilinosInstallTests
+fi
+echo "CHANGED_PACKAGES_ST_LIST='${CHANGED_PACKAGES_ST_LIST}'"
+
+echo
+echo "F) Generate the ${CMAKE_PACKAGE_ENABLES_OUT} enables file"
 echo
 
 echo "
@@ -204,7 +212,7 @@ fi
 echo "Wrote file '$CMAKE_PACKAGE_ENABLES_OUT'"
 
 echo
-echo "F) Generate the ${CTEST_LABELS_FOR_SUBPROJETS_OUT} file"
+echo "G) Generate the ${CTEST_LABELS_FOR_SUBPROJETS_OUT} file"
 echo
 
 printf "set(CTEST_LABELS_FOR_SUBPROJECTS" >  $CTEST_LABELS_FOR_SUBPROJETS_OUT

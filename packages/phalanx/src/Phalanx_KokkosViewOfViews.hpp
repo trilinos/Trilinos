@@ -324,14 +324,14 @@ namespace PHX {
     /// fence. Be sure to manually fence as needed.
     template<typename ExecSpace,typename... Extents>
     ViewOfViews3(const ExecSpace& exec_space,const std::string name,Extents... extents)
-      : view_host_(Kokkos::view_alloc(Kokkos::HostSpace(),name),extents...),
+      : view_host_(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...),
         view_device_(Kokkos::view_alloc(exec_space,name),extents...),
         device_view_is_synced_(false),
         is_initialized_(true),
         use_count_(0),
         check_use_count_(true)
     {
-      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),view_device_);
+      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
       use_count_ = view_device_.impl_track().use_count();
     }
 
@@ -390,9 +390,9 @@ namespace PHX {
     template<typename ExecSpace,typename... Extents>
     void initialize(const ExecSpace& exec_space,const std::string name,Extents... extents)
     {
-      view_host_ = typename OuterViewType::HostMirror(Kokkos::view_alloc(Kokkos::HostSpace(),name),extents...);
+      view_host_ = typename OuterViewType::HostMirror(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...);
       view_device_ = OuterViewType(Kokkos::view_alloc(exec_space,name),extents...);
-      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),view_device_);
+      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
       device_view_is_synced_ = false;
       is_initialized_ = true;
       use_count_ = view_device_.impl_track().use_count();

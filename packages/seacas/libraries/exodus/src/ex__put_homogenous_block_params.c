@@ -280,8 +280,10 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
       int fill = NC_FILL_CHAR;
       nc_def_var_fill(exoid, att_name_varid, 0, &fill);
+#endif
     }
 
     int conn_int_type = NC_INT;

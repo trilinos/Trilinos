@@ -40,15 +40,6 @@ TRIBITS_ADD_TEST_DIRECTORIES(unit-test)
 # performance tests 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(perf-test)
 
-# we do not have examples yet
-#TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-
-#
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
 #
 # D) Do standard postprocessing
 #
