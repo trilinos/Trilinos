@@ -39,8 +39,9 @@ TEST(UnitTestCPUTime, testUnit)
 {
   double cpu_now = stk::cpu_time();
 
-  volatile double x = 0.0;
-  while (x++ < 10000000) ;
+  double x = 0.0;
+  while (x++ < 10000000);
+  EXPECT_EQ(x, 10000001);
   
   double cpu_delta = stk::cpu_time() - cpu_now;
   

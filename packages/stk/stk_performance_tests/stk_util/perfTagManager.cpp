@@ -102,6 +102,8 @@ TEST(MPITagManager, timing)
     perf_test(32, 16, 8192,  96);
     perf_test(32, 16, 16384, 16384);
     perf_test(32, 16, 16384, 96);
+    perf_test(32, 16, 32768, 16384);
+    perf_test(32, 16, 32768, 96);
 
     batchTimer.stop_batch_timer();
   }
