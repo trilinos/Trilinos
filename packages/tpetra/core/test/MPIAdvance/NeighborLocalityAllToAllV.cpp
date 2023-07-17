@@ -98,9 +98,6 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   std::vector<int> sendcounts, recvcounts, senddispls, recvdispls; // alltoallv
   std::vector<int> nbrsendcounts, nbrrecvcounts, nbrsenddispls, nbrrecvdispls; // neighbor locality alltoallv
   std::vector<int> sources, sourceweights, destinations, destweights; // communicator
-  
-  long sendsize = 0;
-  long recvsize = 0;
 
   int sdispl = 0;
   int nbrsdispl = 0;
@@ -116,18 +113,7 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
       nbrsendcounts.push_back(count);
       nbrsenddispls.push_back(nbrsdispl);
       nbrsdispl += count;
-      sendsize += count;
     }
-  }
-  
-  long firstsend = 0;
-  MPI_Exscan(&sendsize, &firstsend, 1, MPI_LONG, MPI_SUM, comm);
-  if (rank == 0) {
-    firstsend = 0;
-  }
-  std::vector<long> globalsindices;
-  for (int i = 0; i < sendsize; ++i) {
-    globalsindices.push_back(firstsend + i);
   }
 
   int rdispl = 0;
@@ -144,13 +130,33 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
       nbrrecvcounts.push_back(count);
       nbrrecvdispls.push_back(nbrrdispl);
       nbrrdispl += count;
-      recvsize += count;
     }
   }
 
   // distribute unique indices for assuming no redundant data
+  long sendsize = 0;
+  long recvsize = 0;
+  std::vector<int> globalsindicesdispls;
+  std::vector<int> globalrindicesdispls;
+  for (int i = 0; i < destinations.size(); ++i) {
+    globalsindicesdispls.push_back(sendsize);
+    sendsize += nbrsendcounts[i];
+  }
+  for (int j = 0; j < sources.size(); ++j) {
+    globalrindicesdispls.push_back(recvsize);
+    recvsize += nbrrecvcounts[j];
+  }
+  long firstsend = 0;
+  MPI_Exscan(&sendsize, &firstsend, 1, MPI_LONG, MPI_SUM, comm);
+  if (rank == 0) {
+    firstsend = 0;
+  }
+  std::vector<long> globalsindices;
+  for (int i = 0; i < sendsize; ++i) {
+    globalsindices.push_back(firstsend + i);
+  }
   std::vector<long> globalrindices(recvsize, 0);
-  MPI_Alltoallv(globalsindices.data(), nbrsendcounts.data(), nbrsenddispls.data(), MPI_LONG, globalrindices.data(), nbrrecvcounts.data(), nbrrecvdispls.data(), MPI_LONG, comm);
+  MPI_Alltoallv(globalsindices.data(), nbrsendcounts.data(), globalsindicesdispls.data(), MPI_LONG, globalrindices.data(), nbrrecvcounts.data(), globalrindicesdispls.data(), MPI_LONG, comm);
 
   print_vec(rank, "sources", sources);
   print_vec(rank, "sourceweights", sourceweights);
