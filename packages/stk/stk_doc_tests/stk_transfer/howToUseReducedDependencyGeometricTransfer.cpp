@@ -162,6 +162,20 @@ private:
 };
 //END_send_adapter
 
+//BEGIN_remote_send_adapter
+class RemoteSendAdapter
+{
+public:
+  using EntityKey = uint64_t;
+  using EntityProc = stk::search::IdentProc<EntityKey>;
+  using EntityProcVec = std::vector<EntityProc>;
+  using BoundingBox = std::pair<stk::search::Box<double>, EntityProc>;
+
+  void bounding_boxes(std::vector<BoundingBox> & ) const {}
+  void update_values() {}
+};
+//END_remote_send_adapter
+
 //BEGIN_recv_adapter
 class StkRecvAdapter
 {
@@ -256,6 +270,105 @@ private:
 };
 //END_recv_adapter
 
+//BEGIN_remote_recv_adapter
+class RemoteRecvAdapter
+{
+public:
+  using EntityKey = uint64_t;
+  using EntityProc = stk::search::IdentProc<EntityKey>;
+  using EntityProcVec = std::vector<EntityProc>;
+  using BoundingBox = std::pair<stk::search::Sphere<double>, EntityProc>;
+
+  using Point = stk::search::Point<double>;
+  using ToPointsContainer = std::vector<Point>;
+  using ToPointsDistance = double;
+  using ToPointsDistanceContainer = std::vector<ToPointsDistance>;
+
+  void bounding_boxes(std::vector<BoundingBox> & ) const {}
+  void get_to_points_coordinates(const EntityProcVec & , ToPointsContainer & ) {}
+  void update_values() {}
+};
+//END_remote_recv_adapter
+
+//BEGIN_interpolate
+template<typename SendAdapter, typename RecvAdapter>
+class Interpolate
+{
+public:
+  using MeshA = SendAdapter;
+  using MeshB = RecvAdapter;
+  using EntityKeyA = typename MeshA::EntityKey;
+  using EntityKeyB = typename MeshB::EntityKey;
+  using EntityProcA = typename MeshA::EntityProc;
+  using EntityProcB = typename MeshB::EntityProc;
+  using EntityProcRelation = std::pair<EntityProcB, EntityProcA>;
+  using EntityProcRelationVec = std::vector<EntityProcRelation>;
+
+  void obtain_parametric_coords(
+      const typename MeshA::EntityProcVec & elemsToInterpolateFrom,
+      const MeshA & sendAdapter,
+      const typename MeshB::ToPointsContainer & pointsToInterpolateTo,
+      typename MeshB::ToPointsDistanceContainer & distanceToInterpolationPoints)
+  {
+    for (unsigned i = 0; i < elemsToInterpolateFrom.size(); ++i) {
+      m_parametricCoords.push_back({0, 0, 0});
+      distanceToInterpolationPoints.push_back(0.0);
+    }
+  }
+
+  void mask_parametric_coords(const std::vector<int> & filterMaskFrom, int fromCount)
+  {
+    for (unsigned i = 0; i < filterMaskFrom.size(); ++i) {
+      if (filterMaskFrom[i]) {
+        m_maskedParametricCoords.push_back(m_parametricCoords[i]);
+      }
+    }
+  }
+
+  void apply(MeshB * recvAdapter, MeshA * sendAdapter,
+             const typename MeshB::EntityProcVec & toEntityKeysMasked,
+             const typename MeshA::EntityProcVec & fromEntityKeysMasked,
+             const stk::transfer::ReducedDependencyCommData & commData)
+  {
+    const unsigned totalFieldSize = sendAdapter->total_field_size();
+    std::vector<double> sendInterpValues(fromEntityKeysMasked.size() * totalFieldSize);
+    std::vector<double> recvInterpValues(toEntityKeysMasked.size() * totalFieldSize);
+
+    interpolate_from_send_mesh(fromEntityKeysMasked, *sendAdapter, sendInterpValues);
+    stk::transfer::do_communication(commData, sendInterpValues, recvInterpValues,
+                                    totalFieldSize);
+    write_to_recv_mesh(recvInterpValues, toEntityKeysMasked, *recvAdapter);
+  }
+
+private:
+  void interpolate_from_send_mesh(const typename MeshA::EntityProcVec & fromEntityKeysMasked,
+                                  const MeshA & sendAdapter,
+                                  std::vector<double> & sendInterpValues)
+  {
+    unsigned offset = 0;
+    for (unsigned i = 0; i < fromEntityKeysMasked.size(); ++i) {
+      typename MeshA::EntityKey key = fromEntityKeysMasked[i].id();
+      sendAdapter.interpolate_fields(m_maskedParametricCoords[i], key, &sendInterpValues[offset]);
+      offset += sendAdapter.total_field_size();
+    }
+  }
+
+  void write_to_recv_mesh(const std::vector<double> & recvInterpValues,
+                          const typename MeshB::EntityProcVec & toEntityKeysMasked,
+                          MeshB & recvAdapter)
+  {
+    unsigned offset = 0;
+    for (unsigned i = 0; i < toEntityKeysMasked.size(); ++i) {
+      typename MeshB::EntityKey key = toEntityKeysMasked[i].id();
+      recvAdapter.set_field_values(key, &recvInterpValues[offset]);
+      offset += recvAdapter.total_field_size();
+    }
+  }
+  std::vector<std::array<double, 3>> m_parametricCoords;
+  std::vector<std::array<double, 3>> m_maskedParametricCoords;
+};
+//END_interpolate
+
 //BEGIN_send_interpolate
 template<typename SendAdapter, typename RecvAdapter>
 class SendInterpolate
@@ -298,7 +411,7 @@ public:
   {
     const unsigned totalFieldSize = sendAdapter->total_field_size();
     std::vector<double> sendInterpValues(fromEntityKeysMasked.size() * totalFieldSize);
-    interpolate_from_mesh(fromEntityKeysMasked, *sendAdapter, sendInterpValues);
+    interpolate_from_send_mesh(fromEntityKeysMasked, *sendAdapter, sendInterpValues);
 
     std::vector<double> recvInterpValues;  // Unused
     stk::transfer::do_communication(commData, sendInterpValues, recvInterpValues,
@@ -306,9 +419,9 @@ public:
   }
 
 private:
-  void interpolate_from_mesh(const typename MeshA::EntityProcVec & fromEntityKeysMasked,
-                             const MeshA & sendAdapter,
-                             std::vector<double> & sendInterpValues)
+  void interpolate_from_send_mesh(const typename MeshA::EntityProcVec & fromEntityKeysMasked,
+                                  const MeshA & sendAdapter,
+                                  std::vector<double> & sendInterpValues)
   {
     unsigned offset = 0;
     for (unsigned i = 0; i < fromEntityKeysMasked.size(); ++i) {
@@ -354,13 +467,13 @@ public:
     stk::transfer::do_communication(comm_data, sendInterpValues, recvInterpValues,
                                     totalFieldSize);
 
-    write_to_mesh(recvInterpValues, toEntityKeysMasked, *recvAdapter);
+    write_to_recv_mesh(recvInterpValues, toEntityKeysMasked, *recvAdapter);
   }
 
 private:
-  void write_to_mesh(const std::vector<double> & recvInterpValues,
-                     const typename MeshB::EntityProcVec & toEntityKeysMasked,
-                     MeshB & recvAdapter)
+  void write_to_recv_mesh(const std::vector<double> & recvInterpValues,
+                          const typename MeshB::EntityProcVec & toEntityKeysMasked,
+                          MeshB & recvAdapter)
   {
     unsigned offset = 0;
     for (unsigned i = 0; i < toEntityKeysMasked.size(); ++i) {
@@ -397,44 +510,6 @@ BulkDataPtr read_mesh(MPI_Comm comm,
   return bulk;
 }
 
-template <typename INTERPOLATE>
-using RDGeomTransfer = stk::transfer::ReducedDependencyGeometricTransfer<INTERPOLATE>;
-
-using SendTransferType = RDGeomTransfer<SendInterpolate<StkSendAdapter, StkRecvAdapter>>;
-using RecvTransferType = RDGeomTransfer<RecvInterpolate<StkSendAdapter, StkRecvAdapter>>;
-
-std::shared_ptr<SendTransferType> setup_send_transfer(MPI_Comm globalComm, BulkDataPtr & bulk,
-                                                      const FieldConfig & fieldConfig)
-{
-  auto sendAdapter = std::make_shared<StkSendAdapter>(globalComm, bulk, "block_1",
-                                                      fieldConfig);
-  std::shared_ptr<StkRecvAdapter> nullRecvAdapter;
-
-  auto sendTransfer = std::make_shared<SendTransferType>(sendAdapter, nullRecvAdapter,
-                                                         "SendTransfer", globalComm);
-
-  sendTransfer->coarse_search();
-  sendTransfer->communication();
-
-  return sendTransfer;
-}
-
-std::shared_ptr<RecvTransferType> setup_recv_transfer(MPI_Comm globalComm,
-                                                      BulkDataPtr & mesh,
-                                                      const FieldConfig & fieldConfig)
-{
-  std::shared_ptr<StkSendAdapter> nullSendAdapter;
-  auto recvAdapter = std::make_shared<StkRecvAdapter>(globalComm, mesh, "block_1",
-                                                      fieldConfig);
-
-  auto recvTransfer = std::make_shared<RecvTransferType>(nullSendAdapter, recvAdapter,
-                                                         "RecvTransfer", globalComm);
-  recvTransfer->coarse_search();
-  recvTransfer->communication();
-
-  return recvTransfer;
-}
-
 bool all_field_values_equal(BulkDataPtr & bulk, const FieldConfig & fieldConfig)
 {
   stk::mesh::MetaData & meta = bulk->mesh_meta_data();
@@ -457,8 +532,89 @@ bool all_field_values_equal(BulkDataPtr & bulk, const FieldConfig & fieldConfig)
 }
 //END_supporting_functions
 
-//BEGIN_main_application
-TEST(StkTransferHowTo, useReducedDependencyGeometricTransfer)
+namespace spmd {
+
+//BEGIN_main_application_spmd
+template <typename INTERPOLATE>
+using RDGeomTransfer = stk::transfer::ReducedDependencyGeometricTransfer<INTERPOLATE>;
+
+using TransferType = RDGeomTransfer<Interpolate<StkSendAdapter, StkRecvAdapter>>;
+
+std::shared_ptr<TransferType> setup_transfer(MPI_Comm globalComm, BulkDataPtr & sendBulk, BulkDataPtr & recvBulk,
+                                             const FieldConfig & sendFieldConfig,
+                                             const FieldConfig & recvFieldConfig)
+{
+  auto sendAdapter = std::make_shared<StkSendAdapter>(globalComm, sendBulk, "block_1", sendFieldConfig);
+  auto recvAdapter = std::make_shared<StkRecvAdapter>(globalComm, recvBulk, "block_1", recvFieldConfig);
+
+  auto transfer = std::make_shared<TransferType>(sendAdapter, recvAdapter, "demoTransfer", globalComm);
+
+  transfer->initialize();
+
+  return transfer;
+}
+
+TEST(StkTransferHowTo, useReducedDependencyGeometricTransferSPMD)
+{
+  MPI_Comm commWorld = MPI_COMM_WORLD;
+
+  FieldConfig sendFieldConfig {{"temperature", stk::topology::NODE_RANK, {300.0}},
+                               {"velocity", stk::topology::NODE_RANK, {1.0, 2.0, 3.0}}};
+  FieldConfig recvFieldConfig {{"temperature", stk::topology::NODE_RANK, {0.0}},
+                               {"velocity", stk::topology::NODE_RANK, {0.0, 0.0, 0.0}}};
+
+  BulkDataPtr sendBulk = read_mesh(commWorld, "generated:1x1x4", sendFieldConfig);
+  BulkDataPtr recvBulk = read_mesh(commWorld, "generated:1x1x4", recvFieldConfig);
+
+  auto transfer = setup_transfer(commWorld, sendBulk, recvBulk, sendFieldConfig, recvFieldConfig);
+
+  transfer->apply();
+  EXPECT_TRUE(all_field_values_equal(recvBulk, sendFieldConfig));
+}
+//END_main_application_spmd
+
+}
+
+namespace mpmd {
+
+//BEGIN_main_application_mpmd
+template <typename INTERPOLATE>
+using RDGeomTransfer = stk::transfer::ReducedDependencyGeometricTransfer<INTERPOLATE>;
+
+using SendTransferType = RDGeomTransfer<SendInterpolate<StkSendAdapter, RemoteRecvAdapter>>;
+using RecvTransferType = RDGeomTransfer<RecvInterpolate<RemoteSendAdapter, StkRecvAdapter>>;
+
+std::shared_ptr<SendTransferType> setup_send_transfer(MPI_Comm globalComm, BulkDataPtr & bulk,
+                                                      const FieldConfig & fieldConfig)
+{
+  auto sendAdapter = std::make_shared<StkSendAdapter>(globalComm, bulk, "block_1",
+                                                      fieldConfig);
+  std::shared_ptr<RemoteRecvAdapter> nullRecvAdapter;
+
+  auto sendTransfer = std::make_shared<SendTransferType>(sendAdapter, nullRecvAdapter,
+                                                         "SendTransfer", globalComm);
+
+  sendTransfer->initialize();
+
+  return sendTransfer;
+}
+
+std::shared_ptr<RecvTransferType> setup_recv_transfer(MPI_Comm globalComm,
+                                                      BulkDataPtr & mesh,
+                                                      const FieldConfig & fieldConfig)
+{
+  std::shared_ptr<RemoteSendAdapter> nullSendAdapter;
+  auto recvAdapter = std::make_shared<StkRecvAdapter>(globalComm, mesh, "block_1",
+                                                      fieldConfig);
+
+  auto recvTransfer = std::make_shared<RecvTransferType>(nullSendAdapter, recvAdapter,
+                                                         "RecvTransfer", globalComm);
+  recvTransfer->initialize();
+
+  return recvTransfer;
+}
+
+TEST(StkTransferHowTo, useReducedDependencyGeometricTransferMPMD)
 {
   MPI_Comm commWorld = MPI_COMM_WORLD;
   int numProcs = stk::parallel_machine_size(commWorld);
@@ -488,6 +644,7 @@ TEST(StkTransferHowTo, useReducedDependencyGeometricTransfer)
     EXPECT_TRUE(all_field_values_equal(bulk, sendFieldConfig));
   }
 }
-//END_main_application
+//END_main_application_mpmd
 
+}
 }
