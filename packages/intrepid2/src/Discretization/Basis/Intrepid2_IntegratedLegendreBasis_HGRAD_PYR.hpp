@@ -141,6 +141,7 @@ namespace Intrepid2
       else {
         scratch1D_1 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
         scratch1D_2 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        scratch1D_3 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
         scratch2D_1 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1);
         scratch2D_2 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1);
         scratch2D_3 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1);
@@ -339,7 +340,7 @@ namespace Intrepid2
           {
             for (int d=0; d<3; d++)
             {
-              output_(vertexOrdinal,d) = lambdaGrad[vertexOrdinal][d];
+              output_(vertexOrdinal,pointOrdinal,d) = lambdaGrad[vertexOrdinal][d];
             }
           }
           
@@ -662,7 +663,7 @@ namespace Intrepid2
     pointType_(pointType)
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
-      this->basisCardinality_  = ((polyOrder+1) * (polyOrder+2) * (polyOrder+3)) / 6;
+      this->basisCardinality_  = polyOrder * polyOrder * polyOrder + 3 * polyOrder + 1;
       this->basisDegree_       = polyOrder;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<> >() );
       this->basisType_         = BASIS_FEM_HIERARCHICAL;
@@ -703,6 +704,7 @@ namespace Intrepid2
         fieldOrdinalOffset += numFunctionsPerEdge;
       }
       
+      // TODO: revise from here down; this was copied from tet. implementation
       // **** face functions **** //
       const int numFunctionsPerFace   = ((polyOrder-1)*(polyOrder-2))/2;
       const int numFaces = 4;
