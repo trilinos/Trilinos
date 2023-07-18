@@ -87,20 +87,26 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   // read my part of the plan
   std::vector<int> sendcounts, recvcounts, senddispls, recvdispls; // alltoallv
 
-  int sdispl = 0;
+  std::uniform_int_distribution<int> soffsetdist(0, 150);
+  rng.seed(seed + rank); // different seed -> different displs per rank
+  int initsdispl = soffsetdist(rng);
+  int sdispl = initsdispl;
   for (int dest = 0; dest < size; ++dest) {
     senddispls.push_back(sdispl);
     int count = plan[rank * size + dest];
     sendcounts.push_back(count);
-    sdispl += count;
+    sdispl += count + soffsetdist(rng);
   }
 
-  int rdispl = 0;
+  std::uniform_int_distribution<int> roffsetdist(0, 150);
+  rng.seed(seed + size + rank); // different seed -> different displs (also per rank)
+  int initrdispl = roffsetdist(rng);
+  int rdispl = initrdispl;
   for (int source = 0; source < size; ++source) {
     recvdispls.push_back(rdispl);
     int count = plan[source * size + rank];
     recvcounts.push_back(count);
-    rdispl += count;
+    rdispl += count + roffsetdist(rng);
   }
 
   // create MPIX communicator

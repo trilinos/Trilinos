@@ -96,37 +96,45 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   std::vector<int> nbrsendcounts, nbrrecvcounts, nbrsenddispls, nbrrecvdispls; // neighbor part locality alltoallv
   std::vector<int> sources, sourceweights, destinations, destweights; // communicator
 
-  int sdispl = 0;
-  int nbrsdispl = 0;
+  std::uniform_int_distribution<int> soffsetdist(0, 150);
+  rng.seed(seed + rank); // different seed -> different displs per rank
+  int initsdispl = soffsetdist(rng);
+  int sdispl = initsdispl;
+  int nbrsdispl = initsdispl;
   for (int dest = 0; dest < size; ++dest) {
     senddispls.push_back(sdispl);
     int count = plan[rank * size + dest];
     sendcounts.push_back(count);
-    sdispl += count;
+    int offset = soffsetdist(rng);
+    sdispl += count + offset;
 
     if (count > 0) {
       destinations.push_back(dest);
       destweights.push_back(count);
       nbrsendcounts.push_back(count);
       nbrsenddispls.push_back(nbrsdispl);
-      nbrsdispl += count;
+      nbrsdispl += count + offset;
     }
   }
 
-  int rdispl = 0;
-  int nbrrdispl = 0;
+  std::uniform_int_distribution<int> roffsetdist(0, 150);
+  rng.seed(seed + size + rank); // different seed -> different displs (also per rank)
+  int initrdispl = roffsetdist(rng);
+  int rdispl = initrdispl;
+  int nbrrdispl = initrdispl;  
   for (int source = 0; source < size; ++source) {
     recvdispls.push_back(rdispl);
     int count = plan[source * size + rank];
     recvcounts.push_back(count);
-    rdispl += count;
+    int offset = roffsetdist(rng);
+    rdispl += count + offset;
 
     if (count > 0) {
       sources.push_back(source);
       sourceweights.push_back(count);
       nbrrecvcounts.push_back(count);
       nbrrecvdispls.push_back(nbrrdispl);
-      nbrrdispl += count;
+      nbrrdispl += count + offset;
     }
   }
 
