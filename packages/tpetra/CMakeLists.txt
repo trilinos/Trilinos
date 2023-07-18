@@ -722,7 +722,16 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_UNSIGNED
   HAVE_TPETRA_INST_INT_UNSIGNED
   "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default.  Please don't set this option.  We only maintain it for backwards compatibility."
-  ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
+  ${HAVE_TPETRA_INSIF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_quadmath)
+  IF (DEFINED TpetraCore_ENABLE_quadmath)
+    SET (${PACKAGE_NAME}_ENABLE_quadmath "${TpetraCore_ENABLE_quadmath}")
+  ELSEIF (DEFINED TPL_ENABLE_quadmath)
+    SET (${PACKAGE_NAME}_ENABLE_quadmath "${TPL_ENABLE_quadmath}")
+  ELSE ()
+    SET (${PACKAGE_NAME}_ENABLE_quadmath OFF)
+  ENDIF ()
+ENDIF ()
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)T_INT_UNSIGNED_DEFAULT}
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -814,6 +823,20 @@ IF(Tpetra_INST_INT_UNSIGNED_LONG)
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned long")
 ENDIF()
 
+# ============================================================
+# MPI advance
+# ============================================================
+
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_mpi_advance)
+  IF (DEFINED TpetraCore_ENABLE_mpi_advance)
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TpetraCore_ENABLE_mpi_advannce}")
+  ELSEIF (DEFINED TPL_ENABLE_mpi_advance)
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TPL_ENABLE_mpi_advance}")
+  ELSE ()
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance OFF)
+  ENDIF ()
+ENDIF ()
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_mpi_advance)
 
 # ============================================================
 # Scalar types
