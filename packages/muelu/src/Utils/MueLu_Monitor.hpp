@@ -178,13 +178,6 @@ namespace MueLu {
     TimeMonitor timerMonitor_;
   };
 
-//convert integer timer number to string
-#ifdef HAVE_MUELU_PROFILING
-#define MUELU_TIMER_AS_STRING static_cast<std::ostringstream*>( &(std::ostringstream() << " " << timerIdentifier_++) )->str()
-#else
-#define MUELU_TIMER_AS_STRING
-#endif
-
   //---------------------------------------------------------------------------------------------------
 
   /*! @class FactoryMonitor
