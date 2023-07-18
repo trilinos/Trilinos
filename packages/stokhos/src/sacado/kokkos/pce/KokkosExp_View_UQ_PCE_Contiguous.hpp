@@ -587,7 +587,7 @@ void deep_copy( const ExecSpace &,
         src_dims[5] = src.extent(5);
         src_dims[6] = src.extent(6);
         src_dims[7] = src.extent(7);
-        src_dims[src_type::Rank] = dimension_scalar(src);
+        src_dims[src_type::rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
           view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
@@ -612,7 +612,7 @@ void deep_copy( const ExecSpace &,
         dst_dims[5] = dst.extent(5);
         dst_dims[6] = dst.extent(6);
         dst_dims[7] = dst.extent(7);
-        dst_dims[dst_type::Rank] = dimension_scalar(dst);
+        dst_dims[dst_type::rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
           view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
@@ -636,7 +636,7 @@ void deep_copy( const ExecSpace &,
         src_dims[5] = src.extent(5);
         src_dims[6] = src.extent(6);
         src_dims[7] = src.extent(7);
-        src_dims[src_type::Rank] = dimension_scalar(src);
+        src_dims[src_type::rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
           view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
@@ -652,7 +652,7 @@ void deep_copy( const ExecSpace &,
         dst_dims[5] = dst.extent(5);
         dst_dims[6] = dst.extent(6);
         dst_dims[7] = dst.extent(7);
-        dst_dims[dst_type::Rank] = dimension_scalar(dst);
+        dst_dims[dst_type::rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
           view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
@@ -689,7 +689,7 @@ namespace Impl {
 
 template <unsigned N, typename... Args>
 KOKKOS_FUNCTION std::enable_if_t<
-    N == View<Args...>::Rank &&
+    N == View<Args...>::rank &&
     std::is_same<typename ViewTraits<Args...>::specialize,
                  Kokkos::Experimental::Impl::ViewPCEContiguous>::value,
     View<Args...>>
@@ -701,7 +701,7 @@ as_view_of_rank_n(View<Args...> v) {
 // never be called
 template <unsigned N, typename T, typename... Args>
 std::enable_if_t<
-    N != View<T, Args...>::Rank &&
+    N != View<T, Args...>::rank &&
         std::is_same<typename ViewTraits<T, Args...>::specialize,
                      Kokkos::Experimental::Impl::ViewPCEContiguous>::value,
     View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
