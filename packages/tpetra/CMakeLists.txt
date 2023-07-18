@@ -722,17 +722,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_UNSIGNED
   HAVE_TPETRA_INST_INT_UNSIGNED
   "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default.  Please don't set this option.  We only maintain it for backwards compatibility."
-  ${HAVE_TPETRA_INSIF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_quadmath)
-  IF (DEFINED TpetraCore_ENABLE_quadmath)
-    SET (${PACKAGE_NAME}_ENABLE_quadmath "${TpetraCore_ENABLE_quadmath}")
-  ELSEIF (DEFINED TPL_ENABLE_quadmath)
-    SET (${PACKAGE_NAME}_ENABLE_quadmath "${TPL_ENABLE_quadmath}")
-  ELSE ()
-    SET (${PACKAGE_NAME}_ENABLE_quadmath OFF)
-  ENDIF ()
-ENDIF ()
-ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)T_INT_UNSIGNED_DEFAULT}
-  )
+)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG_LONG
