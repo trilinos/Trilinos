@@ -53,6 +53,7 @@
 #include <Intrepid2_config.h>
 
 #include "Intrepid2_Basis.hpp"
+#include "Intrepid2_DerivedBasis_HGRAD_QUAD.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TRI.hpp"
 #include "Intrepid2_Polynomials.hpp"
@@ -97,6 +98,7 @@ namespace Intrepid2
     static const int numEdges      = 8;
     // the following ordering of the edges matches that used by ESEAS
     // (it *looks* like this is what ESEAS uses; the basis comparison tests will clarify whether I've read their code correctly)
+    // see also PyramidEdgeNodeMap in Shards_BasicTopologies.hpp
     const int edge_start_[numEdges] = {0,1,2,3,0,1,2,3}; // edge i is from edge_start_[i] to edge_end_[i]
     const int edge_end_[numEdges]   = {1,2,3,0,4,4,4,4}; // edge i is from edge_start_[i] to edge_end_[i]
     
@@ -150,6 +152,12 @@ namespace Intrepid2
       const auto & x = inputPoints_(pointOrdinal,0);
       const auto & y = inputPoints_(pointOrdinal,1);
       const auto & z = inputPoints_(pointOrdinal,2);
+      
+      // TODO: map x,y coordinates from (-1,1)^2 to (0,1)^2
+      // Intrepid2 uses (-1,1)^2 for x,y
+      // ESEAS uses (0,1)^2
+      // TODO: below, scale x,y derivatives appropriately
+      // (Can look at what we do on the HGRAD_LINE for reference; there's a similar difference for line topology.)
       
       Kokkos::Array<OutputScalar,3> coords {x,y,z};
       
@@ -704,11 +712,24 @@ namespace Intrepid2
         fieldOrdinalOffset += numFunctionsPerEdge;
       }
       
-      // TODO: revise from here down; this was copied from tet. implementation
       // **** face functions **** //
-      const int numFunctionsPerFace   = ((polyOrder-1)*(polyOrder-2))/2;
-      const int numFaces = 4;
-      for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
+      const int numFunctionsPerQuadFace =  (polyOrder-1)*(polyOrder-1);
+      const int numQuadFaces = 1;
+      
+      // following the ESEAS ordering: j increments first
+      for (int j=2; j<=polyOrder_; j++)
+      {
+        for (int i=2; i<=polyOrder_; i++)
+        {
+          this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = std::max(i,j);
+          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = std::max(i,j);
+          fieldOrdinalOffset++;
+        }
+      }
+      
+      const int numFunctionsPerTriFace = ((polyOrder-1)*(polyOrder-2))/2;
+      const int numTriFaces = 4;
+      for (int faceOrdinal=0; faceOrdinal<numTriFaces; faceOrdinal++)
       {
         for (int totalPolyOrder=3; totalPolyOrder<=polyOrder_; totalPolyOrder++)
         {
@@ -725,21 +746,23 @@ namespace Intrepid2
       }
 
       // **** interior functions **** //
-      const int numFunctionsPerVolume = ((polyOrder-1)*(polyOrder-2)*(polyOrder-3))/6;
+      const int numFunctionsPerVolume = (polyOrder-1)*(polyOrder-1)*(polyOrder-1);
       const int numVolumes = 1; // interior
       for (int volumeOrdinal=0; volumeOrdinal<numVolumes; volumeOrdinal++)
       {
-        for (int totalPolyOrder=4; totalPolyOrder<=polyOrder_; totalPolyOrder++)
+        // following the ESEAS ordering: k increments first
+        for (int k=2; k<=polyOrder_; k++)
         {
-          const int totalInteriorDofs         = (totalPolyOrder-3)*(totalPolyOrder-2)*(totalPolyOrder-1)/6;
-          const int totalInteriorDofsPrevious = (totalPolyOrder-4)*(totalPolyOrder-3)*(totalPolyOrder-2)/6;
-          const int interiorDofsForPolyOrder  = totalInteriorDofs - totalInteriorDofsPrevious;
-          
-          for (int i=0; i<interiorDofsForPolyOrder; i++)
+          for (int j=2; j<=polyOrder_; j++)
           {
-            this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = totalPolyOrder;
-            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = totalPolyOrder;
-            fieldOrdinalOffset++;
+            for (int i=2; i<=polyOrder_; i++)
+            {
+              const int max_ij  = std::max(i,j);
+              const int max_ijk = std::max(max_ij,k);
+              this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = max_ijk;
+              this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = max_ijk;
+              fieldOrdinalOffset++;
+            }
           }
         }
       }
@@ -748,18 +771,37 @@ namespace Intrepid2
       
       // initialize tags
       {
-        // ESEAS numbers tetrahedron faces differently from Intrepid2
-        // ESEAS:     012, 013, 123, 023
-        // Intrepid2: 013, 123, 032, 021
-        const int intrepid2FaceOrdinals[4] {3,0,1,2}; // index is the ESEAS face ordinal; value is the intrepid2 ordinal
+        // Intrepid2 vertices:
+        // 0: (-1,-1, 0)
+        // 1: ( 1,-1, 0)
+        // 2: ( 1, 1, 0)
+        // 3: (-1, 1, 0)
+        // 4: ( 0, 0, 1)
+        
+        // ESEAS vertices:
+        // 0: ( 0, 0, 0)
+        // 1: ( 1, 0, 0)
+        // 2: ( 1, 1, 0)
+        // 3: ( 0, 1, 0)
+        // 4: ( 0, 0, 1)
+        
+        // The edge numbering appears to match between ESEAS and Intrepid2
+        
+        // ESEAS numbers pyramid faces differently from Intrepid2
+        // See BlendProjectPyraTF in ESEAS.
+        // See PyramidFaceNodeMap in Shards_BasicTopologies
+        // ESEAS:     0123, 014, 124, 324, 034
+        // Intrepid2: 014, 124, 234, 304, 0321
+        
+        const int intrepid2FaceOrdinals[5] {4,0,1,2,3}; // index is the ESEAS face ordinal; value is the intrepid2 ordinal
         
         const auto & cardinality = this->basisCardinality_;
         
         // Basis-dependent initializations
-        const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-        const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
-        const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-        const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+        const ordinal_type tagSize  = 4; // size of DoF tag, i.e., number of fields in the tag
+        const ordinal_type posScDim = 0; // position in the tag, counting from 0, of the subcell dim
+        const ordinal_type posScOrd = 1; // position in the tag, counting from 0, of the subcell ordinal
+        const ordinal_type posDfOrd = 2; // position in the tag, counting from 0, of DoF ordinal relative to the subcell
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
         const int vertexDim = 0, edgeDim = 1, faceDim = 2, volumeDim = 3;
@@ -786,15 +828,30 @@ namespace Intrepid2
                 tagNumber++;
               }
             }
-            for (int faceOrdinalESEAS=0; faceOrdinalESEAS<numFaces; faceOrdinalESEAS++)
             {
-              int faceOrdinalIntrepid2 = intrepid2FaceOrdinals[faceOrdinalESEAS];
-              for (int functionOrdinal=0; functionOrdinal<numFunctionsPerFace; functionOrdinal++)
+              // quad face
+              const int faceOrdinalESEAS = 0;
+              const int faceOrdinalIntrepid2 = intrepid2FaceOrdinals[faceOrdinalESEAS];
+              
+              for (int functionOrdinal=0; functionOrdinal<numFunctionsPerQuadFace; functionOrdinal++)
               {
-                tagView(tagNumber*tagSize+0) = faceDim;               // face dimension
-                tagView(tagNumber*tagSize+1) = faceOrdinalIntrepid2;  // face id
-                tagView(tagNumber*tagSize+2) = functionOrdinal;       // local dof id
-                tagView(tagNumber*tagSize+3) = numFunctionsPerFace;   // total number of dofs on this face
+                tagView(tagNumber*tagSize+0) = faceDim;                 // face dimension
+                tagView(tagNumber*tagSize+1) = faceOrdinalIntrepid2;    // face id
+                tagView(tagNumber*tagSize+2) = functionOrdinal;         // local dof id
+                tagView(tagNumber*tagSize+3) = numFunctionsPerQuadFace; // total number of dofs on this face
+                tagNumber++;
+              }
+            }
+            for (int triFaceOrdinalESEAS=0; triFaceOrdinalESEAS<numTriFaces; triFaceOrdinalESEAS++)
+            {
+              const int faceOrdinalESEAS     = triFaceOrdinalESEAS + 1;
+              const int faceOrdinalIntrepid2 = intrepid2FaceOrdinals[faceOrdinalESEAS];
+              for (int functionOrdinal=0; functionOrdinal<numFunctionsPerTriFace; functionOrdinal++)
+              {
+                tagView(tagNumber*tagSize+0) = faceDim;                // face dimension
+                tagView(tagNumber*tagSize+1) = faceOrdinalIntrepid2;   // face id
+                tagView(tagNumber*tagSize+2) = functionOrdinal;        // local dof id
+                tagView(tagNumber*tagSize+3) = numFunctionsPerTriFace; // total number of dofs on this face
                 tagNumber++;
               }
             }
@@ -898,14 +955,24 @@ namespace Intrepid2
      */
     BasisPtr<DeviceType,OutputScalar,PointScalar>
     getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
-      if(subCellDim == 1) {
-        return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar>
-            (this->basisDegree_));
-      } else if(subCellDim == 2) {
-        return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_TRI<DeviceType,OutputScalar,PointScalar>
-            (this->basisDegree_));
+      using HGRAD_LINE = IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar>;
+      using HGRAD_TRI  = IntegratedLegendreBasis_HGRAD_TRI<DeviceType,OutputScalar,PointScalar>;
+      using HGRAD_QUAD = Basis_Derived_HGRAD_QUAD<HGRAD_LINE>;
+      const auto & p = this->basisDegree_;
+      if(subCellDim == 1) // line basis
+      {
+        return Teuchos::rcp(new HGRAD_LINE(p));
+      }
+      else if (subCellDim == 2)
+      {
+        if (subCellOrd == 0) // quad basis
+        {
+          return Teuchos::rcp(new HGRAD_QUAD(p));
+        }
+        else // tri basis
+        {
+          return Teuchos::rcp(new HGRAD_TRI(p));
+        }
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
