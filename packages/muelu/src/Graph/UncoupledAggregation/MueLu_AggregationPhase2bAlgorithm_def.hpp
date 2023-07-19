@@ -139,6 +139,23 @@ namespace MueLu {
         }
       }
     }
+
+    
+    // CMS
+    {
+      static int cms_ct=0;
+      char name[80];
+      sprintf(name,"agg_phase2b_%d_%d.dat",cms_ct,myRank);
+      FILE* f=fopen(name,"w");
+      fprintf(f,"%% [%d] CMS: after phase 2b = ",myRank);
+      for(int i=0; i<vertex2AggId.size(); i++)
+        fprintf(f,"%d\n",vertex2AggId[i]);
+      fclose(f);
+      cms_ct++;
+    }
+
+
+
   }
 
 } // end namespace

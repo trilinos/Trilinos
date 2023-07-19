@@ -751,6 +751,19 @@ namespace MueLu {
            }
 #endif
           }//end generateColoringGraph
+
+
+          // CMS HAX
+          {
+            static int cms_ct=0;
+            char str[80];
+            sprintf(str,"A_graph_dropped_%d.dat",cms_ct);
+            std::ofstream ofs(str);
+            RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+            graph->print(*fancy,Debug);
+            cms_ct++;
+          }
+
         } else if (BlockSize > 1 && threshold == STS::zero()) {
           // Case 3:  Multiple DOF/node problem without dropping
           const RCP<const Map> rowMap = A->getRowMap();
@@ -1635,6 +1648,8 @@ namespace MueLu {
       Set(currentLevel, "Graph", graph);
 
     } //if (doExperimentalWrap) ... else ...
+
+
 
 
   } //Build

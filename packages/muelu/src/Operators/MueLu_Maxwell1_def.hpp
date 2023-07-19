@@ -115,7 +115,10 @@ namespace MueLu {
       newList.sublist("maxwell1: 11list").set("aggregation: use ml scaling of drop tol",true);
       newList.sublist("maxwell1: 22list").set("aggregation: use ml scaling of drop tol",true);
 
-      newList.sublist("maxwell1: 11list").set("aggregation: min agg size",3);
+      newList.sublist("maxwell1: 22list").set("aggregation: min agg size",3);
+      newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2a",true);
+
+
 
       if(list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
         newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
@@ -156,7 +159,7 @@ namespace MueLu {
       newList.sublist("maxwell1: 11list").sublist("export data").set("A","{0,1,2,3,4,5}");
       newList.sublist("maxwell1: 11list").sublist("export data").set("Pnodal","{0,1,2,3,4,5}");
       newList.sublist("maxwell1: 11list").sublist("export data").set("NodeMatrix","{0,1,2,3,4,5}");
-      newList.sublist("maxwell1: 11list").sublist("export data").set("NodeAggMatrix","{0,1}");
+      newList.sublist("maxwell1: 11list").sublist("export data").set("NodeAggMatrix","{0,1,2,3,4,5}");
       newList.sublist("maxwell1: 11list").sublist("export data").set("Coordinates","{0,1,2,3,4,5}");
       newList.sublist("maxwell1: 11list").sublist("export data").set("A","{0,1,2,3,4,5}");
       newList.sublist("maxwell1: 11list").sublist("export data").set("P","{0,1,2,3,4,5}");

@@ -230,6 +230,8 @@ namespace MueLu {
           A->SetMaxEigenvalueEstimate(lambdaMax);
       }
       GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
+      std::cout<<"CMS: lambdaMax = "<<lambdaMax<<std::endl;
+      A->getMap()->getComm()->barrier();
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);

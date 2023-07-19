@@ -86,6 +86,8 @@ namespace MueLu {
     if (orderingStr == "random" ) ordering = O_RANDOM;
     if (orderingStr == "graph"  ) ordering = O_GRAPH;
 
+    //    printf("CMS: Aggregation ordering =  %d  min/max_nodes_per_aggregate = %d/%d max_neigh_selected = %d\n",ordering, minNodesPerAggregate, maxNodesPerAggregate, maxNeighAlreadySelected);
+
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
@@ -182,14 +184,18 @@ namespace MueLu {
         // rootCandidate becomes the root of the newly formed aggregate
         aggregates.SetIsRoot(rootCandidate);
         aggIndex = numLocalAggregates++;
+        
+        //        printf("CMS: Accepting root %d with %d neighbors, nodes:",rootCandidate,numAggregatedNeighbours);
 
         for (size_t k = 0; k < aggSize; k++) {
+          //          printf("%d ",aggList[k]);//CMS
           aggStat     [aggList[k]] = AGGREGATED;
           vertex2AggId[aggList[k]] = aggIndex;
           procWinner  [aggList[k]] = myRank;
         }
+        //        printf("\n");//CMS
 
-        numNonAggregatedNodes -= aggSize;
+        numNonAggregatedNodes -= aggSize;        
 
       } else {
         // Aggregate is not accepted
@@ -226,6 +232,24 @@ namespace MueLu {
 
     // update aggregate object
     aggregates.SetNumAggregates(numLocalAggregates);
+
+    // CMS
+    {
+      printf("[%d] CMS: Phase 1: %d unknowns on rank\n",myRank,vertex2AggId.size());
+      static int cms_ct=0;
+      char name[80];
+      sprintf(name,"agg_phase1_%d_%d.dat",cms_ct,myRank);
+      FILE* f=fopen(name,"w");
+      fprintf(f,"%% [%d] CMS: after phase 1 = ",myRank);
+      for(int i=0; i<vertex2AggId.size(); i++)
+        fprintf(f,"%d\n",vertex2AggId[i]);
+      fclose(f);
+      cms_ct++;
+    }
+
+
+
+
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

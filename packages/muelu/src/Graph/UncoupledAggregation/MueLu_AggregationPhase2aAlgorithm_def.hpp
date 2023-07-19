@@ -82,7 +82,11 @@ namespace MueLu {
 
     const double aggFactor = params.get<double>("aggregation: phase2a agg factor");
     double       factor    = as<double>(numLocalAggregated)/(numLocalNodes+1);
+
+    printf("[%d] CMS: MueLu: Phase2a aggFactor = %6.4e numAggregated=%d numNodes+1=%d\n",myRank,numLocalAggregated,numLocalNodes+1);
     factor = pow(factor, aggFactor);
+
+
 
     int              aggIndex = -1;
     size_t           aggSize  =  0;
@@ -140,6 +144,21 @@ namespace MueLu {
 
     // update aggregate object
     aggregates.SetNumAggregates(numLocalAggregates);
+
+    // CMS
+    {
+      static int cms_ct=0;
+      char name[80];
+      sprintf(name,"agg_phase2a_%d_%d.dat",cms_ct,myRank);
+      FILE* f=fopen(name,"w");
+      fprintf(f,"%% [%d] CMS: after phase 2a = ",myRank);
+      for(int i=0; i<vertex2AggId.size(); i++)
+        fprintf(f,"%d\n",vertex2AggId[i]);
+      fclose(f);
+      cms_ct++;
+    }
+
+
   }
 
 } // end namespace
