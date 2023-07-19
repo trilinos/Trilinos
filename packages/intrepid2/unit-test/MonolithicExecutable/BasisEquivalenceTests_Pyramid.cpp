@@ -71,4 +71,61 @@ namespace
     NodalC1Basis      nodalBasis;
     BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
   }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, PyramidHierarchical_HGRAD_VertexValues )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_PYR;
+    using DeviceType = DefaultTestDeviceType;
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    const ordinal_type p = 1;
+    
+    HierarchicalBasis hierarchicalBasis(p);
+    
+    using std::vector;
+    const int numPoints = 5;
+    vector< vector<double> > ESEAS_points(5, vector<double>(3)); // these have a pyramid base of (0,1)^2
+    
+    ESEAS_points[0] = {0,0,0};
+    ESEAS_points[1] = {1,0,0};
+    ESEAS_points[2] = {1,1,0};
+    ESEAS_points[3] = {0,1,0};
+    ESEAS_points[4] = {0,0,1};
+    
+    ViewType<double,DeviceType> intrepid2_points = getView<double, DeviceType>("points", numPoints, 3);
+    
+    auto intrepid2_points_host = getHostCopy(intrepid2_points);
+    
+    for (int i=0; i<numPoints; i++)
+    {
+      const double x = ESEAS_points[i][0] * 2 - 1;
+      const double y = ESEAS_points[i][1] * 2 - 1;
+      const double z = ESEAS_points[i][2];
+      intrepid2_points_host(i,0) = x;
+      intrepid2_points_host(i,1) = y;
+      intrepid2_points_host(i,2) = z;
+    }
+    Kokkos::deep_copy(intrepid2_points, intrepid2_points_host);
+    
+    const int basisCardinality = hierarchicalBasis.getCardinality();
+    ViewType<double,DeviceType> expectedValues = getView<double, DeviceType>("expected values", basisCardinality, numPoints);
+    auto expectedValuesHost = getHostCopy(expectedValues);
+    
+    for (int basisOrdinal=0; basisOrdinal<basisCardinality; basisOrdinal++)
+    {
+      for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
+      {
+        // expect basis to be nodal at vertices
+        expectedValuesHost(basisOrdinal,pointOrdinal) = (basisOrdinal == pointOrdinal) ? 1 : 0;
+      }
+    }
+    Kokkos::deep_copy(expectedValues, expectedValuesHost);
+    
+    ViewType<double,DeviceType> actualValues   = getView<double, DeviceType>("expected values", basisCardinality, numPoints);
+    hierarchicalBasis.getValues(actualValues, intrepid2_points);
+    
+    testViewFloatingEquality(actualValues, expectedValues, relTol, absTol, out, success, "actual", "expected");
+  }
 } // namespace
