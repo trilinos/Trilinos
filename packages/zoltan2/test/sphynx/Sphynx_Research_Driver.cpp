@@ -67,14 +67,23 @@
 // Note: This is research code. We do not guarantee it is without bugs. 
 /////////////////////////////////////////////////////////////////////////////
 
+/* -------------------------------------------------------------------------
+ * Function: buildCrsMatrix
+ * Purpose:  When the user does not input a matrix file, buildCrsMatrix will
+ * 	     construct a Brick3D matrix in either 1, 2, or 3 dimensions. The
+ * 	     Brick3D matrix is a 27-point difference stencil for the Laplace
+ * 	     operator on a hex mesh.
+ * ------------------------------------------------------------------------- */
+
 template <typename lno_t, typename gno_t, typename scalar_t, typename nod_t>
 int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
 		   Teuchos::RCP<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>> &M_)
 {
+  /* Print size of the mesh being constructed */
   if (comm->getRank() == 0){
     std::cout << "Create matrix with " << problemType;
-    std::cout << " (and " << xdim;
+    std::cout << " (a " << xdim;
     if (zdim > 0)
       std::cout << " x " << ydim << " x " << zdim << " ";
     else if (ydim > 0)
@@ -90,6 +99,7 @@ int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
   Teuchos::RCP<const Tpetra::Map<lno_t, gno_t> > map =
     Teuchos::rcp(new Tpetra::Map<lno_t, gno_t>(params.GetNumGlobalElements(), 0, comm));
 
+  /* Build the Brick3D matrix */
   try{
     Teuchos::RCP<Galeri::Xpetra::Problem<Tpetra::Map<lno_t, gno_t>,
 					 Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>,
@@ -134,7 +144,6 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   size_t numGblRows = rowMap->getGlobalNumElements();
   size_t numLclCols = colMap->getLocalNumElements();
 
-  
   ordinal_view_t colLocalToGlobal(Kokkos::view_alloc("colLocalToGlobal", Kokkos::WithoutInitializing), numLclCols);
   auto colMapHost = Kokkos::create_mirror_view (Kokkos::HostSpace (), colLocalToGlobal);
   for(size_t i = 0; i < numLclCols; ++i)
@@ -237,6 +246,7 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   }
 }
 
+/*
 template <typename adapter_type>
 void 
 compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
@@ -322,7 +332,7 @@ compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
   }
   
 }
-
+*/
 
 int main(int narg, char *arg[]) 
 {
@@ -364,7 +374,7 @@ int main(int narg, char *arg[])
     cmdp.setOption("matrix_file",&matrix_file,
 		   "Path and filename of the matrix to be read.");
     cmdp.setOption("vector_file",&vector_file,
-		   "Path and filename of the vector to be read.");
+		   "Path and filename of the pre-computed eigenvector(s) to be read.");
     cmdp.setOption("nparts",&nparts,
 		   "Number of global parts desired in the resulting partition.");
     cmdp.setOption("rand_seed",&rand_seed,
@@ -427,14 +437,15 @@ int main(int narg, char *arg[])
     Teuchos::RCP<adapter_type> adapter;
     Teuchos::RCP<crs_matrix_type> tmatrix;
 
+    // Determine whether the user input the largest component of a graph, a matrix, a mesh size, or nothing
     std::string mtx = ".mtx", lc = ".largestComp";
-    if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin())) {
+    if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin())) {		// Largest component file
       tmatrix  = readMatrixFromBinaryFile<crs_matrix_type>(matrix_file, pComm, true, verbosity>0);
       if (me==0){
         std::cout << "Used reader for Largest Comp." << std::endl;
       }
     }
-    else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin())) {
+    else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin())) {	// Matrix File 
       typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
       reader_type r;
       tmatrix = r.readSparseFile(matrix_file, pComm);
@@ -442,17 +453,28 @@ int main(int narg, char *arg[])
         std::cout << "Used standard Matrix Market reader." << std::endl;
       }
     }
-    else {
+    else {									// Build Brick3D matrix
+      /* If the user entered something that was not an .mtx or .largestComp file,
+       * check if it is a mesh size. If invalid input, default to 100^3 Brick3D.
+       */
       int meshdim = 100;
-      if(matrix_file == "200")
-    	meshdim = 200;
-      else if(matrix_file == "400")
-    	meshdim = 400;
+      if(matrix_file != "")
+      {
+        std::string::const_iterator it = matrix_file.begin();
+	while(it != matrix_file.end() && std::isdigit(*it)) ++it;
+	if(it == matrix_file.end())
+        {
+	   meshdim = std::stoi(matrix_file);
+	}
+	else {
+	   std::cout << "Invalid matrix file entered. Reverting to default matrix." << std::endl;
+	}
+      } 
       buildCrsMatrix<local_ordinal_type, global_ordinal_type, scalar_type>
         (meshdim, meshdim, meshdim, "Brick3D", pComm, tmatrix);
       //Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(matrix_file+".mtx", tmatrix);
       if(me == 0){
-        std::cout << "Generated Brick3D matrix." << std::endl;
+        std::cout << "Generated Brick3D matrix with mesh size " << meshdim << " x " << meshdim << " x " << meshdim << "." << std::endl;
       }
     }
     if(me == 0){
@@ -461,6 +483,7 @@ int main(int narg, char *arg[])
 
     Teuchos::RCP<const map_type> map = tmatrix->getMap();
 
+    // If the user input their own eigenvectors - read them in
     Teuchos::RCP<mv_type> V;
     if (vector_file !=""){
       V = Tpetra::MatrixMarket::Reader<mv_type >::readDenseFile(vector_file,pComm,map);
@@ -477,7 +500,8 @@ int main(int narg, char *arg[])
     params->set("num_global_parts", nparts);
 
     Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;  
-    stacked_timer = Teuchos::rcp(new Teuchos::StackedTimer("SphynxDriver"));                                                                                                                                                                                                                                                                                  
+    stacked_timer = Teuchos::rcp(new Teuchos::StackedTimer("SphynxDriver"));
+ 
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
     if(parmetis || pulp) {
 
@@ -539,7 +563,7 @@ int main(int narg, char *arg[])
           Teuchos::TimeMonitor t3b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
           if (vector_file ==""){
             if(me == 0)
-              std::cout << eigensolve << "will be used to solve the partitioning problem." << std::endl;
+              std::cout << eigensolve << " will be used to solve the partitioning problem." << std::endl;
             problem->solve();
           }
           else{
