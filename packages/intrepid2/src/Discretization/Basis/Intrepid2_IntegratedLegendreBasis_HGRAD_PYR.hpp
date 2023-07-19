@@ -153,13 +153,12 @@ namespace Intrepid2
       const auto & y = inputPoints_(pointOrdinal,1);
       const auto & z = inputPoints_(pointOrdinal,2);
       
-      // TODO: map x,y coordinates from (-1,1)^2 to (0,1)^2
       // Intrepid2 uses (-1,1)^2 for x,y
       // ESEAS uses (0,1)^2
       // TODO: below, scale x,y derivatives appropriately
       // (Can look at what we do on the HGRAD_LINE for reference; there's a similar difference for line topology.)
       
-      Kokkos::Array<OutputScalar,3> coords {x,y,z};
+      Kokkos::Array<OutputScalar,3> coords {(x+1.)/2.,(y+1.)/2.,z}; // map x,y coordinates from (-1,1)^2 to (0,1)^2
       
       // pyramid "affine" coordinates and gradients get stored in lambda, lambdaGrad:
       using Kokkos::Array;
@@ -177,8 +176,6 @@ namespace Intrepid2
       Array<Array<Array<OutputScalar,3>,2>,3> nuGrad;
       computeNu    (    nu, coords);
       computeNuGrad(nuGrad, coords);
-      
-      const int num1DEdgeFunctions = polyOrder_ - 1;
       
       switch (opType_)
       {
@@ -403,6 +400,13 @@ namespace Intrepid2
           // TODO: triangle faces
           // TODO: interior functions
           
+          for (int basisOrdinal=0; basisOrdinal<numFields_; basisOrdinal++)
+          {
+            // scale x, y derivatives by 0.5 to account for the ref space transformation: Intrepid2 uses (-1,1)^2; ESEAS uses (0,1)^2
+            output_(basisOrdinal,pointOrdinal,0) *= 0.5;
+            output_(basisOrdinal,pointOrdinal,1) *= 0.5;
+          }
+          
         } // end OPERATOR_GRAD block
           break;
         case OPERATOR_D2:
@@ -428,12 +432,13 @@ namespace Intrepid2
     {
       const auto & x = coords[0];
       const auto & y = coords[1];
-      // (1 - z) goes in denominator -- so we check for z=0
+      const auto & z = coords[2];
+      // (1 - z) goes in denominator -- so we check for 1-z=0
       const double epsilon = 1e-12;
-      PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon;
-      PointScalar scaling = 1. / (1. - z);
-      PointScalar lambda0_x = 1. - x - z;
-      PointScalar lambda0_y = 1. - y - z;
+      PointScalar one_minus_z = (fabs(1.-z) > epsilon) ? 1. - z : epsilon;
+      PointScalar scaling = 1. / one_minus_z;
+      PointScalar lambda0_x = 1. - z - x;
+      PointScalar lambda0_y = 1. - z - y;
       lambda[0] = lambda0_x * lambda0_y * scaling;
       lambda[1] =         x * lambda0_y * scaling;
       lambda[2] =         x *         y * scaling;
@@ -447,12 +452,13 @@ namespace Intrepid2
     {
       const auto & x = coords[0];
       const auto & y = coords[1];
-      // (1 - z) goes in denominator -- so we check for z=0
-      const PointScalar epsilon = 1e-12;
-      PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon; // avoid division by zero
-      PointScalar scaling = 1. / (1. - z);
-      PointScalar lambda0_x = 1. - x - z;
-      PointScalar lambda0_y = 1. - y - z;
+      const auto & z = coords[2];
+      // (1 - z) goes in denominator -- so we check for 1-z=0
+      const double epsilon = 1e-12;
+      PointScalar one_minus_z = (fabs(1.-z) > epsilon) ? 1. - z : epsilon;
+      PointScalar scaling = 1. / one_minus_z;
+      PointScalar lambda0_x = 1. - z - x;
+      PointScalar lambda0_y = 1. - z - y;
       lambdaGrad[0][0] = -lambda0_y * scaling;
       lambdaGrad[0][1] = -lambda0_x * scaling;
       lambdaGrad[0][2] = x * y * scaling * scaling - 1.;
@@ -481,13 +487,14 @@ namespace Intrepid2
     {
       const auto & x = coords[0];
       const auto & y = coords[1];
-      // (1 - z) goes in denominator -- so we check for z=0
+      // (1 - z) goes in denominator -- so we check for 1-z=0
       const double epsilon = 1e-12;
-      PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon;
-      PointScalar scaling = 1. / (1. - z);
+      PointScalar one_minus_z = (fabs(1.-coords[2]) > epsilon) ? 1. - coords[2] : epsilon;
+      PointScalar z           = (fabs(1.-coords[2]) > epsilon) ?      coords[2] : 1. - epsilon;
+      PointScalar scaling = 1. / one_minus_z;
       mu[0][0]  = 1. - x * scaling;
       mu[0][1]  = 1. - y * scaling;
-      mu[0][2]  = 1. - z;
+      mu[0][2]  = one_minus_z;
       mu[1][0]  =      x * scaling;
       mu[1][1]  =      y * scaling;
       mu[1][2]  =      z;
@@ -500,31 +507,30 @@ namespace Intrepid2
     {
       const auto & x = coords[0];
       const auto & y = coords[1];
-      // (1 - z) goes in denominator -- so we check for z=0
-      const PointScalar epsilon = 1e-12;
-      PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon; // avoid division by zero
-      PointScalar scaling = 1. / (1. - z);
-      PointScalar lambda0_x = 1. - x - z;
-      PointScalar lambda0_y = 1. - y - z;
-      muGrad[0][0][0]  = -(1. - z);
-      muGrad[0][0][1]  =     0.   ;
-      muGrad[0][0][2]  =    - x   ;
+      // (1 - z) goes in denominator -- so we check for 1-z=0
+      const double epsilon = 1e-12;
+      PointScalar one_minus_z = (fabs(1.-coords[2]) > epsilon) ? 1. - coords[2] : epsilon;
+      PointScalar scaling  = 1. / one_minus_z;
+      PointScalar scaling2 = scaling * scaling;
+      muGrad[0][0][0]  =  -scaling     ;
+      muGrad[0][0][1]  =     0.        ;
+      muGrad[0][0][2]  = - x * scaling2;
       
-      muGrad[0][1][0]  =     0.   ;
-      muGrad[0][1][1]  = -(1. - z);
-      muGrad[0][1][2]  =    - y   ;
+      muGrad[0][1][0]  =     0.       ;
+      muGrad[0][1][1]  =  -scaling    ;
+      muGrad[0][1][2]  = -y * scaling2;
       
       muGrad[0][2][0]  =     0.   ;
       muGrad[0][2][1]  =     0.   ;
       muGrad[0][2][2]  =    -1.   ;
       
-      muGrad[1][0][0]  =   1. - z ;
-      muGrad[1][0][1]  =     0.   ;
-      muGrad[1][0][2]  =      x   ;
+      muGrad[1][0][0]  =  scaling     ;
+      muGrad[1][0][1]  =     0.       ;
+      muGrad[1][0][2]  =  x * scaling2;
       
-      muGrad[1][1][0]  =     0.   ;
-      muGrad[1][1][1]  =   1. - z ;
-      muGrad[1][1][2]  =      y   ;
+      muGrad[1][1][0]  =     0.       ;
+      muGrad[1][1][1]  =   scaling    ;
+      muGrad[1][1][2]  =  y * scaling2;
       
       muGrad[1][2][0]  =     0.   ;
       muGrad[1][2][1]  =     0.   ;
@@ -538,9 +544,7 @@ namespace Intrepid2
     {
       const auto & x = coords[0];
       const auto & y = coords[1];
-      // (1 - z) goes in denominator -- so we check for z=0
-      const double epsilon = 1e-12;
-      const PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon;
+      const auto & z = coords[2];
       nu[0][0]  = 1. - x - z; // nu_0^{\zeta,\xi_1}
       nu[0][1]  = 1. - y - z; // nu_0^{\zeta,\xi_2}
       nu[1][0]  =      x    ; // nu_1^{\zeta,\xi_1}
@@ -554,11 +558,6 @@ namespace Intrepid2
     void computeNuGrad(Kokkos::Array<Kokkos::Array<Kokkos::Array<OutputScalar,3>,2>,3> &nuGrad,
                        Kokkos::Array<PointScalar,3>  &coords) const
     {
-      const auto & x = coords[0];
-      const auto & y = coords[1];
-      // (1 - z) goes in denominator -- so we check for z=0
-      const PointScalar epsilon = 1e-12;
-      const PointScalar z = (fabs(coords[2]) > epsilon) ? coords[2] : epsilon; // avoid division by zero
       nuGrad[0][0][0]  = -1. ; // nu_0^{\zeta,\xi_1}_dxi_1
       nuGrad[0][0][1]  =  0. ; // nu_0^{\zeta,\xi_1}_dxi_2
       nuGrad[0][0][2]  = -1. ; // nu_0^{\zeta,\xi_1}_dzeta
@@ -713,8 +712,8 @@ namespace Intrepid2
       }
       
       // **** face functions **** //
+      // one quad face
       const int numFunctionsPerQuadFace =  (polyOrder-1)*(polyOrder-1);
-      const int numQuadFaces = 1;
       
       // following the ESEAS ordering: j increments first
       for (int j=2; j<=polyOrder_; j++)
