@@ -293,6 +293,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   // z_: Q applied to right-hand side of the least squares system
   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_;
+  mutable Teuchos::RCP<MV> currentUpdate_;
+
 };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -457,18 +459,18 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   {
     typedef Teuchos::SerialDenseMatrix<int, ScalarType> SDM;
 
-    Teuchos::RCP<MV> currentUpdate = Teuchos::null;
     if (curDim_ == 0) {
       // If this is the first iteration of the Arnoldi factorization,
       // then there is no update, so return Teuchos::null.
-      return currentUpdate;
+      return currentUpdate_;
     }
     else {
       const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero ();
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one ();
       Teuchos::BLAS<int,ScalarType> blas;
 
-      currentUpdate = MVT::Clone (*Z_, blockSize_);
+      if (currentUpdate_.is_null())
+        currentUpdate_ = MVT::Clone (*Z_, blockSize_);
 
       // Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       SDM y (Teuchos::Copy, *z_, curDim_, blockSize_);
@@ -484,9 +486,9 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
         index[i] = i;
       }
       Teuchos::RCP<const MV> Zjp1 = MVT::CloneView (*Z_, index);
-      MVT::MvTimesMatAddMv (one, *Zjp1, y, zero, *currentUpdate);
+      MVT::MvTimesMatAddMv (one, *Zjp1, y, zero, *currentUpdate_);
     }
-    return currentUpdate;
+    return currentUpdate_;
   }
 
 
