@@ -88,7 +88,7 @@ void fill_expected_recv_data(const stk::mesh::BulkData& mesh,
                              std::vector<KeyProcGhostId>& recv_data)
 {
     for(const EntityCommListInfo& commInfo : comm_list) {
-        STK_ThrowAssert(commInfo.entity_comm != -1);
+        STK_ThrowAssertMsg(commInfo.entity_comm != -1,"P"<<mesh.parallel_rank()<<" entity_comm==-1 for "<<commInfo.key);
         STK_ThrowAssert(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)));
         push_back_key_procs_ghost_ids(commInfo.key,
                                       mesh.parallel_owner_rank(commInfo.entity)==mesh.parallel_rank(),

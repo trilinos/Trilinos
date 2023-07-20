@@ -1066,7 +1066,7 @@ protected: //functions
   bool internal_modification_end_for_change_parts(ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
   void internal_modification_end_for_change_ghosting();
 
-  void mark_entity_and_upward_related_entities_as_modified(Entity entity);
+  void mark_entity_and_upward_related_entities_as_modified(Entity entity, bool markUpDownClosureIfShared = false);
 
   void set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map(std::vector<shared_entity_type> & shared_entity_map);
   void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank,

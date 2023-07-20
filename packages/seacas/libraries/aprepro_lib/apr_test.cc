@@ -62,6 +62,12 @@ int main(int argc, char *argv[])
       // Aprepro::parsing_results()
       std::fstream infile(argv[ai]);
       if (!infile.good()) {
+	if (!aprepro.ap_options.include_path.empty() && argv[ai][0] != '/') {
+	  std::string filename = aprepro.ap_options.include_path + "/" + argv[ai];
+	  infile.open(filename, std::fstream::in);
+	}
+      }
+      if (!infile.good()) {
         std::cerr << "APREPRO: Could not open file: " << argv[ai] << '\n';
         return 0;
       }
