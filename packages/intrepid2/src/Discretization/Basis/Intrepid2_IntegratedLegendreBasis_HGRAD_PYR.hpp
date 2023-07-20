@@ -457,23 +457,22 @@ namespace Intrepid2
       const double epsilon = 1e-12;
       PointScalar one_minus_z = (fabs(1.-z) > epsilon) ? 1. - z : epsilon;
       PointScalar scaling = 1. / one_minus_z;
-      PointScalar lambda0_x = 1. - z - x;
-      PointScalar lambda0_y = 1. - z - y;
-      lambdaGrad[0][0] = -lambda0_y * scaling;
-      lambdaGrad[0][1] = -lambda0_x * scaling;
+      
+      lambdaGrad[0][0] = -1. + y * scaling;
+      lambdaGrad[0][1] = -1. + x * scaling;
       lambdaGrad[0][2] = x * y * scaling * scaling - 1.;
       
-      lambdaGrad[1][0] = lambda0_y * scaling;
-      lambdaGrad[1][1] = -x * scaling;
-      lambdaGrad[1][2] = -x * y * scaling * scaling;
+      lambdaGrad[1][0] =  1. + y * scaling;
+      lambdaGrad[1][1] =      -x * scaling;
+      lambdaGrad[1][2] = -x *  y * scaling * scaling;
       
-      lambdaGrad[2][0] = y * scaling;
-      lambdaGrad[2][1] = x * scaling;
-      lambdaGrad[2][2] = x * y * scaling * scaling;
+      lambdaGrad[2][0] =       y * scaling;
+      lambdaGrad[2][1] =       x * scaling;
+      lambdaGrad[2][2] =  x *  y * scaling * scaling;
       
-      lambdaGrad[3][0] = -y * scaling;
-      lambdaGrad[3][1] = lambda0_x * scaling;
-      lambdaGrad[3][2] = -x * y * scaling * scaling;
+      lambdaGrad[3][0] =      -y * scaling;
+      lambdaGrad[3][1] =  1. + x * scaling;
+      lambdaGrad[3][2] = -x *  y * scaling * scaling;
       
       lambdaGrad[4][0] = 0;
       lambdaGrad[4][1] = 0;
