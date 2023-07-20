@@ -164,18 +164,20 @@ namespace Intrepid2
       using Kokkos::Array;
       Array<OutputScalar,5> lambda;
       Array<Kokkos::Array<OutputScalar,3>,5> lambdaGrad;
-      computeLambda    (    lambda, coords);
-      computeLambdaGrad(lambdaGrad, coords);
+//      computeLambda    (    lambda, coords);
+//      computeLambdaGrad(lambdaGrad, coords);
       
       Array<Array<OutputScalar,3>,2> mu;
       Array<Array<Array<OutputScalar,3>,3>,2> muGrad;
-      computeMu    (    mu, coords);
-      computeMuGrad(muGrad, coords);
+//      computeMu    (    mu, coords);
+//      computeMuGrad(muGrad, coords);
       
       Array<Array<OutputScalar,2>,3> nu;
       Array<Array<Array<OutputScalar,3>,2>,3> nuGrad;
-      computeNu    (    nu, coords);
-      computeNuGrad(nuGrad, coords);
+//      computeNu    (    nu, coords);
+//      computeNuGrad(nuGrad, coords);
+      
+      affinePyramid(lambda, lambdaGrad, mu, muGrad, nu, nuGrad, coords);
       
       switch (opType_)
       {
@@ -427,6 +429,104 @@ namespace Intrepid2
     }
     
     KOKKOS_INLINE_FUNCTION
+    void affinePyramid(Kokkos::Array<OutputScalar,5>                                   &lambda,
+                       Kokkos::Array<Kokkos::Array<OutputScalar,3>,5>                  &lambdaGrad,
+                       Kokkos::Array<Kokkos::Array<OutputScalar,3>,2>                  &mu,
+                       Kokkos::Array<Kokkos::Array<Kokkos::Array<OutputScalar,3>,3>,2> &muGrad,
+                       Kokkos::Array<Kokkos::Array<OutputScalar,2>,3>                  &nu,
+                       Kokkos::Array<Kokkos::Array<Kokkos::Array<OutputScalar,3>,2>,3> &nuGrad,
+                       Kokkos::Array<PointScalar,3>  &coords) const
+    {
+      const auto & x = coords[0];
+      const auto & y = coords[1];
+      const auto & z = coords[2];
+      nu[0][0]  = 1. - x - z; // nu_0^{\zeta,\xi_1}
+      nu[0][1]  = 1. - y - z; // nu_0^{\zeta,\xi_2}
+      nu[1][0]  =      x    ; // nu_1^{\zeta,\xi_1}
+      nu[1][1]  =      y    ; // nu_1^{\zeta,\xi_2}
+      nu[2][0]  =      z    ; // nu_2^{\zeta,\xi_1}
+      nu[2][1]  =      z    ; // nu_2^{\zeta,\xi_2}
+      
+      nuGrad[0][0][0]  = -1. ; // nu_0^{\zeta,\xi_1}_dxi_1
+      nuGrad[0][0][1]  =  0. ; // nu_0^{\zeta,\xi_1}_dxi_2
+      nuGrad[0][0][2]  = -1. ; // nu_0^{\zeta,\xi_1}_dzeta
+      
+      nuGrad[0][1][0]  =  0. ; // nu_0^{\zeta,\xi_2}_dxi_1
+      nuGrad[0][1][1]  = -1. ; // nu_0^{\zeta,\xi_2}_dxi_2
+      nuGrad[0][1][2]  = -1. ; // nu_0^{\zeta,\xi_2}_dzeta
+      
+      nuGrad[1][0][0]  =  1. ; // nu_1^{\zeta,\xi_1}_dxi_1
+      nuGrad[1][0][1]  =  0. ; // nu_1^{\zeta,\xi_1}_dxi_2
+      nuGrad[1][0][2]  =  0. ; // nu_1^{\zeta,\xi_1}_dzeta
+      
+      nuGrad[1][1][0]  =  0. ; // nu_1^{\zeta,\xi_2}_dxi_1
+      nuGrad[1][1][1]  =  1. ; // nu_1^{\zeta,\xi_2}_dxi_2
+      nuGrad[1][1][2]  =  0. ; // nu_1^{\zeta,\xi_2}_dzeta
+      
+      nuGrad[2][0][0]  =  0. ; // nu_2^{\zeta,\xi_1}_dxi_1
+      nuGrad[2][0][1]  =  0. ; // nu_2^{\zeta,\xi_1}_dxi_2
+      nuGrad[2][0][2]  =  1. ; // nu_2^{\zeta,\xi_1}_dzeta
+      
+      nuGrad[2][1][0]  =  0. ; // nu_2^{\zeta,\xi_2}_dxi_1
+      nuGrad[2][1][1]  =  0. ; // nu_2^{\zeta,\xi_2}_dxi_2
+      nuGrad[2][1][2]  =  1. ; // nu_2^{\zeta,\xi_2}_dzeta
+      
+      // (1 - z) goes in denominator -- so we check for 1-z=0
+      auto & muZ_0 = mu[0][2];
+      auto & muZ_1 = mu[1][2];
+      const double epsilon = 1e-12;
+      muZ_0 = (fabs(1.-z) > epsilon) ? 1. - z :      epsilon;
+      muZ_1 = (fabs(1.-z) > epsilon) ?      z : 1. - epsilon;
+      PointScalar scaling = 1. / muZ_0;
+      mu[0][0]  = 1. - x * scaling;
+      mu[0][1]  = 1. - y * scaling;
+      mu[1][0]  =      x * scaling;
+      mu[1][1]  =      y * scaling;
+      
+      PointScalar scaling2 = scaling * scaling;
+      muGrad[0][0][0]  =  -scaling     ;
+      muGrad[0][0][1]  =     0.        ;
+      muGrad[0][0][2]  = - x * scaling2;
+      
+      muGrad[0][1][0]  =     0.       ;
+      muGrad[0][1][1]  =  -scaling    ;
+      muGrad[0][1][2]  = -y * scaling2;
+      
+      muGrad[0][2][0]  =     0.   ;
+      muGrad[0][2][1]  =     0.   ;
+      muGrad[0][2][2]  =    -1.   ;
+      
+      muGrad[1][0][0]  =  scaling     ;
+      muGrad[1][0][1]  =     0.       ;
+      muGrad[1][0][2]  =  x * scaling2;
+      
+      muGrad[1][1][0]  =     0.       ;
+      muGrad[1][1][1]  =   scaling    ;
+      muGrad[1][1][2]  =  y * scaling2;
+      
+      muGrad[1][2][0]  =     0.   ;
+      muGrad[1][2][1]  =     0.   ;
+      muGrad[1][2][2]  =     1.   ;
+      
+      lambda[0] = nu[0][0] * mu[0][1];
+      lambda[1] = nu[0][1] * mu[1][0];
+      lambda[2] = nu[1][0] * mu[1][1];
+      lambda[3] = nu[1][1] * mu[0][0];
+      lambda[4] = z;
+      
+      for (int d=0; d<3; d++)
+      {
+        lambdaGrad[0][d] = nu[0][0] * muGrad[0][1][d] + nuGrad[0][0][d] * mu[0][1];
+        lambdaGrad[1][d] = nu[0][1] * muGrad[1][0][d] + nuGrad[0][1][d] * mu[1][0];
+        lambdaGrad[2][d] = nu[1][0] * muGrad[1][1][d] + nuGrad[1][0][d] * mu[1][1];
+        lambdaGrad[3][d] = nu[1][1] * muGrad[0][0][d] + nuGrad[1][1][d] * mu[0][0];
+      }
+      lambdaGrad[4][0] = 0;
+      lambdaGrad[4][1] = 0;
+      lambdaGrad[4][2] = 1;
+    }
+    
+    KOKKOS_INLINE_FUNCTION
     void computeLambda(Kokkos::Array<OutputScalar,5> &lambda,
                        Kokkos::Array<PointScalar,3>  &coords) const
     {
@@ -462,16 +562,16 @@ namespace Intrepid2
       lambdaGrad[0][1] = -1. + x * scaling;
       lambdaGrad[0][2] = x * y * scaling * scaling - 1.;
       
-      lambdaGrad[1][0] =  1. + y * scaling;
-      lambdaGrad[1][1] =      -x * scaling;
+      lambdaGrad[1][0] =  1. - y * scaling;
+      lambdaGrad[1][1] =     - x * scaling;
       lambdaGrad[1][2] = -x *  y * scaling * scaling;
       
       lambdaGrad[2][0] =       y * scaling;
       lambdaGrad[2][1] =       x * scaling;
       lambdaGrad[2][2] =  x *  y * scaling * scaling;
       
-      lambdaGrad[3][0] =      -y * scaling;
-      lambdaGrad[3][1] =  1. + x * scaling;
+      lambdaGrad[3][0] =     - y * scaling;
+      lambdaGrad[3][1] =  1. - x * scaling;
       lambdaGrad[3][2] = -x *  y * scaling * scaling;
       
       lambdaGrad[4][0] = 0;
