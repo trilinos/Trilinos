@@ -200,7 +200,7 @@ namespace Intrepid2
           auto & Li_a2 = scratch1D_2;
           
           Polynomials::shiftedScaledIntegratedLegendreValues(Li_a1, polyOrder_, nu[0][0], nu[0][0] + nu[1][0]);
-          Polynomials::shiftedScaledIntegratedLegendreValues(Li_a2, polyOrder_, nu[0][0], nu[0][1] + nu[1][1]);
+          Polynomials::shiftedScaledIntegratedLegendreValues(Li_a2, polyOrder_, nu[0][1], nu[0][1] + nu[1][1]);
           
           // edge functions
           // "mixed" edges (those shared between the quad and some tri face) first
@@ -234,9 +234,7 @@ namespace Intrepid2
               fieldOrdinalOffset++;
             }
           }
-          
-          // TODO: implement pyramid face functions (below is copied from HGRAD_TET)
-          
+                    
           // quadrilateral face
           // mu_0 * phi_i(mu_0^{xi_1},mu_1^{xi_1}) * phi_j(mu_0^{xi_2},mu_1^{xi_2})
           
@@ -340,7 +338,6 @@ namespace Intrepid2
         case OPERATOR_GRAD:
         case OPERATOR_D1:
         {
-          // TODO: implement gradients (below was copied from HGRAD_TET)
           // vertex functions
           
           for (int vertexOrdinal=0; vertexOrdinal<numVertices; vertexOrdinal++)
@@ -365,7 +362,7 @@ namespace Intrepid2
           
           // mixed edges first
           auto & P_i_minus_1 = scratch1D_1;
-          auto & R_i_minus_1 = scratch1D_2; // this is the same as L_i_dt
+          auto & L_i_dt      = scratch1D_2; // R_{i-1} = d/dt L_i
           auto & L_i         = scratch1D_3;
           
           for (int edgeOrdinal=0; edgeOrdinal<numMixedEdges; edgeOrdinal++)
@@ -376,7 +373,7 @@ namespace Intrepid2
             int b = 3 - a;
             
             Polynomials::shiftedScaledLegendreValues             (P_i_minus_1, polyOrder_-1, nu[0][a-1], nu[0][a-1] + nu[1][a-1]);
-            Polynomials::shiftedScaledIntegratedLegendreValues_dt(R_i_minus_1, polyOrder_,   nu[0][a-1], nu[0][a-1] + nu[1][a-1]);
+            Polynomials::shiftedScaledIntegratedLegendreValues_dt(L_i_dt,      polyOrder_,   nu[0][a-1], nu[0][a-1] + nu[1][a-1]);
             Polynomials::shiftedScaledIntegratedLegendreValues   (L_i,         polyOrder_,   nu[0][a-1], nu[0][a-1] + nu[1][a-1]);
             
             // edge 0,3 --> c=0
@@ -388,7 +385,9 @@ namespace Intrepid2
               
               for (int d=0; d<3; d++)
               {
-                OutputScalar grad_Li_d = P_i_minus_1(i-1) * nuGrad[1][a-1][d] + R_i_minus_1(i-1) * nuGrad[0][a-1][d] + nuGrad[1][a-1][d];
+                // grad [L_i](nu_0,nu_1) = [P_{i-1}](nu_0,nu_1) * grad nu_1 + [R_{i-1}](nu_0,nu_1) * grad (nu_0 + nu_1)
+                const auto & R_i_minus_1 = L_i_dt(i);
+                OutputScalar grad_Li_d = P_i_minus_1(i-1) * nuGrad[1][a-1][d] + R_i_minus_1 * (nuGrad[0][a-1][d] + nuGrad[1][a-1][d]);
                 output_(fieldOrdinalOffset,pointOrdinal,d) = muGrad[c][b-1][d] * L_i(i) + mu[c][b-1] * grad_Li_d;
               }
               fieldOrdinalOffset++;
