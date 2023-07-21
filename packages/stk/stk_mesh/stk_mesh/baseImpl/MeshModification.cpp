@@ -14,7 +14,9 @@ namespace impl {
 
 bool MeshModification::modification_begin(const std::string description)
 {
-    parallel_machine_barrier( m_bulkData.parallel() );
+    if (m_bulkData.m_runConsistencyCheck) {
+      parallel_machine_barrier( m_bulkData.parallel() );
+    }
 
     if (this->synchronized_count() == 0)
     {

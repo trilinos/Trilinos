@@ -44,25 +44,182 @@
 #include <ostream>
 #include <string>
 #include <limits>
+#include <cmath>
+#include <algorithm>
 
 #include "stk_search/DistanceComparison.hpp"
-#include "stk_search/FineSearch.hpp"
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include "stk_util/util/ReportHandler.hpp"
+#include "stk_util/util/SortAndUnique.hpp"
 
 namespace stk {
 namespace search {
 
 template <class SENDMESH, class RECVMESH>
-using FilterToNearestProcRelation = std::pair<typename RECVMESH::EntityProc, typename SENDMESH::EntityProc>;
+using FilterCoarseSearchProcRelation = std::pair<typename RECVMESH::EntityProc, typename SENDMESH::EntityProc>;
 
 template <class SENDMESH, class RECVMESH>
-using FilterToNearestProcRelationVec = std::vector<FilterToNearestProcRelation<SENDMESH, RECVMESH>>;
+using FilterCoarseSearchProcRelationVec = std::vector<FilterCoarseSearchProcRelation<SENDMESH, RECVMESH>>;
+
+enum class ObjectOutsideDomainPolicy { IGNORE, EXTRAPOLATE, TRUNCATE, PROJECT, ABORT, UNDEFINED_OBJFLAG = 0xff };
+
+inline ObjectOutsideDomainPolicy get_object_outside_domain_policy(const std::string& id)
+{
+  if(id == "IGNORE") return ObjectOutsideDomainPolicy::IGNORE;
+  if(id == "EXTRAPOLATE") return ObjectOutsideDomainPolicy::EXTRAPOLATE;
+  if(id == "TRUNCATE") return ObjectOutsideDomainPolicy::TRUNCATE;
+  if(id == "PROJECT") return ObjectOutsideDomainPolicy::PROJECT;
+  if(id == "ABORT") return ObjectOutsideDomainPolicy::ABORT;
+
+  return ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG;
+}
+
+inline std::string get_object_outside_domain_policy(const ObjectOutsideDomainPolicy id)
+{
+  switch(id) {
+  case ObjectOutsideDomainPolicy::IGNORE:
+    return "IGNORE";
+  case ObjectOutsideDomainPolicy::EXTRAPOLATE:
+    return "EXTRAPOLATE";
+  case ObjectOutsideDomainPolicy::TRUNCATE:
+    return "TRUNCATE";
+  case ObjectOutsideDomainPolicy::PROJECT:
+    return "PROJECT";
+  case ObjectOutsideDomainPolicy::ABORT:
+    return "ABORT";
+  case ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG:
+    return "UNDEFINED";
+  }
+
+  return std::string("");
+}
+
+struct FilterCoarseSearchOptions
+{
+  std::ostream& m_outputStream{std::cout};
+  ObjectOutsideDomainPolicy m_extrapolatePolicy{ObjectOutsideDomainPolicy::EXTRAPOLATE};
+  bool m_useNearestNodeForClosestBoundingBox{false};
+  bool m_useCentroidForGeometricProximity{false};
+  bool m_verbose{true};
+
+  FilterCoarseSearchOptions(std::ostream& out)
+  : m_outputStream(out) {}
+  FilterCoarseSearchOptions(std::ostream& out, ObjectOutsideDomainPolicy extrapolatePolicy)
+  : m_outputStream(out), m_extrapolatePolicy(extrapolatePolicy) {}
+  FilterCoarseSearchOptions(std::ostream& out,
+                         ObjectOutsideDomainPolicy extrapolatePolicy,
+                         bool useNearestNodeForClosestBoundingBox,
+                         bool useCentroidForGeometricProximity,
+                         bool verbose)
+  : m_outputStream(out)
+  , m_extrapolatePolicy(extrapolatePolicy)
+  , m_useNearestNodeForClosestBoundingBox(useNearestNodeForClosestBoundingBox)
+  , m_useCentroidForGeometricProximity(useCentroidForGeometricProximity)
+  , m_verbose(verbose) {}
+};
+
+template <class RECVMESH>
+class FilterCoarseSearchResult
+{
+public:
+  using EntityKey = typename RECVMESH::EntityKey;
+
+  virtual void add_search_filter_info(const EntityKey key,
+                                      const std::vector<double>&paramCoords,
+                                      const double parametricDistance,
+                                      const bool isWithinParametricTolerance,
+                                      const double geometricDistanceSquared,
+                                      const bool isWithinGeometricTolerance) = 0;
+
+  virtual void get_parametric_coordinates(const EntityKey key, std::vector<double>& paramCoords) const = 0;
+  virtual void clear() = 0;
+
+  virtual ~FilterCoarseSearchResult() {}
+};
+
+template <class RECVMESH>
+class FilterCoarseSearchResultMap : public FilterCoarseSearchResult<RECVMESH>
+{
+public:
+  using EntityKey = typename RECVMESH::EntityKey;
+
+  void add_search_filter_info(const EntityKey key,
+                              const std::vector<double>& paramCoords,
+                              const double parametricDistance,
+                              const bool isWithinParametricTolerance,
+                              const double geometricDistanceSquared,
+                              const bool isWithinGeometricTolerance) override
+  {
+    m_searchFilterInfo[key] = paramCoords;
+  }
+
+  void get_parametric_coordinates(const EntityKey key, std::vector<double>& paramCoords) const override
+  {
+    const std::vector<double>& returnVal = m_searchFilterInfo.at(key);
+    paramCoords = returnVal;
+  }
+
+  void clear() override { m_searchFilterInfo.clear(); }
+  virtual ~FilterCoarseSearchResultMap() {}
+
+private:
+  std::map<EntityKey, std::vector<double>> m_searchFilterInfo;
+};
+
+template <class RECVMESH>
+class FilterCoarseSearchResultVector : public FilterCoarseSearchResult<RECVMESH>
+{
+public:
+  using EntityKey = typename RECVMESH::EntityKey;
+  using VectorType = std::pair<EntityKey, std::vector<double> >;
+
+  struct VectorTypeLess
+  {
+    inline bool operator()(const VectorType& a, const VectorType& b) const { return a.first < b.first; }
+    inline bool operator()(const VectorType& a, const EntityKey&  b) const { return a.first < b;       }
+    inline bool operator()(const EntityKey&  a, const VectorType& b) const { return a       < b.first; }
+    inline bool operator()(const EntityKey&  a, const EntityKey&  b) const { return a       < b;       }
+  };
+
+  FilterCoarseSearchResultVector() : m_isSorted(false) {}
+
+  void add_search_filter_info(const EntityKey key,
+                              const std::vector<double>& paramCoords,
+                              const double parametricDistance,
+                              const bool isWithinParametricTolerance,
+                              const double geometricDistanceSquared,
+                              const bool isWithinGeometricTolerance) override
+  {
+    m_searchFilterInfo.push_back(std::make_pair(key, paramCoords));
+    m_isSorted = false;
+  }
+
+  void get_parametric_coordinates(const EntityKey key, std::vector<double>& paramCoords) const override
+  {
+    if(!m_isSorted) {
+      stk::util::sort_and_unique(m_searchFilterInfo, VectorTypeLess());
+      m_isSorted = true;
+    }
+
+    auto result = std::lower_bound(m_searchFilterInfo.begin(), m_searchFilterInfo.end(), key, VectorTypeLess());
+    STK_ThrowRequireMsg((result != m_searchFilterInfo.end()) && ((*result).first == key),
+                        "Could not find key in search filter info");
+
+    paramCoords = (*result).second;
+  }
+
+  void clear() override { m_searchFilterInfo.clear(); }
+  virtual ~FilterCoarseSearchResultVector() {}
+
+private:
+  mutable bool m_isSorted{false};
+  mutable std::vector<VectorType> m_searchFilterInfo;
+};
 
 namespace impl {
 
-struct FilterToNearestStats
+struct FilterCoarseSearchStats
 {
   unsigned numEntitiesWithinTolerance{0};
   unsigned numEntitiesOutsideTolerance{0};
@@ -70,6 +227,22 @@ struct FilterToNearestStats
   double longestParametricExtrapolation{0.0};
   double longestGeometricExtrapolation{0.0};
 };
+
+template <class MESH>
+inline
+double get_distance_squared_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const double* toCoords)
+{
+  std::vector<double> centroid = mesh.centroid(k);
+  return stk::search::distance_sq(centroid.size(), centroid.data(), toCoords);
+}
+
+template <class MESH>
+inline
+double get_distance_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const double* toCoords)
+{
+  double distanceSquared = get_distance_squared_from_centroid<MESH>(mesh, k, toCoords);
+  return std::sqrt(distanceSquared);
+}
 
 template <typename EntityProcRelationVec>
 void remove_non_local_range_entities(EntityProcRelationVec& rangeToDomain, int localProc)
@@ -117,14 +290,14 @@ struct FilterResult {
   bool isWithinGeometricTolerance;
   bool isWithinParametricTolerance;
   bool isAccepted;
-  typename FilterToNearestProcRelationVec<SENDMESH, RECVMESH>::const_iterator nearest;
+  typename FilterCoarseSearchProcRelationVec<SENDMESH, RECVMESH>::const_iterator nearest;
 };
 
 template <class SENDMESH, class RECVMESH>
 void accept_candidate(std::vector<double>& parametricCoords,
                       const double parametricDistance,       const bool isWithinParametricTolerance,
                       const double geometricDistanceSquared, const bool isWithinGeometricTolerance,
-                      const typename FilterToNearestProcRelationVec<SENDMESH, RECVMESH>::const_iterator& ii,
+                      const typename FilterCoarseSearchProcRelationVec<SENDMESH, RECVMESH>::const_iterator& ii,
                       FilterResult<SENDMESH, RECVMESH>& bestCandidate)
 {
   bestCandidate.isWithinParametricTolerance = isWithinParametricTolerance;
@@ -156,17 +329,17 @@ void set_geometric_info(SENDMESH& sendMesh,
 }
 
 template <class SENDMESH, class RECVMESH>
-FilterToNearestStats filter_to_nearest_by_range(FilterToNearestProcRelationVec<SENDMESH, RECVMESH>& rangeToDomain,
-                                                SENDMESH& sendMesh, RECVMESH& recvMesh,
-                                                const bool useNearestNodeForClosestBoundingBox,
-                                                const bool useCentroidForGeometricProximity,
-                                                const ObjectOutsideDomainPolicy extrapolatePolicy,
-                                                FilterToNearestResult<RECVMESH>& filterResult)
+FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRelationVec<SENDMESH, RECVMESH>& rangeToDomain,
+                                                      SENDMESH& sendMesh, RECVMESH& recvMesh,
+                                                      const bool useNearestNodeForClosestBoundingBox,
+                                                      const bool useCentroidForGeometricProximity,
+                                                      const ObjectOutsideDomainPolicy extrapolatePolicy,
+                                                      FilterCoarseSearchResult<RECVMESH>& filterResult)
 {
-  using const_iterator = typename FilterToNearestProcRelationVec<SENDMESH,RECVMESH>::const_iterator;
-  using iterator = typename FilterToNearestProcRelationVec<SENDMESH,RECVMESH>::iterator;
+  using const_iterator = typename FilterCoarseSearchProcRelationVec<SENDMESH,RECVMESH>::const_iterator;
+  using iterator = typename FilterCoarseSearchProcRelationVec<SENDMESH,RECVMESH>::iterator;
 
-  FilterToNearestStats stats;
+  FilterCoarseSearchStats stats;
 
   int thisProc = stk::parallel_machine_rank(recvMesh.comm());
 
@@ -327,19 +500,19 @@ void output_summary_outside_tolerance(SENDMESH& sendMesh, RECVMESH& recvMesh, Ou
 }
 
 template <class SENDMESH, class RECVMESH>
-void filter_to_nearest(const std::string& name,
-                       FilterToNearestProcRelationVec<SENDMESH, RECVMESH>& rangeToDomain,
-                       SENDMESH& sendMesh, RECVMESH& recvMesh,
-                       FilterToNearestOptions& filterOptions,
-                       FilterToNearestResult<RECVMESH>& filterResult)
+void filter_coarse_search(const std::string& name,
+                          FilterCoarseSearchProcRelationVec<SENDMESH, RECVMESH>& rangeToDomain,
+                          SENDMESH& sendMesh, RECVMESH& recvMesh,
+                          FilterCoarseSearchOptions& filterOptions,
+                          FilterCoarseSearchResult<RECVMESH>& filterResult)
 {
   const double parametricTol = recvMesh.get_parametric_tolerance();
   const double geometricTol = recvMesh.get_search_tolerance();
-  impl::FilterToNearestStats stats = impl::filter_to_nearest_by_range(rangeToDomain, sendMesh, recvMesh,
-                                                                      filterOptions.m_useNearestNodeForClosestBoundingBox,
-                                                                      filterOptions.m_useCentroidForGeometricProximity,
-                                                                      filterOptions.m_extrapolatePolicy,
-                                                                      filterResult);
+  impl::FilterCoarseSearchStats stats = impl::filter_coarse_search_by_range(rangeToDomain, sendMesh, recvMesh,
+                                                                            filterOptions.m_useNearestNodeForClosestBoundingBox,
+                                                                            filterOptions.m_useCentroidForGeometricProximity,
+                                                                            filterOptions.m_extrapolatePolicy,
+                                                                            filterResult);
 
   stats.numEntitiesWithinTolerance = stk::get_global_sum(sendMesh.comm(), stats.numEntitiesWithinTolerance);
   stats.numEntitiesOutsideTolerance = stk::get_global_sum(sendMesh.comm(), stats.numEntitiesOutsideTolerance);

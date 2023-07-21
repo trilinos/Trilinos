@@ -36,6 +36,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/DestroyElements.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/GetEntities.hpp>
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
@@ -1283,6 +1284,22 @@ public:
       EXPECT_FALSE(get_bulk().is_valid(node494));
     }
   }
+
+  void destroy_elems(const std::vector<std::pair<int,stk::mesh::EntityId>>& procElemIds)
+  {
+    stk::mesh::EntityVector elemsToDestroy;
+    for(const std::pair<int,stk::mesh::EntityId>& procElemId : procElemIds) {
+      if (procElemId.first == get_bulk().parallel_rank()) {
+        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, procElemId.second);
+        ASSERT_TRUE(get_bulk().is_valid(elem));
+        elemsToDestroy.push_back(elem);
+      }
+    }
+
+    get_bulk().modification_begin();
+    stk::mesh::destroy_elements_no_mod_cycle(get_bulk(), elemsToDestroy, get_meta().universal_part());
+    get_bulk().modification_end();
+  }
 };
 
 TEST_F(AuraTetSide, removeAuraSideOnOwner_checkMarking)
@@ -1356,6 +1373,80 @@ TEST_F(AuraTetSide, removeAuraElemOnP2_auraNodesDeletedOnP1)
   setup_text_mesh(meshDesc);
 
   delete_elem_on_p1_check_aura_nodes_deleted();
+}
+
+TEST_F(AuraTetSide, destroy_elems)
+{
+  if (get_parallel_size() != 8) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1049, TET_4, 101,140,138,137\n"
+                         "0, 1050, TET_4, 140,110,139,136\n"
+                         "0, 1051, TET_4, 138,139,108,135\n"
+                         "0, 1052, TET_4, 137,136,135,107\n"
+                         "0, 1053, TET_4, 138,137,140,136\n"
+                         "0, 1054, TET_4, 138,135,137,136\n"
+                         "0, 1055, TET_4, 138,139,135,136\n"
+                         "0, 1056, TET_4, 138,140,139,136\n"
+                         "1, 2000, TET_4, 200,110,162,201\n"
+                         "2, 1065, TET_4, 147,108,103,109\n"
+                         "2, 1066, TET_4, 105,147,103,109\n"
+                         "3, 1108, TET_4, 134,106,133,104\n"
+                         "3, 1109, TET_4, 132,133,105,104\n"
+                         "3, 1110, TET_4, 132,134,133,104\n"
+                         "3, 1111, TET_4, 107,134,132,104\n"
+                         "4, 1081, TET_4, 134,136,107,135\n"
+                         "4, 1145, TET_4, 135,107,136,134\n"
+                         "4, 1146, TET_4, 139,136,110,162\n"
+                         "4, 1148, TET_4, 136,135,134,159\n"
+                         "4, 1149, TET_4, 136,139,135,159\n"
+                         "4, 1150, TET_4, 136,162,139,159\n"
+                         "4, 1151, TET_4, 136,134,162,159\n"
+                         "5, 1089, TET_4, 108,147,135,159\n"
+                         "5, 1090, TET_4, 147,105,132,133\n"
+                         "5, 1091, TET_4, 135,132,107,134\n"
+                         "5, 1092, TET_4, 159,133,134,106\n"
+                         "5, 1093, TET_4, 132,147,133,159\n"
+                         "5, 1094, TET_4, 132,135,147,159\n"
+                         "5, 1095, TET_4, 132,134,135,159\n"
+                         "5, 1096, TET_4, 132,133,134,159\n"
+                         "6, 1160, TET_4, 159,133,160,147\n"
+                         "6, 1161, TET_4, 159,160,133,106\n"
+                         "6, 1162, TET_4, 109,159,160,147\n"
+                         "6, 1163, TET_4, 109,159,147,108\n"
+                         "6, 1164, TET_4, 105,160,133,147\n"
+                         "6, 1165, TET_4, 105,160,147,109\n"
+                         "7, 2001, TET_4, 202,162,110,203|sideset:data=1151,4,1146,2,1052,1,1050,1,1081,4,1053,2\n";
+
+  setup_text_mesh(meshDesc);
+
+  destroy_elems({ {0, 1049},
+                  {0, 1050},
+                  {0, 1051},
+                  {0, 1052},
+                  {0, 1053},
+                  {0, 1054},
+                  {0, 1055},
+                  {0, 1056},
+                  {2, 1065},
+                  {2, 1066},
+                  {3, 1108},
+                  {3, 1109},
+                  {3, 1110},
+                  {3, 1111},
+                  {5, 1089},
+                  {5, 1090},
+                  {5, 1091},
+                  {5, 1092},
+                  {5, 1093},
+                  {5, 1094},
+                  {5, 1095},
+                  {5, 1096},
+                  {6, 1160},
+                  {6, 1161},
+                  {6, 1162},
+                  {6, 1163},
+                  {6, 1164},
+                  {6, 1165} });
 }
 
 } // empty namespace

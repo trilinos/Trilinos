@@ -66,7 +66,7 @@ void MeshModLogObserver::modification_begin_notification()
 
 void MeshModLogObserver::entity_added(Entity entity)
 {
-  if ((m_mesh.synchronized_count()) < m_startAtModCycle) { return; }
+  if (m_mesh.synchronized_count() < m_startAtModCycle) { return; }
 
   if (match(entity)) {
     m_os << "P" << m_mesh.parallel_rank() << " mod-cycle=" << m_mesh.synchronized_count() << ", declare_entity " << m_mesh.entity_key(entity) << std::endl;
@@ -75,7 +75,7 @@ void MeshModLogObserver::entity_added(Entity entity)
 
 void MeshModLogObserver::entity_deleted(Entity entity)
 {
-  if ((m_mesh.synchronized_count()) < m_startAtModCycle) { return; }
+  if (m_mesh.synchronized_count() < m_startAtModCycle) { return; }
 
   if (match(entity)) {
     m_os << "P" << m_mesh.parallel_rank() << " mod-cycle=" << m_mesh.synchronized_count() << ", destroy_entity " << m_mesh.entity_key(entity) << std::endl;
@@ -84,11 +84,8 @@ void MeshModLogObserver::entity_deleted(Entity entity)
 
 void MeshModLogObserver::relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
 {
-  if ((m_mesh.synchronized_count()) < m_startAtModCycle) { return; }
+  if (m_mesh.synchronized_count() < m_startAtModCycle) { return; }
 
-if (m_mesh.parallel_rank()==0 && m_mesh.entity_key(from)==EntityKey(stk::topology::FACE_RANK,18014)) {
-std::cerr<<"";
-}
   if (match(from) || match(to)) {
     m_os << "P" << m_mesh.parallel_rank() << " mod-cycle=" << m_mesh.synchronized_count() << ", destroy_relation "
          << m_mesh.entity_key(from) << " -> " << m_mesh.entity_key(to) << " ordinal=" << ordinal << std::endl;
@@ -97,7 +94,7 @@ std::cerr<<"";
 
 void MeshModLogObserver::relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
 {
-  if ((m_mesh.synchronized_count()) < m_startAtModCycle) { return; }
+  if (m_mesh.synchronized_count() < m_startAtModCycle) { return; }
 
   if (match(from) || match(to)) {
     m_os << "P" << m_mesh.parallel_rank() << " mod-cycle=" << m_mesh.synchronized_count() << ", declare_relation "
@@ -107,7 +104,7 @@ void MeshModLogObserver::relation_declared(Entity from, Entity to, ConnectivityO
 
 void MeshModLogObserver::started_modification_end_notification()
 {
-  if ((m_mesh.synchronized_count()) < m_startAtModCycle) { return; }
+  if (m_mesh.synchronized_count() < m_startAtModCycle) { return; }
 
   m_os << "start modification_end mod-cycle=" << m_mesh.synchronized_count() << std::endl;
   update_patch();
@@ -116,7 +113,7 @@ void MeshModLogObserver::started_modification_end_notification()
 
 void MeshModLogObserver::finished_modification_end_notification()
 {
-  if ((m_mesh.synchronized_count()) < m_startAtModCycle) { return; }
+  if (m_mesh.synchronized_count() < m_startAtModCycle) { return; }
 
   m_os << "finish modification_end mod-cycle=" << m_mesh.synchronized_count() << std::endl;
   update_patch();
@@ -128,13 +125,13 @@ void MeshModLogObserver::add_key_to_watch(const EntityKey& keyToWatch)
   m_keys.insert(keyToWatch);
 }
 
-bool MeshModLogObserver::match(const Entity entity)
+bool MeshModLogObserver::match(const Entity entity) const
 {
   EntityKey key = m_mesh.entity_key(entity);
   return match(key);
 }
 
-bool MeshModLogObserver::match(const EntityKey& key)
+bool MeshModLogObserver::match(const EntityKey& key) const
 {
   return m_mesh.synchronized_count() >= m_startAtModCycle && m_patchKeys.find(key) != m_patchKeys.end();
 }

@@ -80,8 +80,10 @@ public:
 
   stk::mesh::EntityVector get_entity_patch() const { return m_entityPatch; }
 
-  bool match(const Entity entity);
-  bool match(const EntityKey& key);
+  bool match(const Entity entity) const;
+  bool match(const EntityKey& key) const;
+
+  unsigned start_mod_cycle() const { return m_startAtModCycle; }
 
 private:
   void update_patch();
