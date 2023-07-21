@@ -192,31 +192,6 @@ print_crs_matrix_details(
   print_matrix(unc);
 }
 
-template <typename View1, typename View2, typename View3>
-bool
-compare_matrices(
-  const View1& row_map1,
-  const View2& entries1,
-  const View3& values1,
-  const int block_size1,
-  const View1& row_map2,
-  const View2& entries2,
-  const View3& values2,
-  const int block_size2,
-  const std::string& name)
-{
-  auto unc_1 = decompress_matrix(row_map1, entries1, values1, block_size1);
-  auto unc_2 = decompress_matrix(row_map2, entries2, values2, block_size2);
-
-  if (!compare_unc_matrix(unc_1, unc_2)) {
-    print_crs_matrix_details(name, row_map1, entries1, values1, block_size1);
-    std::cout << name << " MATRICES DID NOT EQUAL" << std::endl;
-    print_crs_matrix_details(name, row_map2, entries2, values2, block_size2);
-    return false;
-  }
-  return true;
-}
-
 template <typename View>
 bool
 compare_views(
@@ -241,6 +216,40 @@ compare_views(
     print_view(name + "2", view2);
   }
   return equal;
+}
+
+template <typename View1, typename View2, typename View3>
+bool
+compare_matrices(
+  const View1& row_map1,
+  const View2& entries1,
+  const View3& values1,
+  const int block_size1,
+  const View1& row_map2,
+  const View2& entries2,
+  const View3& values2,
+  const int block_size2,
+  const std::string& name)
+{
+  if (block_size1 == block_size2) {
+    // Structure should match
+    compare_views(row_map1, row_map2, "row_map");
+    compare_views(entries1, entries2, "entries");
+  }
+  else {
+    // Block 2 and check structure?
+  }
+
+  auto unc_1 = decompress_matrix(row_map1, entries1, values1, block_size1);
+  auto unc_2 = decompress_matrix(row_map2, entries2, values2, block_size2);
+
+  if (!compare_unc_matrix(unc_1, unc_2)) {
+    print_crs_matrix_details(name, row_map1, entries1, values1, block_size1);
+    std::cout << name << " MATRICES DID NOT EQUAL" << std::endl;
+    print_crs_matrix_details(name, row_map2, entries2, values2, block_size2);
+    return false;
+  }
+  return true;
 }
 
 template <typename Ordinal>
@@ -613,6 +622,22 @@ class FastILUPrec
         if (ordinal_lam(i, j)) {
           vals_dest(dest_offset + blockOffsetT) = lam(vals_src(src_offset + blockOffset));
         }
+      }
+    }
+  }
+
+  template <typename View1, typename View2, typename L = idlt>
+  KOKKOS_INLINE_FUNCTION
+  static void assign_block_trans(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
+  {
+    const Ordinal blockItems = blockCrsSize*blockCrsSize;
+    const Ordinal dest_offset = blockItems*dest;
+    const Ordinal src_offset  = blockItems*src;
+    for (Ordinal i = 0; i < blockCrsSize; ++i) {
+      for (Ordinal j = 0; j < blockCrsSize; ++j) {
+        const Ordinal blockOffset  = blockCrsSize*i + j;
+        const Ordinal blockOffsetT = blockCrsSize*j + i;
+        vals_dest(dest_offset + blockOffsetT) = lam(vals_src(src_offset + blockOffset));
       }
     }
   }
@@ -1174,7 +1199,7 @@ class FastILUPrec
               Kokkos::parallel_for(
                 "numericILU::copyVals", copy_perm_policy, functor_perm);
             } else {
-              Kokkos::RangePolicy<CopySortedValsKeepSentinelsTag, ExecSpace> copy_policy (0, nRows);
+              Kokkos::RangePolicy<CopySortedValsTag, ExecSpace> copy_policy (0, nRows);
               Kokkos::parallel_for(
                 "numericILU::copyVals", copy_policy, functor);
             }
@@ -1327,7 +1352,7 @@ class FastILUPrec
         {
             FASTILU_CREATE_TIMER(Timer);
             int nnzU = a2uMap.extent(0);
-            ParPermCopyFunctor<Ordinal, Scalar, ExecSpace> permCopy(a2uMap, aVal, aRowIdx, uVal, uColIdx, blockCrsSize);
+            ParPermCopyFunctor<Ordinal, Scalar, ExecSpace> permCopy(a2uMap, aVal, aRowIdx, aColIdx, uVal, uColIdx, blockCrsSize);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), permCopy);
 
             if ((level > 0) && (guessFlag !=0))
@@ -2995,9 +3020,9 @@ class ParPermCopyFunctor
         using parent = FastILUPrec<Ordinal, Scalar, ExecSpace>;
 
         ParPermCopyFunctor (ordinal_array_type a2uMap, scalar_array_type aVal, ordinal_array_type aRowIdx,
-                scalar_array_type uVal, ordinal_array_type uColIdx, const Ordinal blockCrsSize)
+                            ordinal_array_type aColIdx, scalar_array_type uVal, ordinal_array_type uColIdx, const Ordinal blockCrsSize)
             :
-          a2uMap_(a2uMap), aVal_(aVal), aRowIdx_(aRowIdx), uVal_(uVal), uColIdx_(uColIdx), blockCrsSize_(blockCrsSize)
+          a2uMap_(a2uMap), aVal_(aVal), aRowIdx_(aRowIdx), aColIdx_(aColIdx), uVal_(uVal), uColIdx_(uColIdx), blockCrsSize_(blockCrsSize)
         {}
 
         static constexpr auto upper_lamb = [](const Ordinal i, const Ordinal j) { return i <= j; };
@@ -3006,13 +3031,21 @@ class ParPermCopyFunctor
             void operator()(const Ordinal k) const
             {
                 auto pos = a2uMap_(k);
-                parent::assign_block_cond_trans(uVal_, aVal_, k, pos, upper_lamb, blockCrsSize_);
+                auto row = aRowIdx_[pos];
+                auto col = aColIdx_[pos];
+                if (row == col) {
+                  parent::assign_block_cond_trans(uVal_, aVal_, k, pos, upper_lamb, blockCrsSize_);
+                }
+                else {
+                  parent::assign_block_trans(uVal_, aVal_, k, pos, blockCrsSize_);
+                }
                 uColIdx_(k) = aRowIdx_[pos];
             }
 
         ordinal_array_type a2uMap_;
         scalar_array_type  aVal_;
         ordinal_array_type aRowIdx_;
+        ordinal_array_type aColIdx_;
         scalar_array_type  uVal_;
         ordinal_array_type uColIdx_;
         const Ordinal      blockCrsSize_;
