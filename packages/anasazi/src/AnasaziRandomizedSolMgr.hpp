@@ -201,7 +201,7 @@ RandomizedSolMgr<ScalarType,MV,OP>::RandomizedSolMgr(
   tol_ = pl.get("Convergence Tolerance",tol_);
   TEUCHOS_TEST_FOR_EXCEPTION(tol_ <= 0,
                      AnasaziError,
-                     "RandomizedSolMgr: \"Tolerance\" parameter must be strictly postiive.");
+                     "RandomizedSolMgr: \"Tolerance\" parameter must be strictly positive.");
 
   // Create a formatted output stream to print to.
   // See if user requests output processor.
@@ -246,16 +246,20 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
 
   // sort manager
   Teuchos::RCP<BasicSort<MT> > sorter = Teuchos::rcp( new BasicSort<MT> );
+
   // output manager
   Teuchos::RCP<OutputManager<ScalarType> > printer = Teuchos::rcp( new OutputManager<ScalarType>(verb_,osp_) );
+
   { //Timer 
   if(blockSize_ < problem_->getNEV()){ //TODO: Fix couts to proper ostream.
     std::cout << "Block size smaller than number evals. Increasing Block Size to num evals." << std::endl;
     blockSize_ = problem_->getNEV();
   }
+
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
 #endif
+
   Teuchos::RCP<MV> randVecs;
     // grab some Multivector to Clone
     // in practice, getInitVec() should always provide this, but it is possible to use a 
@@ -273,10 +277,13 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
     MVT::MvRandom(*randVecs);
   }
   //std::cout << "Here are the (random?) vectors!" << std::endl;
- // MVT::MvPrint(*randVecs, std::cout);
+  //MVT::MvPrint(*randVecs, std::cout);
   //TEUCHOS_TEST_FOR_EXCEPTION(problem_->getA() == Teuchos::null,std::invalid_argument,
-    //"Anasazi::Randomized: There is no A to get.");
+  //"Anasazi::Randomized: There is no A to get.");
   //std::cout << "DEBUG: got past check of getA." << std::endl;
+
+
+
 
   // Perform multiplies by A and Rayleigh-Ritz
   for( int i = 0; i < maxIters_; i++ ){
@@ -288,6 +295,7 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
     }
   }
   //std::cout  << "DEBUG: Past A multiply." << std::endl;
+
   // Set up Orthomanager and orthonormalize random vecs. 
   Teuchos::RCP<Anasazi::OrthoManager<ScalarType,MV> > orthoMgr;
   if (ortho_=="SVQB") {
@@ -316,7 +324,8 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
   }
 
   //std::cout  << "DEBUG: Past orthog." << std::endl;
-  //Compute H = Q^TAQ. (RR projection) 
+
+  // Compute H = Q^TAQ. (RR projection) 
   Teuchos::RCP<MV> TmpVecs = MVT::Clone(*randVecs,blockSize_);
   Teuchos::SerialDenseMatrix<OT,ScalarType> H (blockSize_, blockSize_);
 
@@ -340,20 +349,24 @@ RandomizedSolMgr<ScalarType,MV,OP>::solve() {
 
   //Find workspace size for DGEEV:
 
-  // 'N' no left eigenvectors. 
-  // 'V' to compute right eigenvectors. 
-  // blockSize = dimension of H
-  // H matrix
-  // H.stride = leading dimension of H
-  // Array to store evals, real parts
-  // Array to store evals, imag parts
-  // vlr -> stores left evects, so don't need this
-  // lead dim of vlr
-  // evects =  array to store right evects
-  // evects.stride = lead dim ovf evects
-  // work = work array
-  // lwork -1 means to query for array size
-  // rwork - not referenced because ScalarType is not complex
+/* --------------------------------------------------------------------------
+ * Parameters for DGEEV:
+ *   'N'                 = Don't compute left eigenvectors. 
+ *   'V'                 = Compute right eigenvectors. 
+ *   blockSize           = Dimension of H (numEvals)
+ *   H.values            = H matrix (Q'AQ)
+ *   H.stride            = Leading dimension of H (numEvals)
+ *   evals_real.data()   = Array to store evals, real parts
+ *   evals_imag.data()   = Array to store evals, imag parts
+ *   vlr                 = Stores left evects, so don't need this
+ *   ldv                 = Leading dimension of vlr
+ *   evects              = Array to store right evects
+ *   evects.stride       = Leading dimension of evects
+ *   work                = Work array
+ *   lwork               = -1 means to query for array size
+ *   rwork               = Not referenced because ST is not complex
+ * -------------------------------------------------------------------------- */
+
   lapack.GEEV('N','V',blockSize_,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
   lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
   work.resize( lwork );

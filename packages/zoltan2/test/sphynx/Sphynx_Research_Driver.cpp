@@ -391,8 +391,8 @@ int main(int narg, char *arg[])
 		   "Whether to use pulp.");
     cmdp.setOption("prec", &prec,
 		   "Prec type to use.");
-    //cmdp.setOption("eigensolve", &eigensolve,
-		 //  "Eigensolver to use: LOBPCG or randomized."); //TODO: Uncomment when randomized eigensolver in Anasazi. 
+    cmdp.setOption("eigensolve", &eigensolve,
+		   "Eigensolver to use: LOBPCG or randomized."); //TODO: Uncomment when randomized eigensolver in Anasazi. 
     cmdp.setOption("prob", &ptype,
 		   "Problem type to use. Options are combinatorial, normalized or generalized.");
     cmdp.setOption("tol", &tol,
@@ -544,7 +544,7 @@ int main(int narg, char *arg[])
         sphynxParams->set("sphynx_block_size", block_size);
       }
       sphynxParams->set("sphynx_skip_preprocessing", true);
-      //sphynxParams->set("sphynx_eigensolver", eigensolve); //TODO: Uncomment when randomized solver in Anasazi. 
+      sphynxParams->set("sphynx_eigensolver", eigensolve); //TODO: Uncomment when randomized solver in Anasazi. 
       if (ptype != "") sphynxParams->set("sphynx_problem_type", ptype);
       if (init != "") sphynxParams->set("sphynx_initial_guess", init);
       if (prec != "") sphynxParams->set("sphynx_preconditioner_type", prec);

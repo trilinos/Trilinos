@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   const int MyPID = comm->getRank ();
   //const int NumImages = comm->getSize ();
 
-  bool testFailed = false;
+  bool testFailed = true;
   //bool verbose = true;
   std::string ortho("ICGS");
   std::string filename("bcsstk12.mtx");
@@ -105,9 +105,9 @@ int main(int argc, char *argv[])
   int nsteps = 3;
   int blockSize = 6;
   MT tol = 1.0e-2;
-  bool conv2tol = false;
-  int maxsteps = 5*nev;
-  int tolstring = nev;
+  int res_freq = nsteps+1;
+  int ortho_freq = nsteps+1;
+  int i; 	/* Loop variable */
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("ortho",&ortho,"Orthogonalization method (DGKS, ICGS, or SVQB)");
@@ -116,9 +116,8 @@ int main(int argc, char *argv[])
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
   cmdp.setOption("filename",&filename,"Filename for Matrix Market test matrix.");
-  cmdp.setOption("conv2tol",&conv2tol,"Run until convergence or until maxsteps is reached. (Default: false)");
-  cmdp.setOption("maxsteps",&maxsteps,"If conv2tol=true, set the maximum number of steps we can take (Default: 5*nev)");
-  cmdp.setOption("tolstride",&stride,"If conv2tol=true, how often should we check the residuals? (Default: nev)");
+  cmdp.setOption("res_freq",&res_freq,"How many iterations between the computation of residuals (Orthogonalization is also done).");
+  cmdp.setOption("ortho_freq",&ortho_freq,"How many iterations between the orthogonalization of the basis (Not including checking residuals).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -126,12 +125,48 @@ int main(int argc, char *argv[])
     if(MyPID == 0) std::cout << "Block size must be greater than or equal to num evals. Increasing block size to " << nev << std::endl;
     blockSize = nev;
   }
+  if (res_freq <= 0) {
+    if(MyPID == 0) std::cout << "res_freq must be greater than or equal to 1. Changing res_freq to " << nsteps+1 << std::endl;
+    res_freq = nsteps+1;
+  }
+  if (ortho_freq <= 0) {
+    if(MyPID == 0) std::cout << "ortho_freq must be greater than or equal to 1. Changing ortho_freq to " << nsteps+1 << std::endl;
+    ortho_freq = nsteps+1;
+  }
 
   //const int ROWS_PER_PROC = 10;
   //int dim = ROWS_PER_PROC * NumImages;
   RCP<CrsMatrix<ST>> A;
   A = Tpetra::MatrixMarket::Reader<CrsMatrix<ST> >::readSparseFile(filename,comm);
   RCP<const Tpetra::Map<> > map = A->getDomainMap();
+
+  // Setup parameters for the eigensolve and residual computation
+  RCP<MV> EigenVecs = rcp(new MV(map,blockSize));			/* Store eigenvectors */
+  Teuchos::SerialDenseMatrix<OT,ST> H (blockSize, blockSize);		/* Store the Rayleigh-Ritz (RR) problem: H=Q'AQ */
+  Teuchos::LAPACK<OT,ST> lapack;					/* Set up Lapack manager */
+  Teuchos::SerialDenseMatrix<OT,ST> evects (blockSize, blockSize);	/* Store the right eigenvectors from the RR problem */
+  std::vector<MT> evals_real(blockSize);				/* Store the real components of the eigenvalues from RR problem */
+  std::vector<MT> evals_imag(blockSize);				/* Store the imag components of the eigenvalues from RR problem */
+  std::vector<int> perm(blockSize);					/* Hold the permutation array when sorting the eigenpairs */
+  Anasazi::BasicSort<MT> sm;						/* Basic sorting manager */
+  int info = -1000;							/* Variable passed into GEEV to check if it returns an error */ 
+  ST* vlr = 0; 								/* Placeholder variable that is never accessed */
+  const int ldv = 1; 							/* Placeholder variable that is never accessed */
+  int lwork = -1;							/* Set to -1 to find the needed size of the workspace */
+  std::vector<ST> work(1);						/* Workspace for GEEV */
+  std::vector<MT> rwork(2*blockSize);					/* Placeholder variable that is never accessed */
+  Anasazi::Eigensolution<ST,MV> sol;					/* Store the solutions to the eigenvalue problem */
+  std::vector<Anasazi::Value<ST>> EigenVals(blockSize);			/* Store the eigenvalue solutions */
+  RCP<MV> evecs;							/* Store the eigenvectors */
+  int numev;								/* Number of eigenpairs found */
+  std::vector<MT> normV( blockSize );
+  Teuchos::SerialDenseMatrix<int,ST> T (blockSize, blockSize);
+  RCP<MV> Avecs;
+
+  // Setting the output format
+  std::ostringstream os;
+  os.setf(std::ios::scientific, std::ios::floatfield);
+  os.precision(6);
 
   // Set up Orthomanager and orthonormalize random vecs. 
   Teuchos::RCP<Anasazi::OrthoManager<ST,MV> > orthoMgr;
@@ -153,58 +188,99 @@ int main(int argc, char *argv[])
   if( rank < blockSize ) std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
   //MVT::MvPrint(*randVecs, std::cout);
 
-
   // Applying the subspace iteration
-  for( int i = 0; i < nsteps; i++ ) {
+  int num_its = 0;
+  while(num_its < nsteps && testFailed) {
     OPT::Apply( *A, *randVecs, *randVecs );
-    rank = orthoMgr->normalize(*randVecs);
+    num_its = num_its + 1;
+    if(num_its % ortho_freq == 0 || num_its % res_freq == 0) {
+      rank = orthoMgr->normalize(*randVecs);
+      if( rank < blockSize ) std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
+    }
+    if (num_its % res_freq == 0) {
+      // Solve RR Problem ---------------------------
+      // Building H = Q^TAQ. (RR projection) 
+      OPT::Apply( *A, *randVecs, *EigenVecs ); //EigenVecs used for temp storage here. 
+      MVT::MvTransMv(ONE, *randVecs, *EigenVecs, H);
+
+      // Querying for the needed size of "work"
+      lapack.GEEV('N','V',blockSize,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
+      lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ST>::real (work[0])));
+      work.resize( lwork );
+  
+      // Solve for Harmoanic Ritz Values:
+      lapack.GEEV('N','V',blockSize,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
+      if(info != 0) std::cout << "Warning!! Anasazi::RandomSolver GEEV solve : info = " << info << std::endl;
+      lwork = -1;
+	
+      // Creating sorting manager to sort the eigenpairs
+      sm.sort(evals_real, evals_imag, Teuchos::rcpFromRef(perm), blockSize);
+      msutils::permuteVectors(perm, evects);
+
+      // Compute the eigenvalues and eigenvectors from the original eigenproblem
+      for( i = 0; i < blockSize; i++){
+        EigenVals[i].realpart = evals_real[i];
+        EigenVals[i].imagpart = evals_imag[i];
+      }
+      sol.Evals = EigenVals;
+
+      MVT::MvTimesMatAddMv(ONE,*randVecs,evects,0.0,*EigenVecs);
+      sol.Evecs = EigenVecs;
+      sol.numVecs = blockSize;
+
+      // Extract evects/evals from solution
+      evecs = sol.Evecs;
+      numev = sol.numVecs;
+
+      // Verify Evec residuals by hand.
+      if (numev > 0) {
+        for (i = 0; i < numev; ++i) T(i,i) = sol.Evals[i].realpart;
+        Avecs = MVT::Clone( *evecs, numev );
+        OPT::Apply( *A, *evecs, *Avecs );
+        MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Avecs );
+        MVT::MvNorm( *Avecs, normV );
+
+        testFailed = false;
+        for (i = 0; i < numev; i++) {
+          if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);	
+	  //std::cout << "Iteration " << num_its << " Eval " << sol.Evals[i].realpart << " residual(" << i << "): " << normV[i] << std::endl;
+          if (normV[i] > tol ) {
+            testFailed = true;
+	    break;
+	  }
+        }
+      }
+    }
   }
 
+  rank = orthoMgr->normalize(*randVecs);
   if( rank < blockSize ) std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
 
-  // Compute H = Q^TAQ. (RR projection) 
-  RCP<MV> EigenVecs = rcp(new MV(map,blockSize));
-  Teuchos::SerialDenseMatrix<OT,ST> H (blockSize, blockSize);
-
+  // Building H = Q^TAQ. (RR projection) 
   OPT::Apply( *A, *randVecs, *EigenVecs ); //EigenVecs used for temp storage here. 
   MVT::MvTransMv(ONE, *randVecs, *EigenVecs, H);
-  // std::cout << "printing H: " << std::endl;
-  // H.print(std::cout);
 
   // Solve projected eigenvalue problem.
-  Teuchos::LAPACK<OT,ST> lapack;
-  Teuchos::SerialDenseMatrix<OT,ST> evects (blockSize, blockSize);
-  std::vector<MT> evals_real(blockSize);
-  std::vector<MT> evals_imag(blockSize);
-
-  int info = -1000; 
-  ST* vlr = 0; 
-  const int ldv = 1; 
-
-  // Size of workspace and workspace for DGEEV
-  int lwork = -1;
-  std::vector<ST> work(1);
-  std::vector<MT> rwork(2*blockSize);
 
 /* --------------------------------------------------------------------------
  * Parameters for DGEEV:
-  // 'N' 		= Don't compute left eigenvectors. 
-  // 'V' 		= Compute right eigenvectors. 
-  // blockSize 		= Dimension of H (numEvals)
-  // H.values 		= H matrix (Q'AQ)
-  // H.stride 		= Leading dimension of H (numEvals)
-  // evals_real.data() 	= Array to store evals, real parts
-  // evals_imag.data() 	= Array to store evals, imag parts
-  // vlr 		= Stores left evects, so don't need this
-  // ldv		= Leading dimension of vlr
-  // evects 		= Array to store right evects
-  // evects.stride 	= Leading dimension of evects
-  // work 		= Work array
-  // lwork 		= -1 means to query for array size
-  // rwork 		= Not referenced because ST is not complex
-  // */
-  std::cout << "Starting Harm Ritz val solve (nsteps = " << nsteps << ")." << std::endl;
+ *  'N' 		= Don't compute left eigenvectors. 
+ *  'V' 		= Compute right eigenvectors. 
+ *  blockSize 		= Dimension of H (numEvals)
+ *  H.values 		= H matrix (Q'AQ)
+ *  H.stride 		= Leading dimension of H (numEvals)
+ *  evals_real.data() 	= Array to store evals, real parts
+ *  evals_imag.data() 	= Array to store evals, imag parts
+ *  vlr 		= Stores left evects, so don't need this
+ *  ldv			= Leading dimension of vlr
+ *  evects 		= Array to store right evects
+ *  evects.stride 	= Leading dimension of evects
+ *  work 		= Work array
+ *  lwork 		= -1 means to query for array size
+ *  rwork 		= Not referenced because ST is not complex
+ * -------------------------------------------------------------------------- */
 
+  std::cout << "Starting Harm Ritz val solve (q = " << num_its << ")." << std::endl;
   // Querying for the needed size of "work"
   lapack.GEEV('N','V',blockSize,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
   lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ST>::real (work[0])));
@@ -212,25 +288,14 @@ int main(int argc, char *argv[])
   
   // Solve for Harmonic Ritz Values:
   lapack.GEEV('N','V',blockSize,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
+  if(info != 0) std::cout << "Warning!! Anasazi::RandomSolver GEEV solve : info = " << info << std::endl;
   
-  //std::cout << "Resulting eigenvalues are: " << std::endl;
-  //print(evals_real);
-  //std::cout << std::endl;
-  if(info != 0)
-    std::cout << "Warning!! Anasazi::RandomSolver GEEV solve : info = " << info << std::endl;
-  
-  std::cout << "Past Harm Ritz val solve." << std::endl;
-
   // Creating sorting manager to sort the eigenpairs
-  std::vector<int> perm(blockSize);
-  Anasazi::BasicSort<MT> sm;
   sm.sort(evals_real, evals_imag, Teuchos::rcpFromRef(perm), blockSize);
   msutils::permuteVectors(perm, evects);
  
   // Compute the eigenvalues and eigenvectors from the original eigenproblem
-  Anasazi::Eigensolution<ST,MV> sol;
-  std::vector<Anasazi::Value<ST>> EigenVals(blockSize);
-  for( int i = 0; i < blockSize; i++){
+  for( i = 0; i < blockSize; i++){
     EigenVals[i].realpart = evals_real[i];
     EigenVals[i].imagpart = evals_imag[i];
   }
@@ -242,35 +307,28 @@ int main(int argc, char *argv[])
   sol.numVecs = blockSize;
 
    // Extract evects/evals from solution
-  RCP<MV> evecs = sol.Evecs;
-  int numev = sol.numVecs;
+  evecs = sol.Evecs;
+  numev = sol.numVecs;
 
   // Computing Rayleigh Quotient: UPDATE - they are identical to what is already computed.
-  /* RCP<MV> evecsA = MVT::CloneCopy(*evecs);
+  /* 
+  RCP<MV> evecsA = MVT::CloneCopy(*evecs);
   OPT::Apply( *A, *evecs, *evecsA );
   std::vector<ST> RQ(blockSize);
   std::vector<ST> RQ_Scale(blockSize);
   MVT::MvDot(*evecsA, *evecs, RQ); 
   MVT::MvDot(*evecs, *evecs, RQ_Scale); 
-  for( int i = 0; i < blockSize; i++){
+  for( i = 0; i < blockSize; i++){
     EigenVals[i] = RQ[i]/RQ_Scale[i]; 
-  } */
+  } 
+  */
 
   std::cout << "Verifying Eigenvector residuals" << std::endl;
   // Verify Evec residuals by hand. 
   if (numev > 0) {
-    //std::cout << "In the numev>0 if" << std::endl;
-    std::ostringstream os;
-    os.setf(std::ios::scientific, std::ios::floatfield);
-    os.precision(6);
-
     // Compute the direct residual
-    std::vector<MT> normV( numev );
-    Teuchos::SerialDenseMatrix<int,ST> T (numev, numev);
-    for (int i = 0; i < numev; ++i) {
-      T(i,i) = sol.Evals[i].realpart;
-    }
-    RCP<MV> Avecs = MVT::Clone( *evecs, numev );
+    for (i = 0; i < numev; ++i) T(i,i) = sol.Evals[i].realpart;
+    Avecs = MVT::Clone( *evecs, numev );
 
     OPT::Apply( *A, *evecs, *Avecs );
 
@@ -280,7 +338,8 @@ int main(int argc, char *argv[])
     os << "Direct residual norms computed in Tpetra_RandSolve_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
-    for (int i=0; i<numev; i++) {
+    testFailed = false;
+    for (i=0; i<numev; i++) {
       if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
         normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);
       }
