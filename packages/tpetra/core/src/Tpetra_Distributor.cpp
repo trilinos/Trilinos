@@ -196,6 +196,10 @@ namespace Tpetra {
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+    sendTypeEnunms.push_back(Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
+    sendTypeEnunms.push_back(Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
+#endif
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
