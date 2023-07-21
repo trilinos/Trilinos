@@ -261,18 +261,6 @@ struct CrsArrayReader
     auto nnz = values.extent(0);
     values_ = ScalarArray("Values", nnz );
     Kokkos::deep_copy(values_, values);
-
-    // Tpetra::blockCrsMatrixWriter(*A, std::cout);
-    // auto crs_matrix = Tpetra::convertToCrsMatrix(*A);
-    // OrdinalArrayHost rowptrsHost;
-    // OrdinalArray rowptrs;
-    // OrdinalArray colinds;
-    // ScalarArray values_tmp;
-    // getStructureCrs(&(*crs_matrix), rowptrsHost, rowptrs, colinds);
-    // getValuesCrs(&(*crs_matrix), values_tmp);
-
-    // const auto decomp = decompress_matrix(rowptrs, colinds, values_tmp, 1);
-    // print_matrix(decomp);
   }
 
   //! Faster specialization of getStructure() for when A is a Tpetra::BlockCrsMatrix.
