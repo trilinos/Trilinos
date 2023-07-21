@@ -20,7 +20,7 @@
 //
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+// this software without specific prior written permisƒsion.
 //
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -2471,7 +2471,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndReindex, LO, GO)  {
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndReindex_Kokkos, LO, GO)  {
   // Test the colmap...
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
@@ -2523,7 +2523,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
     /////////////////////////////////////////////////////////
     Teuchos::Array<int> BcolmapPIDs;
     Teuchos::Array<LO> Bcolind_LID(colind.size());
-    Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex<LO, GO, Node>(rowptr(),Bcolind_LID(),colind_GID(),Adomainmap,colind_PID(),BcolmapPIDs,Bcolmap);
+    Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex_Kokkos<LO, GO, Node>(rowptr(),Bcolind_LID(),colind_GID(),Adomainmap,colind_PID(),BcolmapPIDs,Bcolmap);
 
     // Since this was sorted to begin with, the outgoing maps should be
     // in an identical order.  So let's check.
@@ -2533,8 +2533,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
         if(Acolmap->getGlobalElement(i)!=Bcolmap->getGlobalElement(i)) test_err++;
     }
 
+    const int myRank = Comm->getRank ();
+    
+    // if(myRank == 1) {
+    //   std::cout << "[";
+    //   for(size_t i = 0; i < colind.size(); ++i) { std::cout << colind[i] << ", "; }
+    //   std::cout << "]\n" << std::endl;
+
+    //   std::cout << "[";
+    //   for(size_t i = 0; i < Bcolind_LID.size(); ++i) { std::cout << Bcolind_LID[i] << ", "; }
+    //   std::cout << "]\n" << std::endl;
+    // }
+
     // Now test the column indices
-    if(colind.size()!=Bcolind_LID.size()) test_err++;
+    if(colind.size()!=Bcolind_LID.size()) {
+      test_err++;
+      std::cout << "Different sizes" << std::endl;
+    }
     else {
       for(rsize_t i=0; i<colind.size(); i++)
         if(colind[i] != Bcolind_LID[i]) test_err++;
@@ -3020,7 +3035,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, PackAndPrepareWithOwningPIDs, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import, AdvancedConstructors, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( RemoteOnlyImport, Basic, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, LowCommunicationMakeColMapAndReindex, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, LowCommunicationMakeColMapAndReindex_Kokkos, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraphImportExport, doImport, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetPids, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetTwoTransferOwnershipVector, LO, GO )

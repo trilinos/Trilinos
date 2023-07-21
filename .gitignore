@@ -13,6 +13,8 @@ doxygen_objdb_*.tmp
 /TAGS
 .DS_Store
 .cproject
+.vscode/*
+Testing/*
 
 # Trilinos extra repos
 /TriBITS/
