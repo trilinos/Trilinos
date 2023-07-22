@@ -129,6 +129,10 @@ private:
     void destroy_dependent_ghosts(Entity entity,
                                   EntityProcVec& entitiesToRemoveFromSharing,
                                   EntityVector& auraEntitiesToDestroy);
+    void remove_dependent_ghosts(Entity entity,
+                                 int remoteProc,
+                                 EntityProcVec& entitiesToRemoveFromSharing,
+                                 EntityVector& auraEntitiesToDestroy);
     void add_entity_to_same_ghosting(Entity entity, Entity connectedGhost);
     void remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing,
                                       EntityVector & entitiesNoLongerShared);

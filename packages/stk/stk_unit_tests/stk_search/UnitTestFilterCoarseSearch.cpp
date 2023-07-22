@@ -44,8 +44,7 @@
 #include <gtest/gtest.h>
 #include "mpi.h"                                      // for MPI_COMM_WORLD
 
-#include "stk_search/FineSearch.hpp"
-#include "stk_search/FilterToNearest.hpp"
+#include "stk_search/FilterCoarseSearch.hpp"
 #include "stk_search/IdentProc.hpp"                   // for IdentProc
 #include "stk_util/diag/String.hpp"                   // for String
 #include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
@@ -129,7 +128,7 @@ class SearchFilterTester : public ::testing::Test {
   RelationVec coarse_results;
   SendMesh sendMesh;
   RecvMesh recvMesh;
-  stk::search::FilterToNearestResultMap<RecvMesh> filteredSearchResults;
+  stk::search::FilterCoarseSearchResultMap<RecvMesh> filteredSearchResults;
 
   void add_coarse_results(const std::vector<double>& par_dist, const std::vector<double>& geo_dist)
   {
@@ -166,11 +165,11 @@ TEST_F(SearchFilterTester, checkEarlyGeometricMatch)
   // mix of points within and out of parametric and geo tol
   add_coarse_results({ 2.5, 1.1, 2.0, 0.5 }, { 2.0, 0.2, 2.5, 0.0 });
 
-  stk::search::impl::FilterToNearestStats stats = stk::search::impl::filter_to_nearest_by_range(coarse_results,
-                                                                                                sendMesh, recvMesh,
-                                                                                                false, false,
-                                                                                                sendMesh.get_extrapolate_option(),
-                                                                                                filteredSearchResults);
+  stk::search::impl::FilterCoarseSearchStats stats = stk::search::impl::filter_coarse_search_by_range(coarse_results,
+                                                                                                      sendMesh, recvMesh,
+                                                                                                      false, false,
+                                                                                                      sendMesh.get_extrapolate_option(),
+                                                                                                      filteredSearchResults);
 
   EXPECT_EQ(1u, stats.numEntitiesWithinTolerance);
   EXPECT_EQ(0u, stats.numEntitiesOutsideTolerance);
@@ -190,11 +189,11 @@ TEST_F(SearchFilterTester, checkAllGeometric)
   // all points outside parametric tol - pick closest geo
   add_coarse_results({ 2.5, 1.6, 2.0, 3.5 }, { 2.0, 0.2, 2.5, 0.7 });
 
-  stk::search::impl::FilterToNearestStats stats = stk::search::impl::filter_to_nearest_by_range(coarse_results,
-                                                                                                sendMesh, recvMesh,
-                                                                                                false, false,
-                                                                                                sendMesh.get_extrapolate_option(),
-                                                                                                filteredSearchResults);
+  stk::search::impl::FilterCoarseSearchStats stats = stk::search::impl::filter_coarse_search_by_range(coarse_results,
+                                                                                                      sendMesh, recvMesh,
+                                                                                                      false, false,
+                                                                                                      sendMesh.get_extrapolate_option(),
+                                                                                                      filteredSearchResults);
 
   EXPECT_EQ(1u, stats.numEntitiesWithinTolerance);
   EXPECT_EQ(0u, stats.numEntitiesOutsideTolerance);
@@ -214,11 +213,11 @@ TEST_F(SearchFilterTester, checkAllOutsideTolerance)
   // all points outside both parametric and geometric tolerance
   add_coarse_results({ 2.5, 1.6, 2.0, 3.5 }, { 2.0, 0.75, 2.5, 0.7 });
 
-  stk::search::impl::FilterToNearestStats stats = stk::search::impl::filter_to_nearest_by_range(coarse_results,
-                                                                                                sendMesh, recvMesh,
-                                                                                                false, false,
-                                                                                                sendMesh.get_extrapolate_option(),
-                                                                                                filteredSearchResults);
+  stk::search::impl::FilterCoarseSearchStats stats = stk::search::impl::filter_coarse_search_by_range(coarse_results,
+                                                                                                      sendMesh, recvMesh,
+                                                                                                      false, false,
+                                                                                                      sendMesh.get_extrapolate_option(),
+                                                                                                      filteredSearchResults);
 
   EXPECT_EQ(0u, stats.numEntitiesWithinTolerance);
   EXPECT_EQ(1u, stats.numEntitiesOutsideTolerance);

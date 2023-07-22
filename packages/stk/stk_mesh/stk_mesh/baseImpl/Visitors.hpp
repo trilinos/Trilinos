@@ -304,41 +304,38 @@ void VisitUpwardClosure(
 struct StoreEntity
 {
     StoreEntity(const BulkData& mesh_in)
-    : mesh(mesh_in), visitedEntity(mesh_in.get_size_of_entity_index_space(), false) {}
+    : mesh(mesh_in), visitedEntities() {}
     void operator()(Entity entity) {
-       visitedEntity[entity.local_offset()] = true;
+       visitedEntities.push_back(entity);
     }
 
     void split_shared(std::vector<Entity>& sharedEntities,
                       std::vector<Entity>& nonSharedEntities)
     {
+      stk::util::sort_and_unique(visitedEntities);
       sharedEntities.clear();
       nonSharedEntities.clear();
-      for(unsigned i=0; i<visitedEntity.size(); ++i) {
-        if (visitedEntity[i]) {
-          Entity entity(i);
-          if (mesh.in_shared(entity)) {
-            sharedEntities.push_back(entity);
-          }
-          else {
-            nonSharedEntities.push_back(entity);
-          }
+      for(Entity ent : visitedEntities) {
+        if (mesh.in_shared(ent)) {
+          sharedEntities.push_back(ent);
+        }
+        else {
+          nonSharedEntities.push_back(ent);
         }
       }
     }
 
     void store_visited_entities_in_vec(std::vector<Entity>& entities)
     {
+      stk::util::sort_and_unique(visitedEntities);
       entities.clear();
-      for(unsigned i=0; i<visitedEntity.size(); ++i) {
-        if (visitedEntity[i]) {
-          entities.emplace_back(i);
-        }
+      for(Entity ent : visitedEntities) {
+        entities.emplace_back(ent);
       }
     }
 
     const BulkData& mesh;
-    std::vector<bool> visitedEntity;
+    std::vector<Entity> visitedEntities;
 };
 
 template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, typename FORWARD_ITERATOR, class DESIRED_ENTITY>
@@ -355,6 +352,18 @@ void VisitUpDownClosureGeneral(
     visitedEntityTracker.store_visited_entities_in_vec(entityTmpSpace);
 
     VisitClosureGeneral(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),do_this,desired_entity);
+}
+
+template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, class DESIRED_ENTITY>
+void VisitUpDownClosureGeneral(
+        const BulkData & mesh,
+        Entity entity_of_interest,
+        DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this,
+        DESIRED_ENTITY & desired_entity)
+{
+    const Entity * start = &entity_of_interest;
+    const Entity * finish = start+1;
+    VisitUpDownClosureGeneral(mesh,start,finish,do_this,desired_entity);
 }
 
 template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE>

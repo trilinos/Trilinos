@@ -63,8 +63,7 @@
 #include "stk_search/IdentProc.hpp"        // for IdentProc
 #include "stk_search/Point.hpp"            // for Point
 #include "stk_search/Sphere.hpp"
-#include "stk_search/FineSearch.hpp"
-#include "stk_search/FilterToNearest.hpp"
+#include "stk_search/FilterCoarseSearch.hpp"
 #include "stk_search/SearchInterface.hpp"
 #include "stk_search_util/ObjectCoordinates.hpp"               // for compute_entity_centroid
 #include "stk_topology/topology.hpp"                  // for topology, topol...
@@ -650,7 +649,7 @@ class SinglePointMesh : public stk::search::DestinationMeshInterface<SinglePoint
 };
 
 //BEGIN
-TEST(StkSearchHowTo, useFilterToNearest)
+TEST(StkSearchHowTo, useFilterCoarseSearch)
 {
   using Relation = std::pair<SinglePointMesh::EntityProc, SourceMesh::EntityProc>;
   using RelationVec = std::vector<Relation>;
@@ -709,11 +708,11 @@ TEST(StkSearchHowTo, useFilterToNearest)
   bool useCentroidForGeometricProximity{false};
   bool verbose{false};
 
-  stk::search::FilterToNearestOptions options(std::cout, sendMesh->get_extrapolate_option(),
+  stk::search::FilterCoarseSearchOptions options(std::cout, sendMesh->get_extrapolate_option(),
                                               useNearestNodeForClosestBoundingBox,
                                               useCentroidForGeometricProximity, verbose);
-  stk::search::FilterToNearestResultVector<SinglePointMesh> searchResults;
-  stk::search::filter_to_nearest("filter", relationVec, *sendMesh, *recvMesh, options, searchResults);
+  stk::search::FilterCoarseSearchResultVector<SinglePointMesh> searchResults;
+  stk::search::filter_coarse_search("filter", relationVec, *sendMesh, *recvMesh, options, searchResults);
 
   EXPECT_EQ(1u, relationVec.size());
 

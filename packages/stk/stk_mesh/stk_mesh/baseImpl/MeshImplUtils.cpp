@@ -1623,6 +1623,28 @@ void require_valid_relation(const char action[],
   }
 }
 
+bool is_valid_relation(const BulkData& mesh,
+                       Entity e_from,
+                       Entity e_to,
+                       EntityRank e_to_rank,
+                       ConnectivityOrdinal ord)
+{
+  const MeshIndex& meshIndex = mesh.mesh_index(e_from);
+  const Bucket* bPtr = meshIndex.bucket;
+  const unsigned bOrd = meshIndex.bucket_ordinal;
+  const unsigned num = bPtr->num_connectivity(bOrd, e_to_rank);
+  if (num > 0) {
+    const Entity* conn = bPtr->begin(bOrd, e_to_rank);
+    const ConnectivityOrdinal* ords = bPtr->begin_ordinals(bOrd, e_to_rank);
+    for(unsigned i=0; i<num; ++i) {
+      if (ords[i] == ord && conn[i] == e_to) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 bool is_good_rank_and_id(const MetaData& meta,
                          EntityRank rank,
                          EntityId id)
