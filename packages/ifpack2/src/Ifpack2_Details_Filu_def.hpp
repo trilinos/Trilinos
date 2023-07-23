@@ -114,6 +114,8 @@ initLocalPrec()
   localPrec2_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs2_, this->localColInds2_, this->localValues2_, nRows*blockCrsSize, p.sptrsv_algo,
                                            p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
                                            1));
+  localPrec3_ = Teuchos::rcp(new LocalFILUOrig(skipSortMatrix, this->localRowPtrs2_, this->localColInds2_, this->localValues2_, nRows*blockCrsSize, p.sptrsv_algo,
+                                               p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
   #ifdef HAVE_IFPACK2_METIS
   if (p.use_metis) {
     localPrec_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
@@ -121,7 +123,9 @@ initLocalPrec()
   #endif
   localPrec_->initialize();
   localPrec2_->initialize();
-  localPrec_->verify(*localPrec2_, true);
+  localPrec3_->initialize();
+  localPrec2_->verify(*localPrec3_, "initialization_unblocked_vs_orig", true);
+  localPrec_->verify(*localPrec2_, "initialization_blocked_vs_unblocked", true);
   this->initTime_ = localPrec_->getInitializeTime();
 }
 
@@ -132,11 +136,14 @@ computeLocalPrec()
   //update values in local prec (until compute(), values aren't needed)
   localPrec_->setValues(this->localValues_);
   localPrec2_->setValues(this->localValues2_);
+  localPrec3_->setValues(this->localValues2_);
   localPrec_->compute();
   localPrec2_->compute();
+  localPrec3_->compute();
   this->computeTime_ = localPrec_->getComputeTime();
 
-  localPrec_->verify(*localPrec2_);
+  localPrec2_->verify(*localPrec3_, "compute_unblocked_vs_orig");
+  localPrec_->verify(*localPrec2_, "compute_blocked_vs_unblocked");
   std::cout << "JGF VERIFICATION OF COMPUTE COMPLETE!" << std::endl;
   exit(0);
 }
