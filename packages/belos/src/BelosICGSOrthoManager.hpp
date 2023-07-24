@@ -1170,10 +1170,12 @@ namespace Belos {
       }
 
       // Save the coefficients, if we are working on the original vector and not a randomly generated one
-      if (!addVec) { //TODO: Should be done with subviews and add
-        for (int i=0; i<numX; i++) {
-          DMT::Value(*B,i,j) = DMT::Value(*product,i,0);
-        }
+      if (!addVec) { 
+        Teuchos::RCP<DM> Bcolj = DMT::Subview(*B,numX,1,0,j);
+        DMT::Assign(*Bcolj,*product);
+        //for (int i=0; i<numX; i++) {
+        //  DMT::Value(*B,i,j) = DMT::Value(*product,i,0);
+        //}
       }
 
     } // for (j = 0; j < xc; ++j)

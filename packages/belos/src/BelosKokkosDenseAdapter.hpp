@@ -249,20 +249,20 @@ namespace Belos {
     
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
     static void Add( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& thisDM, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& sourceDM) {
-      KokkosBlas::axpy(1.0,sourceDM.h_view, thisDM.h_view); //axpy(alpha,x,y), y = y + alpha*x
-      thisDM.modify_host();
+      KokkosBlas::axpy(1.0,sourceDM.d_view, thisDM.d_view); //axpy(alpha,x,y), y = y + alpha*x
+      thisDM.modify_device();
     }
 
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
     static void PutScalar( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()){ 
-      Kokkos::deep_copy( dm.h_view, value);
-      dm.modify_host();
+      Kokkos::deep_copy( dm.d_view, value);
+      dm.modify_device();
     }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
     static void Scale( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value) { 
-      KokkosBlas::scal( dm.h_view, value, dm.h_view);
-      dm.modify_host();
+      KokkosBlas::scal( dm.d_view, value, dm.d_view);
+      dm.modify_device();
     }
 
     //!  \brief Fill the Kokkos::DualView with random entries.
@@ -270,31 +270,26 @@ namespace Belos {
     static void Randomize( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) { 
       int rand_seed = std::rand();
       Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
-      Kokkos::fill_random(dm.h_view, pool, -1,1);
-      dm.modify_host();
+      Kokkos::fill_random(dm.d_view, pool, -1,1);
+      dm.modify_device();
     }
 
     //!  \brief Copies entries of source to dest (deep copy). 
     static void Assign( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dest, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& source) { 
       Kokkos::deep_copy(dest,source); //Brian Kelley says this works on dual views.
       //TODO: But do we really want to do this? What if we only need the host pieces copied right now?
-      //Kokkos::deep_copy(dest.h_view,source.h_view); 
-      //dest.modify_host();
       // Note: going with first solution. See discussion on SubViewCopy. 
     }
 
     //!  \brief Returns the Frobenius norm of the dense matrix.
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormFrobenius( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) { 
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormFrobenius(const Kokkos::DualView<const IST**,Kokkos::LayoutLeft>& dm) { 
       using KAT = Kokkos::ArithTraits<IST>;
       using mag_t = typename KAT::mag_type;
       mag_t frobNorm;
-      //TODO: This is going to break in CUDA, isn't it? b/c accessed h_view on device.
-      // Do we even want any of this to happen on device? These should be small matrices. 
-      // And then we would have to make sure the matrix is synced to device.... 
       Kokkos::parallel_reduce(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {dm.extent(0), dm.extent(1)}),
           KOKKOS_LAMBDA(size_t i, size_t j, mag_t& lfrobNorm)
           {
-          mag_t absVal = KAT::abs(dm.h_view(i, j));
+          mag_t absVal = KAT::abs(dm.d_view(i, j));
           lfrobNorm += absVal * absVal;
           }, frobNorm);
       return Kokkos::sqrt(frobNorm);
