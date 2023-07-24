@@ -1242,11 +1242,12 @@ class FastILUPrec
             // both matrices are sorted and, "a" (with fills) contains "aIn" (original)
             KOKKOS_INLINE_FUNCTION
             void operator()(const CopySortedValsTag &, const int i) const {
-                Ordinal aPtr = aRowMapIn[i];
+                Ordinal aPtr    = aRowMapIn[i];
+                Ordinal aPtrEnd = aRowMapIn[i+1];
                 for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal col = aColIdx[k];
-                    if (col == aColIdxIn[aPtr])
+                    if (aPtr < aPtrEnd && col == aColIdxIn[aPtr])
                     {
                         aVal[k] = aValIn[aPtr];
                         aPtr++;
@@ -1262,11 +1263,12 @@ class FastILUPrec
             // both matrices are sorted and, "a" (with fills) contains "aIn" (original)
             KOKKOS_INLINE_FUNCTION
             void operator()(const CopySortedValsPermTag &, const int i) const {
-                Ordinal aPtr = aRowMapIn[iperm[i]];
+                Ordinal aPtr    = aRowMapIn[iperm[i]];
+                Ordinal aPtrEnd = aRowMapIn[iperm[i]+1];
                 for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal col = aColIdx[k];
-                    if (col == aColIdxIn[aPtr])
+                    if (aPtr < aPtrEnd && col == aColIdxIn[aPtr])
                     {
                         aVal[k] = aValIn[aPtr];
                         aPtr++;

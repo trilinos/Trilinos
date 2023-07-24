@@ -1229,10 +1229,8 @@ class FastILUPrec
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + sort/copy/permute values");
 
-            if (level > 0 && blockCrsSize > 1) {
-              std::cout << "JGF Here's how the copying went" << std::endl;
-              print_crs_matrix_details("A with sentinels", aRowMap, aColIdx, aVal, blockCrsSize);
-            }
+            std::cout << "JGF Here's how the copying went for level " << level << " and block size " << blockCrsSize << std::endl;
+            print_crs_matrix_details("A with sentinels", aRowMap, aColIdx, aVal, blockCrsSize);
 
             // obtain diagonal scaling factor
             Kokkos::RangePolicy<GetDiagsTag, ExecSpace> get_policy (0, nRows);
@@ -1675,11 +1673,12 @@ class FastILUPrec
             // both matrices are sorted and, "a" (with fills) contains "aIn" (original)
             KOKKOS_INLINE_FUNCTION
             void operator()(const CopySortedValsTag &, const int i) const {
-                Ordinal aPtr = aRowMapIn[i];
+                Ordinal aPtr    = aRowMapIn[i];
+                Ordinal aPtrEnd = aRowMapIn[i+1];
                 for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal col = aColIdx[k];
-                    if (col == aColIdxIn[aPtr])
+                    if (aPtr < aPtrEnd && col == aColIdxIn[aPtr])
                     {
                         assign_block(aVal, aValIn, k, aPtr, blockCrsSize);
                         aPtr++;
@@ -1698,10 +1697,11 @@ class FastILUPrec
                 static constexpr auto sentinel_lamb = [](const Scalar val_dest, const Scalar val_src)
                   { return !(val_dest != STS::zero() && val_src == STS::zero()) ; };
                 Ordinal aPtr = aRowMapIn[i];
+                Ordinal aPtrEnd = aRowMapIn[i+1];
                 for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal col = aColIdx[k];
-                    if (col == aColIdxIn[aPtr])
+                    if (aPtr < aPtrEnd && col == aColIdxIn[aPtr])
                     {
                       assign_block_cond_val(aVal, aValIn, k, aPtr, sentinel_lamb, blockCrsSize);
                       aPtr++;
@@ -1718,10 +1718,11 @@ class FastILUPrec
             KOKKOS_INLINE_FUNCTION
             void operator()(const CopySortedValsPermTag &, const int i) const {
                 Ordinal aPtr = aRowMapIn[iperm[i]];
+                Ordinal aPtrEnd = aRowMapIn[iperm[i]+1];
                 for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal col = aColIdx[k];
-                    if (col == aColIdxIn[aPtr])
+                    if (aPtr < aPtrEnd && col == aColIdxIn[aPtr])
                     {
                         assign_block(aVal, aValIn, k, aPtr, blockCrsSize);
                         aPtr++;
