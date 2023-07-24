@@ -334,6 +334,14 @@ private:
              Vector<Real> &yc,
              Vector<Real> &pwa, 
              std::ostream &outStream = std::cout) const;
+
+  void dbls(Real &alpha, Real &nval, Real &pred,
+            const Vector<Real> &y,
+            const Vector<Real> &s,
+            Real lambda, Real tmax,
+            Real kappa, Real gs,
+            Objective<Real> &nobj,
+            Vector<Real> &pwa);
   
 }; // class ROL::TypeP::TrustRegionAlgorithm
 

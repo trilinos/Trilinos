@@ -111,6 +111,7 @@ void TrustRegionAlgorithm<Real>::initialize( const Vector<Real> &x,
                                              Vector<Real>       &Bg,
                                              Objective<Real>    &obj,
                                              std::ostream &outStream) {
+  const Real zero(0);
   // Initialize data
   Algorithm<Real>::initialize(x,g);
   solver_->initialize(x,g);
@@ -122,15 +123,17 @@ void TrustRegionAlgorithm<Real>::initialize( const Vector<Real> &x,
   state_->nfval++;
   state_->snorm = ROL_INF<Real>();
   state_->gnorm = ROL_INF<Real>();
+  Real Delta = state_->searchSize;
+  if (Delta <= zero) state_->searchSize = 1e2*x.norm();
   computeGradient(x,obj,true);
   // Check if inverse Hessian is implemented for dogleg methods
   model_->validate(obj,x,g,etr_);
   // Compute initial trust region radius if desired.
-  if ( state_->searchSize <= static_cast<Real>(0) ) {
+  if ( Delta <= zero ) {
     int nfval = 0;
     state_->searchSize
       = TRUtils::initialRadius<Real>(nfval,x,*state_->gradientVec,Bg,
-          state_->value,state_->gnorm,obj,*model_,delMax_,
+          state_->value,state_->gnorm,gtol_,obj,*model_,delMax_,
           outStream,(verbosity_>1));
     state_->nfval += nfval;
   }
@@ -203,7 +206,7 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
 
   while (status_->check(*state_)) {
     // Build trust-region model
-    model_->setData(obj,x,*state_->gradientVec);
+    model_->setData(obj,x,*state_->gradientVec,gtol_);
     // Minimize trust-region model over trust-region constraint
     pRed = zero;
     SPflag_ = 0; SPiter_ = 0;

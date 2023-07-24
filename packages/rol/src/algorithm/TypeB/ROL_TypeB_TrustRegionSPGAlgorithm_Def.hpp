@@ -248,7 +248,7 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
 
   while (status_->check(*state_)) {
     // Build trust-region model
-    model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
+    model_->setData(obj,*state_->iterateVec,*state_->gradientVec,gtol_);
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     q = zero;
