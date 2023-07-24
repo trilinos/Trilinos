@@ -199,8 +199,8 @@ namespace Intrepid2
           auto & Li_a1 = scratch1D_1;
           auto & Li_a2 = scratch1D_2;
           
-          Polynomials::shiftedScaledIntegratedLegendreValues(Li_a1, polyOrder_, nu[0][0], nu[0][0] + nu[1][0]);
-          Polynomials::shiftedScaledIntegratedLegendreValues(Li_a2, polyOrder_, nu[0][1], nu[0][1] + nu[1][1]);
+          Polynomials::shiftedScaledIntegratedLegendreValues(Li_a1, polyOrder_, nu[1][0], nu[0][0] + nu[1][0]);
+          Polynomials::shiftedScaledIntegratedLegendreValues(Li_a2, polyOrder_, nu[1][1], nu[0][1] + nu[1][1]);
           
           // edge functions
           // "mixed" edges (those shared between the quad and some tri face) first
@@ -241,8 +241,8 @@ namespace Intrepid2
           // rename scratch
                  Li = scratch1D_1;
           auto & Lj = scratch1D_2;
-          Polynomials::shiftedScaledIntegratedLegendreValues(Li, polyOrder_, mu[0][0], mu[0][0] + mu[1][0]);
-          Polynomials::shiftedScaledIntegratedLegendreValues(Lj, polyOrder_, mu[0][1], mu[0][1] + mu[1][1]);
+          Polynomials::shiftedScaledIntegratedLegendreValues(Li, polyOrder_, mu[1][0], mu[0][0] + mu[1][0]);
+          Polynomials::shiftedScaledIntegratedLegendreValues(Lj, polyOrder_, mu[1][1], mu[0][1] + mu[1][1]);
           // following the ESEAS ordering: j increments first
           for (int j=2; j<=polyOrder_; j++)
           {
@@ -318,9 +318,9 @@ namespace Intrepid2
                  Li = scratch1D_1;
                  Lj = scratch1D_2;
           auto & Lk = scratch1D_3;
-          Polynomials::shiftedScaledIntegratedLegendreValues(Li, polyOrder_, mu[0][0], mu[0][0] + mu[1][0]);
-          Polynomials::shiftedScaledIntegratedLegendreValues(Lj, polyOrder_, mu[0][1], mu[0][1] + mu[1][1]);
-          Polynomials::shiftedScaledIntegratedLegendreValues(Lk, polyOrder_, mu[0][2], mu[0][2] + mu[1][2]);
+          Polynomials::shiftedScaledIntegratedLegendreValues(Li, polyOrder_, mu[1][0], mu[0][0] + mu[1][0]);
+          Polynomials::shiftedScaledIntegratedLegendreValues(Lj, polyOrder_, mu[1][1], mu[0][1] + mu[1][1]);
+          Polynomials::shiftedScaledIntegratedLegendreValues(Lk, polyOrder_, mu[1][2], mu[0][2] + mu[1][2]);
           // following the ESEAS ordering: k increments first
           for (int k=2; k<=polyOrder_; k++)
           {
@@ -367,14 +367,22 @@ namespace Intrepid2
           
           for (int edgeOrdinal=0; edgeOrdinal<numMixedEdges; edgeOrdinal++)
           {
+            {
+              // DEBUGGING
+              if ((x == -1.0) && (y == -1.0) && (z == 0))
+              {
+                std::cout << "edgeOrdinal: " << edgeOrdinal << std::endl;
+              }
+            }
+            
             // edge 0,2 --> a=1, b=2
             // edge 1,3 --> a=2, b=1
             int a = (edgeOrdinal % 2 == 0) ? 1 : 2;
             int b = 3 - a;
             
-            Polynomials::shiftedScaledLegendreValues             (P_i_minus_1, polyOrder_-1, nu[0][a-1], nu[0][a-1] + nu[1][a-1]);
-            Polynomials::shiftedScaledIntegratedLegendreValues_dt(L_i_dt,      polyOrder_,   nu[0][a-1], nu[0][a-1] + nu[1][a-1]);
-            Polynomials::shiftedScaledIntegratedLegendreValues   (L_i,         polyOrder_,   nu[0][a-1], nu[0][a-1] + nu[1][a-1]);
+            Polynomials::shiftedScaledLegendreValues             (P_i_minus_1, polyOrder_-1, nu[1][a-1], nu[0][a-1] + nu[1][a-1]);
+            Polynomials::shiftedScaledIntegratedLegendreValues_dt(L_i_dt,      polyOrder_,   nu[1][a-1], nu[0][a-1] + nu[1][a-1]);
+            Polynomials::shiftedScaledIntegratedLegendreValues   (L_i,         polyOrder_,   nu[1][a-1], nu[0][a-1] + nu[1][a-1]);
             
             // edge 0,3 --> c=0
             // edge 1,2 --> c=1
@@ -383,12 +391,35 @@ namespace Intrepid2
             {
               // grad (mu[c][b-1] * Li(i)) = grad (mu[c][b-1]) * Li(i) + mu[c][b-1] * grad Li(i)
               
+              const auto & R_i_minus_1 = L_i_dt(i);
+              {
+                // DEBUGGING
+                if ((x == -1.0) && (y == -1.0) && (z == 0))
+                {
+                  std::cout << "L_i(i):      " << L_i(i) << std::endl;
+                  std::cout << "mu[c][b-1]:  " << mu[c][b-1] << std::endl;
+                  std::cout << "nu[0][a-1]:  " << nu[0][a-1] << std::endl;
+                  std::cout << "nu[1][a-1]:  " << nu[1][a-1] << std::endl;
+                  std::cout << "R_i_minus_1: " << R_i_minus_1 << std::endl;
+                }
+              }
+              
               for (int d=0; d<3; d++)
               {
                 // grad [L_i](nu_0,nu_1) = [P_{i-1}](nu_0,nu_1) * grad nu_1 + [R_{i-1}](nu_0,nu_1) * grad (nu_0 + nu_1)
-                const auto & R_i_minus_1 = L_i_dt(i);
+                
                 OutputScalar grad_Li_d = P_i_minus_1(i-1) * nuGrad[1][a-1][d] + R_i_minus_1 * (nuGrad[0][a-1][d] + nuGrad[1][a-1][d]);
                 output_(fieldOrdinalOffset,pointOrdinal,d) = muGrad[c][b-1][d] * L_i(i) + mu[c][b-1] * grad_Li_d;
+                {
+                  // DEBUGGING
+                  if ((x == -1.0) && (y == -1.0) && (z == 0))
+                  {
+                    std::cout << "muGrad[c][b-1][" << d << "]: " << muGrad[c][b-1][d] << std::endl;
+                    std::cout << "grad_Li_" << d << ": " << grad_Li_d << std::endl;
+                    std::cout << "nuGrad[0][a-1]["<< d << "]: " << nuGrad[0][a-1][d] << std::endl;
+                    std::cout << "nuGrad[1][a-1]["<< d << "]: " << nuGrad[1][a-1][d] << std::endl;
+                  }
+                }
               }
               fieldOrdinalOffset++;
             }
