@@ -1615,7 +1615,6 @@ class FastILUPrec
             std::cout << "  > numericILU " << Timer.seconds() << std::endl;
             Timer.reset();
             #endif
-            return; // JGF MADE IT THIS FAR
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
                     aRowMap, aRowIdx, aColIdx, aVal,
                     lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega);

@@ -1987,7 +1987,7 @@ class FastILUPrec
 
       assert(compare_matrices(uRowMap, uColIdx, uVal, blockCrsSize, rhs.uRowMap, rhs.uColIdx, rhs.uVal, 1, "U"));
 
-      //assert(compare_matrices(utRowMap, utColIdx, utVal, blockCrsSize, rhs.utRowMap, rhs.utColIdx, rhs.utVal, 1, "Ut"));
+      assert(compare_matrices(utRowMap, utColIdx, utVal, blockCrsSize, rhs.utRowMap, rhs.utColIdx, rhs.utVal, 1, "Ut"));
     }
 
     if ((level > 0) && (guessFlag != 0)) {
@@ -2012,8 +2012,6 @@ class FastILUPrec
             numericILU();
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > numericILU ");
 
-            return; // JGF MADE IT THIS FAR
-
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
                     aRowMap, aRowIdx, aColIdx, aVal,
                     lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega, blockCrsSize, level);
@@ -2029,18 +2027,30 @@ class FastILUPrec
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > iluFunctor (" << nFact << ")");
 
-            ///return; // JGF MADE IT THIS FAR
-
             // transpose u
             Kokkos::deep_copy(utRowMap, 0);
-            KokkosSparse::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
-              (nRows, nRows, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
+            if (blockCrsSize == 1) {
+              KokkosSparse::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
+                (nRows, nRows, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
+            }
+            else {
+              KokkosSparse::Impl::transpose_bsr_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, ExecSpace>
+                (nRows, nRows, blockCrsSize, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
+            }
+
             // sort, if the triangular solve algorithm requires a sorted matrix.
             bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
             if (sortRequired) {
-              KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
-                (utRowMap, utColIdx, utVal);
+              if (blockCrsSize == 1) {
+                KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
+                  (utRowMap, utColIdx, utVal);
+              }
+              else {
+                KokkosSparse::sort_bsr_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(
+                  blockCrsSize, utRowMap, utColIdx, utVal);
+              }
             }
+
             if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
                 // deep-copy to host
                 Kokkos::deep_copy(lColIdx_, lColIdx);
@@ -2053,6 +2063,7 @@ class FastILUPrec
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > transposeU");
 
             if (sptrsv_algo == FastILU::SpTRSV::Standard) {
+                std::cout << "JGF HERE 1" << std::endl;
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
                 KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
                 #else
@@ -2075,6 +2086,7 @@ class FastILUPrec
                 FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(),
                   "  > sptrsv_symbolic : nnz(L)=" << lColIdx.extent(0) << " nnz(U)=" << utColIdx.extent(0));
             } else if (sptrsv_algo == FastILU::SpTRSV::StandardHost && doUnitDiag_TRSV) {
+                std::cout << "JGF HERE 2" << std::endl;
                 // Prepare L for TRSV by removing unit-diagonals
                 lVal_trsv_   = ScalarArrayHost ("lVal_trsv",    lRowMap_[nRows]-nRows);
                 lColIdx_trsv_ = OrdinalArrayHost("lColIdx_trsv", lRowMap_[nRows]-nRows);
@@ -2120,6 +2132,7 @@ class FastILUPrec
                     dVal_trsv_(i) = STS::one() / dVal_trsv_(i);
                 }
             } else if (sptrsv_KKSpMV) {
+                std::cout << "JGF HERE 3" << std::endl;
                 FastILUPrec_Functor functor(SwapDiagTag(), lVal, lRowMap, lColIdx, utVal, utRowMap, utColIdx, diagElems, blockCrsSize);
                 Kokkos::RangePolicy<SwapDiagTag, ExecSpace> swap_policy (0, nRows);
                 Kokkos::parallel_for(
