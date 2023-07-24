@@ -87,11 +87,11 @@ namespace Belos {
    * implemented by \c BlockGmresSolMgr) is a different algorithm with
    * different convergence characteristics than Pseudoblock GMRES.
    */
-  template<class ScalarType, class MV, class OP>
-  class PseudoBlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  class PseudoBlockGmresSolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 
   private:
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -228,8 +228,8 @@ namespace Belos {
     virtual ~PseudoBlockGmresSolMgr() {};
 
     //! clone for Inverted Injection (DII)
-    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new PseudoBlockGmresSolMgr<ScalarType,MV,OP>);
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+      return Teuchos::rcp(new PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>);
     }
     //@}
 
@@ -332,7 +332,7 @@ namespace Belos {
     bool isLOADetected() const override { return loaDetected_; }
 
     //! Return the residual status test
-    const StatusTestResNorm<ScalarType,MV,OP> *
+    const StatusTestResNorm<ScalarType,MV,OP,DM> *
     getResidualStatusTest() const { return impConvTest_.getRawPtr(); }
     //@}
 
@@ -354,13 +354,13 @@ namespace Belos {
     /// (short-circuiting OR, like the || operator in C++) after
     /// Pseudoblock GMRES' standard convergence test.
     virtual void setUserConvStatusTest(
-      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest,
-      const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &comboType =
-          StatusTestCombo<ScalarType,MV,OP>::SEQ
+      const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &userConvStatusTest,
+      const typename StatusTestCombo<ScalarType,MV,OP,DM>::ComboType &comboType =
+          StatusTestCombo<ScalarType,MV,OP,DM>::SEQ
       ) override;
 
     //! Set a debug status test that will be checked at the same time as the top-level status test.
-    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest ) override;
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override;
 
     //@}
 
@@ -442,18 +442,18 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_;
 
     // Status tests.
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > userConvStatusTest_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugStatusTest_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
-    Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > impConvTest_, expConvTest_;
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
-    typename StatusTestCombo<ScalarType,MV,OP>::ComboType comboType_;
-    Teuchos::RCP<std::map<std::string, Teuchos::RCP<StatusTest<ScalarType, MV, OP> > > > taggedTests_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > userConvStatusTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > convTest_;
+    Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP,DM> > impConvTest_, expConvTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+    typename StatusTestCombo<ScalarType,MV,OP,DM>::ComboType comboType_;
+    Teuchos::RCP<std::map<std::string, Teuchos::RCP<StatusTest<ScalarType, MV, OP, DM> > > > taggedTests_;
 
     // Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
 
      // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -493,8 +493,8 @@ namespace Belos {
 
 
 // Empty Constructor
-template<class ScalarType, class MV, class OP>
-PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
+template<class ScalarType, class MV, class OP, class DM>
+PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::PseudoBlockGmresSolMgr() :
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   taggedTests_(Teuchos::null),
   convtol_(DefaultSolverParameters::convTol),
@@ -522,8 +522,8 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
 {}
 
 // Basic Constructor
-template<class ScalarType, class MV, class OP>
-PseudoBlockGmresSolMgr<ScalarType,MV,OP>::
+template<class ScalarType, class MV, class OP, class DM>
+PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::
 PseudoBlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                         const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
@@ -561,9 +561,9 @@ PseudoBlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &pr
   }
 }
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 void
-PseudoBlockGmresSolMgr<ScalarType,MV,OP>::
+PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::ParameterList;
@@ -958,21 +958,19 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 }
 
 
-template<class ScalarType, class MV, class OP>
-void
-PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setUserConvStatusTest(
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest,
-  const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &comboType
+template<class ScalarType, class MV, class OP, class DM>
+void PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::setUserConvStatusTest(
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &userConvStatusTest,
+  const typename StatusTestCombo<ScalarType,MV,OP,DM>::ComboType &comboType
   )
 {
   userConvStatusTest_ = userConvStatusTest;
   comboType_ = comboType;
 }
 
-template<class ScalarType, class MV, class OP>
-void
-PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
+template<class ScalarType, class MV, class OP, class DM>
+void PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::setDebugStatusTest(
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest
   )
 {
   debugStatusTest_ = debugStatusTest;
@@ -980,9 +978,9 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
 
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
+PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
@@ -1045,15 +1043,15 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
 }
 
 // Check the status test versus the defined linear problem
-template<class ScalarType, class MV, class OP>
-bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
+template<class ScalarType, class MV, class OP, class DM>
+bool PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
 
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestGenResNorm_t;
-  typedef Belos::StatusTestImpResNorm<ScalarType,MV,OP>  StatusTestImpResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestGenResNorm_t;
+  typedef Belos::StatusTestImpResNorm<ScalarType,MV,OP,DM>  StatusTestImpResNorm_t;
 
   // Basic test checks maximum iterations and native residual.
-  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxIters_ ) );
 
   // If there is a left preconditioner, we create a combined status test that checks the implicit
   // and then explicit residual norm to see if we have convergence.
@@ -1141,7 +1139,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   // Create the status test output class.
   // This class manages and formats the output from the status test.
-  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_, taggedTests_ );
+  StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_, taggedTests_ );
   outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
   // Set the solver string for the output test
@@ -1157,8 +1155,8 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
 
 // solve()
-template<class ScalarType, class MV, class OP>
-ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -1569,8 +1567,8 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 }
 
 
-template<class ScalarType, class MV, class OP>
-std::string PseudoBlockGmresSolMgr<ScalarType,MV,OP>::description () const
+template<class ScalarType, class MV, class OP, class DM>
+std::string PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::description () const
 {
   std::ostringstream out;
 
@@ -1587,9 +1585,8 @@ std::string PseudoBlockGmresSolMgr<ScalarType,MV,OP>::description () const
 }
 
 
-template<class ScalarType, class MV, class OP>
-void
-PseudoBlockGmresSolMgr<ScalarType, MV, OP>::
+template<class ScalarType, class MV, class OP, class DM>
+void PseudoBlockGmresSolMgr<ScalarType, MV, OP, DM>::
 describe (Teuchos::FancyOStream &out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {

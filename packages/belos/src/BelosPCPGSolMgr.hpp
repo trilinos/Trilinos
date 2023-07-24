@@ -106,19 +106,19 @@ namespace Belos {
   //
   // FIXME (mfh 09 Sep 2015) This also is a stub for types other than
   // float or double.
-  template<class ScalarType, class MV, class OP,
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
            const bool supportsScalarType =
              Belos::Details::LapackSupportsScalar<ScalarType>::value &&
              ! Teuchos::ScalarTraits<ScalarType>::isComplex>
   class PCPGSolMgr :
-    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP,
+    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM,
                                                     Belos::Details::LapackSupportsScalar<ScalarType>::value &&
                                                     ! Teuchos::ScalarTraits<ScalarType>::isComplex>
   {
     static const bool scalarTypeIsSupported =
       Belos::Details::LapackSupportsScalar<ScalarType>::value &&
       ! Teuchos::ScalarTraits<ScalarType>::isComplex;
-    typedef Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP,
+    typedef Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM,
                                                      scalarTypeIsSupported> base_type;
 
   public:
@@ -132,16 +132,16 @@ namespace Belos {
     virtual ~PCPGSolMgr () {}
 
     //! clone for Inverted Injection (DII)
-    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,supportsScalarType>);
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,DM,supportsScalarType>);
     }
   };
 
-  template<class ScalarType, class MV, class OP>
-  class PCPGSolMgr<ScalarType, MV, OP, true> :
-    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, true> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class PCPGSolMgr<ScalarType, MV, OP, DM, true> :
+    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM, true> {
   private:
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -201,8 +201,8 @@ namespace Belos {
     virtual ~PCPGSolMgr() {};
 
     //! clone for Inverted Injection (DII)
-    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
-      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP>);
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const {
+      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,DM>);
     }
     //@}
 
@@ -318,13 +318,13 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
     // Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -377,8 +377,8 @@ namespace Belos {
 
 
 // Empty Constructor
-template<class ScalarType, class MV, class OP>
-PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr() :
+template<class ScalarType, class MV, class OP, class DM>
+PCPGSolMgr<ScalarType,MV,OP,DM,true>::PCPGSolMgr() :
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   orthoKappa_(DefaultSolverParameters::orthoKappa),
@@ -398,8 +398,8 @@ PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr() :
 
 
 // Basic Constructor
-template<class ScalarType, class MV, class OP>
-PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr(
+template<class ScalarType, class MV, class OP, class DM>
+PCPGSolMgr<ScalarType,MV,OP,DM,true>::PCPGSolMgr(
                                              const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                              const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
@@ -433,8 +433,8 @@ PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr(
 }
 
 
-template<class ScalarType, class MV, class OP>
-void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+template<class ScalarType, class MV, class OP, class DM>
+void PCPGSolMgr<ScalarType,MV,OP,DM,true>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
@@ -585,7 +585,7 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null || changedOrthoType) {
-    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Belos::OrthoManagerFactory<ScalarType, MV, OP,DM> factory;
     Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
       paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
@@ -596,8 +596,8 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
@@ -619,7 +619,7 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_ == Teuchos::null)
-    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxIters_ ) );
 
   if (convTest_ == Teuchos::null)
     convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
@@ -628,7 +628,7 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 
   // Create the status test output class.
   // This class manages and formats the output from the status test.
-  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+  StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
   outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
   // Set the solver string for the output test
@@ -648,9 +648,9 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
+PCPGSolMgr<ScalarType,MV,OP,DM,true>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
@@ -692,8 +692,8 @@ PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 
 
 // solve()
-template<class ScalarType, class MV, class OP>
-ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType PCPGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
   // Set the current parameters if are not set already.
   if (!isSet_) { setParameters( params_ ); }
@@ -1072,8 +1072,8 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
 // A-orthogonalize the Seed Space
 // Note that Anasazi::GenOrthoManager provides simplified versions of the algorithm,
 // that are not rank revealing, and are not designed for PCPG in other ways too.
-template<class ScalarType, class MV, class OP>
-int PCPGSolMgr<ScalarType,MV,OP,true>::ARRQR(int p, int q, const Teuchos::SerialDenseMatrix<int,ScalarType>& D)
+template<class ScalarType, class MV, class OP, class DM>
+int PCPGSolMgr<ScalarType,MV,OP,DM,true>::ARRQR(int p, int q, const Teuchos::SerialDenseMatrix<int,ScalarType>& D)
 {
   using Teuchos::RCP;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -1181,8 +1181,8 @@ int PCPGSolMgr<ScalarType,MV,OP,true>::ARRQR(int p, int q, const Teuchos::Serial
 }
 
 //  The method returns a string describing the solver manager.
-template<class ScalarType, class MV, class OP>
-std::string PCPGSolMgr<ScalarType,MV,OP,true>::description() const
+template<class ScalarType, class MV, class OP, class DM>
+std::string PCPGSolMgr<ScalarType,MV,OP,DM,true>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::PCPGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
