@@ -148,8 +148,8 @@ class GmresPolySolMgrPolynomialFailure : public BelosError {public:
 ///   - Any parameter not explicitly set in the input ParameterList
 ///     retains its current value
 
-template<class ScalarType, class MV, class OP>
-class GmresPolySolMgr : public SolverManager<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class GmresPolySolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 private:
 
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -195,8 +195,8 @@ public:
   virtual ~GmresPolySolMgr() {};
 
   //! clone for Inverted Injection (DII)
-  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-    return Teuchos::rcp(new GmresPolySolMgr<ScalarType,MV,OP>);
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+    return Teuchos::rcp(new GmresPolySolMgr<ScalarType,MV,OP,DM>);
   }
   //@}
 
@@ -372,8 +372,8 @@ private:
 };
 
 
-template<class ScalarType, class MV, class OP>
-GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
+template<class ScalarType, class MV, class OP, class DM>
+GmresPolySolMgr<ScalarType,MV,OP,DM>::GmresPolySolMgr () :
   outputStream_ (Teuchos::rcpFromRef(std::cout)),
   polyTol_ (DefaultSolverParameters::polyTol),
   achievedTol_(MTS::zero()),
@@ -394,8 +394,8 @@ GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
 {}
 
 
-template<class ScalarType, class MV, class OP>
-GmresPolySolMgr<ScalarType,MV,OP>::
+template<class ScalarType, class MV, class OP, class DM>
+GmresPolySolMgr<ScalarType,MV,OP,DM>::
 GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                  const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_ (problem),
@@ -430,9 +430,9 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
+GmresPolySolMgr<ScalarType,MV,OP,DM>::getValidParameters() const
 {
   if (validPL_.is_null ()) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList ();
@@ -471,8 +471,8 @@ GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
 }
 
 
-template<class ScalarType, class MV, class OP>
-void GmresPolySolMgr<ScalarType,MV,OP>::
+template<class ScalarType, class MV, class OP, class DM>
+void GmresPolySolMgr<ScalarType,MV,OP,DM>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   // Create the internal parameter list if ones doesn't already exist.
@@ -626,8 +626,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 }
 
 
-template<class ScalarType, class MV, class OP>
-ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType GmresPolySolMgr<ScalarType,MV,OP,DM>::solve ()
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -711,8 +711,8 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
   else if (hasOuterSolver_) {
 
     // There is no polynomial, just create the outer solver with the outerSolverType_ and outerParams_.
-    Belos::SolverFactory<ScalarType, MV, OP> factory;
-    RCP<SolverManager<ScalarType, MV, OP> > solver = factory.create( outerSolverType_, outerParams_ );
+    Belos::SolverFactory<ScalarType, MV, OP, DM> factory;
+    RCP<SolverManager<ScalarType, MV, OP, DM> > solver = factory.create( outerSolverType_, outerParams_ );
     TEUCHOS_TEST_FOR_EXCEPTION( solver == Teuchos::null, std::invalid_argument,
       "Belos::GmresPolySolMgr::solve(): Selected solver is not valid.");
 
@@ -736,8 +736,8 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 }
 
 
-template<class ScalarType, class MV, class OP>
-std::string GmresPolySolMgr<ScalarType,MV,OP>::description () const
+template<class ScalarType, class MV, class OP, class DM>
+std::string GmresPolySolMgr<ScalarType,MV,OP,DM>::description () const
 {
   std::ostringstream out;
 
