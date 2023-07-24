@@ -108,19 +108,19 @@ namespace Belos {
 
   // Partial specialization for unsupported ScalarType types.
   // This contains a stub implementation.
-  template<class ScalarType, class MV, class OP,
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
            const bool supportsScalarType =
              Belos::Details::LapackSupportsScalar<ScalarType>::value &&
              ! Teuchos::ScalarTraits<ScalarType>::isComplex>
   class RCGSolMgr :
-    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP,
+    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM,
                                                     Belos::Details::LapackSupportsScalar<ScalarType>::value &&
                                                     ! Teuchos::ScalarTraits<ScalarType>::isComplex>
   {
     static const bool scalarTypeIsSupported =
       Belos::Details::LapackSupportsScalar<ScalarType>::value &&
       ! Teuchos::ScalarTraits<ScalarType>::isComplex;
-    typedef Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP,
+    typedef Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM,
                                                      scalarTypeIsSupported> base_type;
 
   public:
@@ -134,19 +134,19 @@ namespace Belos {
     virtual ~RCGSolMgr () {}
 
     //! clone for Inverted Injection (DII)
-    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new RCGSolMgr<ScalarType,MV,OP,supportsScalarType>);
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+      return Teuchos::rcp(new RCGSolMgr<ScalarType,MV,OP,DM,supportsScalarType>);
     }
   };
 
   // Partial specialization for real ScalarType.
   // This contains the actual working implementation of RCG.
   // See discussion in the class documentation above.
-  template<class ScalarType, class MV, class OP>
-  class RCGSolMgr<ScalarType, MV, OP, true> :
-    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, true> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class RCGSolMgr<ScalarType, MV, OP, DM, true> :
+    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM, true> {
   private:
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -434,8 +434,8 @@ namespace Belos {
 
 
 // Empty Constructor
-template<class ScalarType, class MV, class OP>
-RCGSolMgr<ScalarType,MV,OP,true>::RCGSolMgr():
+template<class ScalarType, class MV, class OP, class DM>
+RCGSolMgr<ScalarType,MV,OP,DM,true>::RCGSolMgr():
   achievedTol_(0.0),
   numIters_(0)
 {
@@ -443,8 +443,8 @@ RCGSolMgr<ScalarType,MV,OP,true>::RCGSolMgr():
 }
 
 // Basic Constructor
-template<class ScalarType, class MV, class OP>
-RCGSolMgr<ScalarType,MV,OP,true>::RCGSolMgr(
+template<class ScalarType, class MV, class OP, class DM>
+RCGSolMgr<ScalarType,MV,OP,DM,true>::RCGSolMgr(
                                                      const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
@@ -461,8 +461,8 @@ RCGSolMgr<ScalarType,MV,OP,true>::RCGSolMgr(
 }
 
 // Common instructions executed in all constructors
-template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP,true>::init()
+template<class ScalarType, class MV, class OP, class DM>
+void RCGSolMgr<ScalarType,MV,OP,DM,true>::init()
 {
   outputStream_ = Teuchos::rcpFromRef(std::cout);
   convtol_ = DefaultSolverParameters::convTol;
@@ -512,8 +512,8 @@ void RCGSolMgr<ScalarType,MV,OP,true>::init()
   dold = 0.;
 }
 
-template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+template<class ScalarType, class MV, class OP, class DM>
+void RCGSolMgr<ScalarType,MV,OP,DM,true>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
@@ -692,9 +692,9 @@ void RCGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teuchos
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-RCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
+RCGSolMgr<ScalarType,MV,OP,DM,true>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
 
@@ -736,8 +736,8 @@ RCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 }
 
 // initializeStateStorage
-template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP,true>::initializeStateStorage() {
+template<class ScalarType, class MV, class OP, class DM>
+void RCGSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
 
     // Check if there is any multivector to clone from.
     Teuchos::RCP<const MV> rhsMV = problem_->getRHS();
@@ -1023,8 +1023,8 @@ void RCGSolMgr<ScalarType,MV,OP,true>::initializeStateStorage() {
     }
 }
 
-template<class ScalarType, class MV, class OP>
-ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType RCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
   Teuchos::LAPACK<int,ScalarType> lapack;
   std::vector<int> index(recycleBlocks_);
@@ -1855,8 +1855,8 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
 }
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
-template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType>& F,
+template<class ScalarType, class MV, class OP, class DM>
+void RCGSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType>& F,
                                                   const Teuchos::SerialDenseMatrix<int,ScalarType>& /* G */,
                                                         Teuchos::SerialDenseMatrix<int,ScalarType>& Y) {
   // order of F,G
@@ -1907,8 +1907,8 @@ void RCGSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs(const Teuchos::SerialDens
 }
 
 // This method sorts list of n floating-point numbers and return permutation vector
-template<class ScalarType, class MV, class OP>
-void RCGSolMgr<ScalarType,MV,OP,true>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm)
+template<class ScalarType, class MV, class OP, class DM>
+void RCGSolMgr<ScalarType,MV,OP,DM,true>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm)
 {
   int l, r, j, i, flag;
   int    RR2;
@@ -1972,8 +1972,8 @@ void RCGSolMgr<ScalarType,MV,OP,true>::sort(std::vector<ScalarType>& dlist, int 
 }
 
 //  This method requires the solver manager to return a std::string that describes itself.
-template<class ScalarType, class MV, class OP>
-std::string RCGSolMgr<ScalarType,MV,OP,true>::description() const
+template<class ScalarType, class MV, class OP, class DM>
+std::string RCGSolMgr<ScalarType,MV,OP,DM,true>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::RCGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
