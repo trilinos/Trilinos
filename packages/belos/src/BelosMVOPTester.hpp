@@ -41,6 +41,9 @@ namespace Belos {
     //!  \brief Returns the dense matrix A with random values that is the synchronized across all 
     //!   MPI ranks. Uses existing dimensions of A to determin the size needed.
     //!   Note: This utility is only used within Belos MultiVectorTraits testing. 
+    //
+    //TODO: If ScalarType is complex valued and the random matrix is simply real-valued, is that
+    // still okay for the test??
     template <class ScalarType, class DM>
     static void RandomSyncedMpiMatrix( DM & A ) {
       typedef Belos::DenseMatTraits<ScalarType, DM> DMT;
