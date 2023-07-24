@@ -77,6 +77,8 @@
 // whether to print timings
 //#define FASTILU_TIMER
 
+#define FASTILU_UNBLOCK_A
+
 template <typename View>
 void print_view(const std::string& name, const View& view)
 {
@@ -408,14 +410,14 @@ struct get_unc_structure_struct<void>
   {}
 };
 
-template <typename View1, typename View2, typename View3>
-void reblock(View1& row_map, View2& col_inds, View3& values, const int block_size)
+template <typename View1, typename View2, typename View3, typename View4>
+void reblock(View1& row_map, View2& row_idx, View3& col_inds, View4& values, const int block_size)
 {
   using LO = Tpetra::Map<>::local_ordinal_type;
   using GO = Tpetra::Map<>::global_ordinal_type;
   using Node = Tpetra::Map<>::node_type;
   using Node          = Tpetra::Map<>::node_type;
-  using Scalar        = typename View3::non_const_value_type;
+  using Scalar        = typename View4::non_const_value_type;
   using TCrsMatrix    = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
   using map_type      = typename TCrsMatrix::map_type;
   using local_crs     = typename TCrsMatrix::local_matrix_device_type;
@@ -448,10 +450,20 @@ void reblock(View1& row_map, View2& col_inds, View3& values, const int block_siz
   Kokkos::deep_copy(col_inds, colinds);
   Kokkos::resize(values, vals.size());
   Kokkos::deep_copy(values, vals);
+
+  // Now do row idx
+  const auto nrows_blocked = row_map.size() -1;
+  Kokkos::resize(row_idx, colinds.size());
+  LO nnz = 0;
+  for (size_t row = 0; row < nrows_blocked; ++row) {
+    for (LO row_nnz = row_map(row); row_nnz < row_map(row+1); ++row_nnz) {
+      row_idx(nnz++) = row;
+    }
+  }
+  assert(nnz == row_map(nrows_blocked));
 }
 
 // some useful preprocessor functions
-//#define FASTILU_UNBLOCK_A
 #ifdef FASTILU_TIMER
 #define FASTILU_CREATE_TIMER(timer) Kokkos::Timer timer
 
@@ -1115,16 +1127,16 @@ class FastILUPrec
             // Ensure all filled entries have the sentinel value
 #ifdef FASTILU_UNBLOCK_A
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0));
+            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
 #else
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0) * blockCrsSize * blockCrsSize);
 #endif
-            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
 
             // Re-block A_. At this point, aHost and A_ are unblocked. The host stuff isn't
             // used anymore after this, so just reblock A_
 #ifdef FASTILU_UNBLOCK_A
             if (blockCrsSize > 1) {
-              reblock(aRowMap_, aColIdx_, aVal_, blockCrsSize);
+              reblock(aRowMap_, aRowIdx_, aColIdx_, aVal_, blockCrsSize);
             }
 #endif
 
@@ -1157,6 +1169,9 @@ class FastILUPrec
             uRowMap_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uRowMap);
             const Ordinal nnzU = countU();
             FASTILU_DBG_COUT("**Finished counting U");
+
+            print_view("uRowMap_ after counting", uRowMap_);
+            print_view("a2uMap", a2uMap);
 
             //Allocate memory and initialize pattern for L, U (transpose).
             lColIdx = OrdinalArray(WithoutInit("lColIdx"), nnzL);
@@ -1208,7 +1223,7 @@ class FastILUPrec
               Kokkos::parallel_for(
                 "numericILU::copyVals", copy_perm_policy, functor_perm);
             } else {
-              Kokkos::RangePolicy<CopySortedValsTag, ExecSpace> copy_policy (0, nRows);
+              Kokkos::RangePolicy<CopySortedValsKeepSentinelsTag, ExecSpace> copy_policy (0, nRows);
               Kokkos::parallel_for(
                 "numericILU::copyVals", copy_policy, functor);
             }
