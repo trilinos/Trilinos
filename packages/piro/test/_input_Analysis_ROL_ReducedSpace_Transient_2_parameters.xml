@@ -1,5 +1,7 @@
 <ParameterList>
   <ParameterList name="Piro">
+    <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
+    <Parameter name="Explicit Adjoint Model Evaluator" type="bool" value="true" />
     <ParameterList name="Tempus">
       <Parameter name="Integrator Name" type="string" value="Demo Integrator" />
       <ParameterList name="Demo Integrator">
@@ -11,7 +13,7 @@
         </ParameterList>
         <ParameterList name="Time Step Control">
           <Parameter name="Initial Time" type="double" value="0." />
-          <Parameter name="Initial Time Step" type="double" value="0.5" />
+          <Parameter name="Initial Time Step" type="double" value="0.1" />
           <Parameter name="Final Time" type="double" value="1." />
         </ParameterList>
       </ParameterList>
@@ -146,25 +148,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Rythmos">
-      <Parameter name="Num Time Steps" type="int" value="10" />
-      <Parameter name="Final Time" type="double" value="0.1" />
-      <Parameter name="Stepper Type" type="string" value="Explicit RK" />
-      <ParameterList name="Rythmos Stepper">
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="medium" />
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Stratimikos">
-      </ParameterList>
-      <ParameterList name="Rythmos Integration Control">
-      </ParameterList>
-      <ParameterList name="Rythmos Integrator">
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="medium" />
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Analysis">
       <Parameter name="Transient" type="bool" value="true" />
       <Parameter name="Output Level" type="int" value="4" />
@@ -186,10 +169,9 @@
         <Parameter name="Test Vector" type="bool" value="false" />
         <Parameter name="Number Of Vector Tests" type="int" value="1" />
 
-        <Parameter name="Bound Constrained" type="bool" value="false" />
+        <Parameter name="Bound Constrained" type="bool" value="true" />
 
         <Parameter name="Full Space" type="bool" value="false" />
-        <Parameter name="Use NOX Solver" type="bool" value="false" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
         <ParameterList name="ROL Options">

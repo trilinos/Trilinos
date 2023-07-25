@@ -34,7 +34,9 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_B_Tpetra_2_parameters.hpp
     MatrixBased_LOWS.cpp
     MatrixBased_LOWS.hpp
-    NUM_MPI_PROCS 1-4
+    MassSpringDamperModel.cpp
+    MassSpringDamperModel.hpp
+    NUM_MPI_PROCS 1
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADDED_TESTS_NAMES_OUT AnalysisDriverTpetra_NAME 
@@ -113,6 +115,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml
         input_Analysis_ROL_ReducedSpace_Transient.xml
         input_Analysis_ROL_ReducedSpace_Transient_2_parameters.xml
+        input_Analysis_ROL_ReducedSpace_Transient_MSD.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml

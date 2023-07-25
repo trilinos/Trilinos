@@ -47,6 +47,7 @@
 #include "MockModelEval_A_Tpetra.hpp"
 #include "MockModelEval_B_Tpetra.hpp"
 #include "MockModelEval_B_Tpetra_2_parameters.hpp"
+#include "MassSpringDamperModel.hpp"
 //#include "ObserveSolution_Epetra.hpp"
 
 #include "Piro_SolverFactory.hpp"
@@ -83,33 +84,6 @@ const Teuchos::RCP<Piro::TempusSolver<double> > solverNew(
     double finalTime, 
     const std::string sens_method_string)
 {
- #if 0 
-  const Teuchos::RCP<Teuchos::ParameterList> tempusPL(new Teuchos::ParameterList("Tempus"));
-  analysisPL->sublist("Tempus").set("Integrator Name", "Demo Integrator");
-  analysisPL->sublist("Tempus").sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
-  analysisPL->sublist("Tempus").sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
-  analysisPL->sublist("Tempus").sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
-  analysisPL->sublist("Tempus").sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
-  analysisPL->sublist("Tempus").sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", 0.0);
-  analysisPL->sublist("Tempus").sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
-  analysisPL->sublist("Tempus").sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
-  analysisPL->sublist("Tempus").sublist("Demo Stepper").set("Zero Initial Guess", false);
-  analysisPL->sublist("Tempus").sublist("Demo Stepper").set("Solver Name", "Demo Solver");
-  analysisPL->sublist("Tempus").sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  Piro::SENS_METHOD sens_method; 
-  if (sens_method_string == "None") sens_method = Piro::NONE; 
-  else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
-  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
-  Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
-      = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method));
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
-
-  Teuchos::RCP<Teuchos::ParameterList> stepperPL = Teuchos::rcp(&(analysisPL->sublist("Tempus").sublist("Demo Stepper")), false);
-
-  Teuchos::RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  const Teuchos::RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepperPL, thyraModel);
-  return Teuchos::rcp(new Piro::TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime, sens_method_string));
-#else
   Teuchos::RCP<Teuchos::ParameterList> analysisPL =
     Teuchos::rcp(new Teuchos::ParameterList("Analysis"));
   auto tempusPL = analysisPL->sublist("Tempus");
@@ -143,9 +117,9 @@ const Teuchos::RCP<Piro::TempusSolver<double> > solverNew(
   analysisPL->sublist("Tempus").sublist("Tempus Stepper").set("Solver Name", "Demo Solver");
   analysisPL->sublist("Tempus").sublist("Tempus Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
   analysisPL->sublist("Tempus").sublist("Sensitivities", false, "");
+  analysisPL->set("Sensitivity Method", "Adjoint");
 
   return Teuchos::rcp(new Piro::TempusSolver<double>(analysisPL, thyraModel, thyraAdjointModel));
-#endif
 }
 
 
@@ -172,12 +146,13 @@ int main(int argc, char *argv[]) {
 
   //Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<2; iTest++) {
+  for (int iTest=0; iTest<3; iTest++) {
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Analysis_ROL_ReducedSpace_Transient.xml"; break;
        case 1: inputFile="input_Analysis_ROL_ReducedSpace_Transient_2_parameters.xml"; break;
+       case 2: inputFile="input_Analysis_ROL_ReducedSpace_Transient_MSD.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -188,13 +163,21 @@ int main(int argc, char *argv[]) {
 
     try {
 
-      std::vector<std::string> mockModels = {"MockModelEval_A_Tpetra", "MockModelEval_B_Tpetra", "MockModelEval_B_Tpetra_2_parameters"};
+      std::vector<std::string> mockModels = {"MockModelEval_B_Tpetra", "MockModelEval_B_Tpetra_2_parameters", "MassSpringDamperModel"};
+      // MockModelEval_A_Tpetra is very slow so it is currently disabled.
+
       for (auto mockModel : mockModels) {
 
-        if (mockModel=="MockModelEval_B_Tpetra_2_parameters" && iTest < 1) {
+        if (mockModel=="MockModelEval_B_Tpetra_2_parameters" && iTest != 1) {
           continue;
         }
-        if (mockModel!="MockModelEval_B_Tpetra_2_parameters" && iTest > 0) {
+        if (mockModel=="MockModelEval_A_Tpetra" && iTest > 0) {
+          continue;
+        }
+        if (mockModel=="MockModelEval_B_Tpetra" && iTest > 0) {
+          continue;
+        }
+        if (mockModel=="MassSpringDamperModel" && iTest != 2) {
           continue;
         }
 
@@ -250,6 +233,15 @@ int main(int argc, char *argv[]) {
             adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
           }
           modelName = "B_2";
+        }
+        else if (mockModel=="MassSpringDamperModel") {
+          RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MassSpringDamperModel(appComm,false,probParams,true));
+          model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
+          if(explicitAdjointME) {
+            RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MassSpringDamperModel(appComm,true));
+            adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
+          }
+          modelName = "MSD";
         }
         if (Proc==0)
           std::cout << "=======================================================================================================\n"
@@ -308,6 +300,10 @@ int main(int argc, char *argv[]) {
           if (mockModel=="MockModelEval_B_Tpetra_2_parameters") {
             p_exact[0] = 4;
             p_exact[1] = 6;
+          }
+          if (mockModel=="MassSpringDamperModel") {
+            p_exact[0] = 1.;
+            p_exact[1] = 0.5;
           }
           double tol = 1e-5;
 

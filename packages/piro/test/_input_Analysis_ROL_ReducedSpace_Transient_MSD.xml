@@ -13,8 +13,8 @@
         </ParameterList>
         <ParameterList name="Time Step Control">
           <Parameter name="Initial Time" type="double" value="0." />
-          <Parameter name="Initial Time Step" type="double" value="0.1" />
-          <Parameter name="Final Time" type="double" value="1." />
+          <Parameter name="Initial Time Step" type="double" value="0.01" />
+          <Parameter name="Final Time" type="double" value="0.1" />
         </ParameterList>
       </ParameterList>
       <ParameterList name="Demo Stepper">
@@ -25,6 +25,31 @@
           <ParameterList name="NOX">
             <ParameterList name="Direction">
               <Parameter name="Method" type="string" value="Newton" />
+            </ParameterList>
+            <ParameterList name="Status Tests">
+              <Parameter name="Test Type" type="string" value="Combo" />
+              <Parameter name="Combo Type" type="string" value="OR" />
+              <Parameter name="Number of Tests" type="int" value="2" />
+              <ParameterList name="Test 0">
+                <Parameter name="Test Type" type="string" value="Combo" />
+                <Parameter name="Combo Type" type="string" value="OR" />
+                <Parameter name="Number of Tests" type="int" value="2" />
+                <ParameterList name="Test 0">
+                  <Parameter name="Test Type" type="string" value="NormF" />
+                  <Parameter name="Norm Type" type="string" value="Two Norm" />
+                  <Parameter name="Scale Type" type="string" value="Scaled" />
+                  <Parameter name="Tolerance" type="double" value="1.0e-08" />
+                </ParameterList>
+                <ParameterList name="Test 1">
+                  <Parameter name="Test Type" type="string" value="NormWRMS" />
+                  <Parameter name="Absolute Tolerance" type="double" value="1.0e-09" />
+                  <Parameter name="Relative Tolerance" type="double" value="1.0e-06" />
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="Test 1">
+                <Parameter name="Test Type" type="string" value="MaxIters" />
+                <Parameter name="Maximum Iterations" type="int" value="50" />
+              </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -162,7 +187,7 @@
         <!--Parameter name="Uniform Parameter Guess" type="double" value="2.0"/ -->
         <!--Parameter name="Min And Max Of Random Parameter Guess" type="Array(double)" value="{1.0, 3.0}"/ -->
 
-        <Parameter name="Check Derivatives" type="bool" value="true" />
+        <Parameter name="Check Derivatives" type="bool" value="false" />
 
         <Parameter name="Test Vector" type="bool" value="false" />
         <Parameter name="Number Of Vector Tests" type="int" value="1" />

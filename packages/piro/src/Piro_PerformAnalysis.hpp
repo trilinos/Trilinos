@@ -78,20 +78,20 @@ namespace Piro {
      );
   //@}
 
-  //! \brief Performs analysis of a solved model using ROL.
+  //! \brief Performs analysis of a steady state solved model using ROL.
   //! \details Requires that the ROL package is available.
   //! \ingroup Piro_Thyra_analysis_driver_grp
-  int PerformSROLAnalysis(
+  int PerformROLSteadyAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& rolParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p,
      Teuchos::RCP< ROL_ObserverBase<double> > observer = Teuchos::null
      );
 
-  //! \brief Performs analysis of a solved model using ROL.
+  //! \brief Performs analysis of a transient solved model using ROL.
   //! \details Requires that the ROL package is available.
   //! \ingroup Piro_Thyra_analysis_driver_grp
-  int PerformTROLAnalysis(
+  int PerformROLTransientAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& rolParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p,

@@ -168,7 +168,7 @@ public:
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
   getSubModel() {return model_;}
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
-  getAdjointSubModel() {return thyraModel_;}
+  getAdjointSubModel() {return adjointModel_;} 
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
