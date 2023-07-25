@@ -131,6 +131,7 @@ namespace Intrepid2
       auto pointOrdinal = teamMember.league_rank();
       OutputScratchView scratch1D_1, scratch1D_2, scratch1D_3;
       OutputScratchView scratch1D_4, scratch1D_5, scratch1D_6;
+      OutputScratchView scratch1D_7, scratch1D_8, scratch1D_9;
       OutputScratchView2D scratch2D_1, scratch2D_2, scratch2D_3;
       const int numAlphaValues = (polyOrder_-1 > 1) ? (polyOrder_-1) : 1; // make numAlphaValues at least 1 so we can avoid zero-extent allocations…
       if (fad_size_output_ > 0) {
@@ -140,6 +141,9 @@ namespace Intrepid2
         scratch1D_4 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
         scratch1D_5 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
         scratch1D_6 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        scratch1D_7 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        scratch1D_8 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        scratch1D_9 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
         scratch2D_1 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1, fad_size_output_);
         scratch2D_2 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1, fad_size_output_);
         scratch2D_3 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1, fad_size_output_);
@@ -151,6 +155,9 @@ namespace Intrepid2
         scratch1D_4 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
         scratch1D_5 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
         scratch1D_6 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        scratch1D_7 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        scratch1D_8 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        scratch1D_9 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
         scratch2D_1 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1);
         scratch2D_2 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1);
         scratch2D_3 = OutputScratchView2D(teamMember.team_shmem(), numAlphaValues, polyOrder_ + 1);
@@ -507,7 +514,65 @@ namespace Intrepid2
           }
           
           // TODO: triangle faces
-          // TODO: interior functions
+          
+          // interior functions
+          P_i_minus_1 = scratch1D_1;
+          L_i_dt      = scratch1D_2; // R_{i-1} = d/dt L_i
+          L_i         = scratch1D_3;
+          P_j_minus_1 = scratch1D_4;
+          L_j_dt      = scratch1D_5; // R_{j-1} = d/dt L_j
+          L_j         = scratch1D_6;
+          auto & P_k_minus_1 = scratch1D_7;
+          auto & L_k_dt      = scratch1D_8; // R_{k-1} = d/dt L_k
+          auto & L_k         = scratch1D_9;
+          
+          Polynomials::shiftedScaledLegendreValues             (P_i_minus_1, polyOrder_-1, mu[1][0], mu[0][0] + mu[1][0]);
+          Polynomials::shiftedScaledIntegratedLegendreValues_dt(L_i_dt,      polyOrder_,   mu[1][0], mu[0][0] + mu[1][0]);
+          Polynomials::shiftedScaledIntegratedLegendreValues   (L_i,         polyOrder_,   mu[1][0], mu[0][0] + mu[1][0]);
+          
+          Polynomials::shiftedScaledLegendreValues             (P_j_minus_1, polyOrder_-1, mu[1][1], mu[0][1] + mu[1][1]);
+          Polynomials::shiftedScaledIntegratedLegendreValues_dt(L_j_dt,      polyOrder_,   mu[1][1], mu[0][1] + mu[1][1]);
+          Polynomials::shiftedScaledIntegratedLegendreValues   (L_j,         polyOrder_,   mu[1][1], mu[0][1] + mu[1][1]);
+          
+          Polynomials::shiftedScaledLegendreValues             (P_k_minus_1, polyOrder_-1, mu[1][2], mu[0][2] + mu[1][2]);
+          Polynomials::shiftedScaledIntegratedLegendreValues_dt(L_k_dt,      polyOrder_,   mu[1][2], mu[0][2] + mu[1][2]);
+          Polynomials::shiftedScaledIntegratedLegendreValues   (L_k,         polyOrder_,   mu[1][2], mu[0][2] + mu[1][2]);
+          
+          // following the ESEAS ordering: k increments first
+          for (int k=2; k<=polyOrder_; k++)
+          {
+            const auto & R_k_minus_1 = L_k_dt(k);
+            
+            for (int j=2; j<=polyOrder_; j++)
+            {
+              const auto & R_j_minus_1 = L_j_dt(j);
+              
+              for (int i=2; i<=polyOrder_; i++)
+              {
+                const auto & R_i_minus_1 = L_i_dt(i);
+                
+                OutputScalar phi_quad = L_i(i) * L_j(j);
+                
+                for (int d=0; d<3; d++)
+                {
+                  // grad [L_i](s0,s1) = [P_{i-1}](s0,s1) * grad s1 + [R_{i-1}](s0,s1) * grad (s0 + s1)
+                  // for L_i, s1 = mu[1][0], s0 = mu[0][0]
+                  OutputScalar grad_Li_d = P_i_minus_1(j-1) * muGrad[1][0][d] + R_i_minus_1 * (muGrad[0][0][d] + muGrad[1][0][d]);
+                  // for L_j, s1 = mu[1][1], s0 = mu[0][1]
+                  OutputScalar grad_Lj_d = P_j_minus_1(j-1) * muGrad[1][1][d] + R_j_minus_1 * (muGrad[0][1][d] + muGrad[1][1][d]);
+                  // for L_k, s1 = mu[1][2], s0 = mu[0][2]
+                  OutputScalar grad_Lk_d = P_k_minus_1(k-1) * muGrad[1][2][d] + R_k_minus_1 * (muGrad[0][2][d] + muGrad[1][2][d]);
+                  
+                  OutputScalar grad_phi_quad_d = L_i(i) * grad_Lj_d + L_j(j) * grad_Li_d;
+                  
+                  output_(fieldOrdinalOffset,pointOrdinal,d) = L_k(k) * grad_phi_quad_d + phi_quad * grad_Lk_d;
+                }
+                
+                fieldOrdinalOffset++;
+              }
+            }
+          }
+
           
           for (int basisOrdinal=0; basisOrdinal<numFields_; basisOrdinal++)
           {
@@ -639,7 +704,7 @@ namespace Intrepid2
     size_t team_shmem_size (int team_size) const
     {
       // we use shared memory to create a fast buffer for basis computations
-      // for the (integrated) Legendre computations, we just need p+1 values stored
+      // for the (integrated) Legendre computations, we just need p+1 values stored.  For interior functions on the pyramid, we have up to 3 scratch arrays with (integrated) Legendre values stored, for each of the 3 directions (i,j,k indices): a total of 9.
       // for the (integrated) Jacobi computations, though, we want (p+1)*(# alpha values)
       // alpha is either 2i or 2(i+j), where i=2,…,p or i+j=3,…,p.  So there are at most (p-1) alpha values needed.
       // We can have up to 3 of the (integrated) Jacobi values needed at once.
@@ -648,14 +713,14 @@ namespace Intrepid2
       if (fad_size_output_ > 0)
       {
         // Legendre:
-        shmem_size += 6 * OutputScratchView::shmem_size(polyOrder_ + 1, fad_size_output_);
+        shmem_size += 9 * OutputScratchView::shmem_size(polyOrder_ + 1, fad_size_output_);
         // Jacobi:
         shmem_size += 3 * OutputScratchView2D::shmem_size(numAlphaValues, polyOrder_ + 1, fad_size_output_);
       }
       else
       {
         // Legendre:
-        shmem_size += 6 * OutputScratchView::shmem_size(polyOrder_ + 1);
+        shmem_size += 9 * OutputScratchView::shmem_size(polyOrder_ + 1);
         // Jacobi:
         shmem_size += 3 * OutputScratchView2D::shmem_size(numAlphaValues, polyOrder_ + 1);
       }
