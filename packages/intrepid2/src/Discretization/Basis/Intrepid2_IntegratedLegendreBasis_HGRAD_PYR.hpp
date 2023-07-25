@@ -307,7 +307,7 @@ namespace Intrepid2
             }
             // relabel scratch1D_1
             auto & edge_s0s1 = scratch1D_1;
-            Polynomials::shiftedScaledIntegratedLegendreValues(edge_s0s1, polyOrder_, s0, s0 + s1);
+            Polynomials::shiftedScaledIntegratedLegendreValues(edge_s0s1, polyOrder_, s1, s0 + s1);
             
             for (int totalPolyOrder=3; totalPolyOrder<=polyOrder_; totalPolyOrder++)
             {
@@ -502,7 +502,7 @@ namespace Intrepid2
                 // here, s1 = mu[1][1], s0 = mu[0][1]
                 OutputScalar grad_Lj_d = P_j_minus_1(j-1) * muGrad[1][1][d] + R_j_minus_1 * (muGrad[0][1][d] + muGrad[1][1][d]);
                 // for L_i, s1 = mu[1][0], s0 = mu[0][0]
-                OutputScalar grad_Li_d = P_i_minus_1(j-1) * muGrad[1][0][d] + R_i_minus_1 * (muGrad[0][0][d] + muGrad[1][0][d]);
+                OutputScalar grad_Li_d = P_i_minus_1(i-1) * muGrad[1][0][d] + R_i_minus_1 * (muGrad[0][0][d] + muGrad[1][0][d]);
                 
                 OutputScalar grad_phi_quad_d = L_i(i) * grad_Lj_d + L_j(j) * grad_Li_d;
                 
@@ -513,7 +513,77 @@ namespace Intrepid2
             }
           }
           
-          // TODO: triangle faces
+          // triangle faces
+          for (int faceOrdinal=0; faceOrdinal<numTriFaces; faceOrdinal++)
+          {
+            // face 0,2 --> a=1, b=2
+            // face 1,3 --> a=2, b=1
+            int a = (faceOrdinal % 2 == 0) ? 1 : 2;
+            int b = 3 - a;
+            // face 0,3 --> c=0
+            // face 1,2 --> c=1
+            int c = ((faceOrdinal == 0) || (faceOrdinal == 3)) ? 0 : 1;
+            
+            const auto & s0 = nu[0][a-1];
+            const auto & s1 = nu[1][a-1];
+            const auto & s2 = nu[2][a-1];
+            
+            const auto & s0Grad = nuGrad[0][a-1];
+            const auto & s1Grad = nuGrad[1][a-1];
+            const auto & s2Grad = nuGrad[2][a-1];
+            
+            const PointScalar jacobiScaling = s0 + s1 + s2;
+            
+            // compute integrated Jacobi values for each desired value of alpha
+            // relabel storage:
+            // 1D containers:
+            auto & P_i_minus_1 = scratch1D_1;
+            auto & L_i_dt      = scratch1D_2; // R_{i-1} = d/dt L_i
+            auto & L_i         = scratch1D_3;
+            // 2D containers:
+            auto & L_2i_j_dt      = scratch2D_1;
+            auto & L_2i_j         = scratch2D_2;
+            auto & P_2i_j_minus_1 = scratch2D_3;
+            for (int n=2; n<=polyOrder_; n++)
+            {
+              const double alpha = n*2;
+              const int alphaOrdinal = n-2;
+              using Kokkos::subview;
+              using Kokkos::ALL;
+              auto L_2i_j_dt_alpha      = subview(L_2i_j_dt,      alphaOrdinal, ALL);
+              auto L_2i_j_alpha         = subview(L_2i_j,         alphaOrdinal, ALL);
+              auto P_2i_j_minus_1_alpha = subview(P_2i_j_minus_1, alphaOrdinal, ALL);
+              Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2i_j_dt_alpha, alpha, polyOrder_-2, s2, jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues   (   L_2i_j_alpha, alpha, polyOrder_-2, s2, jacobiScaling);
+              Polynomials::shiftedScaledJacobiValues        (P_2i_j_minus_1_alpha, alpha, polyOrder_-1, s2, jacobiScaling);
+            }
+            Polynomials::shiftedScaledLegendreValues             (P_i_minus_1, polyOrder_-1, s1, s0 + s1);
+            Polynomials::shiftedScaledIntegratedLegendreValues_dt(L_i_dt,      polyOrder_,   s1, s0 + s1);
+            Polynomials::shiftedScaledIntegratedLegendreValues   (L_i,         polyOrder_,   s1, s0 + s1);
+            
+            for (int totalPolyOrder=3; totalPolyOrder<=polyOrder_; totalPolyOrder++)
+            {
+              for (int i=2; i<totalPolyOrder; i++)
+              {
+                const int alphaOrdinal = i-2;
+                const int            j = totalPolyOrder - i;
+                
+                const auto & R_i_minus_1 = L_i_dt(i);
+                OutputScalar     phi_tri = L_2i_j(alphaOrdinal,j) * L_i(i);
+                
+                for (int d=0; d<3; d++)
+                {
+                  // grad [L_i](s0,s1) = [P_{i-1}](s0,s1) * grad s1 + [R_{i-1}](s0,s1) * grad (s0 + s1)
+                  OutputScalar grad_Li_d      = P_i_minus_1(i-1) * s1Grad[d] + R_i_minus_1 * (s0Grad[d] + s1Grad[d]);
+                  OutputScalar grad_L2i_j_d   = P_2i_j_minus_1(alphaOrdinal,j-1) * s2Grad[d] + L_2i_j_dt(alphaOrdinal,j) * (s0Grad[d] + s1Grad[d] + s2Grad[d]);
+                  OutputScalar grad_phi_tri_d = L_i(i) * grad_L2i_j_d + L_2i_j(alphaOrdinal,j) * grad_Li_d;
+                  
+                  output_(fieldOrdinalOffset,pointOrdinal,d) = mu[c][b-1] * grad_phi_tri_d + phi_tri * muGrad[c][b-1][d];
+                }
+                fieldOrdinalOffset++;
+              }
+            }
+          }
           
           // interior functions
           P_i_minus_1 = scratch1D_1;
@@ -557,7 +627,7 @@ namespace Intrepid2
                 {
                   // grad [L_i](s0,s1) = [P_{i-1}](s0,s1) * grad s1 + [R_{i-1}](s0,s1) * grad (s0 + s1)
                   // for L_i, s1 = mu[1][0], s0 = mu[0][0]
-                  OutputScalar grad_Li_d = P_i_minus_1(j-1) * muGrad[1][0][d] + R_i_minus_1 * (muGrad[0][0][d] + muGrad[1][0][d]);
+                  OutputScalar grad_Li_d = P_i_minus_1(i-1) * muGrad[1][0][d] + R_i_minus_1 * (muGrad[0][0][d] + muGrad[1][0][d]);
                   // for L_j, s1 = mu[1][1], s0 = mu[0][1]
                   OutputScalar grad_Lj_d = P_j_minus_1(j-1) * muGrad[1][1][d] + R_j_minus_1 * (muGrad[0][1][d] + muGrad[1][1][d]);
                   // for L_k, s1 = mu[1][2], s0 = mu[0][2]
