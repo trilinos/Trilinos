@@ -2530,7 +2530,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
     if(Acolmap->getLocalNumElements()!=Bcolmap->getLocalNumElements()) test_err++;
     else {
       for(size_t i=0; i<Acolmap->getLocalNumElements(); i++)
-        if(Acolmap->getGlobalElement(i)!=Bcolmap->getGlobalElement(i)) test_err++;
+        if(Acolmap->getGlobalElement(i)!=Bcolmap->getGlobalElement(i)) {
+          test_err++;
+          //printf("Original element: %d, new element: %d\n", Acolmap->getGlobalElement(i), Bcolmap->getGlobalElement(i));
+      }
     }
 
     const int myRank = Comm->getRank ();

@@ -66,7 +66,8 @@
 
 #include "Tpetra_CrsMatrix_decl.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
+#include <Kokkos_Sort.hpp>
 
 namespace Tpetra {
 namespace Import_Util {
@@ -976,8 +977,8 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   typedef Tpetra::Map<LO, GO, Node> map_type;
   const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
 
-
   using execution_space = typename Node::execution_space;
+  execution_space exec;
   using team_policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>;
   typedef typename Node::device_type DT;
   typedef typename map_type::local_map_type local_map_type;
@@ -998,6 +999,8 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
   const map_type& domainMap = *domainMapRCP;
+
+  int myPID = domainMap.getComm()->getRank ();
 
   // Scan all column indices and sort into two groups:
   // Local:  those whose GID matches a GID of the domain map on this processor and
@@ -1034,11 +1037,13 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   // be separate because no local LID is greater than
   // numDomainElements.
 
+  // LID PARALLEL (WORKING)
   // Problem: can't resize unordered map on device calls
   // Can't really use the domain map on device either
   Kokkos::UnorderedMap<LO, bool, execution_space> LocalGIDs_view_map(10000);
   local_map_type domainMap_local = domainMap.getLocalMap();
   printf("Num Rows: %d\n", numMyRows);
+  fflush(stdout);
 
   size_t NumLocalColGIDs = 0;
   size_t NumRemoteColGIDs = 0;
@@ -1068,49 +1073,49 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   Kokkos::View<Kokkos::pair<GO, int>*>  RemoteGID_and_PIDList("Pair_List", 20000);
   typename decltype(RemoteGID_and_PIDList)::HostMirror RemoteGID_and_PID_host = Kokkos::create_mirror_view(RemoteGID_and_PIDList);
   
-  // Problem: each array/map index doesn't have to be ordered, but they do have to be unique
+  // PID / REMOTE GID PARALLEL (NOT FUNCTIONAL)
+  // Problem: each array/map index doesn't have to be ordered, but they do have to be unique (and sequential?)
   // Each remote array needs to have its unique NumRemoteColGIDs
   // Is there a way for other threads to know that we incremented it?
-  Kokkos::parallel_reduce(team_policy(numMyRows, Kokkos::AUTO), KOKKOS_LAMBDA(const typename team_policy::member_type &member, size_t &update) { 
-    const int i = member.league_rank();
-    size_t NumRemoteColGIDs_temp = 0;
-    size_t rowptr_start = rowptr_view[i];
-    size_t rowptr_end = rowptr_view[i+1];
-    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(member, rowptr_start, rowptr_end), [&](const size_t j, size_t &innerUpdate) {
-      const GO GID = colind_GID_view[j];
-      // Check if GID matches a row GID
-      const LO LID = domainMap_local.getLocalElement (GID);
-      if (LID != -1) {
+  // Kokkos::parallel_reduce(team_policy(numMyRows, Kokkos::AUTO), KOKKOS_LAMBDA(const typename team_policy::member_type &member, size_t &update) { 
+  //   const int i = member.league_rank();
+  //   size_t NumRemoteColGIDs_temp = 0;
+  //   size_t rowptr_start = rowptr_view[i];
+  //   size_t rowptr_end = rowptr_view[i+1];
+  //   Kokkos::parallel_reduce(Kokkos::TeamThreadRange(member, rowptr_start, rowptr_end), [&](const size_t j, size_t &innerUpdate) {
+  //     const GO GID = colind_GID_view[j];
+  //     // Check if GID matches a row GID
+  //     const LO LID = domainMap_local.getLocalElement (GID);
+  //     if (LID != -1) {
 
-      }
-      else {
-        auto outcome = RemoteGIDs_view_map.insert(GID, NumRemoteColGIDs_temp + NumRemoteColGIDs);
-        //printf("inserted GID\n");
-        if(outcome.success()) {
-          const int PID = owningPIDs_view[j];
-          if(PID == -1) {
-            printf("Cannot figure out if ID is owned.\n");
-            exit(1);
-          }
-          //printf("before colind\n");
-          colind_LID_view[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs_temp + NumRemoteColGIDs);
-          //printf("before pair list\n");
-          RemoteGID_and_PIDList[j] = Kokkos::make_pair(GID, PID);
-          printf("View GID at index %d\n", j);
-          //printf("after pair list\n");
-          Kokkos::atomic_add(&innerUpdate, 1);
-          //printf("added to innerupdate\n");
-        }
-        else if(outcome.existing()) {
-          //printf("in existing\n");
-          const LO hash_value = RemoteGIDs_view_map.value_at(RemoteGIDs_view_map.find(GID));
-          colind_LID_view[j] = static_cast<LO> (numDomainElements + hash_value);
-        }
-      }
-    }, NumRemoteColGIDs_temp);
-    if(member.team_rank() == 0) update = NumRemoteColGIDs_temp;
-  }, NumRemoteColGIDs);
-
+  //     }
+  //     else {
+  //       auto outcome = RemoteGIDs_view_map.insert(GID, NumRemoteColGIDs_temp + NumRemoteColGIDs);
+  //       //printf("inserted GID\n");
+  //       if(outcome.success()) {
+  //         const int PID = owningPIDs_view[j];
+  //         if(PID == -1) {
+  //           printf("Cannot figure out if ID is owned.\n");
+  //           exit(1);
+  //         }
+  //         //printf("before colind\n");
+  //         colind_LID_view[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs_temp + NumRemoteColGIDs);
+  //         //printf("before pair list\n");
+  //         RemoteGID_and_PIDList[j] = Kokkos::make_pair(GID, PID);
+  //         printf("View GID at index %d\n", j);
+  //         //printf("after pair list\n");
+  //         Kokkos::atomic_add(&innerUpdate, 1);
+  //         //printf("added to innerupdate\n");
+  //       }
+  //       else if(outcome.existing()) {
+  //         //printf("in existing\n");
+  //         const LO hash_value = RemoteGIDs_view_map.value_at(RemoteGIDs_view_map.find(GID));
+  //         colind_LID_view[j] = static_cast<LO> (numDomainElements + hash_value);
+  //       }
+  //     }
+  //   }, NumRemoteColGIDs_temp);
+  //   if(member.team_rank() == 0) update = NumRemoteColGIDs_temp;
+  // }, NumRemoteColGIDs);
 
 
   Kokkos::deep_copy(execution_space(),colind_LID_host, colind_LID_view);
@@ -1119,62 +1124,63 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     colind_LID[i] = colind_LID_host[i];
   }
 
-  Kokkos::deep_copy(RemoteGID_and_PID_host, RemoteGID_and_PIDList);
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
-    printf("\nView Zero GID index: %d\n", RemoteGID_and_PIDList[0].first);
-    printf("View First GID index: %d\n", RemoteGID_and_PIDList[1].first);
-  });
+  // Kokkos::deep_copy(RemoteGID_and_PID_host, RemoteGID_and_PIDList);
+  // Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
+  //   printf("\nView Zero GID index: %d\n", RemoteGID_and_PIDList[0].first);
+  //   printf("View First GID index: %d\n", RemoteGID_and_PIDList[1].first);
+  // });
 
-  printf("Zero GID index: %d\n", RemoteGID_and_PID_host[0].first);
-  printf("First GID index: %d\n", RemoteGID_and_PID_host[1].first);
-  printf("Begin add to PIDList\n");
-  for(int i = 0; i < NumRemoteColGIDs; ++i) {
-    GO GID_value = RemoteGID_and_PID_host[i].first;
-    int PID_value = RemoteGID_and_PID_host[i].second;
-    //printf("PIDList: %d\n", RemoteGID_and_PID_host[i].second);
-    // Is GID always > 0?
-    if(GID_value != 0) {
-      //printf("PIDList: %d, GIDList: %d\n", PID_value, GID_value);
-      RemoteGIDList.push_back(GID_value);
-      PIDList.push_back(PID_value);
-    }
-  }
-
-  // std::unordered_map<LO, bool> LocalGIDs_map;
-  // std::unordered_map<GO, LO> RemoteGIDs_map;
-
-  // for (size_t i = 0; i < numMyRows; ++i) {
-  //   for(size_t j = rowptr[i]; j < rowptr[i+1]; ++j) {
-  //     const GO GID = colind_GID[j];
-  //     // Check if GID matches a row GID
-  //     const LO LID = domainMap.getLocalElement (GID);
-  //     if(LID != -1) {
-  //       // auto outcome = LocalGIDs_map.insert(std::make_pair(LID, true));
-  //       // if(outcome.second) {
-  //       //   NumLocalColGIDs++;
-  //       // }
-  //       // colind_LID[j] = LID;
-  //     }
-  //     else {
-  //       auto outcome = RemoteGIDs_map.insert(std::make_pair(GID, NumRemoteColGIDs));
-  //       const LO hash_value = outcome.first->second;
-  //       if (outcome.second) { // This means its a new remote GID
-  //         const int PID = owningPIDs[j];
-  //         TEUCHOS_TEST_FOR_EXCEPTION(
-  //           PID == -1, std::invalid_argument, prefix << "Cannot figure out if "
-  //           "PID is owned.");
-  //         colind_LID[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs);
-  //         RemoteGIDList.push_back (GID);
-  //         PIDList.push_back (PID);
-  //         NumRemoteColGIDs++;
-  //       }
-  //       else {
-  //         colind_LID[j] = static_cast<LO> (numDomainElements + hash_value);
-  //       }
-  //     }
+  // printf("Zero GID index: %d\n", RemoteGID_and_PID_host[0].first);
+  // printf("First GID index: %d\n", RemoteGID_and_PID_host[1].first);
+  // printf("Begin add to PIDList\n");
+  // for(int i = 0; i < NumRemoteColGIDs; ++i) {
+  //   GO GID_value = RemoteGID_and_PID_host[i].first;
+  //   int PID_value = RemoteGID_and_PID_host[i].second;
+  //   //printf("PIDList: %d\n", RemoteGID_and_PID_host[i].second);
+  //   // Is GID always > 0?
+  //   if(GID_value != 0) {
+  //     //printf("PIDList: %d, GIDList: %d\n", PID_value, GID_value);
+  //     RemoteGIDList.push_back(GID_value);
+  //     PIDList.push_back(PID_value);
   //   }
   // }
 
+  // UNORDERED MAP SERIAL
+  std::unordered_map<LO, bool> LocalGIDs_map;
+  std::unordered_map<GO, LO> RemoteGIDs_map;
+  for (size_t i = 0; i < numMyRows; ++i) {
+    for(size_t j = rowptr[i]; j < rowptr[i+1]; ++j) {
+      const GO GID = colind_GID[j];
+      // Check if GID matches a row GID
+      const LO LID = domainMap.getLocalElement (GID);
+      if(LID != -1) {
+        // auto outcome = LocalGIDs_map.insert(std::make_pair(LID, true));
+        // if(outcome.second) {
+        //   NumLocalColGIDs++;
+        // }
+        // colind_LID[j] = LID;
+      }
+      else {
+        auto outcome = RemoteGIDs_map.insert(std::make_pair(GID, NumRemoteColGIDs));
+        const LO hash_value = outcome.first->second;
+        if (outcome.second) { // This means its a new remote GID
+          const int PID = owningPIDs[j];
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            PID == -1, std::invalid_argument, prefix << "Cannot figure out if "
+            "PID is owned.");
+          colind_LID[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs);
+          RemoteGIDList.push_back (GID);
+          PIDList.push_back (PID);
+          NumRemoteColGIDs++;
+        }
+        else {
+          colind_LID[j] = static_cast<LO> (numDomainElements + hash_value);
+        }
+      }
+    }
+  }
+
+  // TRADITIONAL SERIAL
   // size_t NumLocalColGIDs = 0;
   // LO NumRemoteColGIDs = 0;
   // for (size_t i = 0; i < numMyRows; ++i) {
@@ -1257,12 +1263,70 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     RemotePermuteIDs[i]=i;
   }
 
+  // ---------------------------------------------------------------
+  printf("Beginning binsort\n");
+
+  // Make device views and host mirror views, then deep copy from host to device
+  auto PIDList_view = Details::create_mirror_view_from_raw_host_array(DT(), PIDList.getRawPtr(), PIDList.size(), true, "PIDList");
+  auto ColIndices_view = Details::create_mirror_view_from_raw_host_array(DT(), ColIndices.getRawPtr(), ColIndices.size(), true, "ColIndices");
+  auto RemotePermuteIDs_view = Details::create_mirror_view_from_raw_host_array(DT(), RemotePermuteIDs.getRawPtr(), RemotePermuteIDs.size(), true, "RemotePermuteIDs");
+
+  typename decltype(PIDList_view)::HostMirror PIDList_host(PIDList.getRawPtr(), PIDList.size());
+  typename decltype(ColIndices_view)::HostMirror ColIndices_host(ColIndices.getRawPtr(), ColIndices.size());
+  typename decltype(RemotePermuteIDs_view)::HostMirror RemotePermuteIDs_host(RemotePermuteIDs.getRawPtr(), RemotePermuteIDs.size());
+
+  Kokkos::deep_copy(PIDList_view, PIDList_host);
+  Kokkos::deep_copy(ColIndices_view, ColIndices_host);
+  Kokkos::deep_copy(RemotePermuteIDs_view, RemotePermuteIDs_host);
+
+  printf("Copied from host to view\n");
+
+  // Change to kokkos eventually
+  int PID_max = 0;
+  for(int i = 0; i < PIDList.size(); ++i) {
+    PID_max = std::max(PID_max, PIDList[i]);
+  }
+
+  // Apparently Kokkos binsort doesn't handle sorting slices of views properly, so we make a subview of ColIndices here to permute
+  Kokkos::View<GO*, execution_space> ColIndices_subview("ColIndices_subview", ColIndices_view.extent(0)-NumLocalColGIDs);
+  Kokkos::parallel_for(ColIndices_subview.extent(0), KOKKOS_LAMBDA(const int i){
+    ColIndices_subview[i] = ColIndices_view[i+NumLocalColGIDs];
+  });
+
+  using KeyViewType = decltype(PIDList_view);
+  using BinSortOp = Kokkos::BinOp1D<KeyViewType>;
+
+  // Make binOp with bins = PID_max + 1, min = 0, max = PID_max
+  BinSortOp binOp(PID_max+1, 0, PID_max);
+
+  printf("Beginning binsort, max value = %d, rank = %d\n", PID_max, myPID);
+
+  // Make permute vector on PIDList, sort using permutation
+  Kokkos::BinSort<KeyViewType, BinSortOp> bin_sort(PIDList_view, 0, PIDList_view.extent(0), binOp, false);
+  bin_sort.create_permute_vector(exec);
+  bin_sort.sort(exec, PIDList_view);
+  bin_sort.sort(exec, ColIndices_subview);
+  bin_sort.sort(exec, RemotePermuteIDs_view);
+
+  // Move permuted subview data back into ColIndices
+  Kokkos::parallel_for(ColIndices_subview.extent(0), KOKKOS_LAMBDA(const int i){
+    ColIndices_view[i+NumLocalColGIDs] = ColIndices_subview[i];
+  });
+
+  // Deep copy back from device to host
+  Kokkos::deep_copy(execution_space(), PIDList_host, PIDList_view);
+  Kokkos::deep_copy(execution_space(), ColIndices_host, ColIndices_view);
+  Kokkos::deep_copy(execution_space(), RemotePermuteIDs_host, RemotePermuteIDs_view);
+
+  printf("Reached end of binsort, array size = %d\n", PIDList_host.extent(0));
+  // ---------------------------------------------------------------
+
   // Sort External column indices so that all columns coming from a
   // given remote processor are contiguous.  This is a sort with two
   // auxilary arrays: RemoteColIndices and RemotePermuteIDs.
-  Tpetra::sort3 (PIDList.begin (), PIDList.end (),
-                 ColIndices.begin () + NumLocalColGIDs,
-                 RemotePermuteIDs.begin ());
+  // Tpetra::sort3 (PIDList_test.begin (), PIDList_test.end (),
+  //                ColIndices_test.begin () + NumLocalColGIDs,
+  //                RemotePermuteIDs_test.begin ());
 
   // Stash the RemotePIDs.
   //
