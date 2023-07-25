@@ -214,7 +214,7 @@ void TrustRegionAlgorithm<Real>::computeGradient(const Vector<Real> &x,
     Real gtol0 = scale0_*del;
     if (accept) gtol  = gtol0 + static_cast<Real>(1);
     else        gtol0 = scale0_*std::min(gnorm,del);
-    while ( gtol0 > gtol ) {
+    while ( gtol > gtol0 ) {
       gtol = gtol0;
       sobj.gradient(g,x,gtol); state_->ngrad++;
       dg.set(g.dual());
@@ -1010,7 +1010,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
   Real mold(sval+nval), nold(nval);
   Real snorm(0), snorm0(0), gnorm(0), gnorm0(0), gnorm2(0), rnorm(0);
   Real alpha(1), beta(1), lambdaTmp(1), lambda(1), eta(etaNCG_); //, gamma(1), gammaMax(1);
-  Real alphaMax(1), pred(0);
+  Real alphaMax(1), pred(0), lam1(1);
   Real sy(0), gg(0), sHs(0), gs(0), ds(0), ss(0);
   bool reset(true);
 
@@ -1026,6 +1026,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
   // Compute initial spectral step length
   lambdaTmp = t0_ / gmod.norm();
   lambda    = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
+  lam1      = lambda;
 
   // Compute Cauchy point via SPG
   pgstep(pwa1, pwa2, nobj, y, gmod.dual(), lambda, tol); // pwa1  = prox(x-lambda g), pwa2  = pwa1 - x
@@ -1053,7 +1054,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
     ss = snorm*snorm;
     ds = s.dot(pwa3);
     alphaMax = (-ds + std::sqrt(ds*ds + ss*(del*del - snorm0*snorm0)))/ss;
-    dbls(alpha,nold,pred,y,s,lambda,alphaMax,sHs,gs,nobj,pwa5);
+    dbls(alpha,nold,pred,y,s,lam1,alphaMax,sHs,gs,nobj,pwa5);
     
     //if (sHs <= safeguard) alpha = alphaMax;
     //else {
@@ -1139,6 +1140,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
       if (gs + nval - nold <= -(one - desPar_)*gnorm2){
         pwa4.axpy(-one,x);
         s.set(pwa5);
+        lam1  = one;
         reset = false;
       }
     }
@@ -1149,6 +1151,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
       nobj.update(pwa5,UpdateType::Trial);
       nval = nobj.value(pwa5,tol); state_->nnval++;
       gs   = gmod.apply(s);
+      lam1 = lambda;
       beta = zero;
     }
     snorm = s.norm();
