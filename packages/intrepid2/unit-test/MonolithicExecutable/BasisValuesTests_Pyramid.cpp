@@ -87,12 +87,20 @@ namespace
     
     for (int i=0; i<numPoints; i++)
     {
-      const double x = ESEAS_points[i][0] * 2 - 1;
-      const double y = ESEAS_points[i][1] * 2 - 1;
       const double z = ESEAS_points[i][2];
+      const double x = ESEAS_points[i][0] * 2 - 1 + z;
+      const double y = ESEAS_points[i][1] * 2 - 1 + z;
+      
       intrepid2_points_host(i,0) = x;
       intrepid2_points_host(i,1) = y;
       intrepid2_points_host(i,2) = z;
+      
+      // use Intrepid2's transformation function to convert back (a check on the transformation we just did above).
+      double x_eseas, y_eseas, z_eseas;
+      transformToESEASPyramid(x_eseas, y_eseas, z_eseas, x, y, z);
+      TEST_FLOATING_EQUALITY(ESEAS_points[i][0], x_eseas, relTol);
+      TEST_FLOATING_EQUALITY(ESEAS_points[i][1], y_eseas, relTol);
+      TEST_FLOATING_EQUALITY(ESEAS_points[i][2], z_eseas, relTol);
     }
     Kokkos::deep_copy(intrepid2_points, intrepid2_points_host);
     

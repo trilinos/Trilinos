@@ -26,6 +26,10 @@ SET_TARGET_PROPERTIES( Intrepid2_BasisEquivalenceTests PROPERTIES EXCLUDE_FROM_A
 TRIBITS_ADD_EXECUTABLE( BasisEquivalenceTests_Pyramid NOEXESUFFIX SOURCES BasisEquivalenceTests_Pyramid.cpp UnitTestMain.cpp )
 SET_TARGET_PROPERTIES( Intrepid2_BasisEquivalenceTests_Pyramid PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
+# BasisValuesTests_Pyramid
+TRIBITS_ADD_EXECUTABLE( BasisValuesTests_Pyramid NOEXESUFFIX SOURCES BasisValuesTests_Pyramid.cpp UnitTestMain.cpp )
+SET_TARGET_PROPERTIES( Intrepid2_BasisValuesTests_Pyramid PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
 # BasisEquivalenceTests_Wedge
 TRIBITS_ADD_EXECUTABLE( BasisEquivalenceTests_Wedge NOEXESUFFIX SOURCES BasisEquivalenceTests_Wedge.cpp UnitTestMain.cpp )
 SET_TARGET_PROPERTIES( Intrepid2_BasisEquivalenceTests_Wedge PROPERTIES EXCLUDE_FROM_ALL TRUE)
