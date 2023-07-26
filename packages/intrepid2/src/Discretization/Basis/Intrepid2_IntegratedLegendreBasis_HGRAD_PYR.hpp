@@ -504,14 +504,6 @@ namespace Intrepid2
           
           for (int edgeOrdinal=0; edgeOrdinal<numMixedEdges; edgeOrdinal++)
           {
-//            {
-//              // DEBUGGING
-//              if ((x == -1.0) && (y == -1.0) && (z == 0))
-//              {
-//                std::cout << "edgeOrdinal: " << edgeOrdinal << std::endl;
-//              }
-//            }
-            
             // edge 0,2 --> a=1, b=2
             // edge 1,3 --> a=2, b=1
             int a = (edgeOrdinal % 2 == 0) ? 1 : 2;
@@ -527,19 +519,7 @@ namespace Intrepid2
             for (int i=2; i<=polyOrder_; i++)
             {
               // grad (mu[c][b-1] * Li(i)) = grad (mu[c][b-1]) * Li(i) + mu[c][b-1] * grad Li(i)
-              
               const auto & R_i_minus_1 = L_i_dt(i);
-//              {
-//                // DEBUGGING
-//                if ((x == -1.0) && (y == -1.0) && (z == 0))
-//                {
-//                  std::cout << "L_i(i):      " << L_i(i) << std::endl;
-//                  std::cout << "mu[c][b-1]:  " << mu[c][b-1] << std::endl;
-//                  std::cout << "nu[0][a-1]:  " << nu[0][a-1] << std::endl;
-//                  std::cout << "nu[1][a-1]:  " << nu[1][a-1] << std::endl;
-//                  std::cout << "R_i_minus_1: " << R_i_minus_1 << std::endl;
-//                }
-//              }
               
               for (int d=0; d<3; d++)
               {
@@ -547,16 +527,6 @@ namespace Intrepid2
                 
                 OutputScalar grad_Li_d = P_i_minus_1(i-1) * nuGrad[1][a-1][d] + R_i_minus_1 * (nuGrad[0][a-1][d] + nuGrad[1][a-1][d]);
                 output_(fieldOrdinalOffset,pointOrdinal,d) = muGrad[c][b-1][d] * L_i(i) + mu[c][b-1] * grad_Li_d;
-//                {
-//                  // DEBUGGING
-//                  if ((x == -1.0) && (y == -1.0) && (z == 0))
-//                  {
-//                    std::cout << "muGrad[c][b-1][" << d << "]: " << muGrad[c][b-1][d] << std::endl;
-//                    std::cout << "grad_Li_" << d << ": " << grad_Li_d << std::endl;
-//                    std::cout << "nuGrad[0][a-1]["<< d << "]: " << nuGrad[0][a-1][d] << std::endl;
-//                    std::cout << "nuGrad[1][a-1]["<< d << "]: " << nuGrad[1][a-1][d] << std::endl;
-//                  }
-//                }
               }
               fieldOrdinalOffset++;
             }
