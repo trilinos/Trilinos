@@ -49,7 +49,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
-#include <Kokkos_Core.hpp>
+#include "Kokkos_Core.hpp"
 
 #include "Tpetra_Core.hpp"
 
@@ -203,7 +203,7 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   // displs are in elements, so the displs are correct since MPI_BYTE 
   // matches type in bufs, alltoallv calls as calculated above
   Kokkos::View<char *, typename Device::memory_space>
-    sbuf("sbuf", sdispl), exp("exp", rdispl), act("act", rdispl);
+    sbuf("sbuf", sdispl), exp("exp", rdispl), act("act", nbrrdispl);
 
   // fill send buf
   Kokkos::parallel_for(sbuf.size(), KOKKOS_LAMBDA (size_t i) {sbuf(i) = i;});
