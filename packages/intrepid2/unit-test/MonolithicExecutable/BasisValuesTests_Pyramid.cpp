@@ -130,9 +130,6 @@ namespace
     using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_PYR;
     using DeviceType = DefaultTestDeviceType;
     
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
     const ordinal_type p = 9;
     
     HierarchicalBasis hierarchicalBasis(p);
@@ -149,9 +146,9 @@ namespace
     
     for (int i=0; i<numPoints; i++)
     {
-      const double x = ESEAS_points[i][0] * 2 - 1;
-      const double y = ESEAS_points[i][1] * 2 - 1;
       const double z = ESEAS_points[i][2];
+      const double x = ESEAS_points[i][0] * 2 - 1 + z;
+      const double y = ESEAS_points[i][1] * 2 - 1 + z;
       intrepid2_points_host(i,0) = x;
       intrepid2_points_host(i,1) = y;
       intrepid2_points_host(i,2) = z;
