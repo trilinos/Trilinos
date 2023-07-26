@@ -420,11 +420,12 @@ getEquispacedLatticePyramid( Kokkos::DynRankView<pointValueType,pointProperties.
   ordinal_type cur = 0;
 
   for (ordinal_type i=offset;i<=order-offset;i++) { // z dimension (goes from 0 to 1)
-    for (ordinal_type j=offset;j<=order-i-offset;j++) { // y (goes from -1 to 1)
-      for (ordinal_type k=offset;k<=order-i-offset;k++) { // x (goes from -1 to 1)
-        pointsHost(cur,0) = 2 * k * h - 1.;
-        pointsHost(cur,1) = 2 * j * h - 1.;
-        pointsHost(cur,2) = i * h;
+    pointValueType z = i * h;
+    for (ordinal_type j=offset;j<=order-i-offset;j++) { // y (goes from -(1-z) to 1-z)
+      for (ordinal_type k=offset;k<=order-i-offset;k++) { // x (goes from -(1-z) to 1-z)
+        pointsHost(cur,0) = (2 * k * h - 1.) * (1-z);
+        pointsHost(cur,1) = (2 * j * h - 1.) * (1-z);
+        pointsHost(cur,2) = z;
         cur++;
       }
     }
