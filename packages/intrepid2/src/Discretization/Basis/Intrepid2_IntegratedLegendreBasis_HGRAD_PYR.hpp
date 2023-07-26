@@ -43,6 +43,12 @@
 /** \file   Intrepid2_IntegratedLegendreBasis_HGRAD_PYR.hpp
     \brief  H(grad) basis on the pyramid based on integrated Legendre polynomials.
     \author Created by N.V. Roberts.
+ 
+ Note that although this basis is derived from integrated Legendre polynomials, it is not itself a polynomial basis, but a set of rational functions.  The vertex functions are nodal at the vertices; edge functions associated with one edge vanish on all others; face functions associated with a given face vanish on other faces.  Similarly, the functions associated with the interior vanish on the boundary of the element.
+ 
+ The construction is also hierarchical, in the sense that the basis for p-1 is included in the basis for p.
+ 
+ Intrepid2 has a pre-existing lowest-order HGRAD basis defined on the pyramid, found in Intrepid2_HGRAD_PYR_C1_FEM.hpp; this agrees precisely with this basis when p=1.
  */
 
 #ifndef Intrepid2_IntegratedLegendreBasis_HGRAD_PYR_h
@@ -63,6 +69,128 @@
 
 namespace Intrepid2
 {
+  /// Compute various affine-like coordinates on the pyramid.  See Fuentes et al, Appendix E.9 for definitions.
+  template<class PointScalar>
+  KOKKOS_INLINE_FUNCTION
+  void affinePyramid(Kokkos::Array<PointScalar,5>                                   &lambda,
+                     Kokkos::Array<Kokkos::Array<PointScalar,3>,5>                  &lambdaGrad,
+                     Kokkos::Array<Kokkos::Array<PointScalar,3>,2>                  &mu,
+                     Kokkos::Array<Kokkos::Array<Kokkos::Array<PointScalar,3>,3>,2> &muGrad,
+                     Kokkos::Array<Kokkos::Array<PointScalar,2>,3>                  &nu,
+                     Kokkos::Array<Kokkos::Array<Kokkos::Array<PointScalar,3>,2>,3> &nuGrad,
+                     Kokkos::Array<PointScalar,3>  &coords)
+  {
+    const auto & x = coords[0];
+    const auto & y = coords[1];
+    const auto & z = coords[2];
+    nu[0][0]  = 1. - x - z; // nu_0^{\zeta,\xi_1}
+    nu[0][1]  = 1. - y - z; // nu_0^{\zeta,\xi_2}
+    nu[1][0]  =      x    ; // nu_1^{\zeta,\xi_1}
+    nu[1][1]  =      y    ; // nu_1^{\zeta,\xi_2}
+    nu[2][0]  =      z    ; // nu_2^{\zeta,\xi_1}
+    nu[2][1]  =      z    ; // nu_2^{\zeta,\xi_2}
+    
+    nuGrad[0][0][0]  = -1. ; // nu_0^{\zeta,\xi_1}_dxi_1
+    nuGrad[0][0][1]  =  0. ; // nu_0^{\zeta,\xi_1}_dxi_2
+    nuGrad[0][0][2]  = -1. ; // nu_0^{\zeta,\xi_1}_dzeta
+    
+    nuGrad[0][1][0]  =  0. ; // nu_0^{\zeta,\xi_2}_dxi_1
+    nuGrad[0][1][1]  = -1. ; // nu_0^{\zeta,\xi_2}_dxi_2
+    nuGrad[0][1][2]  = -1. ; // nu_0^{\zeta,\xi_2}_dzeta
+    
+    nuGrad[1][0][0]  =  1. ; // nu_1^{\zeta,\xi_1}_dxi_1
+    nuGrad[1][0][1]  =  0. ; // nu_1^{\zeta,\xi_1}_dxi_2
+    nuGrad[1][0][2]  =  0. ; // nu_1^{\zeta,\xi_1}_dzeta
+    
+    nuGrad[1][1][0]  =  0. ; // nu_1^{\zeta,\xi_2}_dxi_1
+    nuGrad[1][1][1]  =  1. ; // nu_1^{\zeta,\xi_2}_dxi_2
+    nuGrad[1][1][2]  =  0. ; // nu_1^{\zeta,\xi_2}_dzeta
+    
+    nuGrad[2][0][0]  =  0. ; // nu_2^{\zeta,\xi_1}_dxi_1
+    nuGrad[2][0][1]  =  0. ; // nu_2^{\zeta,\xi_1}_dxi_2
+    nuGrad[2][0][2]  =  1. ; // nu_2^{\zeta,\xi_1}_dzeta
+    
+    nuGrad[2][1][0]  =  0. ; // nu_2^{\zeta,\xi_2}_dxi_1
+    nuGrad[2][1][1]  =  0. ; // nu_2^{\zeta,\xi_2}_dxi_2
+    nuGrad[2][1][2]  =  1. ; // nu_2^{\zeta,\xi_2}_dzeta
+    
+    // (1 - z) goes in denominator -- so we check for 1-z=0
+    auto & muZ_0 = mu[0][2];
+    auto & muZ_1 = mu[1][2];
+    const double epsilon = 1e-12;
+    muZ_0 = (fabs(1.-z) > epsilon) ? 1. - z :      epsilon;
+    muZ_1 = (fabs(1.-z) > epsilon) ?      z : 1. - epsilon;
+    PointScalar scaling = 1. / muZ_0;
+    mu[0][0]  = 1. - x * scaling;
+    mu[0][1]  = 1. - y * scaling;
+    mu[1][0]  =      x * scaling;
+    mu[1][1]  =      y * scaling;
+    
+    PointScalar scaling2 = scaling * scaling;
+    muGrad[0][0][0]  =  -scaling     ;
+    muGrad[0][0][1]  =     0.        ;
+    muGrad[0][0][2]  = - x * scaling2;
+    
+    muGrad[0][1][0]  =     0.       ;
+    muGrad[0][1][1]  =  -scaling    ;
+    muGrad[0][1][2]  = -y * scaling2;
+    
+    muGrad[0][2][0]  =     0.   ;
+    muGrad[0][2][1]  =     0.   ;
+    muGrad[0][2][2]  =    -1.   ;
+    
+    muGrad[1][0][0]  =  scaling     ;
+    muGrad[1][0][1]  =     0.       ;
+    muGrad[1][0][2]  =  x * scaling2;
+    
+    muGrad[1][1][0]  =     0.       ;
+    muGrad[1][1][1]  =   scaling    ;
+    muGrad[1][1][2]  =  y * scaling2;
+    
+    muGrad[1][2][0]  =     0.   ;
+    muGrad[1][2][1]  =     0.   ;
+    muGrad[1][2][2]  =     1.   ;
+    
+    lambda[0] = nu[0][0] * mu[0][1];
+    lambda[1] = nu[0][1] * mu[1][0];
+    lambda[2] = nu[1][0] * mu[1][1];
+    lambda[3] = nu[1][1] * mu[0][0];
+    lambda[4] = z;
+    
+    for (int d=0; d<3; d++)
+    {
+      lambdaGrad[0][d] = nu[0][0] * muGrad[0][1][d] + nuGrad[0][0][d] * mu[0][1];
+      lambdaGrad[1][d] = nu[0][1] * muGrad[1][0][d] + nuGrad[0][1][d] * mu[1][0];
+      lambdaGrad[2][d] = nu[1][0] * muGrad[1][1][d] + nuGrad[1][0][d] * mu[1][1];
+      lambdaGrad[3][d] = nu[1][1] * muGrad[0][0][d] + nuGrad[1][1][d] * mu[0][0];
+    }
+    lambdaGrad[4][0] = 0;
+    lambdaGrad[4][1] = 0;
+    lambdaGrad[4][2] = 1;
+  }
+
+  /// Transforms from the Intrepid2 pyramid, centered at the origin with base [-1,1]^2 and height 1, to ESEAS pyramid, with base [0,1]^2, height 1, with its top vertex at (0,0,1).
+  template<class PointScalar>
+  KOKKOS_INLINE_FUNCTION
+  void transformToESEASPyramid(      PointScalar &x_eseas,       PointScalar &y_eseas,       PointScalar &z_eseas,
+                               const PointScalar &x_int2,  const PointScalar &y_int2,  const PointScalar &z_int2)
+  {
+    x_eseas = (x_int2 + 1. - z_int2) / 2.;
+    y_eseas = (y_int2 + 1. - z_int2) / 2.;
+    z_eseas = z_int2;
+  }
+
+  /// Transforms gradients computed on the ESEAS pyramid to gradients on the Intrepid2 pyramid.
+  template<class OutputScalar>
+  KOKKOS_INLINE_FUNCTION
+  void transformFromESEASPyramidGradient(      OutputScalar &dx_int2,        OutputScalar &dy_int2,        OutputScalar &dz_int2,
+                                         const OutputScalar &dx_eseas, const OutputScalar &dy_eseas, const OutputScalar &dz_eseas)
+  {
+    dx_int2 = dx_eseas / 2.;
+    dy_int2 = dy_eseas / 2.;
+    dz_int2 = dz_eseas - dx_int2 - dy_int2;
+  }
+
   /** \class  Intrepid2::Hierarchical_HGRAD_PYR_Functor
       \brief  Functor for computing values for the IntegratedLegendreBasis_HGRAD_PYR class.
    
@@ -169,27 +297,21 @@ namespace Intrepid2
       
       // Intrepid2 uses (-1,1)^2 for x,y
       // ESEAS uses (0,1)^2
-      // TODO: below, scale x,y derivatives appropriately
       // (Can look at what we do on the HGRAD_LINE for reference; there's a similar difference for line topology.)
       
-      Kokkos::Array<OutputScalar,3> coords {(x+1.)/2.,(y+1.)/2.,z}; // map x,y coordinates from (-1,1)^2 to (0,1)^2
+      Kokkos::Array<PointScalar,3> coords;
+      transformToESEASPyramid<>(coords[0], coords[1], coords[2], x, y, z); // map x,y coordinates from (-z,z)^2 to (0,z)^2
       
       // pyramid "affine" coordinates and gradients get stored in lambda, lambdaGrad:
       using Kokkos::Array;
-      Array<OutputScalar,5> lambda;
-      Array<Kokkos::Array<OutputScalar,3>,5> lambdaGrad;
-//      computeLambda    (    lambda, coords);
-//      computeLambdaGrad(lambdaGrad, coords);
+      Array<PointScalar,5> lambda;
+      Array<Kokkos::Array<PointScalar,3>,5> lambdaGrad;
       
-      Array<Array<OutputScalar,3>,2> mu;
-      Array<Array<Array<OutputScalar,3>,3>,2> muGrad;
-//      computeMu    (    mu, coords);
-//      computeMuGrad(muGrad, coords);
+      Array<Array<PointScalar,3>,2> mu;
+      Array<Array<Array<PointScalar,3>,3>,2> muGrad;
       
-      Array<Array<OutputScalar,2>,3> nu;
-      Array<Array<Array<OutputScalar,3>,2>,3> nuGrad;
-//      computeNu    (    nu, coords);
-//      computeNuGrad(nuGrad, coords);
+      Array<Array<PointScalar,2>,3> nu;
+      Array<Array<Array<PointScalar,3>,2>,3> nuGrad;
       
       affinePyramid(lambda, lambdaGrad, mu, muGrad, nu, nuGrad, coords);
       
@@ -643,12 +765,18 @@ namespace Intrepid2
             }
           }
 
-          
           for (int basisOrdinal=0; basisOrdinal<numFields_; basisOrdinal++)
           {
-            // scale x, y derivatives by 0.5 to account for the ref space transformation: Intrepid2 uses (-1,1)^2; ESEAS uses (0,1)^2
-            output_(basisOrdinal,pointOrdinal,0) *= 0.5;
-            output_(basisOrdinal,pointOrdinal,1) *= 0.5;
+            // transform derivatives to account for the ref space transformation: Intrepid2 uses (-z,z)^2; ESEAS uses (0,z)^2
+            const auto dx_eseas = output_(basisOrdinal,pointOrdinal,0);
+            const auto dy_eseas = output_(basisOrdinal,pointOrdinal,1);
+            const auto dz_eseas = output_(basisOrdinal,pointOrdinal,2);
+            
+            auto &dx_int2 = output_(basisOrdinal,pointOrdinal,0);
+            auto &dy_int2 = output_(basisOrdinal,pointOrdinal,1);
+            auto &dz_int2 = output_(basisOrdinal,pointOrdinal,2);
+            
+            transformFromESEASPyramidGradient(dx_int2, dy_int2, dz_int2, dx_eseas, dy_eseas, dz_eseas);
           }
           
         } // end OPERATOR_GRAD block
@@ -668,104 +796,6 @@ namespace Intrepid2
           // unsupported operator type
           device_assert(false);
       }
-    }
-    
-    KOKKOS_INLINE_FUNCTION
-    void affinePyramid(Kokkos::Array<OutputScalar,5>                                   &lambda,
-                       Kokkos::Array<Kokkos::Array<OutputScalar,3>,5>                  &lambdaGrad,
-                       Kokkos::Array<Kokkos::Array<OutputScalar,3>,2>                  &mu,
-                       Kokkos::Array<Kokkos::Array<Kokkos::Array<OutputScalar,3>,3>,2> &muGrad,
-                       Kokkos::Array<Kokkos::Array<OutputScalar,2>,3>                  &nu,
-                       Kokkos::Array<Kokkos::Array<Kokkos::Array<OutputScalar,3>,2>,3> &nuGrad,
-                       Kokkos::Array<PointScalar,3>  &coords) const
-    {
-      const auto & x = coords[0];
-      const auto & y = coords[1];
-      const auto & z = coords[2];
-      nu[0][0]  = 1. - x - z; // nu_0^{\zeta,\xi_1}
-      nu[0][1]  = 1. - y - z; // nu_0^{\zeta,\xi_2}
-      nu[1][0]  =      x    ; // nu_1^{\zeta,\xi_1}
-      nu[1][1]  =      y    ; // nu_1^{\zeta,\xi_2}
-      nu[2][0]  =      z    ; // nu_2^{\zeta,\xi_1}
-      nu[2][1]  =      z    ; // nu_2^{\zeta,\xi_2}
-      
-      nuGrad[0][0][0]  = -1. ; // nu_0^{\zeta,\xi_1}_dxi_1
-      nuGrad[0][0][1]  =  0. ; // nu_0^{\zeta,\xi_1}_dxi_2
-      nuGrad[0][0][2]  = -1. ; // nu_0^{\zeta,\xi_1}_dzeta
-      
-      nuGrad[0][1][0]  =  0. ; // nu_0^{\zeta,\xi_2}_dxi_1
-      nuGrad[0][1][1]  = -1. ; // nu_0^{\zeta,\xi_2}_dxi_2
-      nuGrad[0][1][2]  = -1. ; // nu_0^{\zeta,\xi_2}_dzeta
-      
-      nuGrad[1][0][0]  =  1. ; // nu_1^{\zeta,\xi_1}_dxi_1
-      nuGrad[1][0][1]  =  0. ; // nu_1^{\zeta,\xi_1}_dxi_2
-      nuGrad[1][0][2]  =  0. ; // nu_1^{\zeta,\xi_1}_dzeta
-      
-      nuGrad[1][1][0]  =  0. ; // nu_1^{\zeta,\xi_2}_dxi_1
-      nuGrad[1][1][1]  =  1. ; // nu_1^{\zeta,\xi_2}_dxi_2
-      nuGrad[1][1][2]  =  0. ; // nu_1^{\zeta,\xi_2}_dzeta
-      
-      nuGrad[2][0][0]  =  0. ; // nu_2^{\zeta,\xi_1}_dxi_1
-      nuGrad[2][0][1]  =  0. ; // nu_2^{\zeta,\xi_1}_dxi_2
-      nuGrad[2][0][2]  =  1. ; // nu_2^{\zeta,\xi_1}_dzeta
-      
-      nuGrad[2][1][0]  =  0. ; // nu_2^{\zeta,\xi_2}_dxi_1
-      nuGrad[2][1][1]  =  0. ; // nu_2^{\zeta,\xi_2}_dxi_2
-      nuGrad[2][1][2]  =  1. ; // nu_2^{\zeta,\xi_2}_dzeta
-      
-      // (1 - z) goes in denominator -- so we check for 1-z=0
-      auto & muZ_0 = mu[0][2];
-      auto & muZ_1 = mu[1][2];
-      const double epsilon = 1e-12;
-      muZ_0 = (fabs(1.-z) > epsilon) ? 1. - z :      epsilon;
-      muZ_1 = (fabs(1.-z) > epsilon) ?      z : 1. - epsilon;
-      PointScalar scaling = 1. / muZ_0;
-      mu[0][0]  = 1. - x * scaling;
-      mu[0][1]  = 1. - y * scaling;
-      mu[1][0]  =      x * scaling;
-      mu[1][1]  =      y * scaling;
-      
-      PointScalar scaling2 = scaling * scaling;
-      muGrad[0][0][0]  =  -scaling     ;
-      muGrad[0][0][1]  =     0.        ;
-      muGrad[0][0][2]  = - x * scaling2;
-      
-      muGrad[0][1][0]  =     0.       ;
-      muGrad[0][1][1]  =  -scaling    ;
-      muGrad[0][1][2]  = -y * scaling2;
-      
-      muGrad[0][2][0]  =     0.   ;
-      muGrad[0][2][1]  =     0.   ;
-      muGrad[0][2][2]  =    -1.   ;
-      
-      muGrad[1][0][0]  =  scaling     ;
-      muGrad[1][0][1]  =     0.       ;
-      muGrad[1][0][2]  =  x * scaling2;
-      
-      muGrad[1][1][0]  =     0.       ;
-      muGrad[1][1][1]  =   scaling    ;
-      muGrad[1][1][2]  =  y * scaling2;
-      
-      muGrad[1][2][0]  =     0.   ;
-      muGrad[1][2][1]  =     0.   ;
-      muGrad[1][2][2]  =     1.   ;
-      
-      lambda[0] = nu[0][0] * mu[0][1];
-      lambda[1] = nu[0][1] * mu[1][0];
-      lambda[2] = nu[1][0] * mu[1][1];
-      lambda[3] = nu[1][1] * mu[0][0];
-      lambda[4] = z;
-      
-      for (int d=0; d<3; d++)
-      {
-        lambdaGrad[0][d] = nu[0][0] * muGrad[0][1][d] + nuGrad[0][0][d] * mu[0][1];
-        lambdaGrad[1][d] = nu[0][1] * muGrad[1][0][d] + nuGrad[0][1][d] * mu[1][0];
-        lambdaGrad[2][d] = nu[1][0] * muGrad[1][1][d] + nuGrad[1][0][d] * mu[1][1];
-        lambdaGrad[3][d] = nu[1][1] * muGrad[0][0][d] + nuGrad[1][1][d] * mu[0][0];
-      }
-      lambdaGrad[4][0] = 0;
-      lambdaGrad[4][1] = 0;
-      lambdaGrad[4][2] = 1;
     }
     
     // Provide the shared memory capacity.
