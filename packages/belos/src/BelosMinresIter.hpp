@@ -36,9 +36,9 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp" 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -58,15 +58,16 @@ namespace Belos {
 ///
 /// \ingroup belos_solver_framework
 ///
-template<class ScalarType, class MV, class OP>
-class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
 
   public:
 
   //
   // Convenience typedefs
   //
-  typedef MultiVecTraits< ScalarType, MV > MVT;
+  typedef MultiVecTraits< ScalarType, MV, DM > MVT;
+  typedef DenseMatTraits<ScalarType, DM> DMT; 
   typedef OperatorTraits< ScalarType, MV, OP > OPT;
   typedef Teuchos::ScalarTraits< ScalarType > SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
@@ -85,7 +86,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   ///
   MinresIter (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > >& problem,
 	      const Teuchos::RCP< OutputManager< ScalarType > > &        printer,
-	      const Teuchos::RCP< StatusTest< ScalarType, MV, OP > >&    tester,
+	      const Teuchos::RCP< StatusTest< ScalarType, MV, OP, DM> >&    tester,
 	      const Teuchos::ParameterList& params);
 
   //! Destructor
@@ -230,7 +231,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   //
   const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > > lp_;
   const Teuchos::RCP< OutputManager< ScalarType > >         om_;
-  const Teuchos::RCP< StatusTest< ScalarType, MV, OP > >    stest_;
+  const Teuchos::RCP< StatusTest< ScalarType, MV, OP, DM > >    stest_;
 
 
   /// \brief Whether the solver has been initialized
@@ -277,22 +278,16 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   Teuchos::RCP< MV > W2_;
 
   /// Coefficient in the MINRES iteration
-  ///
-  /// \note If we could be sure that the preconditioner is Hermitian
-  ///   in complex arithmetic (which must be true anyway, in order for
-  ///   MINRES to work), we could make beta1_ a MagnitudeType.  This
-  ///   would certainly be cleaner, considering it will be copied into
-  ///   beta (which is of MagnitudeType).
-  Teuchos::SerialDenseMatrix<int,ScalarType> beta1_;
+  Teuchos::RCP<DM> beta1_;
 
 };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  MinresIter<ScalarType,MV,OP>::MinresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  MinresIter<ScalarType,MV,OP,DM>::MinresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                                                    const Teuchos::ParameterList &/* params */ ):
     lp_(problem),
     om_(printer),
@@ -306,8 +301,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup the state storage.
-  template <class ScalarType, class MV, class OP>
-  void MinresIter<ScalarType,MV,OP>::setStateSize ()
+  template <class ScalarType, class MV, class OP, class DM>
+  void MinresIter<ScalarType,MV,OP,DM>::setStateSize ()
   {
     if (!stateStorageInitialized_) {
 
@@ -344,8 +339,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void MinresIter<ScalarType,MV,OP>::initializeMinres(const MinresIterationState<ScalarType,MV> & newstate)
+  template <class ScalarType, class MV, class OP, class DM>
+  void MinresIter<ScalarType,MV,OP,DM>::initializeMinres(const MinresIterationState<ScalarType,MV> & newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_)
@@ -399,21 +394,22 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     }
 
     // beta1_ = b'*y;
-    beta1_ = Teuchos::SerialDenseMatrix<int,ScalarType>( 1, 1 );
-    MVT::MvTransMv( one, *newstate.Y, *Y_, beta1_ );
 
-    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < m_zero,
+    beta1_ = DMT::Create(1,1);
+    MVT::MvTransMv( one, *newstate.Y, *Y_, *beta1_ );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(DMT::Value(*beta1_,0,0)) < m_zero,
                         std::invalid_argument,
                         "The preconditioner is not positive definite." );
 
-    if( SCT::magnitude(beta1_(0,0)) == m_zero )
+    if( SCT::magnitude(DMT::Value(*beta1_,0,0)) == m_zero )
     {
         // X = 0
         Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
         MVT::MvInit( *cur_soln_vec );
     }
 
-    beta1_(0,0) = SCT::squareroot( beta1_(0,0) );
+    DMT::Value(*beta1_,0,0) = SCT::squareroot( DMT::Value(*beta1_,0,0) );
 
     // The solver is initialized
     initialized_ = true;
@@ -422,8 +418,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void MinresIter<ScalarType,MV,OP>::iterate()
+  template <class ScalarType, class MV, class OP, class DM>
+  void MinresIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -438,9 +434,11 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     const MagnitudeType m_zero = SMT::zero();
 
     // Allocate memory for scalars.
-    Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> beta( beta1_ );
-    phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( beta1_(0,0) );
+    Teuchos::RCP<DM> alpha = DMT::Create(1,1); 
+    Teuchos::RCP<DM> beta = DMT::Create(1,1); 
+    DMT::Assign(*beta,*beta1_); //TODO Should we make a DMT copy constructor as with old version below?
+    //Teuchos::SerialDenseMatrix<int,ScalarType> beta( beta1_ );
+    phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( DMT::Value(*beta1_,0,0) );
 
     // Initialize a few variables.
     ScalarType oldBeta = zero;
@@ -478,19 +476,19 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
       // Normalize previous vector.
       //   v = y / beta(0,0);
-      MVT::MvAddMv (one / beta(0,0), *Y_, zero, *Y_, *V);
+      MVT::MvAddMv (one / DMT::Value(*beta,0,0), *Y_, zero, *Y_, *V);
 
       // Apply operator.
       lp_->applyOp (*V, *Y_);
 
       if (iter_ > 1)
-	MVT::MvAddMv (one, *Y_, -beta(0,0)/oldBeta, *R1_, *Y_);
+        MVT::MvAddMv (one, *Y_, -DMT::Value(*beta,0,0)/oldBeta, *R1_, *Y_);
 
       // alpha := dot(V, Y_)
-      MVT::MvTransMv (one, *V, *Y_, alpha);
+      MVT::MvTransMv (one, *V, *Y_, *alpha);
 
       // y := y - alpha/beta r2
-      MVT::MvAddMv (one, *Y_, -alpha(0,0)/beta(0,0), *R2_, *Y_);
+      MVT::MvAddMv (one, *Y_, -DMT::Value(*alpha,0,0)/DMT::Value(*beta,0,0), *R2_, *Y_);
 
       // r1 = r2;
       // r2 = y;
@@ -515,8 +513,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       }
 
       // Get new beta.
-      oldBeta = beta(0,0);
-      MVT::MvTransMv( one, *R2_, *Y_, beta );
+      oldBeta = DMT::Value(*beta,0,0);
+      MVT::MvTransMv( one, *R2_, *Y_, *beta );
 
       // Intercept beta <= 0.
       //
@@ -528,12 +526,12 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // algebra library to compute a posteriori rounding error bounds
       // for the inner product, and then changing
       // Belos::MultiVecTraits to make this information available).
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) < m_zero,
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(DMT::Value(*beta,0,0)) < m_zero,
                           MinresIterateFailure,
                           "Belos::MinresIter::iterate(): Encountered negative "
-			  "value " << beta(0,0) << " for r2^H*M*r2 at itera"
+			  "value " << DMT::Value(*beta,0,0) << " for r2^H*M*r2 at itera"
 			  "tion " << iter_ << ": MINRES cannot continue." );
-      beta(0,0) = SCT::squareroot( beta(0,0) );
+      DMT::Value(*beta,0,0) = SCT::squareroot( DMT::Value(*beta,0,0) );
 
       // Apply previous rotation Q_{k-1} to get
       //
@@ -541,13 +539,13 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       //    [gbar_k  dbar_{k+1} ]   [-sn cs][alpha_k beta_{k+1}].
       //
       oldeps = epsln;
-      delta  = cs*dbar + sn*alpha(0,0);
-      gbar   = sn*dbar - cs*alpha(0,0);
-      epsln  =           sn*beta(0,0);
-      dbar   =         - cs*beta(0,0);
+      delta  = cs*dbar + sn*DMT::Value(*alpha,0,0);
+      gbar   = sn*dbar - cs*DMT::Value(*alpha,0,0);
+      epsln  =           sn*DMT::Value(*beta,0,0);
+      dbar   =         - cs*DMT::Value(*beta,0,0);
 
       // Compute the next plane rotation Q_k.
-      this->symOrtho(gbar, beta(0,0), &cs, &sn, &gamma);
+      this->symOrtho(gbar, DMT::Value(*beta,0,0), &cs, &sn, &gamma);
 
       phi    = cs * phibar_; // phi_k
       phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( sn * phibar_ ); // phibar_{k+1}
@@ -578,10 +576,10 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   //   r = norm([a b]);
   //   c = a / r;
   //   s = b / r;
-  template <class ScalarType, class MV, class OP>
-  void MinresIter<ScalarType,MV,OP>::symOrtho( ScalarType a, ScalarType b,
-                                               ScalarType *c, ScalarType *s, ScalarType *r
-                                             )
+  template <class ScalarType, class MV, class OP, class DM>
+  void MinresIter<ScalarType,MV,OP,DM>::symOrtho( ScalarType a, ScalarType b,
+                                                  ScalarType *c, ScalarType *s, ScalarType *r
+                                                )
   {
     const ScalarType one = SCT::one();
     const ScalarType zero = SCT::zero();
