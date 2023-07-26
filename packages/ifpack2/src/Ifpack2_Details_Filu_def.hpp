@@ -145,15 +145,30 @@ computeLocalPrec()
   localPrec2_->verify(*localPrec3_, "compute_unblocked_vs_orig");
   localPrec_->verify(*localPrec2_, "compute_blocked_vs_unblocked");
   std::cout << "JGF VERIFICATION OF COMPUTE COMPLETE!" << std::endl;
-  exit(0);
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 {
+  ImplScalarArray x1("x1", x.extent(0)), x2("x2", x.extent(0)),
+    y1("y1", y.extent(0)), y2("y2", y.extent(0));
+  Kokkos::deep_copy(x1, x);
+  Kokkos::deep_copy(x2, x);
+  Kokkos::deep_copy(y1, y);
+  Kokkos::deep_copy(y2, y);
+
   localPrec_->apply(x, y);
-  localPrec2_->apply(x, y);
+  localPrec2_->apply(x1, y1);
+  localPrec3_->apply(x2, y2);
+
+  localPrec2_->verify(*localPrec3_, "apply_unblocked_vs_orig");
+  localPrec_->verify(*localPrec2_, "apply_blocked_vs_unblocked");
+  compare_views(x, x1, "x1");
+  compare_views(x, x2, "x2");
+  compare_views(y, y1, "y1");
+  compare_views(y, y2, "y2");
+
   //since this may be applied to multiple vectors, add to applyTime_ instead of setting it
   this->applyTime_ += localPrec_->getApplyTime();
 }
