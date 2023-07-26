@@ -152,6 +152,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ILUTSingleProcessUnitTests
+  SOURCES
+    Ifpack2_UnitTestSingleProcessILUT.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
 IF(Tpetra_INST_DOUBLE AND ${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     BlockTriDiContainerUnitAndPerfTests
