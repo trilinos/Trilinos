@@ -32,7 +32,6 @@ IF (${PACKAGE_NAME}_ENABLE_mpi_advance)
     MpiAdvance_NeighborAllToAllW
     SOURCES
       NeighborAllToAllW.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM mpi
     NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
