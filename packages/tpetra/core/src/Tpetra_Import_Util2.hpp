@@ -1287,36 +1287,28 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     PID_max = std::max(PID_max, PIDList[i]);
   }
 
-  // Apparently Kokkos binsort doesn't handle sorting slices of views properly, so we make a subview of ColIndices here to permute
-  Kokkos::View<GO*, execution_space> ColIndices_subview("ColIndices_subview", ColIndices_view.extent(0)-NumLocalColGIDs);
-  Kokkos::parallel_for(ColIndices_subview.extent(0), KOKKOS_LAMBDA(const int i){
-    ColIndices_subview[i] = ColIndices_view[i+NumLocalColGIDs];
-  });
+  using KeyViewTypePID = decltype(PIDList_view);
+  using BinSortOpPID = Kokkos::BinOp1D<KeyViewTypePID>;
 
-  using KeyViewType = decltype(PIDList_view);
-  using BinSortOp = Kokkos::BinOp1D<KeyViewType>;
+  // Make a subview of ColIndices for remote GID sorting
+  auto ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs, ColIndices_view.extent(0)));
 
   // Make binOp with bins = PID_max + 1, min = 0, max = PID_max
-  BinSortOp binOp(PID_max+1, 0, PID_max);
+  BinSortOpPID binOp3(PID_max+1, 0, PID_max);
 
   printf("Beginning binsort, max value = %d, rank = %d\n", PID_max, myPID);
 
   // Make permute vector on PIDList, sort using permutation
-  Kokkos::BinSort<KeyViewType, BinSortOp> bin_sort(PIDList_view, 0, PIDList_view.extent(0), binOp, false);
-  bin_sort.create_permute_vector(exec);
-  bin_sort.sort(exec, PIDList_view);
-  bin_sort.sort(exec, ColIndices_subview);
-  bin_sort.sort(exec, RemotePermuteIDs_view);
-
-  // Move permuted subview data back into ColIndices
-  Kokkos::parallel_for(ColIndices_subview.extent(0), KOKKOS_LAMBDA(const int i){
-    ColIndices_view[i+NumLocalColGIDs] = ColIndices_subview[i];
-  });
+  Kokkos::BinSort<KeyViewTypePID, BinSortOpPID> bin_sort3(PIDList_view, 0, PIDList_view.extent(0), binOp3, false);
+  bin_sort3.create_permute_vector(exec);
+  bin_sort3.sort(exec, PIDList_view);
+  bin_sort3.sort(exec, ColIndices_subview);
+  bin_sort3.sort(exec, RemotePermuteIDs_view);
 
   // Deep copy back from device to host
   Kokkos::deep_copy(execution_space(), PIDList_host, PIDList_view);
-  Kokkos::deep_copy(execution_space(), ColIndices_host, ColIndices_view);
-  Kokkos::deep_copy(execution_space(), RemotePermuteIDs_host, RemotePermuteIDs_view);
+  // Kokkos::deep_copy(execution_space(), ColIndices_host, ColIndices_view);
+  // Kokkos::deep_copy(execution_space(), RemotePermuteIDs_host, RemotePermuteIDs_view);
 
   printf("Reached end of binsort, array size = %d\n", PIDList_host.extent(0));
   // ---------------------------------------------------------------
@@ -1340,23 +1332,43 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   // with a given remote processor is known at this point ... so I
   // count them here.
 
-  // NTS: Only sort the RemoteColIndices this time...
+  int ColIndices_max = 0;
+  for(int i = 0; i < ColIndices.size(); ++i) {
+    ColIndices_max = std::max(ColIndices_max, int(ColIndices[i]));
+  }
+
+  using KeyViewTypeColIndices = decltype(ColIndices_view);
+  using BinSortOpColIndices = Kokkos::BinOp1D<KeyViewTypeColIndices>;
+
+  BinSortOpColIndices binOp2(ColIndices_max+1, 0, ColIndices_max);
+
+  // There's actually a sort2 that works with views, but it's host-only
   LO StartCurrent = 0, StartNext = 1;
-  while (StartNext < NumRemoteColGIDs) {
-    if (PIDList[StartNext]==PIDList[StartNext-1]) {
+  while(StartNext < NumRemoteColGIDs) {
+    if(PIDList[StartNext] == PIDList[StartNext-1]) {
       StartNext++;
     }
     else {
-      Tpetra::sort2 (ColIndices.begin () + NumLocalColGIDs + StartCurrent,
-                     ColIndices.begin () + NumLocalColGIDs + StartNext,
-                     RemotePermuteIDs.begin () + StartCurrent);
+      ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext));
+      auto RemotePermuteIDs_subview = Kokkos::subview(RemotePermuteIDs_view, Kokkos::make_pair(StartCurrent, StartNext));
+      Kokkos::BinSort<KeyViewTypeColIndices, BinSortOpColIndices> bin_sort2(ColIndices_subview, 0, ColIndices_subview.extent(0), binOp2, false);
+      bin_sort2.create_permute_vector(exec);
+      bin_sort2.sort(exec, ColIndices_subview);
+      bin_sort2.sort(exec, RemotePermuteIDs_subview);
       StartCurrent = StartNext;
       StartNext++;
     }
   }
-  Tpetra::sort2 (ColIndices.begin () + NumLocalColGIDs + StartCurrent,
-                 ColIndices.begin () + NumLocalColGIDs + StartNext,
-                 RemotePermuteIDs.begin () + StartCurrent);
+
+  ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext));
+  auto RemotePermuteIDs_subview = Kokkos::subview(RemotePermuteIDs_view, Kokkos::make_pair(StartCurrent, StartNext));
+  Kokkos::BinSort<KeyViewTypeColIndices, BinSortOpColIndices> bin_sort2(ColIndices_subview, 0, ColIndices_subview.extent(0), binOp2, false);
+  bin_sort2.create_permute_vector(exec);
+  bin_sort2.sort(exec, ColIndices_subview);
+  bin_sort2.sort(exec, RemotePermuteIDs_subview);
+
+  Kokkos::deep_copy(execution_space(), ColIndices_host, ColIndices_view);
+  Kokkos::deep_copy(execution_space(), RemotePermuteIDs_host, RemotePermuteIDs_view);
 
   // Reverse the permutation to get the information we actually care about
   Teuchos::Array<LO> ReverseRemotePermuteIDs (NumRemoteColGIDs);
