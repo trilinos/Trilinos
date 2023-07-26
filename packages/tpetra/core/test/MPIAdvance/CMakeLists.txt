@@ -41,7 +41,6 @@ IF (${PACKAGE_NAME}_ENABLE_mpi_advance)
     MpiAdvance_NeighborPartLocalityAllToAllV
     SOURCES
       NeighborPartLocalityAllToAllV.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM mpi
     NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
