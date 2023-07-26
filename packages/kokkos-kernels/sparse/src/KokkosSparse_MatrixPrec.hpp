@@ -13,7 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-/// @file KokkosKernels_MatrixPrec.hpp
+
+/// @file KokkosSparse_MatrixPrec.hpp
 
 #ifndef KK_MATRIX_PREC_HPP
 #define KK_MATRIX_PREC_HPP
@@ -27,6 +28,7 @@ namespace KokkosSparse {
 
 namespace Experimental {
 
+/// @file KokkosSparse_MatrixPrec.hpp
 /// \class MatrixPrec
 /// \brief  This is a simple class to use if one
 ///         already has a matrix representation of their

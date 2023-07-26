@@ -128,6 +128,8 @@ void check_line2_on_device()
 
     constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::LINE_2>::num_nodes;
 
+    NGP_EXPECT_EQ(numNodes, 2u);
+
     check_side_node_ordinals_ngp<numNodes>(t, goldSideNodeOrdinals);
     check_side_nodes_ngp<numNodes>(t, goldSideNodeOrdinals);
 
@@ -231,6 +233,8 @@ void check_line3_on_device()
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
     constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::LINE_3>::num_nodes;
+
+    NGP_EXPECT_EQ(numNodes, 3u);
 
     check_side_node_ordinals_ngp<numNodes>(t, goldSideNodeOrdinals);
     check_side_nodes_ngp<numNodes>(t, goldSideNodeOrdinals);
@@ -336,6 +340,8 @@ void check_line2_1d_on_device()
 
     constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::LINE_2_1D>::num_nodes;
 
+    NGP_EXPECT_EQ(numNodes, 2u);
+
     check_side_node_ordinals_ngp<numNodes>(t, goldSideNodeOrdinals);
     check_side_nodes_ngp<numNodes>(t, goldSideNodeOrdinals);
 
@@ -439,6 +445,8 @@ void check_line3_1d_on_device()
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
     constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::LINE_3_1D>::num_nodes;
+
+    NGP_EXPECT_EQ(numNodes, 3u);
 
     check_side_node_ordinals_ngp<numNodes>(t, goldSideNodeOrdinals);
     check_side_nodes_ngp<numNodes>(t, goldSideNodeOrdinals);

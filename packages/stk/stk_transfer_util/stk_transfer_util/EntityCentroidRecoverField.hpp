@@ -14,6 +14,7 @@
 // clang-format off
 #include <stk_transfer_util/RecoverField.hpp>  // for RecoverField, RecoverField::...
 #include <vector>                        // for vector
+#include <functional>
 #include "stk_mesh/base/Bucket.hpp"      // for Bucket
 #include "stk_mesh/base/BulkData.hpp"    // for BulkData
 #include "stk_mesh/base/Entity.hpp"      // for Entity
@@ -28,12 +29,15 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk {
 namespace transfer {
 
+using FieldTransform = std::function<double(double)>;
+
 class EntityCentroidLinearRecoverField : public RecoverField {
  public:
   EntityCentroidLinearRecoverField(RecoverField::RecoveryType recType,
                                    const std::vector<const stk::mesh::FieldBase*>& recVars,
                                    const stk::mesh::FieldBase& recNodeVar, int nSampElem,
-                                   stk::mesh::Entity entity);
+                                   stk::mesh::Entity entity,
+                                   FieldTransform  transform = [](double value) {return value;});
 
   ~EntityCentroidLinearRecoverField() override;
 
@@ -43,13 +47,16 @@ class EntityCentroidLinearRecoverField : public RecoverField {
  protected:
   std::vector<const stk::mesh::FieldBase*> m_recoverVars;
   const stk::mesh::FieldBase& m_nodeVar;
+  FieldTransform  m_transform;
 };
 
 class EntityCentroidQuadraticRecoverField : public RecoverField {
  public:
   EntityCentroidQuadraticRecoverField(RecoverField::RecoveryType recType,
                                       const std::vector<const stk::mesh::FieldBase*>& recVars,
-                                      const stk::mesh::FieldBase& recNodeVar, int nSampElem, stk::mesh::Entity entity);
+                                      const stk::mesh::FieldBase& recNodeVar, int nSampElem,
+                                      stk::mesh::Entity entity,
+                                      FieldTransform  transform = [](double value) {return value;});
 
   ~EntityCentroidQuadraticRecoverField() override;
 
@@ -59,13 +66,16 @@ class EntityCentroidQuadraticRecoverField : public RecoverField {
  protected:
   std::vector<const stk::mesh::FieldBase*> m_recoverVars;
   const stk::mesh::FieldBase& m_nodeVar;
+  FieldTransform  m_transform;
 };
 
 class EntityCentroidCubicRecoverField : public RecoverField {
  public:
   EntityCentroidCubicRecoverField(RecoverField::RecoveryType recType,
                                   const std::vector<const stk::mesh::FieldBase*>& recVars,
-                                  const stk::mesh::FieldBase& recNodeVar, int nSampElem, stk::mesh::Entity entity);
+                                  const stk::mesh::FieldBase& recNodeVar, int nSampElem,
+                                  stk::mesh::Entity entity,
+                                  FieldTransform  transform = [](double value) {return value;});
 
   ~EntityCentroidCubicRecoverField() override;
 
@@ -75,6 +85,7 @@ class EntityCentroidCubicRecoverField : public RecoverField {
  protected:
   std::vector<const stk::mesh::FieldBase*> m_recoverVars;
   const stk::mesh::FieldBase& m_nodeVar;
+  FieldTransform  m_transform;
 };
 
 struct EntityPatchFilter {

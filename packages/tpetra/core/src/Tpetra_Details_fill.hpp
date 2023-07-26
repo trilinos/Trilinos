@@ -71,7 +71,7 @@ template<class ViewType,
          class ValueType,
          class ExecutionSpace,
          class IndexType,
-         const int rank = ViewType::Rank>
+         const int rank = ViewType::rank>
 class Fill {
 public:
   static void
@@ -98,7 +98,7 @@ public:
   Fill (const ViewType& X, const ValueType& alpha) :
     X_ (X), alpha_ (alpha)
   {
-    static_assert (ViewType::Rank == 1,
+    static_assert (ViewType::rank == 1,
                    "ViewType must be a rank-1 Kokkos::View.");
     static_assert (std::is_integral<IndexType>::value,
                    "IndexType must be a built-in integer type.");
@@ -139,7 +139,7 @@ public:
         const IndexType numCols) :
     X_ (X), alpha_ (alpha), numCols_ (numCols)
   {
-    static_assert (ViewType::Rank == 2,
+    static_assert (ViewType::rank == 2,
                    "ViewType must be a rank-2 Kokkos::View.");
     static_assert (std::is_integral<IndexType>::value,
                    "IndexType must be a built-in integer type.");
@@ -190,7 +190,7 @@ struct Fill<ViewType,
         const IndexType numRows,
         const IndexType /* numCols */ )
   {
-    static_assert (ViewType::Rank == 1,
+    static_assert (ViewType::rank == 1,
                    "ViewType must be a rank-1 Kokkos::View.");
     static_assert (std::is_integral<IndexType>::value,
                    "IndexType must be a built-in integer type.");
@@ -232,7 +232,7 @@ struct Fill<ViewType,
         const IndexType /* numRows */,
         const IndexType numCols)
   {
-    static_assert (ViewType::Rank == 2,
+    static_assert (ViewType::rank == 2,
                    "ViewType must be a rank-2 Kokkos::View.");
     static_assert (std::is_integral<IndexType>::value,
                    "IndexType must be a built-in integer type.");
@@ -297,7 +297,7 @@ fill (const ExecutionSpace& execSpace,
   static_assert (std::is_integral<IndexType>::value,
                  "IndexType must be a built-in integer type.");
   typedef Impl::Fill<ViewType, ValueType, ExecutionSpace,
-    IndexType, ViewType::Rank> impl_type;
+    IndexType, ViewType::rank> impl_type;
   impl_type::fill (execSpace, X, alpha, numRows, numCols);
 }
 
@@ -313,7 +313,7 @@ fill (const ExecutionSpace& execSpace,
       const IndexType numCols,
       const size_t whichVectors[])
 {
-  static_assert (ViewType::Rank == 2, "ViewType must be a rank-2 "
+  static_assert (ViewType::rank == 2, "ViewType must be a rank-2 "
                  "Kokkos::View in order to call the \"whichVectors\" "
                  "specialization of fill.");
   static_assert (std::is_integral<IndexType>::value,

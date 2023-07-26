@@ -266,6 +266,7 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
 {
     uint num_nodes = mesh.num_nodes(entity);
     EntityRank entity_rank = mesh.entity_rank(entity);
+    stk::topology baseEntityTopology = mesh.bucket(entity).topology();
 
     // scratch space
     stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
@@ -291,6 +292,9 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
           nodes_of_this_side.resize(entity_top.num_nodes());
           upward_entity_topology.face_nodes(upward_entity_nodes, k, nodes_of_this_side.data());
         }
+
+        if (baseEntityTopology != entity_top) continue;
+
         if ( entity_top.is_equivalent(nodes, nodes_of_this_side.data()).is_equivalent )
         {
             entity_ordinal = k;
@@ -1617,6 +1621,28 @@ void require_valid_relation(const char action[],
     STK_ThrowErrorMsgIf( error_rank, msg.str() <<
                      "A relation must be from higher to lower ranking entity");
   }
+}
+
+bool is_valid_relation(const BulkData& mesh,
+                       Entity e_from,
+                       Entity e_to,
+                       EntityRank e_to_rank,
+                       ConnectivityOrdinal ord)
+{
+  const MeshIndex& meshIndex = mesh.mesh_index(e_from);
+  const Bucket* bPtr = meshIndex.bucket;
+  const unsigned bOrd = meshIndex.bucket_ordinal;
+  const unsigned num = bPtr->num_connectivity(bOrd, e_to_rank);
+  if (num > 0) {
+    const Entity* conn = bPtr->begin(bOrd, e_to_rank);
+    const ConnectivityOrdinal* ords = bPtr->begin_ordinals(bOrd, e_to_rank);
+    for(unsigned i=0; i<num; ++i) {
+      if (ords[i] == ord && conn[i] == e_to) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 bool is_good_rank_and_id(const MetaData& meta,

@@ -230,7 +230,7 @@ void ApplicationInterfaceFakeParallelImpl::do_boundary_snap()
     qualityImprover2->run();
   } else if (m_boundarySnapOpts.type == BoundarySnapAndQualityImprovementType::IncrementalBoundarySnap)
   {
-    auto snapper = mesh::impl::make_incremental_boundary_snapper(m_mesh1Serial, m_mesh2Serial,
+    auto snapper = mesh::impl::make_incremental_boundary_snapper(m_mesh1Serial, m_mesh2Serial, MPI_COMM_SELF,
                                                                  m_boundarySnapOpts.incrementalMeshBoundarySnapOpts);
     snapper->snap();
   } else if (m_boundarySnapOpts.type != BoundarySnapAndQualityImprovementType::None)

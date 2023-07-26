@@ -95,6 +95,8 @@
         
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
         
+\cbb{aggregation: use ml scaling of drop tol}{bool}{false}{Enables ML-style scaling of drop tol, where the drop tol halves with each successive level.}
+        
 \cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
         
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
@@ -438,6 +440,8 @@ optimized neighbor discovery for Importer construction.}
 \cba{maxwell1: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
         
 \cbb{maxwell1: dump matrices}{bool}{false}{Dump matrices to disk.}
+        
+\cbb{maxwell1: nodal smoother fix zero diagonal threshold}{double}{1e-10}{Specifies the fix zero diagonals threshold to be used for the nodal smoothing matrices.}
         
 \cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
         

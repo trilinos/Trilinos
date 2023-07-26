@@ -47,7 +47,7 @@ class ModifyEntries {
 
   KOKKOS_FUNCTION void operator()(const ordinal_type& lclRow,
                                   ordinal_type& numModified) const {
-    typedef Kokkos::Details::ArithTraits<scalar_type> KAT;
+    typedef Kokkos::ArithTraits<scalar_type> KAT;
     typedef typename KAT::mag_type mag_type;
     const scalar_type ONE = KAT::one();
 
@@ -171,7 +171,7 @@ void checkWhetherEntriesWereModified(
   // using Teuchos::RCP;
   typedef typename CrsMatrixType::value_type value_type;
   typedef typename CrsMatrixType::ordinal_type ordinal_type;
-  typedef Kokkos::Details::ArithTraits<value_type> KAT;
+  typedef Kokkos::ArithTraits<value_type> KAT;
 
   // If debug is false, we capture all output in an
   // std::ostringstream, and don't print it unless the test fails
@@ -281,7 +281,7 @@ void testOneCaseImpl(bool& /*success*/, std::ostream& out,
 
     // Restore original values.
     auto val_h            = Kokkos::create_mirror_view(A.values);
-    const scalar_type ONE = Kokkos::Details::ArithTraits<scalar_type>::one();
+    const scalar_type ONE = Kokkos::ArithTraits<scalar_type>::one();
     scalar_type curVal    = ONE;
     for (ordinal_type k = 0; k < A.numCols(); ++k, curVal += ONE) {
       val_h[k] = curVal;
@@ -388,7 +388,7 @@ void testAllSizes(bool& success,
   typedef typename matrix_type::value_type value_type;
   typedef typename matrix_type::ordinal_type ordinal_type;
   typedef typename matrix_type::size_type size_type;
-  const value_type ONE = Kokkos::Details::ArithTraits<value_type>::one();
+  const value_type ONE = Kokkos::ArithTraits<value_type>::one();
 
   // Teuchos::OSTab tab0 (out);
   out << "maxNumEnt: " << maxNumEnt << endl;

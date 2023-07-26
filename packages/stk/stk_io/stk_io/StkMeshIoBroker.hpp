@@ -40,8 +40,6 @@
 #include <Ioss_PropertyManager.h>           // for PropertyManager
       // file exists and is readable and will throw an exception if not.
 #include <cstddef>                          // for size_t
-#include "Teuchos_RCPDecl.hpp"              // for RCP
-#include <Teuchos_RCP.hpp>                  // for RCP::operator->, RCP::RCP<T>
 #include <stk_io/DatabasePurpose.hpp>       // for DatabasePurpose
 #include <stk_io/Heartbeat.hpp>             // for Heartbeat, HeartbeatType
 #include <stk_io/IossBridge.hpp>            // for STKIORequire, FieldNameTo...
@@ -117,11 +115,6 @@ namespace stk {
 
       bool property_exists(const std::string &property_name) const;
       void copy_property(const StkMeshIoBroker& src_broker, const std::string &property_name);
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after Feb 2023
-      STK_DEPRECATED_MSG("This function has been renamed get_input_ioss_region() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::Region> get_input_io_region() const;
-      STK_DEPRECATED_MSG("This function has been renamed get_output_ioss_region() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::Region> get_output_io_region(size_t output_file_index) const;
-      STK_DEPRECATED_MSG("This function has been renamed get_heartbeat_ioss_region() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::Region> get_heartbeat_io_region(size_t heartbeat_file_index) const;
-#endif
 
       std::shared_ptr<Ioss::Region> get_input_ioss_region() const;
       std::shared_ptr<Ioss::Region> get_output_ioss_region(size_t output_file_index) const;
@@ -153,30 +146,15 @@ namespace stk {
       // optional selector will be 'anded' with the normal selector
       // (typically locally owned part) used to associate entities
       // when generating the output database.
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-      STK_DEPRECATED void set_subset_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
-#endif 
-
       void set_subset_selector(size_t output_file_index, std::shared_ptr<stk::mesh::Selector> my_selector);
       void set_subset_selector(size_t output_file_index, const stk::mesh::Selector &my_selector);
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-      STK_DEPRECATED void set_skin_mesh_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
-#endif
 
       void set_skin_mesh_selector(size_t output_file_index, std::shared_ptr<stk::mesh::Selector> my_selector);
       void set_skin_mesh_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-      STK_DEPRECATED void set_shared_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
-#endif
-
       void set_shared_selector(size_t output_file_index, std::shared_ptr<stk::mesh::Selector> my_selector);
       void set_shared_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-      STK_DEPRECATED void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
-#endif
       void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, std::shared_ptr<stk::mesh::Selector> my_selector);
       void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, stk::mesh::Selector &my_selector);
 
@@ -189,14 +167,6 @@ namespace stk {
 
       stk::mesh::Selector get_active_selector() const;
       void set_active_selector(stk::mesh::Selector my_selector);
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-      STK_DEPRECATED Teuchos::RCP<stk::mesh::Selector> deprecated_selector() const;
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-      STK_DEPRECATED void deprecated_set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
-#endif
 
       // Set bulk data directly with your own bulk data. If this is
       // not called prior to the populate_bulk_data() call, it will be
@@ -311,9 +281,6 @@ namespace stk {
       // [2013-11-13: GDS: Currently
       // only used in Salinas/tools/superelem/MkSuperStkMesh.C:
       // The use-case is adding new parts to a mesh]
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after Feb 2023
-      STK_DEPRECATED_MSG("This function has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.") size_t add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region);
-#endif      
       size_t add_mesh_database(std::shared_ptr<Ioss::Region> ioss_input_region);
 
       // Get a reference to an existing mesh database so it can be modified
@@ -805,17 +772,6 @@ namespace stk {
       bool m_cacheEntityListForTransientSteps;
       bool m_useSimpleFields;
     };
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-    STK_DEPRECATED inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) const {
-      validate_output_file_index(output_file_index);
-      return Teuchos::rcp(m_outputFiles[output_file_index]->get_output_ioss_region());
-    }
-
-    STK_DEPRECATED inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_heartbeat_io_region(size_t heartbeat_file_index) const {
-      validate_heartbeat_file_index(heartbeat_file_index);
-      return Teuchos::rcp(m_heartbeat[heartbeat_file_index]->get_heartbeat_ioss_region());
-    }
-#endif
 
     inline std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_output_ioss_region(size_t output_file_index) const {
       validate_output_file_index(output_file_index);
@@ -837,14 +793,6 @@ namespace stk {
       return m_heartbeat[heartbeat_file_index]->end_define_transient();
     }
 
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-    STK_DEPRECATED_MSG("This function has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.") inline void StkMeshIoBroker::set_subset_selector(size_t output_file_index,
-						                     Teuchos::RCP<stk::mesh::Selector> my_selector) {
-      validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->set_subset_selector(Teuchos::get_shared_ptr(my_selector));
-    }
-#endif    
-
     inline void StkMeshIoBroker::set_subset_selector(size_t output_file_index,
 						     std::shared_ptr<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
@@ -858,14 +806,6 @@ namespace stk {
       m_outputFiles[output_file_index]->set_subset_selector(std::make_shared<stk::mesh::Selector>(m_subsetSelector));
     }
 
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-    STK_DEPRECATED_MSG("This function has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.") inline void StkMeshIoBroker::set_skin_mesh_selector(size_t output_file_index,
-						                    Teuchos::RCP<stk::mesh::Selector> my_selector) {
-      validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->set_skin_mesh_selector(Teuchos::get_shared_ptr(my_selector));
-    }
-#endif
-
     inline void StkMeshIoBroker::set_skin_mesh_selector(size_t output_file_index,
 						     std::shared_ptr<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
@@ -878,14 +818,6 @@ namespace stk {
       m_outputFiles[output_file_index]->set_skin_mesh_selector(std::make_shared<stk::mesh::Selector>(my_selector));
     }
 
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-     STK_DEPRECATED_MSG("This function has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.")inline void StkMeshIoBroker::set_shared_selector(size_t output_file_index,
-                                                     Teuchos::RCP<stk::mesh::Selector> my_selector) {
-      validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->set_shared_selector(Teuchos::get_shared_ptr(my_selector));
-    }
-#endif
-
     inline void StkMeshIoBroker::set_shared_selector(size_t output_file_index,
                                                      std::shared_ptr<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
@@ -897,15 +829,6 @@ namespace stk {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->set_shared_selector(std::make_shared<stk::mesh::Selector>(my_selector));
     }
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-    STK_DEPRECATED_MSG("This function has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.") inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
-                                                     stk::topology::rank_t rank,
-                                                     Teuchos::RCP<stk::mesh::Selector> my_selector) {
-      validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->set_output_selector(rank, Teuchos::get_shared_ptr(my_selector));
-    }
-#endif
 
     inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
                                                      stk::topology::rank_t rank,
@@ -953,18 +876,6 @@ namespace stk {
     inline void StkMeshIoBroker::set_active_selector(stk::mesh::Selector my_selector) {
       m_activeSelector = my_selector;
     }
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-    STK_DEPRECATED inline Teuchos::RCP<stk::mesh::Selector> StkMeshIoBroker::deprecated_selector() const {
-      return Teuchos::rcp(m_deprecatedSelector);
-    }
-#endif
-    
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-    STK_DEPRECATED inline void StkMeshIoBroker::deprecated_set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector) {
-      m_deprecatedSelector = Teuchos::get_shared_ptr(my_selector);
-    }
-#endif
 
     inline void StkMeshIoBroker::set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
     {

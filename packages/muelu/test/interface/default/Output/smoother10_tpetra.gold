@@ -4,6 +4,7 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 3
+ timer for apply = 0
 
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
@@ -37,6 +38,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 3
+ timer for apply = 0
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)

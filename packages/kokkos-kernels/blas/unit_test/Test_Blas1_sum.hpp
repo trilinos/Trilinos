@@ -24,29 +24,26 @@ template <class ViewTypeA, class Device>
 void impl_test_sum(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
 
-  ViewTypeA a("A", N);
-
-  typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
+  view_stride_adapter<ViewTypeA> a("A", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(10.0, randStart, randEnd);
-  Kokkos::fill_random(a, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
-  Kokkos::deep_copy(h_a, a);
+  Kokkos::deep_copy(a.h_base, a.d_base);
 
-  typename ViewTypeA::const_type c_a = a;
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   ScalarA expected_result = 0;
-  for (int i = 0; i < N; i++) expected_result += h_a(i);
+  for (int i = 0; i < N; i++) expected_result += a.h_view(i);
 
-  ScalarA nonconst_result = KokkosBlas::sum(a);
+  ScalarA nonconst_result = KokkosBlas::sum(a.d_view);
   EXPECT_NEAR_KK(nonconst_result, expected_result, eps * expected_result);
 
-  ScalarA const_result = KokkosBlas::sum(c_a);
+  ScalarA const_result = KokkosBlas::sum(a.d_view_const);
   EXPECT_NEAR_KK(const_result, expected_result, eps * expected_result);
 }
 
@@ -54,40 +51,28 @@ template <class ViewTypeA, class Device>
 void impl_test_sum_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-
-  typename vfA_type::BaseType b_a("A", N, K);
-
-  ViewTypeA a = vfA_type::view(b_a);
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-
-  typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
-
-  typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
+  view_stride_adapter<ViewTypeA> a("A", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
   Test::getRandomBounds(10.0, randStart, randEnd);
-  Kokkos::fill_random(b_a, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
-  Kokkos::deep_copy(h_b_a, b_a);
-
-  typename ViewTypeA::const_type c_a = a;
+  Kokkos::deep_copy(a.h_base, a.d_base);
 
   ScalarA* expected_result = new ScalarA[K];
   for (int j = 0; j < K; j++) {
     expected_result[j] = ScalarA();
-    for (int i = 0; i < N; i++) expected_result[j] += h_a(i, j);
+    for (int i = 0; i < N; i++) expected_result[j] += a.h_view(i, j);
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   Kokkos::View<ScalarA*, Kokkos::HostSpace> r("Sum::Result", K);
 
-  KokkosBlas::sum(r, a);
+  KokkosBlas::sum(r, a.d_view);
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     ScalarA nonconst_result = r(k);
@@ -95,7 +80,7 @@ void impl_test_sum_mv(int N, int K) {
                    eps * expected_result[k]);
   }
 
-  KokkosBlas::sum(r, c_a);
+  KokkosBlas::sum(r, a.d_view_const);
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     ScalarA const_result = r(k);
@@ -128,17 +113,14 @@ int test_sum() {
   // Test::impl_test_sum<view_type_a_lr, Device>(132231);
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
-    Test::impl_test_sum<view_type_a_ls, Device>(0);
-    Test::impl_test_sum<view_type_a_ls, Device>(13);
-    Test::impl_test_sum<view_type_a_ls, Device>(1024);
-    // Test::impl_test_sum<view_type_a_ls, Device>(132231);
-  #endif
-  */
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+  Test::impl_test_sum<view_type_a_ls, Device>(0);
+  Test::impl_test_sum<view_type_a_ls, Device>(13);
+  Test::impl_test_sum<view_type_a_ls, Device>(1024);
+  // Test::impl_test_sum<view_type_a_ls, Device>(132231);
+#endif
 
   return 1;
 }
@@ -167,18 +149,15 @@ int test_sum_mv() {
   // Test::impl_test_sum_mv<view_type_a_lr, Device>(132231,5);
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
-  view_type_a_ls; Test::impl_test_sum_mv<view_type_a_ls, Device>(0, 5);
-    Test::impl_test_sum_mv<view_type_a_ls, Device>(13, 5);
-    Test::impl_test_sum_mv<view_type_a_ls, Device>(1024, 5);
-    Test::impl_test_sum_mv<view_type_a_ls, Device>(789, 1);
-    // Test::impl_test_sum_mv<view_type_a_ls, Device>(132231,5);
-  #endif
-  */
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
+  Test::impl_test_sum_mv<view_type_a_ls, Device>(0, 5);
+  Test::impl_test_sum_mv<view_type_a_ls, Device>(13, 5);
+  Test::impl_test_sum_mv<view_type_a_ls, Device>(1024, 5);
+  Test::impl_test_sum_mv<view_type_a_ls, Device>(789, 1);
+  // Test::impl_test_sum_mv<view_type_a_ls, Device>(132231,5);
+#endif
 
   return 1;
 }

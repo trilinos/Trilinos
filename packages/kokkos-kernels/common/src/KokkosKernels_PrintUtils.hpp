@@ -104,7 +104,8 @@ inline std::enable_if_t<idx_array_type::rank >= 2> kk_print_1Dview(
     return;
   }
   os << "[" << view.extent(0);
-  for (int i = 1; i < idx_array_type::rank; ++i) {
+  // ::rank is a Kokkos::...::integral_constant, not appropriate for `i`
+  for (int i = 1; i < int(idx_array_type::rank); ++i) {
     os << "x" << view.extent(i);
   }
   os << " multi-vector]" << std::endl;

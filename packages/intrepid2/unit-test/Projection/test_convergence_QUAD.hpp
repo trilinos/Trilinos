@@ -320,7 +320,6 @@ int ConvergenceQuad(const bool verbose) {
           DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
           linearBasis.getValues(linearBasisValuesAtRefCoords, refPoints);
           ExecSpaceType().fence();
-          DynRankView ConstructWithLabel(physVertexes, numElems, numNodesPerElem, dim);
           Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
           KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type d=0; d<dim; ++d)

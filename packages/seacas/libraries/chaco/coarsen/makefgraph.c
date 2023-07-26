@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,7 +10,12 @@
 #include "structs.h" // for vtx_data
 #include <stdio.h>   // for NULL, printf
 
-static void makecv2v();
+static void makecv2v(int  nvtxs,     /* number of vertices in graph */
+                     int  cnvtxs,    /* number of vtxs in coarsened graph */
+                     int *v2cv,      /* mapping from vtxs to coarsened vtxs */
+                     int *cv2v_vals, /* vtxs corresponding to each cvtx */
+                     int *cv2v_ptrs  /* indices into cv2c_vals */
+);
 
 void makefgraph(struct vtx_data  **graph,       /* array of vtx data for graph */
                 int                nvtxs,       /* number of vertices in graph */
@@ -54,8 +59,6 @@ void makefgraph(struct vtx_data  **graph,       /* array of vtx data for graph *
   int              *eptr  = NULL;     /* loops through edges data structure */
   int               cneighbor;        /* neighboring vertex number in coarsened graph */
   int               i, j;             /* loop counters */
-  double            seconds(void);
-  void              makeccoords();
 
   /* Compute the number of vertices and edges in the coarsened graph, */
   /* and construct start pointers into coarsened edge array. */

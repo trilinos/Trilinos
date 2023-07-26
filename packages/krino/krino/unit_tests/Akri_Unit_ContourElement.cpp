@@ -73,7 +73,7 @@ TEST(SingleElementFixture, LS_Element_Tet4)
   EXPECT_EQ(2.0, facet.facet_vertex(1)[2]);
   EXPECT_EQ(2.0, facet.facet_vertex(2)[2]);
 
-  const Vector3d normal = facet.facet_normal();
+  const stk::math::Vector3d normal = facet.facet_normal();
   const double area = facet.facet_area();
 
   EXPECT_EQ(0.0, normal[0]);

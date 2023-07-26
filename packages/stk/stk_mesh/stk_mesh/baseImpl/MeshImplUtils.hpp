@@ -312,6 +312,12 @@ void require_valid_relation(const char action[],
                             const Entity e_from,
                             const Entity e_to);
 
+bool is_valid_relation(const BulkData& mesh,
+                       Entity e_from,
+                       Entity e_to,
+                       EntityRank e_to_rank,
+                       ConnectivityOrdinal ord);
+
 bool is_good_rank_and_id(const MetaData& meta,
                          EntityRank rank,
                          EntityId id);

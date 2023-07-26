@@ -14,7 +14,7 @@
 //
 //@HEADER
 
-/// \file Kokkos_Sparse_getDiagCopy.hpp
+/// \file KokkosSparse_getDiagCopy.hpp
 /// \brief Get a copy of the diagonal entries of a KokkosSparse::CrsMatrix.
 
 #ifndef KOKKOS_SPARSE_GETDIAGCOPY_HPP_

@@ -53,7 +53,7 @@ struct RANK_TWO {};
 /// \param x [in] A vector.
 /// \param beta [in] Scalar multiplier for the multivector y.
 /// \param y [in/out] vector.
-/// \param RANK_ONE tag dispatch
+/// \param tag RANK_ONE dispatch
 ///
 #ifdef DOXY  // documentation version
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -66,7 +66,8 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 #endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y, const RANK_ONE) {
+          const BetaType& beta, const YVector& y,
+          [[maybe_unused]] const RANK_ONE& tag) {
 
   // Make sure that x and y have the same rank.
   static_assert(
@@ -349,6 +350,14 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  // rocSparse does not support the modes (C), (T), (H)
+  if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
+                               Kokkos::HIPSpace>) {
+    useFallback = useFallback || (mode[0] != NoTranspose[0]);
+  }
+#endif
+
   if (useFallback) {
     // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
     std::string label =
@@ -502,8 +511,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
 /// \param A [in] The sparse matrix A.
 /// \param x [in] A multivector (rank-2 Kokkos::View).
 /// \param beta [in] Scalar multiplier for the multivector y.
-/// \param y [in/out] multivector (rank-2 Kokkos::View).
-/// \param RANK_TWO tag-dispatch
+/// \param y [in/out] multivector (exrank-2 Kokkos::View).
+/// \param tag RANK_TWO dispatch
 ///
 #ifdef DOXY
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -516,7 +525,8 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 #endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y, const RANK_TWO) {
+          const BetaType& beta, const YVector& y,
+          [[maybe_unused]] const RANK_TWO& tag) {
 
   // Make sure that x and y have the same rank.
   static_assert(
@@ -1295,12 +1305,15 @@ void spmv_struct(const char mode[], const int stencil_type,
 /// entries of y; if alpha == 0, ignore the entries of A and x.
 ///
 /// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
-///   for conjugate transpose.
+///             for conjugate transpose.
+/// \param stencil_type
 /// \param structure [in] this 1D view stores the # rows in each dimension
-/// (i,j,k) \param alpha [in] Scalar multiplier for the matrix A. \param A [in]
-/// The sparse matrix; KokkosSparse::CrsMatrix instance. \param x [in] Either a
-/// single vector (rank-1 Kokkos::View) or
-///   multivector (rank-2 Kokkos::View).
+///                  (i,j,k)
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix; KokkosSparse::CrsMatrix instance.
+/// \param x [in] Either a
+///                single vector (rank-1 Kokkos::View) or
+///                multivector (rank-2 Kokkos::View).
 /// \param beta [in] Scalar multiplier for the (multi)vector y.
 /// \param y [in/out] Either a single vector (rank-1 Kokkos::View) or
 ///   multivector (rank-2 Kokkos::View).  It must have the same number

@@ -111,7 +111,7 @@ template <typename DeviceType, typename ViewType, typename ScalarType,
 void impl_test_blas_matutil(const int N, const int BlkSize) {
   /// typedefs
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   /// radomized input testing views
   const ScalarType alpha = 11.1;

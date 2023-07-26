@@ -112,14 +112,6 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
   int               flag;                      /* return code from check_input */
   int               old_perturb = 0;           /* saves original perturbation flag */
   int               i, j, k;                   /* loop counters */
-  double            seconds(void);
-  void              setrandom(long int seed);
-  int               check_input(), refine_part();
-  void              connect_enforce();
-  void              makevwsqrt(), balance(), countup();
-  void              force_internal(), sequence(), reflect_input();
-  void              machine_params(), assign_out(), refine_map();
-  void              time_out(), time_kernels(), strout(char *msg);
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering submain>\n");

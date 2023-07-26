@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -99,7 +99,7 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
       DIMENSION A(*)
       INTEGER IA(*)
       LOGICAL EXODUS, FFMATC, DO_CHECK
-      LOGICAL DOMAPN, DOMAPE, DOBLK, DOELE
+      LOGICAL DOMAPN, DOMAPE, DOBLK, DOELE, ADD
       CHARACTER*(*) DBNAME
       CHARACTER*(MXSTLN) QAREC(4,*)
       CHARACTER*(MXLNLN) INFO(*)
@@ -448,12 +448,20 @@ C *** GENESIS Print Commands ***
      *          idess, neess, ixeess, lteess, "elements")
             end if
           else
+            IA(KLEL) = 0
             CALL RMIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
      &        'element number', NUMEL, IA(KLEL), IA(KLEL+1), MAPEL,
      *        *270)
           end if
 
-          CALL DBSBEL (NELBLK, NUMEL, LENE, A(KLEL), NLISEL, LISEL)
+          add = .false.
+          if (intyp(3) .ge. 0) then
+             if (matstr(cfield(3), 'ADD', 3)) then
+                add = .true.
+             end if
+          end if
+
+          CALL DBSBEL (NELBLK, NUMEL, LENE, A(KLEL), NLISEL, LISEL, ADD)
 
           CALL MDDEL ('SCRSEL')
 

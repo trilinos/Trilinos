@@ -26,7 +26,8 @@ namespace Impl {
 #define KOKKOSBLAS3_XGEMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA,        \
                                LAYOUTB, LAYOUTC, MEM_SPACE, ETI_SPEC_AVAIL)   \
   template <class ExecSpace>                                                  \
-  struct GEMM<Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                      \
+  struct GEMM<ExecSpace,                                                      \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                      \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,              \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
               Kokkos::View<const SCALAR_TYPE**, LAYOUTB,                      \
@@ -50,8 +51,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
         CViewType;                                                            \
                                                                               \
-    static void gemm(const typename CViewType::execution_space& /* space*/,   \
-                     const char transA[], const char transB[],                \
+    static void gemm(const ExecSpace& /* space*/, const char transA[],        \
+                     const char transB[],                                     \
                      typename AViewType::const_value_type& alpha,             \
                      const AViewType& A, const BViewType& B,                  \
                      typename CViewType::const_value_type& beta,              \
@@ -163,7 +164,8 @@ namespace Impl {
                                  LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,     \
                                  ETI_SPEC_AVAIL)                           \
   template <class ExecSpace>                                               \
-  struct GEMM<Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                   \
+  struct GEMM<ExecSpace,                                                   \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                   \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,           \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
               Kokkos::View<const SCALAR_TYPE**, LAYOUTB,                   \
@@ -187,8 +189,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >         \
         CViewType;                                                         \
                                                                            \
-    static void gemm(const typename CViewType::execution_space& space,     \
-                     const char transA[], const char transB[],             \
+    static void gemm(const ExecSpace& space, const char transA[],          \
+                     const char transB[],                                  \
                      typename AViewType::const_value_type& alpha,          \
                      const AViewType& A, const BViewType& B,               \
                      typename CViewType::const_value_type& beta,           \
@@ -364,7 +366,8 @@ namespace Impl {
                                   ROCBLAS_FN, LAYOUT, MEM_SPACE,             \
                                   ETI_SPEC_AVAIL)                            \
   template <class ExecSpace>                                                 \
-  struct GEMM<Kokkos::View<const SCALAR_TYPE**, LAYOUT,                      \
+  struct GEMM<ExecSpace,                                                     \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUT,                      \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,             \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
               Kokkos::View<const SCALAR_TYPE**, LAYOUT,                      \
@@ -474,41 +477,25 @@ namespace Impl {
   KOKKOSBLAS3_XGEMM_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, \
                             rocblas_cgemm, LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)
 
-KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          false)
-KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          false)
+KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace, true)
+KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace, false)
+KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, true)
+KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 
-KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          false)
-KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          false)
+KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace, true)
+KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace, false)
+KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, true)
+KOKKOSBLAS3_SGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 
-KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          false)
-KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          false)
+KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace, true)
+KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace, false)
+KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, true)
+KOKKOSBLAS3_ZGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 
-KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          false)
-KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          false)
+KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace, true)
+KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace, false)
+KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, true)
+KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

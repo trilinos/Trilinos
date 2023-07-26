@@ -61,6 +61,7 @@ include(TribitsConstants)
 tribits_asesrt_minimum_cmake_version()
 include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
+# TriBITS package_arch includes
 include(TribitsIncludeDirectories)
 include(TribitsFindPythonInterp)
 include(TribitsGlobalMacros)
@@ -68,7 +69,10 @@ include(TribitsConfigureCTestCustom)
 include(TribitsGenerateResourceSpecFile)
 include(TribitsPackageDependencies)
 include(TribitsPrintDependencyInfo)
+include(TribitsPackagingSupport)
+include(TribitsConfigureTiming)
 
+# TriBITS utils includes
 include(AdvancedSet)
 include(AdvancedOption)
 include(TimingUtils)

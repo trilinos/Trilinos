@@ -5,15 +5,15 @@
  *      Author: drnoble
  */
 #include <Akri_PatchInterpolator.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <iostream>
 
 
 namespace krino {
 
-CubicSplineInterpolator::CubicSplineInterpolator(const std::array<Vector3d,2> & sideNodeCoords, const std::array<Vector3d,2> & sideNodeNormals)
+CubicSplineInterpolator::CubicSplineInterpolator(const std::array<stk::math::Vector3d,2> & sideNodeCoords, const std::array<stk::math::Vector3d,2> & sideNodeNormals)
 {
-  Vector3d tangent = (sideNodeCoords[1]-sideNodeCoords[0]);
+  stk::math::Vector3d tangent = (sideNodeCoords[1]-sideNodeCoords[0]);
   const double dx = tangent.unitize();
   myNormal = crossZ(tangent);
 
@@ -33,7 +33,7 @@ double CubicSplineInterpolator::compute_spline_value(const double paramX) const
   return (a*a*a-a) * myY2H2Over6[0] + (b*b*b-b) * myY2H2Over6[1];
 }
 
-Vector3d CubicSplineInterpolator::evaluate(const std::array<Vector3d,2> & sideNodeCoords, const double paramX) const
+stk::math::Vector3d CubicSplineInterpolator::evaluate(const std::array<stk::math::Vector3d,2> & sideNodeCoords, const double paramX) const
 {
   if (paramX == 0.)
     return sideNodeCoords[0];

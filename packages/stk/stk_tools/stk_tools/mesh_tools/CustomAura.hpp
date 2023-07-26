@@ -115,7 +115,7 @@ inline void populate_symm_comm_map(stk::mesh::BulkData& bulk,
 
 }
 
-inline void nodes_in_rings(stk::mesh::BulkData& bulk,
+inline void nodes_in_rings(const stk::mesh::BulkData& bulk,
                            const stk::mesh::EntityVector& nodesToSearchAround,
                            stk::mesh::EntityVector& nodesInRings,
                            const int num_rings,

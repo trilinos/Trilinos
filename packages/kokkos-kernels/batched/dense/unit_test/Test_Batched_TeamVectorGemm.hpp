@@ -85,7 +85,7 @@ void impl_test_batched_teamvectorgemm(const int N, const int matAdim1,
   using transB          = typename ParamTagType::transB;
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::value_type;
-  using ats             = Kokkos::Details::ArithTraits<value_type>;
+  using ats             = Kokkos::ArithTraits<value_type>;
 
   /// randomized input testing views
   ScalarType alpha = ScalarType(1.5), beta = ScalarType(3.0);

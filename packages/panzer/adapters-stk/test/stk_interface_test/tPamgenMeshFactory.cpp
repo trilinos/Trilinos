@@ -45,6 +45,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCPStdSharedPtrConversions.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -62,6 +63,7 @@
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/CreateAdjacentEntities.hpp"
+#include "stk_mesh/base/DumpMeshInfo.hpp"
 
 namespace panzer_stk {
 
@@ -97,8 +99,8 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
     broker->populate_bulk_data();
 
     if (verbose) {
-      metaData->dump_all_meta_info(out);
-      bulkData->dump_all_mesh_info(out);
+      stk::mesh::impl::dump_all_meta_info(*metaData, out);
+      stk::mesh::impl::dump_all_mesh_info(*bulkData, out);
     }
   }
 
@@ -180,8 +182,8 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
     broker->populate_bulk_data();
 
     if (verbose) {
-      metaData->dump_all_meta_info(out);
-      bulkData->dump_all_mesh_info(out);
+      stk::mesh::impl::dump_all_meta_info(*metaData, out);
+      stk::mesh::impl::dump_all_mesh_info(*bulkData, out);
     }
   }
 
@@ -265,8 +267,8 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, basic)
     mesh->writeToExodus(output_file_name);
 
     if (false) {
-      metaData->dump_all_meta_info(out);
-      bulkData->dump_all_mesh_info(out);
+      stk::mesh::impl::dump_all_meta_info(*metaData, out);
+      stk::mesh::impl::dump_all_mesh_info(*bulkData, out);
     }
   }
 

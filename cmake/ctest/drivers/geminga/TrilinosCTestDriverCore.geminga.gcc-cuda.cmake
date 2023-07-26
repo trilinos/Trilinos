@@ -126,7 +126,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
       ### PACKAGE CONFIGURATION ###
           "-DKokkos_ENABLE_CUDA:BOOL=ON"
-          "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
           "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON"
           "-DKokkos_ARCH_KEPLER35:BOOL=ON"
           "-DTrilinos_ENABLE_Epetra:BOOL=OFF"

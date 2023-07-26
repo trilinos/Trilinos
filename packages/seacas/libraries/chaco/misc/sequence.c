@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -51,12 +51,6 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
   int               old_lan_conv_mode;        /* value of LANCZOS_CONVERGENCE_MODE */
   int               i;                        /* loop counters */
   FILE             *orderfile = NULL;
-  void              ch_mergesort(double *vals, int nvals, int *indices, int *space);
-  void              eigensolve(), free_edgeslist(), y2x();
-  void              make_subvector(), make_subgraph(), remake_graph();
-  void              make_maps2();
-  double            find_maxdeg(), seconds(void);
-  int               find_edges();
 
   double time        = seconds();
   int    using_vwgts = (vwsqrt != NULL);

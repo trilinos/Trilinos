@@ -65,13 +65,12 @@ using stk::mesh::impl::VisitUpwardClosureGeneral;
 using stk::mesh::impl::VisitUpwardClosure;
 using stk::mesh::impl::VisitAuraClosureGeneral;
 using stk::mesh::impl::VisitAuraClosure;
+using stk::mesh::impl::VisitUpDownClosure;
 using stk::mesh::impl::StoreInVector;
 using stk::mesh::impl::StoreInSet;
 using stk::mesh::impl::AlwaysVisit;
-using stk::mesh::impl::OnlyVisitOnce;
 using stk::mesh::impl::OnlyVisitGhostsOnce;
 using stk::mesh::impl::OnlyVisitLocallyOwnedOnce;
-using stk::mesh::impl::OnlyVisitSharedOnce;
 using stk::unit_test_util::build_mesh;
 
 TEST ( MeshImplUtils, find_element_edge_ordinal_and_equivalent_nodes )
@@ -627,6 +626,22 @@ TEST(MeshImplUtils, visit_aura_closure_of_center_element_in_3procs)
   else  {
     EXPECT_EQ( 127u, ev.size() );
   }
+}
+
+TEST(MeshImplUtils, visit_up_down_closure_of_center_element_in_3procs)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  ClosureFixture fix(communicator,4,4); // 4 x 4 x 3
+  int numProcs = fix.psize();
+  if (numProcs != 3 ) { return; }
+
+  BulkData & mesh = fix.mesh();
+
+  Entity element = mesh.get_entity(stk::topology::ELEMENT_RANK,22);
+  EntityVector evUpDown;
+  StoreInVector<EntityVector> sivUpDown(evUpDown);
+  VisitUpDownClosure(mesh,element,sivUpDown);
+  EXPECT_EQ( 9u, evUpDown.size() );
 }
 
 TEST(MeshImplUtils, visit_aura_closure_vector)

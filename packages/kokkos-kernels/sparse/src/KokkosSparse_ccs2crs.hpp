@@ -115,7 +115,7 @@ auto ccs2crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
 ///
 /// \tparam ScalarType   The ccsMatrix::scalar_type
 /// \tparam OrdinalType  The ccsMatrix::ordinal_type
-/// \tparam Device       The ccsMatrix::device_type
+/// \tparam DeviceType   The ccsMatrix::device_type
 /// \tparam MemoryTraits The ccsMatrix::memory_traits
 /// \tparam SizeType     The ccsMatrix::size_type
 /// \param ccsMatrix The KokkosSparse::CcsMatrix.

@@ -50,4 +50,4 @@ TEUCHOS_UNIT_TEST(SSPDIRK22, AppAction)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

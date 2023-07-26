@@ -32,7 +32,8 @@ class ChangeOfBasis
     // basis space
     // (more generally, the point can be in whatever coordinate system the
     //  basis vectors are in)
-    Point project_forward(const Point& pt)
+    template <typename T>
+    PointT<T> project_forward(const PointT<T>& pt)
     {
       Point ptPrime;
       ptPrime.x = dot(m_basis[0], pt);
@@ -42,7 +43,8 @@ class ChangeOfBasis
       return ptPrime;
     }
 
-    Point project_back(const Point& ptPrime)
+    template <typename T>
+    PointT<T> project_back(const PointT<T>& ptPrime)
     {
       Point pt;
       pt.x += ptPrime.x * m_basis[0].x;

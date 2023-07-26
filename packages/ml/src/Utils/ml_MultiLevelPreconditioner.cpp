@@ -2242,8 +2242,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if(AMGSolver_ != ML_CLASSICAL_FAMILY) 
     ML_CHK_ERR(SetupCoordinates());
 
-  if (List_.get("RAP: sort columns",0))                                     //
+  if (List_.get("RAP: sort columns",0)) {                                    
+    if (ml_nodes_) ml_nodes_->sortColumnsAfterRAP = 1;
     ml_->sortColumnsAfterRAP = 1;
+  }
   // ========================================================================//
   //               Setting Repartitioning                                    //
   // ========================================================================//
