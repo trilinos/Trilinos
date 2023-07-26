@@ -163,12 +163,12 @@ namespace Intrepid2 {
                   input_value_type temp = 0.0;
                   for (ordinal_type l=0;l<ndofEdge;++l) {
                     const ordinal_type ll = tagToOrdinal(1, edgeId, l);
-                    auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
+                    auto & inputEntry = leftMultiply ? in(ll, j, k) : in(j, ll, k);
                     auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-                    temp += mat_il*input;
+                    temp += mat_il*inputEntry;
                   }
-                  auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
-                  output = temp;
+                  auto & outputEntry = leftMultiply ? out(ii, j, k) : out(j, ii, k);
+                  outputEntry = temp;
                 }
               }
           }
@@ -198,13 +198,13 @@ namespace Intrepid2 {
                   input_value_type temp = 0.0;
                   for (ordinal_type l=0;l<ndofFace;++l) {
                     const ordinal_type ll = tagToOrdinal(2, faceId, l);
-                    auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
+                    auto & inputEntry = leftMultiply ? in(ll, j, k) : in(j, ll, k);
                     auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-                    temp += mat_il*input;
+                    temp += mat_il*inputEntry;
                   }
                   
-                  auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
-                  output = temp;
+                  auto & outputEntry = leftMultiply ? out(ii, j, k) : out(j, ii, k);
+                  outputEntry = temp;
                 }
               }
           }
@@ -231,12 +231,12 @@ namespace Intrepid2 {
                 input_value_type temp = 0.0;
                 for (ordinal_type l=0;l<ndofFace;++l) {
                   const ordinal_type ll = tagToOrdinal(2, 0, l);
-                  auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
+                  auto & inputEntry = leftMultiply ? in(ll, j, k) : in(j, ll, k);
                   auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-                  temp += mat_il*input;
+                  temp += mat_il*inputEntry;
                 }
-                auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
-                output = temp;
+                auto & outputEntry = leftMultiply ? out(ii, j, k) : out(j, ii, k);
+                outputEntry = temp;
               }
             }
         }
@@ -260,12 +260,12 @@ namespace Intrepid2 {
                 input_value_type temp = 0.0;
                 for (ordinal_type l=0;l<ndofEdge;++l) {
                   const ordinal_type ll = tagToOrdinal(1, 0, l);
-                  auto & input = leftMultiply ? in(ll, j, k) : in(j, ll, k);
+                  auto & inputEntry = leftMultiply ? in(ll, j, k) : in(j, ll, k);
                   auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-                  temp += mat_il*input;
+                  temp += mat_il*inputEntry;
                 }
-                auto & output = leftMultiply ? out(ii, j, k) : out(j, ii, k);
-                output = temp;
+                auto & outputEntry = leftMultiply ? out(ii, j, k) : out(j, ii, k);
+                outputEntry = temp;
               }
             }
         }
