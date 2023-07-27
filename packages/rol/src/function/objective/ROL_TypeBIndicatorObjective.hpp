@@ -74,7 +74,7 @@ public:
                           const Ptr<Constraint<Real>>      &con,
                           const Vector<Real>               &mul,
                           const Vector<Real>               &res,
-                          ParameterList                    &list)
+                          ParameterList                    &list) : 
     proj_(PolyhedralProjectionFactory<Real>(xprim,xdual,bnd,con,mul,res,list)),
     res_(res.clone()) {}
 
@@ -83,7 +83,6 @@ public:
 
   Real value( const Vector<Real> &x, Real &tol ) {
     const Real zero(0), eps(ROL_EPSILON<Real>());
-    Real val(0);
     bool isBndFeasible = proj_->getBoundConstraint()->isFeasible(x); 
     bool isConFeasible = true;
     if (res_ != nullPtr) {
