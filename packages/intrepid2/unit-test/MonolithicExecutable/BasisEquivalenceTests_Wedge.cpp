@@ -34,14 +34,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov), or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
 
-/** \file   BasisEquivalenceTests.cpp
+/** \file   BasisEquivalenceTests_Wedge.cpp
     \brief  Tests to verify that bases on the wedge that span the same space are equivalent.
     \author Created by N.V. Roberts.
  */
