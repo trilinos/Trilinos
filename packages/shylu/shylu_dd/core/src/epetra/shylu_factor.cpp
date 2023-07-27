@@ -131,10 +131,10 @@ int create_matrices
     // Find the required no of diagonals
     /*int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
     //std::cout << "No of diagonals in Sbar =" << Sdiag << std::endl;
-    Sdiag = MIN(Sdiag, SNumGlobalCols-1);*/
+    Sdiag = SHYLU_CORE_MIN(Sdiag, SNumGlobalCols-1);*/
     int Sdiag = (int) Snr * Sdiagfactor;
-    Sdiag = MIN(Sdiag, Snr-1);
-    Sdiag = MAX(Sdiag, 0);
+    Sdiag = SHYLU_CORE_MIN(Sdiag, Snr-1);
+    Sdiag = SHYLU_CORE_MAX(Sdiag, 0);
     //std::cout << "No of diagonals in Sbar =" << Sdiag << std::endl;
     //assert (Sdiag <= SNumGlobalCols-1);
     if (Snr != 0) assert (Sdiag <= Snr-1);
@@ -461,8 +461,8 @@ int extract_matrices
         //config->dm.print(5, "Done R fillcomplete");
 
         int Sdiag = (int) data->Snr * Sdiagfactor;
-        Sdiag = MIN(Sdiag, data->Snr-1);
-        Sdiag = MAX(Sdiag, 0);
+        Sdiag = SHYLU_CORE_MIN(Sdiag, data->Snr-1);
+        Sdiag = SHYLU_CORE_MAX(Sdiag, 0);
 
         // Add the diagonals to Sg
         for (int i = 0; config->schurApproxMethod == 1 && i < nrows ; i++)
@@ -474,8 +474,8 @@ int extract_matrices
             rcnt = 0;
             //TODO Will be trouble if SNumGlobalCols != Snc
             //assert(SNumGlobalCols == Snc);
-            //for (int j = MAX(i-Sdiag,0) ; j<MIN(SNumGlobalCols, i+Sdiag); j++)
-            for (int j = MAX(i-Sdiag, 0) ; j < MIN(data->Snr, i+Sdiag); j++)
+            //for (int j = SHYLU_CORE_MAX(i-Sdiag,0) ; j<SHYLU_CORE_MIN(SNumGlobalCols, i+Sdiag); j++)
+            for (int j = SHYLU_CORE_MAX(i-Sdiag, 0) ; j < SHYLU_CORE_MIN(data->Snr, i+Sdiag); j++)
             {
                 // find the adjacent columns from the row map of S
                 //assert (j >= 0 && j < Snr);

@@ -178,7 +178,7 @@ int main(int argc, char** argv)
 
   //Zoltan2 Test
 
-#if defined(HAVE_SHYLU_ZOLTAN2) || defined(HAVE_SHYLU_ZOLTAN2)
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE)
 
    //Isorropia Test - Graph/ParMetis
   pLUList->set("Partitioning Package","Zoltan2");
