@@ -117,6 +117,7 @@ public:
 
   using ConstIdsDeviceView = Kokkos::View<const gno_t *, device_t>;
   using ConstIdsHostView = typename ConstIdsDeviceView::HostMirror;
+//  using ConstIdsHostView = typename Kokkos::View<const gno_t *, Kokkos::HostSpace>;
 
   using IdsDeviceView = Kokkos::View<gno_t *, device_t>;
   using IdsHostView = typename IdsDeviceView::HostMirror;
