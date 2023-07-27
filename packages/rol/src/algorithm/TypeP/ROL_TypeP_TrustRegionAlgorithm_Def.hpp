@@ -866,7 +866,7 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
   pwa.set(y); pwa.axpy(tR, s);
   nobj.update(pwa,UpdateType::Trial);
   Real nR = nobj.value(pwa,tol); state_->nnval++;
-  Real pR = half * tR * tR * kappa + tR * gs + nR - nold;
+  Real pR = tR * (half * tR * kappa + gs) + nR - nold;
 
   // Compute minimizer of quadratic upper bound
   Real t0 = tR, n0 = nR;
@@ -876,7 +876,8 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
     nobj.update(pwa,UpdateType::Trial);
     n0 = nobj.value(pwa,tol); state_->nnval++;
   }
-  Real t = (kappa > 0) ? std::min(tR,(((nold - n0) / kappa) / t0) - (gs / kappa)) : tR;
+  Real ts = (kappa > 0) ? std::min(tR,(((nold - n0) / kappa) / t0) - (gs / kappa)) : tR;
+  Real t  = std::min(t0,ts);
   bool useOptT = true;
   if (t <= tL) {
     t = (t0 < tR ? t0 : half*tR);
@@ -887,21 +888,25 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
   pwa.set(y); pwa.axpy(t, s);
   nobj.update(pwa,UpdateType::Trial);
   Real nt = nobj.value(pwa,tol); state_->nnval++;
-  Real pt = half * t * t * kappa + t * gs + nt - nold;
+  Real pt = t * (half * t * kappa + gs) + nt - nold;
   Real Q  = pt;
 
   // If phi(x) = phi(x+tmax s) = phi(x+ts), then
   // phi(x+ts) is constant for all t, so the TR
   // model is quadratic---use the minimizer
   if (useOptT && nt == nold && nR == nold) {
-    alpha = t; pred = pt; nval = nt;
+    alpha = ts;
+    pred  = ts * (half * ts * kappa + gs);
+    nval  = nold;
     return;
   }
 
   // If pt >= max(pL, pR), then the model is concave
   // and the minimum is obtained at the end points
   if (pt >= std::max(pL, pR)) {
-    alpha = tR; pred = pR; nval = nR;
+    alpha = tR;
+    pred  = pR;
+    nval  = nR;
     return;
   }
 
@@ -941,7 +946,7 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
     pwa.set(y); pwa.axpy(u, s);
     nobj.update(pwa,UpdateType::Trial);
     nu = nobj.value(pwa,tol); state_->nnval++;
-    pu = half * u * u * kappa + u * gs + nu - nold;
+    pu = u * (half * u * kappa + gs) + nu - nold;
     if (pu <= pt) {
       if (u >= t) tL = t;
       else        tR = t;
@@ -965,7 +970,9 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
     tol2 = two*tol1;
     if (pt <= Q && std::abs(t-tm) <= (tol2-half*(tR-tL))) break;
   }
-  alpha = t; pred = pt; nval = nt;
+  alpha = t;
+  pred  = pt;
+  nval  = nt;
 }
 
 // NCG Subsolver
