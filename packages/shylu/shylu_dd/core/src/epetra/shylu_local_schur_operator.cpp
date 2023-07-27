@@ -178,7 +178,7 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
 #endif
     //cout << "Out of local schur's Apply" << endl;
     cntApply++;
-    return 0;
+    return err;
 }
 
 void ShyLU_Local_Schur_Operator::PrintTimingInfo()

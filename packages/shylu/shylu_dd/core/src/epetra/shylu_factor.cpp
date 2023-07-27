@@ -322,7 +322,7 @@ int extract_matrices
     double *LeftValues = new double[data->lmax];
     int *RightIndex = new int[data->rmax];
     double *RightValues = new double[data->rmax];
-    int err;
+    int err = 0;
     int lcnt, rcnt ;
     int gcid;
     int gid;
@@ -516,8 +516,7 @@ int extract_matrices
         //Rptr->ColMap().NumMyElements() << std::endl;
     // ]
 
-    return 0;
-
+    return err;
 }
 
 /* Find the DBBD form */
@@ -849,6 +848,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     fact_time.start();
 #endif
 
+    int err = 0;
     Teuchos::RCP<Epetra_LinearProblem> LP = ssym->LP;
     Teuchos::RCP<Amesos_BaseSolver> Solver = ssym->Solver;
     Teuchos::RCP<Ifpack_Preconditioner> ifpackSolver = ssym->ifSolver;
@@ -1022,7 +1022,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         }
         std::string schurPrec = config->schurPreconditioner;
 
-        int err = data->innersolver->SetUserOperator
+        err = data->innersolver->SetUserOperator
                     (data->schur_op.get());
         assert (err == 0);
 
@@ -1056,7 +1056,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         // Doing an inexact Schur complement
         if (config->libName == "Belos")
         {
-            int err = data->innersolver->SetUserMatrix
+            err = data->innersolver->SetUserMatrix
                         (data->Sbar.get());
             assert (err == 0);
 
@@ -1100,5 +1100,5 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     std::cout << " Shylu_Factor(" << myPID << ") :: Total Time" << fact_time.totalElapsedTime() << std::endl;
     fact_time.reset();
 #endif
-    return 0;
+    return err;
 }
