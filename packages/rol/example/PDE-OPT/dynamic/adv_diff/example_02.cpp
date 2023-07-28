@@ -71,7 +71,6 @@
 #include "obj_adv_diff.hpp"
 #include "mesh_adv_diff.hpp"
 #include "l1penaltydynamic.hpp"
-#include "boundpenaltydynamic.hpp"
 
 #include "ROL_TypeP_TrustRegionAlgorithm.hpp"
 
