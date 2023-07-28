@@ -147,7 +147,7 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   std::vector<int> typeindplan;
 
   // types to choose from
-  int numTypeOps = 4;
+  constexpr int numTypeOps = 4;
   MPI_Datatype typeoptions[numTypeOps] = {MPI_BYTE, MPI_SHORT, MPI_INT, MPI_LONG};
   int typesizes[numTypeOps];
   MPI_Type_size(MPI_BYTE, &(typesizes[0]));

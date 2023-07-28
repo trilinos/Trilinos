@@ -540,6 +540,7 @@ void RILUK<MatrixType>::initialize ()
                                                                            LevelOfFill_, 0, Overalloc_));
     }
 
+    // This calls spiluk_symbolic
     if (this->isKokkosKernelsSpiluk_) Graph_->initialize (KernelHandle_);
     else Graph_->initialize ();
 
