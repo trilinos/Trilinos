@@ -2549,14 +2549,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
     // }
 
     // Now test the column indices
-    // if(colind.size()!=Bcolind_LID.size()) {
-    //   test_err++;
-    //   std::cout << "Different sizes" << std::endl;
-    // }
-    // else {
-    //   for(rsize_t i=0; i<colind.size(); i++)
-    //     if(colind[i] != Bcolind_LID[i]) test_err++;
-    // }
+    if(colind.size()!=Bcolind_LID.size()) {
+      test_err++;
+      std::cout << "Different sizes" << std::endl;
+    }
+    else {
+      for(rsize_t i=0; i<colind.size(); i++)
+        if(colind[i] != Bcolind_LID[i]) test_err++;
+    }
 
     total_err+=test_err;
   }

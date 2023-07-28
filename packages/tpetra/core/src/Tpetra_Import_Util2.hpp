@@ -951,8 +951,14 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   }
 }
 
+// template <typename T>
+// T add_atomic(T* var, T val) {
+//   Kokkos::atomic_add(var, val);
+//   return var;
+// }
 
 #include <typeinfo>
+
 // Kokkos version of lowCommunicationMakeColMapAndReindex
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
@@ -1036,6 +1042,7 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   fflush(stdout);
 
   size_t NumLocalColGIDs = 0;
+  size_t NumRemoteColGIDs = 0;
   Kokkos::parallel_reduce(team_policy(numMyRows, Kokkos::AUTO), KOKKOS_LAMBDA(const typename team_policy::member_type &member, size_t &update) { 
     const int i = member.league_rank();
     size_t NumLocalColGIDs_temp = 0;
@@ -1051,7 +1058,7 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
         if(outcome.success()) {
           Kokkos::atomic_add(&innerUpdate, 1);
         }
-        colind_LID_view[j] = LID;
+        // colind_LID_view[j] = LID;
       }
     }, NumLocalColGIDs_temp);
     if(member.team_rank() == 0) update += NumLocalColGIDs_temp;
@@ -1084,7 +1091,7 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
       }
     });
   });
-  size_t NumRemoteColGIDs = RemoteGIDs_view_map.size();
+  NumRemoteColGIDs = RemoteGIDs_view_map.size();
   printf("Ended remote map loop\n");
 
   Kokkos::View<int*> valid_key_index("valid_key_index", RemoteGIDs_view_map.capacity()); 
@@ -1117,6 +1124,99 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
 
   Kokkos::deep_copy(RemoteGIDList_host, RemoteGIDList_view);
   Kokkos::deep_copy(PIDList_host, PIDList_view);
+
+  // Kokkos::deep_copy(RemoteGID_and_PID_host, RemoteGID_and_PIDList);
+  // Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
+  //   printf("\nView Zero GID index: %d\n", RemoteGID_and_PIDList[0].first);
+  //   printf("View First GID index: %d\n", RemoteGID_and_PIDList[1].first);
+  // });
+
+  // printf("Zero GID index: %d\n", RemoteGID_and_PID_host[0].first);
+  // printf("First GID index: %d\n", RemoteGID_and_PID_host[1].first);
+  // printf("Begin add to PIDList\n");
+  // for(int i = 0; i < NumRemoteColGIDs; ++i) {
+  //   GO GID_value = RemoteGID_and_PID_host[i].first;
+  //   int PID_value = RemoteGID_and_PID_host[i].second;
+  //   //printf("PIDList: %d\n", RemoteGID_and_PID_host[i].second);
+  //   // Is GID always > 0?
+  //   if(GID_value != 0) {
+  //     //printf("PIDList: %d, GIDList: %d\n", PID_value, GID_value);
+  //     RemoteGIDList.push_back(GID_value);
+  //     PIDList.push_back(PID_value);
+  //   }
+  // }
+
+  // UNORDERED MAP SERIAL
+  // std::unordered_map<LO, bool> LocalGIDs_map;
+  // std::unordered_map<GO, LO> RemoteGIDs_map;
+  // for (size_t i = 0; i < numMyRows; ++i) {
+  //   for(size_t j = rowptr[i]; j < rowptr[i+1]; ++j) {
+  //     const GO GID = colind_GID[j];
+  //     // Check if GID matches a row GID
+  //     const LO LID = domainMap.getLocalElement (GID);
+  //     if(LID != -1) {
+  //       // auto outcome = LocalGIDs_map.insert(std::make_pair(LID, true));
+  //       // if(outcome.second) {
+  //       //   NumLocalColGIDs++;
+  //       // }
+  //       // colind_LID[j] = LID;
+  //     }
+  //     else {
+  //       auto outcome = RemoteGIDs_map.insert(std::make_pair(GID, NumRemoteColGIDs));
+  //       const LO hash_value = outcome.first->second;
+  //       if (outcome.second) { // This means its a new remote GID
+  //         const int PID = owningPIDs[j];
+  //         TEUCHOS_TEST_FOR_EXCEPTION(
+  //           PID == -1, std::invalid_argument, prefix << "Cannot figure out if "
+  //           "PID is owned.");
+  //         colind_LID[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs);
+  //         RemoteGIDList.push_back (GID);
+  //         PIDList.push_back (PID);
+  //         NumRemoteColGIDs++;
+  //       }
+  //       else {
+  //         colind_LID[j] = static_cast<LO> (numDomainElements + hash_value);
+  //       }
+  //     }
+  //   }
+  // }
+
+  // TRADITIONAL SERIAL
+  // size_t NumLocalColGIDs = 0;
+  // LO NumRemoteColGIDs = 0;
+  // for (size_t i = 0; i < numMyRows; ++i) {
+  //   for(size_t j = rowptr[i]; j < rowptr[i+1]; ++j) {
+  //     const GO GID = colind_GID[j];
+  //     // Check if GID matches a row GID
+  //     const LO LID = domainMap.getLocalElement (GID);
+  //     if(LID != -1) {
+  //       const bool alreadyFound = LocalGIDs[LID];
+  //       if (! alreadyFound) {
+  //         LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
+  //         NumLocalColGIDs++;
+  //       }
+  //       colind_LID[j] = LID;
+  //     }
+  //     else {
+  //       const LO hash_value = RemoteGIDs.get (GID);
+  //       if (hash_value == -1) { // This means its a new remote GID
+  //         const int PID = owningPIDs[j];
+  //         TEUCHOS_TEST_FOR_EXCEPTION(
+  //           PID == -1, std::invalid_argument, prefix << "Cannot figure out if "
+  //           "PID is owned.");
+  //         colind_LID[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs);
+  //         RemoteGIDs.add (GID, NumRemoteColGIDs);
+  //         RemoteGIDList.push_back (GID);
+  //         printf("GIDList: %d\n", GID);
+  //         PIDList.push_back (PID);
+  //         NumRemoteColGIDs++;
+  //       }
+  //       else {
+  //         colind_LID[j] = static_cast<LO> (numDomainElements + hash_value);
+  //       }
+  //     }
+  //   }
+  // }
 
   printf("End add to PIDList, size = %d\n", PIDList_host.size());
 
@@ -1158,24 +1258,13 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     RemoteColIndices[i] = RemoteGIDList_host[i];
   }
 
-  // Build permute array for *remote* reindexing.
-  Teuchos::Array<LO> RemotePermuteIDs (NumRemoteColGIDs);
-  for (LO i = 0; i < NumRemoteColGIDs; ++i) {
-    RemotePermuteIDs[i]=i;
-  }
-
   // ---------------------------------------------------------------
   printf("Beginning binsort\n");
 
   // Make device views and host mirror views, then deep copy from host to device
   auto ColIndices_view = Details::create_mirror_view_from_raw_host_array(DT(), ColIndices.getRawPtr(), ColIndices.size(), true, "ColIndices");
-  auto RemotePermuteIDs_view = Details::create_mirror_view_from_raw_host_array(DT(), RemotePermuteIDs.getRawPtr(), RemotePermuteIDs.size(), true, "RemotePermuteIDs");
-
   typename decltype(ColIndices_view)::HostMirror ColIndices_host(ColIndices.getRawPtr(), ColIndices.size());
-  typename decltype(RemotePermuteIDs_view)::HostMirror RemotePermuteIDs_host(RemotePermuteIDs.getRawPtr(), RemotePermuteIDs.size());
-
   Kokkos::deep_copy(ColIndices_view, ColIndices_host);
-  Kokkos::deep_copy(RemotePermuteIDs_view, RemotePermuteIDs_host);
 
   printf("Copied from host to view\n");
 
@@ -1201,12 +1290,9 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   bin_sort3.create_permute_vector(exec);
   bin_sort3.sort(exec, PIDList_view);
   bin_sort3.sort(exec, ColIndices_subview);
-  bin_sort3.sort(exec, RemotePermuteIDs_view);
 
   // Deep copy back from device to host
   Kokkos::deep_copy(execution_space(), PIDList_host, PIDList_view);
-  // Kokkos::deep_copy(execution_space(), ColIndices_host, ColIndices_view);
-  // Kokkos::deep_copy(execution_space(), RemotePermuteIDs_host, RemotePermuteIDs_view);
 
   printf("Reached end of binsort, array size = %d\n", PIDList_host.extent(0));
   // ---------------------------------------------------------------
@@ -1243,11 +1329,6 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     ColIndices_max = std::max(ColIndices_max, int(ColIndices[i]));
   }
 
-  using KeyViewTypeColIndices = decltype(ColIndices_view);
-  using BinSortOpColIndices = Kokkos::BinOp1D<KeyViewTypeColIndices>;
-
-  BinSortOpColIndices binOp2(ColIndices_max+1, 0, ColIndices_max);
-
   printf("Beginning sort2 loop\n");
 
   // There's actually a sort2 that works with views, but it's host-only
@@ -1257,34 +1338,17 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
       StartNext++;
     }
     else {
-      ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext));
-      auto RemotePermuteIDs_subview = Kokkos::subview(RemotePermuteIDs_view, Kokkos::make_pair(StartCurrent, StartNext));
-      Kokkos::BinSort<KeyViewTypeColIndices, BinSortOpColIndices> bin_sort2(ColIndices_subview, 0, ColIndices_subview.extent(0), binOp2, false);
-      bin_sort2.create_permute_vector(exec);
-      bin_sort2.sort(exec, ColIndices_subview);
-      bin_sort2.sort(exec, RemotePermuteIDs_subview);
+      Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
       StartCurrent = StartNext;
       StartNext++;
     }
   }
 
-  ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext));
-  auto RemotePermuteIDs_subview = Kokkos::subview(RemotePermuteIDs_view, Kokkos::make_pair(StartCurrent, StartNext));
-  Kokkos::BinSort<KeyViewTypeColIndices, BinSortOpColIndices> bin_sort2(ColIndices_subview, 0, ColIndices_subview.extent(0), binOp2, false);
-  bin_sort2.create_permute_vector(exec);
-  bin_sort2.sort(exec, ColIndices_subview);
-  bin_sort2.sort(exec, RemotePermuteIDs_subview);
+  Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
 
   Kokkos::deep_copy(execution_space(), ColIndices_host, ColIndices_view);
-  Kokkos::deep_copy(execution_space(), RemotePermuteIDs_host, RemotePermuteIDs_view);
 
   printf("Completed sort2 loop\n");
-
-  // Reverse the permutation to get the information we actually care about
-  Teuchos::Array<LO> ReverseRemotePermuteIDs (NumRemoteColGIDs);
-  for (LO i = 0; i < NumRemoteColGIDs; ++i) {
-    ReverseRemotePermuteIDs[RemotePermuteIDs[i]] = i;
-  }
 
   // Build permute array for *local* reindexing.
   bool use_local_permute = false;
@@ -1326,47 +1390,15 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid ();
   colMap = rcp (new map_type (minus_one, ColIndices, domainMap.getIndexBase (),
                               domainMap.getComm ()));
-
-  std::cout << "Colind size: " << colind_LID.size() << ", ColIndices size: " << ColIndices.size() << std::endl;
   
-  // Kokkos::parallel_for(colind_LID.size(), KOKKOS_LAMBDA(const size_t i) {
-  //   colind_LID_view[i] = ColIndices_view[i];
-  // });
+  auto localColMap = colMap->getLocalMap();
 
-  // auto LocalPermuteIDs_view = Details::create_mirror_view_from_raw_host_array(DT(), LocalPermuteIDs.getRawPtr(), LocalPermuteIDs.size(), true, "LocalPermuteIDs");
-  // auto ReverseRemotePermuteIDs_view = Details::create_mirror_view_from_raw_host_array(DT(), ReverseRemotePermuteIDs.getRawPtr(), ReverseRemotePermuteIDs.size(), true, "ReverseRemotePermuteIDs");
-  
-  // typename decltype(LocalPermuteIDs_view)::HostMirror LocalPermuteIDs_host(LocalPermuteIDs.getRawPtr(), LocalPermuteIDs.size());
-  // typename decltype(ReverseRemotePermuteIDs_view)::HostMirror ReverseRemotePermuteIDs_host(ReverseRemotePermuteIDs.getRawPtr(), ReverseRemotePermuteIDs.size());
+  Kokkos::parallel_for(colind_GID.size(), KOKKOS_LAMBDA(const int i) {
+    colind_LID_view[i] = localColMap.getLocalElement(colind_GID_view[i]);
+  });
 
-  // Kokkos::deep_copy(LocalPermuteIDs_view, LocalPermuteIDs_host);
-  // Kokkos::deep_copy(ReverseRemotePermuteIDs_view, ReverseRemotePermuteIDs_host);
-  // // Kokkos::deep_copy(colind_LID_view, colind_LID_host);
-
-  // // Low-cost reindex of the matrix using Kokkos
-  // Kokkos::parallel_for(team_policy(numMyRows, Kokkos::AUTO), KOKKOS_LAMBDA(const typename team_policy::member_type &member) { 
-  //   const int i = member.league_rank();
-  //   size_t rowptr_start = rowptr_view[i];
-  //   size_t rowptr_end = rowptr_view[i+1];
-  //   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, rowptr_start, rowptr_end), [=](const size_t j) {
-  //     const LO ID = colind_LID_view[j];
-  //     if (static_cast<size_t> (ID) < numDomainElements) {
-  //       if (use_local_permute) {
-  //         colind_LID_view[j] = LocalPermuteIDs_view[colind_LID_view[j]];
-  //       }
-  //       // In the case where use_local_permute==false, we just copy
-  //       // the DomainMap's ordering, which it so happens is what we
-  //       // put in colind_LID to begin with.
-  //     }
-  //     else {
-  //       colind_LID_view[j] =  NumLocalColGIDs + ReverseRemotePermuteIDs_view[colind_LID_view[j]-numDomainElements];
-  //       // printf("Remote: Colind_LID at index %d: %d\n", j, colind_LID_view[j]);
-  //     }
-  //   });
-  // });
-  
-  // Kokkos::deep_copy(execution_space(),colind_LID_host, colind_LID_view);
-}
+  Kokkos::deep_copy(execution_space(),colind_LID_host, colind_LID_view);
+  }
 
 
 
