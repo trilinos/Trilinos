@@ -402,19 +402,16 @@ void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, cons
   // Create new TCrsMatrix with the new filled data
   row_vtype rv("temp", row_map_host.extent(0));
   const auto nrows = row_map_host.size() - 1;
-  const auto nnz = col_inds_host.size();
   for (size_t i = 0; i <= nrows; ++i) {
     rv(i) = row_map_host(i);
   }
   Teuchos::SerialComm<LO> SerialComm;
   Teuchos::RCP<const Teuchos::Comm<LO> > comm_ptr = Teuchos::RCP(&SerialComm, false);
   map_type proc_map(nrows, 0, comm_ptr, Tpetra::LocallyReplicated);
-  map_type col_map(nnz, 0, comm_ptr, Tpetra::LocallyReplicated);
   Teuchos::RCP<map_type> map_ptr =  Teuchos::RCP(&proc_map, false);
-  Teuchos::RCP<map_type> colmap_ptr =  Teuchos::RCP(&col_map, false);
-  graph_type graph(map_ptr, colmap_ptr, rv, col_inds_host);
+  graph_type graph(map_ptr, map_ptr, rv, col_inds_host);
   graph.fillComplete();
-  BCrsMatrix bcrs_matrix(graph, block_size);
+  BCrsMatrix bcrs_matrix(graph, values_host, block_size);
 
   auto A = Tpetra::convertToCrsMatrix(bcrs_matrix);
   auto localA = A->getLocalMatrixDevice();
@@ -1177,9 +1174,6 @@ class FastILUPrec
             uRowMap_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uRowMap);
             const Ordinal nnzU = countU();
             FASTILU_DBG_COUT("**Finished counting U");
-
-            print_view("uRowMap_ after counting", uRowMap_);
-            print_view("a2uMap", a2uMap);
 
             //Allocate memory and initialize pattern for L, U (transpose).
             lColIdx = OrdinalArray(WithoutInit("lColIdx"), nnzL);
@@ -1949,7 +1943,6 @@ class FastILUPrec
   template <typename RHS>
   void verify(const RHS& rhs, const std::string& name, const bool initialize_only=false)
   {
-    std::cout << "JGF Verifying " << name << ", level:" << level << std::endl;
     // verify a this using brs and a rhs using crs
     assert(nRows*blockCrsSize == rhs.nRows);
     assert(guessFlag == rhs.guessFlag);
@@ -2674,18 +2667,7 @@ class FastILUFunctor
             :
                 nnz(nNZ), blk_size(bs), _Ap(Ap), _Ai(Ai), _Aj(Aj),  _Lp(Lp), _Li(Li),_Up(Up),
                 _Ui(Ui), _Ax(Ax), _Lx(Lx), _Ux(Ux), _diag(diag), _omega(omega), _blockCrsSize(blockCrsSize)
-        {
-              std::cout << "JGF starting a new Functor at level " << level << " with block size " << blockCrsSize << std::endl;
-              auto unc_a = decompress_matrix(Ap, Aj, Ax, blockCrsSize);
-              auto unc_l = decompress_matrix(Lp, Li, Lx, blockCrsSize);
-              auto unc_u = decompress_matrix(Up, Ui, Ux, blockCrsSize);
-
-              print_crs_matrix_details("A", Ap, Aj, Ax, blockCrsSize);
-              print_crs_matrix_details("L", Lp, Li, Lx, blockCrsSize);
-              print_crs_matrix_details("U", Up, Ui, Ux, blockCrsSize);
-
-              print_view("JGF Diag elems diag", diag);
-        }
+        { }
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const Ordinal blk_index) const
@@ -2719,11 +2701,6 @@ class FastILUFunctor
                     Ordinal lptr = _Lp[i];
                     Ordinal uptr = _Up[j];
 
-                    const bool lower = i > j;
-                    std::cout << "JGF1 A(" << i << ")(" << j << ")" << (lower ? "lower" : "upper") << std::endl;
-
-                    int diag_matches = 0;
-                    int non_diag_matches = 0;
                     while ( lptr < _Lp[i+1] && uptr < _Up[j+1] )
                     {
                         lCol = _Li[lptr];
@@ -2731,19 +2708,9 @@ class FastILUFunctor
                         lAdd = zero;
                         if (lCol == uCol)
                         {
-                          std::cout << "    JGF1 L(" << i << ")(" << lCol << ")="<< _Lx[lptr] << " U(" << j << ")(" << uCol << ")=" << _Ux[uptr] << std::endl;
 
                             lAdd = _Lx[lptr] * _Ux[uptr];
                             acc_val += lAdd;
-                            if (lCol == i || uCol == j) {
-              //std::cout << "    JGF1 DIAG MATCH " << lCol << " " << lAdd << std::endl;
-                              ++diag_matches;
-                            }
-                            else {
-              //std::cout << "    JGF1 MATCH " << lCol << " " << lAdd << std::endl;
-                              ++non_diag_matches;
-                              std::cout << "    JGF1 ACCUM " << lCol << " " << lAdd << std::endl;
-                            }
                         }
                         if (lCol <= uCol)
                         {
@@ -2757,9 +2724,6 @@ class FastILUFunctor
 
                     acc_val -= lAdd;
 
-                    std::cout << "  JGF1 for nnz=" << nz_index << " lptr=" << lptr << " uptr=" << uptr << " acc_val=" << acc_val << " urowend=" << _Ux[_Up[j+1]-1] << std::endl;
-
-                    assert(diag_matches == 1);
                     // Place the value into L or U
                     if (i > j)
                     {
@@ -2767,7 +2731,6 @@ class FastILUFunctor
                         assert(lCol == j);
                         val = (val-acc_val) / _Ux[_Up[j+1]-1];
                         _Lx[lptr-1] = ((one - _omega) * _Lx[lptr-1]) + (_omega * val);
-                        std::cout << "    JGF1 setting Lx(" << lptr-1 << ") row=" << i << " col="  << lCol << " " << _Lx[lptr-1] << std::endl;
                     }
                     else
                     {
@@ -2776,10 +2739,8 @@ class FastILUFunctor
                         assert(uCol == i);
                         if (i == j) {
                           _diag[j] = val;
-                          std::cout << "    JGF1 setting diag(" << j << ") = " << val << std::endl;
                         }
                         _Ux[uptr-1] = ((one - _omega) * _Ux[uptr - 1]) + (_omega * val);
-                        std::cout << "    JGF1 setting Ux(" << uptr-1 << ") row=" << j << " col="  << uCol <<" " << _Ux[uptr-1] << std::endl;
                     }
                 }
         }
@@ -2808,9 +2769,6 @@ class FastILUFunctor
                     const Ordinal i_unblock = unblock(i, bi, _blockCrsSize);
                     const Ordinal j_unblock = unblock(j, bj, _blockCrsSize);
 
-                    const bool lower = i_unblock > j_unblock;
-                    std::cout << "JGF2 A(" << i_unblock << ")(" << j_unblock << ")" << (lower ? "lower" : "upper") << std::endl;
-
                     // Iterate over bi row of L
                     // Iterate over bj row of U
                     while ( lptr < _Lp[i+1] && uptr < _Up[j+1] )
@@ -2830,10 +2788,8 @@ class FastILUFunctor
 
                           const bool diag_item = (lCol_unblock == i_unblock || uCol_unblock == j_unblock);
                           if (lVal != zero && uVal != zero && !diag_item) {
-                            std::cout << "    JGF2 L(" << i_unblock << ")(" << lCol_unblock << ") U(" << j_unblock << ")(" << uCol_unblock << ")" << std::endl;
                             const Scalar curr_val = lVal * uVal;
                             acc_val += curr_val;
-                            std::cout << "      JGF2 ACCUM " << curr_val << std::endl;
                           }
                         }
                       }
@@ -2850,13 +2806,7 @@ class FastILUFunctor
                     // The last item in the row of U will always be the diagonal
                     Scalar lastU = _diag[j*_blockCrsSize + bj];
 
-                    std::cout << "  JGF2 for nnz=" << nz_index << " lptr=" << lptr << " uptr=" << uptr << " acc_val=" << acc_val << " urowend=" << lastU << std::endl;
-
                     // Place the value into L or U
-                    Ordinal lCol = _Ui[lptr-1];
-                    Ordinal uCol = _Ui[uptr-1];
-                    const Ordinal lCol_unblock = unblock(lCol, bj, _blockCrsSize);
-                    const Ordinal uCol_unblock = unblock(uCol, bj, _blockCrsSize);
                     const Ordinal l_offset = blockItems*(lptr-1);
                     const Ordinal u_offset = blockItems*(uptr-1);
                     const Ordinal blockOffset = _blockCrsSize*bi + bj;
@@ -2864,16 +2814,13 @@ class FastILUFunctor
                     if ( (i == j && bi > bj) || i > j) {
                       val = (val-acc_val) / lastU;
                       _Lx[l_offset + blockOffset] = ((one - _omega) * _Lx[l_offset + blockOffset]) + (_omega * val);
-                      std::cout << "      JGF2 setting Lx(" << l_offset + blockOffset << ") row=" << i_unblock << " col="  << lCol_unblock << " " << _Lx[l_offset + blockOffset] << std::endl;
                     }
                     else {
                       val = (val-acc_val);
                       if (i == j && bi == bj) {
                         _diag[j*_blockCrsSize + bj] = val;
-                        std::cout << "      JGF2 setting diag(" << j*_blockCrsSize + bj << ") = " << val << std::endl;
                       }
                       _Ux[u_offset + blockOffsetT] = ((one - _omega) * _Ux[u_offset + blockOffsetT]) + (_omega * val);
-                      std::cout << "      JGF2 setting Ux(" << u_offset + blockOffsetT << ") row=" << j_unblock << " col="  << uCol_unblock << " " << _Ux[u_offset + blockOffsetT] << std::endl;
                     }
                   }
                 }

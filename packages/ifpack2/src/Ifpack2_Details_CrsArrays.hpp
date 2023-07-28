@@ -61,49 +61,6 @@ namespace Ifpack2
 namespace Details
 {
 
-// template <typename View1, typename View2, typename View3>
-// std::vector<std::vector<typename View3::non_const_value_type>> decompress_matrix(
-//   const View1& row_map,
-//   const View2& entries,
-//   const View3& values,
-//   const int block_size)
-// {
-//   using size_type = typename View1::non_const_value_type;
-//   using lno_t     = typename View2::non_const_value_type;
-//   using scalar_t  = typename View3::non_const_value_type;
-
-//   const size_type nrows = row_map.extent(0) - 1;
-//   std::vector<std::vector<scalar_t>> result;
-//   result.resize(nrows);
-//   for (auto& row : result) {
-//     row.resize(nrows, 0.0);
-//   }
-
-//   std::cout << "cols: " << entries.extent(0) << std::endl;
-
-//   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
-//     const size_type row_nnz_begin = row_map(row_idx);
-//     const size_type row_nnz_end   = row_map(row_idx + 1);
-//     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-//       const lno_t col_idx      = entries(row_nnz);
-//       const scalar_t value     = values.extent(0) > 0 ? values(row_nnz) : 1;
-//       result[row_idx][col_idx] = value;
-//     }
-//   }
-
-//   return result;
-// }
-
-// template <typename scalar_t>
-// void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
-//   for (const auto& row : matrix) {
-//     for (const auto& item : row) {
-//       std::printf("%.2f ", item);
-//     }
-//     std::cout << std::endl;
-//   }
-// }
-
 //Utility for getting the local values, rowptrs and colinds (in Kokkos::Views) for any RowMatrix
 //Used by Fic, Filu and Fildl but may also be useful in other classes
 template<typename Scalar, typename ImplScalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -223,7 +180,6 @@ struct CrsArrayReader
   //! Faster specialization of getValues() for when A is a Tpetra::CrsMatrix.
   static void getValuesCrs(const TCrsMatrix* A, ScalarArray& values_)
   {
-    std::cout << "getValuesCrs" << std::endl;
     auto localA = A->getLocalMatrixDevice();
     auto values = localA.values;
     auto nnz = values.extent(0);
@@ -234,7 +190,6 @@ struct CrsArrayReader
   //! Faster specialization of getStructure() for when A is a Tpetra::CrsMatrix.
   static void getStructureCrs(const TCrsMatrix* A, OrdinalArrayHost& rowptrsHost_, OrdinalArray& rowptrs_, OrdinalArray& colinds_)
   {
-    std::cout << "getStructureCrs" << std::endl;
     //rowptrs really have data type size_t, but need them as LocalOrdinal, so must convert manually
     auto localA = A->getLocalMatrixDevice();
     auto rowptrs = localA.graph.row_map;
@@ -254,8 +209,6 @@ struct CrsArrayReader
   //! Faster specialization of getValues() for when A is a Tpetra::BlockCrsMatrix.
   static void getValuesBrs(const TBrsMatrix* A, ScalarArray& values_)
   {
-    std::cout << "getValuesBrs" << std::endl;
-
     auto localA = A->getLocalMatrixDevice();
     auto values = localA.values;
     auto nnz = values.extent(0);
@@ -266,7 +219,6 @@ struct CrsArrayReader
   //! Faster specialization of getStructure() for when A is a Tpetra::BlockCrsMatrix.
   static void getStructureBrs(const TBrsMatrix* A, OrdinalArrayHost& rowptrsHost_, OrdinalArray& rowptrs_, OrdinalArray& colinds_)
   {
-    std::cout << "getStructureBrs" << std::endl;
     //rowptrs really have data type size_t, but need them as LocalOrdinal, so must convert manually
     auto localA = A->getLocalMatrixDevice();
     auto rowptrs = localA.graph.row_map;

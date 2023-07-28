@@ -177,7 +177,6 @@ initialize()
     auto crs_matrix = Ifpack2::Details::getCrsMatrix(this->mat_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-    print_crs_matrix_details("Original A", localRowPtrs_, localColInds_, localValues_, 1);
 
     localRowPtrsHost2_ = localRowPtrsHost_;
     localRowPtrs2_     = localRowPtrs_;
@@ -289,7 +288,6 @@ initialize()
   }
 
   initLocalPrec();  //note: initLocalPrec updates initTime
-  std::cout << "JGF MADE IT PAST INIT!!" << std::endl;
   initFlag_ = true;
   nInit_++;
 }
