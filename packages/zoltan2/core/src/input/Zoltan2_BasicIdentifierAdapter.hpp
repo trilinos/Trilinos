@@ -188,7 +188,7 @@ public:
   }
 
   void getWeightsDeviceView(typename Base::WeightsDeviceView &wgts) const override {
-    wgts = weightsView_; // weightsView_ is already on device
+    wgts = weightsView_;
   }
 
   void getWeightsHostView(typename Base::WeightsHostView &wgts) const override {
@@ -198,10 +198,10 @@ public:
   }
 
 private:
-  lno_t localNumIDs_;
+  lno_t localNumIDs_ = 0;
   const gno_t *idList_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
-  size_t numWeightsPerID_;
+  size_t numWeightsPerID_ = 0;
 
   Kokkos::View<gno_t *, device_t> idsView_;
   Kokkos::View<scalar_t **, device_t> weightsView_;
@@ -217,14 +217,13 @@ template <typename User>
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       localNumIDs_(numIds), idList_(idPtr), weights_() {
   typedef StridedData<lno_t, scalar_t> input_t;
-  size_t numWeights = weights.size();
-  numWeightsPerID_ = numWeights;
+  numWeightsPerID_ = weights.size();
 
-  if (numWeights > 0){
-    weights_ = arcp(new input_t [numWeights], 0, numWeights, true);
+  if (numWeightsPerID_ > 0){
+    weights_ = arcp(new input_t [numWeightsPerID_], 0, numWeightsPerID_, true);
 
     if (numIds > 0){
-      for (size_t i = 0; i < numWeights; i++){
+      for (size_t i = 0; i < numWeightsPerID_; i++){
         int stride = weightStrides.size() ? weightStrides[i] : 1;
         ArrayRCP<const scalar_t> wgtV(weights[i], 0, stride * numIds, false);
         weights_[i] = input_t(wgtV, stride);
