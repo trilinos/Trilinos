@@ -103,14 +103,13 @@ initLocalPrec()
   auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
   auto matCrs = Ifpack2::Details::getCrsMatrix(this->mat_);
-  auto matBcrs = Ifpack2::Details::getBcrsMatrix(this->mat_);
 
   bool skipSortMatrix = !matCrs.is_null() && matCrs->getCrsGraph()->isSorted() &&
                         !p.use_metis;
   const int blockCrsSize = p.blockCrs ? p.blockCrsSize : 1;
   localPrec_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
-                                          blockCrsSize, matBcrs.get()));
+                                          blockCrsSize));
   localPrec2_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs2_, this->localColInds2_, this->localValues2_, nRows*blockCrsSize, p.sptrsv_algo,
                                            p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
                                            1));
@@ -144,7 +143,6 @@ computeLocalPrec()
 
   localPrec2_->verify(*localPrec3_, "compute_unblocked_vs_orig");
   localPrec_->verify(*localPrec2_, "compute_blocked_vs_unblocked");
-  std::cout << "JGF VERIFICATION OF COMPUTE COMPLETE!" << std::endl;
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>

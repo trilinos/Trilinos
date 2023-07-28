@@ -197,31 +197,17 @@ initialize()
       "a-blk-filled", nrows, nrows, new_nnz_count, local_vals_to_insert.data(), local_new_rowmap.data(), local_col_ids_to_insert.data());
     auto crs_row_map = crs_matrix->getRowMap();
     auto crs_col_map = crs_matrix->getColMap();
-    // std::cout << "JGF crs_row_map: " << crs_row_map->description() << std::endl;
-    // crs_row_map->describe(*(Teuchos::fancyOStream(Teuchos::RCP(&std::cout,false))), Teuchos::VERB_HIGH);
-    // std::cout << "JGF crs_col_map: " << crs_col_map->description() << std::endl;
     TCrsMatrix crs_matrix_block_filled(crs_row_map, crs_col_map, kk_crs_matrix_block_filled);
     mat_ = Teuchos::RCP(&crs_matrix_block_filled, false);
 
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-    //print_crs_matrix_details("Unblocked A filled", localRowPtrs_, localColInds_, localValues_, 1);
 
     auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(crs_matrix_block_filled, params_.blockCrsSize);
     mat_ = bcrs_matrix;
 
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-    //print_crs_matrix_details("BCRS converted A", localRowPtrs_, localColInds_, localValues_, params_.blockCrsSize);
-    //print_crs_matrix_details("Unblocked mirror A2", localRowPtrs2_, localColInds2_, localValues2_, 1);
-
-    // mat_ = Tpetra::convertToCrsMatrix(*bcrs_matrix);
-    // CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
-    // CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-    // unfill_crs(localRowPtrs_, localColInds_, localValues_);
-    // print_crs_matrix_details("A converted back to CRS" localRowPtrs_, localColInds_, localValues_, 1);
-
-    // exit(0);
   }
 
   Kokkos::Timer copyTimer;

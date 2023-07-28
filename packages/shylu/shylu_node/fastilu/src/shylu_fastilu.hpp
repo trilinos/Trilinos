@@ -78,6 +78,7 @@
 // whether to print timings
 //#define FASTILU_TIMER
 
+// Whether to do fills at the block or entry granularity
 #define FASTILU_UNBLOCK_A
 
 template <typename View>
@@ -385,31 +386,46 @@ fill_crs(const View1& row_ptrs, const View2& col_inds, const View3& values, cons
   return new_nnz_count;
 }
 
-template <class BCRS>
-struct get_unc_structure_struct
+template <typename View1, typename View2, typename View3>
+void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, const int block_size)
 {
-  template <typename View1, typename View2, typename View3>
-  static inline void get_unc_structure(BCRS* bcrs, View1& row_map_host, View2& col_inds_host, View3& values_host)
-  {
-    auto A = Tpetra::convertToCrsMatrix(*bcrs);
-    auto localA = A->getLocalMatrixDevice();
-    Kokkos::resize(row_map_host, localA.graph.row_map.size());
-    Kokkos::deep_copy(row_map_host, localA.graph.row_map);
-    Kokkos::resize(col_inds_host, localA.graph.entries.size());
-    Kokkos::deep_copy(col_inds_host, localA.graph.entries);
-    Kokkos::resize(values_host, localA.values.size());
-    Kokkos::deep_copy(values_host, localA.values);
-    unfill_crs(row_map_host, col_inds_host, values_host);
-  }
-};
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using GO = Tpetra::Map<>::global_ordinal_type;
+  using Node = Tpetra::Map<>::node_type;
+  using Node          = Tpetra::Map<>::node_type;
+  using Scalar        = typename View3::non_const_value_type;
+  using BCrsMatrix    = Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>;
+  using map_type      = typename BCrsMatrix::map_type;
+  using graph_type    = typename BCrsMatrix::crs_graph_type;
+  using row_vtype     = typename graph_type::local_graph_device_type::row_map_type::non_const_type;
 
-template <>
-struct get_unc_structure_struct<void>
-{
-  template <typename View1, typename View2, typename View3>
-  static inline void get_unc_structure(void* bcrs, View1& row_map_host, View2& col_inds_host, View3& values_host)
-  {}
-};
+  // Create new TCrsMatrix with the new filled data
+  row_vtype rv("temp", row_map_host.extent(0));
+  const auto nrows = row_map_host.size() - 1;
+  const auto nnz = col_inds_host.size();
+  for (size_t i = 0; i <= nrows; ++i) {
+    rv(i) = row_map_host(i);
+  }
+  Teuchos::SerialComm<LO> SerialComm;
+  Teuchos::RCP<const Teuchos::Comm<LO> > comm_ptr = Teuchos::RCP(&SerialComm, false);
+  map_type proc_map(nrows, 0, comm_ptr, Tpetra::LocallyReplicated);
+  map_type col_map(nnz, 0, comm_ptr, Tpetra::LocallyReplicated);
+  Teuchos::RCP<map_type> map_ptr =  Teuchos::RCP(&proc_map, false);
+  Teuchos::RCP<map_type> colmap_ptr =  Teuchos::RCP(&col_map, false);
+  graph_type graph(map_ptr, colmap_ptr, rv, col_inds_host);
+  graph.fillComplete();
+  BCrsMatrix bcrs_matrix(graph, block_size);
+
+  auto A = Tpetra::convertToCrsMatrix(bcrs_matrix);
+  auto localA = A->getLocalMatrixDevice();
+  Kokkos::resize(row_map_host, localA.graph.row_map.size());
+  Kokkos::deep_copy(row_map_host, localA.graph.row_map);
+  Kokkos::resize(col_inds_host, localA.graph.entries.size());
+  Kokkos::deep_copy(col_inds_host, localA.graph.entries);
+  Kokkos::resize(values_host, localA.values.size());
+  Kokkos::deep_copy(values_host, localA.values);
+  unfill_crs(row_map_host, col_inds_host, values_host);
+}
 
 template <typename View1, typename View2, typename View3, typename View4>
 void reblock(View1& row_map, View2& row_idx, View3& col_inds, View4& values, const int block_size)
@@ -879,7 +895,6 @@ class FastILUPrec
                        int& nzl, std::vector<int> &lRowMap, std::vector<int> &lColIdx, std::vector<int> &lLevel,
                        int& nzu, std::vector<int> &uRowMap, std::vector<int> &uColIdx, std::vector<int> &uLevel) {
             using std::vector;
-            using std::cout;
             using std::sort;
 
             const Ordinal n = lRowMap.size() - 1;
@@ -1016,7 +1031,6 @@ class FastILUPrec
             using WithoutInit = Kokkos::ViewAllocateWithoutInitializing;
             FASTILU_CREATE_TIMER(timer);
             using std::vector;
-            using std::cout;
             using std::stable_sort;
             using std::sort;
             const Ordinal nRowsUnblocked = ia.extent(0) - 1;
@@ -1077,12 +1091,6 @@ class FastILUPrec
             }
             FASTILU_REPORT_TIMER(timer, " Copy time");
 
-            std::cout << "JGF A_ after fills, block size=" << blockCrsSize << std::endl;
-            print_view("aRowMap_", aRowMap_);
-            print_view("aColIdx_", aColIdx_);
-            print_view("aRowIdx_", aRowIdx_);
-            print_view("aLvlIdx_", aLvlIdx_);
-
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             using host_space = typename HostSpace::execution_space;
             KokkosSparse::sort_crs_graph<host_space, OrdinalArrayMirror, OrdinalArrayMirror>
@@ -1129,10 +1137,10 @@ class FastILUPrec
             // Ensure all filled entries have the sentinel value
 #ifdef FASTILU_UNBLOCK_A
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0));
-            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
 #else
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0) * blockCrsSize * blockCrsSize);
 #endif
+            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
 
             // Re-block A_. At this point, aHost and A_ are unblocked. The host stuff isn't
             // used anymore after this, so just reblock A_
@@ -1154,8 +1162,6 @@ class FastILUPrec
             Kokkos::deep_copy(aRowIdx, aRowIdx_);
             Kokkos::deep_copy(aVal, aVal_);
             FASTILU_DBG_COUT("**Finished initializing A");
-            std::cout << "JGF After initializing A in level: " << level << " with block size: " << blockCrsSize << std::endl;
-            print_crs_matrix_details("A", aRowMap, aColIdx, aVal, blockCrsSize);
 
             //Compute RowMap for L and U.
             // > form RowMap for L
@@ -1230,9 +1236,6 @@ class FastILUPrec
                 "numericILU::copyVals", copy_policy, functor);
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + sort/copy/permute values");
-
-            std::cout << "JGF Here's how the copying went for level " << level << " and block size " << blockCrsSize << std::endl;
-            print_crs_matrix_details("A with sentinels", aRowMap, aColIdx, aVal, blockCrsSize);
 
             // obtain diagonal scaling factor
             Kokkos::RangePolicy<GetDiagsTag, ExecSpace> get_policy (0, nRows);
@@ -1513,10 +1516,9 @@ class FastILUPrec
     public:
         //Constructor
         //TODO: Use a Teuchos::ParameterList object
-        template <typename BCRS=void>
         FastILUPrec(bool skipSortMatrix_, OrdinalArray &aRowMapIn_, OrdinalArray &aColIdxIn_, ScalarArray &aValIn_, Ordinal nRow_,
                     FastILU::SpTRSV sptrsv_algo_, Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_,
-                    Ordinal guessFlag_, Ordinal blkSzILU_, Ordinal blkSz_, Ordinal blockCrsSize_ = 1, BCRS* bcrs = nullptr)
+                    Ordinal guessFlag_, Ordinal blkSzILU_, Ordinal blkSz_, Ordinal blockCrsSize_ = 1)
         {
             nRows = nRow_;
             sptrsv_algo = sptrsv_algo_;
@@ -1524,9 +1526,6 @@ class FastILUPrec
             nTrisol = nTrisol_;
 
             useMetis = false;
-
-            std::cout << "From FastILUPrec with blockCrsSize_=" << blockCrsSize_ << ", incoming A is:" << std::endl;
-            print_crs_matrix_details("Ain", aRowMapIn_, aColIdxIn_, aValIn_, blockCrsSize_);
 
             computeTime = 0.0;
             applyTime = 0.0;
@@ -1564,21 +1563,16 @@ class FastILUPrec
             Kokkos::deep_copy(aRowMapHost, aRowMapIn_);
             Kokkos::deep_copy(aColIdxHost, aColIdxIn_);
             Kokkos::deep_copy(aValHost,    aValIn_);
-            if (bcrs != nullptr && blockCrsSize > 1) {
+            if (blockCrsSize > 1) {
 #ifdef FASTILU_UNBLOCK_A
-              get_unc_structure_struct<BCRS>::get_unc_structure(bcrs, aRowMapHost, aColIdxHost, aValHost);
-              std::cout << "After deblocking, AHost is:" << std::endl;
-              print_crs_matrix_details("AHost", aRowMapHost, aColIdxHost, aValHost, 1);
+              unblock(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
 #endif
-            }
-            else {
-              assert(blockCrsSize == 1);
             }
 
             if ((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec = Teuchos::rcp(new FastPrec(skipSortMatrix_, aRowMapIn_, aColIdxIn_, aValIn_, nRow_, sptrsv_algo_,
-                                                          3, 5, level_-1, omega_, shift_, guessFlag_, blkSzILU_, blkSz_, blockCrsSize_, bcrs));
+                                                          3, 5, level_-1, omega_, shift_, guessFlag_, blkSzILU_, blkSz_, blockCrsSize_));
             }
         }
 
@@ -1882,8 +1876,6 @@ class FastILUPrec
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
             symbolicILU(aRowMapHost, aColIdxHost);
-            std::cout << "JGF After symbolicILU() for level " << level << std::endl;
-            print_view("aColIdx_", aColIdx_);
             FASTILU_REPORT_TIMER(timer2, " + initial SymbolicILU (" << level << ") time");
             if ((level > 0) && (guessFlag != 0))
             {
@@ -1903,8 +1895,6 @@ class FastILUPrec
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
             symbolicILU(pRowMap_, pColIdx_, pLvlIdx_);
-            std::cout << "JGF After symbolicILU(4) for level " << level << std::endl;
-            print_view("aColIdx_", aColIdx_);
             FASTILU_REPORT_TIMER(timer2, " - initial SymbolicILU (" << level << ") time");
             if ((level > 0) && (guessFlag != 0))
             {
@@ -2065,7 +2055,6 @@ class FastILUPrec
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > transposeU");
 
             if (sptrsv_algo == FastILU::SpTRSV::Standard) {
-                std::cout << "JGF HERE 1" << std::endl;
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
                 KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
                 #else
@@ -2088,7 +2077,6 @@ class FastILUPrec
                 FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(),
                   "  > sptrsv_symbolic : nnz(L)=" << lColIdx.extent(0) << " nnz(U)=" << utColIdx.extent(0));
             } else if (sptrsv_algo == FastILU::SpTRSV::StandardHost && doUnitDiag_TRSV) {
-                std::cout << "JGF HERE 2" << std::endl;
                 // Prepare L for TRSV by removing unit-diagonals
                 lVal_trsv_   = ScalarArrayHost ("lVal_trsv",    lRowMap_[nRows]-nRows);
                 lColIdx_trsv_ = OrdinalArrayHost("lColIdx_trsv", lRowMap_[nRows]-nRows);
@@ -2134,7 +2122,6 @@ class FastILUPrec
                     dVal_trsv_(i) = STS::one() / dVal_trsv_(i);
                 }
             } else if (sptrsv_KKSpMV) {
-                std::cout << "JGF HERE 3" << std::endl;
                 FastILUPrec_Functor functor(SwapDiagTag(), lVal, lRowMap, lColIdx, utVal, utRowMap, utColIdx, diagElems, blockCrsSize);
                 Kokkos::RangePolicy<SwapDiagTag, ExecSpace> swap_policy (0, nRows);
                 Kokkos::parallel_for(
@@ -2434,8 +2421,8 @@ class FastILUPrec
                 sum_diag += diagElems[i]*diagElems[i];
             }
 
-            std::cout << "l2 norm of nonlinear residual = " << RTS::sqrt(STS::abs(sum)) << std::endl;
-            std::cout << "l2 norm of diag. of U = " << RTS::sqrt(STS::abs(sum_diag)) << std::endl;
+            FASTILU_DBG_COUT("l2 norm of nonlinear residual = " << RTS::sqrt(STS::abs(sum)));
+            FASTILU_DBG_COUT("l2 norm of diag. of U = " << RTS::sqrt(STS::abs(sum_diag)));
         }
 
         void checkIC() const
