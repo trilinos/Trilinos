@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   typedef Teuchos::ScalarTraits<ST>          SCT;
   typedef SCT::magnitudeType                  MT;
   typedef Tpetra::MultiVector<ST>             MV;
-  typedef MV::global_ordinal_type             GO;
+  //typedef MV::global_ordinal_type             GO;
   typedef Tpetra::Operator<ST>                OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
@@ -94,6 +94,8 @@ int main(int argc, char *argv[])
   int nsteps = 3;
   int blockSize = 6;
   MT tol = 1.0e-2;
+  int resFreq = 0;
+  int orthoFreq = 0;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -104,6 +106,8 @@ int main(int argc, char *argv[])
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
   cmdp.setOption("filename",&filename,"Filename for Matrix Market test matrix.");
+  cmdp.setOption("orthoFreq",&orthoFreq,"How many iterations should pass before reorthogonalizing the basis (not including when computing residual norms).");
+  cmdp.setOption("resFreq",&resFreq,"How many iterations should pass before computing the residuals (Orthogonalization of the basis is done here).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -151,6 +155,8 @@ int main(int argc, char *argv[])
   MyPL.set( "Maximum Iterations", nsteps );
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "Orthogonalization", ortho ); 
+  MyPL.set( "Orthogonalization Frequency", orthoFreq ); 
+  MyPL.set( "Residual Frequency", orthoFreq ); 
   //
   // Create the solver manager
   Anasazi::Experimental::RandomizedSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);

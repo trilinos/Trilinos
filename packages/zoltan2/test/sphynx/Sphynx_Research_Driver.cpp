@@ -361,7 +361,9 @@ int main(int narg, char *arg[])
     std::string prec = "";
     std::string init = "";
     double tol = -1;
-    
+    double resFreq = 0;
+    double orthoFreq = 0;
+  
     // Echo the command line
     if (me == 0)  {
       for (int i = 0; i < narg; i++){
@@ -399,6 +401,11 @@ int main(int narg, char *arg[])
 		   "Tolerance to use.");
     cmdp.setOption("init",  &init,
 		   "Sphynx Initial guess. Options: random or constants. Default: random if randomized solver is used.");
+    cmdp.setOption("orthoFreq",  &orthoFreq,
+		   "How many iterations between reorthogonalizing the basis (randomized).");
+    cmdp.setOption("resFreq",  &resFreq,
+		   "How many iterations between checking the residuals (randomized).");
+
 
     if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
@@ -527,12 +534,16 @@ int main(int narg, char *arg[])
         }
         {
           Teuchos::TimeMonitor t3(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
+          std::cout << "Rank " << me << " " << " starting solve." << std::endl;
           problem->solve();
+          std::cout << "Rank " << me << " " << " done with solve." << std::endl;
         }
       }
       pComm->barrier();
+      std::cout << "Rank " << me << " " << " exited barrier" << std::endl;
 
       solution_type solution = problem->getSolution();
+      std::cout << "Rank " << me << " " << "Solution Computed" << std::endl;
       compute_edgecut<adapter_type>(adapter, solution);
 
     }
@@ -560,22 +571,25 @@ int main(int narg, char *arg[])
           problem = Teuchos::rcp(new problem_type(adapter.get(), params.get(), sphynxParams, Tpetra::getDefaultComm()));
         }
         {
-          Teuchos::TimeMonitor t3b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
-          if (vector_file ==""){
-            if(me == 0)
-              std::cout << eigensolve << " will be used to solve the partitioning problem." << std::endl;
+	  if(init == ""){
+            Teuchos::TimeMonitor t3b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
+            std::cout << "Rank " << me << " " << " will be used to solve the partitioning problem." << std::endl;
             problem->solve();
+            std::cout << "Rank " << me << " " << eigensolve << " is done." << std::endl;
           }
-          else{
-            std::cout << "Problem to be partitioned with user-provided eigenvectors." << std::endl;
+	  else{
+            std::cout << "Rank " << me << " " << "Problem to be partitioned with user-provided eigenvectors." << std::endl;
             problem->setUserEigenvectors(V);
             problem->solve();
           }
         }
         pComm->barrier();
       }
+      std::cout << "Rank " << me << " " << "Exit Barrier" << std::endl;
       solution_type solution = problem->getSolution();
+      std::cout << "Rank " << me << " " << "Set solution" << std::endl;
       compute_edgecut<adapter_type>(adapter, solution);
+      std::cout << "Rank " << me << " " << "compute edgecut" << std::endl;
       /*
          const int *SolArray = solution.getPartListView();
          std::cout << "Pointer is: " << SolArray << std::endl;
@@ -585,7 +599,9 @@ int main(int narg, char *arg[])
          */
       // TODO: Uncomment the above lines and use >> out.txt to isolate the solution array file
     }
+    std::cout << me << " out of if statement" << std::endl;
     stacked_timer->stopBaseTimer();       
+    std::cout << me << " timer stopped" << std::endl;
 
     Teuchos::RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& out2 = *fancy2;
