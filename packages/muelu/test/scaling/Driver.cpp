@@ -552,13 +552,13 @@ MueLu::MueLu_AMGX_initialize_plugins();
           && !H.is_null()) {
         for(int i=0; i < H->GetNumLevels(); i++) {
           RCP<Level> level = H->GetLevel(i);
-          RCP<Matrix> A_level = level->Get<RCP<Matrix> >("A");
-
-          std::string level_name = std::string("Level-") + std::to_string(i) + std::string(": ");
-          std::vector<const char *> timers;//MueLu: Laplace2D: Hierarchy: Solve (level=0)  
-          MueLu::report_spmv_performance_models<Matrix>(A_level,100,timers,globalTimeMonitor,level_name,levelPerformanceModel=="verbose");
-          
-
+          try {
+            RCP<Matrix> A_level = level->Get<RCP<Matrix> >("A");            
+            std::string level_name = std::string("Level-") + std::to_string(i) + std::string(": ");
+            std::vector<const char *> timers;//MueLu: Laplace2D: Hierarchy: Solve (level=0)  
+            MueLu::report_spmv_performance_models<Matrix>(A_level,100,timers,globalTimeMonitor,level_name,levelPerformanceModel=="verbose");
+          }
+          catch(...) {;}
         }        
       }
      
