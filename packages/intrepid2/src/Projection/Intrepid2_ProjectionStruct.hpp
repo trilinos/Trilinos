@@ -34,8 +34,9 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
+// Questions? Contact Mauro Perego  (mperego@sandia.gov), or
+//                    Nate Roberts  (nvrober@sandia.gov)
+//
 //
 // ************************************************************************
 // @HEADER
@@ -49,6 +50,8 @@
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
+
+#include "Intrepid2_NodalBasisFamily.hpp"
 
 #include <array>
 
