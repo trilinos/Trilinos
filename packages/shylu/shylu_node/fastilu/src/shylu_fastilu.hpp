@@ -566,7 +566,7 @@ class FastILUPrec
                              Kokkos::Serial, Kokkos::MemoryUnmanaged> UMOrdinalArray;
         typedef Kokkos::View<Scalar *, typename ExecSpace::array_layout,
                              Kokkos::Serial, Kokkos::MemoryUnmanaged> UMScalarArray;
-        typedef FastILUPrec<Ordinal, Scalar, ExecSpace> FastPrec;
+        typedef FastILUPrec<Ordinal, Scalar, ExecSpace, BlockCrsEnabled> FastPrec;
 
         using HostSpace = Kokkos::HostSpace;
         using MirrorSpace = typename OrdinalArray::host_mirror_space;
@@ -600,12 +600,34 @@ class FastILUPrec
     Scalar operator()(const Scalar val) const { return (one/(one + shift)) * val; }
   };
 
+  struct InvFunctor
+  {
+    Scalar one;
+
+    KOKKOS_INLINE_FUNCTION
+    InvFunctor() : one(STS::one()) {}
+
+    KOKKOS_INLINE_FUNCTION
+    Scalar operator()(const Scalar val) const { return one/(RTS::sqrt(STS::abs(val))); };
+  };
+
+  struct NotDiagFunctor
+  {
+    KOKKOS_INLINE_FUNCTION
+    bool operator()(const Ordinal first, const Ordinal second) const {return first != second;}
+  };
+
+  struct LowerFunctor
+  {
+    KOKKOS_INLINE_FUNCTION
+    bool operator()(const Ordinal first, const Ordinal second) const {return first > second;}
+  };
+
   template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
   assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
   {
-    assert(blockCrsSize > 1);
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     for (Ordinal itr = 0; itr < blockItems; ++itr) {
       vals_dest[dest*blockItems + itr] = lam(vals_src[src*blockItems + itr]);
@@ -637,12 +659,14 @@ class FastILUPrec
   static typename std::enable_if<!Block, void>::type
   assign_block(View1& vals_dest, const Ordinal dest, const Scalar value, const Ordinal blockCrsSize)
   {
+    assert(blockCrsSize == 1);
     vals_dest[dest] = value;
   }
 
-  template <typename View1, typename View2, typename LO, typename L = idlt>
+  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor>
   KOKKOS_INLINE_FUNCTION
-  static void assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const L& lam = identity_lambda)
+  static typename std::enable_if<Block, void>::type
+  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     const Ordinal dest_offset = blockItems*dest;
@@ -655,6 +679,14 @@ class FastILUPrec
         }
       }
     }
+  }
+
+  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if<!Block, void>::type
+  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  {
+    vals_dest(dest) = lam(vals_src(src));
   }
 
   template <typename View1, typename View2, typename LO, typename L = idlt>
@@ -727,9 +759,9 @@ class FastILUPrec
     }
   }
 
-  template <typename View1, typename View2, typename L = idlt>
+  template <typename View1, typename View2, typename F = IdentityFunctor>
   KOKKOS_INLINE_FUNCTION
-  static void assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
+  static void assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     for (Ordinal i = 0, j = blockItems*src; i < blockCrsSize; ++i, j+=(blockCrsSize+1)) {
@@ -1183,10 +1215,10 @@ class FastILUPrec
             // Ensure all filled entries have the sentinel value
 #ifdef FASTILU_UNBLOCK_A
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0));
-            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
 #else
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0) * blockCrsSize * blockCrsSize);
 #endif
+            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
 
             // Re-block A_. At this point, aHost and A_ are unblocked. The host stuff isn't
             // used anymore after this, so just reblock A_
@@ -1196,7 +1228,7 @@ class FastILUPrec
             }
 #endif
 
-            // Intialize A
+            // Initialize A
             aRowMap = OrdinalArray(WithoutInit("aRowMap"), aRowMap_.extent(0));
             aColIdx = OrdinalArray(WithoutInit("aColIdx"), aColIdx_.extent(0));
             aRowIdx = OrdinalArray(WithoutInit("aRowIdx"), aRowIdx_.extent(0));
@@ -1295,6 +1327,9 @@ class FastILUPrec
                 Kokkos::deep_copy(aVal_, aVal);
                 applyManteuffelShift();
                 Kokkos::deep_copy(aVal, aVal_);
+            }
+            else {
+              Kokkos::deep_copy(aVal_, aVal); // keep in-sync
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + apply shift/scale");
             FASTILU_DBG_COUT("**Finished diagonal scaling");
@@ -1474,8 +1509,8 @@ class FastILUPrec
 
         void applyManteuffelShift()
         {
-            static ShiftFunctor shift_lambda(shift);
-            static constexpr auto not_diag_lamb = [](const Ordinal i, const Ordinal j) { return i != j; };
+            ShiftFunctor shift_lambda(shift);
+            NotDiagFunctor not_diag_lamb;
             for (Ordinal i = 0; i < nRows; i++)
             {
                 for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
@@ -1487,7 +1522,7 @@ class FastILUPrec
                       assign_block<BlockCrsEnabled>(aVal_, aVal_, k, k, blockCrsSize, shift_lambda);
                     }
                     else {
-                      assign_block_cond(aVal_, aVal_, k, k, not_diag_lamb, blockCrsSize, shift_lambda);
+                      assign_block_cond<BlockCrsEnabled>(aVal_, aVal_, k, k, not_diag_lamb, blockCrsSize, shift_lambda);
                     }
                 }
             }
@@ -1589,6 +1624,10 @@ class FastILUPrec
             blockCrsSize = blockCrsSize_;
             doUnitDiag_TRSV = true; // perform TRSV with unit diagonals
             sptrsv_KKSpMV = true;   // use Kokkos-Kernels SpMV for Fast SpTRSV
+
+            if (!BlockCrsEnabled) {
+              assert(blockCrsSize_ == 1);
+            }
 
             const Scalar one = STS::one();
             onesVector = ScalarArray("onesVector", nRow_);
@@ -1774,8 +1813,7 @@ class FastILUPrec
             // functor to extract diagonals (inverted)
             KOKKOS_INLINE_FUNCTION
             void operator()(const GetDiagsTag &, const int i) const {
-                const Real one = RTS::one();
-                auto dlambda = [&](const Scalar& val) { return one/(RTS::sqrt(STS::abs(val))); };
+                InvFunctor dlambda;
                 for(int k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     aRowIdx[k] = i;
@@ -1818,7 +1856,7 @@ class FastILUPrec
             // functor to apply diagonal scaling
             KOKKOS_INLINE_FUNCTION
             void operator()(const DiagScalTag &, const int i) const {
-                static constexpr auto dlambda = [&](const Scalar& val1, const Scalar& val2, const Scalar& val3) { return val1*val2*val3; };
+                auto dlambda = [&](const Scalar& val1, const Scalar& val2, const Scalar& val3) { return val1*val2*val3; };
                 for (int k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     const Ordinal col = aColIdx[k];
@@ -1831,7 +1869,7 @@ class FastILUPrec
             KOKKOS_INLINE_FUNCTION
             void operator()(const GetLowerTag &, const int i) const {
                 Ordinal lPtr = lRowMap[i];
-                static constexpr auto lower_lamb = [](const Ordinal i, const Ordinal j) { return i > j; };
+                LowerFunctor lower_lamb;
                 for (Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal row = i;
@@ -1842,7 +1880,9 @@ class FastILUPrec
                         {
                           assign_diag_from_block(diagElems, aVal, row, k, blockCrsSize);
                           assign_block_diag_only(lVal, lPtr, STS::one(), blockCrsSize);
-                          assign_block_cond(lVal, aVal, lPtr, k, lower_lamb, blockCrsSize);
+                          if (BlockCrsEnabled) {
+                            assign_block_cond<BlockCrsEnabled>(lVal, aVal, lPtr, k, lower_lamb, blockCrsSize);
+                          }
                         } else {
                           assign_block<BlockCrsEnabled>(lVal, aVal, lPtr, k, blockCrsSize);
                         }
