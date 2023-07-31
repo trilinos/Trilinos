@@ -209,6 +209,8 @@ View(const pointer_type &ptr, const IntType&... indices)
     static void SyncDeviceToHost(DM & dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
+    static void SyncHostToDevice(DM & dm)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
     //@}
     //@{ \name Operator methods
     
