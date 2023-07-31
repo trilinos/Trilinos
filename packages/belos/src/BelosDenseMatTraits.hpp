@@ -130,8 +130,8 @@ View(const pointer_type &ptr, const IntType&... indices)
     //! \brief Marks host data modified to avoid device sync errors. 
     /// \note Belos developers must call this function after EVERY
     ///   call to LAPACK that modifies dense matrix data accessed via raw pointer. 
-    static void RawPtrDataModified(DM & dm)
-    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+    //static void RawPtrDataModified(DM & dm)
+    //{ UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
     //! \brief Returns an RCP to a DM which has a subview of the given DM.
     //        Row and column indexing is zero-based.
