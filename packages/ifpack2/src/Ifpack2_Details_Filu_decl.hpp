@@ -49,7 +49,7 @@
 #include <shylu_fastilu_orig.hpp>
 
 //forward-declare the local preconditioner type
-template<typename LocalOrdinal, typename Scalar, typename execution_space>
+template<typename LocalOrdinal, typename Scalar, typename execution_space, bool BlockCrsEnabled>
 class FastILUPrec;
 
 namespace Ifpack2
@@ -67,7 +67,8 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     typedef typename Base::TRowMatrix TRowMatrix;
     typedef typename Base::ImplScalar ImplScalar;
     typedef typename Base::ImplScalarArray ImplScalarArray;
-    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space> LocalFILU;
+  typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, false> LocalFILU;
+    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, true> LocalFILUB;
     typedef fastilu_orig::FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space> LocalFILUOrig;
 
     //! Constructor
@@ -89,7 +90,7 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     void checkLocalIC() const;
 
   protected:
-    mutable Teuchos::RCP<LocalFILU> localPrec_;
+    mutable Teuchos::RCP<LocalFILUB> localPrec_;
     mutable Teuchos::RCP<LocalFILU> localPrec2_;
     mutable Teuchos::RCP<LocalFILUOrig> localPrec3_;
 

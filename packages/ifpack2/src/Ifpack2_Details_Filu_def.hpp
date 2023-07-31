@@ -107,12 +107,11 @@ initLocalPrec()
   bool skipSortMatrix = !matCrs.is_null() && matCrs->getCrsGraph()->isSorted() &&
                         !p.use_metis;
   const int blockCrsSize = p.blockCrs ? p.blockCrsSize : 1;
-  localPrec_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
+  localPrec_ = Teuchos::rcp(new LocalFILUB(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
                                           blockCrsSize));
   localPrec2_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs2_, this->localColInds2_, this->localValues2_, nRows*blockCrsSize, p.sptrsv_algo,
-                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
-                                           1));
+                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
   localPrec3_ = Teuchos::rcp(new LocalFILUOrig(skipSortMatrix, this->localRowPtrs2_, this->localColInds2_, this->localValues2_, nRows*blockCrsSize, p.sptrsv_algo,
                                                p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
   #ifdef HAVE_IFPACK2_METIS

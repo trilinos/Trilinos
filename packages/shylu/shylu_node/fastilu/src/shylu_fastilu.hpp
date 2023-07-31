@@ -553,7 +553,7 @@ class MemoryPrimeFunctorNnzCoo;
 template<class Ordinal, class Scalar, class ExecSpace>
 class MemoryPrimeFunctorNnzCsr;
 
-template<class Ordinal, class Scalar, class ExecSpace>
+template<class Ordinal, class Scalar, class ExecSpace, bool BlockCrsEnabled=false>
 class FastILUPrec
 {
     public:
@@ -579,20 +579,65 @@ class FastILUPrec
         using STS = Kokkos::ArithTraits<Scalar>;
         using RTS = Kokkos::ArithTraits<Real>;
 
-  template <typename View1, typename View2, typename L = idlt>
-  KOKKOS_INLINE_FUNCTION
-  static void assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const L& lam = identity_lambda)
+  static constexpr auto identity_lambda = [](const Scalar& val) { return val; };
+  using idlt = decltype(identity_lambda);
+
+  struct IdentityFunctor
   {
+    KOKKOS_INLINE_FUNCTION
+    Scalar operator()(const Scalar val) const {return val;}
+  };
+
+  struct ShiftFunctor
+  {
+    Scalar shift;
+    Scalar one;
+
+    KOKKOS_INLINE_FUNCTION
+    ShiftFunctor(const Scalar shift_arg) : shift(shift_arg), one(STS::one()) {}
+
+    KOKKOS_INLINE_FUNCTION
+    Scalar operator()(const Scalar val) const { return (one/(one + shift)) * val; }
+  };
+
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if<Block, void>::type
+  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  {
+    assert(blockCrsSize > 1);
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
-    std::transform(vals_src.data() + src*blockItems, vals_src.data() + (src+1)*blockItems, vals_dest.data() + dest*blockItems, lam);
+    for (Ordinal itr = 0; itr < blockItems; ++itr) {
+      vals_dest[dest*blockItems + itr] = lam(vals_src[src*blockItems + itr]);
+    }
   }
 
-  template <typename View1>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
   KOKKOS_INLINE_FUNCTION
-  static void assign_block(View1& vals_dest, const Ordinal dest, const Scalar value, const Ordinal blockCrsSize)
+  static typename std::enable_if<!Block, void>::type
+  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  {
+    assert(blockCrsSize == 1);
+    vals_dest[dest] = lam(vals_src[src]);
+  }
+
+  template <bool Block, typename View1>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if<Block, void>::type
+  assign_block(View1& vals_dest, const Ordinal dest, const Scalar value, const Ordinal blockCrsSize)
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
-    std::fill(vals_dest.data() + dest*blockItems, vals_dest.data() + (dest+1)*blockItems, value);
+    for (Ordinal itr = 0; itr < blockItems; ++itr) {
+      vals_dest[dest*blockItems + itr] = value;
+    }
+  }
+
+  template <bool Block, typename View1>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if<!Block, void>::type
+  assign_block(View1& vals_dest, const Ordinal dest, const Scalar value, const Ordinal blockCrsSize)
+  {
+    vals_dest[dest] = value;
   }
 
   template <typename View1, typename View2, typename LO, typename L = idlt>
@@ -728,7 +773,7 @@ class FastILUPrec
   }
 
 
-    private:
+  // private: Set back to private once verification work is done
         double computeTime;
         double applyTime;
         double initTime;
@@ -1138,10 +1183,10 @@ class FastILUPrec
             // Ensure all filled entries have the sentinel value
 #ifdef FASTILU_UNBLOCK_A
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0));
+            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
 #else
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0) * blockCrsSize * blockCrsSize);
 #endif
-            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
 
             // Re-block A_. At this point, aHost and A_ are unblocked. The host stuff isn't
             // used anymore after this, so just reblock A_
@@ -1429,8 +1474,7 @@ class FastILUPrec
 
         void applyManteuffelShift()
         {
-            static const Scalar one = STS::one();
-            static auto shift_lambda = [&](const Scalar val) { return (one/(one + shift)) * val; };
+            static ShiftFunctor shift_lambda(shift);
             static constexpr auto not_diag_lamb = [](const Ordinal i, const Ordinal j) { return i != j; };
             for (Ordinal i = 0; i < nRows; i++)
             {
@@ -1440,7 +1484,7 @@ class FastILUPrec
                     Ordinal col = aColIdx_[k];
                     if (row != col)
                     {
-                      assign_block(aVal_, aVal_, k, k, blockCrsSize, shift_lambda);
+                      assign_block<BlockCrsEnabled>(aVal_, aVal_, k, k, blockCrsSize, shift_lambda);
                     }
                     else {
                       assign_block_cond(aVal_, aVal_, k, k, not_diag_lamb, blockCrsSize, shift_lambda);
@@ -1674,11 +1718,11 @@ class FastILUPrec
                     Ordinal col = aColIdx[k];
                     if (aPtr < aPtrEnd && col == aColIdxIn[aPtr])
                     {
-                        assign_block(aVal, aValIn, k, aPtr, blockCrsSize);
+                        assign_block<BlockCrsEnabled>(aVal, aValIn, k, aPtr, blockCrsSize);
                         aPtr++;
                     } else
                     {
-                      assign_block(aVal, k, STS::zero(), blockCrsSize);
+                      assign_block<BlockCrsEnabled>(aVal, k, STS::zero(), blockCrsSize);
                     }
                 }
             }
@@ -1718,11 +1762,11 @@ class FastILUPrec
                     Ordinal col = aColIdx[k];
                     if (aPtr < aPtrEnd && col == aColIdxIn[aPtr])
                     {
-                        assign_block(aVal, aValIn, k, aPtr, blockCrsSize);
+                        assign_block<BlockCrsEnabled>(aVal, aValIn, k, aPtr, blockCrsSize);
                         aPtr++;
                     } else
                     {
-                        assign_block(aVal, k, STS::zero(), blockCrsSize);
+                        assign_block<BlockCrsEnabled>(aVal, k, STS::zero(), blockCrsSize);
                     }
                 }
             }
@@ -1800,7 +1844,7 @@ class FastILUPrec
                           assign_block_diag_only(lVal, lPtr, STS::one(), blockCrsSize);
                           assign_block_cond(lVal, aVal, lPtr, k, lower_lamb, blockCrsSize);
                         } else {
-                          assign_block(lVal, aVal, lPtr, k, blockCrsSize);
+                          assign_block<BlockCrsEnabled>(lVal, aVal, lPtr, k, blockCrsSize);
                         }
                         lColIdx[lPtr] = col;
                         lPtr++;
