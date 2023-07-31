@@ -13,9 +13,6 @@ using Teuchos::rcp;
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "PanzerDiscFE_config.hpp"
-#include "Panzer_IntegrationRule.hpp"
-#include "Panzer_CellData.hpp"
-#include "Panzer_Workset.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
@@ -26,19 +23,11 @@ using Teuchos::rcp;
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
-// TODO BWR MOVE W FUNCS
-#include "Panzer_STK_CubeHexMeshFactory.hpp"
-#include "Panzer_STK_CubeTetMeshFactory.hpp"
-#include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Panzer_STK_SquareTriMeshFactory.hpp"
-#include "Panzer_DOFManager.hpp"
-#include "Panzer_WorksetContainer.hpp"
-#include "Panzer_STKConnManager.hpp"
-#include "Panzer_STK_WorksetFactory.hpp"
-#include "Panzer_OrientationsInterface.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_ProjectionTools.hpp"
+
+#include "EvaluatorTestTools.hpp"
 
 typedef Kokkos::DynRankView<double,PHX::Device> DynRankView;
 
@@ -46,19 +35,6 @@ typedef Kokkos::DynRankView<double,PHX::Device> DynRankView;
 #define UNIT_TEST_GROUP(TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(project_field,value,TYPE)
 
-// TODO BWR Move outside of test
-struct WorksetsAndOrts {
-
-  Teuchos::RCP<std::vector<panzer::Workset> > worksets;
-  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
-
-};
-
-Teuchos::RCP<panzer_stk::STK_Interface> createInlineMesh(Teuchos::RCP<Teuchos::ParameterList> pl);
-WorksetsAndOrts getWorksetsAndOrtsForFields(
-  Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
-  std::map<std::string,panzer::BasisDescriptor> fmap,
-  const int workset_size=-1);
 template <typename EvalType> 
 bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
                      std::map<std::string,panzer::BasisDescriptor> & fmap,
@@ -250,9 +226,9 @@ evaluateFields(
   // subselect
   auto nodes_host = Kokkos::create_mirror_view(sub_local_nodes);
   auto nodesAll_host = Kokkos::create_mirror_view(cellNodesAll.get_view());
-  for (int i=0; i < numOwnedElems; ++i) {
+  for (size_t i=0; i < numOwnedElems; ++i) {
     orts_host(i) = orts->at(workset.cell_local_ids[i]);
-    for (int j=0; j < numNodesPerElem; ++j)
+    for (size_t j=0; j < numNodesPerElem; ++j)
       for (int k=0; k < dim; ++k)
         nodes_host(i,j,k) = nodesAll_host(i,j,k);
   }
@@ -368,7 +344,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
     pl->sublist("Mesh Factory Parameter List").set("X Elements",2);
     pl->sublist("Mesh Factory Parameter List").set("Y Elements",2);
 
-    auto mesh = createInlineMesh(pl);
+    auto mesh = EvaluatorTestTools::createInlineMesh(pl);
     {
       std::map<std::string,panzer::BasisDescriptor> fmap;
   
@@ -406,7 +382,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
     pl->sublist("Mesh Factory Parameter List").set("Y Elements",2);
     pl->sublist("Mesh Factory Parameter List").set("Z Elements",2);
 
-    auto mesh = createInlineMesh(pl);
+    auto mesh = EvaluatorTestTools::createInlineMesh(pl);
     {
       std::map<std::string,panzer::BasisDescriptor> fmap;
   
@@ -442,7 +418,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
     pl->sublist("Mesh Factory Parameter List").set("X Elements",2);
     pl->sublist("Mesh Factory Parameter List").set("Y Elements",2);
 
-    auto mesh = createInlineMesh(pl);
+    auto mesh = EvaluatorTestTools::createInlineMesh(pl);
     {
       std::map<std::string,panzer::BasisDescriptor> fmap;
   
@@ -480,7 +456,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
     pl->sublist("Mesh Factory Parameter List").set("Y Elements",2);
     pl->sublist("Mesh Factory Parameter List").set("Z Elements",2);
 
-    auto mesh = createInlineMesh(pl);
+    auto mesh = EvaluatorTestTools::createInlineMesh(pl);
     {
       std::map<std::string,panzer::BasisDescriptor> fmap;
   
@@ -526,7 +502,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   // set up worksets and orientations
 
   // return worksets and orientations and get relevant sizes
-  auto wkstsAndOrts = getWorksetsAndOrtsForFields(mesh,fmap,-1);
+  auto wkstsAndOrts = EvaluatorTestTools::getWorksetsAndOrtsForFields(mesh,fmap,2);
   auto worksets = wkstsAndOrts.worksets;
   auto orientations = wkstsAndOrts.orientations;
   auto wkstSize = (*worksets)[0].num_cells; // As long as we don't pick the last workset, this gives the max size 
@@ -615,103 +591,6 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   }
 
   return matched;
-}
-
-
-// move and wrap inside some test utils namespace?
-Teuchos::RCP<panzer_stk::STK_Interface> createInlineMesh(Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-
-  auto dim = pl->get<int>("Mesh Dimension");
-  auto type = pl->get<std::string>("Type");
-
-  Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
-
-  if (type == "Quad" && dim == 2) {
-    mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
-  } else if (type == "Tri" && dim == 2) {
-    mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
-  } else if (type == "Tet" && dim == 3) {
-    mesh_factory = Teuchos::rcp(new panzer_stk::CubeTetMeshFactory);
-  } else if (type == "Hex" && dim == 3) {
-    mesh_factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
-  } else {
-    // Throw an error
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-      "ERROR: Type and/or dimension of inline mesh not valid!");
-  }
-
-  mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(pl->sublist("Mesh Factory Parameter List"))));
-  auto mesh = mesh_factory->buildMesh(MPI_COMM_WORLD);
-
-  return mesh;
-}
-
-// TODO BWR move outside of test
-// TODO BWR workset_size -1 is ALL_ELEMENTS
-WorksetsAndOrts getWorksetsAndOrtsForFields(
-  Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
-  std::map<std::string,panzer::BasisDescriptor> fmap,
-  const int workset_size)
-{
-
-  WorksetsAndOrts wksOrts;
-
-  // Dof manager is, at least, a global indexer
-  // and is passed in/out, if needed
-
-  // And a needs map (block to needs)
-  std::map<std::string, panzer::WorksetNeeds> needs_map;
-
-  // Assuming one element block for now...
-  std::vector<std::string> eblocks;
-  mesh->getElementBlockNames(eblocks);
-
-  Teuchos::RCP<panzer::DOFManager> dof_manager;
-  {
-
-    // Build a connectivity manager for the given mesh
-    const auto conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-
-    // Initialize the dof manager with the conn manager
-    dof_manager = Teuchos::rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
-
-    // Build basis and fields
-    const auto & cell_topology = mesh->getCellTopology(eblocks[0]);
-    // Set cell data
-    // numCells will get overwritten with our particular path thru getWorksets below
-    needs_map[eblocks[0]].cellData = panzer::CellData(1,cell_topology);
-
-    for (auto & map : fmap)
-    {
-      auto name = map.first;
-      auto bd = map.second;
-
-      auto intrepid_basis = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>(bd.getType(),bd.getOrder(),cell_topology);
-      auto field_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(intrepid_basis));
-
-      // Add field to dof manager to lock in the field pattern
-      dof_manager->addField(eblocks[0], name, field_pattern);
-
-      needs_map[eblocks[0]].addBasis(bd);
-    }
-  }
-
-  // Finalize the dof manager
-  dof_manager->buildGlobalUnknowns();
-
-  // Build workset factory
-  auto factory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
-
-  auto workset_container = Teuchos::rcp(new panzer::WorksetContainer(factory, needs_map));
-  workset_container->setGlobalIndexer(dof_manager);
-  wksOrts.worksets = workset_container->getWorksets(panzer::WorksetDescriptor(eblocks[0],
-                                                    workset_size, false, true));
-
-  wksOrts.orientations = workset_container->getOrientations();
-
-  return wksOrts;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
