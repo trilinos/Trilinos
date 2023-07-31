@@ -63,8 +63,15 @@ struct WorksetsAndOrts {
 
 };
 
-// TODO BWR move outside of test
-// TODO BWR workset_size -1 is ALL_ELEMENTS
+/* @brief Create worksets and orientations for purposes of evaluator testing.
+*
+* @param[in] mesh STK Mesh
+* @param[in] fmap Map of field names to basis descriptors
+* @param[in] workset_size Maximal workset size. Use \c -1 to use one workset (all elements).
+*
+* @warning Will likely need to be modified for future evaluator tests.
+*/
+
 WorksetsAndOrts getWorksetsAndOrtsForFields(
   Teuchos::RCP<panzer_stk::STK_Interface> mesh, 
   std::map<std::string,panzer::BasisDescriptor> fmap,
@@ -129,6 +136,14 @@ WorksetsAndOrts getWorksetsAndOrtsForFields(
   return wksOrts;
 
 }
+
+/* @brief Create a basic inline mesh for testing purposes 
+* 
+* @param[in] pl Mesh parameter list
+*
+* @note Limited to Square, Cube geometry and Quad, Tri, Tet, Hex 
+*/
+
 Teuchos::RCP<panzer_stk::STK_Interface> createInlineMesh(Teuchos::RCP<Teuchos::ParameterList> pl)
 {
 
