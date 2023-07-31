@@ -952,6 +952,7 @@ namespace Belos {
           // Short-circuit, as required by BLAS semantics.
           C.h_view(0,0) = IST(alpha);
           C.modify_host();
+          C.sync_device(); //TODO should this be counted somehow? Not in a DMT interface.
           return;
         }
         //TODO This case has build problems. Pushing to multiply for now.
