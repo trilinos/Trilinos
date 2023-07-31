@@ -165,13 +165,16 @@ namespace Belos {
       //Call create with non-default third arg.
       RCP<DM> dm2 = DMT::Create(numrows, numcols, false);
       DMT::PutScalar(*dm2,(ScalarType)47.2);
+      DMT::SyncDeviceToHost(*dm2);
       if( DMT::ValueConst(*dm2,0,0) != (ScalarType)47.2){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
-          << "PutScalar failed" << endl;
+          << "PutScalar failed at line 171" << endl
+          << "Value at dm2 0,0 is: " << DMT::ValueConst(*dm2,0,0) << endl;
         return false;
       }
       DMT::PutScalar(*dm2);
+      DMT::SyncDeviceToHost(*dm2);
       if( DMT::ValueConst(*dm2,0,0) != zero){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
