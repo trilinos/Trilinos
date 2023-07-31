@@ -503,10 +503,15 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       //
       //  Solve the least squares problem.
       //
+      DMT::SyncDeviceToHost(*R_);
+      DMT::SyncDeviceToHost(*y);
       //TODO: Need any syncing here for KK verison?
       blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
                  DMT::GetRawHostPtr(*R_), DMT::GetStride(*R_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
+      DMT::SyncHostToDevice(*R_);
+      //Not needed. y dies after this function. DMT::SyncHostToDevice(*y);
+
       //
       //  Compute the current update.
       //
