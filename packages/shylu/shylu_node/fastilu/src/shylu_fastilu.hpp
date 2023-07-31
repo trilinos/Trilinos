@@ -386,13 +386,13 @@ fill_crs(const View1& row_ptrs, const View2& col_inds, const View3& values, cons
   return new_nnz_count;
 }
 
-template <typename View1, typename View2, typename View3>
+template <typename ExecSpace, typename View1, typename View2, typename View3>
 void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, const int block_size)
 {
-  using LO = Tpetra::Map<>::local_ordinal_type;
-  using GO = Tpetra::Map<>::global_ordinal_type;
-  using Node = Tpetra::Map<>::node_type;
-  using Node          = Tpetra::Map<>::node_type;
+  using tmap_type     = Tpetra::Map<>;
+  using LO            = tmap_type::local_ordinal_type;
+  using GO            = tmap_type::global_ordinal_type;
+  using Node          = tmap_type::node_type;
   using Scalar        = typename View3::non_const_value_type;
   using BCrsMatrix    = Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>;
   using map_type      = typename BCrsMatrix::map_type;
@@ -401,17 +401,24 @@ void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, cons
 
   // Create new TCrsMatrix with the new filled data
   row_vtype rv("temp", row_map_host.extent(0));
+  Kokkos::deep_copy(rv, row_map_host);
   const auto nrows = row_map_host.size() - 1;
-  for (size_t i = 0; i <= nrows; ++i) {
-    rv(i) = row_map_host(i);
-  }
+  // for (size_t i = 0; i <= nrows; ++i) {
+  //   rv(i) = row_map_host(i);
+  // }
+  Kokkos::View<LO*, ExecSpace> col_inds("col_inds", col_inds_host.extent(0));
+  Kokkos::deep_copy(col_inds, col_inds_host);
+
+  Kokkos::View<Scalar*, ExecSpace> values("values", values_host.extent(0));
+  Kokkos::deep_copy(values, values_host);
+
   Teuchos::SerialComm<LO> SerialComm;
   Teuchos::RCP<const Teuchos::Comm<LO> > comm_ptr = Teuchos::RCP(&SerialComm, false);
   map_type proc_map(nrows, 0, comm_ptr, Tpetra::LocallyReplicated);
   Teuchos::RCP<map_type> map_ptr =  Teuchos::RCP(&proc_map, false);
-  graph_type graph(map_ptr, map_ptr, rv, col_inds_host);
+  graph_type graph(map_ptr, map_ptr, rv, col_inds);
   graph.fillComplete();
-  BCrsMatrix bcrs_matrix(graph, values_host, block_size);
+  BCrsMatrix bcrs_matrix(graph, values, block_size);
 
   auto A = Tpetra::convertToCrsMatrix(bcrs_matrix);
   auto localA = A->getLocalMatrixDevice();
@@ -571,9 +578,6 @@ class FastILUPrec
 
         using STS = Kokkos::ArithTraits<Scalar>;
         using RTS = Kokkos::ArithTraits<Real>;
-
-  static constexpr auto identity_lambda = [](const Scalar& val) { return val; };
-  using idlt = decltype(identity_lambda);
 
   template <typename View1, typename View2, typename L = idlt>
   KOKKOS_INLINE_FUNCTION
@@ -1148,10 +1152,10 @@ class FastILUPrec
 #endif
 
             // Intialize A
-            aRowMap = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, aRowMap_);
-            aColIdx = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, aColIdx_);
-            aRowIdx = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, aRowIdx_);
-            aVal    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, aVal_);
+            aRowMap = OrdinalArray(WithoutInit("aRowMap"), aRowMap_.extent(0));
+            aColIdx = OrdinalArray(WithoutInit("aColIdx"), aColIdx_.extent(0));
+            aRowIdx = OrdinalArray(WithoutInit("aRowIdx"), aRowIdx_.extent(0));
+            aVal    = ScalarArray (WithoutInit("aVal"),    aVal_.extent(0));
 
             // Copy A_ to A
             Kokkos::deep_copy(aRowMap, aRowMap_);
@@ -1559,7 +1563,7 @@ class FastILUPrec
             Kokkos::deep_copy(aValHost,    aValIn_);
             if (blockCrsSize > 1) {
 #ifdef FASTILU_UNBLOCK_A
-              unblock(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
+              unblock<ExecSpace>(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
 #endif
             }
 
@@ -1726,8 +1730,8 @@ class FastILUPrec
             // functor to extract diagonals (inverted)
             KOKKOS_INLINE_FUNCTION
             void operator()(const GetDiagsTag &, const int i) const {
-                static const Real one = RTS::one();
-                static constexpr auto dlambda = [&](const Scalar& val) { return one/(RTS::sqrt(STS::abs(val))); };
+                const Real one = RTS::one();
+                auto dlambda = [&](const Scalar& val) { return one/(RTS::sqrt(STS::abs(val))); };
                 for(int k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     aRowIdx[k] = i;
@@ -1741,8 +1745,8 @@ class FastILUPrec
             // functor to swap diagonals
             KOKKOS_INLINE_FUNCTION
             void operator()(const SwapDiagTag &, const int i) const {
-                static const Scalar one  = STS::one();
-                static const Scalar zero = STS::zero();
+                const Scalar one  = STS::one();
+                const Scalar zero = STS::zero();
                 // zero the diagonal of L. If sorted, this finds it on first iter.
                 Ordinal lRowBegin = lRowMap(i);
                 Ordinal lRowEnd = lRowMap(i + 1);
@@ -1763,7 +1767,7 @@ class FastILUPrec
                   }
                 }
                 // invert D
-                static constexpr auto dlambda = [&](const Scalar& val) { return one/val; };
+                auto dlambda = [&](const Scalar& val) { return one/val; };
                 assign_diag_from_diag(diagElems, diagElems, i, i, blockCrsSize, dlambda);
             }
 
@@ -2686,8 +2690,8 @@ class FastILUFunctor
         KOKKOS_INLINE_FUNCTION
         void functor_impl(const Ordinal start, const Ordinal end) const
         {
-              static const Scalar zero = STS::zero();
-              static const Scalar one = STS::one();
+              const Scalar zero = STS::zero();
+              const Scalar one = STS::one();
 
                 for (Ordinal nz_index = start; nz_index < end && nz_index < nnz; nz_index++)
                 {
@@ -2748,8 +2752,8 @@ class FastILUFunctor
         KOKKOS_INLINE_FUNCTION
         void functor_bcrs_impl(const Ordinal start, const Ordinal end) const
         {
-              static const Scalar zero = STS::zero();
-              static const Scalar one = STS::one();
+              const Scalar zero = STS::zero();
+              const Scalar one = STS::one();
 
            const Ordinal blockItems = _blockCrsSize*_blockCrsSize;
            for (Ordinal nz_index = start; nz_index < end && nz_index < nnz; nz_index++) {
