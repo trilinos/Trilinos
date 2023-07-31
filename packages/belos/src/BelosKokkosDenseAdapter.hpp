@@ -88,7 +88,8 @@ namespace Belos {
 
     \return Reference-counted pointer to a new dense matrix of type \c Kokkos::DualView<IST**,Kokkos::LayoutLeft>.
     */
-    static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> Create( const int numRows, const int numCols, bool initZero = true) { 
+    static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> 
+           Create( const int numRows, const int numCols, bool initZero = true) { 
       if(initZero){
         return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseView",numRows,numCols));
       }
@@ -103,10 +104,15 @@ namespace Belos {
     /// because this is what is expected by LAPACK.
     /// \note This raw pointer is intended only for passing data to LAPACK
     /// functions. Other operations on the raw data may result in undefined behavior!
+    /// \note We assume that getting this pointer to non-const data means that data
+    /// will be modified. If that is not true, use of this function could result in 
+    /// extra data syncs.
+    /// The user must NOT hold onto this pointer after any data syncs. If you modify the
+    /// data again after a sync, the view will not be marked as modified the second time.
     static Scalar* GetRawHostPtr(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) { 
     //LAPACK could use the host ptr to modify entries, so mark as modified.
     //TODO: Is there a better way to handle this?
-        //dm.modify_host();
+        dm.modify_host();
         return reinterpret_cast<Scalar*>(dm.h_view.data());
     //TODO: Is there any way that the user could hold on to this pointer...
     // and everything works fine the first time they pass to LAPACK. 
@@ -124,9 +130,9 @@ namespace Belos {
     //! \brief Marks host data modified to avoid device sync errors. 
     /// \note Belos developers must call this function after EVERY
     ///   call to LAPACK that modifies dense matrix data accessed via raw pointer. 
-    static void RawPtrDataModified(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) {
-      dm.modify_host();
-    }
+    //static void RawPtrDataModified(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) {
+      //dm.modify_host();
+    //}
 
     //! \brief Returns an RCP to a Kokkos::DualView<IST**,Kokkos::LayoutLeft> which has a subview of the given Kokkos::DualView<IST**,Kokkos::LayoutLeft>.
     //        Row and column indexing is zero-based.
@@ -201,8 +207,8 @@ namespace Belos {
     static void Reshape( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int numRows, const int numCols, bool initZero = false) {
       if(initZero){
         dm.realloc(numRows,numCols); //changes size of both host and device view.
-        Kokkos::deep_copy(dm.h_view, 0.0);
-        dm.modify_host();
+        Kokkos::deep_copy(dm.d_view, 0.0);
+        dm.modify_device();
       }
       else{
         dm.resize(numRows,numCols); //keeps values in old array.
@@ -299,6 +305,9 @@ namespace Belos {
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormOne( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) {  
       using KAT = Kokkos::ArithTraits<IST>;
       IST sum = 0, max_sum = 0; 
+      SyncDeviceToHost(); //TODO Kokkos-ify this
+      //Kokkos::parallel_for(dm.extent_int(1), 
+          //KOKKOS_LAMBDA(
       for(int j = 0; j < dm.extent_int(1); j++){ //cols
         for(int i = 0; i < dm.extent_int(0); i++){  //rows
           sum += KAT::abs(dm.h_view(i,j));

@@ -93,7 +93,7 @@ namespace Belos {
     //! \brief Marks host data modified to avoid device sync errors. 
     /// \note Belos developers must call this function after EVERY
     ///   call to LAPACK!!!
-    static void RawPtrDataModified(Teuchos::SerialDenseMatrix<int,ScalarType> & dm ) { }
+    //static void RawPtrDataModified(Teuchos::SerialDenseMatrix<int,ScalarType> & dm ) { }
 
     //! \brief Returns an RCP to a DM which has a subview of the given DM.
     //        Row and column indexing is zero-based.
