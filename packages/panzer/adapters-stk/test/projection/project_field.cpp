@@ -113,8 +113,6 @@ public:
 
 namespace panzer_stk {
 
-typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
-
 //**********************************************************************
 template<typename EvalT, typename Traits>
 class GetCoeffsEvaluator
@@ -145,10 +143,12 @@ class GetCoeffsEvaluator
     Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> local_orts;
     Kokkos::DynRankView<double,PHX::Device> local_nodes;
     DynRankView local_linearBasisValuesAtEvalPoint;
-    //DynRankView local_jacobian, local_jacobian_inv, local_jacobian_det;
-    //DynRankView local_evaluationPoints, local_physEvalPoints;
-    //DynRankView local_refTargetAtEvalPoints, local_physTargetAtEvalPoints;
+    DynRankView local_jacobian, local_jacobian_inv, local_jacobian_det;
+    DynRankView local_evaluationPoints, local_physEvalPoints;
+    DynRankView local_refTargetAtEvalPoints, local_physTargetAtEvalPoints;
     ElemShape elemShape;
+    Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > it2basis;
   
 }; // end of class
 
@@ -181,26 +181,32 @@ GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
       "ERROR: Element shape not supported!");
   }
 
+  it2basis = basis->template getIntrepid2Basis<PHX::exec_space,double,double>();
+  
+  // set up projection structure
+  projStruct.createL2ProjectionStruct(it2basis.get(), 3); // cubature order 3
+
+  int numPoints = projStruct.getNumTargetEvalPoints();
+
   // storage for local (to the workset) orientations and cell nodes
   local_orts  = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts",workset_size);
   local_nodes = Kokkos::DynRankView<double,PHX::Device>("cellNodes",workset_size,numNodesPerElem,dim);
 
-  // storage for local everything else needed
-  //auto numPoints = 4;
+  // storage for local objects that don't need to know the number of target points
   local_linearBasisValuesAtEvalPoint = DynRankView("linearBasisValuesAtEvalPoint",workset_size,numNodesPerElem);
-  //local_evaluationPoints = DynRankView("evaluationPoints",workset_size,4,dim);
-  //local_physEvalPoints = DynRankView("physEvalPoints",workset_size,4,dim);
-  //local_jacobian = DynRankView("jacobian", workset_size, numPoints, dim, dim);
-  //local_jacobian_det = DynRankView("jacobian_det", workset_size, numPoints);
-  //local_jacobian_inv = DynRankView("jacobian_inv", workset_size, numPoints, dim, dim);
+  local_evaluationPoints = DynRankView("evaluationPoints",workset_size,numPoints,dim);
+  local_physEvalPoints = DynRankView("physEvalPoints",workset_size,numPoints,dim);
+  local_jacobian = DynRankView("jacobian", workset_size, numPoints, dim, dim);
+  local_jacobian_det = DynRankView("jacobian_det", workset_size, numPoints);
+  local_jacobian_inv = DynRankView("jacobian_inv", workset_size, numPoints, dim, dim);
  
-  //if (basis->isVectorBasis()) {
-  //  local_refTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints,dim);
-  //  local_physTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints,dim);
-  //} else {
-  //  local_refTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints);
-  //  local_physTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints);
-  //}
+  if (basis->isVectorBasis()) {
+    local_refTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints,dim);
+    local_physTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints,dim);
+  } else {
+    local_refTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints);
+    local_physTargetAtEvalPoints = DynRankView("targetAtEvalPoints",workset_size, numPoints);
+  }
 
 }
 
@@ -242,7 +248,6 @@ evaluateFields(
   // First, need to copy orientations to device and grab local nodes
   auto orts_host = Kokkos::create_mirror_view(sub_local_orts);
   // subselect
-  // TODO does this, e.g., zero out data? Will that produce correct behavior?
   auto nodes_host = Kokkos::create_mirror_view(sub_local_nodes);
   auto nodesAll_host = Kokkos::create_mirror_view(cellNodesAll.get_view());
   for (int i=0; i < numOwnedElems; ++i) {
@@ -254,46 +259,31 @@ evaluateFields(
   Kokkos::deep_copy(sub_local_orts,orts_host);
   Kokkos::deep_copy(sub_local_nodes,nodes_host);
 
-  auto it2basis = basis->template getIntrepid2Basis<PHX::exec_space,double,double>();
   auto functionSpace = it2basis->getFunctionSpace();
   auto cell_topology = it2basis->getBaseCellTopology(); // See note above
 
   {
-    Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
-    projStruct.createL2ProjectionStruct(it2basis.get(), 3); // cubature order 3
 
     int numPoints = projStruct.getNumTargetEvalPoints();
-    DynRankView evaluationPoints("evaluationPoints", numOwnedElems, numPoints, dim);
-    //auto evaluationPoints = Kokkos::subview(local_evaluationPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
+
+    auto evaluationPoints = Kokkos::subview(local_evaluationPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
 
     pts::getL2EvaluationPoints(evaluationPoints,
         sub_local_orts,
         it2basis.get(),
         &projStruct);
 
-    DynRankView refTargetAtEvalPoints, physTargetAtEvalPoints;
-    if(functionSpace == Intrepid2::FUNCTION_SPACE_HCURL || functionSpace == Intrepid2::FUNCTION_SPACE_HDIV) {
-      refTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints, dim);
-      physTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints, dim);
-    } else {
-      refTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints);
-      physTargetAtEvalPoints = DynRankView("targetAtEvalPoints", numOwnedElems, numPoints);
-    }
-    //auto refTargetAtEvalPoints = Kokkos::subview(local_refTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
-    //auto physTargetAtEvalPoints = Kokkos::subview(local_physTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto refTargetAtEvalPoints = Kokkos::subview(local_refTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto physTargetAtEvalPoints = Kokkos::subview(local_physTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
 
     auto eShape = elemShape;
-    DynRankView physEvalPoints("physEvalPoints", numOwnedElems, numPoints, dim);
-    //auto physEvalPoints = Kokkos::subview(local_physEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto physEvalPoints = Kokkos::subview(local_physEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
     {
-      DynRankView linearBasisValuesAtEvalPoint("linearBasisValuesAtEvalPoint", numOwnedElems, numNodesPerElem);
-      //auto sub_LBVAEP = Kokkos::subview(local_linearBasisValuesAtEvalPoint,cell_range,Kokkos::ALL());
-      //auto linearBasisValuesAtEvalPoint = Kokkos::subview(local_linearBasisValuesAtEvalPoint,cell_range,Kokkos::ALL());
+      auto linearBasisValuesAtEvalPoint = Kokkos::subview(local_linearBasisValuesAtEvalPoint,cell_range,Kokkos::ALL());
 
       Kokkos::parallel_for(Kokkos::RangePolicy<typename PHX::exec_space>(0,numOwnedElems),
           KOKKOS_LAMBDA (const int &i) {
         auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
-        //auto basisValuesAtEvalPoint = Kokkos::subview(sub_LBVAEP,i,Kokkos::ALL());
         for(int j=0; j<numPoints; ++j){
           auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
           switch (eShape) {
@@ -319,17 +309,14 @@ evaluateFields(
     }
 
     // transform the target function and its derivative to the reference element (inverse of pullback operator)
-    DynRankView jacobian("jacobian", numOwnedElems, numPoints, dim, dim);
-    DynRankView jacobian_det("jacobian_det", numOwnedElems, numPoints);
-    DynRankView jacobian_inv("jacobian_inv", numOwnedElems, numPoints, dim, dim);
-    //auto jacobian = Kokkos::subview(local_jacobian,cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-    //auto jacobian_det = Kokkos::subview(local_jacobian_det,cell_range,Kokkos::ALL());
-    //auto jacobian_inv = Kokkos::subview(local_jacobian_inv,cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto jacobian = Kokkos::subview(local_jacobian,cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto jacobian_det = Kokkos::subview(local_jacobian_det,cell_range,Kokkos::ALL());
+    auto jacobian_inv = Kokkos::subview(local_jacobian_inv,cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
     ct::setJacobian(jacobian, evaluationPoints, sub_local_nodes, cell_topology);
     ct::setJacobianDet (jacobian_det, jacobian);
     ct::setJacobianInv (jacobian_inv, jacobian);
 
-    EvalSolFunctor<DynRankView> functor;
+    EvalSolFunctor<decltype(physTargetAtEvalPoints)> functor;
     functor.funAtPoints = physTargetAtEvalPoints;
     functor.points = physEvalPoints;
     Kokkos::parallel_for("loop for evaluating function in phys space", numOwnedElems, functor);
@@ -539,7 +526,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   // set up worksets and orientations
 
   // return worksets and orientations and get relevant sizes
-  auto wkstsAndOrts = getWorksetsAndOrtsForFields(mesh,fmap,2);
+  auto wkstsAndOrts = getWorksetsAndOrtsForFields(mesh,fmap,-1);
   auto worksets = wkstsAndOrts.worksets;
   auto orientations = wkstsAndOrts.orientations;
   auto wkstSize = (*worksets)[0].num_cells; // As long as we don't pick the last workset, this gives the max size 
