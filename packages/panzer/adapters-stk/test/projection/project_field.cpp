@@ -144,7 +144,7 @@ class GetCoeffsEvaluator
     Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orts;
     Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> local_orts;
     Kokkos::DynRankView<double,PHX::Device> local_nodes;
-    //DynRankView local_linearBasisValuesAtEvalPoint;
+    DynRankView local_linearBasisValuesAtEvalPoint;
     //DynRankView local_jacobian, local_jacobian_inv, local_jacobian_det;
     //DynRankView local_evaluationPoints, local_physEvalPoints;
     //DynRankView local_refTargetAtEvalPoints, local_physTargetAtEvalPoints;
@@ -187,7 +187,7 @@ GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
 
   // storage for local everything else needed
   //auto numPoints = 4;
-  //local_linearBasisValuesAtEvalPoint = DynRankView("linearBasisValuesAtEvalPoint",workset_size,numNodesPerElem);
+  local_linearBasisValuesAtEvalPoint = DynRankView("linearBasisValuesAtEvalPoint",workset_size,numNodesPerElem);
   //local_evaluationPoints = DynRankView("evaluationPoints",workset_size,4,dim);
   //local_physEvalPoints = DynRankView("physEvalPoints",workset_size,4,dim);
   //local_jacobian = DynRankView("jacobian", workset_size, numPoints, dim, dim);
@@ -225,7 +225,6 @@ evaluateFields(
   // FYI, this all relies on a first-order mesh
   auto cellNodesAll = workset.getCellVertices(); // TODO BWR UPDATE WHEN DEPRECATED
   size_t numOwnedElems = workset.num_cells;
-  std::cout << "OWNED " << numOwnedElems << " VS " << local_orts.extent(0) << std::endl;
   TEUCHOS_ASSERT(local_nodes.extent(0)==local_orts.extent(0));
 
   auto dim = basis->dimension();
@@ -236,7 +235,9 @@ evaluateFields(
   const auto cell_range = std::pair<int,int>(0,numOwnedElems);
   auto sub_local_nodes = Kokkos::subview(local_nodes,cell_range,Kokkos::ALL(),Kokkos::ALL());
   auto sub_local_orts  = Kokkos::subview(local_orts,cell_range);
-  auto sub_coeffs      = Kokkos::subview(coeffs.get_view(),cell_range,Kokkos::ALL());
+
+  const auto field_cell_range = std::pair<int,int>(workset.cell_local_ids[0],workset.cell_local_ids[numOwnedElems-1]+1);
+  auto sub_coeffs      = Kokkos::subview(coeffs.get_view(),field_cell_range,Kokkos::ALL());
 
   // First, need to copy orientations to device and grab local nodes
   auto orts_host = Kokkos::create_mirror_view(sub_local_orts);
@@ -248,7 +249,7 @@ evaluateFields(
     orts_host(i) = orts->at(workset.cell_local_ids[i]);
     for (int j=0; j < numNodesPerElem; ++j)
       for (int k=0; k < dim; ++k)
-        nodes_host(i,j,k) = nodesAll_host(workset.cell_local_ids[i],j,k);
+        nodes_host(i,j,k) = nodesAll_host(i,j,k);
   }
   Kokkos::deep_copy(sub_local_orts,orts_host);
   Kokkos::deep_copy(sub_local_nodes,nodes_host);
@@ -257,17 +258,11 @@ evaluateFields(
   auto functionSpace = it2basis->getFunctionSpace();
   auto cell_topology = it2basis->getBaseCellTopology(); // See note above
 
-  std::cout << " DONE HERE " << std::endl;
-
-  // TODO HERE HERE PROBABLY NEED TO DO ALL MEMORY ALLOCS IN CONSTRUCTOR !
-  // TODO ASK ROGER WHAT EXACTLY IS GOING ON... WHEN CAN WE HAVE HELPER DYNRANKVIEWS?
-
   {
     Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
     projStruct.createL2ProjectionStruct(it2basis.get(), 3); // cubature order 3
 
     int numPoints = projStruct.getNumTargetEvalPoints();
-    std::cout << numPoints << " POINTS " << std::endl;
     DynRankView evaluationPoints("evaluationPoints", numOwnedElems, numPoints, dim);
     //auto evaluationPoints = Kokkos::subview(local_evaluationPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
 
@@ -287,18 +282,13 @@ evaluateFields(
     //auto refTargetAtEvalPoints = Kokkos::subview(local_refTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
     //auto physTargetAtEvalPoints = Kokkos::subview(local_physTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
 
-    std::cout << " EVAL POINTS " << std::endl;
-
     auto eShape = elemShape;
     DynRankView physEvalPoints("physEvalPoints", numOwnedElems, numPoints, dim);
     //auto physEvalPoints = Kokkos::subview(local_physEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
-    std::cout << "physeval" <<std::endl;
     {
       DynRankView linearBasisValuesAtEvalPoint("linearBasisValuesAtEvalPoint", numOwnedElems, numNodesPerElem);
       //auto sub_LBVAEP = Kokkos::subview(local_linearBasisValuesAtEvalPoint,cell_range,Kokkos::ALL());
-      std::cout << " linearbasis" << std::endl;
-
-      // TODO comment out different parts of this... Intrepid call? Subview? Whole thing?
+      //auto linearBasisValuesAtEvalPoint = Kokkos::subview(local_linearBasisValuesAtEvalPoint,cell_range,Kokkos::ALL());
 
       Kokkos::parallel_for(Kokkos::RangePolicy<typename PHX::exec_space>(0,numOwnedElems),
           KOKKOS_LAMBDA (const int &i) {
@@ -325,10 +315,8 @@ evaluateFields(
               physEvalPoints(i,j,d) += sub_local_nodes(i,k,d)*basisValuesAtEvalPoint(k);
         }
       });
-      std::cout << " OUT OF LOOP " << std::endl;
       Kokkos::fence();
     }
-    std::cout << " GOOD " << std::endl;
 
     // transform the target function and its derivative to the reference element (inverse of pullback operator)
     DynRankView jacobian("jacobian", numOwnedElems, numPoints, dim, dim);
@@ -341,15 +329,11 @@ evaluateFields(
     ct::setJacobianDet (jacobian_det, jacobian);
     ct::setJacobianInv (jacobian_inv, jacobian);
 
-    // TODO BWR DOES THIS CAUSE ISSUES?
-    // TODO ASK ROGER 
-    
     EvalSolFunctor<DynRankView> functor;
     functor.funAtPoints = physTargetAtEvalPoints;
     functor.points = physEvalPoints;
     Kokkos::parallel_for("loop for evaluating function in phys space", numOwnedElems, functor);
     Kokkos::fence();
-    
 
     switch (functionSpace) {
     case Intrepid2::FUNCTION_SPACE_HGRAD:
@@ -374,8 +358,6 @@ evaluateFields(
         it2basis.get(),
         &projStruct);
   }
-  std::cout << " L2 proj " << std::endl;
-
   return;
 }
 
@@ -467,7 +449,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
     Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     std::string eShape("Tri");
     pl->set("Mesh Dimension",2);
-    pl->set("Type","Quad");
+    pl->set("Type","Tri");
     pl->sublist("Mesh Factory Parameter List").set("X Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Y Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("X Elements",2);
@@ -503,7 +485,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(project_field,value,EvalType)
     Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     std::string eShape("Tet");
     pl->set("Mesh Dimension",3);
-    pl->set("Type","Hex");
+    pl->set("Type","Tet");
     pl->sublist("Mesh Factory Parameter List").set("X Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Y Blocks",1);
     pl->sublist("Mesh Factory Parameter List").set("Z Blocks",1);
@@ -560,10 +542,8 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   auto wkstsAndOrts = getWorksetsAndOrtsForFields(mesh,fmap,2);
   auto worksets = wkstsAndOrts.worksets;
   auto orientations = wkstsAndOrts.orientations;
-  auto wkstSize = (*worksets)[0].num_cells; // TODO BWR worksets should be all the same size, but the last one can be smaller ???
-  auto numNodesPerElem = (*worksets)[0].getCellVertices().extent(0);
-  // TODO BWR is it true that the first one will always be the "correct" size? Probably but ask!
-  std::cout << "NUM SETS :: " << worksets->size() << std::endl;
+  auto wkstSize = (*worksets)[0].num_cells; // As long as we don't pick the last workset, this gives the max size 
+  auto numNodesPerElem = (*worksets)[0].getCellVertices().extent(1);
 
   auto numCells = orientations->size();
 
@@ -643,8 +623,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   bool matched = true;
   for (size_t ncell=0;ncell<numCells;++ncell){
     for (int idx_pt=0;idx_pt<sourceBasis->cardinality();++idx_pt){
-      std::cout << s_h(ncell,idx_pt) << " " << t_h(ncell,idx_pt) << std::endl;
-        if (std::abs(s_h(ncell,idx_pt) - t_h(ncell,idx_pt)) > 1e-14) matched = false;
+      if (std::abs(s_h(ncell,idx_pt) - t_h(ncell,idx_pt)) > 1e-14) matched = false;
     }
   }
 

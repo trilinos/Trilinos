@@ -73,12 +73,12 @@ public:
    * \param[in] inName Name of the source MDField
    * \param[in] src Basis of the source field
    * \param[in] dst Target basis
-   * \param[in] worksetSize Number of cells in a workset
+   * \param[in] maxWorksetSize Maximum number of cells in a workset
    * \param[in] outname (Optional) Name for the projected MDField
    */
   
   ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
-               Teuchos::RCP<panzer::PureBasis> dst, const size_t worksetSize, 
+               Teuchos::RCP<panzer::PureBasis> dst, const size_t maxWorksetSize, 
                std::string outname = "");
   
   void postRegistrationSetup(typename Traits::SetupData d,

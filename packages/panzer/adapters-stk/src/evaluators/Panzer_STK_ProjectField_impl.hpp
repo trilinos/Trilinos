@@ -60,7 +60,7 @@ namespace panzer_stk {
 template<typename EvalT,typename Traits>
 ProjectField<EvalT, Traits>::
 ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
-             Teuchos::RCP<panzer::PureBasis> dst, const size_t workset_size,
+             Teuchos::RCP<panzer::PureBasis> dst, const size_t maxWorksetSize,
              std::string outName):
   srcBasis_(src), dstBasis_(dst)
 { 
@@ -84,7 +84,7 @@ ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
   this->setName("Project Field");
 
   // storage for local (to the workset) orientations
-  local_orts_ = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts",workset_size);
+  local_orts_ = Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>("orts",maxWorksetSize);
 
 }
 
@@ -133,8 +133,10 @@ evaluateFields(typename Traits::EvalData workset)
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > srcBasis = srcBasis_->getIntrepid2Basis();
 
   // Same here, need subviews
-  auto sub_result = Kokkos::subview(result_.get_view(),cell_range,Kokkos::ALL());
-  auto sub_source = Kokkos::subview(source_.get_view(),cell_range,Kokkos::ALL());
+  // TODO BWR will things always be arranged this way?
+  const auto field_cell_range = std::pair<int,int>(workset.cell_local_ids[0],workset.cell_local_ids[numCells-1]+1);
+  auto sub_result = Kokkos::subview(result_.get_view(),field_cell_range,Kokkos::ALL());
+  auto sub_source = Kokkos::subview(source_.get_view(),field_cell_range,Kokkos::ALL());
 
   pts::projectField(sub_result,dstBasis.get(),
                     sub_source,srcBasis.get(),sub_local_orts);
