@@ -166,7 +166,14 @@ def merge_branch(source_url, target_branch, sourceSHA):
     check_call_wrapper(['git', 'fetch', 'origin', target_branch])
     check_call_wrapper(['git', 'reset', '--hard', 'HEAD'])
     check_call_wrapper(['git', 'checkout', '-B', target_branch, 'origin/' + target_branch])
-    check_call_wrapper(['git', 'merge', '--no-edit', sourceSHA]),
+
+    sha_exists_as_branch_on_remote = bool(subprocess.check_output('git rev-parse --verify --quiet source_remote/' + sourceSHA + ' || true', shell=True))
+
+    if sha_exists_as_branch_on_remote:
+        print_wrapper("REMARK: Detected ref as a remote branch, will merge as such")
+        check_call_wrapper(['git', 'merge', '--no-edit', "source_remote/" + sourceSHA])
+    else:
+        check_call_wrapper(['git', 'merge', '--no-edit', sourceSHA])
 
     return 0
 
