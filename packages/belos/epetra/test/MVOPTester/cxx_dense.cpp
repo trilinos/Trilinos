@@ -89,8 +89,14 @@ int main(int argc, char *argv[])
   try {
     // Create an output manager to handle the I/O from the solver
     Teuchos::RCP<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>() );
+    Teuchos::RCP<Belos::OutputManager<float> > MyOMFloat = Teuchos::rcp( new Belos::OutputManager<float>() );
+    Teuchos::RCP<Belos::OutputManager<std::complex<double>> > MyOMCplxDouble = Teuchos::rcp( new Belos::OutputManager<std::complex<double>>() );
+    Teuchos::RCP<Belos::OutputManager<std::complex<float>> > MyOMCplxFloat = Teuchos::rcp( new Belos::OutputManager<std::complex<float>>() );
     if (verbose) {
       MyOM->setVerbosity( Belos::Warnings );
+      MyOMFloat->setVerbosity( Belos::Warnings );
+      MyOMCplxDouble->setVerbosity( Belos::Warnings );
+      MyOMCplxFloat->setVerbosity( Belos::Warnings );
     }
 
     //*********************************************************************
@@ -99,10 +105,49 @@ int main(int argc, char *argv[])
     ierr = Belos::TestDenseMatTraits<double,Teuchos::SerialDenseMatrix<int,double>>(MyOM);
     gerr &= ierr;
     if (ierr) {
-      MyOM->print(Belos::Warnings,"*** TeuchosEpetraAdapter PASSED TestDenseMatTraits()\n");
+      MyOM->print(Belos::Warnings,"*** TeuchosEpetraAdapter PASSED TestDenseMatTraits() scalar double \n");
     }
     else {
-      MyOM->print(Belos::Warnings,"*** TeuchosEpetraAdapter FAILED TestDenseMatTraits() ***\n\n");
+      MyOM->print(Belos::Warnings,"*** TeuchosEpetraAdapter FAILED TestDenseMatTraits() scalar double ***\n\n");
+    }
+
+    //TODO Need to test this in Tpetra once Epetra is removed.  
+    // (Epetra doesn't use these scalar types, but Tpetra does.
+    // This code still needs to work with Tpetra, so test it. )
+    //*********************************************************************
+    // Teuchos SerialDense MatrixTraits impl testing. 
+    //*********************************************************************
+    ierr = Belos::TestDenseMatTraits<float,Teuchos::SerialDenseMatrix<int,float>>(MyOMFloat);
+    gerr &= ierr;
+    if (ierr) {
+      MyOMFloat->print(Belos::Warnings,"*** TeuchosEpetraAdapter PASSED TestDenseMatTraits() scalar float \n");
+    }
+    else {
+      MyOMFloat->print(Belos::Warnings,"*** TeuchosEpetraAdapter FAILED TestDenseMatTraits() scalar float ***\n\n");
+    }
+
+    //*********************************************************************
+    // Teuchos SerialDense MatrixTraits impl testing. 
+    //*********************************************************************
+    ierr = Belos::TestDenseMatTraits<std::complex<double>,Teuchos::SerialDenseMatrix<int,std::complex<double>>>(MyOMCplxDouble);
+    gerr &= ierr;
+    if (ierr) {
+      MyOMCplxDouble->print(Belos::Warnings,"*** TeuchosEpetraAdapter PASSED TestDenseMatTraits() scalar complex double \n");
+    }
+    else {
+      MyOMCplxDouble->print(Belos::Warnings,"*** TeuchosEpetraAdapter FAILED TestDenseMatTraits() scalar complex double ***\n\n");
+    }
+
+    //*********************************************************************
+    // Teuchos SerialDense MatrixTraits impl testing. 
+    //*********************************************************************
+    ierr = Belos::TestDenseMatTraits<std::complex<float>,Teuchos::SerialDenseMatrix<int,std::complex<float>>>(MyOMCplxFloat);
+    gerr &= ierr;
+    if (ierr) {
+      MyOMCplxFloat->print(Belos::Warnings,"*** TeuchosEpetraAdapter PASSED TestDenseMatTraits() complex float\n");
+    }
+    else {
+      MyOMCplxFloat->print(Belos::Warnings,"*** TeuchosEpetraAdapter FAILED TestDenseMatTraits() complex float ***\n\n");
     }
 
     //*********************************************************************
