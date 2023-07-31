@@ -540,6 +540,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
     if (norms) {
       Teuchos::BLAS<int,ScalarType> blas;
+      DMT::SyncDeviceToHost(*z_);
       for (int j=0; j<blockSize_; j++) {
         (*norms)[j] = blas.NRM2( blockSize_, &DMT::Value(*z_,curDim_, j), 1);
       }
@@ -773,6 +774,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     // system to upper-triangular form.
     //
     if (blockSize_ == 1) {
+      DMT::SyncDeviceToHost(*R_);
       //
       // QR factorization of Least-Squares system with Givens rotations
       //
@@ -787,15 +789,20 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       //
       blas.ROTG( &DMT::Value(*R_,curDim,curDim), &DMT::Value(*R_,curDim+1,curDim), &cs[curDim], &sn[curDim] );
       DMT::Value(*R_,curDim+1,curDim) = zero;
+      DMT::SyncHostToDevice(*R_); //TODO is this needed?
       //
       // Update RHS w/ new transformation
       //
+      DMT::SyncDeviceToHost(*z_);
       blas.ROT( 1, &DMT::Value(*z_,curDim,0), 1, &DMT::Value(*z_,curDim+1,0), 1, &cs[curDim], &sn[curDim] );
+      DMT::SyncHostToDevice(*z_); //TODO is this needed?
     }
     else {
       //
       // QR factorization of Least-Squares system with Householder reflectors
       //
+      DMT::SyncDeviceToHost(*R_);
+      DMT::SyncDeviceToHost(*z_);
       for (j=0; j<blockSize_; j++) {
         //
         // Apply previous Householder reflectors to new block of Hessenberg matrix
@@ -847,6 +854,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     if (dim >= curDim_ && dim < getMaxSubspaceDim()) {
       curDim_ = dim + blockSize_;
     }
+    DMT::SyncHostToDevice(*z_); //TODO is this needed?
+    DMT::SyncHostToDevice(*R_); //TODO is this needed?
 
   } // end updateLSQR()
 
