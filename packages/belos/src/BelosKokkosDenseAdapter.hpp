@@ -250,6 +250,11 @@ namespace Belos {
       }    
     }
 
+    static void SyncHostToDevice(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm) { 
+      if(dm.need_sync_device()){
+        dm.sync_device();
+      }    
+    }
     //@}
     //@{ \name Operator methods
     
