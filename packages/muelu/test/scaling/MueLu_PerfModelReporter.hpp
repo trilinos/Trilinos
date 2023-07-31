@@ -108,6 +108,8 @@ void report_spmv_performance_models(const Teuchos::RCP<const Matrix> & A, int nr
   int m_log_max = 15;
   PM.pingpong_make_table(nrepeat,m_log_max,comm);
 
+  std::string rank_prefix = prefix + std::to_string(rank) + std::string(": ");
+
 
   if(A->hasCrsGraph()) {
     auto importer = A->getCrsGraph()->getImporter();
@@ -121,19 +123,21 @@ void report_spmv_performance_models(const Teuchos::RCP<const Matrix> & A, int nr
     }
   }
 
-  if(verbose && rank == 0) {
+  if(verbose) {
     std::cout<<prefix<<"********************************************************"<<std::endl;
     std::cout<<prefix<<"Performance model results on "<<nproc<<" ranks"<<std::endl;
-    std::cout<<prefix<<"****** Launch Latency Table ******"<<std::endl;
-    PM.print_launch_latency_table(std::cout,prefix);
-    std::cout<<prefix<<"****** Stream Table ******"<<std::endl;
-    PM.print_stream_vector_table(std::cout,prefix);
-    std::cout<<prefix<<"****** Latency Corrected Stream Table ******"<<std::endl;
-    PM.print_latency_corrected_stream_vector_table(std::cout,prefix);
-    std::cout<<prefix<<"****** Pingpong Table ******"<<std::endl;
-    PM.print_pingpong_table(std::cout,prefix);
-    std::cout<<prefix<<"****** Halopong Table ******"<<std::endl;
-    PM.print_halopong_table(std::cout,prefix);
+    if(rank==0) {
+      std::cout<<rank_prefix<<" ****** Launch Latency Table ******"<<std::endl;
+      PM.print_launch_latency_table(std::cout,rank_prefix);
+      std::cout<<rank_prefix<<"****** Stream Table ******"<<std::endl;
+      PM.print_stream_vector_table(std::cout,rank_prefix);
+      std::cout<<rank_prefix<<"****** Latency Corrected Stream Table ******"<<std::endl;
+      PM.print_latency_corrected_stream_vector_table(std::cout,rank_prefix);
+      std::cout<<rank_prefix<<"****** Pingpong Table ******"<<std::endl;
+      PM.print_pingpong_table(std::cout,rank_prefix);
+      std::cout<<rank_prefix<<"****** Halopong Table ******"<<std::endl;
+      PM.print_halopong_table(std::cout,rank_prefix);
+    }
   }
 
   // For convenience
@@ -158,7 +162,7 @@ void report_spmv_performance_models(const Teuchos::RCP<const Matrix> & A, int nr
 
   std::vector<double> gb_per_sec(NUM_TIMERS);
   if(verbose && rank == 0)
-    std::cout<<prefix<<"****** Local Time Model Results ******"<<std::endl;
+    std::cout<<rank_prefix<<"****** Local Time Model Results ******"<<std::endl;
   for(int i = 0; i < NUM_TIMERS; i++) {
     double avg_time;
 
@@ -175,7 +179,7 @@ void report_spmv_performance_models(const Teuchos::RCP<const Matrix> & A, int nr
     gb_per_sec[i] = convert_time_to_bandwidth_gbs(avg_time,1,memory_traffic);
     
     if(verbose) {
-      std::cout<<prefix<<rank<< "Local: "<<SPMV_test_names[i] << " # Scalars = "<<memory_traffic/sizeof(SC) << " time per call = "<<avg_time*1e6 << " us. GB/sec = "<<gb_per_sec[i]<<std::endl;
+      std::cout<<rank_prefix<< "Local: "<<SPMV_test_names[i] << " # Scalars = "<<memory_traffic/sizeof(SC) << " time per call = "<<avg_time*1e6 << " us. GB/sec = "<<gb_per_sec[i]<<std::endl;
     }
   }
   
@@ -212,8 +216,8 @@ void report_spmv_performance_models(const Teuchos::RCP<const Matrix> & A, int nr
   double minimum_local_all_time = spmv_memory_bytes[NUM_TIMERS-1] / (GB * gb_per_sec[NUM_TIMERS-1]);
 
   if(verbose) {
-    std::cout<<prefix<<rank<< "Local: composite      = "<<minimum_local_composite*1e6<<" us.\n"
-             <<prefix<<rank<< "Local: all            = "<<minimum_all_composite*1e6<<" us.\n";
+    std::cout<<rank_prefix<< "Local: composite      = "<<minimum_local_composite_time*1e6<<" us.\n"
+             <<rank_prefix<< "Local: all            = "<<minimum_local_all_time*1e6<<" us.\n";
   }
 
 
@@ -293,17 +297,17 @@ void report_spmv_performance_models(const Teuchos::RCP<const Matrix> & A, int nr
       time_communicate_halo = halo_time;
 
       if(verbose) {
-        std::cout<<prefix<<rank<<"****** Remote Time Model Results ******"<<std::endl;
-        std::cout<<prefix<<rank<< "Remote: same      = "<<same_time*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: permutes  = "<<permute_time*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: exports   = "<<export_time*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: remotes   = "<<remote_time*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: sends len = "<<total_send_length<<" time = "<<send_time*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: recvs len = "<<total_recv_length<<" time  = "<<recv_time*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: pack/unpack OOP = "<< time_pack_unpack_outofplace*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: pack/unpack INP = "<< time_pack_unpack_inplace*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: ping avg  = "<<(size_t)avg_size_per_msg<<" time  = "<<time_communicate_ping*1e6<<" us.\n"
-                 <<prefix<<rank<< "Remote: halo avg  = "<<(size_t)avg_size_per_msg<<" time  = "<<time_communicate_halo*1e6<<" us.\n"<<std::endl;
+        std::cout<<rank_prefix<<"****** Remote Time Model Results ******"<<std::endl;
+        std::cout<<rank_prefix<< "Remote: same      = "<<same_time*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: permutes  = "<<permute_time*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: exports   = "<<export_time*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: remotes   = "<<remote_time*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: sends len = "<<total_send_length<<" time = "<<send_time*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: recvs len = "<<total_recv_length<<" time = "<<recv_time*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: pack/unpack OOP = "<< time_pack_unpack_outofplace*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: pack/unpack INP = "<< time_pack_unpack_inplace*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: ping avg  = "<<(size_t)avg_size_per_msg<<" time  = "<<time_communicate_ping*1e6<<" us.\n"
+                 <<rank_prefix<< "Remote: halo avg  = "<<(size_t)avg_size_per_msg<<" time  = "<<time_communicate_halo*1e6<<" us.\n"<<std::endl;
       }
       
     }
@@ -347,12 +351,12 @@ void report_spmv_performance_models(const Teuchos::RCP<const Matrix> & A, int nr
 
     if(rank == 0)
       std::cout << "\n\n========================================================\n"
-                <<prefix<< "Minimum time model (composite) : " << avg_times[0] << "\n"
-                <<prefix<< "Minimum time model (all)       : " << avg_times[5] << "\n"
-                <<prefix<< "Pack/unpack in-place           : " << avg_times[1] - avg_times[0] - avg_times[10]<< "\n" // comp+ping_pack_inplace - comp - ping
-                <<prefix<< "Pack/unpack out-of-place       : " << avg_times[2] - avg_times[0] - avg_times[10]<< "\n" // comp+ping_pack_ooplace - comp - ping
-                <<prefix<< "Communication time (ping)      : " << avg_times[10] << "\n"
-                <<prefix<< "Communication time (halo)      : " << avg_times[11] << std::endl;
+                <<prefix<< "Minimum time model (composite) : " << avg_times[0]*1e6 << " us.\n"
+                <<prefix<< "Minimum time model (all)       : " << avg_times[5]*1e6 << " us.\n"
+                <<prefix<< "Pack/unpack in-place           : " << (avg_times[1] - avg_times[0] - avg_times[10])*1e6<< "us.\n" // comp+ping_pack_inplace - comp - ping
+                <<prefix<< "Pack/unpack out-of-place       : " << (avg_times[2] - avg_times[0] - avg_times[10])*1e6<< "us.\n" // comp+ping_pack_ooplace - comp - ping
+                <<prefix<< "Communication time (ping)      : " << avg_times[10]*1e6 << "us.\n"
+                <<prefix<< "Communication time (halo)      : " << avg_times[11]*1e6 << "us." <<std::endl;
     
 
   }
