@@ -92,7 +92,7 @@ int main(int narg, char *arg[]) {
 
   int rank = comm->getRank();
 
-  int nVtxWeights = 5;
+  int nVtxWeights = 2;
   int nnzWgtIdx = -1;
   std::string fname("simple");
 
@@ -108,43 +108,52 @@ int main(int narg, char *arg[]) {
   RCP<trowMatrix_t> trM = rcp_dynamic_cast<trowMatrix_t>(M);
   RCP<const trowMatrix_t> ctrM = rcp_const_cast<const trowMatrix_t>(trM);
   zlno_t nLocalRows = M->getLocalNumRows();
+  std::cout << "nLocalRows: " << nLocalRows << std::endl;
 
   // Weights:
-  zscalar_t **rowWeights = NULL;
-  Zoltan2::BaseAdapter<trowMatrix_t>::WeightsDeviceView kRowWeights(
-      Kokkos::ViewAllocateWithoutInitializing("kRowWeights"), nVtxWeights,
-      nLocalRows);
+  zscalar_t **rowWeights = nullptr;
+  // create as many 1-D weights views as nVtxWeights
+  Zoltan2::BaseAdapter<trowMatrix_t>::WeightsDeviceView1D wgts0("wgts0",
+                                                                nLocalRows);
+  Zoltan2::BaseAdapter<trowMatrix_t>::WeightsDeviceView1D wgts1("wgts1",
+                                                                nLocalRows);
 
-  auto kRowWeightsHost = Kokkos::create_mirror_view(kRowWeights);
+  auto wgts0Host = Kokkos::create_mirror_view(wgts0);
+  auto wgts1Host = Kokkos::create_mirror_view(wgts1);
+
+  for (zlno_t i = 0; i < nLocalRows; i++) {
+      wgts0Host(i) = i;
+      wgts1Host(i) = 200000 + i;
+  }
 
   if (nVtxWeights > 0) {
     rowWeights = new zscalar_t *[nVtxWeights];
     for (int i = 0; i < nVtxWeights; i++) {
       if (nnzWgtIdx == i) {
-        rowWeights[i] = NULL;
-        kRowWeightsHost(i, 0) = 0;
+        rowWeights[i] = nullptr;
       } else {
         rowWeights[i] = new zscalar_t[nLocalRows];
         for (zlno_t j = 0; j < nLocalRows; j++) {
           rowWeights[i][j] = 200000 * i + j;
-          kRowWeightsHost(i, j) = 200000 * i + j;
         }
       }
     }
   }
 
-  Kokkos::deep_copy(kRowWeights, kRowWeightsHost);
+  Kokkos::deep_copy(wgts0, wgts0Host);
+  Kokkos::deep_copy(wgts1, wgts1Host);
 
   tRowMAdapter_t tmi(ctrM, nVtxWeights);
   for (int i = 0; i < nVtxWeights; i++) {
     tmi.setWeights(rowWeights[i], 1, i);
   }
-  tmi.setRowWeights(kRowWeights);
+  tmi.setRowWeightsDevice(wgts0, 0);
+  tmi.setRowWeightsDevice(wgts1, 1);
 
-  simpleVAdapter_t *via = NULL;
+  simpleVAdapter_t *via = nullptr;
 
   // Set up some fake input
-  zscalar_t **coords = NULL;
+  zscalar_t **coords = nullptr;
   int coordDim = 3;
 
   if (coordDim > 0) {
@@ -157,14 +166,14 @@ int main(int narg, char *arg[]) {
     }
   }
 
-  zgno_t *gids = NULL;
+  zgno_t *gids = nullptr;
   if (coordDim > 0) {
     gids = new zgno_t[nLocalRows];
     for (zlno_t i = 0; i < nLocalRows; i++)
       gids[i] = M->getRowMap()->getGlobalElement(i);
     via = new simpleVAdapter_t(nLocalRows, gids, coords[0],
-                               (coordDim > 1 ? coords[1] : NULL),
-                               (coordDim > 2 ? coords[2] : NULL), 1, 1, 1);
+                               (coordDim > 1 ? coords[1] : nullptr),
+                               (coordDim > 2 ? coords[2] : nullptr), 1, 1, 1);
     tmi.setCoordinateInput(via);
   }
 
@@ -263,27 +272,48 @@ int main(int narg, char *arg[]) {
   TEST_FAIL_AND_EXIT(*comm, success, "values != kHostValues != kDeviceValues",
                      1)
 
-  // TEST of getRowWeightsView, getRowWeightsHostView and
+  // TEST of getRowWeightsView, getRowWeightsHost0View and
   // getRowWeightsDeviceView
+
+  Zoltan2::BaseAdapter<trowMatrix_t>::WeightsHostView1D weightsHost0;
+  Zoltan2::BaseAdapter<trowMatrix_t>::WeightsDeviceView1D weightsDevice0;
+  Zoltan2::BaseAdapter<trowMatrix_t>::WeightsHostView1D weightsHost1;
+  Zoltan2::BaseAdapter<trowMatrix_t>::WeightsDeviceView1D weightsDevice1;
+
+  tmi.getRowWeightsHostView(weightsHost0, 0);
+  tmi.getRowWeightsDeviceView(weightsDevice0, 0);
+
+  tmi.getRowWeightsHostView(weightsHost1, 1);
+  tmi.getRowWeightsDeviceView(weightsDevice1, 1);
+
+  auto hostWeightsDevice0 = Kokkos::create_mirror_view(weightsDevice0);
+  Kokkos::deep_copy(hostWeightsDevice0, weightsDevice0);
+
+  auto hostWeightsDevice1 = Kokkos::create_mirror_view(weightsDevice1);
+  Kokkos::deep_copy(hostWeightsDevice1, weightsDevice1);
+
   for (int w = 0; success && w < nVtxWeights; w++) {
     const zscalar_t *wgts;
-    Zoltan2::BaseAdapter<trowMatrix_t>::WeightsHostView kHostWgts;
-    Zoltan2::BaseAdapter<trowMatrix_t>::WeightsDeviceView kDeviceWgts;
 
-    Kokkos::View<zscalar_t **, typename znode_t::device_type> wkgts;
+    Kokkos::View<zscalar_t *, typename znode_t::device_type> wkgts;
     int stride;
     tmi.getRowWeightsView(wgts, stride, w);
-    tmi.getRowWeightsHostView(kHostWgts);
-    tmi.getRowWeightsDeviceView(kDeviceWgts);
 
-    auto kDeviceWgtsHost = Kokkos::create_mirror_view(kDeviceWgts);
-    Kokkos::deep_copy(kDeviceWgtsHost, kDeviceWgts);
+    if (w == 0) {
 
-    for (zlno_t i = 0; success && i < nLocalRows; ++i) {
-      TEUCHOS_TEST_EQUALITY(wgts[stride * i], kHostWgts(w, i), std::cout,
-                            success);
-      TEUCHOS_TEST_EQUALITY(wgts[stride * i], kDeviceWgtsHost(w, i), std::cout,
-                            success);
+        for (zlno_t i = 0; success && i < nLocalRows; ++i) {
+        TEUCHOS_TEST_EQUALITY(wgts[stride * i], weightsHost0(i), std::cout,
+                                success);
+        TEUCHOS_TEST_EQUALITY(wgts[stride * i], hostWeightsDevice0(i), std::cout,
+                                success);
+        }
+    } else {
+        for (zlno_t i = 0; success && i < nLocalRows; ++i) {
+            TEUCHOS_TEST_EQUALITY(wgts[stride * i], weightsHost1(i), std::cout,
+                                    success);
+            TEUCHOS_TEST_EQUALITY(wgts[stride * i], hostWeightsDevice1(i), std::cout,
+                                    success);
+        }
     }
   }
   TEST_FAIL_AND_EXIT(*comm, success, "wgts != vwgts != wkgts", 1)
