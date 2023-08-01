@@ -120,10 +120,10 @@ evaluateFields(typename Traits::EvalData workset)
   // First, need to copy orientations to device
   if (orientations_ == Teuchos::null) {
     // If your bases don't require orientations, pass the default (0,0) orientation
-    for (int i=0; i < numCells; ++i)
+    for (size_t i=0; i < numCells; ++i)
       orts_host(i) = Intrepid2::Orientation();
   } else {
-    for (int i=0; i < numCells; ++i) // grab orientations for this workset
+    for (size_t i=0; i < numCells; ++i) // grab orientations for this workset
       orts_host(i) = orientations_->at(workset.cell_local_ids[i]);
   }   
   Kokkos::deep_copy(sub_local_orts,orts_host);
