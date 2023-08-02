@@ -99,8 +99,7 @@ class GetCoeffsEvaluator
   public:
 
     GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis, 
-                       std::string & eShape, const size_t workset_size,
-                       const size_t numNodesPerElem, const size_t dim /*, Functor ??*/);
+                       std::string & eShape, const size_t numNodesPerElem, const size_t dim);
 
     void
     evaluateFields(
@@ -131,13 +130,14 @@ class GetCoeffsEvaluator
 template<typename EvalT, typename Traits>
 GetCoeffsEvaluator<EvalT, Traits>::
 GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
-                   std::string & eShape, const size_t workset_size, 
-                   const size_t numNodesPerElem, const size_t dim /*, Functor ?? */) 
+                   std::string & eShape, const size_t numNodesPerElem, const size_t dim) 
   : basis(basis)
 {
 
   // set up coeffs
   coeffs = PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS>(name, basis->functional);
+
+  auto workset_size = basis->functional->extent(0); // Max number of cells
 
   this->addEvaluatedField(coeffs);
 
@@ -218,8 +218,7 @@ evaluateFields(
   auto sub_local_nodes = Kokkos::subview(local_nodes,cell_range,Kokkos::ALL(),Kokkos::ALL());
   auto sub_local_orts  = Kokkos::subview(local_orts,cell_range);
 
-  const auto field_cell_range = std::pair<int,int>(workset.cell_local_ids[0],workset.cell_local_ids[numOwnedElems-1]+1);
-  auto sub_coeffs      = Kokkos::subview(coeffs.get_view(),field_cell_range,Kokkos::ALL());
+  auto sub_coeffs      = Kokkos::subview(coeffs.get_view(),cell_range,Kokkos::ALL());
 
   // First, need to copy orientations to device and grab local nodes
   auto orts_host = Kokkos::create_mirror_view(sub_local_orts);
@@ -321,6 +320,87 @@ evaluateFields(
         it2basis.get(),
         &projStruct);
   }
+  return;
+}
+
+template<typename EvalT, typename Traits>
+class CheckCoeffsEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    CheckCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
+                         Teuchos::RCP<std::vector<double> > errors);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+    void postRegistrationSetup(typename Traits::SetupData d, PHX::FieldManager<Traits> & fm);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
+    Teuchos::RCP<panzer::PureBasis> basis;
+    PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> before, after, diff;
+    Teuchos::RCP<std::vector<double> > errors;
+  
+}; // end of class
+
+template<typename EvalT, typename Traits>
+CheckCoeffsEvaluator<EvalT, Traits>::
+CheckCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
+Teuchos::RCP<std::vector<double> > errors)
+  : basis(basis), errors(errors)
+{
+  
+  // set up fields
+
+  before = PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS>(name,         basis->functional);
+  after = PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS>( name+"_final",basis->functional);
+  diff = PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS>("diff",basis->functional);
+  this->addNonConstDependentField(before);
+  this->addNonConstDependentField(after);
+  this->addEvaluatedField(diff); // this is hack to get the evaluator to run
+
+  std::string n = "CheckCoeffsEvaluator: " + name;
+  this->setName(n);
+
+}
+
+template<typename EvalT,typename Traits>
+void CheckCoeffsEvaluator<EvalT, Traits>::
+postRegistrationSetup(typename Traits::SetupData  d, 
+		      PHX::FieldManager<Traits>& /* fm */)
+{
+}
+
+template<typename EvalT, typename Traits>
+void
+CheckCoeffsEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  workset)
+{
+
+  // all on host for checking
+  auto numOwnedElems = workset.num_cells;
+
+  auto s_h = Kokkos::create_mirror_view(before.get_view());
+  Kokkos::deep_copy(s_h, before.get_view());
+  auto t_h = Kokkos::create_mirror_view(after.get_view());
+  Kokkos::deep_copy(t_h, after.get_view());
+
+  double L2err = 0.;
+  for (int ncell=0;ncell<numOwnedElems;++ncell){
+    for (int idx_pt=0;idx_pt<basis->cardinality();++idx_pt){
+      L2err += ( s_h(ncell,idx_pt) - t_h(ncell,idx_pt) ) * ( s_h(ncell,idx_pt) - t_h(ncell,idx_pt) );
+    }
+  }
+
+  errors->push_back(std::sqrt(L2err));
+
   return;
 }
 
@@ -508,15 +588,14 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   auto wkstSize = (*worksets)[0].num_cells; // As long as we don't pick the last workset, this gives the max size 
   auto numNodesPerElem = (*worksets)[0].getCellVertices().extent(1);
 
-  auto numCells = orientations->size();
-
   // we will project from first to a second order basis to a first
   // this essentially matches the intrepid2 test, but we've
   // wrapped things in an evaluator, etc.
   auto topo = mesh->getCellTopology(eblocks[0]);
   auto dim = topo->getDimension();
-  Teuchos::RCP<panzer::PureBasis> sourceBasis = Teuchos::rcp(new panzer::PureBasis(type,1,numCells,topo));
-  Teuchos::RCP<panzer::PureBasis> targetBasis = Teuchos::rcp(new panzer::PureBasis(type,2,numCells,topo));
+
+  Teuchos::RCP<panzer::PureBasis> sourceBasis = Teuchos::rcp(new panzer::PureBasis(type,1,wkstSize,topo));
+  Teuchos::RCP<panzer::PureBasis> targetBasis = Teuchos::rcp(new panzer::PureBasis(type,2,wkstSize,topo));
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
    = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
@@ -525,7 +604,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   ///////////////////////////////////////////////////
   {
     RCP<panzer_stk::GetCoeffsEvaluator<EvalType,panzer::Traits> > e =
-      rcp(new panzer_stk::GetCoeffsEvaluator<EvalType,panzer::Traits>(fname,sourceBasis,eShape,wkstSize,numNodesPerElem,dim)
+      rcp(new panzer_stk::GetCoeffsEvaluator<EvalType,panzer::Traits>(fname,sourceBasis,eShape,numNodesPerElem,dim)
       );
 
     fm->registerEvaluator<EvalType>(e);
@@ -539,7 +618,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   ///////////////////////////////////////////////////
   {
     RCP<panzer_stk::ProjectField<EvalType,panzer::Traits> > e =
-      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,sourceBasis,targetBasis,wkstSize));
+      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,sourceBasis,targetBasis));
 
     fm->registerEvaluator<EvalType>(e);
 
@@ -549,12 +628,28 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   {
     std::string outName = fname+"_final"; // otherwise we'd have two fields with same name
     RCP<panzer_stk::ProjectField<EvalType,panzer::Traits> > e =
-      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,targetBasis,sourceBasis,wkstSize,outName));
+      rcp(new panzer_stk::ProjectField<EvalType,panzer::Traits>(fname,targetBasis,sourceBasis,outName));
 
     fm->registerEvaluator<EvalType>(e);
 
     Teuchos::RCP<PHX::FieldTag> ft = e->evaluatedFields()[0];
     fm->requireField<EvalType>(*ft);
+  }
+
+  // need an evaluator to test projection
+  ///////////////////////////////////////////////////
+  RCP<std::vector<double> > errors = rcp(new std::vector<double>);
+  {
+    RCP<panzer_stk::CheckCoeffsEvaluator<EvalType,panzer::Traits> > e =
+      rcp(new panzer_stk::CheckCoeffsEvaluator<EvalType,panzer::Traits>(fname,sourceBasis,errors)
+      );
+
+    fm->registerEvaluator<EvalType>(e);
+
+    // again a bit of a hack
+    Teuchos::RCP<PHX::FieldTag> ft = e->evaluatedFields()[0];
+    fm->requireField<EvalType>(*ft);
+
   }
 
   panzer::Traits::SD setupData;
@@ -570,25 +665,31 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
     fm->evaluateFields<EvalType>(wkst);
   fm->postEvaluate<EvalType>(0);
 
-  typedef typename EvalType::ScalarT ScalarT;
-
-  PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> s(fname,sourceBasis->functional);
-  PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> t(fname+"_final",sourceBasis->functional);
-
-  fm->getFieldData<EvalType>(s);
-  fm->getFieldData<EvalType>(t);
-
-  auto s_h = Kokkos::create_mirror_view(s.get_view());
-  Kokkos::deep_copy(s_h, s.get_view());
-  auto t_h = Kokkos::create_mirror_view(t.get_view());
-  Kokkos::deep_copy(t_h, t.get_view());
-
   bool matched = true;
-  for (size_t ncell=0;ncell<numCells;++ncell){
-    for (int idx_pt=0;idx_pt<sourceBasis->cardinality();++idx_pt){
-      if (std::abs(s_h(ncell,idx_pt) - t_h(ncell,idx_pt)) > 1e-14) matched = false;
-    }
+
+  for ( auto & err : *errors ) {
+    if ( err > 1e-14 ) matched = false;
   }
+
+  //typedef typename EvalType::ScalarT ScalarT;
+
+  //PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> s(fname,sourceBasis->functional);
+  //PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> t(fname+"_final",sourceBasis->functional);
+
+  //fm->getFieldData<EvalType>(s);
+  //fm->getFieldData<EvalType>(t);
+
+  //auto s_h = Kokkos::create_mirror_view(s.get_view());
+  //Kokkos::deep_copy(s_h, s.get_view());
+  //auto t_h = Kokkos::create_mirror_view(t.get_view());
+  //Kokkos::deep_copy(t_h, t.get_view());
+
+  //bool matched = true;
+  //for (size_t ncell=0;ncell<numCells;++ncell){
+  //  for (int idx_pt=0;idx_pt<sourceBasis->cardinality();++idx_pt){
+  //    if (std::abs(s_h(ncell,idx_pt) - t_h(ncell,idx_pt)) > 1e-14) matched = false;
+  //  }
+  //}
 
   return matched;
 }
