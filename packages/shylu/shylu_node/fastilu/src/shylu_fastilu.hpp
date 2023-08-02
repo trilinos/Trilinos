@@ -437,9 +437,6 @@ template<class Ordinal, class Scalar, class ExecSpace>
 class JacobiIterFunctor;
 
 template<class Ordinal, class Scalar, class ExecSpace>
-class JacobiIterFunctorT;
-
-template<class Ordinal, class Scalar, class ExecSpace>
 class BlockJacobiIterFunctorU;
 
 template<class Ordinal, class Scalar, class ExecSpace>
@@ -496,9 +493,6 @@ class FastILUPrec
 
         using STS = Kokkos::ArithTraits<Scalar>;
         using RTS = Kokkos::ArithTraits<Real>;
-
-  static constexpr auto identity_lambda = [](const Scalar& val) { return val; };
-  using idlt = decltype(identity_lambda);
 
   struct IdentityFunctor
   {
@@ -940,60 +934,6 @@ class FastILUPrec
         KernelHandle khL;
         KernelHandle khU;
 
-        //Internal functions
-        //Serial Transpose for now.
-        //TODO:convert to parallel.
-        void transposeU()
-        {
-            //Count the elements in each row of Ut
-            auto temp = OrdinalArrayHost("temp", nRows + 1);
-            auto rowPtrs = OrdinalArrayHost("rowPtrs", nRows);
-            for (Ordinal i = 0; i <= nRows; i++)
-            {
-                temp[i] = 0;
-            }
-            for (Ordinal i = 0; i < nRows; i++)
-            {
-                for (Ordinal k = uRowMap_[i]; k < uRowMap_[i+1]; k++)
-                {
-                    temp[uColIdx_[k]+1]++;
-
-                }
-            }
-            //Perform an add scan to get the row map for
-            //the transpose
-            for (Ordinal i = 0; i <= nRows; i++)
-            {
-                utRowMap_[i] = temp[i];
-            }
-            for (Ordinal i = 1; i <= nRows; i++)
-            {
-                utRowMap_[i] += utRowMap_[i-1];
-            }
-            //Set the row pointers to their initial places;
-            for (Ordinal i = 0; i < nRows; i++)
-            {
-                rowPtrs[i] = utRowMap_[i];
-            }
-            //Copy the data
-            Kokkos::deep_copy(uVal_, uVal);
-            for (Ordinal i = 0; i < nRows; i++)
-            {
-                for (Ordinal k = uRowMap_[i]; k < uRowMap_[i+1]; k++)
-                {
-                    Ordinal row = uColIdx_[k];
-                    Scalar value = uVal_[k];
-                    utVal_[rowPtrs[row]] = value;
-                    utColIdx_[rowPtrs[row]] = i;
-                    rowPtrs[row]++;
-                    assert(rowPtrs[row] <= utRowMap_[row + 1]);
-                }
-            }
-            Kokkos::deep_copy(utRowMap, utRowMap_);
-            Kokkos::deep_copy(utColIdx, utColIdx_);
-            Kokkos::deep_copy(utVal, utVal_);
-        }
-
         void findFills(int levfill, OrdinalArrayMirror aRowMap, OrdinalArrayMirror aColIdx,
                        int& nzl, std::vector<int> &lRowMap, std::vector<int> &lColIdx, std::vector<int> &lLevel,
                        int& nzu, std::vector<int> &uRowMap, std::vector<int> &uColIdx, std::vector<int> &uLevel) {
@@ -1326,6 +1266,7 @@ class FastILUPrec
             //a contains the structure of ILU(k), values of original Ain is copied at level-0
             FastILUPrec_Functor functor(aValIn, aRowMapIn, aColIdxIn, aVal, diagFact, aRowMap, aColIdx, aRowIdx, blockCrsSize);
             if (useMetis) {
+              assert(blockCrsSize == 1); // Not yet supported for block crs
               FastILUPrec_Functor functor_perm(aValIn, aRowMapIn, aColIdxIn, permMetis, aVal, diagFact, aRowMap, aColIdx, aRowIdx, blockCrsSize);
               Kokkos::RangePolicy<CopySortedValsPermTag, ExecSpace> copy_perm_policy (0, nRows);
               Kokkos::parallel_for(
@@ -2159,6 +2100,7 @@ class FastILUPrec
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > transposeU");
 
             if (sptrsv_algo == FastILU::SpTRSV::Standard) {
+                assert(blockCrsSize == 1); // Not yet supported for block crs
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
                 KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
                 #else
@@ -2182,6 +2124,7 @@ class FastILUPrec
                   "  > sptrsv_symbolic : nnz(L)=" << lColIdx.extent(0) << " nnz(U)=" << utColIdx.extent(0));
             } else if (sptrsv_algo == FastILU::SpTRSV::StandardHost && doUnitDiag_TRSV) {
                 // Prepare L for TRSV by removing unit-diagonals
+                assert(blockCrsSize == 1); // Not yet supported for block crs
                 lVal_trsv_   = ScalarArrayHost ("lVal_trsv",    lRowMap_[nRows]-nRows);
                 lColIdx_trsv_ = OrdinalArrayHost("lColIdx_trsv", lRowMap_[nRows]-nRows);
                 lRowMap_trsv_ = OrdinalArrayHost("lRowMap_trsv", nRows+1);
@@ -2344,6 +2287,7 @@ class FastILUPrec
             }
 
             if (sptrsv_algo == FastILU::SpTRSV::Standard) {
+                assert(blockCrsSize == 1); // Not yet supported for block crs
                 // solve with L
                 KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
                 // solve with U
@@ -2354,6 +2298,7 @@ class FastILUPrec
                 Scalar2dArray y2d (const_cast<Scalar*>(y.data()), nRows, 1);
 
                 if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
+                    assert(blockCrsSize == 1); // Not yet supported for block crs
 
                     // copy x to host
                     auto x_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, x2d);
@@ -2428,6 +2373,8 @@ class FastILUPrec
                           sptrsv_impl(x, y, crsmatL, crsmatU);
                         }
                     } else {
+                        assert(blockCrsSize == 1); // Not yet supported for block crs
+
                         //apply L^{-1} to xTemp
                         applyL(xTemp, y);
                         //apply U^{-1} to y
@@ -2493,6 +2440,7 @@ class FastILUPrec
         //Compute the L2 norm of the nonlinear residual (A - LU) on sparsity pattern
         void checkILU() const
         {
+            assert(blockCrsSize == 1); // Not yet supported for block crs
             Scalar sum = 0.0;
             Scalar sum_diag = 0.0;
             for (int i = 0 ; i < nRows; i++)
@@ -2533,6 +2481,7 @@ class FastILUPrec
         {
             //Compute the L2 norm of the nonlinear residual (A - LLt) on sparsity pattern
             //
+            assert(blockCrsSize == 1); // Not yet supported for block crs
             Scalar sum = 0.0;
             for (int i = 0 ; i < nRows; i++)
             {
@@ -2571,7 +2520,6 @@ class FastILUPrec
         friend class FastICFunctor<Ordinal, Scalar, ExecSpace>;
         friend class JacobiIterFunctor<Ordinal, Scalar, ExecSpace>;
         friend class ParCopyFunctor<Ordinal, Scalar, ExecSpace>;
-        friend class JacobiIterFunctorT<Ordinal, Scalar, ExecSpace>;
         friend class ParScalFunctor<Ordinal, Scalar, Real, ExecSpace>;
         friend class PermScalFunctor<Ordinal, Scalar, Real, ExecSpace>;
         friend class MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace>;
@@ -3162,7 +3110,6 @@ class ParPermCopyFunctor
         const Ordinal      blockCrsSize_;
 };
 
-
 template<class Ordinal, class Scalar, class ExecSpace>
 class JacobiIterFunctorT
 {
@@ -3227,7 +3174,6 @@ class ParScalFunctor
         real_array_type scaleFactors_;
 };
 
-
 template<class Ordinal, class Scalar, class Real, class ExecSpace>
 class PermScalFunctor
 {
@@ -3263,7 +3209,6 @@ class PermScalFunctor
         real_array_type scaleFactors_;
         ordinal_array_type perm_;
 };
-
 
 template<class Ordinal, class Scalar, class ExecSpace>
 class ParInitZeroFunctor
