@@ -1,4 +1,6 @@
+
 INCLUDE(MueluAddSerialAndMpiTest)
+INCLUDE(MueLuInstall)
 
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Ifpack2
