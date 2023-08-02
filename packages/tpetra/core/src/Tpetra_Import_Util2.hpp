@@ -951,11 +951,6 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   }
 }
 
-// template <typename T>
-// T add_atomic(T* var, T val) {
-//   Kokkos::atomic_add(var, val);
-//   return var;
-// }
 
 #include <typeinfo>
 
@@ -975,7 +970,7 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   typedef GlobalOrdinal GO;
   typedef Tpetra::global_size_t GST;
   typedef Tpetra::Map<LO, GO, Node> map_type;
-  const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
+  const char prefix[] = "lowCommunicationMakeColMapAndReindexKokkos: ";
 
   using execution_space = typename Node::execution_space;
   execution_space exec;
@@ -990,11 +985,9 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
 
   typename decltype(colind_LID_view)::HostMirror colind_LID_host(colind_LID.getRawPtr(), colind_LID.size());
   typename decltype(colind_GID_view)::HostMirror colind_GID_host(colind_GID.getRawPtr(), colind_GID.size());
-  // typename decltype(owningPIDs_view)::HostMirror owningPIDs_host(owningPIDs.getRawPtr(), owningPIDs.size());
 
   Kokkos::deep_copy(colind_LID_view, colind_LID_host);
   Kokkos::deep_copy(colind_GID_view, colind_GID_host);
-  // Kokkos::deep_copy(owningPIDs_view, owningPIDs_host);
 
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
@@ -1002,47 +995,27 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
 
   int myPID = domainMap.getComm()->getRank ();
 
-  // Scan all column indices and sort into two groups:
-  // Local:  those whose GID matches a GID of the domain map on this processor and
-  // Remote: All others.
-  const size_t numDomainElements = domainMap.getLocalNumElements ();
-  Teuchos::Array<bool> LocalGIDs;
-  if (numDomainElements > 0) {
-    LocalGIDs.resize (numDomainElements, false); // Assume domain GIDs are not local
-  }
 
-  // In principle it is good to have RemoteGIDs and RemotGIDList be as
-  // long as the number of remote GIDs on this processor, but this
-  // would require two passes through the column IDs, so we make it
-  // the max of 100 and the number of block rows.
-  //
+  // We use two hash tables, one for local GIDs and one for remote GIDs
   // FIXME (mfh 11 Feb 2015) Tpetra::Details::HashTable can hold at
   // most INT_MAX entries, but it's possible to have more rows than
   // that (if size_t is 64 bits and int is 32 bits).
+  Kokkos::UnorderedMap<LO, bool, execution_space> LocalGIDs_view_map(colind_LID.size());
+  Kokkos::UnorderedMap<GO, LO, execution_space> RemoteGIDs_view_map(colind_LID.size());
+  
   const size_t numMyRows = rowptr.size () - 1;
-  const int hashsize = std::max (static_cast<int> (numMyRows), 100);
-
-  Tpetra::Details::HashTable<GO, LO> RemoteGIDs (hashsize);
-
-  // Here we start using the *LocalOrdinal* colind_LID array.  This is
-  // safe even if both columnIndices arrays are actually the same
-  // (because LocalOrdinal==GO).  For *local* GID's set
-  // colind_LID with with their LID in the domainMap.  For *remote*
-  // GIDs, we set colind_LID with (numDomainElements+NumRemoteColGIDs)
-  // before the increment of the remote count.  These numberings will
-  // be separate because no local LID is greater than
-  // numDomainElements.
-
-  // LID PARALLEL (WORKING)
-  // Problem: can't resize unordered map on device calls
-  // Can't really use the domain map on device either
-  Kokkos::UnorderedMap<LO, bool, execution_space> LocalGIDs_view_map(10000);
   local_map_type domainMap_local = domainMap.getLocalMap();
-  printf("Num Rows: %d\n", numMyRows);
-  fflush(stdout);
-
+  
+  const size_t numDomainElements = domainMap.getLocalNumElements ();
+  Kokkos::View<bool*> LocalGIDs_view("LocalGIDs", numDomainElements);
+  auto LocalGIDs_host = Kokkos::create_mirror_view(LocalGIDs_view);
+  
   size_t NumLocalColGIDs = 0;
-  size_t NumRemoteColGIDs = 0;
+  
+  // Scan all column indices and sort into two groups:
+  // Local:  those whose GID matches a GID of the domain map on this processor and
+  // Remote: All others.
+  // Kokkos::Parallel_reduce sums up NumLocalColGIDs, while we use the size of the Remote GIDs map to find NumRemoteColGIDs
   Kokkos::parallel_reduce(team_policy(numMyRows, Kokkos::AUTO), KOKKOS_LAMBDA(const typename team_policy::member_type &member, size_t &update) { 
     const int i = member.league_rank();
     size_t NumLocalColGIDs_temp = 0;
@@ -1050,50 +1023,33 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     size_t rowptr_end = rowptr_view[i+1];
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(member, rowptr_start, rowptr_end), [&](const size_t j, size_t &innerUpdate) {
       const GO GID = colind_GID_view[j];
-      // Check if GID matches a row GID
+      // Check if GID matches a row GID in local domain map
       const LO LID = domainMap_local.getLocalElement (GID);
       if (LID != -1) {
         auto outcome = LocalGIDs_view_map.insert(LID);
         // Fresh insert
         if(outcome.success()) {
+          LocalGIDs_view[LID] = true;
           Kokkos::atomic_add(&innerUpdate, 1);
         }
-        // colind_LID_view[j] = LID;
-      }
-    }, NumLocalColGIDs_temp);
-    if(member.team_rank() == 0) update += NumLocalColGIDs_temp;
-  }, NumLocalColGIDs);
-
-  printf("Starting Remote map loop\n");
-
-  // We don't know how many possible remote GIDs we have, so we'd need to figure that out before setting capacity sizes
-  Kokkos::UnorderedMap<GO, LO, execution_space> RemoteGIDs_view_map(20000);
-  // PID / REMOTE GID PARALLEL (NOT FUNCTIONAL)
-  Kokkos::parallel_for(team_policy(numMyRows, Kokkos::AUTO), KOKKOS_LAMBDA(const typename team_policy::member_type &member) { 
-    const int i = member.league_rank();
-    size_t NumRemoteColGIDs_temp = 0;
-    size_t rowptr_start = rowptr_view[i];
-    size_t rowptr_end = rowptr_view[i+1];
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, rowptr_start, rowptr_end), [=](const size_t j) {
-      const GO GID = colind_GID_view[j];
-      // Check if GID matches a row GID
-      const LO LID = domainMap_local.getLocalElement (GID);
-      if (LID != -1) {
-
       }
       else {
         const int PID = owningPIDs_view[j];
         auto outcome = RemoteGIDs_view_map.insert(GID, PID);
         if(outcome.success() && PID == -1) {
           printf("Cannot figure out if ID is owned.\n");
-          exit(1);
+          Kokkos::abort("Cannot figure out if ID is owned.\n");
         }
       }
-    });
-  });
-  NumRemoteColGIDs = RemoteGIDs_view_map.size();
-  printf("Ended remote map loop\n");
+    }, NumLocalColGIDs_temp);
+    if(member.team_rank() == 0) update += NumLocalColGIDs_temp;
+  }, NumLocalColGIDs);
+  
+  LO NumRemoteColGIDs = RemoteGIDs_view_map.size();
 
+  // For each index in RemoteGIDs_map that contains a GID, use valid_key_index[i] to indicate the number of GIDs "before" this GID
+  // Each valid_key_index[i], where i is an index in RemoteGIDs_map, is unique and consecutive
+  // This maps each element in the RemoteGIDs hash table to an index in RemoteGIDList / PIDList without any overwrites or empty spaces
   Kokkos::View<int*> valid_key_index("valid_key_index", RemoteGIDs_view_map.capacity()); 
   Kokkos::parallel_scan(RemoteGIDs_view_map.capacity(), KOKKOS_LAMBDA(const int i, GO& update, const bool final) {
     if(final && RemoteGIDs_view_map.valid_at(i)) {
@@ -1104,14 +1060,13 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     }
   });
 
-  printf("Ended parallel scan\n");
-
   Kokkos::View<int*> PIDList_view("PIDList", NumRemoteColGIDs);
   auto PIDList_host = Kokkos::create_mirror_view(PIDList_view);
   
   Kokkos::View<int*> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
   auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
 
+  // Maps every key/value in the RemoteGIDs hash table to its own index in their respective views
   Kokkos::parallel_for(RemoteGIDs_view_map.capacity(), KOKKOS_LAMBDA(const int i) {
     if(RemoteGIDs_view_map.valid_at(i)) {
       auto key = RemoteGIDs_view_map.key_at(i);
@@ -1122,106 +1077,6 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     }
   });
 
-  Kokkos::deep_copy(RemoteGIDList_host, RemoteGIDList_view);
-  Kokkos::deep_copy(PIDList_host, PIDList_view);
-
-  // Kokkos::deep_copy(RemoteGID_and_PID_host, RemoteGID_and_PIDList);
-  // Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
-  //   printf("\nView Zero GID index: %d\n", RemoteGID_and_PIDList[0].first);
-  //   printf("View First GID index: %d\n", RemoteGID_and_PIDList[1].first);
-  // });
-
-  // printf("Zero GID index: %d\n", RemoteGID_and_PID_host[0].first);
-  // printf("First GID index: %d\n", RemoteGID_and_PID_host[1].first);
-  // printf("Begin add to PIDList\n");
-  // for(int i = 0; i < NumRemoteColGIDs; ++i) {
-  //   GO GID_value = RemoteGID_and_PID_host[i].first;
-  //   int PID_value = RemoteGID_and_PID_host[i].second;
-  //   //printf("PIDList: %d\n", RemoteGID_and_PID_host[i].second);
-  //   // Is GID always > 0?
-  //   if(GID_value != 0) {
-  //     //printf("PIDList: %d, GIDList: %d\n", PID_value, GID_value);
-  //     RemoteGIDList.push_back(GID_value);
-  //     PIDList.push_back(PID_value);
-  //   }
-  // }
-
-  // UNORDERED MAP SERIAL
-  // std::unordered_map<LO, bool> LocalGIDs_map;
-  // std::unordered_map<GO, LO> RemoteGIDs_map;
-  // for (size_t i = 0; i < numMyRows; ++i) {
-  //   for(size_t j = rowptr[i]; j < rowptr[i+1]; ++j) {
-  //     const GO GID = colind_GID[j];
-  //     // Check if GID matches a row GID
-  //     const LO LID = domainMap.getLocalElement (GID);
-  //     if(LID != -1) {
-  //       // auto outcome = LocalGIDs_map.insert(std::make_pair(LID, true));
-  //       // if(outcome.second) {
-  //       //   NumLocalColGIDs++;
-  //       // }
-  //       // colind_LID[j] = LID;
-  //     }
-  //     else {
-  //       auto outcome = RemoteGIDs_map.insert(std::make_pair(GID, NumRemoteColGIDs));
-  //       const LO hash_value = outcome.first->second;
-  //       if (outcome.second) { // This means its a new remote GID
-  //         const int PID = owningPIDs[j];
-  //         TEUCHOS_TEST_FOR_EXCEPTION(
-  //           PID == -1, std::invalid_argument, prefix << "Cannot figure out if "
-  //           "PID is owned.");
-  //         colind_LID[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs);
-  //         RemoteGIDList.push_back (GID);
-  //         PIDList.push_back (PID);
-  //         NumRemoteColGIDs++;
-  //       }
-  //       else {
-  //         colind_LID[j] = static_cast<LO> (numDomainElements + hash_value);
-  //       }
-  //     }
-  //   }
-  // }
-
-  // TRADITIONAL SERIAL
-  // size_t NumLocalColGIDs = 0;
-  // LO NumRemoteColGIDs = 0;
-  // for (size_t i = 0; i < numMyRows; ++i) {
-  //   for(size_t j = rowptr[i]; j < rowptr[i+1]; ++j) {
-  //     const GO GID = colind_GID[j];
-  //     // Check if GID matches a row GID
-  //     const LO LID = domainMap.getLocalElement (GID);
-  //     if(LID != -1) {
-  //       const bool alreadyFound = LocalGIDs[LID];
-  //       if (! alreadyFound) {
-  //         LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
-  //         NumLocalColGIDs++;
-  //       }
-  //       colind_LID[j] = LID;
-  //     }
-  //     else {
-  //       const LO hash_value = RemoteGIDs.get (GID);
-  //       if (hash_value == -1) { // This means its a new remote GID
-  //         const int PID = owningPIDs[j];
-  //         TEUCHOS_TEST_FOR_EXCEPTION(
-  //           PID == -1, std::invalid_argument, prefix << "Cannot figure out if "
-  //           "PID is owned.");
-  //         colind_LID[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs);
-  //         RemoteGIDs.add (GID, NumRemoteColGIDs);
-  //         RemoteGIDList.push_back (GID);
-  //         printf("GIDList: %d\n", GID);
-  //         PIDList.push_back (PID);
-  //         NumRemoteColGIDs++;
-  //       }
-  //       else {
-  //         colind_LID[j] = static_cast<LO> (numDomainElements + hash_value);
-  //       }
-  //     }
-  //   }
-  // }
-
-  printf("End add to PIDList, size = %d\n", PIDList_host.size());
-
-  std::cout << "NumLocalColGIDs: " << NumLocalColGIDs << std::endl;
-  std::cout << "NumRemoteColGIDs: " << NumRemoteColGIDs << std::endl;
 
   // Possible short-circuit: If all domain map GIDs are present as
   // column indices, then set ColMap=domainMap and quit.
@@ -1245,78 +1100,51 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   // Now build the array containing column GIDs
   // Build back end, containing remote GIDs, first
   const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
-  Teuchos::Array<GO> ColIndices;
-  GO* RemoteColIndices = NULL;
-  if (numMyCols > 0) {
-    ColIndices.resize (numMyCols);
-    if (NumLocalColGIDs != static_cast<size_t> (numMyCols)) {
-      RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back half of ColIndices
-    }
-  }
+  Kokkos::View<GO*> ColIndices_view("ColIndices", numMyCols);
+  auto ColIndices_host = Kokkos::create_mirror_view(ColIndices_view);
+  
+  if(NumLocalColGIDs != static_cast<size_t> (numMyCols)) {
+    Kokkos::parallel_for(NumRemoteColGIDs, KOKKOS_LAMBDA(const int i) {
+      ColIndices_view[NumLocalColGIDs+i] = RemoteGIDList_view[i];
+    });
+  }  
 
-  for (LO i = 0; i < NumRemoteColGIDs; ++i) {
-    RemoteColIndices[i] = RemoteGIDList_host[i];
-  }
-
-  // ---------------------------------------------------------------
-  printf("Beginning binsort\n");
-
-  // Make device views and host mirror views, then deep copy from host to device
-  auto ColIndices_view = Details::create_mirror_view_from_raw_host_array(DT(), ColIndices.getRawPtr(), ColIndices.size(), true, "ColIndices");
-  typename decltype(ColIndices_view)::HostMirror ColIndices_host(ColIndices.getRawPtr(), ColIndices.size());
-  Kokkos::deep_copy(ColIndices_view, ColIndices_host);
-
-  printf("Copied from host to view\n");
-
-  // Change to kokkos eventually
+  // Find the largest PID for bin sorting purposes
   int PID_max = 0;
-  for(int i = 0; i < PIDList_host.size(); ++i) {
-    PID_max = std::max(PID_max, PIDList_host[i]);
-  }
+  Kokkos::parallel_reduce(PIDList_host.size(), KOKKOS_LAMBDA(const int i, int& max) {
+    if(max < PIDList_view[i]) max = PIDList_view[i];
+  }, Kokkos::Max<int>(PID_max));
 
   using KeyViewTypePID = decltype(PIDList_view);
   using BinSortOpPID = Kokkos::BinOp1D<KeyViewTypePID>;
 
   // Make a subview of ColIndices for remote GID sorting
-  auto ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs, ColIndices_view.extent(0)));
+  auto ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs, ColIndices_view.size()));
 
   // Make binOp with bins = PID_max + 1, min = 0, max = PID_max
-  BinSortOpPID binOp3(PID_max+1, 0, PID_max);
+  BinSortOpPID binOp2(PID_max+1, 0, PID_max);
 
-  printf("Beginning binsort, max value = %d, rank = %d\n", PID_max, myPID);
-
-  // Make permute vector on PIDList, sort using permutation
-  Kokkos::BinSort<KeyViewTypePID, BinSortOpPID> bin_sort3(PIDList_view, 0, PIDList_view.extent(0), binOp3, false);
-  bin_sort3.create_permute_vector(exec);
-  bin_sort3.sort(exec, PIDList_view);
-  bin_sort3.sort(exec, ColIndices_subview);
+  // Sort External column indices so that all columns coming from a
+  // given remote processor are contiguous.  This is a sort with one
+  // auxilary array: RemoteColIndices
+  Kokkos::BinSort<KeyViewTypePID, BinSortOpPID> bin_sort2(PIDList_view, 0, PIDList_view.size(), binOp2, false);
+  bin_sort2.create_permute_vector(exec);
+  bin_sort2.sort(exec, PIDList_view);
+  bin_sort2.sort(exec, ColIndices_subview);
 
   // Deep copy back from device to host
   Kokkos::deep_copy(execution_space(), PIDList_host, PIDList_view);
 
-  printf("Reached end of binsort, array size = %d\n", PIDList_host.extent(0));
-  // ---------------------------------------------------------------
-
-  // Sort External column indices so that all columns coming from a
-  // given remote processor are contiguous.  This is a sort with two
-  // auxilary arrays: RemoteColIndices and RemotePermuteIDs.
-  // Tpetra::sort3 (PIDList_test.begin (), PIDList_test.end (),
-  //                ColIndices_test.begin () + NumLocalColGIDs,
-  //                RemotePermuteIDs_test.begin ());
-
-  // Stash the RemotePIDs.
-  //
+  // Stash the RemotePIDs. Once remotePIDs is changed to become a Kokkos view, we can remove this and copy directly.
   // Note: If Teuchos::Array had a shrink_to_fit like std::vector,
   // we'd call it here.
   
   Teuchos::Array<int> PIDList(NumRemoteColGIDs);
-  for(int i = 0; i < NumRemoteColGIDs; ++i) {
+  for(LO i = 0; i < NumRemoteColGIDs; ++i) {
     PIDList[i] = PIDList_host[i];
   }
 
   remotePIDs = PIDList;
-
-  printf("Copied PIDList to remotePIDs\n");
 
   // Sort external column indices so that columns from a given remote
   // processor are not only contiguous but also in ascending
@@ -1325,13 +1153,10 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   // count them here.
 
   int ColIndices_max = 0;
-  for(int i = 0; i < ColIndices.size(); ++i) {
-    ColIndices_max = std::max(ColIndices_max, int(ColIndices[i]));
-  }
+  Kokkos::parallel_reduce(ColIndices_host.size(), KOKKOS_LAMBDA(const int i, int& max) {
+    if(max < int(ColIndices_view[i])) max = int(ColIndices_view[i]);
+  }, Kokkos::Max<int>(ColIndices_max));
 
-  printf("Beginning sort2 loop\n");
-
-  // There's actually a sort2 that works with views, but it's host-only
   LO StartCurrent = 0, StartNext = 1;
   while(StartNext < NumRemoteColGIDs) {
     if(PIDList_host[StartNext] == PIDList_host[StartNext-1]) {
@@ -1346,13 +1171,8 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
 
   Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
 
-  Kokkos::deep_copy(execution_space(), ColIndices_host, ColIndices_view);
-
-  printf("Completed sort2 loop\n");
 
   // Build permute array for *local* reindexing.
-  bool use_local_permute = false;
-  Teuchos::Array<LO> LocalPermuteIDs (numDomainElements);
 
   // Now fill front end. Two cases:
   //
@@ -1365,22 +1185,29 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   //     maintain a consistent ordering of GIDs between the columns
   //     and the domain.
   Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getLocalElementList();
+  auto domainGlobalElements_view = Details::create_mirror_view_from_raw_host_array(DT(), domainGlobalElements.getRawPtr(), domainGlobalElements.size(), true, "domainGlobalElements");
+  
   if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
     if (NumLocalColGIDs > 0) {
       // Load Global Indices into first numMyCols elements column GID list
-      std::copy (domainGlobalElements.begin (), domainGlobalElements.end (),
-                 ColIndices.begin ());
+      Kokkos::parallel_for(domainGlobalElements.size(), KOKKOS_LAMBDA(const int i) {
+        ColIndices_view[i] = domainGlobalElements_view[i];
+      });
     }
   }
   else {
+    // This part isn't actually tested in the unit tests
     LO NumLocalAgain = 0;
-    use_local_permute = true;
-    for (size_t i = 0; i < numDomainElements; ++i) {
-      if (LocalGIDs[i]) {
-        LocalPermuteIDs[i] = NumLocalAgain;
-        ColIndices[NumLocalAgain++] = domainGlobalElements[i];
+    Kokkos::parallel_scan(numDomainElements, KOKKOS_LAMBDA(const int i, LO& update, const bool final) {
+      if(final && LocalGIDs_view[i]) {
+        ColIndices_view[update] = domainGlobalElements_view[i];
       }
-    }
+      if(LocalGIDs_view[i]) {
+        update++;
+      }
+    }, NumLocalAgain);
+    
+    
     TEUCHOS_TEST_FOR_EXCEPTION(
       static_cast<size_t> (NumLocalAgain) != NumLocalColGIDs,
       std::runtime_error, prefix << "Local ID count test failed.");
@@ -1388,16 +1215,16 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
 
   // Make column Map
   const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid ();
-  colMap = rcp (new map_type (minus_one, ColIndices, domainMap.getIndexBase (),
+  colMap = rcp (new map_type (minus_one, ColIndices_view, domainMap.getIndexBase (),
                               domainMap.getComm ()));
-  
-  auto localColMap = colMap->getLocalMap();
 
+  // Fill out colind_LID using local map
+  auto localColMap = colMap->getLocalMap();
   Kokkos::parallel_for(colind_GID.size(), KOKKOS_LAMBDA(const int i) {
     colind_LID_view[i] = localColMap.getLocalElement(colind_GID_view[i]);
   });
 
-  Kokkos::deep_copy(execution_space(),colind_LID_host, colind_LID_view);
+  Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);
   }
 
 

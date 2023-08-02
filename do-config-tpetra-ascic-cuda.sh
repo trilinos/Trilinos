@@ -9,7 +9,7 @@ module load cde/v3/boost/1.79.0-gcc-10.3.0-openmpi-4.1.2
 module load apps/cuda-11.7
 
 # change this to point to your Trilinos source
-TRILINOS_HOME=/scratch/kxren/Trilinos
+TRILINOS_HOME=~/Trilinos
 cd $TRILINOS_HOME
 #GIT_SHA=`git rev-parse HEAD | cut -c 1-8`
 GIT_SHA=`git rev-parse HEAD`
