@@ -267,7 +267,8 @@ compare_matrices(
 }
 
 template <typename Ordinal>
-inline Ordinal
+KOKKOS_INLINE_FUNCTION
+Ordinal
 unblock(const Ordinal block_idx, const Ordinal block_offset, const Ordinal bsize)
 {
   return block_idx * bsize + block_offset;
@@ -643,6 +644,8 @@ class FastILUPrec
   struct IsNotSentinelFunctor
   {
     Scalar zero;
+
+    KOKKOS_INLINE_FUNCTION
     IsNotSentinelFunctor() : zero(STS::zero()) {}
 
     KOKKOS_INLINE_FUNCTION
