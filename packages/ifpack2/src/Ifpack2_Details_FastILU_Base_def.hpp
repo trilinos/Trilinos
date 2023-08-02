@@ -183,26 +183,9 @@ initialize()
     localColInds2_     = localColInds_;
     localValues2_      = localValues_;
 
-    const auto nrows = localRowPtrsHost_.size() - 1;
-    std::vector<LocalOrdinal> local_new_rowmap;
-    std::vector<LocalOrdinal> local_col_ids_to_insert;
-    std::vector<Scalar>  local_vals_to_insert;
-    const auto new_nnz_count = fill_crs(localRowPtrs_, localColInds_, localValues_, params_.blockCrsSize,
-                                        local_new_rowmap, local_col_ids_to_insert, local_vals_to_insert);
-
     // Create new TCrsMatrix with the new filled data
-    using local_crs = typename TCrsMatrix::local_matrix_device_type;
-    local_crs kk_crs_matrix_block_filled(
-      "a-blk-filled", nrows, nrows, new_nnz_count, local_vals_to_insert.data(), local_new_rowmap.data(), local_col_ids_to_insert.data());
-    auto crs_row_map = crs_matrix->getRowMap();
-    auto crs_col_map = crs_matrix->getColMap();
-    TCrsMatrix crs_matrix_block_filled(crs_row_map, crs_col_map, kk_crs_matrix_block_filled);
-    mat_ = Teuchos::RCP(&crs_matrix_block_filled, false);
-
-    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
-    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-
-    auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(crs_matrix_block_filled, params_.blockCrsSize);
+    auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*crs_matrix, params_.blockCrsSize);
+    auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, params_.blockCrsSize);
     mat_ = bcrs_matrix;
 
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);

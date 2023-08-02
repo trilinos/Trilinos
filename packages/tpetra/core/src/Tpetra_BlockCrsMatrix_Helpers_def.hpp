@@ -440,6 +440,180 @@ namespace Tpetra {
 
   }
 
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node>>
+  fillLogicalBlocks(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize)
+  {
+    using crs_t           = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
+    using dev_row_view_t = typename crs_t::local_graph_device_type::row_map_type::non_const_type;
+    using dev_col_view_t = typename crs_t::local_graph_device_type::entries_type::non_const_type;
+    using dev_val_view_t = typename crs_t::local_matrix_device_type::values_type::non_const_type;
+    using host_row_view_t = typename dev_row_view_t::host_mirror_type;
+    using host_col_view_t = typename dev_col_view_t::host_mirror_type;
+    using host_val_view_t = typename dev_val_view_t::host_mirror_type;
+
+    // Get structure / values
+    auto local = pointMatrix.getLocalMatrixHost();
+    auto row_ptrs = local.graph.row_map;
+    auto col_inds = local.graph.entries;
+    auto values = local.values;
+    const auto nrows = pointMatrix.getLocalNumRows();
+
+    host_row_view_t new_rowmap("new_rowmap", nrows+1);
+
+    // Populate blocks, they must be fully populated with entries so fill with zeroes
+    GO new_nnz_count = 0;
+    const auto blocks_per_row = nrows / blockSize; // assumes square matrix
+    std::vector<std::vector<bool> > row_block_active;
+    assert(nrows % blockSize == 0);
+    // Block active
+    for (size_t row = 0; row < nrows; ++row) {
+      GO row_itr = row_ptrs(row);
+      GO row_end = row_ptrs(row+1);
+
+      if (row % blockSize == 0) {
+        // We are starting a fresh sequence of blocks in the vertical
+        row_block_active.push_back(std::vector<bool>(blocks_per_row, false));
+      }
+
+      auto& curr_active_row = row_block_active[row_block_active.size()-1];
+
+      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+        const GO first_possible_col_in_block      = row_block_idx * blockSize;
+        const GO first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
+        GO curr_nnz_col = col_inds(row_itr);
+        while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
+          // This block has at least one nnz in this row
+          curr_active_row[row_block_idx] = true;
+          ++row_itr;
+          if (row_itr == row_end) break;
+          curr_nnz_col = col_inds(row_itr);
+        }
+      }
+    }
+
+    // Sizing
+    for (size_t row = 0; row < nrows; ++row) {
+      new_rowmap[row] = new_nnz_count;
+
+      auto& curr_active_row = row_block_active[row / blockSize];
+
+      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+        if (curr_active_row[row_block_idx]) {
+          new_nnz_count += blockSize;
+        }
+      }
+    }
+    new_rowmap[nrows] = new_nnz_count;
+
+    host_col_view_t new_col_ids("new_col_ids", new_nnz_count);
+    host_val_view_t new_vals("new_vals", new_nnz_count);
+
+    for (size_t row = 0; row < nrows; ++row) {
+      GO row_itr = row_ptrs(row);
+      GO row_end = row_ptrs(row+1);
+      GO row_itr_new = new_rowmap[row];
+
+      auto& curr_active_row = row_block_active[row / blockSize];
+
+      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+        const GO first_possible_col_in_block      = row_block_idx * blockSize;
+        const GO first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
+        if (curr_active_row[row_block_idx]) {
+          for (GO possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col, ++row_itr_new) {
+            new_col_ids[row_itr_new] = possible_col;
+            GO curr_nnz_col = col_inds(row_itr);
+            if (possible_col == curr_nnz_col && row_itr < row_end) {
+              // Already a non-zero entry
+              new_vals[row_itr_new] = values(row_itr);
+              ++row_itr;
+            }
+          }
+        }
+      }
+    }
+
+    // Create new, filled CRS
+    auto crs_row_map = pointMatrix.getRowMap();
+    auto crs_col_map = pointMatrix.getColMap();
+    dev_row_view_t new_rowmap_d("new_rowmap_d", nrows+1);
+    dev_col_view_t new_col_ids_d("new_col_ids_d", new_nnz_count);
+    dev_val_view_t new_vals_d("new_vals_d", new_nnz_count);
+    Kokkos::deep_copy(new_rowmap_d, new_rowmap);
+    Kokkos::deep_copy(new_col_ids_d, new_col_ids);
+    Kokkos::deep_copy(new_vals_d, new_vals);
+
+    Teuchos::RCP<crs_t> result = Teuchos::rcp(new crs_t(crs_row_map, crs_col_map, new_rowmap_d, new_col_ids_d, new_vals_d));
+    result->fillComplete();
+    return result;
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node>>
+  unfillFormerBlockCrs(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix)
+  {
+    using crs_t           = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
+    using dev_row_view_t = typename crs_t::local_graph_device_type::row_map_type::non_const_type;
+    using dev_col_view_t = typename crs_t::local_graph_device_type::entries_type::non_const_type;
+    using dev_val_view_t = typename crs_t::local_matrix_device_type::values_type::non_const_type;
+    using host_row_view_t = typename dev_row_view_t::host_mirror_type;
+    using host_col_view_t = typename dev_col_view_t::host_mirror_type;
+    using host_val_view_t = typename dev_val_view_t::host_mirror_type;
+    using STS             = Kokkos::ArithTraits<Scalar>;
+    using Ordinal         = typename dev_row_view_t::non_const_value_type;
+
+    // Get structure / values
+    auto local = pointMatrix.getLocalMatrixHost();
+    auto row_ptrs = local.graph.row_map;
+    auto col_inds = local.graph.entries;
+    auto values = local.values;
+    const auto nrows = pointMatrix.getLocalNumRows();
+
+    host_row_view_t new_rowmap("new_rowmap", nrows+1);
+
+    // Sizing and rows
+    const Scalar zero = STS::zero();
+    Ordinal real_nnzs = 0;
+    for (size_t row = 0; row < nrows; ++row) {
+      const Ordinal row_nnz_begin = row_ptrs[row];
+      new_rowmap[row] = real_nnzs;
+      for (Ordinal row_nnz = row_nnz_begin; row_nnz < row_ptrs[row+1]; ++row_nnz) {
+        const Scalar  value = values[row_nnz];
+        if (value != zero) {
+          ++real_nnzs;
+        }
+      }
+    }
+    new_rowmap[nrows] = real_nnzs;
+
+    host_col_view_t new_col_ids("new_col_ids", real_nnzs);
+    host_val_view_t new_vals("new_vals", real_nnzs);
+
+    real_nnzs = 0;
+    for (size_t nnz = 0; nnz < values.extent(0); ++nnz) {
+      const Scalar value = values(nnz);
+      if (value != zero) {
+        new_col_ids(real_nnzs) = col_inds(nnz);
+        new_vals(real_nnzs) = value;
+        ++real_nnzs;
+      }
+    }
+
+    // Create new, unfilled CRS
+    auto crs_row_map = pointMatrix.getRowMap();
+    auto crs_col_map = pointMatrix.getColMap();
+    dev_row_view_t new_rowmap_d("new_rowmap_d", nrows+1);
+    dev_col_view_t new_col_ids_d("new_col_ids_d", real_nnzs);
+    dev_val_view_t new_vals_d("new_vals_d", real_nnzs);
+    Kokkos::deep_copy(new_rowmap_d, new_rowmap);
+    Kokkos::deep_copy(new_col_ids_d, new_col_ids);
+    Kokkos::deep_copy(new_vals_d, new_vals);
+
+    Teuchos::RCP<crs_t> result = Teuchos::rcp(new crs_t(crs_row_map, crs_col_map, new_rowmap_d, new_col_ids_d, new_vals_d));
+    result->fillComplete();
+    return result;
+  }
+
   template<class LO, class GO, class Node>
   Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
   createMeshMap (const LO& blockSize, const Tpetra::Map<LO,GO,Node>& pointMap)
@@ -618,6 +792,8 @@ namespace Tpetra {
   template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
   template void writeMatrixStrip(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
   template Teuchos::RCP<BlockCrsMatrix<S, LO, GO, NODE> > convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize); \
+  template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > fillLogicalBlocks(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize); \
+  template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > unfillFormerBlockCrs(const CrsMatrix<S, LO, GO, NODE>& pointMatrix); \
   template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > convertToCrsMatrix(const BlockCrsMatrix<S, LO, GO, NODE>& blockMatrix);
 
 //

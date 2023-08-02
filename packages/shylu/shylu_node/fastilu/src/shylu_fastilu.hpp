@@ -82,6 +82,15 @@
 #define FASTILU_UNBLOCK_A
 
 template <typename View>
+typename View::host_mirror_type ensure_host(const View& view)
+{
+  using host_view = typename View::host_mirror_type;
+  host_view rv("", view.extent(0));
+  Kokkos::deep_copy(rv, view);
+  return rv;
+}
+
+template <typename View>
 void print_view(const std::string& name, const View& view)
 {
   std::cout << name << "(" << view.extent(0) << "): ";
@@ -302,91 +311,6 @@ void unfill_crs(View1& row_ptrs, View2& cols, View3& values)
   Kokkos::resize(values, real_nnzs);
 }
 
-template <typename View1, typename View2, typename View3>
-typename View1::non_const_value_type
-fill_crs(const View1& row_ptrs, const View2& col_inds, const View3& values, const int block_size,
-         std::vector<typename View1::non_const_value_type>& new_rowmap,
-         std::vector<typename View1::non_const_value_type>& col_ids_to_insert,
-         std::vector<typename View3::non_const_value_type>& vals_to_insert)
-{
-  using Ordinal = typename View1::non_const_value_type;
-
-  // Populate blocks, they must be fully populated with entries so fill with zeroes
-  const auto nrows = row_ptrs.size() - 1;
-  new_rowmap.resize(nrows+1);
-  Ordinal new_nnz_count = 0;
-  const auto blocks_per_row = nrows / block_size; // assumes square matrix
-  std::vector<std::vector<bool> > row_block_active;
-  assert(nrows % block_size == 0);
-  // Block active
-  for (size_t row = 0; row < nrows; ++row) {
-    Ordinal row_itr = row_ptrs(row);
-    Ordinal row_end = row_ptrs(row+1);
-
-    if (row % block_size == 0) {
-      // We are starting a fresh sequence of blocks in the vertical
-      row_block_active.push_back(std::vector<bool>(blocks_per_row, false));
-    }
-
-    auto& curr_active_row = row_block_active[row_block_active.size()-1];
-
-    for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-      const Ordinal first_possible_col_in_block      = row_block_idx * block_size;
-      const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * block_size;
-      Ordinal curr_nnz_col = col_inds(row_itr);
-      while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
-        // This block has at least one nnz in this row
-        curr_active_row[row_block_idx] = true;
-        ++row_itr;
-        if (row_itr == row_end) break;
-        curr_nnz_col = col_inds(row_itr);
-      }
-    }
-  }
-
-  // Sizing
-  for (size_t row = 0; row < nrows; ++row) {
-    new_rowmap[row] = new_nnz_count;
-
-    auto& curr_active_row = row_block_active[row / block_size];
-
-    for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-      if (curr_active_row[row_block_idx]) {
-        new_nnz_count += block_size;
-      }
-    }
-  }
-  new_rowmap[nrows] = new_nnz_count;
-
-  col_ids_to_insert.resize(new_nnz_count);
-  vals_to_insert.resize(new_nnz_count, 0.0);
-
-  for (size_t row = 0; row < nrows; ++row) {
-    Ordinal row_itr = row_ptrs(row);
-    Ordinal row_end = row_ptrs(row+1);
-    Ordinal row_itr_new = new_rowmap[row];
-
-    auto& curr_active_row = row_block_active[row / block_size];
-
-    for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-      const Ordinal first_possible_col_in_block      = row_block_idx * block_size;
-      const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * block_size;
-      if (curr_active_row[row_block_idx]) {
-        for (Ordinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col, ++row_itr_new) {
-          col_ids_to_insert[row_itr_new] = possible_col;
-          Ordinal curr_nnz_col = col_inds(row_itr);
-          if (possible_col == curr_nnz_col && row_itr < row_end) {
-            // Already a non-zero entry
-            vals_to_insert[row_itr_new] = values(row_itr);
-            ++row_itr;
-          }
-        }
-      }
-    }
-  }
-  return new_nnz_count;
-}
-
 template <typename ExecSpace, typename View1, typename View2, typename View3>
 void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, const int block_size)
 {
@@ -404,9 +328,6 @@ void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, cons
   row_vtype rv("temp", row_map_host.extent(0));
   Kokkos::deep_copy(rv, row_map_host);
   const auto nrows = row_map_host.size() - 1;
-  // for (size_t i = 0; i <= nrows; ++i) {
-  //   rv(i) = row_map_host(i);
-  // }
   Kokkos::View<LO*, ExecSpace> col_inds("col_inds", col_inds_host.extent(0));
   Kokkos::deep_copy(col_inds, col_inds_host);
 
@@ -435,32 +356,28 @@ void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, cons
 template <typename View1, typename View2, typename View3, typename View4>
 void reblock(View1& row_map, View2& row_idx, View3& col_inds, View4& values, const int block_size)
 {
-  using LO = Tpetra::Map<>::local_ordinal_type;
-  using GO = Tpetra::Map<>::global_ordinal_type;
-  using Node = Tpetra::Map<>::node_type;
+  using LO            = Tpetra::Map<>::local_ordinal_type;
+  using GO            = Tpetra::Map<>::global_ordinal_type;
+  using Node          = Tpetra::Map<>::node_type;
   using Node          = Tpetra::Map<>::node_type;
   using Scalar        = typename View4::non_const_value_type;
   using TCrsMatrix    = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
   using map_type      = typename TCrsMatrix::map_type;
-  using local_crs     = typename TCrsMatrix::local_matrix_device_type;
+  using graph_type    = typename TCrsMatrix::crs_graph_type;
+  using row_vtype     = typename graph_type::local_graph_device_type::row_map_type::non_const_type;
 
+  row_vtype rv("temp", row_map.extent(0));
+  Kokkos::deep_copy(rv, row_map);
   const auto nrows = row_map.size() - 1;
-  std::vector<LO> local_new_rowmap;
-  std::vector<LO> local_col_ids_to_insert;
-  std::vector<Scalar>  local_vals_to_insert;
-  const auto new_nnz_count = fill_crs(row_map, col_inds, values, block_size,
-                                      local_new_rowmap, local_col_ids_to_insert, local_vals_to_insert);
-
-  // Create new TCrsMatrix with the new filled data
-  local_crs kk_crs_matrix_block_filled(
-    "a-blk-filled", nrows, nrows, new_nnz_count, local_vals_to_insert.data(), local_new_rowmap.data(), local_col_ids_to_insert.data());
   Teuchos::SerialComm<LO> SerialComm;
   Teuchos::RCP<const Teuchos::Comm<LO> > comm_ptr = Teuchos::RCP(&SerialComm, false);
   map_type proc_map(nrows, 0, comm_ptr, Tpetra::LocallyReplicated);
   Teuchos::RCP<map_type> map_ptr =  Teuchos::RCP(&proc_map, false);
-  TCrsMatrix crs_matrix_block_filled(map_ptr, map_ptr, kk_crs_matrix_block_filled);
+  TCrsMatrix crs_matrix(map_ptr, map_ptr, rv, col_inds, values);
+  crs_matrix.fillComplete();
+  auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(crs_matrix, block_size);
 
-  auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(crs_matrix_block_filled, block_size);
+  auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, block_size);
   auto localA = bcrs_matrix->getLocalMatrixDevice();
   auto rowptrs = localA.graph.row_map;
   auto colinds = localA.graph.entries;
