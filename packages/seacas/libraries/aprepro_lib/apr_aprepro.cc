@@ -35,7 +35,7 @@
 #endif
 
 namespace {
-  const std::string version_string{"6.16 (2023/07/17)"};
+  const std::string version_string{"6.17 (2023/07/20)"};
 
   void output_copyright();
 
@@ -455,7 +455,7 @@ namespace SEAMS {
         equals = option.size();
       }
       else {
-	equals = equals - number_dash;
+        equals = equals - number_dash;
       }
 
       // NOTE: `option` contains two leading `--` or `-` and a single character...
