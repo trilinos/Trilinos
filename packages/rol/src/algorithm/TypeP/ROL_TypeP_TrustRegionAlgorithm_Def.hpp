@@ -1138,15 +1138,13 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real>             &y,
       nobj.update(pwa4,UpdateType::Trial);
       nval = nobj.value(pwa4,tol); state_->nnval++;
       gs   = gmod.apply(pwa5);
-      if (gs + nval - nold <= -(one - desPar_)*gnorm2){
-        pwa4.axpy(-one,x);
+      if (gs + nval - nold <= -(one - desPar_)*gnorm2) {
         s.set(pwa5);
         lam1  = one;
         reset = false;
       }
     }
     if (reset){ // Reset because either beta=0 or step does not produce descent
-      pwa4.set(pwa1); pwa4.axpy(-one,x);
       s.set(pwa2);
       gs   = gmod.apply(s);
       lam1 = lambda;
