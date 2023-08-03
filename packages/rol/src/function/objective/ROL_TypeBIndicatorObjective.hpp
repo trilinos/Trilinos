@@ -82,7 +82,7 @@ public:
     : proj_(proj), res_(proj->getResidual()->clone()) {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const Real zero(0), eps(ROL_EPSILON<Real>());
+    const Real zero(0), eps(static_cast<Real>(1e-2)*std::sqrt(ROL_EPSILON<Real>()));
     bool isBndFeasible = proj_->getBoundConstraint()->isFeasible(x); 
     bool isConFeasible = true;
     if (res_ != nullPtr) {
