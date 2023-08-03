@@ -74,9 +74,9 @@ public:
                           const Ptr<Constraint<Real>>      &con,
                           const Vector<Real>               &mul,
                           const Vector<Real>               &res,
-                          ParameterList                    &list) : 
-    proj_(PolyhedralProjectionFactory<Real>(xprim,xdual,bnd,con,mul,res,list)),
-    res_(res.clone()) {}
+                          ParameterList                    &list)
+    : proj_(PolyhedralProjectionFactory<Real>(xprim,xdual,bnd,con,mul,res,list)),
+      res_(res.clone()) {}
 
   TypeBIndicatorObjective(const Ptr<PolyhedralProjection<Real>> &proj)
     : proj_(proj), res_(proj->getResidual()->clone()) {}
