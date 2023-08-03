@@ -215,10 +215,13 @@ print_crs_matrix_details(
 template <typename View>
 bool
 compare_views(
-  const View& view1,
-  const View& view2,
+  const View& view1_,
+  const View& view2_,
   const std::string& name)
 {
+  auto view1 = ensure_host(view1_);
+  auto view2 = ensure_host(view2_);
+
   bool equal = view1.extent(0) == view2.extent(0);
 
   if (equal) {
@@ -244,16 +247,24 @@ compare_views(
 template <typename View1, typename View2, typename View3>
 bool
 compare_matrices(
-  const View1& row_map1,
-  const View2& entries1,
-  const View3& values1,
+  const View1& row_map1_,
+  const View2& entries1_,
+  const View3& values1_,
   const int block_size1,
-  const View1& row_map2,
-  const View2& entries2,
-  const View3& values2,
+  const View1& row_map2_,
+  const View2& entries2_,
+  const View3& values2_,
   const int block_size2,
   const std::string& name)
 {
+  // Make sure everything is on host
+  auto row_map1 = ensure_host(row_map1_);
+  auto entries1 = ensure_host(entries1_);
+  auto values1  = ensure_host(values1_);
+  auto row_map2 = ensure_host(row_map2_);
+  auto entries2 = ensure_host(entries2_);
+  auto values2  = ensure_host(values2_);
+
   if (block_size1 == block_size2) {
     // Structure should match
     compare_views(row_map1, row_map2, name + "_row_map");
@@ -311,13 +322,13 @@ void unfill_crs(View1& row_ptrs, View2& cols, View3& values)
   Kokkos::resize(values, real_nnzs);
 }
 
-template <typename ExecSpace, typename View1, typename View2, typename View3>
+template <typename View1, typename View2, typename View3>
 void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, const int block_size)
 {
   using tmap_type     = Tpetra::Map<>;
   using LO            = tmap_type::local_ordinal_type;
   using GO            = tmap_type::global_ordinal_type;
-  using Node          = tmap_type::node_type;
+  using Node          = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
   using Scalar        = typename View3::non_const_value_type;
   using BCrsMatrix    = Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>;
   using map_type      = typename BCrsMatrix::map_type;
@@ -328,19 +339,14 @@ void unblock(View1& row_map_host, View2& col_inds_host, View3& values_host, cons
   row_vtype rv("temp", row_map_host.extent(0));
   Kokkos::deep_copy(rv, row_map_host);
   const auto nrows = row_map_host.size() - 1;
-  Kokkos::View<LO*, ExecSpace> col_inds("col_inds", col_inds_host.extent(0));
-  Kokkos::deep_copy(col_inds, col_inds_host);
-
-  Kokkos::View<Scalar*, ExecSpace> values("values", values_host.extent(0));
-  Kokkos::deep_copy(values, values_host);
 
   Teuchos::SerialComm<LO> SerialComm;
   Teuchos::RCP<const Teuchos::Comm<LO> > comm_ptr = Teuchos::RCP(&SerialComm, false);
   map_type proc_map(nrows, 0, comm_ptr, Tpetra::LocallyReplicated);
   Teuchos::RCP<map_type> map_ptr =  Teuchos::RCP(&proc_map, false);
-  graph_type graph(map_ptr, map_ptr, rv, col_inds);
+  graph_type graph(map_ptr, map_ptr, rv, col_inds_host);
   graph.fillComplete();
-  BCrsMatrix bcrs_matrix(graph, values, block_size);
+  BCrsMatrix bcrs_matrix(graph, values_host, block_size);
 
   auto A = Tpetra::convertToCrsMatrix(bcrs_matrix);
   auto localA = A->getLocalMatrixDevice();
@@ -358,8 +364,7 @@ void reblock(View1& row_map, View2& row_idx, View3& col_inds, View4& values, con
 {
   using LO            = Tpetra::Map<>::local_ordinal_type;
   using GO            = Tpetra::Map<>::global_ordinal_type;
-  using Node          = Tpetra::Map<>::node_type;
-  using Node          = Tpetra::Map<>::node_type;
+  using Node          = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
   using Scalar        = typename View4::non_const_value_type;
   using TCrsMatrix    = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
   using map_type      = typename TCrsMatrix::map_type;
@@ -1612,7 +1617,7 @@ class FastILUPrec
             Kokkos::deep_copy(aValHost,    aValIn_);
             if (blockCrsSize > 1) {
 #ifdef FASTILU_UNBLOCK_A
-              unblock<ExecSpace>(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
+              unblock(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
 #endif
             }
 
@@ -1995,6 +2000,8 @@ class FastILUPrec
   template <typename RHS>
   void verify(const RHS& rhs, const std::string& name, const bool initialize_only=false)
   {
+    std::cout << "JGF verifying: " << name << std::endl;
+
     // verify a this using brs and a rhs using crs
     assert(nRows*blockCrsSize == rhs.nRows);
     assert(guessFlag == rhs.guessFlag);

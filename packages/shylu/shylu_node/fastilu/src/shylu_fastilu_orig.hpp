@@ -735,6 +735,9 @@ class FastILUPrec
                 applyManteuffelShift();
                 Kokkos::deep_copy(aVal, aVal_);
             }
+            else {
+              Kokkos::deep_copy(aVal_, aVal); // keep in-sync
+            }
             #ifdef FASTILU_TIMER
             ExecSpace().fence();
             std::cout << "   + apply shift/scale  " << Timer.seconds() << std::endl;
