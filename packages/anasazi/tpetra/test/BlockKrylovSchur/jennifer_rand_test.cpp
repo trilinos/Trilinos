@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
       lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ST>::real (work[0])));
       work.resize( lwork );
   
-      // Solve for Harmoanic Ritz Values:
+      // Solve for Harmonic Ritz Values:
       lapack.GEEV('N','V',blockSize,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
       if(info != 0) std::cout << "Warning!! Anasazi::RandomSolver GEEV solve : info = " << info << std::endl;
       lwork = -1;

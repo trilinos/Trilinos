@@ -77,7 +77,6 @@ static void getSphynxValidParameters(ParameterList & pl)
 
   pl.set("sphynx_preconditioner_type", "polynomial", "Sphynx preconditioner type", sphynx_preconditionner_type_method_Validator);
 
-
   RCP<Teuchos::StringValidator> sphynx_initial_guess_method_Validator =
     Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "random", "constants")));
 
@@ -97,6 +96,8 @@ static void getSphynxValidParameters(ParameterList & pl)
     Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1) );
   pl.set("sphynx_verbosity", 0, "Sphynx verbosity.", sphynx_verbosity_validator);
 
+  pl.set("sphynx_ortho_freq", 0, "Sphynx orthogonalization frequency");
+  pl.set("sphynx_res_freq", 0, "Sphynx residual frequency");
   pl.set("sphynx_max_iterations", 1000, "Sphynx max iterations");
   pl.set("sphynx_block_size", 0, "Sphynx block size");
   // bool parameter
@@ -156,7 +157,7 @@ static void setSphynxValidatorsInList(
       PartitioningProblem<Adapter>(A, p, comm), sphynxParams_(sphynxParams)
     {
         //std::cout << "DEBUG: In SphynxProblem constructor." << std::endl;
-        //std::cout << "params_ is " << params_ << std::endl;
+        //std::cout << "params_ is " << phynxParams_ << std::endl;
         // Validation of SphynxParameter
         ParameterList validParams;
         try{
@@ -227,7 +228,6 @@ static void setSphynxValidatorsInList(
     Teuchos::RCP<Teuchos::ParameterList> envParams_;
     RCP<ParameterList> sphynxParams_;
     RCP<mvector_t> eigenVectors_;
-
 
   };
 

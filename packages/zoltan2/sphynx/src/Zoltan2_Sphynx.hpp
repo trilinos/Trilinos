@@ -118,6 +118,7 @@ namespace Zoltan2 {
     using op_t = Tpetra::Operator<scalar_t, lno_t, gno_t, node_t>;
 
     enum problemType {COMBINATORIAL, GENERALIZED, NORMALIZED};
+    typedef Anasazi::MultiVecTraits<scalar_t,mvector_t> MVT;
 
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////////// CONSTRUCTORS ////////////////////////////////////
@@ -293,13 +294,14 @@ namespace Zoltan2 {
           std::invalid_argument, "Sphynx: sphynx_eigensolver must be set to LOBPCG or randomized.");
 
       // Set the default problem type
-      problemType_ = COMBINATORIAL;
-      if(irregular_) {
+      //problemType_ = COMBINATORIAL;
+      problemType_ = NORMALIZED;
+      /*if(irregular_) {
         if(precType_ == "polynomial")
           problemType_ = NORMALIZED;
         else
           problemType_ = GENERALIZED;
-      }
+      }*/
 
       // Override the problem type with the user's preference
       pe = sphynxParams_->getEntryPtr("sphynx_problem_type");
@@ -455,7 +457,7 @@ namespace Zoltan2 {
     Teuchos::RCP<matrix_t> computeNormalizedLaplacian(bool AHat = false)
     {
       using range_policy = Kokkos::RangePolicy<
-        typename node_t::device_type::execution_space, Kokkos::IndexType<lno_t>>;
+      typename node_t::device_type::execution_space, Kokkos::IndexType<lno_t>>;
       using values_view_t = Kokkos::View<scalar_t*, typename node_t::device_type>;
       using offset_view_t = Kokkos::View<size_t*, typename node_t::device_type>;
       using vector_t = Tpetra::Vector<scalar_t, lno_t, gno_t, node_t>;
@@ -542,7 +544,7 @@ namespace Zoltan2 {
 
     bool irregular_;           // decided internally
     std::string  precType_;    // obtained from user params or decided internally
-    std::string  solverType_;    // obtained from user params or decided internally
+    std::string  solverType_;  // obtained from user params or decided internally
     problemType problemType_;  // obtained from user params or decided internally
     double tolerance_;         // obtained from user params or decided internally
     bool randomInit_;          // obtained from user params or decided internally
@@ -656,6 +658,8 @@ namespace Zoltan2 {
     bool relConvTol = false;
     int maxIterations = sphynxParams_->get("sphynx_max_iterations",1000);
     int blockSize = sphynxParams_->get("sphynx_block_size",numEigenVectors);
+    int orthoFreq = sphynxParams_->get("sphynx_ortho_freq", 0);
+    int resFreq = sphynxParams_->get("sphynx_res_freq", 0);
     bool isHermitian = true;
     bool relLockTol = false;
     bool lock = false;
@@ -687,9 +691,12 @@ namespace Zoltan2 {
     anasaziParams.set("Use Locking", lock);
     anasaziParams.set("Relative Locking Tolerance", relLockTol);
     anasaziParams.set("Full Ortho", useFullOrtho);
+    anasaziParams.set("Orthogonalization Frequency", orthoFreq);
+    anasaziParams.set("Residual Frequency", resFreq);
 
     // Create and set initial vectors
     Teuchos::RCP<mvector_t> ivec( new mvector_t(laplacian_->getRangeMap(), numEigenVectors));
+    auto map = laplacian_->getRangeMap();
 
     if (randomInit_) {
       // 0-th vector constant 1, rest random
@@ -726,12 +733,10 @@ namespace Zoltan2 {
 
     if(solverType_ == "LOBPCG"){
 
-    // Set preconditioner
-    //std::cout << "DEBUG: Setting LOBPCG preconditioner." << std::endl;
-    Sphynx::setPreconditioner(problem);
-
-    if(problemType_ == Sphynx::GENERALIZED)
-      problem->setM(degMatrix_);
+      // Set preconditioner
+      //std::cout << "DEBUG: Setting LOBPCG preconditioner." << std::endl;
+      Sphynx::setPreconditioner(problem);
+      if(problemType_ == Sphynx::GENERALIZED) problem->setM(degMatrix_);
     }
 
     // Inform the eigenproblem that you are finished passing it information
@@ -747,29 +752,37 @@ namespace Zoltan2 {
     }
     else{
       solver = Teuchos::rcp(new Anasazi::Experimental::RandomizedSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
+      //numFailed = solver->getNumFailed();
+    }
+
+    
+    if(problemType_ == Sphynx::GENERALIZED){
+      std::cout << "Laplacian Type: GENERALIZED" << std::endl; 
+    } else if(problemType_ == Sphynx::COMBINATORIAL){
+      std::cout << "Laplacian Type: COMBINATORIAL" << std::endl; 
+    } else if(problemType_ == Sphynx::NORMALIZED){
+      std::cout << "Laplacian Type: NORMALIZED" << std::endl; 
+    } else{
+      std::cout << "Laplacian Type: ERROR" << std::endl; 
     }
 
     if (verbosity_ > 0 && comm_->getRank() == 0)
       anasaziParams.print(std::cout);
 
     // Solve the problem
-    if (verbosity_ > 0 && comm_->getRank() == 0)
-      std::cout << "Beginning the Anasazi solve..." << std::endl;
     Anasazi::ReturnType returnCode = solver->solve();
 
     // Check convergence, niters, and solvetime
-    if (returnCode != Anasazi::Converged) {
-      ++numfailed;
-    }
     iter = solver->getNumIters();
     //solvetime = (solver->getTimers()[0])->totalElapsedTime();
 
     // Retrieve the solution
     using solution_t = Anasazi::Eigensolution<scalar_t, mvector_t>;
-    //std::cout << "DEBUG: about to call problem->getSolution" << std::endl;
+    std::cout << "DEBUG: about to call problem->getSolution" << std::endl;
     solution_t sol = problem->getSolution();
     eigenVectors_ = sol.Evecs;
     int numev = sol.numVecs;
+    std::vector<Anasazi::Value<double>> eigenValues_ = sol.Evals;
 
     // Summarize iteration counts and solve time
     if (verbosity_ > 0 && comm_->getRank() == 0) {
@@ -780,12 +793,40 @@ namespace Zoltan2 {
       std::cout << "Solve time:            " << std::endl; // solvetime << std::endl;
       std::cout << "No of comp. vecs. :    " << numev << std::endl;
     }
-    std::cout << "Returning from Anasazi Wrapper." << std::endl;
+
+    // Compute residuals
+    std::vector<double> normR(numev);
+    mvector_t Aevec (map, numev);
+
+    if (numev > 0) { 
+      Teuchos::SerialDenseMatrix<int,double> T (numev, numev);
+      T.putScalar(0.0);
+      for (int i = 0; i < numev; ++i) T(i,i) = eigenValues_[i].realpart;
+      laplacian_->apply(*eigenVectors_, Aevec);
+      MVT::MvTimesMatAddMv(-1.0, *eigenVectors_, T, 1.0, Aevec);
+      MVT::MvNorm(Aevec, normR);
+    } // End residual computation
+
+    if(comm_->getRank() == 0) {
+      std::cout << std::endl << "Solver manager returned "
+           << (returnCode == Anasazi::Converged ? "converged." : "unconverged.")
+           << std::endl << std::endl
+	   << std::setw(16) << "Eigenvalue"
+	   << std::setw(18) << "Direct Residual"
+	   << std::endl
+	   << "------------------------------------------------------" << std::endl;
+
+      for (int i = 0; i < numev; ++i) {
+	std::cout << std::setw(16) << eigenValues_[i].realpart
+             << std::setw(18) << normR[i] / eigenValues_[i].realpart
+	     << std::endl;
+      }
+      std::cout << "------------------------------------------------------" << std::endl;
+    }
+
     return numev;
 
   }
-
-
 
   ///////////////////////////////////////////////////////////////////////////
   template <typename Adapter>
@@ -1036,9 +1077,7 @@ namespace Zoltan2 {
 
     // Transform the solution
     Teuchos::ArrayRCP<part_t> parts(myNumVertices);
-    for(size_t i = 0; i < myNumVertices; i++) {
-      parts[i] = vectorsolution->getPartListView()[i];
-    }
+    for(size_t i = 0; i < myNumVertices; i++) parts[i] = vectorsolution->getPartListView()[i];
     solution->setParts(parts);
   }
 
