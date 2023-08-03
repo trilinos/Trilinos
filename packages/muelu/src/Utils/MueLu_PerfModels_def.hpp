@@ -295,12 +295,12 @@ namespace MueLu {
           // Recv/Send the forward messsages
           for(int r=0; r<num_recvs;r++) {
             const int tag = 1000+j;
-            MPI_Irecv(&f_recv_buf[msg_size*r],msg_size,MPI_CHAR,procsFrom[r],tag,communicator,&requests[ct]);
+            MPI_Irecv(f_recv_buf.data()+msg_size*r,msg_size,MPI_CHAR,procsFrom[r],tag,communicator,&requests[ct]);
             ct++;
           }
           for(int s=0; s<num_sends;s++) {
             const int tag = 1000+j;
-            MPI_Isend(&f_send_buf[msg_size*s],msg_size,MPI_CHAR,procsTo[s],tag,communicator,&requests[ct]);
+            MPI_Isend(f_send_buf.data()+msg_size*s,msg_size,MPI_CHAR,procsTo[s],tag,communicator,&requests[ct]);
             ct++;
           }
           // Wait for the forward messsages
@@ -310,12 +310,12 @@ namespace MueLu {
           // Recv/Send the reverse messsages
           for(int r=0; r<num_sends;r++) {
             const int tag = 2000+j;
-            MPI_Irecv(&r_recv_buf[msg_size*r],msg_size,MPI_CHAR,procsTo[r],tag,communicator,&requests[ct]);
+            MPI_Irecv(r_recv_buf.data()+msg_size*r,msg_size,MPI_CHAR,procsTo[r],tag,communicator,&requests[ct]);
             ct++;
           }
           for(int s=0; s<num_recvs;s++) {
             const int tag = 2000+j;
-            MPI_Isend(&r_send_buf[msg_size*s],msg_size,MPI_CHAR,procsFrom[s],tag,communicator,&requests[ct]);
+            MPI_Isend(r_send_buf.data()+msg_size*s,msg_size,MPI_CHAR,procsFrom[s],tag,communicator,&requests[ct]);
             ct++;
           }
           // Wait for the reverse messsages

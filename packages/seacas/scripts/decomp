@@ -21,18 +21,18 @@ Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
                [--rcb] [--rcb_ignore_z] [--rib] [--hsfc] [--random] [--scattered]
                [--weight <specification>] [...others...] meshfile.ext
 
-Decomposition methods: [0..3] = speed ranking 0=fastest
+Decomposition methods: Default is -l rib. [0..3] = speed ranking 0=fastest.  
               (See chaco and/or zoltan documentation for more details)
  --multikl:   [3] Multilevel KL. Gives high quality partitions.
                   Slow, high memory use.
  --spectral:  [2] use eigenvectors of a matrix constructed from the
                   graph to partition the graph.
  --hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
- --rib:       [?] (default) Recursive Inertial Bisection (uses Zoltan)
+ --rib:       [?] Recursive Inertial Bisection (uses Zoltan) (default if zoltan enabled) 
  --rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
  --rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan), ignoring the z dimension coordinates
  --inertial:  [1] vertices divided into sets of equal mass by planes
-                  orthogonal to the principle axis. Good, fast, medium memory
+                  orthogonal to the principle axis. Good, fast, medium memory (default if zoltan not enabled) 
  --linear:    [0] vertices in order first n/p to proc 0, next to proc 1.
                   (fast and sometimes good).
  --random:    [0] vertices are assigned randomly to sets in a way that
@@ -80,18 +80,18 @@ Usage:  decomp [-h] -p <processor count> [-n <nemslice options>]
                [-l rcb] [-l rcb_ignore_z] [-l rib] [-l hsfc] [-l random] [-l scattered]
                [...others...] meshfile.ext
 
-Decomposition methods: [0..3] = speed ranking 0=fastest
+Decomposition methods: Default is -l rib. [0..3] = speed ranking 0=fastest.  
               (See chaco and/or zoltan documentation for more details)
  -l multikl:   [3] Multilevel KL. Gives high quality partitions.
                   Slow, high memory use.
  -l spectral:  [2] use eigenvectors of a matrix constructed from the
                   graph to partition the graph.
  -l hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
- -l rib:       [?] (default) Recursive Inertial Bisection (uses Zoltan)
+ -l rib:       [?] Recursive Inertial Bisection (uses Zoltan) (default if zoltan enabled) 
  -l rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
  -l rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan) ignoring the z dimension coordinates
  -l inertial:  [1] vertices divided into sets of equal mass by planes
-                  orthogonal to the principle axis. Good, fast, medium memory
+                  orthogonal to the principle axis. Good, fast, medium memory (default if zoltan not enabled) 
  -l linear:    [0] vertices in order first n/p to proc 0, next to proc 1.
                   (fast and sometimes good).
  -l random:    [0] vertices are assigned randomly to sets in a way that
