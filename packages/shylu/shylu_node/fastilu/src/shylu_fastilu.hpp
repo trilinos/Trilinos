@@ -2733,7 +2733,7 @@ class FastILUFunctor
             :
                 nnz(nNZ), blk_size(bs), _Ap(Ap), _Ai(Ai), _Aj(Aj),  _Lp(Lp), _Li(Li),_Up(Up),
                 _Ui(Ui), _Ax(Ax), _Lx(Lx), _Ux(Ux), _diag(diag), _omega(omega), _blockCrsSize(blockCrsSize)
-        { }
+        {}
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const Ordinal blk_index) const
@@ -2774,7 +2774,6 @@ class FastILUFunctor
                         lAdd = zero;
                         if (lCol == uCol)
                         {
-
                             lAdd = _Lx[lptr] * _Ux[uptr];
                             acc_val += lAdd;
                         }
@@ -2793,19 +2792,13 @@ class FastILUFunctor
                     // Place the value into L or U
                     if (i > j)
                     {
-                        lCol = _Li[lptr-1];
-                        assert(lCol == j);
                         val = (val-acc_val) / _Ux[_Up[j+1]-1];
                         _Lx[lptr-1] = ((one - _omega) * _Lx[lptr-1]) + (_omega * val);
                     }
                     else
                     {
-                        uCol = _Ui[uptr-1];
                         val = (val-acc_val);
-                        assert(uCol == i);
-                        if (i == j) {
-                          _diag[j] = val;
-                        }
+                        if (i == j) _diag[j] = val;
                         _Ux[uptr-1] = ((one - _omega) * _Ux[uptr - 1]) + (_omega * val);
                     }
                 }
