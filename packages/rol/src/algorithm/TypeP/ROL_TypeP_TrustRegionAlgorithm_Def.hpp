@@ -1017,7 +1017,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real>             &y,
   //       pwa5  = temporary storage
   //       dwa   = the Hessian applied to the step
   const Real zero(0), half(0.5), one(1), two(2);
-  const del2(del*del);
+  const Real del2(del*del);
   Real tol(std::sqrt(ROL_EPSILON<Real>())), safeguard(tol);
   Real mold(sval+nval), nold(nval);
   Real snorm(0), snorm0(0), gnorm(0), gnorm0(0), gnorm2(0);
@@ -1077,7 +1077,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real>             &y,
 
     // Check step size
     pwa3.set(y); pwa3.axpy(-one,x);
-    ss0   += alpha*(alpha*ss + two*ds)
+    ss0   += alpha*(alpha*ss + two*ds);
     snorm0 = std::sqrt(ss0); // pwa3.norm();
     
     if (snorm0 >= (one-safeguard)*del) { SPflag_ = 2; break; }
