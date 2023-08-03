@@ -89,22 +89,22 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(ParameterList &list,
   extrapf_   = lmlist.sublist("Cauchy Point").get("Expansion Rate",                    10.0);
   qtol_      = lmlist.sublist("Cauchy Point").get("Decrease Tolerance",                1e-8);
   // Subsolver (general) parameters
-  lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",          1e-8);
-  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",          1e8);
-  gamma_     = lmlist.sublist("Solver").get("Sufficient Decrease Tolerance",       1e-4);
-  maxSize_   = lmlist.sublist("Solver").get("Maximum Storage Size",                10);
-  maxit_     = lmlist.sublist("Solver").get("Iteration Limit",                     25);
-  tol1_      = lmlist.sublist("Solver").get("Absolute Tolerance",                  1e-4);
-  tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
+  lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",    1e-8);
+  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",    1e8);
+  gamma_     = lmlist.sublist("Solver").get("Sufficient Decrease Tolerance", 1e-4);
+  maxSize_   = lmlist.sublist("Solver").get("Maximum Storage Size",          10);
+  maxit_     = lmlist.sublist("Solver").get("Iteration Limit",               25);
+  tol1_      = lmlist.sublist("Solver").get("Absolute Tolerance",            1e-4);
+  tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",            1e-2);
   // Subsolver (spectral projected gradient) parameters
-  useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
-  useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",              false);
-  std::string ssname = lmlist.sublist("Solver").get("Subproblem Solver",                   "SPG");
+  useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate", true);
+  useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",     false);
+  std::string ssname = lmlist.sublist("Solver").get("Subproblem Solver", "SPG");
   algSelect_ = StringToETrustRegionP(ssname);
   // Subsolver (nonlinear conjugate gradient) parameters)
-  ncgType_   = lmlist.sublist("Solver").sublist("NCG").get("Nonlinear CG Type",                   4);
-  etaNCG_    = lmlist.sublist("Solver").sublist("NCG").get("Truncation Parameter for HZ CG",      1e-2);
-  desPar_    = lmlist.sublist("Solver").sublist("NCG").get("Descent parameter for Nonlinear CG",  1.0);
+  ncgType_   = lmlist.sublist("Solver").sublist("NCG").get("Nonlinear CG Type",              4);
+  etaNCG_    = lmlist.sublist("Solver").sublist("NCG").get("Truncation Parameter for HZ CG", 1e-2);
+  desPar_    = lmlist.sublist("Solver").sublist("NCG").get("Descent Parameter",              0.2);
   // Inexactness Information
   ParameterList &glist = list.sublist("General");
   useInexact_.clear();
@@ -482,20 +482,20 @@ Real TrustRegionAlgorithm<Real>::dcauchy(Vector<Real> &s,
 }
 
 template<typename Real>
-void TrustRegionAlgorithm<Real>::dspg2(Vector<Real> &y,
-                                             Real         &sval,
-                                             Real         &nval,
-                                             Real         &pRed,
-                                             Vector<Real> &gmod,
-                                             const Vector<Real> &x,
-                                             Real del,
-                                             TrustRegionModel_U<Real> &model,
-                                             Objective<Real> &nobj,
-                                             Vector<Real> &pwa,
-                                             Vector<Real> &pwa1,
-                                             Vector<Real> &pwa2,
-                                             Vector<Real> &dwa,
-                                             std::ostream &outStream) {
+void TrustRegionAlgorithm<Real>::dspg2(Vector<Real>             &y,
+                                       Real                     &sval,
+                                       Real                     &nval,
+                                       Real                     &pRed,
+                                       Vector<Real>             &gmod,
+                                       const Vector<Real>       &x,
+                                       Real                      del,
+                                       TrustRegionModel_U<Real> &model,
+                                       Objective<Real>          &nobj,
+                                       Vector<Real>             &pwa,
+                                       Vector<Real>             &pwa1,
+                                       Vector<Real>             &pwa2,
+                                       Vector<Real>             &dwa,
+                                       std::ostream             &outStream) {
   // Use SPG to approximately solve TR subproblem:
   //   min 1/2 <H(y-x), (y-x)> + <g, (y-x)>  subject to y\in C, ||y|| \le del
   //
@@ -597,23 +597,23 @@ void TrustRegionAlgorithm<Real>::dspg2(Vector<Real> &y,
 }
 
 template<typename Real>
-void TrustRegionAlgorithm<Real>::dspg(Vector<Real> &y,
-                                      Real         &sval,
-                                      Real         &nval,
-                                      Vector<Real> &gmod,
-                                      const Vector<Real> &x,
-                                      Real del,
+void TrustRegionAlgorithm<Real>::dspg(Vector<Real>             &y,
+                                      Real                     &sval,
+                                      Real                     &nval,
+                                      Vector<Real>             &gmod,
+                                      const Vector<Real>       &x,
+                                      Real                      del,
                                       TrustRegionModel_U<Real> &model,
-                                      Objective<Real> &nobj,
-                                      Vector<Real> &ymin,
-                                      Vector<Real> &pwa,
-                                      Vector<Real> &pwa1,
-                                      Vector<Real> &pwa2,
-                                      Vector<Real> &pwa3,
-                                      Vector<Real> &pwa4,
-                                      Vector<Real> &pwa5,
-                                      Vector<Real> &dwa,
-                                      std::ostream &outStream) {
+                                      Objective<Real>          &nobj,
+                                      Vector<Real>             &ymin,
+                                      Vector<Real>             &pwa,
+                                      Vector<Real>             &pwa1,
+                                      Vector<Real>             &pwa2,
+                                      Vector<Real>             &pwa3,
+                                      Vector<Real>             &pwa4,
+                                      Vector<Real>             &pwa5,
+                                      Vector<Real>             &dwa,
+                                      std::ostream             &outStream) {
   // Use SPG to approximately solve TR subproblem:
   //   min 1/2 <H(y-x), (y-x)> + <g, (y-x)> + phi(y)  subject to  ||y|| \le del
   //
@@ -853,11 +853,12 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
                                       Vector<Real> &pwa) {
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   const Real eps(1e-2*std::sqrt(ROL_EPSILON<Real>())), tol0(1e4*tol);
+  const Real eps0(1e2*ROL_EPSILON<Real>());
   const unsigned maxit(50);
-  const Real zero(0), half(0.5), two(2);
-  //const Real tau(0.5*(std::sqrt(5.0)-1.0));
+  const Real zero(0), half(0.5), one(1), two(2);
   const Real lam(0.5*(3.0-std::sqrt(5.0)));
-  const Real nold(nval); // mu(1e-2);
+  const Real nold(nval);
+  const Real mu(1e-4);
 
   // Evaluate model at initial left end point (t = 0)
   Real tL(0), pL(0);
@@ -888,8 +889,8 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
   pwa.set(y); pwa.axpy(t, s);
   nobj.update(pwa,UpdateType::Trial);
   Real nt = nobj.value(pwa,tol); state_->nnval++;
-  Real pt = t * (half * t * kappa + gs) + nt - nold;
-  Real Q  = pt;
+  Real Qt = t * gs + nt - nold, Qu = Qt;
+  Real pt = half * t * t * kappa + Qt;
 
   // If phi(x) = phi(x+tmax s) = phi(x+ts), then
   // phi(x+ts) is constant for all t, so the TR
@@ -917,6 +918,7 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
   Real tm   = half * (tL + tR);
   Real tol1 = tol0 * std::abs(t)+eps;
   Real tol2 = two * tol1;
+  Real tol3 = eps;
   for (unsigned it = 0u; it < maxit; ++it) {
     dL = tL-t; dR = tR-t;
     if (std::abs(e) > tol1) {
@@ -946,13 +948,14 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
     pwa.set(y); pwa.axpy(u, s);
     nobj.update(pwa,UpdateType::Trial);
     nu = nobj.value(pwa,tol); state_->nnval++;
-    pu = u * (half * u * kappa + gs) + nu - nold;
+    Qu = u * gs + nu - nold;
+    pu = half * u * u * kappa + Qu;
     if (pu <= pt) {
       if (u >= t) tL = t;
       else        tR = t;
       v  = w;  w  = t;  t  = u;
       pv = pw; pw = pt; pt = pu;
-      nt = nu;
+      nt = nu; Qt = Qu;
     }
     else {
       if (u < t) tL = u;
@@ -968,7 +971,8 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
     tm   = half * (tL+tR);
     tol1 = tol0*std::abs(t)+eps;
     tol2 = two*tol1;
-    if (pt <= Q && std::abs(t-tm) <= (tol2-half*(tR-tL))) break;
+    tol3 = eps0 * std::max(std::abs(Qt),one);
+    if (pt <= (mu*std::min(zero,Qt)+tol3) && std::abs(t-tm) <= (tol2-half*(tR-tL))) break;
   }
   alpha = t;
   pred  = pt;
@@ -977,22 +981,22 @@ void TrustRegionAlgorithm<Real>::dbls(Real &alpha, Real &nval, Real &pred,
 
 // NCG Subsolver
 template<typename Real>
-void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
-                                      Real         &sval,
-                                      Real         &nval,
-                                      Vector<Real> &gmod,
-                                      const Vector<Real> &x,
-                                      Real del,
+void TrustRegionAlgorithm<Real>::dncg(Vector<Real>             &y,
+                                      Real                     &sval,
+                                      Real                     &nval,
+                                      Vector<Real>             &gmod,
+                                      const Vector<Real>       &x,
+                                      Real                      del,
                                       TrustRegionModel_U<Real> &model,
-                                      Objective<Real> &nobj,
-                                      Vector<Real> &s,
-                                      Vector<Real> &pwa1,
-                                      Vector<Real> &pwa2,
-                                      Vector<Real> &pwa3,
-                                      Vector<Real> &pwa4,
-                                      Vector<Real> &pwa5,
-                                      Vector<Real> &dwa,
-                                      std::ostream &outStream) {
+                                      Objective<Real>          &nobj,
+                                      Vector<Real>             &s,
+                                      Vector<Real>             &pwa1,
+                                      Vector<Real>             &pwa2,
+                                      Vector<Real>             &pwa3,
+                                      Vector<Real>             &pwa4,
+                                      Vector<Real>             &pwa5,
+                                      Vector<Real>             &dwa,
+                                      std::ostream             &outStream) {
   // Use NCG to approximately solve TR subproblem:
   //   min 1/2 <H(y-x), (y-x)> + <g, (y-x)> + phi(y)  subject to  ||y-x|| \le del
   //
@@ -1013,22 +1017,18 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
   //       pwa5  = temporary storage
   //       dwa   = the Hessian applied to the step
   const Real zero(0), half(0.5), one(1), two(2);
+  const del2(del*del);
   Real tol(std::sqrt(ROL_EPSILON<Real>())), safeguard(tol);
   Real mold(sval+nval), nold(nval);
-  Real snorm(0), snorm0(0), gnorm(0), gnorm0(0), gnorm2(0), rnorm(0);
-  Real alpha(1), beta(1), lambdaTmp(1), lambda(1), eta(etaNCG_); //, gamma(1), gammaMax(1);
+  Real snorm(0), snorm0(0), gnorm(0), gnorm0(0), gnorm2(0);
+  Real alpha(1), beta(1), lambdaTmp(1), lambda(1), eta(etaNCG_);
   Real alphaMax(1), pred(0), lam1(1);
-  Real sy(0), gg(0), sHs(0), gs(0), ds(0), ss(0);
+  Real sy(0), gg(0), sHs(0), gs(0), ds(0), ss(0), ss0(0);
   bool reset(true);
 
   // Set y = x
   y.set(x);
   pwa3.zero(); // Initially y - x = 0
-
-  // Compute initial projected gradient norm
-  pgstep(pwa1, pwa2, nobj, y, gmod.dual(), t0_, tol);    // pwa1  = prox(x-t0 g), pwa2  = pwa1 - x
-  rnorm  = pwa2.norm() / t0_;                            // hk    = norm(prox(x-t0 g)-x) / t0
-  const Real gtol = std::min(tol1_,tol2_*rnorm);
 
   // Compute initial spectral step length
   lambdaTmp = t0_ / gmod.norm();
@@ -1042,9 +1042,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
   gs     = gmod.apply(s);                                // gs    = <g, prox(x-lambda g)-x> / lambda
   snorm  = s.norm();                                     // snorm = norm(prox(x-lambda g)-x) / lambda
   gnorm  = snorm;
-  pwa5.set(x); pwa5.plus(pwa2);
-  nobj.update(pwa5,UpdateType::Trial);
-  nval   = nobj.value(pwa5, tol); state_->nnval++;
+  const Real gtol = std::min(tol1_,tol2_*gnorm);
 
   if (verbosity_>1) outStream << "  Nonlinear Conjugate Gradient" << std::endl;
 
@@ -1060,7 +1058,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
     // Compute alpha as the 1D minimize in the s direction
     ss = snorm*snorm;
     ds = s.dot(pwa3);
-    alphaMax = (-ds + std::sqrt(ds*ds + ss*(del*del - snorm0*snorm0)))/ss;
+    alphaMax = (-ds + std::sqrt(ds*ds + ss*(del2 - snorm0*snorm0)))/ss;
     dbls(alpha,nold,pred,y,s,lam1,alphaMax,sHs,gs,nobj,pwa5);
     
     //if (sHs <= safeguard) alpha = alphaMax;
@@ -1076,12 +1074,12 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
     y.axpy(alpha, s);
     gmod.axpy(alpha, dwa); // need dual here?
     sval += alpha*(gs + half*alpha*sHs);
-    //nobj.update(y,UpdateType::Trial);
-    //nold  = nobj.value(y,tol); state_->nnval++;
 
     // Check step size
     pwa3.set(y); pwa3.axpy(-one,x);
-    snorm0 = pwa3.norm();
+    ss0   += alpha*(alpha*ss + two*ds)
+    snorm0 = std::sqrt(ss0); // pwa3.norm();
+    
     if (snorm0 >= (one-safeguard)*del) { SPflag_ = 2; break; }
 
     // Update spectral step length
@@ -1090,15 +1088,11 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
 
     // Compute SPG direction
     pwa4.set(pwa2);                                        // store previous "negative gradient"
-    pgstep(pwa1, pwa2, nobj, y, gmod.dual(), t0_, tol);    // pwa1 = prox(x-t0 g), pwa2 = pwa1 - x
-    rnorm = pwa2.norm() / t0_;                             // rnorm = norm(prox(x-t0 g)-x)/t0
     pgstep(pwa1, pwa2, nobj, y, gmod.dual(), lambda, tol); // pwa1 = prox(x-lambda g), pwa2 = pwa1 - x
     pwa2.scale(one/lambda);                                // pwa2 = (pwa1 - x) / lambda (for smooth: pwa2 = negative gradient)
     gnorm0 = gnorm;
     gnorm  = pwa2.norm();
-
-    // Check stopping condition
-    if (rnorm <= gtol) { SPflag_ = 0; break; }
+    if (gnorm <= gtol) { SPflag_ = 0; break; }
 
     gnorm2 = gnorm * gnorm;
     switch (ncgType_) {
@@ -1154,9 +1148,6 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
     if (reset){ // Reset because either beta=0 or step does not produce descent
       pwa4.set(pwa1); pwa4.axpy(-one,x);
       s.set(pwa2);
-      pwa5.set(x); pwa5.plus(pwa2);
-      nobj.update(pwa5,UpdateType::Trial);
-      nval = nobj.value(pwa5,tol); state_->nnval++;
       gs   = gmod.apply(s);
       lam1 = lambda;
       beta = zero;
@@ -1171,7 +1162,7 @@ void TrustRegionAlgorithm<Real>::dncg(Vector<Real> &y,
       outStream << "    NCG parameter (beta):             " << beta             << std::endl;
       outStream << "    Model decrease (pRed):            " << mold-(sval+nold) << std::endl;
       outStream << "    Step size:                        " << snorm0           << std::endl;
-      outStream << "    Optimality criterion:             " << rnorm            << std::endl;
+      outStream << "    Optimality criterion:             " << gnorm            << std::endl;
       outStream << "    Optimality tolerance:             " << gtol             << std::endl;
       outStream << std::endl;
     }

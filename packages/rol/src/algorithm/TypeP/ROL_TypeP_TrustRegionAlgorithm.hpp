@@ -274,19 +274,19 @@ private:
                std::ostream             &outStream = std::cout);
 
   void dspg2(Vector<Real> &y, 
-                   Real &sval,
-                   Real &nval,
-                   Real &pRed,
-                   Vector<Real> &gmod, 
-                   const Vector<Real> &x,
-                   Real del, 
-                   TrustRegionModel_U<Real> &model, 
-                   Objective<Real> &nobj,
-                   Vector<Real> &pwa,
-                   Vector<Real> &pwa1, 
-                   Vector<Real> &pwa2, 
-                   Vector<Real> &dwa, 
-                   std::ostream &outStream = std::cout);
+             Real &sval,
+             Real &nval,
+             Real &pRed,
+             Vector<Real> &gmod, 
+             const Vector<Real> &x,
+             Real del, 
+             TrustRegionModel_U<Real> &model, 
+             Objective<Real> &nobj,
+             Vector<Real> &pwa,
+             Vector<Real> &pwa1, 
+             Vector<Real> &pwa2, 
+             Vector<Real> &dwa, 
+             std::ostream &outStream = std::cout);
 
   void dspg(Vector<Real> &y, 
             Real &sval,
