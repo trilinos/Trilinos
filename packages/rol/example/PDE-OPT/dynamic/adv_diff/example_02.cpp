@@ -140,11 +140,9 @@ int main(int argc, char *argv[]) {
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
     std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(1,ROL::nullPtr);
-    qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<RealT>>(pde->getFE());//state cost
-    //qoi_vec[1] = ROL::makePtr<QoI_Control_Cost_adv_diff<RealT>>();//control cost
+    qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<RealT>>(pde->getFE());
     RealT stateCost   = parlist->sublist("Problem").get("State Cost",1.e5);
-    //RealT controlCost = parlist->sublist("Problem").get("Control Cost",1.e0);
-    std::vector<RealT> wts = {stateCost}; //{stateCost, controlCost};
+    std::vector<RealT> wts = {stateCost};
     ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_k
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wts,dyn_con->getAssembler());
     ROL::Ptr<LTI_Objective<RealT>> dyn_obj
@@ -162,43 +160,28 @@ int main(int argc, char *argv[]) {
     ROL::ParameterList &rpl = parlist->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
       = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl, outStream);
- 
-		ROL::Ptr<ROL::PartitionedVector<RealT>> zlo = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    ROL::Ptr<ROL::PartitionedVector<RealT>> zhi = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    zlo->setScalar(-1.0);
-    zhi->setScalar(1.0);   
-	//	 create l1 dynamic objective for nobj, pass to TRnonsmooth
-    ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
-			= ROL::makePtr<L1_Dyn_Objective<RealT>>(*parlist,timeStamp, zlo, zhi); 
-  	
 
-  //
-  //  ROL::Ptr<ROL::BoundConstraint<RealT>>   bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlo,zhi);
-  //	ROL::Ptr<ROL::TypeBIndicatorObjective<RealT>> nobj 
-  //		= ROL::makePtr<ROL::TypeBIndicatorObjective<RealT>>(bnd); 
-		
-		/*************************************************************************/
-    /***************** BUILD BOUND CONSTRAINT ********************************/
     /*************************************************************************/
-    //ROL::Ptr<ROL::PartitionedVector<RealT>> zlo = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    //ROL::Ptr<ROL::PartitionedVector<RealT>> zhi = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    //zlo->setScalar(-1.0);
-    //zhi->setScalar(1.0);
-    //ROL::Ptr<ROL::BoundConstraint<RealT>>   bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlo,zhi);
+    /***************** BUILD BOUND CONSTRAINT AND L1 PENALTY *****************/
+    /*************************************************************************/
+    ROL::Ptr<ROL::PartitionedVector<RealT>> zlo = ROL::PartitionedVector<RealT>::create(*zk, nt);
+    ROL::Ptr<ROL::PartitionedVector<RealT>> zhi = ROL::PartitionedVector<RealT>::create(*zk, nt);
+    zlo->setScalar(-static_cast<RealT>(1)); zhi->setScalar(static_cast<RealT>(1));   
+    ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
+      = ROL::makePtr<L1_Dyn_Objective<RealT>>(*parlist, timeStamp, zlo, zhi); 
 
     /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
     /*************************************************************************/
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
     if ( checkDeriv ) {
-			
       ROL::Ptr<ROL::PartitionedVector<RealT>> dz = ROL::PartitionedVector<RealT>::create(*zk, nt);
       ROL::Ptr<ROL::PartitionedVector<RealT>> hz = ROL::PartitionedVector<RealT>::create(*zk, nt);
-      zk->randomize(); z->randomize(); dz->randomize(); hz->randomize();
-      uo->randomize(); un->randomize();
+      z->randomize(); dz->randomize(); hz->randomize();
+      zk->randomize(); uo->randomize(); un->randomize();
       ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);
-      ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk);
-      ROL::DynamicConstraintCheck<RealT>::check(*dyn_con,validate,*uo,*un,*zk);
+      ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk,timeStamp[0]);
+      ROL::DynamicConstraintCheck<RealT>::check(*dyn_con,validate,*uo,*un,*zk,timeStamp[0]);
       obj->checkGradient(*z,*dz,true,*outStream);
       obj->checkHessVec(*z,*dz,true,*outStream);
       obj->checkHessSym(*z,*dz,*hz,true,*outStream);
@@ -207,19 +190,12 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    auto problem = ROL::makePtr<ROL::Problem<RealT>>(obj,z);
-    //problem->addBoundConstraint(bnd);
-    problem->finalize(false,true,*outStream);//add regularizer? 
-    //ROL::Solver<RealT> solver(problem,*parlist); 
-    //Algo pointer
-		ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
-		algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(*parlist); 
-		
     z->zero();
+    ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
+    algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(*parlist); 
     std::clock_t timer = std::clock();
-    //solver.solve(*outStream);
     algo->run(*z, *obj, *nobj, *outStream); 
-		*outStream << "Optimization time: "
+    *outStream << "Optimization time: "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
 
