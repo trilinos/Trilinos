@@ -43,6 +43,7 @@
 
 #ifndef ROL_ELEMENTWISE_FUNCTION_H
 #define ROL_ELEMENTWISE_FUNCTION_H
+#include <Kokkos_Core.hpp>
 
 namespace ROL {
 

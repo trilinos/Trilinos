@@ -47,6 +47,7 @@
 
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Types.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace ROL {
 namespace Elementwise {

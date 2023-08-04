@@ -51,6 +51,7 @@
 #include <ctime>
 #include <random>
 #include <chrono>
+#include <Kokkos_Core.hpp>
 
 
 namespace ROL {
