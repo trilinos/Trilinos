@@ -8468,11 +8468,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     size_t N = BaseRowMap->getLocalNumElements ();
 
-    TEUCHOS_TEST_FOR_EXCEPTION
-        (destMat->numImportPacketsPerLID_.need_sync_device(), std::logic_error, "The "
-         "input Kokkos::DualView was most recently modified on host, but TAFC "
-         "needs the device view of the data to be the most recently modified.");
-
     const Kokkos::View<LO const *, typename Node::device_type> RemoteLIDs_d = RemoteLIDs.view_device();
     const Kokkos::View<LO const *, typename Node::device_type> PermuteToLIDs_d = PermuteToLIDs.view_device();
     const Kokkos::View<LO const *, typename Node::device_type> PermuteFromLIDs_d = PermuteFromLIDs.view_device();
