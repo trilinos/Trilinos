@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,9 +30,10 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "stk_util/environment/RuntimeMessage.hpp"
+#include "stk_util/parallel/GlobalComm.hpp"
 #include "stk_util/parallel/Parallel.hpp"   // for parallel_machine_rank, MPI_Gather, MPI_Gatherv
 #include "stk_util/stk_config.h"            // for STK_HAS_MPI
 #include "stk_util/util/Bootstrap.hpp"      // for Bootstrap
@@ -99,11 +100,11 @@ MessageIdMap s_messageIdMap;
 
 MessageIdMap s_deferredMessageIdMap;
 
-struct DeferredMessage 
+struct DeferredMessage
 {
   DeferredMessage()
   {}
-  
+
   DeferredMessage(
     size_t              type,
     MessageId           message_id,
@@ -119,7 +120,7 @@ struct DeferredMessage
       m_header(header),
       m_aggregate(aggregate)
   {}
-  
+
   size_t                m_type;
   MessageId             m_messageId;
   int                   m_rank;
@@ -139,7 +140,7 @@ struct DeferredMessageLess
       || (!(key_2.m_type < key_1.m_type) && !(key_2.m_messageId < key_1.m_messageId) && key_1.m_header < key_2.m_header);
   }
 };
-      
+
 DeferredMessageVector s_deferredMessageVector;
 
 struct MessageTypeInfo
@@ -149,7 +150,7 @@ struct MessageTypeInfo
       m_maxCount(10000000),
       m_name("unknown")
   {}
-  
+
   unsigned              m_count;
   unsigned              m_maxCount;
   std::string           m_name;
@@ -186,7 +187,7 @@ Marshal &operator>>(Marshal &min, DeferredMessage &s)  {
 
 bool should_increment_message_count(unsigned messageType)
 {
-  return !(messageType & MSG_SYMMETRIC) || (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0);
+  return !(messageType & MSG_SYMMETRIC) || (stk::parallel_machine_rank(get_global_comm()) == 0);
 }
 
 CutoffStatus
@@ -224,7 +225,7 @@ register_message_type(
   message_info.m_name = name;
 }
 
-  
+
 unsigned
 get_message_count(
   unsigned              message_type)
@@ -298,16 +299,16 @@ get_max_message_count(
 void
 report_message(
   const char *          message,
-  unsigned              message_type, 
+  unsigned              message_type,
   const MessageCode &   message_code)
 {
   if (message_type & MSG_DEFERRED) {
     report(message, message_type);
-  } else { 
+  } else {
     increment_message_count(message_type);
     const unsigned count = get_message_count(message_type);
-    const unsigned max_count = get_max_message_count(message_type); 
-  
+    const unsigned max_count = get_max_message_count(message_type);
+
     if (count == max_count) {
       report(message, message_type);
 
@@ -318,7 +319,7 @@ report_message(
 
     else if (count < max_count) {
       CutoffStatus cutoff = count_message(message_type, message_code);
-    
+
       if (cutoff == CutoffStatus::MSG_CUTOFF) {
         report(message, message_type);
 
@@ -327,7 +328,7 @@ report_message(
           << " has been exceeded and will no longer be displayed";
         report(s.str().c_str(), MSG_WARNING | MSG_SYMMETRIC);
       }
-    
+
       else if (cutoff == CutoffStatus::MSG_DISPLAY)
       {
         report(message, message_type);
@@ -347,7 +348,7 @@ add_deferred_message(
 {
   std::ostringstream s;
   s << header << " " << aggegrate;
-  
+
   report(s.str().c_str(), message_type | MSG_DEFERRED);
 
   std::pair<MessageIdMap::iterator, bool> res = s_deferredMessageIdMap.insert(MessageIdMap::value_type(MessageIdMap::key_type(message_id, header), Throttle(throttle_cutoff, throttle_group)));
@@ -374,7 +375,7 @@ report_deferred_messages(
   {
     (*it).m_rank = p_rank;
   }
-  
+
   Marshal mout;
   mout << s_deferredMessageVector;
 
@@ -402,7 +403,7 @@ report_deferred_messages(
   }
 
   const int recv_size = recv_displ[p_size] ;
- 
+
   std::vector<char> buffer(recv_size);
 
   {
@@ -425,23 +426,23 @@ report_deferred_messages(
         min >> deferred_message_vector;
       }
 
-      std::stable_sort(deferred_message_vector.begin(), deferred_message_vector.end(), DeferredMessageLess());      
+      std::stable_sort(deferred_message_vector.begin(), deferred_message_vector.end(), DeferredMessageLess());
 
       DeferredMessageVector::const_iterator current_message_it = deferred_message_vector.begin();
       while (current_message_it != deferred_message_vector.end()) {
         const DeferredMessage &current_message = (*current_message_it);
-        
+
         DeferredMessageVector::const_iterator end = current_message_it + 1;
         while (end != deferred_message_vector.end()
                && current_message.m_messageId == (*end).m_messageId
                && current_message.m_header == (*end).m_header)
           ++end;
-        
+
         std::ostringstream s;
-        
+
         s << current_message.m_header << current_message.m_aggregate;
 
-        for (DeferredMessageVector::const_iterator it1 = current_message_it + 1; it1 != end; ++it1) {  
+        for (DeferredMessageVector::const_iterator it1 = current_message_it + 1; it1 != end; ++it1) {
           bool print = true;
           for (DeferredMessageVector::const_iterator it2 = current_message_it; it2 != it1; ++it2)
             if ((*it1).m_aggregate == (*it2).m_aggregate) {
@@ -456,7 +457,7 @@ report_deferred_messages(
         }
 
         report_message(s.str().c_str(), current_message.m_type | stk::MSG_SYMMETRIC, MessageCode(current_message.m_messageId, current_message.m_throttleCutoff, current_message.m_throttleGroup));
-        
+
         current_message_it = end;
       }
     }
@@ -470,7 +471,7 @@ report_deferred_messages(
 std::ostream &
 operator<<(
   std::ostream &        os,
-  const MessageType &   message_type) 
+  const MessageType &   message_type)
 {
   os << get_message_type_info(message_type).m_name;
   return os;

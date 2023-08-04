@@ -9,10 +9,11 @@
 #include <stdlib.h>       // for exit
 #include <cstring>        // for strcpy
 #include <iostream>       // for operator<<, basic_ostream, char_traits, cerr
+#include "stk_util/parallel/GlobalComm.hpp"
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
-namespace stk_tools 
+namespace stk_tools
 {
 
 void SetFileName(char fn[], int total_subdomains, int i, const char* rootdir);
@@ -67,7 +68,7 @@ int getCubeId(int &x_c, int &y_c, int &z_c, const int& n_x, const int& n_y, cons
 
 // This function uses the following information to create a partitioned input file
 // cube.par.${num_procs}.${file_id}
-// 
+//
 // my_proc_id: This processor's id
 // num_procs:  Total number of processors being used to create files
 // ncuts_x:    Number of cuts to make in the x-direction of the cube
@@ -489,7 +490,7 @@ int GetNumDigits(int n)
 }
 
 
-void SetFileName(char dirloc[], int total_subdomains, int i, 
+void SetFileName(char dirloc[], int total_subdomains, int i,
                  const char* rootdir)
 // The following is some ugly code to arrive at the full path and name for
 // each subdomain cube. If root = /ufs/tmp and nsubdomains is 8, then
@@ -524,7 +525,7 @@ void SetFileName(char dirloc[], int total_subdomains, int i,
     break;
   default:
     std::cerr << "no more than 6 digits are supported " << std::endl;
-    MPI_Abort(MPI_COMM_WORLD, digit);
+    MPI_Abort(stk::get_global_comm(), digit);
     exit(-1);
   }
 
@@ -551,7 +552,7 @@ int OpenExoFile(char filename[300] )
   {
     int ierr=0;
     std::cerr << "\nCould not create file " << filename << "\n. Aborting.\n\n";
-    MPI_Abort(MPI_COMM_WORLD, ierr);
+    MPI_Abort(stk::get_global_comm(), ierr);
     exit(-1);
   }
   return exoid;
@@ -998,4 +999,4 @@ void WriteNodesets(int xc, int exoid, int num_nodes_in_set,
 }
 
 
-} // end namespace 
+} // end namespace

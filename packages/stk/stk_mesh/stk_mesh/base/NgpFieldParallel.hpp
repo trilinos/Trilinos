@@ -38,6 +38,7 @@
 #include "stk_mesh/base/Ngp.hpp"
 #include "stk_mesh/base/NgpField.hpp"
 #include "stk_mesh/base/NgpParallelComm.hpp"
+#include "stk_util/parallel/GlobalComm.hpp"
 #include <vector>
 
 namespace stk {
@@ -297,7 +298,7 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
   }
 
   const bool deterministic = false;
-  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<double>(MPI_COMM_WORLD,
+  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<double>(get_global_comm(),
                                                                 comm_procs,
                                                                 exchangeHandler,
                                                                 deterministic);

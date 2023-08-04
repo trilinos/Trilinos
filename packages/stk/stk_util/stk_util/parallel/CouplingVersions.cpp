@@ -1,6 +1,7 @@
 #include "stk_util/parallel/CouplingVersions.hpp"
 #include "stk_util/parallel/CouplingVersions_impl.hpp"
 
+#include "GlobalComm.hpp"
 #include "stk_util/stk_config.h"
 #include <stdexcept>
 #include <map>
@@ -27,7 +28,7 @@ void MPI_Op_MaxMinReduction(void* invec, void* inoutvec, int* len, MPI_Datatype*
 std::pair<int, int> allreduce_minmax(MPI_Comm comm, int localVersion)
 {
   // for compatibility with the ParallelReduce code, the buffer has to be
-  // large enough for 3 ints (empty struct + padding + 2 ints), even though 
+  // large enough for 3 ints (empty struct + padding + 2 ints), even though
   // only the ints are used
   constexpr int bufSize = 3;
   std::array<int, bufSize> inbuf{-1, localVersion, localVersion}, outbuf;
@@ -64,7 +65,7 @@ class StkCompatibleVersion
 
     void set_version_for_testing(unsigned int version)
     {
-      set_version_impl(MPI_COMM_WORLD, version);
+      set_version_impl(get_global_comm(), version);
     }
 
     void set_version(MPI_Comm comm)
@@ -108,7 +109,7 @@ class StkCompatibleVersion
       if (m_isVersionSet && (m_errorOnResetVersion && requestedVersion != oldVersion)) {
         int myRank;
         MPI_Comm_rank(comm, &myRank);
-        if (myRank) { 
+        if (myRank) {
           std::cerr << "STK version compatibility has already been set, and cannot be changed" << std::endl;
         }
 
@@ -128,7 +129,7 @@ class StkCompatibleVersion
 
     std::string get_version_error_string(int requestedVersion)
     {
-      return std::string("Requested version is not compatible with this version of STK.  Requested version: ") + 
+      return std::string("Requested version is not compatible with this version of STK.  Requested version: ") +
              std::to_string(requestedVersion) + ", minimum supported version " + std::to_string(STK_MIN_COUPLING_VERSION) +
              ", maximum supported version " + std::to_string(STK_MAX_COUPLING_VERSION);
     }
@@ -231,7 +232,7 @@ bool is_local_stk_coupling_deprecated()
 
 
 void print_unsupported_version_warning(int version, int line, const char* file)
-{                                                                                      
+{
   if ( STK_MIN_COUPLING_VERSION > version ) {
     std::cerr  << "The function at line " << line << " of file " << file
                << " can be simplified now that STK_MIN_COUPLING_VERSION is greater than "

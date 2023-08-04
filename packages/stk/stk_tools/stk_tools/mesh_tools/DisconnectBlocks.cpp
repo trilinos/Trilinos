@@ -39,7 +39,7 @@
 #include "stk_tools/mesh_tools/DetectHingesImpl.hpp"
 #include "stk_tools/mesh_tools/DisconnectBlocksImpl.hpp"
 #include "stk_util/environment/WallTime.hpp"
-
+#include "stk_util/parallel/GlobalComm.hpp"
 namespace stk
 {
 namespace tools
@@ -67,7 +67,7 @@ bool has_nodes_in_part(const stk::mesh::BulkData& bulk, const stk::mesh::Part* p
   unsigned localCount = stk::mesh::count_selected_entities(*part, bulk.buckets(stk::topology::NODE_RANK));
   unsigned globalCount;
 
-  MPI_Allreduce(&localCount, &globalCount, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&localCount, &globalCount, 1, MPI_UNSIGNED, MPI_SUM, get_global_comm());
 
   return (globalCount > 0);
 }

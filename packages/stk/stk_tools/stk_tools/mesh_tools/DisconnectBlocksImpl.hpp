@@ -44,6 +44,7 @@
 #include "stk_tools/mesh_tools/DisconnectTypes.hpp"
 #include "stk_tools/mesh_tools/DisconnectUtils.hpp"
 #include "stk_tools/mesh_tools/ConvexGroup.hpp"
+#include "stk_util/parallel/GlobalComm.hpp"
 #include "stk_util/parallel/ParallelComm.hpp"
 #include <map>
 #include <utility>
@@ -167,7 +168,7 @@ struct LinkInfo
   std::ostream& print_debug_msg(int userDebugLevel, bool prefixMsg = true) {
     if(userDebugLevel <= debugLevel) {
       if(prefixMsg) {
-        os << "P" << stk::parallel_machine_rank(MPI_COMM_WORLD) << ": ";
+        os << "P" << stk::parallel_machine_rank(get_global_comm()) << ": ";
       }
       return os;
     } else {
@@ -176,7 +177,7 @@ struct LinkInfo
   }
 
   std::ostream& print_debug_msg_p0(int userDebugLevel, bool prefixMsg = true) {
-    if(stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    if(stk::parallel_machine_rank(get_global_comm()) == 0) {
       return print_debug_msg(userDebugLevel, prefixMsg);
     }
     return ns;

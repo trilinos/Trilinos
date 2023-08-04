@@ -3,6 +3,7 @@
 #include <limits>
 #include "stk_util/parallel/MPICommKey.hpp"
 #include "ParallelComm.hpp"
+#include "GlobalComm.hpp"
 
 namespace stk {
 
@@ -44,7 +45,7 @@ MPIKeyManager::MPIKeyManager() : m_destructor([this]() { destructor(); })
   MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, &impl::delete_mpi_comm_key, &m_mpiAttrKey, this);
 
   int myRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_rank(get_global_comm(), &myRank);
   m_currentCommKey = myRank;
 }
 

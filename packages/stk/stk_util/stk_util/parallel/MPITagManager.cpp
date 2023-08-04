@@ -1,5 +1,6 @@
 #include "stk_util/parallel/MPITagManager.hpp"
 #include "stk_util/parallel/CouplingVersions.hpp"
+#include "GlobalComm.hpp"
 #include <cassert>
 
 namespace stk {
@@ -17,7 +18,7 @@ MPITagManager::MPITagManager(int deletionGroupSize, int delayCount) :
 
   int flag;
   int* val;
-  MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &val, &flag);
+  MPI_Comm_get_attr(get_global_comm(), MPI_TAG_UB, &val, &flag);
   STK_ThrowRequireMsg(flag, "This MPI implementation is erroneous");
   STK_ThrowRequireMsg(*val >= m_tagMax, "MPI_TAG_UB must be at least " + std::to_string(m_tagMax));
   m_tagMax = util::get_common_coupling_version() >= 9 ? *val - 1 : *val;
@@ -80,7 +81,7 @@ int MPITagManager::get_new_tag(impl::CommTagInUseList& commData, int tagHint)
 int MPITagManager::get_any_tag(impl::CommTagInUseList& commData)
 {
   int newTag = commData.get_min_free_tag();
-  STK_ThrowRequireMsg(newTag <= m_tagMax, std::string("MPI tag supply exhausted: there can only be ") + 
+  STK_ThrowRequireMsg(newTag <= m_tagMax, std::string("MPI tag supply exhausted: there can only be ") +
                                       std::to_string(m_tagMax) + " tags in use at any time");
 
   return newTag;
@@ -183,7 +184,7 @@ MPITagManager& get_mpi_tag_manager()
   if (delayCount < 0)
   {
     int commSize;
-    MPI_Comm_size(MPI_COMM_WORLD, &commSize);
+    MPI_Comm_size(get_global_comm(), &commSize);
     // some MPI_Barrier algorithms use a tree based algorithm,
     // travering it down and them up again, which likely takes
     // 2 * log2(number of ranks)

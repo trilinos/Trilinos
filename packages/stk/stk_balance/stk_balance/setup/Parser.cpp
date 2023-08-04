@@ -34,6 +34,7 @@
 #include "Parser.hpp"
 #include "stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp"
 #include "stk_util/command_line/CommandLineParserUtils.hpp"
+#include "stk_util/parallel/GlobalComm.hpp"
 #include "stk_util/util/string_utils.hpp"
 
 namespace stk {
@@ -413,7 +414,7 @@ void Parser::set_use_nested_decomp(BalanceSettings& settings) const
   settings.set_use_nested_decomp(useNestedDecomp);
 
   if (useNestedDecomp) {
-    const int inputNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int inputNumProcs = stk::parallel_machine_size(get_global_comm());
     const int outputNumProcs = settings.get_num_output_processors();
     const bool isValidProcCount = (outputNumProcs % inputNumProcs) == 0;
     STK_ThrowRequireMsg(isValidProcCount, "Output number of processors (" << outputNumProcs << ") must be an integer "
