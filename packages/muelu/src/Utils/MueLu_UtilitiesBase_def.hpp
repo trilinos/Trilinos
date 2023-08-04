@@ -394,15 +394,9 @@ namespace MueLu {
           if (useAverageAbsDiagVal) {
             Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
             typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
-            {
-            Teuchos::TimeMonitor MMMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: deep_copy 1");
             Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
-            }
             int numDiagsEqualToOne;
-            {
-            Teuchos::TimeMonitor MMMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: deep_copy 2");
             Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
-            }
 
             tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal()-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
           }
