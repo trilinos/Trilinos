@@ -952,8 +952,6 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 }
 
 
-#include <typeinfo>
-
 // Kokkos version of lowCommunicationMakeColMapAndReindex
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
@@ -978,6 +976,8 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   typedef typename Node::device_type DT;
   typedef typename map_type::local_map_type local_map_type;
 
+  // Create device mirror and host mirror views from function parameters
+  // When we pass in views instead of Teuchos::ArrayViews, we can avoid copying views
   auto colind_LID_view = Details::create_mirror_view_from_raw_host_array(DT(), colind_LID.getRawPtr(), colind_LID.size(), true, "colind_LID");
   auto rowptr_view = Details::create_mirror_view_from_raw_host_array(DT(), rowptr.getRawPtr(), rowptr.size(), true, "rowptr");
   auto colind_GID_view = Details::create_mirror_view_from_raw_host_array(DT(), colind_GID.getRawPtr(), colind_GID.size(), true, "colind_GID");
@@ -1224,6 +1224,8 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
     colind_LID_view[i] = localColMap.getLocalElement(colind_GID_view[i]);
   });
 
+  // For now, we copy back into colind_LID_host (which also overwrites the colind_LID Tuechos array)
+  // When colind_LID becomes a Kokkos View we can delete this
   Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);
   }
 
