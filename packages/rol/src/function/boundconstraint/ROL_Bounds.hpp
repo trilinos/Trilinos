@@ -73,7 +73,7 @@ private:
   class Active : public Elementwise::BinaryFunction<Real> {
     public:
     Active(Real offset) : offset_(offset) {}
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       return ((y <= offset_) ? 0 : x);
     }
     private:
@@ -83,7 +83,7 @@ private:
   class UpperBinding : public Elementwise::BinaryFunction<Real> {
     public:
     UpperBinding(Real xeps, Real geps) : xeps_(xeps), geps_(geps) {}
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       return ((y < -geps_ && x <= xeps_) ? 0 : 1);
     }
     private:
@@ -93,7 +93,7 @@ private:
   class LowerBinding : public Elementwise::BinaryFunction<Real> {
     public:
     LowerBinding(Real xeps, Real geps) : xeps_(xeps), geps_(geps) {}
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       return ((y > geps_ && x <= xeps_) ? 0 : 1);
     }
     private:
@@ -102,14 +102,14 @@ private:
 
   class PruneBinding : public Elementwise::BinaryFunction<Real> {
     public:
-      Real apply( const Real &x, const Real &y ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
         return ((y == 1) ? x : 0);
       }
   } prune_;
 
   class BuildC : public Elementwise::UnaryFunction<Real> {
     public:
-      Real apply( const Real &x ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x ) const {
         const Real zeta(0.5), kappa(1);
         return std::min(zeta * x, kappa);
       }
@@ -117,7 +117,7 @@ private:
 
   class SetZeroEntry : public Elementwise::BinaryFunction<Real> {
     public:
-      Real apply(const Real &x, const Real &y) const {
+      KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
         const Real zero(0);
         return (x==zero ? y : x);
       }

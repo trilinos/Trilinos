@@ -55,7 +55,7 @@ class Multiply : public BinaryFunction<Real> {
 public:
   Multiply( ) { }
 
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return x*y;
   }  
 }; // class Multiply
@@ -63,7 +63,7 @@ public:
 template<class Real>
 class Plus : public BinaryFunction<Real> {
 public:
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return x+y;
   }
 };
@@ -75,7 +75,7 @@ class Divide : public BinaryFunction<Real> {
 public:
   Divide( ) { }
 
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return x/y;
   }  
 }; // class Divide
@@ -85,7 +85,7 @@ class DivideAndInvert : public BinaryFunction<Real> {
 public:
   DivideAndInvert( ) { }
 
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return y/x;
   }  
 }; // class DivideAndInvert
@@ -98,7 +98,7 @@ private:
   Real a_;
 public:
   Axpy(Real a) : a_(a) {}
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return x+a_*y;
   }
 };
@@ -110,7 +110,7 @@ private:
   Real a_;
 public:
   Aypx(Real a) : a_(a) {}
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return a_*x+y;
   }
 };
@@ -120,7 +120,7 @@ template<class Real>
 class Min : public BinaryFunction<Real> {
 public:
   Min() {}
-  Real apply(const Real &x, const Real &y) const {
+  KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
     return std::min(x,y);
   }
 };
@@ -130,7 +130,7 @@ template<class Real>
 class Max : public BinaryFunction<Real> {
 public:
   Max() {}
-  Real apply(const Real &x, const Real &y) const {
+  KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
     return std::max(x,y);
   }
 };
@@ -139,7 +139,7 @@ public:
 template<class Real> 
 class Set : public BinaryFunction<Real> {
 public:
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return y;
   }
 };
@@ -147,7 +147,7 @@ public:
 template<class Real> 
 class Lesser : public BinaryFunction<Real> {
 public:
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return (x<y) ? x : y;
   }
 };
@@ -155,7 +155,7 @@ public:
 template<class Real> 
 class Greater : public BinaryFunction<Real> {
 public:
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return (x>y) ? x : y;
   }
 };
@@ -176,7 +176,7 @@ public:
   ValueSet( const Real& threshold, const int option, const Real &c1=Real(1), const Real &c2=Real(0) ) :
     threshold_(threshold), option_(option), c1_(c1), c2_(c2) {}
  
-  Real apply(const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply(const Real &x, const Real &y ) const {
     Real result(c2_);
     switch( option_ ) {
       case LESS_THAN:    { result = y <  threshold_ ? c1_ : c2_; break; }
@@ -201,7 +201,7 @@ public:
 
   BinaryComposition( ROL::Ptr<BinaryFunction<Real> > &f,
                      ROL::Ptr<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return g_->apply(f_->apply(x,y));
   }
 

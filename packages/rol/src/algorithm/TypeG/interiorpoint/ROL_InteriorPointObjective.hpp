@@ -94,7 +94,7 @@ private:
   //             { -inf   if x <= 0
   class ModifiedLogarithm : public Elementwise::UnaryFunction<Real> {
   public:
-    Real apply( const Real &x ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x ) const {
       const Real zero(0), NINF(ROL_NINF<Real>());
       return (x>zero) ? std::log(x) : NINF;
       //return std::log(x);
@@ -105,7 +105,7 @@ private:
   //             { 0    if  x <= 0
   class ModifiedReciprocal : public Elementwise::UnaryFunction<Real> {
   public:
-    Real apply( const Real &x ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x ) const {
       const Real zero(0), one(1);
       return (x>zero) ? one/x : zero;
       //return one/x;
@@ -117,7 +117,7 @@ private:
   //               { 0    if  x <= 0
   class ModifiedDivide : public Elementwise::BinaryFunction<Real> {
   public:
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       const Real zero(0);
       return (x>zero) ? y/x : zero;
       //return y/x;
@@ -133,7 +133,7 @@ private:
     bool complement_;
   public:
     Mask( bool complement ) : complement_(complement) {}
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       const Real zero(0);
       return ( complement_ ^ (y != zero) ) ? zero : x;
     }

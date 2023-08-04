@@ -370,7 +370,7 @@ public:
 
     class Max1X : public Elementwise::UnaryFunction<Real> {
     public:
-      Real apply( const Real &x ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x ) const {
         return std::max(1.0,x);
       }
     };

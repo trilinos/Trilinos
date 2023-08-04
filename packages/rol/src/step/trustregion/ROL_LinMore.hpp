@@ -69,7 +69,7 @@ private:
 
   class LowerBreakPoint : public Elementwise::BinaryFunction<Real> {
     public:
-    Real apply( const Real &x, const Real &y) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y) const {
       const Real zero(0), one(1);
       return (x > zero && y < zero) ? -x/y : -one;
     }
@@ -77,7 +77,7 @@ private:
 
   class UpperBreakPoint : public Elementwise::BinaryFunction<Real> {
     public:
-    Real apply( const Real &x, const Real &y) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y) const {
       const Real zero(0), one(1);
       return (x > zero && y > zero) ? x/y : -one;
     }

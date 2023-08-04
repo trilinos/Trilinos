@@ -78,7 +78,7 @@ private:
     const Real tol_;
   public:
     SnapInt(void) : tol_(1e-6) {}
-    Real apply(const Real &x) const {
+    KOKKOS_FUNCTION Real apply(const Real &x) const {
       Real fx = std::floor(x);
       Real cx = std::ceil(x);
       if (std::abs(fx - x) < tol_)      return fx;
@@ -348,7 +348,7 @@ protected:
 
   class round : public Elementwise::UnaryFunction<Real> {
   public:
-    Real apply(const Real &x) const { return std::round(x); }
+    KOKKOS_FUNCTION Real apply(const Real &x) const { return std::round(x); }
   } rnd;
 
   Ptr<Vector<Real>> getOptVector(const Ptr<Vector<Real>> &xs ) const {

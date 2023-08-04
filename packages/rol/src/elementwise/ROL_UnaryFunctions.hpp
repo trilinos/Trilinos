@@ -61,7 +61,7 @@ template<class Real>
 class Fill : public UnaryFunction<Real> {
 public:
   Fill( const Real &value ) : value_(value) {}
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return value_;
   }  
 private:  
@@ -75,7 +75,7 @@ private:
   Real value_;
 public:
   Shift( const Real &value ) : value_(value) {}
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return x+value_;
   }
 }; // class Shift
@@ -85,7 +85,7 @@ public:
 template<class Real> 
 class Reciprocal : public UnaryFunction<Real> {
 public:
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return static_cast<Real>(1)/x;
   }  
 }; // class Reciprocal
@@ -94,7 +94,7 @@ public:
 template<class Real>
 class AbsoluteValue : public UnaryFunction<Real> {
 public:
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return std::abs(x); 
   }
 
@@ -107,7 +107,7 @@ private:
   Real one_;
 public:
   Sign() : zero_(0), one_(1) {}
-  Real apply(const Real &x) const {
+  KOKKOS_FUNCTION Real apply(const Real &x) const {
     if(x==zero_) {
       return zero_;
     }
@@ -126,7 +126,7 @@ private:
 public:
   Power( const Real &exponent ) : exponent_(exponent) {}
 
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return std::pow(x,exponent_);
   } 
 }; // class Power
@@ -138,7 +138,7 @@ class SquareRoot : public UnaryFunction<Real> {
 public:
   SquareRoot( void ) {}
 
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return std::sqrt(x);
   } 
 }; // class Power
@@ -163,7 +163,7 @@ public:
     dist_ = makePtr<std::normal_distribution<Real>>(mu,sigma);
   }
 
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return (*dist_)(*gen_);
   }
 }; // class NormalRandom
@@ -182,7 +182,7 @@ public:
     lower_(lower), upper_(upper) {
   }
 
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return (static_cast<Real>(rand()) / static_cast<Real>(RAND_MAX)) * (upper_-lower_) + lower_;
   }
 }; // class UniformlyRandom
@@ -200,7 +200,7 @@ public:
     lower_(lower), upper_(upper) {
   }
 
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return x*((static_cast<Real>(rand()) / static_cast<Real>(RAND_MAX)) * (upper_-lower_) + lower_);
   }
 }; // class UniformlyRandom
@@ -218,7 +218,7 @@ public:
   ThresholdUpper( const Real threshold ) : 
     threshold_(threshold) {}
 
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return std::max(threshold_,x);
   }
 }; 
@@ -234,7 +234,7 @@ public:
   ThresholdLower( const Real threshold ) : 
     threshold_(threshold) {}
 
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return std::min(threshold_,x);
   }
 }; 
@@ -246,7 +246,7 @@ private:
   Real value_;
 public:
   Scale( const Real value ) : value_(value) {}
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return value_*x;
   }
 };
@@ -258,7 +258,7 @@ template<class Real>
 class Logarithm : public UnaryFunction<Real> {
 public:
 
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     // To avoid circular dependency
     Real NINF = -0.1*std::abs(ROL::ScalarTraits<Real>::rmax()); 
     return (x>0) ? std::log(x) : NINF;
@@ -272,7 +272,7 @@ template<class Real>
 class Heaviside : public UnaryFunction<Real> {
 public:
  
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     Real value = 0;
     if( x>0 ) {
       value = 1.0;
@@ -290,7 +290,7 @@ template<class Real>
 class Round : public UnaryFunction<Real> {
 public:
   Round(void) {}
-  Real apply(const Real &x) const {
+  KOKKOS_FUNCTION Real apply(const Real &x) const {
     const Real half(0.5), fx = std::floor(x), cx = std::ceil(x);
     return (x-fx < half ? fx : cx); 
   }
@@ -308,7 +308,7 @@ private:
 public:
   UnaryComposition( ROL::Ptr<UnaryFunction<Real> > &f,
                     ROL::Ptr<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return g_->apply(f_->apply(x));
   }
 

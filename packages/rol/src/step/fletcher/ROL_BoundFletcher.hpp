@@ -152,7 +152,7 @@ private:
   class DiffLower : public Elementwise::BinaryFunction<Real> {
   public:
     DiffLower(void) {}
-    Real apply(const Real& x, const Real& y) const {
+    KOKKOS_FUNCTION Real apply(const Real& x, const Real& y) const {
       const Real NINF(ROL_NINF<Real>());
       return (y <= NINF ? static_cast<Real>(-1.) : x - y);
     }
@@ -161,7 +161,7 @@ private:
   class DiffUpper : public Elementwise::BinaryFunction<Real> {
   public:
     DiffUpper(void) {}
-    Real apply(const Real& x, const Real& y) const {
+    KOKKOS_FUNCTION Real apply(const Real& x, const Real& y) const {
       const Real INF(ROL_INF<Real>());
       return (y >= INF ? static_cast<Real>(-1.) : y - x);
     }
@@ -170,7 +170,7 @@ private:
   class FormQ : public Elementwise::BinaryFunction<Real> {
   public:
     FormQ(void) {}
-    Real apply(const Real& x, const Real& y) const {
+    KOKKOS_FUNCTION Real apply(const Real& x, const Real& y) const {
       Real zero(0.);
       if( x < zero  && y < zero) {
         return static_cast<Real>(1);
@@ -188,7 +188,7 @@ private:
   class FormDQ : public Elementwise::BinaryFunction<Real> {
   public:
     FormDQ(void) {}
-    Real apply(const Real& x, const Real& y) const {
+    KOKKOS_FUNCTION Real apply(const Real& x, const Real& y) const {
       Real zero(0.), one(1.), mone(-1.);
       if( x < zero  && y < zero) {
         return zero;

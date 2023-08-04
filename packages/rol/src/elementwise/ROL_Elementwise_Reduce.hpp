@@ -64,24 +64,24 @@ template<class Real>
 class ReductionOp {
 public:
   virtual ~ReductionOp() {}
-  virtual void reduce( const Real &input, Real &output ) const = 0;
-  virtual void reduce( const volatile Real &input, volatile Real &output ) const = 0; 
-  virtual Real initialValue() const = 0;
+  virtual KOKKOS_FUNCTION void reduce( const Real &input, Real &output ) const = 0;
+  virtual KOKKOS_FUNCTION void reduce( const volatile Real &input, volatile Real &output ) const = 0; 
+  virtual KOKKOS_FUNCTION Real initialValue() const = 0;
   virtual EReductionType reductionType() const = 0;
 };
 
 template<class Real> 
 class ReductionSum : public ReductionOp<Real> {
 public: 
-  void reduce( const Real &input, Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const Real &input, Real &output ) const {
     output = output + input;
   }
 
-  void reduce( const volatile Real &input, volatile Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const volatile Real &input, volatile Real &output ) const {
     output = output + input;
   }
 
-  Real initialValue() const {
+  KOKKOS_FUNCTION Real initialValue() const {
     return 0;
   }
 
@@ -94,15 +94,15 @@ public:
 template<class Real> 
 class ReductionAnd : public ReductionOp<Real> {
 public:
-  void reduce( const Real &input, Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const Real &input, Real &output ) const {
     output = (input*output)==0 ? 0.0 : 1.0;
   }
 
-  void reduce( const volatile Real &input, volatile Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const volatile Real &input, volatile Real &output ) const {
     output = (input*output)==0 ? 0.0 : 1.0;
   }
 
-  Real initialValue() const {
+  KOKKOS_FUNCTION Real initialValue() const {
     return 1.0;
   }
 
@@ -120,15 +120,15 @@ public:
         "be specialized on supplied template parameter.\n" ); 
   }
 
-  void reduce( const Real &input, Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const Real &input, Real &output ) const {
     output = (input<output) ? input : output;
   }
 
-  void reduce( const volatile Real &input, Real volatile &output ) const {
+  KOKKOS_FUNCTION void reduce( const volatile Real &input, Real volatile &output ) const {
     output = (input<output) ? input : output;
   }
  
-  Real initialValue() const {
+  KOKKOS_FUNCTION Real initialValue() const {
     return std::numeric_limits<Real>::max();
   }
 
@@ -147,15 +147,15 @@ public:
         "be specialized on supplied template parameter.\n" ); 
   }
 
-  void reduce( const Real &input, Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const Real &input, Real &output ) const {
     output = (input>output) ? input : output;
   }
 
-  void reduce( const volatile Real &input, volatile Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const volatile Real &input, volatile Real &output ) const {
     output = (input>output) ? input : output;
   }
  
-  Real initialValue() const {
+  KOKKOS_FUNCTION Real initialValue() const {
     return std::numeric_limits<Real>::min();
   }
 
@@ -168,15 +168,15 @@ public:
 template<class Real> 
 class EuclideanNormSquared : public ReductionOp<Real> {
 public: 
-  void reduce( const Real &input, Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const Real &input, Real &output ) const {
     output = output*output + input;
   }
 
-  void reduce( const volatile Real &input, volatile Real &output ) const {
+  KOKKOS_FUNCTION void reduce( const volatile Real &input, volatile Real &output ) const {
     output = output*output + input;
   }
 
-  Real initialValue() const {
+  KOKKOS_FUNCTION Real initialValue() const {
     return 0;
   }
 

@@ -56,7 +56,7 @@ template<class Real>
 class UnaryFunction {
 public:
   virtual ~UnaryFunction() {}
-  virtual Real apply( const Real &x ) const = 0;
+  virtual KOKKOS_FUNCTION Real apply( const Real &x ) const = 0;
 };
 
 // Wrap a generic function/functor of a single argument
@@ -65,7 +65,7 @@ class UnaryFunctionWrapper : public UnaryFunction<Real> {
 public:
   UnaryFunctionWrapper( const Func &f ) : f_(f) {}
   
-  Real apply( const Real &x ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x ) const {
     return f_(x);
   }
 private:
@@ -92,7 +92,7 @@ template<class Real>
 class BinaryFunction {
 public:
   virtual ~BinaryFunction() {}
-  virtual Real apply( const Real &x, const Real &y ) const = 0;
+  virtual KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const = 0;
 };
 
 
@@ -102,7 +102,7 @@ class BinaryFunctionWrapper : public BinaryFunction<Real> {
 public:
   BinaryFunctionWrapper( const Func &f ) : f_(f) {}
   
-  Real apply( const Real &x, const Real &y ) const {
+  KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
     return f_(x,y); 
   }
 private:

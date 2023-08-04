@@ -90,11 +90,11 @@ Bounds<Real>::Bounds(const Ptr<Vector<Real>> &x_lo, const Ptr<Vector<Real>> &x_u
 template<typename Real>
 void Bounds<Real>::project( Vector<Real> &x ) {
   struct Lesser : public Elementwise::BinaryFunction<Real> {
-    Real apply(const Real &xc, const Real &yc) const { return xc<yc ? xc : yc; }
+    KOKKOS_FUNCTION Real apply(const Real &xc, const Real &yc) const { return xc<yc ? xc : yc; }
   } lesser;
 
   struct Greater : public Elementwise::BinaryFunction<Real> {
-    Real apply(const Real &xc, const Real &yc) const { return xc>yc ? xc : yc; }
+    KOKKOS_FUNCTION Real apply(const Real &xc, const Real &yc) const { return xc>yc ? xc : yc; }
   } greater;
 
   if (BoundConstraint<Real>::isUpperActivated()) {
@@ -117,7 +117,7 @@ void Bounds<Real>::projectInterior( Vector<Real> &x ) {
     public:
       LowerFeasible(const Real eps, const Real diff)
         : eps_(eps), diff_(diff) {}
-      Real apply( const Real &x, const Real &y ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
         const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
         const Real one(1);
         Real val = ((y <-tol) ? y*(one-eps_)
@@ -138,7 +138,7 @@ void Bounds<Real>::projectInterior( Vector<Real> &x ) {
     public:
       UpperFeasible(const Real eps, const Real diff)
         : eps_(eps), diff_(diff) {}
-      Real apply( const Real &x, const Real &y ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
         const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
         const Real one(1);
         Real val = ((y <-tol) ? y*(one+eps_)

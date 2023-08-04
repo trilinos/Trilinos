@@ -63,7 +63,7 @@ private:
   Ptr<Vector<Real>> tmp_;
 
   struct ProjSymBnd : public Elementwise::BinaryFunction<Real> {
-       Real apply(const Real &xc, const Real &yc) const { return std::min(yc, std::max(-yc, xc)); }
+       KOKKOS_FUNCTION Real apply(const Real &xc, const Real &yc) const { return std::min(yc, std::max(-yc, xc)); }
   } psb_;
  
 public:

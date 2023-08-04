@@ -84,7 +84,7 @@ public:
     dbyx->set(x);
 
     struct Division : public Elementwise::BinaryFunction<Real> {
-      Real apply( const Real &xc, const Real &dc ) const {
+      KOKKOS_FUNCTION Real apply( const Real &xc, const Real &dc ) const {
         return dc/xc;    
       }
     } division;
@@ -100,7 +100,7 @@ public:
     hv.set(v);
     
     struct HessianApply : public Elementwise::BinaryFunction<Real> {
-      Real apply( const Real &vc, const Real &xc ) const { 
+      KOKKOS_FUNCTION Real apply( const Real &vc, const Real &xc ) const { 
         return vc/(xc*xc);   
       }
     } hessian;

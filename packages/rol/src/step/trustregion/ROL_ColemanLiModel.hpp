@@ -105,7 +105,7 @@ private:
     class NegGradInfU : public Elementwise::BinaryFunction<Real> {
     public:
       NegGradInfU(void) {}
-      Real apply(const Real &x, const Real &y) const {
+      KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
         const Real zero(0), one(1), INF(ROL_INF<Real>());
         return (x < zero && y == INF) ? zero : one;
       }
@@ -117,7 +117,7 @@ private:
     class PosGradNinfL : public Elementwise::BinaryFunction<Real> {
     public:
       PosGradNinfL(void) {}
-      Real apply(const Real &x, const Real &y) const {
+      KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
         const Real zero(0), one(1), NINF(ROL_NINF<Real>());
         return (x >= zero && y == NINF) ? zero : one;
       }
@@ -395,7 +395,7 @@ private:
       const Real val_;
     public:
       PruneNegative( const Real val ) : val_(val) {}
-      Real apply(const Real &x, const Real &y) const {
+      KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
         return (y < static_cast<Real>(0)) ? x/y : val_;
       }
     };
@@ -404,7 +404,7 @@ private:
       const Real val_;
     public:
       PrunePositive( const Real val ) : val_(val) {}
-      Real apply(const Real &x, const Real &y) const {
+      KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
         return (y > static_cast<Real>(0)) ? x/y : val_;
       }
     };
@@ -489,7 +489,7 @@ private:
 
     class LowerBound : public Elementwise::BinaryFunction<Real> {
     public:
-      Real apply( const Real &x, const Real &y ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
         return (x == y) ? static_cast<Real>(-1) : static_cast<Real>(1);
       }
     };
@@ -499,7 +499,7 @@ private:
 
     class UpperBound : public Elementwise::BinaryFunction<Real> {
     public:
-      Real apply( const Real &x, const Real &y ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
         return (x == y) ? static_cast<Real>(-1) : static_cast<Real>(1);
       }
     };
@@ -514,7 +514,7 @@ private:
 
     class LowerBound : public Elementwise::BinaryFunction<Real> {
     public:
-      Real apply( const Real &x, const Real &y ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
         return (x < y) ? static_cast<Real>(-1) : static_cast<Real>(1);
       }
     };
@@ -524,7 +524,7 @@ private:
 
     class UpperBound : public Elementwise::BinaryFunction<Real> {
     public:
-      Real apply( const Real &x, const Real &y ) const {
+      KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
         return (x > y) ? static_cast<Real>(-1) : static_cast<Real>(1);
       }
     };
@@ -543,7 +543,7 @@ private:
       const Real val_;
     public:
       SafeDivide( const Real val ) : val_(val) {}
-      Real apply(const Real &x, const Real &y) const {
+      KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
         const Real zero(0);
         return (y == zero) ? val_ : x/y;
       }
@@ -572,7 +572,7 @@ private:
     class Greater : public Elementwise::BinaryFunction<Real> {
     public:
       Greater() {}
-      Real apply(const Real &x, const Real &y) const {
+      KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
         return (x > y) ? static_cast<Real>(1) : static_cast<Real>(0);
       }
     };
@@ -583,7 +583,7 @@ private:
     class Lesser : public Elementwise::BinaryFunction<Real> {
     public:
       Lesser() {}
-      Real apply(const Real &x, const Real &y) const {
+      KOKKOS_FUNCTION Real apply(const Real &x, const Real &y) const {
         return (x < y) ? static_cast<Real>(1) : static_cast<Real>(0);
       }
     };

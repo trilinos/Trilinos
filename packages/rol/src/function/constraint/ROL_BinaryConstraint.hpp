@@ -72,7 +72,7 @@ private:
   public:
     BoundsCheck( int option ) : opt_(option) {}
 
-    Real apply( const Real &dl, const Real &du ) const {
+    KOKKOS_FUNCTION Real apply( const Real &dl, const Real &du ) const {
       const Real zero(0), one(1), two(2);
       if( dl < ROL_INF<Real>() ) {
         if( du < ROL_INF<Real>() ) {

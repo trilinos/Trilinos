@@ -66,7 +66,7 @@ private:
   class UpperBinding : public Elementwise::BinaryFunction<Real> {
     public:
     UpperBinding(Real offset) : offset_(offset) {}
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       const Real one(1), tol(1e2*ROL_EPSILON<Real>());
       return ((y <= -offset_ && x <= tol) ? -one : one);
     }
@@ -77,7 +77,7 @@ private:
   class LowerBinding : public Elementwise::BinaryFunction<Real> {
     public:
     LowerBinding(Real offset) : offset_(offset) {}
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       const Real one(1), tol(1e2*ROL_EPSILON<Real>());
       return ((y >= offset_ && x <= tol) ? -one : one);
     }
@@ -87,7 +87,7 @@ private:
 
   class PruneBinding : public Elementwise::BinaryFunction<Real> {
     public:
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       const Real zero(0), one(1);
       return ((y == one) ? x : zero);
     }
@@ -95,7 +95,7 @@ private:
 
   class PruneNonbinding : public Elementwise::BinaryFunction<Real> {
     public:
-    Real apply( const Real &x, const Real &y ) const {
+    KOKKOS_FUNCTION Real apply( const Real &x, const Real &y ) const {
       const Real zero(0), one(1);
       return ((y == -one) ? x : zero);
     }
