@@ -385,14 +385,26 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
-  virtual void getColumnWeightsHostView(typename Base::WeightsHostView1D& weights) const
+  virtual void getColumnWeightsHostView(typename Base::WeightsHostView1D& weights,
+                                     int /* idx */ = 0) const
   {
       Z2_THROW_NOT_IMPLEMENTED
   }
 
-  virtual void getColumnWeightsDeviceView(typename Base::WeightsDeviceView1D& weights) const
+  virtual void
+  getColumnWeightsHostView(typename Base::WeightsHostView &weights) const {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getColumnWeightsDeviceView(typename Base::WeightsDeviceView1D& weights,
+                                       int /* idx */ = 0) const
   {
       Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void
+  getColumnWeightsDeviceView(typename Base::WeightsDeviceView &weights) const {
+    Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Indicate whether column weight with index idx should be the
