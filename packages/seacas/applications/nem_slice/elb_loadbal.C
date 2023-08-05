@@ -30,7 +30,7 @@
 #include "elb_graph.h"  // for generate_graph
 #include "elb_groups.h" // for get_group_info
 #include "elb_loadbal.h"
-#include "elb_util.h"   // for find_inter, etc
+#include "elb_util.h" // for find_inter, etc
 #include "fix_column_partitions.h"
 
 #ifndef M_PI
@@ -685,6 +685,11 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         flag = ZOLTAN_assign("HSFC", totalproc, tmp_nv, tmp_vwgts, tmp_x, tmp_y, tmp_z,
                              lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
+      }
+#else
+      else if (lb->type == ZOLTAN_RCB || lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC) {
+        Gen_Error(0, "fatal: Invalid load balance types -- Zoltan is not supported in this build");
+        goto cleanup;
       }
 #endif
       else if (lb->type == LINEAR) {
@@ -1565,7 +1570,7 @@ namespace {
         if (side_cnt < nnodes) {
           nnodes = side_cnt;
         }
-        nnodes--;  /* decrement to find the number of intersections needed */
+        nnodes--; /* decrement to find the number of intersections needed */
 
         nelem = 0; /* reset this in case no intersections are needed */
 
@@ -1870,12 +1875,12 @@ namespace {
                   Gen_Error(0, cmesg);
                   return 0; /* and get out of here */
 
-                }           /* End "if sid < 0 && !problem>skip_checks" */
-              }             /* End "if (sid > 0)" */
-            }               /* End "if (proc != proc2)" */
-          }                 /* End "for (ncnt = 0; ncnt < nelem; ncnt++)" */
-        }                   /* End "if (nelem > 1)" */
-      }                     /* End "for (nscnt = 0; nscnt < nsides; nscnt++)" */
+                } /* End "if sid < 0 && !problem>skip_checks" */
+              }   /* End "if (sid > 0)" */
+            }     /* End "if (proc != proc2)" */
+          }       /* End "for (ncnt = 0; ncnt < nelem; ncnt++)" */
+        }         /* End "if (nelem > 1)" */
+      }           /* End "for (nscnt = 0; nscnt < nsides; nscnt++)" */
 
       if (internal) {
         lb->int_elems[proc].push_back(ecnt);
@@ -2522,9 +2527,9 @@ namespace {
                nx, ny, nz, nx * ny * nz);
 
     float               xmin;
-    float               xmax;     /* Minimum and maximum x-coordinate values */
+    float               xmax; /* Minimum and maximum x-coordinate values */
     float               ymin;
-    float               ymax;     /* Minimum and maximum y-coordinate values */
+    float               ymax; /* Minimum and maximum y-coordinate values */
     float               zmin;
     float               zmax;     /* Minimum and maximum z-coordinate values */
     double              dx;       /* xmax - xmin */
@@ -2749,7 +2754,7 @@ namespace {
     ZOLTAN_ID_PTR dummy2; /* Empty output from Zoltan_LB_Partition */
     int           dummy0;
     int          *dummy3;
-    int          *dummy4;    /* Empty output from Zoltan_LB_Partition */
+    int          *dummy4; /* Empty output from Zoltan_LB_Partition */
     int           zngid_ent;
     int           znlid_ent; /* Useful output from Zoltan_LB_Partition */
     int           znobj;
