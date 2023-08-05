@@ -119,7 +119,8 @@ namespace Belos {
      *
      * This constructor accepts the LinearProblem to be solved in addition
      * to a parameter list of options for the solver manager. These options include the following:
-     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform.
+     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 1000
+     *   - "Num KrylovVecs" - a \c int specifying the maximum number of vectors allowed in the Krylov subspace for each set of RHS solved. Default: 300
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
@@ -265,6 +266,7 @@ namespace Belos {
 
     // Default solver values.
     static constexpr int maxIters_default_ = 1000;
+    static constexpr int numKrylovVecs_default_ = 300;
     static constexpr bool showMaxResNormOnly_default_ = false;
     static constexpr int verbosity_default_ = Belos::Errors;
     static constexpr int outputStyle_default_ = Belos::General;
@@ -275,7 +277,7 @@ namespace Belos {
 
     // Current solver values.
     MagnitudeType convtol_,achievedTol_;
-    int maxIters_, numIters_;
+    int maxIters_, numIters_, numKrylovVecs_;
     int verbosity_, outputStyle_, outputFreq_, defQuorum_;
     bool showMaxResNormOnly_;
     std::string resScale_;
@@ -295,6 +297,7 @@ GCRSolMgr<ScalarType,MV,OP>::GCRSolMgr() :
   convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
+  numKrylovVecs_(numKrylovVecs_default_),
   verbosity_(verbosity_default_),
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
@@ -315,6 +318,7 @@ GCRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   convtol_(DefaultSolverParameters::convTol),
   maxIters_(maxIters_default_),
   numIters_(0),
+  numKrylovVecs_(numKrylovVecs_default_),
   verbosity_(verbosity_default_),
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
@@ -360,6 +364,19 @@ void GCRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
     params_->set("Maximum Iterations", maxIters_);
     if (maxIterTest_!=Teuchos::null)
       maxIterTest_->setMaxIters( maxIters_ );
+  }
+
+  // Check for the maximum number of Krylov vecs.
+  if (params->isParameter ("Num KrylovVecs")) {
+    numKrylovVecs_ = params->get ("Num KrylovVecs", numKrylovVecs_default_);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numKrylovVecs_ <= 0, std::invalid_argument,
+      "Belos::GCRSolMgr::setParameters: "
+      "The \"Num KrylovVecs\" parameter must be strictly positive, "
+      "but you specified a value of " << numKrylovVecs_ << ".");
+
+    // Update parameter in our list.
+    params_->set ("Num KrylovVecs", numKrylovVecs_);
   }
 
   // Check to see if the timer label changed.
@@ -571,6 +588,9 @@ GCRSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
+    pl->set("Num KrylovVecs", static_cast<int>(numKrylovVecs_default_),
+      "The maximum number of vectors allowed in the Krylov subspace\n"
+      "for each set of RHS solved.");
     pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
@@ -622,12 +642,10 @@ ReturnType GCRSolMgr<ScalarType,MV,OP>::solve ()
      "Belos::GCRSolMgr::solve: Linear problem is not ready.  "
      "You must call setProblem() on the LinearProblem before you may solve it.");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (problem_->isLeftPrec (), std::logic_error, "Belos::GCRSolMgr::solve: "
-     "The left-preconditioned case has not yet been implemented.  Please use "
-     "right preconditioning for now.  If you need to use left preconditioning, "
-     "please contact the Belos developers.  Left preconditioning is more "
-     "interesting in GCR because whether it works depends on the initial "
-     "guess (e.g., an initial guess of all zeros might NOT work).");
+    (problem_->isRightPrec (), std::logic_error, "Belos::GCRSolMgr::solve: "
+     "The right-preconditioned case has not yet been implemented.  Please use "
+     "left preconditioning for now.  If you need to use right preconditioning, "
+     "please contact the Belos developers.");
 
   // Create indices for the linear systems to be solved.
   int startPtr = 0;
@@ -646,6 +664,7 @@ ReturnType GCRSolMgr<ScalarType,MV,OP>::solve ()
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list (iteration)
   Teuchos::ParameterList plist;
+  plist.set("Num KrylovVecs",numKrylovVecs_);
 
   // Reset the status test.
   outputTest_->reset();
@@ -679,11 +698,11 @@ ReturnType GCRSolMgr<ScalarType,MV,OP>::solve ()
       outputTest_->resetNumCalls();
 
       // Get the current residual for this block of linear systems.
-      Teuchos::RCP<MV> R_0 = MVT::CloneViewNonConst( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
+      //Teuchos::RCP<MV> R_0 = MVT::CloneViewNonConst( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
 
       // Get a new state struct and initialize the solver.
       GCRIterationState<ScalarType,MV> newState;
-      newState.R = R_0;
+      //newState.R = R_0;
       gcr_iter->initializeGCR(newState);
 
       while(1) {
@@ -735,12 +754,12 @@ ReturnType GCRSolMgr<ScalarType,MV,OP>::solve ()
 
             // Get the current residual vector.
             std::vector<MagnitudeType> norms;
-            R_0 = MVT::CloneCopy( *(gcr_iter->getNativeResiduals(&norms)),currIdx2 );
+            //R_0 = MVT::CloneCopy( *(gcr_iter->getNativeResiduals(&norms)),currIdx2 );
             for (int i=0; i<have; ++i) { currIdx2[i] = i; }
 
             // Set the new state and initialize the solver.
             GCRIterationState<ScalarType,MV> defstate;
-            defstate.R = R_0;
+            //defstate.R = R_0;
             gcr_iter->initializeGCR(defstate);
           }
 

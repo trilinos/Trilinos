@@ -89,23 +89,13 @@ namespace Belos {
     /*! \brief The current residual. */
     Teuchos::RCP<const MV> R;
 
-    /*! \brief The initial residual. */
-    Teuchos::RCP<const MV> Rhat;
+    //std::vector<ScalarType> rho_old, alpha, omega;
 
-    /*! \brief The first decent direction vector */
-    Teuchos::RCP<const MV> P;
-
-    /*! \brief A * M * the first decent direction vector */
-    Teuchos::RCP<const MV> V;
-
-    std::vector<ScalarType> rho_old, alpha, omega;
-
-    GCRIterationState() : R(Teuchos::null), Rhat(Teuchos::null),
-                    P(Teuchos::null), V(Teuchos::null)
+    GCRIterationState() : R(Teuchos::null)
     {
-      rho_old.clear();
-      alpha.clear();
-      omega.clear();
+      //rho_old.clear();
+      //alpha.clear();
+      //omega.clear();
     }
   };
 
@@ -200,12 +190,9 @@ namespace Belos {
     GCRIterationState<ScalarType,MV> getState() const {
       GCRIterationState<ScalarType,MV> state;
       state.R = R_;
-      state.Rhat = Rhat_;
-      state.P = P_;
-      state.V = V_;
-      state.rho_old = rho_old_;
-      state.alpha = alpha_;
-      state.omega = omega_;
+      //state.rho_old = rho_old_;
+      //state.alpha = alpha_;
+      //state.omega = omega_;
       return state;
     }
 
@@ -252,6 +239,12 @@ namespace Belos {
                          "Belos::GCRIter::setBlockSize(): Cannot use a block size that is not one.");
     }
 
+    //! Get the maximum number of vectors in the Krylov subspace used by the iterative solver in solving this linear problem.
+    int getNumKrylovVecs() const { return numKrylovVecs_; }
+    
+    //! \brief Set the maximum number of vectors in the Krylov subspace used by the iterative solver.
+    void setNumKrylovVecs(int numKrylovVecs);
+
     //! States whether the solver has been initialized or not.
     bool isInitialized() { return initialized_; }
 
@@ -261,6 +254,9 @@ namespace Belos {
 
     void axpy(const ScalarType alpha, const MV & A,
               const std::vector<ScalarType> beta, const MV& B, MV& mv, bool minus=false);
+
+    void deep_copy(const MV& Src, const std::vector<int>& colIndex,
+                   const std::vector<Teuchos::RCP<MV> >& Dst);
 
     //
     // Classes inputed through constructor that define the linear problem to be solved.
@@ -274,6 +270,8 @@ namespace Belos {
     //
     // numRHS_ is the current number of linear systems being solved.
     int numRHS_;
+    // numKrylovVecs_ is the number of vectors in the Krylov subspace.
+    int numKrylovVecs_;
 
     //
     // Current solver state
@@ -292,19 +290,19 @@ namespace Belos {
     //
     // State Storage
     //
-    // Initial residual
-    Teuchos::RCP<MV> Rhat_;
-    //
     // Residual
     Teuchos::RCP<MV> R_;
     //
-    // Direction vector 1
-    Teuchos::RCP<MV> P_;
+    Teuchos::RCP<MV> AxR_;
     //
-    // Operator applied to preconditioned direction vector 1
-    Teuchos::RCP<MV> V_;
+    // Reference Norm
+    Teuchos::RCP<MV> Pr_;
     //
-    std::vector<ScalarType> rho_old_, alpha_, omega_;
+    std::vector<ScalarType> pone_;
+    std::vector<int> curIndex_, newIndex_;
+    //
+    std::vector<Teuchos::RCP<MV> > U_;
+    std::vector<Teuchos::RCP<MV> > C_;
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -313,17 +311,35 @@ namespace Belos {
   GCRIter<ScalarType,MV,OP>::GCRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                      const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                                      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                                     Teuchos::ParameterList &/* params */ ):
+                                     Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
     numRHS_(0),
+    numKrylovVecs_(0),
     initialized_(false),
     breakdown_(false),
     iter_(0)
   {
+    // Get the maximum number of vectors allowed in the Krylov subspace
+    TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Num KrylovVecs"), std::invalid_argument,
+                       "Belos::GCRIter::constructor: mandatory parameter 'Num KrylovVecs' is not specified.");
+    int nKrylovVecs = Teuchos::getParameter<int>(params, "Num KrylovVecs");
+
+    setNumKrylovVecs( nKrylovVecs );
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set the maximum number of vectors allowed in the Krylov subspace and make necessary adjustments.
+  template <class ScalarType, class MV, class OP>
+  void GCRIter<ScalarType,MV,OP>::setNumKrylovVecs (int numKrylovVecs)
+  { 
+    TEUCHOS_TEST_FOR_EXCEPTION(numKrylovVecs <= 0, std::invalid_argument, "Belos::GCRIter::setNumKrylovVecs was passed a non-positive argument.");
+
+    numKrylovVecs_ = numKrylovVecs;
+
+    initialized_ = false;
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
@@ -346,14 +362,31 @@ namespace Belos {
     // Initialize the state storage
     // If the subspace has not be initialized before or has changed sizes, generate it using the LHS or RHS from lp_.
     if (Teuchos::is_null(R_) || MVT::GetNumberVecs(*R_)!=numRHS_) {
-      R_ = MVT::Clone( *tmp, numRHS_ );
-      Rhat_ = MVT::Clone( *tmp, numRHS_ );
-      P_ = MVT::Clone( *tmp, numRHS_ );
-      V_ = MVT::Clone( *tmp, numRHS_ );
+      R_   = MVT::Clone( *tmp, numRHS_ );
+      AxR_ = MVT::Clone( *tmp, numRHS_ );
+      Pr_  = MVT::Clone( *tmp, numRHS_ );
+      //R_   = Teuchos::rcp( new MV<ScalarType>(MVT::GetGlobalLength(*tmp), numRHS_, true) );
+      //AxR_ = Teuchos::rcp( new MV(MVT::GetGlobalLength(*tmp), numRHS_, true) );
+      //Pr_  = Teuchos::rcp( new MV(MVT::GetGlobalLength(*tmp), numRHS_, true) );
 
-      rho_old_.resize(numRHS_);
-      alpha_.resize(numRHS_);
-      omega_.resize(numRHS_);
+      MVT::MvInit(*AxR_);
+      MVT::MvInit(*Pr_);
+
+      pone_.resize(numRHS_);
+      curIndex_.resize(numRHS_);
+      newIndex_.resize(numRHS_);
+    }
+    U_.resize(numRHS_);
+    C_.resize(numRHS_);
+    for (int i=0; i<numRHS_; ++i) {
+      if (Teuchos::is_null(U_[i])) {
+        U_[i] = MVT::Clone(*tmp, numKrylovVecs_);
+        MVT::MvInit(*U_[i]);
+      }
+      if (Teuchos::is_null(C_[i])) {
+        C_[i] = MVT::Clone(*tmp, numKrylovVecs_);
+        MVT::MvInit(*C_[i]);
+      }
     }
 
     // Reset breakdown to false before initializing iteration
@@ -361,94 +394,55 @@ namespace Belos {
 
     // NOTE:  In GCRIter R_, the initial residual, is required!!!
     //
-    std::string errstr("Belos::BlockPseudoGCRIter::initialize(): Specified multivectors must have a consistent length and width.");
+    std::string errstr("Belos::GCRIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variable for one.
+    // Create convenience variables for one and zero.
     const ScalarType one = SCT::one();
+    const int zero = Teuchos::ScalarTraits<int>::zero();
 
-    if (!Teuchos::is_null(newstate.R)) {
+    //if (!Teuchos::is_null(newstate.R)) {
+	//
+    //  TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
+    //                      std::invalid_argument, errstr );
+    //  TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != numRHS_,
+    //                      std::invalid_argument, errstr );
+	//
+    //  // Copy residual vectors from newstate into R
+    //  if (newstate.R != R_) {
+    //    // Assigned by the new state
+    //    MVT::Assign(*newstate.R, *R_);
+    //  }
+    //  else {
+    //    // Computed
+    //    lp_->computeCurrResVec(R_.get());
+    //  }
+	//
+    //}
+    //else {
+    //  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(newstate.R),std::invalid_argument,
+    //                     "Belos::GCRIter::initialize(): GCRStateIterState does not have initial residual.");
+    //}
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
-                          std::invalid_argument, errstr );
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != numRHS_,
-                          std::invalid_argument, errstr );
+    // Set pone to 1
+    pone_.assign(numRHS_,one);
 
-      // Copy residual vectors from newstate into R
-      if (newstate.R != R_) {
-        // Assigned by the new state
-        MVT::Assign(*newstate.R, *R_);
-      }
-      else {
-        // Computed
-        lp_->computeCurrResVec(R_.get());
-      }
+    // Set curIndex_ to 0
+    curIndex_.assign(numRHS_,zero);
 
-      // Set Rhat
-      if (!Teuchos::is_null(newstate.Rhat) && newstate.Rhat != Rhat_) {
-        // Assigned by the new state
-        MVT::Assign(*newstate.Rhat, *Rhat_);
-      }
-      else {
-        // Set to be the initial residual
-        MVT::Assign(*R_, *Rhat_);
-      }
+    // Set newIndex_ to 0
+    newIndex_.assign(numRHS_,zero);
 
-      // Set V
-      if (!Teuchos::is_null(newstate.V) && newstate.V != V_) {
-        // Assigned by the new state
-        MVT::Assign(*newstate.V, *V_);
-      }
-      else {
-        // Initial V = 0
-        MVT::MvInit(*V_);
-      }
-
-      // Set P
-      if (!Teuchos::is_null(newstate.P) && newstate.P != P_) {
-        // Assigned by the new state
-        MVT::Assign(*newstate.P, *P_);
-      }
-      else {
-        // Initial P = 0
-        MVT::MvInit(*P_);
-      }
-
-      // Set rho_old
-      if (newstate.rho_old.size () == static_cast<size_t> (numRHS_)) {
-        // Assigned by the new state
-        rho_old_ = newstate.rho_old;
-      }
-      else {
-        // Initial rho = 1
-        rho_old_.assign(numRHS_,one);
-      }
-
-      // Set alpha
-      if (newstate.alpha.size() == static_cast<size_t> (numRHS_)) {
-        // Assigned by the new state
-        alpha_ = newstate.alpha;
-      }
-      else {
-        // Initial rho = 1
-        alpha_.assign(numRHS_,one);
-      }
-
-      // Set omega
-      if (newstate.omega.size() == static_cast<size_t> (numRHS_)) {
-        // Assigned by the new state
-        omega_ = newstate.omega;
-      }
-      else {
-        // Initial rho = 1
-        omega_.assign(numRHS_,one);
-      }
-
+    // Pr(:,:) = Prec*RHS(:,:)
+    Teuchos::RCP<const MV> RHS_ = lp_->getCurrRHSVec();
+    if(lp_->isLeftPrec()) {
+      lp_->applyLeftPrec(*RHS_,*Pr_);
     }
-    else {
-
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(newstate.R),std::invalid_argument,
-                         "Belos::GCRIter::initialize(): GCRStateIterState does not have initial residual.");
+    else if(lp_->isRightPrec()) {
+      lp_->applyRightPrec(*RHS_,*Pr_);
     }
+
+    // R = Pr - R;
+    axpy(one, *Pr_, pone_, *R_, *R_, true);
 
     // The solver is initialized
     initialized_ = true;
@@ -469,28 +463,14 @@ namespace Belos {
       initialize();
     }
 
-    // Allocate memory for scalars.
-    int i=0;
-    std::vector<ScalarType> rho_new( numRHS_ ), beta( numRHS_ );
-    std::vector<ScalarType> rhatV( numRHS_ ), tT( numRHS_ ), tS( numRHS_ );
-
     // Create convenience variable for one.
     const ScalarType one = SCT::one();
 
-    // TODO: We may currently be using more space than is required
-    RCP<MV> leftPrecVec, leftPrecVec2;
+    MagnitudeType alphaMin = 1.0e10;
 
-    RCP<MV> Y, Z, S, T;
-    S = MVT::Clone( *R_, numRHS_ );
-    T = MVT::Clone( *R_, numRHS_ );
-    if (lp_->isLeftPrec() || lp_->isRightPrec()) {
-      Y = MVT::Clone( *R_, numRHS_ );
-      Z = MVT::Clone( *R_, numRHS_ );
-    }
-    else {
-      Y = P_;
-      Z = S;
-    }
+    std::vector<MagnitudeType> nrmval(1);
+    std::vector<ScalarType> val(1);
+    std::vector<ScalarType> gcrAlpha(1);
 
     // Get the current solution std::vector.
     Teuchos::RCP<MV> X = lp_->getCurrLHSVec();
@@ -503,117 +483,73 @@ namespace Belos {
       // Increment the iteration
       iter_++;
 
-      // rho_new = <R_, Rhat_>
-      MVT::MvDot(*R_,*Rhat_,rho_new);
+      curIndex_ = newIndex_;
 
-      // beta = ( rho_new / rho_old ) (alpha / omega )
-      // TODO: None of these loops are currently threaded
-      for(i=0; i<numRHS_; i++) {
-        // Catch breakdown in rho_old here, since
-        // it is just rho_new from the previous iteration.
-        if (SCT::magnitude(rho_new[i]) < MT::sfmin())
-          breakdown_ = true;
+      // U[0:numRHS_-1](:,curIndex_(0:numRHS_-1))]=R(:,0:numRHS_-1);
+      deep_copy(*R_, curIndex_, U_);
 
-        beta[i] = (rho_new[i] / rho_old_[i]) * (alpha_[i] / omega_[i]);
-      }
+      // AxR_ = A*R_;
+      lp_->applyOp(*R_,*AxR_);
 
-      // p = r + beta (p - omega v)
-      // TODO: Is it safe to call MvAddMv with A or B = mv?
-      // TODO: Not all of these things have to be part of the state
-      axpy(one, *P_, omega_, *V_, *P_, true); // p = p - omega v
-      axpy(one, *R_, beta, *P_, *P_); // p = r + beta (p - omega v)
+      for(int i=0; i<numRHS_; i++) {
+        std::vector<int> index1(1);
+        std::vector<int> index2(1);
+        std::vector<int> index3(1);
+        index1[0] = i;
+        index2[0] = curIndex_[i]; 
+        Teuchos::RCP<const MV> AxR_sub = MVT::CloneView(*AxR_, index1);
+        Teuchos::RCP<MV> C_sub = MVT::CloneViewNonConst(*C_[i], index2);
+        Teuchos::RCP<MV> U_sub = MVT::CloneViewNonConst(*U_[i], index2);
 
-      // y = K\p, unless K does not exist
-      // TODO: There may be a more efficient way to apply the preconditioners
-      if(lp_->isLeftPrec()) {
-        if(lp_->isRightPrec()) {
-          if(leftPrecVec == Teuchos::null) {
-            leftPrecVec = MVT::Clone( *R_, numRHS_ );
+        // C[i](:,curIndex_[i]) = Prec*AxR_(:,i)
+        if(lp_->isLeftPrec()) {
+          lp_->applyLeftPrec(*AxR_sub, *C_sub);
+        }
+        else if(lp_->isRightPrec()) {
+          lp_->applyRightPrec(*AxR_sub, *C_sub);
+        }
+
+        for (int j=0; j<std::min(numKrylovVecs_,iter_); j++) {
+          if (j != curIndex_[i]) {
+            //gcrAlpha = dotHerm(C[i](:,j),C[i](:,curIndex_[i])
+            index3[0] = j;
+            Teuchos::RCP<MV> C_prev_sub = MVT::CloneViewNonConst(*C_[i], index3);
+            Teuchos::RCP<MV> U_prev_sub = MVT::CloneViewNonConst(*U_[i], index3);
+
+            MVT::MvDot(*C_sub, *C_prev_sub, gcrAlpha);
+            if (SCT::magnitude(gcrAlpha[0]) < alphaMin) {
+              alphaMin = SCT::magnitude(gcrAlpha[0]);
+              newIndex_[i] = j;
+            }
+
+            //C[i](:,curIndex_[i])=C[i](:,curIndex_[i])-gcrAlpha*C[i](:,j);
+            //U[i](:,curIndex_[i])=U[i](:,curIndex_[i])-gcrAlpha*U[i](:,j);
+            axpy(one, *C_sub, gcrAlpha, *C_prev_sub, *C_sub, true);
+            axpy(one, *U_sub, gcrAlpha, *U_prev_sub, *U_sub, true);
           }
-          lp_->applyLeftPrec(*P_,*leftPrecVec);
-          lp_->applyRightPrec(*leftPrecVec,*Y);
         }
-        else {
-          lp_->applyLeftPrec(*P_,*Y);
-        }
-      }
-      else if(lp_->isRightPrec()) {
-        lp_->applyRightPrec(*P_,*Y);
-      }
 
-      // v = Ay
-      lp_->applyOp(*Y,*V_);
+        // update solution and residual
+        // val = one/norm2(C[i](:,curIndex_[i]));
+        MVT::MvNorm(*C_sub, nrmval);
+        val[0] = one/nrmval[0]; 
 
-      // alpha = rho_new / <Rhat, V>
-      MVT::MvDot(*V_,*Rhat_,rhatV);
-      for(i=0; i<numRHS_; i++) {
-        if (SCT::magnitude(rhatV[i]) < MT::sfmin())
-        {
-          breakdown_ = true;
-          return;
-        }
-        else 
-          alpha_[i] = rho_new[i] / rhatV[i];
-      }
+        // U[i](:,curIndex_[i])=val*U[i](:,curIndex_[i]);
+        // C[i](:,curIndex_[i])=val*C[i](:,curIndex_[i]);
+        MVT::MvScale(*U_sub, val[0]);
+        MVT::MvScale(*C_sub, val[0]);
 
-      // s = r - alpha v
-      axpy(one, *R_, alpha_, *V_, *S, true);
+        // val = dotHerm(C[i](:,curIndex_[i]), R(:,i));
+        Teuchos::RCP<MV> R_sub = MVT::CloneViewNonConst(*R_, index1);
+        MVT::MvDot(*R_sub, *C_sub, val);
+        
+        // X(:,i) = X(:,i) + val*U[i](:,curIndex_[i]);
+        Teuchos::RCP<MV> X_sub = MVT::CloneViewNonConst(*X, index1);
+        axpy(one, *X_sub, val, *U_sub, *X_sub);
 
-      // z = K\s, unless K does not exist
-      if(lp_->isLeftPrec()) {
-        if(lp_->isRightPrec()) {
-          if(leftPrecVec == Teuchos::null) {
-            leftPrecVec = MVT::Clone( *R_, numRHS_ );
-          }
-          lp_->applyLeftPrec(*S,*leftPrecVec);
-          lp_->applyRightPrec(*leftPrecVec,*Z);
-        }
-        else {
-          lp_->applyLeftPrec(*S,*Z);
-        }
-      }
-      else if(lp_->isRightPrec()) {
-        lp_->applyRightPrec(*S,*Z);
-      }
-
-      // t = Az
-      lp_->applyOp(*Z,*T);
-
-      // omega = <K1\t,K1\s> / <K1\t,K1\t>
-      if(lp_->isLeftPrec()) {
-        if(leftPrecVec == Teuchos::null) {
-          leftPrecVec = MVT::Clone( *R_, numRHS_ );
-        }
-        if(leftPrecVec2 == Teuchos::null) {
-          leftPrecVec2 = MVT::Clone( *R_, numRHS_ );
-        }
-        lp_->applyLeftPrec(*T,*leftPrecVec2);
-        MVT::MvDot(*leftPrecVec2,*leftPrecVec2,tT);
-        MVT::MvDot(*leftPrecVec,*leftPrecVec2,tS);
-      }
-      else {
-        MVT::MvDot(*T,*T,tT);
-        MVT::MvDot(*S,*T,tS);
-      }
-      for(i=0; i<numRHS_; i++) {
-        if (SCT::magnitude(tT[i]) < MT::sfmin())
-        {
-          omega_[i] = SCT::zero();
-          breakdown_ = true;
-        }
-        else
-          omega_[i] = tS[i] / tT[i];
-      }
-
-      // x = x + alpha y + omega z
-      axpy(one, *X, alpha_, *Y, *X); // x = x + alpha y
-      axpy(one, *X, omega_, *Z, *X); // x = x + alpha y + omega z
-
-      // r = s - omega t
-      axpy(one, *S, omega_, *T, *R_, true);
-
-      // Update rho_old
-      rho_old_ = rho_new;
+        // R(:,i) = R(:,i) - val*C[i](:,curIndex_[i]);
+		axpy(one, *R_sub, val, *C_sub, *R_sub, true);
+      } // end for(int i=0; i<numRHS_; i++)
     } // end while (sTest_->checkStatus(this) != Passed)
   }
 
@@ -639,6 +575,24 @@ namespace Belos {
       else {
         MVT::MvAddMv(alpha,*A1,beta[i],*B1,*mv1);
       }
+    }
+  }
+
+  template <class ScalarType, class MV, class OP>
+  void GCRIter<ScalarType,MV,OP>::deep_copy(const MV& Src,
+                                            const std::vector<int>& colIndex,
+                                            const std::vector<Teuchos::RCP<MV> >& Dst)
+  {
+    Teuchos::RCP<const MV> subSrc;
+    std::vector<int> index1(1);
+    std::vector<int> index2(1);
+
+    for(int i=0; i<numRHS_; i++) {
+      //Dst[i](:,colIndex[i]) = Src(:,i);
+      index1[0] = i;  
+      index2[0] = colIndex[i];
+      subSrc   = MVT::CloneView(Src, index1);
+      MVT::SetBlock(*subSrc, index2, *Dst[i]);
     }
   }
 
