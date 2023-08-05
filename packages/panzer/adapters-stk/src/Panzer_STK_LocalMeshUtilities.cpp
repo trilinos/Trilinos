@@ -570,9 +570,6 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
   // Lookup face index given a cell and local face index
   PHX::View<panzer::LocalOrdinal**> cell_to_face("cell_to_face",num_total_cells,faces_per_cell);
 
-  // initialize with negative one cells that are not associated with a face
-  Kokkos::deep_copy(cell_to_face,-1);
-
   // Transfer information from 'faceToElement' datasets to local arrays
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("Transer faceToElement to local",TransferFaceToElementLocal);
@@ -585,6 +582,8 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
     auto cell_to_face_h = Kokkos::create_mirror_view(cell_to_face);
     Kokkos::deep_copy(elems_by_face_h, elems_by_face);
     Kokkos::deep_copy(face_to_lidx_h, face_to_lidx);
+    // initialize with negative one cells that are not associated with a face
+    Kokkos::deep_copy(cell_to_face_h, -1);
     for(size_t f=0;f<elems_by_face.extent(0);f++) {
 
       const panzer::GlobalOrdinal global_c0 = elems_by_face_h(f,0);

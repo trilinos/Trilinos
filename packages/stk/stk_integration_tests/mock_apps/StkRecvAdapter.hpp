@@ -46,8 +46,7 @@ public:
   {
     const stk::mesh::BulkData& bulk = *(m_mesh.get_stk_mesh());
     std::vector<const stk::mesh::FieldBase*> fields = {stk::mesh::get_field_by_name(m_fieldName, bulk.mesh_meta_data())};
-    const bool syncOnlySharedOrGhosted = false;
-    stk::mesh::communicate_field_data(bulk, fields, syncOnlySharedOrGhosted);
+    stk::mesh::communicate_field_data(bulk, fields);
     
     called_update_values = true;
   }

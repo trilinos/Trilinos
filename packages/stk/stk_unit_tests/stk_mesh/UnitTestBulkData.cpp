@@ -3009,7 +3009,9 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
   {
     const stk::mesh::RelationIdentifier node_rel_id = 1;
     EXPECT_FALSE(no_aura_declare_relation(bulk, element0, sharedNodeB, node_rel_id));
-  }EXPECT_NO_THROW( bulk.modification_end());
+  }
+
+  EXPECT_NO_THROW( bulk.modification_end());
 
   {
     stk::mesh::Bucket & nodeBBucket = bulk.bucket(sharedNodeB);
@@ -3056,7 +3058,16 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     const stk::mesh::RelationIdentifier node_rel_id = 1;
     bulk.declare_relation(element0, sharedNodeB, node_rel_id);
     EXPECT_TRUE( sharedNodeB == bulk.begin_nodes(element0)[1]);
-  }EXPECT_NO_THROW( bulk.modification_end());
+  }
+
+{
+stk::parallel_machine_barrier(bulk.parallel());
+std::ostringstream os;
+os<<"P"<<bulk.parallel_rank()<<" about to call mod-end"<<std::endl;
+std::cerr<<os.str();
+stk::parallel_machine_barrier(bulk.parallel());
+}
+  bulk.modification_end();
 
   {
     stk::mesh::Bucket & nodeBBucket = bulk.bucket(sharedNodeB);

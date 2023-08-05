@@ -40,6 +40,15 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
 
   INSTALL(TARGETS "${PACKAGE_NAME}_Driver")
 
+  # Perf Model
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME PerformanceModel
+    COMM mpi
+    ARGS "--nx=40 --ny=40 --nz=40 --matrixType=Laplace3D --performance-model=verbose"
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
   # Do a simple weak scaling experiment (4x ranks and 4x grid size)
   TRIBITS_ADD_TEST(
     Driver

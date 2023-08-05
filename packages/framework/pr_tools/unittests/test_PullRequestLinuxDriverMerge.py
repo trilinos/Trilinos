@@ -151,7 +151,7 @@ class Test_mergeBranch(unittest.TestCase):
        into the target branch'''
 
     def test_mergeBranch_without_source_remote(self):
-        with mock.patch('subprocess.check_output', side_effect=['origin /dev/null/target/Trilinos', 'df324ae']) as m_check_out, \
+        with mock.patch('subprocess.check_output', side_effect=['origin /dev/null/target/Trilinos', '']) as m_check_out, \
             mock.patch('subprocess.check_call') as m_check_call:
             PRMerge.merge_branch(os.path.join(os.path.sep,
                                                                   'dev',
@@ -174,21 +174,21 @@ class Test_mergeBranch(unittest.TestCase):
         return
 
 
-
     @patch('subprocess.check_call')
     def test_mergeBranch_with_source_remote(self, m_check_call):
         """
         """
         tmp_path = os.path.join(os.path.sep, 'dev', 'null', 'source', 'Trilinos.git')
 
-        side_effect_list = ["origin /dev/null/target/Trilinos\nsource_remote /dev/null/source12/Trilinos.git", 'df324ae']
+        side_effect_list = ["origin /dev/null/target/Trilinos\nsource_remote /dev/null/source12/Trilinos.git", '']
 
         with mock.patch('subprocess.check_output', side_effect=side_effect_list) as m_check_out:
             with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
                 PRMerge.merge_branch(tmp_path, 'fake_develop', 'df324ae')
 
         expected_calls = []
-        expected_calls.append( mock.call(['git', 'remote', '-v']) )
+        expected_calls.append(mock.call(['git', 'remote', '-v']))
+        expected_calls.append(mock.call('git rev-parse --verify --quiet source_remote/df324ae || true', shell=True))
         m_check_out.assert_has_calls(expected_calls)
 
         m_check_call.assert_has_calls([mock.call(['git', 'remote', 'rm', 'source_remote']),
@@ -200,6 +200,36 @@ class Test_mergeBranch(unittest.TestCase):
                                        mock.call(['git', 'reset', '--hard', 'HEAD']),
                                        mock.call(['git', 'checkout', '-B', 'fake_develop', 'origin/fake_develop']),
                                        mock.call(['git', 'merge', '--no-edit', 'df324ae']),
+                                       ])
+        self.assertIn("git remote exists, removing it", m_stdout.getvalue())
+        return
+
+
+    @patch('subprocess.check_call')
+    def test_mergeBranch_ref_is_remote_branch(self, m_check_call):
+        """
+        """
+        tmp_path = os.path.join(os.path.sep, 'dev', 'null', 'source', 'Trilinos.git')
+
+        side_effect_list = ["origin /dev/null/target/Trilinos\nsource_remote /dev/null/source12/Trilinos.git", 'df324ae']
+
+        with mock.patch('subprocess.check_output', side_effect=side_effect_list) as m_check_out:
+            with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
+                PRMerge.merge_branch(tmp_path, 'fake_develop', 'some_ref')
+
+        expected_calls = []
+        expected_calls.append( mock.call(['git', 'remote', '-v']) )
+        m_check_out.assert_has_calls(expected_calls)
+
+        m_check_call.assert_has_calls([mock.call(['git', 'remote', 'rm', 'source_remote']),
+                                       mock.call(['git', 'remote', 'add', 'source_remote', '/dev/null/source/Trilinos.git']),
+                                       mock.call(['git', 'prune']),
+                                       mock.call(['git', 'gc']),
+                                       mock.call(['git', 'fetch', 'source_remote', 'some_ref']),
+                                       mock.call(['git', 'fetch', 'origin', 'fake_develop']),
+                                       mock.call(['git', 'reset', '--hard', 'HEAD']),
+                                       mock.call(['git', 'checkout', '-B', 'fake_develop', 'origin/fake_develop']),
+                                       mock.call(['git', 'merge', '--no-edit', 'source_remote/some_ref']),
                                        ])
         self.assertIn("git remote exists, removing it", m_stdout.getvalue())
         return
