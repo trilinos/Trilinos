@@ -32,7 +32,6 @@ jobs:
       # This step uses the `trilom/file-changes-action` action to gather all the changed files. This example is pinned to a specific version of the action, using the `a6ca26c14274c33b15e6499323aac178af06ad4b` SHA.
       # 
       # In this example, this step creates the file "${{ env.HOME }}/files.json", among others.
-      - name: Gather files changed
       - id: file_changes
         uses: trilom/file-changes-action@a6ca26c14274c33b15e6499323aac178af06ad4b
         with:
