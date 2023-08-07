@@ -342,7 +342,6 @@ namespace MueLu {
       diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
 
       if(rowMap->lib() == Xpetra::UnderlyingLib::UseTpetra) {
-        Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase::GetLumpedMatrixDiagonal (Kokkos implementation)");
         // Implement using Kokkos
         using local_vector_type = typename Vector::dual_view_type::t_dev_um;
         using local_matrix_type = typename Matrix::local_matrix_type;
@@ -367,8 +366,6 @@ namespace MueLu {
           Kokkos::View<mag_type, execution_space> avgAbsDiagVal_dev("avgAbsDiagVal");
           Kokkos::View<int, execution_space> numDiagsEqualToOne_dev("numDiagsEqualToOne");
 
-          {
-          Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: parallel_for (doReciprocal)");
           Kokkos::parallel_for("GetLumpedMatrixDiagonal", my_policy,
                                KOKKOS_LAMBDA(const int rowIdx) {
                                  diag_dev(rowIdx, 0) = KAT_S::zero();
@@ -390,19 +387,15 @@ namespace MueLu {
                                  }
                                });
 
-          }
-          if (useAverageAbsDiagVal) {
-            Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
-            typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
-            Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
-            int numDiagsEqualToOne;
-            Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
+          typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
+          Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
+          int numDiagsEqualToOne;
+          Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
 
+          if (useAverageAbsDiagVal) {
             tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal()-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
           }
 
-          {
-          Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("ComputeLumpedDiagonalInverse: parallel_for (doReciprocal)");
           Kokkos::parallel_for("ComputeLumpedDiagonalInverse", my_policy,
                                KOKKOS_LAMBDA(const int rowIdx) {
                                  if (replaceSingleEntryRowWithZero && nnzPerRow(rowIdx) <= 1) {
@@ -417,10 +410,8 @@ namespace MueLu {
                                    }
                                  }
                                });
-          }
 
         } else {
-          Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: parallel_for");
           Kokkos::parallel_for("GetLumpedMatrixDiagonal", my_policy,
                                KOKKOS_LAMBDA(const int rowIdx) {
                                  diag_dev(rowIdx, 0) = KAT_S::zero();
@@ -433,7 +424,6 @@ namespace MueLu {
         }
       } else {
         // Implement using Teuchos
-        Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase: GetLumpedMatrixDiagonal: (Teuchos implementation)");
         ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
         Teuchos::Array<Scalar> regSum(diag->getLocalLength());
         Teuchos::ArrayView<const LocalOrdinal> cols;
