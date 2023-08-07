@@ -43,7 +43,7 @@ jobs:
       - name: Find illegal MPI_COMM_WORLD strings
         run: |
           files=$(grep -l MPI_COMM_WORLD ${{steps.file_changes.outputs.files}})
-          if [ -n ${files} ]
+          if [ -n "${files}" ]
           then
             echo -e "The following changed files contain MPI_COMM_WORLD, which is not allowed:\n${files}"
             exit 1
