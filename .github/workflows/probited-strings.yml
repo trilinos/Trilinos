@@ -1,0 +1,47 @@
+# This defines the name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
+name: 'Prohibited Strings'
+
+# The `on` key lets you define the events that trigger when the workflow is run. You can define multiple events here. For more information, see "[AUTOTITLE](/actions/using-workflows/triggering-a-workflow#using-events-to-trigger-workflows)."
+on:
+# Add the `workflow_dispatch` event if you want to be able to manually run this workflow from the UI. For more information, see [`workflow_dispatch`](/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch).
+  workflow_dispatch:
+  # Add the `push` event, so that the workflow runs automatically every time a commit is pushed to a branch called `main`. For more information, see [`push`](/actions/using-workflows/events-that-trigger-workflows#push).
+  # Add the `pull_request` event, so that the workflow runs automatically every time a pull request is created or updated. For more information, see [`pull_request`](/actions/using-workflows/events-that-trigger-workflows#pull_request).
+  pull_request:
+    branches:
+      - 'develop'
+
+# The `jobs` key groups together all the jobs that run in the workflow file.
+jobs:
+  # This line defines a job with the ID `check-links` that is stored within the `jobs` key.
+  mpi_comm_world:
+    # The `runs-on` key in this example configures the job to run on a GitHub-hosted runner or a self-hosted runner, depending on the repository running the workflow. 
+    # 
+    # In this example, the job will run on a self-hosted runner if the repository is named `docs-internal` and is within the `github` organization. If the repository doesn't match this path, then it will run on an `ubuntu-latest` runner hosted by GitHub. For more information on these options, see "[AUTOTITLE](/actions/using-jobs/choosing-the-runner-for-a-job)."
+    runs-on: ubuntu-latest
+    # The `steps` key groups together all the steps that will run as part of the `check-links` job. Each job in a workflow has its own `steps` section.
+    steps:
+      # The `uses` key tells the job to retrieve the action named `actions/checkout`. This is an action that checks out your repository and downloads it to the runner, allowing you to run actions against your code (such as testing tools). You must use the checkout action any time your workflow will use the repository's code or you are using an action defined in the repository.
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # The `run` key tells the job to execute a command on the runner. In this example, `npm ci` is used to install the npm software packages for the project.
+      - name: Deps
+        run: yum install -y grep git
+
+      # This step uses the `trilom/file-changes-action` action to gather all the changed files. This example is pinned to a specific version of the action, using the `a6ca26c14274c33b15e6499323aac178af06ad4b` SHA.
+      # 
+      # In this example, this step creates the file "${{ env.HOME }}/files.json", among others.
+      - id: file_changes
+        uses: trilom/file-changes-action@a6ca26c14274c33b15e6499323aac178af06ad4b
+        with:
+          fileOutput: 'json'
+
+      # To help with verification, this step lists the contents of `files.json`. This will be visible in the workflow run's log, and can be useful for debugging.
+      - name: Show files changed
+        run: echo '${{ steps.file_changes.outputs.files}}'
+
+      # This step uses the `run` command to execute a script that is stored in the repository at `script/rendered-content-link-checker.mjs` and passes all the parameters it needs to run.
+      - name: Find illegal MPI_COMM_WORLD strings
+        run: |
+          grep MPI_COMM_WORLD '${{ steps.file_changes.outputs.files}}'
