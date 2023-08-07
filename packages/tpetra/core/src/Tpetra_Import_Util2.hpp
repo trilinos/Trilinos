@@ -718,7 +718,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowptr,
+lowCommunicationMakeColMapAndReindex_blank (const Teuchos::ArrayView<const size_t> &rowptr,
                                       const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
@@ -955,7 +955,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 // Kokkos version of lowCommunicationMakeColMapAndReindex
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size_t> &rowptr,
+lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowptr,
                                       const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
@@ -1076,6 +1076,9 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
       PIDList_view[valid_index] = value;
     }
   });
+  
+  std::cout << "Num Local GIDs: " << NumLocalColGIDs << "with rank " << myPID << std::endl;
+  std::cout << "Num Remote GIDs: " << NumRemoteColGIDs << "with rank " << myPID << std::endl; 
 
 
   // Possible short-circuit: If all domain map GIDs are present as
@@ -1103,73 +1106,80 @@ lowCommunicationMakeColMapAndReindex_Kokkos (const Teuchos::ArrayView<const size
   Kokkos::View<GO*> ColIndices_view("ColIndices", numMyCols);
   auto ColIndices_host = Kokkos::create_mirror_view(ColIndices_view);
   
-  if(NumLocalColGIDs != static_cast<size_t> (numMyCols)) {
-    Kokkos::parallel_for(NumRemoteColGIDs, KOKKOS_LAMBDA(const int i) {
-      ColIndices_view[NumLocalColGIDs+i] = RemoteGIDList_view[i];
-    });
-  }  
-
-  // Find the largest PID for bin sorting purposes
-  int PID_max = 0;
-  Kokkos::parallel_reduce(PIDList_host.size(), KOKKOS_LAMBDA(const int i, int& max) {
-    if(max < PIDList_view[i]) max = PIDList_view[i];
-  }, Kokkos::Max<int>(PID_max));
-
-  using KeyViewTypePID = decltype(PIDList_view);
-  using BinSortOpPID = Kokkos::BinOp1D<KeyViewTypePID>;
-
-  // Make a subview of ColIndices for remote GID sorting
-  auto ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs, ColIndices_view.size()));
-
-  // Make binOp with bins = PID_max + 1, min = 0, max = PID_max
-  BinSortOpPID binOp2(PID_max+1, 0, PID_max);
-
-  // Sort External column indices so that all columns coming from a
-  // given remote processor are contiguous.  This is a sort with one
-  // auxilary array: RemoteColIndices
-  Kokkos::BinSort<KeyViewTypePID, BinSortOpPID> bin_sort2(PIDList_view, 0, PIDList_view.size(), binOp2, false);
-  bin_sort2.create_permute_vector(exec);
-  bin_sort2.sort(exec, PIDList_view);
-  bin_sort2.sort(exec, ColIndices_subview);
-
-  // Deep copy back from device to host
-  Kokkos::deep_copy(execution_space(), PIDList_host, PIDList_view);
-
-  // Stash the RemotePIDs. Once remotePIDs is changed to become a Kokkos view, we can remove this and copy directly.
-  // Note: If Teuchos::Array had a shrink_to_fit like std::vector,
-  // we'd call it here.
+  // We don't need to load the backend of ColIndices or sort if there are no remote GIDs
+  if(NumRemoteColGIDs > 0) {
+    if(NumLocalColGIDs != static_cast<size_t> (numMyCols)) {
+      Kokkos::parallel_for(NumRemoteColGIDs, KOKKOS_LAMBDA(const int i) {
+        ColIndices_view[NumLocalColGIDs+i] = RemoteGIDList_view[i];
+      });
+    }  
   
-  Teuchos::Array<int> PIDList(NumRemoteColGIDs);
-  for(LO i = 0; i < NumRemoteColGIDs; ++i) {
-    PIDList[i] = PIDList_host[i];
-  }
-
-  remotePIDs = PIDList;
-
-  // Sort external column indices so that columns from a given remote
-  // processor are not only contiguous but also in ascending
-  // order. NOTE: I don't know if the number of externals associated
-  // with a given remote processor is known at this point ... so I
-  // count them here.
-
-  int ColIndices_max = 0;
-  Kokkos::parallel_reduce(ColIndices_host.size(), KOKKOS_LAMBDA(const int i, int& max) {
-    if(max < int(ColIndices_view[i])) max = int(ColIndices_view[i]);
-  }, Kokkos::Max<int>(ColIndices_max));
-
-  LO StartCurrent = 0, StartNext = 1;
-  while(StartNext < NumRemoteColGIDs) {
-    if(PIDList_host[StartNext] == PIDList_host[StartNext-1]) {
-      StartNext++;
+    // Find the largest PID for bin sorting purposes
+    int PID_max = 0;
+    Kokkos::parallel_reduce(PIDList_host.size(), KOKKOS_LAMBDA(const int i, int& max) {
+      if(max < PIDList_view[i]) max = PIDList_view[i];
+    }, Kokkos::Max<int>(PID_max));
+  
+    using KeyViewTypePID = decltype(PIDList_view);
+    using BinSortOpPID = Kokkos::BinOp1D<KeyViewTypePID>;
+  
+    // Make a subview of ColIndices for remote GID sorting
+    auto ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs, ColIndices_view.size()));
+  
+    std::cout << "Max PID: " << PID_max << " with rank " << myPID << std::endl;
+  
+    // Make binOp with bins = PID_max + 1, min = 0, max = PID_max
+    BinSortOpPID binOp2(PID_max+1, 0, PID_max);
+    
+    std::cout <<"Test" << std::endl;
+  
+    // Sort External column indices so that all columns coming from a
+    // given remote processor are contiguous.  This is a sort with one
+    // auxilary array: RemoteColIndices
+    Kokkos::BinSort<KeyViewTypePID, BinSortOpPID> bin_sort2(PIDList_view, 0, PIDList_view.size(), binOp2, false);
+    bin_sort2.create_permute_vector(exec);
+    bin_sort2.sort(exec, PIDList_view);
+    bin_sort2.sort(exec, ColIndices_subview);
+  
+    // Deep copy back from device to host
+    Kokkos::deep_copy(execution_space(), PIDList_host, PIDList_view);
+  
+    // Stash the RemotePIDs. Once remotePIDs is changed to become a Kokkos view, we can remove this and copy directly.
+    // Note: If Teuchos::Array had a shrink_to_fit like std::vector,
+    // we'd call it here.
+    
+    Teuchos::Array<int> PIDList(NumRemoteColGIDs);
+    for(LO i = 0; i < NumRemoteColGIDs; ++i) {
+      PIDList[i] = PIDList_host[i];
     }
-    else {
-      Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
-      StartCurrent = StartNext;
-      StartNext++;
+  
+    remotePIDs = PIDList;
+  
+    // Sort external column indices so that columns from a given remote
+    // processor are not only contiguous but also in ascending
+    // order. NOTE: I don't know if the number of externals associated
+    // with a given remote processor is known at this point ... so I
+    // count them here.
+  
+    int ColIndices_max = 0;
+    Kokkos::parallel_reduce(ColIndices_host.size(), KOKKOS_LAMBDA(const int i, int& max) {
+      if(max < int(ColIndices_view[i])) max = int(ColIndices_view[i]);
+    }, Kokkos::Max<int>(ColIndices_max));
+  
+    LO StartCurrent = 0, StartNext = 1;
+    while(StartNext < NumRemoteColGIDs) {
+      if(PIDList_host[StartNext] == PIDList_host[StartNext-1]) {
+        StartNext++;
+      }
+      else {
+        Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
+        StartCurrent = StartNext;
+        StartNext++;
+      }
     }
+  
+    Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
   }
-
-  Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
 
 
   // Build permute array for *local* reindexing.
