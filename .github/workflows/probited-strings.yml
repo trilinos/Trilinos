@@ -32,7 +32,8 @@ jobs:
       - id: file_changes
         uses: trilom/file-changes-action@a6ca26c14274c33b15e6499323aac178af06ad4b
         with:
-          fileOutput: 'json'
+          output: ' '
+          fileOutput: ' '
 
       # To help with verification, this step lists the contents of `files.json`. This will be visible in the workflow run's log, and can be useful for debugging.
       - name: Show files changed
