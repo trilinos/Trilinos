@@ -265,8 +265,8 @@ namespace Belos {
     mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
     // Default solver values.
-    static constexpr int maxIters_default_ = 1000;
-    static constexpr int numKrylovVecs_default_ = 300;
+    static constexpr int maxIters_default_ = 500;
+    static constexpr int numKrylovVecs_default_ = 40;
     static constexpr bool showMaxResNormOnly_default_ = false;
     static constexpr int verbosity_default_ = Belos::Errors;
     static constexpr int outputStyle_default_ = Belos::General;
@@ -719,48 +719,48 @@ ReturnType GCRSolMgr<ScalarType,MV,OP>::solve ()
           ////////////////////////////////////////////////////////////////////////////////////
           if ( convTest_->getStatus() == Passed ) {
 
-            // Figure out which linear systems converged.
-            std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
+            //// Figure out which linear systems converged.
+            //std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
 
-            // If the number of converged linear systems is equal to the
-            // number of current linear systems, then we are done with this block.
-            if (convIdx.size() == currRHSIdx.size())
+            //// If the number of converged linear systems is equal to the
+            //// number of current linear systems, then we are done with this block.
+            //if (convIdx.size() == currRHSIdx.size())
               break;  // break from while(1){gcr_iter->iterate()}
 
-            // Inform the linear problem that we are finished with this current linear system.
-            problem_->setCurrLS();
-
-            // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
-            int have = 0;
-            std::vector<int> unconvIdx(currRHSIdx.size());
-            for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
-              bool found = false;
-              for (unsigned int j=0; j<convIdx.size(); ++j) {
-                if (currRHSIdx[i] == convIdx[j]) {
-                  found = true;
-                  break;
-                }
-              }
-              if (!found) {
-                currIdx2[have] = currIdx2[i];
-                currRHSIdx[have++] = currRHSIdx[i];
-              }
-            }
-            currRHSIdx.resize(have);
-            currIdx2.resize(have);
-
-            // Set the remaining indices after deflation.
-            problem_->setLSIndex( currRHSIdx );
-
-            // Get the current residual vector.
-            std::vector<MagnitudeType> norms;
-            //R_0 = MVT::CloneCopy( *(gcr_iter->getNativeResiduals(&norms)),currIdx2 );
-            for (int i=0; i<have; ++i) { currIdx2[i] = i; }
-
-            // Set the new state and initialize the solver.
-            GCRIterationState<ScalarType,MV> defstate;
-            //defstate.R = R_0;
-            gcr_iter->initializeGCR(defstate);
+            //// Inform the linear problem that we are finished with this current linear system.
+            //problem_->setCurrLS();
+			//
+            //// Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
+            //int have = 0;
+            //std::vector<int> unconvIdx(currRHSIdx.size());
+            //for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
+            //  bool found = false;
+            //  for (unsigned int j=0; j<convIdx.size(); ++j) {
+            //    if (currRHSIdx[i] == convIdx[j]) {
+            //      found = true;
+            //      break;
+            //    }
+            //  }
+            //  if (!found) {
+            //    currIdx2[have] = currIdx2[i];
+            //    currRHSIdx[have++] = currRHSIdx[i];
+            //  }
+            //}
+            //currRHSIdx.resize(have);
+            //currIdx2.resize(have);
+			//
+            //// Set the remaining indices after deflation.
+            //problem_->setLSIndex( currRHSIdx );
+			//
+            //// Get the current residual vector.
+            //std::vector<MagnitudeType> norms;
+            ////R_0 = MVT::CloneCopy( *(gcr_iter->getNativeResiduals(&norms)),currIdx2 );
+            //for (int i=0; i<have; ++i) { currIdx2[i] = i; }
+			//
+            //// Set the new state and initialize the solver.
+            //GCRIterationState<ScalarType,MV> defstate;
+            ////defstate.R = R_0;
+            //gcr_iter->initializeGCR(defstate);
           }
 
           ////////////////////////////////////////////////////////////////////////////////////

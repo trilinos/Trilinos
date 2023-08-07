@@ -261,9 +261,9 @@ namespace Belos {
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
-    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >  lp_;
+    const Teuchos::RCP<OutputManager<ScalarType> >        om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >     stest_;
 
     //
     // Algorithmic parameters
@@ -290,19 +290,18 @@ namespace Belos {
     //
     // State Storage
     //
-    // Residual
-    Teuchos::RCP<MV> R_;
+    // Residual and temporary multivecs
+    Teuchos::RCP<MV> R_, AxR_, Pr_;
     //
-    Teuchos::RCP<MV> AxR_;
-    //
-    // Reference Norm
-    Teuchos::RCP<MV> Pr_;
+    // Residual Norm and Reference Norm
+    std::vector<MagnitudeType> norm_B_, norm_R_;
     //
     std::vector<ScalarType> pone_;
     std::vector<int> curIndex_, newIndex_;
     //
-    std::vector<Teuchos::RCP<MV> > U_;
-    std::vector<Teuchos::RCP<MV> > C_;
+    std::vector<Teuchos::RCP<MV> > U_, C_;
+    //
+    int myrank_;
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -369,12 +368,15 @@ namespace Belos {
       //AxR_ = Teuchos::rcp( new MV(MVT::GetGlobalLength(*tmp), numRHS_, true) );
       //Pr_  = Teuchos::rcp( new MV(MVT::GetGlobalLength(*tmp), numRHS_, true) );
 
+      MVT::MvInit(*R_);
       MVT::MvInit(*AxR_);
       MVT::MvInit(*Pr_);
 
       pone_.resize(numRHS_);
       curIndex_.resize(numRHS_);
       newIndex_.resize(numRHS_);
+      norm_B_.resize(numRHS_);
+      norm_R_.resize(numRHS_);
     }
     U_.resize(numRHS_);
     C_.resize(numRHS_);
@@ -443,11 +445,16 @@ namespace Belos {
 
     // R = Pr - R;
     axpy(one, *Pr_, pone_, *R_, *R_, true);
+	
+    // norm_B_ = MvNorm(Pr_)
+    MVT::MvNorm(*Pr_, norm_B_);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank_);
+    printf("   norm(Pr*B): %.16lf on rank %d\n", norm_B_[0], myrank_);
 
     // The solver is initialized
     initialized_ = true;
   }
-
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
@@ -465,9 +472,7 @@ namespace Belos {
 
     // Create convenience variable for one.
     const ScalarType one = SCT::one();
-
-    MagnitudeType alphaMin = 1.0e10;
-
+    //
     std::vector<MagnitudeType> nrmval(1);
     std::vector<ScalarType> val(1);
     std::vector<ScalarType> gcrAlpha(1);
@@ -509,6 +514,8 @@ namespace Belos {
           lp_->applyRightPrec(*AxR_sub, *C_sub);
         }
 
+        MagnitudeType alphaMin = 1.0e10;
+
         for (int j=0; j<std::min(numKrylovVecs_,iter_); j++) {
           if (j != curIndex_[i]) {
             //gcrAlpha = dotHerm(C[i](:,j),C[i](:,curIndex_[i])
@@ -532,7 +539,7 @@ namespace Belos {
         // update solution and residual
         // val = one/norm2(C[i](:,curIndex_[i]));
         MVT::MvNorm(*C_sub, nrmval);
-        val[0] = one/nrmval[0]; 
+        val[0] = one/nrmval[0];
 
         // U[i](:,curIndex_[i])=val*U[i](:,curIndex_[i]);
         // C[i](:,curIndex_[i])=val*C[i](:,curIndex_[i]);
@@ -542,14 +549,22 @@ namespace Belos {
         // val = dotHerm(C[i](:,curIndex_[i]), R(:,i));
         Teuchos::RCP<MV> R_sub = MVT::CloneViewNonConst(*R_, index1);
         MVT::MvDot(*R_sub, *C_sub, val);
-        
+
         // X(:,i) = X(:,i) + val*U[i](:,curIndex_[i]);
         Teuchos::RCP<MV> X_sub = MVT::CloneViewNonConst(*X, index1);
         axpy(one, *X_sub, val, *U_sub, *X_sub);
 
         // R(:,i) = R(:,i) - val*C[i](:,curIndex_[i]);
-		axpy(one, *R_sub, val, *C_sub, *R_sub, true);
+        axpy(one, *R_sub, val, *C_sub, *R_sub, true);
       } // end for(int i=0; i<numRHS_; i++)
+
+      // check converge myself
+      // norm_R_=MvNorm(R_);
+      MVT::MvNorm(*R_, norm_R_);
+      if (myrank_ == 0) {
+        printf("   Iter %d, relative residual %.16lf\n", iter_-1, norm_R_[0]/norm_B_[0]);
+      }
+
     } // end while (sTest_->checkStatus(this) != Passed)
   }
 
