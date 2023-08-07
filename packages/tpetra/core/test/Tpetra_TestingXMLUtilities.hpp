@@ -62,7 +62,7 @@ namespace Tpetra {
   class TestingXMLUtilities {
   public:
     std::string
-    reportWatchrXML(const std::string label_class,const std::string base_name, const Teuchos::Array<std::string> & names, const Teuchos::Array<T> & values, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+    reportWatchrXML(const std::string label_class,std::string units, const std::string base_name, const Teuchos::Array<std::string> & names, const Teuchos::Array<T> & values, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
       using Teuchos::Array;
       
       TEUCHOS_TEST_FOR_EXCEPTION(names.size()!=values.size(), std::runtime_error, "reportWatchrXML: names and values are not the same size");
@@ -149,7 +149,7 @@ namespace Tpetra {
         std::ofstream os(fullFile);
         Teuchos::Array<bool> printed(flat_names_.size(), false);
         os << "<?xml version=\"1.0\"?>\n";
-        os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+        os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\""<<units<<"\">\n";
         if(rawGitSHA)
           {
             std::string gitSHA(rawGitSHA);

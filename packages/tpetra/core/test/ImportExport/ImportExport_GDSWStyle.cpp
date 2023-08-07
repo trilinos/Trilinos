@@ -648,7 +648,7 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
     if(watchr_output) {
       out<<"Beginning Watchr output w/ "<<names.size()<<" records"<<std::endl;
       Tpetra::TestingXMLUtilities<double> XML;
-      std::string xmlOut = XML.reportWatchrXML("memory","GDSW Memory " + std::to_string(comm->getSize()) + " ranks",names,memory,comm);
+      std::string xmlOut = XML.reportWatchrXML("memory","KB","GDSW Memory " + std::to_string(comm->getSize()) + " ranks",names,memory,comm);
       if(xmlOut.size() != 0)
       out<<"XML output in: "<<xmlOut<<std::endl;
       

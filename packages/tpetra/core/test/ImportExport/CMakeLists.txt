@@ -33,7 +33,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
   ImportExport_GDSWStyle
   NAME GDSWStyle_BaselineTpetra
-  ARGS "--case=1"
+  ARGS "--case=1 --watchr-output"
   COMM mpi
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
@@ -44,7 +44,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   ImportExport_GDSWStyle
   NAME GDSWStyle_ImportSquareMatrix
-  ARGS "--case=2"
+  ARGS "--case=2 --watchr-output"
   COMM mpi
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
