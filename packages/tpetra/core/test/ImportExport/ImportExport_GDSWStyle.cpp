@@ -70,7 +70,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Tpetra_Import_Util.hpp"
-
+#include "Tpetra_TestingXMLUtilities.hpp"
 #include "GDSW_Proxy.hpp"
 
 
@@ -451,8 +451,7 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
 
 
   template<class SC, class LO, class GO, class NT>
-  void GDSWStyle_Test0(int run_case, bool & success) {
-  //  void GDSWStyle_Test0(RCP<const Comm<int> & comm, const int run_case, std::ostream & out, bool & success) {
+  void GDSWStyle_Test0(int run_case, bool watchr_output, bool & success ) {
     Teuchos::FancyOStream  out(Teuchos::rcpFromRef(std::cout));
 
     using map_type = Map<LO, GO, NT>;
@@ -464,10 +463,13 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     TpetraFunctions<SC,LO,GO,NT> tFunctions;
 
+    // diagnostic setup
+    Teuchos::Array<std::string> names;  names.reserve(50);
+    Teuchos::Array<double> memory;      memory.reserve(50);
+
     // create map
     RCP<const map_type > rowMap1to1 =  createContigMapWithNode<LO, GO, NT> (INVALID, 1000000, comm);
     size_t mem0 = get_memory_usage_now();
-
 
     // Create matrix
     RCP<crs_matrix_type> A = createLaplace1D<SC,LO,GO,NT>(rowMap1to1,out,debug);
@@ -528,20 +530,46 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
 
     std::cout<<"Orig matrix storage                           = "<< (mem1-mem0) <<std::endl;
     std::cout<<"Importer storage                              = "<< (mem2a-mem1) <<std::endl;
-    if(run_case == -1 || run_case == 1)
+    if(run_case == -1 || run_case == 1) {
       std::cout<<"1) Tpetra Importer+Import+FC storage          = "<< (mem2b-mem2a) <<std::endl;
-    if(run_case == -1 || run_case == 2)
+      names.push_back("Tpetra baseline");
+      memory.push_back(mem2b-mem2a);
+    }
+
+    if(run_case == -1 || run_case == 2) {
       std::cout<<"2) GDSW-proxy storage                         = "<< (mem3-mem2b) <<std::endl;
-    if(run_case == -1 || run_case == 3 || run_case == 5)
+      names.push_back("GDSW proxy");
+      memory.push_back(mem3-mem2b);
+    }
+
+    if(run_case == -1 || run_case == 3 || run_case == 5) {
       std::cout<<"3) importAndFillComplete storage              = "<< (mem4-mem3) <<std::endl;
-    if(run_case == -1 || run_case == 4)
+      names.push_back("importAndFillComplete");
+      memory.push_back(mem4-mem3);
+    }
+    if(run_case == -1 || run_case == 4) {
       std::cout<<"4) Import-based GDSW-proxy                    = "<< (mem5-mem4) <<std::endl;
-    if(run_case == -1 || run_case == 5)
+      names.push_back("Import-based GDSW-proxy");
+      memory.push_back(mem5-mem4);
+    }
+
+    if(run_case == -1 || run_case == 5) {
       std::cout<<"5) Locally filtered IACF                      = "<< (mem6-mem5) <<std::endl;
-    if(run_case == -1 || run_case == 6)
+      names.push_back("Locally filtered IACF");
+      memory.push_back(mem6-mem5);
+    }
+
+    if(run_case == -1 || run_case == 6) {
       std::cout<<"6) V2 Import-based GDSW-proxy                 = "<< (mem7-mem6) <<std::endl;
-    if(run_case == -1 || run_case == 7)
+      names.push_back("V2 Import-based GDSW");
+      memory.push_back(mem2b-mem2a);
+    }
+
+    if(run_case == -1 || run_case == 7) {
       std::cout<<"7) V3 Import-based GDSW-proxy                 = "<< (mem8-mem7) <<std::endl;
+      names.push_back("V3 Import-based GDSW");
+      memory.push_back(mem2b-mem2a);
+    }
 
     // Compare the output matrices
     bool result;
@@ -616,6 +644,16 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
       }
       TEST_EQUALITY( result, true );
     }
+
+    if(watchr_output) {
+      out<<"Beginning Watchr output w/ "<<names.size()<<" records"<<std::endl;
+      Tpetra::TestingXMLUtilities<double> XML;
+      std::string xmlOut = XML.reportWatchrXML("memory","GDSW Memory " + std::to_string(comm->getSize()) + " ranks",names,memory,comm);
+      if(xmlOut.size() != 0)
+      out<<"XML output in: "<<xmlOut<<std::endl;
+      
+    }
+                          
   }
 
 }// anonymous namespace
@@ -638,14 +676,14 @@ int main(int narg, char *arg[])
 
   
   Teuchos::CommandLineProcessor cmdp(false,true);
-  int run_case = -1;
-  cmdp.setOption("case", &run_case,
-                 "Which case to run");
+  int run_case = -1; cmdp.setOption("case", &run_case, "Which case to run");
+  bool watchr_output = false;  cmdp.setOption("watchr-output","no-watchr-output", &watchr_output, "Output memory data for watchr");
+
   if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
   bool success = true;
-  GDSWStyle_Test0<SC,LO,GO,NT>(run_case,success);
+  GDSWStyle_Test0<SC,LO,GO,NT>(run_case,watchr_output,success);
 
 
   if(!comm->getRank()) {
