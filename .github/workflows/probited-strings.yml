@@ -10,6 +10,7 @@ on:
   pull_request:
     branches:
       - 'develop'
+      - 'master'
 
 # The `jobs` key groups together all the jobs that run in the workflow file.
 jobs:
