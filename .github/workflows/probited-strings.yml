@@ -45,7 +45,10 @@ jobs:
           files=$(grep -l MPI_COMM_WORLD ${{steps.file_changes.outputs.files}} | grep packages/)
           if [ -n "${files}" ]
           then
-            echo -e "The following changed files contain MPI_COMM_WORLD, which is not allowed:\n${files}"
+            echo -e "\n#########################################################################"
+            echo -e "The following changed files contain MPI_COMM_WORLD, which is not allowed:"
+            echo -e "${files}"
+            echo -e "#########################################################################"
             exit 1
           else
             echo "MPI_COMM_WORLD not found; PASS"
