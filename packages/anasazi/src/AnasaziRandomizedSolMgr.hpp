@@ -53,7 +53,6 @@
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
 
-//TODO Check these includes!!
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziBasicOrthoManager.hpp"
@@ -199,90 +198,90 @@ namespace Anasazi {
         numIters_(0),
         trackResNorms_(true)
         {
-	TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
-        TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
-        TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+          TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+          TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
+          TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
-        whch_ = pl.get("Which",whch_);
-        TEUCHOS_TEST_FOR_EXCEPTION(whch_ != "LM" && whch_ != "LR",
-            AnasaziError,
-            "RandomizedSolMgr: \"Which\" parameter must be LM or LR. Other options not currently implemented."); //TODO Other options??
+          whch_ = pl.get("Which",whch_);
+          TEUCHOS_TEST_FOR_EXCEPTION(whch_ != "LM" && whch_ != "LR",
+              AnasaziError,
+              "RandomizedSolMgr: \"Which\" parameter must be LM or LR. Other options not currently implemented."); //TODO Other options??
 
-        tol_ = pl.get("Convergence Tolerance",tol_);
-        TEUCHOS_TEST_FOR_EXCEPTION(tol_ <= 0,
-            AnasaziError,
-            "RandomizedSolMgr: \"Tolerance\" parameter must be strictly positive.");
+          tol_ = pl.get("Convergence Tolerance",tol_);
+          TEUCHOS_TEST_FOR_EXCEPTION(tol_ <= 0,
+              AnasaziError,
+              "RandomizedSolMgr: \"Tolerance\" parameter must be strictly positive.");
 
-        // Create a formatted output stream to print to.
-        // See if user requests output processor.
-        osProc_ = pl.get("Output Processor", osProc_);
+          // Create a formatted output stream to print to.
+          // See if user requests output processor.
+          osProc_ = pl.get("Output Processor", osProc_);
 
-        // If not passed in by user, it will be chosen based upon operator type.
-        if (pl.isParameter("Output Stream")) {
-          osp_ = Teuchos::getParameter<Teuchos::RCP<Teuchos::FancyOStream> >(pl,"Output Stream");
-        }
-        else {
-          osp_ = OutputStreamTraits<OP>::getOutputStream (*problem_->getOperator(), osProc_);
-        }
+          // If not passed in by user, it will be chosen based upon operator type.
+          if (pl.isParameter("Output Stream")) {
+            osp_ = Teuchos::getParameter<Teuchos::RCP<Teuchos::FancyOStream> >(pl,"Output Stream");
+          }
+          else {
+            osp_ = OutputStreamTraits<OP>::getOutputStream (*problem_->getOperator(), osProc_);
+          }
 
-        // verbosity level
-        if (pl.isParameter("Verbosity")) {
-          if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
-            verb_ = pl.get("Verbosity", verb_);
-          } else {
-            verb_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
+          // verbosity level
+          if (pl.isParameter("Verbosity")) {
+            if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
+              verb_ = pl.get("Verbosity", verb_);
+            } else {
+              verb_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
+            }
+          }
+
+          // Orthogonalization type
+          ortho_ = pl.get("Orthogonalization","SVQB");
+
+          blockSize_= pl.get("Block Size",problem_->getNEV());
+          TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ <= 0,
+              AnasaziError,
+              "RandomizedSolMgr: \"Block Size\" parameter must be strictly positive.");
+
+          maxIters_ = pl.get("Maximum Iterations",maxIters_);
+          trackResNorms_ = pl.get("Track Residuals",true);
+
+          // How many iterations between orthogonalizations
+          if (pl.isParameter("Orthogonalization Frequency")) {
+            if (Teuchos::isParameterType<int>(pl,"Orthogonalization Frequency")) {
+              orthoFreq_ = pl.get("Orthogonalization Frequency", orthoFreq_);
+            } else {
+              orthoFreq_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Orthogonalization Frequency");
+            }
+          }
+
+          // How many iterations between checking the residuals
+          if (pl.isParameter("Residual Frequency")) {
+            if (Teuchos::isParameterType<int>(pl,"Residual Frequency")) {
+              resFreq_ = pl.get("Residual Frequency", resFreq_);
+            } else {
+              resFreq_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Residual Frequency");
+            }
           }
         }
-
-        // Orthogonalization type
-        ortho_ = pl.get("Orthogonalization","SVQB");
-
-        blockSize_= pl.get("Block Size",problem_->getNEV());
-        TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ <= 0,
-            AnasaziError,
-            "RandomizedSolMgr: \"Block Size\" parameter must be strictly positive.");
-
-        maxIters_ = pl.get("Maximum Iterations",maxIters_);
-        trackResNorms_ = pl.get("Track Residuals",true);
-
-        // How many iterations between orthogonalizations
-        if (pl.isParameter("Orthogonalization Frequency")) {
-          if (Teuchos::isParameterType<int>(pl,"Orthogonalization Frequency")) {
-            orthoFreq_ = pl.get("Orthogonalization Frequency", orthoFreq_);
-          } else {
-            orthoFreq_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Orthogonalization Frequency");
-          }
-        }
-
-        // How many iterations between checking the residuals
-        if (pl.isParameter("Residual Frequency")) {
-          if (Teuchos::isParameterType<int>(pl,"Residual Frequency")) {
-            resFreq_ = pl.get("Residual Frequency", resFreq_);
-          } else {
-            resFreq_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Residual Frequency");
-          }
-        }
-      }
 
     ////////////////////////////////////////////////////////////////////////////////////////
     template<class ScalarType, class MV, class OP>
       ReturnType
       RandomizedSolMgr<ScalarType,MV,OP>::solve() {
 
-        // sort manager
+        // Sort manager
         Teuchos::RCP<BasicSort<MT> > sorter = Teuchos::rcp( new BasicSort<MT> );
         sorter->setSortType(whch_);
-        std::vector<int> order(blockSize_); 
+        std::vector<int> order(blockSize_);     /* Permutation array for sorting the eigenvectors */ 
         SolverUtils<ScalarType,MV,OP> msutils;
 
-        // output manager
+        // Output and solution managers
         Teuchos::RCP<OutputManager<ScalarType> > printer = Teuchos::rcp( new OutputManager<ScalarType>(verb_,osp_) );
         Eigensolution<ScalarType,MV> sol;
         sol.numVecs = 0;
         problem_->setSolution(sol);	/* In case there is an exception thrown */
         bool converged = false;
 
-	// ortho manager 
+        // ortho manager 
         Teuchos::RCP<Anasazi::OrthoManager<ScalarType,MV> > orthoMgr;
         int rank;
         if (ortho_=="SVQB") {
@@ -308,7 +307,6 @@ namespace Anasazi {
         Teuchos::RCP<MV> randVecs;
         TEUCHOS_TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument,
             "Anasazi::Randomized: eigenproblem did not specify initial vectors to clone from.");
-        //std::cout << "DEBUG: past teuchos check for getInitVec." << std::endl;
         if(MVT::GetNumberVecs(*(problem_->getInitVec()))==blockSize_){
           randVecs = MVT::CloneCopy(*(problem_->getInitVec()));
         } else {
@@ -325,7 +323,6 @@ namespace Anasazi {
         } 	/* End Ortho Timer */
 
         /* Set up variables for residual computation ------------------------------ */
-
         int i, j; 	// Loop variables 
 
         /* For computing H = Q^TAQ. (RR projection) */ 
@@ -348,8 +345,8 @@ namespace Anasazi {
         numIters_ = 0;
 
         /* For computing the residuals of the eigenproblem */
-	int numev;
-	std::vector<Value<ScalarType>> EigenVals(blockSize_); 
+        int numev;
+        std::vector<Value<ScalarType>> EigenVals(blockSize_); 
         Teuchos::RCP<MV> Avecs, evecs;
         Teuchos::SerialDenseMatrix<OT,ScalarType> T (blockSize_, blockSize_ );
         std::vector<MT> normV( blockSize_ );
@@ -364,10 +361,10 @@ namespace Anasazi {
           // Perform multiplies by A and Rayleigh-Ritz
           for( i = 0; i < maxIters_; i++ ){
             if (converged == true) {
-	      numFailed_ = 0;
-	      numIters_ = i+1;
-	      break;
-	    }
+              numFailed_ = 0;
+              numIters_ = i-1;
+              break;
+            }
 
             { /* Begin Operator Timer */
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -385,6 +382,7 @@ namespace Anasazi {
                 if( rank < blockSize_ ) std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
               } /* End Ortho Timer */
             } /* End  Ortho */
+
             if (resFreq_ > 0 && i % resFreq_ == 0) {
 
               // Build the H matrix to run Rayleigh-Ritz on
@@ -399,7 +397,7 @@ namespace Anasazi {
               // Run GEEV a second time to solve for Harmonic Ritz Values:
               lapack.GEEV('N','V',blockSize_,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
               if(info != 0) printer->stream(IterationDetails) << "Warning!! Anasazi::RandomSolver GEEV solve possible failure: info = " << info << std::endl;
-	      lwork = -1;
+              lwork = -1;
 
               // sort the eigenvalues and permute the eigenvectors appropriately
               sorter->sort(evals_real,evals_imag,Teuchos::rcpFromRef(order),blockSize_);
@@ -415,33 +413,33 @@ namespace Anasazi {
 
               // Copy only the eigenvectors we asked for to soln. 
               sol.Evecs = MVT::CloneCopy(*TmpVecs, Teuchos::Range1D(0,sol.numVecs-1));
-	      sol.numVecs = blockSize_;
-	      sol.Evals = EigenVals;
+              sol.numVecs = blockSize_;
+              sol.Evals = EigenVals;
 
-	      // Extract evects/evals from solution
+              // Extract evects/evals from solution
               evecs = sol.Evecs;
               numev = sol.numVecs;       
 
-	      // Verify residuals by hand
-	      if (numev > 0 ) {
+              // Verify residuals by hand
+              if (numev > 0 ) {
                 for ( j = 0; j < numev; ++j ) T(j, j) = sol.Evals[j].realpart;
 
                 Avecs = MVT::Clone(*evecs, numev);
                 OPT::Apply(*(problem_->getOperator()), *evecs, *Avecs);
 
-                MVT::MvTimesMatAddMv(-ONE, *evecs, T, ONE, *Avecs);
+                MVT::MvTimesMatAddMv(-ONE, *evecs, T, ONE, *Avecs);   /* Residuals = A*evecs - evecs*lambda */
                 MVT::MvNorm(*Avecs, normV);
 
-	        numFailed_ = 0;
+                numFailed_ = 0;
                 converged = true;
                 for ( j = 0; j < numev; ++j )
                 {
                   if ( SCT::magnitude(sol.Evals[j].realpart) != SCT::zero() ) normV[j] = SCT::magnitude(normV[j]/sol.Evals[j].realpart);
                   if (normV[j] > tol_) {
-	            numFailed_++;
-		    converged = false;
-		    break;
-		  }
+                    numFailed_++;
+                    converged = false;
+                    break;
+                  }
                 }
               } // End residual computation              
             } // End Rayleigh-Ritz solve
@@ -456,8 +454,6 @@ namespace Anasazi {
               rank = orthoMgr->normalize(*randVecs);
               if( rank < blockSize_ ) std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
             } /* End Ortho Timer */
-
-            //std::cout  << "DEBUG: Past orthog." << std::endl;
 
             OPT::Apply( *(problem_->getOperator()), *randVecs, *TmpVecs ); 
             MVT::MvTransMv(ONE, *randVecs, *TmpVecs, H);
@@ -481,46 +477,40 @@ namespace Anasazi {
              * -------------------------------------------------------------------------- */
             //Find workspace size for DGEEV:
             lapack.GEEV('N','V',blockSize_,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
+            if(info != 0) printer->stream(IterationDetails) << "Warning!! Anasazi::RandomSolver GEEV solve possible failure: info = " << info << std::endl;
+
             lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
             work.resize( lwork );
 
             // Solve for Harmonic Ritz Values:
             lapack.GEEV('N','V',blockSize_,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
-
             if(info != 0) printer->stream(IterationDetails) << "Warning!! Anasazi::RandomSolver GEEV solve possible failure: info = " << info << std::endl;
-            
-            // std::cout << "DEBUG: Past small eval probl." << std::endl;
 
             // Sort the eigenvalues and permute the eigenvectors appropriately
             sorter->sort(evals_real,evals_imag,Teuchos::rcpFromRef(order),blockSize_);
             msutils.permuteVectors(order, evects);
 
-            // std::cout << "DEBUG: past sort statement. sol.numVecs = " << sol.numVecs << std::endl;
-
             for( j = 0; j < blockSize_; j++){
               EigenVals[j].realpart = evals_real[j];
               EigenVals[j].imagpart = evals_imag[j];
             }
-	    sol.Evals = EigenVals;
+            sol.Evals = EigenVals;
 
             // Project Evects back up to large problem and permute
             MVT::MvTimesMatAddMv(ONE,*randVecs,evects, 0.0,*TmpVecs);
-            // std::cout << "DEBUG: Past computing full evects. " << std::endl;
 
             //------Post-Solve Processing----------------------------
             //Copy only the eigenvectors we asked for to soln. 
-	    sol.numVecs = blockSize_;
+            sol.numVecs = blockSize_;
             sol.Evecs = MVT::CloneCopy(*TmpVecs, Teuchos::Range1D(0,sol.numVecs-1));
-	    numIters_ = maxIters_;
+            numIters_ = maxIters_;
 
           } // End converged == false
-
         } // End solve timer
 
         // Send the solution to the eigenproblem
         problem_->setSolution(sol);
         printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
-        std::cout << "DEBUG: Set solution successfully. Returning from eigensolver." << std::endl;
 
         // print timing information
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -528,11 +518,11 @@ namespace Anasazi {
 #endif
 
         if (converged){
-	  std::cout << "Convergence: SUCCESS" << std::endl;
-	  return Converged;
+          std::cout << "Convergence: SUCCESS" << std::endl;
+          return Converged;
         }
 
-	std::cout << "Convergence: FAIL" << std::endl;
+        std::cout << "Convergence: FAIL" << std::endl;
         return Unconverged;
 
       } // End Solve function
