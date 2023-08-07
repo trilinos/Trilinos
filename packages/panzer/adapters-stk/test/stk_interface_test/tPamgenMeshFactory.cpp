@@ -89,6 +89,7 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
   {
     out << "\nCreating pamgen mesh." << std::endl;
     RCP<stk::io::StkMeshIoBroker> broker = rcp(new stk::io::StkMeshIoBroker(MPI_COMM_WORLD));
+    broker->use_simple_fields();
     broker->add_mesh_database("pamgen_test.gen", "pamgen", stk::io::READ_MESH);
     broker->create_input_mesh();
     metaData = Teuchos::rcp(broker->meta_data_ptr());
@@ -172,6 +173,7 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
   {
     out << "\nReading Exodus file." << std::endl;
     RCP<stk::io::StkMeshIoBroker> broker = rcp(new stk::io::StkMeshIoBroker(MPI_COMM_WORLD));
+    broker->use_simple_fields();
     broker->add_mesh_database(output_exodus_file_name, "exodus", stk::io::READ_MESH);
     broker->create_input_mesh();
     metaData = Teuchos::rcp(broker->meta_data_ptr());
