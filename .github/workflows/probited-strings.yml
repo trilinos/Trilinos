@@ -48,5 +48,5 @@ jobs:
             grep MPI_COMM_WORLD ${{steps.file_changes.outputs.files}} || true
             exit 1
           else
-            echo "MPI_COMM_WORLD not found; PASS
+            echo "MPI_COMM_WORLD not found; PASS"
           fi
