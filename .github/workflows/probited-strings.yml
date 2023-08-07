@@ -42,10 +42,10 @@ jobs:
       # This step uses the `run` command to execute a script that is stored in the repository at `script/rendered-content-link-checker.mjs` and passes all the parameters it needs to run.
       - name: Find illegal MPI_COMM_WORLD strings
         run: |
-          if grep MPI_COMM_WORLD ${{steps.file_changes.outputs.files}};
+          files=$(grep -l MPI_COMM_WORLD ${{steps.file_changes.outputs.files}})
+          if ${files};
           then
-            echo "The following changed files contain MPI_COMM_WORLD, which is not allowed:"
-            grep -l MPI_COMM_WORLD ${{steps.file_changes.outputs.files}} || true
+            echo -e "The following changed files contain MPI_COMM_WORLD, which is not allowed:\n${files}"
             exit 1
           else
             echo "MPI_COMM_WORLD not found; PASS"
