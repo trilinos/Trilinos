@@ -44,7 +44,7 @@ jobs:
         run: |
           if ! grep MPI_COMM_WORLD ${{steps.file_changes.outputs.files}};
           then
-            echo "The following changed files contain MPI_COMM_WORLD, which is not allowed:
+            echo "The following changed files contain MPI_COMM_WORLD, which is not allowed:"
             grep MPI_COMM_WORLD ${{steps.file_changes.outputs.files}}
             exit 1
           fi
