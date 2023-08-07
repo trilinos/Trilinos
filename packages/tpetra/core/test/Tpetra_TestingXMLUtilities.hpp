@@ -61,8 +61,34 @@ namespace Tpetra {
   template<class T>
   class TestingXMLUtilities {
   public:
+    /// \brief Reporting of data in a Watchr-compatible XML format
+    ///
+    /// \param label_class [in] - XML object type to output
+    ///
+    /// \param units [in] - Units to output in reporting
+    ///
+    /// \param base_name [in] - base name to prepend to the XML "name" in the individual line output
+    ///
+    /// \param names [in] - List of individual outputs
+    ///
+    /// \param values [in] - Values for individual output (these will be gathered across all MPI ranks)
+    ///
+    /// \param comm [in] - Teuchos::Comm for reductions
+    ///
+    /// \warning This code is unlikely to work correctly if the "names" don't all appear on each rank in the same order"
+    ///
+    ///
+    /// Sample output (items in parentheses are input parameters, items in braces are enviornment varaibels
+    ///
+    /// <?xml version="1.0"?>
+    /// <performance-report date="2023-08-07T20:38:11" name="nightly_run_2023_08_07" time-units="(units)">
+    /// <metadata key="Trilinos Version" value="{TRILINOS_GIT_SHA}"/>
+    /// <memory name="{WATCHR_BUILD_NAME}: (base_name) (names[0])" value="values[0]"/>
+    /// <memory name="{WATCHR_BUILD_NAME}: (base_name) (names[1])" value="values[1]"/>
+    /// <memory name="{WATCHR_BUILD_NAME}: (base_name) (names[2])" value="values[2]"/>
+    /// </performance-report>
     std::string
-    reportWatchrXML(const std::string label_class,std::string units, const std::string base_name, const Teuchos::Array<std::string> & names, const Teuchos::Array<T> & values, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+    reportWatchrXML(const std::string label_class,const std::string units, const std::string base_name, const Teuchos::Array<std::string> & names, const Teuchos::Array<T> & values, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
       using Teuchos::Array;
       
       TEUCHOS_TEST_FOR_EXCEPTION(names.size()!=values.size(), std::runtime_error, "reportWatchrXML: names and values are not the same size");
