@@ -65,6 +65,7 @@
 #include <KokkosSparse_sptrsv.hpp>
 #include <KokkosSparse_trsv.hpp>
 #include <shylu_fastutil.hpp>
+#include <shylu_fastilu.hpp>
 
 //whether to print extra debug output at runtime to stdout
 //comment out next line to disable
@@ -1590,6 +1591,50 @@ class FastILUPrec
             initGuessPrec->setValues(aValIn_);
           }
         }
+
+    template <typename RHS>
+  void verify(const RHS& rhs, const std::string& name, const bool initialize_only=false)
+  {
+    std::cout << "JGF verifying: " << name << std::endl;
+
+    Kokkos::fence();
+
+    // verify a this using brs and a rhs using crs
+    assert(nRows*blockCrsSize == rhs.nRows);
+    assert(guessFlag == rhs.guessFlag);
+    assert(nFact == rhs.nFact);
+    assert(nTrisol == rhs.nTrisol);
+    assert(level == rhs.level);
+    assert(blkSzILU == rhs.blkSzILU);
+    assert(blkSz == rhs.blkSz);
+    assert(rhs.blockCrsSize == 1);
+    assert(omega == rhs.omega);
+    assert(shift == rhs.shift);
+
+    assert(!useMetis);
+    assert(useMetis == rhs.useMetis);
+
+    assert(compare_matrices(aRowMapIn, aColIdxIn, aValIn, blockCrsSize, rhs.aRowMapIn, rhs.aColIdxIn, rhs.aValIn, rhs.blockCrsSize, "Ain"));
+
+    assert(compare_matrices(aRowMap_, aColIdx_, aVal_, blockCrsSize, rhs.aRowMap_, rhs.aColIdx_, rhs.aVal_, rhs.blockCrsSize, "A_"));
+
+    if (!initialize_only) {
+      assert(compare_matrices(aRowMap, aColIdx, aVal, blockCrsSize, rhs.aRowMap, rhs.aColIdx, rhs.aVal, rhs.blockCrsSize, "A"));
+
+      assert(compare_views(diagFact, rhs.diagFact, "diagFact"));
+      assert(compare_views(diagElems, rhs.diagElems, "diagElems"));
+
+      assert(compare_matrices(lRowMap, lColIdx, lVal, blockCrsSize, rhs.lRowMap, rhs.lColIdx, rhs.lVal, 1, "L"));
+
+      assert(compare_matrices(uRowMap, uColIdx, uVal, blockCrsSize, rhs.uRowMap, rhs.uColIdx, rhs.uVal, 1, "U"));
+
+      assert(compare_matrices(utRowMap, utColIdx, utVal, blockCrsSize, rhs.utRowMap, rhs.utColIdx, rhs.utVal, 1, "Ut"));
+    }
+
+    if ((level > 0) && (guessFlag != 0)) {
+      initGuessPrec->verify(*rhs.initGuessPrec, name, initialize_only);
+    }
+  }
 
         //Actual computation phase.
         //blkSzILU is the chunk size (hard coded).

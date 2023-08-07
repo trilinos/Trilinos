@@ -67,7 +67,7 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     typedef typename Base::TRowMatrix TRowMatrix;
     typedef typename Base::ImplScalar ImplScalar;
     typedef typename Base::ImplScalarArray ImplScalarArray;
-  typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, false> LocalFILU;
+    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, false> LocalFILU;
     typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, true> LocalFILUB;
     typedef fastilu_orig::FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space> LocalFILUOrig;
 
