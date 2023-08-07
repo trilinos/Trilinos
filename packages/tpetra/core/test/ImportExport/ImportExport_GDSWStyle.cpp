@@ -649,8 +649,8 @@ int main(int narg, char *arg[])
 
 
   if(!comm->getRank()) {
-    if(success) std::cout<<"TEST PASSED"<<std::endl;
-    else std::cout<<"TEST FAILED"<<std::endl;
+    if(success) std::cout<<"End Result: TEST PASSED"<<std::endl;
+    else std::cout<<"End Result: TEST FAILED"<<std::endl;
   }
 }
 

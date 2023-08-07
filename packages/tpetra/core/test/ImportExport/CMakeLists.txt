@@ -19,14 +19,37 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+
+
+### Import memory testing for GDSW ###
 # This test only makes sense in an MPI build with > 1 processes.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   ImportExport_GDSWStyle
   SOURCES
   ImportExport_GDSWStyle.cpp
   COMM mpi
-  NUM_MPI_PROCS 2-4
+  )
+
+TRIBITS_ADD_TEST(
+  ImportExport_GDSWStyle
+  NAME GDSWStyle_BaselineTpetra
+  ARGS "--case=1"
+  COMM mpi
+  NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES BASIC PERFORMANCE
+  )
+
+TRIBITS_ADD_TEST(
+  ImportExport_GDSWStyle
+  NAME GDSWStyle_ImportSquareMatrix
+  ARGS "--case=2"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES BASIC PERFORMANCE
   )
 
 
