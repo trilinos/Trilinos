@@ -50,7 +50,7 @@
 #define __INTREPID2_HCURL_TRI_IN_FEM_DEF_HPP__
 
 #include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
-#include "Intrepid2_CubatureDirectTriDefault.hpp"
+#include "Intrepid2_CubatureDirectTriSymmetric.hpp"
 
 namespace Intrepid2 {
 
@@ -249,7 +249,7 @@ namespace Intrepid2 {
 
     // now I need to integrate { (x,y) \times phi } against the big basis
     // first, get a cubature rule.
-    CubatureDirectTriDefault<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
+    CubatureDirectTriSymmetric<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> cubPoints("Hcurl::Tri::In::cubPoints", myCub.getNumPoints() , spaceDim );
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> cubWeights("Hcurl::Tri::In::cubWeights", myCub.getNumPoints() );
     myCub.getCubature( cubPoints , cubWeights );

@@ -666,7 +666,7 @@ namespace Intrepid2 {
         \f$DF\f$ is the Jacobian of the map \f$F\f$.
 
         \param  outputVals       [out] - Output array with reference HCURL data, indexed by (C,P,D)
-        \param  jacobianInverse  [in]  - Input array containing the Jacobian, indexed by (C,P,D,D)
+        \param  jacobian         [in]  - Input array containing the Jacobian, indexed by (C,P,D,D)
         \param  inputVals        [in]  - Input array of HCURL data in physical space, indexed by (C,P,D).
 
     */
