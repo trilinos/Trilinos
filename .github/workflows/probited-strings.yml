@@ -46,7 +46,7 @@ jobs:
           if [ -n "${files}" ]
           then
             echo -e "\n#########################################################################"
-            echo -e "The following changed files contain MPI_COMM_WORLD, which is not allowed:"
+            echo -e "The following changed files contain MPI_COMM_WORLD, which is not allowed (xSDK policy M3):"
             echo -e "${files}"
             echo -e "#########################################################################"
             exit 1
