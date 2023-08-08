@@ -11,7 +11,6 @@
 
 #include "TrilinosSS_config.h"
 #include "trilinos_klu_internal.h"
-#include "omp.h"
 
 Int TRILINOS_KLU_tsolve
 (
