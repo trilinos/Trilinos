@@ -527,10 +527,7 @@ void TpetraFunctions<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 importSquareMatrixFromImporter4(RCP<const CrsMatrix> inputMatrix, 
                                RCP<const Import> importer,
                                 RCP<CrsMatrix> & outputMatrix) {  
-  // Approach:  Modify the packing to only pack the rows we need, then use the IAFC comm & unpack path
-  using LO = LocalOrdinal;
-  using GO = GlobalOrdinal;
-
+  // Approach:  Modify the packing to only pack the rows we need, then use the IAFC comm & unpack pat
 
   // This will need to get Kokkos-ified later, but for now this is fine
   /*
