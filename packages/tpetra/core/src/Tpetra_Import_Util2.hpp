@@ -1060,7 +1060,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
     }
   });
 
-  Kokkos::View<int*> PIDList_view("PIDList", NumRemoteColGIDs);
+  Kokkos::View<int*, execution_space> PIDList_view("PIDList", NumRemoteColGIDs);
   auto PIDList_host = Kokkos::create_mirror_view(PIDList_view);
   
   Kokkos::View<int*> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
@@ -1077,8 +1077,8 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
     }
   });
   
-  std::cout << "Num Local GIDs: " << NumLocalColGIDs << "with rank " << myPID << std::endl;
-  std::cout << "Num Remote GIDs: " << NumRemoteColGIDs << "with rank " << myPID << std::endl; 
+  // std::cout << "Num Local GIDs: " << NumLocalColGIDs << " with rank " << myPID << std::endl;
+  // std::cout << "Num Remote GIDs: " << NumRemoteColGIDs << " with rank " << myPID << std::endl; 
 
 
   // Possible short-circuit: If all domain map GIDs are present as
@@ -1126,12 +1126,12 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
     // Make a subview of ColIndices for remote GID sorting
     auto ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs, ColIndices_view.size()));
   
-    std::cout << "Max PID: " << PID_max << " with rank " << myPID << std::endl;
+    // std::cout << "Max PID: " << PID_max << " with rank " << myPID << std::endl;
   
     // Make binOp with bins = PID_max + 1, min = 0, max = PID_max
     BinSortOpPID binOp2(PID_max+1, 0, PID_max);
     
-    std::cout <<"Test" << std::endl;
+    // std::cout <<"Test" << std::endl;
   
     // Sort External column indices so that all columns coming from a
     // given remote processor are contiguous.  This is a sort with one
@@ -1160,12 +1160,6 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
     // order. NOTE: I don't know if the number of externals associated
     // with a given remote processor is known at this point ... so I
     // count them here.
-  
-    int ColIndices_max = 0;
-    Kokkos::parallel_reduce(ColIndices_host.size(), KOKKOS_LAMBDA(const int i, int& max) {
-      if(max < int(ColIndices_view[i])) max = int(ColIndices_view[i]);
-    }, Kokkos::Max<int>(ColIndices_max));
-  
     LO StartCurrent = 0, StartNext = 1;
     while(StartNext < NumRemoteColGIDs) {
       if(PIDList_host[StartNext] == PIDList_host[StartNext-1]) {
