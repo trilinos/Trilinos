@@ -66,12 +66,8 @@ ProjectionTools<DeviceType>::getHVolEvaluationPoints(typename BasisType::ScalarV
     const BasisType* cellBasis,
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
     const EvalPointsType ePointType) {
-  ordinal_type dim = cellBasis->getBaseCellTopology().getDimension();
-  auto refEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(dim,0,ePointType));
-  auto ePointsRange  = projStruct->getPointsRange(ePointType);
-  RealSpaceTools<DeviceType>::clone(Kokkos::subview(ePoints, Kokkos::ALL(), ePointsRange(dim, 0), Kokkos::ALL()), refEPoints);
+   RealSpaceTools<DeviceType>::clone(ePoints, projStruct->getAllEvalPoints(ePointType));
 }
-
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -82,6 +78,20 @@ void
 ProjectionTools<DeviceType>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
     const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
     const typename BasisType::ScalarViewType targetEPoints,
+    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
+    const BasisType* cellBasis,
+    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
+      getHVolBasisCoeffs(basisCoeffs, targetAtTargetEPoints, orts, cellBasis, projStruct);
+}
+
+template<typename DeviceType>
+template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
+typename funValsValueType, class ...funValsProperties,
+typename BasisType,
+typename ortValueType,class ...ortProperties>
+void
+ProjectionTools<DeviceType>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
+    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
@@ -106,14 +116,11 @@ ProjectionTools<DeviceType>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   ScalarViewType basisAtBasisEPoints("basisAtBasisEPoints", 1, basisCardinality, numBasisEPoints);
   ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints", basisCardinality, numTargetEPoints);
 
-  ScalarViewType basisEPoints("basisEPoints",numCells,projStruct->getNumBasisEvalPoints(), dim);
-  getHVolEvaluationPoints(basisEPoints, orts, cellBasis, projStruct, EvalPointsType::BASIS);
+  auto basisEPoints = projStruct->getAllEvalPoints(EvalPointsType::BASIS);
+  auto targetEPoints = projStruct->getAllEvalPoints(EvalPointsType::TARGET);
 
-  cellBasis->getValues(Kokkos::subview(basisAtBasisEPoints, 0, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(basisEPoints,0, Kokkos::ALL(), Kokkos::ALL()));
-  if(targetEPoints.rank()==3)
-    cellBasis->getValues(basisAtTargetEPoints, Kokkos::subview(targetEPoints, 0, Kokkos::ALL(), Kokkos::ALL()));
-  else
-    cellBasis->getValues(basisAtTargetEPoints, targetEPoints);
+  cellBasis->getValues(Kokkos::subview(basisAtBasisEPoints, 0, Kokkos::ALL(), Kokkos::ALL()), basisEPoints);
+  cellBasis->getValues(basisAtTargetEPoints, targetEPoints);
 
   ScalarViewType weightedBasisAtTargetEPoints("weightedBasisAtTargetEPoints_",numCells, basisCardinality, numTargetEPoints);
   ScalarViewType weightedBasisAtBasisEPoints("weightedBasisAtBasisEPoints", 1, basisCardinality, numBasisEPoints);
