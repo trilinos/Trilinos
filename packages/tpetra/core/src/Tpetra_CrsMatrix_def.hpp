@@ -4529,7 +4529,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       );
       this->checkInternalState ();
     }
-  } //fillComplete(domainMap, rangeMap, params)
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -7914,12 +7914,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const size_t NumSameIDs = rowTransfer.getNumSameIDs();
     ArrayView<const LO> ExportLIDs = reverseMode ?
       rowTransfer.getRemoteLIDs () : rowTransfer.getExportLIDs ();
-    auto RemoteLIDs = reverseMode ?
-      rowTransfer.getExportLIDs_dv() : rowTransfer.getRemoteLIDs_dv();
-    auto PermuteToLIDs = reverseMode ?
-      rowTransfer.getPermuteFromLIDs_dv() : rowTransfer.getPermuteToLIDs_dv();
-    auto PermuteFromLIDs = reverseMode ?
-      rowTransfer.getPermuteToLIDs_dv() : rowTransfer.getPermuteFromLIDs_dv();
+    ArrayView<const LO> RemoteLIDs = reverseMode ?
+      rowTransfer.getExportLIDs () : rowTransfer.getRemoteLIDs ();
+    ArrayView<const LO> PermuteToLIDs = reverseMode ?
+      rowTransfer.getPermuteFromLIDs () : rowTransfer.getPermuteToLIDs ();
+    ArrayView<const LO> PermuteFromLIDs = reverseMode ?
+      rowTransfer.getPermuteToLIDs () : rowTransfer.getPermuteFromLIDs ();
     Distributor& Distor = rowTransfer.getDistributor ();
 
     // Owning PIDs
@@ -8114,14 +8114,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
     if (constantNumPackets == 0) {
       destMat->reallocArraysForNumPacketsPerLid (ExportLIDs.size (),
-                                                 RemoteLIDs.view_host().size ());
+                                                 RemoteLIDs.size ());
     }
     else {
       // There are a constant number of packets per element.  We
       // already know (from the number of "remote" (incoming)
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
-      const size_t rbufLen = RemoteLIDs.view_host().size() * constantNumPackets;
+      const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
       destMat->reallocImportsIfNeeded (rbufLen, false, nullptr);
     }
     }
@@ -8445,48 +8445,52 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     }
 
+    /*********************************************************************/
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
     // Backwards compatibility measure.  We'll use this again below.
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize"))));
+#endif
+    destMat->numImportPacketsPerLID_.sync_host ();
+    Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
+      getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
+    destMat->imports_.sync_host ();
+    Teuchos::ArrayView<const char> hostImports =
+      getArrayViewFromDualView (destMat->imports_);
 
-    // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
-    // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
-    // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
-    destMat->numImportPacketsPerLID_.modify_host(); //FIXME
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "Calling unpackAndCombineWithOwningPIDsCount"
+         << std::endl;
+      std::cerr << os.str ();
+    }
+    size_t mynnz =
+      unpackAndCombineWithOwningPIDsCount (*this,
+                                           RemoteLIDs,
+                                           hostImports,
+                                           numImportPacketsPerLID,
+                                           constantNumPackets,
+                                           INSERT,
+                                           NumSameIDs,
+                                           PermuteToLIDs,
+                                           PermuteFromLIDs);
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "unpackAndCombineWithOwningPIDsCount returned "
+         << mynnz << std::endl;
+      std::cerr << os.str ();
+    }
+    size_t N = BaseRowMap->getLocalNumElements ();
 
-#  ifdef HAVE_TPETRA_MMM_TIMINGS
-    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
-#  endif
-    ArrayRCP<size_t> CSR_rowptr;
+    // Allocations
+    ArrayRCP<size_t> CSR_rowptr(N+1);
     ArrayRCP<GO> CSR_colind_GID;
     ArrayRCP<LO> CSR_colind_LID;
     ArrayRCP<Scalar> CSR_vals;
-
-    destMat->imports_.sync_device ();
-    destMat->numImportPacketsPerLID_.sync_device ();
-
-    size_t N = BaseRowMap->getLocalNumElements ();
-
-    const Kokkos::View<LO const *, typename Node::device_type> RemoteLIDs_d = RemoteLIDs.view_device();
-    const Kokkos::View<LO const *, typename Node::device_type> PermuteToLIDs_d = PermuteToLIDs.view_device();
-    const Kokkos::View<LO const *, typename Node::device_type> PermuteFromLIDs_d = PermuteFromLIDs.view_device();
-    //auto PermuteToLIDs_d = PermuteToLIDs.view_device(); //FAILS
-    Details::unpackAndCombineIntoCrsArrays(
-                                   *this, 
-                                   RemoteLIDs_d,
-                                   destMat->imports_.view_device(),                //hostImports
-                                   destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
-                                   NumSameIDs,
-                                   PermuteToLIDs_d,
-                                   PermuteFromLIDs_d,
-                                   N,
-                                   MyPID,
-                                   CSR_rowptr,
-                                   CSR_colind_GID,
-                                   CSR_vals,
-                                   SourcePids(),
-                                   TargetPids);
+    CSR_colind_GID.resize (mynnz);
+    CSR_vals.resize (mynnz);
 
     // If LO and GO are the same, we can reuse memory when
     // converting the column indices from global to local indices.
@@ -8494,14 +8498,44 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO> (CSR_colind_GID);
     }
     else {
-      CSR_colind_LID.resize (CSR_colind_GID.size());
+      CSR_colind_LID.resize (mynnz);
     }
-    CSR_colind_LID.resize (CSR_colind_GID.size());
-    size_t mynnz = CSR_vals.size();
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    tmCopySPRdata = Teuchos::null;
+    tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC copy same-perm-remote data"))));
+#endif
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "Calling unpackAndCombineIntoCrsArrays"
+         << std::endl;
+      std::cerr << os.str ();
+    }
+    // FIXME (mfh 15 May 2014) Why can't we abstract this out as an
+    // unpackAndCombine method on a "CrsArrays" object?  This passing
+    // in a huge list of arrays is icky.  Can't we have a bit of an
+    // abstraction?  Implementing a concrete DistObject subclass only
+    // takes five methods.
+    unpackAndCombineIntoCrsArrays (*this, 
+                                   RemoteLIDs,
+                                   hostImports,
+                                   numImportPacketsPerLID,
+                                   constantNumPackets,
+                                   INSERT,
+                                   NumSameIDs,
+                                   PermuteToLIDs,
+                                   PermuteFromLIDs,
+                                   N,
+                                   mynnz,
+                                   MyPID,
+                                   CSR_rowptr (),
+                                   CSR_colind_GID (),
+                                   Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
+                                   SourcePids (),
+                                   TargetPids);
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.
-    // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays with a parallel_for.
     for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
     {
       if(TargetPids[i] == -1) TargetPids[i] = MyPID;
