@@ -993,7 +993,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   // (common) special case to return the columnMap = domainMap.
   const map_type& domainMap = *domainMapRCP;
 
-  int myPID = domainMap.getComm()->getRank ();
+  // int myPID = domainMap.getComm()->getRank ();
 
 
   // We use two hash tables, one for local GIDs and one for remote GIDs
@@ -1030,7 +1030,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
         // Fresh insert
         if(outcome.success()) {
           LocalGIDs_view[LID] = true;
-          Kokkos::atomic_add(&innerUpdate, 1);
+          innerUpdate++;
         }
       }
       else {
@@ -1046,34 +1046,23 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   }, NumLocalColGIDs);
   
   LO NumRemoteColGIDs = RemoteGIDs_view_map.size();
-
-  // For each index in RemoteGIDs_map that contains a GID, use valid_key_index[i] to indicate the number of GIDs "before" this GID
-  // Each valid_key_index[i], where i is an index in RemoteGIDs_map, is unique and consecutive
-  // This maps each element in the RemoteGIDs hash table to an index in RemoteGIDList / PIDList without any overwrites or empty spaces
-  Kokkos::View<int*> valid_key_index("valid_key_index", RemoteGIDs_view_map.capacity()); 
-  Kokkos::parallel_scan(RemoteGIDs_view_map.capacity(), KOKKOS_LAMBDA(const int i, GO& update, const bool final) {
-    if(final && RemoteGIDs_view_map.valid_at(i)) {
-      valid_key_index[i] = update;
-    }
-    if(RemoteGIDs_view_map.valid_at(i)) {
-      update += 1;
-    }
-  });
-
+  
   Kokkos::View<int*, execution_space> PIDList_view("PIDList", NumRemoteColGIDs);
   auto PIDList_host = Kokkos::create_mirror_view(PIDList_view);
   
   Kokkos::View<int*> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
   auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
 
-  // Maps every key/value in the RemoteGIDs hash table to its own index in their respective views
-  Kokkos::parallel_for(RemoteGIDs_view_map.capacity(), KOKKOS_LAMBDA(const int i) {
+  // For each index in RemoteGIDs_map that contains a GID, use valid_key_index[i] to indicate the number of GIDs "before" this GID
+  // Each valid_key_index[i], where i is an index in RemoteGIDs_map, is unique and consecutive
+  // This maps each element in the RemoteGIDs hash table to an index in RemoteGIDList / PIDList without any overwrites or empty spaces 
+  Kokkos::parallel_scan(RemoteGIDs_view_map.capacity(), KOKKOS_LAMBDA(const int i, GO& update, const bool final) {
+    if(final && RemoteGIDs_view_map.valid_at(i)) {
+      RemoteGIDList_view[update] = RemoteGIDs_view_map.key_at(i);
+      PIDList_view[update] = RemoteGIDs_view_map.value_at(i);
+    }
     if(RemoteGIDs_view_map.valid_at(i)) {
-      auto key = RemoteGIDs_view_map.key_at(i);
-      auto value = RemoteGIDs_view_map.value_at(i);
-      auto valid_index = valid_key_index[i];
-      RemoteGIDList_view[valid_index] = key;
-      PIDList_view[valid_index] = value;
+      update += 1;
     }
   });
   
