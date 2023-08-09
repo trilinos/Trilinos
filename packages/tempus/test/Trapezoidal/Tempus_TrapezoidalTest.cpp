@@ -22,11 +22,6 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
-#ifdef Tempus_ENABLE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
 
 #include <vector>
 #include <fstream>
