@@ -78,31 +78,6 @@ using execspace_t =
 
 //////////////////////////////////////////////////////////////////////////
 
-template<typename offset_t>
-void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
-    const zgno_t *rowIds, const offset_t *offsets, const zgno_t *colIds) {
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
-  comm->barrier();
-  for (int p=0; p < nprocs; p++){
-    if (p == rank){
-      std::cout << rank << ":" << std::endl;
-      for (zlno_t i=0; i < nrows; i++){
-        std::cout << " row " << rowIds[i] << ": ";
-        for (offset_t j=offsets[i]; j < offsets[i+1]; j++){
-          std::cout << colIds[j] << " ";
-        }
-        std::cout << std::endl;
-      }
-      std::cout.flush();
-    }
-    comm->barrier();
-  }
-  comm->barrier();
-}
-
-//////////////////////////////////////////////////////////////////////////
-
 template <typename adapter_t, typename matrix_t>
 void TestMatrixIds(adapter_t &ia, matrix_t &matrix) {
 
@@ -244,8 +219,6 @@ int main(int narg, char *arg[]) {
 
   Tpetra::ScopeGuard tscope(&narg, &arg);
   const auto comm = Tpetra::getDefaultComm();
-
-  auto rank = comm->getRank();
 
   try {
     Teuchos::ParameterList params;

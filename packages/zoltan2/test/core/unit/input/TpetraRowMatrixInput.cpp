@@ -250,8 +250,6 @@ int main(int narg, char *arg[]) {
   Tpetra::ScopeGuard tscope(&narg, &arg);
   const auto comm = Tpetra::getDefaultComm();
 
-  auto rank = comm->getRank();
-
   try {
     Teuchos::ParameterList params;
     params.set("input file", "simple");
