@@ -609,7 +609,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     int *indices3 = new int[maxentries];
 
     //std::cout << "Creating local matrices" << std::endl;
-    int err;
+    int err = 0;
     Epetra_CrsMatrix localC(Copy, C_localRMap, C->MaxNumEntries(), false);
     for (i = 0; i < c_localElems ; i++)
     {
@@ -722,18 +722,18 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
 
         int cindex;
         // int mypid = C->Comm().MyPID(); // unused
-        Epetra_MultiVector probevec(G_localRMap, nvectors);
+        Epetra_MultiVector ProbeVec(G_localRMap, nvectors);
         Epetra_MultiVector Scol(G_localRMap, nvectors);
         for (i = 0 ; i < findex*nvectors ; i+=nvectors)
         {
-            probevec.PutScalar(0.0); // TODO: Move it out
+            ProbeVec.PutScalar(0.0); // TODO: Move it out
             for (int k = 0; k < nvectors; k++)
             {
                 cindex = k+i;
                 // TODO: Can do better than this, just need to go to the column map
                 // of C, there might be null columns in C
                 // Not much of use for Shasta 2x2 .. Later.
-                probevec.ReplaceGlobalValue(g_rows[cindex], k, 1.0);
+                ProbeVec.ReplaceGlobalValue(g_rows[cindex], k, 1.0);
                 //if (mypid == 0)
                 //std::cout << "Changing row to 1.0 " << g_rows[cindex] << std::endl;
             }
@@ -741,7 +741,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
 #ifdef TIMING_OUTPUT
             app_time.start();
 #endif
-            probeop.Apply(probevec, Scol);
+            probeop.Apply(ProbeVec, Scol);
 #ifdef TIMING_OUTPUT
             app_time.stop();
 #endif
@@ -794,11 +794,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
 
         probeop.ResetTempVectors(1);
 
+        Epetra_MultiVector probevec(G_localRMap, 1);
+        Epetra_MultiVector scol(G_localRMap, 1);
         for ( ; i < g_localElems ; i++)
         {
-            // TODO: Can move the next two decalarations outside the loop
-            Epetra_MultiVector probevec(G_localRMap, 1);
-            Epetra_MultiVector Scol(G_localRMap, 1);
 
             probevec.PutScalar(0.0);
             // TODO: Can do better than this, just need to go to the column map
@@ -808,12 +807,12 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
 #ifdef TIMING_OUTPUT
             app_time.start();
 #endif
-            probeop.Apply(probevec, Scol);
+            probeop.Apply(probevec, scol);
 #ifdef TIMING_OUTPUT
             app_time.stop();
 #endif
-            vecvalues = Scol[0];
-            Scol.MaxValue(maxvalue);
+            vecvalues = scol[0];
+            scol.MaxValue(maxvalue);
             //std::cout << "MAX" << maxvalue << std::endl;
             for (int j = 0 ; j < g_localElems ; j++)
             {
@@ -891,21 +890,21 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
         }
         // Use the prober to probe the probeop for the sparsity pattern
         // add that to Sbar and call Fill complete
-        int nvectors = data->guided_prober->getNumOrthogonalVectors();
+        nvectors = data->guided_prober->getNumOrthogonalVectors();
         std::cout << "Number of Orthogonal Vectors for guided probing" << nvectors
                 << std::endl;
 
         probeop.ResetTempVectors(nvectors);
         Teuchos::RCP<Epetra_CrsMatrix> blockdiag_Sbar =
                                  data->guided_prober->probe(probeop);
-        int maxentries = blockdiag_Sbar->GlobalMaxNumEntries();
+        maxentries = blockdiag_Sbar->GlobalMaxNumEntries();
         int *indices = new int[maxentries];
         double *values = new double[maxentries];
 
         int numentries;
-        for (int i = 0; i < blockdiag_Sbar->NumGlobalRows() ; i++)
+        for (i = 0; i < blockdiag_Sbar->NumGlobalRows() ; i++)
         {
-            int gid = blockdiag_Sbar->GRID(i);
+            gid = blockdiag_Sbar->GRID(i);
             blockdiag_Sbar->ExtractGlobalRowCopy(gid, maxentries, numentries,
                                             values, indices);
             Sbar->InsertGlobalValues(gid, numentries, values, indices);
@@ -916,6 +915,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
         delete[] values;
     }
 
+    (void)err;
     delete[] values1;
     delete[] indices1;
     delete[] values2;
