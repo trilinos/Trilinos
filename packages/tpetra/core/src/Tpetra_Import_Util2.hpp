@@ -718,7 +718,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex_blank (const Teuchos::ArrayView<const size_t> &rowptr,
+lowCommunicationMakeColMapAndReindex_ignore (const Teuchos::ArrayView<const size_t> &rowptr,
                                       const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
@@ -1055,7 +1055,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 
   // For each index in RemoteGIDs_map that contains a GID, use valid_key_index[i] to indicate the number of GIDs "before" this GID
   // Each valid_key_index[i], where i is an index in RemoteGIDs_map, is unique and consecutive
-  // This maps each element in the RemoteGIDs hash table to an index in RemoteGIDList / PIDList without any overwrites or empty spaces 
+  // This maps each element in the RemoteGIDs hash table to an index in RemoteGIDList / PIDList without any overwrites or empty spaces
   Kokkos::parallel_scan(RemoteGIDs_view_map.capacity(), KOKKOS_LAMBDA(const int i, GO& update, const bool final) {
     if(final && RemoteGIDs_view_map.valid_at(i)) {
       RemoteGIDList_view[update] = RemoteGIDs_view_map.key_at(i);
@@ -1066,9 +1066,8 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
     }
   });
   
-  // std::cout << "Num Local GIDs: " << NumLocalColGIDs << " with rank " << myPID << std::endl;
-  // std::cout << "Num Remote GIDs: " << NumRemoteColGIDs << " with rank " << myPID << std::endl; 
-
+  // std::cout << "Num Local GIDs: " << NumLocalColGIDs << "with rank " << myPID << std::endl;
+  // std::cout << "Num Remote GIDs: " << NumRemoteColGIDs << "with rank " << myPID << std::endl; 
 
   // Possible short-circuit: If all domain map GIDs are present as
   // column indices, then set ColMap=domainMap and quit.
@@ -1085,6 +1084,12 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
       // not coincidently, what we clobbered colind with up above
       // anyway.  No further reindexing is needed.
       colMap = domainMapRCP;
+      // Fill out local colMap (which should only contain local GIDs)
+      auto localColMap = colMap->getLocalMap();
+      Kokkos::parallel_for(colind_GID.size(), KOKKOS_LAMBDA(const int i) {
+        colind_LID_view[i] = localColMap.getLocalElement(colind_GID_view[i]);
+      });
+      Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);
       return;
     }
   }
@@ -1208,6 +1213,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 
   // Make column Map
   const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid ();
+  
   colMap = rcp (new map_type (minus_one, ColIndices_view, domainMap.getIndexBase (),
                               domainMap.getComm ()));
 
@@ -1220,7 +1226,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   // For now, we copy back into colind_LID_host (which also overwrites the colind_LID Tuechos array)
   // When colind_LID becomes a Kokkos View we can delete this
   Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);
-  }
+}
 
 
 
