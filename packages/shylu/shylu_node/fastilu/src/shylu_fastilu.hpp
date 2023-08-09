@@ -78,8 +78,8 @@
 // whether to print timings
 //#define FASTILU_TIMER
 
-// Whether to do fills at the block or entry granularity
-#define FASTILU_UNBLOCK_A
+// Whether to try to maintain exact behavior with unblocked impl
+#define FASTILU_ONE_TO_ONE_UNBLOCKED
 
 template <typename View>
 typename View::host_mirror_type ensure_host(const View& view)
@@ -1183,7 +1183,7 @@ class FastILUPrec
             using WithoutInit = Kokkos::ViewAllocateWithoutInitializing;
 
             // Ensure all filled entries have the sentinel value
-#ifdef FASTILU_UNBLOCK_A
+#ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0));
 #else
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0) * blockCrsSize * blockCrsSize);
@@ -1192,7 +1192,7 @@ class FastILUPrec
 
             // Re-block A_. At this point, aHost and A_ are unblocked. The host stuff isn't
             // used anymore after this, so just reblock A_
-#ifdef FASTILU_UNBLOCK_A
+#ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
             if (blockCrsSize > 1) {
               reblock(aRowMap_, aRowIdx_, aColIdx_, aVal_, blockCrsSize);
             }
@@ -1616,7 +1616,7 @@ class FastILUPrec
             Kokkos::deep_copy(aColIdxHost, aColIdxIn_);
             Kokkos::deep_copy(aValHost,    aValIn_);
             if (blockCrsSize > 1) {
-#ifdef FASTILU_UNBLOCK_A
+#ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
               unblock(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
 #endif
             }
@@ -2071,7 +2071,16 @@ class FastILUPrec
 
             for (int i = 0; i < nFact; i++)
             {
-                Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), iluFunctor);
+#ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
+              // Force serialization to avoid races but still perform operation on device
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1), KOKKOS_LAMBDA(const int) {
+                for (Ordinal j = 0; j < extent; ++j) {
+                  iluFunctor(j);
+                }
+              });
+#else
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), iluFunctor);
+#endif
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > iluFunctor (" << nFact << ")");
 
@@ -3241,5 +3250,6 @@ class ParInitZeroFunctor
 #undef FASTILU_REPORT_TIMER
 #undef FASTILU_FENCE_REPORT_TIMER
 #undef FASTILU_DBG_COUT
+#undef FASTILU_ONE_TO_ONE_UNBLOCKED
 
 #endif

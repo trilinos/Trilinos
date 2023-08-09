@@ -70,6 +70,7 @@
 //whether to print extra debug output at runtime to stdout
 //comment out next line to disable
 //#define FASTILU_DEBUG_OUTPUT
+#define FASTILU_ONE_TO_ONE_UNBLOCKED
 
 namespace fastilu_orig {
 
@@ -1676,7 +1677,16 @@ class FastILUPrec
 
             for (int i = 0; i < nFact; i++) 
             {
-                Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), iluFunctor);
+#ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
+              // Force serialization to avoid races but still perform operation on device
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1), KOKKOS_LAMBDA(const int) {
+                for (Ordinal j = 0; j < extent; ++j) {
+                  iluFunctor(j);
+                }
+              });
+#else
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), iluFunctor);
+#endif
             }
             #ifdef FASTILU_TIMER
             ExecSpace().fence();
@@ -2723,6 +2733,8 @@ class ParInitZeroFunctor
 };
 
 }
+
+#undef FASTILU_ONE_TO_ONE_UNBLOCKED
 
 #endif
 

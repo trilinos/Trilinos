@@ -169,10 +169,10 @@ applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 
   localPrec2_->verify(*localPrec3_, "apply_unblocked_vs_orig");
   localPrec_->verify(*localPrec2_, "apply_blocked_vs_unblocked");
-  // compare_views(x, x1, "x1");
-  // compare_views(x, x2, "x2");
-  // compare_views(y, y1, "y1");
-  // compare_views(y, y2, "y2");
+  compare_views(x, x1, "x1");
+  compare_views(x, x2, "x2");
+  compare_views(y, y1, "y1");
+  compare_views(y, y2, "y2");
 
   //since this may be applied to multiple vectors, add to applyTime_ instead of setting it
   this->applyTime_ += localPrec_->getApplyTime();
