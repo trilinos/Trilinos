@@ -2000,11 +2000,10 @@ class FastILUPrec
   template <typename RHS>
   void verify(const RHS& rhs, const std::string& name, const bool initialize_only=false)
   {
-    // std::cout << "JGF verifying: " << name << std::endl;
+#ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
+    std::cout << "Verifying: " << name << std::endl;
 
     Kokkos::fence();
-
-    return; // Disable for now
 
     // verify a this using brs and a rhs using crs
     assert(nRows*blockCrsSize == rhs.nRows);
@@ -2041,6 +2040,7 @@ class FastILUPrec
     if ((level > 0) && (guessFlag != 0)) {
       initGuessPrec->verify(*rhs.initGuessPrec, name, initialize_only);
     }
+#endif
   }
 
         //Actual computation phase.
