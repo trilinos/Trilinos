@@ -78,7 +78,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis.extent(2)), KOKKOS_LAMBDA (const int& basis) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis.extent(2)), [&] (const int& basis) {
     for (int qp = 0; qp < static_cast<int>(grad_basis.extent(1)); ++qp)
       for (int dim = 0; dim < static_cast<int>(grad_basis.extent(3)); ++dim)
 #ifdef PHX_ENABLE_KOKKOS_AMT
