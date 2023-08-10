@@ -1,6 +1,6 @@
 <ParameterList name="test_params">
-  <Parameter name="mm_file" type="string" value="5w.mtx"/>
-  <Parameter name="rhs_mm_file" type="string" value="5w.vec"/>
+  <Parameter name="mm_file" type="string" value="6w.mtx"/>
+  <Parameter name="rhs_mm_file" type="string" value="6w.vec"/>
 
   <Parameter name="solver_type" type="string" value="PseudoBlock Gmres"/>
   <ParameterList name="Belos">
