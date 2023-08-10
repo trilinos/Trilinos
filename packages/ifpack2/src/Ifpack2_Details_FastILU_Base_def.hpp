@@ -439,7 +439,7 @@ Params::getDefaults()
   Params p;
   p.use_metis = false;
   p.sptrsv_algo = FastILU::SpTRSV::Fast;
-  p.nFact = 1;          // # of sweeps for computing fastILU
+  p.nFact = 5;          // # of sweeps for computing fastILU
   p.nTrisol = 5;        // # of sweeps for applying fastSpTRSV
   p.level = 0;          // level of ILU
   p.omega = 1.0;        // damping factor for fastILU
@@ -448,7 +448,7 @@ Params::getDefaults()
   p.blockSizeILU = 1;   // # of nonzeros / thread, for fastILU
   p.blockSize = 1;      // # of rows / thread, for SpTRSV
   p.blockCrs = false;   // whether to use block CRS for fastILU
-  p.blockCrsSize = 3;   // block size for block CRS
+  p.blockCrsSize = 1;   // block size for block CRS
   return p;
 }
 

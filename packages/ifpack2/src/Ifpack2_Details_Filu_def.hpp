@@ -170,6 +170,7 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 {
+  //since this may be applied to multiple vectors, add to applyTime_ instead of setting it
   if (this->isBlockCrs()) {
     localPrecBlockCrs_->apply(x, y);
     this->applyTime_ += localPrecBlockCrs_->getApplyTime();
