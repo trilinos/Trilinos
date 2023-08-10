@@ -65,35 +65,45 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 int Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getSweeps() const
 {
-  return localPrec_->getNFact();
+  return this->isBlockCrs() ? localPrecBlockCrs_->getNFact() : localPrec_->getNFact();
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 std::string Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getSpTrsvType() const
 {
-  return localPrec_->getSpTrsvType();
+  return this->isBlockCrs() ? localPrecBlockCrs_->getSpTrsvType() : localPrec_->getSpTrsvType();
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 int Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getNTrisol() const
 {
-  return localPrec_->getNTrisol();
+  return this->isBlockCrs() ? localPrecBlockCrs_->getNTrisol() : localPrec_->getNTrisol();
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 checkLocalILU() const
 {
-  localPrec_->checkILU();
+  if (this->isBlockCrs()) {
+    localPrecBlockCrs_->checkILU();
+  }
+  else {
+    localPrec_->checkILU();
+  }
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 checkLocalIC() const
 {
-  localPrec_->checkIC();
+  if (this->isBlockCrs()) {
+    localPrecBlockCrs_->checkIC();
+  }
+  else {
+    localPrec_->checkIC();
+  }
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -106,80 +116,68 @@ initLocalPrec()
 
   bool skipSortMatrix = !matCrs.is_null() && matCrs->getCrsGraph()->isSorted() &&
                         !p.use_metis;
-  const int blockCrsSize = p.blockCrs ? p.blockCrsSize : 1;
-  localPrec_ = Teuchos::rcp(new LocalFILUB(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
-                                          p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
-                                          blockCrsSize));
-  localPrec2_ = Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs2_, this->localColInds2_, this->localValues2_, nRows*blockCrsSize, p.sptrsv_algo,
-                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
-  localPrec3_ = Teuchos::rcp(new LocalFILUOrig(skipSortMatrix, this->localRowPtrs2_, this->localColInds2_, this->localValues2_, nRows*blockCrsSize, p.sptrsv_algo,
-                                               p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
+  if (this->isBlockCrs()) {
+    localPrecBlockCrs_ =
+      Teuchos::rcp(new LocalFILUB(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
+                                  p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
+                                  p.blockCrsSize));
+  }
+  else {
+    localPrec_ =
+      Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
+                                 p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
+  }
+
   #ifdef HAVE_IFPACK2_METIS
   if (p.use_metis) {
-    localPrec_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
+    if (this->isBlockCrs()) {
+      localPrec_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
+    }
+    else {
+      localPrecBlockCrs_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
+    }
   }
   #endif
-  localPrec_->initialize();
-  localPrec2_->initialize();
-  localPrec3_->initialize();
-  localPrec2_->verify(*localPrec3_, "initialization_unblocked_vs_orig", true);
-  localPrec_->verify(*localPrec2_, "initialization_blocked_vs_unblocked", true);
-  this->initTime_ = localPrec_->getInitializeTime();
 
-  std::cout << "JGF initialization of blocked took: " << localPrec_->getInitializeTime() << std::endl;
-  std::cout << "JGF initialization of unblocked took: " << localPrec2_->getInitializeTime() << std::endl;
-  std::cout << "JGF initialization of orig took: " << localPrec3_->getInitializeTime() << std::endl;
+  if (this->isBlockCrs()) {
+    localPrecBlockCrs_->initialize();
+    this->initTime_ = localPrecBlockCrs_->getInitializeTime();
+  }
+  else {
+    localPrec_->initialize();
+    this->initTime_ = localPrec_->getInitializeTime();
+  }
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 computeLocalPrec()
 {
-  //update values in local prec (until compute(), values aren't needed)
-  localPrec_->setValues(this->localValues_);
-  localPrec2_->setValues(this->localValues2_);
-  localPrec3_->setValues(this->localValues2_);
-  localPrec_->compute();
-  localPrec2_->compute();
-  localPrec3_->compute();
-  this->computeTime_ = localPrec_->getComputeTime();
-
-  localPrec2_->verify(*localPrec3_, "compute_unblocked_vs_orig");
-  localPrec_->verify(*localPrec2_, "compute_blocked_vs_unblocked");
-
-  std::cout << "JGF compute of blocked took: " << localPrec_->getComputeTime() << std::endl;
-  std::cout << "JGF compute of unblocked took: " << localPrec2_->getComputeTime() << std::endl;
-  std::cout << "JGF compute of orig took: " << localPrec3_->getComputeTime() << std::endl;
+  if (this->isBlockCrs()) {
+    //update values in local prec (until compute(), values aren't needed)
+    localPrecBlockCrs_->setValues(this->localValues_);
+    localPrecBlockCrs_->compute();
+    this->computeTime_ = localPrecBlockCrs_->getComputeTime();
+  }
+  else {
+    localPrec_->setValues(this->localValues_);
+    localPrec_->compute();
+    this->computeTime_ = localPrec_->getComputeTime();
+  }
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 {
-  ImplScalarArray x1("x1", x.extent(0)), x2("x2", x.extent(0)),
-    y1("y1", y.extent(0)), y2("y2", y.extent(0));
-  Kokkos::deep_copy(x1, x);
-  Kokkos::deep_copy(x2, x);
-  Kokkos::deep_copy(y1, y);
-  Kokkos::deep_copy(y2, y);
-
-  localPrec_->apply(x, y);
-  localPrec2_->apply(x1, y1);
-  localPrec3_->apply(x2, y2);
-
-  localPrec2_->verify(*localPrec3_, "apply_unblocked_vs_orig");
-  localPrec_->verify(*localPrec2_, "apply_blocked_vs_unblocked");
-  compare_views(x, x1, "x1");
-  compare_views(x, x2, "x2");
-  compare_views(y, y1, "y1");
-  compare_views(y, y2, "y2");
-
-  //since this may be applied to multiple vectors, add to applyTime_ instead of setting it
-  this->applyTime_ += localPrec_->getApplyTime();
-
-  std::cout << "JGF apply of blocked took: " << localPrec_->getApplyTime() << std::endl;
-  std::cout << "JGF apply of unblocked took: " << localPrec2_->getApplyTime() << std::endl;
-  std::cout << "JGF apply of orig took: " << localPrec3_->getApplyTime() << std::endl;
+  if (this->isBlockCrs()) {
+    localPrecBlockCrs_->apply(x, y);
+    this->applyTime_ += localPrecBlockCrs_->getApplyTime();
+  }
+  else {
+    localPrec_->apply(x, y);
+    this->applyTime_ += localPrec_->getApplyTime();
+  }
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>

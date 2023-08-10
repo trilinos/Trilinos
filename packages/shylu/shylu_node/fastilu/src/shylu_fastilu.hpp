@@ -78,8 +78,9 @@
 // whether to print timings
 //#define FASTILU_TIMER
 
-// Whether to try to maintain exact behavior with unblocked impl
-#define FASTILU_ONE_TO_ONE_UNBLOCKED
+// Whether to try to maintain exact behavior with unblocked impl. Comes at
+// a steep performance cost.
+//#define FASTILU_ONE_TO_ONE_UNBLOCKED
 
 template <typename View>
 typename View::host_mirror_type ensure_host(const View& view)
