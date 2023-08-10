@@ -213,7 +213,6 @@ int feAssemblyHex(int argc, char *argv[]) {
           false,
       Kokkos::DefaultHostExecutionSpace, exec_space>;
 
-  using host_memory_space = do_not_use_host_memory_space;
   using host_execution_space =
       do_not_use_host_execution_space;
   using host_mirror_space = std::conditional_t<
@@ -626,15 +625,14 @@ int feAssemblyHex(int argc, char *argv[]) {
     DynRankView ConstructWithLabel(basisCoeffsLI, numOwnedElems, basisCardinality);
     {
       Teuchos::TimeMonitor liTimer =  *Teuchos::TimeMonitor::getNewTimer("Verification, locally interpolate analytic solution");
-      DynRankView ConstructWithLabel(dofCoordsOriented, numOwnedElems, basisCardinality, dim);
-      DynRankView ConstructWithLabel(dofCoeffsPhys, numOwnedElems, basisCardinality);
+      DynRankView ConstructWithLabel(dofCoords, basisCardinality, dim);
 
-      li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basis.getRawPtr(), elemOrts);
+      basis->getDofCoords(dofCoords);
 
       DynRankView ConstructWithLabel(funAtDofPoints, numOwnedElems, basisCardinality);
       {
         DynRankView ConstructWithLabel(physDofPoints, numOwnedElems, basisCardinality, dim);
-        ct::mapToPhysicalFrame(physDofPoints,dofCoordsOriented,physVertexes,basis->getBaseCellTopology());
+        ct::mapToPhysicalFrame(physDofPoints,dofCoords,physVertexes,basis->getBaseCellTopology());
         EvalSolFunctor<DynRankView> functor;
         functor.funAtPoints = funAtDofPoints;
         functor.points = physDofPoints;
@@ -642,7 +640,7 @@ int feAssemblyHex(int argc, char *argv[]) {
         Kokkos::fence(); //make sure that funAtDofPoints has been evaluated
       }
 
-      li::getBasisCoeffs(basisCoeffsLI, funAtDofPoints, dofCoeffsPhys);
+      li::getBasisCoeffs(basisCoeffsLI, funAtDofPoints, basis.getRawPtr(), elemOrts);
     }
 
     {

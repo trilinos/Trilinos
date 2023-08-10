@@ -116,7 +116,7 @@ void testStructuredIntegration(int meshWidth, int polyOrder, int worksetSize,
   
   EFunctionSpace fs;
   EOperator op1, op2;
-  int numOps; // can be 1 or 2
+  int numOps = 0; // can be 1 or 2
   switch (formulation)
   {
     case Poisson:

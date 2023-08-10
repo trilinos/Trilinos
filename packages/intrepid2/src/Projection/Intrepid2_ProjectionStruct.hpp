@@ -92,20 +92,22 @@ public:
 
   enum EvalPointsType {BASIS, TARGET};
 
-  typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-  /// KK : do we really need this complication instead of using default host exec space ????
-  typedef Kokkos::DefaultHostExecutionSpace HostExecutionSpaceType;
-  typedef Kokkos::HostSpace HostMemorySpaceType;
-  typedef Kokkos::Device<HostExecutionSpaceType,HostMemorySpaceType> HostDeviceType;
-  typedef Kokkos::DynRankView<ValueType,HostDeviceType > view_type;
-  typedef Kokkos::View<range_type**,HostDeviceType> range_tag;
+  using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
+  using HostExecutionSpaceType = Kokkos::DefaultHostExecutionSpace;
+  using HostMemorySpaceType = Kokkos::HostSpace;
+  using MemSpaceType = typename DeviceType::memory_space;
+  using HostDeviceType = Kokkos::Device<HostExecutionSpaceType,HostMemorySpaceType>;
+  using view_type = Kokkos::DynRankView<ValueType,DeviceType >;
+  using host_view_type = Kokkos::DynRankView<ValueType,HostDeviceType >;
+  using range_tag = Kokkos::View<range_type**,HostDeviceType>;
   static constexpr int numberSubCellDims = 4; //{0 for vertex, 1 for edges, 2 for faces, 3 for volumes}
   //max of numVertices, numEdges, numFaces for a reference cell.
   //12 is the number of edges in a Hexahderon.
   //We'll need to change this if we consider generic polyhedra
   static constexpr int maxSubCellsCount = 12;
-  typedef std::array<std::array<view_type, maxSubCellsCount>, numberSubCellDims> view_tag;
-  typedef Kokkos::View<unsigned**,HostDeviceType > key_tag;
+  using view_tag = std::array<std::array<host_view_type, maxSubCellsCount>, numberSubCellDims>;
+  using key_tag = Kokkos::View<unsigned**,HostDeviceType >;
+
 
   /** \brief  Returns number of basis evaluation points
    */
@@ -169,7 +171,7 @@ public:
 
       \return a rank-2 view (P,D) containing the basis evaluation points on the selected subcell
    */
-  view_type getBasisEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
+  host_view_type getBasisEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return basisCubPoints[subCellDim][subCellId];
   }
 
@@ -186,7 +188,7 @@ public:
 
       \return a rank-2 view (P,D) containing the basis derivatives evaluation points on the selected subcell
    */
-  view_type getBasisDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
+  host_view_type getBasisDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return basisDerivCubPoints[subCellDim][subCellId];
   }
 
@@ -203,7 +205,7 @@ public:
 
       \return a rank-2 view (P,D) containing the target evaluation points on the selected subcell
    */
-  view_type getTargetEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
+  host_view_type getTargetEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return targetCubPoints[subCellDim][subCellId];
   }
 
@@ -220,7 +222,7 @@ public:
 
       \return a rank-2 view (P,D) containing the target derivatives evaluation points on the selected subcell
    */
-  view_type getTargetDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
+  host_view_type getTargetDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return targetDerivCubPoints[subCellDim][subCellId];
   }
 
@@ -239,11 +241,30 @@ public:
 
       \return a rank-2 view (P,D) containing the basis/target function evaluation points on the selected subcell
    */
-  view_type getEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId, EvalPointsType type) const{
+  host_view_type getEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId, EvalPointsType type) const{
     if(type == BASIS)
       return basisCubPoints[subCellDim][subCellId];
     else
       return targetCubPoints[subCellDim][subCellId];
+  }
+
+  /** \brief  Returns the basis/target evaluation points in the cell
+
+    \code
+    P  - num. evaluation points
+    D  - spatial dimension of the cell
+    \endcode
+
+    \param  evalPointType [in]  - enum selecting whether the points should be computed for the basis
+                                  functions or for the target function
+
+    \return a rank-2 view (P,D) containing the basis/target function evaluation points in the cell
+  */
+  view_type getAllEvalPoints(EvalPointsType type = TARGET) const{
+    if(type == BASIS)
+      return allBasisEPoints;
+    else
+      return allTargetEPoints;
   }
 
   /** \brief  Returns the evaluation points for basis/target derivatives on a subcell
@@ -260,13 +281,31 @@ public:
 
       \return a rank-2 view (P,D) containing the basis/target  derivatives evaluation points on the selected subcell
    */
-  view_type getDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId, EvalPointsType type) const{
+  host_view_type getDerivEvalPoints(const ordinal_type subCellDim, const ordinal_type subCellId, EvalPointsType type) const{
     if(type == BASIS)
       return basisDerivCubPoints[subCellDim][subCellId];
     else
       return targetDerivCubPoints[subCellDim][subCellId];
   }
 
+  /** \brief  Returns all the evaluation points for basis/target derivatives in the cell
+
+    \code
+    P  - num. evaluation points
+    D  - spatial dimension of the cell
+    \endcode
+
+    \param  evalPointType [in] - enum selecting whether the points should be computed for the basis
+                                  functions or for the target function
+
+    \return a rank-2 view (P,D) containing the basis/target  derivatives evaluation points in the cell
+   */
+  view_type getAllDerivEvalPoints(EvalPointsType type = TARGET) const{
+    if(type == BASIS)
+      return allBasisDerivEPoints;
+    else
+      return allTargetDerivEPoints;
+  }
 
 
   /** \brief  Returns the basis evaluation weights on a subcell
@@ -280,7 +319,7 @@ public:
 
       \return a rank-1 view (P) containing the basis evaluation weights on the selected subcell
    */
-  view_type getBasisEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
+  host_view_type getBasisEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return basisCubWeights[subCellDim][subCellId];
   }
 
@@ -296,7 +335,7 @@ public:
 
       \return a rank-1 view (P) containing the basis derivatives evaluation weights on the selected subcell
    */
-  view_type getBasisDerivEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
+  host_view_type getBasisDerivEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return basisDerivCubWeights[subCellDim][subCellId];
   }
 
@@ -312,7 +351,7 @@ public:
 
       \return a rank-1 view (P) containing the target evaluation weights on the selected subcell
    */
-  view_type getTargetEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
+  host_view_type getTargetEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return targetCubWeights[subCellDim][subCellId];
   }
 
@@ -328,7 +367,7 @@ public:
 
       \return a rank-1 view (P) containing the target derivatives evaluation weights on the selected subcell
    */
-  view_type getTargetDerivEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
+  host_view_type getTargetDerivEvalWeights(const ordinal_type subCellDim, const ordinal_type subCellId) {
     return targetDerivCubWeights[subCellDim][subCellId];
   }
 
@@ -401,9 +440,6 @@ public:
   const key_tag getTopologyKey() const {
     return subCellTopologyKey;
   }
-
-
-
 
   /** \brief  Initialize the ProjectionStruct for L2 projections
       \param  cellBasis       [in]  - basis functions for the projection
@@ -478,6 +514,10 @@ public:
   view_tag targetCubWeights;
   view_tag targetDerivCubPoints;
   view_tag targetDerivCubWeights;
+  view_type allBasisEPoints;
+  view_type allBasisDerivEPoints;
+  view_type allTargetEPoints;
+  view_type allTargetDerivEPoints;
   ordinal_type numBasisEvalPoints;
   ordinal_type numBasisDerivEvalPoints;
   ordinal_type numTargetEvalPoints;
