@@ -51,6 +51,7 @@
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include <random>
+#include <chrono>
 
 template<typename Real>
 class QuadraticTypeP_Test01 : public ROL::StdObjective<Real> {
@@ -117,12 +118,12 @@ int main(int argc, char *argv[]) {
     RealT tol = 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>());
 
     ROL::ParameterList list;
-    list.sublist("General").set("Output Level",iprint+1);
+    list.sublist("General").set("Output Level",iprint);
     list.sublist("Step").set("Type","Trust Region");
-    list.sublist("Status Test").set("Gradient Tolerance",1e-7);
-    list.sublist("Status Test").set("Constraint Tolerance",1e-8);
-    list.sublist("Status Test").set("Step Tolerance",1e-12);
-    list.sublist("Status Test").set("Iteration Limit", 10);
+    list.sublist("Status Test").set("Gradient Tolerance",1e-1*tol);
+    list.sublist("Status Test").set("Constraint Tolerance",1e-1*tol);
+    list.sublist("Status Test").set("Step Tolerance",1e-3*tol);
+    list.sublist("Status Test").set("Iteration Limit", 50);
     int dim = 5;
     ROL::Ptr<ROL::StdVector<RealT>>        sol, wts, y;
     ROL::Ptr<QuadraticTypeP_Test01<RealT>> sobj;
@@ -134,8 +135,8 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl << "Random Diagonal LASSO Test Problem" << std::endl << std::endl;
     ROL::Ptr<std::vector<RealT>> wtsP = ROL::makePtr<std::vector<RealT>>(dim);
     ROL::Ptr<std::vector<RealT>> yP   = ROL::makePtr<std::vector<RealT>>(dim);
-    wts = ROL::makePtr<ROL::StdVector<RealT>>(wtsP);
-    y   = ROL::makePtr<ROL::StdVector<RealT>>(yP);
+    wts = ROL::makePtr<ROL::StdVector<RealT>>(wtsP); wts->setSeed(234);
+    y   = ROL::makePtr<ROL::StdVector<RealT>>(yP);   y->setSeed(345);
     sol = ROL::makePtr<ROL::StdVector<RealT>>(dim);
     wts->randomize(static_cast<RealT>(0),static_cast<RealT>(1));
     y->randomize(static_cast<RealT>(-5),static_cast<RealT>(5));
@@ -163,8 +164,12 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "SPG");  
     sol->zero();
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
+    auto begin = std::chrono::high_resolution_clock::now();
     algo->run(*sol,*sobj,*nobj,*outStream);
+    auto end   = std::chrono::high_resolution_clock::now();
+    *outStream << "  Optimization Time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " microseconds" << std::endl;
 
+    err = static_cast<RealT>(0);
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:   ";
     for (int i = 0; i < dim; ++i) {
@@ -183,8 +188,12 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "Simplified SPG");  
     sol->zero();
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
+    begin = std::chrono::high_resolution_clock::now();
     algo->run(*sol,*sobj,*nobj,*outStream);
+    end   = std::chrono::high_resolution_clock::now();
+    *outStream << "  Optimization Time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " microseconds" << std::endl;
 
+    err = static_cast<RealT>(0);
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:   ";
     for (int i = 0; i < dim; ++i) {
@@ -203,8 +212,12 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG");  
     sol->zero();
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
+    begin = std::chrono::high_resolution_clock::now();
     algo->run(*sol,*sobj,*nobj,*outStream);
+    end   = std::chrono::high_resolution_clock::now();
+    *outStream << "  Optimization Time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " microseconds" << std::endl;
 
+    err = static_cast<RealT>(0);
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:   ";
     for (int i = 0; i < dim; ++i) {
