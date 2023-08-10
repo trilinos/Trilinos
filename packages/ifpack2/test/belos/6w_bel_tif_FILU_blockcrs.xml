@@ -21,5 +21,5 @@
     <Parameter name="block crs block size" type="int" value="3"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="4"/>
+  <Parameter name="expectNumIters" type="int" value="5"/>
 </ParameterList>
