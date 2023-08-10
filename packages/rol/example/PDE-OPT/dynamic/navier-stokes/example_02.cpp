@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::PartitionedVector<RealT>> zhi = ROL::PartitionedVector<RealT>::create(*zk, nt);
     zlo->setScalar(-0.4);
     zhi->setScalar(0.4);   
-ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
+    ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
 			= ROL::makePtr<L1_Dyn_Objective<RealT>>(*parlist,timeStamp, zlo, zhi); 
 		
     //Algo pointer

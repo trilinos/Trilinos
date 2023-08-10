@@ -135,8 +135,8 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl << "Random Diagonal LASSO Test Problem" << std::endl << std::endl;
     ROL::Ptr<std::vector<RealT>> wtsP = ROL::makePtr<std::vector<RealT>>(dim);
     ROL::Ptr<std::vector<RealT>> yP   = ROL::makePtr<std::vector<RealT>>(dim);
-    wts = ROL::makePtr<ROL::StdVector<RealT>>(wtsP); wts->setSeed(234);
-    y   = ROL::makePtr<ROL::StdVector<RealT>>(yP);   y->setSeed(345);
+    wts = ROL::makePtr<ROL::StdVector<RealT>>(wtsP);// wts->setSeed(234);
+    y   = ROL::makePtr<ROL::StdVector<RealT>>(yP);  // y->setSeed(345);
     sol = ROL::makePtr<ROL::StdVector<RealT>>(dim);
     wts->randomize(static_cast<RealT>(0),static_cast<RealT>(1));
     y->randomize(static_cast<RealT>(-5),static_cast<RealT>(5));

@@ -161,14 +161,6 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
       = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl, outStream);
  
-    ROL::Ptr<ROL::PartitionedVector<RealT>> zlo = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    ROL::Ptr<ROL::PartitionedVector<RealT>> zhi = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    zlo->setScalar(-1.0);
-    zhi->setScalar(1.0);   
-	//	 create l1 dynamic objective for nobj, pass to TRnonsmooth
-    ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
-			= ROL::makePtr<L1_Dyn_Objective<RealT>>(*parlist,timeStamp, zlo, zhi); 
-  	
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT AND L1 PENALTY *****************/
     /*************************************************************************/
