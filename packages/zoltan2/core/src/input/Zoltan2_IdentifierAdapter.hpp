@@ -108,10 +108,6 @@ public:
   typedef IdentifierAdapter<User> base_adapter_t;
 #endif
 
-  /*! \brief Destructor
-   */
-  virtual ~IdentifierAdapter() {};
-
   enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
 };
 

@@ -110,10 +110,6 @@ public:
   typedef VectorAdapter<User> base_adapter_t;
 #endif
 
-  /*! \brief Destructor
-   */
-  virtual ~VectorAdapter() {};
-
   ////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////
