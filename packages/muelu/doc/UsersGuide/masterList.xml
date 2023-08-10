@@ -521,6 +521,16 @@
       <name-ML>aggregation: threshold</name-ML>
     </parameter>
 
+  <parameter>
+      <name>aggregation: use ml scaling of drop tol</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Enables ML-style scaling of drop tol, where the drop tol halves with each successive level.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
+
     <parameter>
       <name>aggregation: min agg size</name>
       <type>int</type>
@@ -1343,6 +1353,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>combine: numBlks</name>
+      <type>int</type>
+      <default>1</default>
+      <description> Used with multigrid algorithm 'combine' to combine multiple sub-block prolongators into one  for PDE systems (numBlks x numBlks). </description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>interp: build coarse coordinates</name>
       <type>bool</type>
       <default>true</default>
@@ -1715,6 +1734,14 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>repartition: explicit via new copy rebalance P and R</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Fully explicit rebalancing of R and P during setup that makes new copy and invokes fill copy.  Slowest rebalancing option, but needed by combine mg algo.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>repartition: rebalance Nullspace</name>
       <type>bool</type>
       <default>true</default>
@@ -1933,6 +1960,15 @@ optimized neighbor discovery for Importer construction.</description>
       <default>false</default>
       <description>Dump matrices to disk.</description>
     </parameter>
+
+    <parameter>
+      <name>maxwell1: nodal smoother fix zero diagonal threshold</name>
+      <comment-ML>Hardwired to 1e-10 in ML</comment-ML>
+      <type>double</type>
+      <default>1e-10</default>
+      <description>Specifies the fix zero diagonals threshold to be used for the nodal smoothing matrices.</description>
+    </parameter>
+
   </maxwell1>
 
   <refmaxwell>

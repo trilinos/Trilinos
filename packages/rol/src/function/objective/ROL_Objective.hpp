@@ -186,6 +186,15 @@ public:
     Pv.set(v.dual());
   }
 
+	virtual void prox( Vector<Real> &Pv, const Vector<Real> &v, Real t, Real &tol){
+    ROL_UNUSED(Pv);
+    ROL_UNUSED(v);
+    ROL_UNUSED(t);
+    ROL_UNUSED(tol);
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ">>> ERROR (ROL::Objective): prox not implemented!"); 
+	}
+
   /** \brief Finite-difference gradient check.
 
       This function computes a sequence of one-sided finite-difference checks for the gradient.  

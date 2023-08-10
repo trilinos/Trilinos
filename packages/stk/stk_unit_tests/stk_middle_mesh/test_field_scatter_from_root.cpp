@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "field_scatter_from_root.hpp"
-#include "create_mesh.hpp"
-#include "mesh_scatter_from_root.hpp"
+#include "stk_middle_mesh/field_scatter_from_root.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_scatter_from_root.hpp"
 
 namespace {
 

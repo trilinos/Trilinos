@@ -122,6 +122,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: drop tol");
+    SET_VALID_ENTRY("aggregation: use ml scaling of drop tol");
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
     SET_VALID_ENTRY("aggregation: greedy Dirichlet");
     SET_VALID_ENTRY("aggregation: row sum drop tol");
@@ -205,8 +206,10 @@ namespace MueLu {
     bool generateColoringGraph = false;
 
     // NOTE:  If we're doing blockDiagonal, we'll not want to do rowSum twice (we'll do it
-    // in the block diagonalizaiton). So we'll clobber the rowSumTol with -1.0 in this case
+    // in the block diagonalization). So we'll clobber the rowSumTol with -1.0 in this case
     typename STS::magnitudeType rowSumTol = as<typename STS::magnitudeType>(pL.get<double>("aggregation: row sum drop tol"));
+
+
     RCP<LocalOrdinalVector> ghostedBlockNumber;
     ArrayRCP<const LO> g_block_id;
 
@@ -326,7 +329,14 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "classical", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian" && algo != "signed classical", Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian|signed classical)");
 
-      SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
+      SC threshold;
+    // If we're doing the ML-style halving of the drop tol at each level, we do that here.
+    if (pL.get<bool>("aggregation: use ml scaling of drop tol"))
+      threshold = pL.get<double>("aggregation: drop tol") / pow(2.0,currentLevel.GetLevelID());
+    else
+      threshold =  as<SC>(pL.get<double>("aggregation: drop tol"));
+
+
       std::string distanceLaplacianAlgoStr = pL.get<std::string>("aggregation: distance laplacian algo");
       std::string classicalAlgoStr = pL.get<std::string>("aggregation: classical algo");
       real_type realThreshold = STS::magnitude(threshold);// CMS: Rename this to "magnitude threshold" sometime

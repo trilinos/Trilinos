@@ -251,15 +251,15 @@ int ConvergenceTet(const bool verbose) {
   // a convergence test, but the test can be use for verifying optimal accuracy as well.
   ValueType hgradNorm[numRefinements], hcurlNorm[numRefinements], hdivNorm[numRefinements], hvolNorm[numRefinements];
 
-  ValueType hgrad_errors[4] = {7.3278, 2.34301, 0.352119, 0.0488729};
-  ValueType hcurl_errors[4] = {5.85967, 1.76969, 0.298946, 0.0404068};
-  ValueType hdiv_errors[4] = {4.68569, 1.22549, 0.196687, 0.0262624};
-  ValueType hvol_errors[4] = {0.424385, 0.150827, 0.0231164, 0.00301102};
+  ValueType hgrad_errors[4] = {7.58387, 2.35699, 0.352171, 0.0488584};
+  ValueType hcurl_errors[4] = {5.85886, 1.76968, 0.298939, 0.040406};
+  ValueType hdiv_errors[4] = {4.45611, 1.10965, 0.175198, 0.023302};
+  ValueType hvol_errors[4] = {0.430067, 0.13453, 0.0205393, 0.00266433};
 
-  ValueType hgrad_errors_L2[4] = {7.23725, 2.20317, 0.362514, 0.049889};
-  ValueType hcurl_errors_L2[4] = {6.24416, 2.00036, 0.428591, 0.090222};
+  ValueType hgrad_errors_L2[4] = {7.05768, 2.1609, 0.356837, 0.049138};
+  ValueType hcurl_errors_L2[4] = {6.2418, 2.00039, 0.411311, 0.0847072};
   ValueType hdiv_errors_L2[4] = {4.60503, 1.2758, 0.260201, 0.0561971};
-  ValueType hvol_errors_L2[4] = {0.424385, 0.150827, 0.0231164, 0.00301102};
+  ValueType hvol_errors_L2[4] = {0.430067, 0.13453, 0.0205393, 0.00266433};
 
   for(int iter= 0; iter<numRefinements; iter++, NX *= 2) {
     int NY            = NX;
@@ -379,24 +379,10 @@ int ConvergenceTet(const bool verbose) {
           } else {
             projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
           }
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
-
-          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationGradPoints, numElems, numGradPoints, dim);
-
-          if(useL2Projection) {
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          } else {
-          pts::getHGradEvaluationPoints(evaluationPoints,
-              evaluationGradPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
-          }
-
+          
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationGradPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numGradPoints = evaluationGradPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
           DynRankView ConstructWithLabel(targetGradAtEvalPoints, numElems, numGradPoints, dim);
@@ -411,7 +397,7 @@ int ConvergenceTet(const bool verbose) {
             KOKKOS_LAMBDA (const int &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -420,7 +406,7 @@ int ConvergenceTet(const bool verbose) {
 
               auto basisValuesAtEvalGradPoint = Kokkos::subview(linearBasisValuesAtEvalGradPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numGradPoints; ++j) {
-                auto evalGradPoint = Kokkos::subview(evaluationGradPoints,i,j,Kokkos::ALL());
+                auto evalGradPoint = Kokkos::subview(evaluationGradPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalGradPoint, evalGradPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -454,7 +440,6 @@ int ConvergenceTet(const bool verbose) {
           if(useL2Projection) {
             pts::getL2BasisCoeffs(basisCoeffsHGrad,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -462,8 +447,6 @@ int ConvergenceTet(const bool verbose) {
             pts::getHGradBasisCoeffs(basisCoeffsHGrad,
                 targetAtEvalPoints,
                 targetGradAtEvalPoints,
-                evaluationPoints,
-                evaluationGradPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -629,21 +612,10 @@ int ConvergenceTet(const bool verbose) {
           } else {
             projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
           }
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationCurlPoints, numElems, numCurlPoints, dim);
-          if(useL2Projection) {
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          } else {
-            pts::getHCurlEvaluationPoints(evaluationPoints,
-                evaluationCurlPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          }
+
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationCurlPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numCurlPoints = evaluationCurlPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(targetCurlAtEvalPoints, numElems, numCurlPoints, dim);
@@ -659,7 +631,7 @@ int ConvergenceTet(const bool verbose) {
             KOKKOS_LAMBDA (const int &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -668,7 +640,7 @@ int ConvergenceTet(const bool verbose) {
 
               auto basisValuesAtEvalCurlPoint = Kokkos::subview(linearBasisValuesAtEvalCurlPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numCurlPoints; ++j) {
-                auto evalGradPoint = Kokkos::subview(evaluationCurlPoints,i,j,Kokkos::ALL());
+                auto evalGradPoint = Kokkos::subview(evaluationCurlPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalCurlPoint, evalGradPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -714,7 +686,6 @@ int ConvergenceTet(const bool verbose) {
           if(useL2Projection) {
             pts::getL2BasisCoeffs(basisCoeffsHCurl,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -722,8 +693,6 @@ int ConvergenceTet(const bool verbose) {
             pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
                 targetAtEvalPoints,
                 targetCurlAtEvalPoints,
-                evaluationPoints,
-                evaluationCurlPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -892,22 +861,9 @@ int ConvergenceTet(const bool verbose) {
             projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
           }
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-
-          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationDivPoints, numElems, numDivPoints, dim);
-          if(useL2Projection) {
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          } else {
-            pts::getHDivEvaluationPoints(evaluationPoints,
-                evaluationDivPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          }
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationDivPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numDivPoints = evaluationDivPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(targetDivAtEvalPoints, numElems, numDivPoints);
@@ -923,7 +879,7 @@ int ConvergenceTet(const bool verbose) {
             KOKKOS_LAMBDA (const int &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -932,7 +888,7 @@ int ConvergenceTet(const bool verbose) {
 
               auto basisValuesAtEvalDivPoint = Kokkos::subview(linearBasisValuesAtEvalDivPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numDivPoints; ++j) {
-                auto evalGradPoint = Kokkos::subview(evaluationDivPoints,i,j,Kokkos::ALL());
+                auto evalGradPoint = Kokkos::subview(evaluationDivPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDivPoint, evalGradPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -977,7 +933,6 @@ int ConvergenceTet(const bool verbose) {
           if(useL2Projection) {
             pts::getL2BasisCoeffs(basisCoeffsHDiv,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -985,8 +940,6 @@ int ConvergenceTet(const bool verbose) {
             pts::getHDivBasisCoeffs(basisCoeffsHDiv,
                 targetAtEvalPoints,
                 targetDivAtEvalPoints,
-                evaluationPoints,
-                evaluationDivPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -1149,20 +1102,8 @@ int ConvergenceTet(const bool verbose) {
             projStruct.createHVolProjectionStruct(&basis, targetCubDegree);
           }
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-
-          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-          if(useL2Projection) {
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          } else {
-            pts::getHVolEvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          }
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
 
@@ -1175,7 +1116,7 @@ int ConvergenceTet(const bool verbose) {
             KOKKOS_LAMBDA (const int &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -1202,14 +1143,12 @@ int ConvergenceTet(const bool verbose) {
           if(useL2Projection) {
             pts::getL2BasisCoeffs(basisCoeffsHVol,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
           } else {
             pts::getHVolBasisCoeffs(basisCoeffsHVol,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);

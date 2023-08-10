@@ -830,6 +830,8 @@ private:
   int NumInitialize_ = 0;
   //! the number of successful calls to compute().
   int NumCompute_ = 0;
+  //! Whether apply should register and use a timer
+  bool TimerForApply_ = true;
   //! The number of successful calls to apply().
   mutable int NumApply_ = 0;
   //! Total time in seconds for all successful calls to initialize().

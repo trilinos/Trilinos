@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_DISTOBJECT_DECL_HPP
 #define TPETRA_DISTOBJECT_DECL_HPP
 
@@ -330,7 +331,7 @@ namespace Tpetra {
     ///
     /// Note that this type does not always correspond to the
     /// <tt>Scalar</tt> template parameter of subclasses.
-    using packet_type = typename ::Kokkos::Details::ArithTraits<Packet>::val_type;
+    using packet_type = typename ::Kokkos::ArithTraits<Packet>::val_type;
     //! The type of local indices.
     using local_ordinal_type = LocalOrdinal;
     //! The type of global indices.
@@ -860,6 +861,18 @@ namespace Tpetra {
                     const Kokkos::DualView<const local_ordinal_type*,
                       buffer_device_type>& permuteFromLIDs,
                     const CombineMode CM);
+
+  // clang-format on
+  /*! \brief Same as copyAndPermute, but do operations in \c space
+   */
+  virtual void copyAndPermute(
+      const SrcDistObject &source, const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteFromLIDs,
+      const CombineMode CM, const execution_space &space);
+  // clang-format off
 
     /// \brief Pack data and metadata for communication (sends).
     ///

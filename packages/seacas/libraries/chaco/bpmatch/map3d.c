@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -11,27 +11,26 @@
 #include "structs.h"
 #include <stdio.h> // for printf
 
-static void free3d();
+static void free3d(double *vals[8][MAXSETS], int *indices[8][MAXSETS]);
 
 void map3d(struct vtx_data **graph,   /* graph data structure */
-           double **         xvecs,   /* vectors to partition */
+           double          **xvecs,   /* vectors to partition */
            int               nvtxs,   /* number of vertices */
-           int *             sets,    /* set each vertex gets assigned to */
-           double *          goal,    /* desired set sizes */
+           int              *sets,    /* set each vertex gets assigned to */
+           double           *goal,    /* desired set sizes */
            int               vwgt_max /* largest vertex weight */
 )
 {
   extern int DEBUG_BPMATCH;        /* debug flag for bipartite matching */
   extern int N_VTX_MOVES;          /* number of vertices moved between sets */
   extern int N_VTX_CHECKS;         /* number of vertex moves considered */
-  double *   vals[8][MAXSETS];     /* values in sorted lists */
+  double    *vals[8][MAXSETS];     /* values in sorted lists */
   double     dist[8];              /* trial separation point */
   double     size[8];              /* sizes of each set being modified */
-  int *      indices[8][MAXSETS];  /* indices sorting lists */
+  int       *indices[8][MAXSETS];  /* indices sorting lists */
   int        startvtx[8][MAXSETS]; /* indices defining separation */
   int        nsection = 3;         /* number of xvectors */
   int        nsets    = 8;         /* number of sets being divided into */
-  void       genvals3d(), sorts3d(), inits3d(), checkbp(), movevtxs();
 
   N_VTX_CHECKS = N_VTX_MOVES = 0;
 

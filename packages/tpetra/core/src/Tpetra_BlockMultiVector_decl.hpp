@@ -320,15 +320,25 @@ public:
   /// This is a class ("static") method so that you can make and reuse
   /// a point Map for creating different BlockMultiVector instances,
   /// using the more efficient four-argument constructor.
+  ///
   static map_type
   makePointMap (const map_type& meshMap, const LO blockSize);
+
+  /// \brief Create and return an owning RCP to the point Map corresponding to the
+  ///   given mesh Map and block size.
+  ///
+  /// This is a class ("static") method so that you can make and reuse
+  /// a point Map for creating different BlockMultiVector instances,
+  /// using the more efficient four-argument constructor.
+  static Teuchos::RCP<const map_type>
+  makePointMapRCP (const map_type& meshMap, const LO blockSize);
 
   /// \brief Get this BlockMultiVector's (previously computed) point Map.
   ///
   /// It is always valid to call this method.  A BlockMultiVector
   /// always has a point Map.  We do not compute the point Map lazily.
-  map_type getPointMap () const {
-    return pointMap_;
+  const map_type getPointMap () const {
+    return *pointMap_;
   }
 
   //! Get the number of degrees of freedom per mesh point.
@@ -538,7 +548,13 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const Tpetra::SrcDistObject& source);
+  // clang-format on
+  virtual bool checkSizes(const Tpetra::SrcDistObject &source) override;
+
+  using dist_object_type::
+      copyAndPermute; ///< DistObject copyAndPermute has multiple overloads --
+                      ///< use copyAndPermutes for anything we don't override
+                      // clang-format off
 
   virtual void
   copyAndPermute
@@ -548,9 +564,8 @@ protected:
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteFromLIDs,
-   const CombineMode CM);
+   const CombineMode CM) override;
 
-  // clang-format on
   using dist_object_type::packAndPrepare; ///< DistObject overloads
                                           ///< packAndPrepare. Explicitly use
                                           ///< DistObject's packAndPrepare for
@@ -566,9 +581,8 @@ protected:
      buffer_device_type>& exports,
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets);
+   size_t& constantNumPackets) override;
 
-  // clang-format on
   using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
                                             ///< unpackAndCombine, use the
                                             ///< DistObject's implementation for
@@ -584,7 +598,8 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    const size_t constantNumPackets,
-   const CombineMode combineMode);
+   const CombineMode combineMode) override;
+   // clang-format off
 
   //@}
 
@@ -613,7 +628,7 @@ protected:
 
 private:
   //! The point Map (describing the distribution of degrees of freedom).
-  map_type pointMap_;
+  Teuchos::RCP<const map_type> pointMap_;
 
 protected:
   //! The Tpetra::MultiVector used to represent the data.

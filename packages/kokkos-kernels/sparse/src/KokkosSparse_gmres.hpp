@@ -46,6 +46,16 @@ namespace Experimental {
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
 
+/// @brief
+/// @tparam KernelHandle
+/// @tparam AMatrix
+/// @tparam BType
+/// @tparam XType
+/// @param handle
+/// @param A
+/// @param B
+/// @param X
+/// @param precond
 template <typename KernelHandle, typename AMatrix, typename BType,
           typename XType>
 void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X,

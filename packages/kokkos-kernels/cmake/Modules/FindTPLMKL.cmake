@@ -1,4 +1,30 @@
-IF (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+find_package(MKL)
+IF(TARGET MKL::MKL)
+  # MKL version >= 2021 (see kokkos wiki and intel documentation. MKL CMake module file has been introduced starting MKL >= 2021)
+  IF (KOKKOS_ENABLE_SYCL) #get from kokkos-core
+    # MKL version >= 2022 (see kokkos wiki)
+    IF (NOT TARGET MKL::MKL_DPCPP)
+      MESSAGE(FATAL_ERROR "KOKKOS_ENABLE_SYCL activated but the target MKL_DPCPP wasn't found")
+    ENDIF()
+  ENDIF()
+  SET(TPL_MKL_IMPORTED_NAME MKL::MKL)
+  SET(TPL_IMPORTED_NAME MKL::MKL)
+  ADD_LIBRARY(MKL INTERFACE)
+  IF(KOKKOS_ENABLE_SYCL)
+    TARGET_LINK_LIBRARIES(MKL INTERFACE MKL::MKL MKL::MKL_DPCPP)
+  ELSE()
+    TARGET_LINK_LIBRARIES(MKL INTERFACE MKL::MKL )
+  ENDIF()
+  ADD_LIBRARY(KokkosKernels::MKL ALIAS MKL )
+  GET_TARGET_PROPERTY(LIB_TYPE ${TPL_IMPORTED_NAME} TYPE)
+  MESSAGE("LIB_TYPE: ${LIB_TYPE}")
+  # kokkoskernels_export_imported_tpl install MKL with target name MKL instead of
+  # MKL::MKL or KokkosKernels::MKL, so we need to install a specific ALIAS one
+  if(TARGET MKL)
+    MESSAGE("TARGET MKL CREATED")
+  ENDIF()
+ELSEIF (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+# Regular way with MKL version < 2021 (Where MKL doesn't provide cmake module file)
   TRY_COMPILE(KOKKOSKERNELS_HAS_MKL_ARG
     ${KOKKOSKERNELS_TOP_BUILD_DIR}/tpl_tests
     ${KOKKOSKERNELS_TOP_SOURCE_DIR}/cmake/compile_tests/mkl.cpp
@@ -46,5 +72,5 @@ ELSE()
       HEADER_PATHS
         ${MKL_ROOT}/include
     )
-  ENDIF()
+    ENDIF()
 ENDIF()

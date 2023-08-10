@@ -1,6 +1,6 @@
-#include "active_vert_data.hpp"
-#include "create_mesh.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/active_vert_data.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "gtest/gtest.h"
 
 #include <limits>

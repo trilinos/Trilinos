@@ -87,23 +87,26 @@ void compute_field_entity_ranges(const EntityCommListInfoVector& commListInfo,
   }
 }
 
-void do_initial_sync_to_host(const std::vector<const FieldBase*>& fields, Selector& selector, bool syncOnlySharedOrGhosted)
+void do_initial_sync_to_host(const std::vector<const FieldBase*>& fields, Selector& selector)
 {
   for(const FieldBase* fptr : fields) {
     fptr->sync_to_host();
-    if(syncOnlySharedOrGhosted) {
-      fptr->modify_on_host(selector);
-    } else {
-      fptr->modify_on_host();
-    }
+    fptr->modify_on_host(selector);
   }
 }
 
 //----------------------------------------------------------------------
-void communicate_field_data(
-  const Ghosting                        & ghosts ,
-  const std::vector< const FieldBase *> & fields ,
-  bool syncOnlySharedOrGhosted)
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
+STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use communicate_field_data(ghosts, fields).")
+void communicate_field_data(const Ghosting& ghosts ,
+                            const std::vector< const FieldBase *> & fields,
+                            bool syncOnlySharedOrGhosted)
+{
+  communicate_field_data(ghosts, fields);
+}
+#endif
+
+void communicate_field_data(const Ghosting& ghosts, const std::vector<const FieldBase*>& fields)
 {
   if ( fields.empty() ) { return; }
 
@@ -113,7 +116,7 @@ void communicate_field_data(
   const unsigned ghost_id = ghosts.ordinal();
 
   Selector ghostSelector = !mesh.mesh_meta_data().locally_owned_part();
-  do_initial_sync_to_host(fields, ghostSelector, syncOnlySharedOrGhosted);
+  do_initial_sync_to_host(fields, ghostSelector);
 
   // Sizing for send and receive
 
@@ -229,9 +232,18 @@ void communicate_field_data(
   }
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
+STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use communicate_field_data(mesh, fields).")
 void communicate_field_data(const BulkData& mesh ,
                             const std::vector< const FieldBase *> & fields,
                             bool syncOnlySharedOrGhosted)
+{
+  communicate_field_data(mesh, fields);
+}
+#endif
+
+void communicate_field_data(const BulkData& mesh ,
+                            const std::vector< const FieldBase *> & fields)
 {
   const int parallel_size = mesh.parallel_size();
   if ( fields.empty() || parallel_size == 1) {
@@ -244,7 +256,7 @@ void communicate_field_data(const BulkData& mesh ,
   const EntityCommListInfoVector &comm_info_vec = mesh.internal_comm_list();
 
   Selector ghostSelector = !mesh.mesh_meta_data().locally_owned_part();
-  do_initial_sync_to_host(fields, ghostSelector, syncOnlySharedOrGhosted);
+  do_initial_sync_to_host(fields, ghostSelector);
 
   static std::vector<int> int_buffer;
   int_buffer.resize(4*parallel_size+2);

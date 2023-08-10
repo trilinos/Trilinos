@@ -126,7 +126,7 @@ public:
   Slot<Kokkos::HIP> HIPSlot;
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
-  Slot<Kokkos::SYCL> SYCLSlot;
+  Slot<Kokkos::Experimental::SYCL> SYCLSlot;
 #endif
 
 }; // User

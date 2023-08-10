@@ -528,7 +528,7 @@ struct BSR_GEMV_Functor {
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   //! Nonconst version of the type of column indices in the sparse matrix.
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
@@ -816,7 +816,7 @@ struct BSR_GEMV_Transpose_Functor {
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   //! Nonconst version of the type of column indices in the sparse matrix.
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
@@ -1143,7 +1143,7 @@ struct BSR_GEMM_Functor {
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   //! Nonconst version of the type of column indices in the sparse matrix.
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
@@ -1449,7 +1449,7 @@ struct BSR_GEMM_Transpose_Functor {
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   //! Nonconst version of the type of column indices in the sparse matrix.
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;

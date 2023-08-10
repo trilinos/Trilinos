@@ -240,6 +240,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     LinePartitioner
     LocalFilter
     LocalSparseTriangularSolver
+    MDF
     OverlappingRowMatrix
     Relaxation
     ReorderFilter

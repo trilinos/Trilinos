@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,7 +7,8 @@
  */
 
 #include "chaco.h"
-#include "defs.h"    // for FALSE, TRUE
+#include "defs.h" // for FALSE, TRUE
+#include "prototypes.h"
 #include "smalloc.h" // for sfree, smalloc_ret
 #include "structs.h"
 #include <stdio.h>  // for NULL, printf, fclose, fopen, etc
@@ -66,8 +67,6 @@ int INTER_FACE(int    nvtxs,                 /* number of vertices in full graph
   int               default_goal;       /* using default goals? */
   int               i;                  /* loop counter */
   double            seconds(void);
-  int               reformat();
-  void              free_graph(), read_params(), strout(char *msg);
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering INTER_FACE>\n");

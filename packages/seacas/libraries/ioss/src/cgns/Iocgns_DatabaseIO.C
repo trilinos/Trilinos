@@ -377,7 +377,8 @@ namespace {
     }
 
 #if IOSS_DEBUG_OUTPUT
-    fmt::print("CGNS DatabaseIO has decomp flag? {}\n", has_decomp_flag);
+    fmt::print("[{}] CGNS DatabaseIO has decomp flag? {}; names? {}\n", myProcessor,
+               has_decomp_flag, has_decomp_names);
 #endif
 
     for (int i = 0; i < nconn; i++) {
@@ -399,12 +400,14 @@ namespace {
         is_from_decomp = has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1);
       }
       else {
-#if IOSS_DEBUG_OUTPUT
-        fmt::print("Name: {}, decomp? = {}\n", connectname, name_is_decomp(connectname));
-#endif
         is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor &&
                          (!has_decomp_names || name_is_decomp(connectname));
       }
+#if IOSS_DEBUG_OUTPUT
+      fmt::print(
+          "[{}] ZGC Name: {}, Has decomp descriptor: {}. Name is decomp: {}.  Is_from_decomp: {}\n",
+          myProcessor, connectname, has_decomp_flag, name_is_decomp(connectname), is_from_decomp);
+#endif
 
       if (is_from_decomp) {
         // See if the descriptor named "Decomp" exists as a child of this ZGC.
@@ -663,7 +666,7 @@ namespace Iocgns {
   {
     if (m_cgnsFilePtr > 0) {
       CGCHECKM(cg_close(m_cgnsFilePtr));
-      closeDW();
+      close_dw();
       m_cgnsFilePtr = -1;
     }
   }

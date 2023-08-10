@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
-#include "active_vert_container.hpp"
-#include "boundary_fixture.hpp"
-#include "create_mesh.hpp"
-#include "point.hpp"
+#include "stk_middle_mesh/active_vert_container.hpp"
+#include "stk_middle_mesh/boundary_fixture.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/point.hpp"
 
 namespace {
 
@@ -147,6 +147,7 @@ TEST(ActiveVertContainer, 2Procs)
   EXPECT_EQ(container.get_active_verts().size(), centerPts.size());
   for (auto& centerPt : centerPts)
   {
+    std::cout << "\nchecking patch centered at " << centerPt << std::endl;
     ActiveVertData& patch1 = get_closest_patch(container, centerPt);
     EXPECT_TRUE(has_vert(patch1, centerPt + Point(-delta, -delta), 1e-12));
     EXPECT_TRUE(has_vert(patch1, centerPt + Point(0,      -delta), 1e-12));

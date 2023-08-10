@@ -1379,7 +1379,7 @@ The variable ``HAVE_SIMPLECXX___INT64`` is set up in the base file
 ``SimpleCxx/CMakeLists.txt`` (see `<packageDir>/CMakeLists.txt`_ below).  For
 an explanation of ``HAVE_SIMPLECXX_DEBUG``, see `tribits_add_debug_option()`_.
 For an explanation of ``HAVE_SIMPLECXX_SIMPLETPL``, see `How to add a new
-TriBITS external package/TPL dependency`_.  For an explanation of
+TriBITS Package dependency`_.  For an explanation of
 ``@SIMPLECXX_DEPRECATED_DECLARATIONS@``, see `Setting up support for
 deprecated code handling`_.
 
@@ -1617,7 +1617,7 @@ are defined before a Package's ``CMakeLists.txt`` file is processed:
 
     **NOTE:** The value of this variable also determines the value of the
     macro define variable name
-    `HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>`_.
+    `HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>`_.
 
   .. _${PACKAGE_NAME}_ENABLE_TESTS:
 
@@ -1643,23 +1643,23 @@ The following local **TriBITS Package Optional Dependency Macro Variables**
 are defined in the top-level project scope before a Package's
 ``CMakeLists.txt`` file is processed:
 
-  .. _HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>:
+  .. _HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>:
 
-  ``HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>``
+  ``HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>``
 
     Set to ``ON`` if support for optional upstream package
     ``${OPTIONAL_DEP_PACKAGE}`` is enabled in downstream package
     ``${PACKAGE_NAME}``
     (i.e. `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ = ``ON``) and
     is set to ``FALSE`` otherwise.  Here, ``<PACKAGE_NAME_UC>`` and
-    ``<OPTIONAL_DEP_PACKAGE_NAME_UC>`` are the upper-case names for the packages
+    ``<UPSTREAM_PACKAGE_NAME_UC>`` are the upper-case names for the packages
     ``${PACKAGE_NAME}`` and ``${OPTIONAL_DEP_PACKAGE_NAME}``, respectively.
     For example, if optional support for upstream package ``Triutils`` is
     enabled in downstream package ``EpetraExt`` in `ReducedMockTrilinos`_,
     then ``EpetraExt_ENABLE_TriUtils=ON`` and ``HAVE_EPETRAEXT_TRIUTILS=ON``.
     This variable is meant to be used in::
 
-      #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+      #cmakedefine HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>
 
     in configured header files
     (e.g. `<packageDir>/cmake/<packageName>_config.h.in`_).  For example, for
@@ -2142,7 +2142,7 @@ defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
 Note, the ``<findmod>`` field path in the call to
 `tribits_repository_define_tpls()`_ is relative to the TriBITS repository dir
-``<repoDir>`` but a relative path in for the varaible `<tplName>_FINDMOD`_ is
+``<repoDir>`` but a relative path in for the variable `<tplName>_FINDMOD`_ is
 relative to the project dir ``<projectDir>``.  There is a translation of the
 ``<findmod>`` field to the variable ``<tplName>_FINDMOD`` that takes place
 when the `<repoDir>/TPLsList.cmake`_ file is processed to make this so.
@@ -2615,32 +2615,19 @@ packages** as imposed by downstream TriBITS internal packages are:
   CMake macros or functions that downstream CMake packages may need to use the
   upstream package ``<Package>``.
 
-* All of the upstream dependencies (listed in the ``INTERFACE_LINK_LIBRARIES``
-  property recursively) are also `TriBITS-compliant packages`_
+* [Optional] All of the upstream dependencies (listed in the
+  ``INTERFACE_LINK_LIBRARIES`` property recursively) are also
+  `TriBITS-compliant packages`_
 
 The TriBITS system will also set the variable:
 
 * ``<Package>_IS_TRIBITS_COMPLIANT``: Set to ``TRUE``
 
-for all packages that are determined to be TriBITS-compliant packages.
+for all packages that are determined to be TriBITS-compliant packages and
+satisfy the above criteria.
 
 The above are all that is needed by downstream TriBITS packages to build and
 link against their upstream dependencies.
-
-If a TriBITS package provides any CTest tests/examples, then it must also
-satsify the following requirements:
-
-* Test names must be prefixed with the package name ``<Package>_``.
-
-* Tests should only be added if the variable ``<Package>_ENABLE_TESTS`` is
-  true.
-
-* Examples (that run as CTest tests) should only be added if the variable
-  ``<Package>_ENABLE_EXAMPLES`` is true.
-
-* The test ``PROCESSORS`` and other test properties must be set in a way
-  consistent with `tribits_add_test()`_ so as to run in parallel with other
-  tests and not overwhelm the computing resources on the machine.
 
 Additional requirements are placed on TriBITS-compliant packages depending on
 if they are defined as internal CMake packages (i.e. `TriBITS-compliant
@@ -2672,15 +2659,38 @@ The requirements for **TriBITS-compliant internal packages** are:
   directory ``<installDir>/lib/cmake/<Package>/`` allowing the installed
   package to be used by downstream CMake packages/projects.
 
-* All of the upstream dependencies (recursively) are also `TriBITS-compliant
-  packages`_
+* [Optional] All of the upstream dependencies (recursively) are also
+  `TriBITS-compliant packages`_.
+
+If a TriBITS package provides any CTest tests/examples, then it must also
+satisfy the following requirements:
+
+* Test names must be prefixed with the package name ``<Package>_``.
+
+* Tests should only be added if the variable ``<Package>_ENABLE_TESTS`` is
+  true.
+
+* Examples (that run as CTest tests) should only be added if the variable
+  ``<Package>_ENABLE_EXAMPLES`` is true.
+
+* The ``PROCESSORS`` test property and other test properties must be set in a
+  way consistent with `tribits_add_test()`_ so as to run in parallel with
+  other tests and not overwhelm the computing resources on the machine.
+
+* The test ``<fullTestName>`` must not be added if the cache variable
+  ``<fullTestName>_DISABLE`` is set to ``TRUE`` or if the cache variable
+  ``<fullTestName>_SET_DISABLED_AND_MSG`` is set to non-empty (and the message
+  string should be printed to STDOUT).
 
 TriBITS internal packages that are defined using the TriBITS framework using
-the TriBITS-provided macros and functions such as `tribits_add_library()`_ are
-automatically `TriBITS-compliant internal packages`_ and when they are
-installed they automatically provide `TriBITS-compliant external packages`_.
+the TriBITS-provided macros and functions such as `tribits_add_library()`_ and
+have tests defined using the functions `tribits_add_test()`_ and
+`tribits_add_advanced_test()`_ are automatically `TriBITS-compliant internal
+packages`_.  And when these TriBITS-implemented internal packages are
+installed, they automatically provide `TriBITS-compliant external packages`_.
 But it is possible for a CMake package to write its own raw CMake code to
-satisfy these basic requirements for both internal and external packages.
+satisfy these basic requirements for both internal and (installed) external
+packages.
 
 
 .. _TriBITS-Compliant External Package:
@@ -2692,8 +2702,9 @@ For packages that are installed on the system and not built in the current
 CMake project, a streamlined type of `TriBITS External Package/TPL`_ is a
 *TriBITS-compliant external package*.  These special types of external
 package's don't need to provide a `FindTPL<tplName>.cmake`_ find module.
-Instead, they are fully defined by calling ``find_package(<Package>)`` to
-locate and load their ``<Package>Config.cmake`` package config file.
+Instead, they are fully defined by calling ``find_package(<Package>)`` or
+``include(<someBaseDir>/<Package>Config.cmake)`` to load their
+``<Package>Config.cmake`` package config file.
 
 The requirements for **TriBITS-compliant external packages** are:
 
@@ -2708,17 +2719,22 @@ The requirements for **TriBITS-compliant external packages** are:
     ``<Package>_TRIBITS_COMPLIANT_PACKAGE_CONFIG_FILE``: Points to the file
     ``<Package>Config.cmake`` (i.e. ``${CMAKE_CURRENT_LIST_FILE}``)
 
-  * ``<Package>_DIR`` or
-    ``<Package>_TRIBITS_COMPLIANT_PACKAGE_CONFIG_FILE_DIR`` Points to the base
-    directory for ``<Package>Config.cmake``
-    (i.e. ``${CMAKE_CURRENT_LIST_DIR}``)
-
-* All of the upstream dependencies (recursively) are also provided as
-  `TriBITS-compliant external packages`_ with
+* [Optional] All of the upstream dependencies (recursively) are also provided
+  as `TriBITS-compliant external packages`_ with
   ``<UpstreamPackage>Config.cmake`` files (see above) and all of the targets
   and variables for a TriBITS-compliant external package are defined when the
   ``<Package>Config.cmake`` file is included (or pulled in with
   ``find_package()`` or ``find_dependency()``).
+
+NOTE: TriBITS-compliant external packages that provide TriBITS-compliant
+external packages for all of their upstream dependencies are said to be *fully
+TriBITS-compliant external packages* while those that support the minimal
+requirements are said to be *minimally TriBITS-compliant external packages*.
+The TriBITS external package/TPL system is robust enough to deal with
+minimally TriBITS-compliant external packages.  Any TriBITS external
+packages/TPLs upstream from a minimally TriBITS-compliant external package
+will be found again in the current TriBITS project.  (In these cases, it is up
+to the user to make sure that the same upstream packages are found.)
 
 
 Example TriBITS Projects
@@ -5681,7 +5697,7 @@ to modern CMake along with the proper usage of complete
 
 However, to maintain backwards compatibility with the legacy TriBITS TPL
 system (such as when upgrading a existing ``FindTPL<tplName>.cmake`` file), a
-``FindTPL<tplName>.cmake`` file can be extended to use the
+``FindTPL<tplName>.cmake`` file can be extended to use the function
 `tribits_tpl_allow_pre_find_package()`_ in combination with the functions
 ``tribits_extpkg_create_imported_all_libs_target_and_config_file()`` and
 `tribits_tpl_find_include_dirs_and_libraries()`_ as follows::
@@ -5717,7 +5733,7 @@ the TPL.  See the documentation for `tribits_tpl_allow_pre_find_package()`_
 for conditions where ``<tplName>_ALLOW_PREFIND`` is set to ``FALSE`` (and
 therefore ``find_package(<externalPkg>)`` is not called).
 
-Note that in the above ``FindTPL<tplName>.cmake`` file that
+Note in the above ``FindTPL<tplName>.cmake`` file that
 ``find_package(<externalPkg>)`` will be called even on reconfigures.  That is
 critical since ``find_package(<externalPkg>)`` defines IMPORTED targets that
 must be available each time configure is called.  Also, if
@@ -5954,14 +5970,14 @@ links.
 
 
 How to add a new TriBITS Package dependency
-----------------------------------------------
+-------------------------------------------
 
 It is often the case where one will want to add a new dependency for an
-existing `downstream`_ package to an existing `upstream`_ `TriBITS Package`_.
-This can either be a required dependency or an optional dependency.  Here, we
-will refer to the downstream package as ``<packageName>`` with base directory
-``<packageDir>`` and will refer to the upstream package as
-``<upstreamPackageName>``.
+existing `downstream`_ package to an existing `upstream`_ (internal or
+external) `TriBITS Package`_.  This can either be a required dependency or an
+optional dependency.  Here, we will refer to the downstream package as
+``<packageName>`` with base directory ``<packageDir>`` and will refer to the
+upstream (internal or external) package as ``<upstreamPackageName>``.
 
 The process for adding a new dependency to an existing upstream package is
 as follows:
@@ -5986,9 +6002,9 @@ as follows:
    typically a C/C++ processor macro will be added to the package's configured
    `<packageDir>/cmake/<packageName>_config.h.in`_ file using the line::
 
-     #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+     #cmakedefine HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>
 
-   (see `HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>`_.)
+   (see `HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>`_.)
 
    .. _Warning, do not add optional defines for tests/examples to configured header files:
 
@@ -6017,21 +6033,29 @@ as follows:
 
      #include "<packageName>_config.h"
 
-     #if HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+     #if HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>
      #  include "<upstreamPackageName>_<fileName>"
      #endif
 
 4) **For an optional dependency, use CMake if() statements based on
-   ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:** When a package
+   ${PACKAGE_NAME}_ENABLE_<upstreamPackageName>:** When a package
    ``PACKAGE_NAME`` has an optional dependency on an upstream package
-   ``OPTIONAL_DEP_PACKAGE_NAME`` and needs to put in optional logic in a
-   CMakeLists.txt file, then the if() statements should use the variable
-   `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ and **not** the
-   variable ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}``.  For
-   example, to optionally enable a test that depends on the enable of the
-   optional upstream dep package, one would use::
+   ``<upstreamPackageName>`` and needs to put in optional logic in a
+   ``CMakeLists.txt`` file, then the ``if()`` statements should use the
+   variable ``${PACKAGE_NAME}_ENABLE_<upstreamPackageName>`` and **not** the
+   variable ``${PROJECT_NAME}_ENABLE_<upstreamPackageName>`` or
+   ``TPL_ENABLE_<upstreamPackageName>`` (if ``<upstreamPackageName>`` is an
+   external package/TPL).  For example, to optionally enable a test that
+   depends on the enable of the optional upstream dependent package
+   ``<upstreamPackageName>``, one would use::
 
-     if (${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME})
+     tribits_add_test( ...
+       EXCLUDE_IF_NOT_TRUE  ${PACKAGE_NAME}_ENABLE_<upstreamPackageName>
+       )
+
+   or::
+
+     if (${PACKAGE_NAME}_ENABLE_<upstreamPackageName>)
        tribits_add_test( ... )
      endif()
 
@@ -6045,100 +6069,13 @@ package library and executable links.  See documentation in the functions
 argument to these functions, for more details.
 
 
-How to add a new TriBITS external package/TPL dependency
---------------------------------------------------------
-
-It is often the case where one will want to add a new dependency for an
-existing `downstream`_ package to an existing `upstream`_ `TriBITS external
-package/TPL`_.  This can either be a required dependency or an optional
-dependency.  Here, we will refer to the downstream package as
-``<packageName>`` with base directory ``<packageDir>`` and will refer to the
-upstream TPL as ``<tplName>``.
-
-The process for adding a new dependency to an existing upstream TPL is as
-follows:
-
-1) **Add the name of the upstream TPL to the downstream package's
-   Dependencies.cmake file:** Add ``<tplName>`` to the call of
-   `tribits_package_define_dependencies()`_ in the downstream package's
-   `<packageDir>/cmake/Dependencies.cmake`_ file.  If this is to be a required
-   library dependency, then ``<tplName>`` is added to the
-   ``LIB_REQUIRED_TPLs`` argument.  Alternatively, if this is to be an
-   optional library dependency, then ``<tplName>`` is added to the
-   ``LIB_OPTIONAL_TPL`` argument.  (For example, see the file
-   ``packages/Teuchos/cmake/Dependencies.cmake`` file in the
-   `ReducedMockTrilinos`_ project.)  If only the test and/or example sources,
-   and not the package's core library sources, will have the required or
-   optional dependency, then ``<tplName>`` is added to the arguments
-   ``TEST_REQUIRED_TPLs`` or ``TEST_OPTIONAL_TPLS``, respectively.
-
-2) **For an optional dependency, add `HAVE_` preprocessor macro to the
-   package's configured header file:** If this is an optional dependency,
-   typically a C/C++ processor macro will be added to the package's configured
-   `<packageDir>/cmake/<packageName>_config.h.in`_ file using the line::
-
-     #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
-
-   (see `HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>`_.)
-
-   **WARNING:** If this is a test-only and/or example-only dependency then
-   please do **not** add a ``#cmakedefine`` to the package's core
-   `<packageDir>/cmake/<packageName>_config.h.in`_ file.  See `Warning, do not
-   add optional defines for tests/examples to configured header files`_.
-
-3) **Use the features of the upstream TPL in the source files of the
-   downstream package sources and/or tests/examples:** Usage of the features
-   of the upstream package ``<tplName>`` in the downstream package
-   ``<packageName>`` will typically involve adding ``#include
-   <tplName>_<fileName>`` in the package's C/C++ source (or test/example)
-   files (or the equivalent in Fortran).  If it is an optional dependency,
-   then these includes will typically be protected using preprocessor ifdefs,
-   for example, as::
-
-     #include "<packageName>_config.h"
-
-     #if HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
-     #  include "<upstreamPackageName>_<fileName>"
-     #endif
-
-4) **For an optional dependency, use CMake if() statements based on
-   ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:** When a package
-   ``PACKAGE_NAME`` has an optional dependency on TPL
-   ``OPTIONAL_DEP_PACKAGE_NAME`` and needs to put in optional logic in a
-   CMakeLists.txt file, then the if() statements should use the variable
-   `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ and **not** the
-   variable ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}``.  For
-   example, to optionally enable a test that depends on the enable of the
-   optional TPL, one could use::
-
-     if (${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME})
-       tribits_add_test( ... )
-     endif()
-
-   or::
-
-     tribits_add_test( <testName>
-       EXCLUDE_IF_NOT_TRUE  ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}
-       [other args]
-       )
-
-  .. ToDo: Find an example to point to in TribitsExampleProject.
-
-NOTE: TriBITS will automatically add the include directories for the upstream
-TPL to the compile lines for the downstream package source builds and will add
-the libraries for the upstream TPL to the link lines to the downstream package
-library and executable links.  See documentation in the functions
-`tribits_add_library()`_ and `tribits_add_executable()`_, and the ``DEPLIBS``
-argument to these functions, for more details.
-
-
 How to tentatively enable an external package/TPL
 -------------------------------------------------
 
 A TriBITS package can request the tentative enable of any of its optional
-external packagse/TPLs (see `How to add a new TriBITS external package/TPL
-dependency`_).  This is done by calling `tribits_tpl_tentatively_enable()`_ in
-the package's `<packageDir>/cmake/Dependencies.cmake`_ file.  For example::
+external packagse/TPLs (see `How to add a new TriBITS Package dependency`_).
+This is done by calling `tribits_tpl_tentatively_enable()`_ in the package's
+`<packageDir>/cmake/Dependencies.cmake`_ file.  For example::
 
   tribits_package_define_dependencies(
     ...

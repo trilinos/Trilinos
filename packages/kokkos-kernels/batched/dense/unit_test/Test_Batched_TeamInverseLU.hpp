@@ -161,7 +161,7 @@ template <typename DeviceType, typename AViewType, typename WViewType,
           typename AlgoTagType>
 void impl_test_batched_inverselu(const int N, const int BlkSize) {
   typedef typename AViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   AViewType a0("a0", N, BlkSize, BlkSize);

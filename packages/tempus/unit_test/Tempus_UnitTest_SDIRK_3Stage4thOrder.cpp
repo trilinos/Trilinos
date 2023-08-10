@@ -50,4 +50,4 @@ TEUCHOS_UNIT_TEST(SDIRK_3Stage4thOrder, AppAction)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

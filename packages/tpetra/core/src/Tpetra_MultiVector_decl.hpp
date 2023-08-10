@@ -39,6 +39,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_MULTIVECTOR_DECL_HPP
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
@@ -406,7 +407,7 @@ namespace Tpetra {
     /// MultiVector's data, its entries have type \c impl_scalar_type,
     /// not \c scalar_type.
     using impl_scalar_type =
-      typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      typename Kokkos::ArithTraits<Scalar>::val_type;
 
     //! The type of the Map specialization used by this class.
     using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -2335,13 +2336,23 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const override;
 
-    virtual void
-    copyAndPermute
-    (const SrcDistObject& sourceObj,
-     const size_t numSameIDs,
-     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-     const CombineMode CM) override;
+  // clang-format on
+  virtual void copyAndPermute(
+      const SrcDistObject &sourceObj, const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteFromLIDs,
+      const CombineMode CM, const execution_space &space) override;
+
+  virtual void copyAndPermute(
+      const SrcDistObject &sourceObj, const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteFromLIDs,
+      const CombineMode CM) override;
+  // clang-format off
 
     virtual void
     packAndPrepare

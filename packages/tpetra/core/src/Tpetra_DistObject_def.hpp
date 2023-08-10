@@ -1682,6 +1682,34 @@ namespace Tpetra {
    const CombineMode CM)
   {}
 
+// clang-format on
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
+    const SrcDistObject &source, const size_t numSameIDs,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &permuteFromLIDs,
+    const CombineMode CM, const execution_space &space) {
+  /*
+  This is called if the derived class doesn't know how to pack and prepare in
+  an arbitrary execution space instance, but it was asked to anyway.
+  Provide a safe illusion by actually doing the work in the default instance,
+  and syncing the default instance with the provided instance.
+  The caller expects
+  1. any work in the provided instance to complete before this.
+  2. This to complete before any following work in the provided instance.
+  */
+
+  space.fence(); // // TODO: Tpetra::Details::Spaces::exec_space_wait
+  copyAndPermute(source, numSameIDs, permuteToLIDs, permuteFromLIDs,
+                 CM);        // default instance
+  execution_space().fence(); // TODO:
+                             // Tpetra::Details::Spaces::exec_space_wait
+}
+// clang-format off
+
+
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::

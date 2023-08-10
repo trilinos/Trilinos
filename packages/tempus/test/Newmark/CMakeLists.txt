@@ -1,24 +1,75 @@
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR})
 
-#IKT, replace TRILINOS_ADD_EXECUTABLE code with 
-#the following, once test is running properly. 
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Newmark
-  SOURCES Tempus_NewmarkTest.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  Test_NewmarkExplicitAForm_BallParabolic
+  SOURCES Tempus_Test_NewmarkExplicitAForm_BallParabolic.cpp ${TEMPUS_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
 
-#TRIBITS_ADD_EXECUTABLE(
-#  Newmark
-#  SOURCES Tempus_NewmarkTest.cpp ${TEMPUS_UNIT_TEST_MAIN} 
-#  TESTONLYLIBS tempus_test_models
-#  COMM serial mpi 
-#  )
-
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_NewmarkImplicitAForm_CopyFiles
-  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder.xml Tempus_NewmarkExplicitAForm_SinCos.xml Tempus_NewmarkExplicitAForm_BallParabolic.xml Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml Tempus_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder.xml 
-  EXEDEPS Newmark
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Test_NewmarkExplicitAForm_HarmonicOscillator_Damped
+  SOURCES Tempus_Test_NewmarkExplicitAForm_HarmonicOscillator_Damped.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Test_NewmarkExplicitAForm_SinCos
+  SOURCES Tempus_Test_NewmarkExplicitAForm_SinCos.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder
+  SOURCES Tempus_Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder
+  SOURCES Tempus_Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Test_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder
+  SOURCES Tempus_Test_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_NewmarkExplicitAForm_BallParabolic_CopyFiles
+  DEST_FILES Tempus_Test_NewmarkExplicitAForm_BallParabolic.xml
+  EXEDEPS Test_NewmarkExplicitAForm_BallParabolic
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_NewmarkExplicitAForm_HarmonicOscillator_Damped_CopyFiles
+  DEST_FILES Tempus_Test_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
+  EXEDEPS Test_NewmarkExplicitAForm_HarmonicOscillator_Damped
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_NewmarkExplicitAForm_SinCos_CopyFiles
+  DEST_FILES Tempus_Test_NewmarkExplicitAForm_SinCos.xml
+  EXEDEPS Test_NewmarkExplicitAForm_SinCos
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder_CopyFiles
+  DEST_FILES Tempus_Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder.xml
+  EXEDEPS Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder_CopyFiles
+  DEST_FILES Tempus_Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml
+  EXEDEPS Test_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder_CopyFiles
+  DEST_FILES Tempus_Test_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder.xml 
+  EXEDEPS Test_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder
+  )
+

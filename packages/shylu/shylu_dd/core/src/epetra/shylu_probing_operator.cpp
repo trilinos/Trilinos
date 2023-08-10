@@ -102,7 +102,7 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 
     int nvectors = X.NumVectors();
     bool local = (C_->Comm().NumProc() == 1);
-    int err;
+    int err = 0;
     //cout << "No of colors after probing" << nvectors << endl;
 
 #ifdef TIMING_OUTPUT
@@ -152,7 +152,6 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     localize_time_->start();
 #endif
 
-    //int err;
     int lda;
     double *values;
     if (!local)
@@ -235,7 +234,6 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     {
         // Should Y be localY in Multiply and then exported to Y ?? TODO:
         // Use view mode ?
-        double *values;
         int mylda;
         Y.ExtractView(&values, &mylda);
 
@@ -260,7 +258,7 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     apply_time_->stop();
 #endif
     cntApply++;
-    return 0;
+    return err;
 }
 
 void ShyLU_Probing_Operator::PrintTimingInfo()

@@ -80,7 +80,7 @@ fill (const ExecutionSpace& execSpace,
       const size_t whichVectors[])
 {
   typedef Kokkos::View<DT,DP...> ViewType;
-  static_assert (ViewType::Rank == 2, "ViewType must be a rank-2 "
+  static_assert (ViewType::rank == 2, "ViewType must be a rank-2 "
                  "Kokkos::View in order to call the \"whichVectors\" "
                  "specialization of fill.");
   static_assert (std::is_integral<IndexType>::value,

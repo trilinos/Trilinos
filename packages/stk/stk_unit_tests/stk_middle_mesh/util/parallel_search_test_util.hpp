@@ -35,11 +35,11 @@
 #ifndef  STK_MIDDLE_MESH_PARALLEL_SEARCH_TEST_UTIL_HPP
 #define  STK_MIDDLE_MESH_PARALLEL_SEARCH_TEST_UTIL_HPP
 
-#include "parallel_search.hpp"
+#include "stk_middle_mesh/parallel_search.hpp"
 
 namespace {
 
-using namespace stk::middle_mesh::impl;
+using namespace stk::middle_mesh::mesh::impl;
 
 class SplitCommTestUtil {
 

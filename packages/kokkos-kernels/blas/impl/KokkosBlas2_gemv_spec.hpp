@@ -153,6 +153,5 @@ struct GEMV {
       false, true>;
 
 #include <KokkosBlas2_gemv_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas2_gemv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_GEMV_SPEC_HPP_

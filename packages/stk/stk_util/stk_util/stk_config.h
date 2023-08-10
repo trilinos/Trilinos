@@ -67,8 +67,17 @@
 #endif
 #endif
 
-#define STK_PACKAGE stk
-#define STK_HAS_SNL_EXODUSII
+// GCC address sanitizer
+#ifdef __SANITIZE_ADDRESS__
+#  define STK_ASAN_IS_ON
+#endif
+
+// Clang address sanitizer
+#if !defined(STK_ASAN_IS_ON) && defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define STK_ASAN_IS_ON
+#  endif
+#endif
 
 //----------------------------------------------------------------------
 

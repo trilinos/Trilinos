@@ -196,6 +196,10 @@ namespace Tpetra {
       throw std::runtime_error("Not implemented.");
     }
 
+    LocalOrdinal getBlockSize () const {
+      throw std::runtime_error("Not implemented.");
+    }
+
     size_t getLocalMaxNumRowEntries () const {
       throw std::runtime_error("Not implemented.");
     }

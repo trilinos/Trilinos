@@ -49,13 +49,6 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
 
 
-# Sanity Checking of Macros
-ASSERT_DEFINED(Kokkos_ENABLE_OPENMP)
-ASSERT_DEFINED(Kokkos_ENABLE_THREADS)
-ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
-ASSERT_DEFINED(Kokkos_ENABLE_SERIAL)
-
-
 
 # Default Node Processing
 IF(DEFINED Tpetra_DefaultNode)

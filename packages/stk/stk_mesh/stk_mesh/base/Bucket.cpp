@@ -692,6 +692,11 @@ void Bucket::reset_entity_location(Entity entity, unsigned to_ordinal, const Fie
                                      from_bucket.m_bucket_id, from_ordinal, fields);
 }
 
+void Bucket::reset_empty_space(const FieldVector & fields)
+{
+  m_mesh.reset_empty_field_data_callback(m_entity_rank, m_bucket_id, m_size, m_capacity, fields);
+}
+
 void Bucket::add_entity(Entity entity)
 {
   STK_ThrowAssert(m_size < m_capacity);

@@ -64,7 +64,7 @@ void RandomForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
 
   // double time = workset.time;
 
-  using IST = typename Kokkos::Details::ArithTraits<ScalarT>::val_type;
+  using IST = typename Kokkos::ArithTraits<ScalarT>::val_type;
 
   const IST max = static_cast<IST>(rangeMin_);
   const IST min = static_cast<IST>(rangeMax_);

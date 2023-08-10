@@ -202,12 +202,12 @@ public:
 
 
   // 2D View Constructors
-  WrappedDualView(const WrappedDualView parent,const Kokkos::pair<size_t,size_t>& rowRng, const Kokkos::Impl::ALL_t& colRng) {
+  WrappedDualView(const WrappedDualView parent,const Kokkos::pair<size_t,size_t>& rowRng, const Kokkos::ALL_t& colRng) {
     originalDualView = parent.originalDualView;
     dualView = getSubview2D(parent.dualView,rowRng,colRng);
   }
 
-  WrappedDualView(const WrappedDualView parent,const Kokkos::Impl::ALL_t &rowRng, const Kokkos::pair<size_t,size_t>& colRng) {
+  WrappedDualView(const WrappedDualView parent,const Kokkos::ALL_t &rowRng, const Kokkos::pair<size_t,size_t>& colRng) {
     originalDualView = parent.originalDualView;
     dualView = getSubview2D(parent.dualView,rowRng,colRng);
   }
@@ -589,12 +589,12 @@ private:
   }
 
   template <typename ViewType,typename int_type>
-  ViewType getSubview2D(ViewType view, Kokkos::pair<int_type,int_type> offset0, const Kokkos::Impl::ALL_t&) const {
+  ViewType getSubview2D(ViewType view, Kokkos::pair<int_type,int_type> offset0, const Kokkos::ALL_t&) const {
     return Kokkos::subview(view,offset0,Kokkos::ALL());
   }
 
   template <typename ViewType,typename int_type>
-  ViewType getSubview2D(ViewType view, const Kokkos::Impl::ALL_t&, Kokkos::pair<int_type,int_type> offset1) const {
+  ViewType getSubview2D(ViewType view, const Kokkos::ALL_t&, Kokkos::pair<int_type,int_type> offset1) const {
     return Kokkos::subview(view,Kokkos::ALL(),offset1);
   }
 

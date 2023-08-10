@@ -49,6 +49,7 @@ Ifpack2_UnitTestFiltering.cpp
 Ifpack2_UnitTestHeap.cpp
 Ifpack2_UnitTestIlukGraph.cpp
 Ifpack2_UnitTestILUT.cpp
+Ifpack2_UnitTestMDF.cpp
 Ifpack2_UnitTestOverlapGraph.cpp
 Ifpack2_UnitTestOverlappingRowMatrix.cpp
 Ifpack2_UnitTestParameters.cpp
@@ -100,6 +101,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 		STANDARD_PASS_OUTPUT
 		)
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+		MDF
+		SOURCES
+		Ifpack2_UnitTestMDF.cpp
+		${TEUCHOS_STD_UNIT_TEST_MAIN}
+		ARGS ""
+		COMM serial mpi
+		STANDARD_PASS_OUTPUT
+		)
+
 #TRIBITS_ADD_EXECUTABLE(
 #    Distributed_SGS
 #    SOURCES Ifpack2_DistributedRelaxationTest.cpp
@@ -134,6 +145,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RILUKSingleProcessUnitTests
   SOURCES
     Ifpack2_UnitTestSingleProcessRILUK.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ILUTSingleProcessUnitTests
+  SOURCES
+    Ifpack2_UnitTestSingleProcessILUT.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi

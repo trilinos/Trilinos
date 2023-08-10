@@ -459,7 +459,7 @@ namespace Zoltan2 {
       using offset_view_t = Kokkos::View<size_t*, typename node_t::device_type>;
       using vector_t = Tpetra::Vector<scalar_t, lno_t, gno_t, node_t>;
       using dual_view_t = typename vector_t::dual_view_type;
-      using KAT = Kokkos::Details::ArithTraits<scalar_t>;
+      using KAT = Kokkos::ArithTraits<scalar_t>;
 
       const size_t numEnt = graph_->getLocalNumEntries();
       const size_t numRows = graph_->getLocalNumRows();
@@ -888,7 +888,7 @@ namespace Zoltan2 {
     Teuchos::RCP<lproblem_t> innerPolyProblem(new lproblem_t());
     innerPolyProblem->setOperator(laplacian_);
 
-    using btop_t = Belos::TpetraOperator<scalar_t>;
+    using btop_t = Belos::TpetraOperator<scalar_t, lno_t, gno_t, node_t>;
     Teuchos::RCP<btop_t> polySolver(new btop_t(innerPolyProblem,
           Teuchos::rcpFromRef(paramList),
           "GmresPoly", true));

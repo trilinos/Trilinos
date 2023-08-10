@@ -12,10 +12,16 @@
 #include <Akri_NodeToCapturedDomains.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Part.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino
 {
 class InterfaceGeometry;
+class SharpFeatureInfo;
+class IntersectionPoint;
+class QualityMetric;
+
+typedef std::map<stk::mesh::Entity, std::vector<std::pair<size_t,bool>>> mapFromEntityToIntPtIndexAndSnapAllowed;
 
 NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & elementSelector,
@@ -23,9 +29,34 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
     const InterfaceGeometry & geometry,
     const bool globalIDsAreParallelConsistent,
     const double snappingSharpFeatureAngleInDegrees,
-    const double minIntPtWeightForEstimatingCutQuality);
+    const double minIntPtWeightForEstimatingCutQuality,
+    const double maxSnapForEdges);
 
 void undo_previous_snaps_using_interpolation(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField, const FieldSet & snapFields);
+
+stk::math::Vector3d compute_intersection_point_location(const int dim, const FieldRef coordsField, const IntersectionPoint & intersectionPoint);
+
+mapFromEntityToIntPtIndexAndSnapAllowed get_node_to_intersection_point_indices_and_which_snaps_allowed(const stk::mesh::BulkData & mesh,
+    const SharpFeatureInfo * sharpFeatureInfo,
+    const double maxSnapForEdges,
+    const std::vector<IntersectionPoint> & intersectionPoints);
+
+std::map<std::vector<int>, std::map<stk::mesh::EntityId,double>> determine_quality_per_node_per_domain(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
+    const FieldRef coordsField,
+    const std::vector<IntersectionPoint> & intersectionPoints,
+    const mapFromEntityToIntPtIndexAndSnapAllowed & nodeToIntPtIndicesAndWhichSnapsAllowed,
+    const QualityMetric &qualityMetric,
+    const double minIntPtWeightForEstimatingCutQuality,
+    const bool globalIDsAreParallelConsistent);
+
+double compute_quality_if_node_is_snapped_terminating_early_if_below_threshold(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
+    const FieldRef coordsField,
+    stk::mesh::Entity node,
+    const stk::math::Vector3d & snapLocation,
+    const QualityMetric &qualityMetric,
+    const double qualityThreshold);
 }
 
 

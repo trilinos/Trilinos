@@ -439,7 +439,7 @@ public:
         1u,
         fixture.meta_data().universal_part());
     cdfemSupport.set_coords_field(coord_field);
-    cdfemSupport.add_interpolation_field(coord_field);
+    cdfemSupport.add_edge_interpolation_field(coord_field);
     cdfemSupport.register_parent_node_ids_field();
 
     cdfemSupport.set_prolongation_model(INTERPOLATION);
@@ -503,11 +503,12 @@ public:
       const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
       nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
           krino_mesh->get_active_part(),
-          cdfemSupport.get_interpolation_fields(),
+          cdfemSupport.get_snap_fields(),
           *interfaceGeometry,
           cdfemSupport.get_global_ids_are_parallel_consistent(),
           cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
-          minIntPtWeightForEstimatingCutQuality);
+          minIntPtWeightForEstimatingCutQuality,
+          cdfemSupport.get_max_edge_snap());
     }
     interfaceGeometry->prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToSnappedDomains);
 
@@ -1095,6 +1096,37 @@ TEST_F(CDMeshTestsTwoRightTris3LSPerPhase, Two_Tri3_Check_Compatibility_When_Sna
   //write_mesh("Two_Tri3_Check_Compatibility_When_Snapping_LSPerPhase.e");
 }
 
+
+
+class TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture : public DecompositionFixture<TwoRegularTetsSharingNodeAtOrigin, LSPerInterfacePolicy<1>>
+{
+public:
+TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture()
+{
+  if(stk::parallel_machine_size(mComm) == 1)
+    this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1}, {0,0});
+  else if(stk::parallel_machine_size(mComm) == 2)
+    this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1}, {0,1});
+
+  setup_ls_fields();
+}
+};
+
+TEST_F(TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture, onlyCutFacesImpactNodeScoringToImproveQuality)
+{
+  if (stk::parallel_machine_size(mComm) > 2) return;
+
+  set_level_set({0,1,2,3,4,5,6}, {-0.49, 1.5, 1.5, 1.5, -0.06, 0.18, 0.18});
+
+  attempt_decompose_mesh();
+
+  const ScaledJacobianQualityMetric qualityMetric;
+  const double qualityAfterCut = compute_mesh_quality(mMesh, get_aux_meta().active_part(), qualityMetric);
+  EXPECT_LT(0.07, qualityAfterCut);
+
+  //write_mesh("test.e");
+}
+
 class TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture : public DecompositionFixture<TwoRightTets, LSPerInterfacePolicy<1>>
 {
 public:
@@ -1228,7 +1260,7 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 0.));
+  typename BoundingBoxMesh::BoundingBoxType domain(stk::math::Vector3d::ZERO, stk::math::Vector3d(1., 1., 0.));
   const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
@@ -1335,7 +1367,7 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 0.));
+  typename BoundingBoxMesh::BoundingBoxType domain(stk::math::Vector3d::ZERO, stk::math::Vector3d(1., 1., 0.));
   const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
@@ -1441,7 +1473,7 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 1.));
+  typename BoundingBoxMesh::BoundingBoxType domain(stk::math::Vector3d::ZERO, stk::math::Vector3d(1., 1., 1.));
   const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
@@ -1547,7 +1579,7 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 1.));
+  typename BoundingBoxMesh::BoundingBoxType domain(stk::math::Vector3d::ZERO, stk::math::Vector3d(1., 1., 1.));
   const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.set_mesh_structure_type(BCC_BOUNDING_BOX_MESH);

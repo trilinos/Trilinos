@@ -63,17 +63,69 @@ namespace Ifpack2 {
 
 namespace Experimental {
 
+namespace
+{
+template<class MatrixType>
+struct LocalRowHandler
+{
+  using LocalOrdinal = typename MatrixType::local_ordinal_type;
+  using row_matrix_type = Tpetra::RowMatrix< 
+      typename MatrixType::scalar_type,
+      LocalOrdinal,
+      typename MatrixType::global_ordinal_type,
+      typename MatrixType::node_type>;
+  using inds_type = typename row_matrix_type::local_inds_host_view_type;
+  using vals_type = typename row_matrix_type::values_host_view_type;
+
+  LocalRowHandler(Teuchos::RCP<const row_matrix_type> A)
+   : A_(std::move(A))
+  {
+    if (!A_->supportsRowViews())
+    {
+      const auto maxNumRowEntr = A_->getLocalMaxNumRowEntries();
+      const auto blockSize = A_->getBlockSize();
+      ind_nc_ = inds_type_nc("Ifpack2::RBILUK::LocalRowHandler::indices",maxNumRowEntr);
+      val_nc_ = vals_type_nc("Ifpack2::RBILUK::LocalRowHandler::values",maxNumRowEntr*blockSize*blockSize);
+    }
+  }
+
+  void getLocalRow(LocalOrdinal local_row, inds_type & InI, vals_type & InV, LocalOrdinal & NumIn)
+  {
+    if (A_->supportsRowViews())
+    {
+      A_->getLocalRowView(local_row,InI,InV);
+      NumIn = (LocalOrdinal)InI.size();
+    }
+    else 
+    {
+      size_t cnt;
+      A_->getLocalRowCopy(local_row,ind_nc_,val_nc_,cnt);
+      InI = ind_nc_;
+      InV = val_nc_;
+      NumIn = (LocalOrdinal)cnt;
+    }
+  }
+
+private:
+
+  using inds_type_nc = typename row_matrix_type::nonconst_local_inds_host_view_type;
+  using vals_type_nc = typename row_matrix_type::nonconst_values_host_view_type;
+
+  Teuchos::RCP<const row_matrix_type> A_;
+  inds_type_nc ind_nc_;
+  vals_type_nc val_nc_;
+};
+
+} // namespace
+
 template<class MatrixType>
 RBILUK<MatrixType>::RBILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
-  : RILUK<row_matrix_type>(Teuchos::rcp_dynamic_cast<const row_matrix_type>(Matrix_in) ),
-    A_(Matrix_in),
-    A_block_(Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(Matrix_in))
+  : RILUK<row_matrix_type>(Teuchos::rcp_dynamic_cast<const row_matrix_type>(Matrix_in) )
 {}
 
 template<class MatrixType>
 RBILUK<MatrixType>::RBILUK (const Teuchos::RCP<const block_crs_matrix_type>& Matrix_in)
-  : RILUK<row_matrix_type>(Teuchos::rcp_dynamic_cast<const row_matrix_type>(Matrix_in) ),
-    A_block_(Matrix_in)
+  : RILUK<row_matrix_type>(Teuchos::rcp_dynamic_cast<const row_matrix_type>(Matrix_in) )
 {}
 
 
@@ -91,7 +143,7 @@ RBILUK<MatrixType>::setMatrix (const Teuchos::RCP<const block_crs_matrix_type>& 
   // initialize() until calling setMatrix() with a nonnull input.
   // Regardless, setting the matrix invalidates any previous
   // factorization.
-  if (A.getRawPtr () != A_block_.getRawPtr ())
+  if (A.getRawPtr () != this->A_.getRawPtr ())
   {
     this->isAllocated_ = false;
     this->isInitialized_ = false;
@@ -100,7 +152,6 @@ RBILUK<MatrixType>::setMatrix (const Teuchos::RCP<const block_crs_matrix_type>& 
     L_block_ = Teuchos::null;
     U_block_ = Teuchos::null;
     D_block_ = Teuchos::null;
-    A_block_ = A;
   }
 }
 
@@ -177,11 +228,117 @@ void RBILUK<MatrixType>::allocate_L_and_U_blocks ()
   this->isAllocated_ = true;
 }
 
+namespace
+{
 template<class MatrixType>
-Teuchos::RCP<const typename RBILUK<MatrixType>::block_crs_matrix_type>
-RBILUK<MatrixType>::getBlockMatrix () const {
-  return A_block_;
+Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>
+makeLocalFilter (const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>& A)
+{
+  using row_matrix_type = typename RBILUK<MatrixType>::row_matrix_type;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
+
+  // If A_'s communicator only has one process, or if its column and
+  // row Maps are the same, then it is already local, so use it
+  // directly.
+  if (A->getRowMap ()->getComm ()->getSize () == 1 ||
+      A->getRowMap ()->isSameAs (* (A->getColMap ()))) {
+    return A;
+  }
+
+  // If A_ is already a LocalFilter, then use it directly.  This
+  // should be the case if RILUK is being used through
+  // AdditiveSchwarz, for example.
+  RCP<const LocalFilter<row_matrix_type> > A_lf_r =
+    rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
+  if (! A_lf_r.is_null ()) {
+    return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
+  }
+  else {
+    // A_'s communicator has more than one process, its row Map and
+    // its column Map differ, and A_ is not a LocalFilter.  Thus, we
+    // have to wrap it in a LocalFilter.
+    return rcp (new LocalFilter<row_matrix_type> (A));
+  }
 }
+
+template<class MatrixType>
+Teuchos::RCP<const typename RBILUK<MatrixType>::crs_graph_type>
+getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>& A,const typename MatrixType::local_ordinal_type blockSize)
+{
+  using local_ordinal_type = typename MatrixType::local_ordinal_type;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcpFromRef;
+  using row_matrix_type = typename RBILUK<MatrixType>::row_matrix_type;
+  using crs_graph_type = typename RBILUK<MatrixType>::crs_graph_type;
+  using block_crs_matrix_type = typename RBILUK<MatrixType>::block_crs_matrix_type;
+
+  auto A_local = makeLocalFilter<MatrixType>(A);
+
+  {
+    RCP<const LocalFilter<row_matrix_type> > filteredA =
+      rcp_dynamic_cast<const LocalFilter<row_matrix_type> >(A_local);
+    RCP<const OverlappingRowMatrix<row_matrix_type> > overlappedA = Teuchos::null;
+    RCP<const block_crs_matrix_type > A_block = Teuchos::null;
+    if (!filteredA.is_null ())
+    {
+      overlappedA = rcp_dynamic_cast<const OverlappingRowMatrix<row_matrix_type> > (filteredA->getUnderlyingMatrix ());
+    }
+    
+    if (! overlappedA.is_null ()) {
+      A_block = rcp_dynamic_cast<const block_crs_matrix_type>(overlappedA->getUnderlyingMatrix());
+    } 
+    else if (!filteredA.is_null ()){
+      //If there is no overlap, filteredA could be the block CRS matrix
+      A_block = rcp_dynamic_cast<const block_crs_matrix_type>(filteredA->getUnderlyingMatrix());
+    }
+    else
+    {
+      A_block = rcp_dynamic_cast<const block_crs_matrix_type>(A_local);
+    }
+
+    if (!A_block.is_null()){
+      return rcpFromRef(A_block->getCrsGraph());
+    }
+  }
+
+  // Could not extract block crs, make graph manually
+  {
+    local_ordinal_type numRows = A_local->getLocalNumRows();
+    Teuchos::Array<size_t> entriesPerRow(numRows);
+    for(local_ordinal_type i = 0; i < numRows; i++) {
+      entriesPerRow[i] = A_local->getNumEntriesInLocalRow(i);
+    }
+    RCP<crs_graph_type> A_local_crs_nc =
+      rcp (new crs_graph_type (A_local->getRowMap (),
+                                A_local->getColMap (),
+                                entriesPerRow()));
+
+    {
+      using LocalRowHandler_t = LocalRowHandler<MatrixType>;
+      LocalRowHandler_t localRowHandler(A_local);
+      typename LocalRowHandler_t::inds_type indices;
+      typename LocalRowHandler_t::vals_type values;
+      for(local_ordinal_type i = 0; i < numRows; i++) {
+        local_ordinal_type numEntries = 0;
+        localRowHandler.getLocalRow(i, indices, values, numEntries);
+        A_local_crs_nc->insertLocalIndices(i, numEntries,indices.data());
+      }
+    }
+
+    A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
+    return rcp_const_cast<const crs_graph_type> (A_local_crs_nc);
+  }
+
+}
+
+
+} // namespace
 
 template<class MatrixType>
 void RBILUK<MatrixType>::initialize ()
@@ -191,47 +348,18 @@ void RBILUK<MatrixType>::initialize ()
   using Teuchos::rcp_dynamic_cast;
   const char prefix[] = "Ifpack2::Experimental::RBILUK::initialize: ";
 
-  // FIXME (mfh 04 Nov 2015) Apparently it's OK for A_ to be null.
-  // That probably means that this preconditioner was created with a
-  // BlockCrsMatrix directly, so it doesn't need the LocalFilter.
-
-  // TEUCHOS_TEST_FOR_EXCEPTION
-  //   (A_.is_null (), std::runtime_error, prefix << "The matrix (A_, the "
-  //    "RowMatrix) is null.  Please call setMatrix() with a nonnull input "
-  //    "before calling this method.");
-
-  if (A_block_.is_null ()) {
-    // FIXME (mfh 04 Nov 2015) Why does the input have to be a
-    // LocalFilter?  Why can't we just take a regular matrix, and
-    // apply a LocalFilter only if necessary, like other "local"
-    // Ifpack2 preconditioners already do?
-    RCP<const LocalFilter<row_matrix_type> > filteredA =
-      rcp_dynamic_cast<const LocalFilter<row_matrix_type> >(A_);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (filteredA.is_null (), std::runtime_error, prefix <<
-       "Cannot cast to filtered matrix.");
-    RCP<const OverlappingRowMatrix<row_matrix_type> > overlappedA =
-      rcp_dynamic_cast<const OverlappingRowMatrix<row_matrix_type> > (filteredA->getUnderlyingMatrix ());
-    if (! overlappedA.is_null ()) {
-      A_block_ = rcp_dynamic_cast<const block_crs_matrix_type>(overlappedA->getUnderlyingMatrix());
-    } else {
-      //If there is no overlap, filteredA could be the block CRS matrix
-      A_block_ = rcp_dynamic_cast<const block_crs_matrix_type>(filteredA->getUnderlyingMatrix());
-    }
-  }
-
   TEUCHOS_TEST_FOR_EXCEPTION
-    (A_block_.is_null (), std::runtime_error, prefix << "The matrix (A_block_, "
-     "the BlockCrsMatrix) is null.  Please call setMatrix() with a nonnull "
-     "input before calling this method.");
+    (this->A_.is_null (), std::runtime_error, prefix << "The matrix (A_, the "
+     "RowMatrix) is null.  Please call setMatrix() with a nonnull input "
+     "before calling this method.");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (! A_block_->isFillComplete (), std::runtime_error, prefix << "The matrix "
-     "(A_block_, the BlockCrsMatrix) is not fill complete.  You may not invoke "
+    (! this->A_->isFillComplete (), std::runtime_error, prefix << "The matrix "
+     "(A_, the BlockCrsMatrix) is not fill complete.  You may not invoke "
      "initialize() or compute() with this matrix until the matrix is fill "
      "complete.  Note: BlockCrsMatrix is fill complete if and only if its "
      "underlying graph is fill complete.");
 
-  blockSize_ = A_block_->getBlockSize();
+  blockSize_ = this->A_->getBlockSize();
 
   Teuchos::Time timer ("RBILUK::initialize");
   double startTime = timer.wallTime();
@@ -250,18 +378,14 @@ void RBILUK<MatrixType>::initialize ()
     this->isComputed_ = false;
     this->Graph_ = Teuchos::null;
 
-    typedef Tpetra::CrsGraph<local_ordinal_type,
-                             global_ordinal_type,
-                             node_type> crs_graph_type;
-
-    RCP<const crs_graph_type> matrixCrsGraph = Teuchos::rcpFromRef(A_block_->getCrsGraph() );
+    RCP<const crs_graph_type> matrixCrsGraph = getBlockCrsGraph<MatrixType>(this->A_,blockSize_);
     this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (matrixCrsGraph,
         this->LevelOfFill_, 0));
 
     this->Graph_->initialize ();
     allocate_L_and_U_blocks ();
 #ifdef IFPACK2_RBILUK_INITIAL
-    initAllValues (*A_block_);
+    initAllValues ();
 #endif
   } // Stop timing
 
@@ -274,7 +398,7 @@ void RBILUK<MatrixType>::initialize ()
 template<class MatrixType>
 void
 RBILUK<MatrixType>::
-initAllValues (const block_crs_matrix_type& A)
+initAllValues ()
 {
   using Teuchos::RCP;
   typedef Tpetra::Map<LO,GO,node_type> map_type;
@@ -282,14 +406,14 @@ initAllValues (const block_crs_matrix_type& A)
   LO NumIn = 0, NumL = 0, NumU = 0;
   bool DiagFound = false;
   size_t NumNonzeroDiags = 0;
-  size_t MaxNumEntries = A.getLocalMaxNumRowEntries();
+  size_t MaxNumEntries = this->A_->getLocalMaxNumRowEntries();
   LO blockMatSize = blockSize_*blockSize_;
 
   // First check that the local row map ordering is the same as the local portion of the column map.
   // The extraction of the strictly lower/upper parts of A, as well as the factorization,
   // implicitly assume that this is the case.
-  Teuchos::ArrayView<const GO> rowGIDs = A.getRowMap()->getLocalElementList();
-  Teuchos::ArrayView<const GO> colGIDs = A.getColMap()->getLocalElementList();
+  Teuchos::ArrayView<const GO> rowGIDs = this->A_->getRowMap()->getLocalElementList();
+  Teuchos::ArrayView<const GO> colGIDs = this->A_->getColMap()->getLocalElementList();
   bool gidsAreConsistentlyOrdered=true;
   GO indexOfInconsistentGID=0;
   for (GO i=0; i<rowGIDs.size(); ++i) {
@@ -345,20 +469,16 @@ initAllValues (const block_crs_matrix_type& A)
 
   //TODO BMK: Revisit this fence when BlockCrsMatrix is refactored.
   Kokkos::fence();
-  using inds_type = typename row_matrix_type::local_inds_host_view_type;
-  using vals_type = typename row_matrix_type::values_host_view_type;
-  for (size_t myRow=0; myRow<A.getLocalNumRows(); ++myRow) {
+  using LocalRowHandler_t = LocalRowHandler<MatrixType>;
+  LocalRowHandler_t localRowHandler(this->A_);
+  typename LocalRowHandler_t::inds_type InI;
+  typename LocalRowHandler_t::vals_type InV;
+  for (size_t myRow=0; myRow<this->A_->getLocalNumRows(); ++myRow) {
     LO local_row = myRow;
 
-    //TODO JJH 4April2014 An optimization is to use getLocalRowView.  Not all matrices support this,
-    //                    we'd need to check via the Tpetra::RowMatrix method supportsRowViews().
-    inds_type InI;
-    vals_type InV;
-    A.getLocalRowView(local_row, InI, InV);
-    NumIn = (LO)InI.size();
+    localRowHandler.getLocalRow(local_row, InI, InV, NumIn);
 
     // Split into L and U (we don't assume that indices are ordered).
-
     NumL = 0;
     NumU = 0;
     DiagFound = false;
@@ -464,12 +584,12 @@ void RBILUK<MatrixType>::compute ()
   // error shows them the name of the method that they actually
   // called, rather than the name of some internally called method.
   TEUCHOS_TEST_FOR_EXCEPTION
-    (A_block_.is_null (), std::runtime_error, prefix << "The matrix (A_block_, "
+    (this->A_.is_null (), std::runtime_error, prefix << "The matrix (A_, "
      "the BlockCrsMatrix) is null.  Please call setMatrix() with a nonnull "
      "input before calling this method.");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (! A_block_->isFillComplete (), std::runtime_error, prefix << "The matrix "
-     "(A_block_, the BlockCrsMatrix) is not fill complete.  You may not invoke "
+    (! this->A_->isFillComplete (), std::runtime_error, prefix << "The matrix "
+     "(A_, the BlockCrsMatrix) is not fill complete.  You may not invoke "
      "initialize() or compute() with this matrix until the matrix is fill "
      "complete.  Note: BlockCrsMatrix is fill complete if and only if its "
      "underlying graph is fill complete.");
@@ -478,14 +598,14 @@ void RBILUK<MatrixType>::compute ()
     initialize (); // Don't count this in the compute() time
   }
 
-  // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
-  // host, so sync to host first.  The const_cast is unfortunate but
-  // is our only option to make this correct.
-  if (! A_block_.is_null ()) {
-    Teuchos::RCP<block_crs_matrix_type> A_nc =
-      Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
-    //    A_nc->sync_host ();
-  }
+  // // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
+  // // host, so sync to host first.  The const_cast is unfortunate but
+  // // is our only option to make this correct.
+  // if (! A_block_.is_null ()) {
+  //   Teuchos::RCP<block_crs_matrix_type> A_nc =
+  //     Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
+  //   //    A_nc->sync_host ();
+  // }
   /*
   L_block_->sync_host ();
   U_block_->sync_host ();
@@ -507,7 +627,7 @@ void RBILUK<MatrixType>::compute ()
 
 //    const scalar_type MinDiagonalValue = STS::rmin ();
 //    const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
-    initAllValues (*A_block_);
+    initAllValues ();
 
     size_t NumIn;
     LO NumL, NumU, NumURead;
@@ -808,7 +928,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     local_ordinal_type, global_ordinal_type, node_type> BMV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    A_block_.is_null (), std::runtime_error, "Ifpack2::Experimental::RBILUK::apply: The matrix is "
+    this->A_.is_null (), std::runtime_error, "Ifpack2::Experimental::RBILUK::apply: The matrix is "
     "null.  Please call setMatrix() with a nonnull input, then initialize() "
     "and compute(), before calling this method.");
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -830,8 +950,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
   const LO rowStride = blockSize_;
 
-  BMV yBlock (Y, * (A_block_->getGraph ()->getDomainMap ()), blockSize_);
-  const BMV xBlock (X, * (A_block_->getColMap ()), blockSize_);
+  BMV yBlock (Y, * (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_);
+  const BMV xBlock (X, * (this->A_->getColMap ()), blockSize_);
 
   Teuchos::Array<scalar_type> lclarray(blockSize_);
   little_host_vec_type lclvec((typename little_host_vec_type::value_type*)&lclarray[0], blockSize_);
@@ -851,8 +971,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         //
         // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
         const LO numVectors = xBlock.getNumVectors();
-        BMV cBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
-        BMV rBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
+        BMV cBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
+        BMV rBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
         for (LO imv = 0; imv < numVectors; ++imv)
         {
           for (size_t i = 0; i < D_block_->getLocalNumRows(); ++i)
@@ -962,13 +1082,13 @@ std::string RBILUK<MatrixType>::description () const
 
   os << "Level-of-fill: " << this->getLevelOfFill() << ", ";
 
-  if (A_block_.is_null ()) {
+  if (this->A_.is_null ()) {
     os << "Matrix: null";
   }
   else {
     os << "Global matrix dimensions: ["
-       << A_block_->getGlobalNumRows () << ", " << A_block_->getGlobalNumCols () << "]"
-       << ", Global nnz: " << A_block_->getGlobalNumEntries();
+       << this->A_->getGlobalNumRows () << ", " << this->A_->getGlobalNumCols () << "]"
+       << ", Global nnz: " << this->A_->getGlobalNumEntries();
   }
 
   os << "}";

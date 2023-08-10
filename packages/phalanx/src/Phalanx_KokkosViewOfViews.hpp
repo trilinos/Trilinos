@@ -270,7 +270,7 @@ namespace PHX {
       Unmanaged template parameter) for the inner views to prevent
       double deletion. However, there are use cases where it's painful
       to pass around views built with the unmanaged template parameter
-      (libraries with finctions that block the unmanaged argument). We
+      (libraries with functions that block the unmanaged argument). We
       can generate an unmanged view without the template parameter by
       constructing the view with a raw pointer. This thrid
       implementation does that here.
@@ -304,6 +304,7 @@ namespace PHX {
     bool check_use_count_;
 
   public:
+    /// Ctor that uses the default execution space instance.
     template<typename... Extents>
     ViewOfViews3(const std::string name,Extents... extents)
       : view_host_(name,extents...),
@@ -314,6 +315,23 @@ namespace PHX {
         check_use_count_(true)
     {
       view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
+      use_count_ = view_device_.impl_track().use_count();
+    }
+
+    /// Ctor that uses a user specified execution space instance.
+    /// NOTE: Consistent with Kokkos, when a user supplies the
+    /// execution space instance, the function does not internally
+    /// fence. Be sure to manually fence as needed.
+    template<typename ExecSpace,typename... Extents>
+    ViewOfViews3(const ExecSpace& exec_space,const std::string name,Extents... extents)
+      : view_host_(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...),
+        view_device_(Kokkos::view_alloc(exec_space,name),extents...),
+        device_view_is_synced_(false),
+        is_initialized_(true),
+        use_count_(0),
+        check_use_count_(true)
+    {
+      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
       use_count_ = view_device_.impl_track().use_count();
     }
 
@@ -352,13 +370,29 @@ namespace PHX {
     /// Disable safety check in dtor for external references.
     void disableSafetyCheck() { check_use_count_ = false; }
 
-    /// Allocate the out view objects. Extents are for the outer view.
+    /// Allocate the out view objects. Extents are for the outer view. Uses the default execution space.
     template<typename... Extents>
     void initialize(const std::string name,Extents... extents)
     {
       view_host_ = typename OuterViewType::HostMirror(name,extents...);
       view_device_ = OuterViewType(name,extents...);
       view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
+      device_view_is_synced_ = false;
+      is_initialized_ = true;
+      use_count_ = view_device_.impl_track().use_count();
+    }
+
+    /// Allocate the out view objects. Extents are for the outer
+    /// view. Uses a user supplied execution space.  NOTE: Consistent
+    /// with Kokkos, when a user supplies the execution space
+    /// instance, the function does not internally fence. Be sure to
+    /// manually fence as needed.
+    template<typename ExecSpace,typename... Extents>
+    void initialize(const ExecSpace& exec_space,const std::string name,Extents... extents)
+    {
+      view_host_ = typename OuterViewType::HostMirror(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...);
+      view_device_ = OuterViewType(Kokkos::view_alloc(exec_space,name),extents...);
+      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
       device_view_is_synced_ = false;
       is_initialized_ = true;
       use_count_ = view_device_.impl_track().use_count();
@@ -398,12 +432,28 @@ namespace PHX {
       device_view_is_synced_ = false;
     }
 
-    /// Note this only syncs the outer view. The inner views are
-    /// assumed to be on device for both host and device outer views.
+    /// deep_copy the outer view to device. Uses default execution
+    /// space. Note this only syncs the outer view. The inner views
+    /// are assumed to be on device for both host and device outer
+    /// views.
     void syncHostToDevice()
     {
       TEUCHOS_ASSERT(is_initialized_);
       Kokkos::deep_copy(view_device_,view_host_unmanaged_);
+      device_view_is_synced_ = true;
+    }
+
+    /// deep_copy the outer view to device. Uses a user supplied
+    /// execution space.  Note this only syncs the outer view. The
+    /// inner views are assumed to be on device for both host and
+    /// device outer views.  NOTE: Consistent with Kokkos, when a user
+    /// supplies the execution space instance, the function does not
+    /// internally fence. Be sure to manually fence as needed.
+    template<typename ExecSpace>
+    void syncHostToDevice(const ExecSpace& exec_space)
+    {
+      TEUCHOS_ASSERT(is_initialized_);
+      Kokkos::deep_copy(exec_space,view_device_,view_host_unmanaged_);
       device_view_is_synced_ = true;
     }
 

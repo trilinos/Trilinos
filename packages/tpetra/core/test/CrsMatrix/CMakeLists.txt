@@ -144,6 +144,19 @@ IF (Tpetra_INST_CUDA)
     )
 ENDIF ()
 
+ASSERT_DEFINED (Tpetra_INST_HIP)
+IF (Tpetra_INST_HIP)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_HIP
+    SOURCES
+      CrsMatrix_WithGraph_HIP.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
 ASSERT_DEFINED (Tpetra_INST_OPENMP)
 IF (Tpetra_INST_OPENMP)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -208,12 +221,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CrsMatrixCopyFiles1
   SOURCE_FILES west0067.rua mhd1280b.cua
   EXEDEPS CrsMatrix_UnitTests
-  )
-
-ASSERT_DEFINED(Anasazi_SOURCE_DIR)
-TRIBITS_COPY_FILES_TO_BINARY_DIR(CrsTests_CopyFiles2
-  SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
-  SOURCE_FILES bcsstk14.hb
   )
 
 # This test only makes sense for > 1 processes.

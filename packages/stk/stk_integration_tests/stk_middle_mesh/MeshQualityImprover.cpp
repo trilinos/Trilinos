@@ -1,27 +1,28 @@
 #include "gtest/gtest.h"
 
-#include "boundary_fixture.hpp"
-#include "create_mesh.hpp"
-#include "create_mesh_quality_improver.hpp"
-#include "incremental_mesh_boundary_snapper.hpp"
-#include "mesh_boundary_snapper.hpp"
-#include "mesh_quality_improver.hpp"
-#include "mesh_quality_statistics.hpp"
-#include "regularized_distortion_metric.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/boundary_fixture.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/create_mesh_quality_improver.hpp"
+#include "stk_middle_mesh/incremental_mesh_boundary_snapper.hpp"
+#include "stk_middle_mesh/mesh_boundary_snapper.hpp"
+#include "stk_middle_mesh/mesh_quality_improver.hpp"
+#include "stk_middle_mesh/mesh_quality_statistics.hpp"
+#include "stk_middle_mesh/regularized_distortion_metric.hpp"
 #include "util/meshes.hpp"
 
 #ifdef STK_BUILT_IN_SIERRA
-#include "create_stk_mesh.hpp"
+#include "stk_middle_mesh_util/create_stk_mesh.hpp"
 #endif
 
-#include "mesh_io.hpp" //TODO: DEBUGGING
+#include "stk_middle_mesh/mesh_io.hpp" //TODO: DEBUGGING
 
 namespace stk {
 namespace middle_mesh {
 
 using namespace mesh::impl;
 using namespace utils::impl;
-using namespace stk_interface::impl;
+using stk_interface::StkMeshCreator;
 
 namespace {
 
@@ -66,7 +67,7 @@ TEST(MeshQualityImprover, AnnulusRotation)
 {
   // project coordinates onto sector of a sphere.  Change the size of
   // the mesh2 sector to test different kinds of topology interactions
-  if (comm_size(MPI_COMM_WORLD) != 1)
+  if (comm_size(MPI_COMM_WORLD) > 4)
     GTEST_SKIP();
 
   std::cout << std::setprecision(16) << std::endl;
@@ -81,13 +82,15 @@ TEST(MeshQualityImprover, AnnulusRotation)
 
     // std::cout << "creating mesh1" << std::endl;
     std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(10, 10, 0.5, 1.5, 0);
+    mesh::check_topology(mesh1);
 
     // std::cout << "\ncreating mesh2" << std::endl;
     std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, 0.5, 1.5, i * dtheta);
+    mesh::check_topology(mesh1);
 
     // printVertEdges("mesh_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
+    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
 
     // printVertEdges("mesh_snapped", mesh2);
@@ -101,10 +104,9 @@ TEST(MeshQualityImprover, Ellipsoid)
 {
   // project coordinates onto an ellipsoid
 
-  if (comm_size(MPI_COMM_WORLD) != 1)
+  if (comm_size(MPI_COMM_WORLD) > 4)
     GTEST_SKIP();
 
-  std::cout << std::setprecision(16) << std::endl;
   int nmeshes   = 30; // 60;
   double zscale = 2;
 
@@ -146,7 +148,7 @@ TEST(MeshQualityImprover, Ellipsoid)
     // printVertEdges("mesh1_initial", mesh1);
     // printVertEdges("mesh2_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
+    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
     std::cout << "after boundary snapper, number of invalid verts = "
               << bsnapper->get_mesh2_quality_improver()->count_invalid_points() << std::endl;
@@ -186,7 +188,7 @@ TEST(MeshQualityImprover, EllipsoidFromCAD)
     // printVertEdges("mesh1_initial", mesh1);
     // printVertEdges("mesh2_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
+    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
     std::cout << "after boundary snapper, number of invalid verts = "
               << bsnapper->get_mesh2_quality_improver()->count_invalid_points() << std::endl;
@@ -203,7 +205,7 @@ TEST(MeshQualityImprover, AnnulusRefining)
 {
   // project coordinates onto sector of a sphere.  Change the size of
   // the mesh2 sector to test different kinds of topology interactions
-  if (comm_size(MPI_COMM_WORLD) != 1)
+  if (comm_size(MPI_COMM_WORLD) > 4)
     GTEST_SKIP();
 
   std::cout << std::setprecision(16) << std::endl;
@@ -230,11 +232,11 @@ TEST(MeshQualityImprover, AnnulusRefining)
     std::cout << "initial mesh2 surface error: ";
     compute_surface_error(mesh2, errorFunc);
 
-    auto metric     = std::make_shared<RegularizedDistortionMetric>(1e-1);
+    auto metric     = std::make_shared<RegularizedDistortionMetric<double>>(1e-1);
     auto qualityObj = std::make_shared<PatchDistortionObjective>(metric);
     MeshQualityStatistics qualityStatistics(mesh2, qualityObj);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
+    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
 
     std::cout << "after snap mesh1 surface error: ";
@@ -271,7 +273,7 @@ TEST(MeshQualityImprover, InclinePlaneRefining)
 {
   // project coordinates onto sector of a sphere.  Change the size of
   // the mesh2 sector to test different kinds of topology interactions
-  if (comm_size(MPI_COMM_WORLD) != 1)
+  if (comm_size(MPI_COMM_WORLD) > 4)
     GTEST_SKIP();
 
   std::cout << std::setprecision(16) << std::endl;
@@ -313,7 +315,7 @@ TEST(MeshQualityImprover, InclinePlaneRefining)
     // printVertEdges("mesh1_initial", mesh1);
     // printVertEdges("mesh2_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
+    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
 
     // printVertEdges("mesh1_snapped", mesh1);
@@ -341,7 +343,7 @@ TEST(MeshQualityImprover, TorusRotation)
   // project annulus onto surface of sphere (which is not really of torus)
   // Rotate the annulus of
   // the mesh2 sector to test different kinds of topology interactions
-  if (comm_size(MPI_COMM_WORLD) != 1)
+  if (comm_size(MPI_COMM_WORLD) > 4)
     GTEST_SKIP();
 
   std::cout << std::setprecision(16) << std::endl;
@@ -363,14 +365,14 @@ TEST(MeshQualityImprover, TorusRotation)
     std::cout << "dtheta = " << i * dtheta * 180.0 / pi << std::endl;
 
     // std::cout << "creating mesh1" << std::endl;
-    std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(10, 10, radiusIn, radiusOut, 0, func);
+    std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(10, 10, radiusIn, radiusOut, 0, MPI_COMM_WORLD, func);
 
     // std::cout << "\ncreating mesh2" << std::endl;
-    std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, radiusIn, radiusOut, i * dtheta, func);
+    std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, radiusIn, radiusOut, i * dtheta, MPI_COMM_WORLD, func);
 
     // printVertEdges("mesh_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
+    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
 
     // printVertEdges("mesh_snapped", mesh2);
@@ -384,7 +386,7 @@ TEST(MeshQualityImprover, EigthSphereRefining)
 {
   // project coordinates onto sector of a sphere.  Change the size of
   // the mesh2 sector to test different kinds of topology interactions
-  if (comm_size(MPI_COMM_WORLD) != 1)
+  if (comm_size(MPI_COMM_WORLD) > 4)
     GTEST_SKIP();
 
   std::cout << std::setprecision(16) << std::endl;
@@ -411,7 +413,7 @@ TEST(MeshQualityImprover, EigthSphereRefining)
     // printVertEdges("mesh1_initial", mesh1);
     // printVertEdges("mesh2_initial", mesh2);
 
-    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2);
+    auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
 
     std::cout << "after snap mesh1 surface error: ";

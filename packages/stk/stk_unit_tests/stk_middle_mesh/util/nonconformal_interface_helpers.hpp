@@ -1,7 +1,7 @@
 
-#include "create_mesh.hpp"
-#include "field.hpp"
-#include "variable_size_field.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/field.hpp"
+#include "stk_middle_mesh/variable_size_field.hpp"
 
 namespace stk {
 namespace middle_mesh {

@@ -38,17 +38,15 @@
 // clang-format off
 #include <Ioss_Field.h>                     // for Field::BasicType, Field
 #include <exception>                 // for exception
-#include <Teuchos_RCP.hpp>                  // for RCP::RCP<T>, RCP::reset
 #include <cstddef>                          // for size_t
 #include <stk_io/DatabasePurpose.hpp>       // for DatabasePurpose
-#include <stk_io/IOHelpers.hpp>             // for internal_add_global
+#include <stk_io/IOHelpers.hpp>             // for impl::add_global
 #include <stk_io/IossBridge.hpp>            // for GlobalAnyVariable
 #include <stk_mesh/base/Selector.hpp>       // for Selector
 #include <stk_util/util/ParameterList.hpp>  // for Type
 #include <string>                           // for string
 #include <utility>                          // for pair, swap
 #include <vector>                           // for vector
-#include "Teuchos_RCPDecl.hpp"              // for RCP
 #include "mpi.h"                            // for MPI_Comm, ompi_communicat...
 #include "stk_io/FieldAndName.hpp"          // for FieldAndName, UserDataAnd...
 #include "stk_io/OutputVariableParams.hpp"  // for OutputVariableParams
@@ -110,7 +108,7 @@ public:
         initialize_output_selectors();
     }
 
-    OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator,
+    OutputFile(std::shared_ptr<Ioss::Region> ioss_output_region, MPI_Comm communicator,
                DatabasePurpose db_type, const Ioss::Region *input_region)
     : m_currentOutputStep(-1),
       m_useNodesetForBlockNodesFields(false),
@@ -140,7 +138,7 @@ public:
         initialize_output_selectors();
     }
 
-    Teuchos::RCP<Ioss::Region> get_output_io_region() {
+    std::shared_ptr<Ioss::Region> get_output_ioss_region() {
         return m_region;
     }
     ~OutputFile();
@@ -167,7 +165,7 @@ public:
       std::any anyValue(value);
       std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, anyValue);
       m_anyGlobalVariablesDefined = true;
-      internal_add_global(m_region, variableName, parameter_type.first, parameter_type.second);
+      impl::add_global(m_region, variableName, parameter_type.first, parameter_type.second);
     }
 
     void add_global_ref(const std::string &variableName, const stk::util::Parameter &value);
@@ -192,11 +190,11 @@ public:
 
     int process_output_request(double time, const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
 
-    void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
-    void set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
-    void set_skin_mesh_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
+    void set_subset_selector(std::shared_ptr<stk::mesh::Selector> my_selector);
+    void set_shared_selector(std::shared_ptr<stk::mesh::Selector> my_selector);
+    void set_skin_mesh_selector(std::shared_ptr<stk::mesh::Selector> my_selector);
 
-    void set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
+    void set_output_selector(stk::topology::rank_t rank, std::shared_ptr<stk::mesh::Selector> my_selector);
 
     bool use_nodeset_for_block_nodes_fields() const;
     void use_nodeset_for_block_nodes_fields(bool flag);
@@ -257,11 +255,11 @@ private:
     DatabasePurpose m_dbPurpose;
     const Ioss::Region* m_inputRegion;
     std::shared_ptr<stk::io::OutputParams> m_outputParams;
-    Teuchos::RCP<stk::mesh::Selector> m_subsetSelector;
-    Teuchos::RCP<stk::mesh::Selector> m_sharedSelector;
-    Teuchos::RCP<stk::mesh::Selector> m_outputSelector[stk::topology::ELEM_RANK+1];
-    Teuchos::RCP<stk::mesh::Selector> m_skinMeshSelector;
-    Teuchos::RCP<Ioss::Region> m_region;
+    std::shared_ptr<stk::mesh::Selector> m_subsetSelector;
+    std::shared_ptr<stk::mesh::Selector> m_sharedSelector;
+    std::shared_ptr<stk::mesh::Selector> m_outputSelector[stk::topology::ELEM_RANK+1];
+    std::shared_ptr<stk::mesh::Selector> m_skinMeshSelector;
+    std::shared_ptr<Ioss::Region> m_region;
     std::vector<stk::io::FieldAndName> m_namedFields;
     std::vector<stk::io::FieldAndName> m_additionalAttributeFields;
     std::vector<stk::io::UserDataAndName> m_userData;

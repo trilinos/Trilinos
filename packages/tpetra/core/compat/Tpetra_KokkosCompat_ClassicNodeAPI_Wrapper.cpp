@@ -44,6 +44,10 @@ namespace KokkosCompat {
     std::string KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>::name() {
       return std::string("SYCL/Wrapper");
     }
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>::name() {
+      return std::string("SYCL/Wrapper");
+    }
 #endif // KOKKOS_ENABLE_SYCL
 
 

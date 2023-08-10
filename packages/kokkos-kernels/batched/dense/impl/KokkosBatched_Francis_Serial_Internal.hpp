@@ -82,9 +82,9 @@ struct SerialFrancisInternal {
       } else {
         const value_type val = H[(m - 1) * hs];
         const auto dist_lambda1 =
-            Kokkos::Details::ArithTraits<value_type>::abs(lambda1.real() - val);
+            Kokkos::ArithTraits<value_type>::abs(lambda1.real() - val);
         const auto dist_lambda2 =
-            Kokkos::Details::ArithTraits<value_type>::abs(lambda2.real() - val);
+            Kokkos::ArithTraits<value_type>::abs(lambda2.real() - val);
         const value_type lambda =
             dist_lambda1 < dist_lambda2 ? lambda1.real() : lambda2.real();
         s = 2 * lambda;

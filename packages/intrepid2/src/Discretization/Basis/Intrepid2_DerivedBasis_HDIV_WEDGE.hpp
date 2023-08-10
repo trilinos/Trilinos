@@ -197,10 +197,10 @@ namespace Intrepid2
      Note that getDofCoeffs() is supported only for Lagrangian bases.
      */
     virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const override {
-      auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),0);
-      auto dofCoeffs2 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),1);
-      Kokkos::deep_copy(dofCoeffs1,0.0);
-      this->TensorBasis::getDofCoeffs(dofCoeffs2);
+      auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(), std::make_pair(0,2));
+      auto dofCoeffs2 = Kokkos::subview(dofCoeffs,Kokkos::ALL(), 2);
+      this->TensorBasis::getDofCoeffs(dofCoeffs1);
+      Kokkos::deep_copy(dofCoeffs2,0.0);
     }
   };
 
@@ -329,10 +329,10 @@ namespace Intrepid2
      Note that getDofCoeffs() is supported only for Lagrangian bases.
      */
     virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const override {
-      auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),0);
-      auto dofCoeffs2 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),1);
-      this->TensorBasis::getDofCoeffs(dofCoeffs1);
-      Kokkos::deep_copy(dofCoeffs2,0.0);
+      auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(), std::make_pair(0,2));
+      auto dofCoeffs2 = Kokkos::subview(dofCoeffs,Kokkos::ALL(), 2);
+      Kokkos::deep_copy(dofCoeffs1,0.0);
+      this->TensorBasis::getDofCoeffs(dofCoeffs2);
     }
   };
 
@@ -400,6 +400,41 @@ namespace Intrepid2
     const char*
     getName() const override {
       return name_.c_str();
+    }
+
+
+    /** \brief returns the basis associated to a subCell.
+
+      The bases of the subCell are the restriction to the subCell
+      of the bases of the parent cell.
+      TODO: test this method when different orders are used in different directions
+      \param [in] subCellDim - dimension of subCell
+      \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+      \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+    */
+    Teuchos::RCP<BasisBase>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override
+    {
+      using QuadBasis = Basis_Derived_HVOL_QUAD<HVOL_LINE>;
+      using TriBasis  = HVOL_TRI;
+
+      if(subCellDim == 2) {
+        switch(subCellOrd) {
+        case 0:
+          return Teuchos::rcp( new QuadBasis(order_xy_-1, order_z_-1, pointType_) );
+        case 1:
+          return Teuchos::rcp( new QuadBasis(order_xy_-1, order_z_-1, pointType_) );
+        case 2:
+          return Teuchos::rcp( new QuadBasis(order_z_-1, order_xy_-1, pointType_) );
+        case 3:
+          return Teuchos::rcp( new TriBasis(order_xy_-1, pointType_) );
+        case 4:
+          return Teuchos::rcp( new TriBasis(order_xy_-1, pointType_) );
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"subCellOrd is out of bounds");
+        }
+      } 
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"subCellDim is out of bounds");
     }
 
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.

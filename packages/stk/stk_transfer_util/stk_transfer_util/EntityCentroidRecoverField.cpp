@@ -28,10 +28,11 @@ namespace transfer {
 EntityCentroidLinearRecoverField::EntityCentroidLinearRecoverField(RecoverField::RecoveryType recType,
                                                                    const std::vector<const stk::mesh::FieldBase*>& recVars,
                                                                    const stk::mesh::FieldBase& recNodeVar, int nSampEntity,
-                                                                   stk::mesh::Entity entity)
+                                                                   stk::mesh::Entity entity, FieldTransform transform)
   : RecoverField(recType, nSampEntity)
   , m_recoverVars(recVars)
   , m_nodeVar(recNodeVar)
+  , m_transform(transform)
 {
   m_totalVarComponents = 0;
 
@@ -84,7 +85,7 @@ void EntityCentroidLinearRecoverField::sample_patch(const std::vector<stk::mesh:
         double* entityData = (double*)stk::mesh::field_data(*var, entity);
         double data = 0.0;
         if(nullptr != entityData) {
-          data = entityData[nfi];
+          data = m_transform(entityData[nfi]);
         }
 
         fieldSample[rhsCount * nSampPatch + entityCount] = data;
@@ -138,10 +139,11 @@ void EntityCentroidLinearRecoverField::sample_patch(const std::vector<stk::mesh:
 EntityCentroidQuadraticRecoverField::EntityCentroidQuadraticRecoverField(stk::transfer::RecoverField::RecoveryType recType,
                                                                      const std::vector<const stk::mesh::FieldBase*>& recVars,
                                                                      const stk::mesh::FieldBase& recNodeVar, int nsampElem,
-                                                                     stk::mesh::Entity entity)
+                                                                     stk::mesh::Entity entity, FieldTransform transform)
   : RecoverField(recType, nsampElem)
   , m_recoverVars(recVars)
   , m_nodeVar(recNodeVar)
+  , m_transform(transform)
 {
   m_totalVarComponents = 0;
 
@@ -195,7 +197,7 @@ void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::me
         double* entityData = (double*)stk::mesh::field_data(*var, entity);
         double data = 0.0;
         if(nullptr != entityData) {
-          data = entityData[nfi];
+          data = m_transform(entityData[nfi]);
         }
 
         fieldSample[rhsCount * nSampPatch + entityCount] = data;
@@ -250,10 +252,11 @@ void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::me
 EntityCentroidCubicRecoverField::EntityCentroidCubicRecoverField(stk::transfer::RecoverField::RecoveryType recType,
                                                                      const std::vector<const stk::mesh::FieldBase*>& recVars,
                                                                      const stk::mesh::FieldBase& recNodeVar, int nsampElem,
-                                                                     stk::mesh::Entity entity)
+                                                                     stk::mesh::Entity entity, FieldTransform transform)
   : RecoverField(recType, nsampElem)
   , m_recoverVars(recVars)
   , m_nodeVar(recNodeVar)
+  , m_transform(transform)
 {
   m_totalVarComponents = 0;
 
@@ -307,7 +310,7 @@ void EntityCentroidCubicRecoverField::sample_patch(const std::vector<stk::mesh::
         double* entityData = (double*)stk::mesh::field_data(*var, entity);
         double data = 0.0;
         if(nullptr != entityData) {
-          data = entityData[nfi];
+          data = m_transform(entityData[nfi]);
         }
 
         fieldSample[rhsCount * nSampPatch + entityCount] = data;

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,9 +13,9 @@
 /* Perform KL between two sets. */
 int kl_refine(struct vtx_data **graph,      /* graph data structure */
               struct vtx_data **subgraph,   /* space for subgraph to refine */
-              struct bilist *   set_list,   /* lists of vtxs in each set */
-              struct bilist *   vtx_elems,  /* start of storage for lists */
-              int *             new_assign, /* set assignments for all vertices */
+              struct bilist    *set_list,   /* lists of vtxs in each set */
+              struct bilist    *vtx_elems,  /* start of storage for lists */
+              int              *new_assign, /* set assignments for all vertices */
               int set1, int set2,           /* two sets being refined */
               int *glob2loc,                /* maps vertices to subgraph vertices */
               int *loc2glob,                /* maps subgraph vertices to vertices */
@@ -25,8 +25,8 @@ int kl_refine(struct vtx_data **graph,      /* graph data structure */
               int  using_ewgts,             /* are edge weights being used? */
               int (*hops)[MAXSETS],         /* KL set preferences */
               double *goal,                 /* desired set sizes */
-              int *   sizes,                /* number of vertices in different sets */
-              float * term_wgts[],          /* space for terminal propagation weights */
+              int    *sizes,                /* number of vertices in different sets */
+              float  *term_wgts[],          /* space for terminal propagation weights */
               int     architecture,         /* 0 => hypercube, d => d-dimensional mesh */
               int     mesh_dims[3]          /* if mesh, how big is it? */
 )
@@ -38,7 +38,7 @@ int kl_refine(struct vtx_data **graph,      /* graph data structure */
   double         weights[2] = {0.0, 0.0}; /* weights for each set */
   double         maxdeg;                  /* largest degree of a vertex */
   double         ratio;                   /* set sizes / goals */
-  int *          null_ptr;                /* argument to klspiff */
+  int           *null_ptr;                /* argument to klspiff */
   int            vwgt_max;                /* largest vertex weight */
   int            max_dev;                 /* largest set deviation allowed in KL */
   int            subnvtxs;                /* number of vtxs in subgraph */
@@ -49,9 +49,6 @@ int kl_refine(struct vtx_data **graph,      /* graph data structure */
   int            nsame;                   /* number of vertices not moved */
   int            vtx;                     /* vertex in subgraph */
   int            i;                       /* loop counter */
-  double         find_maxdeg();
-  void           make_maps_ref(), make_subgraph(), remake_graph();
-  void           klspiff(), make_terms_ref(), count_weights();
 
   /* Compute all the quantities I'll need. */
   null_ptr = NULL;

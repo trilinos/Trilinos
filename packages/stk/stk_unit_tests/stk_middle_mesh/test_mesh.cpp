@@ -4,10 +4,10 @@
 #include <fstream>
 #include <set>
 
-#include "create_mesh.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "util/meshes.hpp"
-#include "utils.hpp"
+#include "stk_middle_mesh/utils.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -1277,6 +1277,16 @@ TEST(Mesh, ErrorRemotesNotUnique)
   v1->add_remote_shared_entity({1, 0});
 
   EXPECT_ANY_THROW(check_topology(mesh));
+}
+
+TEST(Mesh, AnnulusRemotes)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) > 4)
+    GTEST_SKIP();
+
+  // Note: 2x2 doesnt work, find out why
+  std::shared_ptr<mesh::Mesh> mesh1 = make_annulus_mesh(4, 4, 0.5, 1.5, 0);
+  mesh::check_topology(mesh1);
 }
 
 } // namespace impl

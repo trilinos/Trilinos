@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "b_splines.hpp"
+#include "stk_middle_mesh/b_splines.hpp"
 
 namespace stk {
 namespace middle_mesh {

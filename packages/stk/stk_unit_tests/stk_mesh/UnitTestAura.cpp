@@ -36,6 +36,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/DestroyElements.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/GetEntities.hpp>
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
@@ -653,7 +654,7 @@ void test_aura_partially_disconnect_elem_from_shared_owned_nodes(stk::mesh::Bulk
     stk::mesh::EntityId ownedElemId = 2;
     stk::mesh::EntityState expectedNodeStates[] = {
       Modified, Modified, Modified, Modified,
-      Unchanged, Unchanged, Unchanged, Unchanged
+      Modified, Modified, Modified, Modified
     };
     check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
   }
@@ -713,7 +714,7 @@ void test_aura_partially_disconnect_elem_from_shared_not_owned_nodes(stk::mesh::
     stk::mesh::Entity ownedElem = mesh.get_entity(stk::topology::ELEM_RANK, ownedElemId);
     EXPECT_EQ(Modified, mesh.state(ownedElem));
     stk::mesh::EntityState expectedNodeStates[] = {
-      Unchanged, Unchanged, Unchanged, Unchanged,
+      Modified, Modified, Modified, Modified,
       Modified, Modified, Modified, Modified
     };
     check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
@@ -724,7 +725,7 @@ void test_aura_partially_disconnect_elem_from_shared_not_owned_nodes(stk::mesh::
     stk::mesh::EntityId ownedElemId = 2;
     stk::mesh::EntityState expectedNodeStates[] = {
       Created, Created, Modified, Modified,
-      Unchanged, Unchanged, Unchanged, Unchanged
+      Modified, Modified, Modified, Modified
     };
     check_node_states_for_elem(mesh, ownedElemId, expectedNodeStates);
   }
@@ -1150,6 +1151,302 @@ TEST_F(AuraSharedSideMods, sharedFaceDeleteElemRecreateElem_declareRelation)
   declare_relation_on_elem2();
   verify_num_faces(1);
   verify_nodes_shared({5, 6, 7, 8});
+}
+
+class AuraTetSide : public TestTextMeshAura
+{
+public:
+  void delete_side_on_p0_check_marking()
+  {
+    get_bulk().modification_begin();
+
+    stk::mesh::Entity elem2577 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2577);
+    stk::mesh::Entity elem2579 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2579);
+    stk::mesh::Entity face25772 = get_bulk().get_entity(stk::topology::FACE_RANK, 25772);
+    EXPECT_TRUE(get_bulk().is_valid(elem2577));
+    EXPECT_TRUE(get_bulk().is_valid(elem2579));
+    EXPECT_TRUE(get_bulk().is_valid(face25772));
+
+    if (get_bulk().parallel_rank() == 0) {
+      stk::mesh::ConnectivityOrdinal ord = 1;
+      EXPECT_TRUE(get_bulk().destroy_relation(elem2577, face25772, ord));
+      EXPECT_TRUE(get_bulk().destroy_relation(elem2579, face25772, ord));
+      EXPECT_TRUE(get_bulk().destroy_entity(face25772));
+
+      stk::mesh::Entity elem2587 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2587);
+      stk::mesh::Entity node484 = get_bulk().get_entity(stk::topology::NODE_RANK, 484);
+      stk::mesh::Entity node494 = get_bulk().get_entity(stk::topology::NODE_RANK, 494);
+      EXPECT_TRUE(get_bulk().state(elem2587) == stk::mesh::Modified);
+      EXPECT_TRUE(get_bulk().state(node484) == stk::mesh::Unchanged);
+      EXPECT_TRUE(get_bulk().state(node494) == stk::mesh::Unchanged);
+    }
+
+    get_bulk().modification_end();
+  }
+
+  void delete_elems_on_p0_check_aura_nodes_deleted()
+  {
+    stk::mesh::Entity elem2577 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2577);
+    stk::mesh::Entity elem2579 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2579);
+    EXPECT_TRUE(get_bulk().is_valid(elem2577));
+    EXPECT_TRUE(get_bulk().is_valid(elem2579));
+
+    get_bulk().modification_begin();
+
+    if (get_bulk().parallel_rank() == 0) {
+      EXPECT_TRUE(get_bulk().destroy_entity(elem2577));
+      EXPECT_TRUE(get_bulk().destroy_entity(elem2579));
+    }
+
+    get_bulk().modification_end();
+
+    if (get_bulk().parallel_rank() == 1) {
+      elem2577 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2577);
+      elem2579 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2579);
+      EXPECT_FALSE(get_bulk().is_valid(elem2577));
+      EXPECT_FALSE(get_bulk().is_valid(elem2579));
+
+      stk::mesh::Entity node452 = get_bulk().get_entity(stk::topology::NODE_RANK, 452);
+      stk::mesh::Entity node464 = get_bulk().get_entity(stk::topology::NODE_RANK, 464);
+      stk::mesh::Entity node474 = get_bulk().get_entity(stk::topology::NODE_RANK, 474);
+      EXPECT_FALSE(get_bulk().is_valid(node452));
+      EXPECT_FALSE(get_bulk().is_valid(node464));
+      EXPECT_FALSE(get_bulk().is_valid(node474));
+    }
+  }
+
+  void delete_elem_on_p1_check_aura_nodes_deleted()
+  {
+    stk::mesh::Entity elem2601 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2601);
+    EXPECT_TRUE(get_bulk().is_valid(elem2601));
+
+    get_bulk().modification_begin();
+
+    if (get_bulk().parallel_rank() == 1) {
+      EXPECT_TRUE(get_bulk().destroy_entity(elem2601));
+    }
+
+    get_bulk().modification_end();
+
+    if (get_bulk().parallel_rank() == 1) {
+      elem2601 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2601);
+      EXPECT_FALSE(get_bulk().is_valid(elem2601));
+
+      stk::mesh::Entity node452 = get_bulk().get_entity(stk::topology::NODE_RANK, 452);
+      stk::mesh::Entity node464 = get_bulk().get_entity(stk::topology::NODE_RANK, 464);
+      stk::mesh::Entity node474 = get_bulk().get_entity(stk::topology::NODE_RANK, 474);
+      EXPECT_FALSE(get_bulk().is_valid(node452));
+      EXPECT_FALSE(get_bulk().is_valid(node464));
+      EXPECT_FALSE(get_bulk().is_valid(node474));
+    }
+  }
+
+  void print_face_nodes()
+  {
+    stk::mesh::Entity face25872 = get_bulk().get_entity(stk::topology::FACE_RANK, 25872);
+    EXPECT_TRUE(get_bulk().is_valid(face25872));
+    const unsigned numNodes = get_bulk().num_nodes(face25872);
+    EXPECT_EQ(3u, numNodes);
+    const stk::mesh::Entity* nodes = get_bulk().begin_nodes(face25872);
+    std::cerr<<" face 25872 nodes: ";
+    for(unsigned i=0; i<numNodes; ++i) {
+      std::cerr<<get_bulk().identifier(nodes[i])<<" ";
+    }
+    std::cerr<<std::endl;
+  }
+
+  void delete_aura_elem_on_p1_check_aura_nodes_deleted()
+  {
+    stk::mesh::Entity elem2587 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2587);
+    stk::mesh::Entity elem2601 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2601);
+    EXPECT_TRUE(get_bulk().is_valid(elem2587));
+    EXPECT_TRUE(get_bulk().is_valid(elem2601));
+
+    get_bulk().modification_begin();
+
+    if (get_bulk().parallel_rank() == 0) {
+      stk::mesh::Entity elem2599 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2599);
+      EXPECT_TRUE(get_bulk().destroy_entity(elem2599));
+    }
+    else {
+      EXPECT_TRUE(get_bulk().destroy_entity(elem2601));
+    }
+
+    get_bulk().modification_end();
+
+    if (get_bulk().parallel_rank() == 1) {
+      elem2587 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2587);
+      EXPECT_FALSE(get_bulk().is_valid(elem2587));
+
+      stk::mesh::Entity node484 = get_bulk().get_entity(stk::topology::NODE_RANK, 484);
+      stk::mesh::Entity node494 = get_bulk().get_entity(stk::topology::NODE_RANK, 494);
+      EXPECT_FALSE(get_bulk().is_valid(node484));
+      EXPECT_FALSE(get_bulk().is_valid(node494));
+    }
+  }
+
+  void destroy_elems(const std::vector<std::pair<int,stk::mesh::EntityId>>& procElemIds)
+  {
+    stk::mesh::EntityVector elemsToDestroy;
+    for(const std::pair<int,stk::mesh::EntityId>& procElemId : procElemIds) {
+      if (procElemId.first == get_bulk().parallel_rank()) {
+        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, procElemId.second);
+        ASSERT_TRUE(get_bulk().is_valid(elem));
+        elemsToDestroy.push_back(elem);
+      }
+    }
+
+    get_bulk().modification_begin();
+    stk::mesh::destroy_elements_no_mod_cycle(get_bulk(), elemsToDestroy, get_meta().universal_part());
+    get_bulk().modification_end();
+  }
+};
+
+TEST_F(AuraTetSide, removeAuraSideOnOwner_checkMarking)
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 2579, TET_4, 91,452,474,464\n"
+                         "0, 2577, TET_4, 50,452,464,474\n"
+                         "0, 2587, TET_4, 50,452,484,494\n"
+                         "1, 2601, TET_4, 91, 50, 60, 70|sideset:data=2577,2";
+  setup_text_mesh(meshDesc);
+
+  delete_side_on_p0_check_marking();
+}
+
+TEST_F(AuraTetSide, removeAuraElemsOnNonOwner_checkMarking)
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 2587, TET_4, 50,452,484,494\n"
+                         "0, 2599, TET_4, 50,497,498,499\n"
+                         "1, 2601, TET_4, 91, 50, 60, 70|sideset:data=2587,2";
+  setup_text_mesh(meshDesc);
+
+  delete_aura_elem_on_p1_check_aura_nodes_deleted();
+}
+
+TEST_F(AuraTetSide, printFaceNodes_serial)
+{
+  if (get_parallel_size() != 1) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 2587, TET_4, 50,452,484,494\n"
+                         "0, 2599, TET_4, 50,497,498,499\n"
+                         "0, 2601, TET_4, 91, 50, 60, 70|sideset:data=2587,2";
+  setup_text_mesh(meshDesc);
+
+  print_face_nodes();
+}
+
+TEST_F(AuraTetSide, removeElemsOnP0_auraNodesDeletedOnP1)
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 2579, TET_4, 91,452,474,464\n"
+                         "0, 2577, TET_4, 50,452,464,474\n"
+                         "1, 2601, TET_4, 91, 50, 60, 70";
+  setup_text_mesh(meshDesc);
+
+  delete_elems_on_p0_check_aura_nodes_deleted();
+}
+
+TEST_F(AuraTetSide, removeElemOnP1_auraNodesDeletedOnP1)
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 2579, TET_4, 91,452,474,464\n"
+                         "0, 2577, TET_4, 50,452,464,474\n"
+                         "1, 2601, TET_4, 91, 50, 60, 70";
+  setup_text_mesh(meshDesc);
+
+  delete_elem_on_p1_check_aura_nodes_deleted();
+}
+
+TEST_F(AuraTetSide, removeAuraElemOnP2_auraNodesDeletedOnP1)
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 2579, TET_4, 91,452,474,464\n"
+                         "0, 2577, TET_4, 50,452,464,474\n"
+                         "1, 2601, TET_4, 91, 50, 60, 70";
+  setup_text_mesh(meshDesc);
+
+  delete_elem_on_p1_check_aura_nodes_deleted();
+}
+
+TEST_F(AuraTetSide, destroy_elems)
+{
+  if (get_parallel_size() != 8) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1049, TET_4, 101,140,138,137\n"
+                         "0, 1050, TET_4, 140,110,139,136\n"
+                         "0, 1051, TET_4, 138,139,108,135\n"
+                         "0, 1052, TET_4, 137,136,135,107\n"
+                         "0, 1053, TET_4, 138,137,140,136\n"
+                         "0, 1054, TET_4, 138,135,137,136\n"
+                         "0, 1055, TET_4, 138,139,135,136\n"
+                         "0, 1056, TET_4, 138,140,139,136\n"
+                         "1, 2000, TET_4, 200,110,162,201\n"
+                         "2, 1065, TET_4, 147,108,103,109\n"
+                         "2, 1066, TET_4, 105,147,103,109\n"
+                         "3, 1108, TET_4, 134,106,133,104\n"
+                         "3, 1109, TET_4, 132,133,105,104\n"
+                         "3, 1110, TET_4, 132,134,133,104\n"
+                         "3, 1111, TET_4, 107,134,132,104\n"
+                         "4, 1081, TET_4, 134,136,107,135\n"
+                         "4, 1145, TET_4, 135,107,136,134\n"
+                         "4, 1146, TET_4, 139,136,110,162\n"
+                         "4, 1148, TET_4, 136,135,134,159\n"
+                         "4, 1149, TET_4, 136,139,135,159\n"
+                         "4, 1150, TET_4, 136,162,139,159\n"
+                         "4, 1151, TET_4, 136,134,162,159\n"
+                         "5, 1089, TET_4, 108,147,135,159\n"
+                         "5, 1090, TET_4, 147,105,132,133\n"
+                         "5, 1091, TET_4, 135,132,107,134\n"
+                         "5, 1092, TET_4, 159,133,134,106\n"
+                         "5, 1093, TET_4, 132,147,133,159\n"
+                         "5, 1094, TET_4, 132,135,147,159\n"
+                         "5, 1095, TET_4, 132,134,135,159\n"
+                         "5, 1096, TET_4, 132,133,134,159\n"
+                         "6, 1160, TET_4, 159,133,160,147\n"
+                         "6, 1161, TET_4, 159,160,133,106\n"
+                         "6, 1162, TET_4, 109,159,160,147\n"
+                         "6, 1163, TET_4, 109,159,147,108\n"
+                         "6, 1164, TET_4, 105,160,133,147\n"
+                         "6, 1165, TET_4, 105,160,147,109\n"
+                         "7, 2001, TET_4, 202,162,110,203|sideset:data=1151,4,1146,2,1052,1,1050,1,1081,4,1053,2\n";
+
+  setup_text_mesh(meshDesc);
+
+  destroy_elems({ {0, 1049},
+                  {0, 1050},
+                  {0, 1051},
+                  {0, 1052},
+                  {0, 1053},
+                  {0, 1054},
+                  {0, 1055},
+                  {0, 1056},
+                  {2, 1065},
+                  {2, 1066},
+                  {3, 1108},
+                  {3, 1109},
+                  {3, 1110},
+                  {3, 1111},
+                  {5, 1089},
+                  {5, 1090},
+                  {5, 1091},
+                  {5, 1092},
+                  {5, 1093},
+                  {5, 1094},
+                  {5, 1095},
+                  {5, 1096},
+                  {6, 1160},
+                  {6, 1161},
+                  {6, 1162},
+                  {6, 1163},
+                  {6, 1164},
+                  {6, 1165} });
 }
 
 } // empty namespace

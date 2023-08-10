@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -312,10 +312,7 @@ namespace Ioss {
 
     int same_count = (diff0 == 0 ? 1 : 0) + (diff1 == 0 ? 1 : 0) + (diff2 == 0 ? 1 : 0);
 
-    if (same_count > 1) {
-      return false;
-    }
-    return true;
+    return same_count <= 1;
   }
 
   bool ZoneConnectivity::retain_original() const

@@ -75,7 +75,7 @@ TEST(UnitTestAccessCommSet_legacy, basicNodeComm)
 
   std::cout<<"proc "<<myProc<<", num nodes: "<<num_nodes<<std::endl;
 
-  Ioss::Region& ioss_region = *stkMeshIoBroker.get_input_io_region();
+  Ioss::Region& ioss_region = *stkMeshIoBroker.get_input_ioss_region();
   Ioss::CommSet* io_cs = ioss_region.get_commset("commset_node");
   EXPECT_FALSE(NULL == io_cs);
 
@@ -124,7 +124,7 @@ TEST(UnitTestAccessCommSet, basicNodeComm)
 
   std::cout<<"proc "<<myProc<<", num nodes: "<<num_nodes<<std::endl;
 
-  Ioss::Region& ioss_region = *stkMeshIoBroker.get_input_io_region();
+  Ioss::Region& ioss_region = *stkMeshIoBroker.get_input_ioss_region();
   Ioss::CommSet* io_cs = ioss_region.get_commset("commset_node");
   EXPECT_FALSE(NULL == io_cs);
 

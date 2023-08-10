@@ -1,10 +1,12 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
  eigen-analysis: type = cg
+
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -21,6 +23,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+aggregation: match ML phase2a = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -41,6 +44,7 @@ smoother ->
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20   [unused]
  eigen-analysis: type = cg
+
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -57,6 +61,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+aggregation: match ML phase2a = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -77,6 +82,7 @@ smoother ->
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20   [unused]
  eigen-analysis: type = cg
+
 Level 3
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -93,6 +99,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+aggregation: match ML phase2a = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -113,6 +120,7 @@ smoother ->
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20   [unused]
  eigen-analysis: type = cg
+
 Level 4
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -129,6 +137,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+aggregation: match ML phase2a = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)

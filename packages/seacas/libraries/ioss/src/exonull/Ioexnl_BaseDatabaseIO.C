@@ -313,7 +313,7 @@ namespace Ioexnl {
       std::replace(std::begin(config), std::end(config), '\t', ' ');
       auto lines = Ioss::tokenize(config, "\n");
       lines.erase(std::remove_if(lines.begin(), lines.end(),
-                                 [](const std::string &line) { return line == ""; }),
+                                 [](const std::string &line) { return line.empty(); }),
                   lines.end());
 
       // See if the client added any "information_records"
@@ -1043,9 +1043,7 @@ namespace Ioexnl {
   }
 
   // common
-  void BaseDatabaseIO::output_results_names(ex_entity_type, VariableNameMap &, bool) const
-  {
-  }
+  void BaseDatabaseIO::output_results_names(ex_entity_type, VariableNameMap &, bool) const {}
 
   // common
   // Handle special output time requests -- primarily restart (cycle, overwrite)

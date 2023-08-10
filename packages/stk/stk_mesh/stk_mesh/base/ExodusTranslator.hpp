@@ -42,7 +42,7 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 
 namespace stk
@@ -104,6 +104,56 @@ inline void fill_element_block_parts(const MetaData& meta, stk::topology elemTop
   if (sortById) {
     stk::util::sort_and_unique(elemBlockParts, stk::mesh::PartLessById());
   }
+}
+
+inline stk::mesh::Part* get_element_block_part(const stk::mesh::BulkData& bulkData,
+                                               const std::vector<stk::mesh::PartOrdinal>& partOrdinals)
+{
+  stk::mesh::Part* elementBlockPart = nullptr;;
+  const stk::mesh::PartVector& allParts = bulkData.mesh_meta_data().get_parts();
+  unsigned blockCounter = 0;
+
+  for(stk::mesh::PartOrdinal partOrdinal : partOrdinals)
+  {
+    stk::mesh::Part* part = allParts[partOrdinal];
+    if(stk::mesh::is_element_block(*part))
+    {
+      elementBlockPart = part;
+      blockCounter++;
+    }
+  }
+
+  bool elementIsAssociatedWithOnlyOneElementBlock = blockCounter == 1;
+  STK_ThrowRequireWithSierraHelpMsg(elementIsAssociatedWithOnlyOneElementBlock);
+  STK_ThrowRequireWithSierraHelpMsg(elementBlockPart != nullptr);
+  return elementBlockPart;
+}
+
+inline stk::mesh::Part* get_element_block_part(const stk::mesh::Bucket& bucket)
+{
+  STK_ThrowRequireWithSierraHelpMsg(bucket.entity_rank() == stk::topology::ELEM_RANK);
+  stk::mesh::Part* elementBlockPart = nullptr;;
+  const stk::mesh::PartVector& parts = bucket.supersets();
+  unsigned blockCounter = 0;
+  for(stk::mesh::Part *part : parts)
+  {
+    if(stk::mesh::is_element_block(*part))
+    {
+      elementBlockPart = part;
+      blockCounter++;
+    }
+  }
+
+  bool elementIsAssociatedWithOnlyOneElementBlock = blockCounter == 1;
+  STK_ThrowRequireWithSierraHelpMsg(elementIsAssociatedWithOnlyOneElementBlock);
+  STK_ThrowRequireWithSierraHelpMsg(elementBlockPart != nullptr);
+  return elementBlockPart;
+}
+
+inline stk::mesh::Part* get_element_block_part(const stk::mesh::BulkData& bulkData,
+                                               stk::mesh::Entity element)
+{
+  return get_element_block_part(bulkData.bucket(element));
 }
 
 class ExodusTranslator

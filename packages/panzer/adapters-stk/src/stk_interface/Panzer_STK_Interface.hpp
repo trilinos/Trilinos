@@ -51,8 +51,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include "Kokkos_Core.hpp"
 
@@ -105,7 +103,7 @@ class STK_Interface {
 public:
    typedef double ProcIdData; // ECC: Not sure why?
    typedef stk::mesh::Field<double> SolutionFieldType;
-   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+   typedef stk::mesh::Field<double> VectorFieldType;
    typedef stk::mesh::Field<ProcIdData> ProcIdFieldType;
 
    // some simple exception classes

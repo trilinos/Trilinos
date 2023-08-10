@@ -1,6 +1,6 @@
-#include "element_operations_2d.hpp"
-#include "mesh_io.hpp"
-#include "nonconformal4.hpp"
+#include "stk_middle_mesh/element_operations_2d.hpp"
+#include "stk_middle_mesh/mesh_io.hpp"
+#include "stk_middle_mesh/nonconformal4.hpp"
 #include "util/nonconformal_interface_helpers.hpp"
 #include "gtest/gtest.h"
 

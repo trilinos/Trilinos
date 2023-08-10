@@ -134,8 +134,6 @@ public:
             const A_type *A, const OrdinalType lda,
             ScalarType *B, const OrdinalType ldb) const
   {
-    typedef Sacado::MP::Vector<Storage> ScalarType;
-
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();

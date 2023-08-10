@@ -13,6 +13,7 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
+#include <Akri_ParallelErrorMessage.hpp>
 #include "Akri_DiagWriter.hpp"
 #include "Akri_MeshHelpers.hpp"
 #include "Akri_ReportHandler.hpp"
@@ -177,38 +178,6 @@ void fill_all_children(const RefinementInterface & refinement, const stk::mesh::
   refinement.fill_children(entity, children);
   all_children = children;
   fill_all_children(refinement, children, all_children);
-}
-
-template<class RefinementClass>
-void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const RefinementClass * refinement)
-{
-  bool error = false;
-  std::string msg = "Error: leaf child without parent owned by same processor";
-  auto buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part());
-  for(auto bucket : buckets)
-  {
-    for(auto && elem : *bucket)
-    {
-      if(refinement->is_child(elem) && !refinement->is_parent(elem))
-      {
-        auto parent = refinement->get_parent(elem);
-        if(!mesh.is_valid(parent))
-        {
-          error = true;
-          msg +=  " " + debug_entity(mesh, elem);
-          break;
-        }
-        else if(!mesh.bucket(parent).owned())
-        {
-          error = true;
-          msg +=  " " + debug_entity(mesh, elem);
-          break;
-        }
-      }
-    }
-    if(error == true) break;
-  }
-  ParallelThrowRequireMsg(mesh.parallel(), !error, msg);
 }
 
 PerceptRefinement &
@@ -456,6 +425,29 @@ void PerceptRefinement::do_uniform_refinement(const int numUniformRefinementLeve
   myUniformRefinement(numUniformRefinementLevels);
 }
 
+std::string PerceptRefinement::locally_check_leaf_children_have_parents_on_same_proc() const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  std::ostringstream localErrorMsg;
+  auto buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part());
+  for(auto bucket : buckets)
+  {
+    for(auto && elem : *bucket)
+    {
+      if(is_child(elem) && !is_parent(elem))
+      {
+        auto parent = get_parent(elem);
+        if(!mesh.is_valid(parent) || !mesh.bucket(parent).owned())
+        {
+          localErrorMsg << debug_entity_1line(mesh, elem) << "\n";
+          return localErrorMsg.str();
+        }
+      }
+    }
+  }
+  return localErrorMsg.str();
+}
+
 KrinoRefinement &
 KrinoRefinement::get(const stk::mesh::MetaData & meta)
 {
@@ -569,6 +561,11 @@ void KrinoRefinement::fill_children(const stk::mesh::Entity parent, std::vector<
 void KrinoRefinement::fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const
 {
   myRefinement.fill_child_element_ids(parent, childElemIds);
+}
+
+std::string KrinoRefinement::locally_check_leaf_children_have_parents_on_same_proc() const
+{
+  return myRefinement.locally_check_leaf_children_have_parents_on_same_proc();
 }
 
 void KrinoRefinement::fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
@@ -741,6 +738,9 @@ void KrinoRefinement::restore_after_restart()
   ParallelThrowAssert(myMeta.mesh_bulk_data().parallel(), check_face_and_edge_relations(myMeta.mesh_bulk_data()));
 }
 
-template void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const RefinementInterface * refinement);
-template void check_leaf_children_have_parents_on_same_proc(const stk::mesh::BulkData & mesh, const Refinement * refinement);
+void check_leaf_children_have_parents_on_same_proc(const stk::ParallelMachine comm, const RefinementInterface & refinement)
+{
+  RequireEmptyErrorMsg(comm, refinement.locally_check_leaf_children_have_parents_on_same_proc(), "Leaf child without parent owned on same proc.");
+}
+
 }

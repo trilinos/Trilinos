@@ -40,7 +40,7 @@
 #include <cstdint>                          // for int64_t
 #include <iostream>                         // for operator<<, basic_ostream
 #include <memory>                           // for allocator_traits<>::value...
-#include <stk_io/IOHelpers.hpp>             // for internal_add_global, put_...
+#include <stk_io/IOHelpers.hpp>             // for impl::add_global, put_...
 #include <stk_io/IossBridge.hpp>            // for GlobalAnyVariable, ioss_a...
 #include <stk_mesh/base/BulkData.hpp>       // for BulkData
 #include <stk_mesh/base/MetaData.hpp>       // for MetaData
@@ -60,7 +60,6 @@
 #include "Ioss_SideSet.h"                   // for SideSet
 #include "Ioss_State.h"                     // for STATE_TRANSIENT, STATE_DE...
 #include "StkIoUtils.hpp"                   // for part_primary_entity_rank
-#include "Teuchos_RCP.hpp"                  // for RCP::operator->, RCP::ope...
 #include "stk_io/DatabasePurpose.hpp"       // for WRITE_RESTART
 #include "stk_io/OutputParams.hpp"          // for OutputParams
 #include "stk_mesh/base/Entity.hpp"         // for Entity
@@ -374,7 +373,7 @@ void OutputFile::add_global_ref(const std::string &name, const stk::util::Parame
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(param.type, param.value);
-    internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+    impl::add_global(m_region, name, parameter_type.first, parameter_type.second);
     m_globalAnyFields.emplace_back(name, &param.value, param.type);
 }
 
@@ -390,7 +389,7 @@ void OutputFile::add_global(const std::string &name, const stk::util::Parameter 
                      " Attempting to add global variable after data has already been written to the database.");
     std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(param.type, param.value);
     m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
-    internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+    impl::add_global(m_region, name, parameter_type.first, parameter_type.second);
 }
 
 void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
@@ -399,7 +398,7 @@ void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::Basic
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
-    internal_add_global(m_region, globalVarName, "scalar", dataType);
+    impl::add_global(m_region, globalVarName, "scalar", dataType);
 }
 
 void OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
@@ -408,7 +407,7 @@ void OutputFile::add_global(const std::string &globalVarName, int component_coun
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
-    internal_add_global(m_region, globalVarName, component_count, dataType);
+    impl::add_global(m_region, globalVarName, component_count, dataType);
 }
 
 void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
@@ -417,33 +416,33 @@ void OutputFile::add_global(const std::string &globalVarName, const std::string 
                      "On region named " << m_region->name() <<
                      " Attempting to add global variable after data has already been written to the database.");
     m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
-    internal_add_global(m_region, globalVarName, storage, dataType);
+    impl::add_global(m_region, globalVarName, storage, dataType);
 }
 
 void OutputFile::write_global(const std::string &globalVarName,
                               const stk::util::Parameter &param)
 {
-    internal_write_parameter(m_region, globalVarName, param);
+    impl::write_parameter(m_region, globalVarName, param);
 }
 
 void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
 {
-    internal_write_global(m_region, globalVarName, globalVarData);
+    impl::write_global(m_region, globalVarName, globalVarData);
 }
 
 void OutputFile::write_global(const std::string &globalVarName, std::vector<int>& globalVarData)
 {
-    internal_write_global(m_region, globalVarName, globalVarData);
+    impl::write_global(m_region, globalVarName, globalVarData);
 }
 
 void OutputFile::write_global(const std::string &globalVarName, int globalVarData)
 {
-    internal_write_global(m_region, globalVarName, globalVarData);
+    impl::write_global(m_region, globalVarName, globalVarData);
 }
 
 void OutputFile::write_global(const std::string &globalVarName, double globalVarData)
 {
-    internal_write_global(m_region, globalVarName, globalVarData);
+    impl::write_global(m_region, globalVarName, globalVarData);
 }
 
 void OutputFile::setup_output_file(const std::string &filename, stk::ParallelMachine communicator,
@@ -464,7 +463,7 @@ void OutputFile::setup_output_file(const std::string &filename, stk::ParallelMac
 
     // There is no "label" for the output region; just use the filename for now so
     // Ioss messages will specify a unique or identifiable instance.
-    m_region = Teuchos::rcp(new Ioss::Region(dbo, filename));
+    m_region = std::make_shared<Ioss::Region>(dbo, filename);
 
     if(property_manager.exists("APPEND_OUTPUT") && property_manager.get("APPEND_OUTPUT").get_int() == Ioss::DB_APPEND)
         m_appendingToMesh = true;
@@ -609,7 +608,7 @@ int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data
     const stk::mesh::PartVector &all_parts = meta_data.get_parts();
     for( auto part : all_parts ) {
         // Check whether this part should be output to database.
-        bool isIoPart = stk::io::is_part_io_part(*part);
+        bool isIoPart = stk::io::is_part_io_part(*part) && !stk::io::is_part_assembly_io_part(*part);
 
         if (isIoPart) {
             stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
@@ -696,7 +695,7 @@ void OutputFile::end_output_step()
     m_region->end_state(m_currentOutputStep);
 }
 
-void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+void OutputFile::set_subset_selector(std::shared_ptr<stk::mesh::Selector> my_selector)
 {
     STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
@@ -704,7 +703,7 @@ void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_select
     m_subsetSelector = my_selector;
 }
 
-void OutputFile::set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+void OutputFile::set_shared_selector(std::shared_ptr<stk::mesh::Selector> my_selector)
 {
     STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
@@ -712,7 +711,7 @@ void OutputFile::set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_select
     m_sharedSelector = my_selector;
 }
 
-void OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector)
+void OutputFile::set_output_selector(stk::topology::rank_t rank, std::shared_ptr<stk::mesh::Selector> my_selector)
 {
     STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
@@ -725,7 +724,7 @@ void OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<st
     m_outputSelector[rank] = my_selector;
 }
 
-void OutputFile::set_skin_mesh_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+void OutputFile::set_skin_mesh_selector(std::shared_ptr<stk::mesh::Selector> my_selector)
 {
     STK_ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<

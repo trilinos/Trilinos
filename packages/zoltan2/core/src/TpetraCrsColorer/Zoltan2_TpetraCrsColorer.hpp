@@ -434,13 +434,14 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::computeSeedMatrixFitted(
   auto V_view_dev = V.getLocalViewDevice(Tpetra::Access::ReadWrite);
   const size_t num_local_cols = V_view_dev.extent(0) / block_size;
   const int chunk_size = V.getNumVectors() / block_size;
+  const int block_color_beg = color_beg / block_size;
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
       "TpetraCrsColorer::computeSeedMatrixFitted()",
       Kokkos::RangePolicy<execution_space>(0, num_local_cols),
       KOKKOS_LAMBDA(const size_t i) {
-        const int color = my_list_of_colors[i] - 1 - color_beg;
+        const int color = my_list_of_colors[i] - 1 - block_color_beg;
         if (color >= 0 && color < chunk_size)
           for (lno_t j = 0; j < block_size; ++j)
             V_view_dev(i*block_size+j, color*block_size+j) = scalar_t(1.0);
@@ -521,6 +522,7 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
   auto local_graph                      = graph->getLocalGraphDevice();
   const size_t num_local_rows           = graph->getLocalNumRows();
   const int chunk_size                  = W.getNumVectors() / block_size;
+  const int block_color_beg             = color_beg / block_size;
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
@@ -534,7 +536,7 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
         {
           const size_t block_col    = local_graph.entries(block_entry);
           const size_t block_offset = block_stride * block_entry;
-          const int block_color     = my_list_of_colors[block_col] - 1 - color_beg;
+          const int block_color     = my_list_of_colors[block_col] - 1 - block_color_beg;
           if (block_color >= 0 && block_color < chunk_size)
           {
             for (lno_t i = 0; i < block_size; ++i)

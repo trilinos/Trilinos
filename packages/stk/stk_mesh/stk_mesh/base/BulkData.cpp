@@ -100,10 +100,6 @@
 #include <utility>                      // for pair, make_pair, swap
 #include <vector>                       // for vector, etc
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-#include <stk_mesh/base/DumpMeshInfo.hpp>
-#endif
-
 namespace stk {
 namespace mesh {
 
@@ -526,16 +522,36 @@ void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) co
   STK_ThrowRequireMsg( ok_id, "Bad id : " << ent_id);
 }
 
-void BulkData::mark_entity_and_upward_related_entities_as_modified(Entity entity)
+void BulkData::mark_entity_and_upward_related_entities_as_modified(Entity entity, bool markUpDownClosureIfShared)
 {
-  impl::OnlyVisitUnchanged ovu(*this);
   BulkData& mesh = *this;
 
   auto markAsModified = [&](Entity ent) { mesh.set_state(ent, Modified); };
 
   auto onlyVisitUnchanged = [&](Entity ent) { return mesh.state(ent) == Unchanged; };
 
-  impl::VisitUpwardClosureGeneral(*this, entity, markAsModified, onlyVisitUnchanged);
+  if (markUpDownClosureIfShared && in_shared(entity)) {
+    impl::VisitUpDownClosureGeneral(*this, entity, markAsModified, onlyVisitUnchanged);
+  }
+  else {
+    if (mesh.state(entity) == Unchanged) {
+      impl::VisitUpwardClosureGeneral(mesh, entity, markAsModified, onlyVisitUnchanged);
+    }
+    else if (mesh.state(entity) == Modified) {
+
+      const EntityRank endRank = static_cast<EntityRank>(mesh_meta_data().entity_rank_count());
+      const EntityRank beginRank = static_cast<EntityRank>(entity_rank(entity)+1);
+    
+      for(EntityRank rank=beginRank; rank<endRank; ++rank) {
+        const unsigned numConnected = num_connectivity(entity, rank);
+        if (numConnected > 0) {
+          const Entity* beginConnected = begin(entity, rank);
+          const Entity* endConnected = end(entity, rank);
+          impl::VisitUpwardClosureGeneral(mesh, beginConnected, endConnected, markAsModified, onlyVisitUnchanged);
+        }
+      }
+    }
+  }
 }
 
 size_t BulkData::count_relations(Entity entity, bool onlyDownwardRelations) const
@@ -1821,7 +1837,8 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
     m_num_fields = field_set.size();
   }
 
-  m_field_data_manager->allocate_bucket_field_data(rank, field_set, superset_parts, capacity);
+  const unsigned newBucketSize = 0;
+  m_field_data_manager->allocate_bucket_field_data(rank, field_set, superset_parts, newBucketSize, capacity);
 }
 
 //
@@ -1893,7 +1910,7 @@ void BulkData::add_entity_callback(EntityRank rank, unsigned bucketId, unsigned 
   const std::vector<FieldBase *> &fields = mesh_meta_data().get_fields();
 
   if (m_field_data_manager->get_bucket_capacity(rank, bucketId) < bucketCapacity) {
-    m_field_data_manager->grow_bucket_capacity(fields, rank, bucketId, bucketCapacity);
+    m_field_data_manager->grow_bucket_capacity(fields, rank, bucketId, indexInBucket, bucketCapacity);
   }
 
   m_field_data_manager->add_field_data_for_entity(fields, rank, bucketId, indexInBucket);
@@ -1939,6 +1956,12 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
 
   const std::vector<FieldBase*>&  fields = mesh_meta_data().get_fields();
   m_field_data_manager->deallocate_bucket_field_data(rank, bucket_id, capacity, fields);
+}
+
+void BulkData::reset_empty_field_data_callback(EntityRank rank, unsigned bucketId, unsigned bucketSize,
+                                               unsigned bucketCapacity, const FieldVector & fields)
+{
+  m_field_data_manager->reset_empty_field_data(rank, bucketId, bucketSize, bucketCapacity, fields);
 }
 
 void BulkData::update_field_data_states(FieldBase* field)
@@ -2017,20 +2040,6 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
   const std::vector<FieldBase*>  fields = mesh_meta_data().get_fields();
   m_field_data_manager->reorder_bucket_field_data(rank, fields, reorderedBucketIds);
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_mesh_bucket_info() from DumpMeshInfo.hpp instead")
-void BulkData::dump_mesh_bucket_info(std::ostream& out, Bucket* bucket) const
-{
-  impl::dump_mesh_bucket_info(*this, out, bucket);
-}
-
-STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_all_mesh_info() from DumpMeshInfo.hpp instead")
-void BulkData::dump_all_mesh_info(std::ostream& out) const
-{
-  impl::dump_all_mesh_info(*this, out);
-}
-#endif
 
 void BulkData::reserve_relation(Entity entity, const unsigned num)
 {
@@ -2252,8 +2261,8 @@ void BulkData::internal_declare_relation( Entity e_from ,
     // added so that the propagation can happen correctly.
     if(is_new_relation)
     {
-        this->mark_entity_and_upward_related_entities_as_modified(e_to);
-        this->mark_entity_and_upward_related_entities_as_modified(e_from);
+        this->mark_entity_and_upward_related_entities_as_modified(e_to, false);
+        this->mark_entity_and_upward_related_entities_as_modified(e_from, false);
     }
 
     // Deduce and set new part memberships:
@@ -2363,7 +2372,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
       }
     }
 
-    // Find the relation this is being deleted and add the parts that are
+    // Find the relation that is being deleted and add the parts that are
     // induced from that relation (and that are not in 'keep') to 'del'
     {
       size_t num_rels = num_connectivity(e_from, e_to_entity_rank);
@@ -2384,10 +2393,16 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
     }
   }
 
+  if (impl::is_valid_relation(*this, e_from, e_to, e_to_entity_rank, local_id)) {
+    const bool markAuraClosureIfNotRecvGhost = false; //experiment more with this in follow-on commit: !bucket(e_from).in_aura();
+    this->mark_entity_and_upward_related_entities_as_modified(e_to, markAuraClosureIfNotRecvGhost);
+  }
+
   //delete relations from the entities
   bool caused_change_fwd = bucket(e_from).destroy_relation(e_from, e_to, local_id);
 
-  if (caused_change_fwd && bucket(e_from).owned() && (entity_rank(e_from) > entity_rank(e_to)) ) {
+  const EntityRank e_from_entity_rank = entity_rank(e_from);
+  if (caused_change_fwd && bucket(e_from).owned() && (e_from_entity_rank > e_to_entity_rank) ) {
     --m_closure_count[e_to.local_offset()];
   }
 
@@ -2395,16 +2410,9 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
   // Relationships should always be symmetrical
   if ( caused_change_fwd ) {
     bool caused_change = bucket(e_to).destroy_relation(e_to, e_from, local_id);
-    if (caused_change && bucket(e_to).owned() && (entity_rank(e_to) > entity_rank(e_from)) ) {
+    if (caused_change && bucket(e_to).owned() && (e_to_entity_rank > e_from_entity_rank) ) {
       --m_closure_count[e_from.local_offset()];
     }
-  }
-
-  // It is critical that the modification be done AFTER the relations are
-  // changed so that the propagation can happen correctly.
-  if ( caused_change_fwd ) {
-    this->mark_entity_and_upward_related_entities_as_modified(e_to);
-    this->mark_entity_and_upward_related_entities_as_modified(e_from);
   }
 
   m_check_invalid_rels = true;
@@ -3577,11 +3585,11 @@ void BulkData::internal_change_ghosting(
   for (unsigned i=0; i<removeRecvGhosts.size(); ++i) {
     const unsigned reverseIdx = removeRecvGhosts.size() - i - 1;
     Entity rmEntity = removeRecvGhosts[reverseIdx];
+    const EntityKey key = entity_key(rmEntity);
     if (impl::has_upward_recv_ghost_connectivity(*this, ghosting, rmEntity)) {
       continue;
     }
 
-    const EntityKey key = entity_key(rmEntity);
     entity_comm_map_erase(key, ghosting);
 
     if (internal_entity_comm_map(rmEntity).empty()) {
@@ -6071,14 +6079,6 @@ void BulkData::create_side_entities(const SideSet &sideSet, const stk::mesh::Par
     if(has_face_adjacent_element_graph())
         FaceCreator(*this, *m_elemElemGraph).create_side_entities_given_sideset(sideSet, parts);
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_mesh_per_proc() from DumpMeshInfo.hpp instead")
-void BulkData::dump_mesh_per_proc(const std::string& fileNamePrefix) const
-{
-  impl::dump_mesh_per_proc(*this, fileNamePrefix);
-}
-#endif
 
 bool BulkData::does_sideset_exist(const stk::mesh::Part &part) const
 {

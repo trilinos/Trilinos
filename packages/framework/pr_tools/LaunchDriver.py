@@ -68,7 +68,7 @@ def get_driver_args(system : str):
 def main(argv):
   """
   This python script determines what system it is running on and then launches
-  the trilinos driver script appropriatly.
+  the trilinos driver script appropriately.
 
   The script returns 0 upon success and non-zero otherwise.
   """
@@ -81,6 +81,8 @@ def main(argv):
   parser.add_argument('--supported-systems', required=False,
                       default='./LoadEnv/ini_files/supported-systems.ini',
                       help='The INI file containing supported systems')
+  parser.add_argument('--in-container', default=False, action="store_true",
+                      help="Build is happening in a container")
   args = parser.parse_args(argv)
 
   if os.getenv("TRILINOS_DIR") == None:
@@ -102,6 +104,9 @@ def main(argv):
       args.driver = "./Trilinos/packages/framework/pr_tools/PullRequestLinuxCudaVortexDriver.sh"
 
   cmd = launch_env + launch_cmd + args.driver + driver_args
+
+  if args.in_container:
+     cmd += " --no-bootstrap"
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 

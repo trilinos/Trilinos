@@ -83,6 +83,8 @@ namespace Intrepid2
     
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
 
+    using HostBasis = HierarchicalBasis_HDIV_TRI<typename Kokkos::HostSpace::device_type, OutputScalar, PointScalar, useCGBasis>;
+
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;
 

@@ -52,11 +52,11 @@
 namespace stk {
 namespace search {
 
-template <typename TOPOLOGY, typename ENTITY>
+template <typename TOPOLOGY, typename ENTITYKEY>
 class EvaluatePointsInterface {
  public:
-  virtual size_t num_points(TOPOLOGY) = 0;
-  virtual const double* coords(ENTITY, size_t) = 0;
+  virtual size_t num_points(ENTITYKEY, TOPOLOGY) = 0;
+  virtual const double* coords(ENTITYKEY, size_t) = 0;
 
   virtual ~EvaluatePointsInterface() {}
 };
@@ -89,23 +89,23 @@ class FindParametricCoordsInterface {
 template <typename TOPOLOGY>
 class ProvideMasterElementInterface {
  public:
-  virtual void evaluate_field(const TOPOLOGY topo,
+  virtual void evaluate_field(const TOPOLOGY& topo,
                               const std::vector<double>& paramCoords, // (numParamCoords)
                               const unsigned numFieldComponents,
                               const std::vector<double>& fieldData, // (numFieldComponents x numNodes)
                               std::vector<double>& result) = 0; // (numFieldComponents)
 
-  virtual void find_parametric_coordinates(const TOPOLOGY topo,
+  virtual void find_parametric_coordinates(const TOPOLOGY& topo,
                                            const unsigned numCoordComponents,
                                            const std::vector<double>& elemNodeCoords,  // (numCoordComponents x numNodes)
                                            const std::vector<double>& inputCoords, // (numCoordComponents)
                                            std::vector<double>& paramCoords,
                                            double& paramDistance) = 0;
 
-  virtual void coordinate_center(TOPOLOGY topo, std::vector<double>&) = 0;
-  virtual unsigned num_parametric_coordinates(TOPOLOGY topo) = 0;
-  virtual unsigned num_integration_points(TOPOLOGY topo) = 0;
-  virtual const double* integration_points(TOPOLOGY topo) = 0;
+  virtual void coordinate_center(const TOPOLOGY& topo, std::vector<double>&) = 0;
+  virtual unsigned num_parametric_coordinates(const TOPOLOGY& topo) = 0;
+  virtual unsigned num_integration_points(const TOPOLOGY& topo) = 0;
+  virtual const double* integration_points(const TOPOLOGY& topo) = 0;
   virtual ~ProvideMasterElementInterface() {}
 };
 

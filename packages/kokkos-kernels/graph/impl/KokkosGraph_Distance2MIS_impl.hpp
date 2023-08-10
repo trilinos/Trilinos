@@ -828,7 +828,6 @@ struct D2_MIS_FixedPriority {
     Kokkos::parallel_for(range_pol(0, numVerts),
                          InitWorklistFunctor(worklist1));
     lno_t workRemain = numVerts;
-    int numIter      = 0;
     while (workRemain) {
       // do another iteration
       Kokkos::parallel_for(
@@ -853,7 +852,6 @@ struct D2_MIS_FixedPriority {
       // Finally, flip the worklists
       std::swap(worklist1, worklist2);
       workRemain = newWorkRemain;
-      numIter++;
     }
     // now that every vertex has been decided IN_SET/OUT_SET,
     // build a compact list of the vertices which are IN_SET.
