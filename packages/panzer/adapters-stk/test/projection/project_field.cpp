@@ -205,7 +205,7 @@ evaluateFields(
   typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
 
   // FYI, this all relies on a first-order mesh
-  auto cellNodesAll = workset.getCellNodes()
+  auto cellNodesAll = workset.getCellNodes();
   size_t numOwnedElems = workset.num_cells;
   TEUCHOS_ASSERT(local_nodes.extent(0)==local_orts.extent(0));
 
