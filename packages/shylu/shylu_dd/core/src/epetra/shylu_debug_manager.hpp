@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -51,7 +51,7 @@
 
 // Using the #define for SHYLU_DEBUG makes the print() much faster when there
 // is nothing to print. However, it would be nice to allow print() even in the
-// release build. We can revisit this if the "if (debug level)" check 
+// release build. We can revisit this if the "if (debug level)" check
 // becomes too expensive, especially while printing something in the innermost
 // loop.
 //#define SHYLU_DEBUG
@@ -74,6 +74,9 @@ class DebugManager
 
     DebugManager (int debugLevel = 0,
      const Teuchos::RCP< std::ostream > &os = Teuchos::rcp(&std::cout,false)
+#ifdef HAVE_SHYLU_DDCORE_MPI
+     , MPI_Comm comm = MPI_COMM_WORLD
+#endif
      );
 
     virtual ~DebugManager() {};
@@ -116,18 +119,28 @@ class DebugManager
     Teuchos::oblackholestream myBHS_;
     bool iPrint_;
     int myPID_;
+#ifdef HAVE_SHYLU_DDCORE_MPI
+    MPI_Comm comm_;
+#endif
 };
 
 
-DebugManager::DebugManager(int debugLevel, const Teuchos::RCP<std::ostream> &os)
+DebugManager::DebugManager(int debugLevel, const Teuchos::RCP<std::ostream> &os
+#ifdef HAVE_SHYLU_DDCORE_MPI
+     , MPI_Comm comm = MPI_COMM_WORLD
+#endif
+)
     :
     debugLevel_(debugLevel),
     myOS_(os)
+#ifdef HAVE_SHYLU_DDCORE_MPI
+    ,comm_(comm)
+#endif
 {
 #ifdef HAVE_SHYLU_DDCORE_MPI
         int mpiStarted = 0;
         MPI_Initialized(&mpiStarted);
-        if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &myPID_);
+        if (mpiStarted) MPI_Comm_rank(comm_, &myPID_);
         else myPID_=0;
 #else
         myPID_ = 0;
