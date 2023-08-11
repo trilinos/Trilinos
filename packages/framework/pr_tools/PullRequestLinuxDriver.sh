@@ -93,67 +93,67 @@ sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReques
 if [[ ${kokkos_develop} == "1" ]]; then
     message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop"
     ./$SCRIPTPATH/SetKokkosDevelop.sh
-fi
+else
+    print_banner "Merge Source into Target"
+    message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
 
-print_banner "Merge Source into Target"
-message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
-
-# Prepare the command for the MERGE operation
-merge_cmd_options=(
-    ${TRILINOS_SOURCE_REPO:?}
-    ${TRILINOS_TARGET_REPO:?}
-    ${TRILINOS_TARGET_BRANCH:?}
-    ${TRILINOS_SOURCE_SHA:?}
-    ${WORKSPACE:?}
-    )
-merge_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
-
-
-# Call the script to handle merging the incoming branch into
-# the current trilinos/develop branch for testing.
-message_std "PRDriver> " ""
-message_std "PRDriver> " "Execute Merge Command: ${merge_cmd:?}"
-message_std "PRDriver> " ""
-execute_command_checked "${merge_cmd:?}"
-#err=$?
-#if [ $err != 0 ]; then
-#    print_banner "An error occurred during merge"
-#    exit $err
-#fi
-print_banner "Merge completed"
+    # Prepare the command for the MERGE operation
+    merge_cmd_options=(
+        ${TRILINOS_SOURCE_REPO:?}
+        ${TRILINOS_TARGET_REPO:?}
+        ${TRILINOS_TARGET_BRANCH:?}
+        ${TRILINOS_SOURCE_SHA:?}
+        ${WORKSPACE:?}
+        )
+    merge_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
 
 
-print_banner "Check for PR Driver Script Modifications"
-
-# Get the md5 checksum of this script:
-#sig_script_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
-sig_script_new=$(get_md5sum ${SCRIPTFILE:?})
-message_std "PRDriver> " ""
-message_std "PRDriver> " "Script File: ${SCRIPTFILE:?}"
-message_std "PRDriver> " "Old md5sum : ${sig_script_old:?}"
-message_std "PRDriver> " "New md5sum : ${sig_script_new:?}"
-
-# Get the md5 checksum of the Merge script
-#sig_merge_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
-export MERGE_SCRIPT=${SCRIPTPATH:?}/PullRequestLinuxDriverMerge.py
-sig_merge_new=$(get_md5sum ${MERGE_SCRIPT:?})
-message_std "PRDriver> " ""
-message_std "PRDriver> " "Script File: ${MERGE_SCRIPT:?}"
-message_std "PRDriver> " "Old md5sum : ${sig_merge_old:?}"
-message_std "PRDriver> " "New md5sum : ${sig_merge_new:?}"
-
-if [ "${sig_script_old:?}" != "${sig_script_new:?}" ] || [ "${sig_merge_old:?}" != "${sig_merge_new:?}"  ]
-then
+    # Call the script to handle merging the incoming branch into
+    # the current trilinos/develop branch for testing.
     message_std "PRDriver> " ""
-    message_std "PRDriver> " "Driver or Merge script change detected. Re-launching PR Driver"
+    message_std "PRDriver> " "Execute Merge Command: ${merge_cmd:?}"
     message_std "PRDriver> " ""
-    ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh
-    exit $?
-fi
+    execute_command_checked "${merge_cmd:?}"
+    #err=$?
+    #if [ $err != 0 ]; then
+    #    print_banner "An error occurred during merge"
+    #    exit $err
+    #fi
+    print_banner "Merge completed"
 
-message_std "PRDriver> " ""
-message_std "PRDriver> " "Driver and Merge scripts unchanged, proceeding to TEST phase"
-message_std "PRDriver> " ""
+
+    print_banner "Check for PR Driver Script Modifications"
+
+    # Get the md5 checksum of this script:
+    #sig_script_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
+    sig_script_new=$(get_md5sum ${SCRIPTFILE:?})
+    message_std "PRDriver> " ""
+    message_std "PRDriver> " "Script File: ${SCRIPTFILE:?}"
+    message_std "PRDriver> " "Old md5sum : ${sig_script_old:?}"
+    message_std "PRDriver> " "New md5sum : ${sig_script_new:?}"
+
+    # Get the md5 checksum of the Merge script
+    #sig_merge_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
+    export MERGE_SCRIPT=${SCRIPTPATH:?}/PullRequestLinuxDriverMerge.py
+    sig_merge_new=$(get_md5sum ${MERGE_SCRIPT:?})
+    message_std "PRDriver> " ""
+    message_std "PRDriver> " "Script File: ${MERGE_SCRIPT:?}"
+    message_std "PRDriver> " "Old md5sum : ${sig_merge_old:?}"
+    message_std "PRDriver> " "New md5sum : ${sig_merge_new:?}"
+
+    if [ "${sig_script_old:?}" != "${sig_script_new:?}" ] || [ "${sig_merge_old:?}" != "${sig_merge_new:?}"  ]
+    then
+        message_std "PRDriver> " ""
+        message_std "PRDriver> " "Driver or Merge script change detected. Re-launching PR Driver"
+        message_std "PRDriver> " ""
+        ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh
+        exit $?
+    fi
+
+    message_std "PRDriver> " ""
+    message_std "PRDriver> " "Driver and Merge scripts unchanged, proceeding to TEST phase"
+    message_std "PRDriver> " ""
+fi
 
 # determine what MODE we are using
 mode="standard"
