@@ -50,7 +50,7 @@ void
 BoundingBoxMesh::set_domain(const BoundingBoxType & mesh_bbox, const double mesh_size, const int pad_size)
 {
   m_mesh_bbox = mesh_bbox;
-  const Vector3d padding(0.5*mesh_size*pad_size, 0.5*mesh_size*pad_size, 0.5*mesh_size*pad_size);
+  const stk::math::Vector3d padding(0.5*mesh_size*pad_size, 0.5*mesh_size*pad_size, 0.5*mesh_size*pad_size);
   m_mesh_bbox = BoundingBoxType(mesh_bbox.get_min() - padding, mesh_bbox.get_max() + padding);
 
   const typename BoundingBoxType::VecType min = m_mesh_bbox.get_min();

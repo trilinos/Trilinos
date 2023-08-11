@@ -43,24 +43,40 @@
 #ifndef IFPACK2_ILUT_DEF_HPP
 #define IFPACK2_ILUT_DEF_HPP
 
-// disable clang warnings
-#if defined (__clang__) && !defined (__INTEL_COMPILER)
-#pragma clang system_header
-#endif
+#include <type_traits>
+#include "Kokkos_StaticCrsGraph.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_Time.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "KokkosSparse_par_ilut.hpp"
 
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Teuchos_Time.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
-#include <type_traits>
 
 namespace Ifpack2 {
 
   namespace {
+
+    struct IlutImplType {
+      enum Enum {
+        Serial,
+        PAR_ILUT   //!< KokkosKernels par_ilut (parallel ILUT)
+      };
+
+      static void loadPLTypeOption (Teuchos::Array<std::string>& type_strs, Teuchos::Array<Enum>& type_enums) {
+        type_strs.resize(2);
+        type_strs[0] = "serial";
+        type_strs[1] = "par_ilut";
+        type_enums.resize(2);
+        type_enums[0] = Serial;
+        type_enums[1] = PAR_ILUT;
+      }
+    };
+
 
     /// \brief Default drop tolerance for ILUT.
     ///
@@ -121,6 +137,7 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
   LevelOfFill_ (1.0),
   DropTolerance_ (ilutDefaultDropTolerance<scalar_type> ()),
+  par_ilut_options_{1, 0., -1, -1, 0.75, false},
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
   ApplyTime_ (0.0),
@@ -128,7 +145,9 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   NumCompute_ (0),
   NumApply_ (0),
   IsInitialized_ (false),
-  IsComputed_ (false)
+  IsComputed_ (false),
+  useKokkosKernelsParILUT_(false)
+  
 {
   allocateSolvers();
 }
@@ -137,18 +156,44 @@ template<class MatrixType>
 void ILUT<MatrixType>::allocateSolvers ()
 {
   L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  L_solver_->setObjectLabel("lower");
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_->setObjectLabel("upper");
 }
 
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
-  using Details::getParamTryingTypes;
+  using Ifpack2::Details::getParamTryingTypes;
   const char prefix[] = "Ifpack2::ILUT: ";
 
   // Don't actually change the instance variables until we've checked
   // all parameters.  This ensures that setParameters satisfies the
   // strong exception guarantee (i.e., is transactional).
+
+  // Parsing implementation type
+  IlutImplType::Enum ilutimplType = IlutImplType::Serial;
+  do {
+    static const char typeName[] = "fact: type";
+
+    if ( ! params.isType<std::string>(typeName)) break;
+
+    // Map std::string <-> IlutImplType::Enum.
+    Teuchos::Array<std::string> ilutimplTypeStrs;
+    Teuchos::Array<IlutImplType::Enum> ilutimplTypeEnums;
+    IlutImplType::loadPLTypeOption (ilutimplTypeStrs, ilutimplTypeEnums);
+    Teuchos::StringToIntegralParameterEntryValidator<IlutImplType::Enum>
+      s2i(ilutimplTypeStrs (), ilutimplTypeEnums (), typeName, false);
+
+    ilutimplType = s2i.getIntegralValue(params.get<std::string>(typeName));
+  } while (0);
+
+  if (ilutimplType == IlutImplType::PAR_ILUT) {
+    this->useKokkosKernelsParILUT_ = true;
+  }
+  else {
+    this->useKokkosKernelsParILUT_ = false;
+  }
 
   // Fill level in ILUT is a double, not a magnitude_type, because it
   // depends on LO and GO, not on Scalar.  Also, you can't cast
@@ -156,11 +201,14 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   double fillLevel = LevelOfFill_;
   {
     const std::string paramName ("fact: ilut level-of-fill");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (params.isParameter(paramName) && this->useKokkosKernelsParILUT_), std::runtime_error,
+      "Ifpack2::ILUT: Parameter " << paramName << " is meaningless for algorithm par_ilut.");
     getParamTryingTypes<double, double, float>
       (fillLevel, params, paramName, prefix);
     TEUCHOS_TEST_FOR_EXCEPTION
       (fillLevel < 1.0, std::runtime_error,
-       "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be >= "
+       "Ifpack2::ILUT: The \"" << paramName << "\" parameter must be >= "
        "1.0, but you set it to " << fillLevel << ".  For ILUT, the fill level "
        "means something different than it does for ILU(k).  ILU(0) produces "
        "factors with the same sparsity structure as the input matrix A. For "
@@ -196,6 +244,53 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
     getParamTryingTypes<magnitude_type, magnitude_type, double>
       (dropTol, params, paramName, prefix);
   }
+
+  int par_ilut_max_iter=20;
+  magnitude_type par_ilut_residual_norm_delta_stop=1e-2;
+  int par_ilut_team_size=0;
+  int par_ilut_vector_size=0;
+  float par_ilut_fill_in_limit=0.75;
+  bool par_ilut_verbose=false;
+  if (this->useKokkosKernelsParILUT_) {
+    par_ilut_max_iter = par_ilut_options_.max_iter;
+    par_ilut_residual_norm_delta_stop = par_ilut_options_.residual_norm_delta_stop;
+    par_ilut_team_size = par_ilut_options_.team_size;
+    par_ilut_vector_size = par_ilut_options_.vector_size;
+    par_ilut_fill_in_limit = par_ilut_options_.fill_in_limit;
+    par_ilut_verbose = par_ilut_options_.verbose;
+
+    std::string par_ilut_plist_name("parallel ILUT options");
+    if (params.isSublist(par_ilut_plist_name)) {
+      Teuchos::ParameterList const &par_ilut_plist = params.sublist(par_ilut_plist_name);
+
+      std::string paramName("maximum iterations");
+      getParamTryingTypes<int, int>(par_ilut_max_iter, par_ilut_plist, paramName, prefix);
+
+      paramName = "residual norm delta stop";
+      getParamTryingTypes<magnitude_type, magnitude_type, double>(par_ilut_residual_norm_delta_stop, par_ilut_plist, paramName, prefix);
+
+      paramName = "team size";
+      getParamTryingTypes<int, int>(par_ilut_team_size, par_ilut_plist, paramName, prefix);
+
+      paramName = "vector size";
+      getParamTryingTypes<int, int>(par_ilut_vector_size, par_ilut_plist, paramName, prefix);
+
+      paramName = "fill in limit";
+      getParamTryingTypes<float, float, double>(par_ilut_fill_in_limit, par_ilut_plist, paramName, prefix);
+
+      paramName = "verbose";
+      getParamTryingTypes<bool, bool>(par_ilut_verbose, par_ilut_plist, paramName, prefix);
+
+    } // if (params.isSublist(par_ilut_plist_name))
+
+    par_ilut_options_.max_iter = par_ilut_max_iter;
+    par_ilut_options_.residual_norm_delta_stop = par_ilut_residual_norm_delta_stop;
+    par_ilut_options_.team_size = par_ilut_team_size;
+    par_ilut_options_.vector_size = par_ilut_vector_size;
+    par_ilut_options_.fill_in_limit = par_ilut_fill_in_limit;
+    par_ilut_options_.verbose = par_ilut_verbose;
+
+  } //if (this->useKokkosKernelsParILUT_)
 
   // Forward to trisolvers.
   L_solver_->setParameters(params);
@@ -355,10 +450,46 @@ void ILUT<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   }
 }
 
+template <class MatrixType>
+Teuchos::RCP<const typename ILUT<MatrixType>::row_matrix_type>
+ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
+
+  // If A_'s communicator only has one process, or if its column and
+  // row Maps are the same, then it is already local, so use it
+  // directly.
+  if (A->getRowMap ()->getComm ()->getSize () == 1 ||
+      A->getRowMap ()->isSameAs (* (A->getColMap ()))) {
+    return A;
+  }
+
+  // If A_ is already a LocalFilter, then use it directly.  This
+  // should be the case if RILUT is being used through
+  // AdditiveSchwarz, for example.
+  RCP<const LocalFilter<row_matrix_type> > A_lf_r =
+    rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
+  if (! A_lf_r.is_null ()) {
+    return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
+  }
+  else {
+    // A_'s communicator has more than one process, its row Map and
+    // its column Map differ, and A_ is not a LocalFilter.  Thus, we
+    // have to wrap it in a LocalFilter.
+    return rcp (new LocalFilter<row_matrix_type> (A));
+  }
+}
+
 
 template<class MatrixType>
 void ILUT<MatrixType>::initialize ()
 {
+  using Teuchos::RCP;
+  using Teuchos::Array;
+  using Teuchos::rcp_const_cast;
   Teuchos::Time timer ("ILUT::initialize");
   double startTime = timer.wallTime();
   {
@@ -377,11 +508,63 @@ void ILUT<MatrixType>::initialize ()
     L_ = Teuchos::null;
     U_ = Teuchos::null;
 
-    A_local_ = makeLocalFilter (A_); // Compute the local filter.
+    A_local_ = makeLocalFilter(A_); // Compute the local filter.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_local_.is_null(), std::logic_error, "Ifpack2::RILUT::initialize: "
+      "makeLocalFilter returned null; it failed to compute A_local.  "
+      "Please report this bug to the Ifpack2 developers.");
+
+    if (this->useKokkosKernelsParILUT_) {
+      this->KernelHandle_ = Teuchos::rcp(new kk_handle_type());
+      KernelHandle_->create_par_ilut_handle();
+      auto par_ilut_handle = KernelHandle_->get_par_ilut_handle();
+      par_ilut_handle->set_residual_norm_delta_stop(par_ilut_options_.residual_norm_delta_stop);
+      par_ilut_handle->set_team_size(par_ilut_options_.team_size);
+      par_ilut_handle->set_vector_size(par_ilut_options_.vector_size);
+      par_ilut_handle->set_fill_in_limit(par_ilut_options_.fill_in_limit);
+      par_ilut_handle->set_verbose(par_ilut_options_.verbose);
+      par_ilut_handle->set_async_update(false);
+
+      RCP<const crs_matrix_type> A_local_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_local_);
+      if (A_local_crs.is_null()) {
+         // the result is a host-based matrix, which is the same as what happens in RILUK
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
+        Array<size_t> entriesPerRow(numRows);
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
+        }
+        RCP<crs_matrix_type> A_local_crs_nc =
+          rcp (new crs_matrix_type (A_local_->getRowMap (),
+                                    A_local_->getColMap (),
+                                    entriesPerRow()));
+        // copy entries into A_local_crs
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          size_t numEntries = 0;
+          A_local_->getLocalRowCopy(i, indices, values, numEntries);
+          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
+        }
+        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
+        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+      }
+      auto A_local_crs_device = A_local_crs->getLocalMatrixDevice();
+
+      //KokkosKernels requires unsigned
+      typedef typename Kokkos::View<usize_type*, array_layout, device_type> ulno_row_view_t;
+      const int NumMyRows = A_local_crs->getRowMap()->getLocalNumElements();
+      L_rowmap_ = ulno_row_view_t("L_row_map", NumMyRows + 1);
+      U_rowmap_ = ulno_row_view_t("U_row_map", NumMyRows + 1);
+
+      KokkosSparse::Experimental::par_ilut_symbolic(KernelHandle_.getRawPtr(),
+                                                    A_local_crs_device.graph.row_map, A_local_crs_device.graph.entries,
+                                                    L_rowmap_,
+                                                    U_rowmap_);
+    }
 
     IsInitialized_ = true;
     ++NumInitialize_;
-  }
+  } //timer scope
   InitializeTime_ += (timer.wallTime() - startTime);
 }
 
@@ -403,29 +586,8 @@ void ILUT<MatrixType>::compute ()
   using Teuchos::as;
   using Teuchos::rcp;
   using Teuchos::reduceAll;
-
-  //--------------------------------------------------------------------------
-  // Ifpack2::ILUT is a translation of the Aztec ILUT implementation. The Aztec
-  // ILUT implementation was written by Ray Tuminaro.
-  //
-  // This isn't an exact translation of the Aztec ILUT algorithm, for the
-  // following reasons:
-  // 1. Minor differences result from the fact that Aztec factors a MSR format
-  // matrix in place, while the code below factors an input CrsMatrix which
-  // remains untouched and stores the resulting factors in separate L and U
-  // CrsMatrix objects.
-  // Also, the Aztec code begins by shifting the matrix pointers back
-  // by one, and the pointer contents back by one, and then using 1-based
-  // Fortran-style indexing in the algorithm. This Ifpack2 code uses C-style
-  // 0-based indexing throughout.
-  // 2. Aztec stores the inverse of the diagonal of U. This Ifpack2 code
-  // stores the non-inverted diagonal in U.
-  // The triangular solves (in Ifpack2::ILUT::apply()) are performed by
-  // calling the Tpetra::CrsMatrix::solve method on the L and U objects, and
-  // this requires U to contain the non-inverted diagonal.
-  //
-  // ABW.
-  //--------------------------------------------------------------------------
+  using Teuchos::RCP;
+  using Teuchos::rcp_const_cast;
 
   // Don't count initialization in the compute() time.
   if (! isInitialized ()) {
@@ -435,7 +597,33 @@ void ILUT<MatrixType>::compute ()
   Teuchos::Time timer ("ILUT::compute");
   double startTime = timer.wallTime();
   { // Timer scope for timing compute()
-    Teuchos::TimeMonitor timeMon (timer, true);
+  Teuchos::TimeMonitor timeMon (timer, true);
+
+  if (!this->useKokkosKernelsParILUT_)
+  {
+    //--------------------------------------------------------------------------
+    // Ifpack2::ILUT's serial version is a translation of the Aztec ILUT
+    // implementation. The Aztec ILUT implementation was written by Ray Tuminaro.
+    //
+    // This isn't an exact translation of the Aztec ILUT algorithm, for the
+    // following reasons:
+    // 1. Minor differences result from the fact that Aztec factors a MSR format
+    // matrix in place, while the code below factors an input CrsMatrix which
+    // remains untouched and stores the resulting factors in separate L and U
+    // CrsMatrix objects.
+    // Also, the Aztec code begins by shifting the matrix pointers back
+    // by one, and the pointer contents back by one, and then using 1-based
+    // Fortran-style indexing in the algorithm. This Ifpack2 code uses C-style
+    // 0-based indexing throughout.
+    // 2. Aztec stores the inverse of the diagonal of U. This Ifpack2 code
+    // stores the non-inverted diagonal in U.
+    // The triangular solves (in Ifpack2::ILUT::apply()) are performed by
+    // calling the Tpetra::CrsMatrix::solve method on the L and U objects, and
+    // this requires U to contain the non-inverted diagonal.
+    //
+    // ABW.
+    //--------------------------------------------------------------------------
+
     const scalar_type zero = STS::zero ();
     const scalar_type one  = STS::one ();
 
@@ -443,10 +631,10 @@ void ILUT<MatrixType>::compute ()
 
     // If this macro is defined, files containing the L and U factors
     // will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
-    // #define IFPACK2_WRITE_FACTORS
-#ifdef IFPACK2_WRITE_FACTORS
-    std::ofstream ofsL("L.tif.mtx", std::ios::out);
-    std::ofstream ofsU("U.tif.mtx", std::ios::out);
+    // #define IFPACK2_WRITE_ILUT_FACTORS
+#ifdef IFPACK2_WRITE_ILUT_FACTORS
+    std::ofstream ofsL("L.ifpack2_ilut.mtx", std::ios::out);
+    std::ofstream ofsU("U.ifpack2_ilut.mtx", std::ios::out);
 #endif
 
     // Calculate how much fill will be allowed in addition to the
@@ -631,7 +819,7 @@ void ILUT<MatrixType>::compute ()
       // triangular solve can assume a unit diagonal, take a short-cut
       // and perform faster.
 
-#ifdef IFPACK2_WRITE_FACTORS
+#ifdef IFPACK2_WRITE_ILUT_FACTORS
       for (size_type ii = 0; ii < L_tmp_idx[row_i].size (); ++ii) {
         ofsL << row_i << " " << L_tmp_idx[row_i][ii] << " " 
                              << L_tmpv[row_i][ii] << std::endl;
@@ -688,7 +876,7 @@ void ILUT<MatrixType>::compute ()
 
       unorm[row_i] /= (orig_U_len + U_vals_heaplen);
 
-#ifdef IFPACK2_WRITE_FACTORS
+#ifdef IFPACK2_WRITE_ILUT_FACTORS
       for(int ii=0; ii<U_tmp_idx[row_i].size(); ++ii) {
         ofsU <<row_i<< " " <<U_tmp_idx[row_i][ii]<< " " 
                            <<U_tmpv[row_i][ii]<< std::endl;
@@ -744,11 +932,95 @@ void ILUT<MatrixType>::compute ()
     U_solver_->setMatrix(U_);
     U_solver_->initialize ();
     U_solver_->compute ();
-  }
+
+  } //if (!this->useKokkosKernelsParILUT_)
+  else {
+    RCP<const crs_matrix_type> A_local_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_local_);
+    {//Make sure values in A is picked up even in case of pattern reuse
+      if(A_local_crs.is_null()) {
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
+        Array<size_t> entriesPerRow(numRows);
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
+        }
+        RCP<crs_matrix_type> A_local_crs_nc =
+          rcp (new crs_matrix_type (A_local_->getRowMap (),
+                                    A_local_->getColMap (),
+                                    entriesPerRow()));
+        // copy entries into A_local_crs
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          size_t numEntries = 0;
+          A_local_->getLocalRowCopy(i, indices, values, numEntries);
+          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
+        }
+        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
+        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+      }
+      auto lclMtx = A_local_crs->getLocalMatrixDevice();
+      A_local_rowmap_  = lclMtx.graph.row_map;
+      A_local_entries_ = lclMtx.graph.entries;
+      A_local_values_  = lclMtx.values;
+    }
+
+    //JHU TODO Should allocation of L & U's column (aka entry) and value arrays occur here or in init()?
+    auto par_ilut_handle = KernelHandle_->get_par_ilut_handle();
+    auto nnzL = par_ilut_handle->get_nnzL();
+    static_graph_entries_t L_entries_ = static_graph_entries_t("L_entries", nnzL);
+    local_matrix_values_t L_values_ = local_matrix_values_t("L_values", nnzL);
+
+    auto nnzU = par_ilut_handle->get_nnzU();
+    static_graph_entries_t U_entries_ = static_graph_entries_t("U_entries", nnzU);
+    local_matrix_values_t U_values_ = local_matrix_values_t("U_values", nnzU);
+
+    KokkosSparse::Experimental::par_ilut_numeric(KernelHandle_.getRawPtr(),
+                                                   A_local_rowmap_, A_local_entries_, A_local_values_,
+                                                   L_rowmap_, L_entries_, L_values_, U_rowmap_, U_entries_, U_values_);
+
+    auto L_kokkosCrsGraph = local_graph_device_type(L_entries_, L_rowmap_);
+    auto U_kokkosCrsGraph = local_graph_device_type(U_entries_, U_rowmap_);
+
+    local_matrix_device_type L_localCrsMatrix_device;
+    L_localCrsMatrix_device = local_matrix_device_type("L_Factor_localmatrix",
+                                                       A_local_->getLocalNumRows(),
+                                                       L_values_,
+                                                       L_kokkosCrsGraph);
+
+    L_ = rcp (new crs_matrix_type (L_localCrsMatrix_device,
+                                   A_local_crs->getRowMap(),
+                                   A_local_crs->getColMap(),
+                                   A_local_crs->getDomainMap(),
+                                   A_local_crs->getRangeMap(),
+                                   A_local_crs->getGraph()->getImporter(),
+                                   A_local_crs->getGraph()->getExporter()));
+
+    local_matrix_device_type U_localCrsMatrix_device;
+    U_localCrsMatrix_device = local_matrix_device_type("U_Factor_localmatrix",
+                                                       A_local_->getLocalNumRows(),
+                                                       U_values_,
+                                                       U_kokkosCrsGraph);
+
+    U_ = rcp (new crs_matrix_type (U_localCrsMatrix_device,
+                                   A_local_crs->getRowMap(),
+                                   A_local_crs->getColMap(),
+                                   A_local_crs->getDomainMap(),
+                                   A_local_crs->getRangeMap(),
+                                   A_local_crs->getGraph()->getImporter(),
+                                   A_local_crs->getGraph()->getExporter()));
+
+    L_solver_->setMatrix (L_);
+    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
+    U_solver_->setMatrix (U_);
+    U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
+
+  } //if (!this->useKokkosKernelsParILUT_) ... else ...
+
+  } // Timer scope for timing compute()
   ComputeTime_ += (timer.wallTime() - startTime);
   IsComputed_ = true;
   ++NumCompute_;
-}
+} //compute()
 
 
 template <class MatrixType>
@@ -819,7 +1091,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
   ++NumApply_;
   ApplyTime_ += (timer.wallTime() - startTime);
-}
+} //apply()
 
 
 template <class MatrixType>
@@ -915,17 +1187,6 @@ describe (Teuchos::FancyOStream& out,
 
     out << "Local matrix:" << endl;
     A_local_->describe (out, vl);
-  }
-}
-
-template <class MatrixType>
-Teuchos::RCP<const typename ILUT<MatrixType>::row_matrix_type>
-ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
-{
-  if (A->getComm ()->getSize () > 1) {
-    return Teuchos::rcp (new LocalFilter<row_matrix_type> (A));
-  } else {
-    return A;
   }
 }
 

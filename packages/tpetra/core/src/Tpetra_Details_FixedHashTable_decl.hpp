@@ -417,30 +417,30 @@ private:
   /// In Tpetra::Map, this corresponds to the minimum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-  KeyType minKey_ = ::Kokkos::Details::ArithTraits<KeyType>::max();
+  KeyType minKey_ = ::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Maximum key (computed in init()).
   ///
   /// In Tpetra::Map, this corresponds to the maximum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-  KeyType maxKey_ = ::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                    ::Kokkos::Details::ArithTraits<KeyType>::min() :
-                   -::Kokkos::Details::ArithTraits<KeyType>::max();
+  KeyType maxKey_ = ::Kokkos::ArithTraits<KeyType>::is_integer ?
+                    ::Kokkos::ArithTraits<KeyType>::min() :
+                   -::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Minimum value.
   ///
   /// In Tpetra::Map, this corresponds to the minimum local index
   /// (local to the MPI process).
-  ValueType minVal_ = ::Kokkos::Details::ArithTraits<ValueType>::max();
+  ValueType minVal_ = ::Kokkos::ArithTraits<ValueType>::max();
 
   /// \brief Maximum value.
   ///
   /// In Tpetra::Map, this corresponds to the maximum local index
   /// (local to the MPI process).
-  ValueType maxVal_ = ::Kokkos::Details::ArithTraits<ValueType>::is_integer ?
-                      ::Kokkos::Details::ArithTraits<ValueType>::min() :
-                     -::Kokkos::Details::ArithTraits<ValueType>::max();
+  ValueType maxVal_ = ::Kokkos::ArithTraits<ValueType>::is_integer ?
+                      ::Kokkos::ArithTraits<ValueType>::min() :
+                     -::Kokkos::ArithTraits<ValueType>::max();
 
   /// \brief First key in any initial contiguous sequence.
   ///
@@ -448,7 +448,7 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType firstContigKey_ = ::Kokkos::Details::ArithTraits<KeyType>::max();
+  KeyType firstContigKey_ = ::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Last key in any initial contiguous sequence.
   ///
@@ -456,9 +456,9 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType lastContigKey_ = ::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                           ::Kokkos::Details::ArithTraits<KeyType>::min() :
-                          -::Kokkos::Details::ArithTraits<KeyType>::max();
+  KeyType lastContigKey_ = ::Kokkos::ArithTraits<KeyType>::is_integer ?
+                           ::Kokkos::ArithTraits<KeyType>::min() :
+                          -::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Whether the table was created using one of the
   ///   constructors that assume contiguous values.

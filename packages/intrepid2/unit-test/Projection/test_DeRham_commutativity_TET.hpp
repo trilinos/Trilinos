@@ -367,15 +367,9 @@ int DeRhamCommutativityTet(const bool verbose) {
 
           Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
           projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationGradPoints, numCells, numGradPoints, dim);
-
-          pts::getHGradEvaluationPoints(evaluationPoints,
-              evaluationGradPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationGradPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numGradPoints = evaluationGradPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
           DynRankView ConstructWithLabel(targetGradAtEvalPoints, numCells, numGradPoints, dim);
@@ -389,7 +383,7 @@ int DeRhamCommutativityTet(const bool verbose) {
               Fun fun;
               auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j) {
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
                 for(ordinal_type d=0; d<dim; ++d)
                   for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -400,7 +394,7 @@ int DeRhamCommutativityTet(const bool verbose) {
               GradFun gradFun;
               auto basisValuesAtEvalCurlPoints = Kokkos::subview(linearBasisValuesAtEvalGradPoints,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numGradPoints; ++j) {
-                auto evalCurlPoint = Kokkos::subview(evaluationGradPoints,i,j,Kokkos::ALL());
+                auto evalCurlPoint = Kokkos::subview(evaluationGradPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalCurlPoints, evalCurlPoint);
                 for(ordinal_type d=0; d<dim; ++d)
                   for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -426,8 +420,6 @@ int DeRhamCommutativityTet(const bool verbose) {
           pts::getHGradBasisCoeffs(basisCoeffsHGrad,
               refTargetAtEvalPoints,
               refTargetGradAtEvalPoints,
-              evaluationPoints,
-              evaluationGradPoints,
               elemOrts,
               &basis,
               &projStruct);
@@ -441,15 +433,9 @@ int DeRhamCommutativityTet(const bool verbose) {
           Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
           projStruct.createHCurlProjectionStruct(&basisHCurl, targetCubDegree, targetDerivCubDegree);
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationDivPoints, numCells, numDivPoints, dim);
-
-          pts::getHCurlEvaluationPoints(evaluationPoints,
-              evaluationDivPoints,
-              elemOrts,
-              &basisHCurl,
-              &projStruct);
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationDivPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numDivPoints = evaluationDivPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
           DynRankView ConstructWithLabel(physEvalPoints, numCells, numPoints, dim);
@@ -459,7 +445,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             GradFun fun;
             auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
             for(ordinal_type j=0; j<numPoints; ++j) {
-              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
               Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
               for(ordinal_type d=0; d<dim; ++d)
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -481,8 +467,6 @@ int DeRhamCommutativityTet(const bool verbose) {
           pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
               refTargetAtEvalPoints,
               refTargetCurlAtEvalPoints,
-              evaluationPoints,
-              evaluationDivPoints,
               elemOrts,
               &basisHCurl,
               &projStruct);
@@ -684,15 +668,9 @@ int DeRhamCommutativityTet(const bool verbose) {
           Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
           projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationCurlPoints, numCells, numCurlPoints, dim);
-
-          pts::getHCurlEvaluationPoints(evaluationPoints,
-              evaluationCurlPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationCurlPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numCurlPoints = evaluationCurlPoints.extent(0);
 
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
@@ -709,7 +687,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             FunCurl fun;
             auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
             for(ordinal_type j=0; j<numPoints; ++j) {
-              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
               Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
               for(ordinal_type d=0; d<dim; ++d)
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -721,7 +699,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             CurlFunCurl curlFun;
             auto basisValuesAtEvalCurlPoints = Kokkos::subview(linearBasisValuesAtEvalCurlPoints,i,Kokkos::ALL());
             for(ordinal_type j=0; j<numCurlPoints; ++j) {
-              auto evalCurlPoint = Kokkos::subview(evaluationCurlPoints,i,j,Kokkos::ALL());
+              auto evalCurlPoint = Kokkos::subview(evaluationCurlPoints,j,Kokkos::ALL());
               Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalCurlPoints, evalCurlPoint);
               for(ordinal_type d=0; d<dim; ++d)
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -757,8 +735,6 @@ int DeRhamCommutativityTet(const bool verbose) {
           pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
               refTargetAtEvalPoints,
               refTargetCurlAtEvalPoints,
-              evaluationPoints,
-              evaluationCurlPoints,
               elemOrts,
               &basis,
               &projStruct);
@@ -772,15 +748,8 @@ int DeRhamCommutativityTet(const bool verbose) {
           Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
           projStruct.createHDivProjectionStruct(&basisHDiv, targetCubDegree, targetDerivCubDegree);
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationDivPoints, numCells, numDivPoints, dim);
-
-          pts::getHDivEvaluationPoints(evaluationPoints,
-              evaluationDivPoints,
-              elemOrts,
-              &basisHDiv,
-              &projStruct);
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numDivPoints = projStruct.getNumTargetDerivEvalPoints();;
 
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
@@ -791,7 +760,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             CurlFunCurl fun;
             auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
             for(ordinal_type j=0; j<numPoints; ++j) {
-              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
               Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
               for(ordinal_type d=0; d<dim; ++d)
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -817,8 +786,6 @@ int DeRhamCommutativityTet(const bool verbose) {
           pts::getHDivBasisCoeffs(basisCoeffsHDiv,
               refTargetAtEvalPoints,
               refTargetDivAtEvalPoints,
-              evaluationPoints,
-              evaluationDivPoints,
               elemOrts,
               &basisHDiv,
               &projStruct);
@@ -1012,17 +979,9 @@ int DeRhamCommutativityTet(const bool verbose) {
           Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
           projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationDivPoints, numCells, numDivPoints, dim);
-
-
-          pts::getHDivEvaluationPoints(evaluationPoints,
-              evaluationDivPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationDivPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numDivPoints = evaluationDivPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
           DynRankView ConstructWithLabel(targetDivAtEvalPoints, numCells, numDivPoints);
@@ -1035,7 +994,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             FunDiv fun;
             auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
             for(ordinal_type j=0; j<numPoints; ++j) {
-              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
               Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
               for(ordinal_type d=0; d<dim; ++d)
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -1047,7 +1006,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             DivFunDiv divFun;
             auto basisValuesAtEvalDivPoints = Kokkos::subview(linearBasisValuesAtEvalDivPoints,i,Kokkos::ALL());
             for(ordinal_type j=0; j<numDivPoints; ++j) {
-              auto evalDivPoint = Kokkos::subview(evaluationDivPoints,i,j,Kokkos::ALL());
+              auto evalDivPoint = Kokkos::subview(evaluationDivPoints,j,Kokkos::ALL());
               Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDivPoints, evalDivPoint);
               for(ordinal_type d=0; d<dim; ++d)
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -1080,8 +1039,6 @@ int DeRhamCommutativityTet(const bool verbose) {
           pts::getHDivBasisCoeffs(basisCoeffsHDiv,
               refTargetAtEvalPoints,
               refTargetDivAtEvalPoints,
-              evaluationPoints,
-              evaluationDivPoints,
               elemOrts,
               &basis,
               &projStruct);
@@ -1095,14 +1052,8 @@ int DeRhamCommutativityTet(const bool verbose) {
           Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
           projStruct.createHVolProjectionStruct(&basisHVol, targetCubDegree);
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationDivPoints, numCells, numDivPoints, dim);
-
-          pts::getHVolEvaluationPoints(evaluationPoints,
-              elemOrts,
-              &basisHVol,
-              &projStruct);
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0);
 
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
@@ -1113,7 +1064,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             DivFunDiv fun;
             auto basisValuesAtEvalPoints = Kokkos::subview(linearBasisValuesAtEvalPoints,i,Kokkos::ALL());
             for(ordinal_type j=0; j<numPoints; ++j) {
-              auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+              auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
               Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoints, evalPoint);
               for(ordinal_type d=0; d<dim; ++d)
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
@@ -1135,7 +1086,6 @@ int DeRhamCommutativityTet(const bool verbose) {
 
           pts::getHVolBasisCoeffs(basisCoeffsHVol,
               refTargetAtEvalPoints,
-              evaluationPoints,
               elemOrts,
               &basisHVol,
               &projStruct);

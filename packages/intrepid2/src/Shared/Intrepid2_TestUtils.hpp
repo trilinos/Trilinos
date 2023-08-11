@@ -204,6 +204,10 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(polyOrder_y < 0, std::invalid_argument, "polyOrder_y must be specified");
       basis = getWedgeBasis<BasisFamily>(fs,polyOrder_x,polyOrder_y);
     }
+    else if (cellTopo.getBaseKey() == shards::Pyramid<>::key)
+    {
+      basis = getPyramidBasis<BasisFamily>(fs,polyOrder_x);
+    }
     else
     {
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported cell topology");
@@ -219,12 +223,13 @@ namespace Intrepid2
     using Scalar = double;
     using namespace Intrepid2;
     
-    using LineBasisGrad = Intrepid2::IntegratedLegendreBasis_HGRAD_LINE<DeviceType, Scalar, Scalar, defineVertexFunctions, true>;
-    using LineBasisVol  = Intrepid2::LegendreBasis_HVOL_LINE< DeviceType, Scalar, Scalar>;
-    using TriangleBasisFamily = Intrepid2::HierarchicalTriangleBasisFamily<DeviceType, Scalar, Scalar, defineVertexFunctions>;
+    using LineBasisGrad          = Intrepid2::IntegratedLegendreBasis_HGRAD_LINE<DeviceType, Scalar, Scalar, defineVertexFunctions, true>;
+    using LineBasisVol           = Intrepid2::LegendreBasis_HVOL_LINE< DeviceType, Scalar, Scalar>;
+    using TriangleBasisFamily    = Intrepid2::HierarchicalTriangleBasisFamily<DeviceType, Scalar, Scalar, defineVertexFunctions>;
     using TetrahedronBasisFamily = Intrepid2::HierarchicalTetrahedronBasisFamily<DeviceType, Scalar, Scalar, defineVertexFunctions>;
+    using PyramidBasisFamily     = Intrepid2::HierarchicalPyramidBasisFamily<DeviceType, Scalar, Scalar, defineVertexFunctions>;
     
-    using BasisFamily = DerivedBasisFamily<LineBasisGrad, LineBasisVol, TriangleBasisFamily, TetrahedronBasisFamily>;
+    using BasisFamily = DerivedBasisFamily<LineBasisGrad, LineBasisVol, TriangleBasisFamily, TetrahedronBasisFamily, PyramidBasisFamily>;
     
     return getBasisUsingFamily<BasisFamily>(cellTopo, fs, polyOrder_x, polyOrder_y, polyOrder_z);
   }

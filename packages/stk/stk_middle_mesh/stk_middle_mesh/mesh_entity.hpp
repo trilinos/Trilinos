@@ -86,6 +86,30 @@ inline std::ostream& operator<<(std::ostream& os, const RemoteSharedEntity& remo
   return os;
 }
 
+inline bool operator<(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  if (lhs.remoteRank != rhs.remoteRank)
+    return lhs.remoteRank < rhs.remoteRank;
+  else
+    return lhs.remoteId < rhs.remoteId;
+}
+
+inline bool operator>(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  return rhs < lhs;
+}
+
+inline bool operator<=(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  return !(lhs > rhs);
+}
+
+inline bool operator>=(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  return !(lhs < rhs);
+}
+
+
 class MeshEntity
 {
   public:

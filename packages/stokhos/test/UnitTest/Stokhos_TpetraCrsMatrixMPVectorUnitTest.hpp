@@ -1152,7 +1152,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  typedef Kokkos::Details::ArithTraits<BaseScalar> BST;
+  typedef Kokkos::ArithTraits<BaseScalar> BST;
   typedef typename BST::mag_type base_mag_type;
   typedef typename Tpetra_Vector::mag_type mag_type;
   base_mag_type btol = 1e-9;
@@ -1305,7 +1305,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  typedef Kokkos::Details::ArithTraits<BaseScalar> BST;
+  typedef Kokkos::ArithTraits<BaseScalar> BST;
   typedef typename BST::mag_type base_mag_type;
   typedef typename Tpetra_Vector::mag_type mag_type;
   base_mag_type btol = 1e-9;

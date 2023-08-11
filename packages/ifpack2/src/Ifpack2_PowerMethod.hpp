@@ -83,8 +83,8 @@ public:
   operator () (const LocalOrdinal& i) const
   {
     typedef typename OneDViewType::non_const_value_type IST;
-    typedef Kokkos::Details::ArithTraits<IST> STS;
-    typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+    typedef Kokkos::ArithTraits<IST> STS;
+    typedef Kokkos::ArithTraits<typename STS::mag_type> STM;
 
     if(STS::real (x_(i)) < STM::zero ()) {
       x_(i) = -x_(i);

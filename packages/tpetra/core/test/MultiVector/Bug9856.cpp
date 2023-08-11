@@ -175,13 +175,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9856, KokkosDeviceNorm180, Scalar,LO,GO,Nod
   const size_t nGlobalEntries = 100;  
   const size_t nVecs = 180;
 
-  using IST = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+  using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
 
   Kokkos::View<IST **, Kokkos::LayoutLeft, typename Node::device_type> 
           mv("mv", nGlobalEntries, nVecs);
   Kokkos::deep_copy(mv, 3.14);
 
-  using MST = typename Kokkos::Details::ArithTraits<Scalar>::mag_type;
+  using MST = typename Kokkos::ArithTraits<Scalar>::mag_type;
   std::vector<MST> norm(nVecs);
   Kokkos::View<MST*, Kokkos::HostSpace> normView(&norm[0], nVecs);
   
@@ -198,13 +198,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9856, KokkosDeviceNorm181, Scalar,LO,GO,Nod
   const size_t nGlobalEntries = 100;  
   const size_t nVecs = 181;
 
-  using IST = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+  using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
 
   Kokkos::View<IST **, Kokkos::LayoutLeft, typename Node::device_type> 
           mv("mv", nGlobalEntries, nVecs);
   Kokkos::deep_copy(mv, 3.14);
 
-  using MST = typename Kokkos::Details::ArithTraits<Scalar>::mag_type;
+  using MST = typename Kokkos::ArithTraits<Scalar>::mag_type;
   std::vector<MST> norm(nVecs);
   Kokkos::View<MST*, Kokkos::HostSpace> normView(&norm[0], nVecs);
 

@@ -147,7 +147,7 @@ template <typename INT> void Node_Set<INT>::entity_load_params()
   sets[0].extra_list               = nullptr;
   sets[0].distribution_factor_list = nullptr;
 
-  int err = ex_get_sets(fileId, 1, &sets[0]);
+  int err = ex_get_sets(fileId, 1, sets.data());
 
   if (err < 0) {
     Error(fmt::format("Failed to get nodeset parameters for nodeset {}. !  Aborting...\n", id_));

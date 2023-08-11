@@ -1996,7 +1996,7 @@ external packages has several consequences:
 * The definition of any TriBITS external packages/TPLs that are enabled
   upstream dependencies from any of these external packages should be defined
   automatically and will **not** be found again. (But there can be exceptions
-  for non-fully TriBITS-compliant external packages; see the section
+  for minimally TriBITS-compliant external packages; see the section
   "TriBITS-Compliant External Packages" in the "TriBITS Users Guide".)
 
 The logic for treating internally defined packages as external packages will
@@ -4182,14 +4182,23 @@ match files to exclude, set::
 
   -D <Project>_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
 
+Extra directories or files can be excluded from the reduced source tarball by
+adding the configure argument::
+
+  "-DCPACK_SOURCE_IGNORE_FILES=<extra-exclude-regex-0>;<extra-exclude-regex-1>;..."
+
+NOTE: The entries in ``CPACK_SOURCE_IGNORE_FILES`` are regexes and **not**
+file globs, so be careful when specifying these or more files and directories
+will be excluded from the reduced source tarball that intended/desired.
+
 While a set of default CPack source generator types is defined for this
 project (see the ``CMakeCache.txt`` file), it can be overridden using, for
 example::
 
   -D <Project>_CPACK_SOURCE_GENERATOR="TGZ;TBZ2"
 
-(see CMake documentation to find out the types of supported CPack source
-generators on your system).
+(See CMake documentation to find out the types of CPack source generators
+supported on your system.)
 
 NOTE: When configuring from an untarred source tree that has missing packages,
 one must configure with::
@@ -4219,7 +4228,7 @@ just using the standard ``ctest -D Experimental`` command are:
 For more details, see `tribits_ctest_driver()`_.
 
 To use the ``dashboard`` target, first, configure as normal but add cache vars
-for the the build and test parallel levels with::
+for the build and test parallel levels with::
 
   -DCTEST_BUILD_FLAGS=-j4 -DCTEST_PARALLEL_LEVEL=4
 

@@ -113,7 +113,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
   auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
   initialSetupTimer->start();
   using namespace std;
-  using FunctionSpaceTools = FunctionSpaceTools<DeviceType>;
   using IntegrationTools   = IntegrationTools<DeviceType>;
   // dimensions of the returned view are (C,F,F)
   

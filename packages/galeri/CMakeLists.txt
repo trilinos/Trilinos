@@ -39,8 +39,6 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example example-fem example-xpetra)
 # Exclude files for source package.
 #
 
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
 TRIBITS_EXCLUDE_FILES(
   src-pfem   
   example-pfem

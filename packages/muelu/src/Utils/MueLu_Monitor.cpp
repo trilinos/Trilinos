@@ -43,7 +43,7 @@ namespace MueLu {
         levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg +
             " (total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
       levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, object.ShortClassName() +
-          MUELU_TIMER_AS_STRING + ": " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
+            ": " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
     }
   }
 
@@ -57,7 +57,7 @@ namespace MueLu {
         levelTimeMonitor_ = rcp(new TimeMonitor(object, label+object.ShortClassName() + ": " +  msg +
             " (total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
       levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, label+object.ShortClassName() +
-          MUELU_TIMER_AS_STRING + ": " + msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
+            ": " + msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
     }
   }
 

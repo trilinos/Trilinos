@@ -54,4 +54,4 @@ TEUCHOS_UNIT_TEST(EDIRK_2StageTheta, AppAction)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

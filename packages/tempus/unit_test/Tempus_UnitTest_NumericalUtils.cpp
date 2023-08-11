@@ -172,4 +172,4 @@ TEUCHOS_UNIT_TEST(NumericalUtils, approxEqualScale)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

@@ -2301,7 +2301,7 @@ bool verifySum(const CrsMat& A, const CrsMat& B, const CrsMat& C)
   using SC = typename CrsMat::scalar_type;
   using LO = typename CrsMat::local_ordinal_type;
   using GO = typename CrsMat::global_ordinal_type;
-  using KAT = Kokkos::Details::ArithTraits<SC>;
+  using KAT = Kokkos::ArithTraits<SC>;
   using Teuchos::Array;
   typedef typename CrsMat::nonconst_global_inds_host_view_type gids_type;
   typedef typename CrsMat::nonconst_values_host_view_type vals_type;

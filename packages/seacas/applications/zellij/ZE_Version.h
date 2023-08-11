@@ -4,8 +4,10 @@
 //
 // See packages/seacas/LICENSE for details
 #pragma once
+#include <array>
+#include <string>
 
-static char const *qainfo[] = {
+static std::array<std::string, 3> qainfo{
     "zellij",
     "2023/01/11",
     "1.5.4",

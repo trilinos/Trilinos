@@ -49,11 +49,6 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
     blockedDOFMngr = tblof->getGlobalIndexer();
 #ifdef PANZER_HAVE_EPETRA_STACK
   } else if (eblof != Teuchos::null) {
-    TEUCHOS_ASSERT(false);
-    // The Epetra code path works, expect for the fact that Epetra
-    // does not implement the needed matrix entry insertion. We'd need
-    // to handle the overwriting (instead of summing into) of already
-    // existing entries by hand.
     blockedDOFMngr = eblof->getGlobalIndexer();
 #endif
   } else {
@@ -202,7 +197,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
     numCells = std::min(maxNumElementsPerBlock, worksetSize);
   else
     numCells = worksetSize;
-  DynRankDeviceView             ho_dofCoords_d("ho_dofCoords_d", numCells, hoCardinality, dim);
+  DynRankDeviceView             ho_dofCoords_d("ho_dofCoords_d", hoCardinality, dim);
   DynRankDeviceView             basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
   DynRankDeviceView::HostMirror basisCoeffsLIOriented_h = Kokkos::create_mirror_view(basisCoeffsLIOriented_d);
   typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>     elemOrts_d ("elemOrts_d",  numCells);
@@ -222,23 +217,16 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
     //  numCells, numFields=loCardinality, numPoints=hoCardinality, (spatialDim)
     //
     if (temp.rank() == 3) {
-      valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
-      valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
+      valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", temp.extent(0), temp.extent(1), temp.extent(2));
+      valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
     } else {
-      valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1));
-      valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1));
+      valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", temp.extent(0), temp.extent(1));
+      valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1));
     }
   }
 
   int fieldRank = Intrepid2::getFieldRank(ho_basis->getFunctionSpace());
   TEUCHOS_ASSERT((fieldRank == 0) || (fieldRank == 1));
-
-  const bool isVectorBasis = (fieldRank == 1);
-  if (isVectorBasis) {
-    ho_dofCoeffs_d = DynRankDeviceView("ho_dofCoeffs_d", numCells, hoCardinality, dim);
-  } else {
-    ho_dofCoeffs_d = DynRankDeviceView("ho_dofCoeffs_d", numCells, hoCardinality);
-  }
 
   Kokkos::View<LocalOrdinal*,HostSpace> indices_h("indices", loCardinality);
   Kokkos::View<Scalar*,      HostSpace> values_h ("values",  loCardinality);
@@ -267,14 +255,10 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
       ots::getOrientation(elemOrts_d, elemNodes_d, topology);
 
       // HO dof coordinates and coefficients
-      li::getDofCoordsAndCoeffs(ho_dofCoords_d, ho_dofCoeffs_d, ho_basis.get(), elemOrts_d);
+      ho_basis->getDofCoords(ho_dofCoords_d);
 
       // compute values of op * (LO basis) at HO dof coords on reference element
-      // TODO: Once this is supported by Intrepid2, make this a parallel_for.
-      for (int cellNo = 0; cellNo < numCells; cellNo++)
-        lo_basis->getValues(Kokkos::subview(valuesAtDofCoordsNonOriented_d, cellNo, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()),
-                            Kokkos::subview(ho_dofCoords_d, cellNo, Kokkos::ALL(), Kokkos::ALL()),
-                            op);
+      lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
 
       // apply orientations for LO basis
       // shuffles things in the second dimension, i.e. wrt LO basis
@@ -289,7 +273,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
         // basisCoeffsLI has dimensions (numCells, numFields=hoCardinality, loCardinality)
         li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::ALL(), Kokkos::ALL(), loIter),
                            Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::ALL(), loIter, Kokkos::ALL(), Kokkos::ALL()),
-                           ho_dofCoeffs_d);
+                           ho_basis.get(), elemOrts_d);
 
       Kokkos::deep_copy(basisCoeffsLIOriented_h, basisCoeffsLIOriented_d);
 
@@ -334,8 +318,13 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 #ifdef PANZER_HAVE_EPETRA_STACK
             if (tblof != Teuchos::null)
               tp_interp_matrix->insertLocalValues(ho_row, rowNNZ, values_h.data(), indices_h.data(), Tpetra::INSERT);
-            else
-              ep_interp_matrix->InsertMyValues(ho_row, rowNNZ, values_h.data(), indices_h.data());
+            else {
+              int ret = ep_interp_matrix->ReplaceMyValues(ho_row, rowNNZ, values_h.data(), indices_h.data());
+              if (ret != 0) {
+                ret = ep_interp_matrix->InsertMyValues(ho_row, rowNNZ, values_h.data(), indices_h.data());
+                TEUCHOS_ASSERT(ret == 0);
+              }
+            }
 #else
             tp_interp_matrix->insertLocalValues(ho_row, rowNNZ, values_h.data(), indices_h.data(), Tpetra::INSERT);
 #endif

@@ -66,6 +66,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files =
   stk_expreval_utest
+  stk_expreval_doc_tests
   ;
 
 #
@@ -143,6 +144,15 @@ exe stk_expreval_utest
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_expreval
   : <tag>@sierra-exec-tag
+  ;
+
+exe stk_expreval_doc_tests
+  :
+    [ glob $(stk_expreval-root)/../stk_doc_tests/stk_expreval/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    stk_expreval
+  : <tag>@sierra-exec-tag
+    <include>$(stk_expreval-root)/../stk_doc_tests/stk_expreval
   ;
 
 lib stk_expreval

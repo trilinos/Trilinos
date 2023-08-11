@@ -4,6 +4,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_KokkosViewOfViews.hpp"
+#include "Phalanx_Kokkos_Tools_CheckStreams.hpp"
 #include <vector>
 
 // ********************************
@@ -126,7 +127,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,NewImpl) {
 
 }
 
-TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_EmptyCtor) {
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamInitialize) {
 
   const int num_cells = 10;
   const int num_pts = 8;
@@ -198,7 +199,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_EmptyCtor) {
       }
 }
 
-TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_TwoArgCtor) {
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamCtor) {
 
   const int num_cells = 10;
   const int num_pts = 8;
@@ -250,6 +251,180 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_TwoArgCtor) {
       for (int eq=0; eq < num_equations; ++eq) {
         TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
       }
+}
+
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
+
+  const int num_cells = 10;
+  const int num_pts = 8;
+  const int num_equations = 32;
+
+  std::vector<PHX::Device> streams;
+  if (PHX::Device().concurrency() >= 4) {
+    std::cout << "Using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    streams = Kokkos::Experimental::partition_space(PHX::Device(),1,1,1,1);
+  }
+  else {
+    std::cout << "NOT using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    for (int i=0; i < 4; ++i)
+      streams.push_back(PHX::Device());
+  }
+
+  PHX::set_enforce_no_default_stream_use();
+
+  Kokkos::View<double***,mem_t> a(Kokkos::view_alloc(streams[0],"a"),num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> b(Kokkos::view_alloc(streams[1],"b"),num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> c(Kokkos::view_alloc(streams[2],"c"),num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> d(Kokkos::view_alloc(streams[3],"d"),num_cells,num_pts,num_equations);
+
+  Kokkos::deep_copy(streams[0],a,2.0);
+  Kokkos::deep_copy(streams[1],b,3.0);
+  Kokkos::deep_copy(streams[2],c,4.0);
+
+  streams[0].fence();
+  streams[1].fence();
+  streams[2].fence();
+  streams[3].fence();
+
+  {
+    using InnerView = Kokkos::View<double***,mem_t>;
+    constexpr int OuterViewRank = 2;
+    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v(streams[3],"outer host",2,2);
+
+    TEST_ASSERT(v_of_v.isInitialized());
+
+    // For UVM=ON builds, need to fence here. The outer views are
+    // being accessed before the initialization is completed on
+    // device. The failure only shows up if you overload the cuda card
+    // with multiple tests to slow down the initialization.
+    streams[3].fence(); // PHX_UVM_ON_FENCE
+
+    v_of_v.addView(a,0,0);
+    v_of_v.addView(b,0,1);
+    v_of_v.addView(c,1,0);
+    v_of_v.addView(d,1,1);
+
+    v_of_v.syncHostToDevice(streams[3]);
+
+    {
+      auto v_dev = v_of_v.getViewDevice();
+      auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>(streams[3],{0,0,0},{num_cells,num_pts,num_equations});
+      Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
+        v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
+      });
+    }
+
+    // Uncomment the line below to prove the ViewOfViews prevents
+    // device views from outliving host view. This line will cause a
+    // Kokkos::abort() and error message since v_dev above is still in
+    // scope when the ViewOfViews is destoryed.
+    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
+  }
+
+  streams[3].fence();
+
+  PHX::unset_enforce_no_default_stream_use();
+
+  auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);
+
+  const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+  for (int cell=0; cell < num_cells; ++cell)
+    for (int pt=0; pt < num_pts; ++pt)
+      for (int eq=0; eq < num_equations; ++eq) {
+        TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
+      }
+}
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
+
+  const int num_cells = 10;
+  const int num_pts = 8;
+  const int num_equations = 32;
+
+  std::vector<PHX::Device> streams;
+  if (PHX::Device().concurrency() >= 4) {
+    std::cout << "Using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    streams = Kokkos::Experimental::partition_space(PHX::Device(),1,1,1,1);
+  }
+  else {
+    std::cout << "NOT using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    for (int i=0; i < 4; ++i)
+      streams.push_back(PHX::Device());
+  }
+
+  PHX::set_enforce_no_default_stream_use();
+
+  Kokkos::View<double***,mem_t> a(Kokkos::view_alloc(streams[0],"a"),num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> b(Kokkos::view_alloc(streams[1],"b"),num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> c(Kokkos::view_alloc(streams[2],"c"),num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> d(Kokkos::view_alloc(streams[3],"d"),num_cells,num_pts,num_equations);
+
+  Kokkos::deep_copy(streams[0],a,2.0);
+  Kokkos::deep_copy(streams[1],b,3.0);
+  Kokkos::deep_copy(streams[2],c,4.0);
+
+  streams[0].fence();
+  streams[1].fence();
+  streams[2].fence();
+  streams[3].fence();
+
+  {
+    using InnerView = Kokkos::View<double***,mem_t>;
+    constexpr int OuterViewRank = 2;
+    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v;
+
+    TEST_ASSERT(!v_of_v.isInitialized());
+    v_of_v.initialize(streams[3],"outer host",2,2);
+    TEST_ASSERT(v_of_v.isInitialized());
+
+    // For UVM=ON builds, need to fence here. The outer views are
+    // being accessed before the initialization is completed on
+    // device. The failure only shows up if you overload the cuda card
+    // with multiple tests to slow down the initialization.
+    streams[3].fence(); // PHX_UVM_ON_FENCE
+
+    v_of_v.addView(a,0,0);
+    v_of_v.addView(b,0,1);
+    v_of_v.addView(c,1,0);
+    v_of_v.addView(d,1,1);
+
+    v_of_v.syncHostToDevice(streams[3]);
+
+    {
+      auto v_dev = v_of_v.getViewDevice();
+      auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>(streams[3],{0,0,0},{num_cells,num_pts,num_equations});
+      Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
+        v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
+      });
+    }
+
+    // Uncomment the line below to prove the ViewOfViews prevents
+    // device views from outliving host view. This line will cause a
+    // Kokkos::abort() and error message since v_dev above is still in
+    // scope when the ViewOfViews is destoryed.
+    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
+  }
+
+  streams[3].fence();
+
+  PHX::unset_enforce_no_default_stream_use();
+
+  auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);
+
+  const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+  for (int cell=0; cell < num_cells; ++cell)
+    for (int pt=0; pt < num_pts; ++pt)
+      for (int eq=0; eq < num_equations; ++eq) {
+        TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
+      }
+}
+
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,KokkosToolsDefaultStreamCheck) {
+  PHX::set_enforce_no_default_stream_use();
+  // Checks are only active for CUDA and HIP backends
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  TEST_THROW(PHX::Device().fence(),std::runtime_error);
+#endif
+  PHX::unset_enforce_no_default_stream_use();
 }
 
 // Make sure that an uninitialized ViewOviews3 can be default
@@ -496,7 +671,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
 
   for (int i=0; i < 2; ++i) {
     vov = createVoV();
-    
+
     auto Mat_h = vov.getViewHost();
     auto a = Mat_h(0,0);
     auto b = Mat_h(0,1);
@@ -510,12 +685,12 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
       a(cell,pt).fastAccessDx(1) = 2.0 * double(cell) + double(pt);
       b(cell,pt).val() = double(cell);
       b(cell,pt).fastAccessDx(0) = 0.0;
-      b(cell,pt).fastAccessDx(1) = 0.0;      
+      b(cell,pt).fastAccessDx(1) = 0.0;
     });
     PHX::Device::execution_space().fence();
 
     // Compute c using device vov
-    auto Mat = vov.getViewDevice(); 
+    auto Mat = vov.getViewDevice();
     const bool use_hierarchic = true;
     if (use_hierarchic) {
       Kokkos::TeamPolicy<PHX::exec_space> policy(a.extent(0),Kokkos::AUTO());
@@ -605,7 +780,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
   }
 
   PHX::exec_space().fence();
-  
+
   auto b_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),b);
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
   for (size_t cell=0; cell < a.extent(0); ++cell) {

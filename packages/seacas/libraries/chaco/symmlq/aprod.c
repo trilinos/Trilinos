@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,8 +15,7 @@ int aprod(long *lnvtxs, double *x, double *y, double *dA, double *vwsqrt, double
 {
   int               nvtxs; /* int copy of long_nvtxs */
   struct vtx_data **A;
-  struct orthlink * orthlist; /* vectors to orthogonalize against */
-  void              splarax(), orthog1(), orthogvec(), orthogonalize();
+  struct orthlink  *orthlist; /* vectors to orthogonalize against */
 
   nvtxs    = (int)*lnvtxs;
   A        = (struct vtx_data **)dA;

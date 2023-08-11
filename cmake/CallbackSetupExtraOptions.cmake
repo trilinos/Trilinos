@@ -88,12 +88,7 @@ ENDMACRO()
 # Set up for build stats
 #
 
-set(buildStatsWrappersFile
-  "${Trilinos_SOURCE_DIR}/commonTools/build_stats/BuildStatsWrappers.cmake")
-if (EXISTS "${buildStatsWrappersFile}")
-  include("${Trilinos_SOURCE_DIR}/commonTools/build_stats/BuildStatsWrappers.cmake")
-  generate_build_stats_wrappers()
-  remove_build_stats_file_on_configure()
-  remove_build_stats_timing_files_on_fresh_configure()
-endif()
-
+include("${Trilinos_SOURCE_DIR}/commonTools/build_stats/BuildStatsWrappers.cmake")
+generate_build_stats_wrappers()
+remove_build_stats_file_on_configure()
+remove_build_stats_timing_files_on_fresh_configure()

@@ -577,7 +577,11 @@ Time Scheduler::next_implicit_output_time(Time time) const
     begin = next++;
   }
 
-  assert( (*begin).first <= time);
+#ifndef NDEBUG
+  static constexpr double eps = std::numeric_limits<double>::epsilon();
+  STK_ThrowAssertMsg( (*begin).first <= (time + eps), "begin.first="<<(*begin).first<<", time="<<time<<" diff "<<((*begin).first-time)<<" eps "<<std::numeric_limits<double>::epsilon());
+#endif
+
   assert(next == end || (*next).first > delta.min);
 
   // At this point, have the correct time interval which specifies start and frequency

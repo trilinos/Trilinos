@@ -7,15 +7,15 @@
 // license that can be found in the LICENSE file.
 
 #include <gtest/gtest.h>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <Akri_Eikonal_Calc.hpp>
-#include <Akri_Plane.hpp>
+#include <stk_math/StkPlane.hpp>
 
 namespace krino {
 
 static constexpr double farDistance = std::numeric_limits<double>::max();
 
-void write_cubit_tet(const std::array<Vector3d,4> & coords)
+void write_cubit_tet(const std::array<stk::math::Vector3d,4> & coords)
 {
   for (auto && x : coords)
     std::cout << "create vertex " << x[0] << " " << x[1] << " " << x[2] << std::endl;
@@ -25,54 +25,54 @@ void write_cubit_tet(const std::array<Vector3d,4> & coords)
   std::cout << "create tet node " << nodeId << " " << nodeId+1 << " " << nodeId+2 << " " << nodeId+3 << std::endl;
 }
 
-void expect_triangle_eikonal_solution(const std::array<Vector3d,3> & x, const std::array<double,2> & d, const double speed, const double gold, const double far = farDistance)
+void expect_triangle_eikonal_solution(const std::array<stk::math::Vector3d,3> & x, const std::array<double,2> & d, const double speed, const double gold, const double far = farDistance)
 {
   const int sign = 1;
   const double resultCase = eikonal_solve_triangle(x, d, sign, far, speed);
   EXPECT_NEAR(gold, resultCase, 1.e-8);
 }
 
-void expect_triangle_distance(const std::array<Vector3d,3> & x, const std::array<double,2> & d, const double gold)
+void expect_triangle_distance(const std::array<stk::math::Vector3d,3> & x, const std::array<double,2> & d, const double gold)
 {
   const double speed = 1.0;
   expect_triangle_eikonal_solution(x,d,speed,gold);
 }
 
-void expect_tetrahedron_eikonal_solution(const std::array<Vector3d,4> & x, const std::array<double,3> & d, const double speed, const double gold, const double far = farDistance)
+void expect_tetrahedron_eikonal_solution(const std::array<stk::math::Vector3d,4> & x, const std::array<double,3> & d, const double speed, const double gold, const double far = farDistance)
 {
   const int sign = 1;
   const double resultCase = eikonal_solve_tetrahedron(x, d, sign, far, speed);
   EXPECT_NEAR(gold, resultCase, 1.e-8);
 }
 
-void expect_tetrahedron_distance(const std::array<Vector3d,4> & x, const std::array<double,3> & d, const double gold)
+void expect_tetrahedron_distance(const std::array<stk::math::Vector3d,4> & x, const std::array<double,3> & d, const double gold)
 {
   const double speed = 1.0;
   expect_tetrahedron_eikonal_solution(x,d,speed,gold);
 }
 
-std::array<Vector3d,3> get_regular_triangle_coordinates()
+std::array<stk::math::Vector3d,3> get_regular_triangle_coordinates()
 {
-  return std::array<Vector3d,3>{{ {-0.5,0.,0.}, {0.5,0.,0.}, {0.,0.5*std::sqrt(3.0),0.} }};
+  return std::array<stk::math::Vector3d,3>{{ {-0.5,0.,0.}, {0.5,0.,0.}, {0.,0.5*std::sqrt(3.0),0.} }};
 }
 
-std::array<Vector3d,3> get_right_triangle_coordinates()
+std::array<stk::math::Vector3d,3> get_right_triangle_coordinates()
 {
-  return std::array<Vector3d,3>{{ {0.,0.,0.}, {1.,0.,0.}, {0.,1.,0.} }};;
+  return std::array<stk::math::Vector3d,3>{{ {0.,0.,0.}, {1.,0.,0.}, {0.,1.,0.} }};;
 }
 
-std::array<Vector3d,4> get_regular_tetrahedron_coordinates()
+std::array<stk::math::Vector3d,4> get_regular_tetrahedron_coordinates()
 {
-  return std::array<Vector3d,4>{{ {1.,1.,1.}, {-1.,1.,-1.}, {1.,-1.,-1.}, {-1.,-1.,1.} }};
+  return std::array<stk::math::Vector3d,4>{{ {1.,1.,1.}, {-1.,1.,-1.}, {1.,-1.,-1.}, {-1.,-1.,1.} }};
 }
 
-std::array<Vector3d,4> get_right_tetrahedron_coordinates()
+std::array<stk::math::Vector3d,4> get_right_tetrahedron_coordinates()
 {
-  return std::array<Vector3d,4>{{ {0.,0.,0.}, {1.,0.,0.}, {0.,1.,0.}, {0.,0.,1.} }};;
+  return std::array<stk::math::Vector3d,4>{{ {0.,0.,0.}, {1.,0.,0.}, {0.,1.,0.}, {0.,0.,1.} }};;
 }
 
 template<size_t SIZE>
-double get_edge_length(const std::array<Vector3d,SIZE> & coords, const int node0, const int node1)
+double get_edge_length(const std::array<stk::math::Vector3d,SIZE> & coords, const int node0, const int node1)
 {
   return (coords[node0]-coords[node1]).length();
 }
@@ -103,7 +103,7 @@ TEST(Eikonal_Calc, whenDecreasingInputNbrValues_resultingDistanceDecreases)
   // could produce an increased distance at a node.  This was caused by a causal check that required the
   // delta from the neighbor values to be positive definite or else it would fall back to side (and then edge)
   // computations.
-  const std::array<Vector3d,4> coords{{
+  const std::array<stk::math::Vector3d,4> coords{{
     { 0.0000000000,  0.0000000000,  0.0000000000},
     { 0.3143942356, -0.7254582644, -0.5797545612},
     { 0.1419055462, -0.5553394556,  0.1665592194},
@@ -142,7 +142,7 @@ TEST(Eikonal_Calc, regularTet_nbrsAllNearZero_resultIsTetHeight)
 
 TEST(Eikonal_Calc, regularTet_gradienAlong0to3_resultIsEdgeLength)
 {
-  const std::array<Vector3d,4> coords = get_regular_tetrahedron_coordinates();
+  const std::array<stk::math::Vector3d,4> coords = get_regular_tetrahedron_coordinates();
   const double edgeLen = get_regular_tetrahedron_edge_length();
   const std::array<double,3> distance{{0.,Dot(coords[1]-coords[0],coords[3]-coords[0])/edgeLen,Dot(coords[2]-coords[0],coords[3]-coords[0])/edgeLen}};
 
@@ -160,7 +160,7 @@ TEST(Eikonal_Calc, regularTri_nbrsAllZero_resultIsTriHeight)
 
 TEST(Eikonal_Calc, regularTri_gradienAlong0to2_resultIsEdgeLength)
 {
-  const std::array<Vector3d,3> coords = get_regular_triangle_coordinates();
+  const std::array<stk::math::Vector3d,3> coords = get_regular_triangle_coordinates();
   const double edgeLen = get_regular_triangle_edge_length();
   const std::array<double,2> distance{{0.,Dot(coords[1]-coords[0],coords[2]-coords[0])/edgeLen}};
 
@@ -170,7 +170,7 @@ TEST(Eikonal_Calc, regularTri_gradienAlong0to2_resultIsEdgeLength)
 
 TEST(Eikonal_Calc, rightTriangleWithOneNeighborNodeAsClosestPointAndOtherNbrOnLongerEdge_resultIsDistanceFromClosestPoint)
 {
-  const std::array<Vector3d,3> coords{{ {0.,0.,0.}, {2.,0.,0.}, {0.,1.,0.} }};
+  const std::array<stk::math::Vector3d,3> coords{{ {0.,0.,0.}, {2.,0.,0.}, {0.,1.,0.} }};
   const std::array<double,2> distance{{0.,2.}};
 
   const double gold = 1.0;
@@ -179,7 +179,7 @@ TEST(Eikonal_Calc, rightTriangleWithOneNeighborNodeAsClosestPointAndOtherNbrOnLo
 
 TEST(Eikonal_Calc, regularTriangle_withFrontEmanatingFromOutsideBase_resultIsEdgeLength)
 {
-  const std::array<Vector3d,3> coords = get_regular_triangle_coordinates();
+  const std::array<stk::math::Vector3d,3> coords = get_regular_triangle_coordinates();
   const double gold = 1.0;
 
   {
@@ -201,7 +201,7 @@ TEST(Eikonal_Calc, regularTriangle_withFrontEmanatingFromOutsideBase_resultIsEdg
 
 TEST(Eikonal_Calc, rightTetrahedronWithOneNeighborNodeAsClosestPointAndAnotherNbrOnLongerEdge_resultIsDistanceFromClosestPoint)
 {
-  const std::array<Vector3d,4> coords{{ {0.,0.,0.}, {2.,0.,0.}, {0.,1.,0.}, {0.,0.,1.} }};
+  const std::array<stk::math::Vector3d,4> coords{{ {0.,0.,0.}, {2.,0.,0.}, {0.,1.,0.}, {0.,0.,1.} }};
   const std::array<double,3> distance{{0.,2.,1.}};
 
   const double gold = 1.0;
@@ -237,7 +237,7 @@ TEST(Eikonal_Calc, rightTetrahedron_nbrsAllZeroAndNonUnitSpeed_resultIsTimeOfArr
 }
 
 template<size_t SIZE>
-std::array<double,SIZE> compute_distance_to_plane(const Plane3d & plane, const std::array<Vector3d,SIZE> & coords)
+std::array<double,SIZE> compute_distance_to_plane(const stk::math::Plane3d & plane, const std::array<stk::math::Vector3d,SIZE> & coords)
 {
   std::array<double,SIZE> result;
   for (size_t i=0; i<SIZE; ++i)
@@ -247,14 +247,14 @@ std::array<double,SIZE> compute_distance_to_plane(const Plane3d & plane, const s
 
 void expect_regular_triangle_distance_correct_for_closest_point_on_opposite_side(const double s)
 {
-  const std::array<Vector3d,3> coords = get_regular_triangle_coordinates();
+  const std::array<stk::math::Vector3d,3> coords = get_regular_triangle_coordinates();
 
   ASSERT_TRUE(s >= 0.);
-  const Vector3d origin = (1.-s)*coords[0] + s*coords[1];
+  const stk::math::Vector3d origin = (1.-s)*coords[0] + s*coords[1];
   const int node = s < 0.5 ? 0 : 1;
 
-  const Vector3d & gradientDir = coords[2] - origin;
-  const Plane3d plane(gradientDir, coords[node]);
+  const stk::math::Vector3d & gradientDir = coords[2] - origin;
+  const stk::math::Plane3d plane(gradientDir, coords[node]);
   const auto distanceToPlane = compute_distance_to_plane(plane, coords);
   const double gold = distanceToPlane[2];
   const std::array<double,2> distance = {{distanceToPlane[0], distanceToPlane[1]}};
@@ -272,16 +272,16 @@ TEST(Eikonal_Calc, regularTri_variousGradients)
 
 void expect_regular_tetrahedron_distance_correct_for_closest_point_on_opposite_side(const double r, const double s)
 {
-  const std::array<Vector3d,4> coords = get_regular_tetrahedron_coordinates();
+  const std::array<stk::math::Vector3d,4> coords = get_regular_tetrahedron_coordinates();
 
   const double t = 1.-r-s;
   ASSERT_TRUE(r >= 0. && s >= 0. && t >= 0.);
   const int node = (t>r && t>s) ? 0 : ((r>s && r>t) ? 1 : 2);
 
-  const Vector3d origin = t*coords[0] + r*coords[1] + s*coords[2];
+  const stk::math::Vector3d origin = t*coords[0] + r*coords[1] + s*coords[2];
 
-  const Vector3d & gradientDir = coords[3] - origin;
-  const Plane3d plane(gradientDir, coords[node]);
+  const stk::math::Vector3d & gradientDir = coords[3] - origin;
+  const stk::math::Plane3d plane(gradientDir, coords[node]);
   const auto distanceToPlane = compute_distance_to_plane(plane, coords);
   const double gold = distanceToPlane[3];
   const std::array<double,3> distance = {{distanceToPlane[0], distanceToPlane[1], distanceToPlane[2]}};
@@ -290,7 +290,7 @@ void expect_regular_tetrahedron_distance_correct_for_closest_point_on_opposite_s
 
 void expect_regular_tetrahedron_distance_correct_for_closest_point_outside_of_opposite_side(const int edge, const double sEdge)
 {
-  const std::array<Vector3d,4> coords = get_regular_tetrahedron_coordinates();
+  const std::array<stk::math::Vector3d,4> coords = get_regular_tetrahedron_coordinates();
 
   ASSERT_TRUE(edge>=0 && edge<=2);
   ASSERT_TRUE(sEdge>=0. && sEdge<=1.);
@@ -300,10 +300,10 @@ void expect_regular_tetrahedron_distance_correct_for_closest_point_outside_of_op
   const double tFace = 1.-rFace-sFace;
   const int node = (tFace>rFace && tFace>sFace) ? 0 : ((rFace>sFace && rFace>tFace) ? 1 : 2);
 
-  const Vector3d originBaseFace = tFace*coords[0] + rFace*coords[1] + sFace*coords[2];
+  const stk::math::Vector3d originBaseFace = tFace*coords[0] + rFace*coords[1] + sFace*coords[2];
 
-  const Vector3d & gradientDir = coords[3] - originBaseFace;
-  const Plane3d plane(gradientDir, coords[node]);
+  const stk::math::Vector3d & gradientDir = coords[3] - originBaseFace;
+  const stk::math::Plane3d plane(gradientDir, coords[node]);
   const auto distanceToPlane = compute_distance_to_plane(plane, coords);
   std::array<double,3> distance = {{distanceToPlane[0], distanceToPlane[1], distanceToPlane[2]}};
 
@@ -334,7 +334,7 @@ TEST(Eikonal_Calc, regularTet_variousGradients)
 
 TEST(Eikonal_Calc, regularTetrahedron_withFrontEmanatingFromOutsideBase_resultIsEdgeLength)
 {
-  const std::array<Vector3d,4> coords = get_regular_tetrahedron_coordinates();
+  const std::array<stk::math::Vector3d,4> coords = get_regular_tetrahedron_coordinates();
   const double edgeLen = get_regular_tetrahedron_edge_length();
   const double gold = edgeLen;
 

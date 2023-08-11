@@ -108,6 +108,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: absolute threshold", 0.0);
   params.set("fact: relative threshold", 1.0);
   params.set("fact: relax value", 0.0);
+  params.set("fact: type", "serial");
+  params.sublist("parallel ILUT options"); //FIXME this should be validated
 
   // Ifpack2_LocalSparseTriangularSolver.cpp
   params.set("trisolver: type", "Internal");

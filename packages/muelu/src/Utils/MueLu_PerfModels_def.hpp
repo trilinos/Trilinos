@@ -73,7 +73,7 @@ namespace MueLu {
     template<class Scalar,class Node>
     double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {      
       // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
-      using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      using impl_scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
       
       using exec_space   = typename Node::execution_space;
       using memory_space = typename Node::memory_space;
@@ -114,7 +114,7 @@ namespace MueLu {
     template<class Scalar,class Node>
     double stream_vector_copy(int KERNEL_REPEATS, int VECTOR_SIZE) {      
       // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
-      using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      using impl_scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
 
       using exec_space   = typename Node::execution_space;
       using memory_space = typename Node::memory_space;
@@ -295,12 +295,12 @@ namespace MueLu {
           // Recv/Send the forward messsages
           for(int r=0; r<num_recvs;r++) {
             const int tag = 1000+j;
-            MPI_Irecv(&f_recv_buf[msg_size*r],msg_size,MPI_CHAR,procsFrom[r],tag,communicator,&requests[ct]);
+            MPI_Irecv(f_recv_buf.data()+msg_size*r,msg_size,MPI_CHAR,procsFrom[r],tag,communicator,&requests[ct]);
             ct++;
           }
           for(int s=0; s<num_sends;s++) {
             const int tag = 1000+j;
-            MPI_Isend(&f_send_buf[msg_size*s],msg_size,MPI_CHAR,procsTo[s],tag,communicator,&requests[ct]);
+            MPI_Isend(f_send_buf.data()+msg_size*s,msg_size,MPI_CHAR,procsTo[s],tag,communicator,&requests[ct]);
             ct++;
           }
           // Wait for the forward messsages
@@ -310,12 +310,12 @@ namespace MueLu {
           // Recv/Send the reverse messsages
           for(int r=0; r<num_sends;r++) {
             const int tag = 2000+j;
-            MPI_Irecv(&r_recv_buf[msg_size*r],msg_size,MPI_CHAR,procsTo[r],tag,communicator,&requests[ct]);
+            MPI_Irecv(r_recv_buf.data()+msg_size*r,msg_size,MPI_CHAR,procsTo[r],tag,communicator,&requests[ct]);
             ct++;
           }
           for(int s=0; s<num_recvs;s++) {
             const int tag = 2000+j;
-            MPI_Isend(&r_send_buf[msg_size*s],msg_size,MPI_CHAR,procsFrom[s],tag,communicator,&requests[ct]);
+            MPI_Isend(r_send_buf.data()+msg_size*s,msg_size,MPI_CHAR,procsFrom[s],tag,communicator,&requests[ct]);
             ct++;
           }
           // Wait for the reverse messsages
@@ -422,31 +422,33 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_stream_vector_table(std::ostream & out) {
-    print_stream_vector_table_impl(out,false);
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_stream_vector_table(std::ostream & out, const std::string & prefix) {
+    print_stream_vector_table_impl(out,false,prefix);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_latency_corrected_stream_vector_table(std::ostream & out) {
-    print_stream_vector_table_impl(out,true);
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_latency_corrected_stream_vector_table(std::ostream & out, const std::string & prefix) {
+    print_stream_vector_table_impl(out,true,prefix);
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_stream_vector_table_impl(std::ostream & out,bool use_latency_correction) {
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_stream_vector_table_impl(std::ostream & out,bool use_latency_correction, const std::string & prefix) {
     using namespace std;
     std::ios old_format(NULL);
     old_format.copyfmt(out);
 
-    out << setw(20) << "Length in Scalars" << setw(1) << " "
+    out << prefix
+        << setw(20) << "Length in Scalars" << setw(1) << " "
         << setw(20) << "COPY (us)" << setw(1) << " "
         << setw(20) << "ADD (us)" << setw(1) << " "
         << setw(20) << "COPY (GB/s)" << setw(1) << " "
         << setw(20) << "ADD (GB/s)" << std::endl;
 
-    out << setw(20) << "-----------------" << setw(1) << " "
+    out << prefix
+        << setw(20) << "-----------------" << setw(1) << " "
         << setw(20) << "---------" << setw(1) << " "
         << setw(20) << "--------" << setw(1) << " "
         << setw(20) << "-----------" << setw(1) << " "
@@ -462,7 +464,8 @@ namespace MueLu {
       double a_bw = PerfDetails::convert_time_to_bandwidth_gbs(a_time,1,size*sizeof(Scalar));
 
 
-      out << setw(20) << size << setw(1) << " "
+      out << prefix
+          << setw(20) << size << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << (c_time*1e6) << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << (a_time*1e6) << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << c_bw << setw(1) << " "
@@ -502,18 +505,20 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_pingpong_table(std::ostream & out) {
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_pingpong_table(std::ostream & out, const std::string & prefix) {
     if(pingpong_sizes_.size() == 0) return;
 
     using namespace std;
     std::ios old_format(NULL);
     old_format.copyfmt(out);
 
-    out << setw(20) << "Message Size" << setw(1) << " "
+    out << prefix
+        << setw(20) << "Message Size" << setw(1) << " "
         << setw(20) << "Host (us)" << setw(1) << " "
         << setw(20) << "Device (us)" << std::endl;
 
-    out << setw(20) << "------------" << setw(1) << " "
+    out << prefix
+        << setw(20) << "------------" << setw(1) << " "
         << setw(20) << "---------" << setw(1) << " "
         << setw(20) << "-----------" << std::endl;
     
@@ -524,7 +529,8 @@ namespace MueLu {
       double d_time = pingpong_device_times_[i];
 
 
-      out << setw(20) << size << setw(1) << " "
+      out << prefix
+          << setw(20) << size << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << (h_time*1e6) << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << (d_time*1e6) << setw(1) << std::endl;
     }
@@ -562,18 +568,20 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_halopong_table(std::ostream & out) {
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_halopong_table(std::ostream & out, const std::string & prefix) {
     if(halopong_sizes_.size() == 0) return;
 
     using namespace std;
     std::ios old_format(NULL);
     old_format.copyfmt(out);
 
-    out << setw(20) << "Message Size" << setw(1) << " "
+    out << prefix
+        << setw(20) << "Message Size" << setw(1) << " "
         << setw(20) << "Host (us)" << setw(1) << " "
         << setw(20) << "Device (us)" << std::endl;
 
-    out << setw(20) << "------------" << setw(1) << " "
+    out << prefix 
+        << setw(20) << "------------" << setw(1) << " "
         << setw(20) << "---------" << setw(1) << " "
         << setw(20) << "-----------" << std::endl;
     
@@ -584,7 +592,8 @@ namespace MueLu {
       double d_time = halopong_device_times_[i];
 
 
-      out << setw(20) << size << setw(1) << " "
+      out << prefix
+          << setw(20) << size << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << (h_time*1e6) << setw(1) << " "
           << setw(20) << fixed << setprecision(4) << (d_time*1e6) << setw(1) << std::endl;
     }
@@ -629,12 +638,13 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_launch_latency_table(std::ostream & out) {
+  PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print_launch_latency_table(std::ostream & out, const std::string & prefix) {
     using namespace std;
     std::ios old_format(NULL);
     old_format.copyfmt(out);
 
-    out << setw(20) << "Launch+Wait Latency (us)" << setw(1) << " " 
+    out << prefix
+        << setw(20) << "Launch+Wait Latency (us)" << setw(1) << " " 
         << setw(20) << fixed << setprecision(4) << (launch_and_wait_latency_*1e6) << std::endl;
 
     out.copyfmt(old_format);

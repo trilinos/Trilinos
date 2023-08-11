@@ -43,7 +43,7 @@
 //
 // @HEADER
 //
-// Basic testing of Zoltan2::TpetraRowMatrixAdapter 
+// Basic testing of Zoltan2::TpetraRowMatrixAdapter
 
 /*! \file TpetraRowMatrixInput.cpp
  *  \brief Test of Zoltan2::TpetraRowMatrixAdapter class.
@@ -177,7 +177,7 @@ int main(int narg, char *arg[])
 
   size_t nrows = trM->getLocalNumRows();
 
-  // To test migration in the input adapter we need a Solution object. 
+  // To test migration in the input adapter we need a Solution object.
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
 
@@ -196,14 +196,14 @@ int main(int narg, char *arg[])
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::RowMatrix
-  if (!gfail){ 
+  if (!gfail){
     if (rank==0)
       std::cout << "Input adapter for Tpetra::RowMatrix" << std::endl;
-    
+
     RCP<const ztrowmatrix_t> ctrM = rcp_const_cast<const ztrowmatrix_t>(
                                    rcp_dynamic_cast<ztrowmatrix_t>(tM));
     RCP<adapter_t> trMInput;
-  
+
     try {
       trMInput = rcp(new adapter_t(ctrM));
     }
@@ -212,11 +212,11 @@ int main(int narg, char *arg[])
       std::cout << e.what() << std::endl;
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "TpetraRowMatrixAdapter ", 1);
-  
+
     fail = verifyInputAdapter<ztrowmatrix_t>(*trMInput, *trM);
-  
+
     gfail = globalFail(*comm, fail);
-  
+
     if (!gfail){
       ztrowmatrix_t *mMigrate = NULL;
       try{
@@ -229,9 +229,9 @@ int main(int narg, char *arg[])
       }
 
       gfail = globalFail(*comm, fail);
-  
+
       if (!gfail){
-        RCP<const ztrowmatrix_t> cnewM = 
+        RCP<const ztrowmatrix_t> cnewM =
                                  rcp_const_cast<const ztrowmatrix_t>(newM);
         RCP<adapter_t> newInput;
         try{
@@ -242,10 +242,10 @@ int main(int narg, char *arg[])
           std::cout << e.what() << std::endl;
         }
         TEST_FAIL_AND_EXIT(*comm, aok, "TpetraRowMatrixAdapter 2 ", 1);
-  
+
         if (rank==0){
-          std::cout << 
-           "Input adapter for Tpetra::RowMatrix migrated to proc 0" << 
+          std::cout <<
+           "Input adapter for Tpetra::RowMatrix migrated to proc 0" <<
            std::endl;
         }
         fail = verifyInputAdapter<ztrowmatrix_t>(*newInput, *newM);

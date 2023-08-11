@@ -1279,6 +1279,16 @@ TEST(Mesh, ErrorRemotesNotUnique)
   EXPECT_ANY_THROW(check_topology(mesh));
 }
 
+TEST(Mesh, AnnulusRemotes)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) > 4)
+    GTEST_SKIP();
+
+  // Note: 2x2 doesnt work, find out why
+  std::shared_ptr<mesh::Mesh> mesh1 = make_annulus_mesh(4, 4, 0.5, 1.5, 0);
+  mesh::check_topology(mesh1);
+}
+
 } // namespace impl
 } // namespace middle_mesh
 } // namespace stk

@@ -56,7 +56,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE)
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -82,7 +82,7 @@ PartitionInterface<Matrix, Vector>::PartitionInterface(Matrix* inA, Teuchos::Par
   pList = inpList;
   ipart = NULL;
   ird = NULL;
-#ifdef HAVE_SHLY_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
   zadapter = NULL;
   zproblem = NULL;
 #endif
@@ -115,7 +115,7 @@ int PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::partitionIsorropia
 }
 
 
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
 template <class Matrix, class Vector>
 int PartitionInterface<Matrix, Vector>::partitionZoltan2()
 {
@@ -133,7 +133,7 @@ int PartitionInterface<Matrix, Vector>::partitionZoltan2()
 template <class Matrix, class Vector>
 int PartitionInterface<Matrix,Vector>::partition()
 {
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
   return partitionZoltan2();
 #else
   return 1;
@@ -147,7 +147,7 @@ int PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::partition()
     {
       return partitionIsorropia();
     }
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
   else if (partitioningPackage.compare("Zoltan2") == 0)
     {
       return partitionZoltan2();
@@ -163,17 +163,15 @@ int PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::partition()
 template <class Matrix, class Vector>
 Matrix* PartitionInterface<Matrix,Vector>::reorderMatrix()
 {
-  Matrix *B;
+  Matrix *B = NULL;
   std::string partitioningPackage = Teuchos::getParameter<std::string>(*pList, "Partitioning Package");
 
-#if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)) \
+                                           && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
   if(partitioningPackage.compare("Zoltan2") == 0)
     {
       zadapter->applyPartitioningSolution(*A, B, zproblem->getSolution());
     }
-#else
-B = NULL;
-
 #endif
   return B;
 }
@@ -186,7 +184,8 @@ Epetra_CrsMatrix* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::reor
     {
       ird->redistribute(*A, B);
     }
-#if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)) \
+                                           && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
   else if (partitioningPackage.compare("Zoltan2") == 0)
     {
       zadapter->applyPartitioningSolution(*A, B, zproblem->getSolution());
@@ -200,7 +199,8 @@ Vector* PartitionInterface<Matrix, Vector>::reorderVector(Vector* x)
 {
   Vector *b = NULL;
   std::string partitioningPackage = Teuchos::getParameter<std::string>(*pList, "Partitioning Package");
-#if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)) \
+                                           && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
       Teuchos::RCP<Vector> rx(x, false);
       Zoltan2::XpetraMultiVectorAdapter<Vector> tempVecAdapter(rx);
       tempVecAdapter.applyPartitioningSolution(*x, b, zproblem->getSolution());
@@ -208,7 +208,7 @@ Vector* PartitionInterface<Matrix, Vector>::reorderVector(Vector* x)
   return b;
 }
 template < >
-Epetra_MultiVector* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::reorderVector(Epetra_MultiVector* x )
+Epetra_MultiVector* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::reorderVector(Epetra_MultiVector* x)
 {
   Epetra_MultiVector *b = NULL;
   std::string partitioningPackage = Teuchos::getParameter<std::string>(*pList, "Partitioning Package");
@@ -216,10 +216,11 @@ Epetra_MultiVector* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::re
     {
       ird->redistribute(*x, b);
     }
-#if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)) \
+                                           && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
   else if (partitioningPackage.compare("Zoltan2") == 0)
     {
-      Teuchos::RCP<Epetra_MultiVector> rx(x);
+      Teuchos::RCP<Epetra_MultiVector> rx(Teuchos::rcpFromRef(*x));
       Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector> tempVecAdapter(rx);
       tempVecAdapter.applyPartitioningSolution(*x, b, zproblem->getSolution());
     }

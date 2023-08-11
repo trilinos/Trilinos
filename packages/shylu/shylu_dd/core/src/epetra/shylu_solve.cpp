@@ -61,7 +61,7 @@ static int shylu_dist_solve(
     Epetra_MultiVector& Y
 )
 {
-    int err;
+    int err = 0;
     AztecOO *solver = 0;
     assert(X.Map().SameAs(Y.Map()));
     //assert(X.Map().SameAs(A_->RowMap()));
@@ -255,7 +255,7 @@ static int shylu_dist_solve(
     {
         delete solver;
     }
-    return 0;
+    return err;
 }
 
 static int shylu_local_solve(
@@ -266,7 +266,7 @@ static int shylu_local_solve(
     Epetra_MultiVector& Y
 )
 {
-    int err;
+    int err = 0;
 #ifndef NDEBUG
     int nvectors = X.NumVectors();
     assert (nvectors == data->localrhs->NumVectors());
@@ -376,7 +376,7 @@ static int shylu_local_solve(
     {
         delete solver;
     }
-    return 0;
+    return err;
 }
 
 int shylu_solve(
