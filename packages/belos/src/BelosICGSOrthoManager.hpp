@@ -587,9 +587,12 @@ namespace Belos {
     int rank = MVT::GetNumberVecs(X);
     Teuchos::RCP<DM> xTx = DMT::Create(rank,rank);
     MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(X,X,MX,*xTx);
+    std::cout << "Attempt D to H sync line 623." << std::endl;
+    DMT::SyncDeviceToHost(*xTx);
     for (int i=0; i<rank; i++) {
       DMT::Value(*xTx,i,i) -= ONE;
     }
+    DMT::SyncHostToDevice(*xTx);
     return DMT::NormFrobenius(*xTx);
   }
 
@@ -709,8 +712,13 @@ namespace Belos {
 
       // Normalize the new block X
       if ( B == Teuchos::null ) {
+        std::cout << "Creating B within function." << std::endl;
         B = DMT::Create(xc,xc);
       }
+      else {
+        std::cout << "B already existed before this line." << std::endl;
+      }
+
       std::vector<ScalarType> diag(xc);
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -718,6 +726,13 @@ namespace Belos {
 #endif
         MVT::MvDot( X, *MX, diag );
       }
+      std::cout << "Attempt D to H sync line 756." << std::endl;
+      DMT::SyncDeviceToHost(*B);
+      //TODO: Do we even need to sync here? We only use one value of B
+      // in the next few lines, and that is the one we are about to write.
+      // Ooooh.... yes, because if B is bigger and the rest of host has junk,
+      // we don't want the junk to sync back to device later.
+      std::cout << "Got past D to H sync line 756." << std::endl;
       DMT::Value(*B,0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
 
       if (SCT::magnitude(DMT::Value(*B,0,0)) > ZERO) {
@@ -728,6 +743,7 @@ namespace Belos {
           MVT::MvScale( *MX, ONE/DMT::Value(*B,0,0) );
         }
       }
+      DMT::SyncHostToDevice(*B);
     }
     else {
 
@@ -1162,12 +1178,15 @@ namespace Belos {
       }
 
       // If we've added a random vector, enter a zero in the j'th diagonal element.
+      std::cout << "Attempt D to H sync line 1203." << std::endl;
+      DMT::SyncDeviceToHost(*B);
       if (addVec) {
         DMT::Value(*B,j,j) = ZERO;
       }
       else {
         DMT::Value(*B,j,j) = diag;
       }
+      DMT::SyncHostToDevice(*B);
 
       // Save the coefficients, if we are working on the original vector and not a randomly generated one
       if (!addVec) { 
@@ -1570,7 +1589,10 @@ namespace Belos {
         }
 
         // Enter value on diagonal of B.
+        std::cout << "Attempt D to H sync line 1614." << std::endl;
+        DMT::SyncDeviceToHost(*B);
         DMT::Value(*B,j,j) = diag;
+        DMT::SyncHostToDevice(*B);
       }
       else {
         // Create a random vector and orthogonalize it against all previous columns of Q.
@@ -1641,7 +1663,10 @@ namespace Belos {
           ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 
           // Enter value on diagonal of B.
+          std::cout << "Attempt D to H sync line 1688." << std::endl;
+          DMT::SyncDeviceToHost(*B);
           DMT::Value(*B,j,j) = ZERO;
+          DMT::SyncHostToDevice(*B);
 
           // Copy vector into current column of _basisvecs
           MVT::MvAddMv( ONE/diag, *tempXj, ZERO, *tempXj, *Xj );
