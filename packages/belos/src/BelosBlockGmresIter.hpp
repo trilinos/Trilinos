@@ -544,6 +544,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       for (int j=0; j<blockSize_; j++) {
         (*norms)[j] = blas.NRM2( blockSize_, &DMT::Value(*z_,curDim_, j), 1);
       }
+      DMT::SyncHostToDevice(*z_);
     }
     return Teuchos::null;
   }

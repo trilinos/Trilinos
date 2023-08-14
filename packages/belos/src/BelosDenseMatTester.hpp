@@ -307,7 +307,7 @@ namespace Belos {
       }
 
       ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
-      DMT::RawPtrDataModified(*dm2);
+      //DMT::RawPtrDataModified(*dm2);
       ScalarType const * testPtr2 = DMT::GetConstRawHostPtr(*dm2);
       //TODO: Test handing this to lapack function? 
       //TODO: Should something err if view is modified on device and 
