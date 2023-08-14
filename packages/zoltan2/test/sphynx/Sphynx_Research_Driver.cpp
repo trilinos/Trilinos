@@ -351,7 +351,7 @@ int main(int narg, char *arg[])
     int rand_seed = 1;
     std::string matrix_file = "";
     std::string vector_file = "";
-    std::string eigensolve = "LOBPCG"; 
+    std::string eigensolve = "randomized"; 
     bool parmetis = false;
     bool pulp = false;
     
