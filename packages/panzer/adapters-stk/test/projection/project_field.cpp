@@ -205,7 +205,7 @@ evaluateFields(
   typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
 
   // FYI, this all relies on a first-order mesh
-  auto cellNodesAll = workset.getCellVertices(); // TODO BWR UPDATE WHEN DEPRECATED
+  auto cellNodesAll = workset.getCellNodes();
   size_t numOwnedElems = workset.num_cells;
   TEUCHOS_ASSERT(local_nodes.extent(0)==local_orts.extent(0));
 
@@ -586,7 +586,7 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   auto worksets = wkstsAndOrts.worksets;
   auto orientations = wkstsAndOrts.orientations;
   auto wkstSize = (*worksets)[0].num_cells; // As long as we don't pick the last workset, this gives the max size 
-  auto numNodesPerElem = (*worksets)[0].getCellVertices().extent(1);
+  auto numNodesPerElem = (*worksets)[0].getCellNodes().extent(1);
 
   // we will project from first to a second order basis to a first
   // this essentially matches the intrepid2 test, but we've
@@ -670,26 +670,6 @@ bool checkProjection(Teuchos::RCP<panzer_stk::STK_Interface> mesh,
   for ( auto & err : *errors ) {
     if ( err > 1e-14 ) matched = false;
   }
-
-  //typedef typename EvalType::ScalarT ScalarT;
-
-  //PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> s(fname,sourceBasis->functional);
-  //PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> t(fname+"_final",sourceBasis->functional);
-
-  //fm->getFieldData<EvalType>(s);
-  //fm->getFieldData<EvalType>(t);
-
-  //auto s_h = Kokkos::create_mirror_view(s.get_view());
-  //Kokkos::deep_copy(s_h, s.get_view());
-  //auto t_h = Kokkos::create_mirror_view(t.get_view());
-  //Kokkos::deep_copy(t_h, t.get_view());
-
-  //bool matched = true;
-  //for (size_t ncell=0;ncell<numCells;++ncell){
-  //  for (int idx_pt=0;idx_pt<sourceBasis->cardinality();++idx_pt){
-  //    if (std::abs(s_h(ncell,idx_pt) - t_h(ncell,idx_pt)) > 1e-14) matched = false;
-  //  }
-  //}
 
   return matched;
 }
