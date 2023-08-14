@@ -716,7 +716,9 @@ namespace Belos {
 #endif
         MVT::MvDot( X, *MX, diag );
       }
+      DMT::SyncDeviceToHost(*B);
       DMT::Value(*B,0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
+      DMT::SyncHostToDevice(*B);
 
       if (SCT::magnitude(DMT::Value(*B,0,0)) > ZERO) {
         rank = 1;
@@ -1193,7 +1195,7 @@ namespace Belos {
           DMT::Value(*B,i,j) = DMT::Value(*product,i,0);
         }
       }
-
+      DMT::SyncHostToDevice(*B);
     } // for (j = 0; j < xc; ++j)
 
     return xc;
