@@ -113,6 +113,7 @@ namespace Belos {
     //LAPACK could use the host ptr to modify entries, so mark as modified.
     //TODO: Is there a better way to handle this?
         dm.modify_host();
+        std::cout << "Modified on host." << std::endl;
         return reinterpret_cast<Scalar*>(dm.h_view.data());
     //TODO: Is there any way that the user could hold on to this pointer...
     // and everything works fine the first time they pass to LAPACK. 
@@ -205,12 +206,16 @@ namespace Belos {
      *        contain noise from memory. 
     */
     static void Reshape( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int numRows, const int numCols, bool initZero = false) {
+      std::cout << "Calling reshape." << std::endl;
       if(initZero){
+        std::cout << "in reshape initZero." << std::endl;
         dm.realloc(numRows,numCols); //changes size of both host and device view.
         Kokkos::deep_copy(dm.d_view, 0.0);
         dm.modify_device();
+        std::cout << "Modified on device." << std::endl;
       }
       else{
+      std::cout << "in reshape keep vals." << std::endl;
         dm.resize(numRows,numCols); //keeps values in old array.
       }
     }     
@@ -224,6 +229,7 @@ namespace Belos {
     { 
     //Mark as modified on host, since we don't know if it will be. 
       dm.modify_host();
+        std::cout << "Modified on host." << std::endl;
       return dm.h_view(i,j);
       // TODO Will this result in extra syncs? Is always marking modified the best way?
     }
@@ -245,12 +251,16 @@ namespace Belos {
     //  and perform computations only on the host. 
     //
     static void SyncDeviceToHost(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm) { 
+      std::cout << "Called Sync Device to Host. " << std::endl;
       if(dm.need_sync_host()){
+        std::cout << "Syncing d2h: Matrix extents are: " << dm.extent_int(0) << " , " << dm.extent_int(1) << std::endl;
+        //Stupidness to print type info: int int1 = dm.d_view;
         dm.sync_host();
       }    
     }
 
     static void SyncHostToDevice(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm) { 
+      std::cout << "Called Sync Host to Device. " << std::endl;
       if(dm.need_sync_device()){
         dm.sync_device();
       }    
@@ -262,18 +272,21 @@ namespace Belos {
     static void Add( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& thisDM, const Kokkos::DualView<IST**,Kokkos::LayoutLeft>& sourceDM) {
       KokkosBlas::axpy(1.0,sourceDM.d_view, thisDM.d_view); //axpy(alpha,x,y), y = y + alpha*x
       thisDM.modify_device();
+        std::cout << "Modified on device." << std::endl;
     }
 
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
     static void PutScalar( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()){ 
       Kokkos::deep_copy( dm.d_view, value);
       dm.modify_device();
+        std::cout << "Modified on device." << std::endl;
     }
 
     //!  \brief Multiply all entries by a scalar. DM = value.*DM
     static void Scale( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, Scalar value) { 
       KokkosBlas::scal( dm.d_view, value, dm.d_view);
       dm.modify_device();
+        std::cout << "Modified on device." << std::endl;
     }
 
     //!  \brief Fill the Kokkos::DualView with random entries.
@@ -283,6 +296,7 @@ namespace Belos {
       Kokkos::Random_XorShift64_Pool<> pool(rand_seed); 
       Kokkos::fill_random(dm.d_view, pool, -1,1);
       dm.modify_device();
+        std::cout << "Modified on device." << std::endl;
     }
 
     //!  \brief Copies entries of source to dest (deep copy). 
@@ -310,7 +324,7 @@ namespace Belos {
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormOne( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm) {  
       using KAT = Kokkos::ArithTraits<IST>;
       IST sum = 0, max_sum = 0; 
-      SyncDeviceToHost(); //TODO Kokkos-ify this
+      SyncDeviceToHost(dm); //TODO Kokkos-ify this
       //Kokkos::parallel_for(dm.extent_int(1), 
           //KOKKOS_LAMBDA(
       for(int j = 0; j < dm.extent_int(1); j++){ //cols
