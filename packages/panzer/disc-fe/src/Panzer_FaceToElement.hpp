@@ -87,7 +87,7 @@ public:
                 const Teuchos::RCP<const Teuchos::Comm<int>> comm);
 
 #ifndef PANZER_HIDE_DEPRECATED_CODE
-  /** Build the mapping from a mesh topology using MPI_COMM_WORLD.
+  /** Build the mapping from a mesh topology using panzer::get_global_comm().
     * This method is deprecated in favor of initialize(conn, comm) which
     * explicitly specifies the communicator.  This method is left here
     * for backward compatibility.

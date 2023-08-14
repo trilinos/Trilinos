@@ -55,6 +55,7 @@
 #include "Panzer_EdgeFieldPattern.hpp"
 #include "Panzer_FaceFieldPattern.hpp"
 #include "Panzer_ElemFieldPattern.hpp"
+#include "Panzer_GlobalComm.hpp"
 
 #include <vector>
 #include <set>
@@ -100,7 +101,7 @@ void
 FaceToElement<LocalOrdinal,GlobalOrdinal>::
 initialize(panzer::ConnManager & conn)
 {
-  Teuchos::RCP<const Teuchos::Comm<int>> comm_world(new Teuchos::MpiComm< int>(MPI_COMM_WORLD));
+  Teuchos::RCP<const Teuchos::Comm<int>> comm_world(new Teuchos::MpiComm< int>(panzer::get_global_comm()));
   initialize(conn, comm_world);
 }
 #endif
