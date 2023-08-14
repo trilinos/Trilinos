@@ -779,34 +779,36 @@ namespace Zoltan2 {
         std::cout << "No of comp. vecs. :    " << numev << std::endl;
       }
 
-      // Compute residuals
-      std::vector<double> normR(numev);
-      mvector_t Aevec (map, numev);
+      // Compute residuals (LOBPCG does this internally)
+      if(solverType_ == "randomized") {
+        std::vector<double> normR(numev);
+        mvector_t Aevec (map, numev);
 
-      if (numev > 0) { 
-        Teuchos::SerialDenseMatrix<int,double> T (numev, numev);
-        T.putScalar(0.0);
-        for (int i = 0; i < numev; ++i) T(i,i) = eigenValues_[i].realpart;
-        laplacian_->apply(*eigenVectors_, Aevec);
-        MVT::MvTimesMatAddMv(-1.0, *eigenVectors_, T, 1.0, Aevec);
-        MVT::MvNorm(Aevec, normR);
-      } // End residual computation
+        if (numev > 0) { 
+          Teuchos::SerialDenseMatrix<int,double> T (numev, numev);
+          T.putScalar(0.0);
+          for (int i = 0; i < numev; ++i) T(i,i) = eigenValues_[i].realpart;
+          laplacian_->apply(*eigenVectors_, Aevec);
+          MVT::MvTimesMatAddMv(-1.0, *eigenVectors_, T, 1.0, Aevec);
+          MVT::MvNorm(Aevec, normR);
+        } // End residual computation
 
-      if(comm_->getRank() == 0 && verbosity_ > 0) {
-        std::cout << std::endl << "Solver manager returned "
-          << (returnCode == Anasazi::Converged ? "converged." : "unconverged.")
-          << std::endl << std::endl
-          << std::setw(16) << "Eigenvalue"
-          << std::setw(18) << "Direct Residual"
-          << std::endl
-          << "------------------------------------------------------" << std::endl;
+        if(comm_->getRank() == 0 && verbosity_ > 0) {
+          std::cout << std::endl << "Solver manager returned "
+            << (returnCode == Anasazi::Converged ? "converged." : "unconverged.")
+            << std::endl << std::endl
+            << std::setw(16) << "Eigenvalue"
+            << std::setw(18) << "Direct Residual"
+            << std::endl
+            << "------------------------------------------------------" << std::endl;
 
-        for (int i = 0; i < numev; ++i) {
-          std::cout << std::setw(16) << 2.0-eigenValues_[i].realpart
-            << std::setw(18) << normR[i] / eigenValues_[i].realpart
-            << std::endl;
+          for (int i = 0; i < numev; ++i) {
+            std::cout << std::setw(16) << 2.0-eigenValues_[i].realpart
+              << std::setw(18) << normR[i] / eigenValues_[i].realpart
+              << std::endl;
+          }
+          std::cout << "------------------------------------------------------" << std::endl;
         }
-        std::cout << "------------------------------------------------------" << std::endl;
       }
 
       return numev;

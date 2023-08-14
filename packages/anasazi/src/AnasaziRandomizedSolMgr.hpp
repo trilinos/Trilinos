@@ -78,7 +78,7 @@
 
   \ingroup anasazi_solver_framework
 
-  \author Jennifer A. Loe, Erik G. Boman
+  \author Jennifer A. Loe, Erik G. Boman, Heather M. Switzer
   */
 
 namespace Anasazi {
@@ -105,13 +105,12 @@ namespace Anasazi {
            *
            * This constructor accepts the Eigenproblem to be solved in addition
            * to a parameter list of options for the solver manager. These options include the following:
-           *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: SR
-           *  NOTE: LM, SM, LR options are not yet implemented. 
+           *   - "Which" - a \c string specifying the desired eigenvalues: LM or LR. This method does not support finding the smallest eigenvalues. Default: LM
            *   - "Block Size" - an \c int specifying the block size to be used by the underlying LOBPCG solver. Default: problem->getNEV()
            *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the underlying solver is allowed to perform. For the randomized solver, this corresponds to the number of times we multiply A by the initial vectors. Default: 5
            *   - "Orthogonalization" - a \c string specifying the desired orthogonalization: DGKS, ICGS, and SVQB. Default: "SVQB"
-           *   - "Orthogonalization Frequency" a \c int specifying how many iterations should pass before the system. Default: 0
-           *   - "Orthogonalization Frequency" a \c int specifying how many iterations should pass before checking the residuals of the system. Default: 0
+           *   - "Orthogonalization Frequency" - a \c int specifying how many iterations should pass before the system. Default: 0
+           *   - "Residual Frequency" - a \c int specifying how many iterations should pass before checking the residuals of the system. Default: 0
            *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
            *   - "Output Stream" - a reference-counted pointer to the formatted output stream where all
            *                      solver output is sent.  Default: Teuchos::getFancyOStream ( Teuchos::rcpFromRef (std::cout) )
@@ -205,7 +204,7 @@ namespace Anasazi {
           whch_ = pl.get("Which",whch_);
           TEUCHOS_TEST_FOR_EXCEPTION(whch_ != "LM" && whch_ != "LR",
               AnasaziError,
-              "RandomizedSolMgr: \"Which\" parameter must be LM or LR. Other options not currently implemented."); //TODO Other options??
+              "RandomizedSolMgr: \"Which\" parameter must be LM or LR. Other options not available."); 
 
           tol_ = pl.get("Convergence Tolerance",tol_);
           TEUCHOS_TEST_FOR_EXCEPTION(tol_ <= 0,
@@ -274,12 +273,13 @@ namespace Anasazi {
         std::vector<int> order(blockSize_);     /* Permutation array for sorting the eigenvectors */ 
         SolverUtils<ScalarType,MV,OP> msutils;
 
-        // Output and solution managers
+        // Output manager
         Teuchos::RCP<OutputManager<ScalarType> > printer = Teuchos::rcp( new OutputManager<ScalarType>(verb_,osp_) );
+
+        // Eigensolution manager
         Eigensolution<ScalarType,MV> sol;
         sol.numVecs = 0;
         problem_->setSolution(sol);	/* In case there is an exception thrown */
-        bool converged = false;
 
         // ortho manager 
         Teuchos::RCP<Anasazi::OrthoManager<ScalarType,MV> > orthoMgr;
@@ -350,6 +350,7 @@ namespace Anasazi {
         Teuchos::RCP<MV> Avecs, evecs;
         Teuchos::SerialDenseMatrix<OT,ScalarType> T (blockSize_, blockSize_ );
         std::vector<MT> normV( blockSize_ );
+        bool converged = false;
 
         { // Solve Timer 
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
