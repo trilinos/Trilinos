@@ -44,5 +44,3 @@ documentation of each package.
 We appreciate your willingness to contribute to the Trilinos project.  Please
 familiarize yourself with our [contributing
 guidelines](https://github.com/trilinos/Trilinos/blob/master/CONTRIBUTING.md).
-
-Run ImportExport2 tests in build di: ctest -R TpetraCore_ImportExport2_Unit* -V
