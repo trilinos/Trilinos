@@ -546,40 +546,40 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
   // We now have the indexing order for our sub_info
 
   // Just as a precaution, make sure the parent_info is setup properly
-  TEUCHOS_ASSERT(static_cast<int>(parent_info.cell_vertices.extent(0)) == num_parent_total_cells);
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.cell_nodes.extent(0)) == num_parent_total_cells);
   TEUCHOS_ASSERT(static_cast<int>(parent_info.local_cells.extent(0)) == num_parent_total_cells);
   TEUCHOS_ASSERT(static_cast<int>(parent_info.global_cells.extent(0)) == num_parent_total_cells);
 
-  const int num_vertices_per_cell = parent_info.cell_vertices.extent(1);
-  const int num_dims = parent_info.cell_vertices.extent(2);
+  const int num_nodes_per_cell = parent_info.cell_nodes.extent(1);
+  const int num_dims = parent_info.cell_nodes.extent(2);
 
   // Fill owned, ghstd, and virtual cells: global indexes, local indexes and vertices
   sub_info.global_cells = PHX::View<GO*>("global_cells", num_total_cells);
   sub_info.local_cells = PHX::View<LO*>("local_cells", num_total_cells);
-  sub_info.cell_vertices = PHX::View<double***>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
+  sub_info.cell_nodes = PHX::View<double***>("cell_nodes", num_total_cells, num_nodes_per_cell, num_dims);
   auto global_cells_h =  Kokkos::create_mirror_view(sub_info.global_cells);
   auto local_cells_h =   Kokkos::create_mirror_view(sub_info.local_cells);
-  auto cell_vertices_h = Kokkos::create_mirror_view(sub_info.cell_vertices);
+  auto cell_nodes_h = Kokkos::create_mirror_view(sub_info.cell_nodes);
   auto p_global_cells_h =  Kokkos::create_mirror_view(parent_info.global_cells);
   auto p_local_cells_h =   Kokkos::create_mirror_view(parent_info.local_cells);
-  auto p_cell_vertices_h = Kokkos::create_mirror_view(parent_info.cell_vertices);
+  auto p_cell_nodes_h = Kokkos::create_mirror_view(parent_info.cell_nodes);
   Kokkos::deep_copy(p_global_cells_h,parent_info.global_cells);
   Kokkos::deep_copy(p_local_cells_h,parent_info.local_cells);
-  Kokkos::deep_copy(p_cell_vertices_h,parent_info.cell_vertices);
+  Kokkos::deep_copy(p_cell_nodes_h,parent_info.cell_nodes);
 
   for (int cell=0; cell<num_total_cells; ++cell) {
     const LO parent_cell = all_parent_cells[cell].first;
     global_cells_h(cell) = p_global_cells_h(parent_cell);
     local_cells_h(cell) = p_local_cells_h(parent_cell);
-    for(int vertex=0;vertex<num_vertices_per_cell;++vertex){
+    for(int node=0;node<num_nodes_per_cell;++node){
       for(int dim=0;dim<num_dims;++dim){
-        cell_vertices_h(cell,vertex,dim) = p_cell_vertices_h(parent_cell,vertex,dim);
+        cell_nodes_h(cell,node,dim) = p_cell_nodes_h(parent_cell,node,dim);
       }
     }
   }
   Kokkos::deep_copy(sub_info.global_cells, global_cells_h);
   Kokkos::deep_copy(sub_info.local_cells, local_cells_h);
-  Kokkos::deep_copy(sub_info.cell_vertices, cell_vertices_h);
+  Kokkos::deep_copy(sub_info.cell_nodes, cell_nodes_h);
   // Now for the difficult part
 
   // We need to create a new face indexing scheme from the old face indexing scheme

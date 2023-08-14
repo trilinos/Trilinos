@@ -1153,6 +1153,25 @@ public:
                            const shards::CellTopology parentCell );
 
 
+    /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
+
+        Overload of the previous function (see explanation above) where the subcell parametrization is used instead of 
+        passing the parent cell topology.
+
+        \param  refSubcellPoints       [out] - rank-2 (P,D1) array with images of parameter space points
+        \param  paramPoints            [in]  - rank-2 (P,D2) array with points in 1D or 2D parameter domain
+        \param  subcellParametrization [in]  - parametrization map of a subcell in the cell
+        \param  subcellOrd             [in]  - subcell ordinal.
+    */
+    template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
+             typename paramPointValueType, class ...paramPointProperties>
+    static void
+    mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
+                         const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
+                         const typename RefSubcellParametrization<DeviceType>::ConstViewType              subcellParametrization,
+                         const ordinal_type subcellOrd);
+
+
     //============================================================================================//
     //                                                                                            //
     //                      Physical-to-reference frame mapping and its inverse                   //

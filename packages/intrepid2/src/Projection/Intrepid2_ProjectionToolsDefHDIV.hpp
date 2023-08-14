@@ -246,65 +246,14 @@ template<typename DeviceType>
 template<typename BasisType,
 typename ortValueType,       class ...ortProperties>
 void
-ProjectionTools<DeviceType>::getHDivEvaluationPoints(typename BasisType::ScalarViewType targetEPoints,
-    typename BasisType::ScalarViewType targetDivEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
+ProjectionTools<DeviceType>::getHDivEvaluationPoints(typename BasisType::ScalarViewType ePoints,
+    typename BasisType::ScalarViewType divEPoints,
+    const Kokkos::DynRankView<ortValueType,   ortProperties...>,//  orts,
     const BasisType* cellBasis,
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
     const EvalPointsType evalPointType){
-  auto refTopologyKey = projStruct->getTopologyKey();
-  //const auto cellTopoKey = cellBasis->getBaseCellTopology().getKey();
-  ordinal_type dim = cellBasis->getBaseCellTopology().getDimension();
-  ordinal_type sideDim = dim-1;
-
-  ordinal_type numSides = cellBasis->getBaseCellTopology().getSideCount();
-
-  ordinal_type numCells = orts.extent(0);
-
-  typename RefSubcellParametrization<DeviceType>::ConstViewType subcellParamSide;
-  if(numSides>0)
-    subcellParamSide = RefSubcellParametrization<DeviceType>::get(sideDim, cellBasis->getBaseCellTopology().getKey());
-
-  auto evalPointsRange = projStruct->getPointsRange(evalPointType);
-
-  for(ordinal_type is=0; is<numSides; ++is)  {
-
-    const auto topoKey = refTopologyKey(sideDim,is);
-    auto sideBasisEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(sideDim,is,evalPointType));
-
-    auto sidePointsRange = evalPointsRange(sideDim, is);
-    Kokkos::parallel_for
-      ("Evaluate Points Sides ",
-       Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
-       KOKKOS_LAMBDA (const size_t ic) {
-
-      ordinal_type sOrt[6];
-      if(dim == 3)
-        orts(ic).getFaceOrientation(sOrt, numSides);
-      else
-        orts(ic).getEdgeOrientation(sOrt, numSides);
-      ordinal_type ort = sOrt[is];
-
-      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(targetEPoints,ic,sidePointsRange,Kokkos::ALL()),
-          sideBasisEPoints, subcellParamSide, topoKey, is, ort);
-    });
-  }
-
-  if(cellBasis->getDofCount(dim,0) <= 0)
-    return;
-
-  auto evalDivPointsRange = projStruct->getDerivPointsRange(evalPointType);
-  auto cellDivPointsRange = evalDivPointsRange(dim, 0);
-  auto cellBasisDivEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getDerivEvalPoints(dim,0,evalPointType));
-
-  RealSpaceTools<DeviceType>::clone(Kokkos::subview(targetDivEPoints, Kokkos::ALL(), cellDivPointsRange, Kokkos::ALL()), cellBasisDivEPoints);
-
-  auto cellPointsRange = evalPointsRange(dim, 0);
-  if(projStruct->getTargetEvalPoints(dim, 0).data() != NULL)
-  {
-    auto cellBasisEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(dim,0,evalPointType));
-    RealSpaceTools<DeviceType>::clone(Kokkos::subview(targetEPoints, Kokkos::ALL(), cellPointsRange, Kokkos::ALL()), cellBasisEPoints);
-  }
+      RealSpaceTools<DeviceType>::clone(ePoints, projStruct->getAllEvalPoints(evalPointType));
+      RealSpaceTools<DeviceType>::clone(divEPoints, projStruct->getAllDerivEvalPoints(evalPointType));
 }
 
 
@@ -317,8 +266,23 @@ void
 ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
     const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEPoints,
     const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetDivAtDivEPoints,
-    const typename BasisType::ScalarViewType targetEPoints,
-    const typename BasisType::ScalarViewType targetDivEPoints,
+    const typename BasisType::ScalarViewType, // targetEPoints,
+    const typename BasisType::ScalarViewType,// divEPoints,
+    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
+    const BasisType* cellBasis,
+    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
+      getHDivBasisCoeffs(basisCoeffs, targetAtEPoints, targetDivAtDivEPoints, orts, cellBasis, projStruct);
+}
+
+template<typename DeviceType>
+template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
+typename funValsValueType, class ...funValsProperties,
+typename BasisType,
+typename ortValueType,class ...ortProperties>
+void
+ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
+    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEPoints,
+    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetDivAtDivEPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
@@ -327,8 +291,6 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   const auto cellTopo = cellBasis->getBaseCellTopology();
   ordinal_type dim = cellTopo.getDimension();
-  ordinal_type numTotalEvaluationPoints(targetAtEPoints.extent(1)),
-      numTotalDivEvaluationPoints(targetDivAtDivEPoints.extent(1));
   ordinal_type basisCardinality = cellBasis->getCardinality();
   ordinal_type numCells = targetAtEPoints.extent(0);
   const ordinal_type sideDim = dim-1;
@@ -352,19 +314,20 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), cellBasis->getAllDofOrdinal());
 
   ordinal_type numTotalBasisEPoints = projStruct->getNumBasisEvalPoints(), numTotalBasisDivEPoints = projStruct->getNumBasisDerivEvalPoints();
-  ScalarViewType basisEPoints_("basisEPoints",numCells,numTotalBasisEPoints, dim);
-  ScalarViewType basisDivEPoints("basisDivEPoints",numCells,numTotalBasisDivEPoints, dim);
-  getHDivEvaluationPoints(basisEPoints_, basisDivEPoints, orts, cellBasis, projStruct, EvalPointsType::BASIS);
+  auto basisEPoints = projStruct->getAllEvalPoints(EvalPointsType::BASIS);
+  auto basisDivEPoints = projStruct->getAllDerivEvalPoints(EvalPointsType::BASIS);
+
+  ordinal_type numTotalTargetEPoints = projStruct->getNumTargetEvalPoints(), numTotalTargetDivEPoints = projStruct->getNumTargetDerivEvalPoints();
+  auto targetEPoints = projStruct->getAllEvalPoints(EvalPointsType::TARGET);
+  auto targetDivEPoints = projStruct->getAllDerivEvalPoints(EvalPointsType::TARGET);
 
   ScalarViewType basisAtBasisEPoints("basisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints, dim);
-  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalEvaluationPoints, dim);
+  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints, dim);
   {
-    ScalarViewType nonOrientedBasisAtBasisEPoints("nonOrientedBasisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints, dim);
-    ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",numCells,basisCardinality, numTotalEvaluationPoints, dim);
-    for(ordinal_type ic=0; ic<numCells; ++ic) {
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(targetEPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtBasisEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(basisEPoints_, ic, Kokkos::ALL(), Kokkos::ALL()));
-    }
+    ScalarViewType nonOrientedBasisAtBasisEPoints("nonOrientedBasisAtBasisEPoints",basisCardinality, numTotalBasisEPoints, dim);
+    ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",basisCardinality, numTotalTargetEPoints, dim);
+    cellBasis->getValues(nonOrientedBasisAtTargetEPoints, targetEPoints);
+    cellBasis->getValues(nonOrientedBasisAtBasisEPoints, basisEPoints);
 
     OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtBasisEPoints, nonOrientedBasisAtBasisEPoints, orts, cellBasis);
     OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
@@ -372,17 +335,15 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
 
   ScalarViewType basisDivAtBasisDivEPoints;
   ScalarViewType basisDivAtTargetDivEPoints;
-  if(numTotalDivEvaluationPoints>0) {
+  if(numTotalTargetDivEPoints>0) {
     ScalarViewType nonOrientedBasisDivAtTargetDivEPoints, nonOrientedBasisDivAtBasisDivEPoints;
     basisDivAtBasisDivEPoints = ScalarViewType ("basisDivAtBasisDivEPoints",numCells,basisCardinality, numTotalBasisDivEPoints);
-    nonOrientedBasisDivAtBasisDivEPoints = ScalarViewType ("nonOrientedBasisDivAtBasisDivEPoints",numCells,basisCardinality, numTotalBasisDivEPoints);
-    basisDivAtTargetDivEPoints = ScalarViewType("basisDivAtTargetDivEPoints",numCells,basisCardinality, numTotalDivEvaluationPoints);
-    nonOrientedBasisDivAtTargetDivEPoints = ScalarViewType("nonOrientedBasisDivAtTargetDivEPoints",numCells,basisCardinality, numTotalDivEvaluationPoints);
+    nonOrientedBasisDivAtBasisDivEPoints = ScalarViewType ("nonOrientedBasisDivAtBasisDivEPoints",basisCardinality, numTotalBasisDivEPoints);
+    basisDivAtTargetDivEPoints = ScalarViewType("basisDivAtTargetDivEPoints",numCells,basisCardinality, numTotalTargetDivEPoints);
+    nonOrientedBasisDivAtTargetDivEPoints = ScalarViewType("nonOrientedBasisDivAtTargetDivEPoints",basisCardinality, numTotalTargetDivEPoints);
+    cellBasis->getValues(nonOrientedBasisDivAtBasisDivEPoints, basisDivEPoints, OPERATOR_DIV);
+    cellBasis->getValues(nonOrientedBasisDivAtTargetDivEPoints, targetDivEPoints, OPERATOR_DIV);
 
-    for(ordinal_type ic=0; ic<numCells; ++ic) {
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisDivAtBasisDivEPoints,ic,Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(basisDivEPoints, ic, Kokkos::ALL(), Kokkos::ALL()),OPERATOR_DIV);
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisDivAtTargetDivEPoints,ic,Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(targetDivEPoints, ic, Kokkos::ALL(), Kokkos::ALL()),OPERATOR_DIV);
-    }
     OrientationTools<DeviceType>::modifyBasisByOrientation(basisDivAtBasisDivEPoints, nonOrientedBasisDivAtBasisDivEPoints, orts, cellBasis);
     OrientationTools<DeviceType>::modifyBasisByOrientation(basisDivAtTargetDivEPoints, nonOrientedBasisDivAtTargetDivEPoints, orts, cellBasis);
   }
@@ -470,7 +431,7 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     hcurlBasis = new Basis_HGRAD_TRI_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree());
   else  {
     std::stringstream ss;
-    ss << ">>> ERROR (Intrepid2::ProjectionTools::getHDivEvaluationPoints): "
+    ss << ">>> ERROR (Intrepid2::ProjectionTools::getHDivBasisCoeffs): "
         << "Method not implemented for basis " << name;
     INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
   }
@@ -524,8 +485,6 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
 
     ordinal_type offsetBasis = basisEPointsRange(dim,0).first;
 
-    auto basisEPoints = Kokkos::subview(basisEPoints_, 0, basisEPointsRange(dim,0), Kokkos::ALL());
-
     ScalarViewType negPartialProjAtBasisEPoints("targetSideAtBasisEPoints",numCells, numBasisEPoints, dim);
     ScalarViewType nonWeightedBasisAtBasisEPoints("basisAtBasisEPoints",numCells,numCellDofs, numBasisEPoints, dim);
     ScalarViewType hcurlBasisCurlAtBasisEPoints("hcurlBasisCurlAtBasisEPoints",hcurlBasisCardinality, numBasisEPoints,dim);
@@ -533,8 +492,8 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     ScalarViewType wHcurlBasisCurlAtBasisEPoints("wHcurlBasisHcurlAtBasisEPoints", numCells, numCurlInteriorDOFs, numBasisEPoints,dim);
     ScalarViewType wHcurlBasisCurlAtTargetEPoints("wHcurlBasisHcurlAtTargetEPoints",numCells, numCurlInteriorDOFs, numTargetEPoints,dim);
 
-    hcurlBasis->getValues(hcurlBasisCurlAtBasisEPoints, basisEPoints, OPERATOR_CURL);
-    hcurlBasis->getValues(hcurlBasisCurlAtTargetEPoints, Kokkos::subview(targetEPoints,0,targetEPointsRange(dim,0),Kokkos::ALL()), OPERATOR_CURL);
+    hcurlBasis->getValues(hcurlBasisCurlAtBasisEPoints, Kokkos::subview(basisEPoints, basisEPointsRange(dim,0), Kokkos::ALL()), OPERATOR_CURL);
+    hcurlBasis->getValues(hcurlBasisCurlAtTargetEPoints, Kokkos::subview(targetEPoints,targetEPointsRange(dim,0),Kokkos::ALL()), OPERATOR_CURL);
 
     auto hCurlTagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), hcurlBasis->getAllDofOrdinal());
     auto cellHCurlDof = Kokkos::subview(hCurlTagToOrdinal, dim, 0, range_type(0, numCurlInteriorDOFs));

@@ -282,6 +282,14 @@ public:
   /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY</tt> environment variable.
   static bool timeKokkosDeepCopy();
   
+  /// \brief Adds verbose output to Kokkos deep_copy timers
+  /// This is especially useful for identifying host/device data transfers
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE</tt> environment variable.
+  static bool timeKokkosDeepCopyVerbose();
+
+
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///
   /// This is disabled by default.  You may control this at run time via the
