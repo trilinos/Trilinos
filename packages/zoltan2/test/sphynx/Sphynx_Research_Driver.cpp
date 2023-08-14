@@ -223,7 +223,7 @@ int main(int narg, char *arg[])
     int orthoFreq = 0;
     std::string matrix_file = "";
     std::string vector_file = "";
-    std::string eigensolve = "LOBPCG"; 
+    std::string eigensolve = "randomized"; 
     bool parmetis = false;
     bool pulp = false;
 
