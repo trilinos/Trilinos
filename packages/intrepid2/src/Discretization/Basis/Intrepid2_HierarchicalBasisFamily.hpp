@@ -116,7 +116,7 @@ namespace Intrepid2 {
     using HGRAD = IntegratedLegendreBasis_HGRAD_PYR<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
     using HCURL = void;
     using HDIV  = void;
-    using HVOL  = LegendreBasis_HGRAD_PYR<DeviceType,OutputScalar,PointScalar>;
+    using HVOL  = LegendreBasis_HVOL_PYR<DeviceType,OutputScalar,PointScalar>;
   };
   
   /** \class Intrepid2::HierarchicalBasisFamily
