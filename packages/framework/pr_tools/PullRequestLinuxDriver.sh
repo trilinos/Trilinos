@@ -7,8 +7,9 @@ source ${SCRIPTPATH:?}/common.bash
 # Fetch arguments
 on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
+on_kokkos_develop=$(echo "$@" | grep '\-\-kokkos\-develop' &> /dev/null && echo "1")
+
 bootstrap=$(echo "$@" | grep '\-\-\no\-bootstrap' &> /dev/null && echo "0" || echo "1")
-kokkos_develop=$(echo "$@" | grep '\-\-kokkos\-develop' &> /dev/null && echo "0" || echo "1")
 
 # Configure ccache via environment variables
 function configure_ccache() {
@@ -90,7 +91,7 @@ sig_script_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReque
 # Get the md5 checksum of the Merge script
 sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
 
-if [[ ${kokkos_develop} == "1" ]]; then
+if [[ ${on_kokkos_develop} == "1" ]]; then
     message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop"
     ./$SCRIPTPATH/SetKokkosDevelop.sh
 else
