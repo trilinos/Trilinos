@@ -971,7 +971,7 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   const char prefix[] = "lowCommunicationMakeColMapAndReindexKokkos: ";
 
   typedef typename Node::device_type DT;
-  using execution_space = typename DT::execution_space;
+  using execution_space = typename Node::execution_space;
   execution_space exec;
   using team_policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>;
   typedef typename map_type::local_map_type local_map_type;
@@ -1000,14 +1000,14 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   // FIXME (mfh 11 Feb 2015) Tpetra::Details::HashTable can hold at
   // most INT_MAX entries, but it's possible to have more rows than
   // that (if size_t is 64 bits and int is 32 bits).
-  Kokkos::UnorderedMap<LO, bool, DT> LocalGIDs_view_map(colind_LID.size());
-  Kokkos::UnorderedMap<GO, LO, DT> RemoteGIDs_view_map(colind_LID.size());
+  Kokkos::UnorderedMap<LO, bool, execution_space> LocalGIDs_view_map(colind_LID.size());
+  Kokkos::UnorderedMap<GO, LO, execution_space> RemoteGIDs_view_map(colind_LID.size());
   
   const size_t numMyRows = rowptr.size () - 1;
   local_map_type domainMap_local = domainMap.getLocalMap();
   
   const size_t numDomainElements = domainMap.getLocalNumElements ();
-  Kokkos::View<bool*, DT> LocalGIDs_view("LocalGIDs", numDomainElements);
+  Kokkos::View<bool*, execution_space> LocalGIDs_view("LocalGIDs", numDomainElements);
   auto LocalGIDs_host = Kokkos::create_mirror_view(LocalGIDs_view);
   
   size_t NumLocalColGIDs = 0;
@@ -1047,10 +1047,10 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   
   LO NumRemoteColGIDs = RemoteGIDs_view_map.size();
   
-  Kokkos::View<int*, DT> PIDList_view("PIDList", NumRemoteColGIDs);
+  Kokkos::View<int*, execution_space> PIDList_view("PIDList", NumRemoteColGIDs);
   auto PIDList_host = Kokkos::create_mirror_view(PIDList_view);
   
-  Kokkos::View<int*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
+  Kokkos::View<int*, execution_space> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
   auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
 
   // For each index in RemoteGIDs_map that contains a GID, use "update" to indicate the number of GIDs "before" this GID
@@ -1094,7 +1094,7 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   // Now build the array containing column GIDs
   // Build back end, containing remote GIDs, first
   const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
-  Kokkos::View<GO*, DT> ColIndices_view("ColIndices", numMyCols);
+  Kokkos::View<GO*, execution_space> ColIndices_view("ColIndices", numMyCols);
   auto ColIndices_host = Kokkos::create_mirror_view(ColIndices_view);
   
   // We don't need to load the backend of ColIndices or sort if there are no remote GIDs
