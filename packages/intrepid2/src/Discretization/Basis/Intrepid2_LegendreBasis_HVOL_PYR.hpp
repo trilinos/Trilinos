@@ -123,9 +123,9 @@ namespace Intrepid2
       numFields_ = output.extent_int(0);
       numPoints_ = output.extent_int(1);
       const auto & p = polyOrder;
-      const auto p3  = p * p * p;
+      const auto p_plus_one_cubed = (p+1) * (p+1) * (p+1);
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
-      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != p3 + 3 * p + 1, std::invalid_argument, "output field size does not match basis cardinality");
+      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != p_plus_one_cubed, std::invalid_argument, "output field size does not match basis cardinality");
     }
     
     KOKKOS_INLINE_FUNCTION
@@ -320,7 +320,7 @@ namespace Intrepid2
     pointType_(pointType)
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
-      this->basisCardinality_  = polyOrder * polyOrder * polyOrder + 3 * polyOrder + 1;
+      this->basisCardinality_  = (polyOrder + 1) * (polyOrder + 1) * (polyOrder + 1);
       this->basisDegree_       = polyOrder;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<> >() );
       this->basisType_         = BASIS_FEM_HIERARCHICAL;
