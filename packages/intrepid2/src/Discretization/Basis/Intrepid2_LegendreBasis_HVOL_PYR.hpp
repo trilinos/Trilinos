@@ -334,7 +334,6 @@ namespace Intrepid2
       int fieldOrdinalOffset = 0;
       
       // **** interior functions **** //
-      const int numFunctionsPerVolume = (polyOrder-1)*(polyOrder-1)*(polyOrder-1);
       const int numVolumes = 1; // interior
       for (int volumeOrdinal=0; volumeOrdinal<numVolumes; volumeOrdinal++)
       {
@@ -368,7 +367,7 @@ namespace Intrepid2
         const ordinal_type posDfOrd = 2; // position in the tag, counting from 0, of DoF ordinal relative to the subcell
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-        const int vertexDim = 0, edgeDim = 1, faceDim = 2, volumeDim = 3;
+        const ordinal_type volumeDim = 3;
 
         for (ordinal_type i=0;i<cardinality;++i) {
           tagView(i*tagSize+0) = volumeDim;   // volume dimension
