@@ -142,14 +142,6 @@ void gemm(const execution_space& space, const char transA[],
       Kokkos::SpaceAccessibility<execution_space,
                                  typename CViewType::memory_space>::accessible,
       "KokkosBlas::gemm: CViewType must be accessible from execution_space");
-  static_assert(
-      Kokkos::SpaceAccessibility<typename CViewType::memory_space,
-                                 typename AViewType::memory_space>::assignable,
-      "KokkosBlas::gemm: CViewType must be assignable by AViewType");
-  static_assert(
-      Kokkos::SpaceAccessibility<typename CViewType::memory_space,
-                                 typename BViewType::memory_space>::assignable,
-      "KokkosBlas::gemm: CViewType must be assignable by BViewType");
 
   // Check validity of transpose argument
   bool valid_transA = (transA[0] == 'N') || (transA[0] == 'n') ||
