@@ -117,7 +117,7 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   auto localPartsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), localParts);
 
   auto parts = solution.getPartListView();
-  for(LO i = 0; i < numLclRows; i++){
+  for(size_t i = 0; i < numLclRows; i++){
     GO gi = rowMap->getGlobalElement(i);
     localPartsHost(gi) = parts[i];
   }
@@ -168,7 +168,7 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
     gpartw[i] = 0; gpartc[i] = 0;
   }
 
-  for(LO i = 0; i < numLclRows; i++){
+  for(size_t i = 0; i < numLclRows; i++){
     partw[parts[i]] += rowPtr_h(i+1) - rowPtr_h(i) - 1;
     partc[parts[i]] ++;
   }
@@ -212,7 +212,6 @@ int main(int narg, char *arg[])
     const Teuchos::RCP<const Teuchos::Comm<int>> pComm= Tpetra::getDefaultComm();
 
     int me = pComm->getRank();
-    int np = pComm->getSize();
 
     // Parameters
     int nparts = 64;     
@@ -304,13 +303,10 @@ int main(int narg, char *arg[])
     using node_type = Tpetra::Details::DefaultTypes::node_type;
 
     using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;  
-    using map_type = Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
-    using mv_type = Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
     using adapter_type = Zoltan2::XpetraCrsGraphAdapter<typename crs_matrix_type::crs_graph_type>;
     using solution_type = Zoltan2::PartitioningSolution<adapter_type>;  
-    using ST = double;
-    using MultiVector  = Tpetra::MultiVector<ST>;
-    typedef Belos::MultiVecTraits<ST,MultiVector>    MVT;
+    //using ST = double;
+    //using MultiVector  = Tpetra::MultiVector<ST>;
 
     // Read the input matrix
     Teuchos::RCP<adapter_type> adapter;
@@ -346,6 +342,7 @@ int main(int narg, char *arg[])
       } 
       int ierr = buildCrsMatrix<local_ordinal_type, global_ordinal_type, scalar_type>
         (meshdim, meshdim, meshdim, "Brick3D", pComm, tmatrix);
+      if (ierr != 0) std::cout << "Error! Brick3D failed to build!" << std::endl;
     }
     if(me == 0 && verbosity > 0) std::cout << "Done with reading/creating the matrix." << std::endl;
     Teuchos::RCP<const Tpetra::Map<> > map = tmatrix->getMap();

@@ -159,18 +159,20 @@ namespace Anasazi {
           Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
           Teuchos::RCP<Teuchos::FancyOStream> osp_;
           std::string whch_;
-          std::string ortho_;
           MT tol_;
           int osProc_;
           int verb_;
+          Teuchos::RCP<Teuchos::Time> timerOrtho_;
+          Teuchos::RCP<Teuchos::Time> timerSolve_;
+          Teuchos::RCP<Teuchos::Time> timerOp_;
+          std::string ortho_;
           int orthoFreq_;
           int resFreq_;
           int blockSize_;
           int maxIters_;
           int numIters_;
-          int numFailed_;
           bool trackResNorms_;
-          Teuchos::RCP<Teuchos::Time> timerOp_, timerOrtho_, timerSolve_;
+          int numFailed_;
       };
 
 
@@ -185,9 +187,9 @@ namespace Anasazi {
         osProc_(0),
         verb_(Anasazi::Errors),
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-        timerOp_(Teuchos::TimeMonitor::getNewTimer("Anasazi: Randomized::Operation Op*x")),
         timerOrtho_(Teuchos::TimeMonitor::getNewTimer("Anasazi: Randomized::Orthogonalization")),
         timerSolve_(Teuchos::TimeMonitor::getNewTimer("Anasazi: Randomized::solve()")),
+        timerOp_(Teuchos::TimeMonitor::getNewTimer("Anasazi: Randomized::Operation Op*x")),
 #endif
         ortho_("SVQB"),
         orthoFreq_(0),

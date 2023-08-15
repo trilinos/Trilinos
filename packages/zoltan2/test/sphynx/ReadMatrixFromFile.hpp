@@ -332,7 +332,6 @@ readBinaryFile(std::string filename, const Teuchos::RCP<const Teuchos::Comm<int>
     std::cout << "-- Done with fill complete." << std::endl;
   }
   
-
   if(myRank == rootRank) {
     delete [] rowPtr;
     delete [] colInd;
