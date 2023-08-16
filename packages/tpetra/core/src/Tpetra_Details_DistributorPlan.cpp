@@ -93,9 +93,11 @@ DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
   }
 }
 
-// TODO null out the mpi advance communicator
 DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
   : comm_(comm),
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+    mpixComm_(Teuchos::null),
+#endif
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
     sendType_(DISTRIBUTOR_SEND),
@@ -106,9 +108,11 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
     totalReceiveLength_(0)
 { }
 
-// TODO: add mpi advance comm
 DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
   : comm_(otherPlan.comm_),
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+    mpixComm_(otherPlan.mpixComm_),
+#endif
     howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
     reversePlan_(otherPlan.reversePlan_),
     sendType_(otherPlan.sendType_),
@@ -126,6 +130,13 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     startsFrom_(otherPlan.startsFrom_),
     indicesFrom_(otherPlan.indicesFrom_)
 { }
+
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+DistributorPlan::~DistributorPlan() {
+  int err = MPIX_Comm_free(*(mpixComm_.get()));
+  TEUCHOS_ASSERT(err == 0);
+}
+#endif
 
 size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
   using Teuchos::outArg;
@@ -403,9 +414,9 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // Invert map to see what msgs are received and what length
   computeReceives();
 
-  #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
   initializeMpiAvance();
-  #endif
+#endif
 
   // createFromRecvs() calls createFromSends(), but will set
   // howInitialized_ again after calling createFromSends().
@@ -420,9 +431,9 @@ void DistributorPlan::createFromRecvs(const Teuchos::ArrayView<const int>& remot
 
   *this = *getReversePlan();
 
-  #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
   initializeMpiAvance();
-  #endif
+#endif
 
   howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
 }
@@ -436,10 +447,6 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   // it will generate a wrong answer, because those lists have a unique entry
   // for each processor id. A version of this with lengthsTo and lengthsFrom
   // should be made.
-
-  #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
-  initializeMpiAvance();
-  #endif
 
   howInitialized_ = Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS;
 
@@ -614,6 +621,10 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   totalReceiveLength_ = remoteProcIDs.size();
   indicesFrom_.clear ();
   numReceives_-=sendMessageToSelf_;
+  
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+  initializeMpiAvance();
+#endif
 }
 
 Teuchos::RCP<DistributorPlan> DistributorPlan::getReversePlan() const {
@@ -661,10 +672,10 @@ void DistributorPlan::createReversePlan() const
   reversePlan_->startsFrom_ = startsTo_;
   reversePlan_->indicesFrom_ = indicesTo_;
 
-  #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
   // is there a smarter way to do this
   reversePlan_->initializeMpiAvance();
-  #endif
+#endif
 }
 
 void DistributorPlan::computeReceives()
@@ -961,12 +972,27 @@ DistributorPlan::getValidParameters() const
 #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
 void DistributorPlan::initializeMpiAvance() {
 
-  // TODO
   // assert the mpix communicator is null. if this is not the case we will figure out why
+  TEUCHOS_ASSERT(mpixComm_.is_null());
 
-  // TODO
   // use the members to initialize the graph for neightborhood mode, or just the MPIX communicator for non-neighborhood mode
+  Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm_);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
+  int err;
+  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
+    err = MPIX_Comm_init(mpixComm_.get(), (*rawComm)());
+  }
+  else if (sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
+    int numRecvs = (int)(numReceives_ + (sendMessageToSelf_ ? 1 : 0));
+    int *sourceRanks = procsFrom_.data();
+    int *sourceWeights = static_cast<int*>(lengthsFrom_.data()); // assume lengths good for weights
+    int numSends = (int)(numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0));
+    int *destRanks = procIdsToSendTo_.data();
+    int *destWeights = static_cast<int*>(lengthsTo_.data()); // assume lengths good for weights
+    err = MPIX_Dist_graph_create_adjacent((*rawComm)(), numRecvs, sourceRanks, sourceWeights, numSends, destRanks, destWeights, MPI_INFO_NULL, false, mpixComm_.get());
+  }
 
+  TEUCHOS_ASSERT(err == 0);
 }
 #endif
 

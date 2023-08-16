@@ -124,6 +124,10 @@ public:
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
   DistributorPlan(const DistributorPlan& otherPlan);
 
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)  
+  ~DistributorPlan();
+#endif
+
   size_t createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs);
   void createFromRecvs(const Teuchos::ArrayView<const int>& remoteProcIDs);
   void createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
@@ -150,7 +154,6 @@ public:
 
 private:
 
-  // TODO
   // after the plan has been created we have the info we need to initialize the MPI advance communicator
 #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
   void initializeMpiAdvance();
@@ -174,7 +177,7 @@ private:
 
   Teuchos::RCP<const Teuchos::Comm<int>> comm_;
 #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
-  Teuchos::RCP<const MPIX_Comm> mpixComm_;
+  Teuchos::RCP<MPIX_Comm*> mpixComm_;
 #endif
 
   Details::EDistributorHowInitialized howInitialized_;
