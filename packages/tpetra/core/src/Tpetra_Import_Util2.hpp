@@ -993,13 +993,6 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   // (common) special case to return the columnMap = domainMap.
   const map_type& domainMap = *domainMapRCP;
 
-  // int myPID = domainMap.getComm()->getRank ();
-
-
-  // We use two hash tables, one for local GIDs and one for remote GIDs
-  // FIXME (mfh 11 Feb 2015) Tpetra::Details::HashTable can hold at
-  // most INT_MAX entries, but it's possible to have more rows than
-  // that (if size_t is 64 bits and int is 32 bits).
   Kokkos::UnorderedMap<LO, bool, DT> LocalGIDs_view_map(colind_LID.size());
   Kokkos::UnorderedMap<GO, LO, DT> RemoteGIDs_view_map(colind_LID.size());
   
@@ -1231,6 +1224,9 @@ void lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t
                                       Teuchos::Array<int> &remotePIDs,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap)
 {
+  // Running lowCommMakeColMap with Kokkos is slower on host, but faster on device
+  // If Kokkos runs on host, select the serial, non-Kokkos version of lowCommMakeColMap, 
+  // but if Kokkos runs on device (CUDA / HIP), select the Kokkos version of lowCommMakeColMap
   typedef typename Node::device_type DT;
   static constexpr bool runOnHost = !std::is_same_v<typename DT::execution_space, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace, 
     Kokkos::DefaultHostExecutionSpace>;
