@@ -293,15 +293,10 @@ namespace Belos {
     // Residual and temporary multivecs
     Teuchos::RCP<MV> R_, AxR_, Pr_;
     //
-    // Residual Norm and Reference Norm
-    std::vector<MagnitudeType> norm_B_, norm_R_;
-    //
     std::vector<ScalarType> pone_;
     std::vector<int> curIndex_, newIndex_;
     //
     std::vector<Teuchos::RCP<MV> > U_, C_;
-    //
-    int myrank_;
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -375,8 +370,6 @@ namespace Belos {
       pone_.resize(numRHS_);
       curIndex_.resize(numRHS_);
       newIndex_.resize(numRHS_);
-      norm_B_.resize(numRHS_);
-      norm_R_.resize(numRHS_);
     }
     U_.resize(numRHS_);
     C_.resize(numRHS_);
@@ -445,12 +438,6 @@ namespace Belos {
 
     // R = Pr - R;
     axpy(one, *Pr_, pone_, *R_, *R_, true);
-	
-    // norm_B_ = MvNorm(Pr_)
-    MVT::MvNorm(*Pr_, norm_B_);
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank_);
-    printf("   norm(Pr*B): %.16lf on rank %d\n", norm_B_[0], myrank_);
 
     // The solver is initialized
     initialized_ = true;
@@ -557,13 +544,6 @@ namespace Belos {
         // R(:,i) = R(:,i) - val*C[i](:,curIndex_[i]);
         axpy(one, *R_sub, val, *C_sub, *R_sub, true);
       } // end for(int i=0; i<numRHS_; i++)
-
-      // check converge myself
-      // norm_R_=MvNorm(R_);
-      MVT::MvNorm(*R_, norm_R_);
-      if (myrank_ == 0) {
-        printf("   Iter %d, relative residual %.16lf\n", iter_-1, norm_R_[0]/norm_B_[0]);
-      }
 
     } // end while (sTest_->checkStatus(this) != Passed)
   }

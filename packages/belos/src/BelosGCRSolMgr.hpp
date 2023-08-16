@@ -272,7 +272,7 @@ namespace Belos {
     static constexpr int outputStyle_default_ = Belos::General;
     static constexpr int outputFreq_default_ = -1;
     static constexpr int defQuorum_default_ = 1;
-    static constexpr const char * resScale_default_ = "Norm of Initial Residual";
+    static constexpr const char * resScale_default_ = "Norm of Preconditioned Initial Residual";
     static constexpr const char * label_default_ = "Belos";
 
     // Current solver values.
