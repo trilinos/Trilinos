@@ -286,10 +286,11 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
      // Operators for RefMaxwell coarse grid solve
      // ("A" and "D0" are already set above.)
      Teuchos::ParameterList& lvlList = muelulist.sublist("level " + std::to_string(maxLevels-1) + " user data");
-     lvlList.set("M1",M1);
-     lvlList.set("Ms",Ms);
+     lvlList.set("Dk_1",discreteGradients.back());
+     lvlList.set("Mk_one",M1);
+     lvlList.set("M1_beta",Ms);
      lvlList.set("Coordinates", S_E_prec_pl.get<RCP<TpMV> >("Coordinates"));
-     lvlList.set("M0inv",M0inv);
+     lvlList.set("invMk_1_invBeta",M0inv);
 
      Teko::InverseLibrary myInvLib = invLib;
 
