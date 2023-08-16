@@ -1028,7 +1028,7 @@ namespace Intrepid2
       }
       else if (subCellDim == 2)
       {
-        if (subCellOrd == 0) // quad basis
+        if (subCellOrd == 4) // quad basis
         {
           return Teuchos::rcp(new HGRAD_QUAD(p));
         }
