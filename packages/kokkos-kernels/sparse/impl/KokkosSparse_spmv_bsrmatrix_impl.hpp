@@ -39,9 +39,10 @@ struct BsrMatrixSpMVTensorCoreFunctorParams {
 
 template <typename T>
 struct is_scalar {
-  const static bool value = std::is_same_v<T, double> ||
-                            std::is_same_v<T, float> ||
-                            std::is_same_v<T, Kokkos::Experimental::half_t>;
+  const static bool value =
+      std::is_same_v<std::remove_cv_t<T>, double> ||
+      std::is_same_v<std::remove_cv_t<T>, float> ||
+      std::is_same_v<std::remove_cv_t<T>, Kokkos::Experimental::half_t>;
 };
 
 /* True if types are all scalar. This excludes complex types and Sacado Vectors
@@ -482,9 +483,19 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   // to be used to avoid instantiating on unsupported types
   static void tag_dispatch(std::false_type, YScalar, AMatrix, XMatrix, YScalar,
                            YMatrix) {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "Tensor core SpMV is only supported for scalar types in GPU "
-        "execution spaces");
+    const std::type_info &tia = typeid(AScalar);
+    const std::type_info &tix = typeid(XScalar);
+    const std::type_info &tiy = typeid(YScalar);
+
+    std::stringstream ss;
+
+    ss << "Tensor core SpMV is only supported for scalar types in GPU "
+          "execution spaces.";
+    ss << " AScalar was " << tia.name() << ".";
+    ss << " XScalar was " << tix.name() << ".";
+    ss << " YScalar was " << tiy.name() << ".";
+
+    KokkosKernels::Impl::throw_runtime_exception(ss.str());
   }
 
   /*true if T1::execution_space, T2, or T3 are all GPU exec space*/
