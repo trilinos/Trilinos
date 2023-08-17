@@ -291,7 +291,7 @@ namespace Belos {
     // State Storage
     //
     // Residual and temporary multivecs
-    Teuchos::RCP<MV> R_, AxR_, Pr_;
+    Teuchos::RCP<MV> R_, AxR_/*, Pr_*/;
     //
     std::vector<ScalarType> pone_;
     std::vector<int> curIndex_, newIndex_;
@@ -358,14 +358,11 @@ namespace Belos {
     if (Teuchos::is_null(R_) || MVT::GetNumberVecs(*R_)!=numRHS_) {
       R_   = MVT::Clone( *tmp, numRHS_ );
       AxR_ = MVT::Clone( *tmp, numRHS_ );
-      Pr_  = MVT::Clone( *tmp, numRHS_ );
-      //R_   = Teuchos::rcp( new MV<ScalarType>(MVT::GetGlobalLength(*tmp), numRHS_, true) );
-      //AxR_ = Teuchos::rcp( new MV(MVT::GetGlobalLength(*tmp), numRHS_, true) );
-      //Pr_  = Teuchos::rcp( new MV(MVT::GetGlobalLength(*tmp), numRHS_, true) );
+      //Pr_  = MVT::Clone( *tmp, numRHS_ );
 
       MVT::MvInit(*R_);
       MVT::MvInit(*AxR_);
-      MVT::MvInit(*Pr_);
+      //MVT::MvInit(*Pr_);
 
       pone_.resize(numRHS_);
       curIndex_.resize(numRHS_);
@@ -428,16 +425,18 @@ namespace Belos {
     newIndex_.assign(numRHS_,zero);
 
     // Pr(:,:) = Prec*RHS(:,:)
-    Teuchos::RCP<const MV> RHS_ = lp_->getCurrRHSVec();
-    if(lp_->isLeftPrec()) {
-      lp_->applyLeftPrec(*RHS_,*Pr_);
-    }
-    else if(lp_->isRightPrec()) {
-      lp_->applyRightPrec(*RHS_,*Pr_);
-    }
+    //Teuchos::RCP<const MV> RHS_ = lp_->getCurrRHSVec();
+    //if(lp_->isLeftPrec()) {
+    //  lp_->applyLeftPrec(*RHS_,*Pr_);
+    //}
+    //else if(lp_->isRightPrec()) {
+    //  lp_->applyRightPrec(*RHS_,*Pr_);
+    //}
+    Teuchos::RCP<const MV> Pr_ = lp_->getInitPrecResVec();
 
     // R = Pr - R;
-    axpy(one, *Pr_, pone_, *R_, *R_, true);
+    //axpy(one, *Pr_, pone_, *R_, *R_, true);
+    MVT::Assign(*Pr_, *R_); // *R_ was already initialized with zeros
 
     // The solver is initialized
     initialized_ = true;
