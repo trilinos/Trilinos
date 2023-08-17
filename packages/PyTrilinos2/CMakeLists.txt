@@ -221,8 +221,9 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 add_custom_command(
   OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/src/PyTrilinos2_Tpetra_ETI.hpp ${CMAKE_CURRENT_BINARY_DIR}/python/getTpetraTypeName.py
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_ETI.py ${CMAKE_CURRENT_BINARY_DIR} ${all_ETI_files_list} ${all_ETI_classes_list} "src/PyTrilinos2_Tpetra_ETI.hpp"
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/include_tmp
 )
-add_custom_target(generate_ETI_name DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/src/PyTrilinos2_Tpetra_ETI.hpp)
+add_custom_target(generate_ETI_name DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/src/PyTrilinos2_Tpetra_ETI.hpp ${CMAKE_CURRENT_BINARY_DIR}/include_tmp)
 
 file (GLOB PyTrilinos2PyFiles2 "${CMAKE_CURRENT_BINARY_DIR}/python/*.py")
 list (APPEND PyTrilinos2PyFiles ${PyTrilinos2PyFiles2})
@@ -230,7 +231,7 @@ list (APPEND PyTrilinos2PyFiles ${PyTrilinos2PyFiles2})
 add_custom_command(
   OUTPUT  ${binder_include_name}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
-  DEPENDS generate_ETI_name 
+  DEPENDS generate_ETI_name ${CMAKE_CURRENT_BINARY_DIR}/include_tmp
 )
 add_custom_target(generate_include_name DEPENDS ${binder_include_name})
 add_dependencies(generate_include_name generate_ETI_name)
@@ -332,6 +333,22 @@ EXECUTE_PROCESS(COMMAND
   ERROR_VARIABLE  Mpi4Py_INCLUDE_ERROR
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
+
+IF(NOT Mpi4Py_VERSION_ERROR)
+  MESSAGE("  -- Mpi4Py Enabled.")
+ELSE()
+  MESSAGE(FATAL_ERROR "Mpi4Py_VERSION_ERROR is defined; the python executable cannot access mpi4py.")
+ENDIF()
+
+EXECUTE_PROCESS(COMMAND
+  ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_config()['mpicxx'])"
+  OUTPUT_VARIABLE Mpi4Py_MPICXX
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+IF(NOT ${Mpi4Py_MPICXX} STREQUAL ${CMAKE_CXX_COMPILER})
+  MESSAGE(WARNING "the cpp compiler used to compile mpi4py ${Mpi4Py_MPICXX} is not consistent with CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
+ENDIF()
 
 ADD_SUBDIRECTORY( src )
 
