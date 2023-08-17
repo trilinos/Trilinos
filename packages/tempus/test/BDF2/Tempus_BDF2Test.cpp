@@ -17,11 +17,13 @@
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/CDR_Model.hpp"
+#include "../TestModels/CDR_Model_Tpetra.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Tpetra_Core.hpp"
 
 #ifdef Tempus_ENABLE_MPI
 #include "Epetra_MpiComm.h"
@@ -474,46 +476,34 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
 }
 
 
-// ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(BDF2, CDR)
-{
-  // Create a communicator for Epetra objects
-  RCP<Epetra_Comm> comm;
-#ifdef Tempus_ENABLE_MPI
-  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  comm = rcp(new Epetra_SerialComm);
-#endif
-
+template <typename SC, typename Model, typename Comm>
+void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream &out, bool& success){
   RCP<Tempus::IntegratorBasic<double> > integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
   std::vector<double> StepSize;
 
   // Read params from .xml file
-  RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_BDF2_CDR.xml");
+  auto pList = getParametersFromXmlFile("Tempus_BDF2_CDR.xml");
   //Set initial time step = 2*dt specified in input file (for convergence study)
   //
-  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-  double dt = pl->sublist("Demo Integrator")
-       .sublist("Time Step Control").get<double>("Initial Time Step");
+  auto pl = sublist(pList, "Tempus", true);
+  auto dt = pl->sublist("Demo Integrator").sublist("Time Step Control").get<double>("Initial Time Step");
   dt *= 2.0;
-  RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
+  auto model_pl = sublist(pList, "CDR Model", true);
 
-  const int nTimeStepSizes = model_pl->get<int>("Number of Time Step Sizes", 5);
+  const auto nTimeStepSizes = model_pl->get<int>("Number of Time Step Sizes", 5);
 
   for (int n=0; n<nTimeStepSizes; n++) {
 
     // Create CDR Model
     const int num_elements = model_pl->get<int>("num elements");
-    const double left_end = model_pl->get<double>("left end");
-    const double right_end = model_pl->get<double>("right end");
-    const double a_convection = model_pl->get<double>("a (convection)");
-    const double k_source = model_pl->get<double>("k (source)");
+    const auto left_end = model_pl->get<SC>("left end");
+    const auto right_end = model_pl->get<SC>("right end");
+    const auto a_convection = model_pl->get<SC>("a (convection)");
+    const auto k_source = model_pl->get<SC>("k (source)");
 
-    auto model = rcp(new Tempus_Test::CDR_Model<double>(comm,
+    auto model = rcp(new Model(comm,
                                                         num_elements,
                                                         left_end,
                                                         right_end,
@@ -528,8 +518,7 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
     p->set("Preconditioner Type", "None");
     builder.setParameterList(p);
 
-    RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
-      lowsFactory = builder.createLinearSolveStrategy("");
+    auto lowsFactory = builder.createLinearSolveStrategy("");
 
     model->set_W_factory(lowsFactory);
 
@@ -563,23 +552,23 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
-    if ((n == nTimeStepSizes-1) && (comm->NumProc() == 1)) {
+    if ((n == nTimeStepSizes-1) && (commSize == 1)) {
       std::ofstream ftmp("Tempus_BDF2_CDR.dat");
       ftmp << "TITLE=\"BDF2 Solution to CDR\"\n"
            << "VARIABLES=\"z\",\"T\"\n";
-      const double dx = std::fabs(left_end-right_end) /
+      const auto dx = std::fabs(left_end-right_end) /
                         static_cast<double>(num_elements);
-      RCP<const SolutionHistory<double> > solutionHistory =
+      auto solutionHistory =
         integrator->getSolutionHistory();
       int nStates = solutionHistory->getNumStates();
       for (int i=0; i<nStates; i++) {
-        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        RCP<const Thyra::VectorBase<double> > x = solutionState->getX();
-        double ttime = solutionState->getTime();
+        auto solutionState = (*solutionHistory)[i];
+        auto x = solutionState->getX();
+        auto ttime = solutionState->getTime();
         ftmp << "ZONE T=\"Time="<<ttime<<"\", I="
              <<num_elements+1<<", F=BLOCK\n";
         for (int j = 0; j < num_elements+1; j++) {
-          const double x_coord = left_end + static_cast<double>(j) * dx;
+          const auto x_coord = left_end + static_cast<double>(j) * dx;
           ftmp << x_coord << "   ";
         }
         ftmp << std::endl;
@@ -596,8 +585,8 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
     double xDotSlope = 0.0;
     std::vector<double> xErrorNorm;
     std::vector<double> xDotErrorNorm;
-    RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
-    double order = stepper->getOrder();
+    auto stepper = integrator->getStepper();
+    auto order = stepper->getOrder();
     writeOrderError("Tempus_BDF2_CDR-Error.dat",
                     stepper, StepSize,
                     solutions,    xErrorNorm,    xSlope,
@@ -613,27 +602,56 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
 
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
-  if (comm->NumProc() == 1) {
-    RCP<ParameterList> pListCDR =
-      getParametersFromXmlFile("Tempus_BDF2_CDR.xml");
-    RCP<ParameterList> model_pl_CDR = sublist(pListCDR, "CDR Model", true);
-    const int num_elements = model_pl_CDR->get<int>("num elements");
-    const double left_end = model_pl_CDR->get<double>("left end");
-    const double right_end = model_pl_CDR->get<double>("right end");
+  if (commSize == 1) {
+    auto pListCDR = getParametersFromXmlFile("Tempus_BDF2_CDR.xml");
+    auto model_pl_CDR = sublist(pListCDR, "CDR Model", true);
+    const auto num_elements = model_pl_CDR->get<int>("num elements");
+    const auto left_end = model_pl_CDR->get<double>("left end");
+    const auto right_end = model_pl_CDR->get<double>("right end");
 
-    const Thyra::VectorBase<double>& x = *(solutions[solutions.size()-1]);
+    const auto& x = *(solutions[solutions.size()-1]);
 
     std::ofstream ftmp("Tempus_BDF2_CDR-Solution.dat");
     for (int n = 0; n < num_elements+1; n++) {
-      const double dx = std::fabs(left_end-right_end) /
+      const auto dx = std::fabs(left_end-right_end) /
                         static_cast<double>(num_elements);
-      const double x_coord = left_end + static_cast<double>(n) * dx;
+      const auto x_coord = left_end + static_cast<double>(n) * dx;
       ftmp << x_coord << "   " <<  Thyra::get_ele(x,n) << std::endl;
     }
     ftmp.close();
   }
 
   Teuchos::TimeMonitor::summarize();
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(BDF2, CDR)
+{
+  // Create a communicator for Epetra objects
+  RCP<Epetra_Comm> comm;
+#ifdef Tempus_ENABLE_MPI
+  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  comm = rcp(new Epetra_SerialComm);
+#endif
+
+  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out, success);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(BDF2, CDR_Tpetra)
+{
+  // Get default Tpetra template types
+  using SC = Tpetra::Vector<>::scalar_type;
+  using LO = Tpetra::Vector<>::local_ordinal_type;
+  using GO = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(comm, comm->getSize(), out, success);
 }
 
 
