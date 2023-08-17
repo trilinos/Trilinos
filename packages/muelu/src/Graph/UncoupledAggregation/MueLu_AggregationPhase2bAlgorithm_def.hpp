@@ -63,7 +63,7 @@ namespace MueLu {
   // Try to stick unaggregated nodes into a neighboring aggregate if they are
   // not already too big
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& /* params */, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
     bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2b");
 
@@ -82,6 +82,18 @@ namespace MueLu {
     std::vector<int> connectWeight(numRows, defaultConnectWeight);
     std::vector<int> aggPenalties (numRows, 0);
 
+
+    FILE * fagg;
+    {
+      static int cms_ct=0;
+      char name[80];    
+      sprintf(name,"aggprint_2b_%d_%d.dat",cms_ct,myRank);
+      fagg = fopen(name,"w");
+      cms_ct++;
+    }
+    
+
+
     // We do this cycle twice.
     // I don't know why, but ML does it too
     // taw: by running the aggregation routine more than once there is a chance that also
@@ -90,8 +102,10 @@ namespace MueLu {
     // should be sufficient.
     for (int k = 0; k < 2; k++) {
       for (LO i = 0; i < numRows; i++) {
-        if (aggStat[i] != READY)
+        if (aggStat[i] != READY) {
+          fprintf(fagg,"%d %d %d %d %d\n",k,i,-2,-2,-2);
           continue;
+        }
 
         ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
 
@@ -128,6 +142,9 @@ namespace MueLu {
           }
         }
 
+        fprintf(fagg,"%d %d %d %d %d\n",k,i,bestScore,bestConnect,bestAggId);
+
+
         if (bestScore >= 0) {
           aggStat     [i] = AGGREGATED;
           vertex2AggId[i] = bestAggId;
@@ -142,6 +159,8 @@ namespace MueLu {
     }
 
     
+   fclose(fagg);//CMS
+
     // CMS
     {
       static int cms_ct=0;
