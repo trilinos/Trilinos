@@ -61,7 +61,10 @@
 
 namespace Intrepid2 {
 
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 namespace Experimental {
+#endif
+
 template<typename DeviceType, typename ValueType>
 template<typename BasisPtrType>
 void ProjectionStruct<DeviceType,ValueType>::createL2ProjectionStruct(const BasisPtrType cellBasis,
@@ -769,9 +772,10 @@ void ProjectionStruct<DeviceType,ValueType>::createHVolProjectionStruct(const Ba
   allBasisDerivEPoints = view_type("allBasisDerivPoints", numBasisDerivEvalPoints, dim);
   allTargetDerivEPoints = view_type("allTargetDerivPoints", numTargetDerivEvalPoints, dim);
 }
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 }
-}
+#endif
+}  // Intrepid2 namespace
 #endif
 
 

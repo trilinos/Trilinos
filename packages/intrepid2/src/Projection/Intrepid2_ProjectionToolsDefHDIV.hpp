@@ -55,8 +55,8 @@
 
 
 namespace Intrepid2 {
-namespace Experimental {
 
+namespace FunctorsProjectionTools {
 
 template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
 struct ComputeBasisCoeffsOnSides_HDiv {
@@ -240,6 +240,10 @@ struct ComputeHCurlBasisCoeffsOnCells_HDiv {
     }
   }
 };
+}  // FunctorsProjectionTools namespace
+
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+namespace Experimental {
 
 
 template<typename DeviceType>
@@ -273,6 +277,8 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
       getHDivBasisCoeffs(basisCoeffs, targetAtEPoints, targetDivAtDivEPoints, orts, cellBasis, projStruct);
 }
+
+#endif
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -376,7 +382,7 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     auto basisEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisEvalWeights(sideDim,is));
 
 
-    typedef ComputeBasisCoeffsOnSides_HDiv<ScalarViewType,  decltype(basisEWeights), decltype(tagToOrdinal), decltype(targetAtEPoints)> functorTypeSide;
+    using functorTypeSide = FunctorsProjectionTools::ComputeBasisCoeffsOnSides_HDiv<ScalarViewType,  decltype(basisEWeights), decltype(tagToOrdinal), decltype(targetAtEPoints)>;
     Kokkos::parallel_for(policy, functorTypeSide(basisNormalAtBasisEPoints, basisAtBasisEPoints,
         basisEWeights,  wBasisNormalAtBasisEPoints, targetEWeights,
         basisAtTargetEPoints, wBasisNormalAtTargetEPoints, tagToOrdinal,
@@ -456,7 +462,7 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   ScalarViewType targetSideDivAtBasisEPoints("targetSideDivAtBasisEPoints",numCells, numBasisDivEPoints);
 
   auto cellDofs = Kokkos::subview(tagToOrdinal, dim, 0, Kokkos::ALL());
-  typedef ComputeBasisCoeffsOnCells_HDiv<decltype(basisCoeffs), ScalarViewType,  decltype(divEWeights), decltype(computedDofs), decltype(cellDofs)> functorType;
+  using functorType = FunctorsProjectionTools::ComputeBasisCoeffsOnCells_HDiv<decltype(basisCoeffs), ScalarViewType,  decltype(divEWeights), decltype(computedDofs), decltype(cellDofs)>;
   Kokkos::parallel_for(policy, functorType( basisCoeffs, targetSideDivAtBasisEPoints,  basisDivAtBasisEPoints,
       basisDivAtBasisDivEPoints, divEWeights,  weightedBasisDivAtBasisEPoints, targetDivEWeights, basisDivAtTargetDivEPoints, weightedBasisDivAtTargetEPoints,
       computedDofs, cellDofs, numCellDofs, offsetBasisDiv, offsetTargetDiv, numSideDofs));
@@ -498,8 +504,8 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     auto hCurlTagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), hcurlBasis->getAllDofOrdinal());
     auto cellHCurlDof = Kokkos::subview(hCurlTagToOrdinal, dim, 0, range_type(0, numCurlInteriorDOFs));
 
-    typedef ComputeHCurlBasisCoeffsOnCells_HDiv<decltype(basisCoeffs), ScalarViewType,  decltype(divEWeights),
-        decltype(tagToOrdinal), decltype(computedDofs), decltype(cellDofs)> functorTypeHCurlCells;
+    using functorTypeHCurlCells = FunctorsProjectionTools::ComputeHCurlBasisCoeffsOnCells_HDiv<decltype(basisCoeffs), ScalarViewType,  decltype(divEWeights),
+        decltype(tagToOrdinal), decltype(computedDofs), decltype(cellDofs)>;
     Kokkos::parallel_for(policy, functorTypeHCurlCells(basisCoeffs, negPartialProjAtBasisEPoints,  nonWeightedBasisAtBasisEPoints,
         basisAtBasisEPoints, hcurlBasisCurlAtBasisEPoints, basisEWeights, wHcurlBasisCurlAtBasisEPoints, targetEWeights,
         hcurlBasisCurlAtTargetEPoints, wHcurlBasisCurlAtTargetEPoints, tagToOrdinal, computedDofs, cellHCurlDof,
@@ -519,10 +525,10 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   cellSystem.solve(basisCoeffs, massMat_, rhsMatTrans, t_, w_, cellDofs, numCellDofs, numCurlInteriorDOFs);
 }
 
-
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 }
-}
+#endif
+}  // Intrepid2 namespace
 
 #endif
 
