@@ -114,7 +114,6 @@ void testBasisVector(Zoltan2::BasicVectorAdapter<userTypes_t> *ia, int *valueStr
     Kokkos::deep_copy(kDeviceCoordsMV, kDeviceCoords);
     for (int v=0; v < mvdim; v++){
         const zscalar_t *coords;
-        int correctStride = valueStrides[v];
         int stride;
 
         ia->getCoordinatesView(coords, stride, v);
