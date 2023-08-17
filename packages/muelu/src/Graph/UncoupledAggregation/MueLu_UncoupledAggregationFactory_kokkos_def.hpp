@@ -344,7 +344,7 @@ namespace MueLu {
         //run d2 graph coloring
         //graph is symmetric so row map/entries and col map/entries are the same
         {
-          SubFactoryMonitor sfm(*this, "Algo \"Graph Coloring\": KokkosGraph Call", currentLevel);//CMS HACK
+          SubFactoryMonitor sfm2(*this, "Algo \"Graph Coloring\": KokkosGraph Call", currentLevel);//CMS HACK
           KokkosGraph::Experimental::graph_color_distance2(&kh, numRows, aRowptrs, aColinds);
         }
 
