@@ -244,6 +244,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: match ML phase2a\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: match ML phase2b\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase2a agg factor\" type=\"double\" value=\"0.5\"/>"
   "<Parameter name=\"aggregation: error on nodes with no on-rank neighbors\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase3 avoid singletons\" type=\"bool\" value=\"false\"/>"
@@ -707,6 +708,8 @@ namespace MueLu {
          ("aggregation: enable phase 3","aggregation: enable phase 3")
       
          ("aggregation: match ML phase2a","aggregation: match ML phase2a")
+      
+         ("aggregation: match ML phase2b","aggregation: match ML phase2b")
       
          ("aggregation: phase2a agg factor","aggregation: phase2a agg factor")
       

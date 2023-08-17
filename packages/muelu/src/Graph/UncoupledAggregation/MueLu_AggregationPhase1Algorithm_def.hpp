@@ -247,7 +247,18 @@ namespace MueLu {
       cms_ct++;
     }
 
-
+    // CMS
+    {
+      static int cms_ct=0;
+      char name[80];
+      sprintf(name,"agg_phase1_aggstat_%d_%d.dat",cms_ct,myRank);
+      FILE* f=fopen(name,"w");
+      fprintf(f,"%% [%d] CMS: after phase 1 = ",myRank);
+      for(int i=0; i<aggStat.size(); i++)
+        fprintf(f,"%d\n",aggStat[i]);
+      fclose(f);
+      cms_ct++;
+    }
 
 
   }

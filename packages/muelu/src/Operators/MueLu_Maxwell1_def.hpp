@@ -117,6 +117,7 @@ namespace MueLu {
 
       newList.sublist("maxwell1: 22list").set("aggregation: min agg size",3);
       newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2a",true);
+      newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2b",true);
 
 
 
