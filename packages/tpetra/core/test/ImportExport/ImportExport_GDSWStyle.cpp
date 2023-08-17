@@ -122,9 +122,7 @@ createLaplace1D (const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, GlobalOr
   typedef LocalOrdinalType LO;
   typedef GlobalOrdinalType GO;
   typedef NodeType NT;
-  typedef Tpetra::global_size_t GST;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef Tpetra::Export<LO, GO, NT> export_type;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> matrix_type;
   typedef typename matrix_type::local_matrix_device_type LMT;
 
@@ -403,7 +401,6 @@ RCP<crs_matrix_type> Filter(const RCP<crs_matrix_type> & A,const RCP<const map_t
   using Teuchos::rcp;
   using indices_type = typename crs_matrix_type::local_inds_host_view_type;
   using values_type = typename crs_matrix_type::values_host_view_type;
-  using GO = typename crs_matrix_type::global_ordinal_type;
   using LO = typename crs_matrix_type::local_ordinal_type;
   LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
