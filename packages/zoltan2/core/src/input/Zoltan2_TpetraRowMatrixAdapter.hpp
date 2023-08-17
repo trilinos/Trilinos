@@ -115,7 +115,6 @@ public:
    */
 
   void setWeights(const scalar_t *weightVal, int stride, int idx = 0);
-  void setWeights(Kokkos::View<scalar_t **, device_t> &weights);
 
   /*! \brief Provide a device view of weights for the primary entity type.
    *    \param val A view to the weights for index \c idx.
@@ -155,7 +154,6 @@ public:
    */
 
   void setRowWeights(const scalar_t *weightVal, int stride, int idx = 0);
-  void setRowWeights(Kokkos::View<scalar_t **, device_t> &weights);
 
   /*! \brief Provide a device view to row weights.
    *    \param val A pointer to the weights for index \c idx.
@@ -233,25 +231,6 @@ public:
       typename Base::ConstOffsetsDeviceView &offsets,
       typename Base::ConstIdsDeviceView &colIds) const override;
 
-  void getCRSHostView(
-      typename BaseAdapter<User>::ConstOffsetsHostView &offsets,
-      typename BaseAdapter<User>::ConstIdsHostView &colIds) const override {
-    auto hostOffsets = Kokkos::create_mirror_view(kOffset_);
-    Kokkos::deep_copy(hostOffsets, kOffset_);
-    offsets = hostOffsets;
-
-    auto hostColIds = Kokkos::create_mirror_view(kColumnIds_);
-    Kokkos::deep_copy(hostColIds, kColumnIds_);
-    colIds = hostColIds;
-  }
-
-  void getCRSDeviceView(
-      typename BaseAdapter<User>::ConstOffsetsDeviceView &offsets,
-      typename BaseAdapter<User>::ConstIdsDeviceView &colIds) const override {
-    offsets = kOffset_;
-    colIds = kColumnIds_;
-  }
-
   void getCRSView(ArrayRCP<const offset_t> &offsets,
                   ArrayRCP<const gno_t> &colIds,
                   ArrayRCP<const scalar_t> &values) const;
@@ -309,11 +288,11 @@ protected:
 
   typename Base::ConstOffsetsHostView offsHost_;
   typename Base::ConstIdsHostView colIdsHost_;
-  typename Base::ScalarsHostView valuesHost_;
+  typename Base::scalarsHostView valuesHost_;
 
   typename Base::ConstOffsetsDeviceView offsDevice_;
   typename Base::ConstIdsDeviceView colIdsDevice_;
-  typename Base::ScalarsDeviceView valuesDevice_;
+  typename Base::scalarsDeviceView valuesDevice_;
 
   int nWeightsPerRow_;
   ArrayRCP<StridedData<lno_t, scalar_t>> rowWeights_;
@@ -349,7 +328,7 @@ TpetraRowMatrixAdapter<User, UserCoord>::TpetraRowMatrixAdapter(
 
   colIdsHost_ = typename Base::ConstIdsHostView("colIdsHost_", nnz);
   offsHost_ = typename Base::ConstOffsetsHostView("offsHost_", nrows + 1);
-  valuesHost_ = typename Base::ScalarsHostView("valuesHost_", nnz);
+  valuesHost_ = typename Base::scalarsHostView("valuesHost_", nnz);
 
   localInds_t localColInds("localColInds", maxNumEntries);
   localVals_t localVals("localVals", maxNumEntries);

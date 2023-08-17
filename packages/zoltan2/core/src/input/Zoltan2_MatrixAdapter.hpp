@@ -264,24 +264,20 @@ public:
   }
 
   virtual void getRowWeightsHostView(typename BaseAdapter<User>::WeightsHostView1D& weights,
-                                     int /* idx */ = 0) const
-  {
+                                     int /* idx */ = 0) const {
       Z2_THROW_NOT_IMPLEMENTED
   }
 
-  virtual void
-  getRowWeightsHostView(typename BaseAdapter<User>::WeightsHostView &weights) const {
+  virtual void getRowWeightsHostView(typename BaseAdapter<User>::WeightsHostView &weights) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
   virtual void getRowWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView1D& weights,
-                                       int /* idx */ = 0) const
-  {
+                                       int /* idx */ = 0) const {
       Z2_THROW_NOT_IMPLEMENTED
   }
 
-  virtual void
-  getRowWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView &weights) const {
+  virtual void getRowWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView &weights) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -385,24 +381,20 @@ public:
   }
 
   virtual void getColumnWeightsHostView(typename BaseAdapter<User>::WeightsHostView1D& weights,
-                                     int /* idx */ = 0) const
-  {
+                                     int /* idx */ = 0) const {
       Z2_THROW_NOT_IMPLEMENTED
   }
 
-  virtual void
-  getColumnWeightsHostView(typename BaseAdapter<User>::WeightsHostView &weights) const {
+  virtual void getColumnWeightsHostView(typename BaseAdapter<User>::WeightsHostView &weights) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
   virtual void getColumnWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView1D& weights,
-                                       int /* idx */ = 0) const
-  {
+                                       int /* idx */ = 0) const {
       Z2_THROW_NOT_IMPLEMENTED
   }
 
-  virtual void
-  getColumnWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView &weights) const {
+  virtual void getColumnWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView &weights) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -603,8 +595,7 @@ public:
     }
   }
 
-  void getWeightsHostView(typename BaseAdapter<User>::WeightsHostView1D &hostWgts,
-                                  int idx = 0) const override {
+  void getWeightsHostView(typename BaseAdapter<User>::WeightsHostView &hostWgts) const override {
       switch (getPrimaryEntityType()) {
       case MATRIX_ROW:
         getRowWeightsHostView(hostWgts);
@@ -626,14 +617,59 @@ public:
         break;
       }  }
 
-  void getWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView1D& deviceWgts,
-                                    int idx = 0) const override {
+  void getWeightsHostView(typename BaseAdapter<User>::WeightsHostView1D &hostWgts,
+                                  int idx = 0) const override {
+      switch (getPrimaryEntityType()) {
+      case MATRIX_ROW:
+        getRowWeightsHostView(hostWgts, idx);
+        break;
+      case MATRIX_COLUMN:
+        getColumnWeightsHostView(hostWgts, idx);
+        break;
+      case MATRIX_NONZERO:
+        {
+        // TODO:  Need getNonzeroWeightsView with Nonzeros as primary object?
+        // TODO:  That is, get Nonzeros' weights based on some nonzero ID?
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  getWeightsView not yet supported for matrix nonzeros."
+             << std::endl;
+        throw std::runtime_error(emsg.str());
+        }
+      default:   // Shouldn't reach default; just making compiler happy
+        break;
+      }  }
+
+  void getWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView& deviceWgts) const override {
       switch (getPrimaryEntityType()) {
       case MATRIX_ROW:
         getRowWeightsDeviceView(deviceWgts);
         break;
       case MATRIX_COLUMN:
         getColumnWeightsDeviceView(deviceWgts);
+        break;
+      case MATRIX_NONZERO:
+        {
+        // TODO:  Need getNonzeroWeightsView with Nonzeros as primary object?
+        // TODO:  That is, get Nonzeros' weights based on some nonzero ID?
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  getWeightsView not yet supported for matrix nonzeros."
+             << std::endl;
+        throw std::runtime_error(emsg.str());
+        }
+      default:   // Shouldn't reach default; just making compiler happy
+        break;
+      }  }
+
+  void getWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView1D& deviceWgts,
+                                    int idx = 0) const override {
+      switch (getPrimaryEntityType()) {
+      case MATRIX_ROW:
+        getRowWeightsDeviceView(deviceWgts, idx);
+        break;
+      case MATRIX_COLUMN:
+        getColumnWeightsDeviceView(deviceWgts, idx);
         break;
       case MATRIX_NONZERO:
         {
