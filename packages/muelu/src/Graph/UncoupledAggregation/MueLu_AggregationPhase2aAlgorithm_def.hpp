@@ -165,7 +165,7 @@ namespace MueLu {
         // NOTE: ML does zero compression here.  Not sure if it matters
         LO rowi_N = num_local_neighbors;
         num_nonaggd_neighbors++; // ML counts the node itself as a nonaggd_neighbor
-        accept_aggregate = (rowi_N > as<size_t>(minNodesPerAggregate)) && (num_nonaggd_neighbors > (factor*rowi_N));
+        accept_aggregate = (rowi_N > as<LO>(minNodesPerAggregate)) && (num_nonaggd_neighbors > (factor*rowi_N));
       }
       else {
         accept_aggregate = (aggSize > as<size_t>(minNodesPerAggregate)) &&  (aggSize > factor*numNeighbors);
