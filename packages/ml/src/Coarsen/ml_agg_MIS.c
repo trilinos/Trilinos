@@ -2664,6 +2664,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      }
      else nbdry++;
    }
+   int CMS_local_phase_one_aggregated =  phase_one_aggregated;
    phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
    total_bdry     = ML_Comm_GsumInt( comm, nbdry);
    total_vertices = ML_Comm_GsumInt( comm, nvertices) - total_bdry;
@@ -2672,13 +2673,32 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* unaggregated nodes.                                            */
 
    factor = ((double) phase_one_aggregated)/((double)(total_vertices + 1));
+   printf("[%d] CMS: ML: Phase2a aggFactor = %6.4e total = %d/%d unaggregated = %d/%d nbdry = %d pre_factor = %6.4e\n",mypid, ml_ag->phase3_agg_creation,
+     nvertices,total_vertices,nvertices - CMS_local_phase_one_aggregated, total_vertices-phase_one_aggregated,nbdry,factor);
+
    factor = pow(factor, ml_ag->phase3_agg_creation);
+
+   printf("[%d] CMS: ML: Phase2a post_factor = %6.4e\n",mypid,factor);
+   
+   
+   FILE * fagg;
+   {
+     static int cms_ct=0;
+     char name[80];    
+     sprintf(name,"aggprint_2a_%d_%d.dat",cms_ct,mypid);
+     fagg = fopen(name,"w");
+
+     cms_ct++;
+   }
+
 
    for (i = 0; i < nvertices; i++)
    {
      if ((aggr_index[i] == -1) && (bdry[i] != 'T'))
      {
        ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
+       int uncompressed_row = rowi_N;
+         
        ML_compressOutZeros(i, rowi_col, rowi_val, &rowi_N);
        nonaggd_neighbors = 0;
        for (j = 0; j < rowi_N; j++) {
@@ -2686,6 +2706,11 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          if (aggr_index[colj] == -1 && colj < nvertices)
            nonaggd_neighbors++;
        }
+
+       int CMS_accept_aggregate = ((rowi_N > 3) &&
+                                   (((double) nonaggd_neighbors)/((double) rowi_N) > factor));
+
+       fprintf(fagg,"%d %d %d %d %6.4e %d\n",i,uncompressed_row,rowi_N,nonaggd_neighbors,factor,CMS_accept_aggregate);
        if ((rowi_N > 3) &&
           (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
        {
@@ -2697,7 +2722,14 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          }
        }
      }
+     else {//Entire else is CMS
+       ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
+       fprintf(fagg,"%d %d %d %d %6.4e %d\n",i,rowi_N,-1,-1,0.0,-1);//CMS
+
+     }
    } /*for (i = 0; i < nvertices; i++)*/
+
+   fclose(fagg);//CMSS
 
    if ( printflag < ML_Get_PrintLevel()) {
 
@@ -2714,10 +2746,18 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      }
    }
 
-   printf("CMS: after phase 2a = ");
-   for(int i=0; i<nvertices; i++)
-     printf("%d ",aggr_index[i]);
-   printf("\n");  
+   // CMS
+    {
+      static int cms_ct=0;
+      char name[80];
+      sprintf(name,"agg_phase2a_%d_%d.dat",cms_ct,mypid);
+      FILE* f=fopen(name,"w");
+      fprintf(f,"%% [%d] CMS: after phase 2a = ",mypid);
+      for(int i=0; i<nvertices; i++)
+        fprintf(f,"%d\n",aggr_index[i]);
+      fclose(f);
+      cms_ct++;
+    }
 
 
 
@@ -2735,6 +2775,15 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* Try to stick unaggregated nodes into a neighboring aggegrate (the */
    /* smallest on processor) if they are not already too big. Otherwise */
    /* make a new aggregate.                                             */
+
+    {
+      static int cms_ct=0;
+      char name[80];    
+      sprintf(name,"aggprint_2b_%d_%d.dat",cms_ct,mypid);
+      fagg = fopen(name,"w");
+      cms_ct++;
+    }
+
 
    for (kk = 0; kk < 2; kk++) {
      for (i = 0; i < nvertices; i++) {
@@ -2771,14 +2820,44 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
              number_connections[current_agg] = 0;
            }
          }
+
          if (best_score >= 0) {
            aggr_index[i] = best_agg;
            agg_incremented[best_agg]++;
            connect_type[i] = best_connect - 10;
+           fprintf(fagg,"%d %d %d %d %d %d %d\n",kk,i,rowi_N,best_score,best_connect,best_agg,connect_type[i]);
          }
+         else 
+           fprintf(fagg,"%d %d %d %d %d %d %d\n",kk,i,rowi_N,best_score,best_connect,best_agg,-1);
+
+
+
+       }
+       else {
+         // CMS DEBUG ONLY
+         ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
+         ML_compressOutZeros(i, rowi_col, rowi_val, &rowi_N);
+         fprintf(fagg,"%d %d %d %d %d %d %d\n",kk,i,rowi_N,-2,-2,-2,-2);
        }
      }
    }
+
+   fclose(fagg);//CMS
+
+   // CMS
+   {
+      static int cms_ct=0;
+      char name[80];
+      sprintf(name,"agg_phase2b_%d_%d.dat",cms_ct,mypid);
+      FILE* f=fopen(name,"w");
+      fprintf(f,"%% [%d] CMS: after phase 2b = ",mypid);
+      for(int i=0; i<nvertices; i++)
+        fprintf(f,"%d\n",aggr_index[i]);
+      fclose(f);
+      cms_ct++;
+    }
+
+
 
    /* only MIS can have aggregates that span processors */
 
@@ -3018,10 +3097,18 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
 
 
-   printf("CMS: after phase 2b = ");
-   for(int i=0; i<nvertices; i++)
-     printf("%d ",aggr_index[i]);
-   printf("\n");  
+   // CMS
+    {
+      static int cms_ct=0;
+      char name[80];
+      sprintf(name,"agg_phase3_%d_%d.dat",cms_ct,mypid);
+      FILE* f=fopen(name,"w");
+      fprintf(f,"%% [%d] CMS: after phase 3 = ",mypid);
+      for(int i=0; i<nvertices; i++)
+        fprintf(f,"%d\n",aggr_index[i]);
+      fclose(f);
+      cms_ct++;
+    }
 
   if (input_bdry == NULL) ML_free(bdry);
   if (rowi_col != NULL) ML_free(rowi_col);

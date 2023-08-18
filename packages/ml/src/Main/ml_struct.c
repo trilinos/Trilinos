@@ -2898,7 +2898,6 @@ fflush(stdout);
 /*ML_Operator_Print(&(ml->Pmat[child_level]),"Pn");*/
 
    tempStatus = ml->Amat[child_level].sortColumnsAfterRAP;
-   printf("CMS: ml_struct setting sortColumnsAfterRAP before RAP to %d\n",ml->sortColumnsAfterRAP);
    ml->Amat[child_level].sortColumnsAfterRAP = ml->sortColumnsAfterRAP;
 #ifdef  MB_MODIF_QR
 {
@@ -6355,7 +6354,6 @@ int ML_Gen_Smoother_Hiptmair2( ML *ml , int nl, int pre_or_post, int ntimes,
          ml_bc = ml->SingleLevel[i].BCs;
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
-         printf("CMS: BClength = %d\n",BClength);
          if(i!=start_level) current_TtATMatrix=0;
          ML_Smoother_Create_Hiptmair_Data(&data);
          if (MassMatrix_array != NULL) MassMatrix = MassMatrix_array[i];

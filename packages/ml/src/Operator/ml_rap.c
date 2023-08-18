@@ -39,18 +39,6 @@ int *bindx; double *vals;
 struct ML_CSR_MSRdata *msr_data;
 
 
- {/*CMSCMSCMS*/
-   char name[80];
-   static int cms_ct=0;
-   sprintf(name,"A_rap_%d",cms_ct);
-   ML_Operator_Print_UsingGlobalOrdering(Amat, name, NULL,NULL);
-   sprintf(name,"P_rap_%d",cms_ct);
-   ML_Operator_Print_UsingGlobalOrdering(Pmat, name, NULL,NULL);
-   sprintf(name,"R_rap_%d",cms_ct);
-   ML_Operator_Print_UsingGlobalOrdering(Rmat, name, NULL,NULL);
-   cms_ct++;
- }/*CMSCMSCMS*/
-
    /* Check that N_input_vector is reasonable */
 
 #  ifdef ML_TIMING
@@ -190,9 +178,7 @@ fflush(stdout);
    RAPcomm->num_rigid = Amat->num_rigid;
    if (matrix_type == ML_MSR_MATRIX) {
      ML_back_to_local(RAPcomm, Result, max_per_proc);
-     
      if (Result->sortColumnsAfterRAP == 1) {
-       printf("CMS: Sorting columns after RAP\n");
         msr_data     = (struct ML_CSR_MSRdata *) Result->data;
         bindx = msr_data->columns;
         vals = msr_data->values;
@@ -201,21 +187,15 @@ fflush(stdout);
                &(vals[bindx[i]]));
         }
      }
-     else
-       printf("CMS: NOT sorting columns after RAP\n");
    }
-   else if (matrix_type == ML_CSR_MATRIX) {
+   else if (matrix_type == ML_CSR_MATRIX)
      ML_back_to_csrlocal(RAPcomm, Result, max_per_proc);
-       printf("CMS: NOT sorting columns after RAP (Crs output)\n");
-   }
-   else if (matrix_type == ML_EpetraCRS_MATRIX) {
+   else if (matrix_type == ML_EpetraCRS_MATRIX)
 #ifdef ML_WITH_EPETRA
      ML_back_to_epetraCrs(RAPcomm, Result, Rmat, Pmat);
-       printf("CMS: NOT sorting columns after RAP (Epetra Crs output)\n");
 #else
      pr_error("ML_RAP: ML_EpetraCRS_MATRIX requires epetra to be compiled in.\n");
 #endif
-   }
    else pr_error("ML_RAP: Unknown matrix type\n");
 
    ML_RECUR_CSR_MSRdata_Destroy(RAPcomm);
@@ -239,14 +219,4 @@ fflush(stdout);
    }
 #  endif
 
-
-
-   {/*CMSCMSCMS*/
-     char name[80];
-     static int cms_ct=0;
-     sprintf(name,"Ac_rap_%d",cms_ct);
-     ML_Operator_Print_UsingGlobalOrdering(Result, name, NULL,NULL);
-     cms_ct++;
-   }/*CMSCMSCMS*/
-   
 }

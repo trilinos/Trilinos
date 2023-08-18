@@ -439,7 +439,7 @@ int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data, int length, int sca
    ML_Comm     *comm;
    double      *v1real=NULL,*v2imag=NULL,*y1real=NULL,*y2imag=NULL;
    double      norm1, norm2, alpha, Toneone, Ttwotwo, b, c;
-   printf("CMS: Running ML_SubspaceIteration_ComputeEigenvalues\n");
+
    /* ----------------------------------------------------------------*/
    /* get all parameters from parent object*/
    /* ----------------------------------------------------------------*/
@@ -612,7 +612,7 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    /* ----------------------------------------------------------------*/
    /* get all parameters from parent object*/
    /* ----------------------------------------------------------------*/
-   printf("CMS: Running ML_Power_ComputeEigenvalues\n");
+
    matrix      = ML_Krylov_Get_Amatrix(data);
    level = -1;
    if (matrix->to != NULL) level = matrix->to->levelnum;

@@ -1715,10 +1715,12 @@ myaztecParams = m_smootherAztecParams;
       nodes_local[0] = (data && data->TtATmat) ? data->TtATmat->invec_leng : 0;
       nodes_local[1] = (data && data->TtATmat) ? data->TtATmat->N_nonzeros : 0;
       if(data && data->TtATmat) {
+        /*
         printf("CMS DEBUG:  data->TtATmat->invec_leng = %d\n",data->TtATmat->invec_leng);
         char name[80];
         sprintf(name,"A_nodes_smoo_%d",currentLevel);
         ML_Operator_Print_UsingGlobalOrdering(data->TtATmat,name,NULL,NULL);
+        */
       }
 
       Comm().SumAll(nodes_local,nodes_global,2);

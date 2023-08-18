@@ -4172,7 +4172,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
                  }
                }
              }
-             printf("CMS: Diagonal doctoring count = %d\n",cms_doctor_ct);
+             //             printf("CMS: Diagonal doctoring count = %d\n",cms_doctor_ct);
            }
          
        }

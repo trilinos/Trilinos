@@ -1408,10 +1408,20 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    }
 
    
-   printf("CMS: after phase 1 = ");
-   for(int i=0; i<Nrows; i++)
-     printf("%d ",aggr_index[i]);
-   printf("\n");   
+   // CMS
+   printf("[%d] CMS: Phase 1: %d unknowns on rank\n",mypid,Nrows);
+   {
+     static int cms_ct=0;
+     char name[80];
+     sprintf(name,"agg_phase1_%d_%d.dat",cms_ct,mypid);
+      FILE* f=fopen(name,"w");
+      fprintf(f,"%% [%d] CMS: after phase 1 = ",mypid);
+      for(int i=0; i<Nrows; i++)
+        fprintf(f,"%d\n",aggr_index[i]);
+      fclose(f);
+      cms_ct++;
+    }
+
 
    if ( ordering == 1 ) ML_memory_free((void**) &randomVector);
    else if ( ordering == 2 )
