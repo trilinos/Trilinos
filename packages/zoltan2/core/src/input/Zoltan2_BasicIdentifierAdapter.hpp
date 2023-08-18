@@ -182,7 +182,7 @@ public:
   void getWeightsDeviceView(typename Base::WeightsDeviceView1D &deviceWgts,
                             int idx = 0) const override {
     AssertCondition((idx >= 0) and (idx < numWeightsPerID_),
-                    "Invalid vertex weight index.");
+                    "Invalid weight index.");
 
     const auto size = weightsView_.extent(0);
     deviceWgts = typename Base::WeightsDeviceView1D("deviceWgts", size);
@@ -203,7 +203,7 @@ public:
   void getWeightsHostView(typename Base::WeightsHostView1D &wgts,
                           int idx = 0) const override {
     AssertCondition((idx >= 0) and (idx < numWeightsPerID_),
-                    "Invalid vertex weight index.");
+                    "Invalid weight index.");
 
     auto weightsDevice =
         typename Base::WeightsDeviceView1D("weights", weightsView_.extent(0));
