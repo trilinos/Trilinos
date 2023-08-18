@@ -1628,7 +1628,11 @@ public:
                                       typename DstTraits::array_layout(
                                         dims[0] , dims[1] , dims[2] , dims[3] ,
                                         dims[4] , dims[5] , dims[6] , dims[7] ) );
-      dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
+
+      // For CudaLDGFetch, which doesn't define operator=() for pointer RHS
+      // but does define a constructor
+      //dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
+      dst.m_impl_handle = typename DstType::handle_type(src.m_impl_handle.scalar_ptr);
     }
 };
 
