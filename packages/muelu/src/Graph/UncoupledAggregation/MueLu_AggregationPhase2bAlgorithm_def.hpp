@@ -103,7 +103,15 @@ namespace MueLu {
     for (int k = 0; k < 2; k++) {
       for (LO i = 0; i < numRows; i++) {
         if (aggStat[i] != READY) {
-          fprintf(fagg,"%d %d %d %d %d\n",k,i,-2,-2,-2);
+          // DEBUG
+          LO local_neighbor_count=0;
+          ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
+          for (int j = 0; j < neighOfINode.size(); j++) {
+            LO neigh = neighOfINode[j];
+            if (graph.isLocalNeighborVertex(neigh))
+              local_neighbor_count++;
+          }            
+          fprintf(fagg,"%d %d %d %d %d %d %d\n",k,i,local_neighbor_count,-2,-2,-2,-2);
           continue;
         }
 
@@ -121,11 +129,26 @@ namespace MueLu {
         int bestAggId   = -1;
         int bestConnect = -1;
 
+        // Translating from ML's version
+        // MueLu           ML
+        // bestAggId       best_agg
+        // bestScore       best_score
+        // bestConnect     best_connect
+        // connectWeight   connect_type
+        // aggWeight       number_conections
+        // aggPenalties    agg_incremented
+
+        LO local_neighbor_count=0;
         for (int j = 0; j < neighOfINode.size(); j++) {
           LO neigh = neighOfINode[j];
+          if (graph.isLocalNeighborVertex(neigh))
+            local_neighbor_count++;
+          
+          int aggId = vertex2AggId[neigh];
+          // Note: The third condition is only relevant if the ML matching is enabled
+          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED 
+              && (!matchMLbehavior || aggWeight[aggId] != 0) ) {
 
-          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED) {
-            int aggId = vertex2AggId[neigh];
             int score = aggWeight[aggId] - aggPenalties[aggId];
 
             if (score > bestScore) {
@@ -142,8 +165,6 @@ namespace MueLu {
           }
         }
 
-        fprintf(fagg,"%d %d %d %d %d\n",k,i,bestScore,bestConnect,bestAggId);
-
 
         if (bestScore >= 0) {
           aggStat     [i] = AGGREGATED;
@@ -154,6 +175,12 @@ namespace MueLu {
 
           aggPenalties[bestAggId]++;
           connectWeight[i] = bestConnect - penaltyConnectWeight;
+          fprintf(fagg,"%d %d %d %d %d %d %d\n",k,i,local_neighbor_count,bestScore,bestConnect,bestAggId,connectWeight[i]);
+        }
+        else{ 
+          // DEBUG
+          fprintf(fagg,"%d %d %d %d %d %d %d\n",k,i,local_neighbor_count,bestScore,bestConnect,bestAggId,-1);
+
         }
       }
     }

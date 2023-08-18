@@ -717,6 +717,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: match ML phase2b</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Match ML's phase 2a.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: phase2a agg factor</name>
       <type>double</type>
       <default>0.5</default>
