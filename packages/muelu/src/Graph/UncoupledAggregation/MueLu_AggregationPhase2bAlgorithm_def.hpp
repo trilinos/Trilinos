@@ -109,12 +109,12 @@ namespace MueLu {
 
         for (int j = 0; j < neighOfINode.size(); j++) {
           LO neigh = neighOfINode[j];
+          int aggId = vertex2AggId[neigh];
 
           // Note: The third condition is only relevant if the ML matching is enabled
           if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED 
             && (!matchMLbehavior || aggWeight[aggId] != 0) ) {
 
-            int aggId = vertex2AggId[neigh];
             int score = aggWeight[aggId] - aggPenalties[aggId];
 
             if (score > bestScore) {
