@@ -128,24 +128,17 @@ void test_mdf_reference_problem(
   using row_matrix_t = Tpetra::RowMatrix<Scalar,LO,GO,Node>;
   using crs_matrix_t = Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
   Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > rowmap(tif_utest::create_tpetra_map<LO,GO,Node>(locNumRow));
-  Teuchos::RCP<crs_matrix_t> crsmatrix(new crs_matrix_t(rowmap,maxEntrPerRow));
+  Teuchos::RCP<crs_matrix_t> crsmatrix(new crs_matrix_t(rowmap,rowmap,maxEntrPerRow));
 
   //Fill matrix
   {
-    GO rb = rowmap()->getGlobalElement(0);
-    GO col_indices[maxEntrPerRow];
-
-    for(LO row_lo = 0; row_lo < locNumRow; ++row_lo)
-    {
+    for(LO row_lo = 0; row_lo < locNumRow; ++row_lo) {
       const LO & entrStart = crs_row_map[row_lo];
       const LO entriesInRow = crs_row_map[row_lo+1] - entrStart;
-      for (LO i =0; i < entriesInRow; ++i)
-        col_indices[i] = crs_col_ind[entrStart + i] + rb;
-
-      crsmatrix->insertGlobalValues (row_lo + rb,
+      crsmatrix->insertLocalValues (row_lo,
                           entriesInRow,
                           &crs_values[entrStart],
-                          col_indices);
+                          &crs_col_ind[entrStart]);
     }
     crsmatrix->fillComplete();
   }
@@ -155,7 +148,7 @@ void test_mdf_reference_problem(
   {
     Teuchos::ParameterList params;
     params.set("fact: mdf level-of-fill", 0.0);
-    params.set("Verbosity",0);
+    params.set("Verbosity", 0);
     TEST_NOTHROW(prec.setParameters(params));
   }
 
@@ -300,38 +293,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test1, Scalar, LocalOrdinal, Globa
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test2, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-  // Finite difference Advection-difussion problem with uniform spacing, D = 0.1, and v = {1,0}.
-  //     0 = D lapl(c) - v div(c)
+  // Finite difference Advection-difussion problem with uniform spacing, D = 0.1, and v = {1,0}, and source term
+  //     0 = D lapl(c) - v div(c) + src
+  // where source = 0.1*(sin(x/Lx*2*pi)/2+1)*(sin(y/Ly*2*pi)/2+1)
   // Matrix generated in matlab
 
+  const LocalOrdinal crs_row_map[] = {0, 4, 9, 13, 17, 22, 26, 30, 35, 39};
+  const LocalOrdinal crs_col_ind[] = {
+    0, 1, 3, 6, 
+    0, 1, 2, 4, 7, 
+    1, 2, 5, 8, 
+    0, 3, 4, 6, 
+    1, 3, 4, 5, 7, 
+    2, 4, 5, 8, 
+    0, 3, 6, 7, 
+    1, 4, 6, 7, 8, 
+    2, 5, 7, 8};
+  const Scalar crs_values[] = {
+    -0.3946, -0.1, -0.1, -0.1, 
+    0.9, -0.5187, -0.1, -0.1, -0.1, 
+    0.9, -0.4567, -0.1, -0.1, 
+    -0.1, -0.5187, -0.1, -0.1, 
+    -0.1, 0.9, -0.5679, -0.1, -0.1, 
+    -0.1, 0.9, -0.5433, -0.1, 
+    -0.1, -0.1, -0.4567, -0.1, 
+    -0.1, -0.1, 0.9, -0.5433, -0.1, 
+    -0.1, -0.1, 0.9, -0.5};
+  const LocalOrdinal known_Perm[] = {5, 8, 2, 4, 7, 6, 3, 0, 1};
+  const Scalar known_sln[] = {-1.33087277527186, -2.60397120798988, -7.11775593415348, -0.999724724820625, -1.69383010526766, -2.51463317632001, -1.14468009596675, -2.12778343905707, -4.46471296630885};
   const LocalOrdinal locNumRow = 9;
   const LocalOrdinal maxEntrPerRow = 5;
-
-  const LocalOrdinal crs_row_map[locNumRow + 1] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45};
-  const LocalOrdinal crs_col_ind[] = {
-    0, 1, 2, 3, 6, 
-    0, 1, 2, 4, 7, 
-    0, 1, 2, 5, 8, 
-    0, 3, 4, 5, 6, 
-    1, 3, 4, 5, 7, 
-    2, 3, 4, 5, 8, 
-    0, 3, 6, 7, 8, 
-    1, 4, 6, 7, 8, 
-    2, 5, 6, 7, 8
-  };
-  const Scalar crs_values[] = {
-    -0.6, -0.1,  0.9, -0.1, -0.1, 
-     0.9, -0.6, -0.1, -0.1, -0.1, 
-    -0.1,  0.9, -0.6, -0.1, -0.1, 
-    -0.1, -0.6, -0.1,  0.9, -0.1, 
-    -0.1,  0.9, -0.6, -0.1, -0.1, 
-    -0.1, -0.1,  0.9, -0.6, -0.1, 
-    -0.1, -0.1, -0.6, -0.1,  0.9, 
-    -0.1, -0.1,  0.9, -0.6, -0.1, 
-    -0.1, -0.1, -0.1,  0.9, -0.6
-  };
-  const LocalOrdinal known_Perm[] = {0, 3, 6, 1, 4, 5, 7, 8, 2};
-  const Scalar known_sln[] = {5.16247188607349, 5.52439770923273, 6.238246086077, 4.89405015653464, 5.66305162810038, 5.1671248742544, 4.75093559248463, 5.88204162861661, 4.46367801745558};
 
   test_mdf_reference_problem<maxEntrPerRow,Scalar,LocalOrdinal,GlobalOrdinal,Node>(
     success,
