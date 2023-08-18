@@ -111,7 +111,7 @@ namespace MueLu {
           LO neigh = neighOfINode[j];
 
           // Note: The third condition is only relevant if the ML matching is enabled
-          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED) 
+          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED 
             && (!matchMLbehavior || aggWeight[aggId] != 0) ) {
 
             int aggId = vertex2AggId[neigh];
