@@ -138,6 +138,9 @@ public:
   Teuchos::RCP<DistributorPlan> getReversePlan() const;
 
   Teuchos::RCP<const Teuchos::Comm<int>> getComm() const { return comm_; }
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+  Teuchos::RCP<MPIX_Comm*> getMPIXComm() const { return mpixComm_; }
+#endif
   EDistributorSendType getSendType() const { return sendType_; }
   size_t getNumReceives() const { return numReceives_; }
   size_t getNumSends() const { return numSendsToOtherProcs_; }
