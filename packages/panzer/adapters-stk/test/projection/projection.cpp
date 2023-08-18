@@ -457,11 +457,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         //Computing HDIV coefficients for B to interpolate the constant vector [1,1,1]
         DynRankView basisCoeffsB("basisCoeffsB", workset.numOwnedCells(), numBasisB);
         {
-          DynRankView dofCoordsB("dofCoordsB", workset.numOwnedCells(), numBasisB, dim);
-          DynRankView dofCoeffsB("dofCoeffsB", workset.numOwnedCells(), numBasisB, dim);
-          li::getDofCoordsAndCoeffs(dofCoordsB,  dofCoeffsB, divBasis.getRawPtr(), elemOrts);
-
-
           // Evaluate the function (in the physical frame) and map it back to the reference frame
           // In order to map an HDiv function back to the reference frame we need to multiply it
           // by det(J) J^(-1)   (J being the Jacobian of the map from reference to physical frame)
@@ -477,7 +472,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           });
 
           //compute basis coefficients
-          li::getBasisCoeffs(basisCoeffsB, functValuesAtDofCoordsB, dofCoeffsB);
+          li::getBasisCoeffs(basisCoeffsB, functValuesAtDofCoordsB, divBasis.getRawPtr(), elemOrts);
         }
 
 

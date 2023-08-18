@@ -94,7 +94,6 @@ void ProjectionStruct<DeviceType,ValueType>::createL2ProjectionStruct(const Basi
 
   numBasisEvalPoints += numVertices;
   numTargetEvalPoints += numVertices;
-  host_view_type coord("vertex_coord", dim);
 
   basisPointsRange = range_tag("basisPointsRange", 4,maxSubCellsCount);
   targetPointsRange = range_tag("targetPointsRange", 4,maxSubCellsCount);
@@ -103,16 +102,14 @@ void ProjectionStruct<DeviceType,ValueType>::createL2ProjectionStruct(const Basi
   subCellTopologyKey = key_tag("subCellTopologyKey",numberSubCellDims,maxSubCellsCount);
 
   maxNumBasisEvalPoints = numVertices; maxNumTargetEvalPoints = numVertices;
+
+  // The set of the eval points on the reference vertex contains only point (0.0).
+  // Not very useful, updating these for completeness  
   for(ordinal_type iv=0; iv<numVertices; ++iv) {
     basisPointsRange(0,iv) = range_type(iv, iv+1);
-    basisCubPoints[0][iv] = host_view_type("basisCubPoints",1,dim);
+    basisCubPoints[0][iv] = host_view_type("basisCubPoints",1,1);
     targetPointsRange(0,iv) = range_type(iv, iv+1);
-    targetCubPoints[0][iv] = host_view_type("targetCubPoints",1,dim);
-    CellTools<HostDeviceType>::getReferenceVertex(coord, cellTopo, iv);
-    for(ordinal_type d=0; d<dim; d++) {
-      basisCubPoints[0][iv](0,d) = coord(d);
-      targetCubPoints[0][iv](0,d) = coord(d);
-    }
+    targetCubPoints[0][iv] = host_view_type("targetCubPoints",1,1);
   }
 
   if (cellBasis->getFunctionSpace() == FUNCTION_SPACE_HCURL) {
@@ -199,7 +196,6 @@ void ProjectionStruct<DeviceType,ValueType>::createL2ProjectionStruct(const Basi
   allTargetDerivEPoints = view_type("allTargetDerivPoints", numTargetDerivEvalPoints, dim);
 
   if(numVertices>0) {
-    host_view_type coord("vertex_coord", dim);
     for(ordinal_type iv=0; iv<numVertices; ++iv) {
       CellTools<DeviceType>::getReferenceVertex(Kokkos::subview(allBasisEPoints, iv, Kokkos::ALL()), cellTopo, iv);
       CellTools<DeviceType>::getReferenceVertex(Kokkos::subview(allTargetEPoints, iv, Kokkos::ALL()), cellTopo, iv);
@@ -277,17 +273,14 @@ void ProjectionStruct<DeviceType,ValueType>::createHGradProjectionStruct(const B
 
   numBasisEvalPoints += numVertices;
   numTargetEvalPoints += numVertices;
-  host_view_type coord("vertex_coord", dim);
+  
+  // The set of the eval points on the reference vertex contains only point (0.0).
+  // Not very useful, updating these for completeness  
   for(ordinal_type iv=0; iv<numVertices; ++iv) {
     basisPointsRange(0,iv) = range_type(iv, iv+1);
-    basisCubPoints[0][iv] = host_view_type("basisCubPoints",1,dim);
+    basisCubPoints[0][iv] = host_view_type("basisCubPoints",1,1);
     targetPointsRange(0,iv) = range_type(iv, iv+1);
-    targetCubPoints[0][iv] = host_view_type("targetCubPoints",1,dim);
-    CellTools<HostDeviceType>::getReferenceVertex(coord, cellTopo, iv);
-    for(ordinal_type d=0; d<dim; d++) {
-      basisCubPoints[0][iv](0,d) = coord(d);
-      targetCubPoints[0][iv](0,d) = coord(d);
-    }
+    targetCubPoints[0][iv] = host_view_type("targetCubPoints",1,1);
   }
 
   DefaultCubatureFactory cub_factory;
@@ -359,7 +352,6 @@ void ProjectionStruct<DeviceType,ValueType>::createHGradProjectionStruct(const B
   allTargetDerivEPoints = view_type("allTargetDerivPoints", numTargetDerivEvalPoints, dim);
 
   if(numVertices>0) {
-    host_view_type coord("vertex_coord", dim);
     for(ordinal_type iv=0; iv<numVertices; ++iv) {
       CellTools<DeviceType>::getReferenceVertex(Kokkos::subview(allBasisEPoints, iv, Kokkos::ALL()), cellTopo, iv);
       CellTools<DeviceType>::getReferenceVertex(Kokkos::subview(allTargetEPoints, iv, Kokkos::ALL()), cellTopo, iv);
