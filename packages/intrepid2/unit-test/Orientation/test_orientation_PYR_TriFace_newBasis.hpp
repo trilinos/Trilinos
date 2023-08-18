@@ -41,23 +41,23 @@
 // @HEADER
 
 
-/** \file test_orientation_HEX_newBasis.hpp
-    \brief  Test for checking orientation tools for the Nodal and Hierarchical Derived basis on Hexahedra
+/** \file test_orientation_PYR_newBasis.hpp
+    \brief  Test for checking orientation tools for the Hierarchical basis on Pyramids
 
-    The test considers two hexahedra in the physical space sharing a common face. 
-    In order to test significant configurations, we consider 6 mappings of the reference hexahedron
-    to the first (physical) hexahedron, so that the common face is mapped from all the 6 faces
-    of the reference hexahedron.
+    The test considers two pyramids in physical space sharing a common triangular face.
+    In order to test significant configurations, we consider 4 mappings of the reference pyramid
+    to the first (physical) pyramid, so that the common face is mapped from all 4 triangular faces
+    of the reference pyramid.
     Then, for each of the mappings, the global ids of the vertices of the common face are permuted.
-    This gives a total of 144 combinations
+    This gives a total of 24 combinations.
 
-    The test considers HGRAD, HCURL and HDIV Lagrangian and Hierarchical basis functions, and for each of them:
+    The test considers HGRAD, HCURL and HDIV Hierarchical basis functions, and for each:
     1. Computes the oriented basis.
-    2. computes the basis coefficients, separately for each hexa, for functions belonging to the H-space spanned by the basis.
-    3. checks that the dofs shared between the two hexas are equivalent (this ensures that the orientation works correctly)
-    4. checks that the functions are indeed exactly reproduced
+    2. Computes the basis coefficients, separately for each pyramid, for functions belonging to the H-space spanned by the basis.
+    3. Checks that the dofs shared between the two pyramids are equivalent (this ensures that the orientation works correctly)
+    4. Checks that the functions are indeed exactly reproduced
 
-    \author Created by Mauro Perego
+    \author Created by Nate Roberts, based on HEX tests by Mauro Perego.
  */
 
 #include "Intrepid2_config.h"
@@ -71,9 +71,10 @@
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_TestUtils.hpp"
 
+#include "Intrepid2_HGRAD_PYR_C1_FEM.hpp"
 #include "Intrepid2_HierarchicalBasisFamily.hpp"
-#include "Intrepid2_NodalBasisFamily.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -99,7 +100,7 @@ namespace Test {
     }
 
 template<typename ValueType, typename DeviceType>
-int OrientationHexNewBasis(const bool verbose) {
+int OrientationPyrTriFaceNewBasis(const bool verbose) {
 
   typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
   typedef Kokkos::DynRankView<ordinal_type,DeviceType> DynRankViewInt;
@@ -230,7 +231,7 @@ int OrientationHexNewBasis(const bool verbose) {
 
 
   typedef std::array<ordinal_type,2> edgeType;
-  typedef std::array<ordinal_type,4> faceType;
+  typedef std::array<ordinal_type,3> faceType;
   typedef CellTools<DeviceType> ct;
   typedef OrientationTools<DeviceType> ots;
   typedef RealSpaceTools<DeviceType> rst;
@@ -240,29 +241,21 @@ int OrientationHexNewBasis(const bool verbose) {
 
   constexpr ordinal_type dim = 3;
   constexpr ordinal_type numCells = 2;
-  constexpr ordinal_type numElemVertexes = 8;
-  constexpr ordinal_type numTotalVertexes = 12;
-  constexpr ordinal_type numSharedVertexes = 4;
-  constexpr ordinal_type numSharedEdges = 4;
+  constexpr ordinal_type numElemVertices = 5;
+  constexpr ordinal_type numTotalVertices = 7;
+  constexpr ordinal_type numSharedVertices = 3;
+  constexpr ordinal_type numSharedEdges = 3;
 
+  ValueType  vertices_orig[numTotalVertices][dim] = {{1,1,0},{0,1,0},{0,0,0},{0,1,0},{0,0,1},{0,-1,0},{1,-1,0}};
+  ordinal_type pyrs_orig[numCells][numElemVertices] = {{2,3,0,1,4},{5,6,3,2,4}};  //common face is {2,3,4}
+  faceType common_face = {{2,3,4}};
+  ordinal_type pyrs_rotated[numCells][numElemVertices];
 
-  ValueType  vertices_orig[numTotalVertexes][dim] = {{-1,-1,-1},{1,-1,-1},{1,1,-1},{-1,1,-1},{-1,-1,1},{1,-1,1},{1,1,1},{-1,1,1}, {-1,-1,2},{1,-1,2},{1,1,2},{-1,1,2}};
-  ordinal_type hexas_orig[numCells][numElemVertexes] = {{0,1,2,3,4,5,6,7},{4,5,6,7,8,9,10,11}};  //common face is {4,5,6,7}
-  faceType common_face = {{4,5,6,7}};
-  faceType faceLeft = {{0, 3, 7, 4}};
-  faceType faceRight = {{1, 2, 6, 5}};
-  faceType faceFront = {{0, 4, 5, 1}};
-  faceType faceBack = {{2, 3, 7, 6}};
-  ordinal_type hexas_rotated[numCells][numElemVertexes];
-  faceType faceLeftOriented, faceRightOriented, faceBackOriented, faceFrontOriented;
-
-  static std::set<edgeType> common_edges;
-  common_edges.insert(edgeType({{4,5}})); common_edges.insert(edgeType({{5,6}})); common_edges.insert(edgeType({{6,7}})); common_edges.insert(edgeType({{4,7}}));
-
-  static ordinal_type shared_vertexes[numCells][numSharedVertexes];
-  static ordinal_type edgeIndexes[numCells][numSharedEdges];
+  static std::set<edgeType> common_edges { {{2,3}}, {{2,4}}, {{3,4}} };
+  
+  static ordinal_type shared_vertices[numCells][numSharedVertices];
+  static ordinal_type edgeIndices[numCells][numSharedEdges];
   static ordinal_type faceIndex[numCells];
-
 
   class TestResults
   {
@@ -287,7 +280,7 @@ int OrientationHexNewBasis(const bool verbose) {
           elemOrts(elemOrts_),
           basis(basis_){}
 
-    //check that fun values are consistent at the common vertexes
+    //check that fun values are consistent at the common vertices
     void test(ordinal_type& errorFlag, ValueType tol){
 
       auto numVertexDOFs = basis->getDofCount(0,0);
@@ -295,20 +288,20 @@ int OrientationHexNewBasis(const bool verbose) {
         bool areDifferent(false);
 
 
-        for(ordinal_type j=0;j<numSharedVertexes && !areDifferent;j++)
-          areDifferent = std::abs(basisCoeffs(0,basis->getDofOrdinal(0,shared_vertexes[0][j],0))
-              - basisCoeffs(1,basis->getDofOrdinal(0,shared_vertexes[1][j],0))) > 10*tol;
+        for(ordinal_type j=0;j<numSharedVertices && !areDifferent;j++)
+          areDifferent = std::abs(basisCoeffs(0,basis->getDofOrdinal(0,shared_vertices[0][j],0))
+              - basisCoeffs(1,basis->getDofOrdinal(0,shared_vertices[1][j],0))) > 10*tol;
 
         if(areDifferent) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "Function  DOFs on shared vertexes computed using Cell 0 basis functions are not consistent with those computed using Cell 1 bssis functions\n";
+          *outStream << "Function  DOFs on shared vertices computed using Cell 0 basis functions are not consistent with those computed using Cell 1 bssis functions\n";
           *outStream << "Function DOFs for Cell 0 are:";
-          for(ordinal_type j=0;j<numSharedVertexes;j++)
-            *outStream << " " << basisCoeffs(0,basis->getDofOrdinal(0,shared_vertexes[0][j],0));
+          for(ordinal_type j=0;j<numSharedVertices;j++)
+            *outStream << " " << basisCoeffs(0,basis->getDofOrdinal(0,shared_vertices[0][j],0));
           *outStream << "\nFunction DOFs for Cell 1 are:";
-          for(ordinal_type j=0;j<numSharedVertexes;j++)
-            *outStream << " " << basisCoeffs(1,basis->getDofOrdinal(0,shared_vertexes[1][j],0));
+          for(ordinal_type j=0;j<numSharedVertices;j++)
+            *outStream << " " << basisCoeffs(1,basis->getDofOrdinal(0,shared_vertices[1][j],0));
           *outStream << std::endl;
         }
 
@@ -323,8 +316,8 @@ int OrientationHexNewBasis(const bool verbose) {
         bool areDifferent(false);
         for(std::size_t iEdge=0;iEdge<numSharedEdges;iEdge++) {
         for(ordinal_type j=0;j<numEdgeDOFs && !areDifferent;j++) {
-          areDifferent = std::abs(basisCoeffs(0,basis->getDofOrdinal(1,edgeIndexes[0][iEdge],j))
-              - basisCoeffs(1,basis->getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
+          areDifferent = std::abs(basisCoeffs(0,basis->getDofOrdinal(1,edgeIndices[0][iEdge],j))
+              - basisCoeffs(1,basis->getDofOrdinal(1,edgeIndices[1][iEdge],j))) > 10*tol;
         }
         if(areDifferent) {
           errorFlag++;
@@ -332,10 +325,10 @@ int OrientationHexNewBasis(const bool verbose) {
           *outStream << "Function DOFs on shared edge " << iEdge << " computed using Cell 0 basis functions are not consistent with those computed using Cell 1 basis functions\n";
           *outStream << "Function DOFs for Cell 0 are:";
           for(ordinal_type j=0;j<numEdgeDOFs;j++)
-            *outStream << " " << basisCoeffs(0,basis->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
+            *outStream << " " << basisCoeffs(0,basis->getDofOrdinal(1,edgeIndices[0][iEdge],j));
           *outStream << "\nFunction DOFs for Cell 1 are:";
           for(ordinal_type j=0;j<numEdgeDOFs;j++)
-            *outStream << " " << basisCoeffs(1,basis->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
+            *outStream << " " << basisCoeffs(1,basis->getDofOrdinal(1,edgeIndices[1][iEdge],j));
           *outStream << std::endl;
         }
         }
@@ -368,6 +361,7 @@ int OrientationHexNewBasis(const bool verbose) {
 
       ordinal_type numRefCoords = funAtPhysRefCoords.extent(1);
       ordinal_type basisCardinality = basisCoeffs.extent(1);
+      INTREPID2_TEST_FOR_EXCEPTION(numRefCoords < basisCardinality, std::invalid_argument, "numRefCoords must be at least as large as basisCardinality");
       ordinal_type basis_dim = (transformedBasisValuesAtRefCoordsOriented.rank()==3) ? 1 : dim;
 
       DynRankView ConstructWithLabel(funAtRefCoordsOriented, numCells, numRefCoords, basis_dim);
@@ -458,81 +452,67 @@ int OrientationHexNewBasis(const bool verbose) {
   try {
 
     const ordinal_type order = 3;
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
+    ordinal_type reorder[numTotalVertices] = {0,1,2,3,4,5,6};
 
     do {
-      ordinal_type orderback[numTotalVertexes];
-      for(ordinal_type i=0;i<numTotalVertexes;++i) {
+      ordinal_type orderback[numTotalVertices];
+      for(ordinal_type i=0;i<numTotalVertices;++i) {
         orderback[reorder[i]]=i;
       }
-      ValueType vertices[numTotalVertexes][dim];
-      ordinal_type hexas[numCells][numElemVertexes];
-      std::copy(&hexas_orig[0][0], &hexas_orig[0][0]+numCells*numElemVertexes, &hexas_rotated[0][0]);
-      for (ordinal_type shift=0; shift<6; ++shift) {
-        if(shift <4){
-          std::rotate_copy(faceLeft.begin(), faceLeft.begin()+shift, faceLeft.end(), faceLeftOriented.begin());
-          std::rotate_copy(faceRight.begin(), faceRight.begin()+shift, faceRight.end(), faceRightOriented.begin());
-          for(ordinal_type ii=0; ii<4; ii++) {
-            hexas_rotated[0][faceLeft[ii]] = hexas_orig[0][faceLeftOriented[ii]];
-            hexas_rotated[0][faceRight[ii]] = hexas_orig[0][faceRightOriented[ii]];
-          }
-        } else {
-          ordinal_type iirot = (shift==4) ? 1 : 3;
-          std::rotate_copy(faceFront.begin(), faceFront.begin()+iirot, faceFront.end(), faceFrontOriented.begin());
-          std::rotate_copy(faceBack.begin(), faceBack.begin()+iirot, faceBack.end(), faceBackOriented.begin());
-          for(ordinal_type ii=0; ii<4; ii++) {
-            hexas_rotated[0][faceFront[ii]] = hexas_orig[0][faceFrontOriented[ii]];
-            hexas_rotated[0][faceBack[ii]] = hexas_orig[0][faceBackOriented[ii]];
-          }
+      ValueType vertices[numTotalVertices][dim];
+      ordinal_type pyrs[numCells][numElemVertices];
+      std::copy(&pyrs_orig[0][0], &pyrs_orig[0][0]+numCells*numElemVertices, &pyrs_rotated[0][0]);
+      for (ordinal_type rotationOrdinal=0; rotationOrdinal<4; ++rotationOrdinal) {
+        // rotations of the pyramid correspond to rotations of the bottom quadrilateral
+        // for now, we do not consider reflection symmetries
+        for (int vertexOrdinal=0; vertexOrdinal<4; vertexOrdinal++)
+        {
+          pyrs_rotated[0][vertexOrdinal] = pyrs_orig[0][(vertexOrdinal + rotationOrdinal) % 4];
         }
 
         for(ordinal_type i=0; i<numCells;++i)
-          for(ordinal_type j=0; j<numElemVertexes;++j)
-            hexas[i][j] = reorder[hexas_rotated[i][j]];
+          for(ordinal_type j=0; j<numElemVertices;++j)
+            pyrs[i][j] = reorder[pyrs_rotated[i][j]];
 
-        for(ordinal_type i=0; i<numTotalVertexes;++i)
+        for(ordinal_type i=0; i<numTotalVertices;++i)
           for(ordinal_type d=0; d<dim;++d)
             vertices[i][d] = vertices_orig[orderback[i]][d];
 
-        *outStream <<  "Considering Hex 0: [ ";
-        for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << hexas[0][j] << " ";
-        *outStream << "] and Hex 1: [ ";
-        for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << hexas[1][j] << " ";
+        *outStream <<  "Considering Pyr 0: [ ";
+        for(ordinal_type j=0; j<numElemVertices;++j)
+          *outStream << pyrs[0][j] << " ";
+        *outStream << "] and Pyr 1: [ ";
+        for(ordinal_type j=0; j<numElemVertices;++j)
+          *outStream << pyrs[1][j] << " ";
         *outStream << "]\n";
 
-        shards::CellTopology hexa(shards::getCellTopologyData<shards::Hexahedron<8> >());
-        shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
-        shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
+        shards::CellTopology pyramid(shards::getCellTopologyData<shards::Pyramid<5> >());
 
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, hexa.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertices, numCells, pyramid.getNodeCount(), dim);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<hexa.getNodeCount(); ++j)
+          for(std::size_t j=0; j<pyramid.getNodeCount(); ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[hexas[i][j]][k];
+              physVertices(i,j,k) = vertices[pyrs[i][j]][k];
 
 
 
         //computing common face and edges
-
-
         {
           faceType face={};
           edgeType edge={};
           //bool faceOrientation[numCells][4];
           for(ordinal_type i=0; i<numCells; ++i) {
-            for (std::size_t iv=0; iv<hexa.getNodeCount(); ++iv) {
-              auto vertex = hexas_rotated[i][hexa.getNodeMap(0,iv,0)];
+            for (std::size_t iv=0; iv<pyramid.getNodeCount(); ++iv) {
+              auto vertex = pyrs_rotated[i][pyramid.getNodeMap(0,iv,0)];
               for (std::size_t isv=0; isv<common_face.size(); ++isv)
                 if(common_face[isv] == vertex)
-                  shared_vertexes[i][isv] = iv;
+                  shared_vertices[i][isv] = iv;
             }
             //compute faces' tangents
-            for (std::size_t is=0; is<hexa.getSideCount(); ++is) {
-              for (std::size_t k=0; k<hexa.getNodeCount(2,is); ++k)
-                face[k]= hexas_rotated[i][hexa.getNodeMap(2,is,k)];
+            for (std::size_t is=0; is<pyramid.getSideCount(); ++is) {
+              for (std::size_t k=0; k<pyramid.getNodeCount(2,is); ++k)
+                face[k]= pyrs_rotated[i][pyramid.getNodeMap(2,is,k)];
 
               //rotate and flip
               auto minElPtr= std::min_element(face.begin(), face.end());
@@ -542,46 +522,42 @@ int OrientationHexNewBasis(const bool verbose) {
               if(face == common_face) faceIndex[i]=is;
             }
             //compute edges' tangents
-            for (std::size_t ie=0; ie<hexa.getEdgeCount(); ++ie) {
-              for (std::size_t k=0; k<hexa.getNodeCount(1,ie); ++k)
-                edge[k]= hexas_rotated[i][hexa.getNodeMap(1,ie,k)];
+            for (std::size_t ie=0; ie<pyramid.getEdgeCount(); ++ie) {
+              for (std::size_t k=0; k<pyramid.getNodeCount(1,ie); ++k)
+                edge[k]= pyrs_rotated[i][pyramid.getNodeMap(1,ie,k)];
               std::sort(edge.begin(),edge.end());
               auto it=common_edges.find(edge);
               if(it !=common_edges.end()){
                 auto edge_lid = std::distance(common_edges.begin(),it);
-                edgeIndexes[i][edge_lid]=ie;
+                edgeIndices[i][edge_lid]=ie;
               }
             }
           }
         }
 
-        using CG_NBasis = NodalBasisFamily<DeviceType,ValueType,ValueType>;
-        using CG_DNBasis = DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>;
         using CG_HBasis = HierarchicalBasisFamily<DeviceType,ValueType,ValueType>;
         std::vector<basisType*> basis_set;
 
-        //compute reference points
-        typename CG_NBasis::HGRAD_HEX warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
-        ordinal_type numRefCoords = warpBasis.getCardinality();
-        DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
-        warpBasis.getDofCoords(refPoints);
-
+        //compute reference points: use a lattice
+        auto refPoints = getInputPointsView<double,DeviceType>(pyramid, order*3);
+        ordinal_type numRefCoords = refPoints.extent_int(0);
+        
         // compute orientations for cells (one time computation)
-        DynRankViewInt elemNodes(&hexas[0][0], numCells, numElemVertexes);
+        DynRankViewInt elemNodes(&pyrs[0][0], numCells, numElemVertices);
         Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
-        ots::getOrientation(elemOrts, elemNodes, hexa);
+        ots::getOrientation(elemOrts, elemNodes, pyramid);
 
         //Compute physical Dof Coordinates and Reference coordinates
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         {
-          Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
-          hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          Basis_HGRAD_PYR_C1_FEM<DeviceType,ValueType,ValueType> pyramidLinearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(pyramidLinearBasisValuesAtRefCoords, pyramid.getNodeCount(), numRefCoords);
+          pyramidLinearBasis.getValues(pyramidLinearBasisValuesAtRefCoords, refPoints);
           for(ordinal_type i=0; i<numCells; ++i)
             for(ordinal_type d=0; d<dim; ++d) {
               for(ordinal_type j=0; j<numRefCoords; ++j)
-                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
-                  physRefCoords(i,j,d) += vertices[hexas[i][k]][d]*hexaLinearBasisValuesAtRefCoords(k,j);
+                for(std::size_t k=0; k<pyramid.getNodeCount(); ++k)
+                  physRefCoords(i,j,d) += vertices[pyrs[i][k]][d]*pyramidLinearBasisValuesAtRefCoords(k,j);
             }
         }
 
@@ -595,9 +571,7 @@ int OrientationHexNewBasis(const bool verbose) {
               funAtPhysRefCoords(i,j) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
           }
 
-          basis_set.push_back(new typename  CG_NBasis::HGRAD_HEX(order));
-          basis_set.push_back(new typename  CG_DNBasis::HGRAD_HEX(order));
-          basis_set.push_back(new typename  CG_HBasis::HGRAD_HEX(order));
+          basis_set.push_back(new typename  CG_HBasis::HGRAD_PYR(order));
 
           for (auto basisPtr:basis_set) {
             auto& basis = *basisPtr;
@@ -645,7 +619,8 @@ int OrientationHexNewBasis(const bool verbose) {
 
 
         //HCURL Case
-        {
+        //TODO: uncomment after we implement H(curl) basis for pyramids
+        /*{
           FunCurl fun;
           DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords, dim);
           for(ordinal_type i=0; i<numCells; ++i) {
@@ -656,9 +631,7 @@ int OrientationHexNewBasis(const bool verbose) {
           }
 
           basis_set.clear();
-          basis_set.push_back(new typename  CG_NBasis::HCURL_HEX(order));
-          basis_set.push_back(new typename  CG_DNBasis::HCURL_HEX(order));
-          basis_set.push_back(new typename  CG_HBasis::HCURL_HEX(order));
+          basis_set.push_back(new typename  CG_HBasis::HCURL_PYR(order));
 
           for (auto basisPtr:basis_set) {
             auto& basis = *basisPtr;
@@ -688,7 +661,7 @@ int OrientationHexNewBasis(const bool verbose) {
             // transform basis values
             DynRankView ConstructWithLabel(jacobianAtRefCoords, numCells, numRefCoords, dim, dim);
             DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numCells, numRefCoords, dim, dim);
-            ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
+            ct::setJacobian(jacobianAtRefCoords, refPoints, physVertices, pyramid);
             ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
             fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
                 jacobianAtRefCoords_inv,
@@ -712,11 +685,12 @@ int OrientationHexNewBasis(const bool verbose) {
             testResults.test(errorFlag,tol);
             delete basisPtr;
           }
-        }
+        }*/
 
 
         //HDIV Case
-        {
+        //TODO: uncomment after we implement H(div) basis for pyramids
+        /*{
           FunDiv fun;
           DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords, dim);
           for(ordinal_type i=0; i<numCells; ++i) {
@@ -726,9 +700,7 @@ int OrientationHexNewBasis(const bool verbose) {
             }
           }
           basis_set.clear();
-          basis_set.push_back(new typename  CG_NBasis::HDIV_HEX(order));
-          basis_set.push_back(new typename  CG_DNBasis::HDIV_HEX(order));
-          basis_set.push_back(new typename  CG_HBasis::HDIV_HEX(order));
+          basis_set.push_back(new typename  CG_HBasis::HDIV_PYR(order));
 
           for (auto basisPtr:basis_set) {
             auto& basis = *basisPtr;
@@ -755,7 +727,7 @@ int OrientationHexNewBasis(const bool verbose) {
             // transform basis values
             DynRankView ConstructWithLabel(jacobianAtRefCoords, numCells, numRefCoords, dim, dim);
             DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numCells, numRefCoords);
-            ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
+            ct::setJacobian(jacobianAtRefCoords, refPoints, physVertices, pyramid);
             ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
             fst::HDIVtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
                 jacobianAtRefCoords,
@@ -784,9 +756,9 @@ int OrientationHexNewBasis(const bool verbose) {
             testResults.test(errorFlag,tol);
             delete basisPtr;
           }
-        }
+        }*/
       } //rotation of first cell vertices
-    } while(std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+2, &reorder[0]+5)); //reorder vertices of common face
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";

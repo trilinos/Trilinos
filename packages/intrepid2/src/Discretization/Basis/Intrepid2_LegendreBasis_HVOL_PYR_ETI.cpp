@@ -1,11 +1,11 @@
-//@HEADER
+// @HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,17 +34,18 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
+//                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
-//@HEADER
+// @HEADER
 
+/** \file   Intrepid2_LegendreBasis_HVOL_PYR.cpp
+    \brief  \brief ETI instantiation for Intrepid2 LegendreBasis_HVOL_PYR class.
+    \author Created by N.V. Roberts.
+ */
 
-#include "Tpetra_KokkosCompat_DefaultNode.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_PYR.hpp"
 
-// This header file only exists for backwards compatibility.
-#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
-#warning "The header file Trilinos/packages/tpetra/core/compat/Kokkos_DefaultNode.hpp is deprecated."
-#else
-#error "The header file Trilinos/packages/tpetra/core/compat/Kokkos_DefaultNode.hpp is deprecated."
-#endif
+using DefaultDeviceType = Kokkos::DefaultExecutionSpace::device_type;
+template class Intrepid2::LegendreBasis_HVOL_PYR<Kokkos::DefaultExecutionSpace::device_type,double,double>;
