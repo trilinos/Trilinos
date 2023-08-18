@@ -101,12 +101,18 @@ public:
 private:
 
 #ifdef HAVE_TPETRA_MPI
-  /*! \brief TODO: both regular and MPI_Advance*/
   template <class ExpView, class ImpView>
   void doPostsAllToAll(const DistributorPlan& plan,
                const ExpView& exports,
                size_t numPackets,
                const ImpView& imports);
+               
+  template <class ExpView, class ImpView>
+  void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
+                                const ExpView &exports,
+                                const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                                const ImpView &imports,
+                                const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 #endif
   int mpiTag_;
 
@@ -251,10 +257,17 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
 
 #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
   if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == sendType) {
+    MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
+    
+    const int err = MPIX_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
+                                    imports.data(), recvcounts.data(), rdispls.data(), rawType,
+                                    mpixComm);
+                                    
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                              "MPIX_Alltoallv failed with error \""
+                              << Teuchos::mpiErrorCodeToString (err) << "\".");v
 
-      // TODO: call MPI advance
-
-      return;
+    return;
   }
 #endif
 
@@ -353,7 +366,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
                        plan.getStartsTo()[0]*numPackets,
                        plan.getLengthsTo()[0]*numPackets);
     }
-    // TODO should we just return here?
+    // should we just return here?
+    // likely not as comm could be a serial comm
 #endif // HAVE_TPETRA_MPI
 
   size_t selfReceiveOffset = 0;
@@ -569,7 +583,94 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   }
 }
 
-// TODO: refactor this the same way as the overload
+#ifdef HAVE_TPETRA_MPI
+template <class ExpView, class ImpView>
+void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
+                               const ExpView &exports,
+                               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                               const ImpView &imports,
+                               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(!plan.getIndicesTo().is_null(),
+                              std::runtime_error,
+                              "Send Type=\"Alltoall\" only works for fast-path communication.");
+
+  auto comm = plan.getComm();
+  std::vector<int> sendcounts (comm->getSize(), 0);
+  std::vector<int> sdispls    (comm->getSize(), 0);
+  std::vector<int> recvcounts (comm->getSize(), 0);
+  std::vector<int> rdispls    (comm->getSize(), 0);
+
+  size_t curPKToffset = 0;
+  for (size_t pp=0; pp<plan.getNumSends(); ++pp) {
+    sdispls[plan.getProcsTo()[pp]]    = curPKToffset;
+    size_t numPackets = 0;
+    for (size_t j=plan.getStartsTo()[pp]; j<plan.getStartsTo()[pp]+plan.getLengthsTo()[pp]; ++j) {
+      numPackets += numExportPacketsPerLID[j];
+    }
+    // numPackets is converted down to int, so make sure it can be represented
+    TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX),
+                                std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                                "Send count for send " << pp << " (" << numPackets << ") is too large "
+                                "to be represented as int.");
+    sendcounts[plan.getProcsTo()[pp]] = static_cast<int>(numPackets);
+    curPKToffset += numPackets;
+  }
+
+  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
+  as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+
+  size_t curBufferOffset = 0;
+  size_t curLIDoffset = 0;
+  for (size_type i = 0; i < actualNumReceives; ++i) {
+    size_t totalPacketsFrom_i = 0;
+    for (size_t j = 0; j < plan.getLengthsFrom()[i]; ++j) {
+      totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
+    }
+    curLIDoffset += plan.getLengthsFrom()[i];
+
+    rdispls   [plan.getProcsFrom()[i]] = curBufferOffset;
+    // totalPacketsFrom_i is converted down to int, so make sure it can be represented
+    TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
+                                std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
+                                "to be represented as int.");
+    recvcounts[plan.getProcsFrom()[i]] = static_cast<int>(totalPacketsFrom_i);
+    curBufferOffset += totalPacketsFrom_i;
+  }
+
+  Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
+  using T = typename exports_view_type::non_const_value_type;
+  T t;
+  MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
+  
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+  if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == sendType) {
+    MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
+    
+    const int err = MPIX_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
+                                    imports.data(), recvcounts.data(), rdispls.data(), rawType,
+                                    mpixComm);
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                              "MPIX_Alltoallv failed with error \""
+                              << Teuchos::mpiErrorCodeToString (err) << "\".");
+    
+    return;
+  }
+#endif
+  
+  const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
+                                imports.data(), recvcounts.data(), rdispls.data(), rawType,
+                                (*rawComm)());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                              "MPI_Alltoallv failed with error \""
+                              << Teuchos::mpiErrorCodeToString (err) << "\".");
+}
+#endif
+
 template <class ExpView, class ImpView>
 void DistributorActor::doPosts(const DistributorPlan& plan,
                                const ExpView &exports,
@@ -616,73 +717,25 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
 
+#ifdef HAVE_TPETRA_MPI
   //  All-to-all communication layout is quite different from
   //  point-to-point, so we handle it separately.
   if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
-#ifdef HAVE_TPETRA_MPI
-    TEUCHOS_TEST_FOR_EXCEPTION(!plan.getIndicesTo().is_null(),
-                               std::runtime_error,
-                               "Send Type=\"Alltoall\" only works for fast-path communication.");
-
-    auto comm = plan.getComm();
-    std::vector<int> sendcounts (comm->getSize(), 0);
-    std::vector<int> sdispls    (comm->getSize(), 0);
-    std::vector<int> recvcounts (comm->getSize(), 0);
-    std::vector<int> rdispls    (comm->getSize(), 0);
-
-    size_t curPKToffset = 0;
-    for (size_t pp=0; pp<plan.getNumSends(); ++pp) {
-      sdispls[plan.getProcsTo()[pp]]    = curPKToffset;
-      size_t numPackets = 0;
-      for (size_t j=plan.getStartsTo()[pp]; j<plan.getStartsTo()[pp]+plan.getLengthsTo()[pp]; ++j) {
-        numPackets += numExportPacketsPerLID[j];
-      }
-      // numPackets is converted down to int, so make sure it can be represented
-      TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX),
-                                 std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): "
-                                 "Send count for send " << pp << " (" << numPackets << ") is too large "
-                                 "to be represented as int.");
-      sendcounts[plan.getProcsTo()[pp]] = static_cast<int>(numPackets);
-      curPKToffset += numPackets;
-    }
-
-    const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
-    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
-
-    size_t curBufferOffset = 0;
-    size_t curLIDoffset = 0;
-    for (size_type i = 0; i < actualNumReceives; ++i) {
-      size_t totalPacketsFrom_i = 0;
-      for (size_t j = 0; j < plan.getLengthsFrom()[i]; ++j) {
-        totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
-      }
-      curLIDoffset += plan.getLengthsFrom()[i];
-
-      rdispls   [plan.getProcsFrom()[i]] = curBufferOffset;
-      // totalPacketsFrom_i is converted down to int, so make sure it can be represented
-      TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
-                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-                                 "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
-                                 "to be represented as int.");
-      recvcounts[plan.getProcsFrom()[i]] = static_cast<int>(totalPacketsFrom_i);
-      curBufferOffset += totalPacketsFrom_i;
-    }
-
-    Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
-    using T = typename exports_view_type::non_const_value_type;
-    T t{};
-    MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
-    const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
-                                  imports.data(), recvcounts.data(), rdispls.data(), rawType,
-                                  (*rawComm)());
-
-    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                               "MPI_Alltoallv failed with error \""
-                               << Teuchos::mpiErrorCodeToString (err) << "\".");
-
+    doPostsAllToAll(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
     return;
-#else
+  }
+#ifdef HAVE_TPETRA_CORE_MPI_ADVANCE
+  else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL)
+  {
+    doPostsAllToAll(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+    return;
+  } else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) [
+    // TODO
+    return
+  ]
+#endif
+
+#else // HAVE_TPETRA_MPI
     if (plan.hasSelfMessage()) {
 
       size_t selfReceiveOffset = 0;
@@ -706,8 +759,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       deep_copy_offset(imports, exports, selfReceiveOffset,
           sendPacketOffsets[0], packetsPerSend[0]);
     }
-#endif
-  }
+#endif // HAVE_TPETRA_MPI
 
   const int myProcID = plan.getComm()->getRank ();
   size_t selfReceiveOffset = 0;
