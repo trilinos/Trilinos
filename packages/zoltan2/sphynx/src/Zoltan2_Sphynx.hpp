@@ -81,6 +81,9 @@
 #include "Zoltan2_AlgMultiJagged.hpp"
 
 #include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziBlockDavidsonSolMgr.hpp"
+#include "AnasaziGeneralizedDavidsonSolMgr.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziRandomizedSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziTpetraAdapter.hpp"
@@ -291,8 +294,8 @@ namespace Zoltan2 {
         }
 
         solverType_ = sphynxParams_->get("sphynx_eigensolver","LOBPCG");
-        TEUCHOS_TEST_FOR_EXCEPTION(!(solverType_ == "LOBPCG" || solverType_ == "randomized"), 
-            std::invalid_argument, "Sphynx: sphynx_eigensolver must be set to LOBPCG or randomized.");
+        TEUCHOS_TEST_FOR_EXCEPTION(!(solverType_ == "LOBPCG" || solverType_ == "randomized" || solverType_ == "BlockDavidson" || solverType_ == "GeneralizedDavidson" || solverType_ == "BlockKrylovSchur" ), 
+            std::invalid_argument, "Sphynx: sphynx_eigensolver must be set to LOBPCG, randomized, BlockDavidson, GeneralizedDavidson, or BlockKrylovSchur.");
 
         // Set the default problem type
         problemType_ = COMBINATORIAL;
@@ -608,8 +611,8 @@ namespace Zoltan2 {
         // or Randomized eigensolver
         computedNumEv = Sphynx::AnasaziWrapper(numEigenVectors);
 
-        if(computedNumEv <= 1 && solverType_ == "LOBPCG") { 
-          throw
+        if(computedNumEv <= 1 && (solverType_ == "LOBPCG" || solverType_ == "GeneralizedDavidson" || solverType_ == "BlockDavidson" || solverType_ == "BlockKrylovSchur")) { 
+        throw
             std::runtime_error("\nAnasazi Error: LOBPCGSolMgr::solve() returned unconverged.\n"
                 "Sphynx Error:  LOBPCG could not compute any eigenvectors.\n"
                 "               Increase either max iters or tolerance.\n");
@@ -692,6 +695,12 @@ namespace Zoltan2 {
       anasaziParams.set("Full Ortho", useFullOrtho);
       anasaziParams.set("Orthogonalization Frequency", orthoFreq);
       anasaziParams.set("Residual Frequency", resFreq);
+     
+      if(solverType_ == "GeneralizedDavidson" || solverType_ == "BlockKrylovSchur" || solverType_ == "BlockDavidson"){ 
+        anasaziParams.set( "Num Blocks", maxIterations );
+        anasaziParams.set( "Maximum Restarts", 0 );
+        anasaziParams.set( "Maximum Subspace Dimension", (maxIterations+1)*blockSize );
+      }
 
       // Create and set initial vectors
       Teuchos::RCP<mvector_t> ivec( new mvector_t(laplacian_->getRangeMap(), numEigenVectors));
@@ -730,7 +739,7 @@ namespace Zoltan2 {
       problem->setHermitian(isHermitian);
       problem->setNEV(numEigenVectors);
 
-      if(solverType_ == "LOBPCG"){
+      if(solverType_ != "randomized"){
         // Set preconditioner
         Sphynx::setPreconditioner(problem);
         if(problemType_ == Sphynx::GENERALIZED) problem->setM(degMatrix_);
@@ -746,6 +755,15 @@ namespace Zoltan2 {
 
       if(solverType_ == "LOBPCG"){
         solver = Teuchos::rcp(new Anasazi::LOBPCGSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
+      }
+      else if(solverType_ == "BlockDavidson"){
+        solver = Teuchos::rcp(new Anasazi::BlockDavidsonSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
+      }
+      else if(solverType_ == "GeneralizedDavidson"){
+        solver = Teuchos::rcp(new Anasazi::GeneralizedDavidsonSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
+      }
+      else if(solverType_ == "BlockKrylovSchur"){
+        solver = Teuchos::rcp(new Anasazi::BlockKrylovSchurSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));
       }
       else{
         solver = Teuchos::rcp(new Anasazi::Experimental::RandomizedSolMgr<scalar_t, mvector_t, op_t>(problem, anasaziParams));

@@ -250,9 +250,9 @@ int main(int narg, char *arg[])
     cmdp.setOption("rand_seed",&rand_seed,
         "Seed for the random multivector."); //TODO: Final randomized solver maybe should have param??  Or notes in the docs?
     cmdp.setOption("max_iters",&max_iters,
-        "Maximum iters (LOBPCG) or mulitplies by A (randomized).");
+        "Maximum iters for the eigensolver.");
     cmdp.setOption("block_size",&block_size,
-        "Block size (LOBPCG) or number of vectors l (randomized).");
+        "Block size.");
     cmdp.setOption("verbosity", &verbosity,
         "Verbosity level");
     cmdp.setOption("parmetis", "sphynx", &parmetis,
@@ -262,7 +262,7 @@ int main(int narg, char *arg[])
     cmdp.setOption("prec", &prec,
         "Prec type to use.");
     cmdp.setOption("eigensolve", &eigensolve,
-        "Eigensolver to use: LOBPCG or randomized.");
+        "Eigensolver to use: LOBPCG, BlockDavidson, GeneralizedDavidson, BlockKrylovSchur or randomized.");
     cmdp.setOption("prob", &ptype,
         "Problem type to use. Options are combinatorial, normalized or generalized.");
     cmdp.setOption("tol", &tol,

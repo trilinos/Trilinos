@@ -83,7 +83,7 @@ namespace Zoltan2 {
     pl.set("sphynx_initial_guess", "random", "Sphynx initial guess", sphynx_initial_guess_method_Validator);
 
     RCP<Teuchos::StringValidator> sphynx_eigensolver_Validator =
-      Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "LOBPCG", "randomized")));
+      Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "LOBPCG", "randomized", "GeneralizedDavidson", "BlockDavidson", "BlockKrylovSchur")));
 
     pl.set("sphynx_eigensolver", "LOBPCG", "Sphynx eigensolver", sphynx_eigensolver_Validator);
 

@@ -11,6 +11,15 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
     COMM serial mpi
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_LOBPCG_test
+    SOURCES cxx_main_test.cpp 
+    ARGS 
+      "--verbose"
+      "--verbose --ortho=ICGS"
+    COMM serial mpi
+    )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_LOBPCG_ComplexCopyFiles
     SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
     SOURCE_FILES mhd1280b.cua
