@@ -523,13 +523,8 @@ int feProjection(int argc, char *argv[]) {
       Intrepid2::Experimental::ProjectionStruct<DeviceSpaceType,scalar_t> projStruct;
       projStruct.createL2ProjectionStruct(basis.get(), targetCubDegree);
 
-      int numPoints = projStruct.getNumTargetEvalPoints();
-      DynRankView evaluationPoints("evaluationPoints", numOwnedElems, numPoints, dim);
-
-      pts::getL2EvaluationPoints(evaluationPoints,
-          elemOrts,
-          basis.get(),
-          &projStruct);
+      auto evaluationPoints = projStruct.getAllEvalPoints();
+      int numPoints     = evaluationPoints.extent(0);
 
       DynRankView refTargetAtEvalPoints, physTargetAtEvalPoints;
       if(functionSpace == Intrepid2::FUNCTION_SPACE_HCURL || functionSpace == Intrepid2::FUNCTION_SPACE_HDIV) {
@@ -548,7 +543,7 @@ int feProjection(int argc, char *argv[]) {
             KOKKOS_LAMBDA (const int &i) {
           auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
           for(int j=0; j<numPoints; ++j){
-            auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+            auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
             switch (eShape) {
             case HEX:
               Intrepid2::Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
@@ -609,7 +604,6 @@ int feProjection(int argc, char *argv[]) {
 
       pts::getL2BasisCoeffs(basisCoeffsL2Proj,
           refTargetAtEvalPoints,
-          evaluationPoints,
           elemOrts,
           basis.get(),
           &projStruct);
@@ -844,14 +838,8 @@ int feProjection(int argc, char *argv[]) {
         Intrepid2::Experimental::ProjectionStruct<DeviceSpaceType,scalar_t> sideProjStruct;
         sideProjStruct.createL2ProjectionStruct(sideBasisPtr.get(), targetCubDegree);
 
-        int numSidePoints = sideProjStruct.getNumTargetEvalPoints();
-        DynRankView sideEvaluationPoints("sideEvaluationPoints", numBoundarySides, numSidePoints, sideDim);
-
-        // get (oriented) reference points where to evaluate the boundary term
-        pts::getL2EvaluationPoints(sideEvaluationPoints,
-            sideOrts,
-            sideBasisPtr.get(),
-            &sideProjStruct);
+        auto sideEvaluationPoints = sideProjStruct.getAllEvalPoints();
+        int numSidePoints = sideEvaluationPoints.extent(0);
 
         DynRankView physTargetAtSideEvalPoints,refTargetAtSideEvalPoints;
         if(sideFunctionSpace == Intrepid2::FUNCTION_SPACE_HCURL) {
@@ -888,12 +876,11 @@ int feProjection(int argc, char *argv[]) {
             auto basisValuesAtSideEvalPoint = Kokkos::subview(linearBasisValuesAtSideEvalPoint,is,Kokkos::ALL());
 
             auto cellCoords = Kokkos::subview(sideEvaluationPoints3d,is,Kokkos::ALL(),Kokkos::ALL());
-            auto subCoords = Kokkos::subview(sideEvaluationPoints,is,Kokkos::ALL(),Kokkos::ALL());
-            for(size_t i=0; i<subCoords.extent(0); ++i) {
+            for(size_t i=0; i<sideEvaluationPoints.extent(0); ++i) {
               for(int d=0; d<dim; ++d) {
                 cellCoords(i,d) = subcellParametrization(elemSide, d, 0);
                 for(int k=0; k<sideDim; ++k)
-                  cellCoords(i,d) += subcellParametrization(elemSide, d, k+1)*subCoords(i,k);
+                  cellCoords(i,d) += subcellParametrization(elemSide, d, k+1)*sideEvaluationPoints(i,k);
               }
             }
 
@@ -902,7 +889,7 @@ int feProjection(int argc, char *argv[]) {
                 sidePhysVertices(is, node, d) = physVertexes(elem, node, d);
 
             for(int j=0; j<numSidePoints; ++j){
-              auto sideEvalPoint = Kokkos::subview(sideEvaluationPoints,is,j,Kokkos::ALL());
+              auto sideEvalPoint = Kokkos::subview(sideEvaluationPoints,j,Kokkos::ALL());
 
               switch (sideTopoKey) {
               case shards::Quadrilateral<4>::key:
@@ -1009,7 +996,6 @@ int feProjection(int argc, char *argv[]) {
           //perform the projections and get the basis coeffiecients
           pts::getL2BasisCoeffs(sideBasisCoeffsL2Proj,
               refTargetAtSideEvalPoints,
-              sideEvaluationPoints,
               sideOrts,
               sideBasisPtr.get(),
               &sideProjStruct);

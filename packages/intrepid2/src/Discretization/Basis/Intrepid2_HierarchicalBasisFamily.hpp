@@ -61,6 +61,7 @@
 #include "Intrepid2_LegendreBasis_HVOL_LINE.hpp"
 #include "Intrepid2_LegendreBasis_HVOL_TRI.hpp"
 #include "Intrepid2_LegendreBasis_HVOL_TET.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_PYR.hpp"
 
 namespace Intrepid2 {
   
@@ -115,7 +116,7 @@ namespace Intrepid2 {
     using HGRAD = IntegratedLegendreBasis_HGRAD_PYR<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
     using HCURL = void;
     using HDIV  = void;
-    using HVOL  = void;
+    using HVOL  = LegendreBasis_HVOL_PYR<DeviceType,OutputScalar,PointScalar>;
   };
   
   /** \class Intrepid2::HierarchicalBasisFamily

@@ -440,9 +440,19 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_DIRK_BackwardEuler_CopyFiles
   EXEDEPS UnitTest_DIRK_BackwardEuler
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkExplicitAForm_CopyFiles
+  DEST_FILES Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
+  EXEDEPS UnitTest_NewmarkExplicitAForm
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkImplicitAForm_CopyFiles
-  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
+  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml
   EXEDEPS UnitTest_NewmarkImplicitAForm
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkImplicitDForm_CopyFiles
+  DEST_FILES Tempus_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder.xml
+  EXEDEPS UnitTest_NewmarkImplicitDForm
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_IntegratorBasic_CopyFiles

@@ -51,8 +51,8 @@
 #define _ZOLTAN2_TPETRAROWMATRIXADAPTER_HPP_
 
 #include <Zoltan2_MatrixAdapter.hpp>
-#include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningHelpers.hpp>
+#include <Zoltan2_StridedData.hpp>
 
 #include <Tpetra_RowMatrix.hpp>
 
@@ -72,32 +72,30 @@ namespace Zoltan2 {
 
 */
 
-template <typename User, typename UserCoord=User>
-  class TpetraRowMatrixAdapter : public MatrixAdapter<User,UserCoord> {
+template <typename User, typename UserCoord = User>
+class TpetraRowMatrixAdapter : public MatrixAdapter<User, UserCoord> {
 public:
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
-  typedef typename InputTraits<User>::offset_t offset_t;
-  typedef typename InputTraits<User>::lno_t    lno_t;
-  typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::part_t   part_t;
-  typedef typename InputTraits<User>::node_t   node_t;
-  typedef User user_t;
-  typedef UserCoord userCoord_t;
+  using scalar_t = typename InputTraits<User>::scalar_t;
+  using offset_t = typename InputTraits<User>::offset_t;
+  using lno_t = typename InputTraits<User>::lno_t;
+  using gno_t = typename InputTraits<User>::gno_t;
+  using part_t = typename InputTraits<User>::part_t;
+  using node_t = typename InputTraits<User>::node_t;
+  using device_t = typename node_t::device_type;
+  using host_t = typename Kokkos::HostSpace::memory_space;
+  using user_t = User;
+  using userCoord_t = UserCoord;
 #endif
-
-  /*! \brief Destructor
-   */
-  ~TpetraRowMatrixAdapter() { }
 
   /*! \brief Constructor
    *    \param inmatrix The user's Tpetra RowMatrix object
-   *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
-   *        the set \c nWeightsPerRow to the number of weights per row.
+   *    \param nWeightsPerRow If row weights will be provided in
+   * setRowWeights(), the set \c nWeightsPerRow to the number of weights per
+   * row.
    */
   TpetraRowMatrixAdapter(const RCP<const User> &inmatrix,
-                         int nWeightsPerRow=0);
+                         int nWeightsPerRow = 0);
 
   /*! \brief Specify a weight for each entity of the primaryEntityType.
    *    \param weightVal A pointer to the weights for this index.
@@ -112,12 +110,13 @@ public:
    */
 
   void setWeights(const scalar_t *weightVal, int stride, int idx = 0);
+  void setWeights(Kokkos::View<scalar_t **, device_t> &weights);
 
   /*! \brief Specify a weight for each row.
    *    \param weightVal A pointer to the weights for this index.
-   *    \stride          A stride to be used in reading the values.  The
-   *        index \c idx weight for row \k should be found at
-   *        <tt>weightVal[k*stride]</tt>.
+   *    \param stride    A stride to be used in reading the values.
+   *                     The index \c idx weight for row \k should be found at
+   *                     <tt>weightVal[k*stride]</tt>.
    *    \param idx  A value between zero and one less that the \c nWeightsPerRow
    *                  argument to the constructor.
    *
@@ -129,6 +128,7 @@ public:
    */
 
   void setRowWeights(const scalar_t *weightVal, int stride, int idx = 0);
+  void setRowWeights(Kokkos::View<scalar_t **, device_t> &weights);
 
   /*! \brief Specify an index for which the weight should be
               the degree of the entity
@@ -148,85 +148,153 @@ public:
   // The MatrixAdapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumRows() const {
-    return matrix_->getLocalNumRows();
-  }
+  size_t getLocalNumRows() const { return matrix_->getLocalNumRows(); }
 
-  size_t getLocalNumColumns() const {
-    return matrix_->getLocalNumCols();
-  }
+  size_t getLocalNumColumns() const { return matrix_->getLocalNumCols(); }
 
-  size_t getLocalNumEntries() const {
-    return matrix_->getLocalNumEntries();
-  }
+  size_t getLocalNumEntries() const { return matrix_->getLocalNumEntries(); }
 
   bool CRSViewAvailable() const { return true; }
 
-  void getRowIDsView(const gno_t *&rowIds) const
-  {
+  void getRowIDsView(const gno_t *&rowIds) const override {
     ArrayView<const gno_t> rowView = rowMap_->getLocalElementList();
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
-  {
+  void getRowIDsHostView(
+      typename BaseAdapter<User>::ConstIdsHostView &rowIds) const override {
+    auto kRowIds = rowMap_->getMyGlobalIndices();
+    auto hostRowIds = Kokkos::create_mirror_view(kRowIds);
+    Kokkos::deep_copy(hostRowIds, kRowIds);
+    rowIds = hostRowIds;
+  }
+
+  void getRowIDsDeviceView(
+      typename BaseAdapter<User>::ConstIdsDeviceView &rowIds) const override {
+    using device_type = typename node_t::device_type;
+    auto rowIdsDevice = Kokkos::create_mirror_view_and_copy(
+        device_type(), rowMap_->getMyGlobalIndices());
+    rowIds = rowIdsDevice;
+  }
+
+  void getCRSView(ArrayRCP<const offset_t> &offsets,
+                  ArrayRCP<const gno_t> &colIds) const {
     offsets = offset_;
     colIds = columnIds_;
   }
 
+  void getCRSHostView(
+      typename BaseAdapter<User>::ConstOffsetsHostView &offsets,
+      typename BaseAdapter<User>::ConstIdsHostView &colIds) const override {
+    auto hostOffsets = Kokkos::create_mirror_view(kOffset_);
+    Kokkos::deep_copy(hostOffsets, kOffset_);
+    offsets = hostOffsets;
+
+    auto hostColIds = Kokkos::create_mirror_view(kColumnIds_);
+    Kokkos::deep_copy(hostColIds, kColumnIds_);
+    colIds = hostColIds;
+  }
+
+  void getCRSDeviceView(
+      typename BaseAdapter<User>::ConstOffsetsDeviceView &offsets,
+      typename BaseAdapter<User>::ConstIdsDeviceView &colIds) const override {
+    offsets = kOffset_;
+    colIds = kColumnIds_;
+  }
+
   void getCRSView(ArrayRCP<const offset_t> &offsets,
                   ArrayRCP<const gno_t> &colIds,
-                  ArrayRCP<const scalar_t> &values) const
-  {
+                  ArrayRCP<const scalar_t> &values) const {
     offsets = offset_;
     colIds = columnIds_;
     values = values_;
   }
 
+  void getCRSHostView(
+      typename BaseAdapter<User>::ConstOffsetsHostView &offsets,
+      typename BaseAdapter<User>::ConstIdsHostView &colIds,
+      typename BaseAdapter<User>::ConstScalarsHostView &values) const override {
+    auto hostOffsets = Kokkos::create_mirror_view(kOffset_);
+    Kokkos::deep_copy(hostOffsets, kOffset_);
+    offsets = hostOffsets;
+
+    auto hostColIds = Kokkos::create_mirror_view(kColumnIds_);
+    Kokkos::deep_copy(hostColIds, kColumnIds_);
+    colIds = hostColIds;
+
+    auto hostValues = Kokkos::create_mirror_view(kValues_);
+    Kokkos::deep_copy(hostValues, kValues_);
+    values = hostValues;
+  }
+
+  void
+  getCRSDeviceView(typename BaseAdapter<User>::ConstOffsetsDeviceView &offsets,
+                   typename BaseAdapter<User>::ConstIdsDeviceView &colIds,
+                   typename BaseAdapter<User>::ConstScalarsDeviceView &values)
+      const override {
+    offsets = kOffset_;
+    colIds = kColumnIds_;
+    values = kValues_;
+  }
 
   int getNumWeightsPerRow() const { return nWeightsPerRow_; }
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
-                           int idx = 0) const
-  {
-    if(idx<0 || idx >= nWeightsPerRow_)
-    {
+                         int idx = 0) const {
+    if (idx < 0 || idx >= nWeightsPerRow_) {
       std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid row weight index " << idx << std::endl;
+      emsg << __FILE__ << ":" << __LINE__ << "  Invalid row weight index "
+           << idx << std::endl;
       throw std::runtime_error(emsg.str());
     }
-
 
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  bool useNumNonzerosAsRowWeight(int idx) const { return numNzWeight_[idx];}
+  void getRowWeightsHostView(
+      typename BaseAdapter<User>::WeightsHostView &weights) const {
+    auto hostWeight = Kokkos::create_mirror_view(kRowWeights_);
+    Kokkos::deep_copy(hostWeight, kRowWeights_);
+    weights = hostWeight;
+  }
+
+  void getRowWeightsDeviceView(
+      typename BaseAdapter<User>::WeightsDeviceView &weights) const {
+    weights = kRowWeights_;
+  }
+
+  bool useNumNonzerosAsRowWeight(int idx) const { return numNzWeight_[idx]; }
 
   template <typename Adapter>
-    void applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<Adapter> &solution) const;
+  void applyPartitioningSolution(
+      const User &in, User *&out,
+      const PartitioningSolution<Adapter> &solution) const;
 
   template <typename Adapter>
-    void applyPartitioningSolution(const User &in, RCP<User> &out,
-         const PartitioningSolution<Adapter> &solution) const;
+  void applyPartitioningSolution(
+      const User &in, RCP<User> &out,
+      const PartitioningSolution<Adapter> &solution) const;
 
 private:
-
+  // Old Non Kokkos type
   RCP<const User> matrix_;
-  RCP<const Tpetra::Map<lno_t, gno_t, node_t> > rowMap_;
-  RCP<const Tpetra::Map<lno_t, gno_t, node_t> > colMap_;
+  RCP<const Tpetra::Map<lno_t, gno_t, node_t>> rowMap_;
+  RCP<const Tpetra::Map<lno_t, gno_t, node_t>> colMap_;
   ArrayRCP<offset_t> offset_;
-  ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
-  ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
+  ArrayRCP<gno_t> columnIds_; // TODO:  KDD Is it necessary to copy and store
+  ArrayRCP<scalar_t> values_; // TODO:  the matrix here?  Would prefer views.
+  ArrayRCP<StridedData<lno_t, scalar_t>> rowWeights_;
+
+  // New Kokkos Type
+  Kokkos::View<offset_t *, device_t> kOffset_;
+  Kokkos::View<gno_t *, device_t> kColumnIds_;
+  Kokkos::View<scalar_t *, device_t> kValues_;
+  Kokkos::View<scalar_t **, device_t> kRowWeights_;
+  Kokkos::View<bool *, host_t> numNzWeight_;
 
   int nWeightsPerRow_;
-  ArrayRCP<StridedData<lno_t, scalar_t> > rowWeights_;
-  ArrayRCP<bool> numNzWeight_;
-
   bool mayHaveDiagonalEntries;
-
   RCP<User> doMigration(const User &from, size_t numLocalRows,
                         const gno_t *myNewRows) const;
 };
@@ -236,14 +304,10 @@ private:
 /////////////////////////////////////////////////////////////////
 
 template <typename User, typename UserCoord>
-  TpetraRowMatrixAdapter<User,UserCoord>::TpetraRowMatrixAdapter(
-    const RCP<const User> &inmatrix, int nWeightsPerRow):
-      matrix_(inmatrix), rowMap_(), colMap_(),
-      offset_(), columnIds_(),
-      nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
-      mayHaveDiagonalEntries(true)
-{
-  typedef StridedData<lno_t,scalar_t> input_t;
+TpetraRowMatrixAdapter<User, UserCoord>::TpetraRowMatrixAdapter(
+    const RCP<const User> &inmatrix, int nWeightsPerRow)
+    : matrix_(inmatrix), nWeightsPerRow_(nWeightsPerRow), mayHaveDiagonalEntries(true) {
+  typedef StridedData<lno_t, scalar_t> input_t;
 
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
@@ -251,40 +315,69 @@ template <typename User, typename UserCoord>
   size_t nrows = matrix_->getLocalNumRows();
   size_t nnz = matrix_->getLocalNumEntries();
   size_t maxnumentries =
-         matrix_->getLocalMaxNumRowEntries(); // Diff from CrsMatrix
+      matrix_->getLocalMaxNumRowEntries(); // Diff from CrsMatrix
 
-  offset_.resize(nrows+1, 0);
+  offset_.resize(nrows + 1, 0);
   columnIds_.resize(nnz);
   values_.resize(nnz);
-  typename User::nonconst_local_inds_host_view_type  indices("indices", maxnumentries);
-  typename User::nonconst_values_host_view_type  nzs("nzs", maxnumentries);
+  typename User::nonconst_local_inds_host_view_type indices("indices",
+                                                            maxnumentries);
+  typename User::nonconst_values_host_view_type nzs("nzs", maxnumentries);
+
+  kOffset_ = Kokkos::View<offset_t *, device_t>(
+      Kokkos::ViewAllocateWithoutInitializing("offset_"), nrows + 1);
+  auto kOffsetHost = Kokkos::create_mirror_view(kOffset_);
+
+  kColumnIds_ = Kokkos::View<gno_t *, device_t>(
+      Kokkos::ViewAllocateWithoutInitializing("columIds_"), nnz);
+  auto kColumnIdsHost = Kokkos::create_mirror_view(kColumnIds_);
+
+  kValues_ = Kokkos::View<scalar_t *, device_t>(
+      Kokkos::ViewAllocateWithoutInitializing("values_"), nnz);
+  auto kValuesHost = Kokkos::create_mirror_view(kValues_);
+
+  kRowWeights_ = Kokkos::View<scalar_t **, device_t>(
+      Kokkos::ViewAllocateWithoutInitializing("rowWeights_"), nWeightsPerRow_,
+      nWeightsPerRow_ * nrows);
 
   lno_t next = 0;
-  for (size_t i=0; i < nrows; i++){
+  kOffsetHost(0) = 0;
+  for (size_t i = 0; i < nrows; i++) {
     lno_t row = i;
     matrix_->getLocalRowCopy(row, indices, nzs, nnz); // Diff from CrsMatrix
-    for (size_t j=0; j < nnz; j++){
-      values_[next] = nzs[j];
+    for (size_t j = 0; j < nnz; j++) {
+      auto cNzs = nzs[j];
+      values_[next] = cNzs;
+      kValuesHost(next) = cNzs;
       // TODO - this will be slow
       //   Is it possible that global columns ids might be stored in order?
-      columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
+      auto colMapGId = colMap_->getGlobalElement(indices[j]);
+      kColumnIdsHost(next) = colMapGId;
+      columnIds_[next++] = colMapGId;
     }
-    offset_[i+1] = offset_[i] + nnz;
+    auto nextOffset = offset_[i] + nnz;
+    offset_[i + 1] = nextOffset;
+    kOffsetHost(i + 1) = nextOffset;
   }
 
-  if (nWeightsPerRow_ > 0){
-    rowWeights_ = arcp(new input_t [nWeightsPerRow_], 0, nWeightsPerRow_, true);
-    numNzWeight_ = arcp(new bool [nWeightsPerRow_], 0, nWeightsPerRow_, true);
-    for (int i=0; i < nWeightsPerRow_; i++)
-      numNzWeight_[i] = false;
+  Kokkos::deep_copy(kValues_, kValuesHost);
+  Kokkos::deep_copy(kOffset_, kOffsetHost);
+  Kokkos::deep_copy(kColumnIds_, kColumnIdsHost);
+
+  if (nWeightsPerRow_ > 0) {
+    rowWeights_ = arcp(new input_t[nWeightsPerRow_], 0, nWeightsPerRow_, true);
+    numNzWeight_ =
+        Kokkos::View<bool *, host_t>("numNzWeight_", nWeightsPerRow_);
+    for (size_t i = 0; i < numNzWeight_.extent(0); ++i) {
+      numNzWeight_(i) = false;
+    }
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void TpetraRowMatrixAdapter<User,UserCoord>::setWeights(
-    const scalar_t *weightVal, int stride, int idx)
-{
+void TpetraRowMatrixAdapter<User, UserCoord>::setWeights(
+    const scalar_t *weightVal, int stride, int idx) {
   if (this->getPrimaryEntityType() == MATRIX_ROW)
     setRowWeights(weightVal, stride, idx);
   else {
@@ -292,36 +385,63 @@ template <typename User, typename UserCoord>
     std::ostringstream emsg;
     emsg << __FILE__ << "," << __LINE__
          << " error:  setWeights not yet supported for"
-         << " columns or nonzeros."
-         << std::endl;
+         << " columns or nonzeros." << std::endl;
     throw std::runtime_error(emsg.str());
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void TpetraRowMatrixAdapter<User,UserCoord>::setRowWeights(
-    const scalar_t *weightVal, int stride, int idx)
-{
-  typedef StridedData<lno_t,scalar_t> input_t;
-  if(idx<0 || idx >= nWeightsPerRow_)
-  {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid row weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str());
+void TpetraRowMatrixAdapter<User, UserCoord>::setWeights(
+    Kokkos::View<scalar_t **, device_t> &weights) {
+  if (this->getPrimaryEntityType() == MATRIX_ROW)
+    setRowWeights(weights);
+  else {
+    // TODO:  Need to allow weights for columns and/or nonzeros
+    std::ostringstream emsg;
+    emsg << __FILE__ << "," << __LINE__
+         << " error:  setWeights not yet supported for"
+         << " columns or nonzeros." << std::endl;
+    throw std::runtime_error(emsg.str());
   }
-
-  size_t nvtx = getLocalNumRows();
-  ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
-  rowWeights_[idx] = input_t(weightV, stride);
 }
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void TpetraRowMatrixAdapter<User,UserCoord>::setWeightIsDegree(
-    int idx)
-{
+void TpetraRowMatrixAdapter<User, UserCoord>::setRowWeights(
+    const scalar_t *weightVal, int stride, int idx) {
+  typedef StridedData<lno_t, scalar_t> input_t;
+  if (idx < 0 || idx >= nWeightsPerRow_) {
+    std::ostringstream emsg;
+    emsg << __FILE__ << ":" << __LINE__ << "  Invalid row weight index " << idx
+         << std::endl;
+    throw std::runtime_error(emsg.str());
+  }
+
+  size_t nvtx = getLocalNumRows();
+  ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx * stride, false);
+  rowWeights_[idx] = input_t(weightV, stride);
+
+  // JD-TODO: Check if correct
+  auto kRowWeightsHost = Kokkos::create_mirror_view(kRowWeights_);
+  Kokkos::deep_copy(kRowWeightsHost, kRowWeights_);
+  for (size_t i = 0; i < nvtx; ++i) {
+    kRowWeightsHost(idx, i) = weightV[i];
+  }
+
+  Kokkos::deep_copy(kRowWeights_, kRowWeightsHost);
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+void TpetraRowMatrixAdapter<User, UserCoord>::setRowWeights(
+    Kokkos::View<scalar_t **, device_t> &weights) {
+  kRowWeights_ = weights;
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+void TpetraRowMatrixAdapter<User, UserCoord>::setWeightIsDegree(int idx) {
   if (this->getPrimaryEntityType() == MATRIX_ROW)
     setRowWeightIsNumberOfNonZeros(idx);
   else {
@@ -336,35 +456,32 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void TpetraRowMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(
-    int idx)
-{
-  if(idx<0 || idx >= nWeightsPerRow_)
-  {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid row weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str());
+void TpetraRowMatrixAdapter<User, UserCoord>::setRowWeightIsNumberOfNonZeros(
+    int idx) {
+  if (idx < 0 || idx >= nWeightsPerRow_) {
+    std::ostringstream emsg;
+    emsg << __FILE__ << ":" << __LINE__ << "  Invalid row weight index " << idx
+         << std::endl;
+    throw std::runtime_error(emsg.str());
   }
 
-
-  numNzWeight_[idx] = true;
+  numNzWeight_(idx) = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  template <typename Adapter>
-    void TpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
-      const User &in, User *&out,
-      const PartitioningSolution<Adapter> &solution) const
-{
+template <typename Adapter>
+void TpetraRowMatrixAdapter<User, UserCoord>::applyPartitioningSolution(
+    const User &in, User *&out,
+    const PartitioningSolution<Adapter> &solution) const {
   // Get an import list (rows to be received)
   size_t numNewRows;
   ArrayRCP<gno_t> importList;
-  try{
-    numNewRows = Zoltan2::getImportList<Adapter,
-                                        TpetraRowMatrixAdapter<User,UserCoord> >
-                                       (solution, this, importList);
+  try {
+    numNewRows =
+        Zoltan2::getImportList<Adapter,
+                               TpetraRowMatrixAdapter<User, UserCoord>>(
+            solution, this, importList);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -376,18 +493,18 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  template <typename Adapter>
-    void TpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
-      const User &in, RCP<User> &out,
-      const PartitioningSolution<Adapter> &solution) const
-{
+template <typename Adapter>
+void TpetraRowMatrixAdapter<User, UserCoord>::applyPartitioningSolution(
+    const User &in, RCP<User> &out,
+    const PartitioningSolution<Adapter> &solution) const {
   // Get an import list (rows to be received)
   size_t numNewRows;
   ArrayRCP<gno_t> importList;
-  try{
-    numNewRows = Zoltan2::getImportList<Adapter,
-                                        TpetraRowMatrixAdapter<User,UserCoord> >
-                                       (solution, this, importList);
+  try {
+    numNewRows =
+        Zoltan2::getImportList<Adapter,
+                               TpetraRowMatrixAdapter<User, UserCoord>>(
+            solution, this, importList);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -395,15 +512,10 @@ template <typename User, typename UserCoord>
   out = doMigration(in, numNewRows, importList.getRawPtr());
 }
 
-
 ////////////////////////////////////////////////////////////////////////////
-template < typename User, typename UserCoord>
-RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
-  const User &from,
-  size_t numLocalRows,
-  const gno_t *myNewRows
-) const
-{
+template <typename User, typename UserCoord>
+RCP<User> TpetraRowMatrixAdapter<User, UserCoord>::doMigration(
+    const User &from, size_t numLocalRows, const gno_t *myNewRows) const {
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsmatrix_t;
 
@@ -418,7 +530,7 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
   // approach it might be clearer what's going on here
   const tcrsmatrix_t *pCrsMatrix = dynamic_cast<const tcrsmatrix_t *>(&from);
 
-  if(!pCrsMatrix) {
+  if (!pCrsMatrix) {
     throw std::logic_error("TpetraRowMatrixAdapter cannot migrate data for "
                            "your RowMatrix; it can migrate data only for "
                            "Tpetra::CrsMatrix.  "
@@ -433,7 +545,7 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
 
   // target map
   ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
-  const RCP<const Teuchos::Comm<int> > &comm = from.getComm();
+  const RCP<const Teuchos::Comm<int>> &comm = from.getComm();
   RCP<const map_t> tmap = rcp(new map_t(numGlobalRows, rowList, base, comm));
 
   // importer
@@ -462,25 +574,24 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
 
   // number of non zeros in my new rows
   typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
-  vector_t numOld(smap);  // TODO These vectors should have scalar=size_t,
-  vector_t numNew(tmap);  // but ETI does not yet support that.
-  for (int lid=0; lid < oldNumElts; lid++){
+  vector_t numOld(smap); // TODO These vectors should have scalar=size_t,
+  vector_t numNew(tmap); // but ETI does not yet support that.
+  for (int lid = 0; lid < oldNumElts; lid++) {
     numOld.replaceGlobalValue(smap->getGlobalElement(lid),
-      scalar_t(from.getNumEntriesInLocalRow(lid)));
+                              scalar_t(from.getNumEntriesInLocalRow(lid)));
   }
   numNew.doImport(numOld, importer, Tpetra::INSERT);
 
   // TODO Could skip this copy if could declare vector with scalar=size_t.
   ArrayRCP<size_t> nnz(newNumElts);
-  if (newNumElts > 0){
+  if (newNumElts > 0) {
     ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
-    for (int lid=0; lid < newNumElts; lid++){
+    for (int lid = 0; lid < newNumElts; lid++) {
       nnz[lid] = static_cast<size_t>(ptr[lid]);
     }
   }
 
-  RCP<tcrsmatrix_t> M =
-    rcp(new tcrsmatrix_t(tmap, nnz()));
+  RCP<tcrsmatrix_t> M = rcp(new tcrsmatrix_t(tmap, nnz()));
 
   M->doImport(from, importer, Tpetra::INSERT);
   M->fillComplete();
@@ -489,6 +600,6 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
   return Teuchos::rcp_dynamic_cast<User>(M);
 }
 
-}  //namespace Zoltan2
+} // namespace Zoltan2
 
-#endif
+#endif // _ZOLTAN2_TPETRAROWMATRIXADAPTER_HPP_

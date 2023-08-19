@@ -591,6 +591,21 @@ namespace
     }
   }
 
+  TEUCHOS_UNIT_TEST( BasisCardinality, Pyramid_HVOL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_PYR;
+    
+    for (ordinal_type p=1; p<10; p++)
+    {
+      // expected cardinality is (p+1)^3
+      const ordinal_type expectedCardinality = (p+1) * (p+1) * (p+1);
+      
+      HierarchicalBasis hierarchicalBasis(p);
+      const ordinal_type actualCardinality = hierarchicalBasis.getCardinality();
+      TEST_EQUALITY(expectedCardinality, actualCardinality);
+    }
+  }
+
   TEUCHOS_UNIT_TEST( BasisCardinality, Serendipity_HDIV_HEX )
   {
     // TODO: finish this test.  (Can we do something templated on the BasisFamily??)

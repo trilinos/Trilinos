@@ -82,14 +82,6 @@ void gemv(const execution_space& space, const char trans[],
       Kokkos::SpaceAccessibility<execution_space,
                                  typename YViewType::memory_space>::accessible,
       "KokkosBlas::gemv: YViewType must be accessible from execution_space");
-  static_assert(
-      Kokkos::SpaceAccessibility<typename YViewType::memory_space,
-                                 typename AViewType::memory_space>::assignable,
-      "KokkosBlas::gemv: AViewType must be assignable to YViewType");
-  static_assert(
-      Kokkos::SpaceAccessibility<typename YViewType::memory_space,
-                                 typename XViewType::memory_space>::assignable,
-      "KokkosBlas::gemv: XViewType must be assignable to YViewType");
 
   // Check compatibility of dimensions at run time.
   if (trans[0] == 'N' || trans[0] == 'n') {
