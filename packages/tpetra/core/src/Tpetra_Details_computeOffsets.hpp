@@ -385,7 +385,7 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
     using functor_type =
       ComputeOffsetsFromConstantCount<offset_type, CT, SizeType>;
     execution_space execSpace;
-    functor_type::run (execSpace, ptr, count);
+    total = functor_type::run (execSpace, ptr, count);
   }
   return total;
 }
