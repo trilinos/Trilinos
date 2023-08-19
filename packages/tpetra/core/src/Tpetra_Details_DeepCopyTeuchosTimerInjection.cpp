@@ -51,6 +51,10 @@
 #endif
 #include <string>
 
+#include "Tpetra_Details_Behavior.hpp"
+
+
+
 namespace Tpetra {
 namespace Details {
 
@@ -61,10 +65,23 @@ namespace Details {
     void kokkosp_begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle, const char* dst_name, const void* dst_ptr,                                 
                                  Kokkos::Tools::SpaceHandle src_handle, const char* src_name, const void* src_ptr,
                                  uint64_t size) {      
+      // In verbose mode, we add the src/dst names as well
+      std::string extra_label;
+      if(Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose()) {
+        extra_label = std::string(" {") + src_name + "=>" + dst_name + "," + std::to_string(size)+"}";
+      }    
+
       if(timer_ != Teuchos::null)
         std::cout << "WARNING: Kokkos::deep_copy() started within another Kokkos::deep_copy().  Timers will be in error"<<std::endl;
 
-      timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::deep_copy [")+src_handle.name+"=>"+dst_handle.name+"]");
+      // If the src_name is "Scalar" then we're doing a "Fill" style copy from host to devices, which we want to record separately.  
+      if(!strcmp(src_name,"Scalar")) 
+        timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::deep_copy_scalar [")+src_handle.name+"=>"+dst_handle.name+"]" + extra_label);
+      // If the size is under 65 bytes, we're going to flag this as "small" to make it easier to watch the big stuff
+      else if(size <= 64)
+        timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::deep_copy_small [")+src_handle.name+"=>"+dst_handle.name+"]" + extra_label);
+      else
+        timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::deep_copy [")+src_handle.name+"=>"+dst_handle.name+"]" + extra_label);
       timer_->start();
       timer_->incrementNumCalls();
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
@@ -107,10 +124,11 @@ namespace Details {
 
   void AddKokkosDeepCopyToTimeMonitor(bool force) {
     if (!DeepCopyTimerInjection::initialized_) {
-      if (force || Tpetra::Details::Behavior::timeKokkosDeepCopy()) {
+      if (force || Tpetra::Details::Behavior::timeKokkosDeepCopy() || Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose()) {
         Kokkos::Tools::Experimental::set_begin_deep_copy_callback(DeepCopyTimerInjection::kokkosp_begin_deep_copy);
         Kokkos::Tools::Experimental::set_end_deep_copy_callback(DeepCopyTimerInjection::kokkosp_end_deep_copy);
         DeepCopyTimerInjection::initialized_=true;
+
       }
     }
   }

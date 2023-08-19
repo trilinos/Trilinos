@@ -375,10 +375,8 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         //Computing HGRAD coefficients for PHI to interpolate function f(x,y,z) = 1+x+2y+3z
         DynRankView basisCoeffsPHI("basisCoeffsPHI", workset.numOwnedCells(), numBasisPHI);
         {
-          DynRankView dofCoordsPHI("dofCoordsPHI", workset.numOwnedCells(), numBasisPHI, dim);
-          DynRankView dofCoeffsPHI("dofCoeffsPHI", workset.numOwnedCells(), numBasisPHI);
-
-          li::getDofCoordsAndCoeffs(dofCoordsPHI,  dofCoeffsPHI, hgradBasis.getRawPtr(), elemOrts);
+          DynRankView dofCoordsPHI("dofCoordsPHI", numBasisPHI, dim);         
+          hgradBasis->getDofCoords(dofCoordsPHI);
 
           //map the reference Dof coordinates into physical frame
           DynRankView physCoordsPHI("physCoordsPHI", workset.numOwnedCells(), numBasisPHI, dim);
@@ -394,18 +392,18 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           });
 
           //compute basis coefficients
-          li::getBasisCoeffs(basisCoeffsPHI, functValuesAtDofCoordsPHI, dofCoeffsPHI);
+          li::getBasisCoeffs(basisCoeffsPHI, functValuesAtDofCoordsPHI, hgradBasis.getRawPtr(), elemOrts);
         }
 
 
         //Computing HCURL coefficients for E to interpolate the constant vector [1,1,1]
         DynRankView basisCoeffsE("basisCoeffsE", workset.numOwnedCells(), numBasisE);
         {
-          DynRankView dofCoordsE("dofCoordsE", workset.numOwnedCells(), numBasisE, dim);
-          DynRankView dofCoeffsE("dofCoeffsE", workset.numOwnedCells(), numBasisE, dim);
-          li::getDofCoordsAndCoeffs(dofCoordsE,  dofCoeffsE, curlBasis.getRawPtr(), elemOrts);
+          //Because the function is constant, we do not need the DoF coordinates.
+          //DynRankView dofCoordsE("dofCoordsE", numBasisE, dim);
+          //curlBasis->getDofCoords(dofCoordsE);
 
-          //Because the function is constant, we do not need to map the coordinates to physical frame.
+          
 
           // Evaluate the function (in the physical frame) and map it back to the reference frame
           // In order to map an HCurl function back to the reference frame we need to multiply it
@@ -421,7 +419,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           });
 
           //compute basis coefficients
-          li::getBasisCoeffs(basisCoeffsE, functValuesAtDofCoordsE, dofCoeffsE);
+          li::getBasisCoeffs(basisCoeffsE, functValuesAtDofCoordsE, curlBasis.getRawPtr(), elemOrts);
         }
 
    /*
@@ -435,7 +433,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           projStruct.createL2DGProjectionStruct(curlBasis, targetCubDegree);
           int numPoints = projStruct.getNumTargetEvalPoints();
           //DynRankView evalPoints("evalPoints", elemOrts, workset.numOwnedCells(), numPoints, dim);
-          //pts::getL2EvaluationPoints(evalPoints, curlBasis, &projStruct);
+          //auto evalPoints = projStruct->getAllEvalPoints();
 
           DynRankView functValuesAtEvalPoints("funE", workset.numOwnedCells(), numPoints ,dim);
           double curlScaling = boxLength/2.0/numXElements;

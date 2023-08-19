@@ -81,7 +81,7 @@
 #endif
 
 // Zoltan2 includes
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE)
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -98,8 +98,8 @@
 
 //#include "shylu_debug_manager.hpp"
 
-#define MIN(a, b) (((a) < (b)) ? a : b)
-#define MAX(a, b) (((a) > (b)) ? a : b)
+#define SHYLU_CORE_MIN(a, b) (((a) < (b)) ? a : b)
+#define SHYLU_CORE_MAX(a, b) (((a) > (b)) ? a : b)
 
 /** \brief Main data structure holding needed offset and temp variables
  *

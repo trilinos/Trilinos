@@ -393,10 +393,18 @@ class BsrMatrix {
   //! Nonconst version of the type of the entries in the sparse matrix.
   typedef typename values_type::non_const_value_type non_const_value_type;
 
-  // block values are actually a 1-D view, however they are implicitly
-  // arranged in LayoutRight, e.g. consecutive entries in the values view
-  // are consecutive entries within a row inside a block
-  using block_layout = Kokkos::LayoutRight;
+  //! block values are actually a 1-D view, however they are implicitly
+  //! arranged in LayoutRight, e.g. consecutive entries in the values view
+  //! are consecutive entries within a row inside a block
+  using block_layout_type = Kokkos::LayoutRight;
+
+  //! Type returned by \c unmanaged_block
+  using block_type = Kokkos::View<value_type**, block_layout_type, device_type,
+                                  Kokkos::MemoryUnmanaged>;
+
+  //! Type returned by \c unmanaged_block_const
+  using const_block_type = Kokkos::View<const value_type**, block_layout_type,
+                                        device_type, Kokkos::MemoryUnmanaged>;
 
   /// \name Storage of the actual sparsity structure and values.
   ///
@@ -480,15 +488,12 @@ class BsrMatrix {
   /// \param cols [in] The column indices. cols[k] is the column
   ///   index of val[k].
   /// \param blockdim [in] The block size of the constructed BsrMatrix.
-  /// \param pad [in] If true, pad the sparse matrix's storage with
-  ///   zeros in order to improve cache alignment and / or
-  ///   vectorization.
+  /// \param pad [in] Ignored
   ///
   /// The \c pad argument is currently not used.
   BsrMatrix(const std::string& label, OrdinalType nrows, OrdinalType ncols,
             size_type annz, ScalarType* vals, OrdinalType* rows,
             OrdinalType* cols, OrdinalType blockdim, bool pad = false) {
-    (void)label;
     (void)pad;
     blockDim_ = blockdim;
 
@@ -532,10 +537,10 @@ class BsrMatrix {
 
     // device data
     typename row_map_type::non_const_type row_map_device(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map_device"),
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, label + " row_map"),
         numRows + 1);
-    index_type entries_device("entries_device", numBlocks);
-    Kokkos::resize(values, annz);
+    index_type entries_device(label + " entries", numBlocks);
+    values = values_type(label + " values", annz);
 
     // mirror views on host
     auto row_map_host = Kokkos::create_mirror_view(row_map_device);
@@ -986,6 +991,20 @@ class BsrMatrix {
       return BsrRowViewConst<BsrMatrix>(values, graph.entries, blockDim(),
                                         count, start);
     }
+  }
+
+  /*! \brief return an unmanaged view of block i */
+  KOKKOS_INLINE_FUNCTION
+  block_type unmanaged_block(const size_type i) const {
+    // cast up to the size_type to help avoid an overflow
+
+    return block_type(&values(i * blockDim_ * blockDim_), blockDim_, blockDim_);
+  }
+  KOKKOS_INLINE_FUNCTION
+  const_block_type unmanaged_block_const(const size_type i) const {
+    // cast up to the size_type to help avoid an overflow
+    return const_block_type(&values(i * blockDim_ * blockDim_), blockDim_,
+                            blockDim_);
   }
 
  protected:

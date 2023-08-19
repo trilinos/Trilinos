@@ -130,7 +130,6 @@ namespace Intrepid2
     using HDIV_WEDGE  = Basis_Derived_HDIV_WEDGE < HDIV_TRI, HVOL_TRI,  HGRAD_LINE, HVOL_LINE>;
     using HVOL_WEDGE  = Basis_Derived_HVOL_WEDGE < HVOL_TRI, HVOL_LINE>;
     
-    
     // pyramid bases
     using HGRAD_PYR = typename PyramidBasisFamily::HGRAD;
     using HCURL_PYR = typename PyramidBasisFamily::HCURL;
@@ -408,7 +407,7 @@ namespace Intrepid2
     using Teuchos::rcp;
     switch (fs)
     {
-//      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_PYR (polyOrder, pointType));
+      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_PYR (polyOrder, pointType));
 //      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_PYR(polyOrder, pointType));
 //      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_PYR (polyOrder, pointType));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_PYR(polyOrder, pointType));

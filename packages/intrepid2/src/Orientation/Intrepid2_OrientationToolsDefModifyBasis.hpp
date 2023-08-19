@@ -283,7 +283,8 @@ namespace Intrepid2 {
   modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
                            const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                            const OrientationViewType orts,
-                           const BasisType* basis ) {
+                           const BasisType* basis,
+                           const bool transpose) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
       if (input.rank() == output.rank())
@@ -338,6 +339,8 @@ namespace Intrepid2 {
         numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
       }
 
+      bool leftMultiply = true;
+
       const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
       typedef F_modifyBasisByOrientation
         <decltype(orts),
@@ -351,7 +354,7 @@ namespace Intrepid2 {
                      ordinalToTag, tagToOrdinal,
                      matData,
                      cellDim, numVerts, numEdges, numFaces,
-                     numPoints, dimBasis));
+                     numPoints, dimBasis, leftMultiply, transpose));
     }
   }
 
@@ -366,6 +369,22 @@ namespace Intrepid2 {
                                     const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                                     const OrientationViewType orts,
                                     const BasisType* basis ) {
+    bool transpose = true; 
+    modifyBasisByOrientation(output, input, orts, basis, transpose);
+  }
+
+  template<typename DT>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties,
+           typename OrientationViewType,
+           typename BasisType>
+  void
+  OrientationTools<DT>::
+  modifyBasisByOrientationInverse(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                                    const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                                    const OrientationViewType orts,
+                                    const BasisType* basis,
+                                    const bool transpose ) {
   #ifdef HAVE_INTREPID2_DEBUG
     {
       if (input.rank() == output.rank())
@@ -410,7 +429,7 @@ namespace Intrepid2 {
         numPoints = output.extent(2),
         dimBasis  = output.extent(3); //returns 1 when output.rank() < 4;
 
-      const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
+      const CoeffMatrixDataViewType matData = createInvCoeffMatrix(basis);
 
       ordinal_type numVerts(0), numEdges(0), numFaces(0);
 
@@ -421,7 +440,6 @@ namespace Intrepid2 {
       }
 
       bool leftMultiply = true;
-      bool transpose    = true;
       
       const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
       typedef F_modifyBasisByOrientation
