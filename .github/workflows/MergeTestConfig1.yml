@@ -1,0 +1,85 @@
+name: MergeTestConfig1
+
+on:
+  pull_request:
+    types:
+      - labeled
+      - opened
+    branches:
+    - master
+    - develop
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Remove "RUN AUTOTESTER" Label
+        uses: actions-ecosystem/action-remove-labels@v1.3.0
+        with:
+          labels: RUN AUTOTESTER
+      - name: Set "TESTING..." Label
+        uses: actions-ecosystem/action-add-labels@v1.1.0
+        with:
+          labels: TESTING...
+          github_token: ${{ github.token }}
+  inteloneapi:
+    needs: prepare
+    runs-on: [self-hosted, trilogpu01]
+    container:
+      image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers
+      options: --shm-size=8g
+    steps:
+      - name: debug
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          env
+      - name: debug 2
+        shell: bash
+        run: |
+          bash -l -c "module list"
+          printenv PATH
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+      - name: make dirs
+        working-directory: /
+        run: |
+          mkdir -p /home/Trilinos/src/Trilinos
+          mkdir -p /home/Trilinos/install
+      - name: clone trilinos
+        uses: actions/checkout@v3
+        with:
+          path: /__w/Trilinos/Trilinos/src/Trilinos
+      - name: move trilinos
+        working-directory: /__w/Trilinos/Trilinos/src/Trilinos
+        run: |
+          mv -f * /home/Trilinos/src/Trilinos
+      - name: configure trilinos
+        working-directory: /home/Trilinos/build/
+        run: |
+          bash -l -c "./configure.sh"
+      - name: debug 3
+        if: always()
+        working-directory: /home/Trilinos/build/
+        run: |
+          bash -l -c "cat CMakeCache.txt"
+      - name: build trilinos
+        working-directory: /home/Trilinos/build/
+        run: bash -l -c "make -j8 && make install -j8"
+      - name: ctest
+        working-directory: /home/Trilinos/build/
+        run: bash -l -c "ctest -j8"
+  cleanup-labels:
+    if: always()
+    needs: [inteloneapi, gcc]
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Remove "TESTING..." Label
+      uses: actions-ecosystem/action-remove-labels@v1.3.0
+      with:
+        labels: |
+          RUN AUTOTESTER
+          TESTING...
