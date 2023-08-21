@@ -71,8 +71,6 @@
 #include <utility>
 #include <vector>
 
-#include "KokkosKernels_Utils.hpp"
-
 namespace Tpetra {
   namespace Details {
     namespace Impl {
@@ -1235,7 +1233,6 @@ namespace Tpetra {
       // values.  For now, we omit that feature of the sequential
       // code disabled below.
       numInds = computeOffsetsFromCounts (k_rowPtrs, k_numAllocPerRow_);
-      std::cout << "Just computed numInds = " << numInds << " from computeOffsetsFromCounst\n";
     }
     else {
       // It's OK to throw std::invalid_argument here, because we
@@ -1251,19 +1248,11 @@ namespace Tpetra {
 
       using Details::computeOffsetsFromConstantCount;
       numInds = computeOffsetsFromConstantCount (k_rowPtrs, this->numAllocForAllRows_);
-      std::cout << "Just computed numInds = " << numInds << " from computeOffsetsFromConstantCount, with allocPerRow = " << numAllocForAllRows_ << '\n';
-      std::cout << "The rowptrs: ";
-      KokkosKernels::Impl::print_1Dview(k_rowPtrs);
-      std::cout << '\n';
     }
     // "Commit" the resulting row offsets.
     setRowPtrsUnpacked(k_rowPtrs);
   }
-    std::cout << "The host rowptrs, after setRowPtrsUnpacked: ";
-    KokkosKernels::Impl::print_1Dview(this->getRowPtrsUnpackedHost());
-    std::cout << '\n';
     if(debug_) {
-      std::cout << "These should match: " << numInds << ", " << this->getRowPtrsUnpackedHost()(numRows) << '\n';
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numInds != size_type(this->getRowPtrsUnpackedHost()(numRows)), std::logic_error,
          ": Number of indices produced by computeOffsetsFrom[Constant]Counts "
