@@ -67,3 +67,10 @@ As a second example, for CUDA, one might need to specify the used architecture a
 ```
 -D PyTrilinos2_BINDER_FLAGS="--cuda-gpu-arch=sm_70;--cuda-path=..." \
 ```
+
+## Report issues:
+
+PyTrilinos2 relies on an automatic generation of the interface files.
+Although this automatic generation has been intensively tested, it is unfeasible to test every combinations of options of Trilinos.
+Therefore, if you face a configuration error or a compilation error, please submit an issue on https://github.com/trilinos/Trilinos 
+with the PyTrilinos2 tag, the used configuration script, the log of the outpupt of the configuration, and the log of the build process.
