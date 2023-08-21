@@ -18,7 +18,7 @@ jobs:
       - name: Remove Label
         uses: actions-ecosystem/action-remove-labels@v1.3.0
         with:
-          labels: AT: PRE-TEST INSPECTED
+          labels: "AT: PRE-TEST INSPECTED"
   inteloneapi:
     needs: prepare
     runs-on: [self-hosted, trilogpu01]
