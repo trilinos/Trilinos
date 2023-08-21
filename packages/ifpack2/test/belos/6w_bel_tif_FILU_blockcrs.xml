@@ -13,7 +13,7 @@
     <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
-  <Parameter name="Ifpack2::Preconditioner" type="string" value="FAST_ILU"/>
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="FAST_ILU_B"/>
   <ParameterList name="Ifpack2">
     <Parameter name="level" type="int" value="2"/>
     <Parameter name="triangular solve iterations" type="int" value="2"/>

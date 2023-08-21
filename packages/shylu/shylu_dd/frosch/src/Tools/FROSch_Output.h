@@ -55,11 +55,11 @@
         const bool throw_exception = !(COND); \
         if(throw_exception) { \
             Teuchos::TestForException_incrThrowNumber(); \
-            const int throwNumber = Teuchos::TestForException_getThrowNumber(); \
+            const int throwNumber = throwNumber; \
             std::ostringstream omsg; \
             omsg \
                 << std::setw(FROSCH_OUTPUT_INDENT) << " " << __FILE__ << ":" << __LINE__ << ":\n\n" \
-                << "Throw number = " << throwNumber \
+                << "Throw number = " << Teuchos::TestForException_getThrowNumber() \
                 << "\n\n" \
                 << std::setw(FROSCH_OUTPUT_INDENT) << " " << "Throw test that evaluated to true: "#COND \
                 << "\n\n" \

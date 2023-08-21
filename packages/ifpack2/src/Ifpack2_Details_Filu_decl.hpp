@@ -58,7 +58,7 @@ namespace Details
 
 /// \class Filu
 /// \brief The Ifpack2 wrapper to the ILU preconditioner of ShyLU FastILU.
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, bool BlockCrsEnabled>
 class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
   public:
@@ -66,8 +66,7 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     typedef typename Base::TRowMatrix TRowMatrix;
     typedef typename Base::ImplScalar ImplScalar;
     typedef typename Base::ImplScalarArray ImplScalarArray;
-    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, false> LocalFILU;
-    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, true> LocalFILUB;
+    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, BlockCrsEnabled> LocalFILU;
 
     //! Constructor
     Filu(Teuchos::RCP<const TRowMatrix> mat_);
@@ -89,7 +88,6 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 
   protected:
     mutable Teuchos::RCP<LocalFILU> localPrec_;
-    mutable Teuchos::RCP<LocalFILUB> localPrecBlockCrs_;
 
     void initLocalPrec();
     //compute() takes A's local values
