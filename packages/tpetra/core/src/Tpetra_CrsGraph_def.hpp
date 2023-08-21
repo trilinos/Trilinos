@@ -1198,13 +1198,13 @@ namespace Tpetra {
     //  STATIC ALLOCATION PROFILE
     //
     size_type numInds = 0;
-    {
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Allocate k_rowPtrs: " << (numRows+1) << endl;
-        std::cerr << os.str();
-      }
-      non_const_row_map_type k_rowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
+  {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Allocate k_rowPtrs: " << (numRows+1) << endl;
+      std::cerr << os.str();
+    }
+    non_const_row_map_type k_rowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
 
     if (this->k_numAllocPerRow_.extent (0) != 0) {
       // It's OK to throw std::invalid_argument here, because we
