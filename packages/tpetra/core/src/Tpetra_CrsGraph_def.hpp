@@ -1072,7 +1072,10 @@ namespace Tpetra {
           return static_cast<size_t> (0);
         }
         else {
-          return this->getRowPtrsPackedHost()(lclNumRows);
+          if(this->isLocallyIndexed())
+            return lclIndsPacked_wdv.extent(0);
+          else
+            return gblInds_wdv.extent(0);
         }
       }
       else if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
@@ -1081,7 +1084,10 @@ namespace Tpetra {
           return static_cast<size_t> (0);
         }
         else {
-          return rowPtrsUnpacked_host(lclNumRows);
+          if(this->isLocallyIndexed())
+            return lclIndsUnpacked_wdv.extent(0);
+          else
+            return gblInds_wdv.extent(0);
         }
       }
       else {
