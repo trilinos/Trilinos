@@ -14,15 +14,10 @@ jobs:
   prepare:
     runs-on: ubuntu-22.04
     steps:
-      - name: Remove "RUN AUTOTESTER" Label
+      - name: Remove "AT: PRE-TEST INSPECTED" Label
         uses: actions-ecosystem/action-remove-labels@v1.3.0
         with:
-          labels: RUN AUTOTESTER
-      - name: Set "TESTING..." Label
-        uses: actions-ecosystem/action-add-labels@v1.1.0
-        with:
-          labels: TESTING...
-          github_token: ${{ github.token }}
+          labels: AT: PRE-TEST INSPECTED
   inteloneapi:
     needs: prepare
     runs-on: [self-hosted, trilogpu01]
@@ -77,9 +72,8 @@ jobs:
     needs: [inteloneapi]
     runs-on: ubuntu-22.04
     steps:
-    - name: Remove "TESTING..." Label
+    - name: Remove Labels
       uses: actions-ecosystem/action-remove-labels@v1.3.0
       with:
         labels: |
-          RUN AUTOTESTER
-          TESTING...
+          AT: PRE-TEST INSPECTED
