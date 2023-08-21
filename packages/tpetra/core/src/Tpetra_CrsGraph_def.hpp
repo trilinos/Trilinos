@@ -939,6 +939,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalNumEntries () const
   {
+    const char tfecfFuncName[] = "getLocalNumEntries: ";
     typedef LocalOrdinal LO;
 
     if (this->indicesAreAllocated_) {
@@ -959,6 +960,11 @@ namespace Tpetra {
             // indices are allocated and k_numRowEntries_ is not allocated,
             // so we have packed storage and the length of lclIndsPacked_wdv
             // must be the number of local entries.
+            if(debug_) {
+              TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+                (this->getRowPtrsPackedHost()(lclNumRows) != lclIndsPacked_wdv.extent(0), std::logic_error,
+                 "Final entry of packed host rowptrs doesn't match the length of lclIndsPacked");
+            }
             return lclIndsPacked_wdv.extent(0);
           }
         }
