@@ -10,13 +10,10 @@ class Loss(Objective_SimOpt):
         self.Y = Y
         super().__init__()
     
-    def value(self, *args):
-        if len(args) == 2:
-            x, tol = args
-            return super().value(x, tol)
-        else:
-            return (self.Y - u).norm()**2/2
-        
+    def value_3(self, *args):
+        u, z, tol = args
+        return (self.Y - u).norm()**2/2
+
 def main():
     
     a, b = 1, 0  # the "true" parameter values from which we generate data
@@ -45,7 +42,8 @@ def main():
     # Evaluate the objective.  ##################
     x = Vector_SimOpt(u, z)
     tol = 0.0
-    objective.value(x, tol)
+    print(objective.value(u, z, tol))
+    print(objective.value(x, tol))
 
 
 if __name__ == "__main__":
