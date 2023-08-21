@@ -5,6 +5,7 @@ on:
     types:
       - labeled
       - opened
+      - edited
     branches:
     - master
     - develop
