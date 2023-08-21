@@ -1173,12 +1173,13 @@ namespace Tpetra {
     }
 
     // Allocate matrix values.
-    const size_t lclNumRows = this->staticGraph_->getLocalNumRows ();
-    typename Graph::local_graph_device_type::row_map_type k_ptrs =
-                                      this->staticGraph_->rowPtrsUnpacked_dev_;
-
-    const size_t lclTotalNumEntries = 
-                 this->staticGraph_->rowPtrsUnpacked_host_(lclNumRows);
+    const size_t lclTotalNumEntries = this->staticGraph_->lclIndsUnpacked_wdv.extent(0);
+    if (debug) {
+      const size_t lclNumRows = this->staticGraph_->getLocalNumRows ();
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->staticGraph_->rowPtrsUnpacked_host_(lclNumRows) != lclTotalNumEntries, std::logic_error,
+         "staticGraph_ is null." << suffix);
+    }
 
     // Allocate array of (packed???) matrix values.
     using values_type = typename local_matrix_device_type::values_type;
