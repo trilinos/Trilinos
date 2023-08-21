@@ -1206,47 +1206,47 @@ namespace Tpetra {
       }
       non_const_row_map_type k_rowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
 
-      if (this->k_numAllocPerRow_.extent (0) != 0) {
-        // It's OK to throw std::invalid_argument here, because we
-        // haven't incurred any side effects yet.  Throwing that
-        // exception (and not, say, std::logic_error) implies that the
-        // instance can recover.
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (this->k_numAllocPerRow_.extent (0) != numRows,
-           std::invalid_argument, "k_numAllocPerRow_ is allocated, that is, "
-           "has nonzero length " << this->k_numAllocPerRow_.extent (0)
-           << ", but its length != numRows = " << numRows << ".");
+    if (this->k_numAllocPerRow_.extent (0) != 0) {
+      // It's OK to throw std::invalid_argument here, because we
+      // haven't incurred any side effects yet.  Throwing that
+      // exception (and not, say, std::logic_error) implies that the
+      // instance can recover.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->k_numAllocPerRow_.extent (0) != numRows,
+         std::invalid_argument, "k_numAllocPerRow_ is allocated, that is, "
+         "has nonzero length " << this->k_numAllocPerRow_.extent (0)
+         << ", but its length != numRows = " << numRows << ".");
 
-        // k_numAllocPerRow_ is a host View, but k_rowPtrs (the thing
-        // we want to compute here) lives on device.  That's OK;
-        // computeOffsetsFromCounts can handle this case.
-        using Details::computeOffsetsFromCounts;
+      // k_numAllocPerRow_ is a host View, but k_rowPtrs (the thing
+      // we want to compute here) lives on device.  That's OK;
+      // computeOffsetsFromCounts can handle this case.
+      using Details::computeOffsetsFromCounts;
 
-        // FIXME (mfh 27 Jun 2016) Currently, computeOffsetsFromCounts
-        // doesn't attempt to check its input for "invalid" flag
-        // values.  For now, we omit that feature of the sequential
-        // code disabled below.
-        numInds = computeOffsetsFromCounts (k_rowPtrs, k_numAllocPerRow_);
-      }
-      else {
-        // It's OK to throw std::invalid_argument here, because we
-        // haven't incurred any side effects yet.  Throwing that
-        // exception (and not, say, std::logic_error) implies that the
-        // instance can recover.
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (this->numAllocForAllRows_ ==
-           Tpetra::Details::OrdinalTraits<size_t>::invalid (),
-           std::invalid_argument, "numAllocForAllRows_ has an invalid value, "
-           "namely Tpetra::Details::OrdinalTraits<size_t>::invalid() = " <<
-           Tpetra::Details::OrdinalTraits<size_t>::invalid () << ".");
-
-        using Details::computeOffsetsFromConstantCount;
-        numInds = computeOffsetsFromConstantCount (k_rowPtrs, this->numAllocForAllRows_);
-      }
-
-      // "Commit" the resulting row offsets.
-      setRowPtrsUnpacked(k_rowPtrs);
+      // FIXME (mfh 27 Jun 2016) Currently, computeOffsetsFromCounts
+      // doesn't attempt to check its input for "invalid" flag
+      // values.  For now, we omit that feature of the sequential
+      // code disabled below.
+      numInds = computeOffsetsFromCounts (k_rowPtrs, k_numAllocPerRow_);
     }
+    else {
+      // It's OK to throw std::invalid_argument here, because we
+      // haven't incurred any side effects yet.  Throwing that
+      // exception (and not, say, std::logic_error) implies that the
+      // instance can recover.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->numAllocForAllRows_ ==
+         Tpetra::Details::OrdinalTraits<size_t>::invalid (),
+         std::invalid_argument, "numAllocForAllRows_ has an invalid value, "
+         "namely Tpetra::Details::OrdinalTraits<size_t>::invalid() = " <<
+         Tpetra::Details::OrdinalTraits<size_t>::invalid () << ".");
+
+      using Details::computeOffsetsFromConstantCount;
+      numInds = computeOffsetsFromConstantCount (k_rowPtrs, this->numAllocForAllRows_);
+    }
+
+    // "Commit" the resulting row offsets.
+    setRowPtrsUnpacked(k_rowPtrs);
+  }
 
     if (lg == LocalIndices) {
       if (verbose) {
