@@ -1178,7 +1178,7 @@ namespace Tpetra {
       const size_t lclNumRows = this->staticGraph_->getLocalNumRows ();
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->staticGraph_->rowPtrsUnpacked_host_(lclNumRows) != lclTotalNumEntries, std::logic_error,
-         "staticGraph_ is null." << suffix);
+         "length of staticGraph's lclIndsUnpacked does not match final entry of rowPtrsUnapcked_host." << suffix);
     }
 
     // Allocate array of (packed???) matrix values.
