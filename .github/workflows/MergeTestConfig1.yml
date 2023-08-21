@@ -15,7 +15,7 @@ jobs:
   prepare:
     runs-on: ubuntu-22.04
     steps:
-      - name: Remove "AT: PRE-TEST INSPECTED" Label
+      - name: Remove Label
         uses: actions-ecosystem/action-remove-labels@v1.3.0
         with:
           labels: AT: PRE-TEST INSPECTED
