@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(3,ROL::nullPtr), qoi_T(1,ROL::nullPtr);
     RealT w1 = parlist->sublist("Problem").get("State Cost",1.0);
     RealT w2 = parlist->sublist("Problem").get("State Boundary Cost",1.0);
-    RealT w3 = parlist->sublist("Problem").get("Control Cost",0.0);
+    RealT w3 = parlist->sublist("Problem").get("L2 Control Cost",0.0);
     RealT wT = parlist->sublist("Problem").get("Final Time State Cost",1.0);
 
     std::vector<RealT> wts = {w1, w2, w3}, wts_T = {wT};
@@ -256,8 +256,8 @@ int main(int argc, char *argv[]) {
     // create l1 dynamic objective for nobj, pass to TRnonsmooth
     ROL::Ptr<ROL::PartitionedVector<RealT>> zlo = ROL::PartitionedVector<RealT>::create(*zk, nt);
     ROL::Ptr<ROL::PartitionedVector<RealT>> zhi = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    zlo->setScalar(-0.4);
-    zhi->setScalar(0.4);   
+    zlo->setScalar(parlist->sublist("Problem").get("Lower Control Bound", -1.e0));
+    zhi->setScalar(parlist->sublist("Problem").get("Upper Control Bound", 1.e0));
     ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
 			= ROL::makePtr<L1_Dyn_Objective<RealT>>(*parlist,timeStamp, zlo, zhi); 
 		
