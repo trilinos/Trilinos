@@ -57,6 +57,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_SUPPRESS_ERRORS
   "Enable the suppress errors option of binder."
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_USE_ONE_FILE
+  PYTRILINOS2_USE_ONE_FILE
+  "Enable the use of one file by binder."
+  OFF )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_CMAKE_ERROR
 PYTRILINOS2_CMAKE_ERROR
   "Stop the configuration if binder fails."
@@ -239,8 +244,12 @@ add_dependencies(generate_include_name generate_ETI_name)
 set(BINDER_OPTIONS "")
 list(APPEND BINDER_OPTIONS --root-module PyTrilinos2)
 list(APPEND BINDER_OPTIONS --prefix ${CMAKE_CURRENT_BINARY_DIR}/binder)
-#list(APPEND BINDER_OPTIONS -max-file-size=1000000)
-list(APPEND BINDER_OPTIONS -single-file)
+IF(PYTRILINOS2_USE_ONE_FILE)
+  list(APPEND BINDER_OPTIONS -single-file)
+ELSE()
+  list(APPEND BINDER_OPTIONS -max-file-size=1000000)
+  list(APPEND BINDER_OPTIONS -flat)
+ENDIF()
 list(APPEND BINDER_OPTIONS --bind Teuchos)
 list(APPEND BINDER_OPTIONS --bind Tpetra)
 list(APPEND BINDER_OPTIONS --bind MueLu)
@@ -272,7 +281,6 @@ ENDIF()
 list(APPEND BINDER_OPTIONS -DNDEBUG)
 
 message("BINDER_OPTIONS='${BINDER_OPTIONS}'")
-
 
 add_custom_command(
   OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/binder/PyTrilinos2.cpp
