@@ -41,10 +41,7 @@
 # A) Data that may change
 #
 
-TRILINOS_EXCLUDE_PACKAGES_FROM_PR_TESTING=(
-  TriKota
-  PyTrilinos
-  )
+TRILINOS_EXCLUDE_PACKAGES_FROM_PR_TESTING=(PyTrilinos)
 
 
 #
