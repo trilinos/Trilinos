@@ -1,1 +1,0 @@
-MPI_COMM_WORLD()
