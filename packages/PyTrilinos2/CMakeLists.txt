@@ -72,6 +72,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PyTrilinos2_BINDER_VERBOSE
   "Increase the verbosity of binder."
   OFF ) 
 
+SET(PyTrilinos2_BINDER_NUM_FILES "100" CACHE STRING "Maxinum number of generated files by binder.")
+
 MESSAGE("-- PYTHON_EXECUTABLE:")
 IF(NOT DEFINED ${PYTHON_EXECUTABLE})
   find_program(PYTHON_EXECUTABLE
