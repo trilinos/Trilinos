@@ -163,17 +163,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
 
     int ch;
-    while (  (ch = getc(fp) ) != '\n') ; fscanf(fp,"%d",&nElas);
+    int ret_val = 0; (void) ret_val; // suppress fscanf return value and unused variable warnings
+    while (  (ch = getc(fp) ) != '\n')
+      ;
+    ret_val = fscanf(fp,"%d",&nElas);
 
     fp = fopen(std::string("aux2" + suffix + ".mat").c_str(),"r");
     if (fp == NULL) {
       std::cout << "\nERROR:  File aux2"+suffix+".mat not found"  << std::endl;
       return EXIT_FAILURE;
     }
-    while (  (ch = getc(fp) ) != '\n') ; fscanf(fp,"%d",&nPois);
+    while (  (ch = getc(fp) ) != '\n')
+      ;
+    ret_val = fscanf(fp,"%d",&nPois);
     fclose(fp); 
 
-    // check that multiphysics problem and aux matrices are consstent with respect to sizes
+    // check that multiphysics problem and aux matrices are consistent with respect to sizes
 
     int itemp;
 
@@ -183,7 +188,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::cout << "\nERROR:  File multiPhys4x4"+suffix+".mat not found"  << std::endl;
       return EXIT_FAILURE;
     }
-    while (  (ch = getc(fp) ) != '\n') ; fscanf(fp,"%d",&itemp);
+    while (  (ch = getc(fp) ) != '\n')
+      ;
+    ret_val = fscanf(fp,"%d",&itemp);
     if (itemp != nElas+nPois+nElas+nPois) {
       std::cout << "\nERROR:  multiPhys4x4"+suffix+".mat dimension is" << itemp << "was expecting it to be " << 2*(nElas+nPois) << std::endl;
       return EXIT_FAILURE;
@@ -194,7 +201,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::cout << "\nERROR:  File multiPhys2x2"+suffix+".mat not found"  << std::endl;
       return EXIT_FAILURE;
     }
-    while (  (ch = getc(fp) ) != '\n') ; fscanf(fp,"%d",&itemp);
+    while (  (ch = getc(fp) ) != '\n')
+      ;
+    ret_val = fscanf(fp,"%d",&itemp);
     if (itemp != nElas+nPois) {
       std::cout << "\nERROR:  multiPhys2x2"+suffix+".mat dimension is" << itemp << "was expecting it to be " << (nElas+nPois) << std::endl;
       return EXIT_FAILURE;
