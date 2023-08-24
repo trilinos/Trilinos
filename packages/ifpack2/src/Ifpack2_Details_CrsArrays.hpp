@@ -70,7 +70,7 @@ struct CrsArrayReader
   typedef typename device_type::execution_space execution_space;
   typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TRowMatrix;
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TCrsMatrix;
-  typedef Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TBrsMatrix;
+  typedef Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TBcrsMatrix;
   typedef Ifpack2::LocalFilter<TRowMatrix> Filter;
   typedef Ifpack2::ReorderFilter<TRowMatrix> ReordFilter;
   typedef KokkosSparse::CrsMatrix<ImplScalar, LocalOrdinal, execution_space> KCrsMatrix;
@@ -88,14 +88,14 @@ struct CrsArrayReader
   static void getValues(const TRowMatrix* A, ScalarArray& vals, OrdinalArrayHost& rowptrs)
   {
     auto Acrs = dynamic_cast<const TCrsMatrix*>(A);
-    auto Abrs = dynamic_cast<const TBrsMatrix*>(A);
+    auto Abcrs = dynamic_cast<const TBcrsMatrix*>(A);
     if(Acrs)
     {
       getValuesCrs(Acrs, vals);
       return;
     }
-    if (Abrs) {
-      getValuesBrs(Abrs, vals);
+    if (Abcrs) {
+      getValuesBcrs(Abcrs, vals);
       return;
     }
     using range_type = Kokkos::pair<int, int>;
@@ -131,14 +131,14 @@ struct CrsArrayReader
   static void getStructure(const TRowMatrix* A, OrdinalArrayHost& rowptrsHost, OrdinalArray& rowptrs, OrdinalArray& colinds)
   {
     auto Acrs = dynamic_cast<const TCrsMatrix*>(A);
-    auto Abrs = dynamic_cast<const TBrsMatrix*>(A);
+    auto Abcrs = dynamic_cast<const TBcrsMatrix*>(A);
     if(Acrs)
     {
       getStructureCrs(Acrs, rowptrsHost, rowptrs, colinds);
       return;
     }
-    if (Abrs) {
-      getStructureBrs(Abrs, rowptrsHost, rowptrs, colinds);
+    if (Abcrs) {
+      getStructureBcrs(Abcrs, rowptrsHost, rowptrs, colinds);
       return;
     }
     //Need to allocate new array, then copy in one row at a time
@@ -207,7 +207,7 @@ struct CrsArrayReader
   }
 
   //! Faster specialization of getValues() for when A is a Tpetra::BlockCrsMatrix.
-  static void getValuesBrs(const TBrsMatrix* A, ScalarArray& values_)
+  static void getValuesBcrs(const TBcrsMatrix* A, ScalarArray& values_)
   {
     auto localA = A->getLocalMatrixDevice();
     auto values = localA.values;
@@ -217,7 +217,7 @@ struct CrsArrayReader
   }
 
   //! Faster specialization of getStructure() for when A is a Tpetra::BlockCrsMatrix.
-  static void getStructureBrs(const TBrsMatrix* A, OrdinalArrayHost& rowptrsHost_, OrdinalArray& rowptrs_, OrdinalArray& colinds_)
+  static void getStructureBcrs(const TBcrsMatrix* A, OrdinalArrayHost& rowptrsHost_, OrdinalArray& rowptrs_, OrdinalArray& colinds_)
   {
     //rowptrs really have data type size_t, but need them as LocalOrdinal, so must convert manually
     auto localA = A->getLocalMatrixDevice();

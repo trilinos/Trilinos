@@ -53,7 +53,6 @@
 #include <Kokkos_Timer.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <stdexcept>
-#include <shylu_fastilu.hpp> // Remove this later
 
 namespace Ifpack2
 {
