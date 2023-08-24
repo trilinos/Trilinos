@@ -643,7 +643,15 @@ void TpetraRowMatrixAdapter<User, UserCoord>::getRowWeightsDeviceView(
   AssertCondition((idx >= 0) and (idx < nWeightsPerRow_),
                   "Invalid row weight index.");
 
-  weights = Kokkos::subview(rowWeightsDevice_, Kokkos::ALL, idx);
+  const auto size = rowWeightsDevice_.extent(0);
+  weights = typename Base::WeightsDeviceView1D("weights", size);
+
+  Kokkos::parallel_for(
+      size, KOKKOS_CLASS_LAMBDA(const int id) {
+        weights(id) = rowWeightsDevice_(id, idx);
+      });
+
+  Kokkos::fence();
 }
 
 ////////////////////////////////////////////////////////////////////////////
