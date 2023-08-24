@@ -30,6 +30,13 @@ ELSE()
     OFF)
 ENDIF()   
 
+# temporary flag
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KEEP_EXPERIMENTAL_NAMESPACE
+  HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  "Whether Intrepid2 keeps experimentatl namespace for projections."
+  ON
+)
+
 #
 # C) Add the libraries, tests, and examples
 #

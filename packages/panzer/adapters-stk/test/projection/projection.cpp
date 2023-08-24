@@ -369,8 +369,11 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
         const int numBasisE = static_cast<int>(offsetsE.extent(0));
         const int numBasisB = static_cast<int>(offsetsB.extent(0));
-
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
         using li = Intrepid2::Experimental::LagrangianInterpolation<PHX::Device>;
+  #else
+        using li = Intrepid2::LagrangianInterpolation<PHX::Device>;
+  #endif
 
         //Computing HGRAD coefficients for PHI to interpolate function f(x,y,z) = 1+x+2y+3z
         DynRankView basisCoeffsPHI("basisCoeffsPHI", workset.numOwnedCells(), numBasisPHI);
@@ -425,11 +428,11 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
    /*
         // Alternative way of computing HCurl coefficients with L2 projection
         #include "Intrepid2_ProjectionTools.hpp"
-        using pts = Intrepid2::Experimental::ProjectionTools<PHX::Device>;
+        using pts = Intrepid2::ProjectionTools<PHX::Device>;
         DynRankView basisCoeffsE("basisCoeffsE", workset.numOwnedCells(), numBasisE);
         {
           int targetCubDegree(0);
-          Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
+          Intrepid2::ProjectionStruct<PHX::Device,double> projStruct;
           projStruct.createL2DGProjectionStruct(curlBasis, targetCubDegree);
           int numPoints = projStruct.getNumTargetEvalPoints();
           //DynRankView evalPoints("evalPoints", elemOrts, workset.numOwnedCells(), numPoints, dim);
@@ -454,11 +457,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         //Computing HDIV coefficients for B to interpolate the constant vector [1,1,1]
         DynRankView basisCoeffsB("basisCoeffsB", workset.numOwnedCells(), numBasisB);
         {
-          DynRankView dofCoordsB("dofCoordsB", workset.numOwnedCells(), numBasisB, dim);
-          DynRankView dofCoeffsB("dofCoeffsB", workset.numOwnedCells(), numBasisB, dim);
-          li::getDofCoordsAndCoeffs(dofCoordsB,  dofCoeffsB, divBasis.getRawPtr(), elemOrts);
-
-
           // Evaluate the function (in the physical frame) and map it back to the reference frame
           // In order to map an HDiv function back to the reference frame we need to multiply it
           // by det(J) J^(-1)   (J being the Jacobian of the map from reference to physical frame)
@@ -474,7 +472,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           });
 
           //compute basis coefficients
-          li::getBasisCoeffs(basisCoeffsB, functValuesAtDofCoordsB, dofCoeffsB);
+          li::getBasisCoeffs(basisCoeffsB, functValuesAtDofCoordsB, divBasis.getRawPtr(), elemOrts);
         }
 
 

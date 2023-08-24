@@ -117,12 +117,15 @@ class GetCoeffsEvaluator
     Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orts;
     Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> local_orts;
     Kokkos::DynRankView<double,PHX::Device> local_nodes;
-    DynRankView local_linearBasisValuesAtEvalPoint;
     DynRankView local_jacobian, local_jacobian_inv, local_jacobian_det;
-    DynRankView local_evaluationPoints, local_physEvalPoints;
+    DynRankView local_physEvalPoints;
     DynRankView local_refTargetAtEvalPoints, local_physTargetAtEvalPoints;
     ElemShape elemShape;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
     Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
+  #else
+    Intrepid2::ProjectionStruct<PHX::Device,double> projStruct;
+  #endif
     Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > it2basis;
   
 }; // end of class
@@ -161,7 +164,6 @@ GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
   
   // set up projection structure
   projStruct.createL2ProjectionStruct(it2basis.get(), 3); // cubature order 3
-
   int numPoints = projStruct.getNumTargetEvalPoints();
 
   // storage for local (to the workset) orientations and cell nodes
@@ -169,8 +171,6 @@ GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
   local_nodes = Kokkos::DynRankView<double,PHX::Device>("cellNodes",workset_size,numNodesPerElem,dim);
 
   // storage for local objects that don't need to know the number of target points
-  local_linearBasisValuesAtEvalPoint = DynRankView("linearBasisValuesAtEvalPoint",workset_size,numNodesPerElem);
-  local_evaluationPoints = DynRankView("evaluationPoints",workset_size,numPoints,dim);
   local_physEvalPoints = DynRankView("physEvalPoints",workset_size,numPoints,dim);
   local_jacobian = DynRankView("jacobian", workset_size, numPoints, dim, dim);
   local_jacobian_det = DynRankView("jacobian_det", workset_size, numPoints);
@@ -200,9 +200,13 @@ GetCoeffsEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  workset)
 {
-  typedef Intrepid2::CellTools<PHX::Device> ct;
-  typedef Intrepid2::FunctionSpaceTools<PHX::Device> fst;
-  typedef Intrepid2::Experimental::ProjectionTools<PHX::Device> pts;
+  using ct = Intrepid2::CellTools<PHX::Device>;
+  using fst = Intrepid2::FunctionSpaceTools<PHX::Device>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  using pts = Intrepid2::Experimental::ProjectionTools<PHX::Device>;
+  #else
+  using pts = Intrepid2::ProjectionTools<PHX::Device>;
+  #endif 
 
   // FYI, this all relies on a first-order mesh
   auto cellNodesAll = workset.getCellNodes();
@@ -239,49 +243,13 @@ evaluateFields(
 
   {
 
-    int numPoints = projStruct.getNumTargetEvalPoints();
+    auto evaluationPoints = projStruct.getAllEvalPoints();
 
-    auto evaluationPoints = Kokkos::subview(local_evaluationPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
-
-    pts::getL2EvaluationPoints(evaluationPoints,
-        sub_local_orts,
-        it2basis.get(),
-        &projStruct);
+    auto physEvalPoints = Kokkos::subview(local_physEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
+    ct::mapToPhysicalFrame(physEvalPoints,evaluationPoints,sub_local_nodes,it2basis->getBaseCellTopology());
 
     auto refTargetAtEvalPoints = Kokkos::subview(local_refTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
     auto physTargetAtEvalPoints = Kokkos::subview(local_physTargetAtEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
-
-    auto eShape = elemShape;
-    auto physEvalPoints = Kokkos::subview(local_physEvalPoints,cell_range,Kokkos::ALL(),Kokkos::ALL());
-    {
-      auto linearBasisValuesAtEvalPoint = Kokkos::subview(local_linearBasisValuesAtEvalPoint,cell_range,Kokkos::ALL());
-
-      Kokkos::parallel_for(Kokkos::RangePolicy<typename PHX::exec_space>(0,numOwnedElems),
-          KOKKOS_LAMBDA (const int &i) {
-        auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
-        for(int j=0; j<numPoints; ++j){
-          auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
-          switch (eShape) {
-          case HEX:
-            Intrepid2::Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-            break;
-          case TET:
-            Intrepid2::Impl::Basis_HGRAD_TET_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-            break;
-          case QUAD:
-            Intrepid2::Impl::Basis_HGRAD_QUAD_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-            break;
-          case TRI:
-            Intrepid2::Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-            break;
-          }
-          for(size_t k=0; k<numNodesPerElem; ++k)
-            for(int d=0; d<dim; ++d)
-              physEvalPoints(i,j,d) += sub_local_nodes(i,k,d)*basisValuesAtEvalPoint(k);
-        }
-      });
-      Kokkos::fence();
-    }
 
     // transform the target function and its derivative to the reference element (inverse of pullback operator)
     auto jacobian = Kokkos::subview(local_jacobian,cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -315,7 +283,6 @@ evaluateFields(
 
     pts::getL2BasisCoeffs(sub_coeffs,
         refTargetAtEvalPoints,
-        evaluationPoints,
         sub_local_orts,
         it2basis.get(),
         &projStruct);

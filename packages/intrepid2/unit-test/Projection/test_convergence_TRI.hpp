@@ -208,7 +208,13 @@ int ConvergenceTri(const bool verbose) {
 
   using ct = CellTools<DeviceType>;
   using ots = OrientationTools<DeviceType>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   using pts = Experimental::ProjectionTools<DeviceType>;
+  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
+  #else
+  using pts = ProjectionTools<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+  #endif
   using rst = RealSpaceTools<DeviceType>;
   using fst = FunctionSpaceTools<DeviceType>;
 
@@ -352,7 +358,7 @@ int ConvergenceTri(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -584,7 +590,7 @@ int ConvergenceTri(const bool verbose) {
         {
           ordinal_type targetCubDegree(cub_degree),targetDerivCubDegree(cub_degree-1);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -828,7 +834,7 @@ int ConvergenceTri(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -1069,7 +1075,7 @@ int ConvergenceTri(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {

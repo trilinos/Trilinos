@@ -187,10 +187,13 @@ namespace mini_em {
     using Teuchos::rcp_dynamic_cast;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
 
-    typedef Intrepid2::OrientationTools<DeviceSpace> ots;
-    typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
-    typedef Kokkos::DynRankView<Scalar,DeviceSpace> DynRankDeviceView;
-
+    using ots = Intrepid2::OrientationTools<DeviceSpace>;
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+    using li = Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace>;
+#else
+    using li = Intrepid2::LagrangianInterpolation<DeviceSpace>;
+#endif
+    using DynRankDeviceView = Kokkos::DynRankView<Scalar,DeviceSpace>;
     using view_t = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev;
     using const_view_t = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev::const_type;
 
@@ -396,9 +399,12 @@ namespace mini_em {
     using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
 
     typedef Intrepid2::OrientationTools<DeviceSpace> ots;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
     typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
+  #else
+    typedef Intrepid2::LagrangianInterpolation<DeviceSpace> li;
+  #endif
     typedef Kokkos::DynRankView<Scalar,DeviceSpace> DynRankDeviceView;
-
     using TST = Teuchos::ScalarTraits<Scalar>;
     const Scalar ZERO = TST::zero();
     using view_t = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev;
