@@ -2,6 +2,7 @@
 #define __Panzer_STK_ResponseEvaluatorFactory_SolutionWriter_impl_hpp__
 
 #include "Panzer_STK_Interface.hpp"
+#include "Panzer_STK_ProjectField.hpp"
 #include "Panzer_STK_ScatterFields.hpp"
 #include "Panzer_STK_ScatterVectorFields.hpp"
 #include "Panzer_PointValues_Evaluator.hpp"
@@ -169,18 +170,32 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
       // get eblock, get mesh basis, check and see if we need to project
 
       auto eBlock = physicsBlock.elementBlockID();
-      Teuchos::RCP<const panzer::PureBasis> meshBasis = 
-        mesh_.getMeshGeometryManager(eBlock)->getMeshPureBasis(basis->numCells());
+      auto meshBasis = mesh_->getMeshGeometryManager(eBlock)->getMeshPureBasis(basis->numCells());
 
-      if (meshBasis->getIntrepid2Basis().getName() != basis->getIntrepid2Basis().getName()) {
-        // TODO BWR project
+      if (meshBasis->getIntrepid2Basis()->getName() != basis->getIntrepid2Basis()->getName()) {
         // TODO BWR may need to add capabilities to do MULTIPLE field projections of same type...
         // TODO BWR akin to scatter below
+
+        // Project from the solution basis to the mesh
+        // Keep the field name the same so scatter can find the projected fields 
+        // TODO BWR CAN ONLY DO RESID
+        // TODO BWR ASK ABOUT THAT ^
+        // TODO BWR This seems to be OK...
+        // TODO BWR Going to watch to batch
+        for (auto & f : fields) {
+          Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval =
+            Teuchos::rcp(new ProjectField<panzer::Traits::Residual,panzer::Traits>(f, basis, meshBasis));
+
+          // register and require evaluator fields 
+          this->template registerEvaluator<panzer::Traits::Residual>(fm,eval);
+          fm.template requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
+        }
       }
 
       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval = 
-        Teuchos::rcp(new ScatterFields<EvalT,panzer::Traits>("STK HGRAD Scatter Basis " +basis->name()+": "+fields_concat,
-                                                      mesh_, basis, fields, scalars));
+        Teuchos::rcp(new ScatterFields<EvalT,panzer::Traits>(
+          "STK HGRAD Scatter Basis " +meshBasis->name()+": "+fields_concat,
+          mesh_, meshBasis, fields, scalars));
 
       // register and require evaluator fields
       this->template registerEvaluator<EvalT>(fm, eval);

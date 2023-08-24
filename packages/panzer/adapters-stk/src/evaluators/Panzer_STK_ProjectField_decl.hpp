@@ -76,8 +76,8 @@ public:
    * \param[in] outname (Optional) Name for the projected MDField
    */
   
-  ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
-               Teuchos::RCP<panzer::PureBasis> dst, std::string outname = "");
+  ProjectField(const std::string & inName, Teuchos::RCP<const panzer::PureBasis> src,
+               Teuchos::RCP<const panzer::PureBasis> dst, std::string outname = "");
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& fm);

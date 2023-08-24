@@ -50,6 +50,7 @@
 #include "Shards_BasicTopologies.hpp"
 
 #include "Panzer_BasisDescriptor.hpp"
+#include "Panzer_PureBasis.hpp"
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
@@ -94,14 +95,14 @@ namespace panzer {
      * @param[in] mesh_order  Order of the mesh associated with this manager
     */
 
-    MeshGeometryManager(const Teuchos::RCP<const shards::CellTopology> & ct, const size_t & mesh_order)
+    MeshGeometryManager(const Teuchos::RCP<const shards::CellTopology> & ct)
       : cell_topo_(ct)
     {
       // Create a "mesh basis", or the HGrad basis consistent with the mesh geometry
       // (as defined by the extended cell topology)
 
       mesh_basis_ = createHGradBasis<double,double>(*ct);
-      basis_descriptor_ = createBasisDescriptor(mesh_order);
+      basis_descriptor_ = createBasisDescriptor(mesh_basis_->getDegree());
 
     }
  

@@ -1619,8 +1619,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
    }
 
    // construct cell topology object for this block
-   Teuchos::RCP<shards::CellTopology> ct
-         = Teuchos::rcp(new shards::CellTopology(ctData));
+   Teuchos::RCP<shards::CellTopology> ct = Teuchos::rcp(new shards::CellTopology(ctData));
 
    // add element block part and cell topology
    elementBlocks_.insert(std::make_pair(name,block));
@@ -1630,8 +1629,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
    // create a mesh geometry manager for the block
 
-   Teuchos::RCP<panzer::MeshGeometryManager> mgm 
-      = Teuchos::rcp(new panzer::MeshGeometryManager(ct));
+   Teuchos::RCP<panzer::MeshGeometryManager> mgm = Teuchos::rcp(new panzer::MeshGeometryManager(ct));
 
    elementBlockMGM_.insert(std::make_pair(name,mgm));
 }
@@ -2023,6 +2021,22 @@ Teuchos::RCP<const shards::CellTopology> STK_Interface::getCellTopology(const st
       printMetaData(ss);
       TEUCHOS_TEST_FOR_EXCEPTION(itr==elementBlockCT_.end(),std::logic_error,
                                  "STK_Interface::getCellTopology: No such element block \"" +eBlock +"\" available.\n\n"
+                              << "STK Meta Data follows: \n" << ss.str());
+   }
+
+   return itr->second;
+}
+
+Teuchos::RCP<const panzer::MeshGeometryManager> STK_Interface::getMeshGeometryManager(const std::string & eBlock) const
+{
+   std::map<std::string, Teuchos::RCP<panzer::MeshGeometryManager> >::const_iterator itr;
+   itr = elementBlockMGM_.find(eBlock);
+
+   if(itr==elementBlockMGM_.end()) {
+      std::stringstream ss;
+      printMetaData(ss);
+      TEUCHOS_TEST_FOR_EXCEPTION(itr==elementBlockMGM_.end(),std::logic_error,
+                                 "STK_Interface::getMeshGeometryManager: No such element block \"" +eBlock +"\" available.\n\n"
                               << "STK Meta Data follows: \n" << ss.str());
    }
 

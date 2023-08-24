@@ -162,11 +162,12 @@ buildClosureModels(const std::string& model_id,
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(nodalItr->second));
 
         //Teuchos::RCP<const panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis("HGrad",1,ir->workset_size,ir->topology));
-        Teuchos::RCP<const panzer::PureBasis> basis = mesh_.getMeshGeometryManager(block_id)->getMeshPureBasis(ir->workset_size);
+        auto basis = mesh_->getMeshGeometryManager(block_id)->getMeshPureBasis(ir->workset_size);
 
         // TODO BWR check if we need to project...
    
         // setup scatter nodal fields
+
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
             = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,basis,*fieldNames));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);

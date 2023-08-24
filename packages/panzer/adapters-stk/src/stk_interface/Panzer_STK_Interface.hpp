@@ -1254,6 +1254,10 @@ public:
      */
    Teuchos::RCP<const shards::CellTopology> getCellTopology(const std::string & eBlock) const;
 
+   /** Get the mesh geometry manager from the element block.
+     */
+   Teuchos::RCP<const panzer::MeshGeometryManager> getMeshGeometryManager(const std::string & eBlock) const;
+
    /** Get the value of the time-stamp the last time this object was written to Exodus (default 0.0)
      *
      * \note The initial state time is completely disconnected from the current state time

@@ -59,8 +59,8 @@ namespace panzer_stk {
 
 template<typename EvalT,typename Traits>
 ProjectField<EvalT, Traits>::
-ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
-             Teuchos::RCP<panzer::PureBasis> dst, std::string outName):
+ProjectField(const std::string & inName, Teuchos::RCP<const panzer::PureBasis> src,
+             Teuchos::RCP<const panzer::PureBasis> dst, std::string outName):
   srcBasis_(src), dstBasis_(dst)
 { 
   using panzer::Cell;
