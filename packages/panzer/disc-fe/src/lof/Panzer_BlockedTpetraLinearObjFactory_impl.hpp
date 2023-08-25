@@ -34,6 +34,7 @@
 namespace panzer {
 
 using Teuchos::RCP;
+using Teuchos::rcp_dynamic_cast;
 
 // ************************************************************
 // class BlockedTpetraLinearObjFactory
@@ -43,12 +44,11 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const Teuchos::RCP<const BlockedDOFManager> & gidProvider)
-   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(comm)
+   : useColGidProviders_(false), comm_(comm)
 {
-  for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
-    gidProviders_.push_back(gidProvider->getFieldDOFManagers()[i]);
+  gidProviders_.push_back(Teuchos::rcp(new DOFManagerContainer(gidProvider)));
 
-  makeRoomForBlocks(gidProviders_.size());
+  makeRoomForBlocks(getBlockRowCount());
 
   // build and register the gather/scatter evaluators with
   // the base class.
@@ -59,9 +59,17 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> & gidProviders)
-  : gidProviders_(gidProviders), comm_(comm)
+  : useColGidProviders_(true), comm_(comm)
 {
-  makeRoomForBlocks(gidProviders_.size());
+   for(std::size_t i=0;i<gidProviders.size();i++) {
+      gidProviders_.push_back(Teuchos::rcp(new DOFManagerContainer(gidProviders[i])));
+   }
+
+  makeRoomForBlocks(getBlockRowCount(), getBlockColCount());
+
+  // build and register the gather/scatter evaluators with
+  // the base class.
+  this->buildGatherScatterEvaluators(*this);
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -78,7 +86,7 @@ BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>
 buildLinearObjContainer() const
 {
    std::vector<Teuchos::RCP<const MapType> > blockMaps;
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t blockDim = getBlockRowCount();
    for(std::size_t i=0;i<blockDim;i++)
       blockMaps.push_back(getMap(i));
 
@@ -94,7 +102,7 @@ BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>
 buildGhostedLinearObjContainer() const
 {
    std::vector<Teuchos::RCP<const MapType> > blockMaps;
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t blockDim = getBlockRowCount();
    for(std::size_t i=0;i<blockDim;i++)
       blockMaps.push_back(getGhostedMap(i));
 
@@ -118,13 +126,13 @@ globalToGhostContainer(const LinearObjContainer & in,LinearObjContainer & out,in
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
    if ( !is_null(b_in.get_x()) && !is_null(b_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     globalToGhostThyraVector(b_in.get_x(),b_out.get_x());
+     globalToGhostThyraVector(b_in.get_x(),b_out.get_x(),true);
 
    if ( !is_null(b_in.get_dxdt()) && !is_null(b_out.get_dxdt()) && ((mem & LOC::DxDt)==LOC::DxDt))
-     globalToGhostThyraVector(b_in.get_dxdt(),b_out.get_dxdt());
+     globalToGhostThyraVector(b_in.get_dxdt(),b_out.get_dxdt(),true);
 
    if ( !is_null(b_in.get_f()) && !is_null(b_out.get_f()) && ((mem & LOC::F)==LOC::F))
-      globalToGhostThyraVector(b_in.get_f(),b_out.get_f());
+      globalToGhostThyraVector(b_in.get_f(),b_out.get_f(),false);
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -141,10 +149,10 @@ ghostToGlobalContainer(const LinearObjContainer & in,LinearObjContainer & out,in
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
    if ( !is_null(b_in.get_x()) && !is_null(b_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     ghostToGlobalThyraVector(b_in.get_x(),b_out.get_x());
+     ghostToGlobalThyraVector(b_in.get_x(),b_out.get_x(),true);
 
    if ( !is_null(b_in.get_f()) && !is_null(b_out.get_f()) && ((mem & LOC::F)==LOC::F))
-     ghostToGlobalThyraVector(b_in.get_f(),b_out.get_f());
+     ghostToGlobalThyraVector(b_in.get_f(),b_out.get_f(),false);
 
    if ( !is_null(b_in.get_A()) && !is_null(b_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat))
      ghostToGlobalThyraMatrix(*b_in.get_A(),*b_out.get_A());
@@ -164,7 +172,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    using Thyra::VectorBase;
    using Thyra::ProductVectorBase;
 
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t rowBlockDim = getBlockRowCount();
+   std::size_t colBlockDim = getBlockColCount();
 
    // first cast to block LOCs
    const BTLOC & b_localBCRows = Teuchos::dyn_cast<const BTLOC>(localBCRows);
@@ -183,13 +192,13 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    if(adjustX) f = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_ghosted.get_x());
 
    // sanity check!
-   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productRange()->numBlocks()==(int) blockDim);
-   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productDomain()->numBlocks()==(int) blockDim);
-   if(f!=Teuchos::null) TEUCHOS_ASSERT(f->productSpace()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(local_bcs->productSpace()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(global_bcs->productSpace()->numBlocks()==(int) blockDim);
+   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productRange()->numBlocks()==(int) rowBlockDim);
+   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productDomain()->numBlocks()==(int) colBlockDim);
+   if(f!=Teuchos::null) TEUCHOS_ASSERT(f->productSpace()->numBlocks()==(int) rowBlockDim);
+   TEUCHOS_ASSERT(local_bcs->productSpace()->numBlocks()==(int) rowBlockDim);
+   TEUCHOS_ASSERT(global_bcs->productSpace()->numBlocks()==(int) rowBlockDim);
 
-   for(std::size_t i=0;i<blockDim;i++) {
+   for(std::size_t i=0;i<rowBlockDim;i++) {
       // grab epetra vector
       RCP<const VectorType> t_local_bcs = rcp_dynamic_cast<const ThyraVector>(local_bcs->getVectorBlock(i),true)->getConstTpetraVector();
       RCP<const VectorType> t_global_bcs = rcp_dynamic_cast<const ThyraVector>(global_bcs->getVectorBlock(i),true)->getConstTpetraVector();
@@ -202,9 +211,9 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       else
         t_f = rcp_dynamic_cast<ThyraVector>(th_f,true)->getTpetraVector();
 
-      for(std::size_t j=0;j<blockDim;j++) {
-        RCP<const MapType> map_i = getGhostedMap(i);
-        RCP<const MapType> map_j = getGhostedMap(j);
+      for(std::size_t j=0;j<colBlockDim;j++) {
+      //   RCP<const MapType> map_i = getGhostedMap(i);
+      //   RCP<const MapType> map_j = getGhostedMap(j);
 
          // pull out epetra values
          RCP<LinearOpBase<ScalarT> > th_A = (A== Teuchos::null)? Teuchos::null : A->getNonconstBlock(i,j);
@@ -327,10 +336,11 @@ buildReadOnlyDomainContainer() const
   using TVROGED = panzer::TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,
     LocalOrdinalT, GlobalOrdinalT, NodeT>;
   vector<RCP<ReadOnlyVector_GlobalEvaluationData>> gedBlocks;
+
   for (int i(0); i < getBlockColCount(); ++i)
   {
     auto tvroged = rcp(new TVROGED);
-    tvroged->initialize(getGhostedImport(i), getGhostedMap(i), getMap(i));
+    tvroged->initialize(getColGhostedImport(i), getColGhostedMap(i), getColMap(i));
     gedBlocks.push_back(tvroged);
   }
   auto ged = rcp(new BVROGED);
@@ -453,17 +463,31 @@ Teuchos::RCP<const GlobalIndexer>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGlobalIndexer(int i) const
 {
-   return gidProviders_[i];
+   return gidProviders_[0]->getFieldDOFManagers()[i];
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const GlobalIndexer>
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getColGlobalIndexer(int i) const
+{
+   return gidProviders_.back()->getFieldDOFManagers()[i];
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-makeRoomForBlocks(std::size_t blockCnt)
+makeRoomForBlocks(std::size_t blockCnt, std::size_t colBlockCnt)
 {
    maps_.resize(blockCnt);
    ghostedMaps_.resize(blockCnt);
    importers_.resize(blockCnt);
    exporters_.resize(blockCnt);
+   if(colBlockCnt > 0) {
+      colMaps_.resize(blockCnt);
+      colGhostedMaps_.resize(blockCnt);
+      colImporters_.resize(blockCnt);
+      colExporters_.resize(blockCnt);
+   }
 }
 
 // Thyra methods
@@ -477,8 +501,8 @@ getThyraDomainSpace() const
    if(domainSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > > vsArray;
-      for(std::size_t i=0;i<gidProviders_.size();i++)
-         vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap(i)));
+      for(std::size_t i=0;i<getBlockColCount();i++)
+         vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getColMap(i)));
 
       domainSpace_ = Thyra::productVectorSpace<ScalarT>(vsArray);
    }
@@ -494,7 +518,7 @@ getThyraRangeSpace() const
    if(rangeSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > > vsArray;
-      for(std::size_t i=0;i<gidProviders_.size();i++)
+      for(std::size_t i=0;i<getBlockRowCount();i++)
          vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap(i)));
 
       rangeSpace_ = Thyra::productVectorSpace<ScalarT>(vsArray);
@@ -537,9 +561,9 @@ getThyraDomainVector() const
    Thyra::assign(vec.ptr(),0.0);
 
    Teuchos::RCP<Thyra::ProductVectorBase<ScalarT> > p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<ScalarT> >(vec);
-   for(std::size_t i=0;i<gidProviders_.size();i++) {
+   for(std::size_t i=0;i<getBlockColCount();i++) {
       TEUCHOS_ASSERT(Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<ScalarT> >(p_vec->getNonconstVectorBlock(i))->spmdSpace()->localSubDim()==
-                     Teuchos::as<int>(getMap(i)->getLocalNumElements()));
+                     Teuchos::as<int>(getColMap(i)->getLocalNumElements()));
    }
 
    return vec;
@@ -565,14 +589,15 @@ getThyraMatrix() const
    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<ScalarT> > blockedOp = Thyra::defaultBlockedLinearOp<ScalarT>();
 
    // get the block dimension
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t rowBlockDim = getBlockRowCount();
+   std::size_t colBlockDim = getBlockColCount();
 
    // this operator will be square
-   blockedOp->beginBlockFill(blockDim,blockDim);
+   blockedOp->beginBlockFill(rowBlockDim,colBlockDim);
 
    // loop over each block
-   for(std::size_t i=0;i<blockDim;i++) {
-      for(std::size_t j=0;j<blockDim;j++) {
+   for(std::size_t i=0;i<rowBlockDim;i++) {
+      for(std::size_t j=0;j<colBlockDim;j++) {
          if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
             // build (i,j) block matrix and add it to blocked operator
             Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > block = Thyra::createLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getTpetraMatrix(i,j));
@@ -595,8 +620,8 @@ getGhostedThyraDomainSpace() const
    if(ghostedDomainSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > > vsArray;
-      for(std::size_t i=0;i<gidProviders_.size();i++)
-         vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGhostedMap(i)));
+      for(std::size_t i=0;i<getBlockColCount();i++)
+         vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getColGhostedMap(i)));
 
       ghostedDomainSpace_ = Thyra::productVectorSpace<ScalarT>(vsArray);
    }
@@ -612,7 +637,7 @@ getGhostedThyraRangeSpace() const
    if(ghostedRangeSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > > vsArray;
-      for(std::size_t i=0;i<gidProviders_.size();i++)
+      for(std::size_t i=0;i<getBlockRowCount();i++)
          vsArray.push_back(Thyra::createVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGhostedMap(i)));
 
       ghostedRangeSpace_ = Thyra::productVectorSpace<ScalarT>(vsArray);
@@ -653,14 +678,15 @@ getGhostedThyraMatrix() const
    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<ScalarT> > blockedOp = Thyra::defaultBlockedLinearOp<ScalarT>();
 
    // get the block dimension
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t rowBlockDim = getBlockRowCount();
+   std::size_t colBlockDim = getBlockColCount();
 
    // this operator will be square
-   blockedOp->beginBlockFill(blockDim,blockDim);
+   blockedOp->beginBlockFill(rowBlockDim,colBlockDim);
 
    // loop over each block
-   for(std::size_t i=0;i<blockDim;i++) {
-      for(std::size_t j=0;j<blockDim;j++) {
+   for(std::size_t i=0;i<rowBlockDim;i++) {
+      for(std::size_t j=0;j<colBlockDim;j++) {
          if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
             // build (i,j) block matrix and add it to blocked operator
             Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > block = Thyra::createLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGhostedTpetraMatrix(i,j));
@@ -678,13 +704,13 @@ getGhostedThyraMatrix() const
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 ghostToGlobalThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > & in,
-                         const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & out) const
+                         const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & out, bool col) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
    using Thyra::ProductVectorBase;
 
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t blockDim = col ? getBlockColCount() : getBlockRowCount();
 
    // get product vectors
    RCP<const ProductVectorBase<ScalarT> > prod_in = rcp_dynamic_cast<const ProductVectorBase<ScalarT> >(in,true);
@@ -699,7 +725,7 @@ ghostToGlobalThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > &
       RCP<VectorType> tp_out      = rcp_dynamic_cast<ThyraVector>(prod_out->getNonconstVectorBlock(i),true)->getTpetraVector();
 
       // use Tpetra to do global communication
-      ghostToGlobalTpetraVector(i,*tp_in,*tp_out);
+      ghostToGlobalTpetraVector(i, *tp_in, *tp_out, col);
    }
 }
 
@@ -713,19 +739,20 @@ ghostToGlobalThyraMatrix(const Thyra::LinearOpBase<ScalarT> & in,Thyra::LinearOp
    using Thyra::LinearOpBase;
    using Thyra::PhysicallyBlockedLinearOpBase;
 
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t rowBlockDim = getBlockRowCount();
+   std::size_t colBlockDim = getBlockColCount();
 
    // get product vectors
    const PhysicallyBlockedLinearOpBase<ScalarT> & prod_in = dyn_cast<const PhysicallyBlockedLinearOpBase<ScalarT> >(in);
    PhysicallyBlockedLinearOpBase<ScalarT> & prod_out      = dyn_cast<PhysicallyBlockedLinearOpBase<ScalarT> >(out);
 
-   TEUCHOS_ASSERT(prod_in.productRange()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(prod_in.productDomain()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(prod_out.productRange()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(prod_out.productDomain()->numBlocks()==(int) blockDim);
+   TEUCHOS_ASSERT(prod_in.productRange()->numBlocks()==(int) rowBlockDim);
+   TEUCHOS_ASSERT(prod_in.productDomain()->numBlocks()==(int) colBlockDim);
+   TEUCHOS_ASSERT(prod_out.productRange()->numBlocks()==(int) rowBlockDim);
+   TEUCHOS_ASSERT(prod_out.productDomain()->numBlocks()==(int) colBlockDim);
 
-   for(std::size_t i=0;i<blockDim;i++) {
-      for(std::size_t j=0;j<blockDim;j++) {
+   for(std::size_t i=0;i<rowBlockDim;i++) {
+      for(std::size_t j=0;j<colBlockDim;j++) {
          if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
             // extract the blocks
             RCP<const LinearOpBase<ScalarT> > th_in = prod_in.getBlock(i,j);
@@ -752,13 +779,13 @@ ghostToGlobalThyraMatrix(const Thyra::LinearOpBase<ScalarT> & in,Thyra::LinearOp
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 globalToGhostThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > & in,
-                         const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & out) const
+                         const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & out, bool col) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
    using Thyra::ProductVectorBase;
 
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t blockDim = col ? getBlockColCount() : getBlockRowCount();
 
    // get product vectors
    RCP<const ProductVectorBase<ScalarT> > prod_in = rcp_dynamic_cast<const ProductVectorBase<ScalarT> >(in,true);
@@ -773,7 +800,7 @@ globalToGhostThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > &
       RCP<VectorType> tp_out      = rcp_dynamic_cast<ThyraVector>(prod_out->getNonconstVectorBlock(i),true)->getTpetraVector();
 
       // use Tpetra to do global communication
-      globalToGhostTpetraVector(i,*tp_in,*tp_out);
+      globalToGhostTpetraVector(i, *tp_in, *tp_out, col);
    }
 }
 
@@ -782,12 +809,12 @@ globalToGhostThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > &
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-ghostToGlobalTpetraVector(int i,const VectorType & in,VectorType & out) const
+ghostToGlobalTpetraVector(int i,const VectorType & in,VectorType & out, bool col) const
 {
    using Teuchos::RCP;
 
    // do the global distribution
-   RCP<const ExportType> exporter = getGhostedExport(i);
+   RCP<const ExportType> exporter = col ? getColGhostedExport(i) : getGhostedExport(i);
    out.putScalar(0.0);
    out.doExport(in,*exporter,Tpetra::ADD);
 }
@@ -812,12 +839,12 @@ ghostToGlobalTpetraMatrix(int blockRow,const CrsMatrixType & in,CrsMatrixType & 
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-globalToGhostTpetraVector(int i,const VectorType & in,VectorType & out) const
+globalToGhostTpetraVector(int i,const VectorType & in,VectorType & out, bool col) const
 {
    using Teuchos::RCP;
 
    // do the global distribution
-   RCP<const ImportType> importer = getGhostedImport(i);
+   RCP<const ImportType> importer = col ? getColGhostedImport(i) : getGhostedImport(i);
    out.putScalar(0.0);
    out.doImport(in,*importer,Tpetra::INSERT);
 }
@@ -834,6 +861,21 @@ getMap(int i) const
    return maps_[i];
 }
 
+// get the col map from the matrix
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getColMap(int i) const
+{
+   if(not useColGidProviders_)
+     return getMap(i);
+
+   if(colMaps_[i]==Teuchos::null)
+      colMaps_[i] = buildColTpetraMap(i);
+
+   return colMaps_[i];
+}
+
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
@@ -843,6 +885,20 @@ getGhostedMap(int i) const
       ghostedMaps_[i] = buildTpetraGhostedMap(i);
 
    return ghostedMaps_[i];
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getColGhostedMap(int i) const
+{
+   if(not useColGidProviders_)
+     return getGhostedMap(i);
+
+   if(colGhostedMaps_[i]==Teuchos::null)
+      colGhostedMaps_[i] = buildColTpetraGhostedMap(i);
+
+   return colGhostedMaps_[i];
 }
 
 // get the graph of the crs matrix
@@ -898,12 +954,40 @@ getGhostedImport(int i) const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const  Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> >
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getColGhostedImport(int i) const
+{
+   if(not useColGidProviders_)
+     return getGhostedImport(i);
+
+   if(colImporters_[i]==Teuchos::null)
+      colImporters_[i] = Teuchos::rcp(new ImportType(getColMap(i),getColGhostedMap(i)));
+
+   return importers_[i];
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<const  Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedExport(int i) const
 {
    if(exporters_[i]==Teuchos::null)
       exporters_[i] = Teuchos::rcp(new ExportType(getGhostedMap(i),getMap(i)));
+
+   return exporters_[i];
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const  Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> >
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getColGhostedExport(int i) const
+{
+   if(not useColGidProviders_)
+     return getGhostedExport(i);
+
+   if(colExporters_[i]==Teuchos::null)
+      colExporters_[i] = Teuchos::rcp(new ExportType(getColGhostedMap(i),getColMap(i)));
 
    return exporters_[i];
 }
@@ -917,6 +1001,19 @@ buildTpetraMap(int i) const
 
    // get the global indices
    getGlobalIndexer(i)->getOwnedIndices(indices);
+
+   return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildColTpetraMap(int i) const
+{
+   std::vector<GlobalOrdinalT> indices;
+
+   // get the global indices
+   getColGlobalIndexer(i)->getOwnedIndices(indices);
 
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }
@@ -935,6 +1032,20 @@ buildTpetraGhostedMap(int i) const
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }
 
+// build the ghosted col map
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> >
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildColTpetraGhostedMap(int i) const
+{
+   std::vector<GlobalOrdinalT> indices;
+
+   // get the global indices
+   getColGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
+
+   return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
+}
+
 // get the graph of the crs matrix
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> >
@@ -947,7 +1058,10 @@ buildTpetraGraph(int i,int j) const
    // build the map and allocate the space for the graph and
    // grab the ghosted graph
    RCP<const MapType> map_i = getMap(i);
-   RCP<const MapType> map_j = getMap(j);
+   RCP<const MapType> map_j = getColMap(j);
+
+   TEUCHOS_ASSERT(map_i!=Teuchos::null);
+   TEUCHOS_ASSERT(map_j!=Teuchos::null);
 
    RCP<CrsGraphType> graph  = rcp(new CrsGraphType(map_i,0));
    RCP<const CrsGraphType> oGraph = getGhostedGraph(i,j);
@@ -971,17 +1085,17 @@ buildTpetraGhostedGraph(int i,int j) const
    // build the map and allocate the space for the graph and
    // grab the ghosted graph
    RCP<const MapType> map_i = getGhostedMap(i);
-   RCP<const MapType> map_j = getGhostedMap(j);
+   RCP<const MapType> map_j = getColGhostedMap(j);
 
    std::vector<std::string> elementBlockIds;
 
    Teuchos::RCP<const GlobalIndexer> rowProvider, colProvider;
 
    rowProvider = getGlobalIndexer(i);
-   colProvider = getGlobalIndexer(j);
+   colProvider = getColGlobalIndexer(j);
 
-   gidProviders_[0]->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
-                                                          // same element blocks
+   rowProvider->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
+                                                     // same element blocks
 
    // Count number of entries in each row of graph; needed for graph constructor
    std::vector<size_t> nEntriesPerRow(map_i->getLocalNumElements(), 0);
@@ -989,8 +1103,8 @@ buildTpetraGhostedGraph(int i,int j) const
    for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;
       // grab elements for this block
-      const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(blockId); // each sub provider "should" have the
-                                                                                                // same elements in each element block
+      const std::vector<LocalOrdinalT> & elements = rowProvider->getElementBlock(blockId); // each sub provider "should" have the
+                                                                                           // same elements in each element block
 
       // get information about number of indicies
       std::vector<GlobalOrdinalT> row_gids;
@@ -998,27 +1112,26 @@ buildTpetraGhostedGraph(int i,int j) const
 
       // loop over the elemnts
       for(std::size_t elmt=0;elmt<elements.size();elmt++) {
-
          rowProvider->getElementGIDs(elements[elmt],row_gids);
          colProvider->getElementGIDs(elements[elmt],col_gids);
+
          for(std::size_t row=0;row<row_gids.size();row++) {
             LocalOrdinalT lid = map_i->getLocalElement(row_gids[row]);
             nEntriesPerRow[lid] += col_gids.size();
          }
       }
    }
+
    Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
    RCP<CrsGraphType> graph  = rcp(new CrsGraphType(map_i,map_j, nEntriesPerRowView));
-
-
 
    // graph information about the mesh
    for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;
 
       // grab elements for this block
-      const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(blockId); // each sub provider "should" have the
-                                                                                                // same elements in each element block
+      const std::vector<LocalOrdinalT> & elements = rowProvider->getElementBlock(blockId); // each sub provider "should" have the
+                                                                                           // same elements in each element block
 
       // get information about number of indicies
       std::vector<GlobalOrdinalT> row_gids;
@@ -1026,7 +1139,6 @@ buildTpetraGhostedGraph(int i,int j) const
 
       // loop over the elemnts
       for(std::size_t elmt=0;elmt<elements.size();elmt++) {
-
          rowProvider->getElementGIDs(elements[elmt],row_gids);
          colProvider->getElementGIDs(elements[elmt],col_gids);
          for(std::size_t row=0;row<row_gids.size();row++)
@@ -1036,7 +1148,7 @@ buildTpetraGhostedGraph(int i,int j) const
 
    // finish filling the graph: Make sure the colmap and row maps coincide to
    //                           minimize calls to LID lookups
-   graph->fillComplete(getMap(j),getMap(i));
+   graph->fillComplete(map_j, map_i);
 
    return graph;
 }
@@ -1047,7 +1159,7 @@ BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>
 getTpetraMatrix(int i,int j) const
 {
    Teuchos::RCP<const MapType> map_i = getMap(i);
-   Teuchos::RCP<const MapType> map_j = getMap(j);
+   Teuchos::RCP<const MapType> map_j = getColMap(j);
 
    Teuchos::RCP<const CrsGraphType> tGraph = getGraph(i,j);
    Teuchos::RCP<CrsMatrixType> mat = Teuchos::rcp(new CrsMatrixType(tGraph));
@@ -1062,11 +1174,11 @@ BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>
 getGhostedTpetraMatrix(int i,int j) const
 {
    Teuchos::RCP<const MapType> map_i = getGhostedMap(i);
-   Teuchos::RCP<const MapType> map_j = getGhostedMap(j);
+   Teuchos::RCP<const MapType> map_j = getColGhostedMap(j);
 
    Teuchos::RCP<const CrsGraphType> tGraph = getGhostedGraph(i,j);
    Teuchos::RCP<CrsMatrixType> mat = Teuchos::rcp(new CrsMatrixType(tGraph));
-   mat->fillComplete(getMap(j),getMap(i));
+   mat->fillComplete(map_j,map_i);
 
    return mat;
 }
@@ -1076,7 +1188,7 @@ Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTpetraDomainVector(int i) const
 {
-   Teuchos::RCP<const MapType> tMap = getMap(i);
+   Teuchos::RCP<const MapType> tMap = getColMap(i);
    return Teuchos::rcp(new VectorType(tMap));
 }
 
@@ -1085,7 +1197,7 @@ Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraDomainVector(int i) const
 {
-   Teuchos::RCP<const MapType> tMap = getGhostedMap(i);
+   Teuchos::RCP<const MapType> tMap = getColGhostedMap(i);
    return Teuchos::rcp(new VectorType(tMap));
 }
 
@@ -1112,7 +1224,7 @@ int
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getBlockRowCount() const
 {
-   return gidProviders_.size();
+   return gidProviders_[0]->getFieldBlocks();
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -1120,7 +1232,11 @@ int
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getBlockColCount() const
 {
-   return gidProviders_.size();
+   if(not useColGidProviders_) {
+      return gidProviders_[0]->getFieldBlocks();
+   }
+
+   return gidProviders_.back()->getFieldBlocks();
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

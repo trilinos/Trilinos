@@ -45,12 +45,6 @@
 #include "Ioss_IOFactory.h"
 #include "Ioss_DatabaseIO.h"
 
-//#ifdef HAVE_MPI
-//   #include "Epetra_MpiComm.h"
-//#else
-//   #include "Epetra_SerialComm.h"
-//#endif
-
 using Teuchos::RCP;
 using Teuchos::rcp;
 
