@@ -67,7 +67,9 @@
   \class Belos::GCRIter
 
   \brief This class implements the pseudo-block GCR iteration, where the basic GCR
-  algorithm is performed on all of the linear systems simultaneously.
+  algorithm is performed on all of the linear systems sequentially. The algorithm
+  is based on the GCR algorithm described in the "Iterative Methods for Sparse
+  Linear Systems" (by Yousef Saad)
 
   \ingroup belos_solver_framework
 
