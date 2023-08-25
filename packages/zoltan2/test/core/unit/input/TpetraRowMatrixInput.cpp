@@ -156,12 +156,8 @@ template <typename adapter_t, typename matrix_t>
 void verifyInputAdapter(adapter_t &ia, matrix_t &matrix) {
   using idsDevice_t = typename adapter_t::ConstIdsDeviceView;
   using idsHost_t = typename adapter_t::ConstIdsHostView;
-  using offsetsDevice_t = typename adapter_t::ConstOffsetsDeviceView;
-  using offsetsHost_t = typename adapter_t::ConstOffsetsHostView;
   using weightsDevice_t = typename adapter_t::WeightsDeviceView1D;
   using weightsHost_t = typename adapter_t::WeightsHostView1D;
-  using constWeightsDevice_t = typename adapter_t::ConstWeightsDeviceView1D;
-  using constWeightsHost_t = typename adapter_t::ConstWeightsHostView1D;
 
   const auto nrows = ia.getLocalNumIDs();
 
@@ -178,7 +174,7 @@ void verifyInputAdapter(adapter_t &ia, matrix_t &matrix) {
   idsHost_t rowIdsHost;
   ia.getRowIDsHostView(rowIdsHost);
 
-  TestDeviceHostView(rowIdsDevice, rowIdsHost);
+  Z2_TEST_DEVICE_HOST_VIEWS(rowIdsDevice, rowIdsHost);
 
   /////////////////////////////////
   //// setRowWeightsDevice
@@ -211,9 +207,9 @@ void verifyInputAdapter(adapter_t &ia, matrix_t &matrix) {
     weightsHost_t weightsHost;
     Z2_TEST_NOTHROW(ia.getRowWeightsHostView(weightsHost, 0));
 
-    TestDeviceHostView(weightsDevice, weightsHost);
+    Z2_TEST_DEVICE_HOST_VIEWS(weightsDevice, weightsHost);
 
-    TestDeviceHostView(wgts0, weightsHost);
+    Z2_TEST_DEVICE_HOST_VIEWS(wgts0, weightsHost);
   }
   {
     weightsDevice_t weightsDevice;
@@ -222,9 +218,9 @@ void verifyInputAdapter(adapter_t &ia, matrix_t &matrix) {
     weightsHost_t weightsHost;
     Z2_TEST_NOTHROW(ia.getRowWeightsHostView(weightsHost, 1));
 
-    TestDeviceHostView(weightsDevice, weightsHost);
+    Z2_TEST_DEVICE_HOST_VIEWS(weightsDevice, weightsHost);
 
-    TestDeviceHostView(wgts1, weightsHost);
+    Z2_TEST_DEVICE_HOST_VIEWS(wgts1, weightsHost);
   }
   {
     weightsDevice_t wgtsDevice;
@@ -243,9 +239,6 @@ void verifyInputAdapter(adapter_t &ia, matrix_t &matrix) {
 int main(int narg, char *arg[]) {
   using rowSoln_t = Zoltan2::PartitioningSolution<rowAdapter_t>;
   using rowPart_t = rowAdapter_t::part_t;
-
-  using crsSoln_t = Zoltan2::PartitioningSolution<crsAdapter_t>;
-  using crsPart_t = crsAdapter_t::part_t;
 
   Tpetra::ScopeGuard tscope(&narg, &arg);
   const auto comm = Tpetra::getDefaultComm();
