@@ -45,6 +45,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 #include <string>
 #include <iostream>
@@ -57,13 +58,6 @@
 
 #include "UnitTest_GlobalIndexer.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-   #include "mpi.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 using Teuchos::rcp;
@@ -75,16 +69,11 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,GhostedFieldVector)
 {
-
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -179,18 +168,13 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
 {
-
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -263,18 +247,13 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 {
-
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -341,18 +320,13 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector)
 {
-
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -409,18 +383,13 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector)
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 {
-
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
