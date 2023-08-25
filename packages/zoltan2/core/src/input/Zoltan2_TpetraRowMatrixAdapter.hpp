@@ -288,11 +288,11 @@ protected:
 
   typename Base::ConstOffsetsHostView offsHost_;
   typename Base::ConstIdsHostView colIdsHost_;
-  typename Base::scalarsHostView valuesHost_;
+  typename Base::ScalarsHostView valuesHost_;
 
   typename Base::ConstOffsetsDeviceView offsDevice_;
   typename Base::ConstIdsDeviceView colIdsDevice_;
-  typename Base::scalarsDeviceView valuesDevice_;
+  typename Base::ScalarsDeviceView valuesDevice_;
 
   int nWeightsPerRow_;
   ArrayRCP<StridedData<lno_t, scalar_t>> rowWeights_;
@@ -328,7 +328,7 @@ TpetraRowMatrixAdapter<User, UserCoord>::TpetraRowMatrixAdapter(
 
   colIdsHost_ = typename Base::ConstIdsHostView("colIdsHost_", nnz);
   offsHost_ = typename Base::ConstOffsetsHostView("offsHost_", nrows + 1);
-  valuesHost_ = typename Base::scalarsHostView("valuesHost_", nnz);
+  valuesHost_ = typename Base::ScalarsHostView("valuesHost_", nnz);
 
   localInds_t localColInds("localColInds", maxNumEntries);
   localVals_t localVals("localVals", maxNumEntries);
