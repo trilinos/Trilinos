@@ -92,11 +92,7 @@ namespace Belos {
     //std::vector<ScalarType> rho_old, alpha, omega;
 
     GCRIterationState() : R(Teuchos::null)
-    {
-      //rho_old.clear();
-      //alpha.clear();
-      //omega.clear();
-    }
+    {}
   };
 
   template<class ScalarType, class MV, class OP>
@@ -190,9 +186,6 @@ namespace Belos {
     GCRIterationState<ScalarType,MV> getState() const {
       GCRIterationState<ScalarType,MV> state;
       state.R = R_;
-      //state.rho_old = rho_old_;
-      //state.alpha = alpha_;
-      //state.omega = omega_;
       return state;
     }
 
@@ -291,7 +284,7 @@ namespace Belos {
     // State Storage
     //
     // Residual and temporary multivecs
-    Teuchos::RCP<MV> R_, AxR_/*, Pr_*/;
+    Teuchos::RCP<MV> R_, AxR_;
     //
     std::vector<ScalarType> pone_;
     std::vector<int> curIndex_, newIndex_;
@@ -354,15 +347,12 @@ namespace Belos {
     numRHS_ = numRHS;
 
     // Initialize the state storage
-    // If the subspace has not be initialized before or has changed sizes, generate it using the LHS or RHS from lp_.
     if (Teuchos::is_null(R_) || MVT::GetNumberVecs(*R_)!=numRHS_) {
       R_   = MVT::Clone( *tmp, numRHS_ );
       AxR_ = MVT::Clone( *tmp, numRHS_ );
-      //Pr_  = MVT::Clone( *tmp, numRHS_ );
 
       MVT::MvInit(*R_);
       MVT::MvInit(*AxR_);
-      //MVT::MvInit(*Pr_);
 
       pone_.resize(numRHS_);
       curIndex_.resize(numRHS_);
@@ -425,17 +415,9 @@ namespace Belos {
     newIndex_.assign(numRHS_,zero);
 
     // Pr(:,:) = Prec*RHS(:,:)
-    //Teuchos::RCP<const MV> RHS_ = lp_->getCurrRHSVec();
-    //if(lp_->isLeftPrec()) {
-    //  lp_->applyLeftPrec(*RHS_,*Pr_);
-    //}
-    //else if(lp_->isRightPrec()) {
-    //  lp_->applyRightPrec(*RHS_,*Pr_);
-    //}
     Teuchos::RCP<const MV> Pr_ = lp_->getInitPrecResVec();
 
     // R = Pr - R;
-    //axpy(one, *Pr_, pone_, *R_, *R_, true);
     MVT::Assign(*Pr_, *R_); // *R_ was already initialized with zeros
 
     // The solver is initialized
@@ -460,8 +442,8 @@ namespace Belos {
     const ScalarType one = SCT::one();
     //
     std::vector<MagnitudeType> nrmval(1);
-    std::vector<ScalarType> val(1);
     std::vector<ScalarType> gcrAlpha(1);
+    std::vector<ScalarType> gcrBeta(1);
 
     // Get the current solution std::vector.
     Teuchos::RCP<MV> X = lp_->getCurrLHSVec();
@@ -500,48 +482,48 @@ namespace Belos {
           lp_->applyRightPrec(*AxR_sub, *C_sub);
         }
 
-        MagnitudeType alphaMin = 1.0e10;
+        MagnitudeType betaMin = 1.0e10;
 
         for (int j=0; j<std::min(numKrylovVecs_,iter_); j++) {
           if (j != curIndex_[i]) {
-            //gcrAlpha = dotHerm(C[i](:,j),C[i](:,curIndex_[i])
+            //gcrBeta = dotHerm(C[i](:,j),C[i](:,curIndex_[i])
             index3[0] = j;
             Teuchos::RCP<MV> C_prev_sub = MVT::CloneViewNonConst(*C_[i], index3);
             Teuchos::RCP<MV> U_prev_sub = MVT::CloneViewNonConst(*U_[i], index3);
 
-            MVT::MvDot(*C_sub, *C_prev_sub, gcrAlpha);
-            if (SCT::magnitude(gcrAlpha[0]) < alphaMin) {
-              alphaMin = SCT::magnitude(gcrAlpha[0]);
+            MVT::MvDot(*C_sub, *C_prev_sub, gcrBeta);
+            if (SCT::magnitude(gcrBeta[0]) < betaMin) {
+              betaMin = SCT::magnitude(gcrBeta[0]);
               newIndex_[i] = j;
             }
 
-            //C[i](:,curIndex_[i])=C[i](:,curIndex_[i])-gcrAlpha*C[i](:,j);
-            //U[i](:,curIndex_[i])=U[i](:,curIndex_[i])-gcrAlpha*U[i](:,j);
-            axpy(one, *C_sub, gcrAlpha, *C_prev_sub, *C_sub, true);
-            axpy(one, *U_sub, gcrAlpha, *U_prev_sub, *U_sub, true);
+            //C[i](:,curIndex_[i])=C[i](:,curIndex_[i])-gcrBeta*C[i](:,j);
+            //U[i](:,curIndex_[i])=U[i](:,curIndex_[i])-gcrBeta*U[i](:,j);
+            axpy(one, *C_sub, gcrBeta, *C_prev_sub, *C_sub, true);
+            axpy(one, *U_sub, gcrBeta, *U_prev_sub, *U_sub, true);
           }
         }
 
         // update solution and residual
-        // val = one/norm2(C[i](:,curIndex_[i]));
+        // gcrAlpha = one/norm2(C[i](:,curIndex_[i]));
         MVT::MvNorm(*C_sub, nrmval);
-        val[0] = one/nrmval[0];
+        gcrAlpha[0] = one/nrmval[0];
 
-        // U[i](:,curIndex_[i])=val*U[i](:,curIndex_[i]);
-        // C[i](:,curIndex_[i])=val*C[i](:,curIndex_[i]);
-        MVT::MvScale(*U_sub, val[0]);
-        MVT::MvScale(*C_sub, val[0]);
+        // U[i](:,curIndex_[i])=gcrAlpha*U[i](:,curIndex_[i]);
+        // C[i](:,curIndex_[i])=gcrAlpha*C[i](:,curIndex_[i]);
+        MVT::MvScale(*U_sub, gcrAlpha[0]);
+        MVT::MvScale(*C_sub, gcrAlpha[0]);
 
-        // val = dotHerm(C[i](:,curIndex_[i]), R(:,i));
+        // gcrAlpha = dotHerm(C[i](:,curIndex_[i]), R(:,i));
         Teuchos::RCP<MV> R_sub = MVT::CloneViewNonConst(*R_, index1);
-        MVT::MvDot(*R_sub, *C_sub, val);
+        MVT::MvDot(*R_sub, *C_sub, gcrAlpha);
 
-        // X(:,i) = X(:,i) + val*U[i](:,curIndex_[i]);
+        // X(:,i) = X(:,i) + gcrAlpha*U[i](:,curIndex_[i]);
         Teuchos::RCP<MV> X_sub = MVT::CloneViewNonConst(*X, index1);
-        axpy(one, *X_sub, val, *U_sub, *X_sub);
+        axpy(one, *X_sub, gcrAlpha, *U_sub, *X_sub);
 
-        // R(:,i) = R(:,i) - val*C[i](:,curIndex_[i]);
-        axpy(one, *R_sub, val, *C_sub, *R_sub, true);
+        // R(:,i) = R(:,i) - gcrAlpha*C[i](:,curIndex_[i]);
+        axpy(one, *R_sub, gcrAlpha, *C_sub, *R_sub, true);
       } // end for(int i=0; i<numRHS_; i++)
 
     } // end while (sTest_->checkStatus(this) != Passed)
