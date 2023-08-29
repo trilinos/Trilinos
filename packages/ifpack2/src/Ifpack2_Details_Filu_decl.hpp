@@ -46,6 +46,7 @@
 #define __IFPACK2_FILU_DECL_HPP__ 
 
 #include <Ifpack2_Details_FastILU_Base.hpp>
+#include <shylu_fastilu_orig.hpp>
 
 //forward-declare the local preconditioner type
 template<typename LocalOrdinal, typename Scalar, typename execution_space, bool BlockCrsEnabled>
@@ -66,7 +67,9 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     typedef typename Base::TRowMatrix TRowMatrix;
     typedef typename Base::ImplScalar ImplScalar;
     typedef typename Base::ImplScalarArray ImplScalarArray;
-    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, BlockCrsEnabled> LocalFILU;
+    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, false> LocalFILU;
+    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, true> LocalFILUB;
+    typedef fastilu_orig::FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space> LocalFILUOrig;
 
     //! Constructor
     Filu(Teuchos::RCP<const TRowMatrix> mat_);
@@ -87,7 +90,9 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     void checkLocalIC() const;
 
   protected:
-    mutable Teuchos::RCP<LocalFILU> localPrec_;
+    mutable Teuchos::RCP<LocalFILUB> localPrec_;
+    mutable Teuchos::RCP<LocalFILU> localPrec2_;
+    mutable Teuchos::RCP<LocalFILUOrig> localPrec3_;
 
     void initLocalPrec();
     //compute() takes A's local values

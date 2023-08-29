@@ -157,13 +157,6 @@ setParameters (const Teuchos::ParameterList& List)
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-isBlockCrs() const
-{
-  return params_.blockCrs && params_.blockCrsSize > 1;
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initialize()
 {
@@ -179,23 +172,28 @@ initialize()
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
   }
 
-  Kokkos::Timer copyTimer;
-  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
-  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
-  crsCopyTime_ = copyTimer.seconds();
-
-  if (isBlockCrs()) {
-    // Create new TCrsMatrix with the new filled data
+  if (params_.blockCrs) {
     auto crs_matrix = Ifpack2::Details::getCrsMatrix(this->mat_);
-    auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*crs_matrix, params_.blockCrsSize);
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
 
-    // Convert to block crs matrix
+    localRowPtrsHost2_ = localRowPtrsHost_;
+    localRowPtrs2_     = localRowPtrs_;
+    localColInds2_     = localColInds_;
+    localValues2_      = localValues_;
+
+    // Create new TCrsMatrix with the new filled data
+    auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*crs_matrix, params_.blockCrsSize);
     auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, params_.blockCrsSize);
     mat_ = bcrs_matrix;
 
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
   }
+
+  Kokkos::Timer copyTimer;
+  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+  crsCopyTime_ = copyTimer.seconds();
 
   if (params_.use_metis)
   {
