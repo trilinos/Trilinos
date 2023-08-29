@@ -63,6 +63,7 @@ APPEND_SET(HEADERS
   AnasaziEigensolverDecl.hpp
   AnasaziEigensolver.hpp
   AnasaziFactory.hpp
+  AnasaziGlobalComm.hpp
   AnasaziGeneralizedDavidson.hpp
   AnasaziGeneralizedDavidsonSolMgr.hpp
   AnasaziGenOrthoManager.hpp
