@@ -60,7 +60,7 @@ CMake system via `-D<VARNAME>:BOOL=<ON|OFF>` parameters:
 1. `configure_script` points to the `cmake/std/PullRequestLinux<COMPILER><COMPILER_VERSION>TestingSettings.cmake` file.
     - Example: `${WORKSPACE}/Trilinos/cmake/std/PullRequestLinuxGCC8.3.0TestingSettings.cmake`
 
-See `TrilinosPRConfigurationStandard.py`[4] for information on what options are set to something
+See `TrilinosPRConfigurationStandard.py`[2] for information on what options are set to something
 other than the default during normal Trilinos PR operations.
 
 Expected Operation
