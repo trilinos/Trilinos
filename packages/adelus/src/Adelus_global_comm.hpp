@@ -29,11 +29,11 @@
 // MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 // IN NO EVENT SHALL NTESS OR THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
 // INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
 // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
 // HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Vinh Dang (vqdang@sandia.gov)
@@ -44,52 +44,27 @@
 //@HEADER
 */
 
-#ifndef __ADELUS_MYTIME_HPP__
-#define __ADELUS_MYTIME_HPP__
+#ifndef __ADELUS_GLOBALCOMM_H__
+#define __ADELUS_GLOBALCOMM_H__
 
-#include <stdio.h>
 #include <mpi.h>
-#include "Adelus_defines.h"
+#include <mutex>
 
 namespace Adelus {
 
-inline
-double get_seconds(double start)
-{
-  double time;		/* total seconds */
-  time = MPI_Wtime();
-  time = time - start;
-  
-  return (time);
+static std::mutex mpi_mutex;
+static MPI_Comm Global_Adelus_Comm = MPI_COMM_WORLD;
+
+inline void initialize_global_comm(MPI_Comm comm) {
+  std::lock_guard<std::mutex> guard(mpi_mutex);
+  Global_Adelus_Comm = comm;
 }
 
-// Exchange and calculate max, min, and average timing information
-inline
-void showtime(int comm_id, MPI_Comm comm, int me, int nprocs_cube, const char *label, double *value)
-{
-  double avgtime;
-  
-  struct {
-    double val;
-    int proc;
-  } max_in, max_out, min_in, min_out;
-  max_in.val = *value;
-  max_in.proc = me;
-  MPI_Allreduce(&max_in,&max_out,1,MPI_DOUBLE_INT,MPI_MAXLOC,comm);
-  min_in.val = *value;
-  min_in.proc = me;
-  MPI_Allreduce(&min_in,&min_out,1,MPI_DOUBLE_INT,MPI_MINLOC,comm);
-  
-  MPI_Allreduce(value,&avgtime,1,MPI_DOUBLE,MPI_SUM,comm);
-  
-  avgtime /= nprocs_cube;
-  
-  if (me == 0) {
-    fprintf(stderr, "Communicator %d -- %s = %.4f (min, on proc %d), %.4f (avg), %.4f (max, on proc %d).\n",
-      comm_id,label,min_out.val,min_out.proc,avgtime, max_out.val,max_out.proc);
-  }
+inline MPI_Comm get_global_comm() {
+  std::lock_guard<std::mutex> guard(mpi_mutex);
+  return Global_Adelus_Comm;
 }
 
-}//namespace Adelus
+} // namespace Adelus
 
-#endif
+#endif // __ADELUS_GLOBALCOMM_H__

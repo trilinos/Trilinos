@@ -88,8 +88,9 @@
 #endif
 
 namespace Intrepid2 {
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 namespace Experimental {
+#endif
 
 
 
@@ -152,7 +153,7 @@ public:
   using MemSpaceType = typename DeviceType::memory_space;
   using EvalPointsType = typename ProjectionStruct<DeviceType, double>::EvalPointsType;
 
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   /** \brief  Computes evaluation points for L2 projection
    *          WARNING: this function will be removed when the class will be moved out of the namespace Experimental
 
@@ -211,6 +212,7 @@ public:
       const BasisType* cellBasis,
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
+#endif
 
   /** \brief  Computes the basis coefficients of the L2 projection of the target function
 
@@ -242,7 +244,7 @@ public:
       const BasisType* cellBasis,
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   /** \brief  Computes evaluation points for local L2 projection
      for broken HGRAD HCURL HDIV and HVOL spaces
      WARNING: this function will be removed when the class will be moved out of the namespace Experimental
@@ -267,6 +269,7 @@ public:
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
       const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
+#endif
 
   /** \brief  Computes evaluation points for local L2 projection
      for broken HGRAD HCURL HDIV and HVOL spaces
@@ -331,7 +334,7 @@ public:
       const BasisType* cellBasis,
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   /** \brief  Computes evaluation points for HGrad projection
    *          WARNING: this function will be removed when the class will be moved out of the namespace Experimental
 
@@ -396,7 +399,7 @@ public:
                       const OrientationViewType cellOrientations,
                       const BasisType* cellBasis,
                       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
-
+#endif
 
   /** \brief  Computes the basis coefficients of the HGrad projection of the target function
 
@@ -429,7 +432,7 @@ public:
                       const BasisType* cellBasis,
                       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   /** \brief  Computes evaluation points for HCurl projection
    *          WARNING: this function will be removed when the class will be moved out of the namespace Experimental
 
@@ -501,6 +504,8 @@ public:
       const BasisType* cellBasis,
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
+#endif
+
   /** \brief  Computes the basis coefficients of the HCurl projection of the target function
 
       \code
@@ -537,6 +542,7 @@ public:
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
 
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   /** \brief  Computes evaluation points for HDiv projection
    *          WARNING: this function will be removed when the class will be moved out of the namespace Experimental
 
@@ -605,7 +611,7 @@ public:
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
-
+#endif
   
   /** \brief  Computes the basis coefficients of the HDiv projection of the target function
 
@@ -640,6 +646,7 @@ public:
       const BasisType* cellBasis,
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   /** \brief  Computes evaluation points for HVol projection
    *          WARNING: this function will be removed when the class will be moved out of the namespace Experimental
 
@@ -697,7 +704,7 @@ public:
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
-
+#endif
 
   /** \brief  Computes the basis coefficients of the HVol projection of the target function
 
@@ -1155,8 +1162,9 @@ public:
   };
   
 };
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 } //Experimental
+#endif
 } //Intrepid2
 
 

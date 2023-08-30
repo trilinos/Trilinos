@@ -902,8 +902,7 @@ struct OperatorTensorDecomposition
         
         for (ordinal_type d=0; d<=tensorSpaceDim; d++) // d: tensorial dimension
         {
-          ordinal_type d2_max = std::min(spaceDim2,d);
-          int subcellOffset = 0; // for this dimension of tensor subcells, how many subcells have we already counted with other d2/d1 combos?
+          ordinal_type d2_max = std::min(spaceDim2, d);
           for (ordinal_type d2=0; d2<=d2_max; d2++)
           {
             ordinal_type d1 = d-d2;
@@ -935,8 +934,7 @@ struct OperatorTensorDecomposition
                   } // localDofID1
                 } // localDofID2
               } // subcellOrdinal1
-            } // subcellOrdinal2
-            subcellOffset += subcellCount1 * subcellCount2;
+            }   // subcellOrdinal2
           }
         }
         

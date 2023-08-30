@@ -150,7 +150,7 @@ namespace Stokhos {
       ValueType tol =
         abs_tol + rel_tol*std::max(abs(a1.fastAccessCoeff(i)),
                                    abs(a2.fastAccessCoeff(i)));
-      if (err  > tol) {
+      if ( (err  > tol) && (err != 0.) ) {
         out
           <<"\nError, relErr("<<a1_name<<"["<<i<<"],"
           <<a2_name<<"["<<i<<"]) = relErr("<<a1.coeff(i)<<","<<a2.coeff(i)

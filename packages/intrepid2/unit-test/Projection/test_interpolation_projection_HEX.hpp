@@ -213,13 +213,21 @@ int InterpolationProjectionHex(const bool verbose) {
     }
   };
 
-  typedef std::array<ordinal_type,2> edgeType;
-  typedef std::array<ordinal_type,4> faceType;
-  typedef CellTools<DeviceType> ct;
-  typedef OrientationTools<DeviceType> ots;
-  typedef Experimental::ProjectionTools<DeviceType> pts;
-  typedef FunctionSpaceTools<DeviceType> fst;
-  typedef Experimental::LagrangianInterpolation<DeviceType> li;
+  using edgeType = std::array<ordinal_type,2>;
+  using faceType = std::array<ordinal_type,4>;
+  using ct = CellTools<DeviceType>;
+  using ots = OrientationTools<DeviceType>;
+  using fst = FunctionSpaceTools<DeviceType>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  using pts = Experimental::ProjectionTools<DeviceType>;
+  using li = Experimental::LagrangianInterpolation<DeviceType>;
+  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
+#else
+  using pts = ProjectionTools<DeviceType>;
+  using li = LagrangianInterpolation<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+#endif
+  using lt = LagrangianTools<DeviceType>;
   using  basisType = Basis<DeviceType,ValueType,ValueType>;
 
   constexpr ordinal_type dim = 3;
@@ -416,7 +424,8 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
               DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, elemOrts);
+              lt::getOrientedDofCoords(dofCoordsOriented, basisPtr, elemOrts);
+              lt::getOrientedDofCoeffs(dofCoeffsPhys, basisPtr, elemOrts);
               DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
               DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
               for(ordinal_type i=0; i<numCells; ++i) {
@@ -555,7 +564,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createHGradProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -628,7 +637,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -682,7 +691,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -921,7 +930,8 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
               DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, elemOrts);
+              lt::getOrientedDofCoords(dofCoordsOriented, basisPtr, elemOrts);
+              lt::getOrientedDofCoeffs(dofCoeffs, basisPtr, elemOrts);
               DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
               DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
               for(ordinal_type i=0; i<numCells; ++i) {
@@ -1068,7 +1078,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createHCurlProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1143,7 +1153,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1198,7 +1208,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1428,7 +1438,8 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
               DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
-              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, elemOrts);
+              lt::getOrientedDofCoords(dofCoordsOriented, basisPtr, elemOrts);
+              lt::getOrientedDofCoeffs(dofCoeffs, basisPtr, elemOrts);
               DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
               DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
               for(ordinal_type i=0; i<numCells; ++i) {
@@ -1556,7 +1567,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createHDivProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1628,7 +1639,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1683,7 +1694,7 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
 
               auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1847,7 +1858,8 @@ int InterpolationProjectionHex(const bool verbose) {
         {
           DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
           DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
-          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
+          lt::getOrientedDofCoords(dofCoordsOriented, basisPtr, elemOrts);
+          lt::getOrientedDofCoeffs(dofCoeffsPhys, basisPtr, elemOrts);
           DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
           DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
           for(ordinal_type i=0; i<numCells; ++i) {
@@ -1941,7 +1953,7 @@ int InterpolationProjectionHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(basisPtr->getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createHVolProjectionStruct(basisPtr, targetCubDegree);
 
           auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1996,7 +2008,7 @@ int InterpolationProjectionHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(basisPtr->getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
 
           auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -2050,7 +2062,7 @@ int InterpolationProjectionHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(basisPtr->getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
 
           auto evaluationPoints = projStruct.getAllEvalPoints();

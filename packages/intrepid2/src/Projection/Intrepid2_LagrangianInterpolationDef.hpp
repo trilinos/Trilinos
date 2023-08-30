@@ -54,10 +54,9 @@
 
 
 namespace Intrepid2 {
-namespace Experimental {
 
 
-
+namespace FunctorsLagrangianTools {
 template<typename CoordsViewType,
 typename ortViewType,
 typename t2oViewType,
@@ -163,15 +162,16 @@ struct computeDofCoords {
     }
   }
 };
+}  // FunctorsLagrangianTools namespace
+
 
 template<typename DeviceType>
 template<typename BasisType,
-class ...coordsProperties, class ...coeffsProperties,
+class ...coordsProperties,
 typename ortValueType, class ...ortProperties>
 void
-LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
+LagrangianTools<DeviceType>::getOrientedDofCoords(
     Kokkos::DynRankView<typename BasisType::scalarType, coordsProperties...> dofCoords,
-    Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
     const BasisType* basis,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
 
@@ -198,22 +198,12 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
 
   const ordinal_type dim = topo.getDimension();
 
-  const ordinal_type numCells = dofCoeffs.extent(0);
-
-  ScalarViewType refDofCoords("refDofCoords", dofCoords.extent(1), dofCoords.extent(2)), refDofCoeffs;
+  ScalarViewType refDofCoords("refDofCoords", dofCoords.extent(1), dofCoords.extent(2));
   basis->getDofCoords(refDofCoords);
   RealSpaceTools<DeviceType>::clone(dofCoords,refDofCoords);
 
-  if(dofCoeffs.rank() == 3) //vector basis
-    refDofCoeffs = ScalarViewType("refDofCoeffs", dofCoeffs.extent(1), dofCoeffs.extent(2));
-  else //scalar basis
-    refDofCoeffs = ScalarViewType("refDofCoeffs",dofCoeffs.extent(1));
-  basis->getDofCoeffs(refDofCoeffs);  
-
-  if((numFaces == 0) && (numEdges == 0)) {
-    RealSpaceTools<DeviceType>::clone(dofCoeffs,refDofCoeffs);
+  if((numFaces == 0) && (numEdges == 0)) 
     return;
-  }
 
   //*** Pre-compute needed quantities related to edge DoFs that do not depend on the cell ***
   intViewType edgeTopoKey("edgeTopoKey",numEdges);
@@ -304,14 +294,13 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
 
   //*** Loop over cells ***
 
-  const Kokkos::RangePolicy<typename DeviceType::execution_space> policy(0, numCells);
-  typedef computeDofCoords
-      <decltype(dofCoords),
+  const Kokkos::RangePolicy<typename DeviceType::execution_space> policy(0, dofCoords.extent(0));
+  using FunctorType = FunctorsLagrangianTools::computeDofCoords<decltype(dofCoords),
       decltype(orts),
       decltype(tagToOrdinal),
       decltype(edgeParam),
       intViewType,
-      ScalarViewType> FunctorType;
+      ScalarViewType>;
   Kokkos::parallel_for(policy,
       FunctorType(dofCoords,
           orts, tagToOrdinal, edgeParam, faceParam,
@@ -319,8 +308,49 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
           dim, numEdges, numFaces,
           edgeTopoKey, numEdgesInternalDofs,
           faceTopoKey, numFacesInternalDofs));
+}
+
+
+template<typename DeviceType>
+template<typename BasisType, 
+class ...coeffsProperties,
+typename ortValueType, class ...ortProperties>
+void
+LagrangianTools<DeviceType>::getOrientedDofCoeffs(
+    Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
+    const BasisType* basis,
+    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
+
+  using ScalarViewType = Kokkos::DynRankView<typename BasisType::scalarType, DeviceType>;
+  ScalarViewType refDofCoeffs;
+  if(dofCoeffs.rank() == 3) //vector basis
+    refDofCoeffs = ScalarViewType("refDofCoeffs", dofCoeffs.extent(1), dofCoeffs.extent(2));
+  else //scalar basis
+    refDofCoeffs = ScalarViewType("refDofCoeffs",dofCoeffs.extent(1));
+  basis->getDofCoeffs(refDofCoeffs); 
 
   OrientationTools<DeviceType>::modifyBasisByOrientationInverse(dofCoeffs, refDofCoeffs, orts, basis, true);
+}
+
+
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+namespace Experimental {
+#endif
+
+
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+template<typename DeviceType>
+template<typename BasisType,
+class ...coordsProperties, class ...coeffsProperties,
+typename ortValueType, class ...ortProperties>
+void
+LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
+    Kokkos::DynRankView<typename BasisType::scalarType, coordsProperties...> dofCoords,
+    Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
+    const BasisType* basis,
+    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
+  LagrangianTools<DeviceType>::getOrientedDofCoords(dofCoords, basis, orts);
+  LagrangianTools<DeviceType>::getOrientedDofCoeffs(dofCoeffs, basis, orts);
 }
 
 
@@ -334,6 +364,8 @@ LagrangianInterpolation<DeviceType>::getBasisCoeffs(basisCoeffsViewType basisCoe
     const dofCoeffViewType dofCoeffs){
   ArrayTools<DeviceType>::dotMultiplyDataData(basisCoeffs,functionValsAtDofCoords,dofCoeffs);
 }
+#endif
+
 
 template<typename DeviceType>
 template<typename basisCoeffsViewType,
@@ -358,9 +390,10 @@ LagrangianInterpolation<DeviceType>::getBasisCoeffs(basisCoeffsViewType basisCoe
   OrientationTools<DeviceType>::modifyBasisByOrientationInverse(basisCoeffs, basisCoeffsRef, orts, cellBasis, true);
 }
 
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 }
-}
+#endif
+} // Intrepid2 namespace
 
 #endif
 

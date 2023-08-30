@@ -50,16 +50,17 @@
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#include "AnasaziGlobalComm.hpp"
 #else
 #include "Epetra_SerialComm.h"
 #endif
 
 namespace RBGen {
-  
+
   LapackPOD::LapackPOD() :
     isInitialized_( false ),
     basis_size_( 16 ),
-    comp_time_( 0.0 ) 
+    comp_time_( 0.0 )
   {
   }
 
@@ -84,12 +85,12 @@ namespace RBGen {
   }
 
   void LapackPOD::computeBasis()
-  {    
+  {
 #ifdef EPETRA_MPI
-    Epetra_MpiComm comm( MPI_COMM_WORLD );
+    Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
     Epetra_SerialComm comm;
-#endif    
+#endif
     //
     // Variables for Epetra
     //
@@ -138,8 +139,8 @@ namespace RBGen {
 	//
 	timer.ResetStartTime();
 	lapack.GESVD( 'O', 'N', dim, num_vecs, Proc0MV.Values(), Proc0MV.Stride(), &sv_[0], U, 1, Vt, 1, &work[0], &lwork, &info );
-	comp_time_ = timer.ElapsedTime();      
-	if (info != 0) { 
+	comp_time_ = timer.ElapsedTime();
+	if (info != 0) {
 	  // THROW AN EXCEPTION HERE!
 	  std::cout<< "The return value of the SVD is not 0!"<< std::endl;
 	}
@@ -156,7 +157,7 @@ namespace RBGen {
       //
       // Each processor needs to import the information back.
       //
-      Epetra_Import importer( basis_->Map(), Proc0MV_front.Map() );     
+      Epetra_Import importer( basis_->Map(), Proc0MV_front.Map() );
       basis_->Import(Proc0MV_front, importer, Insert);
       //
       // Clean up
@@ -179,16 +180,16 @@ namespace RBGen {
       //
       timer.ResetStartTime();
       lapack.GESVD( 'O', 'N', dim, num_vecs, ss_->Values(), ss_->Stride(), &sv_[0], U, 1, Vt, 1, &work[0], &lwork, &info );
-      comp_time_ = timer.ElapsedTime();      
-      if (info != 0) { 
+      comp_time_ = timer.ElapsedTime();
+      if (info != 0) {
 	// THROW AN EXCEPTION HERE!
 	std::cout<< "The return value of the SVD is not 0!"<< std::endl;
       }
-      sv_.resize( basis_size_ );     
+      sv_.resize( basis_size_ );
       basis_ = Teuchos::rcp( new Epetra_MultiVector( Copy, *ss_, 0, basis_size_ ) );
       //
     }
   }
-  
+
 } // end of RBGen namespace
 

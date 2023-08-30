@@ -508,9 +508,9 @@ namespace Intrepid2
             // compute integrated Jacobi values for each desired value of alpha
             // relabel storage:
             // 1D containers:
-            auto & P_i_minus_1 = scratch1D_1;
-            auto & L_i_dt      = scratch1D_2; // R_{i-1} = d/dt L_i
-            auto & L_i         = scratch1D_3;
+            P_i_minus_1 = scratch1D_1;
+            L_i_dt      = scratch1D_2; // R_{i-1} = d/dt L_i
+            L_i         = scratch1D_3;
             // 2D containers:
             auto & L_2i_j_dt      = scratch2D_1;
             auto & L_2i_j         = scratch2D_2;

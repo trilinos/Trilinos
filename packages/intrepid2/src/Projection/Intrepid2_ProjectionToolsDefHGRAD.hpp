@@ -56,7 +56,8 @@
 #include "Intrepid2_TestUtils.hpp"
 
 namespace Intrepid2 {
-namespace Experimental {
+
+namespace FunctorsProjectionTools {
 
 template<typename ViewType1, typename ViewType2, typename ViewType3,
 typename ViewType4, typename ViewType5>
@@ -318,6 +319,11 @@ struct ComputeBasisCoeffsOnCells_HGRAD {
   }
 };
 
+} // FunctorsProjectionTools namespace
+
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+namespace Experimental {
+
 template<typename DeviceType>
 template<typename BasisType, typename OrientationViewType>
 void
@@ -344,6 +350,7 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
                                           ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct) {
                                             getHGradBasisCoeffs(basisCoeffs, targetAtTargetEPoints, targetGradAtTargetGradEPoints, orts, cellBasis, projStruct);
                                           }
+#endif
 
 template<typename DeviceType>
 template<class BasisCoeffsViewType, class TargetValueViewType, class TargetGradViewType, class BasisType, class OrientationViewType>
@@ -443,8 +450,8 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
   ordinal_type computedDofsCount = numVertices;
 
   const Kokkos::RangePolicy<ExecSpaceType> policy(0, numCells);
-  typedef ComputeBasisCoeffsOnVertices_HGRAD<decltype(basisCoeffs), decltype(tagToOrdinal), decltype(targetEPointsRange),
-      decltype(targetAtTargetEPoints), decltype(basisAtTargetEPoints)> functorType;
+  using functorType = FunctorsProjectionTools::ComputeBasisCoeffsOnVertices_HGRAD<decltype(basisCoeffs), decltype(tagToOrdinal), decltype(targetEPointsRange),
+      decltype(targetAtTargetEPoints), decltype(basisAtTargetEPoints)>;
   Kokkos::parallel_for(policy, functorType(basisCoeffs, tagToOrdinal, targetEPointsRange,
       targetAtTargetEPoints, basisAtTargetEPoints, numVertices));
 
@@ -469,8 +476,8 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
     ScalarViewType wBasisAtTargetGradEPoints("wTanBasisAtTargetGradEPoints",numCells,edgeCardinality, numTargetGradEPoints);
     ScalarViewType negPartialProjGrad("negPartialProjGrad", numCells, numBasisGradEPoints);
 
-    typedef ComputeBasisCoeffsOnEdges_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights),
-        decltype(computedDofs), decltype(tagToOrdinal), decltype(targetGradAtTargetGradEPoints)> functorTypeEdge;
+    using functorTypeEdge = FunctorsProjectionTools::ComputeBasisCoeffsOnEdges_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights),
+        decltype(computedDofs), decltype(tagToOrdinal), decltype(targetGradAtTargetGradEPoints)>;
 
     Kokkos::parallel_for(policy, functorTypeEdge(basisCoeffs, negPartialProjGrad,  basisTanAtEPoints,
         basisGradAtBasisGradEPoints, basisGradEWeights,  wBasisAtBasisGradEPoints,   targetGradEWeights,
@@ -522,8 +529,8 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
     ScalarViewType targetGradTanAtTargetGradEPoints("targetGradTanAtTargetGradEPoints",numCells, numTargetGradEPoints,dim);
     ScalarViewType negPartialProjGrad("mNormalComputedProjection", numCells,numGradEPoints,dim);
 
-    typedef ComputeBasisCoeffsOnFaces_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights),
-        decltype(computedDofs), decltype(tagToOrdinal), decltype(orts), decltype(targetGradAtTargetGradEPoints), decltype(subcellParamFace)> functorTypeFace_HGRAD;
+    using functorTypeFace_HGRAD = FunctorsProjectionTools::ComputeBasisCoeffsOnFaces_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights),
+        decltype(computedDofs), decltype(tagToOrdinal), decltype(orts), decltype(targetGradAtTargetGradEPoints), decltype(subcellParamFace)>;
 
     Kokkos::parallel_for(policy, functorTypeFace_HGRAD(basisCoeffs, negPartialProjGrad, faceBasisGradAtGradEPoints,
         basisGradAtBasisGradEPoints, basisGradEWeights, wBasisGradAtGradEPoints, targetGradEWeights,
@@ -574,7 +581,7 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
     ScalarViewType wBasisGradBasisAtTargetGradEPoints("wBasisGradAtTargetGradEPoints",numCells,numElemDofs, numTargetGradEPoints,dim);
 
     auto elemDof = Kokkos::subview(tagToOrdinal, dim, 0, Kokkos::ALL());
-    typedef ComputeBasisCoeffsOnCells_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights), decltype(computedDofs), decltype(elemDof)> functorTypeCell_HGRAD;
+    using functorTypeCell_HGRAD = FunctorsProjectionTools::ComputeBasisCoeffsOnCells_HGRAD<decltype(basisCoeffs), ScalarViewType,  decltype(basisGradEWeights), decltype(computedDofs), decltype(elemDof)>;
     Kokkos::parallel_for(policy, functorTypeCell_HGRAD(basisCoeffs, negPartialProjGrad,  cellBasisGradAtGradEPoints,
         basisGradAtBasisGradEPoints, basisGradEWeights,  wBasisGradAtGradEPoints,   targetGradEWeights,
         basisGradAtTargetGradEPoints, wBasisGradBasisAtTargetGradEPoints, computedDofs, elemDof,
@@ -595,8 +602,10 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
     cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
   }
 }
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 }
-}
+#endif
+}  // Intrepid2 namespace
 
 #endif
 

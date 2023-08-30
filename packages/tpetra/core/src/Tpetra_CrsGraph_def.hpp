@@ -939,6 +939,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalNumEntries () const
   {
+    const char tfecfFuncName[] = "getLocalNumEntries: ";
     typedef LocalOrdinal LO;
 
     if (this->indicesAreAllocated_) {
@@ -956,7 +957,15 @@ namespace Tpetra {
             return static_cast<size_t> (0);
           }
           else {
-            return this->getRowPtrsPackedHost()(lclNumRows);
+            // indices are allocated and k_numRowEntries_ is not allocated,
+            // so we have packed storage and the length of lclIndsPacked_wdv
+            // must be the number of local entries.
+            if(debug_) {
+              TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+                (this->getRowPtrsPackedHost()(lclNumRows) != lclIndsPacked_wdv.extent(0), std::logic_error,
+                 "Final entry of packed host rowptrs doesn't match the length of lclIndsPacked");
+            }
+            return lclIndsPacked_wdv.extent(0);
           }
         }
         else { // k_numRowEntries_ is populated
@@ -1061,7 +1070,10 @@ namespace Tpetra {
           return static_cast<size_t> (0);
         }
         else {
-          return this->getRowPtrsPackedHost()(lclNumRows);
+          if(this->isLocallyIndexed())
+            return lclIndsPacked_wdv.extent(0);
+          else
+            return gblInds_wdv.extent(0);
         }
       }
       else if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
@@ -1070,7 +1082,10 @@ namespace Tpetra {
           return static_cast<size_t> (0);
         }
         else {
-          return rowPtrsUnpacked_host(lclNumRows);
+          if(this->isLocallyIndexed())
+            return lclIndsUnpacked_wdv.extent(0);
+          else
+            return gblInds_wdv.extent(0);
         }
       }
       else {
@@ -1188,6 +1203,7 @@ namespace Tpetra {
     //
     //  STATIC ALLOCATION PROFILE
     //
+    size_type numInds = 0;
   {
     if (verbose) {
       std::ostringstream os;
@@ -1216,7 +1232,7 @@ namespace Tpetra {
       // doesn't attempt to check its input for "invalid" flag
       // values.  For now, we omit that feature of the sequential
       // code disabled below.
-      computeOffsetsFromCounts (k_rowPtrs, k_numAllocPerRow_);
+      numInds = computeOffsetsFromCounts (k_rowPtrs, k_numAllocPerRow_);
     }
     else {
       // It's OK to throw std::invalid_argument here, because we
@@ -1231,14 +1247,19 @@ namespace Tpetra {
          Tpetra::Details::OrdinalTraits<size_t>::invalid () << ".");
 
       using Details::computeOffsetsFromConstantCount;
-      computeOffsetsFromConstantCount (k_rowPtrs, this->numAllocForAllRows_);
+      numInds = computeOffsetsFromConstantCount (k_rowPtrs, this->numAllocForAllRows_);
     }
-
     // "Commit" the resulting row offsets.
     setRowPtrsUnpacked(k_rowPtrs);
   }
+    if(debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numInds != size_type(this->getRowPtrsUnpackedHost()(numRows)), std::logic_error,
+         ": Number of indices produced by computeOffsetsFrom[Constant]Counts "
+         "does not match final entry of rowptrs unpacked");
+    }
 
-    const size_type numInds = this->getRowPtrsUnpackedHost()(numRows);
+
     if (lg == LocalIndices) {
       if (verbose) {
         std::ostringstream os;

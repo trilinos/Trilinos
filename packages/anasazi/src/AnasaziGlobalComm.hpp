@@ -39,68 +39,32 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_OUTPUT_STREAM_TRAITS_HPP
-#define ANASAZI_OUTPUT_STREAM_TRAITS_HPP
-
-/*!     \file AnasaziOutputStreamTraits.hpp
-        \brief Abstract class definition for Anasazi output stream.
-*/
+#ifndef ANASAZI_GLOBAL_COMM_HPP
+#define ANASAZI_GLOBAL_COMM_HPP
 
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziTypes.hpp"
-
-#include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_RCP.hpp"
 
 #ifdef HAVE_MPI
+
 #include <mpi.h>
-#include "AnasaziGlobalComm.hpp"
-#endif
-
-/*!  \class Anasazi::OutputStreamTraits
-
-  \brief Output managers remove the need for the eigensolver to know any information
-  about the required output.  However, a formatted output stream is needed to control
-  the output during parallel computations.
-
-  \author Mark Hoemmen and Heidi Thornquist
-*/
+#include <mutex>
 
 namespace Anasazi {
 
-template<class OperatorType>
-struct OutputStreamTraits {
+static std::mutex mpi_mutex;
+static MPI_Comm Global_Anasazi_Comm = MPI_COMM_WORLD;
 
-  // The input argument, op, is presumed to be a valid object that can be queried to
-  // determine the correct output stream.
-  static Teuchos::RCP<Teuchos::FancyOStream>
-  getOutputStream (const OperatorType& /* op */, int rootRank = 0)
-  {
-    Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+inline void initialize_global_comm(MPI_Comm comm) {
+  std::lock_guard<std::mutex> guard(mpi_mutex);
+  Global_Anasazi_Comm = comm;
+}
 
-#ifdef HAVE_MPI
-    // The default implementation will output on processor 0, if parallel.
-    int myRank = 0;
-    int numProcs = 1;
-    // Initialize MPI
-    int mpiStarted = 0;
-    MPI_Initialized(&mpiStarted);
-    if (mpiStarted)
-    {
-      MPI_Comm_rank(get_global_comm(), &myRank);
-      MPI_Comm_size(get_global_comm(), &numProcs);
-    }
-    fos->setProcRankAndSize(myRank, numProcs);
-    fos->setOutputToRootOnly(rootRank);
-#endif
+inline MPI_Comm get_global_comm() {
+  std::lock_guard<std::mutex> guard(mpi_mutex);
+  return Global_Anasazi_Comm;
+}
+} // namespace Anasazi
 
-    return fos;
-  }
-};
+#endif // HAVE_MPI
 
-
-} // end Anasazi namespace
-
-#endif
-
-// end of file AnasaziOutputStreamTraits.hpp
+#endif // ANASAZI_GLOBAL_COMM_HPP
