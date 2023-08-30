@@ -1173,12 +1173,13 @@ namespace Tpetra {
     }
 
     // Allocate matrix values.
-    const size_t lclNumRows = this->staticGraph_->getLocalNumRows ();
-    typename Graph::local_graph_device_type::row_map_type k_ptrs =
-                                      this->staticGraph_->rowPtrsUnpacked_dev_;
-
-    const size_t lclTotalNumEntries = 
-                 this->staticGraph_->rowPtrsUnpacked_host_(lclNumRows);
+    const size_t lclTotalNumEntries = this->staticGraph_->getLocalAllocationSize();
+    if (debug) {
+      const size_t lclNumRows = this->staticGraph_->getLocalNumRows ();
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->staticGraph_->getRowPtrsUnpackedHost()(lclNumRows) != lclTotalNumEntries, std::logic_error,
+         "length of staticGraph's lclIndsUnpacked does not match final entry of rowPtrsUnapcked_host." << suffix);
+    }
 
     // Allocate array of (packed???) matrix values.
     using values_type = typename local_matrix_device_type::values_type;
@@ -1267,7 +1268,7 @@ namespace Tpetra {
          << curRowOffsets.extent (0) << " != lclNumRows + 1 = "
          << (lclNumRows + 1) << ".");
       const size_t numOffsets = curRowOffsets.extent (0);
-      const auto valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets - 1);
+      const auto valToCheck = myGraph_->getRowPtrsUnpackedHost()(numOffsets - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numOffsets != 0 &&
          myGraph_->lclIndsUnpacked_wdv.extent (0) != valToCheck,
@@ -1304,7 +1305,7 @@ namespace Tpetra {
       if (debug && curRowOffsets.extent (0) != 0) {
         const size_t numOffsets =
           static_cast<size_t> (curRowOffsets.extent (0));
-        const auto valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets - 1);
+        const auto valToCheck = myGraph_->getRowPtrsUnpackedHost()(numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) !=
            static_cast<size_t> (valuesUnpacked_wdv.extent (0)),
@@ -1457,13 +1458,14 @@ namespace Tpetra {
       // FIXME? This is already done in the graph fill call - need to avoid the memcpy to host
       myGraph_->rowPtrsPacked_dev_ = myGraph_->rowPtrsUnpacked_dev_;
       myGraph_->rowPtrsPacked_host_ = myGraph_->rowPtrsUnpacked_host_;
+      myGraph_->packedUnpackedRowPtrsMatch_ = true;
       myGraph_->lclIndsPacked_wdv = myGraph_->lclIndsUnpacked_wdv;
       valuesPacked_wdv = valuesUnpacked_wdv;
 
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Storage already packed: rowPtrsUnpacked_: "
-           << myGraph_->rowPtrsUnpacked_host_.extent(0) << ", lclIndsUnpacked_wdv: "
+           << myGraph_->getRowPtrsUnpackedHost().extent(0) << ", lclIndsUnpacked_wdv: "
            << myGraph_->lclIndsUnpacked_wdv.extent(0) << ", valuesUnpacked_wdv: "
            << valuesUnpacked_wdv.extent(0) << endl;
         std::cerr << os.str();
@@ -1472,13 +1474,14 @@ namespace Tpetra {
       if (debug) {
         const char myPrefix[] =
           "(\"Optimize Storage\"=false branch) ";
+        auto rowPtrsUnpackedHost = myGraph_->getRowPtrsUnpackedHost();
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (myGraph_->rowPtrsUnpacked_dev_.extent (0) == 0, std::logic_error, myPrefix
            << "myGraph->rowPtrsUnpacked_dev_.extent(0) = 0.  This probably means "
            "that rowPtrsUnpacked_ was never allocated.");
         if (myGraph_->rowPtrsUnpacked_dev_.extent (0) != 0) {
-          const size_t numOffsets (myGraph_->rowPtrsUnpacked_host_.extent (0));
-          const auto valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets - 1);
+          const size_t numOffsets = rowPtrsUnpackedHost.extent (0);
+          const auto valToCheck = rowPtrsUnpackedHost(numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (size_t (valToCheck) != valuesPacked_wdv.extent (0),
              std::logic_error, myPrefix <<
@@ -1497,14 +1500,15 @@ namespace Tpetra {
 
     if (debug) {
       const char myPrefix[] = "After packing, ";
+      auto rowPtrsPackedHost = myGraph_->getRowPtrsPackedHost();
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (size_t (myGraph_->rowPtrsPacked_host_.extent (0)) != size_t (lclNumRows + 1),
+        (size_t (rowPtrsPackedHost.extent (0)) != size_t (lclNumRows + 1),
          std::logic_error, myPrefix << "myGraph_->rowPtrsPacked_host_.extent(0) = "
-         << myGraph_->rowPtrsPacked_host_.extent (0) << " != lclNumRows+1 = " <<
+         << rowPtrsPackedHost.extent (0) << " != lclNumRows+1 = " <<
          (lclNumRows+1) << ".");
-      if (myGraph_->rowPtrsPacked_host_.extent (0) != 0) {
-        const size_t numOffsets (myGraph_->rowPtrsPacked_host_.extent (0));
-        const size_t valToCheck = myGraph_->rowPtrsPacked_host_(numOffsets-1);
+      if (rowPtrsPackedHost.extent (0) != 0) {
+        const size_t numOffsets (rowPtrsPackedHost.extent (0));
+        const size_t valToCheck = rowPtrsPackedHost(numOffsets-1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (valToCheck != size_t (valuesPacked_wdv.extent (0)),
            std::logic_error, myPrefix << "k_ptrs_const(" <<
@@ -1552,6 +1556,7 @@ namespace Tpetra {
       // We directly set the memory spaces to avoid a memcpy from device to host
       myGraph_->rowPtrsUnpacked_dev_ = myGraph_->rowPtrsPacked_dev_;
       myGraph_->rowPtrsUnpacked_host_ = myGraph_->rowPtrsPacked_host_;
+      myGraph_->packedUnpackedRowPtrsMatch_ = true;
       myGraph_->lclIndsUnpacked_wdv = myGraph_->lclIndsPacked_wdv;
       valuesUnpacked_wdv = valuesPacked_wdv;
 
@@ -3719,7 +3724,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const LO myNumRows = static_cast<LO> (this->getLocalNumRows ());
     const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
 
-    auto rowPtrsPackedHost = staticGraph_->rowPtrsPacked_host_;
+    auto rowPtrsPackedHost = staticGraph_->getRowPtrsPackedHost();
     auto valuesPackedHost = valuesPacked_wdv.getHostView(Access::ReadOnly);
     Kokkos::parallel_for
       ("Tpetra::CrsMatrix::getLocalDiagCopy",
@@ -4661,7 +4666,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       size_t totalNumDups = 0;
       {
         //Accessing host unpacked (4-array CRS) local matrix.
-        auto rowBegins_ = graph.rowPtrsUnpacked_host_;
+        auto rowBegins_ = graph.getRowPtrsUnpackedHost();
         auto rowLengths_ = graph.k_numRowEntries_;
         auto vals_ = this->valuesUnpacked_wdv.getHostView(Access::ReadWrite);
         auto cols_ = graph.lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
@@ -5522,7 +5527,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate row_ptrs_beg: "
-         << myGraph_->rowPtrsUnpacked_host_.extent(0) << endl;
+         << myGraph_->getRowPtrsUnpackedHost().extent(0) << endl;
       std::cerr << os.str();
     }
     using Kokkos::view_alloc;
@@ -5609,7 +5614,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          << "old size: " << myGraph_->rowPtrsUnpacked_host_.extent(0)
          << ", new size: " << row_ptr_beg.extent(0) << endl;
       std::cerr << os.str();
-      TEUCHOS_ASSERT( myGraph_->rowPtrsUnpacked_host_.extent(0) ==
+      TEUCHOS_ASSERT( myGraph_->getRowPtrsUnpackedHost().extent(0) ==
                       row_ptr_beg.extent(0) );
     }
     myGraph_->setRowPtrsUnpacked(row_ptr_beg);
