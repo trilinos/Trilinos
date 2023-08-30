@@ -449,8 +449,10 @@ namespace Tpetra {
     using dev_row_view_t  = typename crs_t::local_graph_device_type::row_map_type::non_const_type;
     using dev_col_view_t  = typename crs_t::local_graph_device_type::entries_type::non_const_type;
     using dev_val_view_t  = typename crs_t::local_matrix_device_type::values_type::non_const_type;
-    using dev_bool_view_t = Kokkos::View<bool*, execution_space>;
     using range_type      = Kokkos::RangePolicy<execution_space, size_t>;
+    using team_policy     = Kokkos::TeamPolicy<execution_space>;
+    using member_type     = typename team_policy::member_type;
+    using scratch_view    = Kokkos::View<bool*, typename execution_space::scratch_memory_space>;
     using Ordinal         = typename dev_row_view_t::non_const_value_type;
 
     // Get structure / values
@@ -467,41 +469,112 @@ namespace Tpetra {
     // Make row workspace views
     dev_row_view_t new_rowmap("new_rowmap", nrows+1);
     const auto blocks_per_row = nrows / blockSize; // assumes square matrix
-    dev_bool_view_t row_block_active("row_block_active", blocks_per_row * nrows);
+    dev_row_view_t active_block_row_map("active_block_row_map", blocks_per_row + 1);
+    const int max_threads = execution_space::concurrency();
+    assert(max_threads >= blockSize);
+    team_policy tp(blocks_per_row, blockSize);
     assert(nrows % blockSize == 0);
+    const int mem_level = 0;
+    const int bytes = scratch_view::shmem_size(blocks_per_row);
+
+    // Count active blocks
+    Kokkos::parallel_for("countActiveBlocks", tp.set_scratch_size(mem_level, Kokkos::PerTeam(bytes)), KOKKOS_LAMBDA(const member_type& team) {
+      Ordinal block_row = team.league_rank();
+
+      scratch_view row_block_active(team.team_scratch(mem_level), blocks_per_row);
+
+      // All threads in a team scan a blocks-worth of rows to see which
+      // blocks are active
+      Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, blockSize), [&] (Ordinal block_offset) {
+
+          Ordinal row     = block_row*blocks_per_row + block_offset;
+          Ordinal row_itr = row_ptrs(row);
+          Ordinal row_end = row_ptrs(row+1);
+
+          for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+            const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
+            const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
+            Ordinal curr_nnz_col = col_inds(row_itr);
+            while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
+              // This block has at least one nnz in this row
+              row_block_active(row_block_idx) = true;
+              ++row_itr;
+              if (row_itr == row_end) break;
+              curr_nnz_col = col_inds(row_itr);
+            }
+          }
+      });
+
+      team.team_barrier();
+
+      Kokkos::single(
+        Kokkos::PerTeam(team), [&] () {
+          Ordinal count = 0;
+          for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+            if (row_block_active(row_block_idx)) {
+              ++count;
+            }
+          }
+          active_block_row_map(block_row) = count;
+      });
+    });
+
+    Ordinal nnz_block_count = 0;
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
+      dev_row_view_t, execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
+
+    dev_col_view_t block_col_ids("block_col_ids", nnz_block_count);
 
     // Find active blocks
-    Kokkos::parallel_for("findActiveBlocks", range_type(0, nrows), KOKKOS_LAMBDA(const size_t row) {
-      Ordinal row_itr = row_ptrs(row);
-      Ordinal row_end = row_ptrs(row+1);
+    Kokkos::parallel_for("findActiveBlocks", tp.set_scratch_size(mem_level, Kokkos::PerTeam(bytes)), KOKKOS_LAMBDA(const member_type& team) {
+      Ordinal block_row = team.league_rank();
 
-      const auto active_offset = (row / blockSize) * blocks_per_row;
+      scratch_view row_block_active(team.team_scratch(mem_level), blocks_per_row);
 
-      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-        const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
-        const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
-        Ordinal curr_nnz_col = col_inds(row_itr);
-        while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
-          // This block has at least one nnz in this row
-          row_block_active(active_offset + row_block_idx) = true;
-          ++row_itr;
-          if (row_itr == row_end) break;
-          curr_nnz_col = col_inds(row_itr);
-        }
-      }
+      // All threads in a team scan a blocks-worth of rows to see which
+      // blocks are active
+      Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, blockSize), [&] (Ordinal block_offset) {
+
+          Ordinal row     = block_row*blocks_per_row + block_offset;
+          Ordinal row_itr = row_ptrs(row);
+          Ordinal row_end = row_ptrs(row+1);
+
+          for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+            const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
+            const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
+            Ordinal curr_nnz_col = col_inds(row_itr);
+            while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
+              // This block has at least one nnz in this row
+              row_block_active(row_block_idx) = true;
+              ++row_itr;
+              if (row_itr == row_end) break;
+              curr_nnz_col = col_inds(row_itr);
+            }
+          }
+      });
+
+      team.team_barrier();
+
+      Kokkos::single(
+        Kokkos::PerTeam(team), [&] () {
+          Ordinal offset = active_block_row_map[block_row];
+          for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+            if (row_block_active(row_block_idx)) {
+              block_col_ids(offset) = row_block_idx;
+              ++offset;
+            }
+          }
+      });
     });
 
     // Sizing
     Kokkos::parallel_for("sizing", range_type(0, nrows), KOKKOS_LAMBDA(const size_t row) {
-      Ordinal row_nnz = 0;
-
-      const auto active_offset = (row / blockSize) * blocks_per_row;
-
-      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-        if (row_block_active(row_block_idx + active_offset)) {
-          row_nnz += blockSize;
-        }
-      }
+      const auto block_row = row / blockSize;
+      const Ordinal block_row_begin = active_block_row_map(block_row);
+      const Ordinal block_row_end   = active_block_row_map(block_row+1);
+      const Ordinal row_nnz         = (block_row_end - block_row_begin) * blockSize;
       new_rowmap(row) = row_nnz;
     });
 
@@ -517,20 +590,21 @@ namespace Tpetra {
       Ordinal row_end = row_ptrs(row+1);
       Ordinal row_itr_new = new_rowmap(row);
 
-      const auto active_offset = (row / blockSize) * blocks_per_row;
+      Ordinal block_row       = row / blockSize;
+      Ordinal block_row_begin = active_block_row_map(block_row);
+      Ordinal block_row_end   = active_block_row_map(block_row+1);
 
-      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-        const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
-        const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
-        if (row_block_active(row_block_idx + active_offset)) {
-          for (Ordinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col, ++row_itr_new) {
-            new_col_ids(row_itr_new) = possible_col;
-            Ordinal curr_nnz_col = col_inds(row_itr);
-            if (possible_col == curr_nnz_col && row_itr < row_end) {
-              // Already a non-zero entry
-              new_vals(row_itr_new) = values(row_itr);
-              ++row_itr;
-            }
+      for (Ordinal row_block_idx = block_row_begin; row_block_idx < block_row_end; ++row_block_idx) {
+        const Ordinal block_col                        = block_col_ids(row_block_idx);
+        const Ordinal first_possible_col_in_block      = block_col * blockSize;
+        const Ordinal first_possible_col_in_next_block = (block_col+1) * blockSize;
+        for (Ordinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col, ++row_itr_new) {
+          new_col_ids(row_itr_new) = possible_col;
+          Ordinal curr_nnz_col = col_inds(row_itr);
+          if (possible_col == curr_nnz_col && row_itr < row_end) {
+            // Already a non-zero entry
+            new_vals(row_itr_new) = values(row_itr);
+            ++row_itr;
           }
         }
       }
