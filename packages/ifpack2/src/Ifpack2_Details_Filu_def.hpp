@@ -128,8 +128,8 @@ initLocalPrec()
   localPrec_->initialize();
   localPrec2_->initialize();
   localPrec3_->initialize();
-  // localPrec2_->verify(*localPrec3_, "initialization_unblocked_vs_orig", true);
-  // localPrec_->verify(*localPrec2_, "initialization_blocked_vs_unblocked", true);
+  localPrec2_->verify(*localPrec3_, "initialization_unblocked_vs_orig", true);
+  localPrec_->verify(*localPrec2_, "initialization_blocked_vs_unblocked", true);
   this->initTime_ = localPrec_->getInitializeTime();
 
   std::cout << "JGF initialization of blocked took: " << localPrec_->getInitializeTime() << std::endl;
@@ -150,8 +150,8 @@ computeLocalPrec()
   localPrec3_->compute();
   this->computeTime_ = localPrec_->getComputeTime();
 
-  // localPrec2_->verify(*localPrec3_, "compute_unblocked_vs_orig");
-  // localPrec_->verify(*localPrec2_, "compute_blocked_vs_unblocked");
+  localPrec2_->verify(*localPrec3_, "compute_unblocked_vs_orig");
+  localPrec_->verify(*localPrec2_, "compute_blocked_vs_unblocked");
 
   std::cout << "JGF compute of blocked took: " << localPrec_->getComputeTime() << std::endl;
   std::cout << "JGF compute of unblocked took: " << localPrec2_->getComputeTime() << std::endl;
@@ -173,12 +173,12 @@ applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
   localPrec2_->apply(x1, y1);
   localPrec3_->apply(x2, y2);
 
-  // localPrec2_->verify(*localPrec3_, "apply_unblocked_vs_orig");
-  // localPrec_->verify(*localPrec2_, "apply_blocked_vs_unblocked");
-  // compare_views(x, x1, "x1");
-  // compare_views(x, x2, "x2");
-  // compare_views(y, y1, "y1");
-  // compare_views(y, y2, "y2");
+  localPrec2_->verify(*localPrec3_, "apply_unblocked_vs_orig");
+  localPrec_->verify(*localPrec2_, "apply_blocked_vs_unblocked");
+  compare_views(x, x1, "x1");
+  compare_views(x, x2, "x2");
+  compare_views(y, y1, "y1");
+  compare_views(y, y2, "y2");
 
   //since this may be applied to multiple vectors, add to applyTime_ instead of setting it
   this->applyTime_ += localPrec_->getApplyTime();
@@ -186,6 +186,7 @@ applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
   std::cout << "JGF apply of blocked took: " << localPrec_->getApplyTime() << std::endl;
   std::cout << "JGF apply of unblocked took: " << localPrec2_->getApplyTime() << std::endl;
   std::cout << "JGF apply of orig took: " << localPrec3_->getApplyTime() << std::endl;
+  exit(0);
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, bool BlockCrsEnabled>

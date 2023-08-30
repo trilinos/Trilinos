@@ -79,7 +79,212 @@
 //#define FASTILU_TIMER
 
 // Whether to try to maintain exact behavior with unblocked impl
-//#define FASTILU_ONE_TO_ONE_UNBLOCKED
+#define FASTILU_ONE_TO_ONE_UNBLOCKED
+
+template <typename View>
+typename View::host_mirror_type ensure_host(const View& view)
+{
+  using host_view = typename View::host_mirror_type;
+  host_view rv("", view.extent(0));
+  Kokkos::deep_copy(rv, view);
+  return rv;
+}
+
+template <typename View>
+void print_view(const std::string& name, const View& view)
+{
+  std::cout << name << "(" << view.extent(0) << "): ";
+  for (size_t i = 0; i < view.extent(0); ++i) {
+    std::cout << view(i) << ", ";
+  }
+  std::cout << std::endl;
+}
+
+template <typename T>
+void print_vector(const std::string& name, const std::vector<T>& vect)
+{
+  std::cout << name << "(" << vect.size() << "): ";
+  for (size_t i = 0; i < vect.size(); ++i) {
+    std::cout << vect[i] << ", ";
+  }
+  std::cout << std::endl;
+}
+
+template <typename F, typename std::enable_if<std::is_floating_point<F>::value>::type* = nullptr>
+bool approx_same(const F a, const F b)
+{
+  static constexpr auto EPS = std::numeric_limits<F>::epsilon() * 100;
+  return std::fabs(a - b) < EPS;
+
+}
+
+template <typename F, typename std::enable_if<!std::is_floating_point<F>::value>::type* = nullptr>
+bool approx_same(const F a, const F b)
+{
+  return a == b;
+}
+
+template <typename View1, typename View2, typename View3>
+std::vector<std::vector<typename View3::non_const_value_type>> decompress_matrix(
+  const View1& row_map,
+  const View2& entries,
+  const View3& values,
+  const int block_size)
+{
+  using size_type = typename View1::non_const_value_type;
+  using lno_t     = typename View2::non_const_value_type;
+  using scalar_t  = typename View3::non_const_value_type;
+
+  const size_type nbrows   = row_map.extent(0) - 1;
+  const size_type nrows    = nbrows * block_size;
+  const size_type block_items = block_size * block_size;
+  std::vector<std::vector<scalar_t>> result;
+  result.resize(nrows);
+  for (auto& row : result) {
+    row.resize(nrows, 0.0);
+  }
+
+  for (size_type row_idx = 0; row_idx < nbrows; ++row_idx) {
+    const size_type row_nnz_begin = row_map(row_idx);
+    const size_type row_nnz_end   = row_map(row_idx + 1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const lno_t col_idx      = entries(row_nnz);
+      for (size_type i = 0; i < block_size; ++i) {
+        const size_type unc_row_idx = row_idx*block_size + i;
+        for (size_type j = 0; j < block_size; ++j) {
+          const size_type unc_col_idx = col_idx*block_size + j;
+          result[unc_row_idx][unc_col_idx] = values(row_nnz*block_items + i*block_size + j);
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+template <typename scalar_t>
+void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
+  for (const auto& row : matrix) {
+    for (const auto& item : row) {
+      std::printf("%.2f ", item);
+    }
+    std::cout << std::endl;
+  }
+}
+
+template <typename scalar_t>
+bool compare_unc_matrix(
+  const std::vector<std::vector<scalar_t>>& matrix1,
+  const std::vector<std::vector<scalar_t>>& matrix2) {
+  const size_t rows = matrix1.size();
+  if (rows != matrix2.size()) return false;
+
+  for (size_t i = 0; i < rows; ++i) {
+    const size_t cols = matrix1[i].size();
+    if (cols != matrix2[i].size()) return false;
+    for (size_t j = 0; j < cols; ++j) {
+      if (!approx_same(matrix1[i][j], matrix2[i][j])) {
+        printf("Mismatch in [%ld][%ld] %40.32E != %40.32E\n", i, j, matrix1[i][j], matrix2[i][j]);
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+template <typename View1, typename View2, typename View3>
+void
+print_crs_matrix_details(
+  const std::string& name,
+  const View1& row_map,
+  const View2& entries,
+  const View3& values,
+  const int block_size)
+{
+  std::cout << "MATRIX DETAILS FOR: " << name << std::endl;
+
+  print_view("row_map", row_map);
+  print_view("entries", entries);
+  print_view("values", values);
+
+  auto unc = decompress_matrix(row_map, entries, values, block_size);
+  print_matrix(unc);
+}
+
+template <typename View>
+bool
+compare_views(
+  const View& view1_,
+  const View& view2_,
+  const std::string& name)
+{
+  auto view1 = ensure_host(view1_);
+  auto view2 = ensure_host(view2_);
+
+  bool equal = view1.extent(0) == view2.extent(0);
+
+  if (equal) {
+    for (size_t i = 0; i < view1.extent(0); ++i) {
+      if (!approx_same(view1(i), view2(i))) {
+        std::cout << "Mismatch in " << name << "[" << i << "] " << view1(i) << " != " << view2(i) << std::endl;
+        equal = false;
+      }
+    }
+  }
+  else {
+    std::cout << name << " VIEWS did not have same extent, " << view1.extent(0) << " vs " << view2.extent(0) << std::endl;
+  }
+
+  if (!equal) {
+    print_view(name + "1", view1);
+    std::cout << name << " VIEWS DID NOT EQUAL" << std::endl;
+    print_view(name + "2", view2);
+  }
+  return equal;
+}
+
+template <typename View1, typename View2, typename View3>
+bool
+compare_matrices(
+  const View1& row_map1_,
+  const View2& entries1_,
+  const View3& values1_,
+  const int block_size1,
+  const View1& row_map2_,
+  const View2& entries2_,
+  const View3& values2_,
+  const int block_size2,
+  const std::string& name)
+{
+  // Make sure everything is on host
+  auto row_map1 = ensure_host(row_map1_);
+  auto entries1 = ensure_host(entries1_);
+  auto values1  = ensure_host(values1_);
+  auto row_map2 = ensure_host(row_map2_);
+  auto entries2 = ensure_host(entries2_);
+  auto values2  = ensure_host(values2_);
+
+  if (block_size1 == block_size2) {
+    // Structure should match
+    compare_views(row_map1, row_map2, name + "_row_map");
+    compare_views(entries1, entries2, name + "_entries");
+  }
+  else {
+    // Block 2 and check structure?
+  }
+
+  auto unc_1 = decompress_matrix(row_map1, entries1, values1, block_size1);
+  auto unc_2 = decompress_matrix(row_map2, entries2, values2, block_size2);
+
+  if (!compare_unc_matrix(unc_1, unc_2)) {
+    print_crs_matrix_details(name, row_map1, entries1, values1, block_size1);
+    std::cout << name << " MATRICES DID NOT EQUAL" << std::endl;
+    print_crs_matrix_details(name, row_map2, entries2, values2, block_size2);
+    return false;
+  }
+  return true;
+}
 
 template <typename Ordinal>
 KOKKOS_INLINE_FUNCTION
@@ -1412,11 +1617,11 @@ class FastILUPrec
             Kokkos::deep_copy(aRowMapHost, aRowMapIn_);
             Kokkos::deep_copy(aColIdxHost, aColIdxIn_);
             Kokkos::deep_copy(aValHost,    aValIn_);
-            if (blockCrsSize > 1) {
 #ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
+            if (blockCrsSize > 1) {
               unblock(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
-#endif
             }
+#endif
 
             if ((level > 0) && (guessFlag != 0))
             {
@@ -1794,6 +1999,52 @@ class FastILUPrec
           }
         }
 
+  template <typename RHS>
+  void verify(const RHS& rhs, const std::string& name, const bool initialize_only=false)
+  {
+#ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
+    std::cout << "Verifying: " << name << std::endl;
+
+    Kokkos::fence();
+
+    // verify a this using brs and a rhs using crs
+    assert(nRows*blockCrsSize == rhs.nRows);
+    assert(guessFlag == rhs.guessFlag);
+    assert(nFact == rhs.nFact);
+    assert(nTrisol == rhs.nTrisol);
+    assert(level == rhs.level);
+    assert(blkSzILU == rhs.blkSzILU);
+    assert(blkSz == rhs.blkSz);
+    assert(rhs.blockCrsSize == 1);
+    assert(omega == rhs.omega);
+    assert(shift == rhs.shift);
+
+    assert(!useMetis);
+    assert(useMetis == rhs.useMetis);
+
+    assert(compare_matrices(aRowMapIn, aColIdxIn, aValIn, blockCrsSize, rhs.aRowMapIn, rhs.aColIdxIn, rhs.aValIn, rhs.blockCrsSize, "Ain"));
+
+    assert(compare_matrices(aRowMap_, aColIdx_, aVal_, blockCrsSize, rhs.aRowMap_, rhs.aColIdx_, rhs.aVal_, rhs.blockCrsSize, "A_"));
+
+    if (!initialize_only) {
+      assert(compare_matrices(aRowMap, aColIdx, aVal, blockCrsSize, rhs.aRowMap, rhs.aColIdx, rhs.aVal, rhs.blockCrsSize, "A"));
+
+      assert(compare_views(diagFact, rhs.diagFact, "diagFact"));
+      assert(compare_views(diagElems, rhs.diagElems, "diagElems"));
+
+      assert(compare_matrices(lRowMap, lColIdx, lVal, blockCrsSize, rhs.lRowMap, rhs.lColIdx, rhs.lVal, 1, "L"));
+
+      assert(compare_matrices(uRowMap, uColIdx, uVal, blockCrsSize, rhs.uRowMap, rhs.uColIdx, rhs.uVal, 1, "U"));
+
+      assert(compare_matrices(utRowMap, utColIdx, utVal, blockCrsSize, rhs.utRowMap, rhs.utColIdx, rhs.utVal, 1, "Ut"));
+    }
+
+    if ((level > 0) && (guessFlag != 0)) {
+      initGuessPrec->verify(*rhs.initGuessPrec, name, initialize_only);
+    }
+#endif
+  }
+
         //Actual computation phase.
         //blkSzILU is the chunk size (hard coded).
         //1 gives the best performance on GPUs.
@@ -1847,7 +2098,7 @@ class FastILUPrec
             }
 
             // sort, if the triangular solve algorithm requires a sorted matrix.
-            bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
+            bool sortRequired = true; //sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
             if (sortRequired) {
               if (blockCrsSize == 1) {
                 KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
