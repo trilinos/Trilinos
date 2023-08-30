@@ -92,7 +92,6 @@ namespace MueLu {
       Teuchos::reduceAll(*graph.GetComm(), Teuchos::REDUCE_SUM, 2, in_data, out_data);
       GO phase_one_aggregated = out_data[1] - out_data[0];
       factor = as<double>(phase_one_aggregated) / (out_data[1]+1);
-
       
       LO agg_stat_unaggregated=0;
       LO agg_stat_aggregated=0;
@@ -105,6 +104,9 @@ namespace MueLu {
         else
           agg_stat_unaggregated++;
       }
+
+      // NOTE: ML always uses 3 as minNodesPerAggregate
+      minNodesPerAggregate=3;
       
     }
     else {
@@ -156,13 +158,13 @@ namespace MueLu {
         }
       }
 
-      // NOTE: ML uses a hardcoded value 3 instead of MinNodesPerAggregate
       
       bool accept_aggregate;
       if (matchMLbehavior) {
         // ML does this calculation slightly differently than MueLu does by default, specifically it
         // uses the *local* number of neigbors, regardless of what they are.
         // NOTE: ML does zero compression here.  Not sure if it matters
+        // NOTE: ML uses a hardcoded value 3 instead of minNodesPerAggregate.  This has been set above
         LO rowi_N = num_local_neighbors;
         num_nonaggd_neighbors++; // ML counts the node itself as a nonaggd_neighbor
         accept_aggregate = (rowi_N > as<LO>(minNodesPerAggregate)) && (num_nonaggd_neighbors > (factor*rowi_N));
