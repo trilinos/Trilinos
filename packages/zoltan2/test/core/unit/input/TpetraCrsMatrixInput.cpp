@@ -43,10 +43,10 @@
 //
 // @HEADER
 //
-// Basic testing of Zoltan2::TpetraRowMatrixAdapter
+// Basic testing of Zoltan2::TpetraCrsMatrixAdapter
 
-/*! \file TpetraRowMatrixInput.cpp
- *  \brief Test of Zoltan2::TpetraRowMatrixAdapter class.
+/*! \file TpetraCrsMatrixInput.cpp
+ *  \brief Test of Zoltan2::TpetraCrsMatrixAdapter class.
  *  \todo test with geometric row coordinates.
  */
 
@@ -70,38 +70,11 @@ using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 
 using ztcrsmatrix_t = Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>;
-using ztrowmatrix_t = Tpetra::RowMatrix<zscalar_t, zlno_t, zgno_t, znode_t>;
-using node_t = typename Zoltan2::InputTraits<ztrowmatrix_t>::node_t;
+using node_t = typename Zoltan2::InputTraits<ztcrsmatrix_t>::node_t;
 using device_t = typename node_t::device_type;
-using rowAdapter_t = Zoltan2::TpetraRowMatrixAdapter<ztrowmatrix_t>;
 using crsAdapter_t = Zoltan2::TpetraCrsMatrixAdapter<ztcrsmatrix_t>;
 using execspace_t =
-    typename rowAdapter_t::ConstWeightsHostView1D::execution_space;
-
-//////////////////////////////////////////////////////////////////////////
-
-template<typename offset_t>
-void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
-    const zgno_t *rowIds, const offset_t *offsets, const zgno_t *colIds) {
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
-  comm->barrier();
-  for (int p=0; p < nprocs; p++){
-    if (p == rank){
-      std::cout << rank << ":" << std::endl;
-      for (zlno_t i=0; i < nrows; i++){
-        std::cout << " row " << rowIds[i] << ": ";
-        for (offset_t j=offsets[i]; j < offsets[i+1]; j++){
-          std::cout << colIds[j] << " ";
-        }
-        std::cout << std::endl;
-      }
-      std::cout.flush();
-    }
-    comm->barrier();
-  }
-  comm->barrier();
-}
+    typename crsAdapter_t::ConstWeightsHostView1D::execution_space;
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -237,8 +210,8 @@ void verifyInputAdapter(adapter_t &ia, matrix_t &matrix) {
 //////////////////////////////////////////////////////////////////////////
 
 int main(int narg, char *arg[]) {
-  using rowSoln_t = Zoltan2::PartitioningSolution<rowAdapter_t>;
-  using rowPart_t = rowAdapter_t::part_t;
+  using crsSoln_t = Zoltan2::PartitioningSolution<crsAdapter_t>;
+  using crsPart_t = crsAdapter_t::part_t;
 
   Tpetra::ScopeGuard tscope(&narg, &arg);
   const auto comm = Tpetra::getDefaultComm();
@@ -250,11 +223,10 @@ int main(int narg, char *arg[]) {
 
     auto uinput = rcp(new UserInputForTests(params, comm));
 
-    // Input crs matrix and row matrix cast from it.
+    // Input crs matrix
     const auto crsMatrix = uinput->getUITpetraCrsMatrix();
-    const auto rowMatrix = rcp_dynamic_cast<ztrowmatrix_t>(crsMatrix);
 
-    const auto nrows = rowMatrix->getLocalNumRows();
+    const auto nrows = crsMatrix->getLocalNumRows();
 
     // To test migration in the input adapter we need a Solution object.
     const auto env = rcp(new Zoltan2::Environment(comm));
@@ -262,31 +234,31 @@ int main(int narg, char *arg[]) {
     const int nWeights = 2;
 
     /////////////////////////////////////////////////////////////
-    // User object is Tpetra::RowMatrix
+    // User object is Tpetra::CrsMatrix
     /////////////////////////////////////////////////////////////
 
-    PrintFromRoot("Input adapter for Tpetra::RowMatrix");
+    PrintFromRoot("Input adapter for Tpetra::CrsMatrix");
 
-    // Graph Adapters use crsGraph, original TpetraInput uses trM (=rowMatrix)
-    auto tpetraRowMatrixInput = rcp(new rowAdapter_t(rowMatrix, nWeights));
+    // Graph Adapters use crsGraph, original TpetraInput uses trM (=CrsMatrix)
+    auto tpetraCrsMatrixInput = rcp(new crsAdapter_t(crsMatrix, nWeights));
 
-    verifyInputAdapter(*tpetraRowMatrixInput, *rowMatrix);
+    verifyInputAdapter(*tpetraCrsMatrixInput, *crsMatrix);
 
-    rowPart_t *p = new rowPart_t[nrows];
-    memset(p, 0, sizeof(rowPart_t) * nrows);
-    ArrayRCP<rowPart_t> solnParts(p, 0, nrows, true);
+    crsPart_t *p = new crsPart_t[nrows];
+    memset(p, 0, sizeof(crsPart_t) * nrows);
+    ArrayRCP<crsPart_t> solnParts(p, 0, nrows, true);
 
-    rowSoln_t solution(env, comm, nWeights);
+    crsSoln_t solution(env, comm, nWeights);
     solution.setParts(solnParts);
 
-    ztrowmatrix_t *mMigrate = NULL;
-    tpetraRowMatrixInput->applyPartitioningSolution(*rowMatrix, mMigrate,
+    ztcrsmatrix_t *mMigrate = NULL;
+    tpetraCrsMatrixInput->applyPartitioningSolution(*crsMatrix, mMigrate,
                                                     solution);
     const auto newM = rcp(mMigrate);
-    auto cnewM = rcp_const_cast<const ztrowmatrix_t>(newM);
-    auto newInput = rcp(new rowAdapter_t(cnewM, nWeights));
+    auto cnewM = rcp_const_cast<const ztcrsmatrix_t>(newM);
+    auto newInput = rcp(new crsAdapter_t(cnewM, nWeights));
 
-    PrintFromRoot("Input adapter for Tpetra::RowMatrix migrated to proc 0");
+    PrintFromRoot("Input adapter for Tpetra::CrsMatrix migrated to proc 0");
 
     verifyInputAdapter(*newInput, *newM);
 
