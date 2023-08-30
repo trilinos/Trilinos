@@ -697,7 +697,7 @@ namespace Zoltan2 {
       anasaziParams.set("Residual Frequency", resFreq);
      
       if(solverType_ == "GeneralizedDavidson" || solverType_ == "BlockKrylovSchur" || solverType_ == "BlockDavidson"){ 
-        anasaziParams.set( "Num Blocks", maxIterations );
+        anasaziParams.set( "Num Blocks", maxIterations+1 );
         anasaziParams.set( "Maximum Restarts", 0 );
         anasaziParams.set( "Maximum Subspace Dimension", (maxIterations+1)*blockSize );
       }

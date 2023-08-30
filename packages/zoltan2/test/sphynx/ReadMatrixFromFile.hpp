@@ -99,7 +99,7 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
       global_ordinal_type curPos = rowPtr[myRow];
 
       if (curNumEntries > 0) {
-      	for(size_t ii = 0; ii < curNumEntries; ++ii) {
+      	for(size_t ii = 0; ii < (size_t)curNumEntries; ++ii) {
       	  myColInd[myCurPos++] = colInd[curPos++];
       	}
       }
@@ -153,7 +153,7 @@ distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
 
 	  if (curNumEntries > 0) {
 
-	    for(size_t ii = 0; ii < curNumEntries; ++ii) {
+	    for(size_t ii = 0; ii < (size_t)curNumEntries; ++ii) {
 	      theirColInd[theirCurPos++] = colInd[curPos++];
 	    }
 	    

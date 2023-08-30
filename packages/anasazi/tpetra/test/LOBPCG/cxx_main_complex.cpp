@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
   int nev = 4;
   int blockSize = 4;
   MT tol = 1.0e-6;
+  int maxIterations = 1000;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -114,6 +115,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
+  cmdp.setOption("max_iters", &maxIterations, "Maximum Iterations");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }

@@ -296,8 +296,8 @@ namespace Anasazi {
           TEUCHOS_TEST_FOR_EXCEPTION(ortho_!="SVQB"&&ortho_!="DGKS"&&ortho_!="ICGS",std::logic_error,"Anasazi::RandomSolver Invalid orthogonalization type.");
         }
 
-        if(blockSize_ < problem_->getNEV()){ //TODO: Fix couts to proper ostream.
-          std::cout << "Block size smaller than number evals. Increasing Block Size to num evals." << std::endl;
+        if(blockSize_ < problem_->getNEV()){ 
+          printer->stream(Warnings) << "Warning! Block size smaller than number evals. Increasing Block Size to num evals." << std::endl;
           blockSize_ = problem_->getNEV();
         }
 
@@ -321,7 +321,7 @@ namespace Anasazi {
           Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 #endif
           rank = orthoMgr->normalize(*randVecs);
-          if( rank < blockSize_ ) std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
+          if( rank < blockSize_ ) printer->stream(Warnings) << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
         } 	/* End Ortho Timer */
 
         /* Set up variables for residual computation ------------------------------ */
@@ -382,7 +382,7 @@ namespace Anasazi {
                 Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 #endif
                 rank = orthoMgr->normalize(*randVecs);
-                if( rank < blockSize_ ) std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
+                if( rank < blockSize_ ) printer->stream(Warnings) << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
               } /* End Ortho Timer */
             } /* End  Ortho */
 
@@ -399,7 +399,7 @@ namespace Anasazi {
 
               // Run GEEV a second time to solve for Harmonic Ritz Values:
               lapack.GEEV('N','V',blockSize_,H.values(),H.stride(),evals_real.data(),evals_imag.data(),vlr, ldv, evects.values(), evects.stride(), &work[0], lwork, &rwork[0], &info);
-              if(info != 0) printer->stream(IterationDetails) << "Warning!! Anasazi::RandomSolver GEEV solve possible failure: info = " << info << std::endl;
+              if(info != 0) printer->stream(Warnings) << "Warning! Anasazi::RandomSolver GEEV solve possible failure: info = " << info << std::endl;
               lwork = -1;
 
               // sort the eigenvalues and permute the eigenvectors appropriately
@@ -455,7 +455,7 @@ namespace Anasazi {
               Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 #endif
               rank = orthoMgr->normalize(*randVecs);
-              if( rank < blockSize_ ) std::cout << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
+              if( rank < blockSize_ ) printer->stream(Warnings) << "Warning! Anasazi::RandomSolver Random vectors did not have full rank!" << std::endl;
             } /* End Ortho Timer */
 
             OPT::Apply( *(problem_->getOperator()), *randVecs, *TmpVecs ); 
@@ -520,13 +520,8 @@ namespace Anasazi {
         if ( printer->isVerbosity( TimingDetails ) ) Teuchos::TimeMonitor::summarize( printer->stream( TimingDetails ) );
 #endif
 
-        if (converged){
-          std::cout << "Convergence: SUCCESS" << std::endl;
-          return Converged;
-        }
-
-        std::cout << "Convergence: FAIL" << std::endl;
-        return Unconverged;
+        if (converged) return Converged;  // Return from RandomizedSolMgr::solve()
+        return Unconverged; // Return from RandomizedSolMgr::solve()
 
       } // End Solve function
   } // end Experimental namespace

@@ -79,7 +79,6 @@ int main(int argc, char *argv[])
   typedef ScalarTraits<ST>                   SCT;
   typedef SCT::magnitudeType                  MT;
   typedef MultiVector<ST>                     MV;
-  typedef MV::global_ordinal_type             GO;
   typedef Operator<ST>                        OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
@@ -87,7 +86,6 @@ int main(int argc, char *argv[])
 
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
-  int info = 0;
   int MyPID = 0;
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
