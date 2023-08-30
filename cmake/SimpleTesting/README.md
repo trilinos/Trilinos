@@ -15,8 +15,6 @@ interact with each other.
      <img src="img/CMake-structure.png" alt="CMake Structure Diagram" height="600"/>
 </center>
 
-<!--- Adding a comment to see if Jenkins updates -->
-
 CMake Files
 -----------
 
@@ -31,7 +29,7 @@ CMake Files
 | `ctest-functions.cmake`       |    X     | Functions and macros                                                     |
 | `ctest-CTestConfig.cmake`     |          | Required file that is copied into the build directory at configure time. |
 
-The _guarded_ files use the CMake command [`include_guard()`][3] which should prevent that file
+The _guarded_ files use the CMake command [`include_guard()`][1] which should prevent that file
 from being include more than once in an include chain.
 
 Options and Variables (`simple_testing.cmake`)
@@ -62,7 +60,7 @@ CMake system via `-D<VARNAME>:BOOL=<ON|OFF>` parameters:
 1. `configure_script` points to the `cmake/std/PullRequestLinux<COMPILER><COMPILER_VERSION>TestingSettings.cmake` file.
     - Example: `${WORKSPACE}/Trilinos/cmake/std/PullRequestLinuxGCC8.3.0TestingSettings.cmake`
 
-See `TrilinosPRConfigurationStandard.py` for information on what options are set to something
+See `TrilinosPRConfigurationStandard.py`[4] for information on what options are set to something
 other than the default during normal Trilinos PR operations.
 
 Expected Operation
@@ -137,4 +135,5 @@ This allows some PR's to go through without building Trilinos, which is advantag
 when only documentation or perhaps the testing framework itself is modified and we do
 not need to spend O(5 hours) for the test suite to run.
 
-[3]: https://cmake.org/cmake/help/latest/command/include_guard.html
+[1]: https://cmake.org/cmake/help/latest/command/include_guard.html
+[2]: https://github.com/trilinos/Trilinos/blob/master/cmake/std/trilinosprhelpers/TrilinosPRConfigurationStandard.py
