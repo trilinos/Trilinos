@@ -15,13 +15,15 @@
 
 #include "Epetra_CrsMatrix.h"
 
+#include <percept/Percept_GlobalComm.hpp>
+
 namespace RFGen
 {
 
 KLSolver::KLSolver(const unsigned spatialDim)
   : 
   Epetra_Operator(),
-  mpiComm_(MPI_COMM_WORLD),
+  mpiComm_(percept::get_global_comm()),
   epetraComm_(Epetra_MpiComm(mpiComm_)),
   localNumElem_(0),
   globalNumElem_(0),

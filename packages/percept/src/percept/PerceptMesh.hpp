@@ -121,8 +121,8 @@
 
       // ctor constructor
       /// Create a Mesh object that owns its constituent MetaData and BulkData (which are created by this object)
-      //PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
-      PerceptMesh(size_t spatialDimension = 3u, stk::ParallelMachine comm =  MPI_COMM_WORLD);
+      //PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD ); // CHECK: ALLOW MPI_COMM_WORLD
+      PerceptMesh(size_t spatialDimension = 3u, stk::ParallelMachine comm =  MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
 
       /// Create a Mesh object that doesn't own its constituent MetaData and BulkData, pointers to which are adopted
       /// by this constructor.
@@ -710,7 +710,8 @@
 
 
       ~PerceptMesh() ;
-      void init( stk::ParallelMachine comm  =  MPI_COMM_WORLD, bool no_alloc=false );      // FIXME - make private
+      // FIXME - make private
+      void init( stk::ParallelMachine comm  =  MPI_COMM_WORLD, bool no_alloc=false ); // CHECK: ALLOW MPI_COMM_WORLD
       void destroy();       // FIXME - make private
 
       const stk::mesh::Part*

@@ -8,6 +8,7 @@
 
 #include <percept/PerceptUtils.hpp>
 #include <percept/mesh/geometry/volume/VolumeUtil.hpp>
+#include <percept/Percept_GlobalComm.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -75,7 +76,7 @@ void printTimersTableStructured() {
   rootTimerStructured().stop();
   stk::diag::printTimersTable(str, rootTimerStructured(), stk::diag::METRICS_ALL, false);
   
-  if (0==stk::parallel_machine_rank(MPI_COMM_WORLD))
+  if (0==stk::parallel_machine_rank(percept::get_global_comm()))
     std::cout << str.str() << std::endl;
 }
 
