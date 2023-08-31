@@ -126,7 +126,10 @@ namespace MueLu {
         }
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
         XpetraList.set("Timer Label","MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
-	rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+        {
+          SubFactoryMonitor subM2(*this, "Rebalancing existing Ac: MatrixFactory::Build", coarseLevel);
+          rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+        }
 
         if (!rebalancedAc.is_null()) {
           rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
