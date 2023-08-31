@@ -2697,7 +2697,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + myRank + 17311uLL;
     unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
 
-    pool_type rand_pool (seed);
+    static pool_type rand_pool (seed);
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
