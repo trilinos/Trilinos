@@ -58,7 +58,8 @@ constexpr size_t minimum_initial_size = sizeof (double) * 30 * 2;
 // easy by having nontemplated static raw pointers.
 
 #ifdef KOKKOS_ENABLE_CUDA
-
+bool created_cuda_finalize_hook = false;
+Kokkos::Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> * cuda_pool_=nullptr;
 void* cuda_memory_ = nullptr;
 size_t cuda_memory_size_ = 0;
 
@@ -69,6 +70,11 @@ void finalize_cuda_memory ()
     cuda_memory_ = nullptr;
     cuda_memory_size_ = 0;
   }
+
+  if(cuda_pool_ != nullptr) {
+    delete cuda_pool_;
+    cuda_pool_ = nullptr;
+  }    
 }
 
 void* cuda_uvm_memory_ = nullptr;
@@ -97,7 +103,8 @@ void finalize_cuda_host_pinned_memory ()
 #endif // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_HIP
-
+bool created_hip_finalize_hook = false;
+Kokkos::Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space> * hip_pool_=nullptr;
 void* hip_memory_ = nullptr;
 size_t hip_memory_size_ = 0;
 
@@ -108,6 +115,11 @@ void finalize_hip_memory ()
     hip_memory_ = nullptr;
     hip_memory_size_ = 0;
   }
+
+  if(hip_pool_ != nullptr) {
+    delete hip_pool_;
+    hip_pool_ = nullptr;
+  }    
 }
 
 void* hip_host_pinned_memory_ = nullptr;
@@ -124,7 +136,8 @@ void finalize_hip_host_pinned_memory ()
 #endif // KOKKOS_ENABLE_HIP
 
 #ifdef KOKKOS_ENABLE_SYCL
-
+bool created_sycl_finalize_hook = false;
+Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> * sycl_pool_=nullptr;
 void* sycl_memory_ = nullptr;
 size_t sycl_memory_size_ = 0;
 
@@ -135,6 +148,11 @@ void finalize_sycl_memory ()
     sycl_memory_ = nullptr;
     sycl_memory_size_ = 0;
   }
+
+  if(sycl_pool_ != nullptr) {
+    delete sycl_pool_;
+    sycl_pool_ = nullptr;
+  }    
 }
 
 void* sycl_shared_memory_ = nullptr;
@@ -150,6 +168,9 @@ void finalize_sycl_shared_memory ()
 }
 #endif // KOKKOS_ENABLE_SYCL
 
+bool created_host_finalize_hook = false;
+Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> * host_pool_=nullptr;
+
 void* host_memory_ = nullptr;
 size_t host_memory_size_ = 0;
 
@@ -160,6 +181,11 @@ void finalize_host_memory ()
     host_memory_ = nullptr;
     host_memory_size_ = 0;
   }
+
+  if(host_pool_ != nullptr) {
+    delete host_pool_;
+    host_pool_ = nullptr;
+  }   
 }
 
 } // namespace (anonymous)
@@ -172,8 +198,6 @@ resize (Kokkos::CudaSpace /* space */,
         const size_t size)
 {
   using memory_space = Kokkos::CudaSpace;
-  static bool created_finalize_hook = false;
-
   if (size > cuda_memory_size_) {
     if (cuda_memory_ != nullptr) {
       Kokkos::kokkos_free<memory_space> (cuda_memory_);
@@ -182,12 +206,27 @@ resize (Kokkos::CudaSpace /* space */,
     cuda_memory_ = Kokkos::kokkos_malloc<memory_space> (req_size);
     cuda_memory_size_ = size;
   }
-  if (! created_finalize_hook) {
+  if (! created_cuda_finalize_hook) {
     Kokkos::push_finalize_hook (finalize_cuda_memory);
-    created_finalize_hook = true;
+    created_cuda_finalize_hook = true;
   }
 
   return cuda_memory_;
+}
+
+Kokkos::Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> &
+Static_Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space>::
+getPool(unsigned int seed) {
+  using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space>;
+
+  if(cuda_pool_ == nullptr) {
+    cuda_pool_ = new pool_type(seed);
+    if (! created_cuda_finalize_hook) {
+      Kokkos::push_finalize_hook (finalize_cuda_memory);
+      created_cuda_finalize_hook = true;
+    }
+  }
+  return *cuda_pool_;
 }
 
 void*
@@ -248,7 +287,6 @@ resize (Kokkos::Experimental::HIPSpace /* space */,
         const size_t size)
 {
   using memory_space = Kokkos::Experimental::HIPSpace;
-  static bool created_finalize_hook = false;
 
   if (size > hip_memory_size_) {
     if (hip_memory_ != nullptr) {
@@ -258,12 +296,27 @@ resize (Kokkos::Experimental::HIPSpace /* space */,
     hip_memory_ = Kokkos::kokkos_malloc<memory_space> (req_size);
     hip_memory_size_ = size;
   }
-  if (! created_finalize_hook) {
+  if (! created_hip_finalize_hook) {
     Kokkos::push_finalize_hook (finalize_hip_memory);
-    created_finalize_hook = true;
+    created_hip_finalize_hook = true;
   }
 
   return hip_memory_;
+}
+
+Kokkos::Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space> &
+Static_Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space>::
+getPool(unsigned int seed) {
+  using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space>;
+
+  if(hip_pool_ == nullptr) {
+    hip_pool_ = new pool_type(seed);
+    if (! created_hip_finalize_hook) {
+      Kokkos::push_finalize_hook (finalize_cuda_memory);
+      created_hip_finalize_hook = true;
+    }
+  }
+  return *hip_pool_;
 }
 
 void*
@@ -301,7 +354,6 @@ resize (Kokkos::Experimental::SYCLDeviceUSMSpace /* space */,
         const size_t size)
 {
   using memory_space = Kokkos::Experimental::SYCLDeviceUSMSpace;
-  static bool created_finalize_hook = false;
 
   if (size > sycl_memory_size_) {
     if (sycl_memory_ != nullptr) {
@@ -311,13 +363,30 @@ resize (Kokkos::Experimental::SYCLDeviceUSMSpace /* space */,
     sycl_memory_ = Kokkos::kokkos_malloc<memory_space> (req_size);
     sycl_memory_size_ = size;
   }
-  if (! created_finalize_hook) {
+  if (! created_syck_finalize_hook) {
     Kokkos::push_finalize_hook (finalize_sycl_memory);
-    created_finalize_hook = true;
+    created_sycl)finalize_hook = true;
   }
 
   return sycl_memory_;
 }
+
+
+Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> &
+Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>::
+getPool(unsigned int seed) {
+  using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>;
+
+  if(sycl_pool_ == nullptr) {
+    sycl_pool_ = new pool_type(seed);
+    if (! created_sycl_finalize_hook) {
+      Kokkos::push_finalize_hook (finalize_cuda_memory);
+      created_sycl_finalize_hook = true;
+    }
+  }
+  return *sycl_pool_;
+}
+
 
 template <>
 void*
@@ -352,7 +421,6 @@ resize (Kokkos::HostSpace /* space */,
         const size_t size)
 {
   using memory_space = Kokkos::HostSpace;
-  static bool created_finalize_hook = false;
 
   const size_t req_size = size > minimum_initial_size ? size : minimum_initial_size;
   if (req_size > host_memory_size_) {
@@ -362,13 +430,30 @@ resize (Kokkos::HostSpace /* space */,
     host_memory_ = Kokkos::kokkos_malloc<memory_space> (req_size);
     host_memory_size_ = req_size;
   }
-  if (! created_finalize_hook) {
+  if (! created_host_finalize_hook) {
     Kokkos::push_finalize_hook (finalize_host_memory);
-    created_finalize_hook = true;
+    created_host_finalize_hook = true;
   }
 
   return host_memory_;
 }
+
+Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> &
+Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>::
+getPool(unsigned int seed) {
+  using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>;
+
+  if(host_pool_ == nullptr) {
+    host_pool_ = new pool_type(seed);
+    if (! created_host_finalize_hook) {
+      Kokkos::push_finalize_hook (finalize_cuda_memory);
+      created_host_finalize_hook = true;
+    }
+  }
+  return *host_pool_;
+}
+
+
 
 } // namespace Impl
 } // namespace Details
