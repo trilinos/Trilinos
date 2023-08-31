@@ -8,6 +8,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/bcstrategy)
 
 SET(UNIT_TEST_DRIVER ${PANZER_UNIT_TEST_MAIN})
 
+IF (PANZER_HAVE_EPETRA_STACK)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   model_evaluator
   SOURCES model_evaluator.cpp ${UNIT_TEST_DRIVER}
@@ -25,13 +26,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   thyra_model_evaluator
   SOURCES thyra_model_evaluator.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 4
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  explicit_model_evaluator
-  SOURCES explicit_model_evaluator.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 4
   )
@@ -58,3 +52,11 @@ IF(${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
      NUM_MPI_PROCS 4
      )
 ENDIF()
+ENDIF (PANZER_HAVE_EPETRA_STACK)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  explicit_model_evaluator
+  SOURCES explicit_model_evaluator.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  )
