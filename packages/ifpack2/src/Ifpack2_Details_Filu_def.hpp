@@ -186,7 +186,6 @@ applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
   std::cout << "JGF apply of blocked took: " << localPrec_->getApplyTime() << std::endl;
   std::cout << "JGF apply of unblocked took: " << localPrec2_->getApplyTime() << std::endl;
   std::cout << "JGF apply of orig took: " << localPrec3_->getApplyTime() << std::endl;
-  exit(0);
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, bool BlockCrsEnabled>
