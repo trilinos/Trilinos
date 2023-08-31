@@ -63,6 +63,7 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_StaticView.hpp"
 #ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
 #  include "Teuchos_SerialDenseMatrix.hpp"
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
@@ -2697,7 +2698,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + myRank + 17311uLL;
     unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
 
-    pool_type rand_pool (seed);
+    pool_type & rand_pool = Tpetra::Details::Impl::Static_Random_XorShift64_Pool<typename device_type::execution_space>::getPool(seed);
+    //    static pool_type rand_pool (seed);
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
