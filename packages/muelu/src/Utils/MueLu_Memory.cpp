@@ -46,6 +46,7 @@
 #include <sstream>
 #include <fstream>
 #include "MueLu_Memory.hpp"
+#include "MueLu_GlobalComm.hpp"
 
 #include <iostream> // TODO: remove
 #include <unistd.h>
@@ -121,9 +122,9 @@ namespace MueLu {
       double localTime = timer.totalElapsedTime();
 #ifdef HAVE_MPI
       int ntimers=1, root=0;
-      MPI_Reduce(&localTime,&maxTime,ntimers,MPI_DOUBLE,MPI_MAX,root,MPI_COMM_WORLD);
-      MPI_Reduce(&localTime,&minTime,ntimers,MPI_DOUBLE,MPI_MIN,root,MPI_COMM_WORLD);
-      MPI_Reduce(&localTime,&avgTime,ntimers,MPI_DOUBLE,MPI_SUM,root,MPI_COMM_WORLD);
+      MPI_Reduce(&localTime,&maxTime,ntimers,MPI_DOUBLE,MPI_MAX,root,MueLu::GetGlobalComm());
+      MPI_Reduce(&localTime,&minTime,ntimers,MPI_DOUBLE,MPI_MIN,root,MueLu::GetGlobalComm());
+      MPI_Reduce(&localTime,&avgTime,ntimers,MPI_DOUBLE,MPI_SUM,root,MueLu::GetGlobalComm());
 #else
       maxTime = localTime;
       minTime = localTime;

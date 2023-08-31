@@ -55,6 +55,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_GlobalComm.hpp"
 
 namespace MueLu {
 
@@ -74,8 +75,8 @@ namespace MueLu {
 #ifdef HAVE_MPI
     int mpiStarted = 0; MPI_Initialized(&mpiStarted);
     if (mpiStarted)     {
-      MPI_Comm_rank(MPI_COMM_WORLD, &procRank_);
-      MPI_Comm_size(MPI_COMM_WORLD, &numProcs_);
+      MPI_Comm_rank(MueLu::GetGlobalComm(), &procRank_);
+      MPI_Comm_size(MueLu::GetGlobalComm(), &numProcs_);
     }
 #endif
     }
@@ -140,7 +141,7 @@ namespace MueLu {
     int mpiStarted = 0; MPI_Initialized(&mpiStarted);
     if (mpiStarted)     {
       int procRank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
+      MPI_Comm_rank(MueLu::GetGlobalComm(), &procRank);
       fn = filename + "." + std::to_string(procRank);
     } else
 #endif

@@ -61,6 +61,7 @@
 #include "MueLu_TimeMonitor.hpp"
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_VerboseObject.hpp"
+#include "MueLu_GlobalComm.hpp"
 
 #include <cuda_runtime.h>
 #include <amgx_c.h>
@@ -150,7 +151,7 @@ namespace MueLu {
     typedef Tpetra::Map<LO,GO,NO>            Map;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> MultiVector;
 
-   
+
     void printMaps(Teuchos::RCP<const Teuchos::Comm<int> >& comm, const std::vector<std::vector<int> >& vec, const std::vector<int>& perm,
                    const int* nbrs, const Map& map, const std::string& label) {
       for (int p = 0; p < comm->getSize(); p++) {
@@ -179,15 +180,15 @@ namespace MueLu {
       RCP<const Teuchos::Comm<int> > comm = inA->getRowMap()->getComm();
       int numProcs = comm->getSize();
       int myRank   = comm->getRank();
-     
+
 
       RCP<Teuchos::Time> amgxTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: initialize");
       amgxTimer->start();
       // Initialize
       //AMGX_SAFE_CALL(AMGX_initialize());
       //AMGX_SAFE_CALL(AMGX_initialize_plugins());
-    
-                
+
+
       /*system*/
       //AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
       AMGX_SAFE_CALL(AMGX_install_signal_handler());
@@ -241,7 +242,7 @@ namespace MueLu {
 #ifdef NEW_COMM
         AMGX_resources_create(&Resources_, Config_, &mpiComm, 1/* number of GPU devices utilized by this rank */, device);
 #else
-        AMGX_resources_create(&Resources_, Config_, MPI_COMM_WORLD, 1/* number of GPU devices utilized by this rank */, device);
+        AMGX_resources_create(&Resources_, Config_, MueLu::GetGlobalComm(), 1/* number of GPU devices utilized by this rank */, device);
 #endif
       }
 
@@ -464,7 +465,7 @@ namespace MueLu {
       AMGX_SAFE_CALL(AMGX_config_destroy(Config_));
     }
 
-   
+
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Map> getDomainMap() const;
 
