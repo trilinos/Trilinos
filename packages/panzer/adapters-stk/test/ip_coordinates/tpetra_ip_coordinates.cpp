@@ -44,21 +44,20 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_DefaultComm.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_Workset_Builder.hpp"
-#include "Panzer_WorksetContainer.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
+#include "Panzer_Workset_Builder.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
@@ -68,6 +67,13 @@ using Teuchos::rcp;
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
+
+#include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_WorksetContainer.hpp"
+
+#include "Panzer_ResponseEvaluatorFactory_IPCoordinates.hpp"
+
+#include "TestEvaluators.hpp"
 
 #include <vector>
 #include <map>
@@ -79,14 +85,33 @@ namespace panzer
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList> &ipb,
                          std::vector<panzer::BC> &bcs);
 
-  TEUCHOS_UNIT_TEST(field_manager_builder, incremental_setup_interface)
+  struct RespFactoryIPCoords_Builder
+  {
+    int cubatureDegree;
+
+    template <typename T>
+    Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
+    {
+      return Teuchos::rcp(new ResponseEvaluatorFactory_IPCoordinates<T>(cubatureDegree));
+    }
+  };
+
+  TEUCHOS_UNIT_TEST(response_library_stk2, test)
   {
     using Teuchos::RCP;
+
+    bool ENABLE_DEBUG_OUTPUT = false;
+
+#ifdef HAVE_MPI
+    Teuchos::RCP<const Teuchos::MpiComm<int>> tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+#else
+    Teuchos::RCP<Teuchos::Comm<int>> tcomm = FAIL
+#endif
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
-    const std::size_t workset_size = 20;
+    const std::size_t workset_size = 1;
 
     panzer::FieldManagerBuilder fmb;
 
@@ -97,8 +122,12 @@ namespace panzer
       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
       pl->set("X Blocks", 2);
       pl->set("Y Blocks", 1);
-      pl->set("X Elements", 6);
-      pl->set("Y Elements", 4);
+      pl->set("X Elements", 2);
+      pl->set("Y Elements", 2);
+      pl->set("X0", 0.0);
+      pl->set("Y0", 0.0);
+      pl->set("Xf", 8.0);
+      pl->set("Yf", 4.0);
       mesh_factory.setParameterList(pl);
       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
@@ -136,6 +165,11 @@ namespace panzer
 
     // setup worksets
     /////////////////////////////////////////////
+
+    std::vector<std::string> validEBlocks;
+    mesh->getElementBlockNames(validEBlocks);
+
+    // build WorksetContainer
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer                                                       // attach it to a workset container (uses lazy evaluation)
         = Teuchos::rcp(new panzer::WorksetContainer);
@@ -151,60 +185,167 @@ namespace panzer
     Teuchos::RCP<const panzer::GlobalIndexerFactory> indexerFactory = Teuchos::rcp(new panzer::DOFManagerFactory);
     const Teuchos::RCP<panzer::GlobalIndexer> dofManager = indexerFactory->buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD), physics_blocks, conn_manager);
 
+    RCP<const Teuchos::MpiComm<int>> tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
     // and linear object factory
-    std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> gidProviders = {dofManager};
-    Teuchos::RCP<const Teuchos::MpiComm<int>> tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    panzer::BlockedTpetraLinearObjFactory<panzer::Traits, double, panzer::LocalOrdinal, panzer::GlobalOrdinal> elof(tComm, gidProviders);
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits>> lof = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits, double, panzer::LocalOrdinal, panzer::GlobalOrdinal>(tComm.getConst(), dofManager));
 
     // setup field manager builder
     /////////////////////////////////////////////
 
     // Add in the application specific closure model factory
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     user_app::MyModelFactory_TemplateBuilder cm_builder;
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value", 1.0);
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value", 1.0);
+    closure_models.sublist("Response Model");
 
     Teuchos::ParameterList user_data("User Data");
+    user_data.sublist("Panzer Data").set("Mesh", mesh);
+    user_data.sublist("Panzer Data").set("DOF Manager", dofManager);
+    user_data.sublist("Panzer Data").set("Linear Object Factory", lof);
+    user_data.set<int>("Workset Size", workset_size);
 
-    fmb.setWorksetContainer(wkstContainer);
-    fmb.setupVolumeFieldManagers(physics_blocks, cm_factory, closure_models, elof, user_data);
-    fmb.setupBCFieldManagers(bcs, physics_blocks, *eqset_factory, cm_factory, bc_factory, closure_models, elof, user_data);
+    // IP is in center of element
+    user_data.sublist("IP Coordinates").set<int>("Integration Order", 1);
 
-    // run tests
-    /////////////////////////////////
-    fmb.writeVolumeGraphvizDependencyFiles("FMB_Test", physics_blocks);
-    fmb.writeBCGraphvizDependencyFiles("FMB_Test");
-    fmb.writeVolumeTextDependencyFiles("FMB_Test", physics_blocks);
-    fmb.writeBCTextDependencyFiles("FMB_Test");
+    // setup and evaluate ResponseLibrary
+    ///////////////////////////////////////////////////
 
-    const std::vector<Teuchos::RCP<PHX::FieldManager<panzer::Traits>>> &fmb_vol_fm =
-        fmb.getVolumeFieldManagers();
+    out << "Adding responses" << std::endl;
 
-    TEST_EQUALITY(fmb_vol_fm.size(), 2);
+    RCP<ResponseLibrary<Traits>> rLibrary = Teuchos::rcp(new ResponseLibrary<Traits>(wkstContainer, dofManager, lof));
 
-    Teuchos::RCP<std::vector<panzer::Workset>> fmb_vol_worksets;
+    ResponseEvaluatorFactory_IPCoordinates_Builder builder;
+    builder.cubatureDegree = 1;
 
-    panzer::WorksetDescriptor wd = blockDescriptor("eblock-0_0");
-    fmb_vol_worksets = wkstContainer->getWorksets(wd);
-    TEST_ASSERT(fmb_vol_worksets != Teuchos::null);
+    std::vector<std::string> blocks(1);
+    blocks[0] = "eblock-0_0";
+    rLibrary->addResponse("IPCoordinates-0_0", blocks, builder);
+    blocks[0] = "eblock-1_0";
+    rLibrary->addResponse("IPCoordinates-1_0", blocks, builder);
 
-    wd = blockDescriptor("eblock-1_0");
-    fmb_vol_worksets = wkstContainer->getWorksets(wd);
-    TEST_ASSERT(fmb_vol_worksets != Teuchos::null);
+    Teuchos::RCP<ResponseBase> resp00 = rLibrary->getResponse<panzer::Traits::Residual>("IPCoordinates-0_0");
+    Teuchos::RCP<ResponseBase> resp10 = rLibrary->getResponse<panzer::Traits::Residual>("IPCoordinates-1_0");
 
-    const std::map<panzer::BC,
-                   std::map<unsigned, PHX::FieldManager<panzer::Traits>>,
-                   panzer::LessBC> &fmb_bc_fm = fmb.getBCFieldManagers();
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_IPCoordinates<panzer::Traits::Residual>>(resp00, true));
+    TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_IPCoordinates<panzer::Traits::Residual>>(resp10, true));
 
-    std::map<panzer::BC, Teuchos::RCP<std::map<unsigned, panzer::Workset>>, panzer::LessBC> fmb_bc_worksets;
-    panzer::getSideWorksetsFromContainer(*wkstContainer, bcs, fmb_bc_worksets);
+    rLibrary->buildResponseEvaluators(physics_blocks,
+                                      cm_factory,
+                                      closure_models,
+                                      user_data, true);
 
-    TEST_EQUALITY(fmb_bc_fm.size(), 3);
-    TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());
+    Teuchos::RCP<panzer::LinearObjContainer> loc = lof->buildLinearObjContainer();
+    lof->initializeContainer(panzer::LinearObjContainer::X, *loc);
+    Teuchos::RCP<panzer::LinearObjContainer> gloc = lof->buildGhostedLinearObjContainer();
+    lof->initializeGhostedContainer(panzer::LinearObjContainer::X, *gloc);
+
+    out << "evaluating VFM" << std::endl;
+    panzer::AssemblyEngineInArgs ae_inargs(gloc, loc);
+    rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
+    rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+
+    std::map<std::string, Teuchos::RCP<const std::vector<panzer::Traits::Residual::ScalarT>>> coords;
+    coords["eblock-0_0"] = Teuchos::rcp_dynamic_cast<Response_IPCoordinates<panzer::Traits::Residual>>(resp00, true)->getCoords();
+    ;
+    coords["eblock-1_0"] = Teuchos::rcp_dynamic_cast<Response_IPCoordinates<panzer::Traits::Residual>>(resp10, true)->getCoords();
+    ;
+
+    // Debugging
+    if (ENABLE_DEBUG_OUTPUT)
+    {
+      Teuchos::RCP<Teuchos::FancyOStream> out2 = Teuchos::getFancyOStream(Teuchos::rcp(&out, false));
+      out2->setOutputToRootOnly(-1);
+      *out2 << "\nPrinting IP coordinates for block: eblock-0_0" << std::endl;
+      for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = (coords["eblock-0_0"])->begin(); i != (coords["eblock-0_0"])->end(); ++i)
+        *out2 << "pid = " << tcomm->getRank() << ", val = " << *i << std::endl;
+      *out2 << "\nPrinting IP coordinates for block: eblock-1_0" << std::endl;
+      for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = (coords["eblock-1_0"])->begin(); i != (coords["eblock-1_0"])->end(); ++i)
+        *out2 << "pid = " << tcomm->getSize() << ", val = " << *i << std::endl;
+    }
+
+    const double double_tol = 10.0 * std::numeric_limits<double>::epsilon();
+
+    // NOTE: if the ordering of elements in STK changes or the
+    // ordering of integration points in Intrepid2 changes, this test
+    // will break!  It assumes a fixed deterministic ordering.
+    if (tcomm->getSize() == 1)
+    {
+      // eblock 1
+      {
+        const std::vector<panzer::Traits::Residual::ScalarT> &values = *(coords["eblock-0_0"]);
+        TEST_FLOATING_EQUALITY(values[0], 1.0, double_tol); // x
+        TEST_FLOATING_EQUALITY(values[1], 3.0, double_tol); // x
+        TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol); // x
+        TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol); // x
+        TEST_FLOATING_EQUALITY(values[4], 1.0, double_tol); // y
+        TEST_FLOATING_EQUALITY(values[5], 1.0, double_tol); // y
+        TEST_FLOATING_EQUALITY(values[6], 3.0, double_tol); // y
+        TEST_FLOATING_EQUALITY(values[7], 3.0, double_tol); // y
+      }
+      // eblock 2
+      {
+        const std::vector<panzer::Traits::Residual::ScalarT> &values = *(coords["eblock-1_0"]);
+        TEST_FLOATING_EQUALITY(values[0], 5.0, double_tol); // x
+        TEST_FLOATING_EQUALITY(values[1], 7.0, double_tol); // x
+        TEST_FLOATING_EQUALITY(values[2], 5.0, double_tol); // x
+        TEST_FLOATING_EQUALITY(values[3], 7.0, double_tol); // x
+        TEST_FLOATING_EQUALITY(values[4], 1.0, double_tol); // y
+        TEST_FLOATING_EQUALITY(values[5], 1.0, double_tol); // y
+        TEST_FLOATING_EQUALITY(values[6], 3.0, double_tol); // y
+        TEST_FLOATING_EQUALITY(values[7], 3.0, double_tol); // y
+      }
+    }
+    else if (tcomm->getSize() == 2)
+    {
+
+      if (tcomm->getRank() == 0)
+      {
+        // eblock 1
+        {
+          const std::vector<panzer::Traits::Residual::ScalarT> &values = *(coords["eblock-0_0"]);
+          TEST_FLOATING_EQUALITY(values[0], 1.0, double_tol); // x
+          TEST_FLOATING_EQUALITY(values[1], 1.0, double_tol); // x
+          TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol); // y
+          TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol); // y
+        }
+        // eblock 2
+        {
+          const std::vector<panzer::Traits::Residual::ScalarT> &values = *(coords["eblock-1_0"]);
+          TEST_FLOATING_EQUALITY(values[0], 5.0, double_tol); // x
+          TEST_FLOATING_EQUALITY(values[1], 5.0, double_tol); // x
+          TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol); // y
+          TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol); // y
+        }
+      }
+      else if (tcomm->getRank() == 1)
+      {
+        // eblock 1
+        {
+          const std::vector<panzer::Traits::Residual::ScalarT> &values = *(coords["eblock-0_0"]);
+          TEST_FLOATING_EQUALITY(values[0], 3.0, double_tol); // x
+          TEST_FLOATING_EQUALITY(values[1], 3.0, double_tol); // x
+          TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol); // y
+          TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol); // y
+        }
+        // eblock 2
+        {
+          const std::vector<panzer::Traits::Residual::ScalarT> &values = *(coords["eblock-1_0"]);
+          TEST_FLOATING_EQUALITY(values[0], 7.0, double_tol); // x
+          TEST_FLOATING_EQUALITY(values[1], 7.0, double_tol); // x
+          TEST_FLOATING_EQUALITY(values[2], 1.0, double_tol); // y
+          TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol); // y
+        }
+      }
+    }
+    else
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Error - this test can only be run with 1 or 2 processes!");
+    }
   }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList> &ipb,
