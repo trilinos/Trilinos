@@ -163,10 +163,12 @@ public:
 
   void getRowIDsHostView(
       typename BaseAdapter<User>::ConstIdsHostView &rowIds) const override {
+
     auto kRowIds = rowMap_->getMyGlobalIndices();
-    auto hostRowIds = Kokkos::create_mirror_view(kRowIds);
-    Kokkos::deep_copy(hostRowIds, kRowIds);
-    rowIds = hostRowIds;
+    auto tmpIds = typename BaseAdapter<User>::IdsHostView("rowIds", kRowIds.extent(0));
+
+    Kokkos::deep_copy(tmpIds, kRowIds);
+    rowIds = tmpIds;
   }
 
   void getRowIDsDeviceView(
@@ -256,6 +258,7 @@ public:
       typename BaseAdapter<User>::WeightsHostView &weights) const {
     auto hostWeight = Kokkos::create_mirror_view(kRowWeights_);
     Kokkos::deep_copy(hostWeight, kRowWeights_);
+
     weights = hostWeight;
   }
 
@@ -287,10 +290,10 @@ private:
   ArrayRCP<StridedData<lno_t, scalar_t>> rowWeights_;
 
   // New Kokkos Type
-  Kokkos::View<offset_t *, device_t> kOffset_;
-  Kokkos::View<gno_t *, device_t> kColumnIds_;
-  Kokkos::View<scalar_t *, device_t> kValues_;
-  Kokkos::View<scalar_t **, device_t> kRowWeights_;
+  typename BaseAdapter<User>::OffsetsDeviceView kOffset_;
+  typename BaseAdapter<User>::IdsDeviceView kColumnIds_;
+  typename BaseAdapter<User>::ScalarsDeviceView kValues_;
+  typename BaseAdapter<User>::WeightsDeviceView kRowWeights_;
   Kokkos::View<bool *, host_t> numNzWeight_;
 
   int nWeightsPerRow_;

@@ -56,7 +56,8 @@
 
 
 namespace Intrepid2 {
-namespace Experimental {
+
+namespace FunctorsProjectionTools {
 
 template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
 struct ComputeBasisCoeffsOnEdges_HCurl {
@@ -409,6 +410,11 @@ struct ComputeBasisCoeffsOnCell_HCurl {
   }
 };
 
+} // FunctorsProjectionTools namespace
+
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+namespace Experimental {
+
 
 template<typename DeviceType>
 template<typename BasisType,
@@ -441,6 +447,7 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
     
     getHCurlBasisCoeffs(basisCoeffs, targetAtTargetEPoints, targetCurlAtTargetCurlEPoints, orts, cellBasis, projStruct);
 }
+#endif
 
 
 template<typename DeviceType>
@@ -564,7 +571,7 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
     ordinal_type offsetBasis = basisEPointsRange(edgeDim, ie).first;
     ordinal_type offsetTarget = targetEPointsRange(edgeDim, ie).first;
 
-    typedef ComputeBasisCoeffsOnEdges_HCurl<ScalarViewType,  decltype(basisEWeights), decltype(tagToOrdinal), decltype(targetAtTargetEPoints)> functorTypeEdge;
+    using functorTypeEdge = FunctorsProjectionTools::ComputeBasisCoeffsOnEdges_HCurl<ScalarViewType,  decltype(basisEWeights), decltype(tagToOrdinal), decltype(targetAtTargetEPoints)>;
     Kokkos::parallel_for(policy, functorTypeEdge(basisTanAtBasisEPoints,basisAtBasisEPoints,basisEWeights,
         weightedTanBasisAtBasisEPoints, targetEWeights,
         basisAtTargetEPoints, weightedTanBasisAtTargetEPoints, tagToOrdinal,
@@ -664,8 +671,8 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
     auto targetCurlEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetDerivEvalWeights(faceDim,iface));
     auto basisCurlEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisDerivEvalWeights(faceDim,iface));
     const auto topoKey = refTopologyKey(faceDim, iface);
-    typedef ComputeBasisCoeffsOnFaces_HCurl<decltype(basisCoeffs), decltype(orts), ScalarViewType,  decltype(targetAtTargetEPoints), decltype(basisEWeights),
-        decltype(tagToOrdinal), decltype(subcellParamFace), decltype(computedDofs)> functorTypeFaces;
+    using functorTypeFaces = FunctorsProjectionTools::ComputeBasisCoeffsOnFaces_HCurl<decltype(basisCoeffs), decltype(orts), ScalarViewType,  decltype(targetAtTargetEPoints), decltype(basisEWeights),
+        decltype(tagToOrdinal), decltype(subcellParamFace), decltype(computedDofs)>;
     Kokkos::parallel_for(policy, functorTypeFaces(basisCoeffs,
         orts, negPartialProjTan, negPartialProjCurlNormal,
         hgradBasisGradAtBasisEPoints, wHgradBasisGradAtBasisEPoints,
@@ -771,8 +778,8 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
 
     auto hGradTagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), hgradBasis->getAllDofOrdinal());
 
-    typedef ComputeBasisCoeffsOnCell_HCurl<decltype(basisCoeffs), ScalarViewType,  decltype(basisEWeights),
-        decltype(computedDofs), decltype(tagToOrdinal)> functorTypeCell;
+    using functorTypeCell = FunctorsProjectionTools::ComputeBasisCoeffsOnCell_HCurl<decltype(basisCoeffs), ScalarViewType,  decltype(basisEWeights),
+        decltype(computedDofs), decltype(tagToOrdinal)>;
     Kokkos::parallel_for(policy, functorTypeCell(basisCoeffs, negPartialProj, negPartialProjCurl,
         cellBasisAtBasisEPoints, cellBasisCurlAtCurlEPoints,
         basisAtBasisEPoints, hgradBasisGradAtBasisEPoints, basisCurlAtBasisCurlEPoints,
@@ -813,8 +820,10 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
     delete hgradBasis;
   }
 }
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 }
-}
+#endif
+}   // Intrepid2 namespace
 
 #endif
 
