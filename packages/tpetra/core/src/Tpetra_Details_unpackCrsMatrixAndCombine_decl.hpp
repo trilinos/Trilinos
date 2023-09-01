@@ -45,6 +45,7 @@
 #include "Kokkos_DualView.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_DistObject_decl.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_Details_unpackCrsMatrixAndCombine_decl.hpp
 /// \brief Declaration of functions for unpacking the entries of a
@@ -230,12 +231,27 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void
 unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Kokkos::View<LocalOrdinal const *, typename Node::device_type>,
-    const Kokkos::View<const char*, typename Node::device_type>,
-    const Kokkos::View<const size_t*, typename Node::device_type>,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
+    const Kokkos::View<const char*, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+          ,void, void >,
+    const Kokkos::View<const size_t*, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+          ,void, void >,
     const size_t numSameIDs,
-    const Kokkos::View<LocalOrdinal const *, typename Node::device_type>,
-    const Kokkos::View<LocalOrdinal const *, typename Node::device_type>,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
     size_t TargetNumRows,
     const int MyTargetPID,
     Teuchos::ArrayRCP<size_t>& CRS_rowptr,
@@ -243,7 +259,6 @@ unpackAndCombineIntoCrsArrays (
     Teuchos::ArrayRCP<Scalar>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);
-
 } // namespace Details
 } // namespace Tpetra
 

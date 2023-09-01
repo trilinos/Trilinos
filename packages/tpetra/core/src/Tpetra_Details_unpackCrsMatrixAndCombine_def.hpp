@@ -40,7 +40,10 @@
 #ifndef TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_DEF_HPP
 #define TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_DEF_HPP
 
+#include <memory>
+#include <string>
 #include "TpetraCore_config.h"
+#include "Kokkos_Core.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
@@ -52,9 +55,7 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
-#include "Kokkos_Core.hpp"
-#include <memory>
-#include <string>
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_Details_unpackCrsMatrixAndCombine_def.hpp
 /// \brief Definition of functions for unpacking the entries of a
@@ -747,8 +748,8 @@ size_t
 unpackAndCombineWithOwningPIDsCount(
   const LocalMatrix& local_matrix,
   const typename PackTraits<typename LocalMatrix::ordinal_type>::input_array_type permute_from_lids,
-  const Kokkos::View<const char*, BufferDeviceType>& imports,
-  const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
+  const Kokkos::View<const char*, BufferDeviceType, void, void>& imports,
+  const Kokkos::View<const size_t*, BufferDeviceType, void, void>& num_packets_per_lid,
   const size_t num_same_ids)
 {
   using Kokkos::parallel_reduce;
@@ -961,8 +962,8 @@ unpackAndCombineIntoCrsArrays2(
     const Kokkos::View<size_t*,typename LocalMap::device_type>& new_start_row,
     const typename PackTraits<size_t>::input_array_type& offsets,
     const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& import_lids,
-    const Kokkos::View<const char*, BufferDeviceType>& imports,
-    const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
+    const Kokkos::View<const char*, BufferDeviceType, void, void>& imports,
+    const Kokkos::View<const size_t*, BufferDeviceType, void, void>& num_packets_per_lid,
     const LocalMatrix& /* local_matrix */,
     const LocalMap /*& local_col_map*/,
     const int my_pid,
@@ -1036,8 +1037,8 @@ unpackAndCombineIntoCrsArrays(
     const LocalMatrix & local_matrix,
     const LocalMap & local_col_map,
     const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& import_lids,
-    const Kokkos::View<const char*, BufferDeviceType>& imports,
-    const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
+    const Kokkos::View<const char*, BufferDeviceType, void, void>& imports,
+    const Kokkos::View<const size_t*, BufferDeviceType, void, void>& num_packets_per_lid,
     const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& permute_to_lids,
     const typename PackTraits<typename LocalMap::local_ordinal_type>::input_array_type& permute_from_lids,
     const typename PackTraits<size_t>::output_array_type& tgt_rowptr,
@@ -1387,17 +1388,23 @@ unpackAndCombineWithOwningPIDsCount (
      "numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
 
   auto local_matrix = sourceMatrix.getLocalMatrixDevice ();
-  auto permute_from_lids_d =
+
+  using kokkos_device_type = Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>;
+
+  Kokkos::View<LocalOrdinal const *, kokkos_device_type, void, void > permute_from_lids_d =
     create_mirror_view_from_raw_host_array (DT (),
                                             permuteFromLIDs.getRawPtr (),
                                             permuteFromLIDs.size (), true,
                                             "permute_from_lids");
-  auto imports_d =
+
+  Kokkos::View<const char*, kokkos_device_type, void, void > imports_d =
     create_mirror_view_from_raw_host_array (DT (),
                                             imports.getRawPtr (),
                                             imports.size (), true,
                                             "imports");
-  auto num_packets_per_lid_d =
+
+  Kokkos::View<const size_t*, kokkos_device_type, void, void > num_packets_per_lid_d =
     create_mirror_view_from_raw_host_array (DT (),
                                             numPacketsPerLID.getRawPtr (),
                                             numPacketsPerLID.size (), true,
@@ -1427,12 +1434,27 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void
 unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Kokkos::View<LocalOrdinal const *, typename Node::device_type> import_lids_d,
-    const Kokkos::View<const char*, typename Node::device_type> imports_d,
-    const Kokkos::View<const size_t*, typename Node::device_type> num_packets_per_lid_d,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                        Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void > import_lids_d,
+    const Kokkos::View<const char*, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void > imports_d,
+    const Kokkos::View<const size_t*, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void > num_packets_per_lid_d,
     const size_t numSameIDs,
-    const Kokkos::View<LocalOrdinal const *, typename Node::device_type> permute_to_lids_d,
-    const Kokkos::View<LocalOrdinal const *, typename Node::device_type> permute_from_lids_d,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void > permute_to_lids_d,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void > permute_from_lids_d,
     size_t TargetNumRows,
     const int MyTargetPID,
     Teuchos::ArrayRCP<size_t>& CRS_rowptr,
@@ -1680,12 +1702,27 @@ unpackAndCombineIntoCrsArrays (
   template void \
   Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT> &, \
-    const Kokkos::View<LO const *, typename NT::device_type>, \
-    const Kokkos::View<const char*, typename NT::device_type>, \
-    const Kokkos::View<const size_t*, typename NT::device_type>, \
+    const Kokkos::View<LO const *, \
+                       Kokkos::Device<typename NT::device_type::execution_space, \
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename NT::device_type>>,\
+                       void, void >, \
+    const Kokkos::View<const char*, \
+                       Kokkos::Device<typename NT::device_type::execution_space, \
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename NT::device_type>>, \
+                       void, void >, \
+    const Kokkos::View<const size_t*, \
+                       Kokkos::Device<typename NT::device_type::execution_space, \
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename NT::device_type>>, \
+                       void, void >, \
     const size_t, \
-    const Kokkos::View<LO const *, typename NT::device_type>, \
-    const Kokkos::View<LO const *, typename NT::device_type>, \
+    const Kokkos::View<LO const *, \
+                       Kokkos::Device<typename NT::device_type::execution_space, \
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename NT::device_type>>, \
+                       void, void >, \
+    const Kokkos::View<LO const *, \
+                       Kokkos::Device<typename NT::device_type::execution_space, \
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename NT::device_type>>, \
+                       void, void >, \
     size_t, \
     const int, \
     Teuchos::ArrayRCP<size_t>&, \
