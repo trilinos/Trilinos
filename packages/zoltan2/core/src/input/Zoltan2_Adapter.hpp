@@ -124,14 +124,14 @@ public:
   using ConstOffsetsDeviceView = Kokkos::View<const offset_t *, device_t>;
   using ConstOffsetsHostView = typename ConstOffsetsDeviceView::HostMirror;
 
-  using offsetsDeviceView = Kokkos::View<offset_t *, device_t>;
-  using offsetsHostView = typename offsetsDeviceView::HostMirror;
+  using OffsetsDeviceView = Kokkos::View<offset_t *, device_t>;
+  using OffsetsHostView = typename OffsetsDeviceView::HostMirror;
 
   using ConstScalarsDeviceView = Kokkos::View<const scalar_t *, device_t>;
   using ConstScalarsHostView = typename ConstScalarsDeviceView::HostMirror;
 
-  using scalarsDeviceView = Kokkos::View<scalar_t *, device_t>;
-  using scalarsHostView = typename scalarsDeviceView::HostMirror;
+  using ScalarsDeviceView = Kokkos::View<scalar_t *, device_t>;
+  using ScalarsHostView = typename ScalarsDeviceView::HostMirror;
 
   using ConstWeightsDeviceView1D = Kokkos::View<const scalar_t *, device_t>;
   using ConstWeightsHostView1D = typename ConstWeightsDeviceView1D::HostMirror;

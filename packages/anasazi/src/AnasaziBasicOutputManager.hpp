@@ -52,6 +52,7 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#include "AnasaziGlobalComm.hpp"
 #endif
 
 /*!  \class Anasazi::BasicOutputManager
@@ -70,7 +71,7 @@ namespace Anasazi {
     public:
 
       //! @name Constructors/Destructor
-      //@{ 
+      //@{
 
       //! Default constructor
       BasicOutputManager(int vb = Anasazi::Errors, int rootRank = 0);
@@ -89,7 +90,7 @@ namespace Anasazi {
     private:
 
       //! @name Undefined methods
-      //@{ 
+      //@{
 
       //! Copy constructor.
       BasicOutputManager( const OutputManager<ScalarType>& OM );
@@ -114,8 +115,8 @@ namespace Anasazi {
     MPI_Initialized(&mpiStarted);
     if (mpiStarted)
     {
-      MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-      MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+      MPI_Comm_rank(get_global_comm(), &myRank);
+      MPI_Comm_size(get_global_comm(), &numProcs);
     }
     this->fos_->setProcRankAndSize(myRank, numProcs);
     this->fos_->setOutputToRootOnly(rootRank);

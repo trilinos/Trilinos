@@ -187,8 +187,9 @@ namespace MueLuExamples {
     sed_pref = sed_pref +  "\"\" ";
 #endif
 
-    system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
-    system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+    int ret_val = 0; (void) ret_val; // suppress fscanf return value and unused variable warnings
+    ret_val = system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+    ret_val = system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
   }
 
   bool compare_to_gold(int myRank, const std::string & baseFile) {
@@ -197,8 +198,9 @@ namespace MueLuExamples {
 
       // Create a copy of outputs
       std::string cmd = "cp -f ";
-      system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
-      system((cmd + baseFile + ".out "  + baseFile + ".out_filtered").c_str());
+      int ret_val = 0; (void) ret_val; // suppress fscanf return value and unused variable warnings
+      ret_val = system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+      ret_val = system((cmd + baseFile + ".out "  + baseFile + ".out_filtered").c_str());
 
       // Tpetra produces different eigenvalues in Chebyshev due to using
       // std::rand() for generating random vectors, which may be initialized

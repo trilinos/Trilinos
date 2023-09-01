@@ -213,8 +213,6 @@ int feAssemblyHex(int argc, char *argv[]) {
           false,
       Kokkos::DefaultHostExecutionSpace, exec_space>;
 
-  using host_execution_space =
-      do_not_use_host_execution_space;
   using host_mirror_space = std::conditional_t<
       std::is_same<exec_space, do_not_use_host_execution_space>::value &&
           std::is_same<mem_space, do_not_use_host_memory_space>::value,
@@ -224,26 +222,30 @@ int feAssemblyHex(int argc, char *argv[]) {
 
   using HostSpaceType = typename host_mirror_space::execution_space;
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+  using DynRankView = Kokkos::DynRankView<ValueType,DeviceSpaceType>;
 
-  typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal> map_t;
+  using map_t = Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal>;
 
-  typedef typename map_t::local_ordinal_type  local_ordinal_t;
-  typedef typename map_t::global_ordinal_type global_ordinal_t;
-  typedef typename map_t::node_type           node_t;
-  typedef Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>      fe_graph_t;
-  typedef ValueType scalar_t;
-  typedef Tpetra::FECrsMatrix<scalar_t, local_ordinal_t, global_ordinal_t> fe_matrix_t;
-  typedef Tpetra::FEMultiVector<scalar_t, local_ordinal_t, global_ordinal_t> fe_multivector_t;
-  typedef Tpetra::Vector<scalar_t, local_ordinal_t, global_ordinal_t> vector_t;
+  using local_ordinal_t = typename map_t::local_ordinal_type;
+  using global_ordinal_t = typename map_t::global_ordinal_type;
+  using node_t = typename map_t::node_type;
+  using fe_graph_t = Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>;
+  using scalar_t = ValueType;
+  using fe_matrix_t = Tpetra::FECrsMatrix<scalar_t, local_ordinal_t, global_ordinal_t>;
+  using fe_multivector_t = Tpetra::FEMultiVector<scalar_t, local_ordinal_t, global_ordinal_t>;
+  using vector_t = Tpetra::Vector<scalar_t, local_ordinal_t, global_ordinal_t>;
 
-  typedef Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType> DynRankViewGId;
+  using DynRankViewGId = Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType>;
 
-  typedef Intrepid2::CellTools<DeviceSpaceType> ct;
-  typedef Intrepid2::OrientationTools<DeviceSpaceType> ots;
-  typedef Intrepid2::RealSpaceTools<DeviceSpaceType> rst;
-  typedef Intrepid2::FunctionSpaceTools<DeviceSpaceType> fst;
-  typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpaceType> li;
+  using ct = Intrepid2::CellTools<DeviceSpaceType>;
+  using ots = Intrepid2::OrientationTools<DeviceSpaceType>;
+  using rst = Intrepid2::RealSpaceTools<DeviceSpaceType>;
+  using fst = Intrepid2::FunctionSpaceTools<DeviceSpaceType>;
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  using li = Intrepid2::Experimental::LagrangianInterpolation<DeviceSpaceType>;
+#else
+  using li = Intrepid2::LagrangianInterpolation<DeviceSpaceType>;
+#endif
 
   int errorFlag = 0;
 

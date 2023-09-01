@@ -1,7 +1,0 @@
-WHICH_FEI new_fei
-SOLVER_LIBRARY Trilinos
-PARAM_FILE parameters.Trilinos
-INPUT_FILE basic.in
-SOLN_FILE basic.soln
-CHECK_FILE basic.soln
-NUM_SOLVES 1

@@ -108,53 +108,55 @@ namespace Intrepid2 {
     template<typename refSubcellViewType,
              typename paramPointsViewType,
              typename subcellMapViewType>
-    struct F_mapReferenceSubcell2 {
+    struct F_mapReferenceSubcell {
       refSubcellViewType refSubcellPoints_;
       const paramPointsViewType paramPoints_;
       const subcellMapViewType subcellMap_;
-      ordinal_type subcellOrd_;
+      const ordinal_type subcellOrd_;
+      const ordinal_type sideDim_;
 
       KOKKOS_INLINE_FUNCTION
-      F_mapReferenceSubcell2( refSubcellViewType  refSubcellPoints,
+      F_mapReferenceSubcell( refSubcellViewType  refSubcellPoints,
                              const paramPointsViewType paramPoints,
                              const subcellMapViewType  subcellMap,
                              ordinal_type subcellOrd)
         : refSubcellPoints_(refSubcellPoints), paramPoints_(paramPoints), subcellMap_(subcellMap),
-          subcellOrd_(subcellOrd){};
+          subcellOrd_(subcellOrd), sideDim_(paramPoints_.extent(1)){};
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type pt, const size_type d) const {
 
-        const auto u = paramPoints_(pt, 0);
-        const auto v = paramPoints_(pt, 1);
-
-        // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are affine!
-        refSubcellPoints_(pt, d) = subcellMap_(subcellOrd_, d, 0) + ( subcellMap_(subcellOrd_, d, 1)*u +
-                                                                 subcellMap_(subcellOrd_, d, 2)*v );
+        refSubcellPoints_(pt, d) = subcellMap_(subcellOrd_, d, 0);
+        for(ordinal_type k=0; k<sideDim_; ++k)
+          refSubcellPoints_(pt, d) += subcellMap_(subcellOrd_, d, k+1)*paramPoints_(pt, k);
       }
     };
 
     template<typename refSubcellViewType,
-             typename paramPointsViewType,
-             typename subcellMapViewType>
-    struct F_mapReferenceSubcell1 {
+          typename paramPointsViewType,
+          typename subcellMapViewType,
+          typename ordViewType>
+    struct F_mapReferenceSubcellBatch {
       refSubcellViewType refSubcellPoints_;
       const paramPointsViewType paramPoints_;
       const subcellMapViewType subcellMap_;
-      ordinal_type subcellOrd_;
+      const ordViewType subcellOrd_;
+      const ordinal_type sideDim_;
 
       KOKKOS_INLINE_FUNCTION
-      F_mapReferenceSubcell1( refSubcellViewType  refSubcellPoints,
+      F_mapReferenceSubcellBatch( refSubcellViewType  refSubcellPoints,
                              const paramPointsViewType paramPoints,
                              const subcellMapViewType  subcellMap,
-                             ordinal_type subcellOrd)
+                             ordViewType subcellOrd)
         : refSubcellPoints_(refSubcellPoints), paramPoints_(paramPoints), subcellMap_(subcellMap),
-          subcellOrd_(subcellOrd){};
+          subcellOrd_(subcellOrd), sideDim_(paramPoints_.extent(1)){};
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type pt, const size_type d) const {
-        const auto u = paramPoints_(pt, 0);
-        refSubcellPoints_(pt, d) = subcellMap_(subcellOrd_, d, 0) + ( subcellMap_(subcellOrd_, d, 1)*u );
+      void operator()(const size_type isc, const size_type pt, const size_type d) const {
+
+        refSubcellPoints_(isc, pt, d) = subcellMap_(subcellOrd_(isc), d, 0);
+        for(ordinal_type k=0; k<sideDim_; ++k)
+          refSubcellPoints_(isc, pt, d) += subcellMap_(subcellOrd_(isc), d, k+1)*paramPoints_(pt, k);
       }
     };
   }
@@ -224,12 +226,11 @@ namespace Intrepid2 {
   }
 
   template<typename DeviceType>
-  template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
-           typename paramPointValueType, class ...paramPointProperties>
+  template<typename refSubcellViewType, typename paramViewType>
   void
   CellTools<DeviceType>::
-  mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
-                         const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
+  mapToReferenceSubcell(       refSubcellViewType refSubcellPoints,
+                         const paramViewType  paramPoints,
                          const ordinal_type subcellDim,
                          const ordinal_type subcellOrd,
                          const shards::CellTopology parentCell ) {
@@ -259,7 +260,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): paramPoints dimension (1) does not match to subcell dimension.");
 
     // cross check: refSubcellPoints and paramPoints: dimension 0 must match
-    INTREPID2_TEST_FOR_EXCEPTION( refSubcellPoints.extent(0) < paramPoints.extent(0), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( refSubcellPoints.extent(0) != paramPoints.extent(0), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): refSubcellPoints dimension (0) does not match to paramPoints dimension(0).");
 #endif
 
@@ -270,13 +271,12 @@ namespace Intrepid2 {
   }
 
   template<typename DeviceType>
-  template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
-           typename paramPointValueType, class ...paramPointProperties>
+  template<typename refSubcellViewType, typename paramViewType>
   void
   CellTools<DeviceType>::
-  mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
-                         const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
-                         const typename RefSubcellParametrization<DeviceType>::ConstViewType              subcellParametrization,
+  mapToReferenceSubcell(       refSubcellViewType                                            refSubcellPoints,
+                         const paramViewType                                                 paramPoints,
+                         const typename RefSubcellParametrization<DeviceType>::ConstViewType subcellParametrization,
                          const ordinal_type subcellOrd) {
 
     constexpr bool are_accessible =
@@ -284,31 +284,71 @@ namespace Intrepid2 {
         typename decltype(refSubcellPoints)::memory_space>::accessible &&
         Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
         typename decltype(paramPoints)::memory_space>::accessible;
-
     static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceSubcell(..): input/output views' memory spaces are not compatible with DeviceType");
+
+
+  #ifdef HAVE_INTREPID2_DEBUG
+    const bool ranks_and_dims_compatible = (refSubcellPoints.rank() == 2) && (paramPoints.rank() == 2) && (subcellParametrization.rank() == 3) && 
+                                           (refSubcellPoints.extent(0) == paramPoints.extent(0)) && 
+                                           (refSubcellPoints.extent(1) == subcellParametrization.extent(1)) && 
+                                           (paramPoints.extent(1) == subcellParametrization.extent(2)-1);
+    
+    INTREPID2_TEST_FOR_EXCEPTION(!ranks_and_dims_compatible, std::invalid_argument, "CellTools<DeviceType>::mapToReferenceSubcell(..): input/output views' ranks and dimensions are not compatible");
+  #endif
 
     const ordinal_type parentCellDim = subcellParametrization.extent(1);
     const ordinal_type numPts  = paramPoints.extent(0);
-    const ordinal_type subcellDim = paramPoints.extent(1);
     
     //Note: this function has several template parameters and the compiler gets confused if using a lambda function
-    using FunctorType1 = FunctorCellTools::F_mapReferenceSubcell1<decltype(refSubcellPoints), decltype(paramPoints), decltype(subcellParametrization)>;
-    using FunctorType2 = FunctorCellTools::F_mapReferenceSubcell2<decltype(refSubcellPoints), decltype(paramPoints), decltype(subcellParametrization)>;
-
+    using FunctorType = FunctorCellTools::F_mapReferenceSubcell<decltype(refSubcellPoints), decltype(paramPoints), decltype(subcellParametrization)>;
 
     Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>> rangePolicy({0,0},{numPts,parentCellDim});
+    
     // Apply the parametrization map to every point in parameter domain
-    switch (subcellDim) {
-    case 2: {
-      Kokkos::parallel_for( rangePolicy, FunctorType2(refSubcellPoints, paramPoints, subcellParametrization, subcellOrd) );
-      break;
-    }
-    case 1: {
-      Kokkos::parallel_for( rangePolicy, FunctorType1(refSubcellPoints, paramPoints, subcellParametrization, subcellOrd) );
-      break;
-    }
-    default: {}
-    }
+    Kokkos::parallel_for( rangePolicy, FunctorType(refSubcellPoints, paramPoints, subcellParametrization, subcellOrd) );
+  }
+
+  template<typename DeviceType>
+  template<typename refSubcellViewType, typename paramViewType, typename ordViewType>
+  void
+  CellTools<DeviceType>::
+  mapToReferenceSubcell(       refSubcellViewType                                            refSubcellPoints,
+                         const paramViewType                                                 paramPoints,
+                         const typename RefSubcellParametrization<DeviceType>::ConstViewType subcellParametrization,
+                         const ordViewType                                                   subcellOrd) {
+
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refSubcellPoints)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(paramPoints)::memory_space>::accessible && 
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(subcellOrd)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceSubcell(..): input/output views' memory spaces are not compatible with DeviceType");
+    
+
+#ifdef HAVE_INTREPID2_DEBUG
+    const bool ranks_and_dims_compatible = (refSubcellPoints.rank() == 3) && (paramPoints.rank() == 2) && (subcellParametrization.rank() == 3) && 
+                                           (refSubcellPoints.extent(0) == subcellOrd.extent(0)) && 
+                                           (refSubcellPoints.extent(1) == paramPoints.extent(0)) && 
+                                           (refSubcellPoints.extent(2) == subcellParametrization.extent(1)) && 
+                                           (paramPoints.extent(1) == subcellParametrization.extent(2)-1);
+
+    INTREPID2_TEST_FOR_EXCEPTION(!ranks_and_dims_compatible, std::invalid_argument, "CellTools<DeviceType>::mapToReferenceSubcell(..): input/output views' ranks and dimensions are not compatible");
+#endif
+
+    const ordinal_type numSubCells = refSubcellPoints.extent(0);
+    const ordinal_type parentCellDim = subcellParametrization.extent(1);
+    const ordinal_type numPts  = paramPoints.extent(0);
+
+    
+    //Note: this function has several template parameters and the compiler gets confused if using a lambda function
+    using FunctorType = FunctorCellTools::F_mapReferenceSubcellBatch<decltype(refSubcellPoints), decltype(paramPoints), decltype(subcellParametrization), decltype(subcellOrd)>;
+
+    Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>> rangePolicy({0,0,0},{numSubCells,numPts,parentCellDim});
+    
+    // Apply the parametrization map to every point in parameter domain
+    Kokkos::parallel_for( rangePolicy, FunctorType(refSubcellPoints, paramPoints, subcellParametrization, subcellOrd) );
   }
 
 }
