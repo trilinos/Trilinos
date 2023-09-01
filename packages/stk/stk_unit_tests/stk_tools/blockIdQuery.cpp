@@ -13,16 +13,16 @@ TEST_F(StkToolsB, GetBlockIdsForSpecifiedSideset)
 {
   const std::string unNamed = "mesh not specified";
   const std::string meshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
-  ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
+  STK_ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
   setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
   int invalidSideset = -1;
   int sideset = stk::unit_test_util::simple_fields::get_command_line_option("-s", invalidSideset);
-  ThrowRequireMsg(sideset!=invalidSideset, "Please specify sideset with -s.");
+  STK_ThrowRequireMsg(sideset!=invalidSideset, "Please specify sideset with -s.");
 
   std::string sidesetName = "surface_" + std::to_string(sideset);
   stk::mesh::Part* ss = get_meta().get_part(sidesetName);
-  ThrowRequire(ss!=nullptr);
+  STK_ThrowRequire(ss!=nullptr);
   stk::mesh::EntityVector sides;
   stk::mesh::get_selected_entities(*ss, get_bulk().buckets(get_meta().side_rank()),sides);
 
@@ -39,7 +39,7 @@ TEST_F(StkToolsB, GetBlockIdsForSpecifiedSideset)
     const stk::mesh::Entity *elements = get_bulk().begin_elements(side);
     for (unsigned i = 0; i < numElements; ++i)
     {
-      const stk::mesh::Part *block = stk::mesh::get_element_block_selector_for_element(get_bulk(), elements[i]);
+      const stk::mesh::Part *block = stk::mesh::get_element_block_part(get_bulk(), elements[i]);
       blockIds.insert(block->id());
     }
   }

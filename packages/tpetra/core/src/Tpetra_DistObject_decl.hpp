@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_DISTOBJECT_DECL_HPP
 #define TPETRA_DISTOBJECT_DECL_HPP
 
@@ -330,7 +331,7 @@ namespace Tpetra {
     ///
     /// Note that this type does not always correspond to the
     /// <tt>Scalar</tt> template parameter of subclasses.
-    using packet_type = typename ::Kokkos::Details::ArithTraits<Packet>::val_type;
+    using packet_type = typename ::Kokkos::ArithTraits<Packet>::val_type;
     //! The type of local indices.
     using local_ordinal_type = LocalOrdinal;
     //! The type of global indices.
@@ -797,11 +798,13 @@ namespace Tpetra {
 
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                          size_t& constantNumPackets);
+                          size_t& constantNumPackets,
+                          const execution_space &space);
 
     void doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
                             size_t constantNumPackets,
-                            CombineMode CM);
+                            CombineMode CM,
+                            const execution_space &space);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
@@ -859,6 +862,18 @@ namespace Tpetra {
                       buffer_device_type>& permuteFromLIDs,
                     const CombineMode CM);
 
+  // clang-format on
+  /*! \brief Same as copyAndPermute, but do operations in \c space
+   */
+  virtual void copyAndPermute(
+      const SrcDistObject &source, const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteFromLIDs,
+      const CombineMode CM, const execution_space &space);
+  // clang-format off
+
     /// \brief Pack data and metadata for communication (sends).
     ///
     /// Subclasses <i>must</i> reimplement this function.  Its default
@@ -905,6 +920,19 @@ namespace Tpetra {
                     Kokkos::DualView<size_t*,
                       buffer_device_type> numPacketsPerLID,
                     size_t& constantNumPackets);
+
+    /*! \brief Same as packAndPrepare, but in an execution space instance
+    */
+    virtual void
+    packAndPrepare (const SrcDistObject& source,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& exportLIDs,
+                    Kokkos::DualView<packet_type*,
+                      buffer_device_type>& exports,
+                    Kokkos::DualView<size_t*,
+                      buffer_device_type> numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    const execution_space &space);
 
     /// \brief Perform any unpacking and combining after
     ///   communication.
@@ -955,6 +983,16 @@ namespace Tpetra {
                       const size_t constantNumPackets,
                       const CombineMode combineMode);
 
+    virtual void
+    unpackAndCombine (const Kokkos::DualView<const local_ordinal_type*,
+                        buffer_device_type>& importLIDs,
+                      Kokkos::DualView<packet_type*,
+                        buffer_device_type> imports,
+                      Kokkos::DualView<size_t*,
+                        buffer_device_type> numPacketsPerLID,
+                      const size_t constantNumPackets,
+                      const CombineMode combineMode,
+                      const execution_space &space);
 
     //! The Map over which this object is distributed.
     Teuchos::RCP<const map_type> map_;

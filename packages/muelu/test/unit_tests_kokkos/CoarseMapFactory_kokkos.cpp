@@ -50,8 +50,8 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 
-#include "MueLu_Aggregates_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 
 namespace MueLuTests {
 
@@ -69,7 +69,7 @@ namespace MueLuTests {
     fineLevel.Set("A", A);
 
     // build dummy aggregate structure
-    RCP<Aggregates_kokkos> aggs = Teuchos::rcp(new Aggregates_kokkos(A->getRowMap()));
+    RCP<Aggregates> aggs = Teuchos::rcp(new Aggregates(A->getRowMap()));
     aggs->SetNumAggregates(10); // set (local!) number of aggregates
     fineLevel.Set("Aggregates", aggs);
 
@@ -78,7 +78,7 @@ namespace MueLuTests {
     nsp->putScalar(1.0);
     fineLevel.Set("Nullspace", nsp);
 
-    RCP<CoarseMapFactory_kokkos> coarseMapFactory = Teuchos::rcp(new CoarseMapFactory_kokkos());
+    RCP<CoarseMapFactory> coarseMapFactory = Teuchos::rcp(new CoarseMapFactory());
     coarseMapFactory->SetFactory("Aggregates", MueLu::NoFactory::getRCP());
     coarseMapFactory->SetFactory("Nullspace",  MueLu::NoFactory::getRCP());
 

@@ -568,7 +568,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_div)
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;    
 
-    scalar a2 = {0.,2.};
+    scalar a2 = {0.,2.,2.,2.,2.,2.,2.,2.};
     std::cout << a2 << std::endl;
 
     scalar a = (scalar) 1.;
@@ -611,22 +611,4 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_div)
     mask_assign(b>0.5,b) /= {b, 2.,-1.};
     TEST_EQUALITY(b,-1.);
 
-}
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  Kokkos::initialize();
-//  Kokkos::HostSpace::execution_space::initialize();
-//  if (!Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::initialize();
-
-  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  Kokkos::finalize();
-//  Kokkos::HostSpace::execution_space::finalize();
-//  if (Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::finalize();
-
-  return res;
 }

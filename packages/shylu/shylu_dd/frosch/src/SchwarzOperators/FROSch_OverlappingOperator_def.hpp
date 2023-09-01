@@ -127,7 +127,7 @@ namespace FROSch {
         ConstXMapPtr yMap = y.getMap();
         ConstXMapPtr yOverlapMap = YOverlap_->getMap();
         if (Combine_ == Restricted) {
-#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+#if defined(HAVE_XPETRA_TPETRA)
             if (XTmp_->getMap()->lib() == UseTpetra) {
                 auto yLocalMap = yMap->getLocalMap();
                 auto yLocalOverlapMap = yOverlapMap->getLocalMap();
@@ -135,15 +135,24 @@ namespace FROSch {
                 using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
                 using execution_space = typename XMap::local_map_type::execution_space;
                 Kokkos::RangePolicy<execution_space> policy (0, yMap->getLocalNumElements());
-                for (UN i=0; i<y.getNumVectors(); i++) {
-                    auto yOverlapData_i = YOverlap_->getData(i);
-                    auto xLocalData_i = XTmp_->getDataNonConst(i);
+
+                using xTMVector    = Xpetra::TpetraMultiVector<SC,LO,GO,NO>;
+                // Xpetra wrapper for Tpetra MV
+                auto yXTpetraMVector = rcp_dynamic_cast<const xTMVector>(YOverlap_, true);
+                auto xXTpetraMVector = rcp_dynamic_cast<      xTMVector>(XTmp_, true);
+                // Tpetra MV
+                auto yTpetraMVector = yXTpetraMVector->getTpetra_MultiVector();
+                auto xTpetraMVector = xXTpetraMVector->getTpetra_MultiVector();
+                // View
+                auto yView = yTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                auto xView = xTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
+                for (UN j=0; j<y.getNumVectors(); j++) {
                     Kokkos::parallel_for(
                       "FROSch_OverlappingOperator::applyLocalRestriction", policy,
-                      KOKKOS_LAMBDA(const int j) {
-                        GO gID = yLocalMap.getGlobalElement(j);
+                      KOKKOS_LAMBDA(const int i) {
+                        GO gID = yLocalMap.getGlobalElement(i);
                         LO lID = yLocalOverlapMap.getLocalElement(gID);
-                        xLocalData_i[j] = yOverlapData_i[lID];
+                        xView(i, j) = yView(lID, j);
                       });
                 }
                 Kokkos::fence();
@@ -193,7 +202,17 @@ namespace FROSch {
             XExportPtr multiplicityExporter = ExportFactory<LO,GO,NO>::Build(multiplicityRepeated->getMap(),this->getRangeMap());
             Multiplicity_->doExport(*multiplicityRepeated,*multiplicityExporter,ADD);
         }
+        return 0; // RETURN VALUE
+    }
 
+    template <class SC,class LO,class GO,class NO>
+    int OverlappingOperator<SC,LO,GO,NO>::initializeSubdomainSolver(ConstXMatrixPtr localMat)
+    {
+        FROSCH_DETAILTIMER_START_LEVELID(initializeSubdomainSolverTime,"OverlappingOperator::initializeSubdomainSolver");
+        SubdomainSolver_ = SolverFactory<SC,LO,GO,NO>::Build(localMat,
+                                                             sublist(this->ParameterList_,"Solver"),
+                                                             string("Solver (Level ") + to_string(this->LevelID_) + string(")"));
+        SubdomainSolver_->initialize();
         return 0; // RETURN VALUE
     }
 
@@ -203,21 +222,16 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START_LEVELID(computeOverlappingOperatorTime,"OverlappingOperator::computeOverlappingOperator");
 
         updateLocalOverlappingMatrices();
-
         bool reuseSymbolicFactorization = this->ParameterList_->get("Reuse: Symbolic Factorization",true);
-        if (!this->IsComputed_) {
-            reuseSymbolicFactorization = false;
-        }
-
-        if (!reuseSymbolicFactorization) {
+        if (!reuseSymbolicFactorization || SubdomainSolver_.is_null()) {
+            // initializeSubdomainSolver is called during symbolic only if reuseSymbolicFactorization=true
+            // so if reuseSymbolicFactorization=false, we always call initializeSubdomainSolver 
             if (this->IsComputed_ && this->Verbose_) cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << endl;
-            SubdomainSolver_ = SolverFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_,
-                                                                 sublist(this->ParameterList_,"Solver"),
-                                                                 string("Solver (Level ") + to_string(this->LevelID_) + string(")"));
-            SubdomainSolver_->initialize();
-        } else {
-            FROSCH_ASSERT(!SubdomainSolver_.is_null(),"FROSch::OverlappingOperator: SubdomainSolver_.is_null()");
-            SubdomainSolver_->updateMatrix(OverlappingMatrix_,true);
+            initializeSubdomainSolver(this->OverlappingMatrix_);
+        } else if (this->IsComputed_) {
+            // if !IsComputed, then this is the first timing calling "compute" after initializeSubdomainSolver is called in symbolic phase
+            // so no need to do anything
+            SubdomainSolver_->updateMatrix(this->OverlappingMatrix_,true);
         }
         this->IsComputed_ = true;
         return SubdomainSolver_->compute();

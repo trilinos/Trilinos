@@ -70,6 +70,10 @@ ScatterCellAvgQuantity(
 
   std::string scatterName = p.get<std::string>("Scatter Name");
 
+  // if it's there pull the ouptut scaling
+  if (p.isParameter("Variable Scale Factors Map"))
+    varScaleFactors_ = p.get<Teuchos::RCP<std::map<std::string,double>>>("Variable Scale Factors Map");
+
   const std::vector<std::string> & names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
@@ -102,7 +106,7 @@ postRegistrationSetup(
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
 
-    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::ELEMENT_RANK, fieldName);
+    stkFields_[fd] = mesh_->getMetaData()->get_field<double>(stk::topology::ELEMENT_RANK, fieldName);
   }
 }
 
@@ -129,7 +133,17 @@ evaluateFields(
      });
      Kokkos::fence();
 
-     mesh_->setCellFieldData(scatterFields_[fieldIndex].fieldTag().name(),blockId,localCellIds,average);
+     std::string varname = scatterFields_[fieldIndex].fieldTag().name();
+     double scalef = 1.0;
+
+     if (!varScaleFactors_.is_null())
+     {
+       std::map<std::string,double> *tmp_sfs = varScaleFactors_.get();
+       if(tmp_sfs->find(varname) != tmp_sfs->end())
+         scalef = (*tmp_sfs)[varname];
+     }
+
+     mesh_->setCellFieldData(varname,blockId,localCellIds,average,scalef);
    }
 }
 

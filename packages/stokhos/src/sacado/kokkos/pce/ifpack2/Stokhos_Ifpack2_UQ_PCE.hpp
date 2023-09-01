@@ -68,7 +68,7 @@ struct V_ReciprocalThresholdSelfFunctor<
   typedef typename array_type::execution_space   execution_space;
   typedef SizeType                                     size_type;
   typedef typename array_type::non_const_value_type   value_type;
-  typedef Kokkos::Details::ArithTraits<value_type>           KAT;
+  typedef Kokkos::ArithTraits<value_type>                    KAT;
   typedef typename KAT::mag_type                        mag_type;
 
   const XVector    m_x;

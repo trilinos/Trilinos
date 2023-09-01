@@ -25,6 +25,9 @@
 
 #include "amesos_cholmod.h"
 #include "amesos_cholmod_internal.h"
+// paraklete did not define its own EMPTY macro
+// the macro came from include of amesos_cholmod_internal.h
+// which defines the TRILINOS_CHOLMOD_EMPTY macro used through paraklete
 #include "trilinos_btf_decl.h"
 #include "trilinos_klu_decl.h"
 
@@ -144,7 +147,7 @@ typedef struct paraklete_symbolic_struct
 
     Int *Cparent ;	/* size n, but only entries 0 to ncomponents-1 used.
 			 * Cparent [c] is the parent of node c in the separator
-			 * tree, or EMPTY if c is a root. */
+			 * tree, or TRILINOS_CHOLMOD_EMPTY if c is a root. */
 
     /* ---------------------------------------------------------------------- */
     /* size-(7*ncomponents+2) memory space, in Mem_c: */

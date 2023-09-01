@@ -30,6 +30,7 @@
 
 
 #include <limits>
+#include <set>
 
 // TrilinosCouplings includes
 #include <TrilinosCouplings_config.h>
@@ -56,7 +57,7 @@
 #include <pamgen_extras.h>
 #include "RTC_FunctionRTC.hh"
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef HAVE_INTREPID_KOKKOS
 #include "Sacado.hpp"
 #else
 // Sacado includes
@@ -735,6 +736,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
   /**********************************************************************************/
 
+  Tpetra::global_size_t GST_INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
   *out << "Building Maps" << endl;
 
   Array<GO> ownedGIDs;
@@ -760,7 +763,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         ++oidx;
       }
     }
-    globalMapG = rcp (new map_type (-1, ownedGIDs (), 0, comm));
+    globalMapG = rcp (new map_type (GST_INVALID, ownedGIDs (), 0, comm));
   }
 
   /**********************************************************************************/
@@ -781,7 +784,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }
 
     //Generate overlapped Map for nodes.
-    overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm));
+    overlappedMapG = rcp (new map_type (GST_INVALID, overlappedGIDs (), 0, comm));
 
     // Build Tpetra Export from overlapped to owned Map.
     exporter = rcp (new export_type (overlappedMapG, globalMapG));

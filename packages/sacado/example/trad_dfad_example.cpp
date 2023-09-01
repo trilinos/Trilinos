@@ -138,6 +138,12 @@ int main(int argc, char **argv)
 	    << std::setw(w) << d2rdbda_ad << " (AD) Error = " << std::setw(w) 
 	    << d2rdadb - d2rdbda_ad << std::endl;
 
+  // Free Rad's memory to avoid memory leaks.  The zero_out() call is
+  // necessary to destroy dynamically allocated DFad arrays (which are
+  // stored outside of Rad's memory management).
+  Sacado::Rad::ADcontext< Sacado::Fad::DFad<double> >::zero_out();
+  Sacado::Rad::ADcontext< Sacado::Fad::DFad<double> >::free_all();
+
   double tol = 1.0e-14;
   if (std::fabs(r - r_ad)             < tol &&
       std::fabs(drda - drda_ad)       < tol &&

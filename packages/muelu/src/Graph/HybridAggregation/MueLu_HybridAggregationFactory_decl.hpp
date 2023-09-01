@@ -48,8 +48,6 @@
 
 
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -58,16 +56,14 @@
 #include "MueLu_AggregationAlgorithmBase.hpp"
 
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_GraphBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
 
 // Uncoupled Agg
 #include "MueLu_InterfaceAggregationAlgorithm_fwd.hpp"
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
 
 #include "MueLu_AggregationPhase1Algorithm_fwd.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm_fwd.hpp"

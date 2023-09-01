@@ -41,15 +41,18 @@
 // @HEADER
 
 #include "MockModelEval_A_Tpetra.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
 
 #include <iostream>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm)
+MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint, const Teuchos::RCP<Teuchos::ParameterList>& problemList, bool hessianSupport)
 {
     comm = appComm;
+    adjointModel = adjoint;
+    hessSupport = hessianSupport;
 
     //set up map and initial guess for solution vector
     const int vecLength = 4;
@@ -120,6 +123,8 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
     nominalValues.set_p(0, Thyra::createVector(p_init, p_space));
     lowerBounds.set_p(0, Thyra::createVector(p_lo, p_space));
     upperBounds.set_p(0, Thyra::createVector(p_up, p_space));
+
+    probList_ = problemList;
 }
 
 MockModelEval_A_Tpetra::~MockModelEval_A_Tpetra()
@@ -147,7 +152,7 @@ MockModelEval_A_Tpetra::get_p_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
-                     "Error!  App::ModelEval::get_p_map() only " <<
+                     "Error!  MockModelEval_A_Tpetra::get_p_space() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
                      l << std::endl);
   Teuchos::RCP<const Thyra::VectorSpaceBase<double>> p_space =
@@ -160,8 +165,8 @@ MockModelEval_A_Tpetra::get_g_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
-                     "Error!  MockModelEval_A_Tpetra::get_g_map() only " <<
-                     " supports 1 parameter vector.  Supplied index l = " <<
+                     "Error!  MockModelEval_A_Tpetra::get_g_space() only " <<
+                     " supports 1 response.  Supplied index l = " <<
                      l << std::endl);
   Teuchos::RCP<const Thyra::VectorSpaceBase<double>> g_space =
         Thyra::createVectorSpace<double>(g_map);
@@ -172,7 +177,7 @@ RCP<const  Teuchos::Array<std::string> > MockModelEval_A_Tpetra::get_p_names(int
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
-                     "Error!  App::ModelEval::get_p_names() only " <<
+                     "Error!  MockModelEval_A_Tpetra::get_p_names() only " <<
                      " supports 1 parameter vector.  Supplied index l = " <<
                      l << std::endl);
 
@@ -215,7 +220,7 @@ MockModelEval_A_Tpetra::create_hess_g_pp( int j, int l1, int l2 ) const
 {
   const Teuchos::RCP<Tpetra_Operator> H =
       Teuchos::rcp(new Tpetra_CrsMatrix(hess_crs_graph));
-  return Thyra::createLinearOp(H);
+  return Teuchos::rcp(new MatrixBased_LOWS(Thyra::createLinearOp(H)));
 }
 
 Thyra::ModelEvaluatorBase::InArgs<double>
@@ -273,7 +278,7 @@ MockModelEval_A_Tpetra::createOutArgsImpl() const
   result.setSupports(
         Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, 0, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
 
-  result.setHessianSupports(true);
+  result.setHessianSupports(hessSupport);
 
   return result;
 }
@@ -354,25 +359,25 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         ConverterT::getConstTpetraVector(inArgs.get_f_multiplier()) :
         Teuchos::null;
 
-  auto f_hess_xx_v = outArgs.get_hess_vec_prod_f_xx();
+  auto f_hess_xx_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_f_xx) ? outArgs.get_hess_vec_prod_f_xx() : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> f_hess_xx_v_out =
       Teuchos::nonnull(f_hess_xx_v) ?
         ConverterT::getTpetraMultiVector(f_hess_xx_v) :
         Teuchos::null;
 
-  auto f_hess_xp_v = outArgs.get_hess_vec_prod_f_xp(0);
+  auto f_hess_xp_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_f_xp,0) ? outArgs.get_hess_vec_prod_f_xp(0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> f_hess_xp_v_out =
       Teuchos::nonnull(f_hess_xp_v) ?
         ConverterT::getTpetraMultiVector(f_hess_xp_v) :
         Teuchos::null;
 
-  auto f_hess_px_v = outArgs.get_hess_vec_prod_f_px(0);
+  auto f_hess_px_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_f_px,0) ? outArgs.get_hess_vec_prod_f_px(0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> f_hess_px_v_out =
       Teuchos::nonnull(f_hess_px_v) ?
         ConverterT::getTpetraMultiVector(f_hess_px_v) :
         Teuchos::null;
 
-  auto f_hess_pp_v = outArgs.get_hess_vec_prod_f_pp(0,0);
+  auto f_hess_pp_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_f_pp,0,0) ? outArgs.get_hess_vec_prod_f_pp(0,0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> f_hess_pp_v_out =
       Teuchos::nonnull(f_hess_pp_v) ?
         ConverterT::getTpetraMultiVector(f_hess_pp_v) :
@@ -389,124 +394,144 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         ConverterT::getConstTpetraVector(inArgs.get_g_multiplier(0)) :
         Teuchos::null;
 
-  auto g_hess_xx_v = outArgs.get_hess_vec_prod_g_xx(0);
+  auto g_hess_xx_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_g_xx,0) ? outArgs.get_hess_vec_prod_g_xx(0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> g_hess_xx_v_out =
       Teuchos::nonnull(g_hess_xx_v) ?
         ConverterT::getTpetraMultiVector(g_hess_xx_v) :
         Teuchos::null;
 
-  auto g_hess_xp_v = outArgs.get_hess_vec_prod_g_xp(0,0);
+  auto g_hess_xp_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_g_xp,0,0) ? outArgs.get_hess_vec_prod_g_xp(0,0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> g_hess_xp_v_out =
       Teuchos::nonnull(g_hess_xp_v) ?
         ConverterT::getTpetraMultiVector(g_hess_xp_v) :
         Teuchos::null;
 
-  auto g_hess_px_v = outArgs.get_hess_vec_prod_g_px(0,0);
+  auto g_hess_px_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_g_px,0,0) ? outArgs.get_hess_vec_prod_g_px(0,0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> g_hess_px_v_out =
       Teuchos::nonnull(g_hess_px_v) ?
         ConverterT::getTpetraMultiVector(g_hess_px_v) :
         Teuchos::null;
 
-  auto g_hess_pp_v = outArgs.get_hess_vec_prod_g_pp(0,0,0);
+  auto g_hess_pp_v = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_vec_prod_g_pp,0,0,0) ? outArgs.get_hess_vec_prod_g_pp(0,0,0) : Teuchos::null;
   const Teuchos::RCP<Tpetra_MultiVector> g_hess_pp_v_out =
       Teuchos::nonnull(g_hess_pp_v) ?
         ConverterT::getTpetraMultiVector(g_hess_pp_v) :
         Teuchos::null;
 
-  auto x = x_in->getData();
-  auto p = p_vec->getData();
+  {
+    auto x_host = x_in->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto x = Kokkos::subview(x_host,Kokkos::ALL(),0);
+    auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
 
-  double x0;
-  for (int i=0; i<myVecLength; i++) {
-    if( x_in->getMap()->getGlobalElement(i) == 0) {
-      x0 = x[i];
-      TEUCHOS_ASSERT(comm->getRank() == 0);
-    }
-  }
-  comm->broadcast(0, sizeof(double), (char*)(&x0));
-
-  if (f_out != Teuchos::null) {
-    f_out->putScalar(0.0);
-    auto f_out_data = f_out->getDataNonConst();
+    double x0;
     for (int i=0; i<myVecLength; i++) {
-      int gid = x_in->getMap()->getGlobalElement(i);
-
-      if (gid==0) { // f_0 = (x_0)^3 - p_0
-        f_out_data[i] = x[i] * x[i] * x[i] -  p[0];
-      }
-      else // f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_1) - 0.5*(x_0 - p_0),  (for i != 0)
-        f_out_data[i] = x[i] - (gid + p[1]) - 0.5*(x0 - p[0]) + x[i] * (x0 - std::cbrt(p[0]));
-    }
-  }
-  if (W_out != Teuchos::null) {
-    Teuchos::RCP<Tpetra_CrsMatrix> W_out_crs =
-      Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(W_out, true);
-    W_out_crs->resumeFill();
-    W_out_crs->setAllToScalar(0.0);
-
-    double diag=0, extra_diag=0;
-    for (int i=0; i<myVecLength; i++) {
-      auto gid = x_in->getMap()->getGlobalElement(i);
-      if(gid==0) {
-        diag = 3.0 * x0 * x0;
-        W_out_crs->replaceLocalValues(i, 1, &diag, &i);
-      }
-      else {
-        diag = 1.0 + x0 - std::cbrt(p[0]);
-        W_out_crs->replaceLocalValues(i, 1, &diag, &i);
-        decltype(gid) col = 0;
-        extra_diag = -0.5 + x[i];
-        W_out_crs->replaceGlobalValues(gid, 1, &extra_diag, &col);
+      if( x_in->getMap()->getGlobalElement(i) == 0) {
+        x0 = x[i];
+        TEUCHOS_ASSERT(comm->getRank() == 0);
       }
     }
-    if(!Teuchos::nonnull(x_dot_in))
-      W_out_crs->fillComplete();
-  }
-
-  const Teuchos::RCP<Tpetra_Operator> H_pp_out =
-      Teuchos::nonnull(outArgs.get_hess_g_pp(0,0,0)) ?
-          ConverterT::getTpetraOperator(outArgs.get_hess_g_pp(0,0,0)) :
-          Teuchos::null;
-
-  if (H_pp_out != Teuchos::null) {
-    Teuchos::RCP<Tpetra_CrsMatrix> H_pp_out_crs =
-      Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(H_pp_out, true);
-    H_pp_out_crs->resumeFill();
-    H_pp_out_crs->setAllToScalar(0.0);
-
-    if (comm->getRank() == 0) {
-      std::vector<double> vals = {2, 1};
-      std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices = {0, 1};
-      H_pp_out_crs->replaceGlobalValues(0, 2, &vals[0], &indices[0]);
-      vals[0] = 1;
-      H_pp_out_crs->replaceGlobalValues(1, 2, &vals[0], &indices[0]);
-    }
-    H_pp_out_crs->fillComplete();
-  }
-
-  if (Teuchos::nonnull(dfdp_out)) {
-    dfdp_out->putScalar(0.0);
-    auto dfdp_out_data_0 = dfdp_out->getVectorNonConst(0)->getDataNonConst();
-    auto dfdp_out_data_1 = dfdp_out->getVectorNonConst(1)->getDataNonConst();
-    for (int i=0; i<myVecLength; i++) {
-      const int gid = x_in->getMap()->getGlobalElement(i);
-      if  (gid==0) {
-        dfdp_out_data_0[i] = -1.0;
-      }
-      else {
-        dfdp_out_data_0[i] = 0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
-        dfdp_out_data_1[i] = -1.0;
+    comm->broadcast(0, sizeof(double), (char*)(&x0));
+    
+    if (f_out != Teuchos::null) {
+      f_out->putScalar(0.0);
+      auto f_out_data = f_out->getDataNonConst();
+      for (int i=0; i<myVecLength; i++) {
+        int gid = x_in->getMap()->getGlobalElement(i);
+        
+        if (gid==0) { // f_0 = (x_0)^3 - p_0
+          f_out_data[i] = x[i] * x[i] * x[i] -  p[0];
+        }
+        else // f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_1) - 0.5*(x_0 - p_0),  (for i != 0)
+          f_out_data[i] = x[i] - (gid + p[1]) - 0.5*(x0 - p[0]) + x[i] * (x0 - std::cbrt(p[0]));
       }
     }
-  }
+    if (W_out != Teuchos::null) {
+      Teuchos::RCP<Tpetra_CrsMatrix> W_out_crs =
+        Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(W_out, true);
+      W_out_crs->resumeFill();
+      W_out_crs->setAllToScalar(0.0);
+      
+      double diag=0, extra_diag=0;
+      for (int i=0; i<myVecLength; i++) {
+        auto gid = x_in->getMap()->getGlobalElement(i);
+        if(gid==0) {
+          diag = 3.0 * x0 * x0;
+          W_out_crs->replaceLocalValues(i, 1, &diag, &i);
+        } 
+        else {
+          diag = 1.0 + x0 - std::cbrt(p[0]);
+          W_out_crs->replaceLocalValues(i, 1, &diag, &i);
+          decltype(gid) col = 0;
+          extra_diag = -0.5 + x[i];
+          W_out_crs->replaceGlobalValues(gid, 1, &extra_diag, &col);
+        }
+      }
 
+      if(!Teuchos::nonnull(x_dot_in))
+        W_out_crs->fillComplete();
+
+      if(adjointModel) {
+        Tpetra::RowMatrixTransposer<double,LO,GO> transposer(W_out_crs);
+        *W_out_crs = *transposer.createTranspose();
+      }
+    }
+    
+    auto hess_g_pp = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_g_pp,0,0,0) ? outArgs.get_hess_g_pp(0,0,0) : Teuchos::null;
+    const Teuchos::RCP<MatrixBased_LOWS> H_pp_out =
+      Teuchos::nonnull(hess_g_pp) ?
+        Teuchos::rcp_dynamic_cast<MatrixBased_LOWS>(outArgs.get_hess_g_pp(0,0,0)):
+        Teuchos::null;
+    
+    if (Teuchos::nonnull(H_pp_out)) {
+      Teuchos::RCP<Tpetra_CrsMatrix> H_pp_out_crs =
+        Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(ConverterT::getTpetraOperator(H_pp_out->getMatrix()), true);
+      H_pp_out_crs->resumeFill();
+      H_pp_out_crs->setAllToScalar(0.0);
+      
+      if (comm->getRank() == 0) {
+        std::vector<double> vals = {2, 1};
+        std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices = {0, 1};
+        H_pp_out_crs->replaceGlobalValues(0, 2, &vals[0], &indices[0]);
+        vals[0] = 1;
+        H_pp_out_crs->replaceGlobalValues(1, 2, &vals[0], &indices[0]);
+      }
+      H_pp_out_crs->fillComplete();
+
+      if(probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").isSublist("H_pp Solver")) {
+        auto pl = probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").sublist("H_pp Solver");
+        H_pp_out->initializeSolver(Teuchos::rcpFromRef(pl));
+      }
+    }
+    
+    if (Teuchos::nonnull(dfdp_out)) {
+      dfdp_out->putScalar(0.0);
+      auto dfdp_out_data_0 = dfdp_out->getVectorNonConst(0)->getDataNonConst();
+      auto dfdp_out_data_1 = dfdp_out->getVectorNonConst(1)->getDataNonConst();
+      for (int i=0; i<myVecLength; i++) {
+        const int gid = x_in->getMap()->getGlobalElement(i);
+        if  (gid==0) {
+          dfdp_out_data_0[i] = -1.0;
+        }
+        else {
+          dfdp_out_data_0[i] = 0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
+          dfdp_out_data_1[i] = -1.0;
+        }
+      }
+    }
+  }
   // Response: g = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2
   // min g(x(p), p) s.t. f(x, p) = 0 reached for p_0 = 1, p_1 = 3
 
   double term1, term2;
   term1 = x_in->meanValue();
-  term1 =  vecLength * term1 - (p[0] + p[1]) - 12.0;
-  term2 = p[0] - 1.0;
+
+  {
+    auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
+    term1 =  vecLength * term1 - (p[0] + p[1]) - 12.0;
+    term2 = p[0] - 1.0;
+  }
 
   if (Teuchos::nonnull(g_out)) {
     g_out->getDataNonConst()[0] = 0.5*term1*term1 + 0.5*term2*term2;
@@ -524,6 +549,9 @@ void MockModelEval_A_Tpetra::evalModelImpl(
 
   if (Teuchos::nonnull(f_hess_xx_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(x_direction));
+    TEUCHOS_TEST_FOR_EXCEPTION(adjointModel, std::logic_error,
+                     std::endl << "Error!  MockModelEval_A_Tpetra::evalModelImpl " <<
+                     " adjoint Hessian not implemented." << std::endl);
 
     double x_direction_0;
     for (int i=0; i<myVecLength; i++) {
@@ -536,6 +564,8 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     double temp= lag_multiplier_f_in->dot(*x_direction->getVector(0));
     comm->broadcast(0, sizeof(double), (char*)(&x_direction_0));
 
+    auto x_host = x_in->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto x = Kokkos::subview(x_host,Kokkos::ALL(),0);
     f_hess_xx_v_out->getVectorNonConst(0)->putScalar(0);
     for (int i=0; i<myVecLength; i++) {
       if (x_in->getMap()->getGlobalElement(i)==0){
@@ -549,6 +579,11 @@ void MockModelEval_A_Tpetra::evalModelImpl(
   }
 
   if (Teuchos::nonnull(f_hess_xp_v_out)) {
+    TEUCHOS_TEST_FOR_EXCEPTION(adjointModel, std::logic_error,
+                  std::endl << "Error!  MockModelEval_A_Tpetra::evalModelImpl " <<
+                  " adjoint Hessian not implemented." << std::endl);
+    auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
     f_hess_xp_v_out->getVectorNonConst(0)->putScalar(0);
     for (int i=0; i<myVecLength; i++) {
@@ -560,9 +595,14 @@ void MockModelEval_A_Tpetra::evalModelImpl(
   }
 
   if (Teuchos::nonnull(f_hess_px_v_out)) {
+    TEUCHOS_TEST_FOR_EXCEPTION(adjointModel, std::logic_error,
+                  std::endl << "Error!  MockModelEval_A_Tpetra::evalModelImpl " <<
+                  " adjoint Hessian not implemented." << std::endl);
     TEUCHOS_ASSERT(Teuchos::nonnull(x_direction));
     f_hess_px_v_out->getVectorNonConst(0)->putScalar(0);
     Tpetra_Vector temp_vec(lag_multiplier_f_in->getMap());
+    auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
     for (int i=0; i<myVecLength; i++) {
       if (x_in->getMap()->getGlobalElement(i)==0)
         temp_vec.getDataNonConst()[i] = 0;
@@ -577,6 +617,8 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
     f_hess_pp_v_out->getVectorNonConst(0)->putScalar(0);
     Tpetra_Vector temp_vec(lag_multiplier_f_in->getMap());
+    auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
     for (int i=0; i<myVecLength; i++) {
       if (x_in->getMap()->getGlobalElement(i)==0)
         temp_vec.getDataNonConst()[i] = 0;

@@ -1,3 +1,34 @@
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 14.2 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Kokkos
+
+  - Subpackages have been removed Kokkos.  That means that CMake cache
+    variables like Trilinos_ENABLE_KokkosCore or
+    Trilinos_ENABLE_KokkosAlgorithms no longer exist.  Now there is just the
+    top-level package Kokkos enabled with Trilinos_ENABLE_Kokkos.  In
+    addition, all downstream Trilinos packages that had dependencies on Kokkos
+    subpackages now just depend on the parent package Kokkos.  That means that
+    any optional dependencies on a Kokkos subpackage is now an optional
+    dependency on the parent package Kokkos.  For example, the Sacado package
+    had an optional dependency on KokkosCore which could be disabled with -D
+    Sacado_ENABLE_KokkosCore=OFF which now needs to be disabled with -D
+    Sacado_ENABLE_Kokkos=OFF.  In addition, the #define macros for optional
+    dependencies on Kokkos subpackages have changed names.  For example, the
+    Sacado_config.h file defined the preprocessor macros
+    HAVE_SACADO_KOKKOSCORE and HAVE_SACADO_KOKKOSCONTAINERS but now just
+    defines HAVE_SACADO_KOKKOS.  Therefore, downstream C++ code will need to
+    adjust any code that depends on these preprocessor defines.  However,
+    other than changes in the names of the the CMake Cache variables
+    `<Something>_ENABLE_Kokkos<Subpkg>` to `<Something>_ENABLE_Kokkos` and the
+    changes in the names of the proprocessor defines ``XXX_KOKKOS<SUBPKG>`` to
+    ``XXX_KOKKOS``, all other behavior should be identical.
+
+
 ###############################################################################
 #                                                                             #
 # Trilinos Release 14.0 Release Notes                                         #
@@ -888,20 +919,20 @@ Tpetra
       2. Otherwise, if you're building with OpenMP, Tpetra uses OpenMP by
          default.
       3. Otherwise, if Kokkos enables the Serial execution space (if
-         Kokkos_ENABLE_Serial is ON), Tpetra uses Serial by default.
+         Kokkos_ENABLE_SERIAL is ON), Tpetra uses Serial by default.
       4. Otherwise, if Kokkos enables the Threads execution space (if
-         Kokkos_ENABLE_Pthread is ON), Tpetra uses Threads by default.
+         Kokkos_ENABLE_THREADS is ON), Tpetra uses Threads by default.
 
     If you wish to enable other Node types, you may set the following
     CMake options.  You do NOT need to set any of these options explicitly
     if the Node type would be enabled by default anyway.
 
-      - Tpetra_INST_CUDA (Kokkos_ENABLE_Cuda must be ON, and Trilinos must
+      - Tpetra_INST_CUDA (Kokkos_ENABLE_CUDA must be ON, and Trilinos must
         be built with CUDA; ON by default if building with CUDA)
-      - Tpetra_INST_OPENMP (Kokkos_ENABLE_OpenMP must be ON, and Trilinos
+      - Tpetra_INST_OPENMP (Kokkos_ENABLE_OPENMP must be ON, and Trilinos
         must be built with OpenMP support)
-      - Tpetra_INST_PTHREAD (Kokkos_ENABLE_Pthread must be ON)
-      - Tpetra_INST_SERIAL (Kokkos_ENABLE_Serial must be ON)
+      - Tpetra_INST_PTHREAD (Kokkos_ENABLE_THREADS must be ON)
+      - Tpetra_INST_SERIAL (Kokkos_ENABLE_SERIAL must be ON)
 
     While it is legal to enable both the OpenMP and Pthreads back-ends in
     the same executable, it is a bad idea.  Both back-ends spawn their own
@@ -1862,7 +1893,7 @@ Tpetra
     # Disable KokkosClassic::TPINode
     -D KokkosClassic_ENABLE_ThreadPool:BOOL=OFF
     # Shut off Kokkos' Pthreads back-end in favor of OpenMP
-    -D Kokkos_ENABLE_Pthread:BOOL=OFF
+    -D Kokkos_ENABLE_THREADS:BOOL=OFF
 
     You must also enable the following subpackages explicitly, since they
     are not Primary Tested at the moment:

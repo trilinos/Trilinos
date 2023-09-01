@@ -484,7 +484,7 @@ struct PackCrsGraphFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst, const volatile value_type& src) const
+  join (value_type& dst, const value_type& src) const
   {
     // `dst` should reflect the first (least) bad index and all other
     // associated error codes and data, so prefer keeping it.
@@ -848,6 +848,7 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
     exports_h (exports.getRawPtr (), exports.size ());
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
   Kokkos::deep_copy (execution_space(), exports_h, exports_dv.d_view);
+  execution_space().fence();
 }
 
 /// \brief Pack specified entries of the given local sparse graph for
@@ -1005,6 +1006,7 @@ packCrsGraphWithOwningPIDs
   using execution_space = typename buffer_device_type::execution_space;
   Kokkos::deep_copy (execution_space(),
     num_packets_per_lid_h, num_packets_per_lid_d);
+  execution_space().fence();
 }
 
 } // namespace Details

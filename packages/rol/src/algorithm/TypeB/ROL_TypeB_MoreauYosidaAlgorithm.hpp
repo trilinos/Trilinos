@@ -46,6 +46,7 @@
 
 #include "ROL_TypeB_Algorithm.hpp"
 #include "ROL_MoreauYosidaObjective.hpp"
+#include "ROL_Secant.hpp"
 
 /** \class ROL::TypeB::MoreauYosidaAlgorithm
     \brief Provides an interface to run the Moreau-Yosida algorithm.
@@ -57,6 +58,7 @@ namespace TypeB {
 template<typename Real>
 class MoreauYosidaAlgorithm : public TypeB::Algorithm<Real> {
 private:
+  const Ptr<Secant<Real>> secant_;
   Real compViolation_;
   Real gnorm_;
   Real maxPenalty_;
@@ -93,7 +95,7 @@ private:
                    std::ostream &outStream = std::cout);
 public:
 
-  MoreauYosidaAlgorithm(ParameterList &list);
+  MoreauYosidaAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant = nullPtr);
 
   using TypeB::Algorithm<Real>::run;
   void run( Vector<Real>          &x,

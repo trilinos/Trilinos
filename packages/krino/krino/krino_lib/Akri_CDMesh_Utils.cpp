@@ -6,6 +6,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_CDMesh_Utils.hpp>
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_InterfaceID.hpp>
 #include <Akri_PhaseTag.hpp>
@@ -96,7 +97,18 @@ static void fill_topology_entities(const stk::mesh::BulkData & mesh, const stk::
 
 std::vector<bool> which_intersection_point_nodes_are_compatible_for_snapping(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const std::vector<stk::mesh::Entity> & intersectionPointNodes)
 {
-  std::vector<bool> areIntersectionPointsCompatibleForSnapping(intersectionPointNodes.size(),true);
+  std::vector<bool> areIntersectionPointsCompatibleForSnapping(intersectionPointNodes.size(), true);
+  filter_which_intersection_point_nodes_are_compatible_for_snapping(mesh, auxMeta, phaseSupport, intersectionPointNodes, areIntersectionPointsCompatibleForSnapping);
+  return areIntersectionPointsCompatibleForSnapping;
+}
+
+void filter_which_intersection_point_nodes_are_compatible_for_snapping(const stk::mesh::BulkData & mesh,
+    const AuxMetaData & auxMeta,
+    const Phase_Support & phaseSupport,
+    const std::vector<stk::mesh::Entity> & intersectionPointNodes,
+    std::vector<bool> & areIntersectionPointsCompatibleForSnapping)
+{
+  STK_ThrowAssert(intersectionPointNodes.size() == areIntersectionPointsCompatibleForSnapping.size());
   std::vector<stk::mesh::Entity> topologyEntities;
   stk::topology elemTopology = get_simplex_element_topology(mesh);
   std::array<stk::topology,2> sideAndElementTopology{{elemTopology.side_topology(), elemTopology}};
@@ -111,7 +123,6 @@ std::vector<bool> which_intersection_point_nodes_are_compatible_for_snapping(con
           parts_are_compatible_for_snapping_when_ignoring_phase(mesh, auxMeta, phaseSupport, intersectionPointNodes[iNode], topo.rank(), nonconformalPartsToCheck);
     }
   }
-  return areIntersectionPointsCompatibleForSnapping;
 }
 
 bool phase_matches_interface(const bool oneLSPerPhase, const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & phase, const InterfaceID interface)
@@ -127,7 +138,7 @@ bool phase_matches_interface(const bool oneLSPerPhase, const std::vector<Surface
 
 bool determine_phase_from_parts(PhaseTag & phase, const stk::mesh::PartVector & parts, const Phase_Support & phaseSupport)
 {
-  ThrowAssert(phase.empty());
+  STK_ThrowAssert(phase.empty());
   bool has_conformal_ioparts = false;
 
   for (auto && part : parts)

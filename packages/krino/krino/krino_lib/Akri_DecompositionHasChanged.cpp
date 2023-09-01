@@ -232,14 +232,14 @@ static bool snap_displacements_at_node_are_small_compared_to_parent_edges(const 
     const stk::mesh::Selector & parentElementSelector,
     const double snapTol)
 {
-  const Vector3d snapDisplacements(field_data<double>(cdfemSnapField, node), mesh.mesh_meta_data().spatial_dimension());
+  const stk::math::Vector3d snapDisplacements(field_data<double>(cdfemSnapField, node), mesh.mesh_meta_data().spatial_dimension());
   const double snapDisplacmentsSqrLength = snapDisplacements.length_squared();
-  const Vector3d nodeCoords(field_data<double>(coordsField, node), mesh.mesh_meta_data().spatial_dimension());
+  const stk::math::Vector3d nodeCoords(field_data<double>(coordsField, node), mesh.mesh_meta_data().spatial_dimension());
   std::vector<stk::mesh::Entity> neighborNodes;
   fill_neighbor_nodes(mesh, node, parentElementSelector, neighborNodes);
   for (auto && nbr : neighborNodes)
   {
-    const Vector3d nbrCoords(field_data<double>(coordsField, nbr), mesh.mesh_meta_data().spatial_dimension());
+    const stk::math::Vector3d nbrCoords(field_data<double>(coordsField, nbr), mesh.mesh_meta_data().spatial_dimension());
     const double edgeSqrLength = (nbrCoords-nodeCoords).length_squared();
     if (snapDisplacmentsSqrLength > snapTol*snapTol * edgeSqrLength)
       return false;
@@ -257,12 +257,12 @@ static bool locally_snap_displacements_are_small_on_nodes_with_interfaces(const 
   {
     const double snapTol = cdfemSupport.get_snapper().get_edge_tolerance();
     FieldRef oldCdfemSnapField = cdfemSupport.get_cdfem_snap_displacements_field().field_state(stk::mesh::StateOld);
-    const stk::mesh::Selector parentElementSelector = get_owned_parent_element_selector(mesh, activePart, cdfemSupport, phaseSupport);
+    const stk::mesh::Selector ownedParentElementSelector = get_cdfem_parent_element_selector(activePart, cdfemSupport, phaseSupport) & mesh.mesh_meta_data().locally_owned_part();
     const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
     for ( auto && bucket : mesh.buckets(stk::topology::NODE_RANK) )
       if (bucket->field_data_is_allocated(oldCdfemSnapField) && nodes_are_on_any_interface(mesh, phaseSupport, *bucket))
         for ( auto && node : *bucket )
-          if (!snap_displacements_at_node_are_small_compared_to_parent_edges(mesh, node, oldCdfemSnapField, coordsField, parentElementSelector, snapTol))
+          if (!snap_displacements_at_node_are_small_compared_to_parent_edges(mesh, node, oldCdfemSnapField, coordsField, ownedParentElementSelector, snapTol))
             return false;
   }
   return true;

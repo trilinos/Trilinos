@@ -46,7 +46,6 @@
 #ifndef MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 
@@ -54,13 +53,13 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos_decl.hpp"
 
-#include "MueLu_AmalgamationInfo_kokkos.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities_kokkos.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -457,7 +456,7 @@ namespace MueLu {
   } // namespace
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -475,8 +474,6 @@ namespace MueLu {
         rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
     }
 #undef  SET_VALID_ENTRY
-    validParamList->set< bool >                  ("lightweight wrap",            true, "Experimental option for lightweight graph access");
-
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
@@ -485,19 +482,17 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level &currentLevel) const {
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
-    if (pL.get<bool>("lightweight wrap") == true) {
-      if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
-        Input(currentLevel, "Coordinates");
-    }
+    if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
+      Input(currentLevel, "Coordinates");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
   Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
@@ -521,21 +516,16 @@ namespace MueLu {
 
        If numPDEs>1
          If matrix uses point storage, then storageblocksize=1  and blkSize=numPDEs.
-         If matrix uses block storage, with block size of n, then storageblocksize=n, and blkSize=numPDEs/n.  
+         If matrix uses block storage, with block size of n, then storageblocksize=n, and blkSize=numPDEs/n.
          Thus far, only storageblocksize=numPDEs and blkSize=1 has been tested.
-      */      
+      */
  
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0,Exceptions::RuntimeError,"A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
     LO   blkSize   = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
-    auto amalInfo = Get< RCP<AmalgamationInfo_kokkos> >(currentLevel, "UnAmalgamationInfo");
+    auto amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
-
-    bool doLightWeightWrap = pL.get<bool>("lightweight wrap");
-    GetOStream(Warnings0) << "lightweight wrap is deprecated" << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(!doLightWeightWrap, Exceptions::RuntimeError,
-                               "MueLu KokkosRefactor only supports \"lightweight wrap\"=\"true\"");
 
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
 
@@ -559,7 +549,7 @@ namespace MueLu {
       // Scalar problem without dropping
 
       // Detect and record rows that correspond to Dirichlet boundary conditions
-      boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+      boundaryNodes = Utilities::DetectDirichletRows_kokkos(*A, dirichletThreshold);
 
       // Trivial LWGraph construction
       graph = rcp(new LWGraph_kokkos(A->getCrsGraph()->getLocalGraphDevice(), A->getRowMap(), A->getColMap(), "graph of A"));
@@ -629,7 +619,7 @@ namespace MueLu {
           {
             kokkosMatrix = local_matrix_type();
             SubFactoryMonitor m2(*this, "Ghosted diag construction", currentLevel);
-            ghostedDiag     = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
+            ghostedDiag     = Utilities::GetMatrixOverlappedDiagonal(*A);
             kokkosMatrix=A->getLocalMatrixDevice();
           }
 
@@ -876,7 +866,7 @@ namespace MueLu {
       Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numNodes+1), scanFunctor);
 
       // Detect and record dof rows that correspond to Dirichlet boundary conditions
-      boundary_nodes_type singleEntryRows = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+      boundary_nodes_type singleEntryRows = Utilities::DetectDirichletRows_kokkos(*A, dirichletThreshold);
 
       typename entries_type::non_const_type dofcols("dofcols", numDofCols/*dofNnz(numNodes)*/); // why does dofNnz(numNodes) work? should be a parallel reduce, i guess
 
@@ -949,5 +939,4 @@ namespace MueLu {
     Set(currentLevel, "A",            filteredA);
   }
 }
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP

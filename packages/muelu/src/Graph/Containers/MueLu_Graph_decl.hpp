@@ -47,7 +47,7 @@
 #define MUELU_GRAPH_DECL_HPP
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
-#include <Xpetra_CrsGraph.hpp>     // inline functions requires class declaration
+#include <Xpetra_CrsGraph_fwd.hpp>     // inline functions requires class declaration
 #include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -76,10 +76,7 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
-    Graph(const RCP<const CrsGraph> & graph, const std::string & /* objectLabel */="") : graph_(graph) {
-      minLocalIndex_ = graph_->getDomainMap()->getMinLocalIndex();
-      maxLocalIndex_ = graph_->getDomainMap()->getMaxLocalIndex();
-    }
+    Graph(const RCP<const CrsGraph> & graph, const std::string & /* objectLabel */="");
 
     virtual ~Graph() {}
     //@}

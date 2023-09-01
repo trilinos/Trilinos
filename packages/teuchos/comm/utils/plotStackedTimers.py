@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 
+# from Trilinos/packages/teuchos/comm/utils 
+
 import re
 from argparse import ArgumentParser
 try:
-    from hpie import HPie, stringvalues_to_pv, Path
+    from sunburst import SunburstPlot as sbplot
+    from sunburst import stringvalues_to_pv, Path
 except ImportError:
-    print("This scripts needs the python package from https://github.com/klieret/pyplot-hierarchical-pie")
+    print("This scripts needs the python package from https://github.com/klieret/sunburst")
     raise
 import matplotlib.pyplot as plt
+
 
 
 parser = ArgumentParser(description="Plot hierarchical pie chart for stacked timers. Left click for zooming in, right click for zooming out.")
@@ -72,14 +76,16 @@ if options.useTimerNumbers:
     s = '\n'.join([str(translate[key])+': '+key for key in sorted(translate, key=lambda key: int(translate[key]))])
     print(s)
 
+
 # create plot
 dataAll = stringvalues_to_pv(data)
 if not options.non_interactive:
 
+
     global hp, base
 
     ax = plt.gca()
-    hp = HPie(dataAll, ax)
+    hp = sbplot(dataAll, ax)
     hp.plot(setup_axes=True, interactive=True)
     if options.useTimerNumbers:
         ax.text(1, 0, s, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
@@ -97,7 +103,7 @@ if not options.non_interactive:
                     path = Path(base[:]+path[:])
                     data = {p[len(path)-1:]: time for p, time in dataAll.items() if p.startswith(path)}
                     ax.clear()
-                    hp = HPie(data, ax)
+                    hp = sbplot(data, ax)
                     hp.plot(setup_axes=True, interactive=True)
                     if options.useTimerNumbers:
                         ax.text(1, 0, s, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
@@ -113,7 +119,7 @@ if not options.non_interactive:
                 path = Path([])
                 data = dataAll
             ax.clear()
-            hp = HPie(data, ax)
+            hp = sbplot(data, ax)
             hp.plot(setup_axes=True, interactive=True)
             if options.useTimerNumbers:
                 ax.text(1, 0, s, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
@@ -122,10 +128,12 @@ if not options.non_interactive:
 
     ax.figure.canvas.mpl_connect('button_press_event', onClick)
 else:
+    plt.figure(figsize=(15, 12))
     ax = plt.gca()
-    hp = HPie(dataAll, ax)
+    hp = sbplot(dataAll, ax)
     hp.plot(setup_axes=True)
     if options.useTimerNumbers:
         ax.text(1, 0, s, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
 
 plt.show()
+wait = input("Press Enter to exit.")

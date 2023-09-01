@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -65,12 +65,12 @@ void tec(int exoid, const char *filename)
       strcpy(nameco[2], "Z");
   ex_get_coord(exoid, x[0], x[1], x[2]);
 
-  int *  elem_id       = (int *)malloc(nblk * sizeof(int));
-  int *  node_per_elem = (int *)malloc(nblk * sizeof(int));
-  int *  elem_per_blk  = (int *)malloc(nblk * sizeof(int));
-  int *  attr_per_blk  = (int *)malloc(nblk * sizeof(int));
+  int   *elem_id       = (int *)malloc(nblk * sizeof(int));
+  int   *node_per_elem = (int *)malloc(nblk * sizeof(int));
+  int   *elem_per_blk  = (int *)malloc(nblk * sizeof(int));
+  int   *attr_per_blk  = (int *)malloc(nblk * sizeof(int));
   char **elem_type     = (char **)malloc(nblk * sizeof(char *));
-  int ** icon          = (int **)malloc(nblk * sizeof(int *));
+  int  **icon          = (int **)malloc(nblk * sizeof(int *));
   for (int i = 0; i < nblk; i++)
     elem_type[i] = (char *)malloc((name_size + 1) * sizeof(char));
   ex_get_ids(exoid, EX_ELEM_BLOCK, elem_id);
@@ -98,7 +98,7 @@ void tec(int exoid, const char *filename)
   int nvar = 0;
   ex_get_variable_param(exoid, EX_NODAL, &nvar);
 
-  char **  varnames = NULL;
+  char   **varnames = NULL;
   double **q        = NULL;
   if (nvar > 0) {
     varnames = (char **)malloc(nvar * sizeof(char *));
@@ -284,10 +284,10 @@ void tec(int exoid, const char *filename)
 void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_elem, int elem_per_blk,
              int *icon, int ndim, double **x, int nvar, double **q, FILE *tecfile)
 {
-  int *    ic = NULL;
-  double * xx[3];
+  int     *ic = NULL;
+  double  *xx[3];
   double **qq    = NULL;
-  int *    isort = NULL;
+  int     *isort = NULL;
   int      inode;
 
   void internal_heapsort(int *, int);
@@ -377,21 +377,21 @@ void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_ele
     /*
      *  Copy local data
      */
-    for (int i = 0; i < ndim; i++)
-      xx[i] = (double *)malloc(inode * sizeof(double));
+    for (int ii = 0; ii < ndim; ii++)
+      xx[ii] = (double *)malloc(inode * sizeof(double));
 
     for (int j = 0; j < ndim; j++)
-      for (int i = 0; i < inode; i++)
-        xx[j][i] = x[j][isort[i] - 1];
+      for (int ii = 0; ii < inode; ii++)
+        xx[j][ii] = x[j][isort[ii] - 1];
 
     if (nvar > 0)
       qq = (double **)malloc(nvar * sizeof(double *));
-    for (int i = 0; i < nvar; i++)
-      qq[i] = (double *)malloc(inode * sizeof(double));
+    for (int ii = 0; ii < nvar; ii++)
+      qq[ii] = (double *)malloc(inode * sizeof(double));
 
     for (int j = 0; j < nvar; j++)
-      for (int i = 0; i < inode; i++)
-        qq[j][i] = q[j][isort[i] - 1];
+      for (int ii = 0; ii < inode; ii++)
+        qq[j][ii] = q[j][isort[ii] - 1];
   }
   else {
     /*
@@ -425,17 +425,17 @@ void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_ele
          inode);
   char zname[80];
   char eltype[16];
-  sprintf(zname, "Zone %s_%d", elem_type, elem_id);
+  snprintf(zname, 80, "Zone %s_%d", elem_type, elem_id);
 
   if (ndim == 3 && (node_per_elem == 8 || (node_per_elem == 4 && ifac == 2) ||
                     (node_per_elem == 2 && ifac == 4)))
-    sprintf(eltype, "BRICK");
+    snprintf(eltype, 16, "BRICK");
   else if (ndim == 3 && node_per_elem == 4)
-    sprintf(eltype, "TETRAHEDRON");
+    snprintf(eltype, 16, "TETRAHEDRON");
   else if (ndim == 2 && (node_per_elem == 4 || (node_per_elem == 2 && ifac == 2)))
-    sprintf(eltype, "QUADRILATERAL");
+    snprintf(eltype, 16, "QUADRILATERAL");
   else if (ndim == 2 && node_per_elem == 3)
-    sprintf(eltype, "TRIANGLE");
+    snprintf(eltype, 16, "TRIANGLE");
   else {
     printf("\nBad element type found in teczone\n");
     printf("   Dimensions = %d\n", ndim);

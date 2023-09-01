@@ -133,7 +133,7 @@ GeneratedMeshToFileWithTransientFields::GeneratedMeshToFileWithTransientFields(s
   stk::mesh::put_field_on_mesh(scalarField, meta.universal_part(), nullptr);
   stk::mesh::put_field_on_mesh(vectorField, meta.universal_part(), 3, nullptr);
 
-  stk::io::set_field_output_type(vectorField, "Vector_3D");
+  stk::io::set_field_output_type(vectorField, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 void GeneratedMeshToFileWithTransientFields::write_mesh_with_field(const std::vector<double>& timeSteps,

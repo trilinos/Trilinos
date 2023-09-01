@@ -267,7 +267,7 @@ void Ifpack2RILUKSingleProcess_test0 (bool& success, Teuchos::FancyOStream& out,
 
 template<typename Scalar, typename LO, typename GO>
 void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out, const IlukImplTypeDetails::Enum ilukimplType) {
-  using Kokkos::Details::ArithTraits;
+  using Kokkos::ArithTraits;
   using Teuchos::RCP;
   using std::endl;
   typedef Tpetra::Map<LO, GO, Node> map_type;
@@ -276,7 +276,7 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename MV::impl_scalar_type val_type;
-  typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type mag_type;
+  typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;
   typedef typename map_type::device_type device_type;
   const mag_type oneMag = ArithTraits<mag_type>::one ();
   const mag_type twoMag = oneMag + oneMag;
@@ -320,9 +320,8 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
     tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
 
   {//CMS
-    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-    *out<<"***** A *****"<<std::endl;
-    crsmatrix->describe(*out,Teuchos::VERB_EXTREME);
+    out<<"***** A *****"<<std::endl;
+    crsmatrix->describe(out,Teuchos::VERB_EXTREME);
   }
 
   //----------------Default trisolver----------------//
@@ -343,13 +342,12 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
     prec.compute();
    
   {//CMS
-    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-    *out<<"***** Test L *****"<<std::endl;
-    prec.getL().describe(*out,Teuchos::VERB_EXTREME);
-    *out<<"***** Test U *****"<<std::endl;
-    prec.getU().describe(*out,Teuchos::VERB_EXTREME);
-    *out<<"***** Test D *****"<<std::endl;
-    prec.getD().describe(*out,Teuchos::VERB_EXTREME);
+    out<<"***** Test L *****"<<std::endl;
+    prec.getL().describe(out,Teuchos::VERB_EXTREME);
+    out<<"***** Test U *****"<<std::endl;
+    prec.getU().describe(out,Teuchos::VERB_EXTREME);
+    out<<"***** Test D *****"<<std::endl;
+    prec.getD().describe(out,Teuchos::VERB_EXTREME);
   }
 
  

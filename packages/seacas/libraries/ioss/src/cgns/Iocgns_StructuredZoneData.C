@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -360,7 +360,7 @@ namespace Iocgns {
 
     if (rank == 0 && verbose) {
       fmt::print(
-          Ioss::DEBUG(), "{}",
+          Ioss::DebugOut(), "{}",
           fmt::format(
               fg(fmt::color::cyan),
               "\nSplit Zone {} ({}) Adam {} ({}) with intervals {:>12},\twork = {:12}, offset {} "
@@ -369,7 +369,7 @@ namespace Iocgns {
               fmt::format("{} {} {}", m_ordinal[0], m_ordinal[1], m_ordinal[2]),
               fmt::group_digits(work()), m_offset[0], m_offset[1], m_offset[2], ordinal, ratio));
 
-      fmt::print(Ioss::DEBUG(),
+      fmt::print(Ioss::DebugOut(),
                  "\tChild 1: Zone {} ({}) with intervals {:>12},\twork = {:12}, offset "
                  "{} {} {}\n"
                  "\tChild 2: Zone {} ({}) with intervals {:>12},\twork = {:12}, offset "
@@ -483,10 +483,10 @@ namespace Iocgns {
   StructuredZoneData::update_zgc_processor(const std::vector<Iocgns::StructuredZoneData *> &zones)
   {
     for (auto &zgc : m_zoneConnectivity) {
-      auto &donor_zone = zones[zgc.m_donorZone - 1];
+      const auto &donor_zone = zones[zgc.m_donorZone - 1];
       assert(donor_zone->m_proc >= 0);
-      zgc.m_donorProcessor = donor_zone->m_proc;
-      auto &owner_zone     = zones[zgc.m_ownerZone - 1];
+      zgc.m_donorProcessor   = donor_zone->m_proc;
+      const auto &owner_zone = zones[zgc.m_ownerZone - 1];
       assert(owner_zone->m_proc >= 0);
       zgc.m_ownerProcessor = owner_zone->m_proc;
     }

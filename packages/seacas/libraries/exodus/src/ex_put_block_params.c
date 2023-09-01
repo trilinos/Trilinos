@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -53,9 +53,6 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
   const char *dnnpe       = NULL;
   const char *dnepe       = NULL;
   const char *dnfpe       = NULL;
-#if NC_HAS_HDF5
-  int fill = NC_FILL_CHAR;
-#endif
 
   if (block_count == 0) {
     return (EX_NOERR);
@@ -119,7 +116,7 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
                                     __func__)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: No %ss defined in file id %d",
                ex_name_of_object(last_type), exoid);
-      ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -169,7 +166,7 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
                                     &dimid, __func__)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: No %ss defined in file id %d",
                ex_name_of_object(blocks[i].type), exoid);
-      ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
+      ex_err_fn(exoid, __func__, errmsg, status);
       free(blocks_to_define);
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -403,7 +400,8 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-#if NC_HAS_HDF5
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
+      int fill = NC_FILL_CHAR;
       nc_def_var_fill(exoid, att_name_varid, 0, &fill);
 #endif
     }
@@ -565,6 +563,8 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
 
   /* leave define mode  */
   if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

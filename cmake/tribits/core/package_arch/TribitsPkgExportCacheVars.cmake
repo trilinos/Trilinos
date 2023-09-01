@@ -122,7 +122,7 @@ function(tribits_pkg_append_set_commands_for_exported_vars  packageName
     endforeach()
   endif()
   foreach(exportedCacheVar IN LISTS ${packageName}_PKG_VARS_TO_EXPORT)
-    tribits_assert_cache_and_local_vars_same_value(${exportedCacheVar})
+    #tribits_assert_cache_and_local_vars_same_value(${exportedCacheVar})
     string(APPEND configFileStr
       "set(${exportedCacheVar} \"${${exportedCacheVar}}\")\n")
   endforeach()

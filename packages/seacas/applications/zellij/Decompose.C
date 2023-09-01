@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -160,9 +160,9 @@ void decompose_grid(Grid &grid, int ranks, const std::string &method)
   size_t idx = 0;
   for (size_t j = 0; j < grid.JJ(); j++) {
     for (size_t i = 0; i < grid.II(); i++) {
-      auto &cell = grid.get_cell(i, j);
-      x[idx]     = cell.m_offX;
-      y[idx]     = cell.m_offY;
+      const auto &cell = grid.get_cell(i, j);
+      x[idx]           = cell.m_offX;
+      y[idx]           = cell.m_offY;
 
       const auto &element_blocks = cell.region()->get_element_blocks();
       for (const auto *block : element_blocks) {

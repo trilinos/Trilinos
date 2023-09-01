@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -492,43 +492,6 @@ namespace Iotm {
     return num_to_get;
   }
 
-  int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::get_field_internal(const Ioss::EdgeSet * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::get_field_internal(const Ioss::FaceSet * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::get_field_internal(const Ioss::ElementSet * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-
-  int64_t DatabaseIO::get_field_internal(const Ioss::SideSet * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
   int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
@@ -593,7 +556,7 @@ namespace Iotm {
   }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::Assembly *assembly, const Ioss::Field &field,
-                                         void *data, size_t data_size) const
+                                         void * /* data */, size_t data_size) const
   {
     {
       Ioss::SerializeIO serializeIO__(this);
@@ -640,80 +603,6 @@ namespace Iotm {
       }
       return num_to_get;
     }
-  }
-
-  // Input only database -- these will never be called...
-  int64_t DatabaseIO::put_field_internal(const Ioss::Region * /*reg*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock * /*eb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock * /*nb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock * /*nb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock * /*nb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet * /*ns*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet * /*ns*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet * /*ns*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet * /*ns*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::SideSet * /*fs*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock * /*fb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::CommSet * /*cs*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
   }
 
   const Ioss::Map &DatabaseIO::get_node_map() const
@@ -904,8 +793,8 @@ namespace Iotm {
       Ioss::EntityType               type    = m_textMesh->get_assembly_type(name);
       const std::vector<std::string> members = m_textMesh->get_assembly_members(name);
 
-      for (size_t j = 0; j < members.size(); j++) {
-        auto *ge = get_region()->get_entity(members[j], type);
+      for (const auto &member : members) {
+        auto *ge = get_region()->get_entity(member, type);
         if (ge != nullptr) {
           assem->add(ge);
         }
@@ -913,7 +802,7 @@ namespace Iotm {
           std::ostringstream errmsg;
           fmt::print(errmsg,
                      "Error: Failed to find entity of type {} with name {} for Assembly {}.\n",
-                     type, members[j], assem->name());
+                     Ioss::Utils::entity_type_to_string(type), member, assem->name());
           IOSS_ERROR(errmsg);
         }
       }

@@ -49,7 +49,6 @@
 #ifndef Intrepid2_TensorBasis_h
 #define Intrepid2_TensorBasis_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Teuchos_RCP.hpp>
@@ -72,7 +71,7 @@ namespace Intrepid2
 {
   template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
-  ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries);
+  ordinal_type getDkEnumeration(const Kokkos::Array<int,spaceDim> &entries);
 
   template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
@@ -148,7 +147,7 @@ namespace Intrepid2
 
         // ensure that we don't try to allocate an empty array…
         constexpr ordinal_type sizeForSubArray = (spaceDim > 2) ? spaceDim - 1 : 1;
-        Kokkos::Array<int,sizeForSubArray> subEntries;
+        Kokkos::Array<int,sizeForSubArray> subEntries = {};
         
         // the -1 in sub-entry enumeration value accounts for the fact that the entry is the one *after* (k0,0,…,0)
         getDkEnumerationInverse<spaceDim-1>(subEntries, dkEnum - dkEnumFor_k0 - 1, operatorOrder - entries[0]);
@@ -165,14 +164,14 @@ namespace Intrepid2
   
   template<>
   KOKKOS_INLINE_FUNCTION
-  ordinal_type getDkEnumeration<1>(Kokkos::Array<int,1> &entries)
+  ordinal_type getDkEnumeration<1>(const Kokkos::Array<int,1> &entries)
   {
     return getDkEnumeration<1>(entries[0]);
   }
   
   template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
-  ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries)
+  ordinal_type getDkEnumeration(const Kokkos::Array<int,spaceDim> &entries)
   {
     ordinal_type k_minus_k0 = 0; // sum of all the entries but the first
     
@@ -204,10 +203,10 @@ namespace Intrepid2
   ordinal_type getDkTensorIndex(const ordinal_type dkEnum1, const ordinal_type operatorOrder1,
                                 const ordinal_type dkEnum2, const ordinal_type operatorOrder2)
   {
-    Kokkos::Array<int,spaceDim1> entries1;
+    Kokkos::Array<int,spaceDim1> entries1 = {};
     getDkEnumerationInverse<spaceDim1>(entries1, dkEnum1, operatorOrder1);
     
-    Kokkos::Array<int,spaceDim2> entries2;
+    Kokkos::Array<int,spaceDim2> entries2 = {};
     getDkEnumerationInverse<spaceDim2>(entries2, dkEnum2, operatorOrder2);
     
     const int spaceDim = spaceDim1 + spaceDim2;
@@ -238,6 +237,7 @@ struct OperatorTensorDecomposition
   std::vector< std::vector<EOperator> > ops; // outer index: vector entry ordinal; inner index: basis component ordinal. (scalar-valued operators have a single entry in outer vector)
   std::vector<double> weights; // weights for each vector entry
   ordinal_type numBasisComponents_;
+  bool rotateXYNinetyDegrees_ = false; // if true, indicates that something that otherwise would have values (f_x, f_y, …) should be mapped to (-f_y, f_x, …).  This is used for H(curl) wedges (specifically, for OPERATOR_CURL).
   
   OperatorTensorDecomposition(const std::vector<EOperator> &opsBasis1, const std::vector<EOperator> &opsBasis2, const std::vector<double> vectorComponentWeights)
   :
@@ -472,7 +472,20 @@ struct OperatorTensorDecomposition
     // check that vector lengths agree:
     INTREPID2_TEST_FOR_EXCEPTION(expandedOps.size() != expandedWeights.size(), std::logic_error, "expandedWeights and expandedOps do not agree on the number of vector components");
     
-    return OperatorTensorDecomposition(expandedOps, expandedWeights);
+    OperatorTensorDecomposition result(expandedOps, expandedWeights);
+    result.setRotateXYNinetyDegrees(rotateXYNinetyDegrees_);
+    return result;
+  }
+  
+  //! If true, this flag indicates that a vector component that spans the first two dimensions should be rotated by 90 degrees clockwise, mapping (x,y) to (-y,x).  If there is no such vector component, the flag should be ignored.  As of this writing, this is used only by the "derived" H(curl) basis on the wedge.
+  bool rotateXYNinetyDegrees() const
+  {
+    return rotateXYNinetyDegrees_;
+  }
+  
+  void setRotateXYNinetyDegrees(const bool &value)
+  {
+    rotateXYNinetyDegrees_ = value;
   }
 };
 
@@ -855,6 +868,10 @@ struct OperatorTensorDecomposition
       {
         this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
       }
+      else if ((cellKey1 == shards::Triangle<3>::key) && (cellKey2 == shards::Line<2>::key))
+      {
+        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
+      }
       else
       {
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Cell topology combination not yet supported");
@@ -1029,7 +1046,7 @@ struct OperatorTensorDecomposition
      
      Subclasses must override this method.
     */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator &operatorType) const
     {
       const int spaceDim  = this->getDomainDimension();
       
@@ -1380,7 +1397,9 @@ struct OperatorTensorDecomposition
     /** \brief  Fills in coefficients of degrees of freedom on the reference cell
         \param [out] dofCoeffs - the container into which to place the degrees of freedom.
 
-     dofCoeffs is a rank 1 with dimension equal to the cardinality of the basis.
+     dofCoeffs has the rank 1 or 2 and the first dimension equals the cardinality of the basis.
+     dofCoeffs has rank 2 if either basis1 or basis2 is a vector basis, in which case the second dimension equals the number of vector components
+     We do not support the case where both basis1 and basis2 are vector bases
 
      Note that getDofCoeffs() is not supported by all bases; in particular, hierarchical bases do not generally support this.
      */
@@ -1390,14 +1409,22 @@ struct OperatorTensorDecomposition
       using ResultLayout = typename DeduceLayout< typename BasisBase::ScalarViewType >::result_layout;
       using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
 
-      ViewType dofCoeffs1("dofCoeffs1",basis1_->getCardinality());
-      ViewType dofCoeffs2("dofCoeffs2",basis2_->getCardinality());
-
-      basis1_->getDofCoeffs(dofCoeffs1);
-      basis2_->getDofCoeffs(dofCoeffs2);
-
       const ordinal_type basisCardinality1 = basis1_->getCardinality();
       const ordinal_type basisCardinality2 = basis2_->getCardinality();
+
+      bool isVectorBasis1 = getFieldRank(basis1_->getFunctionSpace()) == 1;
+      bool isVectorBasis2 = getFieldRank(basis2_->getFunctionSpace()) == 1;
+
+      INTREPID2_TEST_FOR_EXCEPTION(isVectorBasis1 && isVectorBasis2, std::invalid_argument, "the case in which basis1 and basis2 are vector bases is not supported");
+
+      int basisDim1 = isVectorBasis1 ? basis1_->getBaseCellTopology().getDimension() : 1;
+      int basisDim2 = isVectorBasis2 ? basis2_->getBaseCellTopology().getDimension() : 1;
+
+      auto dofCoeffs1 = isVectorBasis1 ? ViewType("dofCoeffs1",basis1_->getCardinality(), basisDim1) : ViewType("dofCoeffs1",basis1_->getCardinality());
+      auto dofCoeffs2 = isVectorBasis2 ? ViewType("dofCoeffs2",basis2_->getCardinality(), basisDim2) : ViewType("dofCoeffs2",basis2_->getCardinality());
+      
+      basis1_->getDofCoeffs(dofCoeffs1);
+      basis2_->getDofCoeffs(dofCoeffs2);
 
       Kokkos::RangePolicy<ExecutionSpace> policy(0, basisCardinality2);
       Kokkos::parallel_for(policy, KOKKOS_LAMBDA (const int fieldOrdinal2)
@@ -1405,8 +1432,12 @@ struct OperatorTensorDecomposition
          for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
          {
            const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1;
-           dofCoeffs(fieldOrdinal) = dofCoeffs1(fieldOrdinal1);
-           dofCoeffs(fieldOrdinal) = dofCoeffs2(fieldOrdinal2);
+           for (int d1 = 0; d1 <basisDim1; d1++) {
+             for (int d2 = 0; d2 <basisDim2; d2++) {
+               dofCoeffs.access(fieldOrdinal,d1+d2)  = dofCoeffs1.access(fieldOrdinal1,d1);
+               dofCoeffs.access(fieldOrdinal,d1+d2) *= dofCoeffs2.access(fieldOrdinal2,d2);
+             }
+           }
          }
        });
     }
@@ -1525,6 +1556,25 @@ struct OperatorTensorDecomposition
               }
               
               tensorComponents_[basisOrdinal]->getValues(basisValues, basisPoints, op);
+            }
+            
+            // op.rotateXYNinetyDegrees() is set to true for one of the H(curl) wedge families
+            // (due to the fact that Intrepid2::EOperator does not allow us to extract individual vector components
+            //  via, e.g., OPERATOR_X, OPERATOR_Y, etc., we don't have a way of expressing the decomposition
+            //  just in terms of EOperator and component-wise scalar weights; we could also do this via component-wise
+            //  matrix weights, but this would involve a more intrusive change to the implementation).
+            const bool spansXY = (vectorComponentOrdinal == 0) && (basisValueView.extent_int(2) == 2);
+            if (spansXY && operatorDecomposition.rotateXYNinetyDegrees())
+            {
+              // map from (f_x,f_y) --> (-f_y,f_x)
+              auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1)});
+              Kokkos::parallel_for("rotateXYNinetyDegrees", policy,
+              KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
+                const auto  f_x = basisValueView(fieldOrdinal,pointOrdinal,0); // copy
+                const auto &f_y = basisValueView(fieldOrdinal,pointOrdinal,1); // reference
+                basisValueView(fieldOrdinal,pointOrdinal,0) = -f_y;
+                basisValueView(fieldOrdinal,pointOrdinal,1) =  f_x;
+              });
             }
             
             // if weight is non-trivial (not 1.0), then we need to multiply one of the component views by weight.
@@ -1675,7 +1725,7 @@ struct OperatorTensorDecomposition
                   //   (this would allow us to eliminate both for loops here)
                   // At the moment, we defer such optimizations on the idea that this may not ever become a performance bottleneck.
                   FunctorType functor(outputValues_dkTensor, outputValues1_dkEnum1, outputValues2_dkEnum2, tensorPoints, weight);
-                  Kokkos::parallel_for( policy , functor, "TensorViewFunctor");
+                  Kokkos::parallel_for("TensorViewFunctor", policy , functor);
                 }
               }
             }
@@ -1769,21 +1819,24 @@ struct OperatorTensorDecomposition
         pointCount2 = totalPointCount;
       }
       
-      int spaceDim1 = inputPoints1.extent_int(1);
-      int spaceDim2 = inputPoints2.extent_int(1);
+      const ordinal_type spaceDim1 = inputPoints1.extent_int(1);
+      const ordinal_type spaceDim2 = inputPoints2.extent_int(1);
       
       INTREPID2_TEST_FOR_EXCEPTION(!tensorPoints && (totalPointCount != inputPoints2.extent_int(0)),
                                    std::invalid_argument, "If tensorPoints is false, the point counts must match!");
             
-      int opRank1 = getOperatorRank(basis1_->getFunctionSpace(), operatorType1, spaceDim1);
-      int opRank2 = getOperatorRank(basis2_->getFunctionSpace(), operatorType2, spaceDim2);
+      const ordinal_type opRank1 = getOperatorRank(basis1_->getFunctionSpace(), operatorType1, spaceDim1);
+      const ordinal_type opRank2 = getOperatorRank(basis2_->getFunctionSpace(), operatorType2, spaceDim2);
+      
+      const ordinal_type outputRank1 = opRank1 + getFieldRank(basis1_->getFunctionSpace());
+      const ordinal_type outputRank2 = opRank2 + getFieldRank(basis2_->getFunctionSpace());
       
       OutputViewType outputValues1, outputValues2;
-      if (opRank1 == 0)
+      if (outputRank1 == 0)
       {
         outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
       }
-      else if (opRank1 == 1)
+      else if (outputRank1 == 1)
       {
         outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
       }
@@ -1792,11 +1845,11 @@ struct OperatorTensorDecomposition
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported opRank1");
       }
       
-      if (opRank2 == 0)
+      if (outputRank2 == 0)
       {
         outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
       }
-      else if (opRank2 == 1)
+      else if (outputRank2 == 1)
       {
         outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
       }
@@ -1817,7 +1870,7 @@ struct OperatorTensorDecomposition
       using FunctorType = TensorViewFunctor<ExecutionSpace, OutputValueType, OutputViewType>;
       
       FunctorType functor(outputValues, outputValues1, outputValues2, tensorPoints, weight);
-      Kokkos::parallel_for( policy , functor, "TensorViewFunctor");
+      Kokkos::parallel_for("TensorViewFunctor", policy , functor);
     }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
@@ -2334,7 +2387,45 @@ struct OperatorTensorDecomposition
       
       using FunctorType = TensorBasis3_Functor<ExecutionSpace, OutputValueType, OutputViewType>;
       FunctorType functor(outputValues, outputValues1, outputValues2, outputValues3, tensorPoints, weight);
-      Kokkos::parallel_for( policy , functor, "TensorBasis3_Functor");
+      Kokkos::parallel_for("TensorBasis3_Functor", policy , functor);
+    }
+
+    /** \brief  Fills in coefficients of degrees of freedom on the reference cell
+      \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs is a rank 1 with dimension equal to the cardinality of the basis.
+
+     Note that getDofCoeffs() is not supported by all bases; in particular, hierarchical bases do not generally support this.
+     */
+    virtual void getDofCoeffs( typename BasisBase::ScalarViewType dofCoeffs ) const override
+    {
+      using ValueType    = typename BasisBase::ScalarViewType::value_type;
+      using ResultLayout = typename DeduceLayout< typename BasisBase::ScalarViewType >::result_layout;
+      using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, typename TensorBasis::DeviceType >;
+
+      const ordinal_type basisCardinality1 = basis1_->getCardinality();
+      const ordinal_type basisCardinality2 = basis2_->getCardinality();
+      const ordinal_type basisCardinality3 = basis3_->getCardinality();
+
+      auto dofCoeffs1 = ViewType("dofCoeffs1",basisCardinality1);
+      auto dofCoeffs2 = ViewType("dofCoeffs2",basisCardinality2);
+      auto dofCoeffs3 = ViewType("dofCoeffs3",basisCardinality3);
+
+      basis1_->getDofCoeffs(dofCoeffs1);
+      basis2_->getDofCoeffs(dofCoeffs2);
+      basis3_->getDofCoeffs(dofCoeffs3);
+
+      Kokkos::RangePolicy<ExecutionSpace> policy(0, basisCardinality3);
+      Kokkos::parallel_for(policy, KOKKOS_LAMBDA (const int fieldOrdinal3)
+       {
+         for (int fieldOrdinal2=0; fieldOrdinal2<basisCardinality2; fieldOrdinal2++)
+          for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
+          {
+            const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1 + fieldOrdinal3 * (basisCardinality1*basisCardinality2);
+            dofCoeffs(fieldOrdinal)  = dofCoeffs1(fieldOrdinal1);
+            dofCoeffs(fieldOrdinal) *= dofCoeffs2(fieldOrdinal2) * dofCoeffs3(fieldOrdinal3);
+          }
+       });
     }
     
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.

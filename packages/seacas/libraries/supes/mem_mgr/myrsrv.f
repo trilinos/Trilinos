@@ -56,7 +56,7 @@ C     LASTER   Error return
 
 C***********************************************************************
 
-      LASTER = SUCESS
+      LASTER = SUCCESS
       INTLEN = (NEWLEN + CHRNUM - 1) / CHRNUM
 
       IF (NEWLEN .EQ. 0) THEN
@@ -69,7 +69,7 @@ C        Zero length entry.
          CALL MXLOOK (INTLEN, VOID(1,CHRCOL,1), CHRCOL*LVOID,
      *      NVOIDS(CHRCOL), VROW, LASTER)
 
-         IF (LASTER .EQ. SUCESS) THEN
+         IF (LASTER .EQ. SUCCESS) THEN
             NEWLOC = VOID(VROW,1,1)
          ELSE IF (DEFER .AND. CHRCOL .EQ. 1) THEN
 
@@ -77,7 +77,7 @@ C           A good void was not found - defer the space request.
 
             NEWLOC = IXLNUM(NEWLOC)
             INTLEN = - INTLEN
-            LASTER = SUCESS
+            LASTER = SUCCESS
 
          ELSE IF (CHRCOL .EQ. 1) THEN
 
@@ -85,7 +85,7 @@ C           Get space.
 
             CALL MXGET (MYLOC, INTLEN, VOID, LVOID,
      *         NVOIDS, CHRCOL, LASTER, VROW)
-            IF (LASTER .NE. SUCESS) RETURN
+            IF (LASTER .NE. SUCCESS) RETURN
             NEWLOC = VOID(VROW,1,1)
 
          ELSE
@@ -94,7 +94,7 @@ C           CHRCOL .EQ. 2
 
             CALL MYGET (MYCLOC, NEWLEN, VOID, LVOID,
      *         NVOIDS, CHRCOL, MAXSIZ, LASTER, VROW)
-            IF (LASTER .NE. SUCESS) RETURN
+            IF (LASTER .NE. SUCCESS) RETURN
             NEWLOC = VOID(VROW,2,1)
 
          END IF
@@ -105,7 +105,7 @@ C     Update dictionary.
       CALL MYNSRT (NAME1, NEWLOC, INTLEN, NEWLEN, DICT, DPOINT, LDICT,
      *   NNAMES, CHRCOL, LASTER)
       IF (LASTER .EQ. WRTYPE) LASTER = BDNAME
-      IF (LASTER .NE. SUCESS) RETURN
+      IF (LASTER .NE. SUCCESS) RETURN
 
       IF (INTLEN .GT. 0) THEN
 

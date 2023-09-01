@@ -158,6 +158,18 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, rawUpdateAndBroadcastNoOverWrite ) {
 
 }
 
+TEUCHOS_UNIT_TEST( Teuchos_ParameterList, xmlUpdateAndBroadcastSpecialChars ) {
+  const RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  // Test that the special characters '&' and '<' are correctly translated from '&amp;' and '&lt;'
+  std::string inputFile="inputSpecialChars.xml";
+  ParameterList A;
+  updateParametersFromXmlFileAndBroadcast(inputFile, outArg(A), *comm);
+  out << "A = " << A;
+  TEST_ASSERT( A.begin() != A.end() ); // Avoid false positive from empty lists
+
+  TEST_EQUALITY( A.get<std::string>("sigma"), "if (x >= 0.0 && y >= 0.0 && x <= 0.5 && y <= 0.5)" );
+}
+
 } // namespace Teuchos
 
 

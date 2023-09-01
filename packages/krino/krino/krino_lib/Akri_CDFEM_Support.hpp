@@ -24,6 +24,7 @@
 namespace krino {
 
 class Phase_Support;
+class RefinementInterface;
 
 enum Prolongation_Model
 {
@@ -75,7 +76,6 @@ public:
   static CDFEM_Support & get(const stk::mesh::MetaData & meta);
   static void use_constrained_edge_interpolation() { the_edge_interpolation_model = CONSTRAINED_LINEAR; }
   static Edge_Interpolation_Model get_edge_interpolation_model() { return the_edge_interpolation_model; }
-  static bool use_nonconformal_adaptivity(stk::mesh::MetaData & meta) { CDFEM_Support & cdfem_support = get(meta); return cdfem_support.get_interface_maximum_refinement_level() > 0; }
   static std::string cdfem_mesh_displacements_field_name() { return "CDFEM_MESH_DISPLACEMENTS"; }
 
   static bool is_active(const stk::mesh::MetaData & meta);
@@ -88,10 +88,10 @@ public:
   void set_simplex_generation_method(const Simplex_Generation_Method & method);
   bool get_global_ids_are_parallel_consistent() const { return myGlobalIDsAreParallelConsistent; }
   void set_global_ids_are_NOT_parallel_consistent() { myGlobalIDsAreParallelConsistent = false; }
-  void activate_interface_refinement(int minimum_level, int maximum_level);
-  void activate_nonconformal_adaptivity(const int num_levels);
   void set_snapping_sharp_feature_angle_in_degrees(const double snappingSharpFeatureAngleInDegrees) { mySnappingSharpFeatureAngleInDegrees = snappingSharpFeatureAngleInDegrees; }
   double get_snapping_sharp_feature_angle_in_degrees() const { return mySnappingSharpFeatureAngleInDegrees; }
+  void set_is_transient(const bool isTransient) { myFlagIsTransient = isTransient; }
+  bool get_is_transient() const { return myFlagIsTransient; }
 
   void create_parts();
 
@@ -104,6 +104,7 @@ public:
   void set_cdfem_snap_displacement_field(const FieldRef field) { myCDFEMSnapDisplacementsField = field; }
   void add_ale_prolongation_field(const FieldRef field);
   void add_interpolation_field(const FieldRef field);
+  void add_edge_interpolation_field(const FieldRef field);
 
   void set_coords_field(const FieldRef coords_field) { my_coords_field = coords_field; }
   const FieldRef get_coords_field() const { return my_coords_field; }
@@ -111,6 +112,7 @@ public:
   const FieldRef get_cdfem_snap_displacements_field() const { return myCDFEMSnapDisplacementsField; }
   const FieldSet & get_ale_prolongation_fields() const { return my_ale_prolongation_fields; }
   const FieldSet & get_interpolation_fields() const { return my_interpolation_fields; }
+  const FieldSet & get_edge_interpolation_fields() const { return my_edge_interpolation_fields; }
   const FieldSet & get_zeroed_fields() const { return my_zeroed_fields; }
   const FieldSet & get_element_fields() const { return my_element_fields; }
   const FieldSet & get_snap_fields() const { return mySnapFields; }
@@ -129,29 +131,18 @@ public:
 
   stk::mesh::Selector get_post_cdfem_refinement_selector() const;
 
-  stk::mesh::Part & get_child_edge_node_part() const { return *my_child_edge_node_part; }
-  FieldRef get_parent_node_ids_field() const { return my_parent_node_ids_field; }
+  stk::mesh::Part & get_child_node_part() const { return *myChildNodePart; }
+  FieldRef get_parent_node_ids_field() const { return myParentNodeIdsField; }
+  FieldRef get_parent_node_weights_field() const { return myParentNodeWtsField; }
 
   void activate_fully_coupled_cdfem() { my_fully_coupled_cdfem = true; }
   bool fully_coupled_cdfem() const { return my_fully_coupled_cdfem; }
 
-  void activate_nonconformal_adapt_target_count(uint64_t val);
-  uint64_t get_nonconformal_adapt_target_count() const { return my_nonconformal_adapt_target_element_count; }
-  int get_interface_minimum_refinement_level() const { return my_interface_minimum_refinement_level; }
-  int get_interface_maximum_refinement_level() const { return my_interface_maximum_refinement_level; }
-  void set_post_adapt_refinement_levels(int levels) { my_post_adapt_uniform_refinement_levels = levels; }
-  int get_post_adapt_refinement_levels() const { return my_post_adapt_uniform_refinement_levels; }
   void set_post_cdfem_refinement_levels(int levels) { my_post_cdfem_refinement_levels = levels; }
   int get_post_cdfem_refinement_levels() const { return my_post_cdfem_refinement_levels; }
   void set_post_cdfem_refinement_blocks(const std::vector<std::string> & post_cdfem_refinement_blocks) { my_post_cdfem_refinement_blocks = post_cdfem_refinement_blocks; }
   void set_num_initial_decomposition_cycles(int num_initial_decomposition_cycles) { my_num_initial_decomposition_cycles = num_initial_decomposition_cycles; }
-  // In case of both nonconformal adaptivity, perform at least 2 rounds of level set initialization and decomposition.
-  // This is to capture features that might be missed on the unrefined mesh.
-  int get_num_initial_decomposition_cycles() const { return (my_num_initial_decomposition_cycles > 1) ? my_num_initial_decomposition_cycles : ((my_interface_maximum_refinement_level > 0) ? 2 : 1); }
-  const std::string & get_nonconformal_adapt_marker_name() const { return my_nonconformal_adapt_marker_name; }
-  const std::string & get_nonconformal_adapt_indicator_name() const { return my_nonconformal_adapt_indicator_name; }
-  void set_nonconformal_hadapt(const std::function<void(const std::string &, int)> & hadapt) { my_nonconformal_hadapt = hadapt; }
-  const std::function<void(const std::string &, int)> & get_nonconformal_hadapt() const { return my_nonconformal_hadapt; }
+  int get_num_initial_decomposition_cycles() const { return (my_num_initial_decomposition_cycles > 1) ? my_num_initial_decomposition_cycles : 1; }
 
   bool is_ale_prolongation_field(const FieldRef field) const
   {
@@ -161,23 +152,28 @@ public:
   {
     return (my_interpolation_fields.find(field) != my_interpolation_fields.end());
   }
+  bool is_edge_interpolation_field(const FieldRef field) const
+  {
+    return (my_edge_interpolation_fields.find(field) != my_edge_interpolation_fields.end());
+  }
 
   void use_nonconformal_element_size(bool flag) { my_flag_use_nonconformal_element_size = flag; }
   bool use_nonconformal_element_size() const { return my_flag_use_nonconformal_element_size; }
 
-  void do_nearby_refinement_before_interface_refinement(bool flag) { myFlagDoNearbyRefinementBeforeInterfaceRefinement = flag; }
-  bool do_nearby_refinement_before_interface_refinement() const { return myFlagDoNearbyRefinementBeforeInterfaceRefinement; }
+  void set_use_facets_instead_of_levelset_fields(bool flag) { myFlagUseFacetsInsteadOfLsFields = flag; }
+  bool use_facets_instead_of_levelset_fields() const { return myFlagUseFacetsInsteadOfLsFields; }
 
   Edge_Degeneracy_Handling get_cdfem_edge_degeneracy_handling() const { return my_cdfem_edge_degeneracy_handling; }
   void set_cdfem_edge_degeneracy_handling( const Edge_Degeneracy_Handling type ) { my_cdfem_edge_degeneracy_handling = type; }
 
   stk::diag::Timer & get_timer_cdfem() const { return my_timer_cdfem; }
-  stk::diag::Timer & get_timer_adapt() const { return my_timer_adapt; }
 
   void set_cdfem_edge_tol( const double tol ) { my_cdfem_snapper.set_edge_tolerance(tol); }
   const CDFEM_Snapper & get_snapper() const { return my_cdfem_snapper; }
-  const double & get_cdfem_dof_edge_tol() const { return my_cdfem_dof_edge_tol; }
+  double get_cdfem_dof_edge_tol() const { return my_cdfem_dof_edge_tol; }
   void set_cdfem_dof_edge_tol( const double tol ) { my_cdfem_dof_edge_tol = tol; }
+  double get_max_edge_snap() const { return myMaxEdgeSnap; }
+  void set_max_edge_snap( const double snap ) { myMaxEdgeSnap = snap; }
   bool use_internal_face_stabilization() const { return my_internal_face_stabilization_multiplier > 0.0; }
   double get_internal_face_stabilization_multiplier() const { return my_internal_face_stabilization_multiplier; }
   void set_internal_face_stabilization_multiplier( const double mult ) { my_internal_face_stabilization_multiplier = mult; }
@@ -185,6 +181,10 @@ public:
   void set_use_hierarchical_dofs(bool flag) { my_flag_use_hierarchical_dofs = flag; }
   bool get_constrain_CDFEM_to_XFEM_space() const { return my_flag_constrain_CDFEM_to_XFEM_space; }
   void set_constrain_CDFEM_to_XFEM_space(bool flag) { my_flag_constrain_CDFEM_to_XFEM_space = flag; }
+  void set_use_interpolation_to_unsnap_mesh(bool flag) { myFlagUseInterpolationToUnsnapMesh = flag; }
+  bool get_use_interpolation_to_unsnap_mesh() const { return myFlagUseInterpolationToUnsnapMesh; }
+  void set_perform_volume_correction_after_levelset_solve(bool flag) { myFlagPerformVolumeCorrectionAfterLsSolve = flag; }
+  bool get_perform_volume_correction_after_levelset_solve() const { return myFlagPerformVolumeCorrectionAfterLsSolve; }
 
   void set_constant_length_scale_for_interface_CFL(double lengthScale) { myConstantLengthScaleForInterfaceCFL = lengthScale; }
   double get_constant_length_scale_for_interface_CFL() const { return myConstantLengthScaleForInterfaceCFL; }
@@ -195,8 +195,18 @@ public:
 
   void force_ale_prolongation_for_field(const std::string & field_name);
 
+  void add_user_prolongation_field(const std::vector<std::string> & fields)
+  {
+    my_user_prolongation_field_names.insert(fields.begin(), fields.end());
+  }
+  
+  const std::set<std::string> & get_user_prolongation_field() const
+  {
+    return my_user_prolongation_field_names;
+  }
+
+
 private:
-  void setup_refinement_marker();
   void set_snap_fields();
 
 private:
@@ -211,6 +221,7 @@ private:
   std::vector<std::string> my_force_ale_prolongation_fields;
   FieldSet my_ale_prolongation_fields;
   FieldSet my_interpolation_fields;
+  FieldSet my_edge_interpolation_fields;
   FieldSet my_zeroed_fields;
   FieldSet my_element_fields;
   FieldSet mySnapFields;
@@ -221,23 +232,18 @@ private:
   stk::mesh::Part * my_parent_part;
   stk::mesh::Part * my_child_part;
   stk::mesh::Part * my_internal_side_part;
-  stk::mesh::Part * my_child_edge_node_part;
-  FieldRef my_parent_node_ids_field;
+  stk::mesh::Part * myChildNodePart;
+  FieldRef myParentNodeIdsField;
+  FieldRef myParentNodeWtsField;
   bool my_fully_coupled_cdfem;
   int my_num_initial_decomposition_cycles;
   bool myGlobalIDsAreParallelConsistent;
-  int my_interface_minimum_refinement_level;
-  int my_interface_maximum_refinement_level;
-  int my_post_adapt_uniform_refinement_levels;
   int my_post_cdfem_refinement_levels;
   std::vector<std::string> my_post_cdfem_refinement_blocks;
-  uint64_t my_nonconformal_adapt_target_element_count;
-  std::string my_nonconformal_adapt_marker_name;
-  std::string my_nonconformal_adapt_indicator_name;
-  std::function<void(const std::string &, int)> my_nonconformal_hadapt;
   Edge_Degeneracy_Handling my_cdfem_edge_degeneracy_handling;
   CDFEM_Snapper my_cdfem_snapper;
   double my_cdfem_dof_edge_tol;
+  double myMaxEdgeSnap{1.0};
   double my_internal_face_stabilization_multiplier;
   double mySnappingSharpFeatureAngleInDegrees;
   Interface_CFL_Length_Scale myLengthScaleTypeForInterfaceCFL;
@@ -245,10 +251,13 @@ private:
   bool my_flag_use_hierarchical_dofs;
   bool my_flag_constrain_CDFEM_to_XFEM_space;
   bool my_flag_use_nonconformal_element_size;
-  bool myFlagDoNearbyRefinementBeforeInterfaceRefinement;
+  bool myFlagUseFacetsInsteadOfLsFields{false};
   bool myFlagUseVelocityToEvaluateInterfaceCFL;
+  bool myFlagUseInterpolationToUnsnapMesh{false};
+  bool myFlagPerformVolumeCorrectionAfterLsSolve{false};
+  bool myFlagIsTransient{false};
   mutable stk::diag::Timer my_timer_cdfem;
-  mutable stk::diag::Timer my_timer_adapt;
+  std::set<std::string> my_user_prolongation_field_names;
 };
 
 } // namespace krino

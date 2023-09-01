@@ -1,27 +1,23 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
+#pragma once
 
 /*
  * Define element types.
  */
 
 /* 1-d elements */
-
-#ifndef EL_ELM_H
-#define EL_ELM_H
-
 #define BAR2   0
 #define BAR3   1
 #define SHELL2 2
 #define SHELL3 3
 
 /* 2-d elements */
-
 #define QUAD4 14
 #define QUAD8 18
 #define QUAD9 19
@@ -31,7 +27,6 @@
 #define TRI7  27
 
 /* 3-d elements */
-
 #define HEX8      108
 #define HEX16     116
 #define HEX20     120
@@ -74,4 +69,3 @@
 extern int elem_info(int info, int ielem_type, int supp);
 
 extern int get_type(const char string[], int nodes, int num_dim);
-#endif

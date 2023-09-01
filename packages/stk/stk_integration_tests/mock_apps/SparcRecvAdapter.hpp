@@ -28,10 +28,10 @@ public:
     m_fieldName(fieldName)
   {
   }
-  using EntityKey = uint64_t;
-  using EntityProc = stk::search::IdentProc<EntityKey>;
-  using EntityProcVec = std::vector<EntityProc>;
-  using BoundingBox = SparcMesh::BoundingSphere;
+  using EntityKey = SparcMesh::EntityKey;
+  using EntityProc = SparcMesh::EntityProc;
+  using EntityProcVec = SparcMesh::EntityProcVec;
+  using BoundingBox = SparcMesh::BoundingBox;
 
   //Used for Reduced dependency
   using Point = stk::search::Point<double>;
@@ -44,7 +44,6 @@ public:
   void update_values() {called_update_values = true;}
 
   bool called_update_values = false;
-  bool owning_rank() const { return stk::parallel_machine_rank(m_mesh.comm()) == m_mesh.owning_rank(); }
 
   void set_field_value(const EntityKey & entityKey, const double & value)
   {

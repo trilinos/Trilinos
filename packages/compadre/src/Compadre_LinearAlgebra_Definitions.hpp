@@ -18,7 +18,7 @@ void largestTwoEigenvectorsThreeByThreeSymmetric(const member_type& teamMember, 
         double eigenvalue_relative_tolerance = 1e-6; // TODO: use something smaller, but really anything close is acceptable for this manifold
 
         
-        double v[3] = {1,1,1};
+        double v[3] = {rand_gen.drand(maxRange),rand_gen.drand(maxRange),rand_gen.drand(maxRange)};
         double v_old[3] = {v[0], v[1], v[2]};
 
         double error = 1;

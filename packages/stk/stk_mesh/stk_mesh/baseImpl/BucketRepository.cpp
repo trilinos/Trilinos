@@ -57,15 +57,21 @@ namespace impl {
 
 BucketRepository::BucketRepository(BulkData & mesh,
                                    unsigned entity_rank_count,
-                                   unsigned bucket_capacity)
+                                   unsigned initialBucketCapacity,
+                                   unsigned maximumBucketCapacity)
   : m_mesh(mesh),
     m_buckets(entity_rank_count),
     m_partitions(entity_rank_count),
     m_need_sync_from_partitions(entity_rank_count, false),
-    m_bucket_capacity(bucket_capacity),
+    m_initialBucketCapacity(initialBucketCapacity),
+    m_maximumBucketCapacity(maximumBucketCapacity),
     m_being_destroyed(false)
 {
-  // Nada.
+  STK_ThrowRequireMsg(initialBucketCapacity > 0,
+                      "The initial Bucket capacity (" << initialBucketCapacity << ") must be positive");
+  STK_ThrowRequireMsg(initialBucketCapacity <= maximumBucketCapacity,
+                      "The initial Bucket capacity (" << initialBucketCapacity
+                      << ") cannot be larger than the maximum Bucket capacity (" << maximumBucketCapacity << ")");
 }
 
 BucketRepository::~BucketRepository()
@@ -147,8 +153,8 @@ void BucketRepository::ensure_data_structures_sized()
     if(m_buckets.empty())
     {
         size_t entity_rank_count = m_mesh.mesh_meta_data().entity_rank_count();
-        ThrowRequireMsg( entity_rank_count > 0,
-                        "MetaData doesn't have any entity-ranks! Did you forget to initialize MetaData before creating BulkData?");
+        STK_ThrowRequireMsg(entity_rank_count > 0, "MetaData doesn't have any entity-ranks! Did you forget to "
+                            "initialize MetaData before creating BulkData?");
         m_buckets.resize(entity_rank_count);
         m_partitions.resize(entity_rank_count);
         m_need_sync_from_partitions.resize(entity_rank_count, false);
@@ -239,8 +245,8 @@ Partition *BucketRepository::get_partition(
   PartOrdinal* keyPtr,
   PartOrdinal* keyEnd)
 {
-  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
-                  "Entity rank " << arg_entity_rank << " is invalid");
+  STK_ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank), "Entity rank " << arg_entity_rank
+                      << " is invalid");
 
   ensure_data_structures_sized();
 
@@ -270,7 +276,7 @@ Partition* BucketRepository::create_partition(
   keyPtr[keyPtr[0]] = 0;
 
   Partition *partition = new Partition(m_mesh, this, arg_entity_rank, keyPtr, keyEnd);
-  ThrowRequire(partition != NULL);
+  STK_ThrowRequire(partition != nullptr);
 
   m_need_sync_from_partitions[arg_entity_rank] = true;
   m_partitions[arg_entity_rank].insert( ik , partition );
@@ -288,7 +294,7 @@ void BucketRepository::internal_modification_end()
         unsigned num_buckets = buckets.size();
         for(unsigned j = 0; j < num_buckets; ++j)
         {
-            ThrowAssert(buckets[j] != NULL);
+            STK_ThrowAssert(buckets[j] != nullptr);
             Bucket &bucket = *buckets[j];
 
             // Update the hop-saving connectivity data on this bucket.
@@ -410,34 +416,35 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
   m_need_sync_from_partitions[rank] = false;
 }
 
-Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
-                                          const std::vector<unsigned> & arg_key,
-                                          size_t arg_capacity )
+Bucket *BucketRepository::allocate_bucket(EntityRank entityRank,
+                                          const std::vector<unsigned> & key,
+                                          unsigned initialCapacity,
+                                          unsigned maximumCapacity)
 {
-  ThrowAssertMsg(stk::util::is_sorted_and_unique(std::vector<unsigned>(arg_key.begin()+1,arg_key.end()-1),std::less<unsigned>()),"bucket created with 'key' vector that's not sorted and unique");
-  BucketVector &bucket_vec = m_buckets[arg_entity_rank];
+  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(std::vector<unsigned>(key.begin()+1,key.end()-1),std::less<unsigned>()),
+                     "bucket created with 'key' vector that's not sorted and unique");
+  BucketVector &bucket_vec = m_buckets[entityRank];
   const unsigned bucket_id = bucket_vec.size();
-  Bucket * new_bucket = new Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, bucket_id);
-  ThrowRequire(new_bucket != NULL);
+  Bucket * new_bucket = new Bucket(m_mesh, entityRank, key, initialCapacity, maximumCapacity, bucket_id);
+  STK_ThrowRequire(new_bucket != nullptr);
 
   bucket_vec.push_back(new_bucket);
-  m_need_sync_from_partitions[arg_entity_rank] = true;
+  m_need_sync_from_partitions[entityRank] = true;
 
   return new_bucket;
 }
 
 void BucketRepository::deallocate_bucket(Bucket *b)
 {
-  ThrowAssertMsg(b != NULL,
-                 "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
+  STK_ThrowAssertMsg(b != nullptr, "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
 
   const unsigned bucket_id = b->bucket_id();
   const EntityRank bucket_rank = b->entity_rank();
 
-  ThrowAssertMsg(b == m_buckets[bucket_rank][bucket_id],
-                 "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
+  STK_ThrowAssertMsg(b == m_buckets[bucket_rank][bucket_id],
+                     "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
 
-  m_buckets[bucket_rank][bucket_id] = NULL; // space will be reclaimed by sync_from_partitions
+  m_buckets[bucket_rank][bucket_id] = nullptr; // space will be reclaimed by sync_from_partitions
   m_need_sync_from_partitions[bucket_rank] = true;
   delete b;
 }
@@ -450,9 +457,8 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
 
   for (unsigned i = 0; i < num_buckets; ++i)
   {
-    ThrowAssertMsg(buckets[i] != NULL,
-                   "BucketRepository::sync_bucket_ids() called when m_buckets["
-                   << entity_rank << "] is not dense.");
+    STK_ThrowAssertMsg(buckets[i] != nullptr, "BucketRepository::sync_bucket_ids() called when m_buckets["
+                       << entity_rank << "] is not dense.");
     id_map[i] = buckets[i]->bucket_id();
     buckets[i]->m_bucket_id = i;
   }

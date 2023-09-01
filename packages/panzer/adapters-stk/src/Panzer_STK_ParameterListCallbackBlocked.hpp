@@ -53,7 +53,9 @@
 
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_GlobalIndexer_Utilities.hpp"
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_GlobalIndexer_EpetraUtilities.hpp"
+#endif
 #include "Panzer_BlockedDOFManager.hpp"
 
 #include <vector>
@@ -102,9 +104,12 @@ private:
   }
 
   void buildArrayToVectorTpetra(int block,const std::string & field, const bool useAux = false);
-  void buildArrayToVectorEpetra(int block,const std::string & field, const bool useAux = false);
   void buildCoordinatesTpetra(const std::string & field, const bool useAux = false);
+
+#ifdef PANZER_HAVE_EPETRA_STACK
+  void buildArrayToVectorEpetra(int block,const std::string & field, const bool useAux = false);
   void buildCoordinatesEpetra(const std::string & field, const bool useAux = false);
+#endif
 
   // this method assumes handlesRequest(rm)==true
   std::string getHandledField(const Teuchos::ParameterList & pl) const;
@@ -133,10 +138,14 @@ private:
   std::map<std::string,std::vector<double> > zcoords_;
 
   mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVector> > arrayToVectorTpetra_;
+#ifdef PANZER_HAVE_EPETRA_STACK
   mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVectorEpetra> > arrayToVectorEpetra_;
+#endif
 
   Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > coordsVecTp_;
+#ifdef PANZER_HAVE_EPETRA_STACK
   Teuchos::RCP<Epetra_MultiVector> coordsVecEp_;
+#endif
 
   bool returnTpetraObjects_;
 };

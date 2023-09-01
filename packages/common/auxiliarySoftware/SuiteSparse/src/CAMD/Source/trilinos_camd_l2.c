@@ -281,7 +281,7 @@ GLOBAL void TRILINOS_CAMD_2
  *	    as (-(j)-2).  Row j has the same pattern as row i.  Note that j
  *	    might later be absorbed into another supervariable j2, in which
  *	    case Pe [i] is still FLIP (j), and Pe [j] = FLIP (j2) which is
- *	    < EMPTY, where EMPTY is defined as (-1) in camd_internal.h.
+ *	    < TRILINOS_CAMD_EMPTY, where TRILINOS_CAMD_EMPTY is defined as (-1) in camd_internal.h.
  *
  *	Unabsorbed element e:  the index into Iw of the description of element
  *	    e, if e has not yet been absorbed by a subsequent element.  Element
@@ -291,8 +291,8 @@ GLOBAL void TRILINOS_CAMD_2
  *	Absorbed element e:  if element e is absorbed into element e2, then
  *	    Pe [e] = FLIP (e2).  This occurs when the pattern of e (which we
  *	    refer to as Le) is found to be a subset of the pattern of e2 (that
- *	    is, Le2).  In this case, Pe [i] < EMPTY.  If element e is "null"
- *	    (it has no nonzeros outside its pivot block), then Pe [e] = EMPTY,
+ *	    is, Le2).  In this case, Pe [i] < TRILINOS_CAMD_EMPTY.  If element e is "null"
+ *	    (it has no nonzeros outside its pivot block), then Pe [e] = TRILINOS_CAMD_EMPTY,
  *	    and e is the root of an assembly subtree (or the whole tree if
  *	    there is just one such root).
  *
@@ -303,7 +303,7 @@ GLOBAL void TRILINOS_CAMD_2
  *	represents a pivot order with identical fill-in as the actual order
  *	(via a depth-first search of the tree), as follows.  If Nv [i] > 0,
  *	then i represents a node in the assembly tree, and the parent of i is
- *	Pe [i], or EMPTY if i is a root.  If Nv [i] = 0, then (i, Pe [i])
+ *	Pe [i], or TRILINOS_CAMD_EMPTY if i is a root.  If Nv [i] = 0, then (i, Pe [i])
  *	represents an edge in a subtree, the root of which is a node in the
  *	assembly tree.  Note that i refers to a row/column in the original
  *	matrix, not the permuted matrix.
@@ -393,16 +393,16 @@ GLOBAL void TRILINOS_CAMD_2
  *	execution, Elen [i] is the number of elements in the list for
  *	supervariable i.  When e becomes an element, Elen [e] = FLIP (esize) is
  *	set, where esize is the size of the element (the number of pivots, plus
- *	the number of nonpivotal entries).  Thus Elen [e] < EMPTY.
- *	Elen (i) = EMPTY set when variable i becomes nonprincipal.
+ *	the number of nonpivotal entries).  Thus Elen [e] < TRILINOS_CAMD_EMPTY.
+ *	Elen (i) = TRILINOS_CAMD_EMPTY set when variable i becomes nonprincipal.
  *
- *	For variables, Elen (i) >= EMPTY holds until just before the
+ *	For variables, Elen (i) >= TRILINOS_CAMD_EMPTY holds until just before the
  *	postordering and permutation vectors are computed.  For elements,
- *	Elen [e] < EMPTY holds.
+ *	Elen [e] < TRILINOS_CAMD_EMPTY holds.
  *
  *	On output, Elen [i] is the degree of the row/column in the Cholesky
  *	factorization of the permuted matrix, corresponding to the original row
- *	i, if i is a super row/column.  It is equal to EMPTY if i is
+ *	i, if i is a super row/column.  It is equal to TRILINOS_CAMD_EMPTY if i is
  *	non-principal.  Note that i refers to a row/column in the original
  *	matrix, not the permuted matrix.
  *
@@ -411,7 +411,7 @@ GLOBAL void TRILINOS_CAMD_2
  *	which is instead returned in the Next array in this C version,
  *	described below).
  *
- * Last: In a degree list, Last [i] is the supervariable preceding i, or EMPTY
+ * Last: In a degree list, Last [i] is the supervariable preceding i, or TRILINOS_CAMD_EMPTY
  *	if i is the head of the list.  In a hash bucket, Last [i] is the hash
  *	key for i.
  *
@@ -423,7 +423,7 @@ GLOBAL void TRILINOS_CAMD_2
  *	i = Last [k], then row i is the kth pivot row (where k ranges from 0 to
  *	n-1).  Row Last [k] of A is the kth row in the permuted matrix, PAP'.
  *
- * Next: Next [i] is the supervariable following i in a link list, or EMPTY if
+ * Next: Next [i] is the supervariable following i in a link list, or TRILINOS_CAMD_EMPTY if
  *	i is the last in the list.  Used for two kinds of lists:  degree lists
  *	and hash buckets (a supervariable can be in only one kind of list at a
  *	time).
@@ -454,16 +454,16 @@ GLOBAL void TRILINOS_CAMD_2
  *	Head [deg] is the first supervariable in a degree list.  All
  *	supervariables i in a degree list Head [deg] have the same approximate
  *	degree, namely, deg = Degree [i].  If the list Head [deg] is empty then
- *	Head [deg] = EMPTY.
+ *	Head [deg] = TRILINOS_CAMD_EMPTY.
  *
  *	During supervariable detection Head [hash] also serves as a pointer to
  *	a hash bucket.  If Head [hash] >= 0, there is a degree list of degree
  *	hash.  The hash bucket head pointer is Last [Head [hash]].  If
- *	Head [hash] = EMPTY, then the degree list and hash bucket are both
- *	empty.  If Head [hash] < EMPTY, then the degree list is empty, and
+ *	Head [hash] = TRILINOS_CAMD_EMPTY, then the degree list and hash bucket are both
+ *	empty.  If Head [hash] < TRILINOS_CAMD_EMPTY, then the degree list is empty, and
  *	FLIP (Head [hash]) is the head of the hash bucket.  After supervariable
  *	detection is complete, all hash buckets are empty, and the
- *	(Last [Head [hash]] = EMPTY) condition is restored for the non-empty
+ *	(Last [Head [hash]] = TRILINOS_CAMD_EMPTY) condition is restored for the non-empty
  *	degree lists.
  *
  *      Head also workes as a temporary workspace in post ordering with dense
@@ -634,7 +634,7 @@ GLOBAL void TRILINOS_CAMD_2
     nms_lu = 0 ;
     nms_ldl = 0 ;
     dmax = 1 ;
-    me = EMPTY ;
+    me = TRILINOS_CAMD_EMPTY ;
 
     mindeg = 0 ;
     ncmpa = 0 ;
@@ -737,18 +737,18 @@ GLOBAL void TRILINOS_CAMD_2
 
     for (i = 0 ; i < n ; i++)
     {
-	Last [i] = EMPTY ;
-	Head [i] = EMPTY ;
-	Next [i] = EMPTY ;
+	Last [i] = TRILINOS_CAMD_EMPTY ;
+	Head [i] = TRILINOS_CAMD_EMPTY ;
+	Next [i] = TRILINOS_CAMD_EMPTY ;
 	/* if separate Hhead array is used for hash buckets: *
-	Hhead [i] = EMPTY ;
+	Hhead [i] = TRILINOS_CAMD_EMPTY ;
 	*/
 	Nv [i] = 1 ;
 	W [i] = 1 ;
 	Elen [i] = 0 ;
 	Degree [i] = Len [i] ;
     }
-    Head [n] = EMPTY ;
+    Head [n] = TRILINOS_CAMD_EMPTY ;
 
     /* initialize wflg */
     wbig = Int_MAX - n ;
@@ -790,7 +790,7 @@ GLOBAL void TRILINOS_CAMD_2
 	    }
 	    Pe [i] = FLIP (n) ;
 	    Nv [i] = 0 ;		/* do not postorder this node */
-	    Elen [i] = EMPTY ;
+	    Elen [i] = TRILINOS_CAMD_EMPTY ;
 	    nel++ ;
 	}
     }
@@ -832,12 +832,12 @@ GLOBAL void TRILINOS_CAMD_2
 		     * ------------------------------------------------------ */
 
 		    inext = Head [deg] ;
-		    ASSERT (inext >= EMPTY && inext < n) ;
-		    if (inext != EMPTY) Last [inext] = i ;
+		    ASSERT (inext >= TRILINOS_CAMD_EMPTY && inext < n) ;
+		    if (inext != TRILINOS_CAMD_EMPTY) Last [inext] = i ;
 		    Next [i] = inext ;
 		    Head [deg] = i ;
 		    degreeListCounter++ ;
-		    Last [i] = EMPTY ;
+		    Last [i] = TRILINOS_CAMD_EMPTY ;
 		    mindeg = MIN (mindeg, deg) ;
 		}
 	    }
@@ -864,7 +864,7 @@ GLOBAL void TRILINOS_CAMD_2
 	for (deg = mindeg ; deg < n ; deg++)
 	{
 	    me = Head [deg] ;
-	    if (me != EMPTY) break ;
+	    if (me != TRILINOS_CAMD_EMPTY) break ;
 	}
 	mindeg = deg ;
 	ASSERT (me >= 0 && me < n) ;
@@ -875,8 +875,8 @@ GLOBAL void TRILINOS_CAMD_2
 	/* ----------------------------------------------------------------- */
 
 	inext = Next [me] ;
-	ASSERT (inext >= EMPTY && inext < n) ;
-	if (inext != EMPTY) Last [inext] = EMPTY ;
+	ASSERT (inext >= TRILINOS_CAMD_EMPTY && inext < n) ;
+	if (inext != TRILINOS_CAMD_EMPTY) Last [inext] = TRILINOS_CAMD_EMPTY ;
 	Head [deg] = inext ;
 	degreeListCounter-- ;
 
@@ -944,10 +944,10 @@ GLOBAL void TRILINOS_CAMD_2
 		    {
 			ilast = Last [i] ;
 			inext = Next [i] ;
-			ASSERT (ilast >= EMPTY && ilast < n) ;
-			ASSERT (inext >= EMPTY && inext < n) ;
-			if (inext != EMPTY) Last [inext] = ilast ;
-			if (ilast != EMPTY)
+			ASSERT (ilast >= TRILINOS_CAMD_EMPTY && ilast < n) ;
+			ASSERT (inext >= TRILINOS_CAMD_EMPTY && inext < n) ;
+			if (inext != TRILINOS_CAMD_EMPTY) Last [inext] = ilast ;
+			if (ilast != TRILINOS_CAMD_EMPTY)
 			{
 			    Next [ilast] = inext ;
 			}
@@ -992,7 +992,7 @@ GLOBAL void TRILINOS_CAMD_2
 		    pj = Pe [e] ;
 		    ln = Len [e] ;
 		    TRILINOS_CAMD_DEBUG2 (("Search element e "ID" in me "ID"\n", e,me)) ;
-		    ASSERT (Elen [e] < EMPTY && W [e] > 0 && pj >= 0) ;
+		    ASSERT (Elen [e] < TRILINOS_CAMD_EMPTY && W [e] > 0 && pj >= 0) ;
 		}
 		ASSERT (ln >= 0 && (ln == 0 || (pj >= 0 && pj < iwlen))) ;
 
@@ -1006,7 +1006,7 @@ GLOBAL void TRILINOS_CAMD_2
 		for (knt2 = 1 ; knt2 <= ln ; knt2++)
 		{
 		    i = Iw [pj++] ;
-		    ASSERT (i >= 0 && i < n && (i == me || Elen [i] >= EMPTY));
+		    ASSERT (i >= 0 && i < n && (i == me || Elen [i] >= TRILINOS_CAMD_EMPTY));
 		    nvi = Nv [i] ;
 		    TRILINOS_CAMD_DEBUG2 ((": "ID" "ID" "ID" "ID"\n",
 				i, Elen [i], Nv [i], wflg)) ;
@@ -1031,11 +1031,11 @@ GLOBAL void TRILINOS_CAMD_2
 			    Pe [me] = p ;
 			    Len [me] -= knt1 ;
 			    /* check if nothing left of supervariable me */
-			    if (Len [me] == 0) Pe [me] = EMPTY ;
+			    if (Len [me] == 0) Pe [me] = TRILINOS_CAMD_EMPTY ;
 			    Pe [e] = pj ;
 			    Len [e] = ln - knt2 ;
 			    /* nothing left of element e */
-			    if (Len [e] == 0) Pe [e] = EMPTY ;
+			    if (Len [e] == 0) Pe [e] = TRILINOS_CAMD_EMPTY ;
 
 			    ncmpa++ ;	/* one more garbage collection */
 
@@ -1107,10 +1107,10 @@ GLOBAL void TRILINOS_CAMD_2
 			{
 			    ilast = Last [i] ;
 			    inext = Next [i] ;
-			    ASSERT (ilast >= EMPTY && ilast < n) ;
-			    ASSERT (inext >= EMPTY && inext < n) ;
-			    if (inext != EMPTY) Last [inext] = ilast ;
-			    if (ilast != EMPTY)
+			    ASSERT (ilast >= TRILINOS_CAMD_EMPTY && ilast < n) ;
+			    ASSERT (inext >= TRILINOS_CAMD_EMPTY && inext < n) ;
+			    if (inext != TRILINOS_CAMD_EMPTY) Last [inext] = ilast ;
+			    if (ilast != TRILINOS_CAMD_EMPTY)
 			    {
 				Next [ilast] = inext ;
 			    }
@@ -1141,7 +1141,7 @@ GLOBAL void TRILINOS_CAMD_2
 		    {
 			/* make element a root; kill it if not in same bucket */
 			TRILINOS_CAMD_DEBUG1 (("2 Element "ID" => "ID"\n", e, me)) ;
-			Pe [e] = EMPTY ;
+			Pe [e] = TRILINOS_CAMD_EMPTY ;
 			W [e] = 0 ;
 		    }
 		}
@@ -1302,7 +1302,7 @@ GLOBAL void TRILINOS_CAMD_2
 				TRILINOS_CAMD_DEBUG1 (("2 Element "ID" =>"ID" (aggr)\n",
 					e, me)) ;
 				ASSERT (dext == 0) ;
-				Pe [e] = EMPTY ;
+				Pe [e] = TRILINOS_CAMD_EMPTY ;
 				W [e] = 0 ;
 			    }
 			}
@@ -1400,7 +1400,7 @@ GLOBAL void TRILINOS_CAMD_2
 		nvpiv += nvi ;
 		nel += nvi ;
 		Nv [i] = 0 ;
-		Elen [i] = EMPTY ;
+		Elen [i] = TRILINOS_CAMD_EMPTY ;
 
 	    }
 	    else
@@ -1441,7 +1441,7 @@ GLOBAL void TRILINOS_CAMD_2
 
 		/* if the Hhead array is not used: */
 		j = Head [hash] ;
-		if (j <= EMPTY)
+		if (j <= TRILINOS_CAMD_EMPTY)
 		{
 		    /* degree list is empty, hash head is FLIP (j) */
 		    Next [i] = FLIP (j) ;
@@ -1505,33 +1505,33 @@ GLOBAL void TRILINOS_CAMD_2
 
 		/* if Hhead array is not used: */
 		j = Head [hash] ;
-		if (j == EMPTY)
+		if (j == TRILINOS_CAMD_EMPTY)
 		{
 		    /* hash bucket and degree list are both empty */
-		    i = EMPTY ;
+		    i = TRILINOS_CAMD_EMPTY ;
 		}
-		else if (j < EMPTY)
+		else if (j < TRILINOS_CAMD_EMPTY)
 		{
 		    /* degree list is empty */
 		    i = FLIP (j) ;
-		    Head [hash] = EMPTY ;
+		    Head [hash] = TRILINOS_CAMD_EMPTY ;
 		}
 		else
 		{
 		    /* degree list is not empty, restore Last [j] of head j */
 		    i = Last [j] ;
-		    Last [j] = EMPTY ;
+		    Last [j] = TRILINOS_CAMD_EMPTY ;
 		}
 
 		/* if separate Hhead array is used: *
 		i = Hhead [hash] ;
-		Hhead [hash] = EMPTY ;
+		Hhead [hash] = TRILINOS_CAMD_EMPTY ;
 		*/
 
-		ASSERT (i >= EMPTY && i < n) ;
+		ASSERT (i >= TRILINOS_CAMD_EMPTY && i < n) ;
 		TRILINOS_CAMD_DEBUG2 (("----i "ID" hash "ID"\n", i, hash)) ;
 
-		while (i != EMPTY && Next [i] != EMPTY)
+		while (i != TRILINOS_CAMD_EMPTY && Next [i] != TRILINOS_CAMD_EMPTY)
 		{
 
 		    /* -----------------------------------------------------
@@ -1557,9 +1557,9 @@ GLOBAL void TRILINOS_CAMD_2
 
 		    jlast = i ;
 		    j = Next [i] ;
-		    ASSERT (j >= EMPTY && j < n) ;
+		    ASSERT (j >= TRILINOS_CAMD_EMPTY && j < n) ;
 
-		    while (j != EMPTY)
+		    while (j != TRILINOS_CAMD_EMPTY)
 		    {
 			/* ------------------------------------------------- */
 			/* check if j and i have identical nonzero pattern */
@@ -1593,7 +1593,7 @@ GLOBAL void TRILINOS_CAMD_2
 			    /* are the number of variables in i and j: */
 			    Nv [i] += Nv [j] ;
 			    Nv [j] = 0 ;
-			    Elen [j] = EMPTY ;
+			    Elen [j] = TRILINOS_CAMD_EMPTY ;
 			    /* delete j from hash bucket */
 			    ASSERT (j != Next [j]) ;
 			    j = Next [j] ;
@@ -1607,7 +1607,7 @@ GLOBAL void TRILINOS_CAMD_2
 			    ASSERT (j != Next [j]) ;
 			    j = Next [j] ;
 			}
-			ASSERT (j >= EMPTY && j < n) ;
+			ASSERT (j >= TRILINOS_CAMD_EMPTY && j < n) ;
 		    }
 
 		    /* -----------------------------------------------------
@@ -1617,7 +1617,7 @@ GLOBAL void TRILINOS_CAMD_2
 
 		    wflg++ ;
 		    i = Next [i] ;
-		    ASSERT (i >= EMPTY && i < n) ;
+		    ASSERT (i >= TRILINOS_CAMD_EMPTY && i < n) ;
 
 		}
 	    }
@@ -1657,10 +1657,10 @@ GLOBAL void TRILINOS_CAMD_2
 		if (IsInCurrentSet (C, i, curC))
 		{
 		    inext = Head [deg] ;
-		    ASSERT (inext >= EMPTY && inext < n) ;
-		    if (inext != EMPTY) Last [inext] = i ;
+		    ASSERT (inext >= TRILINOS_CAMD_EMPTY && inext < n) ;
+		    if (inext != TRILINOS_CAMD_EMPTY) Last [inext] = i ;
 		    Next [i] = inext ;
-		    Last [i] = EMPTY ;
+		    Last [i] = TRILINOS_CAMD_EMPTY ;
 		    Head [deg] = i ;
 		    degreeListCounter++ ;
 		}
@@ -1693,7 +1693,7 @@ GLOBAL void TRILINOS_CAMD_2
 	{
 	    /* there is nothing left of the current pivot element */
 	    /* it is a root of the assembly tree */
-	    Pe [me] = EMPTY ;
+	    Pe [me] = TRILINOS_CAMD_EMPTY ;
 	    W [me] = 0 ;
 	}
 	if (elenme != 0)
@@ -1804,15 +1804,15 @@ GLOBAL void TRILINOS_CAMD_2
  * Variables at this point:
  *
  * Pe: holds the elimination tree.  The parent of j is FLIP (Pe [j]),
- *	or EMPTY if j is a root.  The tree holds both elements and
+ *	or TRILINOS_CAMD_EMPTY if j is a root.  The tree holds both elements and
  *	non-principal (unordered) variables absorbed into them.
  *	Dense and empty variables are non-principal and unordered.  They are
  *	all represented by the fictitious node n (that is, Pe [i] = FLIP (n)
- *      and Elen [i] = EMPTY if i is a dense or empty node).
+ *      and Elen [i] = TRILINOS_CAMD_EMPTY if i is a dense or empty node).
  *
  * Elen: holds the size of each element, including the diagonal part.
  *	FLIP (Elen [e]) > 0 if e is an element.  For unordered
- *	variables i, Elen [i] is EMPTY.
+ *	variables i, Elen [i] is TRILINOS_CAMD_EMPTY.
  *
  * Nv: Nv [e] > 0 is the number of pivots represented by the element e.
  *	For unordered variables i, Nv [i] is zero.
@@ -1845,7 +1845,7 @@ GLOBAL void TRILINOS_CAMD_2
 	Elen [i] = FLIP (Elen [i]) ;
     }
 
-    /* Now, Pe [j] is the parent of j, or EMPTY if j is a root.
+    /* Now, Pe [j] is the parent of j, or TRILINOS_CAMD_EMPTY if j is a root.
      * Pe [j] = n if j is a dense/empty node */
 
     /* place all variables in the list of children of their parents */
@@ -1861,7 +1861,7 @@ GLOBAL void TRILINOS_CAMD_2
     for (e = n-1 ; e >= 0 ; e--)
     {
 	if (Nv [e] <= 0) continue ;	    /* skip if e is a variable */
-	if (Pe [e] == EMPTY) continue ;	    /* skip if e is a root */
+	if (Pe [e] == TRILINOS_CAMD_EMPTY) continue ;	    /* skip if e is a root */
 	Next [e] = Head [Pe [e]] ;	    /* place e in list of its parent */
 	Head [Pe [e]] = e ;
     }
@@ -1885,7 +1885,7 @@ GLOBAL void TRILINOS_CAMD_2
     {
 	j = BucketSet [i] ;
 	ASSERT (j >= 0 && j < n) ;
-	if (Pe [j] == EMPTY)
+	if (Pe [j] == TRILINOS_CAMD_EMPTY)
 	{
 	    k = TRILINOS_CAMD_postorder (j, k, n, Head, Next, Perm, W) ;
 	}
@@ -1922,12 +1922,12 @@ GLOBAL void TRILINOS_CAMD_2
 		Bucket [c] = 0 ;
 	    }
 	    i = 0 ;
-	    for (j = Head [n] ; j != EMPTY ; j = Next [j])
+	    for (j = Head [n] ; j != TRILINOS_CAMD_EMPTY ; j = Next [j])
 	    {
 		TRILINOS_CAMD_DEBUG1 (("Dense/empty node: "ID" : "ID" "ID"\n", j,
 		    Pe [j], Elen [j])) ;
 		fflush (stdout) ;
-		ASSERT (Pe [j] == n && Elen [j] == EMPTY) ;
+		ASSERT (Pe [j] == n && Elen [j] == TRILINOS_CAMD_EMPTY) ;
 		i++ ;
 		Bucket [C [j]]++ ;
 	    }
@@ -1946,7 +1946,7 @@ GLOBAL void TRILINOS_CAMD_2
 
 	    /* place dense/empty nodes in BucketSet, in constraint order,
 	     * ties in natural order */
-	    for (j = Head [n] ; j != EMPTY ; j = Next [j])
+	    for (j = Head [n] ; j != TRILINOS_CAMD_EMPTY ; j = Next [j])
 	    {
 		BucketSet [Bucket [C [j]]++] = j ;
 	    }

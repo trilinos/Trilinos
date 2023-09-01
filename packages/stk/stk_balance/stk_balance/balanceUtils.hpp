@@ -108,7 +108,8 @@ public:
   virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const;
   virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const;
   virtual int getGraphVertexWeight(stk::topology type) const;
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const ;
+
+  virtual double getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index = 0) const;
   virtual GraphOption getGraphOption() const;
   virtual double getGraphEdgeWeightMultiplier() const;
 
@@ -141,7 +142,10 @@ public:
   virtual bool isIncrementalRebalance() const;
   virtual bool isMultiCriteriaRebalance() const;
 
-  virtual bool areVertexWeightsProvidedViaFields() const;
+  virtual void setVertexWeightFieldName(std::string field_name, unsigned criteria_index = 0);
+  virtual std::string getVertexWeightFieldName(unsigned criteria_index = 0) const;
+  virtual const stk::mesh::Field<double> * getVertexWeightField(const stk::mesh::BulkData & stkMeshBulkData, unsigned criteria_index = 0) const;
+  virtual void setDefaultFieldWeight(double defaultFieldWeight);
 
   virtual double getImbalanceTolerance() const;
 
@@ -157,7 +161,8 @@ public:
   virtual bool shouldPrintDiagnostics() const;
   virtual bool shouldPrintMetrics() const;
 
-  virtual int getNumCriteria() const;
+  virtual int getNumCriteria() const { return m_numCriteria; }
+  virtual void setNumCriteria(int num_criteria);
 
   // Given an element/proc pair, can modify decomposition before elements are migrated
   virtual void modifyDecomposition(DecompositionChangeList & decomp) const ;
@@ -216,11 +221,15 @@ private:
   std::string m_inputFilename;
   std::string m_outputFilename;
   std::string m_logFilename;
+  int m_numCriteria;
+  double m_defaultFieldWeight;
+  std::vector<std::string> m_vertexWeightFieldNames;
   BlockWeightMultipliers m_vertexWeightBlockMultipliers;
   bool m_useNestedDecomp;
   bool m_shouldPrintDiagnostics;
   mutable const stk::mesh::Field<double> * m_diagnosticElementWeightsField;
   mutable const stk::mesh::Field<double> * m_vertexConnectivityWeightField;
+  mutable std::vector<const stk::mesh::Field<double> *> m_vertexWeightFields;
   VertexWeightMethod m_vertexWeightMethod;
   double m_graphEdgeWeightMultiplier;
 };
@@ -245,8 +254,6 @@ public:
   virtual double getGraphEdgeWeightForSearch() const override;
 
   virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override;
-
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const override;
 
   virtual int getGraphVertexWeight(stk::topology type) const override;
 
@@ -361,29 +368,21 @@ public:
   FieldVertexWeightSettings(stk::mesh::BulkData &stkMeshBulkData,
                             const DoubleFieldType &weightField,
                             const double defaultWeight = 0.0)
-    : m_stkMeshBulkData(stkMeshBulkData),
-      m_weightField(weightField),
-      m_defaultWeight(defaultWeight)
+    : m_stkMeshBulkData(stkMeshBulkData)
   {
     m_method = "parmetis";
     m_includeSearchResultInGraph = false;
+    setVertexWeightMethod(VertexWeightMethod::FIELD);
+    setVertexWeightFieldName(weightField.name());
+    setDefaultFieldWeight(defaultWeight);
   }
   virtual ~FieldVertexWeightSettings() = default;
 
   virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-  virtual bool areVertexWeightsProvidedViaFields() const { return true; }
   virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
   virtual double getImbalanceTolerance() const { return 1.05; }
   virtual void setDecompMethod(const std::string& input_method) { m_method = input_method;}
   virtual std::string getDecompMethod() const { return m_method; }
-
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const
-  {
-    const double *weight = stk::mesh::field_data(m_weightField, entity);
-    if(weight) return *weight;
-
-    return m_defaultWeight;
-  }
 
 protected:
   FieldVertexWeightSettings() = delete;
@@ -391,8 +390,6 @@ protected:
   FieldVertexWeightSettings& operator=(const FieldVertexWeightSettings&) = delete;
 
   const stk::mesh::BulkData & m_stkMeshBulkData;
-  const DoubleFieldType &m_weightField;
-  const double m_defaultWeight;
 };
 
 class MultipleCriteriaSettings : public GraphCreationSettings
@@ -400,54 +397,44 @@ class MultipleCriteriaSettings : public GraphCreationSettings
 public:
   MultipleCriteriaSettings(const std::vector<const stk::mesh::Field<double>*> critFields,
                            const double default_weight = 0.0)
-    : m_critFields(critFields), m_defaultWeight(default_weight)
   {
-    m_includeSearchResultInGraph = false;
+    setIncludeSearchResultsInGraph(false);
+    setNumCriteria(critFields.size());
+    setVertexWeightMethod(VertexWeightMethod::FIELD);
+    for (unsigned i = 0; i < critFields.size(); ++i) {
+      setVertexWeightFieldName(critFields[i]->name(), i);
+    }
+    setDefaultFieldWeight(default_weight);
   }
 
   MultipleCriteriaSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch,
                            const std::string& decompMethod, double multiplierVWSearch,
                            const std::vector<const stk::mesh::Field<double>*> critFields,
                            bool includeSearchResults, const double default_weight = 0.0)
-    : GraphCreationSettings(faceSearchTol, particleSearchTol, edgeWeightSearch, decompMethod, multiplierVWSearch),
-      m_critFields(critFields), m_defaultWeight(default_weight)
+    : GraphCreationSettings(faceSearchTol, particleSearchTol, edgeWeightSearch, decompMethod, multiplierVWSearch)
   {
-    m_includeSearchResultInGraph = includeSearchResults;
+    setIncludeSearchResultsInGraph(includeSearchResults);
+    setNumCriteria(critFields.size());
+    setVertexWeightMethod(VertexWeightMethod::FIELD);
+    for (unsigned i = 0; i < critFields.size(); ++i) {
+      setVertexWeightFieldName(critFields[i]->name(), i);
+    }
+    setDefaultFieldWeight(default_weight);
   }
 
-  virtual ~MultipleCriteriaSettings() = default;
+  virtual ~MultipleCriteriaSettings() override = default;
 
   virtual double getGraphEdgeWeight(stk::topology element1Topology,
                                     stk::topology element2Topology) const override { return 1.0; }
-  virtual bool areVertexWeightsProvidedViaFields() const override { return true; }
   virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
-  virtual int getNumCriteria() const override { return m_critFields.size(); }
   virtual bool isMultiCriteriaRebalance() const override { return true;}
   virtual bool isIncrementalRebalance() const override { return true; }
-
-
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const override
-  {
-    ThrowRequireWithSierraHelpMsg(criteria_index>=0 && static_cast<size_t>(criteria_index)<m_critFields.size());
-    const double *weight = stk::mesh::field_data(*m_critFields[criteria_index], entity);
-    if(weight != nullptr)
-    {
-      ThrowRequireWithSierraHelpMsg(*weight >= 0);
-      return *weight;
-    }
-    else
-    {
-      return m_defaultWeight;
-    }
-  }
 
 protected:
   MultipleCriteriaSettings() = delete;
   MultipleCriteriaSettings(const MultipleCriteriaSettings&) = delete;
   MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
-  const std::vector<const stk::mesh::Field<double>*> m_critFields;
-  const double m_defaultWeight;
 };
 
 class BasicColoringSettings : public BalanceSettings

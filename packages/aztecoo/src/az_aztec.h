@@ -728,7 +728,7 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
 
   extern int AZ_adjust_N_nz_to_fit_memory(int N, int , int);
 
-  extern char *AZ_allocate(unsigned int iii);
+  extern char *AZ_allocate(size_t iii);
 
   extern char *AZ_allocate_or_free(void *ptr, unsigned int size, int action);
 
@@ -1021,7 +1021,7 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
   extern void  AZ_lower_tsolve(double x[],int  , double l[], int il[],
                                int jl[],  double y[] );
 
-  extern double *AZ_manage_memory(unsigned int size, int action, int type,
+  extern double *AZ_manage_memory(size_t size, int action, int type,
                                   char *name, int *status);
 
   extern struct AZ_MATRIX_STRUCT *AZ_matrix_create(int local);
@@ -1195,7 +1195,7 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
                                 int proc_config[], int bigN, int chunk,
                                 int input_option);
 
-  extern char *AZ_realloc(void *ptr, unsigned int size);
+  extern char *AZ_realloc(void *ptr, size_t size);
 
   extern void AZ_recover_sol_params(int instance, int **sub_options,
                                     double **sub_params, double **sub_status, AZ_MATRIX **sub_matrix,

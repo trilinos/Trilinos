@@ -73,12 +73,6 @@ def parse_args():
                           help='Repo with the new changes',
                           required=True)
 
-    required.add_argument('--source-branch-name',
-                          dest="source_branch_name",
-                          action='store',
-                          help='Branch with the new changes',
-                          required=True)
-
     required.add_argument('--target-repo-url',
                           dest="target_repo_url",
                           action='store',
@@ -225,6 +219,12 @@ def parse_args():
                                "based on number_of_available_cores / max_test_parallelism" + \
                                " Default = %(default)s")
 
+    optional.add_argument("--enable-ccache",
+                          dest="ccache_enable",
+                          action="store_true",
+                          default=False,
+                          help="Enable ccache object caching to improve build times. Default = %(default)s")
+
     optional.add_argument("--dry-run",
                           dest="dry_run",
                           action="store_true",
@@ -244,7 +244,6 @@ def parse_args():
     print("| PullRequestLinuxDriverTest Parameters")
     print("+" + "="*78 + "+")
     print("| - [R] source-repo-url             : {source_repo_url}".format(**vars(arguments)))
-    print("| - [R] source-branch-name          : {source_branch_name}".format(**vars(arguments)))
     print("| - [R] target_repo_url             : {target_repo_url}".format(**vars(arguments)))
     print("| - [R] target_branch_name          : {target_branch_name}".format(**vars(arguments)))
     print("| - [R] pullrequest-build-name      : {pullrequest_build_name}".format(**vars(arguments)))
@@ -257,6 +256,7 @@ def parse_args():
     print("| - [R] ctest-drop-site             : {ctest_drop_site}".format(**vars(arguments)))
     print("|")
     print("| - [O] dry-run                     : {dry_run}".format(**vars(arguments)))
+    print("| - [O] enable-ccache               : {ccache_enable}".format(**vars(arguments)))
     print("| - [O] filename-packageenables     : {filename_packageenables}".format(**vars(arguments)))
     print("| - [O] max-cores-allowed           : {max_cores_allowed}".format(**vars(arguments)))
     print("| - [O] num-concurrent-tests        : {num_concurrent_tests}".format(**vars(arguments)))

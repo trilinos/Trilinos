@@ -260,7 +260,7 @@ Entity EntityKeyMapping::get_entity(const EntityKey &key) const
 
   clear_updated_entity_cache(rank);
 
-  ThrowErrorMsgIf( ! key.is_valid(),
+  STK_ThrowErrorMsgIf( ! key.is_valid(),
       "Invalid key: " << key.rank() << " " << key.id());
 
   if (rank >= entity_rank_count()) {

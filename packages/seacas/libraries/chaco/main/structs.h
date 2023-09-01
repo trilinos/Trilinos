@@ -1,20 +1,18 @@
-#ifndef CHACO_MAIN_STRUCTS_H
-#define CHACO_MAIN_STRUCTS_H
-
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
+#pragma once
 /**< An array of these stores all the data for the graph/matrix. */
 struct vtx_data
 {
   int vwgt;     /**< weight of vertex */
   int nedges;   /**< number of neighbors of vertex in subgraph */
                 /**< Note: above always includes self-edge first */
-  int *  edges; /**< neighbor list in subgraph numbering scheme */
+  int   *edges; /**< neighbor list in subgraph numbering scheme */
   float *ewgts; /**< weights of all the edges */
                 /**< Note: above 2 fields have self-edge first */
 };
@@ -26,7 +24,7 @@ struct msg_data
   double           dur;   /**< duration of message */
   double           beg;   /**< time at which message begins */
   double           end;   /**< time at which message end */
-  struct list *    route; /**< linked list of ints stores message route */
+  struct list     *route; /**< linked list of ints stores message route */
   struct msg_data *pntr;  /**< pointer to next outgoing message from this set */
 };
 
@@ -39,7 +37,7 @@ struct orthlink
   double           betaji;  /**< residual bound on good ritz pair */
   double           tau;     /**< from orthogonality recursion */
   double           prevtau; /**< from orthogonality recursion */
-  double *         vec;     /**< vector to orthogonalize against */
+  double          *vec;     /**< vector to orthogonalize against */
   struct orthlink *pntr;    /**< pointer to next link */
 };
 
@@ -52,7 +50,7 @@ struct orthlink_float
   double                 betaji;  /**< residual bound on good ritz pair */
   double                 tau;     /**< from orthogonality recursion */
   double                 prevtau; /**< from orthogonality recursion */
-  float *                vec;     /**< vector to orthogonalize against */
+  float                 *vec;     /**< vector to orthogonalize against */
   struct orthlink_float *pntr;    /**< pointer to next link */
 };
 
@@ -82,8 +80,8 @@ struct edgeslist
 /**< These store all the data needed to modify edges for connectivity. */
 struct connect_data
 {
-  struct ilists *   old_edges;  /**< overwritten old edges */
-  struct flists *   old_ewgts;  /**< overwritten old weights */
+  struct ilists    *old_edges;  /**< overwritten old edges */
+  struct flists    *old_ewgts;  /**< overwritten old weights */
   struct edgeslist *new_edges;  /**< list of new edges */
   int               old_nedges; /**< original number of edges in graph */
 };
@@ -107,7 +105,7 @@ struct list
 
 struct lists
 {                         /**< linked list of lists */
-  struct list * begin;    /**< pointer to list */
+  struct list  *begin;    /**< pointer to list */
   struct lists *nextlist; /**< next list header */
 };
 
@@ -125,14 +123,14 @@ struct ipairs
 
 struct ilists
 { /**< linked list of integer lists */
-  int *          list;
+  int           *list;
   struct ilists *next;
 };
 
 struct flists
 { /**< linked list of floating lists */
-  float *        list;
+  float         *list;
   struct flists *next;
 };
 
-#endif
+#include "prototypes.h"

@@ -44,6 +44,7 @@ include(TribitsAddTestHelpers)
 include(TribitsGeneralMacros)
 include(TribitsLibIsTestOnly)
 include(TribitsReportInvalidTribitsUsage)
+include(TribitsDeprecatedHelpers)
 
 include(PrintVar)
 include(AppendSet)
@@ -170,9 +171,9 @@ include(CMakeParseArguments)
 #   ``TESTONLYLIBS <lib0> <lib1> ...``
 #
 #     Specifies extra test-only libraries defined in this CMake project that
-#     will be linked to the executable using ``target_link_libraries()``.  Note
-#     that regular libraries (i.e. not ``TESTONLY``) defined in the current SE
-#     package or any upstream SE packages can *NOT* be listed!  TriBITS
+#     will be linked to the executable using ``target_link_libraries()``.
+#     Note that regular libraries (i.e. not ``TESTONLY``) defined in the
+#     current package or any upstream packages can *NOT* be listed!  TriBITS
 #     automatically links non ``TESTONLY`` libraries in this package and
 #     upstream packages to the executable.  The only libraries that should be
 #     listed in this argument are either ``TESTONLY`` libraries.
@@ -374,7 +375,7 @@ function(tribits_add_executable EXE_NAME)
   endif()
 
   if (PARSE_DEFINES)
-    message(WARNING "WARNING: Passing extra defines through 'DEFINES' ${PARSE_DEFINES}"
+    tribits_deprecated("Passing extra defines through 'DEFINES' ${PARSE_DEFINES}"
       " is deprecated.  Instead, pass them through 'TARGET_DEFINES'.  The 'DEFINES'"
       " argument was incorrectly implemented by calling add_definitions() which has"
       " directory scope and not function scope as was documented.  This resulted in"
@@ -587,10 +588,10 @@ function(tribits_add_executable_assert_testonlylibs)
     tribits_lib_is_testonly(${prefixedTestOnlyLib} libIsTestOnlyLib)
     if (NOT libIsTestOnlyLib)
       message(FATAL_ERROR "ERROR: '${testOnlyLib}' in TESTONLYLIBS not a TESTONLY lib!"
-        "  If this a regular library in this SE package or in an dependent upstream SE"
+        "  If this a regular library in this package or in an dependent upstream"
         " package then TriBITS will link automatically to it.  If you remove this and it"
-        " does not link, then you need to add a new SE package dependency to"
-        " this SE package's dependencies file"
+        " does not link, then you need to add a new package dependency to"
+        " this package's dependencies file"
         " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
     elseif(PARSE_INSTALLABLE)
       message(FATAL_ERROR "ERROR: TESTONLY lib '${testOnlyLib}' not allowed with"
@@ -626,18 +627,18 @@ function(tribits_add_executable_assert_importedlibs)
     if (NOT foundPrefixedImportedLibInPkgLibs_idx EQUAL -1)
       message(FATAL_ERROR
         "ERROR: Lib '${importedLib}' in IMPORTEDLIBS is in"
-        " this SE package and is *not* an external lib!"
+        " this package and is *not* an external lib!"
         "  TriBITS takes care of linking against libs the current"
-        " SE package automatically.  Please remove '${importedLib}' from IMPORTEDLIBS!")
+        " package automatically.  Please remove '${importedLib}' from IMPORTEDLIBS!")
     elseif (TARGET ${prefixedImportedLib})
       message(FATAL_ERROR
         "ERROR: Lib '${importedLib}' being passed through"
         " IMPORTEDLIBS is *not* an external library but instead is a library"
         " defined in this CMake project!"
         "  TriBITS takes care of linking against libraries in dependent upstream"
-        " SE packages.  If you want to link to a library in an upstream SE"
-        " package then add the SE package name for that library to the appropriate"
-        " list in this SE package's dependencies file"
+        " packages.  If you want to link to a library in an upstream"
+        " package then add the package name for that library to the appropriate"
+        " list in this package's dependencies file"
         " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
     endif()
   endforeach()
@@ -657,19 +658,19 @@ macro(tribits_add_executable_convert_from_deplibs)
     set(prefixedDepLib "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${depLib}")
     tribits_lib_is_testonly(${prefixedDepLib} depLibIsTestOnlyLib)
     if (depLibIsTestOnlyLib)
-      message(WARNING "WARNING: Passing TESTONLY lib '${depLib}' through DEPLIBS"
+      tribits_deprecated("Passing TESTONLY lib '${depLib}' through DEPLIBS"
         " is deprecated!  Instead, please pass through TESTONLYLIBS instead!"
         "  DEPLIBS is deprecated!")
       list(APPEND PARSE_TESTONLYLIBS ${depLib})
     elseif (TARGET ${prefixedDepLib})
-      message(WARNING "WARNING: Passing non-TESTONLY lib '${depLib}' through DEPLIBS"
+      tribits_deprecated("Passing non-TESTONLY lib '${depLib}' through DEPLIBS"
       " is deprecated!  The library '${depLib}' appears to be a"
       " library defined in this CMake project."
       "  TriBITS takes care of linking against libraries in dependent upstream"
-      " SE packages.  Therefore, please remove '${depLib}' from this list."
-      "   If you want to link to a library from an upstream SE"
-      " package, then add the SE package name to the appropriate category"
-      " in this SE package's dependencies file: "
+      " packages.  Therefore, please remove '${depLib}' from this list."
+      "   If you want to link to a library from an upstream"
+      " package, then add the package name to the appropriate category"
+      " in this package's dependencies file: "
       " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
       # ToDo: Convert the above 'WARNING' to 'SEND_ERROR'
     else()

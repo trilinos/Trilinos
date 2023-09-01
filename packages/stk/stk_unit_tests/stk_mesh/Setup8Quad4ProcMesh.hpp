@@ -61,7 +61,7 @@
 inline
 void setup8Quad4ProcMesh2D(stk::mesh::BulkData& bulk)
 {
-  ThrowRequire(bulk.parallel_size() == 4);
+  STK_ThrowRequire(bulk.parallel_size() == 4);
   //
   //     id/proc
   //     11/0--12/0--13/1--14/2--15/3

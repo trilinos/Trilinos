@@ -287,7 +287,7 @@ namespace MueLu {
 
     if (this->IsSetup() == true) {
       this->GetOStream(Warnings0) << "MueLu::Ifpack2moother::SetupAggregate(): Setup() has already been called" << std::endl;
-      this->GetOStream(Warnings0) << "MueLu::IfpackSmoother::SetupAggregate(): reuse of this type is not available, reverting to full construction" << std::endl;    
+      this->GetOStream(Warnings0) << "MueLu::IfpackSmoother::SetupAggregate(): reuse of this type is not available, reverting to full construction" << std::endl;
     }
 
     this->GetOStream(Statistics0) << "IfpackSmoother: Using Aggregate Smoothing"<<std::endl;
@@ -307,7 +307,7 @@ namespace MueLu {
       dof_ids.resize(aggregate_ids.size() * blocksize);
       for(LO i=0; i<(LO)aggregate_ids.size(); i++) {
         for(LO j=0; j<(LO)blocksize; j++)
-          dof_ids[i*blocksize+j] = aggregate_ids[i];    
+          dof_ids[i*blocksize+j] = aggregate_ids[i];
       }
     }
     else {

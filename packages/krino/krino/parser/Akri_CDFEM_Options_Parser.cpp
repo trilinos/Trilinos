@@ -13,6 +13,7 @@
 #include <Akri_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
+#include <Akri_RefinementSupport.hpp>
 
 namespace krino {
 
@@ -23,6 +24,11 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaDat
   if ( cdfem_node )
   {
     CDFEM_Support & cdfem_support = CDFEM_Support::get(meta);
+    RefinementSupport & refinementSupport = RefinementSupport::get(meta);
+
+    bool usePercept = false;
+    cdfem_node.get_if_present("use_percept", usePercept);
+    refinementSupport.set_use_percept(usePercept);
 
     std::string cdfem_edge_degeneracy_handling_string;
     if (cdfem_node.get_if_present("cdfem_edge_degeneracy_handling", cdfem_edge_degeneracy_handling_string))
@@ -38,6 +44,11 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaDat
       else
       {
         cdfem_support.set_cdfem_edge_degeneracy_handling( it->second );
+        if (it->second == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
+        {
+          const double defaultEdgeTolWhenSnapping = 0.05;
+          cdfem_support.set_cdfem_edge_tol( defaultEdgeTolWhenSnapping );
+        }
       }
     }
 
@@ -51,6 +62,16 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaDat
         cdfem_edge_tol = minimum_edge_tol;
       }
       cdfem_support.set_cdfem_edge_tol( cdfem_edge_tol );
+    }
+
+    double maxEdgeSnap = 1.0;
+    if (cdfem_node.get_if_present("max_edge_snap", maxEdgeSnap))
+    {
+      if (maxEdgeSnap < 0. || maxEdgeSnap > 1.)
+      {
+        stk::RuntimeDoomedAdHoc() << "max_edge_snap must be in the range of 0 to 1: " << cdfem_node.info();
+      }
+      cdfem_support.set_max_edge_snap( maxEdgeSnap );
     }
 
     std::string cdfem_simplex_generation_method_string;
@@ -94,25 +115,25 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaDat
 
     if (interface_refinement_specified)
     {
-      cdfem_support.activate_interface_refinement( interface_minimum_refinement_level, interface_maximum_refinement_level );
+      refinementSupport.activate_interface_refinement( interface_minimum_refinement_level, interface_maximum_refinement_level );
     }
 
     int nonconformal_adapt_levels = 0;
     if (cdfem_node.get_if_present("cdfem_nonconformal_adaptivity_levels", nonconformal_adapt_levels))
     {
-      cdfem_support.activate_nonconformal_adaptivity( nonconformal_adapt_levels );
+      refinementSupport.activate_nonconformal_adaptivity( nonconformal_adapt_levels );
     }
 
     int post_adapt_refine_levels = 0;
     if (cdfem_node.get_if_present("post_adaptivity_uniform_refinement_levels", post_adapt_refine_levels))
     {
-      cdfem_support.set_post_adapt_refinement_levels( post_adapt_refine_levels );
+      refinementSupport.set_post_adapt_refinement_levels( post_adapt_refine_levels );
     }
 
     uint64_t nonconformal_adapt_target_element_count = 0;
     if (cdfem_node.get_if_present("nonconformal_adaptivity_target_element_count", nonconformal_adapt_target_element_count))
     {
-      cdfem_support.activate_nonconformal_adapt_target_count( nonconformal_adapt_target_element_count );
+      refinementSupport.activate_nonconformal_adapt_target_count( nonconformal_adapt_target_element_count );
     }
 
     int post_cdfem_refinement_levels = 0;
@@ -135,7 +156,7 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaDat
 
     bool myFlagDoNearbyRefinementBeforeInterfaceRefinement = false;
     cdfem_node.get_if_present("perform_initial_refinement_near_interfaces", myFlagDoNearbyRefinementBeforeInterfaceRefinement);
-    cdfem_support.do_nearby_refinement_before_interface_refinement( myFlagDoNearbyRefinementBeforeInterfaceRefinement );
+    refinementSupport.do_nearby_refinement_before_interface_refinement( myFlagDoNearbyRefinementBeforeInterfaceRefinement );
   }
 }
 

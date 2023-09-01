@@ -39,7 +39,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_performance_tests/stk_mesh/timer.hpp>
+#include <stk_unit_test_utils/timer.hpp>
 #include <cstdlib>
 
 using EntityIdPair = std::pair<stk::mesh::EntityId,stk::mesh::EntityId>;
@@ -88,12 +88,12 @@ public:
     stk::mesh::Part& block2 = *get_meta().get_part("block_2");
     stk::mesh::Selector sharedButNotBlock2 = get_meta().globally_shared_part() & !block2;
     const stk::mesh::BucketVector& nodeBuckets = get_bulk().get_buckets(stk::topology::NODE_RANK, sharedButNotBlock2);
-    ThrowRequire(!nodeBuckets.empty());
-    ThrowRequire(nodeBuckets[0]->size() > 0);
+    STK_ThrowRequire(!nodeBuckets.empty());
+    STK_ThrowRequire(nodeBuckets[0]->size() > 0);
 
     stk::mesh::Entity node = (*nodeBuckets[0])[0];
     stk::mesh::Entity elem = get_owned_element(node);
-    ThrowRequire(get_bulk().is_valid(elem));
+    STK_ThrowRequire(get_bulk().is_valid(elem));
     get_bulk().change_entity_parts(elem, stk::mesh::ConstPartVector{&block2});
   }
 };
@@ -111,26 +111,31 @@ TEST_F( StressEntityKeyMapping, Timing )
   unsigned arbitrarySeed = 1919;
   std::srand(arbitrarySeed);
 
-  stk::performance_tests::Timer timer(get_comm());
-  timer.start_timing();
-  setup_host_mesh();
+  const unsigned NUM_RUNS = 5;
+  const int numElementsToChange = 10;
+  const int numGetEntityQueries = 1000000;
 
-  const int numElementsToChange = 20;
-  for(int i=0; i<numElementsToChange; ++i) {
-    get_bulk().modification_begin();
-    add_1_element_to_block_2();
-    get_bulk().modification_end();
-  }
+  stk::unit_test_util::BatchTimer batchTimer(get_comm());
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    setup_host_mesh();
+    batchTimer.start_batch_timer();
   
-  std::pair<stk::mesh::EntityId,stk::mesh::EntityId> minMaxElemIds = get_min_max_elem_ids_on_local_proc();
+    for(int i=0; i<numElementsToChange; ++i) {
+      get_bulk().modification_begin();
+      add_1_element_to_block_2();
+      get_bulk().modification_end();
+    }
+  
+    std::pair<stk::mesh::EntityId,stk::mesh::EntityId> minMaxElemIds = get_min_max_elem_ids_on_local_proc();
 
-  const int numGetEntityQueries = 3000000;
+    for (int i=0; i<numGetEntityQueries; i++) {
+      stk::mesh::EntityId id = get_random_id(minMaxElemIds);
+      get_bulk().get_entity(stk::topology::ELEM_RANK, id);
+    }
 
-  for (int i=0; i<numGetEntityQueries; i++) {
-    stk::mesh::EntityId id = get_random_id(minMaxElemIds);
-    get_bulk().get_entity(stk::topology::ELEM_RANK, id);
+    batchTimer.stop_batch_timer();
+    reset_mesh();
   }
-
-  timer.update_timing();
-  timer.print_timing(numGetEntityQueries);
+  batchTimer.print_batch_timing(numGetEntityQueries);
 }

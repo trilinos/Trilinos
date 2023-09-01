@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_Property.h>       // for Property
@@ -31,7 +33,7 @@ namespace Ioss {
    *
    *
    */
-  class EntitySet : public GroupingEntity
+  class IOSS_EXPORT EntitySet : public GroupingEntity
   {
   public:
     EntitySet &operator=(const EntitySet &)                                     = delete;
@@ -42,7 +44,6 @@ namespace Ioss {
     EntitySet(const EntitySet &) = default;
     ~EntitySet() override        = default;
 
-  protected:
     void count_attributes() const;
   };
 } // namespace Ioss

@@ -275,6 +275,8 @@ protected:
  * @param pList  ParameterList defining the integrator options and options
  *               defining the sensitivity analysis
  * @param model  ModelEvaluator for the problem
+ * @param sens_residual_model  Sensitivity residual model
+ * @param sens_solve_model     Sensitivity solve model
  *
  * @return Time integrator implementing forward sensitivity
  */

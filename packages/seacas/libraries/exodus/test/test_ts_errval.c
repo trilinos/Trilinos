@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,7 +34,7 @@ void *error_test(void *varg)
   const char *message;
   int         err_num;
   /*  ex_opts(EX_VERBOSE); */
-  sprintf(name, "Thread%ld", arg->threadid);
+  snprintf(name, 32, "Thread%ld", arg->threadid);
   for (i = EX_MEMFAIL; i <= EX_INTERNAL; i++) {
     ex_err(name, "Testing thread-safe exodus", i);
     ex_get_err(&message, &routine, &err_num);

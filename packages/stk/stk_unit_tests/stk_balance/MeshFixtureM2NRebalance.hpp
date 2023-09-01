@@ -118,7 +118,7 @@ protected:
 
         for (const std::string & subsetPartName : ag.subsetPartNames) {
           stk::mesh::Part * subsetPart = tMesh.get_meta().get_part(subsetPartName);
-          ThrowRequire(subsetPart != nullptr);
+          STK_ThrowRequire(subsetPart != nullptr);
           tMesh.get_meta().declare_part_subset(assemblyPart, *subsetPart);
         }
       }
@@ -146,6 +146,7 @@ protected:
     stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
                                                                                              get_input_file_name(),
                                                                                              m_transientFieldName,
+                                                                                             stk::topology::NODE_RANK,
                                                                                              m_globalVariableName,
                                                                                              m_transientTimeSteps,
                                                                                              stk::unit_test_util::IdAndTimeFieldValueSetter());

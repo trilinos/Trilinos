@@ -139,7 +139,7 @@ function(tribits_tpl_allow_pre_find_package  TPL_NAME  ALLOW_PACKAGE_PREFIND_OUT
     OR (NOT "${${TPL_NAME}_LIBRARY_NAMES}" STREQUAL "")
     OR (NOT "${${TPL_NAME}_LIBRARY_DIRS}" STREQUAL "")
     )
-    # One ore more of the ${TPL_NAME}_XXX variables are set
+    # One or more of the ${TPL_NAME}_XXX variables are set
     if (${TPL_NAME}_FORCE_PRE_FIND_PACKAGE)
       # Even with one or more of the ${TPL_NAME}_XXX vars set, we still want
       # to do the find_package(${TPL_NAME} ...) search and ignore this
@@ -676,8 +676,11 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
       advanced_set(TPL_${TPL_NAME}_INCLUDE_DIRS ${${TPL_NAME}_INCLUDE_DIRS}
         CACHE PATH "User provided include dirs in the absence of include files.")
     else()
-      # Library has no header files, no user override, so just set them to null
-      global_null_set(TPL_${TPL_NAME}_INCLUDE_DIRS)
+      if ("${TPL_${TPL_NAME}_INCLUDE_DIRS}" STREQUAL "")
+        # Library has no header files, no user override, so just set them to
+        # null (unless the user has already set this).
+        global_null_set(TPL_${TPL_NAME}_INCLUDE_DIRS)
+      endif()
     endif()
 
   endif()
@@ -721,8 +724,6 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
   tribits_extpkg_write_config_file(${TPL_NAME} "${tplConfigFile}")
   if (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
     include("${tplConfigFile}")
-    set(${TPL_NAME}_DIR "${tplConfigFileBaseDir}" CACHE INTERNAL
-       "TriBITS-generated ${TPL_NAME}Config.cmake file used from this dir")
   endif()
   # NOTE: The file <tplName>ConfigVersion.cmake will get created elsewhere as
   # will the install targets for the files <tplName>Config and
@@ -741,9 +742,9 @@ endfunction()
 #   tribits_tpl_tentatively_enable(<tplName>)
 # 
 # This function can be called from any CMakeLists.txt file to put a TPL in
-# tentative enable mode.  But typically, it is called from an SE Package's
+# tentative enable mode.  But typically, it is called from an Package's
 # `<packageDir>/cmake/Dependencies.cmake`_ file (see `How to tentatively
-# enable a TPL`_).
+# enable an external package/TPL`_).
 #
 # This should only be used for optional TPLs.  It will not work correctly for
 # required TPLs because any enabled packages that require this TPL will not be

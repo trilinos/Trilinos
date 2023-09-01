@@ -59,7 +59,7 @@ void StkBalanceRunner::set_output_dir(const std::string& name)
 
 void StkBalanceRunner::set_app_type_defaults(const std::string& defaults)
 {
-  ThrowRequireMsg(defaults == "sm" || defaults == "sd",
+  STK_ThrowRequireMsg(defaults == "sm" || defaults == "sd",
       "Passed the invalid app type default specification " << defaults
       << " to StkBalanceRunner");
 

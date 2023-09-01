@@ -61,6 +61,7 @@ The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
 * `${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`_
+* `${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`_
 * `${PROJECT_NAME}_C_Standard`_
 * `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
@@ -88,6 +89,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
 * `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
+* `${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`_
 * `${PROJECT_NAME}_TEST_CATEGORIES`_
 * `${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`_
 * `${PROJECT_NAME}_TRACE_ADD_TEST`_
@@ -97,6 +99,7 @@ a given TriBITS project are:
 * `CMAKE_INSTALL_RPATH_USE_LINK_PATH`_
 * `MPI_EXEC_MAX_NUMPROCS`_
 * `PythonInterp_FIND_VERSION`_
+* `TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE`_
 
 These options are described below.
 
@@ -119,6 +122,25 @@ These options are described below.
     set(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT WARNING)
 
   in the project's base `<projectDir>/ProjectName.cmake`_ file.
+
+
+.. _${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES:
+
+**${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES**
+
+  To set ``${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`` a different default,
+  set::
+
+    set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_DEFAULT  <newDefault>)
+
+  in the project's base `<projectDir>/ProjectName.cmake`_ file, where
+  ``<newDefault>`` can be ``FATAL_ERROR``, ``SEND_ERROR``, ``WARNING``,
+  ``NOTICE`` or ``IGNORE``
+
+  Otherwise, the default is ``WARNING`` when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is ``ON`` and if ``IGNORE`` if
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is ``OFF``.
+
 
 .. _${PROJECT_NAME}_C_Standard:
 
@@ -257,7 +279,7 @@ These options are described below.
   processed in CTest -S driver scripts using ``tribits_ctest_driver()``.)
 
   In general, a project should change the default to ``TRUE`` when using a
-  newer CDash installation with CDash versions 3.0+ that can accomidate the
+  newer CDash installation with CDash versions 3.0+ that can accommodate the
   results coming from ctest -S and display them package-by-package very
   nicely.  Otherwise, most projects are better off with package-by-package
   mode since it results in nicer display on CDash for older CDash versions.
@@ -280,7 +302,7 @@ These options are described below.
 
 **${PROJECT_NAME}_ELEVATE_ST_TO_PT**
 
-  If ``${PROJECT_NAME}_ELEVATE_ST_TO_PT`` is set to ``ON``, then all ``ST`` SE
+  If ``${PROJECT_NAME}_ELEVATE_ST_TO_PT`` is set to ``ON``, then all ``ST``
   packages will be elevated to ``PT`` packages.  The TriBITS default is
   obviously ``OFF``.  The default can be changed by setting::
 
@@ -349,11 +371,12 @@ These options are described below.
   to ``OFF`` when creating a release (see `Project and Repository Versioning
   and Release Mode`_).  When ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is
   ``ON``, several other variables are given defaults appropriate for
-  development mode.  For example, ``${PROJECT_NAME}_ASSERT_MISSING_PACKAGES``
-  is set to ``ON`` by default in development mode but is set to ``OFF`` by
-  default in release mode.  In addition, strong compiler warnings are enabled
-  by default in development mode but are disabled by default in release mode.
-  This variable also affects the behavior of `tribits_set_st_for_dev_mode()`_.
+  development mode.  For example,
+  ``${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`` is set to ``FATAL_ERROR`` by
+  default in development mode but is set to ``IGNORE`` by default in release
+  mode.  In addition, strong compiler warnings are enabled by default in
+  development mode but are disabled by default in release mode.  This variable
+  also affects the behavior of `tribits_set_st_for_dev_mode()`_.
  
 .. _${PROJECT_NAME}_ENABLE_Fortran:
   
@@ -649,6 +672,19 @@ These options are described below.
   date/time for regular tests added with `tribits_add_test()`_ (which uses a
   raw command with ``add_test()``).
 
+.. _${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES:
+
+**${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES**
+
+  To change the default value of the
+  ``${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`` to ``TRUE``, for
+  example, for a TriBITS project, set::
+
+    set(${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES_DEFAULT TRUE)
+
+  in the project's `<projectDir>/CMakeLists.txt`_ or
+  `<projectDir>/ProjectName.cmake`_ files.
+
 .. _${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE:
 
 **${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE**
@@ -723,14 +759,14 @@ These options are described below.
   thereby avoid the defect with gfortran described above.  If CMake version
   3.3 or greater is used, this variable is not required.
 
-  NOTE: Currently, a TriBITS SE package must have a direct dependency on a TPL
+  NOTE: Currently, a TriBITS package must have a direct dependency on a TPL
   to have ``-isystem`` added to a TPL's include directories on the compile
   lines for that package.  That is, the TPL must be listed in the
   ``LIB_REQUIRED_TPLS`` or ``LIB_OPTIONAL_TPLS`` arguments passed into the
-  `tribits_package_define_dependencies()`_ function in the SE package's
+  `tribits_package_define_dependencies()`_ function in the package's
   `<packageDir>/cmake/Dependencies.cmake`_ file.  In addition, to have
   ``-isystem`` added to the include directories for a TPL when compiling the
-  tests for an SE package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
+  tests for an package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
   ``TEST_OPTIONAL_TPLS`` arguments.  This is a limitation of the TriBITS
   implementation that will be removed in a future version of TriBITS.
 
@@ -840,6 +876,19 @@ These options are described below.
   Python by configuring with, for example::
 
     -D PythonInterp_FIND_VERSION="3.6.2"
+
+.. _TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE:
+
+**TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE**
+
+  Determines how the function `tribits_deprecated()`_ behaves.  To change the
+  default behavor, such as call ``message(FATAL_ERROR ...)``, set::
+
+    set(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_DEFAULT  FATAL_ERROR)
+
+  in the project's `<projectDir>/ProjectName.cmake`_ file, or
+  `<projectDir>/CMakeLists.txt`_ file, or on the individual package basis in
+  its `<packageDir>/CMakeLists.txt`_ file.
 
 
 TriBITS Macros and Functions

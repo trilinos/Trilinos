@@ -32,12 +32,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
+TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
 
 FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_EXECUTABLE(
-    search_unit_tests
+    stk_search_utest
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
@@ -45,8 +45,7 @@ TRIBITS_ADD_EXECUTABLE(
     )
 
 TRIBITS_ADD_TEST(
-    search_unit_tests
-    NAME STKSearch_unit_tests
+    stk_search_utest
     ARGS ""
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"

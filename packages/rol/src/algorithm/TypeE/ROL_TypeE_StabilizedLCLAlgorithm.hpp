@@ -48,6 +48,7 @@
 #include "ROL_AugmentedLagrangianObjective.hpp"
 #include "ROL_ElasticLinearConstraint.hpp"
 #include "ROL_ElasticObjective.hpp"
+#include "ROL_Secant.hpp"
 
 /** \class ROL::TypeE::StabilizedLCLAlgorithm
     \brief Provides an interface to run equality constrained optimization algorithms
@@ -61,6 +62,7 @@ namespace TypeE {
 template<typename Real>
 class StabilizedLCLAlgorithm : public TypeE::Algorithm<Real> {
 private:
+  const Ptr<Secant<Real>> secant_;
   ParameterList list_;
   // Lagrange multiplier update
   bool useDefaultInitPen_;
@@ -110,7 +112,7 @@ private:
 
 public:
 
-  StabilizedLCLAlgorithm(ParameterList &list);
+  StabilizedLCLAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant = nullPtr);
 
   using TypeE::Algorithm<Real>::run;
   virtual void run( Problem<Real> &problem,

@@ -59,7 +59,7 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_BrickAggregationFactory_fwd.hpp"
 
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_GraphBase_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
 #include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
@@ -159,9 +159,9 @@ namespace MueLu {
      int nx_, ny_, nz_;
     mutable
      int bx_, by_, bz_;
-    mutable 
+    mutable
      bool dirichletX_,dirichletY_,dirichletZ_;
-    mutable 
+    mutable
      int naggx_, naggy_, naggz_;
 
     mutable

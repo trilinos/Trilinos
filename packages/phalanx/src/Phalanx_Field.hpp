@@ -51,7 +51,6 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_any.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Sacado.hpp"
@@ -134,7 +133,7 @@ namespace PHX {
 
     ~Field();
 
-    static const int ArrayRank=array_type::Rank;
+    static const int ArrayRank=array_type::rank;
 
     const PHX::FieldTag& fieldTag() const;
 

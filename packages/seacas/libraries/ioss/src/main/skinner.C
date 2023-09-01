@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -239,8 +239,7 @@ namespace {
 
     output_region.begin_mode(Ioss::STATE_DEFINE_MODEL);
 
-    Ioss::NodeBlock *nbo =
-        new Ioss::NodeBlock(output_region.get_database(), "nodeblock_1", ref_count, 3);
+    auto *nbo = new Ioss::NodeBlock(output_region.get_database(), "nodeblock_1", ref_count, 3);
 
     // Count number of nodes owned by this processor (owner_out[i] == myProcessor);
     size_t owned = std::count_if(owner_out.begin(), owner_out.end(),
@@ -259,7 +258,7 @@ namespace {
     // Count faces per element block and create output element block...
     for (auto &eb : ebs) {
       const std::string &name      = eb->name();
-      auto              &boundary  = boundary_faces[name];
+      const auto        &boundary  = boundary_faces[name];
       auto               face_topo = eb->topology()->face_type(0);
       std::string        topo      = "shell";
       if (face_topo == nullptr) {
@@ -291,7 +290,7 @@ namespace {
     INT  fid               = 0;
     for (auto &eb : ebs) {
       const std::string &name       = eb->name();
-      auto              &boundary   = boundary_faces[name];
+      const auto        &boundary   = boundary_faces[name];
       auto              *block      = output_region.get_element_block(name);
       size_t             node_count = block->topology()->number_corner_nodes();
 

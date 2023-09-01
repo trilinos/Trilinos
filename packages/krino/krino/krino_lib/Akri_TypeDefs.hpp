@@ -10,8 +10,6 @@
 #define SIERRA_Akri_TypeDefs_h
 
 #include <stk_util/util/Array.hpp>
-#include <Akri_Vec.hpp>
-#include <vector>
 
 namespace krino {
 
@@ -19,8 +17,6 @@ namespace krino {
   class NPE_VAR{};
   class NPE_COORD{};
   class DIM{};
-  
-  typedef std::vector< Vector3d > PointVec;
 
 }
 

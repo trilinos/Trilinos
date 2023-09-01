@@ -16,7 +16,7 @@ SubElementChildNodeAncestry::SubElementChildNodeAncestry( stk::CommBuffer & b )
 {
   size_t ancestrySize = 0;
   b.unpack(ancestrySize);
-  ThrowAssert(ancestrySize > 0);
+  STK_ThrowAssert(ancestrySize > 0);
 
   myAncestry.reserve(ancestrySize);
 
@@ -97,7 +97,7 @@ SubElementChildNodeAncestry::is_shared(const stk::mesh::BulkData & mesh, const S
 void
 SubElementChildNodeAncestry::pack_into_buffer(stk::CommBuffer & b) const
 {
-  ThrowAssert(!myAncestry.empty());
+  STK_ThrowAssert(!myAncestry.empty());
   const size_t ancestrySize = myAncestry.size();
   b.pack(ancestrySize);
   for (auto&& cut : myAncestry)
@@ -122,7 +122,7 @@ SubElementChildNodeAncestry::find_subelement_node(CDMesh & mesh) const
 const SubElementNode *
 SubElementChildNodeAncestry::find_subelement_node(CDMesh & mesh, unsigned & ancestryIndex) const
 {
-  ThrowAssert(ancestryIndex < myAncestry.size());
+  STK_ThrowAssert(ancestryIndex < myAncestry.size());
   const Cut & cut = myAncestry[ancestryIndex];
   const size_t numParents = cut.myParentIDs.size();
   std::vector<const SubElementNode*> parents(numParents, nullptr);
@@ -192,7 +192,7 @@ SubElementChildNodeAncestry::get_constrained_node_ancestries(const std::unordere
 const SubElementNode *
 SubElementChildNodeAncestry::build_missing_child_nodes(CDMesh & mesh, unsigned & ancestryIndex) const
 {
-  ThrowAssert(ancestryIndex < myAncestry.size());
+  STK_ThrowAssert(ancestryIndex < myAncestry.size());
   const Cut & cut = myAncestry[ancestryIndex];
   const size_t numParents = cut.myParentIDs.size();
   std::vector<const SubElementNode*> parents(numParents, nullptr);
@@ -216,7 +216,7 @@ SubElementChildNodeAncestry::build_missing_child_nodes(CDMesh & mesh, unsigned &
   ancestorNodes.reserve(ancestors.size());
   for (auto&& ancestor : ancestors)
   {
-    ThrowAssert(ancestor->entity_is_valid(mesh.stk_bulk()));
+    STK_ThrowAssert(ancestor->entity_is_valid(mesh.stk_bulk()));
     ancestorNodes.push_back(ancestor->entity());
   }
 

@@ -321,7 +321,7 @@ Messages region_report(const Ioss::Region& region)
             msgs += blob_report(report_transient, *set);
         for(auto set : region.get_coordinate_frames())
             msgs += coord_frame_report(report_transient, set);
-       
+
 
     }
     return msgs;
@@ -400,4 +400,3 @@ std::string field_role(const int id) {
 }
 
 } // End namespace ioss_region_report
-

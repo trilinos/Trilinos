@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,6 @@ int main(int argc, char **argv)
   float  version, fdum;
 
   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char *block_names[10], *nset_names[10], *sset_names[10];
   char *attrib_names[10];
   char  name[MAX_STR_LENGTH + 1];
   char  title[MAX_LINE_LENGTH + 1];
@@ -632,15 +631,12 @@ int main(int argc, char **argv)
 
       error = ex_inquire(exoid, EX_INQ_SS_DF_LEN, &df_list_len, &fdum, cdum);
       printf("\nafter ex_inquire: EX_INQ_SS_DF_LEN = %d,  error = %d\n", df_list_len, error);
-    }
 
-    /* read concatenated side sets; this produces the same information as
-     * the above code which reads individual side sets
-     */
+      /* read concatenated side sets; this produces the same information as
+       * the above code which reads individual side sets
+       */
 
-    /* concatenated side set read */
-
-    if (num_side_sets > 0) {
+      /* concatenated side set read */
       ids              = (int *)calloc(num_side_sets, sizeof(int));
       num_elem_per_set = (int *)calloc(num_side_sets, sizeof(int));
       num_df_per_set   = (int *)calloc(num_side_sets, sizeof(int));

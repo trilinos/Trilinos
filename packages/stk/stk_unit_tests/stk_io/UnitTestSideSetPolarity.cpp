@@ -36,12 +36,20 @@ void check_polarity_of_modified_AA(stk::ParallelMachine pm,
     const unsigned spatialDim = 3;
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, pm);
 
+    if (!bulk->has_observer_type<stk::mesh::SidesetUpdater>()) {
+      stk::mesh::Selector activeSelector = bulk->mesh_meta_data().universal_part();
+
+      bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector));
+    }
+
+    bulk->initialize_face_adjacent_element_graph();
+
     stk::mesh::Part* ssPart = stk::unit_test_util::create_AA_mesh_with_sideset(*bulk, direction);
     stk::mesh::Entity  face = verify_and_get_face(*bulk, ssPart);
 
     std::pair<bool,bool> sidesetPolarity = stk::mesh::is_positive_sideset_polarity(*bulk, *ssPart, face);
-    EXPECT_TRUE(sidesetPolarity.first);
-    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second);
+    EXPECT_TRUE(sidesetPolarity.first) << "Failure for " << name << " on first";
+    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second) << "Failure for " << name << " on second";
 }
 
 void check_polarity_of_modified_AB(stk::ParallelMachine pm,
@@ -52,20 +60,20 @@ void check_polarity_of_modified_AB(stk::ParallelMachine pm,
     const unsigned spatialDim = 3;
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, pm);
 
+    if (!bulk->has_observer_type<stk::mesh::SidesetUpdater>()) {
+      stk::mesh::Selector activeSelector = bulk->mesh_meta_data().universal_part();
+
+      bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector));
+    }
+
+    bulk->initialize_face_adjacent_element_graph();
+
     stk::mesh::Part* ssPart = stk::unit_test_util::create_AB_mesh_with_sideset(*bulk, direction);
     stk::mesh::Entity  face = verify_and_get_face(*bulk, ssPart);
 
     std::pair<bool,bool> sidesetPolarity = stk::mesh::is_positive_sideset_polarity(*bulk, *ssPart, face);
-    EXPECT_TRUE(sidesetPolarity.first);
-    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second);
-
-    std::string file = name+".e";
-    stk::io::write_mesh(file, *bulk);
-
-    sidesetPolarity = stk::mesh::is_positive_sideset_polarity(*bulk, *ssPart, face);
-    EXPECT_TRUE(sidesetPolarity.first);
-    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second);
-    unlink(file.c_str());
+    EXPECT_TRUE(sidesetPolarity.first) << "Failure for " << name << " on first";
+    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second) << "Failure for " << name << " on second";
 }
 
 TEST(StkIo_legacy, sideset_polarity_AA)
@@ -97,7 +105,7 @@ TEST(StkIo_legacy, sideset_polarity_AB)
 void update_sidesets(const stk::mesh::BulkData& bulk, std::ostream& os)
 {
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk.get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
 
     updaters[0]->set_output_stream(os);
 
@@ -128,12 +136,11 @@ TEST(StkIo_legacy, check_internal_sideset_warning_with_reconstruction)
     EXPECT_TRUE(ssPart != nullptr);
 
     stk::mesh::Selector activeSelector(meta.universal_part());
-    bulk->register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(*bulk, activeSelector),
-                            stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk->register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(*bulk, activeSelector));
     bulk->modification_end();
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
     updaters[0]->set_warn_about_internal_sideset(true);
 
     {//mesh was just modified, including elements touching the sideset, so expect warning
@@ -191,11 +198,10 @@ TEST(StkIo_legacy, check_internal_sideset_warning_with_incremental_update)
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
 
     stk::mesh::Selector activeSelector(meta.universal_part());
-    bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector),
-                            stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector));
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
     std::ostringstream os;
     updaters[0]->set_output_stream(os);
     updaters[0]->set_warn_about_internal_sideset(true);
@@ -264,12 +270,20 @@ void check_polarity_of_modified_AA(stk::ParallelMachine pm,
     const unsigned spatialDim = 3;
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(spatialDim, pm);
 
+    if (!bulk->has_observer_type<stk::mesh::SidesetUpdater>()) {
+      stk::mesh::Selector activeSelector = bulk->mesh_meta_data().universal_part();
+
+      bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector));
+    }
+
+    bulk->initialize_face_adjacent_element_graph();
+
     stk::mesh::Part* ssPart = stk::unit_test_util::create_AA_mesh_with_sideset(*bulk, direction);
     stk::mesh::Entity  face = verify_and_get_face(*bulk, ssPart);
 
     std::pair<bool,bool> sidesetPolarity = stk::mesh::is_positive_sideset_polarity(*bulk, *ssPart, face);
-    EXPECT_TRUE(sidesetPolarity.first);
-    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second);
+    EXPECT_TRUE(sidesetPolarity.first) << "Failure for " << name << " on first";
+    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second) << "Failure for " << name << " on second";
 }
 
 void check_polarity_of_modified_AB(stk::ParallelMachine pm,
@@ -280,20 +294,20 @@ void check_polarity_of_modified_AB(stk::ParallelMachine pm,
     const unsigned spatialDim = 3;
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(spatialDim, pm);
 
+    if (!bulk->has_observer_type<stk::mesh::SidesetUpdater>()) {
+      stk::mesh::Selector activeSelector = bulk->mesh_meta_data().universal_part();
+
+      bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector));
+    }
+
+    bulk->initialize_face_adjacent_element_graph();
+
     stk::mesh::Part* ssPart = stk::unit_test_util::create_AB_mesh_with_sideset(*bulk, direction);
     stk::mesh::Entity  face = verify_and_get_face(*bulk, ssPart);
 
     std::pair<bool,bool> sidesetPolarity = stk::mesh::is_positive_sideset_polarity(*bulk, *ssPart, face);
-    EXPECT_TRUE(sidesetPolarity.first);
-    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second);
-
-    std::string file = name+".e";
-    stk::io::write_mesh(file, *bulk);
-
-    sidesetPolarity = stk::mesh::is_positive_sideset_polarity(*bulk, *ssPart, face);
-    EXPECT_TRUE(sidesetPolarity.first);
-    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second);
-    unlink(file.c_str());
+    EXPECT_TRUE(sidesetPolarity.first) << "Failure for " << name << " on first";
+    EXPECT_EQ(isPositivePolarity, sidesetPolarity.second) << "Failure for " << name << " on second";
 }
 
 TEST(StkIo, sideset_polarity_AA)
@@ -325,7 +339,7 @@ TEST(StkIo, sideset_polarity_AB)
 void update_sidesets(const stk::mesh::BulkData& bulk, std::ostream& os)
 {
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk.get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
 
     updaters[0]->set_output_stream(os);
 
@@ -356,12 +370,11 @@ TEST(StkIo, check_internal_sideset_warning_with_reconstruction)
     EXPECT_TRUE(ssPart != nullptr);
 
     stk::mesh::Selector activeSelector(meta.universal_part());
-    bulk->register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(*bulk, activeSelector),
-                            stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk->register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(*bulk, activeSelector));
     bulk->modification_end();
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
     updaters[0]->set_warn_about_internal_sideset(true);
 
     {//mesh was just modified, including elements touching the sideset, so expect warning
@@ -419,11 +432,10 @@ TEST(StkIo, check_internal_sideset_warning_with_incremental_update)
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
 
     stk::mesh::Selector activeSelector(meta.universal_part());
-    bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector),
-                            stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk->register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(*bulk, activeSelector));
 
     std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = bulk->get_observer_type<stk::mesh::SidesetUpdater>();
-    ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+    STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
     std::ostringstream os;
     updaters[0]->set_output_stream(os);
     updaters[0]->set_warn_about_internal_sideset(true);

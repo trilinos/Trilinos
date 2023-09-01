@@ -90,8 +90,8 @@ int main( int argc, char* argv[] ) {
     Kokkos::hwloc::get_available_threads_per_core();
 
   // Initialize openmp
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = team_count*threads_per_team;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(team_count*threads_per_team);
   Kokkos::initialize( init_args );
   //Kokkos::print_configuration( std::cout );
 

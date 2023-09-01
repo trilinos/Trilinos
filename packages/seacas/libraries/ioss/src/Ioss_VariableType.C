@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,7 @@ namespace Ioss {
 
   Registry::~Registry()
   {
-    for (auto &entry : m_deleteThese) {
+    for (const auto &entry : m_deleteThese) {
       delete entry;
     }
   }
@@ -123,7 +123,7 @@ namespace Ioss {
 
     // Create the variable.  Note that the 'true' argument means Ioss will delete
     // the pointer.
-    auto var_type = new NamedSuffixVariableType(low_name, count, true);
+    auto *var_type = new NamedSuffixVariableType(low_name, count, true);
 
     for (size_t i = 0; i < count; i++) {
       var_type->add_suffix(i + 1, suffices[i]);
@@ -186,6 +186,9 @@ namespace Ioss {
     bool match = false;
     for (const auto &vtype : registry()) {
       auto *tst_ivt = vtype.second;
+      if (ignore_realn_fields && Ioss::Utils::substr_equal("Real", tst_ivt->name())) {
+        continue;
+      }
       if (tst_ivt->suffix_count() == static_cast<int>(size)) {
         if (tst_ivt->match(suffices)) {
           ivt   = tst_ivt;
@@ -281,7 +284,7 @@ namespace Ioss {
     // and see if the basename is a valid variable type and the count is a
     // valid integer.
     size_t len      = type.length() + 1;
-    auto   typecopy = new char[len];
+    auto  *typecopy = new char[len];
     Utils::copy_string(typecopy, typestr, len);
 
     char *base = std::strtok(typecopy, "[]");

@@ -45,6 +45,7 @@
 
 #include "Ifpack2_Details_AdditiveSchwarzFilter_decl.hpp"
 #include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include "Kokkos_Bitset.hpp"
 
 namespace Ifpack2
@@ -419,7 +420,7 @@ void AdditiveSchwarzFilter<MatrixType>::fillLocalMatrix(typename AdditiveSchwarz
         }
       });
   //Sort the matrix, since the reordering can shuffle the entries into any order.
-  KokkosKernels::sort_crs_matrix(localMatrix);
+  KokkosSparse::sort_crs_matrix(localMatrix);
 }
 
 template<class MatrixType>
@@ -467,6 +468,12 @@ AdditiveSchwarzFilter<MatrixType>::getGraph() const
   //require the importer of the original distributed graph, even though the
   //BlockRelaxation is preconditioning a local matrix (A_).
   return A_unfiltered_->getGraph();
+}
+
+template<class MatrixType>
+typename MatrixType::local_ordinal_type AdditiveSchwarzFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
 }
 
 template<class MatrixType>
@@ -678,7 +685,7 @@ CreateReducedProblem(
     mv_type singletonUpdates(A_unfiltered_->getRowMap(), numVecs, false);
     A_unfiltered_->apply(OverlappingY, singletonUpdates);
     auto updatesView = singletonUpdates.getLocalViewDevice(Tpetra::Access::ReadOnly);
-    auto revperm = reverseperm_.view_device();
+    // auto revperm = reverseperm_.view_device();
     Kokkos::parallel_for(policy_2d_type({0, 0}, {(local_ordinal_type) reducedB.extent(0), numVecs}),
       KOKKOS_LAMBDA(local_ordinal_type row, local_ordinal_type col)
       {

@@ -29,10 +29,10 @@ template<class SMT>
 inline
 std::shared_ptr<SMT>
 buildSTKMeshTransfer(stk::mesh::BulkData       &bulkData_from,
-		     stk::mesh::Field<double, stk::mesh::Cartesian> * coordinates_from,
+         stk::mesh::FieldBase * coordinates_from,
 		     stk::mesh::FieldBase * field_from,
 		     stk::mesh::BulkData       &bulkData_to,
-		     stk::mesh::Field<double, stk::mesh::Cartesian> * coordinates_to,
+         stk::mesh::FieldBase * coordinates_to,
 		     stk::mesh::FieldBase * field_to,
 		     const std::string &transfer_name,
                      SrcFieldType srcFieldType=SRC_FIELD,

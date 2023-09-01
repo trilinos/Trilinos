@@ -161,13 +161,18 @@ public:
 
   //! Templated constructor
   template<typename ValueType>
-  explicit any(const ValueType & value)
-    : content(new holder<ValueType>(value))
+  explicit any(ValueType&& value)
+    : content(new holder<std::decay_t<ValueType>>(std::forward<ValueType>(value)))
     {}
 
   //! Copy constructor
   any(const any & other)
     : content(other.content ? other.content->clone() : 0)
+    {}
+
+  //! Move constructor.
+  any(any&& other)
+    : content(std::exchange(other.content,nullptr))
     {}
 
   //! Destructor
@@ -198,11 +203,25 @@ public:
       return *this;
     }
 
-  //! Return true if nothing is being stored
-  bool empty() const
-    {
-      return !content;
+  //! Move-assignment operator.
+  any& operator=(any&& other)
+  {
+    if(this != &other) {
+      delete this->content;
+      this->content = std::exchange(other.content, nullptr);
     }
+    return *this;
+  }
+
+  //! Return true if nothing is being stored
+  TEUCHOS_DEPRECATED
+  bool empty() const
+  {
+    return ! this->has_value();
+  }
+
+  //! Checks whether the object contains a value.
+  bool has_value() const { return this->content != nullptr; }
 
   //! Return the type of value being stored
   const std::type_info & type() const
@@ -222,13 +241,13 @@ public:
    */
   bool same( const any &other ) const
     {
-      if( this->empty() && other.empty() )
+      if( !this->has_value() && !other.has_value() )
         return true;
-      else if( this->empty() && !other.empty() )
+      else if( this->has_value() && !other.has_value() )
         return false;
-      else if( !this->empty() && other.empty() )
+      else if( !this->has_value() && other.has_value() )
         return false;
-      // !this->empty() && !other.empty()
+      // this->has_value() && other.has_value()
       return content->same(*other.content);
     }
 
@@ -269,8 +288,9 @@ public:
   {
   public:
     /** \brief . */
-    holder(const ValueType & value)
-      : held(value)
+    template <typename U>
+    holder(U&& value)
+      : held(std::forward<U>(value))
       {}
     /** \brief . */
     const std::type_info & type() const
@@ -375,6 +395,26 @@ template<typename ValueType>
 const ValueType& any_cast(const any &operand)
 {
   return any_cast<ValueType>(const_cast<any&>(operand));
+}
+
+/**
+ * @relates any
+ */
+template <typename ValueType>
+ValueType* any_cast(any* operand)
+{
+  return &any_cast<ValueType>(*operand);
+}
+
+/**
+ * @relates any
+ */
+template <typename ValueType>
+ValueType any_cast(any&& operand)
+{
+  using U = std::remove_cv_t<std::remove_reference_t<ValueType>>;
+  static_assert(std::is_constructible_v<ValueType, U>);
+  return static_cast<ValueType>(std::move(*any_cast<U>(&operand)));
 }
 
 /*! \relates any

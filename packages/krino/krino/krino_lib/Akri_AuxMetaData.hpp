@@ -61,7 +61,7 @@ class AuxMetaData final
 {
 public:
   static AuxMetaData & get(const stk::mesh::MetaData & stk_meta);
-  
+  static bool has(const stk::mesh::MetaData & stk_meta);
   static AuxMetaData & create(stk::mesh::MetaData & stk_meta); // must be called before calling get
 
   AuxMetaData ( const AuxMetaData & ) = delete;

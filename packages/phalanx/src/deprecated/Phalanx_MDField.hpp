@@ -50,7 +50,6 @@
 #include "Phalanx_any.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
-#include "Kokkos_View.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_MDFieldToKokkos.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"

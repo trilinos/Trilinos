@@ -111,7 +111,7 @@ void SineSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 
   auto policy = panzer::HP::inst().teamPolicy<ScalarT>(workset.num_cells);
 
-  Kokkos::parallel_for(policy,ssf,"MixedPoisson SineSource");
+  Kokkos::parallel_for("MixedPoisson SineSource",policy,ssf);
 }
 
 //**********************************************************************

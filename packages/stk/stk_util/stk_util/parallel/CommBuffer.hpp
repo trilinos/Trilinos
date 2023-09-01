@@ -1,6 +1,7 @@
 #ifndef stk_util_parallel_CommBuffer_hpp
 #define stk_util_parallel_CommBuffer_hpp
 
+#include <stddef.h>
 #include <string>
 #include <map>
 #include <vector>
@@ -56,7 +57,7 @@ public:
 private:
   /** Do not try to pack a pointer for global communication */
   template<typename T> CommBuffer &pack( const T* value ) {
-    ThrowAssertMsg(false,"CommBuffer::pack(const T* value) not allowed. Don't pack a pointer for communication!");
+    STK_ThrowAssertMsg(false,"CommBuffer::pack(const T* value) not allowed. Don't pack a pointer for communication!");
     return *this;
   }
 

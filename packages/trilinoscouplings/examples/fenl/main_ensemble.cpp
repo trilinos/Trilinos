@@ -21,13 +21,6 @@
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
-#ifdef HAVE_TRILINOSCOUPLINGS_TRIKOTA
-#include "LibraryEnvironment.hpp"
-#include "DirectApplicInterface.hpp"
-#include "ProblemDescDB.hpp"
-#include "DakotaModel.hpp"
-#endif
-
 #ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
 #include <TasmanianSparseGrid.hpp>
 #endif
@@ -325,185 +318,6 @@ void run_stokhos(
     std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
     std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
   }
-}
-
-#ifdef HAVE_TRILINOSCOUPLINGS_TRIKOTA
-namespace FENL {
-
-template <typename Problem, typename CoeffFunction>
-class DirectApplicInterface : public Dakota::DirectApplicInterface {
-public:
-
-  //! Constructor that takes the Model Evaluator to wrap
-  DirectApplicInterface(
-    Dakota::ProblemDescDB& problem_db_,
-    const Teuchos::RCP<const Teuchos::Comm<int> >& comm_,
-    const Teuchos::RCP<Problem>& problem_,
-    const Teuchos::RCP<CoeffFunction>& coeff_function_,
-    const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grpr_,
-    const Teuchos::RCP<Teuchos::ParameterList>& fenlParams_,
-    const Teuchos::RCP<const CMD>& cmd_,
-    const Teuchos::RCP<Kokkos::Example::FENL::Perf>& perf_total_,
-    const double bc_lower_value_,
-    const double bc_upper_value_) :
-    Dakota::DirectApplicInterface(problem_db_),
-    comm(comm_),
-    problem(problem_),
-    coeff_function(coeff_function_),
-    grouper(grpr_),
-    fenlParams(fenlParams_),
-    cmd(cmd_),
-    perf_total(perf_total_),
-    bc_lower_value(bc_lower_value_),
-    bc_upper_value(bc_upper_value_)
-  {
-    numParameters = cmd->USE_UQ_DIM;
-
-    // Check number of parameters is consistent
-    Dakota::Model& first_model = *(problem_db_.model_list().begin());
-    unsigned int num_dakota_vars =  first_model.acv();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      num_dakota_vars != numParameters, std::logic_error,
-      "TriKota Adapter Error: number of parameters " <<  numParameters <<
-      "does not match the number of continuous variables " <<
-      "specified in the dakota.in input file " << num_dakota_vars << "\n" );
-  }
-
-  ~DirectApplicInterface() {};
-
-protected:
-
-  //! Virtual function redefinition from Dakota::DirectApplicInterface
-  int derived_map_ac(const Dakota::String& ac_name) {
-    using Teuchos::Array;
-
-    // test for consistency of problem definition between ModelEval and Dakota
-    TEUCHOS_TEST_FOR_EXCEPTION(numVars != numParameters, std::logic_error,
-                               "TriKota_Dakota Adapter Error: ");
-    TEUCHOS_TEST_FOR_EXCEPTION(numFns != 1, std::logic_error,
-                               "TriKota_Dakota Adapter Error: ");
-    TEUCHOS_TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
-                               "TriKota_Dakota Adapter Error: ");
-
-    Array< Array<double> > p(1);
-    p[0].resize(numVars);
-    for (unsigned int i=0; i<numVars; i++)
-      p[0][i] = xC[i];
-    Array<double> responses(1);
-    Array< Array<double> > response_gradients;
-    if (gradFlag) {
-      response_gradients.resize(1);
-      response_gradients[0].resize(numVars);
-    }
-    Array<int> iterations(1), ensemble_iterations(1);
-    run_samples(*comm, *problem, *coeff_function, grouper,
-                fenlParams, *cmd,
-                bc_lower_value, bc_upper_value,
-                p, responses, response_gradients,
-                iterations, ensemble_iterations,
-                *perf_total);
-    ++perf_total->uq_count;
-
-    fnVals[0]= responses[0];
-    if (gradFlag) {
-      for (unsigned int i=0; i<numVars; ++i)
-        fnGrads[0][i] = response_gradients[0][i];
-    }
-
-    return 0;
-  }
-
-  //! Virtual function redefinition from Dakota::DirectApplicInterface
-  int derived_map_of(const Dakota::String& of_name) {
-    return 0;
-  }
-
-  //int derived_map_if(const Dakota::String& if_name);
-
-private:
-
-  Teuchos::RCP<const Teuchos::Comm<int> > comm;
-  Teuchos::RCP<Problem> problem;
-  Teuchos::RCP<CoeffFunction> coeff_function;
-  Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> > grouper;
-  Teuchos::RCP<Teuchos::ParameterList> fenlParams;
-  Teuchos::RCP<const CMD> cmd;
-  Teuchos::RCP<Kokkos::Example::FENL::Perf> perf_total;
-  double bc_lower_value;
-  double bc_upper_value;
-  unsigned int numParameters;
-};
-
-}
-#endif
-
-template< class ProblemType, class CoeffFunctionType >
-void run_dakota(
-  const Teuchos::Comm<int>& comm ,
-  ProblemType& problem ,
-  CoeffFunctionType & coeff_function,
-  const Teuchos::RCP<Kokkos::Example::FENL::SampleGrouping<double> >& grouper,
-  const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
-  const CMD & cmd ,
-  const double bc_lower_value,
-  const double bc_upper_value,
-  Kokkos::Example::FENL::Perf& perf_total)
-{
-#ifdef HAVE_TRILINOSCOUPLINGS_TRIKOTA
-
-  using Teuchos::rcpFromRef;
-
-  // set the Dakota input/output/etc in program options
-  std::string dakota_in="dakota.in";
-  std::string dakota_out="dakota.out";
-  std::string dakota_err="dakota.err";
-  Dakota::ProgramOptions prog_opts;
-  prog_opts.input_file(dakota_in);
-  prog_opts.output_file(dakota_out);
-  prog_opts.error_file(dakota_err);
-  Dakota::LibraryEnvironment dakota_env(prog_opts);
-
-  // Create interface
-  FENL::DirectApplicInterface<ProblemType,CoeffFunctionType> *interface =
-    new FENL::DirectApplicInterface<ProblemType,CoeffFunctionType>(
-      dakota_env.problem_description_db(),
-      rcpFromRef(comm),
-      rcpFromRef(problem),
-      rcpFromRef(coeff_function),
-      grouper,
-      fenlParams,
-      rcpFromRef(cmd),
-      rcpFromRef(perf_total),
-      bc_lower_value,
-      bc_upper_value);
-
-  Dakota::Model& first_model =
-    *(dakota_env.problem_description_db().model_list().begin());
-  Dakota::Interface& dakota_interface  = first_model.derived_interface();
-
-  // Pass a pointer to a Dakota::DirectApplicInterface
-  dakota_interface.assign_rep(interface, false);
-
-  dakota_env.execute();
-
-  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
-    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
-              << std::endl;
-    std::cout << "Total prec setup time (s) = " << perf_total.prec_setup_time
-              << std::endl;
-    std::cout << "Total assembly time (s) = " << perf_total.fill_time + perf_total.bc_time
-              << std::endl;
-    std::cout << "Total tangent time (s) = " << perf_total.tangent_fill_time
-              << std::endl;
-    std::cout << "Total newton time (s) = " << perf_total.newton_total_time
-              << std::endl;
-  }
-
-#else
-
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "DAKOTA not available.  Please re-configure with TriKota enabled.");
-
-#endif
 }
 
 #ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
@@ -863,8 +677,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   // Number of sensitivities -- currently only useful for Dakota
   unsigned num_sens = 0;
-  if (cmd.USE_UQ_SAMPLING == SAMPLING_DAKOTA)
-    num_sens = kl_dim;
 
   // Compute PCE of response propagating blocks of quadrature
   // points at a time
@@ -911,9 +723,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     if (cmd.USE_UQ_SAMPLING == SAMPLING_STOKHOS)
       run_stokhos(*comm, problem, diffusion_coefficient, grouper,
                   fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
-    else if (cmd.USE_UQ_SAMPLING == SAMPLING_DAKOTA)
-      run_dakota(*comm, problem, diffusion_coefficient, grouper,
-                 fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_TASMANIAN)
       run_tasmanian(*comm, problem, diffusion_coefficient, grouper,
                     fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
@@ -942,9 +751,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     if (cmd.USE_UQ_SAMPLING == SAMPLING_STOKHOS)
       run_stokhos(*comm, problem, diffusion_coefficient, Teuchos::null,
                   fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
-     else if (cmd.USE_UQ_SAMPLING == SAMPLING_DAKOTA)
-      run_dakota(*comm, problem, diffusion_coefficient, Teuchos::null,
-                 fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);
     else if (cmd.USE_UQ_SAMPLING == SAMPLING_TASMANIAN)
       run_tasmanian(*comm, problem, diffusion_coefficient, Teuchos::null,
                     fenlParams, cmd, bc_lower_value, bc_upper_value, perf_total);

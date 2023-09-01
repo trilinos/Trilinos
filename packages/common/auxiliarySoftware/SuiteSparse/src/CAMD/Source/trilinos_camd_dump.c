@@ -88,12 +88,12 @@ GLOBAL void TRILINOS_CAMD_dump (
 	len = Len [i] ;
 	w = W [i] ;
 
-	if (elen >= EMPTY)
+	if (elen >= TRILINOS_CAMD_EMPTY)
 	{
 	    if (nv == 0)
 	    {
 		TRILINOS_CAMD_DEBUG4 (("\nI "ID": nonprincipal:    ", i)) ;
-		ASSERT (elen == EMPTY) ;
+		ASSERT (elen == TRILINOS_CAMD_EMPTY) ;
 		if (pe == FLIP(n))
 		{
 		    TRILINOS_CAMD_DEBUG4 ((" dense node\n")) ;
@@ -101,7 +101,7 @@ GLOBAL void TRILINOS_CAMD_dump (
 		}
 		else
 		{
-		    ASSERT (pe < EMPTY) ;
+		    ASSERT (pe < TRILINOS_CAMD_EMPTY) ;
 		    TRILINOS_CAMD_DEBUG4 ((" i "ID" -> parent "ID"\n", i, FLIP (Pe[i])));
 		}
 	    }
@@ -162,10 +162,10 @@ GLOBAL void TRILINOS_CAMD_dump (
 	cnt = 0 ;
 	for (deg = 0 ; deg < n ; deg++)
 	{
-	    if (Head [deg] == EMPTY) continue ;
-	    ilast = EMPTY ;
+	    if (Head [deg] == TRILINOS_CAMD_EMPTY) continue ;
+	    ilast = TRILINOS_CAMD_EMPTY ;
 	    TRILINOS_CAMD_DEBUG4 ((ID": \n", deg)) ;
-	    for (i = Head [deg] ; i != EMPTY ; i = Next [i])
+	    for (i = Head [deg] ; i != TRILINOS_CAMD_EMPTY ; i = Next [i])
 	    {
 		TRILINOS_CAMD_DEBUG4 (("   "ID" : next "ID" last "ID" deg "ID"\n",
 		    i, Next [i], Last [i], Degree [i])) ;

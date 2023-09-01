@@ -92,9 +92,10 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags):
                   numGlobalCoordinates_(), env_(env), comm_(comm),
-                  coordinateDim_(), gids_(), 
+                  coordinateDim_(), gids_(),
                   xyz_(), userNumWeights_(0), weights_()
   {
+    this->ia_ = ia;
     typedef VectorAdapter<user_t> adapterWithCoords_t;
     sharedConstructor<adapterWithCoords_t>(&(*ia), env, comm, flags);
   }
@@ -105,14 +106,16 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags) :
                   numGlobalCoordinates_(), env_(env), comm_(comm),
-                  coordinateDim_(), gids_(), 
+                  coordinateDim_(), gids_(),
                   xyz_(), userNumWeights_(0), weights_()
   {
     if (!(ia->coordinatesAvailable()))
       throw std::logic_error("No coordinate info provided to MatrixAdapter.");
     else {
+      this->ia_ = ia;
       typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
       adapterWithCoords_t *va = ia->getCoordinateInput();
+      // this->ia = va;
       sharedConstructor<adapterWithCoords_t>(va, env, comm, flags);
     }
   }
@@ -123,14 +126,16 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags) :
                   numGlobalCoordinates_(), env_(env), comm_(comm),
-                  coordinateDim_(), gids_(), 
+                  coordinateDim_(), gids_(),
                   xyz_(), userNumWeights_(0), weights_()
   {
     if (!(ia->coordinatesAvailable()))
       throw std::logic_error("No coordinate info provided to GraphAdapter.");
     else {
+      this->ia_ = ia;
       typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
       adapterWithCoords_t *va = ia->getCoordinateInput();
+
       sharedConstructor<adapterWithCoords_t>(va, env, comm, flags);
     }
   }
@@ -141,9 +146,10 @@ public:
 		  const RCP<const Comm<int> > &comm,
 		  modelFlag_t &flags) :
                   numGlobalCoordinates_(), env_(env), comm_(comm),
-                  coordinateDim_(), gids_(), 
+                  coordinateDim_(), gids_(),
                   xyz_(), userNumWeights_(0), weights_()
   {
+    this->ia_ = ia;
     typedef MeshAdapter<user_t> adapterWithCoords_t;
     sharedConstructor<adapterWithCoords_t>(&(*ia), env, comm, flags);
   }
@@ -232,9 +238,25 @@ public:
       Kokkos::LayoutLeft, typename node_t::device_type> &xyz,
     Kokkos::View<scalar_t **, typename node_t::device_type> &wgts) const
   {
-    Ids = kokkos_gids_;
-    xyz = kokkos_xyz_;
-    wgts = kokkos_weights_;
+    const auto type = ia_->adapterType();
+
+    if (type == VectorAdapterType or type == MeshAdapterType)
+    {
+      auto adapterWithCoords = dynamic_cast<const AdapterWithCoords<user_t>*>(&(*ia_));
+      adapterWithCoords->getCoordinatesKokkosView(xyz);
+    }
+    else if (type == MatrixAdapterType or type == GraphAdapterType)
+    {
+      auto wrapper = dynamic_cast<const AdapterWithCoordsWrapper<user_t, userCoord_t>*>(&(*ia_));
+      wrapper->getCoordinateInput()->getCoordinatesKokkosView(xyz);
+    }
+
+    ia_->getIDsKokkosView(Ids);
+
+    if(userNumWeights_ > 0) {
+      ia_->getWeightsKokkosView(wgts);
+    }
+
     return getLocalNumCoordinates();
   }
 
@@ -253,27 +275,20 @@ public:
   }
 
 private:
+  RCP<const BaseAdapter<user_t>> ia_;
+
   size_t numGlobalCoordinates_;
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   int coordinateDim_;
-
-  // TODO: We now have a Kokkos version and non kokkos version so need to clean
-  // this up and perhaps eliminate the non-kokkos version completely.
-  // However not all tests are converted to Kokkos so keeping both forms around
-  // for now is probably necessary.
-  Kokkos::View<gno_t *, typename node_t::device_type> kokkos_gids_;
-  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-  Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> kokkos_xyz_;
-  Kokkos::View<scalar_t **, typename node_t::device_type> kokkos_weights_;
 
   ArrayRCP<const gno_t> gids_;
   ArrayRCP<input_t> xyz_;
   int userNumWeights_;
   ArrayRCP<input_t> weights_;
 
-  template <typename AdapterWithCoords>
-  void sharedConstructor(const AdapterWithCoords *ia,
+  template <typename AdapterWithCoords_>
+  void sharedConstructor(const AdapterWithCoords_ *ia,
                          const RCP<const Environment> &env,
                          const RCP<const Comm<int> > &comm,
                          modelFlag_t &flags);
@@ -285,14 +300,14 @@ private:
 
 // sharedConstructor
 template <typename Adapter>
-template <typename AdapterWithCoords>
+template <typename AdapterWithCoords_>
 void CoordinateModel<Adapter>::sharedConstructor(
-    const AdapterWithCoords *ia,
+    const AdapterWithCoords_ *ia,
     const RCP<const Environment> &/* env */,
     const RCP<const Comm<int> > &comm,
     modelFlag_t &/* flags */)
 {
-  size_t nLocalIds = ia->getLocalNumIDs();
+  size_t nLocalIds = ia_->getLocalNumIDs();
 
   // Get coordinates and weights (if any)
 
@@ -351,26 +366,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
   if (userNumWeights_)
     weights_ = arcp(weightArray, 0, userNumWeights_);
 
-  // These are deep copies so we don't hold on to refs of the device views causing problems without UVM
-  Kokkos::View<const gno_t *, typename node_t::device_type> kokkos_gids;
-  ia->getIDsKokkosView(kokkos_gids);
-  kokkos_gids_ =   Kokkos::View<gno_t *, typename node_t::device_type>("kokkos_gids_",kokkos_gids.extent(0));
-  Kokkos::deep_copy(kokkos_gids_, kokkos_gids);
-
-  Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> kokkos_xyz;
-  ia->getCoordinatesKokkosView(kokkos_xyz);
-  kokkos_xyz_ =   Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>("kokkos_xyz", kokkos_xyz.extent(0), kokkos_xyz.extent(1));
-  Kokkos::deep_copy(kokkos_xyz_, kokkos_xyz);
-
-  if(userNumWeights_ > 0) {
-    Kokkos::View<scalar_t **, typename node_t::device_type> kokkos_weights;
-    ia->getWeightsKokkosView(kokkos_weights);
-    kokkos_weights_ = Kokkos::View<scalar_t **, typename node_t::device_type>("kokkos_weights_",kokkos_weights.extent(0), kokkos_weights.extent(1));
-    Kokkos::deep_copy(kokkos_weights_, kokkos_weights);
-  }
-
- 
-  Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1, 
+  Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
                                   &nLocalIds, &numGlobalCoordinates_);
 
   env_->memory("After construction of coordinate model");

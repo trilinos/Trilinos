@@ -370,9 +370,10 @@ class StkIoFixture_legacy : public stk::unit_test_util::MeshFixture
 protected:
     void setup_mesh(const std::string & meshSpec,
                     stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                    unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity) override
+                    unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                    unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity()) override
     {
-        setup_empty_mesh(auraOption, bucketCapacity);
+        setup_empty_mesh(auraOption, initialBucketCapacity, maximumBucketCapacity);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
     }
@@ -436,7 +437,7 @@ TEST(DeclareIossField_legacy, reRegisterWithDifferentNumCopies)
                                                                                    *iossField1copy, false);
 
   unsigned expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
-  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+  EXPECT_EQ(expectedMaxSize, stkField->max_size());
 
   numFieldCopiesPerEntity = 9;
   
@@ -445,7 +446,7 @@ TEST(DeclareIossField_legacy, reRegisterWithDifferentNumCopies)
   stkField = stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myOtherPart, *iossField9copies, false);
 
   expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
-  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+  EXPECT_EQ(expectedMaxSize, stkField->max_size());
 
   delete iossField1copy;
   delete iossField9copies;
@@ -767,9 +768,10 @@ class StkIoFixture : public stk::unit_test_util::MeshFixture
 protected:
     void setup_mesh(const std::string & meshSpec,
                     stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                    unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity) override
+                    unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                    unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity()) override
     {
-        setup_empty_mesh(auraOption, bucketCapacity);
+        setup_empty_mesh(auraOption, initialBucketCapacity, maximumBucketCapacity);
 
         stk::io::fill_mesh(meshSpec, get_bulk());
     }
@@ -834,7 +836,7 @@ TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
                                                                                    *iossField1copy, false);
 
   unsigned expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
-  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+  EXPECT_EQ(expectedMaxSize, stkField->max_size());
 
   numFieldCopiesPerEntity = 9;
 
@@ -843,7 +845,7 @@ TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
   stkField = stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myOtherPart, *iossField9copies, false);
 
   expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
-  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+  EXPECT_EQ(expectedMaxSize, stkField->max_size());
 
   delete iossField1copy;
   delete iossField9copies;

@@ -36,7 +36,9 @@
 
 #ifdef __GNUC__
 #ifdef _OPENMP
+#ifdef __GLIBCXX__
 #define STK_SEARCH_USE_GCC_PARALLEL_SORT
+#endif
 #endif
 #endif
 

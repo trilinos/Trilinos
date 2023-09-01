@@ -20,7 +20,8 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../headers)
 
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
@@ -30,15 +31,15 @@ SET(HEADERS ${HEADERS}
 # src
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
-  Galeri_Version.h
-  Galeri_ConfigDefs.h
+  ../headers/Galeri_ConfigDefs.h
+  ../headers/Galeri_Exception.h
+  ../headers/Galeri_Version.h
   Galeri_Maps.h
   Galeri_CrsMatrices.h
   Galeri_VbrMatrices.h
-  Galeri_Exception.h
   Galeri_FiniteElements.h
   Galeri_Utils.h
   )
@@ -63,7 +64,7 @@ ENDIF()
 # src/Maps
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Maps)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Maps)
 
 SET(HEADERS ${HEADERS}
   Maps/Galeri_Linear.h
@@ -77,8 +78,8 @@ SET(HEADERS ${HEADERS}
 #
 # src/CrsMatrices
 #
-  
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/CRSMatrices)
+
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/CRSMatrices)
 
 SET(HEADERS ${HEADERS}
   CrsMatrices/Galeri_BigCross2D.h
@@ -112,27 +113,27 @@ SET(HEADERS ${HEADERS}
 # src/FiniteElements
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/FiniteElements)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/FiniteElements)
 
 SET(HEADERS ${HEADERS}
-  FiniteElements/Galeri_AbstractGrid.h         
-  FiniteElements/Galeri_AbstractProblem.h      
-  FiniteElements/Galeri_AbstractQuadrature.h   
-  FiniteElements/Galeri_AbstractVariational.h  
-  FiniteElements/Galeri_FileGrid.h             
+  FiniteElements/Galeri_AbstractGrid.h
+  FiniteElements/Galeri_AbstractProblem.h
+  FiniteElements/Galeri_AbstractQuadrature.h
+  FiniteElements/Galeri_AbstractVariational.h
+  FiniteElements/Galeri_FileGrid.h
   FiniteElements/Galeri_TriangleRectangleGrid.h
-  FiniteElements/Galeri_QuadRectangleGrid.h    
-  FiniteElements/Galeri_HexCubeGrid.h          
-  FiniteElements/Galeri_TetCubeGrid.h          
-  FiniteElements/Galeri_TRIANGLEGrid.h         
-  FiniteElements/Galeri_QuadQuadrature.h       
-  FiniteElements/Galeri_TetQuadrature.h        
-  FiniteElements/Galeri_TriangleQuadrature.h   
-  FiniteElements/Galeri_HexQuadrature.h        
-  FiniteElements/Galeri_LinearProblem.h        
-  FiniteElements/Galeri_GalerkinVariational.h  
-  FiniteElements/Galeri_SUPGVariational.h      
-  FiniteElements/Galeri_MEDITInterface.h       
+  FiniteElements/Galeri_QuadRectangleGrid.h
+  FiniteElements/Galeri_HexCubeGrid.h
+  FiniteElements/Galeri_TetCubeGrid.h
+  FiniteElements/Galeri_TRIANGLEGrid.h
+  FiniteElements/Galeri_QuadQuadrature.h
+  FiniteElements/Galeri_TetQuadrature.h
+  FiniteElements/Galeri_TriangleQuadrature.h
+  FiniteElements/Galeri_HexQuadrature.h
+  FiniteElements/Galeri_LinearProblem.h
+  FiniteElements/Galeri_GalerkinVariational.h
+  FiniteElements/Galeri_SUPGVariational.h
+  FiniteElements/Galeri_MEDITInterface.h
   FiniteElements/Galeri_Workspace.h
   )
 

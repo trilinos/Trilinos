@@ -103,7 +103,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   else
   {
     print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Sufficient Decrease Condition\"" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   choice = p.get("Interpolation Type", "Cubic");
@@ -117,7 +117,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   else
   {
     print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   choice = p.get("Recovery Step Type", "Constant");
@@ -129,7 +129,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   }
   else {
     print.err() << "NOX::LineSearch::Polynomial::reset - Invalid \"Recovery Step Type\"" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   minStep = p.get("Minimum Step", 1.0e-12);
@@ -403,7 +403,7 @@ checkConvergence(double newValue, double oldValue,
   default:
 
     print.err() << "NOX::LineSearch::Polynomial::isSufficientDecrease - Unknown convergence criteria" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
 
   }
   return returnVal;

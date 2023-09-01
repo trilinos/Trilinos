@@ -478,18 +478,18 @@ generateSurfacePermutations(const int num_cells,
         // FIXME: Currently virtual cells will set their surface normal along the same direction as the cell they "reflect"
         // This causes a host of issues (e.g. identifying 180 degree periodic wedges), but we have to support virtual cells as a priority
         // Therefore, we will just assume that the ordering is fine (not valid for 180 degree periodic wedges)
-        if(Kokkos::Experimental::fabs(n0_dot_n1 - 1.) < 1.e-8)
+        if(Kokkos::fabs(n0_dot_n1 - 1.) < 1.e-8)
           return;
 
         // Rotated faces case (e.g. periodic wedge) we need to check for non-antiparallel face normals
-        if(Kokkos::Experimental::fabs(n0_dot_n1 + 1.) > 1.e-2){
+        if(Kokkos::fabs(n0_dot_n1 + 1.) > 1.e-2){
 
           // Now we need to define an arbitrary transverse and binormal in the plane across which the faces are anti-symmetric
           // We can do this by setting t = n_0 \times n_1
           PANZER_CROSS(n0,n1,t);
 
           // Normalize the transverse vector
-          const Scalar mag_t = Kokkos::Experimental::sqrt(PANZER_DOT(t,t));
+          const Scalar mag_t = Kokkos::sqrt(PANZER_DOT(t,t));
           t[0] /= mag_t;
           t[1] /= mag_t;
           t[2] /= mag_t;
@@ -500,7 +500,7 @@ generateSurfacePermutations(const int num_cells,
           b[2] = n0[2] + n1[2];
 
           // Normalize the binormal vector
-          const Scalar mag_b = Kokkos::Experimental::sqrt(PANZER_DOT(b,b));
+          const Scalar mag_b = Kokkos::sqrt(PANZER_DOT(b,b));
           b[0] /= mag_b;
           b[1] /= mag_b;
           b[2] /= mag_b;
@@ -749,15 +749,15 @@ template <typename Scalar>
 void
 IntegrationValues2<Scalar>::
 setup(const Teuchos::RCP<const panzer::IntegrationRule>& ir,
-      const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+      const PHX::MDField<Scalar,Cell,NODE,Dim> & cell_node_coordinates,
       const int num_cells)
 {
 
   // Clear arrays just in case we are rebuilding this object
   resetArrays();
 
-  num_cells_ = vertex_coordinates.extent(0);
-  num_evaluate_cells_ = num_cells < 0 ? vertex_coordinates.extent(0) : num_cells;
+  num_cells_ = cell_node_coordinates.extent(0);
+  num_evaluate_cells_ = num_cells < 0 ? cell_node_coordinates.extent(0) : num_cells;
   int_rule = ir;
 
   TEUCHOS_ASSERT(ir->getType() != IntegrationDescriptor::NONE);
@@ -768,13 +768,13 @@ setup(const Teuchos::RCP<const panzer::IntegrationRule>& ir,
     MDFieldArrayFactory af(prefix_,true);
 
     const int num_space_dim = int_rule->topology->getDimension();
-    const int num_vertexes = int_rule->topology->getNodeCount();
-    TEUCHOS_ASSERT(static_cast<int>(vertex_coordinates.extent(1)) == num_vertexes);
+    const int num_nodes = int_rule->topology->getNodeCount();
+    TEUCHOS_ASSERT(static_cast<int>(cell_node_coordinates.extent(1)) == num_nodes);
 
-    auto aux = af.template buildStaticArray<Scalar,Cell,NODE,Dim>("node_coordinates",num_cells_,num_vertexes, num_space_dim);
-    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_vertexes,num_space_dim});
+    auto aux = af.template buildStaticArray<Scalar,Cell,NODE,Dim>("node_coordinates",num_cells_,num_nodes, num_space_dim);
+    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_nodes,num_space_dim});
     Kokkos::parallel_for(policy,KOKKOS_LAMBDA(const int & cell, const int & point, const int & dim){
-      aux(cell,point,dim) = vertex_coordinates(cell,point,dim);
+      aux(cell,point,dim) = cell_node_coordinates(cell,point,dim);
     });
     PHX::Device::execution_space().fence();
     node_coordinates = aux;
@@ -1135,7 +1135,8 @@ getWeightedMeasure(const bool cache,
       // Calculate measures (quadrature weights in physical space) for this side
       auto side_weighted_measure = Kokkos::DynRankView<Scalar,PHX::Device>("side_weighted_measure",num_evaluate_cells_,num_points_on_side);
       if(cell_dim == 1){
-        Kokkos::deep_copy(side_weighted_measure, side_cub_weights(0));
+        auto side_cub_weights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),side_cub_weights);
+        Kokkos::deep_copy(side_weighted_measure, side_cub_weights_host(0));
       } else {
 
         // Copy from complete jacobian to side jacobian
@@ -1348,7 +1349,7 @@ getSurfaceNormals(const bool cache,
         }
         // If n is zero then this is - hopefully - a virtual cell
         if(n > 0.){
-          n = Kokkos::Experimental::sqrt(n);
+          n = Kokkos::sqrt(n);
           for(int dim=0;dim<cell_dim;++dim)
             side_normals(cell,point,dim) /= n;
         }
@@ -1547,7 +1548,7 @@ getNormContravarientMatrix(const bool cache,
         aux(cell,ip) += con(cell,ip,i,j) * con(cell,ip,i,j);
       }
     }
-    aux(cell,ip) = Kokkos::Experimental::sqrt(aux(cell,ip));
+    aux(cell,ip) = Kokkos::sqrt(aux(cell,ip));
   });
   PHX::Device::execution_space().fence();
 

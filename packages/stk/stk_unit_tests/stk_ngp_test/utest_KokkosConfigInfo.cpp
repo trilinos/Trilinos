@@ -15,7 +15,7 @@ NGP_TEST(KokkosConfigInfo, print_device_information) {
 #endif
 #endif
 
-  std::cout << "Kokkos::DefaultHostExecutionSpace::concurrency() returns "
-            <<  Kokkos::DefaultHostExecutionSpace::concurrency() << std::endl;
+  std::cout << "Kokkos::DefaultHostExecutionSpace().concurrency() returns "
+            <<  Kokkos::DefaultHostExecutionSpace().concurrency() << std::endl;
 }
 

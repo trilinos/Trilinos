@@ -165,6 +165,11 @@ public:
   //! The level of overlap used to construct this graph.
   int getLevelOverlap () const { return LevelOverlap_; }
 
+  //! Returns the original graph given
+  Teuchos::RCP<const GraphType> getA_Graph () const {
+    return Graph_;
+  }
+
   //! Returns the graph of lower triangle of the ILU(k) graph as a Tpetra::CrsGraph.
   Teuchos::RCP<crs_graph_type> getL_Graph () const {
     return L_Graph_;
@@ -305,8 +310,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
                            // Heuristic to get the maximum number of entries per row.
                            int RowMaxNumIndices = localOverlapGraph.rowConst(i).length;
                            numEntPerRow_d(i) = (levelfill == 0) ? RowMaxNumIndices  // No additional storage needed
-                             : Kokkos::Experimental::ceil(static_cast<double>(RowMaxNumIndices) 
-                                    * Kokkos::Experimental::pow(overalloc, levelfill));
+                             : Kokkos::ceil(static_cast<double>(RowMaxNumIndices)
+                                    * Kokkos::pow(overalloc, levelfill));
                          });
    
   };
@@ -602,8 +607,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
   do {
     symbolicError = false;
     try {
-      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_, 
-                                                   localOverlapGraph.row_map, localOverlapGraph.entries, 
+      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_,
+                                                   localOverlapGraph.row_map, localOverlapGraph.entries,
                                                    L_row_map, L_entries, U_row_map, U_entries );
     }
     catch (std::runtime_error &e) {

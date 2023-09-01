@@ -43,7 +43,6 @@
 #ifndef PANZER_LOCAL_MESH_INFO_HPP
 #define PANZER_LOCAL_MESH_INFO_HPP
 
-#include "Kokkos_View.hpp"
 #include "PanzerCore_config.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Shards_CellTopology.hpp"
@@ -70,8 +69,8 @@ namespace panzer
     // These are the cell indexes in the LocalMeshInfo class
     PHX::View<panzer::LocalOrdinal*> local_cells;
 
-    // Vertices
-    PHX::View<double***> cell_vertices;
+    // Nodes
+    PHX::View<double***> cell_nodes;
 
     // Face to neighbors
     bool has_connectivity;

@@ -48,13 +48,13 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 #  include <string>
 // NOTE (mfh 18 Apr 2016) KokkosCore requires C++11, so we may include
 // type_traits here.  Please do not include it unconditionally,
 // because TeuchosCore does NOT require C++11.
 #  include <type_traits>
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
 //
 // Unit tests for GlobalMPISession
@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST( GlobalMPISession, allGather )
 }
 
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 // Check whether GlobalMPISession's constructor (called in the unit
 // test harness, not in this file) correctly saved a copy of the
 // command-line arguments.  Command-line arguments _should_ be
@@ -160,7 +160,7 @@ TEUCHOS_UNIT_TEST( GlobalMPISession, getArgv )
 		   "that returns a type convertible to std::string.");
   }
 }
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
 
 } // namespace Teuchos

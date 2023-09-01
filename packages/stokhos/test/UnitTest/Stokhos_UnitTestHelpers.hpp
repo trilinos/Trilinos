@@ -127,6 +127,10 @@ namespace Stokhos {
                    const ValueType& rel_tol, const ValueType& abs_tol,
                    Teuchos::FancyOStream& out)
   {
+    using value_t_1 = typename VectorType1::value_type;
+    using value_t_2 = typename VectorType2::value_type;
+    static_assert(std::is_same<value_t_1,value_t_2>::value,"Inconsistent types.");
+
     bool success = true;
 
     out << "Comparing " << a1_name << " == " << a2_name << " ... ";
@@ -142,10 +146,10 @@ namespace Stokhos {
 
     // Compare elements
     for( int i = 0; i < n; ++i ) {
-      ValueType err = std::abs(a1.coeff(i) - a2.coeff(i));
+      ValueType err = abs(a1.coeff(i) - a2.coeff(i));
       ValueType tol =
-        abs_tol + rel_tol*std::max(std::abs(a1.fastAccessCoeff(i)),
-                                   std::abs(a2.fastAccessCoeff(i)));
+        abs_tol + rel_tol*std::max(abs(a1.fastAccessCoeff(i)),
+                                   abs(a2.fastAccessCoeff(i)));
       if (err  > tol) {
         out
           <<"\nError, relErr("<<a1_name<<"["<<i<<"],"

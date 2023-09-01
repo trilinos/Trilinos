@@ -71,6 +71,10 @@ ScatterCellQuantity(
   std::string scatterName = p.get<std::string>("Scatter Name");
   int worksetSize = p.get<int>("Workset Size");
 
+  // if it's there pull the ouptut scaling
+  if (p.isParameter("Variable Scale Factors Map"))
+    varScaleFactors_ = p.get<Teuchos::RCP<std::map<std::string,double>>>("Variable Scale Factors Map");
+
   const std::vector<std::string> & names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
@@ -122,7 +126,17 @@ evaluateFields(
       for(unsigned i=0; i<field.extent(0);i++)
          value(i,0) = Sacado::scalarValue(field(i));
 
-      mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,value.get_view());
+      std::string varname = field.fieldTag().name();
+      double scalef = 1.0;
+
+      if (!varScaleFactors_.is_null())
+      {
+        std::map<std::string,double> *tmp_sfs = varScaleFactors_.get();
+        if(tmp_sfs->find(varname) != tmp_sfs->end())
+          scalef = (*tmp_sfs)[varname];
+      }
+
+      mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,value.get_view(),scalef);
    }
 }
 

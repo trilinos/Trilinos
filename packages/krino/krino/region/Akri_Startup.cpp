@@ -88,6 +88,8 @@ Startup::Startup(int argc, char ** argv)
   MPI_Comm_size(stk::EnvData::parallel_comm(), &stk::EnvData::instance().m_parallelSize);
   MPI_Comm_rank(stk::EnvData::parallel_comm(), &stk::EnvData::instance().m_parallelRank);
 
+  Kokkos::initialize(argc, argv);
+
   stk::register_message_type(stk::MSG_WARNING, 10000000, "Warning");
   stk::register_message_type(stk::MSG_DOOMED, 10000000, "Parser error");
   stk::register_message_type(stk::MSG_EXCEPTION, 1000000, "Exception");
@@ -222,6 +224,7 @@ void Startup::setup_commandline_options()
 
 Startup::~Startup()
 {
+  Kokkos::finalize();
   MPI_Finalize();
 }
 

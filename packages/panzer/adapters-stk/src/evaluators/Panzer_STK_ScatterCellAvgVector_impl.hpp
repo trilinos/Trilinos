@@ -71,6 +71,9 @@ ScatterCellAvgVector(
 
   std::string scatterName = p.get<std::string>("Scatter Name");
 
+  if (p.isParameter("Variable Scale Factors Map"))
+    varScaleFactors_ = p.get<Teuchos::RCP<std::map<std::string,double>>>("Variable Scale Factors Map");
+
   const std::vector<std::string> & names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
@@ -105,7 +108,7 @@ postRegistrationSetup(
   {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
 
-    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::ELEMENT_RANK, fieldName);
+    stkFields_[fd] = mesh_->getMetaData()->get_field<double>(stk::topology::ELEMENT_RANK, fieldName);
   }
 }
 
@@ -147,7 +150,16 @@ evaluateFields(
          average(i,0) /= numPoints;
       }
 
-      mesh_->setCellFieldData(fieldName+d_mod[dim],blockId,localCellIds,average.get_view());
+      double scalef = 1.0;
+
+      if (!varScaleFactors_.is_null())
+      {
+        std::map<std::string,double> *tmp_sfs = varScaleFactors_.get();
+        if(tmp_sfs->find(fieldName) != tmp_sfs->end())
+          scalef = (*tmp_sfs)[fieldName];
+      }
+
+      mesh_->setCellFieldData(fieldName+d_mod[dim],blockId,localCellIds,average.get_view(),scalef);
 
     }
   }

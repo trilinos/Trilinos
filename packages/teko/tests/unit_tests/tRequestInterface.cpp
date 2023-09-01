@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -66,7 +66,7 @@ class TestFactory : public Teko::PreconditionerFactory {
 public:
    Teko::LinearOp buildPreconditionerOperator(Teko::LinearOp & lo,
                                               Teko::PreconditionerState & state) const;
-   
+
    mutable double timestep_;
    mutable Teko::LinearOp pcdOp_;
    mutable std::string string_;
@@ -92,7 +92,7 @@ public:
    Teko::LinearOp request(const Teko::RequestMesg & rd)
    {
       TEUCHOS_ASSERT(handlesRequest(rd));
-      return Teuchos::null;  
+      return Teuchos::null;
    }
 
    bool handlesRequest(const Teko::RequestMesg & rd)
@@ -110,7 +110,7 @@ public:
    double request(const Teko::RequestMesg & rd)
    {
       TEUCHOS_ASSERT(handlesRequest(rd));
-      return 0.1;  
+      return 0.1;
    }
 
    bool handlesRequest(const Teko::RequestMesg & rd)
@@ -174,7 +174,7 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
       rh->preRequest<int>(intMesg);
       out << "Found <int> with name \"Int Op\" in preRequest" << std::endl;
       TEST_ASSERT(false);
-   } catch(std::exception & e) 
+   } catch(std::exception & e)
    { out << "expected exception = " << e.what() << std::endl; }
 
    try {
@@ -182,7 +182,7 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
       int size = rh->request<int>(intMesg);
       out << "Found <int> with name \"Int Op\" value=" << size << std::endl;
       TEST_ASSERT(false);
-   } catch(std::exception & e) 
+   } catch(std::exception & e)
    { out << "expected exception = " << e.what() << std::endl; }
 
    try {
@@ -190,11 +190,11 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
       int lo = rh->request<int>(intMesg);
       out << "Found <int> with name \"PCD Op\" value=" << lo << std::endl;
       TEST_ASSERT(false);
-   } catch(std::exception & e) 
+   } catch(std::exception & e)
    { out << "expected exception = " << e.what() << std::endl; }
 }
 
-// Test widget for the parameter list based call back: 
+// Test widget for the parameter list based call back:
 //    used in preconditioner_request_interface unit test
 ///////////////////////////////////////////////////////////////////
 class PLCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
@@ -213,7 +213,7 @@ Teuchos::RCP<Teuchos::ParameterList> PLCallback::request(const Teko::RequestMesg
                       "Parameter list not included in request message");
 
    Teuchos::RCP<Teuchos::ParameterList> outputPL = Teuchos::rcp(new Teuchos::ParameterList);
-   
+
    // build up new parameter list from message list
    Teuchos::ParameterList::ConstIterator itr;
    for(itr=inputPL->begin();itr!=inputPL->end();++itr) {
@@ -226,11 +226,11 @@ Teuchos::RCP<Teuchos::ParameterList> PLCallback::request(const Teko::RequestMesg
    return outputPL;
 }
 
-void PLCallback::preRequest(const Teko::RequestMesg & rm) 
+void PLCallback::preRequest(const Teko::RequestMesg & rm)
 {
 }
 
-bool PLCallback::handlesRequest(const Teko::RequestMesg & rm) 
+bool PLCallback::handlesRequest(const Teko::RequestMesg & rm)
 {
    if(rm.getName()=="Parameter List") return true;
    else return false;
@@ -238,6 +238,7 @@ bool PLCallback::handlesRequest(const Teko::RequestMesg & rm)
 
 TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface)
 {
+#ifdef TEKO_HAVE_EPETRA
    using Teuchos::RCP;
    using Teuchos::rcp;
 
@@ -246,14 +247,14 @@ TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface)
       Teuchos::ParameterList & mlList = pl.sublist("ML-Test");
       mlList.set<std::string>("Type","ML");
       mlList.sublist("ML Settings");
-      mlList.sublist("Required Parameters").set<std::string>("cat","dog"); 
+      mlList.sublist("Required Parameters").set<std::string>("cat","dog");
    }
    {  // ML-Test2 does not require a handler
       Teuchos::ParameterList & mlList = pl.sublist("ML-Test2");
       mlList.set<std::string>("Type","ML");
       mlList.sublist("ML Settings").set<std::string>("pet","horse");
    }
-   
+
    // make sure it throws if uses haven't set things up correctly
    {
       RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
@@ -272,13 +273,12 @@ TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface)
       RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("ML-Test");
 
       // investigate the parameter list to see if it has bee correctly updated!
-      RCP<Teko::PreconditionerInverseFactory> pInvFact 
+      RCP<Teko::PreconditionerInverseFactory> pInvFact
             = Teuchos::rcp_dynamic_cast<Teko::PreconditionerInverseFactory>(invFact);
-      Teuchos::RCP<const Teuchos::ParameterList> pl = pInvFact->getPrecFactory()->getParameterList();
+      Teuchos::RCP<const Teuchos::ParameterList> pl2 = pInvFact->getPrecFactory()->getParameterList();
 
-      TEST_ASSERT(pl->sublist("ML Settings").isParameter("cat"));
-      TEST_EQUALITY(pl->sublist("ML Settings").get<int>("cat"),7);
+      TEST_ASSERT(pl2->sublist("ML Settings").isParameter("cat"));
+      TEST_EQUALITY(pl2->sublist("ML Settings").get<int>("cat"),7);
    }
-
-   
+#endif
 }

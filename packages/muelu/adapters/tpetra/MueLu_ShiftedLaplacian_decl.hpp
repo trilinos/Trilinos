@@ -56,13 +56,12 @@
 #include "MueLu.hpp"
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_IFPACK2)
 
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_AmalgamationFactory_fwd.hpp>
 #include <MueLu_CoalesceDropFactory_fwd.hpp>
 #include <MueLu_CoarseMapFactory_fwd.hpp>
-#include <MueLu_CoupledAggregationFactory_fwd.hpp>
 #include <MueLu_CoupledRBMFactory_fwd.hpp>
 #include <MueLu_DirectSolver_fwd.hpp>
 #include <MueLu_GenericRFactory_fwd.hpp>
@@ -286,7 +285,6 @@ namespace MueLu {
     RCP<RAPShiftFactory>              Acshift_;
     RCP<AmalgamationFactory>          Amalgfact_;
     RCP<CoalesceDropFactory>          Dropfact_;
-    RCP<CoupledAggregationFactory>    Aggfact_;
     RCP<UncoupledAggregationFactory>  UCaggfact_;
     RCP<CoarseMapFactory>             CoarseMapfact_;
     RCP<SmootherPrototype>            smooProto_, coarsestSmooProto_;

@@ -29,9 +29,7 @@
 #include <Isorropia_EpetraPartitioner.hpp>
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraCrsGraph.hpp>
-#endif
 #endif // ENDIF HAVE_MUELU_ISORROPIA
 
 #include "MueLu_Level.hpp"
@@ -39,7 +37,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -216,14 +213,12 @@ namespace MueLu {
     }
 #endif // ENDIF HAVE_MUELU_EPETRA
 
-#ifdef HAVE_MUELU_TPETRA
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
     RCP< Xpetra::TpetraCrsGraph<LO, GO, Node> > tpCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsGraph<LO, GO, Node> >(crsGraph);
     TEUCHOS_TEST_FOR_EXCEPTION(tpCrsGraph != Teuchos::null, Exceptions::RuntimeError, "Tpetra is not supported with Isorropia.");
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Isorropia is an interface to Zoltan which only has support for LO=GO=int and SC=double.");
 #endif // ENDIF HAVE_MUELU_INST_DOUBLE_INT_INT
-#endif // ENDIF HAVE_MUELU_TPETRA
 #endif // HAVE_MUELU_ISORROPIA
 #else  // if we don't have MPI
 

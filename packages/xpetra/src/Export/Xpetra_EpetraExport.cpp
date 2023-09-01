@@ -68,24 +68,24 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_TPETRA_INST_SERIAL
-template class EpetraExportT<int, Kokkos::Compat::KokkosSerialWrapperNode >;
-template RCP<const Export<int,int,Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<int,Kokkos::Compat::KokkosSerialWrapperNode >(const Epetra_Export *);
+template class EpetraExportT<int, Tpetra::KokkosCompat::KokkosSerialWrapperNode >;
+template RCP<const Export<int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode > > toXpetra<int,Tpetra::KokkosCompat::KokkosSerialWrapperNode >(const Epetra_Export *);
 #endif
 #ifdef HAVE_TPETRA_INST_PTHREAD
-template class EpetraExportT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
-template RCP<const Export<int,int,Kokkos::Compat::KokkosThreadsWrapperNode> > toXpetra<int,Kokkos::Compat::KokkosThreadsWrapperNode >(const Epetra_Export *);
+template class EpetraExportT<int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode>;
+template RCP<const Export<int,int,Tpetra::KokkosCompat::KokkosThreadsWrapperNode> > toXpetra<int,Tpetra::KokkosCompat::KokkosThreadsWrapperNode >(const Epetra_Export *);
 #endif
 #ifdef HAVE_TPETRA_INST_OPENMP
-template class EpetraExportT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
-template RCP<const Export<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<int,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Export *);
+template class EpetraExportT<int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >;
+template RCP<const Export<int, int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > toXpetra<int,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>(const Epetra_Export *);
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
-typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode default_node_type;
 template class EpetraExportT<int, default_node_type >;
 template RCP<const Export<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Export *);
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
-typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode default_node_type;
 template class EpetraExportT<int, default_node_type >;
 template RCP<const Export<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Export *);
 #endif
@@ -107,24 +107,24 @@ template RCP<const Export<int, int, default_node_type> > toXpetra<int,default_no
 #endif
 
 #ifdef HAVE_TPETRA_INST_SERIAL
-template class EpetraExportT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
-template RCP<const Export<int,long long,Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<long long,Kokkos::Compat::KokkosSerialWrapperNode >(const Epetra_Export *);
+template class EpetraExportT<long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode >;
+template RCP<const Export<int,long long,Tpetra::KokkosCompat::KokkosSerialWrapperNode > > toXpetra<long long,Tpetra::KokkosCompat::KokkosSerialWrapperNode >(const Epetra_Export *);
 #endif
 #ifdef HAVE_TPETRA_INST_PTHREAD
-template class EpetraExportT<long long, Kokkos::Compat::KokkosThreadsWrapperNode>;
-template RCP<const Export<int,long long,Kokkos::Compat::KokkosThreadsWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosThreadsWrapperNode >(const Epetra_Export *);
+template class EpetraExportT<long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode>;
+template RCP<const Export<int,long long,Tpetra::KokkosCompat::KokkosThreadsWrapperNode> > toXpetra<long long,Tpetra::KokkosCompat::KokkosThreadsWrapperNode >(const Epetra_Export *);
 #endif
 #ifdef HAVE_TPETRA_INST_OPENMP
-template class EpetraExportT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
-template RCP<const Export<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Export *);
+template class EpetraExportT<long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >;
+template RCP<const Export<int, long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > toXpetra<long long,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>(const Epetra_Export *);
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
-typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode default_node_type;
 template class EpetraExportT<long long, default_node_type >;
 template RCP<const Export<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Export *);
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
-typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode default_node_type;
 template class EpetraExportT<long long, default_node_type >;
 template RCP<const Export<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Export *);
 #endif

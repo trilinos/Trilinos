@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "ioss_export.h"
 
 #include "Ioss_EntityType.h" // for EntityType, etc
 #include "Ioss_Property.h"   // for Property
@@ -23,12 +25,12 @@ namespace Ioss {
 
   /** \brief A homogeneous collection of other GroupingEntities.
    */
-  class Assembly : public GroupingEntity
+  class IOSS_EXPORT Assembly : public GroupingEntity
   {
   public:
-    Assembly()           = default; // Used for template typing only
-    ~Assembly() override = default;
-    Assembly(const Assembly &);
+    Assembly()                 = default; // Used for template typing only
+    ~Assembly() override       = default;
+    Assembly(const Assembly &) = default;
 
     Assembly(DatabaseIO *io_database, const std::string &my_name);
 
@@ -43,7 +45,7 @@ namespace Ioss {
     EntityType get_member_type() const { return m_type; }
 
     bool                   add(const GroupingEntity *member);
-    bool                   remove(const GroupingEntity *member);
+    bool                   remove(const GroupingEntity *removal);
     const EntityContainer &get_members() const;
     const GroupingEntity  *get_member(const std::string &my_name) const;
     void                   remove_members();
@@ -60,6 +62,9 @@ namespace Ioss {
 
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
+
+    int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                       size_t *data_size) const override;
 
   private:
     EntityContainer m_members;

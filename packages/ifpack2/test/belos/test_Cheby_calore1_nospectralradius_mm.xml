@@ -1,0 +1,18 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file"     type="string" value="calore1.mtx"/>
+  <Parameter name="rhs_mm_file" type="string" value="calore1_rhs.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="Block Gmres"/>
+  <ParameterList name="Belos">
+    <Parameter name="Verbosity" type="int" value="2"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="CHEBYSHEV"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="chebyshev: degree" type="int" value="3"/>
+    <Parameter name="chebyshev: compute spectral radius" type="bool" value="false"/>
+    <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="30"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="32"/>
+</ParameterList>

@@ -24,7 +24,6 @@ SET(PARAVIEW_PYTHON_LIBRARY_RPATH_DIRECTORY CACHE
     FILEPATH "Path to the directory containing the Python library used by ParaView.")
 
 IF(PARAVIEW_PYTHON_LIBRARY_RPATH_DIRECTORY)
-  CMAKE_POLICY(SET CMP0015 OLD)
   LINK_DIRECTORIES(${PARAVIEW_PYTHON_LIBRARY_RPATH_DIRECTORY})
 ENDIF()
 
@@ -47,6 +46,7 @@ ADD_LIBRARY(${PVCSA_LIBRARY_NAME} SHARED manager/CatalystManager.cxx
                                          manager/CatalystMeshWriter.cxx
                                          exodus/CatalystExodusMesh.cxx
                                          cgns/CatalystCGNSMesh.cxx)
+TARGET_COMPILE_DEFINITIONS(${PVCSA_LIBRARY_NAME} PRIVATE __CATALYST_PLUGIN_BUILD)
 
 TARGET_INCLUDE_DIRECTORIES(${PVCSA_LIBRARY_NAME}
     PUBLIC
@@ -69,16 +69,11 @@ IF(BUILD_IOSS_2_CATALYST_APPLICATION)
 
     SET(CMAKE_PREFIX_PATH ${SEACAS_INSTALL_DIR} ${CMAKE_PREFIX_PATH})
     FIND_PACKAGE(SEACAS REQUIRED)
-    FIND_PACKAGE(HDF5 REQUIRED)
 
     IF(SEACAS_FOUND)
-        IF("CGNS" IN_LIST SEACAS_TPL_LIST)
-            ADD_SUBDIRECTORY(ioss2catalyst)
-            ENABLE_TESTING()
-            ADD_SUBDIRECTORY(test)
-        ELSE()
-            MESSAGE(FATAL_ERROR "Must build SEACAS with CGNS TPL enabled.")
-        ENDIF()
+        ADD_SUBDIRECTORY(ioss2catalyst)
+        ENABLE_TESTING()
+        ADD_SUBDIRECTORY(test)
     ENDIF()
 ENDIF()
 

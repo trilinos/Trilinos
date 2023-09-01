@@ -594,7 +594,7 @@ Real Constraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real> &w,
   ROL::Ptr<Vector<Real> > Jv = dualw.clone();
   ROL::Ptr<Vector<Real> > Jw = dualv.clone();
   
-  this->update(x);
+  this->update(x,UpdateType::Temp);
   applyJacobian(*Jv,v,x,tol);
   applyAdjointJacobian(*Jw,w,x,tol);
 

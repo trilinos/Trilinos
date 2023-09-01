@@ -156,7 +156,7 @@ void populate_AA_sideset(stk::mesh::BulkData& bulk,
     stk::mesh::EntityIdVector elem;
     std::vector<int> ordinal;
     populate_elem_sides(direction, elemOrdering, elem, ordinal);
-    ThrowRequire(elem.size() == ordinal.size());
+    STK_ThrowRequire(elem.size() == ordinal.size());
 
     stk::mesh::SideSet& sideSet = bulk.create_sideset(*parts[0]);
     sideSet.set_accept_all_internal_non_coincident_entries(false);
@@ -220,7 +220,7 @@ void populate_AB_sideset(stk::mesh::BulkData& bulk,
     std::vector<int> ordinal;
 
     populate_elem_sides(direction, elemOrdering, elem, ordinal);
-    ThrowRequire(elem.size() == ordinal.size());
+    STK_ThrowRequire(elem.size() == ordinal.size());
 
     stk::mesh::SideSet &sideSet = bulk.create_sideset(*parts[0]);
     sideSet.set_accept_all_internal_non_coincident_entries(false);
@@ -341,7 +341,7 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh:
     }
 
     stk::mesh::Part* sidePart = parts[0];
-    ThrowRequire(nullptr != sidePart);
+    STK_ThrowRequire(nullptr != sidePart);
     const unsigned numberOfStates = 1;
     stk::mesh::Field<double,shards::ArrayDimension> & ssField = meta.declare_field<stk::mesh::Field<double,shards::ArrayDimension>>(stk::topology::FACE_RANK, fieldName, numberOfStates);
     for (stk::mesh::Part* part : parts)
@@ -349,7 +349,7 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh:
       stk::io::set_distribution_factor_field(*part, ssField);
     }
     stk::topology sideTopo = sidePart->topology();
-    ThrowRequireMsg(sideTopo != stk::topology::INVALID_TOPOLOGY, "sidePart "<<sidePart->name()<<" has invalid topology.");
+    STK_ThrowRequireMsg(sideTopo != stk::topology::INVALID_TOPOLOGY, "sidePart "<<sidePart->name()<<" has invalid topology.");
     unsigned numNodes = sideTopo.num_nodes();
     std::vector<double> initValVec(numNodes, initValue);
     stk::mesh::put_field_on_mesh(ssField, *sidePart, numNodes, initValVec.data());
@@ -474,7 +474,7 @@ void populate_AA_sideset(stk::mesh::BulkData& bulk,
   stk::mesh::EntityIdVector elem;
   std::vector<int> ordinal;
   simple_fields::populate_elem_sides(direction, elemOrdering, elem, ordinal);
-  ThrowRequire(elem.size() == ordinal.size());
+  STK_ThrowRequire(elem.size() == ordinal.size());
 
   stk::mesh::SideSet& sideSet = bulk.create_sideset(*parts[0]);
   sideSet.set_accept_all_internal_non_coincident_entries(false);
@@ -538,7 +538,7 @@ void populate_AB_sideset(stk::mesh::BulkData& bulk,
   std::vector<int> ordinal;
 
   simple_fields::populate_elem_sides(direction, elemOrdering, elem, ordinal);
-  ThrowRequire(elem.size() == ordinal.size());
+  STK_ThrowRequire(elem.size() == ordinal.size());
 
   stk::mesh::SideSet &sideSet = bulk.create_sideset(*parts[0]);
   sideSet.set_accept_all_internal_non_coincident_entries(false);
@@ -659,7 +659,7 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh:
   }
 
   stk::mesh::Part* sidePart = parts[0];
-  ThrowRequire(nullptr != sidePart);
+  STK_ThrowRequire(nullptr != sidePart);
   const unsigned numberOfStates = 1;
   stk::mesh::Field<double> & ssField = meta.declare_field<double>(stk::topology::FACE_RANK, fieldName, numberOfStates);
   for (stk::mesh::Part* part : parts)
@@ -667,7 +667,7 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh:
     stk::io::set_distribution_factor_field(*part, ssField);
   }
   stk::topology sideTopo = sidePart->topology();
-  ThrowRequireMsg(sideTopo != stk::topology::INVALID_TOPOLOGY, "sidePart "<<sidePart->name()<<" has invalid topology.");
+  STK_ThrowRequireMsg(sideTopo != stk::topology::INVALID_TOPOLOGY, "sidePart "<<sidePart->name()<<" has invalid topology.");
   unsigned numNodes = sideTopo.num_nodes();
   std::vector<double> initValVec(numNodes, initValue);
   stk::mesh::put_field_on_mesh(ssField, *sidePart, numNodes, initValVec.data());

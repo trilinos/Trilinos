@@ -5,7 +5,6 @@
 #include <Compadre_Config.h>
 #include <Compadre_GMLS.hpp>
 #include <Compadre_PointCloudSearch.hpp>
-#include <Compadre_KokkosParser.hpp>
 
 #ifdef COMPADRE_USE_MPI
 #include <mpi.h>
@@ -35,7 +34,7 @@ MPI_Init(&argc, &args);
 #endif
 
 // initializes Kokkos with command line arguments given
-auto kp = KokkosParser(argc, args, true);
+Kokkos::initialize(argc, args);
 
 // becomes false if the computed solution not within the failure_threshold of the actual solution
 bool all_passed = true;
@@ -834,7 +833,7 @@ bool all_passed = true;
 }
 
 // finalize Kokkos and MPI (if available)
-kp.finalize();
+Kokkos::finalize();
 #ifdef COMPADRE_USE_MPI
 MPI_Finalize();
 #endif

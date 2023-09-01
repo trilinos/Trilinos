@@ -48,8 +48,6 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ConfigDefs.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // Teuchos
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -77,9 +75,9 @@ void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> 
   lagr2DofFile.close();
 }
 
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MUELU_TPETRA
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
+  #include <MueLu_UseShortNames.hpp>
   using SparseMatrixType = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_mvector_type = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -91,7 +89,6 @@ int main(int argc, char *argv[])
   using ST = ScalarTraits<Scalar>;
 
   oblackholestream blackhole;
-  GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
   RCP<const Comm<int>> comm = DefaultComm<int>::getComm();
   RCP<FancyOStream> out = fancyOStream(rcpFromRef(std::cout));
@@ -248,9 +245,12 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
   else
     return EXIT_FAILURE;
+}
 
-#else
-  std::cout << "Tpetra not enabled. Skip test." << std::endl;
-  return EXIT_SUCCESS;
-#endif
+//- -- --------------------------------------------------------
+#define MUELU_AUTOMATIC_TEST_ETI_NAME main_
+#include "MueLu_Test_ETI.hpp"
+
+int main(int argc, char *argv[]) {
+  return Automatic_Test_ETI(argc,argv);
 }

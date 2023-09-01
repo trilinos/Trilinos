@@ -59,7 +59,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class  IPOUHarmonicCoarseOperator : public HarmonicCoarseOperator<SC,LO,GO,NO> {
 
     protected:
@@ -128,7 +128,6 @@ namespace FROSch {
         virtual int initialize()
         {
             FROSCH_ASSERT(false," IPOUHarmonicCoarseOperator cannot be built without a repeated Map");
-            return 0;
         };
 
         int initialize(UN dimension,

@@ -124,7 +124,7 @@ all_reduce_loc_impl(ParallelMachine comm,
         vin[i].m_loc = local_loc[i] ;
       }
   
-      ThrowRequire( MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n, sierra::MPI::Datatype< MpiLocType >::type(), mpiOp, comm ) );
+      STK_ThrowRequire( MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n, sierra::MPI::Datatype< MpiLocType >::type(), mpiOp, comm ) );
   
       for (unsigned i = 0 ; i < n ; ++i ) {
         global_extrema[i] = vout[i].m_value ;

@@ -53,7 +53,6 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Kokkos_View.hpp"
 #include "KokkosCompat_View.hpp"
 #include "Tpetra_Core.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
@@ -136,8 +135,6 @@ namespace Tpetra {
       Kokkos::deep_copy(v_out,v_in_wrap);
       return v_out;
     }
-
-
 
   } // namespace TestingUtilities
 } // namespace Tpetra

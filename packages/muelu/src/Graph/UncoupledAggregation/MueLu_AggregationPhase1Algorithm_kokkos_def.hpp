@@ -46,8 +46,6 @@
 #ifndef MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP
 #define MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <queue>
 #include <vector>
 
@@ -58,7 +56,7 @@
 
 #include "MueLu_AggregationPhase1Algorithm_kokkos_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
@@ -72,7 +70,7 @@ namespace MueLu {
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const Teuchos::ParameterList& params,
                   const LWGraph_kokkos& graph,
-                  Aggregates_kokkos& aggregates,
+                  Aggregates& aggregates,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
 
@@ -105,7 +103,7 @@ namespace MueLu {
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregatesRandom(const LO maxAggSize,
                         const LWGraph_kokkos& graph,
-                        Aggregates_kokkos& aggregates,
+                        Aggregates& aggregates,
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                         LO& numNonAggregatedNodes) const
   {
@@ -208,7 +206,7 @@ namespace MueLu {
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregatesDeterministic(const LO maxAggSize,
                                const LWGraph_kokkos& graph,
-                               Aggregates_kokkos& aggregates,
+                               Aggregates& aggregates,
                                Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                                LO& numNonAggregatedNodes) const
   {
@@ -285,5 +283,4 @@ namespace MueLu {
 
 } // end namespace
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP

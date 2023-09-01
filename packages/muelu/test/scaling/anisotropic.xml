@@ -1,4 +1,4 @@
-<ParameterList> 
+<ParameterList>
   <ParameterList name="Run1">
     <ParameterList name="Galeri">
       <!--  //  z3  e  z4
@@ -44,7 +44,7 @@
       <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
       <!-- Uncomment the next line to enable dropping of weak connections, which can help AMG convergence
            for anisotropic problems.  The exact value is problem dependent. -->
-      <Parameter        name="aggregation: drop tol"                type="double"   value="0.2"/> 
+      <Parameter        name="aggregation: drop tol"                type="double"   value="0.2"/>
       
       <!-- ===========  SMOOTHING  =========== -->
       <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>

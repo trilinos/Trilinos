@@ -48,6 +48,13 @@
 
 namespace TpetraExamples {
 
+template<typename V>
+Kokkos::View<typename V::data_type, typename V::array_layout, typename V::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+makeUnmanaged(const V& v)
+{
+  return v;
+}
+
 // Return a pointer (RCP is like std::shared_ptr) to an output
 // stream.  It prints on Process 0 of the given MPI communicator,
 // but ignores all output on other MPI processes.

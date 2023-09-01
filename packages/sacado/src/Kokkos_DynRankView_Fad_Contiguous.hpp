@@ -35,7 +35,7 @@
 // This file is setup to always work even when KokkosContainers (which contains
 // Kokkos::DynRankView) isn't enabled.
 
-#if defined(HAVE_SACADO_KOKKOSCONTAINERS)
+#if defined(HAVE_SACADO_KOKKOS)
 
 #include "Kokkos_DynRankView.hpp"
 
@@ -751,7 +751,7 @@ public:
                         src.m_map.m_impl_offset.layout() );
 
       dst.m_map.m_impl_handle = src.m_map.m_impl_handle ;
-      dst.m_rank = src.Rank ;
+      dst.m_rank = src.rank ;
 
       dst.m_map.m_fad_size = src.m_map.m_fad_size ;
       dst.m_map.m_original_fad_size = src.m_map.m_original_fad_size;
@@ -824,7 +824,7 @@ public:
       dst.m_map.m_impl_offset.m_stride = src.m_map.m_array_offset.m_stride ;
 
       dst.m_map.m_impl_handle = src.m_map.m_impl_handle ;
-      dst.m_rank = src.Rank ;
+      dst.m_rank = src.rank ;
     }
 };
 
@@ -832,6 +832,6 @@ public:
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCONTAINERS)
+#endif // defined(HAVE_SACADO_KOKKOS)
 
 #endif /* #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP */

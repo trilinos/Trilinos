@@ -11,7 +11,7 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Compute_Surface_Distance.hpp>
 #include <Akri_MeshSurface.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
@@ -45,7 +45,7 @@ static BoundingBox compute_nodal_bounding_box(const stk::mesh::BulkData & mesh,
     double *coord = stk::mesh::field_data(coordinates, *bucket);
 
     for (size_t n = 0; n < length; ++n)
-      nodeBbox.accommodate( Vector3d(coord+n*spatial_dimension, spatial_dimension) );
+      nodeBbox.accommodate( stk::math::Vector3d(coord+n*spatial_dimension, spatial_dimension) );
   }
 
   return nodeBbox;
@@ -69,9 +69,9 @@ static void compute_distance_to_facets(const stk::mesh::BulkData & mesh,
 
     for (size_t n = 0; n < length; ++n)
     {
-      ThrowAssert(&(dist[n]) != NULL);
+      STK_ThrowAssert(&(dist[n]) != NULL);
 
-      const Vector3d xvec(coord+n*spatial_dimension, spatial_dimension);
+      const stk::math::Vector3d xvec(coord+n*spatial_dimension, spatial_dimension);
       dist[n] = facet_list.point_unsigned_distance(xvec, narrowBandSize, farFieldValue);
     }
   }

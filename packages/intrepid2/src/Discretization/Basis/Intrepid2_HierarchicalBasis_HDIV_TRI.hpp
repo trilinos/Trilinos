@@ -51,7 +51,6 @@
 #ifndef Intrepid2_HierarchicalBasis_HDIV_TRI_h
 #define Intrepid2_HierarchicalBasis_HDIV_TRI_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -83,6 +82,8 @@ namespace Intrepid2
     using CurlBasis = HierarchicalBasis_HCURL_TRI<DeviceType,OutputScalar,PointScalar,useCGBasis>;
     
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+
+    using HostBasis = HierarchicalBasis_HDIV_TRI<typename Kokkos::HostSpace::device_type, OutputScalar, PointScalar, useCGBasis>;
 
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;

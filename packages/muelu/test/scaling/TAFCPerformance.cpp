@@ -74,9 +74,7 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include <MueLu_CreateEpetraPreconditioner.hpp>
 #include <EpetraExt_MMHelpers.h>
@@ -452,7 +450,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         try {
           runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
           mueluList = runList  .sublist("MueLu", mustAlreadyExist);
-        } catch (Teuchos::Exceptions::InvalidParameterName& e) {
+        } catch (Teuchos::Exceptions::InvalidParameterName&) {
           stop = true;
         }
       }

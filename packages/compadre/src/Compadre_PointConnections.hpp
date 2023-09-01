@@ -76,10 +76,8 @@ struct PointConnections {
         double val = 0.0;
         if (dim == 0 && V.extent_int(0)==1) { // 2D problem with 1D manifold
             val = local_coord.x * V(0, dim);
-        } else if (dim == 0) { // 3D problem with 2D manifold
-            val = local_coord.x * (V(0, dim) + V(1, dim));
-        } else if (dim == 1) { // 3D problem with 2D manifold
-            val = local_coord.y * (V(0, dim) + V(1, dim));
+        } else { // 3D problem with 2D manifold
+            val = local_coord.x * V(0, dim) + local_coord.y * V(1, dim);
         }
         return val;
     }

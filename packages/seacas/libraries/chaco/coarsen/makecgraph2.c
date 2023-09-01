@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,8 +54,6 @@ void makecgraph2(struct vtx_data  **graph,       /* array of vtx data for graph 
   double            m1, m2;          /* vertex weights of vertices being merged */
   int               v1, v2;          /* vertices being merged */
   int               i, j;            /* loop counters */
-  double            seconds(void);
-  void              makev2cv();
 
   /* Compute the number of vertices and edges in the coarsened graph, */
   /* and construct start pointers into coarsened edge array. */

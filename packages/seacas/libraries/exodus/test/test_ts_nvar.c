@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,7 +49,7 @@ void *output_nodal_var(void *varg)
   }
 
   char name[33];
-  sprintf(name, "NodalVar%ld", arg->threadid + 1);
+  snprintf(name, 33, "NodalVar%ld", arg->threadid + 1);
   ex_put_variable_name(arg->exoid, EX_NODAL, arg->threadid + 1, name);
 
   ex_put_var(arg->exoid, arg->timestep, EX_NODAL, arg->threadid + 1, 1, num_node, data);

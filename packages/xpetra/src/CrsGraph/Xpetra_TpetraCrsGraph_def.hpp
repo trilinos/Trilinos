@@ -100,7 +100,6 @@ TpetraCrsGraph(const Teuchos::RCP<const CrsGraph >& sourceGraph,
 }
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
 TpetraCrsGraph(const Teuchos::RCP< const Map > &rowMap,
@@ -128,7 +127,6 @@ TpetraCrsGraph(const local_graph_type& lclGraph,
                const Teuchos::RCP<const map_type>& rangeMap,
                const Teuchos::RCP<Teuchos::ParameterList>& params)
   : graph_(Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(lclGraph, toTpetra(rowMap), toTpetra(colMap), toTpetra(domainMap), toTpetra(rangeMap), params))) {  }
-#endif
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
@@ -324,7 +322,6 @@ void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalRowView(LocalOrdin
   Indices = ArrayView<const LocalOrdinal> (indices.data(), indices.extent(0));
 }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::local_graph_type::HostMirror TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalGraphHost () const {
   return getTpetra_CrsGraph()->getLocalGraphHost();
@@ -334,7 +331,6 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::local_graph_type TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalGraphDevice () const {
   return getTpetra_CrsGraph()->getLocalGraphDevice();
 }
-#endif
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::computeGlobalConstants() {
@@ -459,7 +455,6 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
     ///
@@ -553,7 +548,6 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
                                    "int",
                                    typeid(EpetraNode).name());
     }
-#endif
 
     //! Destructor.
     virtual ~TpetraCrsGraph() {  }
@@ -686,14 +680,12 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     /// \brief Access the local KokkosSparse::StaticCrsGraph data
     local_graph_type getLocalGraph () const {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "Epetra does not support Kokkos::StaticCrsGraph!");
       TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
     }
-#endif
 
     //! Dummy implementation for computeGlobalConstants
     void computeGlobalConstants() { }
@@ -799,7 +791,6 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
     ///
@@ -893,7 +884,6 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
                                    "int",
                                    typeid(EpetraNode).name());
     }
-#endif
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -1058,7 +1048,6 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
     //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     local_graph_type getLocalGraphDevice () const {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "Epetra does not support Kokkos::StaticCrsGraph!");
@@ -1070,8 +1059,6 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
                                  "Epetra does not support Kokkos::StaticCrsGraph!");
       TEUCHOS_UNREACHABLE_RETURN((local_graph_type::HostMirror()));
     }
-
-#endif
 
     //! Dummy implementation for computeGlobalConstants
     void computeGlobalConstants() { }

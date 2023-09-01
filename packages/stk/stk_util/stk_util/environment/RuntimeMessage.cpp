@@ -39,11 +39,11 @@
 #include "stk_util/util/Marshal.hpp"        // for operator<<, operator>>, Marshal
 #include "stk_util/util/ReportHandler.hpp"  // for report
 #include <algorithm>                        // for stable_sort
-#include <functional>                       // for hash, binary_function
+#include <functional>                       // for hash
 #include <sstream>                          // for operator<<, basic_ostream, basic_ostream::ope...
 #include <stdexcept>                        // for runtime_error
 #include <string>                           // for string, operator<<, char_traits, operator==
-#include <system_error>                     // for hash
+#include <system_error>
 #include <unordered_map>                    // for unordered_map<>::iterator, _Node_iterator
 #include <utility>                          // for pair
 #include <vector>                           // for vector, vector<>::const_iterator
@@ -131,7 +131,7 @@ struct DeferredMessage
 
 typedef std::vector<DeferredMessage> DeferredMessageVector;
 
-struct DeferredMessageLess : public std::binary_function<DeferredMessage, DeferredMessage, bool>
+struct DeferredMessageLess
 {
   bool operator()(const DeferredMessage &key_1, const DeferredMessage &key_2) const {
     return (key_1.m_type < key_2.m_type)
@@ -234,7 +234,7 @@ get_message_count(
 
 unsigned get_message_printed_count(unsigned messageType)
 {
-  ThrowRequireMsg(messageType==MSG_WARNING,"Only count printed warning messages.");
+  STK_ThrowRequireMsg(messageType==MSG_WARNING,"Only count printed warning messages.");
   unsigned totalPrinted = 0;
   for(auto& iter : s_messageIdMap) {
     totalPrinted += std::min(iter.second.m_count, iter.second.m_cutoff);

@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "iocgns_export.h"
 
 #include <cgnsconfig.h>
 #if CG_BUILD_PARALLEL
@@ -50,7 +52,7 @@ namespace Ioss {
 
 namespace Iocgns {
 
-  class ParallelDatabaseIO : public Ioss::DatabaseIO
+  class IOCGNS_EXPORT ParallelDatabaseIO : public Ioss::DatabaseIO
   {
   public:
     enum class entity_type { NODE, ELEM };
@@ -61,7 +63,7 @@ namespace Iocgns {
 
     ~ParallelDatabaseIO() override;
 
-    const std::string get_format() const override { return "CGNS"; }
+    std::string get_format() const override { return "CGNS"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed

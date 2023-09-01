@@ -26,13 +26,15 @@
    By default, it's assumed that the edge FE input matrix is curl,curl + mass.
    In this case, invoke the example as follows:
 
-      ml_read_maxwell.exe Ke T Kn [edge map] [node map]
+      ml_read_maxwell.exe Ke T Kn [rhs] [xml deck] [edge map] [node map]
 
    where
 
       Ke is the edge FE matrix (curlcurl + mass)
       T is the topological gradient matrix
       Kn is the nodal FE matrix
+      rhs is the rhs vector (optional)
+      xml deck for ML options (optional)
       edge map (optional)
       node map (optional)
 
@@ -44,7 +46,7 @@
    (curl,curl) and mass matrices are read in separately.  In this case, invoke
    the example as follows:
 
-      ml_read_maxwell.exe S M T Kn [edge map] [node map]
+      ml_read_maxwell.exe S M T Kn [rhs] [xml deck] [edge map] [node map]
 
    where
 
@@ -52,6 +54,8 @@
       M is the mass matrix
       T is the discrete gradient matrix
       Kn is the nodal FE matrix
+      rhs is the rhs vector (optional)
+      xml deck for ML options (optional)
       edge map (optional)
       node map (optional)
 
@@ -89,6 +93,8 @@
 #include "ml_epetra.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_BlockMapOut.h"
@@ -107,6 +113,11 @@ int MatrixMarketFileToCrsMatrix(const char *filename,
                                                       &rowMap,NULL,
                                                       &rangeMap, &domainMap));
 }
+
+int MatrixMarketFileToVector(const char *filename, const Epetra_Map & map, Epetra_Vector *& v) {
+  return EpetraExt::MatrixMarketFileToVector(filename,map,v);
+}
+
 
 ML_Comm *mlcomm;
 
@@ -146,25 +157,29 @@ int main(int argc, char *argv[])
   char *datafile;
 
 #ifdef CurlCurlAndMassAreSeparate
-  if (argc != 5 && argc != 7) {
+  if (argc < 5 && argc > 9) {
     if (Comm.MyPID() == 0) {
-      std::cout << "usage: ml_maxwell.exe <S> <M> <T> <Kn> [edge map] [node map]"
+      std::cout << "usage: ml_maxwell.exe <S> <M> <T> <Kn> [rhs] [xml file] [edge map] [node map]"
            << std::endl;
       std::cout << "        S = edge stiffness matrix file" << std::endl;
       std::cout << "        M = edge mass matrix file" << std::endl;
       std::cout << "        T = discrete gradient file" << std::endl;
       std::cout << "       Kn = auxiliary nodal FE matrix file" << std::endl;
+      std::cout << "      rhs = rhs vector" << std::endl;
+      std::cout << " xml file = xml solver options" <<std::endl;
       std::cout << " edge map = edge distribution over processors" << std::endl;
       std::cout << " node map = node distribution over processors" << std::endl;
       std::cout << argc << std::endl;
     }
 #else //ifdef CurlCurlAndMassAreSeparate
-  if (argc != 4 && argc != 6) {
+ if (argc < 4 && argc > 8) {
     if (Comm.MyPID() == 0) {
-      std::cout << "usage: ml_maxwell.exe <A> <T> <Kn> [edge map] [node map]" <<std::endl;
+      std::cout << "usage: ml_maxwell.exe <A> <T> <Kn> [rhs] [xml file] [edge map] [node map]" <<std::endl;
       std::cout << "        A = edge element matrix file" << std::endl;
       std::cout << "        T = discrete gradient file" << std::endl;
       std::cout << "       Kn = auxiliary nodal FE matrix file" << std::endl;
+      std::cout << "      rhs = rhs vector" << std::endl;
+      std::cout << " xml file = xml solver options" <<std::endl;
       std::cout << " edge map = edge distribution over processors" << std::endl;
       std::cout << " node map = node distribution over processors" << std::endl;
       std::cout << argc << std::endl;
@@ -184,12 +199,12 @@ int main(int argc, char *argv[])
   // ================================================= //
   // every processor reads this in
 #ifdef CurlCurlAndMassAreSeparate
-  if (argc > 5)
+  if (argc > 7)
 #else
-  if (argc > 4)
+  if (argc > 6)
 #endif
   {
-    datafile = argv[5];
+    datafile = argv[7];
     if (Comm.MyPID() == 0) {
       printf("Reading in edge map from %s ...\n",datafile);
       fflush(stdout);
@@ -230,11 +245,54 @@ int main(int argc, char *argv[])
     nodeMap = new Epetra_Map(N,0,Comm);
   }
 
+
+  // ===================================================== //
+  // PARAMETER LISTS                                       //
+  // ===================================================== //
+
+  Teuchos::ParameterList MLList;
+  int *options    = new int[AZ_OPTIONS_SIZE];
+  double *params  = new double[AZ_PARAMS_SIZE];
+  ML_Epetra::SetDefaults("maxwell", MLList, options, params);
+
+#ifdef CurlCurlAndMassAreSeparate
+    const int xml_idx = 6;
+#else
+    const int xml_idx = 5;
+#endif
+    if (argc > xml_idx) {
+    Teuchos::updateParametersFromXmlFileAndBroadcast(argv[xml_idx],Teuchos::Ptr<Teuchos::ParameterList>(&MLList),*Teuchos::DefaultComm<int>::getComm());
+  }
+  else {
+    MLList.set("ML output", 10);
+    MLList.set("aggregation: type", "Uncoupled");
+    MLList.set("coarse: max size", 128);  
+    MLList.set("aggregation: threshold", 0.0);
+    //MLList.set("negative conductivity",true);
+    //MLList.set("smoother: type", "Jacobi");
+    MLList.set("subsmoother: type", "symmetric Gauss-Seidel");
+    MLList.set("max levels", 2);
+    MLList.set("aggregation: damping factor",0.0);
+    
+    // coarse level solve
+    MLList.set("coarse: type", "Amesos-KLU");
+    //MLList.set("coarse: type", "Hiptmair");
+    //MLList.set("coarse: type", "Jacobi");
+    MLList.set("aggregation: do qr", false);
+    
+    MLList.set("smoother: sweeps",1);
+    MLList.set("subsmoother: edge sweeps",1);
+    MLList.set("subsmoother: node sweeps",1);
+    MLList.set("smoother: Hiptmair efficient symmetric",false);
+    //MLList.set("dump matrix: enable", true);   
+  }
+
   // ===================================================== //
   // READ IN MATRICES FROM FILE                            //
   // ===================================================== //
+  Epetra_Vector *rhs=0;
 #ifdef CurlCurlAndMassAreSeparate
-  for (int i = 1; i <5; i++) {
+  for (int i = 1; i <6; i++) {
     datafile = argv[i];
     if (Comm.MyPID() == 0) {
       printf("reading %s ....\n",datafile); fflush(stdout);
@@ -252,11 +310,14 @@ int main(int argc, char *argv[])
     case 4: //Auxiliary nodal matrix
       MatrixMarketFileToCrsMatrix(datafile, *nodeMap,*nodeMap, *nodeMap, Kn);
       break;
+    case 5: // RHS
+      MatrixMarketFileToVector(datafile, *edgeMap,rhs);
+      break;
     } //switch
-  } //for (int i = 1; i <5; i++)
+  } //for (int i = 1; i <6; i++)
 
 #else
-  for (int i = 1; i <4; i++) {
+  for (int i = 1; i <5; i++) {
     datafile = argv[i];
     if (Comm.MyPID() == 0) {
       printf("reading %s ....\n",datafile); fflush(stdout);
@@ -271,34 +332,20 @@ int main(int argc, char *argv[])
     case 3: //Auxiliary nodal matrix
       MatrixMarketFileToCrsMatrix(datafile, *nodeMap, *nodeMap, *nodeMap, Kn);
       break;
+    case 4: // RHS
+      MatrixMarketFileToVector(datafile, *edgeMap,rhs);
+      break;
     } //switch
-  } //for (int i = 1; i <4; i++)
+  } //for (int i = 1; i <5; i++)
 #endif //ifdef CurlCurlAndMassAreSeparate
 
   // ==================================================== //
   // S E T U P   O F    M L   P R E C O N D I T I O N E R //
   // ==================================================== //
 
-  Teuchos::ParameterList MLList;
-  int *options    = new int[AZ_OPTIONS_SIZE];
-  double *params  = new double[AZ_PARAMS_SIZE];
-  ML_Epetra::SetDefaults("maxwell", MLList, options, params);
 
-  MLList.set("ML output", 10);
-  MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("coarse: max size", 15);
-  MLList.set("aggregation: threshold", 0.0);
-  //MLList.set("negative conductivity",true);
-  //MLList.set("smoother: type", "Jacobi");
-  MLList.set("subsmoother: type", "symmetric Gauss-Seidel");
-  //MLList.set("max levels", 2);
-
-  // coarse level solve
-  MLList.set("coarse: type", "Amesos-KLU");
-  //MLList.set("coarse: type", "Hiptmair");
-  //MLList.set("coarse: type", "Jacobi");
-
-  //MLList.set("dump matrix: enable", true);
+  if(Comm.MyPID()==0) 
+    std::cout<<"*** ML Parameters ***\n"<<MLList<<std::endl;
 
 #ifdef CurlCurlAndMassAreSeparate
   //Create the matrix of interest.
@@ -322,6 +369,8 @@ int main(int argc, char *argv[])
 
   MLPrec->PrintUnused(0);
 
+  MLPrec->Print(-1);
+
   // ========================================================= //
   // D E F I N I T I O N   O F   A Z T E C O O   P R O B L E M //
   // ========================================================= //
@@ -332,22 +381,31 @@ int main(int argc, char *argv[])
   // Epetra_Vectors can be created in View mode, to accept pointers to
   // double vectors.
 
-  if (Comm.MyPID() == 0)
-    std::cout << "Putting in a zero initial guess and random rhs (in the range of S+M)" << std::endl;
   Epetra_Vector x(CCplusM->DomainMap());
-  x.Random();
-  Epetra_Vector rhs(CCplusM->DomainMap());
-  CCplusM->Multiply(false,x,rhs);
+
+  // If we don't have a user rhs, get one in the range
+  if(!rhs) {
+    if (Comm.MyPID() == 0)
+      std::cout << "Putting in a zero initial guess and random rhs (in the range of S+M)" << std::endl;
+    x.Random();
+    rhs = new Epetra_Vector(CCplusM->DomainMap());
+    CCplusM->Multiply(false,x,*rhs);
+  }
+  else {
+    if (Comm.MyPID() == 0)
+      std::cout << "Using user rhs"<<std::endl;
+  }
+
   x.PutScalar(0.0);
 
   double vecnorm;
-  rhs.Norm2(&vecnorm);
+  rhs->Norm2(&vecnorm);
   if (Comm.MyPID() == 0) std::cout << "||rhs|| = " << vecnorm << std::endl;
   x.Norm2(&vecnorm);
   if (Comm.MyPID() == 0) std::cout << "||x|| = " << vecnorm << std::endl;
 
   // for AztecOO, we need an Epetra_LinearProblem
-  Epetra_LinearProblem Problem(CCplusM,&x,&rhs);
+  Epetra_LinearProblem Problem(CCplusM,&x,rhs);
   // AztecOO Linear problem
   AztecOO solver(Problem);
   // set MLPrec as precondititoning operator for AztecOO linear problem
@@ -359,7 +417,7 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 1);
 
-  solver.Iterate(15, 1e-3);
+  solver.Iterate(15, 1e-10);
 
   // =============== //
   // C L E A N   U P //
@@ -371,6 +429,7 @@ int main(int argc, char *argv[])
   delete Mass;
   delete T;
   delete Kn;
+  delete rhs;
   delete nodeMap;
   delete edgeMap;
   delete [] params;

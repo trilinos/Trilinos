@@ -34,8 +34,10 @@ trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_gcc
 exe rm -rf $trilinos_install_dir
 
 stk_build_dir=${output_dir}/stk_build_${build_type}_gcc
-exe rm -rf $stk_build_dir
-exe mkdir -p $stk_build_dir
+if [ "${clear_cache}" == "ON" ] ; then
+  exe rm -rf $stk_build_dir
+  exe mkdir -p $stk_build_dir
+fi
 
 stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
 

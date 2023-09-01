@@ -31,6 +31,9 @@
 /* Determine if we have the quadmath TPL */
 #cmakedefine HAVE_TPETRACORE_QUADMATH
 
+/* Determine if we have the mpi_advance TPL */
+#cmakedefine HAVE_TPETRACORE_MPI_ADVANCE
+
 /* Determine if we have QD */
 #cmakedefine HAVE_TPETRACORE_QD
 #ifdef HAVE_TPETRACORE_QD
@@ -42,9 +45,6 @@
 
 /* Define if want to build tpetra-print_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_WARNINGS
-
-/* Define if want to build tpetra-throw_efficiency_warnings */
-#cmakedefine HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
 
 /* Define if want to build tpetra-print_efficiency_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
@@ -79,12 +79,12 @@
 #cmakedefine HAVE_TPETRA_MMM_TIMINGS
 #cmakedefine HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-/* Define when enabling KokkosCore in Tpetra */
-#cmakedefine HAVE_TPETRACORE_KOKKOSCORE
-#ifdef HAVE_TPETRACORE_KOKKOSCORE
+/* Define when enabling Kokkos in Tpetra */
+#cmakedefine HAVE_TPETRACORE_KOKKOS
+#ifdef HAVE_TPETRACORE_KOKKOS
 // For backwards compatibility
-#  define HAVE_TPETRA_KOKKOSCORE
-#endif // HAVE_TPETRACORE_KOKKOSCORE
+#  define HAVE_TPETRA_KOKKOS
+#endif // HAVE_TPETRACORE_KOKKOS
 
 /* Define when enabling KokkosCompat in TpetraCore */
 #cmakedefine HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
@@ -94,13 +94,6 @@
 #  define HAVE_TPETRA_TEUCHOSKOKKOSCOMPAT
 #  define HAVE_TPETRA_KOKKOSCOMPAT
 #endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
-
-/* Define when enabling KokkosContainers in TpetraCore */
-#cmakedefine HAVE_TPETRACORE_KOKKOSCONTAINERS
-#ifdef HAVE_TPETRACORE_KOKKOSCONTAINERS
-// For backwards compatibility
-#  define HAVE_TPETRA_KOKKOSCONTAINERS
-#endif // HAVE_TPETRACORE_KOKKOSCONTAINERS
 
 /* Define when enabling KokkosComm in TpetraCore */
 #cmakedefine HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM
@@ -119,8 +112,8 @@
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-/* Define when Tpetra assumes that the MPI implementation is CUDA aware */
-#cmakedefine TPETRA_ASSUME_CUDA_AWARE_MPI
+/* Define when Tpetra assumes that the MPI implementation is GPU aware */
+#cmakedefine TPETRA_ASSUME_GPU_AWARE_MPI
 
 /* List of enabled (LocalOrdinal, GlobalOrdinal) pairs */
 #cmakedefine HAVE_TPETRA_INST_INT_INT

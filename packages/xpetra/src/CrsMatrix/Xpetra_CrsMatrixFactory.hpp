@@ -66,7 +66,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsMatrixFactory {
   private:
     //! Private constructor. This is a static class.
@@ -97,7 +97,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (rowMap->lib() == UseTpetra)
-        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, maxNumEntriesPerRow, plist) );
+        return Teuchos::rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, maxNumEntriesPerRow, plist) );
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
@@ -112,7 +112,7 @@ namespace Xpetra {
     {
 #ifdef HAVE_XPETRA_TPETRA
       if (rowMap->lib() == UseTpetra)
-        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, NumEntriesPerRowToAlloc, plist) );
+        return Teuchos::rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, NumEntriesPerRowToAlloc, plist) );
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
@@ -163,6 +163,19 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
+
+    //! Constructor specifying a previously constructed graph and values array
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (graph->getRowMap()->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(graph, values, plist) );
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(graph->getRowMap()->lib());
+      XPETRA_FACTORY_END;
+    }
 
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(
         const Teuchos::RCP< const CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > > &sourceMatrix,
@@ -234,7 +247,6 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
@@ -289,7 +301,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
     
     // Builds a BlockCrsMatrix
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BuildBlock (
@@ -418,6 +429,22 @@ namespace Xpetra {
     }
 
 
+    //! Constructor specifying a previously constructed graph and values array
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (graph->getRowMap()->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(graph, values, plist) );
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(graph->getRowMap()->lib());
+      XPETRA_FACTORY_END;
+    }
+
+
+
+
     //! Constructor using FusedImport
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(
         const Teuchos::RCP< const CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > > &sourceMatrix,
@@ -501,7 +528,6 @@ namespace Xpetra {
     }
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
@@ -560,7 +586,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
 
     //! Build a BlockCrsMatrix
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BuildBlock (
@@ -687,6 +712,22 @@ namespace Xpetra {
     }
 
 
+    //! Constructor specifying a previously constructed graph and values array
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (graph->getRowMap()->lib() == UseTpetra) {
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(graph, values, plist) );
+      }
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(graph->getRowMap()->lib());
+      XPETRA_FACTORY_END;
+    }
+
+
+
     //! Constructor using FusedImport
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(
         const Teuchos::RCP< const CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node > > &sourceMatrix,
@@ -769,7 +810,6 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
@@ -806,7 +846,6 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-#endif
 
 
     //! Build a BlockCrsMatrix

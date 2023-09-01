@@ -136,8 +136,8 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   const size_t threads_per_team =
     Kokkos::hwloc::get_available_threads_per_core();
 
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = team_count*threads_per_team;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(team_count*threads_per_team);
   Kokkos::initialize( init_args );
 
   std::string name = "Host";

@@ -69,7 +69,7 @@ namespace Thyra {
  * \ingroup Tpetra_Thyra_Op_Vec_adapters_grp
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
-  class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+  class Node=Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraLinearOp
   : virtual public Thyra::LinearOpDefaultBase<Scalar>,
     virtual public ScaledLinearOpBase<Scalar>,

@@ -272,4 +272,4 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyComposite, Setting_Strategies_PLs)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

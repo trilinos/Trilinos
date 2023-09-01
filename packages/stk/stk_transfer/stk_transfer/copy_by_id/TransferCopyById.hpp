@@ -119,7 +119,7 @@ private:
 
   std::vector<DataTypeKey::data_t> m_sendFieldDataTypes;
   std::vector<DataTypeKey::data_t> m_recvFieldDataTypes;
-  std::vector<bool> m_fieldCompatibility;
+  std::vector<int> m_fieldCompatibility;
   std::vector<const stk::transfer::TranslatorBase*> m_dataTranslators;
 };
 

@@ -94,15 +94,9 @@ public:
   using no_uvm_device_type = device_type;
 #endif
 
-  LocalMap () :
-    indexBase_ (0),
-    myMinGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    myMaxGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    firstContiguousGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    lastContiguousGid_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    numLocalElements_ (0),
-    contiguous_ (false)
-  {}
+  //! Default constructor.
+  KOKKOS_DEFAULTED_FUNCTION LocalMap() = default;
+
   LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, no_uvm_device_type>& glMap,
             const ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, no_uvm_device_type>& lgMap,
             const GlobalOrdinal indexBase,
@@ -222,13 +216,13 @@ private:
   /// copying from the default to the nondefault layout.
   ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, no_uvm_device_type> lgMap_;
 
-  GlobalOrdinal indexBase_;
-  GlobalOrdinal myMinGid_;
-  GlobalOrdinal myMaxGid_;
-  GlobalOrdinal firstContiguousGid_;
-  GlobalOrdinal lastContiguousGid_;
-  LocalOrdinal numLocalElements_;
-  bool contiguous_;
+  GlobalOrdinal indexBase_          = 0;
+  GlobalOrdinal myMinGid_           = Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid();
+  GlobalOrdinal myMaxGid_           = Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid();
+  GlobalOrdinal firstContiguousGid_ = Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid();
+  GlobalOrdinal lastContiguousGid_  = Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid();
+  LocalOrdinal numLocalElements_    = 0;
+  bool contiguous_                  = false;
 };
 
 } // namespace Details

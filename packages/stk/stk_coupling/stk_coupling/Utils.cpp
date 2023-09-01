@@ -30,13 +30,13 @@ void check_sync_mode_consistency(const SyncInfo & myInfo,
 {
   bool myInfoHasMode = myInfo.has_value<int>(TimeSyncMode);
   bool otherInfoHasMode = otherInfo.has_value<int>(TimeSyncMode);
-  ThrowRequireMsg(myInfoHasMode || otherInfoHasMode,
+  STK_ThrowRequireMsg(myInfoHasMode || otherInfoHasMode,
                   "neither myInfo nor otherInfo contains value for '" << TimeSyncMode << "'");
   
   if (myInfoHasMode) {
     SyncMode myMode = myInfo.get_value<SyncMode>(TimeSyncMode);
     if (myMode == Minimum || myMode == Receive) {
-      ThrowRequireMsg(otherInfo.has_value<int>(TimeSyncMode),
+      STK_ThrowRequireMsg(otherInfo.has_value<int>(TimeSyncMode),
           "otherInfo doesn't contain value for '" << TimeSyncMode << "' and my mode is '" << myMode << "'");
     }
   }
@@ -44,7 +44,7 @@ void check_sync_mode_consistency(const SyncInfo & myInfo,
   if (otherInfoHasMode) {
     SyncMode otherMode = otherInfo.get_value<SyncMode>(TimeSyncMode);
     if (otherMode == Minimum || otherMode == Receive) {
-      ThrowRequireMsg(myInfo.has_value<int>(TimeSyncMode),
+      STK_ThrowRequireMsg(myInfo.has_value<int>(TimeSyncMode),
           "myInfo doesn't contain value for '" << TimeSyncMode << "' and other mode is '" << otherMode << "'");
     }
   }
@@ -56,7 +56,7 @@ void check_sync_mode_consistency(const SyncInfo & myInfo,
                     (myMode==Minimum && otherMode==Minimum) ||
                     (myMode==Send && otherMode==Receive) ||
                     (myMode==Receive && otherMode==Send);
-    ThrowRequireMsg(consistent, "Inconsistent TimeSyncMode (my mode="<<myMode<<", other mode="<<otherMode
+    STK_ThrowRequireMsg(consistent, "Inconsistent TimeSyncMode (my mode="<<myMode<<", other mode="<<otherMode
                                <<"). Required to both be Minimum, or one Send and one Receive or either can be 'Any'.");
   }
 }
@@ -77,24 +77,24 @@ double choose_value(const SyncInfo & myInfo,
         case Receive: syncMode = Send; break;
         case Minimum: syncMode = Minimum; break;
         case Any:
-        default: ThrowErrorMsg("choose_value: if syncMode is Any, then other syncMode must be Send, Receive or Minimum.");
+        default: STK_ThrowErrorMsg("choose_value: if syncMode is Any, then other syncMode must be Send, Receive or Minimum.");
           break;
       }
     }
     else {
-      ThrowRequireMsg(myInfo.has_value<double>(parameterName),"choose_value: syncMode=Any, but no value for '"<<parameterName<<"' in myInfo.");
+      STK_ThrowRequireMsg(myInfo.has_value<double>(parameterName),"choose_value: syncMode=Any, but no value for '"<<parameterName<<"' in myInfo.");
       return myInfo.get_value<double>(parameterName);
     }
   }
 
   if (syncMode != Receive) {
-    ThrowRequireMsg(myInfo.has_value<double>(parameterName),
+    STK_ThrowRequireMsg(myInfo.has_value<double>(parameterName),
         "choose_value: myInfo "<<myInfo.get_name()<<" doesn't contain " << parameterName
          << " and sync mode is " << syncMode);
     myValue = myInfo.get_value<double>(parameterName);
   }
   if (syncMode != Send) {
-    ThrowRequireMsg(otherInfo.has_value<double>(parameterName),
+    STK_ThrowRequireMsg(otherInfo.has_value<double>(parameterName),
         "choose_value: otherInfo "<<otherInfo.get_name()<<" doesn't contain " << parameterName
          << " and sync mode is " << syncMode);
     otherValue = otherInfo.get_value<double>(parameterName);
@@ -109,12 +109,12 @@ double choose_value(const SyncInfo & myInfo,
 
 int string_to_color(const std::string& appString)
 {
-  ThrowRequireMsg(!appString.empty(), "string_to_color: empty input string, probable programming error.");
+  STK_ThrowRequireMsg(!appString.empty(), "string_to_color: empty input string, probable programming error.");
 
   std::hash<std::string> hasher;
   size_t hashedValue = hasher(appString);
   int intValue = static_cast<int>(hashedValue % std::numeric_limits<int>::max());
-  ThrowRequireMsg(intValue >= 0, "string_to_color is required to produce non-negative int, but produced '"<<intValue<<"'");
+  STK_ThrowRequireMsg(intValue >= 0, "string_to_color is required to produce non-negative int, but produced '"<<intValue<<"'");
   return intValue;
 }
 
@@ -125,7 +125,7 @@ SyncMode string_to_sync_mode(const std::string& syncModeString)
   else if (stk::equal_case(syncModeString, "Receive")) returnValue = Receive;
   else if (stk::equal_case(syncModeString, "Send")) returnValue = Send;
   else if (stk::equal_case(syncModeString, "Any")) returnValue = Any;
-  else ThrowErrorMsg("string_to_sync_mode: invalid sync mode: " << syncModeString);
+  else STK_ThrowErrorMsg("string_to_sync_mode: invalid sync mode: " << syncModeString);
   return returnValue;
 }
 

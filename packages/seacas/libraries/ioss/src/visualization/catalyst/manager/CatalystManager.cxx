@@ -13,17 +13,16 @@
 #include "vtkCPInputDataDescription.h"
 #include "vtkCPProcessor.h"
 #include "vtkCPPythonPipeline.h"
+#include "vtkDataObject.h"
 #include "vtkDoubleArray.h"
 #include "vtkFieldData.h"
 #include "vtkIntArray.h"
 #include "vtkMPIController.h"
-#include "vtkMultiBlockDataSet.h"
 #include "vtkMultiProcessController.h"
 #include "vtkProcessModule.h"
 #include "vtkPython.h"
 #include "vtkStringArray.h"
-#include "vtkTrivialProducer.h"
-#include "vtkXMLPMultiBlockDataWriter.h"
+#include "vtkPartitionedDataSetCollection.h"
 #include <fstream>
 #include <sstream>
 #include <vtksys/SystemInformation.hxx>
@@ -55,6 +54,8 @@ namespace Iovs {
     Py_DECREF(sys);
     Py_DECREF(path);
   }
+
+  std::string CatalystManager::getCatalystPluginVersion() { return catalystPluginVersion; }
 
   int CatalystManager::getCatalystOutputIDNumber() { return catalystOutputIDNumber; }
 
@@ -94,7 +95,7 @@ namespace Iovs {
     cem->SetUnderscoreVectors(cmInit.underScoreVectors);
     cem->SetApplyDisplacements(cmInit.applyDisplacements);
 
-    registerMeshInPipeline(cmInit, cem->getMultiBlockDataSet(), cpi);
+    registerMeshInPipeline(cmInit, cem->getPartitionedDataSetCollection(), cpi);
 
     return std::unique_ptr<Iovs_exodus::CatalystExodusMeshBase>(
         dynamic_cast<Iovs_exodus::CatalystExodusMeshBase *>(cem));
@@ -109,7 +110,7 @@ namespace Iovs {
 
     Iovs_cgns::CatalystCGNSMesh *cgm = new Iovs_cgns::CatalystCGNSMesh(this, cpi);
 
-    registerMeshInPipeline(cmInit, cgm->getMultiBlockDataSet(), cpi);
+    registerMeshInPipeline(cmInit, cgm->getPartitionedDataSetCollection(), cpi);
 
     return std::unique_ptr<Iovs_cgns::CatalystCGNSMeshBase>(
         dynamic_cast<Iovs_cgns::CatalystCGNSMeshBase *>(cgm));
@@ -149,18 +150,18 @@ namespace Iovs {
     return id;
   }
 
-  void CatalystManager::registerMeshInPipeline(CatalystMeshInit &cmInit, vtkMultiBlockDataSet *mbds,
+  void CatalystManager::registerMeshInPipeline(CatalystMeshInit &cmInit, vtkDataObject *vobj,
                                                const CatalystPipelineInfo &cpi)
   {
 
     if (pipelines.find(cpi.catalystPipelineID) == pipelines.end()) {
-      initCatalystPipeline(cmInit, mbds, cpi);
+      initCatalystPipeline(cmInit, vobj, cpi);
       if (cmInit.enableLogging) {
         initCatalystLogging(cpi);
       }
     }
     else {
-      addInputToPipeline(mbds, cpi);
+      addInputToPipeline(vobj, cpi);
     }
   }
 
@@ -208,7 +209,7 @@ namespace Iovs {
     }
   }
 
-  void CatalystManager::initCatalystPipeline(CatalystMeshInit &cmInit, vtkMultiBlockDataSet *mbds,
+  void CatalystManager::initCatalystPipeline(CatalystMeshInit &cmInit, vtkDataObject *vobj,
                                              const CatalystPipelineInfo &cpi)
   {
 
@@ -227,7 +228,7 @@ namespace Iovs {
     pipelines[id]
         .getDataDescription()
         ->GetInputDescriptionByName(cpi.catalystInputName.c_str())
-        ->SetGrid(mbds);
+        ->SetGrid(vobj);
 
     pipelines[id].getMeshWriter() = std::make_shared<CatalystMeshWriter>();
     if (cmInit.writeCatalystMeshOneFile) {
@@ -239,7 +240,7 @@ namespace Iovs {
           cmInit.catalystMeshFilePerProcPrefix);
     }
 
-    vtkFieldData *  fd = vtkFieldData::New();
+    vtkFieldData   *fd = vtkFieldData::New();
     vtkStringArray *sa = vtkStringArray::New();
     sa->SetName("catalyst_sierra_data");
     vtkIntArray *ec = vtkIntArray::New();
@@ -278,8 +279,7 @@ namespace Iovs {
     em->Delete();
   }
 
-  void CatalystManager::addInputToPipeline(vtkMultiBlockDataSet *      mbds,
-                                           const CatalystPipelineInfo &cpi)
+  void CatalystManager::addInputToPipeline(vtkDataObject *vobj, const CatalystPipelineInfo &cpi)
   {
 
     CatalystPipelineID id = cpi.catalystPipelineID;
@@ -288,7 +288,7 @@ namespace Iovs {
     pipelines[id]
         .getDataDescription()
         ->GetInputDescriptionByName(cpi.catalystInputName.c_str())
-        ->SetGrid(mbds);
+        ->SetGrid(vobj);
   }
 
   void CatalystManager::DeletePipeline(const CatalystPipelineInfo &cpi)
@@ -312,8 +312,8 @@ namespace Iovs {
     finalizeIfNeeded();
   }
 
-  void CatalystManager::PerformCoProcessing(std::vector<int> &          error_and_warning_codes,
-                                            std::vector<std::string> &  error_and_warning_messages,
+  void CatalystManager::PerformCoProcessing(std::vector<int>           &error_and_warning_codes,
+                                            std::vector<std::string>   &error_and_warning_messages,
                                             const CatalystPipelineInfo &cpi)
   {
 
@@ -337,13 +337,13 @@ namespace Iovs {
         return;
       }
 
-      vtkCPPythonPipeline * pl              = pipelines[id].getPipeline();
+      vtkCPPythonPipeline  *pl              = pipelines[id].getPipeline();
       vtkCPDataDescription *dataDescription = pipelines[id].getDataDescription();
       coProcessor->AddPipeline(pl);
       coProcessor->CoProcess(dataDescription);
 
       vtkFieldData *fd = pipelines[id].getDataDescription()->GetUserData();
-      vtkIntArray * ec =
+      vtkIntArray  *ec =
           vtkIntArray::SafeDownCast(fd->GetAbstractArray("catalyst_sierra_error_codes"));
       vtkStringArray *em =
           vtkStringArray::SafeDownCast(fd->GetAbstractArray("catalyst_sierra_error_messages"));
@@ -391,8 +391,8 @@ namespace Iovs {
 
     if (this->logging.find(id) != this->logging.end()) {
       vtksys::SystemInformation sysInfo;
-      vtkProcessModule *        pm   = vtkProcessModule::GetProcessModule();
-      vtkMPIController *        mpic = vtkMPIController::SafeDownCast(pm->GetGlobalController());
+      vtkProcessModule         *pm   = vtkProcessModule::GetProcessModule();
+      vtkMPIController         *mpic = vtkMPIController::SafeDownCast(pm->GetGlobalController());
       double                    measurements[3];
       measurements[0]                = sysInfo.GetProcMemoryUsed() * (1.0 / 1024.0); // Store in MB
       measurements[1]                = sysInfo.GetHostMemoryUsed() * (1.0 / 1024.0);
@@ -412,7 +412,7 @@ namespace Iovs {
     if (this->logging.find(id) != this->logging.end()) {
       vtkProcessModule *pm         = vtkProcessModule::GetProcessModule();
       vtkMPIController *mpic       = vtkMPIController::SafeDownCast(pm->GetGlobalController());
-      vtkDoubleArray *  logData    = this->logging[id].second;
+      vtkDoubleArray   *logData    = this->logging[id].second;
       clock_t           begin_time = this->logging[id].first.first;
       if (mpic && mpic->GetNumberOfProcesses() > 1) {
         vtkDoubleArray *recvBufferMin = vtkDoubleArray::New();
@@ -473,12 +473,16 @@ namespace Iovs {
   bool CatalystManager::writeMeshON(const CatalystPipelineInfo &cpi)
   {
 
+    bool retVal = false;
+
     CatalystPipelineID id = cpi.catalystPipelineID;
 
     if (pipelines.find(id) != pipelines.end()) {
       auto mw = pipelines[id].getMeshWriter();
-      return mw->outputCatalystMeshOneFileON() || mw->outputCatalystMeshFilePerProcON();
+      retVal  = mw->outputCatalystMeshOneFileON() || mw->outputCatalystMeshFilePerProcON();
     }
+
+    return retVal;
   }
 
   void CatalystManager::writeMesh(const CatalystPipelineInfo &cpi)
@@ -487,18 +491,17 @@ namespace Iovs {
     CatalystPipelineID id = cpi.catalystPipelineID;
 
     if (pipelines.find(id) != pipelines.end()) {
-      auto                  mw   = pipelines[id].getMeshWriter();
-      vtkMultiBlockDataSet *mbds = vtkMultiBlockDataSet::SafeDownCast(
-          pipelines[id]
-              .getDataDescription()
-              ->GetInputDescriptionByName(cpi.catalystInputName.c_str())
-              ->GetGrid());
+      auto           mw   = pipelines[id].getMeshWriter();
+      vtkDataObject *vobj = pipelines[id]
+                                .getDataDescription()
+                                ->GetInputDescriptionByName(cpi.catalystInputName.c_str())
+                                ->GetGrid();
       int timeStep = pipelines[id].getDataDescription()->GetTimeStep();
       if (mw->outputCatalystMeshOneFileON()) {
-        mw->writeCatalystMeshOneFile(mbds, timeStep);
+        mw->writeCatalystMeshOneFile(vobj, timeStep);
       }
       if (mw->outputCatalystMeshFilePerProcON()) {
-        mw->writeCatalystMeshFilePerProc(mbds, timeStep);
+        mw->writeCatalystMeshFilePerProc(vobj, timeStep);
       }
     }
   }

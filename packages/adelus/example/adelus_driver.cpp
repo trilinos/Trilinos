@@ -168,11 +168,9 @@ int main( int argc, char* argv[] )
 #else
   hipGetDeviceCount ( &gpu_count );
 #endif
-  Kokkos::InitArguments args;
-  args.num_threads = 0;
-  args.num_numa    = 0;
-  args.device_id   = rank%nptile;
-  printf("Rank %d, Before Kokkos initialization, GPU %d/%d\n", rank, args.device_id, gpu_count);
+  Kokkos::InitializationSettings args;
+  args.set_num_threads(1);
+  printf("Rank %d, Before Kokkos initialization, GPU %d/%d\n", rank, args.get_device_id(), gpu_count);
 
   MPI_Barrier (MPI_COMM_WORLD);
 
@@ -240,7 +238,7 @@ int main( int argc, char* argv[] )
     ViewVectorType_Host h_X0( "h_X0", N );                                 //store the referencen solution vector on host for error checking
 
     //2. Randomly generate the assigned matrix on each MPI process and the reference solution vector
-    uint64_t seed = Kokkos::Impl::clock_tic() + rank;
+    uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count() + rank;
     Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
     // Reference solution (assumming one solution vector)

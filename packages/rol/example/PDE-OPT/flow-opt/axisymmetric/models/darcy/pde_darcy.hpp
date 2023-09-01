@@ -702,15 +702,15 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       fePrsBdry_.resize(numSideSets);
-      feCtrlBdry_.resize(numSideSets);
+      //feCtrlBdry_.resize(numSideSets);
       for (int i = 0; i < numSideSets; ++i) {
         int numLocSides = bdryCellNodes[i].size();
         fePrsBdry_[i].resize(numLocSides);
-        feCtrlBdry_[i].resize(numLocSides);
+        //feCtrlBdry_[i].resize(numLocSides);
         for (int j = 0; j < numLocSides; ++j) {
           if (bdryCellNodes[i][j] != ROL::nullPtr) {
             fePrsBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtrPrs_,bdryCub_,j);
-            feCtrlBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtrCtrl_,bdryCub_,j);
+            //feCtrlBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtrCtrl_,bdryCub_,j);
           }
         }
       }

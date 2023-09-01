@@ -99,6 +99,7 @@ typedef struct hypre_ParVector_struct hypre_ParVector;
 typedef HYPRE_Int (*int_func)(HYPRE_Solver, HYPRE_Int);
 typedef HYPRE_Int (*double_func)(HYPRE_Solver, double);
 typedef HYPRE_Int (*double_int_func)(HYPRE_Solver, double, HYPRE_Int);
+typedef HYPRE_Int (*int_double_func)(HYPRE_Solver, HYPRE_Int, double);
 typedef HYPRE_Int (*int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int);
 typedef HYPRE_Int (*int_star_func)(HYPRE_Solver, HYPRE_Int*);
 typedef HYPRE_Int (*int_star_star_func)(HYPRE_Solver, HYPRE_Int**);
@@ -150,6 +151,14 @@ namespace Ifpack2 {
       double_int_func_(funct),
       int_param1_(param2),
       double_param1_(param1) {}
+
+    //! Single int, single double constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_double_func funct, HYPRE_Int param1, double param2):
+      chooser_(chooser),
+      option_(10),
+      int_double_func_(funct),
+      int_param1_(param1),
+      double_param1_(param2) {}
 
     FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1, HYPRE_Int param2):
       chooser_(chooser),
@@ -290,6 +299,8 @@ namespace Ifpack2 {
           return int_int_int_double_int_int_func_(solver, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
         } else if (option_ == 9) {
           return char_star_func_(solver, char_star_param_);
+        } else if (option_ == 10) {
+          return int_double_func_(solver, int_param1_, double_param1_);
         } else {
           IFPACK2_CHK_ERR(-2);
         }
@@ -314,6 +325,8 @@ namespace Ifpack2 {
           return int_int_int_double_int_int_func_(precond, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
         } else if (option_ == 9) {
           return char_star_func_(solver, char_star_param_);
+        } else if (option_ == 10) {
+          return int_double_func_(precond, int_param1_, double_param1_);
         } else {
           IFPACK2_CHK_ERR(-2);
         }
@@ -343,6 +356,7 @@ namespace Ifpack2 {
     int_func int_func_;
     double_func double_func_;
     double_int_func double_int_func_;
+    int_double_func int_double_func_;
     int_int_func int_int_func_;
     int_star_func int_star_func_;
     double_star_func double_star_func_;
@@ -365,6 +379,7 @@ namespace Ifpack2 {
     static const std::map<std::string, int_func> hypreMapIntFunc_;
     static const std::map<std::string, double_func> hypreMapDoubleFunc_;
     static const std::map<std::string, double_int_func> hypreMapDoubleIntFunc_;
+    static const std::map<std::string, int_double_func> hypreMapIntDoubleFunc_;
     static const std::map<std::string, int_int_func> hypreMapIntIntFunc_;
     static const std::map<std::string, int_star_func> hypreMapIntStarFunc_;
     static const std::map<std::string, double_star_func> hypreMapDoubleStarFunc_;

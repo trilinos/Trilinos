@@ -97,7 +97,7 @@ class MPITag
 
 inline bool operator==(const MPITag& lhs, const MPITag& rhs)
 {
-  ThrowRequireMsg(lhs.m_data->get_tag_manager() == rhs.m_data->get_tag_manager(),
+  STK_ThrowRequireMsg(lhs.m_data->get_tag_manager() == rhs.m_data->get_tag_manager(),
                   "Cannot compare MPITags on different MPITagManagers");
 
   return static_cast<int>(lhs) == static_cast<int>(rhs) &&

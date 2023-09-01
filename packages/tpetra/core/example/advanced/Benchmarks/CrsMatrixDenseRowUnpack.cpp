@@ -295,7 +295,7 @@ public:
     success = 1;
   }
 
-  KOKKOS_INLINE_FUNCTION void join(volatile int& dst, volatile int& src) const {
+  KOKKOS_INLINE_FUNCTION void join(int& dst, int& src) const {
     dst = (dst == 1 && src == 1) ? 1 : 0;
   }
 

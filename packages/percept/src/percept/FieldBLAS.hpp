@@ -51,14 +51,14 @@ void field_axpby(
 //: Y(ts) = X
 void field_copy_component(
   const stk::mesh::BulkData &bulkdata ,
-  stk::mesh::Field<double, stk::mesh::Cartesian> *X,
-  stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> *Y,
+  stk::mesh::Field<double> *X,
+  stk::mesh::Field<double> *Y,
   const int index)
 {
   const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
   const unsigned nDim = meta.spatial_dimension();
 
-  const unsigned field_size_y = Y->max_size(stk::topology::NODE_RANK);
+  const unsigned field_size_y = Y->max_size();
 
   stk::mesh::Selector select_used =
     meta.locally_owned_part() |
@@ -93,11 +93,11 @@ void field_copy_component(
 void field_compute_MAC(
   const stk::mesh::BulkData &bulkdata,
   const stk::mesh::MetaData &metadata,
-  stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> * X,
-  stk::mesh::Field<double, stk::mesh::SimpleArrayTag, stk::mesh::Cartesian> * Y,
+  stk::mesh::Field<double> * X,
+  stk::mesh::Field<double> * Y,
   Intrepid::FieldContainer<double> & mac_values)
 {
-  const unsigned field_size = Y->max_size(stk::topology::NODE_RANK);
+  const unsigned field_size = Y->max_size();
 
   const unsigned nDim = metadata.spatial_dimension();
   const unsigned nVecs = field_size / nDim;

@@ -79,6 +79,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // params.set("chebyshev: operator inv diagonal",Teuchos::null);
   params.set("chebyshev: min diagonal value", STS::eps());
   params.set("chebyshev: zero starting solution", true);
+  params.set("chebyshev: use native spmv", false);
 
   // Ifpack2_Amesos.cpp
   params.set("amesos: solver type", "Amesos_Klu");
@@ -107,6 +108,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: absolute threshold", 0.0);
   params.set("fact: relative threshold", 1.0);
   params.set("fact: relax value", 0.0);
+  params.set("fact: type", "serial");
+  params.sublist("parallel ILUT options"); //FIXME this should be validated
 
   // Ifpack2_LocalSparseTriangularSolver.cpp
   params.set("trisolver: type", "Internal");

@@ -9,7 +9,7 @@
 # and then generates a CMake fragment file <package-enables-cmake-out> which
 # provides the set of enables of Trilinos packages needed to test the changed
 # files and optionally also a <package-subproject-list-out> CMake fragment
-# file provides a 'set(CTEST_LABELS_FOR_SUBPROJECTS ...)' statment which
+# file provides a 'set(CTEST_LABELS_FOR_SUBPROJECTS ...)' statement which
 # provides the list of subprojects (TriBITS packages) to display on CDash.
 #
 # For example, to generate a file for the set of enables to test changes in
@@ -138,7 +138,7 @@ echo "***"
 echo
 
 echo
-echo "A) Generate the Trilinos Packages definition and depencencies XML file"
+echo "A) Generate the Trilinos Packages definition and dependencies XML file"
 echo
 
 generate_trilinos_package_dependencies_xml_file
@@ -176,13 +176,21 @@ CHANGED_PACKAGES_FULL_LIST=`$TRIBITS_DIR/ci_support/get-tribits-packages-from-fi
 echo "CHANGED_PACKAGES_FULL_LIST='$CHANGED_PACKAGES_FULL_LIST'"
 
 echo
-echo "D) Filter list of changed packages to get only the PT packages"
+echo "D) Filter list of changed packages"
 echo
 CHANGED_PACKAGES_ST_LIST=$(trilinos_filter_packages_to_test "${CHANGED_PACKAGES_FULL_LIST}")
 echo "CHANGED_PACKAGES_ST_LIST='${CHANGED_PACKAGES_ST_LIST}'"
 
 echo
-echo "E) Generate the ${CMAKE_PACKAGE_ENABLES_OUT} enables file"
+echo "E) Enable Trilinos installation tests if any Trilinos packages are changed"
+echo
+if [[ "${CHANGED_PACKAGES_ST_LIST}" != "" ]] ; then
+  export CHANGED_PACKAGES_ST_LIST=${CHANGED_PACKAGES_ST_LIST},TrilinosInstallTests
+fi
+echo "CHANGED_PACKAGES_ST_LIST='${CHANGED_PACKAGES_ST_LIST}'"
+
+echo
+echo "F) Generate the ${CMAKE_PACKAGE_ENABLES_OUT} enables file"
 echo
 
 echo "
@@ -204,7 +212,7 @@ fi
 echo "Wrote file '$CMAKE_PACKAGE_ENABLES_OUT'"
 
 echo
-echo "F) Generate the ${CTEST_LABELS_FOR_SUBPROJETS_OUT} file"
+echo "G) Generate the ${CTEST_LABELS_FOR_SUBPROJETS_OUT} file"
 echo
 
 printf "set(CTEST_LABELS_FOR_SUBPROJECTS" >  $CTEST_LABELS_FOR_SUBPROJETS_OUT

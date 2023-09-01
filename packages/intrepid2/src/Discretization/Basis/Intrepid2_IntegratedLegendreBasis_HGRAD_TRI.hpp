@@ -49,7 +49,6 @@
 #ifndef Intrepid2_IntegratedLegendreBasis_HGRAD_TRI_h
 #define Intrepid2_IntegratedLegendreBasis_HGRAD_TRI_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -378,6 +377,7 @@ namespace Intrepid2
   {
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+    using HostBasis = IntegratedLegendreBasis_HGRAD_TRI<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar,defineVertexFunctions>;
 
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;
@@ -595,7 +595,7 @@ namespace Intrepid2
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HGRAD_TRI_Functor");
+      Kokkos::parallel_for("Hierarchical_HGRAD_TRI_Functor", policy, functor);
     }
 
     /** \brief returns the basis associated to a subCell.

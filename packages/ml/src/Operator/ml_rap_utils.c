@@ -323,7 +323,7 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
       *values  = t2;
    }
 
-   if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
+   if (input_matrix->getrow->use_loc_glob_map == ML_YES) {
       mapper       = input_matrix->getrow->loc_glob_map;
       for (i = 0; i < row_lengths[0]; i++)
          (*columns)[i+index] = mapper[(*columns)[index+i]];
@@ -413,7 +413,7 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
       *val_ptr++  = *val_start++;
    }
 
-   if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
+   if (input_matrix->getrow->use_loc_glob_map == ML_YES) {
       col_size = matrix->cpntr[1]-matrix->cpntr[0];
 /*mapper       = input_matrix->getrow->loc_glob_map;*/
       for (i = 0; i < row_lengths[0]; i++)
@@ -503,7 +503,7 @@ void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
       *val_ptr++  = *val++;
    }
 
-   if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
+   if (input_matrix->getrow->use_loc_glob_map == ML_YES) {
       mapper       = input_matrix->getrow->loc_glob_map;
       for (i = 0; i < row_lengths[0]; i++)
          (*columns)[i+index] = mapper[(*columns)[index+i]];
@@ -581,7 +581,7 @@ void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, int N_requested_rows,
       *val_ptr++  = *val++;
    }
 
-   if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
+   if (input_matrix->getrow->use_loc_glob_map == ML_YES) {
       mapper       = input_matrix->getrow->loc_glob_map;
       for (i = 0; i < row_lengths[0]; i++)
          (*columns)[i+index] = mapper[(*columns)[index+i]];

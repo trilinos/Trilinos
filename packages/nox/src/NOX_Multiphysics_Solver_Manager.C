@@ -113,7 +113,7 @@ bool NOX::Multiphysics::Solver::Manager::reset(
     else
     {
       utils.out() << "ERROR: NOX::Multiphysics::Solver::Manager::reset - Invalid solver choice " << method << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     if (cplPtr == NULL)
@@ -153,7 +153,7 @@ void NOX::Multiphysics::Solver::Manager::deprecated(const std::string& oldName, 
        << std::endl;
 }
 
-NOX::StatusTest::StatusType NOX::Multiphysics::Solver::Manager::getStatus()
+NOX::StatusTest::StatusType NOX::Multiphysics::Solver::Manager::getStatus() const
 {
   checkNullPtr("getStatus");
   return cplPtr->getStatus();
@@ -221,7 +221,7 @@ void NOX::Multiphysics::Solver::Manager::checkNullPtr(const std::string& fname) 
   if (cplPtr == NULL)
   {
     utils.out() << "NOX::Multiphysics::Solver::Manager::" << fname << " - Null pointer error" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 }
 

@@ -37,7 +37,6 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_mesh/base/Types.hpp>      // for EntityProc
-#include <stk_mesh/base/FieldTraits.hpp>  // for FieldTraits
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
@@ -61,25 +60,43 @@ namespace mesh {
  * For entities that are ghosted, this function updates field-data from the
  * original entity to the ghosts.
  */
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
+STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use communicate_field_data(ghosts, fields).")
 void communicate_field_data(
   const Ghosting                        & ghosts ,
   const std::vector< const FieldBase *> & fields ,
   bool syncOnlySharedOrGhosted);
 
+STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use communicate_field_data(mesh, fields).")
 void communicate_field_data(const BulkData& mesh ,
                             const std::vector< const FieldBase *> & fields ,
                             bool syncOnlySharedOrGhosted);
+#endif
+
+void communicate_field_data(const Ghosting& ghosts, const std::vector<const FieldBase*>& fields);
+
+void communicate_field_data(const BulkData& mesh, const std::vector<const FieldBase*>& fields);
 
 /** Copy data for the given fields, from owned entities to shared-but-not-owned entities.
  * I.e., shared-but-not-owned entities get an update of the field-data from the owned entity.
 */
 inline
 void copy_owned_to_shared( const BulkData& mesh,
-                           const std::vector< const FieldBase *> & fields,
-                           bool syncOnlySharedOrGhosted = false)
+                           const std::vector< const FieldBase *> & fields)
 {
-  communicate_field_data(*mesh.ghostings()[BulkData::SHARED], fields, syncOnlySharedOrGhosted );
+  communicate_field_data(*mesh.ghostings()[BulkData::SHARED], fields);
 }
+
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
+STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use copy_owned_to_shared(mesh, fields).")
+inline
+void copy_owned_to_shared( const BulkData& mesh,
+                           const std::vector< const FieldBase *> & fields,
+                           bool syncOnlySharedOrGhosted)
+{
+  copy_owned_to_shared(mesh, fields);
+}
+#endif
 
 //----------------------------------------------------------------------
 

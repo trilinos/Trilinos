@@ -54,13 +54,12 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_Ifpack2Smoother_fwd.hpp"
 
 namespace MueLu {
 
   /*!
     @class SmootherFactory
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Generic Smoother Factory for generating the smoothers of the MG hierarchy
 
     This factory is generic and can produce any kind of Smoother.
@@ -87,7 +86,7 @@ namespace MueLu {
   template <class Scalar = double,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class SmootherFactory : public SmootherFactoryBase {
   public:
     typedef Scalar scalar_type;

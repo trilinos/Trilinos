@@ -8,7 +8,7 @@
 #ifndef Intrepid2_JacobianFlopEstimate_hpp
 #define Intrepid2_JacobianFlopEstimate_hpp
 
-double flopsPerJacobian(const int &spaceDim, const int &numPoints, const int &numGeometryNodes)
+inline double flopsPerJacobian(const int &spaceDim, const int &numPoints, const int &numGeometryNodes)
 {
   // implementation looks like:
 //  for (ordinal_type i=0;i<dim;++i)
@@ -20,7 +20,7 @@ double flopsPerJacobian(const int &spaceDim, const int &numPoints, const int &nu
   return 2.0 * spaceDim * spaceDim * numPoints * numGeometryNodes;
 }
 
-double flopsPerJacobianDet(const int &spaceDim, const int &numPoints)
+inline double flopsPerJacobianDet(const int &spaceDim, const int &numPoints)
 {
   //implementation in RealSpaceTools:
   /*value_type r_val = 0.0;
@@ -52,7 +52,7 @@ double flopsPerJacobianDet(const int &spaceDim, const int &numPoints)
   return r_val;
 }
 
-double flopsPerJacobianInverse(const int &spaceDim, const int &numPoints)
+inline double flopsPerJacobianInverse(const int &spaceDim, const int &numPoints)
 {
   // implementation looks like:
   // const value_type val = RealSpaceTools<>::Serial::det(mat);
@@ -122,4 +122,4 @@ double flopsPerJacobianInverse(const int &spaceDim, const int &numPoints)
   return totalFlops;
 }
 
-#endif /* GRADGRADStandardAssembly_h */
+#endif /* Intrepid2_JacobianFlopEstimate_hpp */

@@ -48,16 +48,33 @@
 */
 
 
-#include <Teuchos_ConfigDefs.hpp>
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Ifpack2_Version.hpp>
 #include <iostream>
+#include <type_traits>
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Ifpack2_ConfigDefs.hpp>
+
+// Xpetra / Galeri
+#ifdef HAVE_IFPACK2_XPETRA
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_DefaultPlatform.hpp"
+#include "Xpetra_Parameters.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_TpetraMap.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_TpetraCrsMatrix.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraMatrixTypes.hpp"
+#include "Galeri_XpetraParameters.hpp"
+#include "Galeri_XpetraUtils.hpp"
+#include "Galeri_XpetraMaps.hpp"
+#endif // HAVE_IFPACK2_XPETRA
+
+#include <Ifpack2_Version.hpp>
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_ILUT.hpp>
 
-#include <type_traits>
 
 namespace {
 using Tpetra::global_size_t;
@@ -104,7 +121,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test0, Scalar, LocalOrdinal, Glob
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar(1);
 
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using STM = typename STS::magnitudeType;
+  Kokkos::View<STM*, Kokkos::HostSpace> norms("Initial norms", 1);
+  Kokkos::View<STM*, Kokkos::HostSpace> lastNorms("previous norms", 1);
+
+  x.norm2(norms);
+  std::cout << "||x_init||=" << norms[0] << std::endl;
+  y.norm2(norms);
+  std::cout << "||y||=" << norms[0] << std::endl;
+
   prec.apply(x, y);
+
+  y.norm2(norms);
+  std::cout << "||y_final||=" << norms[0] << std::endl;
 
   Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
@@ -277,7 +307,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test3, Scalar, LocalOrdinal, Glob
     }
   }
 }
-
 
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \

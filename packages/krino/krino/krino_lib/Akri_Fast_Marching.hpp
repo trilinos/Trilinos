@@ -11,7 +11,7 @@
 
 #include <Akri_LevelSet.hpp>
 #include <Akri_FieldRef.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -27,14 +27,14 @@ class Fast_Marching_Node
 public:
   Fast_Marching_Node()
   : my_node(), my_status(STATUS_UNUSED), my_signed_dist(std::numeric_limits<double>::max()), my_on_neg_side(false) {}
-  Fast_Marching_Node(stk::mesh::Entity in_node, Enum_Fast_Marching_Node_Status in_status, double in_dist, int in_sign, Vector3d in_coords)
+  Fast_Marching_Node(stk::mesh::Entity in_node, Enum_Fast_Marching_Node_Status in_status, double in_dist, int in_sign, stk::math::Vector3d in_coords)
   : my_node(in_node), my_status(in_status), my_signed_dist(in_dist), my_on_neg_side(in_sign<0), my_coords(in_coords) {}
 
   int sign() const { return (my_on_neg_side ? (-1) : 1); }
   void set_sign(const int in_sign) { my_on_neg_side = (in_sign<0); }
   stk::mesh::Entity node() const { return my_node; }
   Enum_Fast_Marching_Node_Status status() const { return my_status; }
-  const Vector3d & coords() const { return my_coords; }
+  const stk::math::Vector3d & coords() const { return my_coords; }
   double signed_dist() const { return my_signed_dist; }
   void set_signed_dist(double dist) { my_signed_dist = dist; }
   void set_status(Enum_Fast_Marching_Node_Status status) { my_status = status; }
@@ -44,7 +44,7 @@ private:
   Enum_Fast_Marching_Node_Status my_status;
   double my_signed_dist;
   bool my_on_neg_side;
-  Vector3d my_coords;
+  stk::math::Vector3d my_coords;
 };
 
 class Fast_Marching_Node_Less

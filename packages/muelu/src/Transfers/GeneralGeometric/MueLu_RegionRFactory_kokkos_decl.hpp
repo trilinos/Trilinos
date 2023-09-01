@@ -50,9 +50,8 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Types.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Kokkos_View.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Kokkos_Core.hpp>
 
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_RegionRFactory_kokkos_fwd.hpp"
@@ -119,5 +118,4 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_REGIONRFACTORY_KOKKOS_SHORT
-#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_REGIONRFACTORY_KOKKOS_DECL_HPP

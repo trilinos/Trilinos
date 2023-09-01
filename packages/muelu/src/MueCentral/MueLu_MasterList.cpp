@@ -141,6 +141,8 @@ namespace MueLu {
     if (name == "sa: rowsumabs use automatic diagonal tolerance") { ss << "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs diagonal replacement value") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "replicate: npdes") { ss << "<Parameter name=\"replicate: npdes\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "combine: numBlks") { ss << "<Parameter name=\"combine: numBlks\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: element") { ss << "<Parameter name=\"pcoarsen: element\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
@@ -219,6 +221,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: use ml scaling of drop tol\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"aggregation: compute aggregate qualities\" type=\"bool\" value=\"false\"/>"
@@ -275,6 +278,7 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: mode\" type=\"string\" value=\"eigenvalue\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"keep data\" type=\"string\" value=\"{}\"/>"
+  "<Parameter name=\"save data\" type=\"string\" value=\"{}\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
@@ -305,6 +309,8 @@ namespace MueLu {
   "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"replicate: npdes\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"combine: numBlks\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"interp: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
@@ -347,6 +353,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: remap accept partition\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: explicit via new copy rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance Nullspace\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
@@ -370,6 +377,7 @@ namespace MueLu {
   "<ParameterList name=\"maxwell1: 11list\"/>"
   "<ParameterList name=\"maxwell1: 22list\"/>"
   "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"maxwell1: nodal smoother fix zero diagonal threshold\" type=\"double\" value=\"1e-10\"/>"
   "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
   "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"refmaxwell: 11list\"/>"
@@ -654,6 +662,8 @@ namespace MueLu {
       
          ("aggregation: threshold","aggregation: drop tol")
       
+         ("aggregation: use ml scaling of drop tol","aggregation: use ml scaling of drop tol")
+      
          ("aggregation: min agg size","aggregation: min agg size")
       
          ("aggregation: max agg size","aggregation: max agg size")
@@ -766,6 +776,8 @@ namespace MueLu {
       
          ("keep data","keep data")
       
+         ("save data","save data")
+      
          ("ML print initial list","print initial parameters")
       
          ("print unused","print unused parameters")
@@ -825,6 +837,10 @@ namespace MueLu {
          ("not supported by ML","sa: rowsumabs diagonal replacement value")
       
          ("not supported by ML","sa: rowsumabs replace single entry row with zero")
+      
+         ("not supported by ML","replicate: npdes")
+      
+         ("not supported by ML","combine: numBlks")
       
          ("interp: build coarse coordinates","interp: build coarse coordinates")
       
@@ -910,6 +926,8 @@ namespace MueLu {
       
          ("repartition: rebalance P and R","repartition: rebalance P and R")
       
+         ("repartition: explicit via new copy rebalance P and R","repartition: explicit via new copy rebalance P and R")
+      
          ("repartition: rebalance Nullspace","repartition: rebalance Nullspace")
       
          ("repartition: use subcommunicators","repartition: use subcommunicators")
@@ -955,6 +973,8 @@ namespace MueLu {
          ("maxwell1: 22list","maxwell1: 22list")
       
          ("maxwell1: dump matrices","maxwell1: dump matrices")
+      
+         ("maxwell1: nodal smoother fix zero diagonal threshold","maxwell1: nodal smoother fix zero diagonal threshold")
       
          ("refmaxwell: mode","refmaxwell: mode")
       

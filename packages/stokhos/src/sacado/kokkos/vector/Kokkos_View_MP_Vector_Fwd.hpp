@@ -42,10 +42,20 @@
 #ifndef KOKKOS_VIEW_MP_VECTOR_FWD_HPP
 #define KOKKOS_VIEW_MP_VECTOR_FWD_HPP
 
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
 #include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_View.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 //----------------------------------------------------------------------------
 
@@ -236,6 +246,29 @@ void deep_copy( const ExecSpace &,
   std::is_same< typename ViewTraits<ST,SP...>::specialize
               , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
     )>::type * = 0 );
+
+namespace Impl {
+
+template <unsigned N, typename... Args>
+KOKKOS_FUNCTION std::enable_if_t<
+    N == View<Args...>::rank &&
+    std::is_same<typename ViewTraits<Args...>::specialize,
+                 Kokkos::Experimental::Impl::ViewMPVectorContiguous>::value,
+    View<Args...>>
+as_view_of_rank_n(View<Args...> v);
+
+// Placeholder implementation to compile generic code for DynRankView; should
+// never be called
+template <unsigned N, typename T, typename... Args>
+std::enable_if_t<
+    N != View<T, Args...>::rank &&
+        std::is_same<typename ViewTraits<T, Args...>::specialize,
+                     Kokkos::Experimental::Impl::ViewMPVectorContiguous>::value,
+    View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
+         Args...>>
+as_view_of_rank_n(View<T, Args...>);
+
+}
 
 } // namespace Kokkos
 

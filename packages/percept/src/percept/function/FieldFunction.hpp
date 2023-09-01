@@ -24,7 +24,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <percept/function/Function.hpp>
 #include <percept/function/internal/Searcher.hpp>

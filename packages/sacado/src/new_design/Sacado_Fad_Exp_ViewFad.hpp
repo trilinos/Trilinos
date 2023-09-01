@@ -33,7 +33,7 @@
 #include "Sacado_Fad_Exp_GeneralFad.hpp"
 #include "Sacado_Fad_Exp_ViewStorage.hpp"
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Error.hpp"
 #endif

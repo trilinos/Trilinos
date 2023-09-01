@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -97,7 +97,7 @@ C     --   Sets ROT3D, ROTMAT, ROTCEN of /XYZROT/
 
       LOGICAL FFEXST, MATSTR, HELP
 
-      CHARACTER*(128) STRING
+      CHARACTER*(256) STRING
       CHARACTER*(mxlnln) INFREC(*)
       CHARACTER*(mxstln) QAREC(4,*)
       CHARACTER*(mxstln) BLKTYP(*)
@@ -268,6 +268,15 @@ C     --Read command line
       IF (IOSTAT .LT. 0) GOTO 430
       IF (NUMFLD .EQ. 0) GOTO 110
       INTYP(MIN(MAXFLD,NUMFLD)+1) = -999
+      if (numfld .gt. maxfld) then
+         write (string, 1) numfld, maxfld
+ 1       format('There were ',i3, ' words entered on the command line,'
+     $          ' but only ',i3,' are allowed.')
+         CALL PRTERR ('WARNING', STRING(:LENSTR(STRING)))
+         CALL PRTERR ('CMDSPEC',
+     $        ' Please enter the command on two or more lines')
+         CALL PRTERR ('CMDSPEC',' ')
+      end if
 
       IFLD = 1
       CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -432,7 +441,7 @@ C=======================================================================
           WRITE (CTEMP, 10010) 'Offset for Material ', idelb(iblk),' > '
 10010     FORMAT (1X, A, I10, A)
           CALL SQZSTR (CTEMP, LSTR)
-          
+
           CALL FREFLD (0, 0, CTEMP(:LENSTR(CTEMP)+1), MAXFLD,
      &      IOSTAT, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
           IF (IOSTAT .LT. 0) GOTO 430
@@ -1562,7 +1571,7 @@ C ... Field is character
                   GO TO 333
                 END IF
 
-              ELSE IF (MATSTR (WORD2, 'NAMES', 2)) THEN
+            ELSE IF (MATSTR (WORD2, 'NAMES', 2)) THEN
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
                   do i=1, nelblk
@@ -1575,15 +1584,15 @@ C ... Field is character
                   CALL PRTERR ('CMDSPEC',
      *              'All material block names deleted.')
                 ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
-     &              MATSTR(WORD,'NSETS',   1) ) THEN
-                  do i=1, numnps
+     &                 MATSTR(WORD,'NSETS',   1) ) THEN
+                   do i=1, numnps
 #if defined(__XLF__)
-                    nsname(i) = " "
+                      nsname(i) = " "
 #else
-                    nsname(i) = ""
+                      nsname(i) = ""
 #endif
-                  end do
-                  CALL PRTERR ('CMDSPEC','All nodeset names deleted.')
+                   end do
+                   CALL PRTERR ('CMDSPEC','All nodeset names deleted.')
                 ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
      &              MATSTR(WORD,'SSETS',   1) ) THEN
                   do i=1, numess
@@ -1594,13 +1603,22 @@ C ... Field is character
 #endif
                   end do
                   CALL PRTERR ('CMDSPEC','All sideset names deleted.')
-                ELSE
+               ELSE
                   CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
      &              // '" is an invalid DELETE NAME option')
                   GO TO 333
-                END IF
+               END IF
 
-              ELSE IF (MATSTR (WORD2, 'RESET', 2)) THEN
+            ELSE IF (MATSTR (WORD2, 'ATTRIBUTES', 2)) THEN
+               IF (MATSTR(WORD,'MATERIALS',1) .OR.
+     &              MATSTR(WORD, 'BLOCKS',1)) THEN
+                  do i=1, nelblk
+                     numatr(i) = 0
+                  end do
+                  CALL PRTERR ('CMDSPEC',
+     *              'All element block attributes deleted.')
+               END IF
+            ELSE IF (MATSTR (WORD2, 'RESET', 2)) THEN
                 IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &            MATSTR(WORD, 'BLOCKS',1)) THEN
                   do i=1, nelblk
@@ -2301,7 +2319,7 @@ C========================================================================
 
 C========================================================================
       ELSE IF (VERB .EQ. 'QUIT') THEN
-         call prterr('WARNING', 
+         call prterr('WARNING',
      &   'Aborting current execution; no output file will be written')
         CALL SCNEOF
         RETURN 1

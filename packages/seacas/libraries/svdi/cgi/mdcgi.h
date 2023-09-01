@@ -5,11 +5,8 @@
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef MDCGI_H
-#define MDCGI_H
+#pragma once
 
 #include "cgi.h"                    // for device_struct, MAX_DEVICES, etc
 void xcoon_(anything **surface_id); /* which surface to turn output on for*/
 void xcact_(void (*device_fn)(anything **, int, anything **), anything **p_surface_id);
-#endif

@@ -103,7 +103,7 @@ enum MatrixEntityType {
 */
 
 template <typename User, typename UserCoord=User>
-  class MatrixAdapter : public BaseAdapter<User> {
+  class MatrixAdapter : public AdapterWithCoordsWrapper<User, UserCoord> {
 private:
   enum MatrixEntityType primaryEntityType_;
   VectorAdapter<UserCoord> *coordinateInput_;
@@ -112,27 +112,23 @@ private:
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
-  typedef typename InputTraits<User>::lno_t    lno_t;
-  typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::part_t   part_t;
-  typedef typename InputTraits<User>::node_t   node_t;
-  typedef typename InputTraits<User>::offset_t offset_t;
-  typedef User user_t;
-  typedef UserCoord userCoord_t;
-  typedef MatrixAdapter<User,UserCoord> base_adapter_t;
+  using scalar_t = typename InputTraits<User>::scalar_t;
+  using lno_t = typename InputTraits<User>::lno_t;
+  using gno_t = typename InputTraits<User>::gno_t;
+  using part_t = typename InputTraits<User>::part_t;
+  using node_t = typename InputTraits<User>::node_t;
+  using offset_t = typename InputTraits<User>::offset_t;
+  using user_t = User;
+  using userCoord_t = UserCoord;
+  using base_adapter_t = MatrixAdapter<User,UserCoord>;
 #endif
 
-  enum BaseAdapterType adapterType() const {return MatrixAdapterType;}
+  enum BaseAdapterType adapterType() const override {return MatrixAdapterType;}
 
   // Constructor; sets default primaryEntityType to MATRIX_ROW.
   MatrixAdapter() : primaryEntityType_(MATRIX_ROW),
                     coordinateInput_(),
                     haveCoordinateInput_(false) {}
-
-  /*! \brief Destructor
-   */
-  virtual ~MatrixAdapter(){}
 
   /*! \brief Returns the number of rows on this process.
    */
@@ -164,6 +160,16 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+  virtual void getRowIDsHostView(typename BaseAdapter<User>::ConstIdsHostView& rowIds) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getRowIDsDeviceView(typename BaseAdapter<User>::ConstIdsDeviceView& rowIds) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
   /*! \brief Sets pointers to this process' matrix entries using
              compressed sparse row (CRS) format.
              All matrix adapters must implement either getCRSView or
@@ -182,6 +188,19 @@ public:
     colIds = ArrayRCP<const gno_t>();
     Z2_THROW_NOT_IMPLEMENTED
   }
+
+  virtual void getCRSHostView(typename BaseAdapter<User>::ConstOffsetsHostView& offsets,
+                              typename BaseAdapter<User>::ConstIdsHostView& colIds) const
+  {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getCRSDeviceView(typename BaseAdapter<User>::ConstOffsetsDeviceView& offsets,
+                                typename BaseAdapter<User>::ConstIdsDeviceView& colIds) const
+  {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
 
   /*! \brief Sets pointers to this process' matrix entries
              and their values using
@@ -208,6 +227,21 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+  virtual void getCRSHostView(typename BaseAdapter<User>::ConstOffsetsHostView& offsets,
+                              typename BaseAdapter<User>::ConstIdsHostView& colIds,
+                              typename BaseAdapter<User>::ConstScalarsHostView& values) const
+  {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getCRSDeviceView(typename BaseAdapter<User>::ConstOffsetsDeviceView& offsets,
+                                typename BaseAdapter<User>::ConstIdsDeviceView& colIds,
+                                typename BaseAdapter<User>::ConstScalarsDeviceView& values) const
+  {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
+
   /*! \brief Returns the number of weights per row (0 or greater).
       Row weights may be used when partitioning matrix rows.
    */
@@ -226,6 +260,16 @@ public:
     weights = NULL;
     stride = 0;
     Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getRowWeightsHostView(typename BaseAdapter<User>::WeightsHostView& weights) const
+  {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getRowWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView& weights) const
+  {
+      Z2_THROW_NOT_IMPLEMENTED
   }
 
   /*! \brief Indicate whether row weight with index idx should be the
@@ -249,6 +293,16 @@ public:
   virtual void getColumnIDsView(const gno_t *&colIds) const
   {
     colIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getColumnIDsHostView(typename BaseAdapter<User>::ConstIdsHostView& colIds) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getColumnIDsDeviceView(typename BaseAdapter<User>::ConstIdsDeviceView& colIds) const
+  {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -317,6 +371,16 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+  virtual void getColumnWeightsHostView(typename BaseAdapter<User>::WeightsHostView& weights) const
+  {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  virtual void getColumnWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView& weights) const
+  {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
   /*! \brief Indicate whether column weight with index idx should be the
    *         global number of nonzeros in the column.
    */
@@ -338,7 +402,7 @@ public:
    *  \param coordData is a pointer to a VectorAdapter with the user's
    *         coordinate data.
    */
-  void setCoordinateInput(VectorAdapter<UserCoord> *coordData)
+  void setCoordinateInput(VectorAdapter<UserCoord> *coordData) override
   {
     coordinateInput_ = coordData;
     haveCoordinateInput_ = true;
@@ -352,7 +416,7 @@ public:
   /*! \brief Obtain the coordinate data registered by the user.
    *  \return pointer a VectorAdapter with the user's coordinate data.
    */
-  VectorAdapter<UserCoord> *getCoordinateInput() const
+  VectorAdapter<UserCoord> *getCoordinateInput() const override
   {
     return coordinateInput_;
   }
@@ -394,7 +458,7 @@ public:
   }
 
   // Functions from the BaseAdapter interface
-  size_t getLocalNumIDs() const
+  size_t getLocalNumIDs() const override
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
@@ -408,7 +472,7 @@ public:
     }
   }
 
-  void getIDsView(const gno_t *&Ids) const
+  void getIDsView(const gno_t *&Ids) const override
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
@@ -431,7 +495,51 @@ public:
     }
   }
 
-  int getNumWeightsPerID() const
+  void getIDsHostView(typename BaseAdapter<User>::ConstIdsHostView& ids) const override {
+    switch (getPrimaryEntityType()) {
+    case MATRIX_ROW:
+      getRowIDsHostView(ids);
+      break;
+    case MATRIX_COLUMN:
+      getColumnIDsHostView(ids);
+      break;
+    case MATRIX_NONZERO: {
+      // TODO:  Need getNonzeroIDsHostView?  What is a Nonzero ID?
+      // TODO:  std::pair<gno_t, gno_t>?
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  getIDsView not yet supported for matrix nonzeros."
+           << std::endl;
+      throw std::runtime_error(emsg.str());
+      }
+    default:   // Shouldn't reach default; just making compiler happy
+      break;
+    }
+  }
+
+  void getIDsDeviceView(typename BaseAdapter<User>::ConstIdsDeviceView& ids) const override {
+    switch (getPrimaryEntityType()) {
+    case MATRIX_ROW:
+      getRowIDsDeviceView(ids);
+      break;
+    case MATRIX_COLUMN:
+      getColumnIDsDeviceView(ids);
+      break;
+    case MATRIX_NONZERO: {
+      // TODO:  Need getNonzeroIDsDeviceView?  What is a Nonzero ID?
+      // TODO:  std::pair<gno_t, gno_t>?
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  getIDsView not yet supported for matrix nonzeros."
+           << std::endl;
+      throw std::runtime_error(emsg.str());
+      }
+    default:   // Shouldn't reach default; just making compiler happy
+      break;
+    }
+  }
+
+  int getNumWeightsPerID() const override
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
@@ -445,7 +553,7 @@ public:
     }
   }
 
-  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const
+  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const override
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
@@ -468,6 +576,50 @@ public:
       break;
     }
   }
+
+  virtual void getWeightsHostView(typename BaseAdapter<User>::WeightsHostView& hostWgts) const {
+      switch (getPrimaryEntityType()) {
+      case MATRIX_ROW:
+        getRowWeightsHostView(hostWgts);
+        break;
+      case MATRIX_COLUMN:
+        getColumnWeightsHostView(hostWgts);
+        break;
+      case MATRIX_NONZERO:
+        {
+        // TODO:  Need getNonzeroWeightsView with Nonzeros as primary object?
+        // TODO:  That is, get Nonzeros' weights based on some nonzero ID?
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  getWeightsView not yet supported for matrix nonzeros."
+             << std::endl;
+        throw std::runtime_error(emsg.str());
+        }
+      default:   // Shouldn't reach default; just making compiler happy
+        break;
+      }  }
+
+  virtual void getWeightsDeviceView(typename BaseAdapter<User>::WeightsDeviceView& deviceWgts) const {
+      switch (getPrimaryEntityType()) {
+      case MATRIX_ROW:
+        getRowWeightsDeviceView(deviceWgts);
+        break;
+      case MATRIX_COLUMN:
+        getColumnWeightsDeviceView(deviceWgts);
+        break;
+      case MATRIX_NONZERO:
+        {
+        // TODO:  Need getNonzeroWeightsView with Nonzeros as primary object?
+        // TODO:  That is, get Nonzeros' weights based on some nonzero ID?
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  getWeightsView not yet supported for matrix nonzeros."
+             << std::endl;
+        throw std::runtime_error(emsg.str());
+        }
+      default:   // Shouldn't reach default; just making compiler happy
+        break;
+      }  }
 
   bool useDegreeAsWeight(int idx) const
   {

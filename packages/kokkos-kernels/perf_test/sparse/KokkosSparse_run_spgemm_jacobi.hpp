@@ -1,51 +1,24 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Seher Acer (sacer@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosSparse_spgemm.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 #define TRANSPOSEFIRST false
 #define TRANSPOSESECOND false
@@ -69,7 +42,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
   size_t nentries2 = output_mat2.graph.entries.extent(0);
   size_t nvals2    = output_mat2.values.extent(0);
 
-  KokkosKernels::sort_crs_matrix(output_mat1);
+  KokkosSparse::sort_crs_matrix(output_mat1);
 
   if (nrows1 != nrows2) {
     std::cerr << "row count is different" << std::endl;
@@ -84,7 +57,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
     return false;
   }
 
-  KokkosKernels::sort_crs_matrix(output_mat2);
+  KokkosSparse::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
@@ -326,9 +299,9 @@ void run_spgemm_jacobi(Parameters params) {
                                            void, size_type>
       slow_crstmat_t;
 
-  char *a_mat_file = params.a_mtx_bin_file;
-  char *b_mat_file = params.b_mtx_bin_file;
-  char *c_mat_file = params.c_mtx_bin_file;
+  const char *a_mat_file = params.a_mtx_bin_file.c_str();
+  const char *b_mat_file = params.b_mtx_bin_file.c_str();
+  const char *c_mat_file = params.c_mtx_bin_file.c_str();
 
   slow_crstmat_t a_slow_crsmat, b_slow_crsmat, c_slow_crsmat;
   fast_crstmat_t a_fast_crsmat, b_fast_crsmat, c_fast_crsmat;
@@ -337,12 +310,10 @@ void run_spgemm_jacobi(Parameters params) {
 
   if (params.a_mem_space == 1) {
     a_fast_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
   } else {
     a_slow_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
   }
 
   if ((b_mat_file == NULL || strcmp(b_mat_file, a_mat_file) == 0) &&
@@ -353,13 +324,11 @@ void run_spgemm_jacobi(Parameters params) {
   } else if (params.b_mem_space == 1) {
     if (b_mat_file == NULL) b_mat_file = a_mat_file;
     b_fast_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            b_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(b_mat_file);
   } else {
     if (b_mat_file == NULL) b_mat_file = a_mat_file;
     b_slow_crsmat =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            b_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(b_mat_file);
   }
 
   if (params.a_mem_space == 1) {
@@ -485,18 +454,18 @@ void run_spgemm_jacobi(Parameters params) {
 
   if (c_mat_file != NULL) {
     if (params.c_mem_space == 1) {
-      KokkosKernels::sort_crs_matrix(c_fast_crsmat);
+      KokkosSparse::sort_crs_matrix(c_fast_crsmat);
 
-      KokkosKernels::Impl::write_graph_bin(
+      KokkosSparse::Impl::write_graph_bin(
           (lno_t)(c_fast_crsmat.numRows()),
           (size_type)(c_fast_crsmat.graph.entries.extent(0)),
           c_fast_crsmat.graph.row_map.data(),
           c_fast_crsmat.graph.entries.data(), c_fast_crsmat.values.data(),
           c_mat_file);
     } else {
-      KokkosKernels::sort_crs_matrix(c_slow_crsmat);
+      KokkosSparse::sort_crs_matrix(c_slow_crsmat);
 
-      KokkosKernels::Impl::write_graph_bin(
+      KokkosSparse::Impl::write_graph_bin(
           (lno_t)c_slow_crsmat.numRows(),
           (size_type)c_slow_crsmat.graph.entries.extent(0),
           c_slow_crsmat.graph.row_map.data(),

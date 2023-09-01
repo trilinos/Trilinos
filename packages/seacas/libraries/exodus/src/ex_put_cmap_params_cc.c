@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,11 +41,12 @@ int ex_put_cmap_params_cc(int exoid, const void_int *node_cmap_ids,
                           const void_int *elem_proc_ptrs)
 {
   size_t num_n_comm_maps, num_e_comm_maps;
-  int    status, n_varid[2], e_varid[2], iproc;
+  int    status, n_varid[2], e_varid[2];
   int    varid, n_dimid[1], e_dimid[1];
   int    n_varid_idx, e_varid_idx;
   int    num_icm;
   size_t start[1], count[1];
+  size_t iproc;
 
   long long nl_ecnt_cmap, nl_ncnt_cmap;
   void_int *n_var_idx = NULL;
@@ -159,7 +160,7 @@ file ID %d",
   } /* "if (num_n_comm_maps > 0)" */
 
   /* Check to see if there are elemental communications maps in the file */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &e_dimid[0])) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &e_dimid[0]) != NC_NOERR) {
     num_e_comm_maps = 0;
   }
   else {

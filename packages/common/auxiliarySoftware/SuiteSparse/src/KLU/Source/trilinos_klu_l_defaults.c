@@ -47,13 +47,13 @@ Int TRILINOS_KLU_defaults
     /* statistics */
     Common->status = TRILINOS_KLU_OK ;
     Common->nrealloc = 0 ;
-    Common->structural_rank = EMPTY ;
-    Common->numerical_rank = EMPTY ;
-    Common->noffdiag = EMPTY ;
-    Common->flops = EMPTY ;
-    Common->rcond = EMPTY ;
-    Common->condest = EMPTY ;
-    Common->rgrowth = EMPTY ;
+    Common->structural_rank = TRILINOS_KLU_EMPTY ;
+    Common->numerical_rank = TRILINOS_KLU_EMPTY ;
+    Common->noffdiag = TRILINOS_KLU_EMPTY ;
+    Common->flops = TRILINOS_KLU_EMPTY ;
+    Common->rcond = TRILINOS_KLU_EMPTY ;
+    Common->condest = TRILINOS_KLU_EMPTY ;
+    Common->rgrowth = TRILINOS_KLU_EMPTY ;
     Common->work = 0 ;		/* work done by btf_order */
 
     Common->memusage = 0 ;

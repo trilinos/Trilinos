@@ -48,11 +48,22 @@ struct EntityParallelState {
   EntityState         state;
   EntityCommListInfo  comm_info;
   bool                remote_owned_closure;
-  const BulkData* mesh;
 
   bool operator<(const EntityParallelState& rhs) const
-  { return EntityLess(*mesh)(comm_info.entity, rhs.comm_info.entity); }
+  { return comm_info.key < rhs.comm_info.key; }
 };
+
+inline
+bool operator<(const EntityKey& key, const EntityParallelState& rhs)
+{
+  return key < rhs.comm_info.key;
+}
+
+inline
+bool operator<(const EntityParallelState& lhs, const EntityKey& key)
+{
+  return lhs.comm_info.key < key;
+}
 
 }
 }

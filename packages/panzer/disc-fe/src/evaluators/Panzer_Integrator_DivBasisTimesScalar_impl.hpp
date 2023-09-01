@@ -126,7 +126,7 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<View<const ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
+      View<PHX::UnmanagedView<const ScalarT**>*>("DivBasisTimesScalar::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -189,9 +189,13 @@ namespace panzer
     using Kokkos::createDynRankView;
     using panzer::getBasisIndex;
 
+    auto kokkosFieldMults_h = Kokkos::create_mirror_view(kokkosFieldMults_);
+
     // Get the PHX::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+      kokkosFieldMults_h(i) = fieldMults_[i].get_static_view();
+
+    Kokkos::deep_copy(kokkosFieldMults_, kokkosFieldMults_h);
 
     // Allocate temporary if not using shared memory
     bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
@@ -412,13 +416,13 @@ namespace panzer
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       } else {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       }
     }
     else {
@@ -427,13 +431,13 @@ namespace panzer
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       } else {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.num_cells);
-	parallel_for(policy, *this, this->getName());
+	parallel_for(this->getName(), policy, *this);
       }
     }
   } // end of evaluateFields()

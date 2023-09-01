@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_BLOCKCRSMATRIX_DECL_HPP
 #define TPETRA_BLOCKCRSMATRIX_DECL_HPP
 
@@ -48,6 +49,8 @@
 #include "Tpetra_BlockMultiVector_decl.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 
+#include "KokkosSparse_BsrMatrix.hpp"
+
 namespace Tpetra {
 
 template<class BlockCrsMatrixType>
@@ -55,14 +58,13 @@ Teuchos::RCP<BlockCrsMatrixType>
 importAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
                                      const Import<typename BlockCrsMatrixType::local_ordinal_type,
                                                   typename BlockCrsMatrixType::global_ordinal_type,
-                                                  typename BlockCrsMatrixType::node_type>& importer,
-                                     const Teuchos::RCP<const Map<typename BlockCrsMatrixType::local_ordinal_type,
-                                                                  typename BlockCrsMatrixType::global_ordinal_type,
-                                                                  typename BlockCrsMatrixType::node_type> >& domainMap = Teuchos::null,
-                                     const Teuchos::RCP<const Map<typename BlockCrsMatrixType::local_ordinal_type,
-                                                                  typename BlockCrsMatrixType::global_ordinal_type,
-                                                                  typename BlockCrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-                                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+				                  typename BlockCrsMatrixType::node_type>& importer);
+template<class BlockCrsMatrixType>
+Teuchos::RCP<BlockCrsMatrixType>
+exportAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                     const Export<typename BlockCrsMatrixType::local_ordinal_type,
+                                                  typename BlockCrsMatrixType::global_ordinal_type,
+				                  typename BlockCrsMatrixType::node_type>& exporter);
 
 /// \class BlockCrsMatrix
 /// \brief Sparse matrix whose entries are small dense square blocks,
@@ -251,6 +253,17 @@ public:
   using nonconst_values_host_view_type =
         typename row_matrix_type::nonconst_values_host_view_type;
 
+  using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
+
+  using  local_matrix_device_type =
+    KokkosSparse::Experimental::BsrMatrix<impl_scalar_type,
+                          local_ordinal_type,
+                          device_type,
+                          void,
+                          typename local_graph_device_type::size_type>;
+  using local_matrix_host_type =
+    typename local_matrix_device_type::HostMirror;
+
   //@}
   //! \name Constructors and destructor
   //@{
@@ -268,6 +281,10 @@ public:
   /// \param graph [in] A fill-complete graph.
   /// \param blockSize [in] Number of degrees of freedom per mesh point.
   BlockCrsMatrix (const crs_graph_type& graph, const LO blockSize);
+
+  BlockCrsMatrix (const crs_graph_type& graph,
+                  const typename local_matrix_device_type::values_type& values,
+                  const LO blockSize);
 
   /// \brief Constructor that takes a graph, domain and range point
   ///   Maps, and a block size.
@@ -374,7 +391,7 @@ public:
   //@{
 
   //! The number of degrees of freedom per mesh point.
-  LO getBlockSize () const { return blockSize_; }
+  virtual LO getBlockSize () const override { return blockSize_; }
 
   //! Get the (mesh) graph.
   virtual Teuchos::RCP<const ::Tpetra::RowGraph<LO,GO,Node> > getGraph () const override;
@@ -392,12 +409,18 @@ public:
               const Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
               const Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ());
 
+  /// \brief Import from <tt>this</tt> to the given destination
+  ///   matrix, and make the result fill complete.
   void
   importAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
-                         const Import<LO, GO, Node>& importer,
-                         const Teuchos::RCP<const map_type>& domainMap,
-                         const Teuchos::RCP<const map_type>& rangeMap,
-                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
+                         const Import<LO, GO, Node>& importer) const;
+
+  /// \brief Import from <tt>this</tt> to the given destination
+  ///   matrix, and make the result fill complete.
+  void
+  exportAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
+                         const Export<LO, GO, Node>& exporter) const;
+
 
   /// \brief Replace values at the given (mesh, i.e., block) column
   ///   indices, in the given (mesh, i.e., block) row.
@@ -586,6 +609,11 @@ public:
   /// any entries in that row.
   size_t getNumEntriesInLocalRow (const LO localRowInd) const override;
 
+
+  /// Get KokkosSparce::Experimental::BsrMatrix representation
+  /// of this BlockCrsMatrix 
+  local_matrix_device_type getLocalMatrixDevice () const;
+
   /// \brief Whether this object had an error on the calling process.
   ///
   /// Import and Export operations using this object as the target of
@@ -716,6 +744,12 @@ protected:
 
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source) override;
 
+  // clang-format on
+  using dist_object_type::
+      copyAndPermute; ///< DistObject copyAndPermute has multiple overloads --
+                      ///< use copyAndPermutes for anything we don't override
+                      // clang-format off
+
   virtual void
   copyAndPermute
   (const SrcDistObject& sourceObj,
@@ -725,6 +759,13 @@ protected:
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteFromLIDs,
    const CombineMode CM) override;
+
+  // clang-format on
+  using dist_object_type::packAndPrepare; ///< DistObject overloads
+                                          ///< packAndPrepare. Explicitly use
+                                          ///< DistObject's packAndPrepare for
+                                          ///< anything we don't override
+                                          // clang-format off
 
   virtual void
   packAndPrepare
@@ -736,6 +777,13 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    size_t& constantNumPackets) override;
+
+  // clang-format on
+  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
+                                            ///< unpackAndCombine, use the
+                                            ///< DistObject's implementation for
+                                            ///< anything we don't override.
+                                            // clang-format off
 
   virtual void
   unpackAndCombine
@@ -1053,6 +1101,7 @@ private:
 
 
 public:
+
   //! The communicator over which this matrix is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
 
@@ -1223,14 +1272,15 @@ public:
   Tpetra::importAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
                                                const Import<typename BlockCrsMatrixType::local_ordinal_type,
                                                             typename BlockCrsMatrixType::global_ordinal_type,
-                                                            typename BlockCrsMatrixType::node_type>& importer,
-                                               const Teuchos::RCP<const Map<typename BlockCrsMatrixType::local_ordinal_type,
-                                                                            typename BlockCrsMatrixType::global_ordinal_type,
-                                                                            typename BlockCrsMatrixType::node_type> >& domainMap,
-                                               const Teuchos::RCP<const Map<typename BlockCrsMatrixType::local_ordinal_type,
-                                                                            typename BlockCrsMatrixType::global_ordinal_type,
-                                                                            typename BlockCrsMatrixType::node_type> >& rangeMap,
-                                               const Teuchos::RCP<Teuchos::ParameterList>& params);
+					                    typename BlockCrsMatrixType::node_type>& importer);
+  // Friend declaration for nonmember function.
+  template<class BlockCrsMatrixType>
+  friend Teuchos::RCP<BlockCrsMatrixType>
+  Tpetra::exportAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                               const Export<typename BlockCrsMatrixType::local_ordinal_type,
+                                                            typename BlockCrsMatrixType::global_ordinal_type,
+					                    typename BlockCrsMatrixType::node_type>& exporter);
+
 };
 
 template<class BlockCrsMatrixType>
@@ -1238,17 +1288,23 @@ Teuchos::RCP<BlockCrsMatrixType>
 importAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
                                      const Import<typename BlockCrsMatrixType::local_ordinal_type,
                                                   typename BlockCrsMatrixType::global_ordinal_type,
-                                                  typename BlockCrsMatrixType::node_type>& importer,
-                                     const Teuchos::RCP<const Map<typename BlockCrsMatrixType::local_ordinal_type,
-                                                                  typename BlockCrsMatrixType::global_ordinal_type,
-                                                                  typename BlockCrsMatrixType::node_type> >& domainMap,
-                                     const Teuchos::RCP<const Map<typename BlockCrsMatrixType::local_ordinal_type,
-                                                                  typename BlockCrsMatrixType::global_ordinal_type,
-                                                                  typename BlockCrsMatrixType::node_type> >& rangeMap,
-                                     const Teuchos::RCP<Teuchos::ParameterList>& params)
+                                                  typename BlockCrsMatrixType::node_type>& importer)
 {
   Teuchos::RCP<BlockCrsMatrixType> destMatrix;
-  sourceMatrix->importAndFillComplete (destMatrix, importer, domainMap, rangeMap, params);
+  sourceMatrix->importAndFillComplete (destMatrix, importer);
+  return destMatrix;
+}
+
+
+template<class BlockCrsMatrixType>
+Teuchos::RCP<BlockCrsMatrixType>
+exportAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                     const Export<typename BlockCrsMatrixType::local_ordinal_type,
+                                                  typename BlockCrsMatrixType::global_ordinal_type,
+                                                  typename BlockCrsMatrixType::node_type>& exporter)
+{
+  Teuchos::RCP<BlockCrsMatrixType> destMatrix;
+  sourceMatrix->exportAndFillComplete (destMatrix, exporter);
   return destMatrix;
 }
 

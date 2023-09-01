@@ -12,24 +12,34 @@
 #include <math.h>
 #include <stdio.h>
 
-static int check_params(), check_assignment();
+static int check_params(int global_method, /* global partitioning algorithm */
+                        int local_method,  /* local partitioning algorithm */
+                        int rqi_flag,      /* use multilevel eigensolver? */
+                        int ndims /* number of eigenvectors */);
+
+static int check_assignment(int *assignment,  /* set numbers if read-from-file */
+                            int  nvtxs,       /* number of vertices */
+                            int  nsets_tot,   /* total number of desired sets */
+                            int  ndims,       /* partitioning level */
+                            int  local_method /* local partitioning algorithm */
+);
 
 /* Check graph and input options and parameters. */
 int check_input(struct vtx_data **graph,         /* linked lists of vertex data */
                 int               nvtxs,         /* number of vertices */
                 int               nedges,        /* number of edges */
                 int               igeom,         /* geometric dimension for inertial method */
-                float **          coords,        /* coordinates for inertial method */
-                char *            graphname,     /* graph input file name */
-                int *             assignment,    /* set numbers if read-from-file */
-                double *          goal,          /* desired sizes of different sets */
+                float           **coords,        /* coordinates for inertial method */
+                char             *graphname,     /* graph input file name */
+                int              *assignment,    /* set numbers if read-from-file */
+                double           *goal,          /* desired sizes of different sets */
                 int               architecture,  /* 0=> hypercube, d=> d-dimensional mesh */
                 int               ndims_tot,     /* number of hypercube dimensions */
                 int               mesh_dims[3],  /* size of mesh in each dimension */
                 int               global_method, /* global partitioning algorithm */
                 int               local_method,  /* local partitioning algorithm */
                 int               rqi_flag,      /* flag for RQI/symmlq eigensolver */
-                int *             vmax,          /* smallest acceptable coarsened nvtxs */
+                int              *vmax,          /* smallest acceptable coarsened nvtxs */
                 int               ndims,         /* partitioning level */
                 double            eigtol         /* tolerance for eigen-pairs */
 )
@@ -44,7 +54,6 @@ int check_input(struct vtx_data **graph,         /* linked lists of vertex data 
   int          flag_assign;         /* does assignment look good? */
   int          nprocs = 0;          /* number of processors partitioning for */
   int          i;                   /* loop counter */
-  int          check_graph(), check_params(), check_assignment();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering check_input>\n");

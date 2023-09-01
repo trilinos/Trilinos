@@ -123,6 +123,13 @@ public:
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
 
 private:
+
+  /// \brief Variant of setParameters() that takes a nonconst Teuchos::ParameterList.
+  ///
+  /// This variant fills in default values for any valid parameters
+  /// that are not in the input list.
+  void setParametersImpl(Teuchos::ParameterList& params);
+
   void computeImporter() const;
 
   //! \name Internal typedefs (handy for brevity and code clarity)
@@ -449,6 +456,9 @@ private:
 
   //! Contains the number of successful call to compute().
   int NumCompute_;
+
+  //! Whether apply should register and use a timer
+  bool TimerForApply_;
 
   //! Contains the number of successful call to apply().
   mutable int NumApply_;

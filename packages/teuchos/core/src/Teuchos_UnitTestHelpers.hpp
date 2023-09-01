@@ -87,9 +87,9 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
     TEST_GROUP##_##TEST_NAME##_UnitTest() \
       : Teuchos::UnitTestBase( #TEST_GROUP, #TEST_NAME ) \
     {} \
-    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
-    virtual std::string unitTestFile() const { return __FILE__; } \
-    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
+    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const override; \
+    virtual std::string unitTestFile() const override { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const override { return __LINE__; } \
   }; \
   \
   TEST_GROUP##_##TEST_NAME##_UnitTest \

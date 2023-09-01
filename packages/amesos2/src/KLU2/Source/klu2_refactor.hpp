@@ -93,8 +93,8 @@ Int KLU_refactor        /* returns TRUE if successful, FALSE otherwise */
         return (FALSE) ;
     }
 
-    Common->numerical_rank = EMPTY ;
-    Common->singular_col = EMPTY ;
+    Common->numerical_rank = AMESOS2_KLU2_EMPTY ;
+    Common->singular_col = AMESOS2_KLU2_EMPTY ;
 
     Az = (Entry *) Ax ;
 
@@ -290,7 +290,7 @@ Int KLU_refactor        /* returns TRUE if successful, FALSE otherwise */
                     {
                         /* matrix is numerically singular */
                         Common->status = KLU_SINGULAR ;
-                        if (Common->numerical_rank == EMPTY)
+                        if (Common->numerical_rank == AMESOS2_KLU2_EMPTY)
                         {
                             Common->numerical_rank = k+k1 ;
                             Common->singular_col = Q [k+k1] ;
@@ -434,7 +434,7 @@ Int KLU_refactor        /* returns TRUE if successful, FALSE otherwise */
                     {
                         /* matrix is numerically singular */
                         Common->status = KLU_SINGULAR ;
-                        if (Common->numerical_rank == EMPTY)
+                        if (Common->numerical_rank == AMESOS2_KLU2_EMPTY)
                         {
                             Common->numerical_rank = k+k1 ;
                             Common->singular_col = Q [k+k1] ;

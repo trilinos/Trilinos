@@ -2,6 +2,218 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2023-06-22:
+
+* **Added:** Packages are now determined to be missing if their dependencies
+  file `<packageDir>/cmake/Dependencies.cmake` is missing.  If the package
+  directory `<packageDir>` exists but the dependencies file is missing, the
+  package is determined to be missing but a warning is printed.  (This expands
+  behavior to gracefully deal with a situation where a package source
+  directory is only partially removed, such as with `git rm -r <packageDir>`,
+  but the base directory still exists.  Therefore, this allows the project to
+  gracefully configure with the package being considered missing and avoids a
+  fatal error in this case.)
+
+## 2023-06-02:
+
+* **Added/Deprecated:** External packages/TPLs can now be (and should be)
+  listed in the `[TEST|LIB]_[REQUIRED|OPTIONAL]_PACKAGES` arguments/lists in
+  the macro `tribits_package_define_dependencies()` and the
+  `[TEST|LIB]_[REQUIRED|OPTIONAL]_TPLS` arguments/lists are deprecated (but
+  with no deprecation warning yet).  This makes it easier to write
+  `<packageDir>/cmake/Dependencies.cmake` files for packages where the set of
+  internal and external upstream dependent packages is dynamic and changes
+  depending on the TriBITS project where these package are configured under.
+  (And conceptually, a downstream package should not care if an upstream
+  dependent package is pulled in as an external package or built as an
+  internal package.)
+
+## 2023-05-03:
+
+* **Added:** Added support for non-fully TriBITS-compatible external packages.
+  Now, a `<Package>Config.cmake` file need not define
+  `<UpstreamPkg>::all_libs` targets for all of its upstream dependencies.  The
+  updated macro `tribits_process_enabled_tpls()` will find any missing
+  upstream external packages/TPLs as needed (see updated documentation in the
+  section "TriBITS-Compliant External Packages" in the "TriBITS Users Guide"
+  and the section "Processing of external packages/TPLs and TriBITS-compliant
+  external packages" in the "TriBITS Maintainers Guide").
+
+## 2023-02-24:
+
+* **Changed:** Upgraded minimum required CMake version from 3.17 to 3.23.
+  Existing TriBITS projects that have already upgraded to require CMake 3.23+
+  should not notice any major changes due to this change.
+
+## 2023-02-21:
+
+* **Added:** Added support for pre-installed internal packages treated as
+  external packages.  Now, any set of internally defined TriBITS packages for
+  a TriBITS project can be pre-built and pre-installed and the remaining
+  packages in the TriBITS project can be configured to point to those by
+  setting `-D TPL_ENABLE_<Package>=ON`.  This allows great flexibility in how
+  a TriBITS project's packages can be and built, installed, and deployed.
+  This technically implements "Use Case 3: Configure/build pointing to a
+  subset of already installed TriBITS packages in same repo" in [TriBITS
+  #63](https://github.com/TriBITSPub/TriBITS/issues/63).  See the section
+  "Building against pre-installed packages" in the updated build reference
+  documentation for details.
+
+* **Fixed:** Setting `-D<Project>_ENABLE_<TplName>=ON` for an external
+   package/TPL `<TplName>` will not correctly enable and process the TPL.
+
+## 2022-12-07:
+
+* **Changed:** Setting `-D<Project>_ENABLE_<TplName>=ON` now triggers the
+  enable an external package/TPL `<TplName>` similar to the way that
+  `-DTPL_ENABLE_<TplName>` has always done.  This is technically a change in
+  backward compatibility because setting `<Project>_ENABLE_<TplName>=ON` for
+  an external package/TPL used to be ignored.  This change was done as part of
+  a general refactoring to unify the handling of internal and external
+  packages and is a side effect of that refactoring (see [TriBITS
+  #63](https://github.com/TriBITSPub/TriBITS/issues/63)).  (Initially, setting
+  `-D<Project>_ENABLE_<TplName>=ON` resulted in a failed configure because the
+  refactoring was not complete for the handling of external packages/TPL.  But
+  this was fixed in a latter update.)
+
+## 2023-10-25:
+
+* **Added:** New option `<Project>_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`
+  skips the install of the project-level `<Project>Config.cmake` file.  The
+  default value is ``FALSE`` so as to maintain backward compatibility.  (The
+  project can change the default.)
+
+* **Changed:** External packages/TPLs are now processed at the base project
+  scope level.  This allows simple `set()` statements in package module files
+  or config files included by `find_package()` to have project-level scope for
+  the entire TriBITS project.  This is more similar to how a raw CMake project
+  would usually behave that calls `find_package()` in the base
+  `CMakeLists.txt` file.  Before, calls to `find_package()` were wrapped in a
+  CMake `function()` called from the base project directory scope.  So while
+  IMPORTED targets created from a `find_package()` command where visible at
+  the base directory project-level scope, local variables were not.  With this
+  change, now they are.
+
+## 2023-01-10:
+
+* **Added:** Added back support for deprecated variable
+  `<Project>_ASSERT_MISSING_PACKAGES` that was removed
+  [2022-10-11](#2022-10-11).  When `<Project>_ASSERT_MISSING_PACKAGES` is set
+  to a non-null value, it overrides the default value for
+  `<Project>_ASSERT_DEFINED_DEPENDENCIES` (but setting
+  `<Project>_ASSERT_DEFINED_DEPENDENCIES` in the cache takes precedence).
+
+## 2023-01-06:
+
+* **Changed:** Changed all TPL dependencies back to 'Optional' so that
+  disabling an external package/TPL will **not** disable any downstream
+  external packages/TPLs that list a dependency on that external package/TPL.
+  This undoes the change on [2022-10-20](#2022-10-20) and restores backward
+  compatibility to the behavior before that change.
+
+## 2022-12-20:
+
+* **Deprecated:** The macro `set_and_inc_dirs()` is deprecated and replaced by
+  `tribits_set_and_inc_dirs()`.  Use the script
+  `TriBITS/refactoring/replace_set_and_inc_dirs_r.sh` to update
+  `CMakeLists.txt` files.
+
+## 2022-11-03:
+
+* **Deprecated:** The long-deprecated TriBITS function override
+  `include_directories()` now emits a deprecated warning.  To replace all
+  usages of `include_directories()` that should be
+  `tribits_include_directories()`, use the script
+  `TriBITS/refactoring/replace_include_directories_r.sh` (see documentation in
+  that script).
+
+* **Deprecated:** Many previously deprecated TriBITS features now will trigger
+  a CMake DEPRECATION warning message by default (by calling
+  `message(DEPRECATION ...)`).  The message printed to the CMake output will
+  typically describe how to remove the usage of the deprecated feature.  To
+  remove deprecation warnings, change to use the non-deprecated features
+  mentioned in the deprecation warning message.  To temporarily disable
+  deprecation warnings, configure with `-D
+  TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE=IGNORE` (see build reference entry
+  for `TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE` for more details).
+
+## 2022-10-20:
+
+* **Changed:** Disabling an external package/TPL will now disable any
+  downstream external packages/TPLs that list a dependency on that external
+  package/TPL through its
+  [`FindTPL<tplName>Dependencies.cmake`](https://tribitspub.github.io/TriBITS/users_guide/index.html#findtpl-tplname-dependencies-cmake)
+  file.  Prior to this, disabling an external package/TPL would not disable
+  dependent downstream external packages/TPLs (it would only disable
+  downstream dependent required internal packages).  To avoid this, simply
+  leave the enable status of the upstream external package/TPL empty "" and no
+  downstream propagation of disables will take place.
+
+## 2022-10-16:
+
+* **Removed:** Removed the variables `<Project>_LIBRARY_DIRS`,
+  `<Project>_TPL_LIST` and `<Project>_TPL_LIBRARIES` from the installed
+  `<Project>Config.cmake` file.  These are not needed after the change to
+  modern CMake targets `<Package>::all_libs` (see `<Package>::all_libs`
+  below).  To determine if a TPL is enabled, check `if (TARGET
+  <tplName>::all_libs)`.  To get the libraries and include dirs for a TPL,
+  link against the IMPORTED target `<tplName>::all_libs` (see the updated
+  TriBITS example APP projects for details).
+
+* **Removed:** Removed the variables `<Package>_PACKAGE_LIST`,
+  `<Package>_TPL_LIST`, `<Package>_INCLUDE_DIR`, `<Package>_LIBRARY_DIRS`,
+  `<Package>_TPL_INCLUDE_DIRS`, `<Package>_TPL_LIBRARIES` and
+  `<Package>_TPL_LIBRARY_DIRS` from the generated `<Package>Config.cmake`
+  files.  These are not needed with the move to modern CMake targets (see
+  `<Package>::all_libs` below).
+
+* **Changed:** Changed `<Package>_LIBRARIES` in generated
+  `<Package>Config.cmake` files from the full list of the package's library
+  targets to just `<Package>::all_libs`.  (There is no need to list the
+  individual libraries after the move to modern CMake targets.)
+
+## 2022-10-11:
+
+* **Changed:** Added option `<Project>_ASSERT_DEFINED_DEPENDENCIES` to
+  determine if listed external package/TPL and internal package dependencies
+  are defined within the project or not.  The initial default is `FATAL_ERROR`
+  for development mode and `IGNORE` for release mode.  (Previously, undefined
+  external package/TPL dependencies where ignore.)  To set a different
+  default, set `<Project>_ASSERT_DEFINED_DEPENDENCIES_DEFAULT` to `WARNING`,
+  for example, in the project's `ProjectName.cmake` file.
+
+* **Removed:** `<Project>_ASSERT_MISSING_PACKAGES` has been removed and setting
+  it will result in a `FATAL_ERROR`.  Instead, use
+  `<Project>_ASSERT_DEFINED_DEPENDENCIES` (and make sure all of your project's
+  listed TPL dependencies are all defined within the project).
+
+## 2022-10-02:
+
+* **Changed:** The TriBITS FindTPLCUDA.cmake module changed
+  `find_package(CUDA)` to `find_package(CUDAToolkit)` (the former is
+  deprecated as of CMake 3.17).  This avoids imported target namespace
+  conflicts with downstream CMake projects that call
+  `find_package(CUDAToolkit)` (see [Trilinos
+  #10954](https://github.com/trilinos/Trilinos/issues/10954)).
+
+## 2022-09-16:
+
+* **Changed:** Changed nomenclature for packages and TPLs (see updated
+  "Maintainers Guide" section "TriBITS System Data Structures"): "TPLs" =>
+  "External Packages/TPLs"; "Packages" => "Internal Top-Level Packages"; "SE
+  Packages" => "Internal Packages". This impacted many internal variables as
+  well as printed qualities.  Behavior should otherwise be identical
+  w.r.t. input state.  The only observable change that users should see is the
+  text used to describe the different sets of packages and TPLs.  (This is
+  working towards a uniform handling of packages and TPLs (see [TriBITS
+  #63](https://github.com/TriBITSPub/TriBITS/issues/63)).
+
+* **Deprecated:** The rarely used input var
+  `<Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_SE_PACKAGES` is deprecated
+  and the new var name
+  `<Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_PACKAGES` should be used
+  instead.
+
 ## 2022-08-22:
 
 * **Added:** Added support for exporting cache variables for packages in their
@@ -39,9 +251,9 @@ ChangeLog for TriBITS
   macro `tribits_extpkg_define_dependencies()` that sets
   `<tplName>_LIB_ALL_DEPENDENCIES`.  Now `<tplName>_LIB_ENABLED_DEPENDENCIES`
   is automatically set from `<tplName>_LIB_ALL_DEPENDENCIES` based on what
-  TPLs are actaully enabled.  This avoids the problem described below from
+  TPLs are actually enabled.  This avoids the problem described below from
   directly setting `<tplName>_LIB_ENABLED_DEPENDENCIES` without reguard to
-  what TPLs are actaully enabled.  This maintains backward compatibility for
+  what TPLs are actually enabled.  This maintains backward compatibility for
   existing configure scripts where an upstream TPL may not be enabled in some
   strange configure scripts (see
   [TriBITSPub/TriBITS#494](https://github.com/TriBITSPub/TriBITS/issues/494)).

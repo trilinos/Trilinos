@@ -14,7 +14,7 @@
 #include <Akri_IO_Helpers.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_Phase_Support.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <Akri_Parser.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -84,7 +84,7 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
         {
           stk::RuntimeDoomedAdHoc() << "Expecting " << ls.spatial_dimension << " real values for extension_velocity for level set " << ls_name << ".\n";
         }
-        ls.set_extension_velocity(Vector3d(extension_velocity.data(), extension_velocity.size()));
+        ls.set_extension_velocity(stk::math::Vector3d(extension_velocity.data(), extension_velocity.size()));
       }
 
       double narrow_band_multiplier = 0.0;
@@ -156,17 +156,17 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
         {
           const std::string surface_name = comp_dist_surf.as<std::string>();
 
-          ThrowErrorMsgIf( !ls.aux_meta().has_part(surface_name),
+          STK_ThrowErrorMsgIf( !ls.aux_meta().has_part(surface_name),
               "Could not locate a surface named " << surface_name);
 
           stk::mesh::Part & io_part = ls.aux_meta().get_part(surface_name);
-          ThrowErrorMsgIf( ls.meta().side_rank() != io_part.primary_entity_rank(),
+          STK_ThrowErrorMsgIf( ls.meta().side_rank() != io_part.primary_entity_rank(),
             "Part " << surface_name << " is not a side-rank part.");
 
           ls.get_compute_surface_distance_parts().push_back(&io_part);
           compute_distance_surfaces.push_back(surface_name);
         }
-        ThrowErrorMsgIf( ls.get_compute_surface_distance_parts().empty(),
+        STK_ThrowErrorMsgIf( ls.get_compute_surface_distance_parts().empty(),
           "Please specify surfaces for compute surface distance.");
       }
 

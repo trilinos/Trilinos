@@ -3,9 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef EXO_ENTITY_H
-#define EXO_ENTITY_H
+#pragma once
 
 #include <exodusII.h>
 #include <iostream>
@@ -31,7 +29,7 @@ public:
   Exo_Entity(int file_id, size_t id);
   Exo_Entity(int file_id, size_t id, size_t nnodes);
   virtual ~Exo_Entity();
-  Exo_Entity(const Exo_Entity &) = delete;
+  Exo_Entity(const Exo_Entity &)                  = delete;
   const Exo_Entity &operator=(const Exo_Entity &) = delete;
 
   size_t Size() const { return numEntity; }
@@ -95,4 +93,3 @@ private:
 
   template <typename INT> friend class ExoII_Read;
 };
-#endif

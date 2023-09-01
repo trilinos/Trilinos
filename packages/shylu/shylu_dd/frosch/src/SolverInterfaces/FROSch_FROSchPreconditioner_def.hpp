@@ -89,7 +89,6 @@ namespace FROSch {
                                                         bool reuseInitialize)
     {
         FROSCH_ASSERT(false,"FROSch::FROSchPreconditioner: updateMatrix() is not implemented for the FROSchPreconditioner yet.");
-        return 0;
     }
 
     template<class SC,class LO,class GO,class NO>

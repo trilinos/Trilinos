@@ -222,7 +222,7 @@ void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this
 
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elem_nodes[i], node);
 
-        ThrowRequireMsg( m_bulk_data.is_valid(node),
+        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node
@@ -302,7 +302,7 @@ QuadShellFixture::QuadShellFixture(MetaData& meta,
 {
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
@@ -323,7 +323,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
 
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
@@ -345,7 +345,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
 
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
@@ -365,7 +365,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
 
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 QuadShellFixture::~QuadShellFixture()
@@ -457,7 +457,7 @@ void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this
 
         DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, elem_nodes[i], node);
 
-        ThrowRequireMsg( m_bulk_data.is_valid(node),
+        STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
 
         // Compute and assign coordinates to the node

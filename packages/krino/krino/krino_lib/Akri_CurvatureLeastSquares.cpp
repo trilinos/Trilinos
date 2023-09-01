@@ -9,8 +9,8 @@
 #include <vector>
 
 #include <stk_util/util/SortAndUnique.hpp>
-#include "Akri_CramersRuleSolver.hpp"
-#include "Akri_Vec.hpp"
+#include <Akri_CramersRuleSolver.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -28,12 +28,12 @@ static std::vector<int> get_unique_halo_nodes(const std::vector<std::array<int,2
   return uniqueHaloNodes;
 }
 
-void set_rotation_matrix_for_rotating_normal_to_zDir(std::array<std::array<double,3>,3> & m, const Vector3d & normalDir)
+void set_rotation_matrix_for_rotating_normal_to_zDir(std::array<std::array<double,3>,3> & m, const stk::math::Vector3d & normalDir)
 {
-  const Vector3d normal = normalDir.unit_vector();
-  static const Vector3d zDir(0.,0.,1.);
+  const stk::math::Vector3d normal = normalDir.unit_vector();
+  static const stk::math::Vector3d zDir(0.,0.,1.);
   const double c = Dot(zDir, normal);
-  Vector3d v = Cross(normal, zDir);
+  stk::math::Vector3d v = Cross(normal, zDir);
   const double s = v.length();
   if (s > 0.) v *= (1./s);
 
@@ -50,9 +50,9 @@ void set_rotation_matrix_for_rotating_normal_to_zDir(std::array<std::array<doubl
   m[2][2] = c + v[2]*v[2]*c1;
 }
 
-Vector3d compute_patch_normal(const std::vector<Vector3d> & haloNodeLocs, const std::vector<std::array<int,2>> & haloSegments)
+stk::math::Vector3d compute_patch_normal(const std::vector<stk::math::Vector3d> & haloNodeLocs, const std::vector<std::array<int,2>> & haloSegments)
 {
-  Vector3d patchNormal = Vector3d::ZERO;
+  stk::math::Vector3d patchNormal = stk::math::Vector3d::ZERO;
   for (auto && haloSegment : haloSegments)
   {
     const stk::math::Vector3d & xc0 = haloNodeLocs[haloSegment[0]];
@@ -64,7 +64,7 @@ Vector3d compute_patch_normal(const std::vector<Vector3d> & haloNodeLocs, const 
   return patchNormal.unit_vector();
 }
 
-static void fill_matrix_and_rhs_for_curvature_least_squares(const std::vector<Vector3d> & rotatedUniqueHaloNodeLocs, std::array<std::array<double,3>,3> & A, std::array<double,3> & b)
+static void fill_matrix_and_rhs_for_curvature_least_squares(const std::vector<stk::math::Vector3d> & rotatedUniqueHaloNodeLocs, std::array<std::array<double,3>,3> & A, std::array<double,3> & b)
 {
   if (rotatedUniqueHaloNodeLocs.size() == 3)
   {
@@ -78,7 +78,7 @@ static void fill_matrix_and_rhs_for_curvature_least_squares(const std::vector<Ve
   }
   else
   {
-    ThrowRequireMsg(rotatedUniqueHaloNodeLocs.size() == 4, "Unexpected vector size in fill_matrix_and_rhs_for_curvature_least_squares.");
+    STK_ThrowRequireMsg(rotatedUniqueHaloNodeLocs.size() == 4, "Unexpected vector size in fill_matrix_and_rhs_for_curvature_least_squares.");
     std::array<std::array<double,3>,4> Apts;
     for (int i=0; i<4; ++i)
     {
@@ -103,7 +103,7 @@ static void fill_matrix_and_rhs_for_curvature_least_squares(const std::vector<Ve
   }
 }
 
-static void fill_matrix_and_rhs_for_curvature_normal_least_squares(const std::vector<Vector3d> & rotatedUniqueHaloNodeLocs, std::array<std::array<double,5>,5> & A, std::array<double,5> & b)
+static void fill_matrix_and_rhs_for_curvature_normal_least_squares(const std::vector<stk::math::Vector3d> & rotatedUniqueHaloNodeLocs, std::array<std::array<double,5>,5> & A, std::array<double,5> & b)
 {
   if (rotatedUniqueHaloNodeLocs.size() == 5)
   {
@@ -146,7 +146,7 @@ static void fill_matrix_and_rhs_for_curvature_normal_least_squares(const std::ve
   }
 }
 
-static Vector3d compute_least_squares_curvature_times_normal(const std::vector<Vector3d> & rotatedUniqueHaloNodeLocs)
+static stk::math::Vector3d compute_least_squares_curvature_times_normal(const std::vector<stk::math::Vector3d> & rotatedUniqueHaloNodeLocs)
 {
   if (rotatedUniqueHaloNodeLocs.size() == 3 || rotatedUniqueHaloNodeLocs.size() == 4)
   {
@@ -156,7 +156,7 @@ static Vector3d compute_least_squares_curvature_times_normal(const std::vector<V
 
     const std::array<double,3> soln = CramersRuleSolver::solve3x3(A,b);
 
-    return Vector3d(0., 0., -2.*soln[0]-2.*soln[2]);
+    return stk::math::Vector3d(0., 0., -2.*soln[0]-2.*soln[2]);
   }
   else if (rotatedUniqueHaloNodeLocs.size() >= 5)
   {
@@ -166,7 +166,7 @@ static Vector3d compute_least_squares_curvature_times_normal(const std::vector<V
 
     const std::array<double,5> soln = CramersRuleSolver::solve5x5(A,b);
 
-    Vector3d normal(-soln[3],-soln[4],1.);
+    stk::math::Vector3d normal(-soln[3],-soln[4],1.);
     const double mag = normal.unitize();
 
     const double curvature =
@@ -177,12 +177,12 @@ static Vector3d compute_least_squares_curvature_times_normal(const std::vector<V
     return curvature*normal;
   }
 
-  return Vector3d::ZERO;
+  return stk::math::Vector3d::ZERO;
 }
 
-static Vector3d compute_least_squares_normal(const std::vector<Vector3d> & rotatedUniqueHaloNodeLocs)
+static stk::math::Vector3d compute_least_squares_normal(const std::vector<stk::math::Vector3d> & rotatedUniqueHaloNodeLocs)
 {
-  ThrowRequire(rotatedUniqueHaloNodeLocs.size() >= 5);
+  STK_ThrowRequire(rotatedUniqueHaloNodeLocs.size() >= 5);
 
   std::array<std::array<double,5>,5> A;
   std::array<double,5> b;
@@ -190,81 +190,81 @@ static Vector3d compute_least_squares_normal(const std::vector<Vector3d> & rotat
 
   const std::array<double,5> soln = CramersRuleSolver::solve5x5(A,b);
 
-  Vector3d normal(-soln[3],-soln[4],1.);
+  stk::math::Vector3d normal(-soln[3],-soln[4],1.);
   normal.unitize();
 
   return normal;
 }
 
-Vector3d rotate_3d_vector(const std::array<std::array<double,3>,3> & m, const Vector3d & v)
+stk::math::Vector3d rotate_3d_vector(const std::array<std::array<double,3>,3> & m, const stk::math::Vector3d & v)
 {
-  return Vector3d(
+  return stk::math::Vector3d(
     (m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2]),
     (m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2]),
     (m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]));
 }
 
-Vector3d reverse_rotate_3d_vector(const std::array<std::array<double,3>,3> & m, const Vector3d & v)
+stk::math::Vector3d reverse_rotate_3d_vector(const std::array<std::array<double,3>,3> & m, const stk::math::Vector3d & v)
 {
-  return Vector3d(
+  return stk::math::Vector3d(
     (m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2]),
     (m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2]),
     (m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2]));
 }
 
-static std::vector<Vector3d> get_rotated_neighbor_node_locations(const std::vector<Vector3d> & neighborNodeLocs, const std::array<std::array<double,3>,3> & m)
+static std::vector<stk::math::Vector3d> get_rotated_neighbor_node_locations(const std::vector<stk::math::Vector3d> & neighborNodeLocs, const std::array<std::array<double,3>,3> & m)
 {
-  std::vector<Vector3d> rotatedUniqueHaloNodeLocs;
+  std::vector<stk::math::Vector3d> rotatedUniqueHaloNodeLocs;
   rotatedUniqueHaloNodeLocs.reserve(neighborNodeLocs.size());
   for (auto && loc : neighborNodeLocs)
     rotatedUniqueHaloNodeLocs.push_back(rotate_3d_vector(m, loc));
   return rotatedUniqueHaloNodeLocs;
 }
 
-static std::vector<Vector3d> get_rotated_unique_halo_node_locations(const std::vector<Vector3d> & haloNodeLocs, std::vector<int> uniqueHaloNodes, const std::array<std::array<double,3>,3> & m)
+static std::vector<stk::math::Vector3d> get_rotated_unique_halo_node_locations(const std::vector<stk::math::Vector3d> & haloNodeLocs, std::vector<int> uniqueHaloNodes, const std::array<std::array<double,3>,3> & m)
 {
-  std::vector<Vector3d> rotatedUniqueHaloNodeLocs;
+  std::vector<stk::math::Vector3d> rotatedUniqueHaloNodeLocs;
   rotatedUniqueHaloNodeLocs.reserve(uniqueHaloNodes.size());
   for (int haloNode : uniqueHaloNodes)
     rotatedUniqueHaloNodeLocs.push_back(rotate_3d_vector(m, haloNodeLocs[haloNode]));
   return rotatedUniqueHaloNodeLocs;
 }
 
-Vector3d compute_least_squares_curvature_times_normal(const std::vector<Vector3d> & haloNodeLocs, const std::vector<std::array<int,2>> & haloSegments)
+stk::math::Vector3d compute_least_squares_curvature_times_normal(const std::vector<stk::math::Vector3d> & haloNodeLocs, const std::vector<std::array<int,2>> & haloSegments)
 {
   if (haloSegments.size() < 3)
-    return Vector3d::ZERO;
+    return stk::math::Vector3d::ZERO;
 
-  const Vector3d patchNormal = compute_patch_normal(haloNodeLocs, haloSegments);
+  const stk::math::Vector3d patchNormal = compute_patch_normal(haloNodeLocs, haloSegments);
 
   std::vector<int> uniqueHaloNodes = get_unique_halo_nodes(haloSegments);
 
   std::array<std::array<double,3>,3> m;
   set_rotation_matrix_for_rotating_normal_to_zDir(m, patchNormal);
 
-  const std::vector<Vector3d> rotatedUniqueHaloNodeLocs = get_rotated_unique_halo_node_locations(haloNodeLocs, uniqueHaloNodes, m);
+  const std::vector<stk::math::Vector3d> rotatedUniqueHaloNodeLocs = get_rotated_unique_halo_node_locations(haloNodeLocs, uniqueHaloNodes, m);
 
-  const Vector3d rotatedCurvatureNormal = compute_least_squares_curvature_times_normal(rotatedUniqueHaloNodeLocs);
+  const stk::math::Vector3d rotatedCurvatureNormal = compute_least_squares_curvature_times_normal(rotatedUniqueHaloNodeLocs);
 
   return reverse_rotate_3d_vector(m, rotatedCurvatureNormal);
 }
 
-Vector3d compute_least_squares_curvature_times_normal(const Vector3d & approximateNormal, const std::vector<Vector3d> & neighborNodeLocs)
+stk::math::Vector3d compute_least_squares_curvature_times_normal(const stk::math::Vector3d & approximateNormal, const std::vector<stk::math::Vector3d> & neighborNodeLocs)
 {
   if (neighborNodeLocs.size() < 3)
-    return Vector3d::ZERO;
+    return stk::math::Vector3d::ZERO;
 
   std::array<std::array<double,3>,3> m;
   set_rotation_matrix_for_rotating_normal_to_zDir(m, approximateNormal);
 
-  const std::vector<Vector3d> rotatedNbrNodeLocs = get_rotated_neighbor_node_locations(neighborNodeLocs, m);
+  const std::vector<stk::math::Vector3d> rotatedNbrNodeLocs = get_rotated_neighbor_node_locations(neighborNodeLocs, m);
 
-  const Vector3d rotatedCurvatureNormal = compute_least_squares_curvature_times_normal(rotatedNbrNodeLocs);
+  const stk::math::Vector3d rotatedCurvatureNormal = compute_least_squares_curvature_times_normal(rotatedNbrNodeLocs);
 
   return reverse_rotate_3d_vector(m, rotatedCurvatureNormal);
 }
 
-Vector3d compute_least_squares_normal(const Vector3d & approximateNormal, const std::vector<Vector3d> & neighborNodeLocs)
+stk::math::Vector3d compute_least_squares_normal(const stk::math::Vector3d & approximateNormal, const std::vector<stk::math::Vector3d> & neighborNodeLocs)
 {
   if (neighborNodeLocs.size() < 5)
     return approximateNormal;
@@ -272,9 +272,9 @@ Vector3d compute_least_squares_normal(const Vector3d & approximateNormal, const 
   std::array<std::array<double,3>,3> m;
   set_rotation_matrix_for_rotating_normal_to_zDir(m, approximateNormal);
 
-  const std::vector<Vector3d> rotatedNbrNodeLocs = get_rotated_neighbor_node_locations(neighborNodeLocs, m);
+  const std::vector<stk::math::Vector3d> rotatedNbrNodeLocs = get_rotated_neighbor_node_locations(neighborNodeLocs, m);
 
-  const Vector3d rotatedCurvatureNormal = compute_least_squares_normal(rotatedNbrNodeLocs);
+  const stk::math::Vector3d rotatedCurvatureNormal = compute_least_squares_normal(rotatedNbrNodeLocs);
 
   return reverse_rotate_3d_vector(m, rotatedCurvatureNormal).unit_vector();
 }

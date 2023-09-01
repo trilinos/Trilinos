@@ -3800,7 +3800,11 @@ struct ReduceWeightsFunctor {
 
     Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(teamMember, begin, end),
+#if (__cplusplus > 201703L)
+      [=, this] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
+#else
       [=] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
+#endif
 #endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
       int i = permutations(ii);
@@ -3967,7 +3971,11 @@ struct ReduceWeightsFunctor {
     teamMember.team_barrier();
 
     // collect all the team's results
+#if (__cplusplus > 201703L)
+    Kokkos::single(Kokkos::PerTeam(teamMember), [=, this] () {
+#else
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
+#endif
       for(int n = 0; n < value_count_weights; ++n) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&current_part_weights(n),
@@ -4018,23 +4026,6 @@ struct ReduceWeightsFunctor {
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   KOKKOS_INLINE_FUNCTION
   void join(value_type dst, const value_type src)  const {
-    for(int n = 0; n < value_count_weights; ++n) {
-      dst[n] += src[n];
-    }
-
-    for(int n = value_count_weights + 2;
-      n < value_count_weights + value_count_rightleft - 2; n += 2) {
-      if(src[n] > dst[n]) {
-        dst[n] = src[n];
-      }
-      if(src[n+1] < dst[n+1]) {
-        dst[n+1] = src[n+1];
-      }
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type dst, const volatile value_type src) const {
     for(int n = 0; n < value_count_weights; ++n) {
       dst[n] += src[n];
     }
@@ -4142,8 +4133,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
     typedef mj_scalar_t array_t;
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
-    array_t * reduce_array =
-      new array_t[static_cast<size_t>(total_array_length)];
+    Kokkos::View<array_t*, Kokkos::HostSpace> reduce_array("reduce_array", total_array_length);
 #endif // KOKKOS_ENABLE_CUDA && KOKKOS_ENABLE_HIP
 
     int offset_cuts = 0;
@@ -4217,6 +4207,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
 #else
     Kokkos::parallel_reduce(policy_ReduceWeightsFunctor,
       teamFunctor, reduce_array);
+    Kokkos::fence();
 #endif
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
@@ -4236,8 +4227,6 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
     }
     Kokkos::deep_copy(my_current_left_closest, hostLeftArray);
     Kokkos::deep_copy(my_current_right_closest, hostRightArray);
-
-    delete [] reduce_array;
 #endif
 
     total_part_shift += total_part_count;
@@ -4448,13 +4437,6 @@ struct ArrayReducer {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type& dst, const volatile value_type& src) const {
-    for(int n = 0; n < value_count; ++n) {
-      dst.ptr[n] += src.ptr[n];
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION void init (value_type& dst) const {
     dst.ptr = value->ptr; // must update ptr
     for(int n = 0; n < value_count; ++n) {
@@ -4585,7 +4567,11 @@ struct ReduceArrayFunctor {
 
     Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(teamMember, begin, end),
+#if (__cplusplus > 201703L)
+      [=, this] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
+#else
       [=] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
+#endif
 #endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
       index_t coordinate_index = permutations(ii);
@@ -4616,7 +4602,11 @@ struct ReduceArrayFunctor {
     teamMember.team_barrier();
 
     // collect all the team's results
+#if (__cplusplus > 201703L)
+    Kokkos::single(Kokkos::PerTeam(teamMember), [=, this] () {
+#else
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
+#endif
       for(int n = 0; n < value_count; ++n) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&local_point_counts(n), shared_ptr[n]);
@@ -4633,13 +4623,6 @@ struct ReduceArrayFunctor {
 
   KOKKOS_INLINE_FUNCTION
   void join(value_type dst, const value_type src)  const {
-    for(int n = 0; n < value_count; ++n) {
-      dst[n] += src[n];
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void join (volatile value_type dst, const volatile value_type src) const {
     for(int n = 0; n < value_count; ++n) {
       dst[n] += src[n];
     }
@@ -4786,7 +4769,7 @@ mj_create_new_partitions(
   // just need parts - on the cuts will be handled in a separate serial
   // call after this.
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
-  array_t * reduce_array = new array_t[static_cast<size_t>(num_parts)];
+  Kokkos::View<array_t*, Kokkos::HostSpace> reduce_array("reduce_array", num_parts);
 #endif
 
   ReduceArrayFunctor<policy_t, mj_scalar_t, mj_part_t, mj_lno_t,
@@ -4807,13 +4790,13 @@ mj_create_new_partitions(
   Kokkos::parallel_for(policy_ReduceFunctor, teamFunctor);
 #else
   Kokkos::parallel_reduce(policy_ReduceFunctor, teamFunctor, reduce_array);
+  Kokkos::fence();
 #endif
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   for(mj_part_t part = 0; part < num_parts; ++part) {
     local_point_counts(part) = reduce_array[part];
   }
-  delete [] reduce_array;
 #endif
 
   // the last member is utility used for atomically inserting the values.
@@ -6703,7 +6686,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t>
       dst_coordinates("mj_coordinates", num_incoming_gnos, this->coord_dim);
 
-    Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> 
+    Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>
       host_src_coordinates(
         Kokkos::ViewAllocateWithoutInitializing("host_coords"),
         this->mj_coordinates.extent(0), this->mj_coordinates.extent(1));
@@ -6746,7 +6729,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
     Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_weight(
       Kokkos::ViewAllocateWithoutInitializing("received_weight_buffer"),
-      num_incoming_gnos); 
+      num_incoming_gnos);
 
     for(int i = 0; i < this->num_weights_per_coord; ++i) {
 
@@ -7641,7 +7624,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         Kokkos::ViewAllocateWithoutInitializing("sent_gnos"),
         this->current_mj_gnos.extent(0));
       Kokkos::deep_copy(sent_gnos, this->current_mj_gnos);
-           
+
       Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos(
         Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
         incoming);
@@ -8446,8 +8429,6 @@ class Zoltan2_AlgMJ : public Algorithm<Adapter>
 private:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef CoordinateModel<typename Adapter::base_adapter_t> coordinateModel_t;
-
   // For coordinates and weights, MJ needs floats or doubles
   // But Adapter can provide other scalars, e.g., ints.
   // So have separate scalar_t for MJ and adapter.
@@ -8477,7 +8458,7 @@ private:
 
   RCP<const Environment> mj_env; // the environment object
   RCP<const Comm<int> > mj_problemComm; // initial comm object
-  RCP<const coordinateModel_t> mj_coords; // coordinate adapter
+  RCP<const typename Adapter::base_adapter_t> mj_adapter; // coordinate adapter
 
   // PARAMETERS
   double imbalance_tolerance; // input imbalance tolerance.
@@ -8594,11 +8575,11 @@ public:
 
   Zoltan2_AlgMJ(const RCP<const Environment> &env,
     RCP<const Comm<int> > &problemComm,
-    const RCP<const coordinateModel_t> &coords) :
+    const RCP<const typename Adapter::base_adapter_t> &adapter) :
       mj_partitioner(),
       mj_env(env),
       mj_problemComm(problemComm),
-      mj_coords(coords),
+      mj_adapter(adapter),
       imbalance_tolerance(0),
       num_teams(0),
       num_global_parts(1),
@@ -8880,7 +8861,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
 
   Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_weight(
     Kokkos::ViewAllocateWithoutInitializing("received_weight_buffer"),
-    num_incoming_gnos); 
+    num_incoming_gnos);
 
   for(int i = 0; i < this->num_weights_per_coord; ++i) {
 
@@ -8915,7 +8896,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
                  Kokkos::ViewAllocateWithoutInitializing("sent_owners"),
                  num_local_coords_);
     Kokkos::deep_copy(sent_owners, myRank);
-                             
+
     Kokkos::View<int*, Kokkos::HostSpace> received_owners(
                  Kokkos::ViewAllocateWithoutInitializing("received_owners"),
                  num_incoming_gnos);
@@ -9184,6 +9165,9 @@ void Zoltan2_AlgMJ<Adapter>::partition(
   }
 
   this->mj_env->timerStop(MACRO_TIMERS, timer_base_string + "all");
+
+  // reset the view (release the reference to device data)
+  this->mj_coordinates = Kokkos::View<mj_scalar_t **, Kokkos::LayoutLeft, device_t>();
 }
 
 /* \brief Sets the partitioning data for multijagged algorithm.
@@ -9193,10 +9177,14 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
   const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
-  this->coord_dim = this->mj_coords->getCoordinateDim();
-  this->num_weights_per_coord = this->mj_coords->getNumWeightsPerCoordinate();
-  this->num_local_coords = this->mj_coords->getLocalNumCoordinates();
-  this->num_global_coords = this->mj_coords->getGlobalNumCoordinates();
+  modelFlag_t flags;
+  CoordinateModel<Adapter> mj_coords(mj_adapter, mj_env, mj_problemComm, flags);
+
+  this->coord_dim = mj_coords.getCoordinateDim();
+  this->num_weights_per_coord = mj_coords.getNumWeightsPerCoordinate();
+  this->num_local_coords = mj_coords.getLocalNumCoordinates();
+  this->num_global_coords = mj_coords.getGlobalNumCoordinates();
+
   int criteria_dim = (this->num_weights_per_coord ?
     this->num_weights_per_coord : 1);
   // From the Solution we get part information.
@@ -9214,7 +9202,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
   Kokkos::View<adapter_scalar_t **, Kokkos::LayoutLeft, device_t> xyz_adapter;
   // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
   Kokkos::View<adapter_scalar_t **, device_t> wgts_adapter;
-  this->mj_coords->getCoordinatesKokkos(gnos, xyz_adapter, wgts_adapter);
+  mj_coords.getCoordinatesKokkos(gnos, xyz_adapter, wgts_adapter);
   // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
   Kokkos::View<mj_scalar_t **, Kokkos::LayoutLeft, device_t> xyz;
   Kokkos::View<mj_scalar_t **, device_t> wgts;

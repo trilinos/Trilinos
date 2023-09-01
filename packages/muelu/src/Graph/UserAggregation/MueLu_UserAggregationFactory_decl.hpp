@@ -48,8 +48,6 @@
 
 
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -57,10 +55,8 @@
 #include "MueLu_UserAggregationFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

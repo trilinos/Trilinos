@@ -69,7 +69,6 @@
 #include <EpetraExt_BlockMapOut.h>
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
@@ -77,7 +76,6 @@
 #include <Xpetra_TpetraOperator.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
-#endif
 
 #ifdef HAVE_MUELU_EPETRA
 #include <Xpetra_EpetraMap.hpp>
@@ -86,8 +84,6 @@
 #include <Xpetra_BlockedCrsMatrix.hpp>
 //#include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_IO.hpp>
-#include <Xpetra_Import.hpp>
-#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -210,7 +206,6 @@ namespace MueLu {
   }
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const vec) {
@@ -355,7 +350,7 @@ namespace MueLu {
       }
     } catch (std::bad_cast&) {
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-    }    
+    }
   }
 
 
@@ -423,7 +418,6 @@ namespace MueLu {
       throw Exceptions::BadCast("Utilities::Map2TpetraMap : Cast from Xpetra::Map to Xpetra::TpetraMap failed");
     return tmp_TMap->getTpetra_Map();
   }
-#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Teuchos::ArrayRCP<const Scalar>& scalingVector, bool doInverse,
@@ -464,7 +458,6 @@ namespace MueLu {
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
-#ifdef HAVE_MUELU_TPETRA
     try {
       Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpOp = Op2NonConstTpetraCrs(Op);
 
@@ -531,9 +524,6 @@ namespace MueLu {
     } catch(...) {
       throw Exceptions::RuntimeError("Only Tpetra::CrsMatrix types can be scaled (Err.1)");
     }
-#else
-    throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled.");
-#endif
   } //MyOldScaleMatrix_Tpetra()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -555,7 +545,6 @@ namespace MueLu {
     }
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
     if (TorE == "tpetra") {
       using Helpers = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
       /***************************************************************/
@@ -591,16 +580,12 @@ namespace MueLu {
         using XCrsMatrix = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
         using XCrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
         using BCRS = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-        using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+        // using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
         const BCRS & tpetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraBlockCrs(Op);
         
-        if(!Op.getRowMap()->getComm()->getRank())
-          std::cout<<"WARNING: Utilities::Transpose(): Using inefficient placeholder algorithm for Transpose"<<std::endl;
-
         RCP<BCRS> At;
-        RCP<const CRS> Acrs = Tpetra::convertToCrsMatrix(tpetraOp);
         {
-          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(Acrs,label);
+          Tpetra::BlockCrsMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label);
           
           using Teuchos::ParameterList;
           using Teuchos::rcp;
@@ -608,10 +593,9 @@ namespace MueLu {
             rcp (new ParameterList) :
             rcp (new ParameterList (*params));
           transposeParams->set ("sort", false);
-          RCP<CRS> Atcrs = transposer.createTranspose(transposeParams);
-          
-          At = Tpetra::convertToBlockCrsMatrix(*Atcrs,Op.GetStorageBlockSize());
+          At = transposer.createTranspose(transposeParams);
         }
+        
         RCP<Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA   = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(At));
         RCP<XCrsMatrix>                                                           AAA  = rcp_implicit_cast<XCrsMatrix>(AA);
         RCP<XMatrix>                                                              AAAA = rcp( new XCrsMatrixWrap(AAA));
@@ -624,7 +608,6 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs matrix");
       }
     } //if
-#endif
 
     // Epetra case
     std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
@@ -636,25 +619,28 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > X) {
+  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node> > X) {
     RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar;
 #if defined(HAVE_XPETRA_TPETRA) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
-      // Need to cast the real-valued multivector to Scalar=complex
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+    // Need to cast the real-valued multivector to Scalar=complex
     if ((typeid(Scalar).name() == typeid(std::complex<double>).name()) ||
         (typeid(Scalar).name() == typeid(std::complex<float>).name())) {
-        Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),X->getNumVectors());
-        size_t numVecs = X->getNumVectors();
-        for (size_t j=0;j<numVecs;j++) {
-          Teuchos::ArrayRCP<const real_type> XVec = X->getData(j);
-          Teuchos::ArrayRCP<Scalar> XVecScalar = Xscalar->getDataNonConst(j);
-          for(size_t i = 0; i < static_cast<size_t>(XVec.size()); ++i)
-            XVecScalar[i]=XVec[i];
-        }
-      } else
+      size_t numVecs = X->getNumVectors();
+      Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),numVecs);
+      auto XVec = X->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto XVecScalar = Xscalar->getDeviceLocalView(Xpetra::Access::ReadWrite);
+
+      Kokkos::parallel_for("MueLu:Utils::RealValuedToScalarMultiVector", range_type(0,X->getLocalLength()),
+                           KOKKOS_LAMBDA(const size_t i) {
+                             for (size_t j=0; j<numVecs; j++)
+                               XVecScalar(i,j) = XVec(i,j);
+                           });
+    } else
 #endif
-        Xscalar = rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(X);
-      return Xscalar;
+      Xscalar = rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(X);
+    return Xscalar;
   }
 
 
@@ -668,9 +654,6 @@ namespace MueLu {
     // check whether coordinates are contained in parameter list
     if(paramList.isParameter ("Coordinates") == false)
       return coordinates;
-
-#if defined(HAVE_MUELU_TPETRA)
-    // only Tpetra code
 
     // define Tpetra::MultiVector type with Scalar=float only if
     // * ETI is turned off, since then the compiler will instantiate it automatically OR
@@ -712,7 +695,6 @@ namespace MueLu {
     // Tpetra is not instantiated on scalar=double
     throw Exceptions::RuntimeError("ExtractCoordinatesFromParameterList: The coordinates vector in parameter list is expected to be a Tpetra multivector with SC=double or float.");
 #endif
-#endif // endif HAVE_TPETRA
 
     // check for Xpetra coordinates vector
     if(paramList.isType<decltype(coordinates)>("Coordinates")) {

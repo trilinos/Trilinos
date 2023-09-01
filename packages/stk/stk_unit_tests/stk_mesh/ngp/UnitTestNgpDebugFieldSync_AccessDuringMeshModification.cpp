@@ -41,7 +41,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -107,7 +106,7 @@ public:
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), meta.locally_owned_part());
     stk::mesh::EntityRank rank = ngpField.get_rank();
 
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(unsigned ) {
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(unsigned ) {
                            for (unsigned i = 0; i < bucketIds.size(); ++i) {
                              const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
                              for (unsigned j = 0; j < bucket.size(); ++j) {
@@ -768,7 +767,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -788,7 +787,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -827,7 +826,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucketId
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -847,7 +846,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucketId
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -886,7 +885,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -906,7 +905,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -945,7 +944,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucket_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -965,7 +964,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucket_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1004,7 +1003,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucketId
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1024,7 +1023,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucketId
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1063,7 +1062,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingBucket_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1083,7 +1082,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingBucket_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1121,7 +1120,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1139,7 +1138,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1174,7 +1173,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1192,7 +1191,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1227,7 +1226,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucket_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1245,7 +1244,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucket_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1280,7 +1279,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucketId
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1298,7 +1297,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucketId
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1333,7 +1332,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingBucket_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1351,7 +1350,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingBucket_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1389,7 +1388,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1410,7 +1409,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1456,7 +1455,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1483,7 +1482,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1530,7 +1529,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1551,7 +1550,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1592,7 +1591,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1613,7 +1612,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1654,7 +1653,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucket_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1675,7 +1674,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucket_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1716,7 +1715,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingBucket_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1737,7 +1736,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingBucket_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1777,7 +1776,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1796,7 +1795,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1833,7 +1832,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingEntity_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1852,7 +1851,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingEntity_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1889,7 +1888,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucket_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1908,7 +1907,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingBucket_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -1945,7 +1944,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingBucket_C
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -1964,7 +1963,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, VectorAccessUsingBucket_D
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_vector_field<double>("doubleVectorField", 3, {"Part1", "Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleVectorField");
@@ -2006,7 +2005,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Create
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2028,7 +2027,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Delete
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2070,7 +2069,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Create
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2089,7 +2088,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Delete
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2130,7 +2129,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Create
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2152,7 +2151,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Delete
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2195,7 +2194,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Create
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2217,7 +2216,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Delete
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2260,7 +2259,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Create
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2281,7 +2280,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoConsecutiveMods_Delete
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2328,7 +2327,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoMods_CreateBucket_Crea
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2353,7 +2352,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, TwoMods_DeleteBucket_Dele
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2400,7 +2399,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2421,7 +2420,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2466,7 +2465,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2490,7 +2489,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2539,7 +2538,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2564,7 +2563,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2611,7 +2610,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 1}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
@@ -2633,7 +2632,7 @@ TEST_F(NgpDebugFieldSync_AccessDuringMeshModification, ScalarAccessUsingEntity_T
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
   build_mesh({{"Part1", 3}, {"Part2", 1}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");

@@ -118,6 +118,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
     const ordinal_type srcbeg = info.sid_block_colidx(sbeg).second, srcend = info.sid_block_colidx(send).second,
                        srcsize = srcend - srcbeg;
 
+    static constexpr bool runOnHost = run_tacho_on_host_v <typename supernode_info_type::exec_space>;
+
     // short cut to direct update
     if ((send - sbeg) == 1) {
       const auto &s = info.supernodes(info.sid_block_colidx(sbeg).first);
@@ -128,35 +130,35 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
         /* */ value_type *tgt = s.u_buf;
         const value_type *src = (value_type *)ABR.data();
 
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-        // lock
-        while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-          TACHO_IMPL_PAUSE;
-        Kokkos::store_fence();
+        if constexpr(runOnHost) {
+          // lock
+          while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
+            TACHO_IMPL_PAUSE;
+          Kokkos::store_fence();
 
-        for (ordinal_type j = 0; j < srcsize; ++j) {
-          const value_type *__restrict__ ss = src + j * srcsize;
-          /* */ value_type *__restrict__ tt = tgt + j * srcsize;
-          const ordinal_type iend = update_lower ? srcsize : j + 1;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-          for (ordinal_type i = 0; i < iend; ++i)
-            tt[i] += ss[i];
+          for (ordinal_type j = 0; j < srcsize; ++j) {
+            const value_type *__restrict__ ss = src + j * srcsize;
+            /* */ value_type *__restrict__ tt = tgt + j * srcsize;
+            const ordinal_type iend = update_lower ? srcsize : j + 1;
+            #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+            #pragma unroll
+            #endif
+            for (ordinal_type i = 0; i < iend; ++i)
+              tt[i] += ss[i];
+          }
+
+          // unlock
+          s.lock = 0;
+          Kokkos::load_fence();
+        } else {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
+            const value_type *__restrict__ ss = src + j * srcsize;
+            /* */ value_type *__restrict__ tt = tgt + j * srcsize;
+            const ordinal_type iend = update_lower ? srcsize : j + 1;
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
+                                 [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
+          });
         }
-
-        // unlock
-        s.lock = 0;
-        Kokkos::load_fence();
-#else
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
-          const value_type *__restrict__ ss = src + j * srcsize;
-          /* */ value_type *__restrict__ tt = tgt + j * srcsize;
-          const ordinal_type iend = update_lower ? srcsize : j + 1;
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
-                               [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
-        });
-#endif
 
         return 0;
       }
@@ -165,69 +167,69 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
     const ordinal_type *s_colidx = sbeg < send ? &info.gid_colidx(cur.gid_col_begin + srcbeg) : NULL;
 
     // loop over target
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    ordinal_type *s2t = (ordinal_type *)buf;
-    const size_type s2tsize = srcsize * sizeof(ordinal_type);
-    TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");
+    if constexpr(runOnHost) {
+      ordinal_type *s2t = (ordinal_type *)buf;
+      const size_type s2tsize = srcsize * sizeof(ordinal_type);
+      TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");
 
-    for (ordinal_type i = sbeg; i < send; ++i) {
-      const ordinal_type tgtsid = info.sid_block_colidx(i).first;
-      const auto &s = info.supernodes(tgtsid);
-      {
-        const ordinal_type tgtbeg = info.sid_block_colidx(s.sid_col_begin).second,
-                           tgtend = info.sid_block_colidx(s.sid_col_end - 1).second, tgtsize = tgtend - tgtbeg;
+      for (ordinal_type i = sbeg; i < send; ++i) {
+        const ordinal_type tgtsid = info.sid_block_colidx(i).first;
+        const auto &s = info.supernodes(tgtsid);
+        {
+          const ordinal_type tgtbeg = info.sid_block_colidx(s.sid_col_begin).second,
+                             tgtend = info.sid_block_colidx(s.sid_col_end - 1).second, tgtsize = tgtend - tgtbeg;
 
-        const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-        for (ordinal_type k = 0, l = 0; k < srcsize; ++k) {
-          s2t[k] = -1;
-          for (; l < tgtsize && t_colidx[l] <= s_colidx[k]; ++l)
-            if (s_colidx[k] == t_colidx[l]) {
-              s2t[k] = l;
-              break;
-            }
-        }
-      }
-
-      {
-        UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
-        UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
-        const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
-
-        ordinal_type ijbeg = 0;
-        for (; s2t[ijbeg] == -1; ++ijbeg)
-          ;
-
-        // lock
-        while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-          TACHO_IMPL_PAUSE;
-        Kokkos::store_fence();
-
-        for (ordinal_type jj = ijbeg; jj < srcsize; ++jj) {
-          const ordinal_type col = s2t[jj];
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-          for (ordinal_type ii = ijbeg; ii < srcsize; ++ii) {
-            const ordinal_type row = s2t[ii];
-            if (row < s.m) {
-              U(row, col) += ABR(ii, jj);
-              if (update_lower && col >= s.m) {
-                L(col - s.m, row) += ABR(jj, ii);
+          const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+          for (ordinal_type k = 0, l = 0; k < srcsize; ++k) {
+            s2t[k] = -1;
+            for (; l < tgtsize && t_colidx[l] <= s_colidx[k]; ++l)
+              if (s_colidx[k] == t_colidx[l]) {
+                s2t[k] = l;
+                break;
               }
-            } else
-              break;
           }
         }
 
-        // unlock
-        s.lock = 0;
-        Kokkos::load_fence();
+        {
+          UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
+          UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
+          const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
+
+          ordinal_type ijbeg = 0;
+          for (; s2t[ijbeg] == -1; ++ijbeg)
+            ;
+
+          // lock
+          while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
+            TACHO_IMPL_PAUSE;
+          Kokkos::store_fence();
+
+          for (ordinal_type jj = ijbeg; jj < srcsize; ++jj) {
+            const ordinal_type col = s2t[jj];
+            #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+            #pragma unroll
+            #endif
+            for (ordinal_type ii = ijbeg; ii < srcsize; ++ii) {
+              const ordinal_type row = s2t[ii];
+              if (row < s.m) {
+                U(row, col) += ABR(ii, jj);
+                if (update_lower && col >= s.m) {
+                  L(col - s.m, row) += ABR(jj, ii);
+                }
+              } else
+                break;
+            }
+          }
+
+          // unlock
+          s.lock = 0;
+          Kokkos::load_fence();
+        }
       }
-    }
-#else
-    // CUDA version
-    const size_type s2tsize = srcsize * sizeof(ordinal_type) * member.team_size();
-    TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");
+    } else {
+      // CUDA version
+      const size_type s2tsize = srcsize * sizeof(ordinal_type) * member.team_size();
+      TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");
 #if 0 // single version for testing only 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
             ordinal_type *s2t = (ordinal_type*)buf;        
@@ -273,76 +275,76 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
             }
           });
 #else
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
-      ordinal_type *s2t = ((ordinal_type *)(buf)) + member.team_rank() * srcsize;
-      const auto &s = info.supernodes(info.sid_block_colidx(i).first);
-      {
-        const ordinal_type tgtbeg = info.sid_block_colidx(s.sid_col_begin).second,
-                           tgtend = info.sid_block_colidx(s.sid_col_end - 1).second, tgtsize = tgtend - tgtbeg;
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
+        ordinal_type *s2t = ((ordinal_type *)(buf)) + member.team_rank() * srcsize;
+        const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+        {
+          const ordinal_type tgtbeg = info.sid_block_colidx(s.sid_col_begin).second,
+                             tgtend = info.sid_block_colidx(s.sid_col_end - 1).second, tgtsize = tgtend - tgtbeg;
 
-        const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-        // for (ordinal_type k=0,l=0;k<srcsize;++k) {
-        //   s2t[k] = -1;
-        //   for (;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
-        //     if (s_colidx[k] == t_colidx[l]) {
-        //       s2t[k] = l;
-        //       break;
-        //     }
-        // }
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
-          s2t[k] = -1;
-          auto found = lower_bound(&t_colidx[0], &t_colidx[tgtsize - 1], s_colidx[k],
-                                   [](ordinal_type left, ordinal_type right) { return left < right; });
-          if (s_colidx[k] == *found) {
-            s2t[k] = found - t_colidx;
-          }
-        });
-      }
-      {
-        UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
-        UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
-        const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
+          const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+          // for (ordinal_type k=0,l=0;k<srcsize;++k) {
+          //   s2t[k] = -1;
+          //   for (;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
+          //     if (s_colidx[k] == t_colidx[l]) {
+          //       s2t[k] = l;
+          //       break;
+          //     }
+          // }
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
+            s2t[k] = -1;
+            auto found = lower_bound(&t_colidx[0], &t_colidx[tgtsize - 1], s_colidx[k],
+                                     [](ordinal_type left, ordinal_type right) { return left < right; });
+            if (s_colidx[k] == *found) {
+              s2t[k] = found - t_colidx;
+            }
+          });
+        }
+        {
+          UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
+          UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
+          const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
 
-        ordinal_type ijbeg = 0;
-        for (; s2t[ijbeg] == -1; ++ijbeg)
-          ;
+          ordinal_type ijbeg = 0;
+          for (; s2t[ijbeg] == -1; ++ijbeg)
+            ;
 
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, ijbeg, srcsize), [&](const ordinal_type &ii) {
-          const ordinal_type row = s2t[ii];
-          if (row < s.m) {
-            for (ordinal_type jj = ijbeg; jj < srcsize; ++jj) {
-              const ordinal_type col = s2t[jj];
-              Kokkos::atomic_add(&U(row, col), ABR(ii, jj));
-              if (update_lower && col >= s.m) {
-                Kokkos::atomic_add(&L(col - s.m, row), ABR(jj, ii));
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, ijbeg, srcsize), [&](const ordinal_type &ii) {
+            const ordinal_type row = s2t[ii];
+            if (row < s.m) {
+              for (ordinal_type jj = ijbeg; jj < srcsize; ++jj) {
+                const ordinal_type col = s2t[jj];
+                Kokkos::atomic_add(&U(row, col), ABR(ii, jj));
+                if (update_lower && col >= s.m) {
+                  Kokkos::atomic_add(&L(col - s.m, row), ABR(jj, ii));
+                }
               }
             }
-          }
-        });
-        // Kokkos::parallel_for
-        //   (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &jjj) {
-        //     const ordinal_type jj = jjj + ijbeg;
-        //     for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
-        //       const ordinal_type row = s2t[ii];
-        //       if (row < s.m)
-        //         Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-        //       else
-        //         break;
-        //     }
-        //   });
-        // const ordinal_type cnt = srcsize-ijbeg;
-        // Kokkos::parallel_for
-        //   (Kokkos::ThreadVectorRange(member, cnt*cnt), [&](const ordinal_type &idx) {
-        //     const ordinal_type ii = idx%cnt + ijbeg;
-        //     const ordinal_type jj = idx/cnt + ijbeg;
-        //     const ordinal_type row = s2t[ii];
-        //     const ordinal_type col = s2t[jj];
-        //     if (row < s.m) Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-        //   });
-      }
-    });
+          });
+          // Kokkos::parallel_for
+          //   (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &jjj) {
+          //     const ordinal_type jj = jjj + ijbeg;
+          //     for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
+          //       const ordinal_type row = s2t[ii];
+          //       if (row < s.m)
+          //         Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+          //       else
+          //         break;
+          //     }
+          //   });
+          // const ordinal_type cnt = srcsize-ijbeg;
+          // Kokkos::parallel_for
+          //   (Kokkos::ThreadVectorRange(member, cnt*cnt), [&](const ordinal_type &idx) {
+          //     const ordinal_type ii = idx%cnt + ijbeg;
+          //     const ordinal_type jj = idx/cnt + ijbeg;
+          //     const ordinal_type row = s2t[ii];
+          //     const ordinal_type col = s2t[jj];
+          //     if (row < s.m) Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+          //   });
+        }
+      });
 #endif
-#endif
+    }
     return 0;
   }
 
@@ -395,46 +397,49 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
   KOKKOS_INLINE_FUNCTION static int update_solve_lower(MemberType &member, const SupernodeInfoType &info,
                                                        const typename SupernodeInfoType::value_type_matrix &xB,
                                                        const ordinal_type sid) {
+
+    static constexpr bool runOnHost = run_tacho_on_host_v <typename SupernodeInfoType::exec_space>;
+
     const auto &cur = info.supernodes(sid);
     const ordinal_type sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
 
     const ordinal_type m = xB.extent(0), n = xB.extent(1);
     TACHO_TEST_FOR_ABORT(m != (cur.n - cur.m), "# of rows in xB does not match to super blocksize in sid");
 
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    for (ordinal_type i = sbeg, is = 0; i < send; ++i) {
-      const ordinal_type tbeg = info.sid_block_colidx(i).second, tend = info.sid_block_colidx(i + 1).second;
-
-      // lock
-      const auto &s = info.supernodes(info.sid_block_colidx(i).first);
-      while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
-        TACHO_IMPL_PAUSE;
-      Kokkos::store_fence();
-
-      // both src and tgt increase index
-      for (ordinal_type it = tbeg; it < tend; ++it, ++is) {
-        const ordinal_type row = info.gid_colidx(cur.gid_col_begin + it);
-        for (ordinal_type j = 0; j < n; ++j)
-          info.x(row, j) += xB(is, j);
-      }
-
-      // unlock
-      s.lock = 0;
-      Kokkos::load_fence();
-    }
-#else
-    Kokkos::single(Kokkos::PerTeam(member), [&]() {
+    if constexpr(runOnHost) {
       for (ordinal_type i = sbeg, is = 0; i < send; ++i) {
         const ordinal_type tbeg = info.sid_block_colidx(i).second, tend = info.sid_block_colidx(i + 1).second;
 
+        // lock
+        const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+        while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
+          TACHO_IMPL_PAUSE;
+        Kokkos::store_fence();
+
+        // both src and tgt increase index
         for (ordinal_type it = tbeg; it < tend; ++it, ++is) {
           const ordinal_type row = info.gid_colidx(cur.gid_col_begin + it);
           for (ordinal_type j = 0; j < n; ++j)
-            Kokkos::atomic_add(&info.x(row, j), xB(is, j));
+            info.x(row, j) += xB(is, j);
         }
+
+        // unlock
+        s.lock = 0;
+        Kokkos::load_fence();
       }
-    });
-#endif
+    } else {
+      Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        for (ordinal_type i = sbeg, is = 0; i < send; ++i) {
+          const ordinal_type tbeg = info.sid_block_colidx(i).second, tend = info.sid_block_colidx(i + 1).second;
+
+          for (ordinal_type it = tbeg; it < tend; ++it, ++is) {
+            const ordinal_type row = info.gid_colidx(cur.gid_col_begin + it);
+            for (ordinal_type j = 0; j < n; ++j)
+              Kokkos::atomic_add(&info.x(row, j), xB(is, j));
+          }
+        }
+      });
+    }
     return 0;
   }
 
@@ -488,26 +493,28 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
                                                        const typename SupernodeInfoType::value_type_matrix &xB,
                                                        const ordinal_type sid) {
 
+    static constexpr bool runOnHost = run_tacho_on_host_v <typename SupernodeInfoType::exec_space>;
+
     const auto &s = info.supernodes(sid);
 
     const ordinal_type m = xB.extent(0), n = xB.extent(1);
     TACHO_TEST_FOR_ABORT(m != (s.n - s.m), "# of rows in xB does not match to super blocksize in sid");
 
     const ordinal_type goffset = s.gid_col_begin + s.m;
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    for (ordinal_type j = 0; j < n; ++j)
-      for (ordinal_type i = 0; i < m; ++i) {
-        const ordinal_type row = info.gid_colidx(i + goffset);
-        xB(i, j) = info.x(row, j);
-      }
-#else
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const ordinal_type &j) {
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m), [&](const ordinal_type &i) {
-        const ordinal_type row = info.gid_colidx(i + goffset);
-        xB(i, j) = info.x(row, j);
+    if constexpr(runOnHost) {
+      for (ordinal_type j = 0; j < n; ++j)
+        for (ordinal_type i = 0; i < m; ++i) {
+          const ordinal_type row = info.gid_colidx(i + goffset);
+          xB(i, j) = info.x(row, j);
+        }
+    } else {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const ordinal_type &j) {
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m), [&](const ordinal_type &i) {
+          const ordinal_type row = info.gid_colidx(i + goffset);
+          xB(i, j) = info.x(row, j);
+        });
       });
-    });
-#endif
+    }
 
     return 0;
   }
@@ -521,6 +528,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
     using value_type = typename supernode_info_type::value_type;
     using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
+    static constexpr bool runOnHost = run_tacho_on_host_v <typename supernode_info_type::exec_space>;
+
     const auto &s = info.supernodes(sid);
 
     if (final) {
@@ -531,11 +540,13 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
 
     {
       const ordinal_type n = s.n - s.m;
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-      const size_type bufsize_required = n * (n + 1) * sizeof(value_type);
-#else
-      const size_type bufsize_required = n * (n + member.team_size()) * sizeof(value_type);
-#endif
+
+      size_type bufsize_required;
+      if constexpr(runOnHost)
+        bufsize_required = n * (n + 1) * sizeof(value_type);
+      else
+        bufsize_required = n * (n + member.team_size()) * sizeof(value_type);
+
       TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
 
       UnmanagedViewType<value_type_matrix> ABR((value_type *)buf, n, n);

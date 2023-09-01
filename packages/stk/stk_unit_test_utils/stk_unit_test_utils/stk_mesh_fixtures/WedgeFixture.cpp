@@ -224,7 +224,7 @@ void WedgeFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_process
            stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , wedge_nodes[i] );
            m_bulk_data.change_entity_parts(node, m_node_parts);
 
-           ThrowRequireMsg( m_bulk_data.is_valid(node),
+           STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
                               "This process should know about the nodes that make up its element");
 
            DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, wedge_nodes[i], node);
@@ -321,7 +321,7 @@ WedgeFixture::WedgeFixture(MetaData& meta,
 {
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 }
 
 WedgeFixture::WedgeFixture(stk::ParallelMachine pm,
@@ -347,7 +347,7 @@ WedgeFixture::WedgeFixture(stk::ParallelMachine pm,
 
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 
 }
 
@@ -375,7 +375,7 @@ WedgeFixture::WedgeFixture(stk::ParallelMachine pm,
 
   //put coord-field on all nodes:
   put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
-  stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
+  stk::io::set_field_output_type(*m_coord_field, stk::io::FieldOutputType::VECTOR_3D);
 
 }
 
@@ -474,7 +474,7 @@ void WedgeFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_process
            stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , wedge_nodes[i] );
            m_bulk_data.change_entity_parts(node, m_node_parts);
 
-           ThrowRequireMsg( m_bulk_data.is_valid(node),
+           STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
                               "This process should know about the nodes that make up its element");
 
            DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, wedge_nodes[i], node);

@@ -5,8 +5,7 @@
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef Sierra_SystemInterface_h
-#define Sierra_SystemInterface_h
+#pragma once
 
 #include "GetLongOpt.h" // for GetLongOption
 #include <climits>      // for INT_MAX
@@ -177,4 +176,3 @@ namespace Excn {
     return partCount_ > 0 ? partCount_ : processorCount_;
   }
 } // namespace Excn
-#endif

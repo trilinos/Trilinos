@@ -92,28 +92,25 @@ namespace Intrepid2 {
   Orientation::getOrientation(const subCellVertType subCellVerts[],
                               const ordinal_type numVerts) {
     ordinal_type ort = 0;
+
+#ifdef HAVE_INTREPID2_DEBUG
+    for(ordinal_type i=0;i<numVerts-1;++i)
+      for(ordinal_type j=i+1;j<numVerts;++j)
+        INTREPID2_TEST_FOR_ABORT( ( subCellVerts[i] == subCellVerts[j] ), 
+                                 ">>> ERROR (Intrepid::Orientation::getOrientation): " \
+                                 "Invalid subCellVerts, some vertex ids are repeated");
+#endif
+
+    ordinal_type rotation = 0; // find smallest vertex id
+    for (ordinal_type i=1;i<numVerts;++i)
+      rotation = (subCellVerts[i] < subCellVerts[rotation]) ? i : rotation;
+
     switch (numVerts) {
     case 2: {// edge
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_ABORT( ( subCellVerts[0] == subCellVerts[1] ), 
-                                ">>> ERROR (Intrepid::Orientation::getOrientation): " \
-                                "Invalid subCellVerts, same vertex ids are repeated");
-#endif
-      ort = (subCellVerts[0] > subCellVerts[1]);
+      ort = rotation;
       break;
     }
     case 3: {
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_ABORT( ( subCellVerts[0] == subCellVerts[1] ||
-                                  subCellVerts[0] == subCellVerts[2] ||
-                                  subCellVerts[1] == subCellVerts[2] ), 
-                                ">>> ERROR (Intrepid::Orientation::getOrientation): " \
-                                "Invalid subCellVerts, same vertex ids are repeated");
-#endif
-      ordinal_type rotation = 0; // find smallest vertex id
-      for (ordinal_type i=1;i<3;++i)
-        rotation = ( subCellVerts[i] < subCellVerts[rotation] ? i : rotation );
-
       const ordinal_type axes[][2] = { {1,2}, {2,0}, {0,1} };
       const ordinal_type flip = (subCellVerts[axes[rotation][0]] > subCellVerts[axes[rotation][1]]);
 
@@ -121,20 +118,6 @@ namespace Intrepid2 {
       break;
     }
     case 4: {
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_ABORT( ( subCellVerts[0] == subCellVerts[1] ||
-                                  subCellVerts[0] == subCellVerts[2] ||
-                                  subCellVerts[0] == subCellVerts[3] ||
-                                  subCellVerts[1] == subCellVerts[2] ||
-                                  subCellVerts[1] == subCellVerts[3] ||
-                                  subCellVerts[2] == subCellVerts[3] ), 
-                                ">>> ERROR (Intrepid::Orientation::getOrientation): " \
-                                "Invalid subCellVerts, same vertex ids are repeated");
-#endif
-      ordinal_type rotation = 0; // find smallest vertex id
-      for (ordinal_type i=1;i<4;++i)
-        rotation = ( subCellVerts[i] < subCellVerts[rotation] ? i : rotation );
-
       const ordinal_type axes[][2] = { {1,3}, {2,0}, {3,1}, {0,2} };
       const ordinal_type flip = (subCellVerts[axes[rotation][0]] > subCellVerts[axes[rotation][1]]);
 

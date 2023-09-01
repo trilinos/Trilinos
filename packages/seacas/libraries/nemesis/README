@@ -1,15 +1,4 @@
 The Nemesis library is licensed under the terms of the BSD License.
-
-Legal stuff (copyright, licensing restrictions, etc.) can be found in
-the file COPYRIGHT which contains:
-
-1. The NTESS Copyright Notice.
-2. The BSD License text.
-
-We appreciate feedback from users of this package.  Please send
-comments, suggestions, and bug reports to Greg Sjaardema <gdsjaar@sandia.gov>.
-Please identify the version of the package.
-
 ========================================================================
 
 NEMESIS is an enhancement to the EXODUSII finite element database
@@ -23,5 +12,14 @@ that reads EXODUSII files can be used on files which contain NEMESIS
 information. The NEMESIS information is written and read via C or C++
 callable functions which compromise the NEMESIS I API.
 
-The exodusII package is available at https://github.com/gsjaardema/seacas.git
+NOTE:
+All nemesis functionality has been moved into the exodus library API.
+All (almost) nemesis API functions are available in exodus by
+replacing the `ne_` at the beginning of the function name with `ex_`.
+
+For example, the nemesis function `ne_get_init_global` is known as
+`ex_get_init_global` in the exodus library API.
+
+The nemesis library is only retained for backward compatibility; for
+all new development, the exodus library should be used instead.
 

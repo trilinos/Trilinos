@@ -394,7 +394,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, 
 {
   typedef Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::HostSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_block_type;
   typedef Kokkos::View<Scalar*,Kokkos::LayoutRight,Kokkos::HostSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_vec_type;
-  typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
+  typedef typename Kokkos::ArithTraits<Scalar>::val_type impl_scalar_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   const int blockSize = 5;
@@ -829,6 +829,103 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzSubdomainSolver, Scalar
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzReordering, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  using row_matrix_t = Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+
+  out << "Use AdditiveSchwarz to reorder subdomain for RBILUK" << std::endl;
+
+  const int num_rows_per_proc = 5;
+  const int blockSize = 3;
+  auto crsgraph = tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
+  auto bcrsmatrix = tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize);
+  const auto & rowmap = *bcrsmatrix->getRowMap();
+
+  // Apply some arbitrary reordering
+  Teuchos::ArrayRCP<LocalOrdinal> reversePermuations(num_rows_per_proc);
+  reversePermuations[0] = 4;
+  reversePermuations[1] = 3;
+  reversePermuations[2] = 1;
+  reversePermuations[3] = 0;
+  reversePermuations[4] = 2;
+
+  // And build the inverse relationship
+  Teuchos::ArrayRCP<LocalOrdinal> permuations(num_rows_per_proc);
+  for (int i = 0; i < num_rows_per_proc; ++i)
+    permuations[reversePermuations[i]] = i;
+  
+  // Scale each row to make sure ordering is correct
+  for (int i = 0; i < num_rows_per_proc; ++i)
+  {
+    using inds_t = typename block_crs_matrix_type::local_inds_host_view_type;
+    using vals_t = typename block_crs_matrix_type::nonconst_values_host_view_type;
+    inds_t inds;
+    vals_t vals;
+
+    const Scalar scaleFact = 1.0 + i/Scalar(num_rows_per_proc);
+    bcrsmatrix->getLocalRowViewNonConst(i,inds,vals);
+    for (size_t j=0;j<vals.size();++j)
+      vals[j] /= scaleFact;
+  }
+
+  // Now apply reordering with AdditiveSchwarz
+  Ifpack2::AdditiveSchwarz<row_matrix_t> blockPrec(bcrsmatrix.getConst());
+  {
+    Teuchos::ParameterList params;
+    params.set ("schwarz: overlap level", static_cast<int> (0));
+    params.set ("schwarz: combine mode", "add");
+    params.set ("inner preconditioner name", "RBILUK");
+    params.set ("schwarz: zero starting solution", true);
+    params.set ("schwarz: num iterations", 1);
+    {
+      Teuchos::ParameterList innerParams;
+      innerParams.set ("fact: iluk level-of-fill", static_cast<int> (0));
+      innerParams.set ("fact: iluk level-of-overlap", static_cast<int> (0));
+
+      params.set ("inner preconditioner parameters", innerParams);
+    }
+#   if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+    params.set ("schwarz: use reordering", true);
+    out << "Using reordering" << std::endl;
+#   else
+    params.set ("schwarz: use reordering", false);
+    out << "Not using reordering, XPETRA and/or ZOLTAN2 missing." << std::endl;
+#   endif
+    {
+      Teuchos::ParameterList zlist;
+      zlist.set ("order_method", "user");
+      zlist.set ("order_method_type", "local");
+      zlist.set ("user ordering", permuations);
+      zlist.set ("user reverse ordering", reversePermuations);
+
+      params.set ("schwarz: reordering list", zlist);
+    }
+    blockPrec.setParameters(params);
+  }
+
+  blockPrec.initialize();
+  blockPrec.compute();
+
+  using BMV = Tpetra::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using MV = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  BMV xB(rowmap,blockSize,2), yB(rowmap,blockSize,2);
+  MV x = xB.getMultiVectorView ();
+  MV y = yB.getMultiVectorView ();
+
+  x.putScalar(1);
+  blockPrec.apply(x, y);
+
+  const Scalar exactSol = 0.2;
+  for (int k = 0; k < num_rows_per_proc; ++k) {
+    const Scalar scaledSol = exactSol*(1.0 + k/Scalar(num_rows_per_proc));
+    auto ylcl = yB.getLocalBlockHost(k, 0, Tpetra::Access::ReadOnly);
+    for (int j = 0; j < blockSize; ++j) {
+      TEST_FLOATING_EQUALITY(ylcl(j), scaledSol, 1e-14);
+    }
+  }
+}
+
 
 # define UNIT_TEST_GROUP_BLOCK_LGN( Scalar, LocalOrdinal, GlobalOrdinal ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, LowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
@@ -836,8 +933,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzSubdomainSolver, Scalar
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, BandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, DiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, FullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
-    //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, AdditiveSchwarzSubdomainSolver, Scalar, LocalOrdinal, GlobalOrdinal)
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, FullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, AdditiveSchwarzReordering, Scalar, LocalOrdinal,GlobalOrdinal) 
+    // TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, AdditiveSchwarzSubdomainSolver, Scalar, LocalOrdinal, GlobalOrdinal)
 
 typedef Tpetra::MultiVector<>::scalar_type scalar_type;
 typedef Tpetra::MultiVector<>::local_ordinal_type local_ordinal_type;

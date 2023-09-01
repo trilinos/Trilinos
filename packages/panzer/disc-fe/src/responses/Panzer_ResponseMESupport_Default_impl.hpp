@@ -45,7 +45,7 @@
 
 namespace panzer {
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 template <typename EvalT>
 Epetra_Vector & ResponseMESupport_Default<EvalT>::
 getEpetraVector() const
@@ -68,7 +68,7 @@ getThyraVector() const
    return data;
 }
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 template <typename EvalT>
 Teuchos::RCP<const Epetra_Map> ResponseMESupport_Default<EvalT>::
 getMap() const

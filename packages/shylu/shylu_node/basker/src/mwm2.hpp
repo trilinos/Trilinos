@@ -1290,7 +1290,7 @@ L160:
 
       for(Int j = col_ptr[k]; j < col_ptr[k+1]; j++)
       {
-        //come back to the left shit op
+        //come back to the left shift op
         min_val[j]= fact - abs(val[j]);
       }
     }//end over all columns    

@@ -45,7 +45,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_PromotionTraits.hpp"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_View.hpp"
 
 #include "Stokhos_KL_OneDExponentialEigenPair.hpp"
 #include "Stokhos_KL_ProductEigenPair.hpp"

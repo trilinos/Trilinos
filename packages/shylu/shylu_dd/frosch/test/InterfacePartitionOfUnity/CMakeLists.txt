@@ -10,7 +10,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(IPOUCopyFiles
     EXEDEPS interfacepartitionofunity
 )
 
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 TRIBITS_ADD_TEST(
 interfacepartitionofunity
 NAME test_interfacepartitionofunity_DIM2_EPETRA

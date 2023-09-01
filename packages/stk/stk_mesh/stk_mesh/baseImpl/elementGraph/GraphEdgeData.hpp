@@ -98,17 +98,25 @@ public:
     ParallelInfoForGraphEdges(int procRank) : m_procRank(procRank) {}
     impl::ParallelInfo& get_parallel_info_for_graph_edge(const GraphEdge& graphEdge);
     const impl::ParallelInfo& get_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const;
+    impl::ParallelGraphInfo::const_iterator get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge) const;
+    impl::ParallelGraphInfo::iterator get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge);
     impl::ParallelGraphInfo &get_parallel_graph_info() { return m_parallel_graph_info; }
     const impl::ParallelGraphInfo &get_parallel_graph_info() const { return m_parallel_graph_info; }
 
+    void insert_sorted_edges(const impl::ParallelGraphInfo& newParallelEdges);
+    bool find_parallel_info_for_graph_edge(const GraphEdge& graphEdge) const;
     bool insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo& p_info);
+    void erase_edges(const std::vector<GraphEdge>& edges);
     void erase_parallel_info_for_graph_edge(const GraphEdge& graphEdge);
 
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
     stk::mesh::EntityId convert_negative_local_id_to_remote_global_id(impl::LocalId remoteElementId) const;
     void clear();
+    size_t size_in_bytes() const
+    {
+      return sizeof(impl::ParallelGraphInfo)+m_parallel_graph_info.capacity()*sizeof(impl::ParallelGraphInfo::value_type);
+    }
 private:
-    impl::ParallelGraphInfo::const_iterator get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge) const;
     impl::ParallelGraphInfo m_parallel_graph_info;
     int m_procRank;
 };

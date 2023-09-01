@@ -127,13 +127,13 @@ inline EAlgorithmG StringToEAlgorithmG(std::string s) {
 }
 
 template<typename Real>
-inline Ptr<TypeG::Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
+inline Ptr<TypeG::Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
   EAlgorithmG ealg = StringToEAlgorithmG(parlist.sublist("Step").get("Type","Augmented Lagrangian"));
   switch(ealg) {
-    case ALGORITHM_G_AUGMENTEDLAGRANGIAN: return makePtr<TypeG::AugmentedLagrangianAlgorithm<Real>>(parlist);
-    case ALGORITHM_G_MOREAUYOSIDA:        return makePtr<TypeG::MoreauYosidaAlgorithm<Real>>(parlist);
-    case ALGORITHM_G_INTERIORPOINT:       return makePtr<TypeG::InteriorPointAlgorithm<Real>>(parlist);
-    case ALGORITHM_G_STABILIZEDLCL:       return makePtr<TypeG::StabilizedLCLAlgorithm<Real>>(parlist);
+    case ALGORITHM_G_AUGMENTEDLAGRANGIAN: return makePtr<TypeG::AugmentedLagrangianAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_G_MOREAUYOSIDA:        return makePtr<TypeG::MoreauYosidaAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_G_INTERIORPOINT:       return makePtr<TypeG::InteriorPointAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_G_STABILIZEDLCL:       return makePtr<TypeG::StabilizedLCLAlgorithm<Real>>(parlist,secant);
     default:                              return nullPtr;
   }
 }

@@ -14,9 +14,12 @@
 #include <vector>
 
 namespace krino { class CDMesh; }
+namespace krino { class RefinementInterface; }
 
 namespace krino {
 namespace rebalance_utils {
+
+bool have_parmetis();
 
 // This function will call STK rebalance to rebalance the specified selections of the
 // mesh based on the ELEMENT_RANK field element_weights_field. If cdmesh != nullptr the
@@ -25,6 +28,7 @@ namespace rebalance_utils {
 // such that the parent elements are weighted with the sum of their child
 // weights, and the child weights are 0 for both CDFEM and adaptivity parents/children.
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
+    const RefinementInterface * refinement,
     CDMesh * cdmesh,
     const std::string & element_weights_field_name,
     const std::string & coordinates_field_name,
@@ -36,6 +40,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 // This version handles multiple criteria rebalancing with different weights for each
 // criterion.
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
+    const RefinementInterface * refinement,
     CDMesh * cdmesh,
     const std::vector<std::string> & element_weights_field_names,
     const std::string & coordinates_field_name,

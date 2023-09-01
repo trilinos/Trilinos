@@ -136,10 +136,10 @@ int main(int argc, char *argv[]) {
   pyrNodes(17,0) = -0.4;  pyrNodes(17,1) =  0.9;  pyrNodes(17,2) = 0.0;
 
 
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
-
   try{
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    FieldContainer<double> vals;
+    
     // exception #1: CURL cannot be applied to scalar functions
     // resize vals to rank-3 container with dimensions (num. points, num. basis functions)
     vals.resize(pyrBasis.getCardinality(), pyrNodes.dimension(0), 3 );

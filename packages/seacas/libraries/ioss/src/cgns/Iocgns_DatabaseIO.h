@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "iocgns_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
@@ -48,7 +50,7 @@ namespace Ioss {
  */
 namespace Iocgns {
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOCGNS_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     enum class entity_type { NODE, ELEM };
@@ -67,7 +69,7 @@ namespace Iocgns {
 
     ~DatabaseIO() override;
 
-    const std::string get_format() const override { return "CGNS"; }
+    std::string get_format() const override { return "CGNS"; }
 
     // This isn't quite true since a CGNS library with cgsize_t == 64-bits can read
     // a file with 32-bit ints. However,...

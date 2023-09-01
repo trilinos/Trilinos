@@ -92,6 +92,7 @@ namespace MueLu {
         maxCoarseSize_(MasterList::getDefault<int>("coarse: max size")),
         verbosity_(Medium),
         doPRrebalance_(MasterList::getDefault<bool>("repartition: rebalance P and R")),
+        doPRViaCopyrebalance_(MasterList::getDefault<bool>("repartition: explicit via new copy rebalance P and R")),
         implicitTranspose_(MasterList::getDefault<bool>("transpose: use implicit")),
         fuseProlongationAndUpdate_(MasterList::getDefault<bool>("fuse prolongation and update")),
         suppressNullspaceDimensionCheck_(MasterList::getDefault<bool>("nullspace: suppress dimension check")),
@@ -211,6 +212,7 @@ namespace MueLu {
       }
 
       H.SetPRrebalance(doPRrebalance_);
+      H.SetPRViaCopyrebalance(doPRViaCopyrebalance_);
       H.SetImplicitTranspose(implicitTranspose_);
       H.SetFuseProlongationAndUpdate(fuseProlongationAndUpdate_);
 
@@ -246,9 +248,12 @@ namespace MueLu {
           H.AddLevel(newLevel);
         }
       }
-      ExportDataSetKeepFlags(H, matricesToPrint_,"A");
-      ExportDataSetKeepFlags(H, prolongatorsToPrint_, "P");
-      ExportDataSetKeepFlags(H, restrictorsToPrint_,  "R");
+
+      // Matrices to print
+      for(auto iter=matricesToPrint_.begin(); iter!=matricesToPrint_.end(); iter++)
+        ExportDataSetKeepFlags(H,iter->second,iter->first);
+
+      // Vectors, aggregates and other things that need special case handling
       ExportDataSetKeepFlags(H, nullspaceToPrint_,  "Nullspace");
       ExportDataSetKeepFlags(H, coordinatesToPrint_,  "Coordinates");
       // NOTE: Aggregates use the next level's Factory
@@ -256,7 +261,9 @@ namespace MueLu {
 #ifdef HAVE_MUELU_INTREPID2
       ExportDataSetKeepFlags(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
-      for(int i=0; i<dataToSave_.size(); i++) 
+
+      // Data to save only (these do not have a level, so we do all levels)
+      for(int i=0; i<dataToSave_.size(); i++)
         ExportDataSetKeepFlagsAll(H,dataToSave_[i]);
 
       int  levelID     = 0;
@@ -268,7 +275,8 @@ namespace MueLu {
                          LvlMngr(levelID-1, lastLevelID),
                          LvlMngr(levelID,   lastLevelID),
                          LvlMngr(levelID+1, lastLevelID));
-        H.GetLevel(levelID)->print(H.GetOStream(Developer), verbosity_);
+        if (levelID < H.GetNumLevels())
+          H.GetLevel(levelID)->print(H.GetOStream(Developer), verbosity_);
 
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
@@ -292,12 +300,18 @@ namespace MueLu {
       // here.
       numDesiredLevel_ = levelID;
 
-      WriteData<Matrix>(H, matricesToPrint_,     "A");
-      WriteData<Matrix>(H, prolongatorsToPrint_, "P");
-      WriteData<Matrix>(H, restrictorsToPrint_,  "R");
+      // Matrix prints
+      for(auto iter = matricesToPrint_.begin(); iter != matricesToPrint_.end(); iter++) {
+        WriteData<Matrix>(H,iter->second,iter->first);
+      }
+
+      // Vectors, aggregates and all things we need to print manually
       WriteData<MultiVector>(H, nullspaceToPrint_,  "Nullspace");
       WriteData<MultiVector>(H, coordinatesToPrint_,  "Coordinates");
       WriteDataAggregates(H, aggregatesToPrint_,  "Aggregates");
+
+
+
 #ifdef HAVE_MUELU_INTREPID2
       typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
       WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node");
@@ -347,6 +361,7 @@ namespace MueLu {
     MsgType verbosity_;
 
     bool doPRrebalance_;
+    bool doPRViaCopyrebalance_;
     bool implicitTranspose_;
     bool fuseProlongationAndUpdate_;
 
@@ -364,14 +379,17 @@ namespace MueLu {
     int graphOutputLevel_;
 
     //! Lists of entities to be exported (or saved)
-    Teuchos::Array<int> matricesToPrint_;
-    Teuchos::Array<int> prolongatorsToPrint_;
-    Teuchos::Array<int> restrictorsToPrint_;
+    // Items here get handled manually
     Teuchos::Array<int> nullspaceToPrint_;
     Teuchos::Array<int> coordinatesToPrint_;
     Teuchos::Array<int> aggregatesToPrint_;
     Teuchos::Array<int> elementToNodeMapsToPrint_;
+
+    // Data we'll need to save, not necessarily print
     Teuchos::Array<std::string> dataToSave_;
+
+    // Matrices we'll need to print
+    std::map<std::string,Teuchos::Array<int> > matricesToPrint_;
 
     Teuchos::RCP<Teuchos::ParameterList> matvecParams_;
 
@@ -404,7 +422,7 @@ namespace MueLu {
     void ExportDataSetKeepFlagsAll(Hierarchy& H, const std::string& name) const {
       for (int i=0; i < H.GetNumLevels(); i++ ) {
           RCP<Level> L = H.GetLevel(i);
-      	  if(!L.is_null())
+      	  if(!L.is_null() && i < levelManagers_.size())
       	    L->AddKeepFlag(name, &*levelManagers_[i]->GetFactory(name));
       }
     }
@@ -434,12 +452,10 @@ namespace MueLu {
             if (!M.is_null()) {
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
-	        }
-
+          }
         }
       }
     }
-
 
     void WriteDataAggregates(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
       for (int i = 0; i < data.size(); ++i) {

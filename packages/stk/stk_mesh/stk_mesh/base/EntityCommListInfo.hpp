@@ -43,13 +43,12 @@ namespace stk {
 namespace mesh {
 
 class Bucket;
-struct EntityComm;
 
 struct EntityCommListInfo
 {
   EntityKey key;
   Entity    entity; // Might be invalid if entity has been deleted.
-  const EntityComm* entity_comm; // Might be NULL if entity has been deleted.
+  int entity_comm; // Might be -1 if entity has been deleted.
 };
 
 inline
@@ -73,7 +72,7 @@ struct IsInvalid
 {
   bool operator()(const EntityCommListInfo& comm) const
   {
-    return comm.key == EntityKey() || comm.entity_comm == nullptr;
+    return comm.key == EntityKey() || comm.entity_comm == -1;
   }
 };
 

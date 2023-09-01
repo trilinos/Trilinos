@@ -37,15 +37,23 @@ using Teuchos::RCP;
  *  In the following table, code snippets from the \ref 00_Basic_Problem.cpp
  *  "Basic Problem" tutorial are replaced with snippets using Thyra to create
  *  01_Utilize_Thyra.cpp for the \ref 01_Utilize_Thyra.cpp "Utilize Thyra"
- *  tutorial.
+ *  tutorial.  This is similar to performing a diff between
+ *  00_Basic_Problem.cpp and 01_Utilize_Thyra.cpp, but the first column
+ *  provides comments related to the changes.  You may want to to do a
+ *  diff (e.g., vimdiff or tkdiff) to see these changes within main
+ *  (e.g., vimdiff 00_Basic_Problem/00_Basic_Problem.cpp 01_Utilize_Thyra/01_Utilize_Thyra.cpp).
  *
  *  <table>
  *    <tr> <th> Comments <th> Original "Basic Problem" Code Snippet
  *                        <th> Replacement "Utilize Thyra" Code Snippet
  *    <tr VALIGN=TOP>
  *    <td>
- *      We first need to replace the C++ double arrays with a vector space
- *      to construct the Thyra::Vector.
+ *      <b>Setup Thyra vectors.</b> We first need to replace the C++
+ *      double arrays with a vector space to construct the Thyra::Vector.
+ *      We additionally have introduced the use of Teuchos
+ *      Reference-Counted Pointers (Teuchos:RCP), which are Trilinos's
+ *      smart pointers.  Details on RCP can be found at
+ *      https://www.osti.gov/servlets/purl/919177.
  *    <td>
  *      @code
  *        // Solution and its time-derivative.
@@ -64,6 +72,7 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Initialize Thyra vectors.</b>
  *      The initialization can be achieved with the
  *      Thyra::DetachedVectorView's.  The scoping ensures they are deleted
  *      after use.
@@ -93,6 +102,7 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Access Thyra vectors.</b>
  *      Elements of the Thyra::Vector can be quickly accessed with get_ele.
  *    <td>
  *      @code
@@ -105,6 +115,7 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Clone Thyra vectors.</b>
  *      To initialize the solution at the next time step, we can simply
  *      clone the current timestep.
  *    <td>
@@ -121,6 +132,7 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Accessing elements of Thyra vectors.</b>
  *      The model evaluation is achieved through Thyra::DetachedVectorView.
  *    <td>
  *      @code
@@ -141,6 +153,7 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Compute with Thyra vectors.</b>
  *      The Forward Euler time stepping is achieved by using
  *      Thyra::V_VpStV, which performs an axpy.
  *    <td>
@@ -156,33 +169,35 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Other Thyra vector utilities.</b>
  *      We can also take advantage other Thyra features, Thyra::norm, to check
- *      if the solution is passing.
+ *      if the solution has passed.
  *    <td>
  *      @code
- *        // Test if solution is passing.
+ *        // Test if solution has passed.
  *        if ( std::isnan(x_n[0]) || std::isnan(x_n[1]) ) {
  *      @endcode
  *    <td>
  *      @code
- *        // Test if solution is passing.
+ *        // Test if solution has passed.
  *        if ( std::isnan(Thyra::norm(*x_np1) ) {
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Use Thyra vector assignment.</b>
  *      The solution update is achieved via Thyra::V_V.
  *    <td>
  *      @code
  *          // Promote to next step (n <- n+1).
- *          n++;
  *          x_n[0] = x_np1[0];
  *          x_n[1] = x_np1[1];
+ *          n++;
  *      @endcode
  *    <td>
  *      @code
  *          // Promote to next step (n <- n+1).
- *          n++;
  *          Thyra::V_V(x_n.ptr(), *x_np1);
+ *          n++;
  *      @endcode
  *  </table>
  *
@@ -193,7 +208,7 @@ using Teuchos::RCP;
  *
  *  - Back to: \ref tutorials
  *  - Previous: \ref example-00
- *  - Next: Use ModelEvaluator
+ *  - Next: \ref example-02
  */
 int main(int argc, char *argv[])
 {
@@ -209,8 +224,10 @@ int main(int argc, char *argv[])
     RCP<Thyra::VectorBase<double> > xDot_n = Thyra::createMember(xSpace);
 
     // Initial Conditions
+    int n = 0;
     double time = 0.0;
     double epsilon = 1.0e-1;
+    bool passed = true;   // ICs are considered passed.
     { // Scope to delete DetachedVectorViews
       Thyra::DetachedVectorView<double> x_n_view(*x_n);
       x_n_view[0] = 2.0;
@@ -226,11 +243,9 @@ int main(int argc, char *argv[])
     const double constDT = finalTime/(nTimeSteps-1);
 
     // Advance the solution to the next timestep.
-    int n = 0;
-    bool passing = true;
     cout << n << "  " << time << "  " << get_ele(*(x_n), 0)
                               << "  " << get_ele(*(x_n), 1) << endl;
-    while (passing && time < finalTime && n < nTimeSteps) {
+    while (passed && time < finalTime && n < nTimeSteps) {
 
       // Initialize next time step
       RCP<Thyra::VectorBase<double> > x_np1 = x_n->clone_v(); // at time index n+1
@@ -251,13 +266,13 @@ int main(int argc, char *argv[])
       // Take the timestep - Forward Euler
       Thyra::V_VpStV(x_np1.ptr(), *x_n, dt, *xDot_n);
 
-      // Test if solution is passing.
+      // Test if solution has passed.
       if ( std::isnan(Thyra::norm(*x_np1)) ) {
-        passing = false;
+        passed = false;
       } else {
         // Promote to next step (n <- n+1).
-        n++;
         Thyra::V_V(x_n.ptr(), *x_np1);
+        n++;
       }
 
       // Output
@@ -282,7 +297,7 @@ int main(int argc, char *argv[])
     cout << "Relative L2 Norm of the error (regression) = "
          << x_L2norm_error/x_L2norm_regress << endl;
     if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
-      passing = false;
+      passed = false;
       cout << "FAILED regression constraint!" << endl;
     }
 
@@ -300,10 +315,10 @@ int main(int argc, char *argv[])
     cout << "Relative L2 Norm of the error (best)       = "
          << x_L2norm_error/x_L2norm_best << endl;
     if ( x_L2norm_error > 0.02*x_L2norm_best) {
-      passing = false;
+      passed = false;
       cout << "FAILED best constraint!" << endl;
     }
-    if (passing) success = true;
+    if (passed) success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

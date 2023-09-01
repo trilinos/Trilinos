@@ -39,6 +39,7 @@
 
 
 include(TribitsHostType)
+include(TribitsDeprecatedHelpers)
 
 
 #
@@ -94,7 +95,7 @@ endmacro()
 # ``${PROJECT_NAME}_HOSTTYPE`` variable for the current platform, then package
 # ``<packageName>`` test group classification is changed to ``EX``.  Changing
 # the package test group classification to ``EX`` results in the package being
-# disabled by default (see `EX SE packages disabled by default`_).  However,
+# disabled by default (see `EX packages disabled by default`_).  However,
 # an explicit enable can still enable the package.
 #
 macro( tribits_disable_package_on_platforms  PACKAGE_NAME )
@@ -120,8 +121,8 @@ endmacro()
 
 
 macro( package_disable_on_platforms  PACKAGE_NAME_IN_ )
-  message(WARNING "package_disable_on_platforms() is deprecated!"
-    "  Use tribits_disable_package_on_platforms() instead!")
+  tribits_deprecated_command(package_disable_on_platforms
+    MESSAGE "Use tribits_disable_package_on_platforms() instead!")
   tribits_disable_package_on_platforms(${PACKAGE_NAME_IN_} ${ARGN})
 endmacro()
 
@@ -136,19 +137,19 @@ function(tribits_update_ps_pt_ss_st  THING_TYPE  THING_NAME  TESTGROUP_VAR)
 
   if (TESTGROUP_IN STREQUAL PS)
     if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      message("-- " "WARNING: ${THING_TYPE} ${THING_NAME} TESTGROUP 'PS' is deprecated."
+      tribits_deprecated("${THING_TYPE} ${THING_NAME} TESTGROUP 'PS' is deprecated."
         "  Use 'PT' instead!")
     endif()
     set(TESTGROUP_OUT PT)
   elseif (TESTGROUP_IN STREQUAL SS)
     if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      message("-- " "WARNING: ${THING_TYPE} ${THING_NAME} TESTGROUP 'SS' is deprecated."
+      tribits_deprecated("${THING_TYPE} ${THING_NAME} TESTGROUP 'SS' is deprecated."
         "  Use 'ST' instead!")
     endif()
     set(TESTGROUP_OUT ST)
   elseif (TESTGROUP_IN STREQUAL TS)
     if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      message("-- " "WARNING: ${THING_TYPE} ${THING_NAME} TESTGROUP 'TS' is deprecated."
+      tribits_deprecated("${THING_TYPE} ${THING_NAME} TESTGROUP 'TS' is deprecated."
         "  Use 'TT' instead!")
     endif()
     set(TESTGROUP_OUT TT)

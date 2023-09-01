@@ -89,7 +89,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &/* fineLevel */, Level &coarseLevel) const {
-    FactoryMonitor m(*this, "Computing Ac", coarseLevel);    
+    FactoryMonitor m(*this, "Computing Ac", coarseLevel);
     
     const Teuchos::ParameterList & pL = GetParameterList();
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
@@ -106,7 +106,7 @@ namespace MueLu {
       // The "in place" still leaves a dummy matrix here.  That needs to go
       if(newMap.is_null()) originalAc = Teuchos::null;
 
-      Set(coarseLevel, "A", originalAc);      
+      Set(coarseLevel, "A", originalAc);
       return;
     }
 

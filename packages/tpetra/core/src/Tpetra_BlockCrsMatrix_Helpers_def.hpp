@@ -318,6 +318,7 @@ namespace Tpetra {
 
       const map_type &pointColMap = *(pointMatrix.getColMap());
       RCP<const map_type> meshColMap = createMeshMap<LO,GO,Node>(blockSize, pointColMap);
+      if(meshColMap.is_null()) throw std::runtime_error("ERROR: Cannot create mesh colmap");
 
       const map_type &pointDomainMap = *(pointMatrix.getDomainMap());
       RCP<const map_type> meshDomainMap = createMeshMap<LO,GO,Node>(blockSize, pointDomainMap);
@@ -338,15 +339,23 @@ namespace Tpetra {
       typename crs_matrix_type::values_host_view_type pointVals;
       Array<GO> meshColGids;
       meshColGids.reserve(pointMatrix.getGlobalMaxNumRowEntries());
+
       //again, I assume that point GIDs associated with a mesh GID are consecutive.
       //if they are not, this will break!!
+      GO indexBase = pointColMap.getIndexBase();
       for (size_t i=0; i<pointMatrix.getLocalNumRows()/blockSize; i++) {
         for (int j=0; j<blockSize; ++j) {
           LO rowLid = i*blockSize+j;
           pointMatrix.getLocalRowView(rowLid,pointColInds,pointVals); //TODO optimization: Since I don't care about values,
                                                                       //TODO I should use the graph instead.
           for (size_t k=0; k<pointColInds.size(); ++k) {
-            GO meshColInd = pointColMap.getGlobalElement(pointColInds[k]) / blockSize;
+            GO meshColInd = (pointColMap.getGlobalElement(pointColInds[k]) - indexBase) / blockSize + indexBase;
+            if (meshColMap->getLocalElement(meshColInd) == Teuchos::OrdinalTraits<GO>::invalid()) {
+              std::ostringstream oss; 
+              oss<< "["<<i<<"] ERROR: meshColId "<< meshColInd <<" is not in the column map.  Correspnds to pointColId = "<<pointColInds[k]<<std::endl;
+              throw std::runtime_error(oss.str());
+            }
+
             meshColGids.push_back(meshColInd);
           }
         }

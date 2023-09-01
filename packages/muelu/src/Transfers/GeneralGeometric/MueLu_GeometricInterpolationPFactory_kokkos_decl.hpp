@@ -51,7 +51,7 @@
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Teuchos_SerialDenseSolver.hpp>
 
-#include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_CrsGraph_fwd.hpp"
 
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Level_fwd.hpp"
@@ -71,7 +71,7 @@ namespace MueLu{
     using realvaluedmultivector_type = Xpetra::MultiVector<real_type,LO,GO,Node>;
     using device_type      = typename Node::device_type;
     using execution_space  = typename Node::execution_space;
-    using impl_scalar_type = typename Kokkos::Details::ArithTraits<real_type>::val_type;
+    using impl_scalar_type = typename Kokkos::ArithTraits<real_type>::val_type;
     using coord_view_type  = typename Kokkos::View<impl_scalar_type**,
                                                    Kokkos::LayoutLeft,
                                                    device_type>;

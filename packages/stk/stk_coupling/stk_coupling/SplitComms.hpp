@@ -16,6 +16,7 @@
 #include <utility>
 #include <map>
 #include <memory>
+#include "stk_util/parallel/MPIFinalizationCallback.hpp"
 
 namespace stk
 {
@@ -33,7 +34,8 @@ namespace impl {
 class SplitCommsImpl
 {
   public:
-  SplitCommsImpl() = default;
+  SplitCommsImpl();
+
   SplitCommsImpl(MPI_Comm parentComm, int localColor);
 
   ~SplitCommsImpl();
@@ -49,11 +51,6 @@ class SplitCommsImpl
   int get_local_color() const;
 
   PairwiseRanks get_pairwise_root_ranks(int otherColor) const;
-
-#ifndef STK_HIDE_DEPRECATED_CODE  // remove June 2022
-STK_DEPRECATED
-  bool is_coupling_version_deprecated() const;
-#endif
 
   bool is_initialized() const;
 
@@ -82,6 +79,7 @@ private:
   std::map<int, MPI_Comm> m_pairwiseComms;
   std::vector<int> m_otherColors;
   std::map<int, PairwiseRanks> m_rootRanks;
+  MPIFinalizationCallback m_finalizationDestructor;
   bool m_isInitialized = false;
   bool m_freeCommsInDestructor = false;
   bool m_haveFreedComms = false;
@@ -111,11 +109,6 @@ class SplitComms
     int get_local_color() const { return m_impl->get_local_color(); }
 
     PairwiseRanks get_pairwise_root_ranks(int otherColor) const { return m_impl->get_pairwise_root_ranks(otherColor); }
-
-#ifndef STK_HIDE_DEPRECATED_CODE  // remove June 2022
-    STK_DEPRECATED
-    bool is_coupling_version_deprecated() const { return m_impl->is_coupling_version_deprecated(); }
-#endif
 
     bool is_initialized() const { return m_impl->is_initialized(); }
 

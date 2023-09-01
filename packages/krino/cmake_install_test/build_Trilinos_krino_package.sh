@@ -102,19 +102,7 @@ function setup_environment()
     execute source /etc/profile.d/modules.sh
     execute module purge
     
-    # compiler environment
-    export MODULEPATH=/projects/cde/modules:$MODULEPATH
-    execute module load cde/v2/cmake/3.19.2
-    execute module load cde/v2/compiler/gcc/7.2.0
-    execute module load cde/v2/gcc/7.2.0/openmpi/4.0.5
-    
-    #TPLs
-    execute module load cde/v2/gcc/7.2.0/netlib-lapack/3.8.0
-    execute module load cde/v2/gcc/7.2.0/hdf5/1.10.6
-    execute module load cde/v2/gcc/7.2.0/netcdf-c/4.7.3
-    execute module load cde/v2/gcc/7.2.0/parallel-netcdf/1.12.1
-    execute module load cde/v2/gcc/7.2.0/metis/5.1.0
-    execute module load cde/v2/gcc/7.2.0/parmetis/4.0.3
+    execute source ${output_dir}/${productName}/Trilinos/packages/krino/cmake_install_test/load_gcc_modules
 
     execute module list
     execute env

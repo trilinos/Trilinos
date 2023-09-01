@@ -49,7 +49,7 @@
 #ifndef XPETRA_MATRIX_HPP
 #define XPETRA_MATRIX_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -93,7 +93,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class Matrix : public Xpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node > {
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
@@ -107,10 +107,8 @@ namespace Xpetra {
     typedef GlobalOrdinal   global_ordinal_type;
     typedef Node            node_type;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
-#endif
 #endif
 
     //! @name Constructor/Destructor Methods
@@ -583,14 +581,12 @@ namespace Xpetra {
     }
 
     // ----------------------------------------------------------------------------------
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     virtual local_matrix_type getLocalMatrixDevice () const = 0;
     virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const = 0;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
     // ----------------------------------------------------------------------------------

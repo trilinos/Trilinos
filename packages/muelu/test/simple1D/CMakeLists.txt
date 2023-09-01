@@ -1,11 +1,11 @@
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
@@ -56,14 +56,12 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     SOURCES simple1D-UncoupledAggregation.cpp
     )
 
-  IF( ${PACKAGE_NAME}_ENABLE_Tpetra )
-    TRIBITS_ADD_TEST(
-      simple1D-UncoupledAggregation
-      NAME "simple1D-UncoupledAggregation-Tpetra"
-      ARGS "--linAlgebra=Tpetra"
-      COMM serial mpi
-      )
-  ENDIF()
+  TRIBITS_ADD_TEST(
+    simple1D-UncoupledAggregation
+    NAME "simple1D-UncoupledAggregation-Tpetra"
+    ARGS "--linAlgebra=Tpetra"
+    COMM serial mpi
+    )
 
   IF( ${PACKAGE_NAME}_ENABLE_Epetra )
     TRIBITS_ADD_TEST(

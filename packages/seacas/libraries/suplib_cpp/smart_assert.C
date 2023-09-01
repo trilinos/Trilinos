@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,7 @@ namespace {
   stream_holder default_logger_info;
 
   // initializes the SMART_ASSERT library
-  struct assert_initializer
+  [[maybe_unused]] struct assert_initializer
   {
     assert_initializer() { Private::init_assert(); }
   } init;
@@ -85,7 +85,7 @@ namespace smart_assert {
     out << "\nExpression: '" << context.get_expr() << "'\n";
 
     typedef assert_context::vals_array ac_vals_array;
-    const ac_vals_array &              aVals = context.get_vals_array();
+    const ac_vals_array               &aVals = context.get_vals_array();
     if (!aVals.empty()) {
       bool                          bFirstTime = true;
       ac_vals_array::const_iterator first = aVals.begin(), last = aVals.end();

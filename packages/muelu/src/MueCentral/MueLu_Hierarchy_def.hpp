@@ -59,7 +59,6 @@
 
 #include "MueLu_Hierarchy_decl.hpp"
 
-#include "MueLu_BoostGraphviz.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_TopRAPFactory.hpp"
@@ -68,7 +67,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherBase.hpp"
 
@@ -82,7 +80,7 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy()
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
-      doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
+      doPRrebalance_(GetDefaultPRrebalance()), doPRViaCopyrebalance_(false), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
       scalingFactor_(Teuchos::ScalarTraits<double>::one()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-2), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
   {
@@ -101,7 +99,7 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A)
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
-      doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
+      doPRrebalance_(GetDefaultPRrebalance()), doPRViaCopyrebalance_(false), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
       scalingFactor_(Teuchos::ScalarTraits<double>::one()), isDumpingEnabled_(false), dumpLevel_(-2), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
   {
@@ -360,7 +358,7 @@ namespace MueLu {
     if (isDumpingEnabled_ && (dumpLevel_ == 0 || dumpLevel_ == -1) && coarseLevelID == 1)
       DumpCurrentGraph(0);
 
-    RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
+    RCP<TopSmootherFactory> coarseFact;
     RCP<TopSmootherFactory> smootherFact = rcp(new TopSmootherFactory(coarseLevelManager, "Smoother"));
 
     int nextLevelID = coarseLevelID + 1;
@@ -403,9 +401,12 @@ namespace MueLu {
       //   during request for data "      Nullspace" on level 2 by factory NullspacePresmoothFactory
       //   during request for data "      Nullspace" on level 2 by factory ProjectorSmoother
       //   during request for data "    PreSmoother" on level 2 by factory NoFactory
+      if (coarseFact.is_null())
+        coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
       level.Request(*coarseFact);
     }
 
+    GetOStream(Runtime0) << std::endl;
     PrintMonitor m0(*this, "Level " +  Teuchos::toString(coarseLevelID), static_cast<MsgType>(Runtime0 | Test));
 
     // Build coarse level hierarchy
@@ -419,6 +420,7 @@ namespace MueLu {
       coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
     }
 
+    bool setLastLevelviaMaxCoarseSize = false;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Operator> >("A");
     RCP<Matrix> Acm = rcp_dynamic_cast<Matrix>(Ac);
@@ -444,6 +446,7 @@ namespace MueLu {
         // Last level as the size of the coarse matrix became too small
         GetOStream(Runtime0) << "Max coarse size (<= " << maxCoarseSize_ << ") achieved" << std::endl;
         isLastLevel = true;
+        if (Acm->getGlobalNumRows() != 0) setLastLevelviaMaxCoarseSize = true;
       }
     }
 
@@ -474,6 +477,8 @@ namespace MueLu {
         // We did not expect to finish this early so we did request a smoother.
         // We need a coarse solver instead. Do the magic.
         level.Release(*smootherFact);
+        if (coarseFact.is_null())
+          coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
         level.Request(*coarseFact);
       }
 
@@ -497,12 +502,38 @@ namespace MueLu {
     }
 
     if (isLastLevel == true) {
+      int actualNumLevels = nextLevelID;
       if (isOrigLastLevel == false) {
         // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
         // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to release those.
         Levels_[nextLevelID]->Release(TopRAPFactory(coarseLevelManager, nextLevelManager));
+
+        // We truncate/resize the hierarchy and possibly remove the last created level if there is
+        // something wrong with it as indicated by its P not being valid. This might happen
+        // if the global number of aggregates turns out to be zero
+
+
+        if (!setLastLevelviaMaxCoarseSize) {
+          if   (Levels_[nextLevelID-1]->IsAvailable("P"))  {
+            if (Levels_[nextLevelID-1]->template Get<RCP<Matrix> >("P") == Teuchos::null)   actualNumLevels = nextLevelID-1;
+          }
+          else actualNumLevels = nextLevelID-1;
+        }
       }
-      Levels_.resize(nextLevelID);
+       if (actualNumLevels == nextLevelID-1) {
+         // Didn't expect to finish early so we requested smoother but need coarse solver instead.
+         Levels_[nextLevelID-2]->Release(*smootherFact);
+
+         if (Levels_[nextLevelID-2]->IsAvailable("PreSmoother") ) Levels_[nextLevelID-2]->RemoveKeepFlag("PreSmoother" ,NoFactory::get());
+         if (Levels_[nextLevelID-2]->IsAvailable("PostSmoother")) Levels_[nextLevelID-2]->RemoveKeepFlag("PostSmoother",NoFactory::get());
+         if (coarseFact.is_null())
+           coarseFact = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
+         Levels_[nextLevelID-2]->Request(*coarseFact);
+         if ( !(Levels_[nextLevelID-2]->template Get<RCP<Matrix> >("A").is_null() ))
+           coarseFact->Build( *(Levels_[nextLevelID-2]));
+         Levels_[nextLevelID-2]->Release(*coarseFact);
+       }
+       Levels_.resize(actualNumLevels);
     }
 
     // I think this is the proper place for graph so that it shows every dependence
@@ -1229,7 +1260,8 @@ namespace MueLu {
       std::vector<Xpetra::global_size_t> nnzPerLevel;
       std::vector<Xpetra::global_size_t> rowsPerLevel;
       std::vector<int>                   numProcsPerLevel;
-      bool aborted = false;
+      bool someOpsNotMatrices = false;
+      const Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
       for (int i = 0; i < numLevels; i++) {
         TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError,
                                    "Operator A is not available on level " << i);
@@ -1240,19 +1272,22 @@ namespace MueLu {
 
         RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
         if (Am.is_null()) {
-          GetOStream(Warnings0) << "Some level operators are not matrices, statistics calculation aborted" << std::endl;
-          aborted = true;
-          break;
+          someOpsNotMatrices = true;
+          nnzPerLevel     .push_back(INVALID);
+          rowsPerLevel    .push_back(A->getDomainMap()->getGlobalNumElements());
+          numProcsPerLevel.push_back(A->getDomainMap()->getComm()->getSize());
+        } else {
+          LO storageblocksize=Am->GetStorageBlockSize();
+          Xpetra::global_size_t nnz = Am->getGlobalNumEntries()*storageblocksize*storageblocksize;
+          nnzPerLevel     .push_back(nnz);
+          rowsPerLevel    .push_back(Am->getGlobalNumRows()*storageblocksize);
+          numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
         }
-
-        LO storageblocksize=Am->GetStorageBlockSize();
-        Xpetra::global_size_t nnz = Am->getGlobalNumEntries()*storageblocksize*storageblocksize;
-        nnzPerLevel     .push_back(nnz);
-        rowsPerLevel    .push_back(Am->getGlobalNumRows()*storageblocksize);
-        numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
       }
+      if (someOpsNotMatrices)
+        GetOStream(Warnings0) << "Some level operators are not matrices, statistics calculation are incomplete" << std::endl;
 
-      if (!aborted) {
+      {
         std::string label = Levels_[0]->getObjectLabel();
         std::ostringstream oss;
         oss << std::setfill(' ');
@@ -1262,8 +1297,11 @@ namespace MueLu {
         if (verbLevel & Parameters1)
           oss << "Scalar              = " << Teuchos::ScalarTraits<Scalar>::name() << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
-        oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-            << GetOperatorComplexity() << std::endl;
+        oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed);
+        if (!someOpsNotMatrices)
+          oss << GetOperatorComplexity() << std::endl;
+        else
+          oss << "not available (Some operators in hierarchy are not matrices.)" << std::endl;
 
         if(smoother_comp!=-1.0) {
           oss << "Smoother complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
@@ -1286,7 +1324,12 @@ namespace MueLu {
 
         Xpetra::global_size_t tt = rowsPerLevel[0];
         int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
-        tt = nnzPerLevel[0];
+        for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
+          tt = nnzPerLevel[i];
+          if (tt != INVALID)
+            break;
+          tt = 100;  // This will get used if all levels are operators.
+        }
         int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
         tt = numProcsPerLevel[0];
         int npspacer = 2;  while (tt != 0) { tt /= 10; npspacer++; }
@@ -1294,9 +1337,15 @@ namespace MueLu {
         for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
           oss << "  " << i << "  ";
           oss << std::setw(rowspacer) << rowsPerLevel[i];
-          oss << std::setw(nnzspacer) << nnzPerLevel[i];
-          oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
-          oss << std::setw(9) << as<double>(nnzPerLevel[i]) / rowsPerLevel[i];
+          if (nnzPerLevel[i] != INVALID) {
+            oss << std::setw(nnzspacer) << nnzPerLevel[i];
+            oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
+            oss << std::setw(9) << as<double>(nnzPerLevel[i]) / rowsPerLevel[i];
+          } else {
+            oss << std::setw(nnzspacer) << "Operator";
+            oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
+            oss << std::setw(9) << "     ";
+          }
           if (i) oss << std::setw(9) << as<double>(rowsPerLevel[i-1])/rowsPerLevel[i];
           else   oss << std::setw(9) << "     ";
           oss << "    " << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
@@ -1408,11 +1457,11 @@ namespace MueLu {
     RCP<Operator> Ao = level.Get<RCP<Operator> >("A");
     RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Ao);
     if (A.is_null()) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
       return;
     }
     if(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A) != Teuchos::null) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: operator is a BlockedCrsMatrix, skipping..." << std::endl;
       return;
     }
 
@@ -1421,7 +1470,7 @@ namespace MueLu {
     RCP<xdMV> coords = level.Get<RCP<xdMV> >("Coordinates");
 
     if (A->getRowMap()->isSameAs(*(coords->getMap()))) {
-      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
+      GetOStream(Runtime1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
       return;
     }
 

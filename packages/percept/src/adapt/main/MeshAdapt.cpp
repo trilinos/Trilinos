@@ -18,6 +18,7 @@
 #include <percept/PerceptUtils.hpp>
 
 #include <stk_util/registry/ProductRegistry.hpp>
+#include <stk_util/util/string_case_compare.hpp>
 
 #include <sys/ioctl.h>
 
@@ -112,8 +113,6 @@ namespace percept {
 #if defined( STK_HAS_MPI )
     stk::parallel_machine_finalize();
 #endif
-
-    Kokkos::finalize();
 
     std::exit(exit_code);
   }      
@@ -1339,13 +1338,11 @@ namespace percept {
                 std::string bname = bn.substr(1);
                 stk::mesh::Part *part = eMeshP->get_fem_meta_data()->get_part(bname);
 
-                if (!part) {
-                  const std::string alias = eMeshP->get_ioss_mesh_data()->get_input_io_region()->get_alias(bname, Ioss::ELEMENTBLOCK);
+                if (part && !stk::equal_case(part->name(), bname)) {
+                  const std::string alias = part->name();
 
                     if (debug && !eMeshP->get_rank())
                       std::cout << "block= " << bname << " replaced with alias=" << alias << std::endl;
-
-                    part = eMeshP->get_fem_meta_data()->get_part(alias);
 
                     const int mult = block_names_x_map[bname];
                     block_names_x_map[alias] = mult;
@@ -1457,22 +1454,22 @@ namespace percept {
         for ( stk::mesh::BucketVector::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             stk::mesh::Bucket & bucket = **k ;
-            RefineFieldType_type val = static_cast<RefineFieldType_type>(0);
+            RefineFieldType::value_type val = static_cast<RefineFieldType::value_type>(0);
             if (block_selector(bucket))
               {
                 std::string pname;
                 int mult = bucket_in_block_names(bucket, pname);
                 if (iBreak < mult)
                   {
-                    val = static_cast<RefineFieldType_type>(1);
+                    val = static_cast<RefineFieldType::value_type>(1);
                   }
               }
             const unsigned num_elements_in_bucket = bucket.size();
             for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
               {
                 stk::mesh::Entity element = bucket[iElement];
-                RefineFieldType_type *fdata = stk::mesh::field_data( *eMeshP->m_refine_field , element );
-                fdata[0] = static_cast<RefineFieldType_type>(val);
+                RefineFieldType::value_type *fdata = stk::mesh::field_data( *eMeshP->m_refine_field , element );
+                fdata[0] = static_cast<RefineFieldType::value_type>(val);
               }
           }
       }
@@ -2042,8 +2039,8 @@ namespace percept {
         const double bytes_in_MB = 1024*1024;
         auditdata data;
         AuditLogDefaults(&data, "mesh_adapt", sierra::ProductRegistry::version(), eMeshP->get_parallel_size());
-        strcpy(data.starttime,sierra::format_time(sierra::Env::start_time(), "%Y%m%d%H%M%S").c_str());
-        strcpy(data.purpose,"meshing");
+        data.starttime = sierra::format_time(sierra::Env::start_time(), "%Y%m%d%H%M%S");
+        data.purpose = "meshing";
 
         data.num_proc       = eMeshP->get_parallel_size();
 
@@ -2054,7 +2051,7 @@ namespace percept {
         data.hwm_min        = hwm_min / bytes_in_MB;
         data.hwm_max        = hwm_max / bytes_in_MB;
         data.hwm_avg        = hwm_avg / bytes_in_MB;
-        strcpy(data.status, status ? "success" : "fail" );
+        data.status = status ? "success" : "fail";
 
         OutputAuditLog(&data);
       }
@@ -2070,12 +2067,6 @@ namespace percept {
 #if defined( STK_HAS_MPI )
     m_comm = stk::ParallelMachine(stk::parallel_machine_init(&argc, &argv));
 #endif
-
-    // don't pass "--help" to Kokkos, as it clutters output!
-    // actually, we don't really need to pass in anything
-    int kokkos_argc(1);
-    char ** kokkos_argv = &argv[0]; // executable name
-    Kokkos::initialize( kokkos_argc, &kokkos_argv[0] );
 
     EXCEPTWATCH;
 
@@ -2107,6 +2098,8 @@ namespace percept {
 //    std::string output_mesh_save = output_mesh;
 
     eMeshP.reset(new percept::PerceptMesh);
+    eMeshP->use_simple_fields();
+
     if (output_active_elements_only)
       eMeshP->output_active_children_only(true);
 

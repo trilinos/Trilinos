@@ -53,18 +53,15 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_ThyraUtils.hpp>
 #include <MueLu_Maxwell1.hpp>
-#ifdef HAVE_MUELU_TPETRA
-# include <Xpetra_TpetraHalfPrecisionOperator.hpp>
-#endif
+#include <Xpetra_TpetraHalfPrecisionOperator.hpp>
 
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
 // This is not as general as possible, but should be good enough for most builds.
-#if (defined(HAVE_MUELU_TPETRA) && \
-     ((defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
-      (!defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
-      (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))))
+#if((defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+    (!defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+    (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)))
 # define MUELU_CAN_USE_MIXED_PRECISION
 #endif
 
@@ -89,9 +86,7 @@ namespace Thyra {
   bool MueLuMaxwell1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isCompatible(const LinearOpSourceBase<Scalar>& fwdOpSrc) const {
     const RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc.getOp();
 
-#ifdef HAVE_MUELU_TPETRA
     if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isTpetra(fwdOp)) return true;
-#endif
 
 #ifdef HAVE_MUELU_EPETRA
     if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
@@ -172,6 +167,27 @@ namespace Thyra {
       std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "Kn", "D0"};
       for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
         Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(paramList,*it);
+
+      std::list<std::string> sublists = {"maxwell1: 11list", "maxwell1: 22list"};
+      for (auto itSublist = sublists.begin(); itSublist != sublists.end(); ++itSublist)
+      if (paramList.isSublist(*itSublist)) {
+        ParameterList& sublist = paramList.sublist(*itSublist);
+        for (int lvlNo=0; lvlNo < 10; ++lvlNo) {
+          if (sublist.isSublist("level " + std::to_string(lvlNo) + " user data")) {
+            ParameterList& lvlList = sublist.sublist("level " + std::to_string(lvlNo) + " user data");
+            std::list<std::string> convertKeys;
+            for (auto it = lvlList.begin(); it != lvlList.end(); ++it)
+              convertKeys.push_back(lvlList.name(it));
+            for (auto it = convertKeys.begin(); it != convertKeys.end(); ++it)
+              Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(lvlList,*it);
+          }
+        }
+      }
+
+      ParameterList& sublist = paramList.sublist("maxwell1: 11list");
+      if (sublist.isParameter("D0")) {
+        Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(sublist,"D0");
+      }
 
       paramList.set<bool>("Maxwell1: use as preconditioner", true);
       if (useHalfPrecision) {

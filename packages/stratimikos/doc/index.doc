@@ -9,16 +9,17 @@ linear solvers and preconditioners can be performed.  Given these object, you
 can solve individual linear systems (see \ref stratimikos_examples_sec "examples").
 
 Currently, Stratimikos is really just the single class
-<tt>Stratimikos::DefaultLinearSolverBuilder</tt> which provides uniform access
-to linear solver capabilities in Trilinos where the underlying operator can be
-viewed as either an <tt>Epetra_CrsMatrix</tt> object or as an
-<tt>Epetra_RowMatrix</tt> object.  This class builds linear solvers using the
-Thyra linear solver and preconditioner factory adapters given below.  The
-linear solver and preconditioner factories are returned as
+<tt>Stratimikos::LinearSolverBuilder</tt> which provides uniform access to
+linear solver capabilities in Trilinos where the underlying operator can be
+viewed as either an <tt>Epetra_CrsMatrix</tt> (or <tt>Epetra_RowMatrix</tt>)
+object or a <tt>Tpetra::CrsMatrix</tt> (or <tt>Tpetra::RowMatrix></tt>)
+object.  This class builds linear solvers using the Thyra linear solver and
+preconditioner factory adapters listed below.  The linear solver and
+preconditioner factories are returned as
 <tt>Thyra::LinearOpWithSolveFactoryBase</tt> and
 <tt>Thyra::PreconditionerFactoryBase</tt> objects respectively.
 
-The class <tt>Stratimikos::DefaultLinearSolverBuilder</tt> is parameter-list
+The class <tt>Stratimikos::LinearSolverBuilder</tt> is parameter-list
 driven.  All valid parameters are given below:
 
 \htmlonly
@@ -40,10 +41,10 @@ supported are "None", "ML", and "Ifpack"). -->
 Many other example XML input files (e.g. <tt>*.xml</tt>) can be found in the
 directory <tt>stratimikos/example</tt>.  <!--The full listing of supported
 parameters can be found in the documentation for
-<tt>Stratimikos::DefaultLinearSolverBuilder</tt>. -->
+<tt>Stratimikos::LinearSolverBuilder</tt>. -->
 
 The example <tt>simple_stratimikos_example.cpp</tt> shows how to wrap Epetra
-objects and then use <tt>Stratimikos::DefaultLinearSolverBuilder</tt> to solve
+objects and then use <tt>Stratimikos::LinearSolverBuilder</tt> to solve
 a linear system.
 
 The example <tt>MixedOrderPhysicsBasedPreconditioner.cpp</tt> shows the use of
@@ -59,7 +60,7 @@ See how all of the examples and tests are run by looking at
 These adapters provide concrete subclasses implementing the abstract
 interfaces <tt>Thyra::LinearOpWithSolveFactoryBase</tt> and
 <tt>Thyra::LinearOpWithSolveBase</tt>.  It is these implementations that are
-used in the implementation of <tt>Stratimikos::DefaultLinearSolverBuilder</tt>
+used in the implementation of <tt>Stratimikos::LinearSolverBuilder</tt>
 but they can also be used on their own.
 
 <ul>
@@ -77,7 +78,7 @@ but they can also be used on their own.
 These adapters provide concrete subclasses implementing the abstract interface
 <tt>Thyra::PreconditionerFactoryBase</tt>.  It is these implementations that
 are used in the implementation of
-<tt>Stratimikos::DefaultLinearSolverBuilder</tt> but can also be used on their
+<tt>Stratimikos::LinearSolverBuilder</tt> but can also be used on their
 own.
 
 <ul>
@@ -93,7 +94,7 @@ own.
 <ul>
 
 <li><tt><a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>:
-Shows how to use the <tt>Stratimikos::DefaultLinearSolverBuilder</tt> to solve
+Shows how to use the <tt>Stratimikos::LinearSolverBuilder</tt> to solve
 linear systems based on Epetra objects.
 
 <li><tt><a href="MixedOrderPhysicsBasedPreconditioner_8cpp-example.html">MixedOrderPhysicsBasedPreconditioner.cpp</a></tt>:

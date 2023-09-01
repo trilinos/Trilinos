@@ -236,7 +236,7 @@ private:
         }
         int k = iter+1 - ell; // we synch idot from k-th iteration
         if (outPtr != nullptr && k > 0) {
-          *outPtr << "Current iteration: iter=" << iter
+          *outPtr << "Current pipeline iteration: iter=" << iter
                   << ", restart=" << restart
                   << ", metric=" << metric << endl;
           Indent indent3 (outPtr);

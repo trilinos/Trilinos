@@ -30,9 +30,19 @@
 #ifndef KOKKOS_LAYOUT_NATURAL_HPP
 #define KOKKOS_LAYOUT_NATURAL_HPP
 
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 #include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_Layout.hpp"
 #include "Kokkos_LayoutContiguous.hpp" // for inner_layout<>
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 namespace Kokkos {
 

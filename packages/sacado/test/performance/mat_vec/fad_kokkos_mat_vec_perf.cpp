@@ -331,7 +331,7 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   Perf perf;
 
 #if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
-  const size_t concurrency = execution_space::concurrency();
+  const size_t concurrency = execution_space().concurrency();
   const size_t warp_dim = is_cuda ? 32 : 1;
   const size_t block_size = pa*sizeof(double);
   const size_t nkernels = concurrency / warp_dim;
@@ -634,9 +634,8 @@ int main(int argc, char* argv[]) {
     if (vtune)
       connect_vtune();
 
-    Kokkos::InitArguments init_args;
-    init_args.num_threads = cores_per_numa;
-    init_args.num_numa = numa;
+    Kokkos::InitializationSettings init_args;
+    init_args.set_num_threads(cores_per_numa);
 
     Kokkos::initialize(init_args);
 

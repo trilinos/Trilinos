@@ -410,4 +410,4 @@ TEUCHOS_UNIT_TEST(TimeEventRange, SingleEventAtZero)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

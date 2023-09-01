@@ -144,7 +144,7 @@ namespace MueLu {
     LO FindCpts(LO const PtsPerLine, LO const CoarsenRate, LO const Thin, LO **LayerCpts) const;
     LO MakeSemiCoarsenP(LO const Ntotal, LO const nz, LO const CoarsenRate, LO const LayerId[],
                                   LO const VertLineId[], LO const DofsPerNode, RCP<Matrix>& Amat,
-                                  RCP<Matrix>& P, RCP<const Map>& coarseMap, 
+                                  RCP<Matrix>& P, RCP<const Map>& coarseMap,
                                   const RCP<MultiVector> fineNullspace, RCP<MultiVector>& coarseNullspace, RCP<Matrix>& R, bool buildRestriction, bool doLinear) const;
     void RevertToPieceWiseConstant( RCP<Matrix>& P, LO BlkSize) const;
 

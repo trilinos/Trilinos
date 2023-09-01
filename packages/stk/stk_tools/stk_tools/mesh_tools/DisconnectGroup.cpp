@@ -58,7 +58,7 @@ DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mes
     m_node(node),
     m_active(true)
 {
-  ThrowRequire(m_bulk.is_valid(m_node));
+  STK_ThrowRequire(m_bulk.is_valid(m_node));
 
   if(part != nullptr) {
     m_parts.push_back(part);
@@ -78,7 +78,7 @@ DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const BlockPai
     m_blockPair(blockPair),
     m_hasBlockPair(true)
 {
-  ThrowRequire(m_bulk.is_valid(m_node));
+  STK_ThrowRequire(m_bulk.is_valid(m_node));
 
   if(m_blockPair.second != nullptr) {
     m_parts.push_back(m_blockPair.second);
@@ -108,7 +108,7 @@ DisconnectGroup::DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mes
     m_node(node),
     m_active(true)
 {
-  ThrowRequire(m_bulk.is_valid(m_node));
+  STK_ThrowRequire(m_bulk.is_valid(m_node));
 
   m_entities = get_group_elements();
   store_node_sharing_info();
@@ -220,7 +220,7 @@ bool DisconnectGroup::needs_to_communicate() const
 void DisconnectGroup::update_info(stk::mesh::Entity node)
 {
   m_node = node;
-  ThrowRequire(m_bulk.is_valid(node));
+  STK_ThrowRequire(m_bulk.is_valid(node));
   m_entities = get_group_elements();
   store_node_sharing_info();
   update_id();
@@ -261,7 +261,7 @@ stk::mesh::EntityIdVector DisconnectGroup::get_group_element_ids() const
   return elementIds;
 }
 void DisconnectGroup::pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int proc) const {
-  ThrowRequire(!m_parts.empty());
+  STK_ThrowRequire(!m_parts.empty());
   stk::mesh::EntityId parentNodeId = m_bulk.identifier(m_node);
 
   procBuffer.pack<stk::mesh::EntityId>(parentNodeId);
@@ -292,10 +292,10 @@ void DisconnectGroup::unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::
   procBuffer.unpack<stk::mesh::EntityId>(parentNodeId);
 
   m_node = m_bulk.get_entity(stk::topology::NODE_RANK, parentNodeId);
-  ThrowRequire(m_bulk.is_valid(m_node));
+  STK_ThrowRequire(m_bulk.is_valid(m_node));
 
   procBuffer.unpack<unsigned>(numParts);
-  ThrowRequire(numParts != 0u);
+  STK_ThrowRequire(numParts != 0u);
 
   for(unsigned i = 0; i < numParts; i++) {
     procBuffer.unpack<stk::mesh::PartOrdinal>(partOrdinal);
@@ -311,7 +311,7 @@ void DisconnectGroup::unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::
 
     for(stk::mesh::EntityId elementId : elementIds) {
       stk::mesh::Entity element = m_bulk.get_entity(stk::topology::ELEMENT_RANK, elementId);
-      ThrowRequire(m_bulk.is_valid(element));
+      STK_ThrowRequire(m_bulk.is_valid(element));
       m_entities.push_back(element);
     }
   } else {

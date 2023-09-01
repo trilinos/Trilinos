@@ -79,6 +79,17 @@ struct XYZ {
         result.z = scalar*z;
         return result;
     }
+
+    KOKKOS_INLINE_FUNCTION
+    size_t extent(int comp = 0) {
+        return 3;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    int extent_int(int comp = 0) {
+        return 3;
+    }
+
 }; // XYZ
 
 

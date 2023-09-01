@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -483,43 +483,6 @@ namespace Iogn {
     return num_to_get;
   }
 
-  int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::get_field_internal(const Ioss::EdgeSet * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::get_field_internal(const Ioss::FaceSet * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::get_field_internal(const Ioss::ElementSet * /* fs */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
-
-  int64_t DatabaseIO::get_field_internal(const Ioss::SideSet * /* ss */,
-                                         const Ioss::Field & /* field */, void * /* data */,
-                                         size_t /* data_size */) const
-  {
-    return -1;
-  }
   int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
@@ -582,80 +545,6 @@ namespace Iogn {
       num_to_get = Ioss::Utils::field_warning(cs, field, "input");
     }
     return num_to_get;
-  }
-
-  // Input only database -- these will never be called...
-  int64_t DatabaseIO::put_field_internal(const Ioss::Region * /*reg*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock * /*eb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock * /*nb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock * /*nb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock * /*nb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet * /*ns*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet * /*ns*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet * /*ns*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet * /*ns*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::SideSet * /*ss*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock * /*sb*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
-  }
-  int64_t DatabaseIO::put_field_internal(const Ioss::CommSet * /*cs*/,
-                                         const Ioss::Field & /*field*/, void * /*data*/,
-                                         size_t /*data_size*/) const
-  {
-    return -1;
   }
 
   const Ioss::Map &DatabaseIO::get_node_map() const
@@ -861,7 +750,8 @@ namespace Iogn {
     size_t           var_count = m_generatedMesh->get_variable_count(type);
     for (size_t i = 0; i < var_count; i++) {
       std::string var_name = entity->type_string() + "_" + std::to_string(i + 1);
-      entity->field_add(Ioss::Field(var_name, Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
+      entity->field_add(
+          Ioss::Field(std::move(var_name), Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
     }
   }
 } // namespace Iogn

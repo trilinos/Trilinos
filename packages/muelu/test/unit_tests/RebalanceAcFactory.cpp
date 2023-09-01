@@ -88,7 +88,6 @@
 #include <MueLu_CoarseMapFactory.hpp>
 //#include <MueLu_RebalanceAcFactory.hpp>
 //#include <MueLu_TrilinosSmoother.hpp>
-//#include <MueLu_CoupledAggregationFactory.hpp>
 //#include <MueLu_TentativePFactory.hpp>
 #include <MueLu_SmootherFactory.hpp>
 #include <MueLu_RebalanceAcFactory.hpp>

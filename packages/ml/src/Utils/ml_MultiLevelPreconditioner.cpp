@@ -2242,8 +2242,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if(AMGSolver_ != ML_CLASSICAL_FAMILY) 
     ML_CHK_ERR(SetupCoordinates());
 
-  if (List_.get("RAP: sort columns",0))                                     //
+  if (List_.get("RAP: sort columns",0)) {                                    
+    if (ml_nodes_) ml_nodes_->sortColumnsAfterRAP = 1;
     ml_->sortColumnsAfterRAP = 1;
+  }
   // ========================================================================//
   //               Setting Repartitioning                                    //
   // ========================================================================//
@@ -3730,7 +3732,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
   int PSmSweeps = List_.get("aggregation: smoothing sweeps", 1);
   char aggListName[80];
   for (int i=0; i<MaxLevels_; i++) {
-    sprintf(aggListName,"aggregation: list (level %d)",LevelID_[i]);
+    snprintf(aggListName, sizeof(aggListName), "aggregation: list (level %d)",LevelID_[i]);
     ParameterList &aggList = List_.sublist(aggListName);
     int MyPSmSweeps = aggList.get("aggregation: smoothing sweeps",PSmSweeps);
     ML_Aggregate_Set_DampingSweeps(agg_,MyPSmSweeps,LevelID_[i]);

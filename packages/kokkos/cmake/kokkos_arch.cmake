@@ -1,7 +1,7 @@
 
-FUNCTION(KOKKOS_ARCH_OPTION SUFFIX DEV_TYPE DESCRIPTION)
+FUNCTION(KOKKOS_ARCH_OPTION SUFFIX DEV_TYPE DESCRIPTION DEPENDENCY)
   #all optimizations off by default
-  KOKKOS_OPTION(ARCH_${SUFFIX} OFF BOOL "Optimize for ${DESCRIPTION} (${DEV_TYPE})")
+  KOKKOS_DEPENDENT_OPTION(ARCH_${SUFFIX} "Optimize for ${DESCRIPTION} (${DEV_TYPE})" OFF "${DEPENDENCY}" OFF)
   SET(KOKKOS_ARCH_${SUFFIX} ${KOKKOS_ARCH_${SUFFIX}} PARENT_SCOPE)
   SET(KOKKOS_OPTION_KEYS ${KOKKOS_OPTION_KEYS} PARENT_SCOPE)
   SET(KOKKOS_OPTION_VALUES ${KOKKOS_OPTION_VALUES} PARENT_SCOPE)
@@ -30,55 +30,97 @@ SET(KOKKOS_ARCH_LIST)
 
 
 KOKKOS_DEPRECATED_LIST(ARCH ARCH)
-KOKKOS_ARCH_OPTION(AMDAVX          HOST "AMD chip")
-KOKKOS_ARCH_OPTION(ARMV80          HOST "ARMv8.0 Compatible CPU")
-KOKKOS_ARCH_OPTION(ARMV81          HOST "ARMv8.1 Compatible CPU")
-KOKKOS_ARCH_OPTION(ARMV8_THUNDERX  HOST "ARMv8 Cavium ThunderX CPU")
-KOKKOS_ARCH_OPTION(ARMV8_THUNDERX2 HOST "ARMv8 Cavium ThunderX2 CPU")
-KOKKOS_ARCH_OPTION(A64FX           HOST "ARMv8.2 with SVE Support")
-KOKKOS_ARCH_OPTION(WSM             HOST "Intel Westmere CPU")
-KOKKOS_ARCH_OPTION(SNB             HOST "Intel Sandy/Ivy Bridge CPUs")
-KOKKOS_ARCH_OPTION(HSW             HOST "Intel Haswell CPUs")
-KOKKOS_ARCH_OPTION(BDW             HOST "Intel Broadwell Xeon E-class CPUs")
-KOKKOS_ARCH_OPTION(SKX             HOST "Intel Sky Lake Xeon E-class HPC CPUs (AVX512)")
-KOKKOS_ARCH_OPTION(KNC             HOST "Intel Knights Corner Xeon Phi")
-KOKKOS_ARCH_OPTION(KNL             HOST "Intel Knights Landing Xeon Phi")
-KOKKOS_ARCH_OPTION(BGQ             HOST "IBM Blue Gene Q")
-KOKKOS_ARCH_OPTION(POWER7          HOST "IBM POWER7 CPUs")
-KOKKOS_ARCH_OPTION(POWER8          HOST "IBM POWER8 CPUs")
-KOKKOS_ARCH_OPTION(POWER9          HOST "IBM POWER9 CPUs")
-KOKKOS_ARCH_OPTION(KEPLER30        GPU  "NVIDIA Kepler generation CC 3.0")
-KOKKOS_ARCH_OPTION(KEPLER32        GPU  "NVIDIA Kepler generation CC 3.2")
-KOKKOS_ARCH_OPTION(KEPLER35        GPU  "NVIDIA Kepler generation CC 3.5")
-KOKKOS_ARCH_OPTION(KEPLER37        GPU  "NVIDIA Kepler generation CC 3.7")
-KOKKOS_ARCH_OPTION(MAXWELL50       GPU  "NVIDIA Maxwell generation CC 5.0")
-KOKKOS_ARCH_OPTION(MAXWELL52       GPU  "NVIDIA Maxwell generation CC 5.2")
-KOKKOS_ARCH_OPTION(MAXWELL53       GPU  "NVIDIA Maxwell generation CC 5.3")
-KOKKOS_ARCH_OPTION(PASCAL60        GPU  "NVIDIA Pascal generation CC 6.0")
-KOKKOS_ARCH_OPTION(PASCAL61        GPU  "NVIDIA Pascal generation CC 6.1")
-KOKKOS_ARCH_OPTION(VOLTA70         GPU  "NVIDIA Volta generation CC 7.0")
-KOKKOS_ARCH_OPTION(VOLTA72         GPU  "NVIDIA Volta generation CC 7.2")
-KOKKOS_ARCH_OPTION(TURING75        GPU  "NVIDIA Turing generation CC 7.5")
-KOKKOS_ARCH_OPTION(AMPERE80        GPU  "NVIDIA Ampere generation CC 8.0")
-KOKKOS_ARCH_OPTION(AMPERE86        GPU  "NVIDIA Ampere generation CC 8.6")
-KOKKOS_ARCH_OPTION(ZEN             HOST "AMD Zen architecture")
-KOKKOS_ARCH_OPTION(ZEN2            HOST "AMD Zen2 architecture")
-KOKKOS_ARCH_OPTION(ZEN3            HOST "AMD Zen3 architecture")
-KOKKOS_ARCH_OPTION(VEGA900         GPU  "AMD GPU MI25 GFX900")
-KOKKOS_ARCH_OPTION(VEGA906         GPU  "AMD GPU MI50/MI60 GFX906")
-KOKKOS_ARCH_OPTION(VEGA908         GPU  "AMD GPU MI100 GFX908")
-KOKKOS_ARCH_OPTION(VEGA90A         GPU  "AMD GPU MI200 GFX90A")
-KOKKOS_ARCH_OPTION(INTEL_GEN       GPU  "Intel GPUs Gen9+")
-KOKKOS_ARCH_OPTION(INTEL_DG1       GPU  "Intel Iris XeMAX GPU")
-KOKKOS_ARCH_OPTION(INTEL_GEN9      GPU  "Intel GPU Gen9")
-KOKKOS_ARCH_OPTION(INTEL_GEN11     GPU  "Intel GPU Gen11")
-KOKKOS_ARCH_OPTION(INTEL_GEN12LP   GPU  "Intel GPU Gen12LP")
-KOKKOS_ARCH_OPTION(INTEL_XEHP      GPU  "Intel GPU Xe-HP")
 
+SET(HOST_ARCH_ALREADY_SPECIFIED "")
+MACRO(DECLARE_AND_CHECK_HOST_ARCH ARCH LABEL)
+  KOKKOS_ARCH_OPTION(${ARCH} HOST "${LABEL}" TRUE)
+  IF(KOKKOS_ARCH_${ARCH})
+    IF(HOST_ARCH_ALREADY_SPECIFIED)
+      MESSAGE(FATAL_ERROR "Multiple host architectures given! Already have ${HOST_ARCH_ALREADY_SPECIFIED}, but trying to add ${ARCH}. If you are re-running CMake, try clearing the cache and running again.")
+    ENDIF()
+    SET(HOST_ARCH_ALREADY_SPECIFIED ${ARCH})
+  ENDIF()
+ENDMACRO()
+
+DECLARE_AND_CHECK_HOST_ARCH(NATIVE            "local machine")
+DECLARE_AND_CHECK_HOST_ARCH(AMDAVX            "AMD chip")
+DECLARE_AND_CHECK_HOST_ARCH(ARMV80            "ARMv8.0 Compatible CPU")
+DECLARE_AND_CHECK_HOST_ARCH(ARMV81            "ARMv8.1 Compatible CPU")
+DECLARE_AND_CHECK_HOST_ARCH(ARMV8_THUNDERX    "ARMv8 Cavium ThunderX CPU")
+DECLARE_AND_CHECK_HOST_ARCH(ARMV8_THUNDERX2   "ARMv8 Cavium ThunderX2 CPU")
+DECLARE_AND_CHECK_HOST_ARCH(A64FX             "ARMv8.2 with SVE Support")
+DECLARE_AND_CHECK_HOST_ARCH(WSM               "Intel Westmere CPU")
+DECLARE_AND_CHECK_HOST_ARCH(SNB               "Intel Sandy/Ivy Bridge CPUs")
+DECLARE_AND_CHECK_HOST_ARCH(HSW               "Intel Haswell CPUs")
+DECLARE_AND_CHECK_HOST_ARCH(BDW               "Intel Broadwell Xeon E-class CPUs")
+DECLARE_AND_CHECK_HOST_ARCH(ICL               "Intel Ice Lake Client CPUs (AVX512)")
+DECLARE_AND_CHECK_HOST_ARCH(ICX               "Intel Ice Lake Xeon Server CPUs (AVX512)")
+DECLARE_AND_CHECK_HOST_ARCH(SKL               "Intel Skylake Client CPUs")
+DECLARE_AND_CHECK_HOST_ARCH(SKX               "Intel Skylake Xeon Server CPUs (AVX512)")
+DECLARE_AND_CHECK_HOST_ARCH(KNC               "Intel Knights Corner Xeon Phi")
+DECLARE_AND_CHECK_HOST_ARCH(KNL               "Intel Knights Landing Xeon Phi")
+DECLARE_AND_CHECK_HOST_ARCH(SPR               "Intel Sapphire Rapids Xeon Server CPUs (AVX512)")
+DECLARE_AND_CHECK_HOST_ARCH(BGQ               "IBM Blue Gene Q")
+DECLARE_AND_CHECK_HOST_ARCH(POWER7            "IBM POWER7 CPUs")
+DECLARE_AND_CHECK_HOST_ARCH(POWER8            "IBM POWER8 CPUs")
+DECLARE_AND_CHECK_HOST_ARCH(POWER9            "IBM POWER9 CPUs")
+DECLARE_AND_CHECK_HOST_ARCH(ZEN               "AMD Zen architecture")
+DECLARE_AND_CHECK_HOST_ARCH(ZEN2              "AMD Zen2 architecture")
+DECLARE_AND_CHECK_HOST_ARCH(ZEN3              "AMD Zen3 architecture")
+
+IF(Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_OPENMPTARGET OR Kokkos_ENABLE_OPENACC OR Kokkos_ENABLE_SYCL)
+  SET(KOKKOS_SHOW_CUDA_ARCHS ON)
+ENDIF()
+
+KOKKOS_ARCH_OPTION(KEPLER30        GPU  "NVIDIA Kepler generation CC 3.0"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(KEPLER32        GPU  "NVIDIA Kepler generation CC 3.2"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(KEPLER35        GPU  "NVIDIA Kepler generation CC 3.5"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(KEPLER37        GPU  "NVIDIA Kepler generation CC 3.7"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(MAXWELL50       GPU  "NVIDIA Maxwell generation CC 5.0" "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(MAXWELL52       GPU  "NVIDIA Maxwell generation CC 5.2" "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(MAXWELL53       GPU  "NVIDIA Maxwell generation CC 5.3" "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(PASCAL60        GPU  "NVIDIA Pascal generation CC 6.0"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(PASCAL61        GPU  "NVIDIA Pascal generation CC 6.1"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(VOLTA70         GPU  "NVIDIA Volta generation CC 7.0"   "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(VOLTA72         GPU  "NVIDIA Volta generation CC 7.2"   "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(TURING75        GPU  "NVIDIA Turing generation CC 7.5"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(AMPERE80        GPU  "NVIDIA Ampere generation CC 8.0"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(AMPERE86        GPU  "NVIDIA Ampere generation CC 8.6"  "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(ADA89           GPU  "NVIDIA Ada generation CC 8.9"     "KOKKOS_SHOW_CUDA_ARCHS")
+KOKKOS_ARCH_OPTION(HOPPER90        GPU  "NVIDIA Hopper generation CC 9.0"  "KOKKOS_SHOW_CUDA_ARCHS")
+
+IF(Kokkos_ENABLE_HIP OR Kokkos_ENABLE_OPENMPTARGET)
+  SET(KOKKOS_SHOW_HIP_ARCHS ON)
+ENDIF()
+
+# AMD archs ordered in decreasing priority of autodetection
+LIST(APPEND SUPPORTED_AMD_GPUS       MI200    MI100    MI50/60  RX7900XTX  V620/W6800)
+LIST(APPEND SUPPORTED_AMD_ARCHS      VEGA90A  VEGA908  VEGA906  NAVI1100   NAVI1030)
+LIST(APPEND CORRESPONDING_AMD_FLAGS  gfx90a   gfx908   gfx906   gfx1100    gfx1030)
+
+#FIXME CAN BE REPLACED WITH LIST_ZIP IN CMAKE 3.17
+FOREACH(ARCH IN LISTS SUPPORTED_AMD_ARCHS)
+  LIST(FIND SUPPORTED_AMD_ARCHS ${ARCH} LIST_INDEX)
+  LIST(GET SUPPORTED_AMD_GPUS ${LIST_INDEX} GPU)
+  LIST(GET CORRESPONDING_AMD_FLAGS ${LIST_INDEX} FLAG)
+  KOKKOS_ARCH_OPTION(${ARCH}         GPU  "AMD GPU ${GPU} ${FLAG}"      "KOKKOS_SHOW_HIP_ARCHS")
+ENDFOREACH()
+
+IF(Kokkos_ENABLE_SYCL OR Kokkos_ENABLE_OPENMPTARGET)
+  SET(KOKKOS_SHOW_SYCL_ARCHS ON)
+ENDIF()
+
+KOKKOS_ARCH_OPTION(INTEL_GEN       GPU  "SPIR64-based devices, e.g. Intel GPUs, using JIT" "KOKKOS_SHOW_SYCL_ARCHS")
+KOKKOS_ARCH_OPTION(INTEL_DG1       GPU  "Intel Iris XeMAX GPU"                             "KOKKOS_SHOW_SYCL_ARCHS")
+KOKKOS_ARCH_OPTION(INTEL_GEN9      GPU  "Intel GPU Gen9"                                   "KOKKOS_SHOW_SYCL_ARCHS")
+KOKKOS_ARCH_OPTION(INTEL_GEN11     GPU  "Intel GPU Gen11"                                  "KOKKOS_SHOW_SYCL_ARCHS")
+KOKKOS_ARCH_OPTION(INTEL_GEN12LP   GPU  "Intel GPU Gen12LP"                                "KOKKOS_SHOW_SYCL_ARCHS")
+KOKKOS_ARCH_OPTION(INTEL_XEHP      GPU  "Intel GPU Xe-HP"                                  "KOKKOS_SHOW_SYCL_ARCHS")
+KOKKOS_ARCH_OPTION(INTEL_PVC       GPU  "Intel GPU Ponte Vecchio"                          "KOKKOS_SHOW_SYCL_ARCHS")
 
 IF(KOKKOS_ENABLE_COMPILER_WARNINGS)
   SET(COMMON_WARNINGS
-    "-Wall" "-Wunused-parameter" "-Wshadow" "-pedantic"
+    "-Wall" "-Wextra" "-Wunused-parameter" "-Wshadow" "-pedantic"
     "-Wsign-compare" "-Wtype-limits" "-Wuninitialized")
 
   # NOTE KOKKOS_ prefixed variable (all uppercase) is not set yet because TPLs are processed after ARCH
@@ -87,9 +129,11 @@ IF(KOKKOS_ENABLE_COMPILER_WARNINGS)
     LIST(REMOVE_ITEM COMMON_WARNINGS "-pedantic")
   ENDIF()
 
-  # OpenMPTarget compilers give erroneous warnings about sign comparison in loops
-  IF(KOKKOS_ENABLE_OPENMPTARGET)
-    LIST(REMOVE_ITEM COMMON_WARNINGS "-Wsign-compare")
+  # NVHPC compiler does not support -Wtype-limits.
+  IF(KOKKOS_ENABLE_OPENACC)
+    IF(KOKKOS_CXX_COMPILER_ID STREQUAL NVHPC)
+      LIST(REMOVE_ITEM COMMON_WARNINGS "-Wtype-limits")
+    ENDIF()
   ENDIF()
 
   IF(KOKKOS_CXX_COMPILER_ID STREQUAL Clang)
@@ -98,16 +142,19 @@ IF(KOKKOS_ENABLE_COMPILER_WARNINGS)
 
   SET(GNU_WARNINGS "-Wempty-body" "-Wclobbered" "-Wignored-qualifiers"
     ${COMMON_WARNINGS})
-  IF(KOKKOS_CXX_COMPILER_ID STREQUAL GNU AND KOKKOS_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7)
+  IF(KOKKOS_CXX_COMPILER_ID STREQUAL GNU)
     LIST(APPEND GNU_WARNINGS "-Wimplicit-fallthrough")
   ENDIF()
 
-  COMPILER_SPECIFIC_FLAGS(
-    COMPILER_ID CMAKE_CXX_COMPILER_ID
-    NVHPC       NO-VALUE-SPECIFIED
-    GNU         ${GNU_WARNINGS}
-    DEFAULT     ${COMMON_WARNINGS}
-  )
+  # Not using COMPILER_SPECIFIC_FLAGS function so the warning flags are not passed downstream
+  IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+    STRING(REPLACE ";" " " WARNING_FLAGS "${GNU_WARNINGS}")
+  ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL NVHPC)
+    # FIXME_NVHPC
+  ELSE()
+    STRING(REPLACE ";" " " WARNING_FLAGS "${COMMON_WARNINGS}")
+  ENDIF()
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS}")
 ENDIF()
 
 
@@ -115,13 +162,9 @@ ENDIF()
 #clear anything that might be in the cache
 GLOBAL_SET(KOKKOS_CUDA_OPTIONS)
 # Construct the Makefile options
-IF (KOKKOS_ENABLE_CUDA_LAMBDA)
-  IF(KOKKOS_CXX_COMPILER_ID STREQUAL NVIDIA)
-    GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS "-expt-extended-lambda")
-    IF(KOKKOS_COMPILER_CUDA_VERSION GREATER_EQUAL 110)
-      GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS "-Wext-lambda-captures-this")
-    ENDIF()
-  ENDIF()
+IF(KOKKOS_CXX_COMPILER_ID STREQUAL NVIDIA)
+  GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS "-extended-lambda")
+  GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS "-Wext-lambda-captures-this")
 ENDIF()
 
 IF (KOKKOS_ENABLE_CUDA_CONSTEXPR)
@@ -142,6 +185,12 @@ IF (KOKKOS_CXX_COMPILER_ID STREQUAL Clang)
   IF (KOKKOS_ENABLE_CUDA)
      SET(KOKKOS_IMPL_CUDA_CLANG_WORKAROUND ON CACHE BOOL "enable CUDA Clang workarounds" FORCE)
   ENDIF()
+ELSEIF (KOKKOS_CXX_COMPILER_ID STREQUAL NVHPC)
+  SET(CUDA_ARCH_FLAG "-gpu")
+  GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS -cuda)
+  IF (KOKKOS_ENABLE_CUDA) # FIXME ideally unreachable when CUDA not enabled
+    GLOBAL_APPEND(KOKKOS_LINK_OPTIONS -cuda)
+  ENDIF()
 ELSEIF(KOKKOS_CXX_COMPILER_ID STREQUAL NVIDIA)
   SET(CUDA_ARCH_FLAG "-arch")
 ENDIF()
@@ -152,9 +201,6 @@ IF (KOKKOS_CXX_COMPILER_ID STREQUAL NVIDIA)
     GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS -lineinfo)
   ENDIF()
   UNSET(_UPPERCASE_CMAKE_BUILD_TYPE)
-  IF (KOKKOS_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9.0 AND KOKKOS_CXX_COMPILER_VERSION VERSION_LESS 10.0)
-    GLOBAL_APPEND(KOKKOS_CUDAFE_OPTIONS --diag_suppress=esa_on_defaulted_function_ignored)
-  ENDIF()
 ENDIF()
 
 
@@ -162,11 +208,9 @@ ENDIF()
 #clear anything that might be in the cache
 GLOBAL_SET(KOKKOS_AMDGPU_OPTIONS)
 IF(KOKKOS_ENABLE_HIP)
-  IF(KOKKOS_CXX_COMPILER_ID STREQUAL HIPCC)
-    SET(AMDGPU_ARCH_FLAG "--amdgpu-target")
-  ELSE()
-    SET(AMDGPU_ARCH_FLAG "--offload-arch")
-    GLOBAL_APPEND(KOKKOS_AMDGPU_OPTIONS -x hip)
+  SET(AMDGPU_ARCH_FLAG "--offload-arch")
+  IF(NOT KOKKOS_CXX_COMPILER_ID STREQUAL HIPCC)
+    GLOBAL_APPEND(KOKKOS_AMDGPU_OPTIONS -xhip)
     IF(DEFINED ENV{ROCM_PATH})
       GLOBAL_APPEND(KOKKOS_AMDGPU_OPTIONS --rocm-path=$ENV{ROCM_PATH})
     ENDIF()
@@ -174,10 +218,29 @@ IF(KOKKOS_ENABLE_HIP)
 ENDIF()
 
 
+IF(KOKKOS_ARCH_NATIVE)
+  IF(KOKKOS_CXX_HOST_COMPILER_ID STREQUAL "MSVC")
+    MESSAGE(FATAL_ERROR "MSVC doesn't support ARCH_NATIVE!")
+  ENDIF()
+
+  STRING(TOUPPER "${CMAKE_SYSTEM_PROCESSOR}" KOKKOS_UC_SYSTEM_PROCESSOR)
+  IF(KOKKOS_UC_SYSTEM_PROCESSOR MATCHES "(X86)|(AMD64)")
+    SET(KOKKOS_NATIVE_FLAGS "-march=native;-mtune=native")
+  ELSE()
+    SET(KOKKOS_NATIVE_FLAGS "-mcpu=native")
+  ENDIF()
+  COMPILER_SPECIFIC_FLAGS(
+    COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    NVHPC   -tp=native
+    DEFAULT ${KOKKOS_NATIVE_FLAGS}
+  )
+ENDIF()
+
 IF (KOKKOS_ARCH_ARMV80)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
     Cray    NO-VALUE-SPECIFIED
+    MSVC    /arch:armv8.0
     NVHPC   NO-VALUE-SPECIFIED
     DEFAULT -march=armv8-a
   )
@@ -187,6 +250,7 @@ IF (KOKKOS_ARCH_ARMV81)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
     Cray    NO-VALUE-SPECIFIED
+    MSVC    /arch:armv8.1
     NVHPC   NO-VALUE-SPECIFIED
     DEFAULT -march=armv8.1-a
   )
@@ -197,6 +261,7 @@ IF (KOKKOS_ARCH_ARMV8_THUNDERX)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
     Cray    NO-VALUE-SPECIFIED
+    MSVC    /arch:armv8.0
     NVHPC   NO-VALUE-SPECIFIED
     DEFAULT -march=armv8-a -mtune=thunderx
   )
@@ -207,6 +272,7 @@ IF (KOKKOS_ARCH_ARMV8_THUNDERX2)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
     Cray    NO-VALUE-SPECIFIED
+    MSVC    /arch:armv8.1
     NVHPC   NO-VALUE-SPECIFIED
     DEFAULT -mcpu=thunderx2t99 -mtune=thunderx2t99
   )
@@ -215,10 +281,11 @@ ENDIF()
 IF (KOKKOS_ARCH_A64FX)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
-    NVHPC   NO-VALUE-SPECIFIED
-    DEFAULT -march=armv8.2-a+sve
     Clang   -march=armv8.2-a+sve -msve-vector-bits=512
     GNU     -march=armv8.2-a+sve -msve-vector-bits=512
+    MSVC    NO-VALUE-SPECIFIED
+    NVHPC   NO-VALUE-SPECIFIED
+    DEFAULT -march=armv8.2-a+sve
   )
 ENDIF()
 
@@ -226,6 +293,7 @@ IF (KOKKOS_ARCH_ZEN)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
     Intel   -mavx2
+    MSVC    /arch:AVX2
     NVHPC   -tp=zen
     DEFAULT -march=znver1 -mtune=znver1
   )
@@ -237,6 +305,7 @@ IF (KOKKOS_ARCH_ZEN2)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
     Intel   -mavx2
+    MSVC    /arch:AVX2
     NVHPC   -tp=zen2
     DEFAULT -march=znver2 -mtune=znver2
   )
@@ -248,6 +317,7 @@ IF (KOKKOS_ARCH_ZEN3)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
     Intel   -mavx2
+    MSVC    /arch:AVX2
     NVHPC   -tp=zen2
     DEFAULT -march=znver3 -mtune=znver3
   )
@@ -258,9 +328,10 @@ ENDIF()
 IF (KOKKOS_ARCH_WSM)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
-    Intel   -xSSE4.2
-    NVHPC   -tp=px
     Cray    NO-VALUE-SPECIFIED
+    Intel   -xSSE4.2
+    MSVC    NO-VALUE-SPECIFIED
+    NVHPC   -tp=px
     DEFAULT -msse4.2
   )
   SET(KOKKOS_ARCH_SSE42 ON)
@@ -270,9 +341,10 @@ IF (KOKKOS_ARCH_SNB OR KOKKOS_ARCH_AMDAVX)
   SET(KOKKOS_ARCH_AVX ON)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
-    Intel   -mavx
-    NVHPC   -tp=sandybridge
     Cray    NO-VALUE-SPECIFIED
+    Intel   -mavx
+    MSVC    /arch:AVX
+    NVHPC   -tp=sandybridge
     DEFAULT -mavx
   )
 ENDIF()
@@ -281,9 +353,10 @@ IF (KOKKOS_ARCH_HSW)
   SET(KOKKOS_ARCH_AVX2 ON)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
-    Intel   -xCORE-AVX2
-    NVHPC   -tp=haswell
     Cray    NO-VALUE-SPECIFIED
+    Intel   -xCORE-AVX2
+    MSVC    /arch:AVX2
+    NVHPC   -tp=haswell
     DEFAULT -march=core-avx2 -mtune=core-avx2
   )
 ENDIF()
@@ -292,9 +365,10 @@ IF (KOKKOS_ARCH_BDW)
   SET(KOKKOS_ARCH_AVX2 ON)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
-    Intel   -xCORE-AVX2
-    NVHPC   -tp=haswell
     Cray    NO-VALUE-SPECIFIED
+    Intel   -xCORE-AVX2
+    MSVC    /arch:AVX2
+    NVHPC   -tp=haswell
     DEFAULT -march=core-avx2 -mtune=core-avx2 -mrtm
   )
 ENDIF()
@@ -304,53 +378,97 @@ IF (KOKKOS_ARCH_KNL)
   SET(KOKKOS_ARCH_AVX512MIC ON) #not a cache variable
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
-    Intel   -xMIC-AVX512
-    NVHPC   -tp=knl
     Cray    NO-VALUE-SPECIFIED
+    Intel   -xMIC-AVX512
+    MSVC    /arch:AVX512
+    NVHPC   -tp=knl
     DEFAULT -march=knl -mtune=knl
   )
 ENDIF()
 
 IF (KOKKOS_ARCH_KNC)
-  SET(KOKKOS_USE_ISA_KNC ON)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    MSVC    NO-VALUE-SPECIFIED
     DEFAULT -mmic
   )
 ENDIF()
 
-IF (KOKKOS_ARCH_SKX)
-  #avx512-xeon
-  SET(KOKKOS_ARCH_AVX512XEON ON)
+IF (KOKKOS_ARCH_SKL)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
-    Intel   -xCORE-AVX512
-    NVHPC   -tp=skylake
     Cray    NO-VALUE-SPECIFIED
-    DEFAULT -march=skylake-avx512 -mtune=skylake-avx512 -mrtm
+    Intel   -xSKYLAKE
+    MSVC    /arch:AVX2
+    NVHPC   -tp=skylake
+    DEFAULT -march=skylake -mtune=skylake
   )
 ENDIF()
 
-IF (KOKKOS_ARCH_WSM OR KOKKOS_ARCH_SNB OR KOKKOS_ARCH_HSW OR KOKKOS_ARCH_BDW OR KOKKOS_ARCH_KNL OR KOKKOS_ARCH_SKX OR KOKKOS_ARCH_ZEN OR KOKKOS_ARCH_ZEN2 OR KOKKOS_ARCH_ZEN3)
-  SET(KOKKOS_USE_ISA_X86_64 ON)
+IF (KOKKOS_ARCH_SKX)
+  # FIXME_NVHPC nvc++ doesn't seem to support AVX512.
+  IF (NOT KOKKOS_CXX_HOST_COMPILER_ID STREQUAL NVHPC)
+    SET(KOKKOS_ARCH_AVX512XEON ON)
+  ENDIF()
+  COMPILER_SPECIFIC_FLAGS(
+    COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    Cray    NO-VALUE-SPECIFIED
+    Intel   -xCORE-AVX512
+    MSVC    /arch:AVX512
+    NVHPC   -tp=skylake
+    DEFAULT -march=skylake-avx512 -mtune=skylake-avx512
+  )
 ENDIF()
 
-IF (KOKKOS_ARCH_BDW OR KOKKOS_ARCH_SKX)
-  SET(KOKKOS_ENABLE_TM ON) #not a cache variable
+IF (KOKKOS_ARCH_ICL)
+  # FIXME_NVHPC nvc++ doesn't seem to support AVX512.
+  IF (NOT KOKKOS_CXX_HOST_COMPILER_ID STREQUAL NVHPC)
+    SET(KOKKOS_ARCH_AVX512XEON ON)
+  ENDIF()
+  COMPILER_SPECIFIC_FLAGS(
+    COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    MSVC    /arch:AVX512
+    DEFAULT -march=icelake-client -mtune=icelake-client
+  )
+ENDIF()
+
+IF (KOKKOS_ARCH_ICX)
+  # FIXME_NVHPC nvc++ doesn't seem to support AVX512.
+  IF (NOT KOKKOS_CXX_HOST_COMPILER_ID STREQUAL NVHPC)
+    SET(KOKKOS_ARCH_AVX512XEON ON)
+  ENDIF()
+  COMPILER_SPECIFIC_FLAGS(
+    COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    MSVC    /arch:AVX512
+    DEFAULT -march=icelake-server -mtune=icelake-server
+  )
+ENDIF()
+
+IF (KOKKOS_ARCH_SPR)
+  # FIXME_NVHPC nvc++ doesn't seem to support AVX512.
+  IF (NOT KOKKOS_CXX_HOST_COMPILER_ID STREQUAL NVHPC)
+    SET(KOKKOS_ARCH_AVX512XEON ON)
+  ENDIF()
+  COMPILER_SPECIFIC_FLAGS(
+    COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    MSVC    /arch:AVX512
+    DEFAULT -march=sapphirerapids -mtune=sapphirerapids
+  )
 ENDIF()
 
 IF (KOKKOS_ARCH_POWER7)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    MSVC    NO-VALUE-SPECIFIED
     NVHPC   NO-VALUE-SPECIFIED
     DEFAULT -mcpu=power7 -mtune=power7
   )
-  SET(KOKKOS_USE_ISA_POWERPCBE ON)
 ENDIF()
 
 IF (KOKKOS_ARCH_POWER8)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    MSVC    NO-VALUE-SPECIFIED
     NVHPC   -tp=pwr8
     DEFAULT -mcpu=power8 -mtune=power8
   )
@@ -359,20 +477,24 @@ ENDIF()
 IF (KOKKOS_ARCH_POWER9)
   COMPILER_SPECIFIC_FLAGS(
     COMPILER_ID KOKKOS_CXX_HOST_COMPILER_ID
+    MSVC    NO-VALUE-SPECIFIED
     NVHPC   -tp=pwr9
     DEFAULT -mcpu=power9 -mtune=power9
   )
 ENDIF()
 
-IF (KOKKOS_ARCH_POWER8 OR KOKKOS_ARCH_POWER9)
-  SET(KOKKOS_USE_ISA_POWERPCLE ON)
-ENDIF()
-
-IF (KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE)
-  COMPILER_SPECIFIC_FLAGS(
-    Clang  -fcuda-rdc
-    NVIDIA --relocatable-device-code=true
-  )
+IF (NOT KOKKOS_COMPILE_LANGUAGE STREQUAL CUDA)
+  IF (KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE)
+      COMPILER_SPECIFIC_FLAGS(
+        Clang  -fcuda-rdc
+        NVIDIA --relocatable-device-code=true
+        NVHPC -gpu=rdc
+      )
+  ELSEIF(KOKKOS_ENABLE_CUDA)
+    COMPILER_SPECIFIC_FLAGS(
+      NVHPC -gpu=nordc
+    )
+  ENDIF()
 ENDIF()
 
 # Clang needs mcx16 option enabled for Windows atomic functions
@@ -383,7 +505,7 @@ IF (CMAKE_CXX_COMPILER_ID STREQUAL Clang AND WIN32)
 ENDIF()
 
 # MSVC ABI has many deprecation warnings, so ignore them
-IF (CMAKE_CXX_COMPILER_ID STREQUAL MSVC OR "x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
+IF (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR "x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
   COMPILER_SPECIFIC_DEFS(
     Clang _CRT_SECURE_NO_WARNINGS
   )
@@ -395,7 +517,7 @@ ENDIF()
 IF (KOKKOS_ENABLE_HIP)
   IF (KOKKOS_ENABLE_HIP_RELOCATABLE_DEVICE_CODE)
     COMPILER_SPECIFIC_FLAGS(
-      DEFAULT -fgpu-rdc -DDESUL_HIP_RDC
+      DEFAULT -fgpu-rdc
     )
   ELSE()
     COMPILER_SPECIFIC_FLAGS(
@@ -413,6 +535,35 @@ IF (KOKKOS_ENABLE_SYCL)
   )
 ENDIF()
 
+# Check support for device_global variables
+# FIXME_SYCL Once the feature test macro SYCL_EXT_ONEAPI_DEVICE_GLOBAL is
+#            available, use that instead.
+IF(KOKKOS_ENABLE_SYCL AND NOT BUILD_SHARED_LIBS)
+  INCLUDE(CheckCXXSourceCompiles)
+  STRING(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${KOKKOS_COMPILE_OPTIONS}")
+  CHECK_CXX_SOURCE_COMPILES("
+    #include <sycl/sycl.hpp>
+    using namespace sycl::ext::oneapi::experimental;
+    using namespace sycl;
+
+    SYCL_EXTERNAL device_global<int, decltype(properties(device_image_scope))> Foo;
+
+    void bar(queue q) {
+      q.single_task([=] {
+      Foo = 42;
+    });
+    }
+
+    int main(){ return 0; }
+    "
+    KOKKOS_IMPL_SYCL_DEVICE_GLOBAL_SUPPORTED)
+
+  IF(KOKKOS_IMPL_SYCL_DEVICE_GLOBAL_SUPPORTED)
+    COMPILER_SPECIFIC_FLAGS(
+      DEFAULT -fsycl-device-code-split=off -DDESUL_SYCL_DEVICE_GLOBAL_SUPPORTED
+    )
+  ENDIF()
+ENDIF()
 
 SET(CUDA_ARCH_ALREADY_SPECIFIED "")
 FUNCTION(CHECK_CUDA_ARCH ARCH FLAG)
@@ -421,18 +572,28 @@ FUNCTION(CHECK_CUDA_ARCH ARCH FLAG)
       MESSAGE(FATAL_ERROR "Multiple GPU architectures given! Already have ${CUDA_ARCH_ALREADY_SPECIFIED}, but trying to add ${ARCH}. If you are re-running CMake, try clearing the cache and running again.")
     ENDIF()
     SET(CUDA_ARCH_ALREADY_SPECIFIED ${ARCH} PARENT_SCOPE)
-    IF (NOT KOKKOS_ENABLE_CUDA AND NOT KOKKOS_ENABLE_OPENMPTARGET AND NOT KOKKOS_ENABLE_SYCL)
-      MESSAGE(WARNING "Given CUDA arch ${ARCH}, but Kokkos_ENABLE_CUDA and Kokkos_ENABLE_OPENMPTARGET are OFF. Option will be ignored.")
+    IF (NOT KOKKOS_ENABLE_CUDA AND NOT KOKKOS_ENABLE_OPENMPTARGET AND NOT KOKKOS_ENABLE_SYCL AND NOT KOKKOS_ENABLE_OPENACC)
+      MESSAGE(WARNING "Given CUDA arch ${ARCH}, but Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENACC, and Kokkos_ENABLE_OPENMPTARGET are OFF. Option will be ignored.")
       UNSET(KOKKOS_ARCH_${ARCH} PARENT_SCOPE)
     ELSE()
+      IF(KOKKOS_ENABLE_CUDA)
+        STRING(REPLACE "sm_" "" CMAKE_ARCH ${FLAG})
+        SET(KOKKOS_CUDA_ARCHITECTURES ${CMAKE_ARCH})
+        SET(KOKKOS_CUDA_ARCHITECTURES ${CMAKE_ARCH} PARENT_SCOPE)
+      ENDIF()
       SET(KOKKOS_CUDA_ARCH_FLAG ${FLAG} PARENT_SCOPE)
       IF(KOKKOS_ENABLE_COMPILE_AS_CMAKE_LANGUAGE)
-        string(REPLACE "sm_" "" CMAKE_ARCH ${FLAG})
-        SET(CMAKE_CUDA_ARCHITECTURES ${CMAKE_ARCH} PARENT_SCOPE)
+        SET(CMAKE_CUDA_ARCHITECTURES ${KOKKOS_CUDA_ARCHITECTURES} PARENT_SCOPE)
       ELSE()
-        GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS "${CUDA_ARCH_FLAG}=${FLAG}")
-        IF(KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE OR KOKKOS_CXX_COMPILER_ID STREQUAL NVIDIA)
-          GLOBAL_APPEND(KOKKOS_LINK_OPTIONS "${CUDA_ARCH_FLAG}=${FLAG}")
+        IF(KOKKOS_CXX_COMPILER_ID STREQUAL NVHPC)
+          STRING(REPLACE "sm_" "cc" NVHPC_CUDA_ARCH ${FLAG})
+          GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS "${CUDA_ARCH_FLAG}=${NVHPC_CUDA_ARCH}")
+          GLOBAL_APPEND(KOKKOS_LINK_OPTIONS "${CUDA_ARCH_FLAG}=${NVHPC_CUDA_ARCH}")
+        ELSE()
+          GLOBAL_APPEND(KOKKOS_CUDA_OPTIONS "${CUDA_ARCH_FLAG}=${FLAG}")
+          IF(KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE OR KOKKOS_CXX_COMPILER_ID STREQUAL NVIDIA)
+            GLOBAL_APPEND(KOKKOS_LINK_OPTIONS "${CUDA_ARCH_FLAG}=${FLAG}")
+          ENDIF()
         ENDIF()
       ENDIF()
     ENDIF()
@@ -460,6 +621,8 @@ CHECK_CUDA_ARCH(VOLTA72   sm_72)
 CHECK_CUDA_ARCH(TURING75  sm_75)
 CHECK_CUDA_ARCH(AMPERE80  sm_80)
 CHECK_CUDA_ARCH(AMPERE86  sm_86)
+CHECK_CUDA_ARCH(ADA89     sm_89)
+CHECK_CUDA_ARCH(HOPPER90  sm_90)
 
 SET(AMDGPU_ARCH_ALREADY_SPECIFIED "")
 FUNCTION(CHECK_AMDGPU_ARCH ARCH FLAG)
@@ -472,6 +635,9 @@ FUNCTION(CHECK_AMDGPU_ARCH ARCH FLAG)
       MESSAGE(WARNING "Given AMD GPU architecture ${ARCH}, but Kokkos_ENABLE_HIP and Kokkos_ENABLE_OPENMPTARGET are OFF. Option will be ignored.")
       UNSET(KOKKOS_ARCH_${ARCH} PARENT_SCOPE)
     ELSE()
+      IF(KOKKOS_ENABLE_HIP)
+        SET(KOKKOS_HIP_ARCHITECTURES ${FLAG} PARENT_SCOPE)
+      ENDIF()
       SET(KOKKOS_AMDGPU_ARCH_FLAG ${FLAG} PARENT_SCOPE)
       GLOBAL_APPEND(KOKKOS_AMDGPU_OPTIONS "${AMDGPU_ARCH_FLAG}=${FLAG}")
       IF(KOKKOS_ENABLE_HIP_RELOCATABLE_DEVICE_CODE)
@@ -483,26 +649,17 @@ ENDFUNCTION()
 
 #These will define KOKKOS_AMDGPU_ARCH_FLAG
 #to the corresponding flag name if ON
-CHECK_AMDGPU_ARCH(VEGA900 gfx900) # Radeon Instinct MI25
-CHECK_AMDGPU_ARCH(VEGA906 gfx906) # Radeon Instinct MI50 and MI60
-CHECK_AMDGPU_ARCH(VEGA908 gfx908) # Radeon Instinct MI100
-CHECK_AMDGPU_ARCH(VEGA90A gfx90a) # Radeon Instinct MI200
+FOREACH(ARCH IN LISTS SUPPORTED_AMD_ARCHS)
+  LIST(FIND SUPPORTED_AMD_ARCHS ${ARCH} LIST_INDEX)
+  LIST(GET CORRESPONDING_AMD_FLAGS ${LIST_INDEX} FLAG)
+  CHECK_AMDGPU_ARCH(${ARCH} ${FLAG})
+ENDFOREACH()
 
-IF(KOKKOS_ENABLE_HIP AND NOT AMDGPU_ARCH_ALREADY_SPECIFIED)
-  IF(KOKKOS_CXX_COMPILER_ID STREQUAL HIPCC)
-    FIND_PROGRAM(ROCM_ENUMERATOR rocm_agent_enumerator)
-    EXECUTE_PROCESS(COMMAND ${ROCM_ENUMERATOR} OUTPUT_VARIABLE GPU_ARCHS)
-    STRING(LENGTH "${GPU_ARCHS}" len_str)
-    # enumerator always output gfx000 as the first line
-    IF(${len_str} LESS 8)
-      MESSAGE(SEND_ERROR "HIP enabled but no AMD GPU architecture currently enabled. "
-                         "Please enable one AMD GPU architecture via -DKokkos_ARCH_{..}=ON'.")
-    ENDIF()
-  ELSE()
-    MESSAGE(SEND_ERROR "HIP enabled but no AMD GPU architecture currently enabled. "
-                       "Please enable one AMD GPU architecture via -DKokkos_ARCH_{..}=ON'.")
-  ENDIF()
-ENDIF()
+MACRO(SET_AND_CHECK_AMD_ARCH ARCH FLAG)
+  KOKKOS_SET_OPTION(ARCH_${ARCH} ON)
+  CHECK_AMDGPU_ARCH(${ARCH} ${FLAG})
+  LIST(APPEND KOKKOS_ENABLED_ARCH_LIST ${ARCH})
+ENDMACRO()
 
 MACRO(CHECK_MULTIPLE_INTEL_ARCH)
   IF(KOKKOS_ARCH_INTEL_GPU)
@@ -529,16 +686,24 @@ ENDIF()
 IF(KOKKOS_ARCH_INTEL_XEHP)
   CHECK_MULTIPLE_INTEL_ARCH()
 ENDIF()
+IF(KOKKOS_ARCH_INTEL_PVC)
+  CHECK_MULTIPLE_INTEL_ARCH()
+ENDIF()
 
 IF (KOKKOS_ENABLE_OPENMPTARGET)
   SET(CLANG_CUDA_ARCH ${KOKKOS_CUDA_ARCH_FLAG})
   IF (CLANG_CUDA_ARCH)
-    STRING(REPLACE "sm_" "cc" NVHPC_CUDA_ARCH ${CLANG_CUDA_ARCH})
-    COMPILER_SPECIFIC_FLAGS(
-      Clang -Xopenmp-target -march=${CLANG_CUDA_ARCH} -fopenmp-targets=nvptx64-nvidia-cuda
-      XL    -qtgtarch=${KOKKOS_CUDA_ARCH_FLAG}
-      NVHPC -gpu=${NVHPC_CUDA_ARCH}
-    )
+    IF(KOKKOS_CLANG_IS_CRAY)
+      COMPILER_SPECIFIC_FLAGS(
+        Cray -fopenmp
+      )
+    ELSE()
+      STRING(REPLACE "sm_" "cc" NVHPC_CUDA_ARCH ${CLANG_CUDA_ARCH})
+      COMPILER_SPECIFIC_FLAGS(
+        Clang -Xopenmp-target -march=${CLANG_CUDA_ARCH} -fopenmp-targets=nvptx64
+        NVHPC -gpu=${NVHPC_CUDA_ARCH}
+      )
+    ENDIF()
   ENDIF()
   SET(CLANG_AMDGPU_ARCH ${KOKKOS_AMDGPU_ARCH_FLAG})
   IF (CLANG_AMDGPU_ARCH)
@@ -546,9 +711,46 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
       Clang -Xopenmp-target=amdgcn-amd-amdhsa -march=${CLANG_AMDGPU_ARCH} -fopenmp-targets=amdgcn-amd-amdhsa
     )
   ENDIF()
-  IF (KOKKOS_ARCH_INTEL_GPU)
+  IF (KOKKOS_ARCH_INTEL_GEN)
     COMPILER_SPECIFIC_FLAGS(
       IntelLLVM -fopenmp-targets=spir64 -D__STRICT_ANSI__
+    )
+  ELSEIF(KOKKOS_ARCH_INTEL_GEN9)
+    COMPILER_SPECIFIC_FLAGS(
+      IntelLLVM -fopenmp-targets=spir64_gen -Xopenmp-target-backend "-device gen9" -D__STRICT_ANSI__
+    )
+  ELSEIF(KOKKOS_ARCH_INTEL_GEN11)
+    COMPILER_SPECIFIC_FLAGS(
+      IntelLLVM -fopenmp-targets=spir64_gen -Xopenmp-target-backend "-device gen11" -D__STRICT_ANSI__
+    )
+  ELSEIF(KOKKOS_ARCH_INTEL_GEN12LP)
+    COMPILER_SPECIFIC_FLAGS(
+      IntelLLVM -fopenmp-targets=spir64_gen -Xopenmp-target-backend "-device gen12lp" -D__STRICT_ANSI__
+    )
+  ELSEIF(KOKKOS_ARCH_INTEL_DG1)
+    COMPILER_SPECIFIC_FLAGS(
+      IntelLLVM -fopenmp-targets=spir64_gen -Xopenmp-target-backend "-device dg1" -D__STRICT_ANSI__
+    )
+  ELSEIF(KOKKOS_ARCH_INTEL_XEHP)
+    COMPILER_SPECIFIC_FLAGS(
+      IntelLLVM -fopenmp-targets=spir64_gen -Xopenmp-target-backend "-device 12.50.4" -D__STRICT_ANSI__
+    )
+  ELSEIF(KOKKOS_ARCH_INTEL_PVC)
+    COMPILER_SPECIFIC_FLAGS(
+      IntelLLVM -fopenmp-targets=spir64_gen -Xopenmp-target-backend "-device 12.60.7" -D__STRICT_ANSI__
+    )
+  ENDIF()
+ENDIF()
+
+IF (KOKKOS_ENABLE_OPENACC)
+  IF(KOKKOS_CUDA_ARCH_FLAG)
+    STRING(REPLACE "sm_" "cc" NVHPC_CUDA_ARCH ${KOKKOS_CUDA_ARCH_FLAG})
+    COMPILER_SPECIFIC_FLAGS(
+      NVHPC -acc -gpu=${NVHPC_CUDA_ARCH}
+    )
+  ELSE()
+    COMPILER_SPECIFIC_FLAGS(
+      NVHPC -acc
     )
   ENDIF()
 ENDIF()
@@ -557,35 +759,44 @@ IF (KOKKOS_ENABLE_SYCL)
   IF(CUDA_ARCH_ALREADY_SPECIFIED)
     IF(KOKKOS_ENABLE_UNSUPPORTED_ARCHS)
       COMPILER_SPECIFIC_FLAGS(
-        DEFAULT -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend "${CUDA_ARCH_FLAG}=${KOKKOS_CUDA_ARCH_FLAG}"
+        DEFAULT -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=${KOKKOS_CUDA_ARCH_FLAG}
       )
     ELSE()
       MESSAGE(SEND_ERROR "Setting a CUDA architecture for SYCL is only allowed with Kokkos_ENABLE_UNSUPPORTED_ARCHS=ON!")
     ENDIF()
   ELSEIF(KOKKOS_ARCH_INTEL_GEN)
     COMPILER_SPECIFIC_FLAGS(
-      DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen9-"
+      DEFAULT -fsycl-targets=spir64
     )
-  ELSEIF(KOKKOS_ARCH_INTEL_GEN9)
-    COMPILER_SPECIFIC_FLAGS(
-      DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen9"
+  ELSE()
+    COMPILER_SPECIFIC_OPTIONS(
+      DEFAULT -fsycl-targets=spir64_gen
     )
-  ELSEIF(KOKKOS_ARCH_INTEL_GEN11)
-    COMPILER_SPECIFIC_FLAGS(
-      DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen11"
-    )
-  ELSEIF(KOKKOS_ARCH_INTEL_GEN12LP)
-    COMPILER_SPECIFIC_FLAGS(
-      DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen12lp"
-    )
-  ELSEIF(KOKKOS_ARCH_INTEL_DG1)
-    COMPILER_SPECIFIC_FLAGS(
-      DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device dg1"
-    )
-  ELSEIF(KOKKOS_ARCH_INTEL_XEHP)
-    COMPILER_SPECIFIC_FLAGS(
-      DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device xehp"
-    )
+    IF(KOKKOS_ARCH_INTEL_GEN9)
+      COMPILER_SPECIFIC_LINK_OPTIONS(
+        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen9"
+      )
+    ELSEIF(KOKKOS_ARCH_INTEL_GEN11)
+      COMPILER_SPECIFIC_LINK_OPTIONS(
+        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen11"
+      )
+    ELSEIF(KOKKOS_ARCH_INTEL_GEN12LP)
+      COMPILER_SPECIFIC_LINK_OPTIONS(
+        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen12lp"
+      )
+    ELSEIF(KOKKOS_ARCH_INTEL_DG1)
+      COMPILER_SPECIFIC_LINK_OPTIONS(
+        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device dg1"
+      )
+    ELSEIF(KOKKOS_ARCH_INTEL_XEHP)
+      COMPILER_SPECIFIC_LINK_OPTIONS(
+        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device 12.50.4"
+      )
+    ELSEIF(KOKKOS_ARCH_INTEL_PVC)
+      COMPILER_SPECIFIC_LINK_OPTIONS(
+        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device 12.60.7"
+      )
+    ENDIF()
   ENDIF()
 ENDIF()
 
@@ -624,8 +835,8 @@ IF(KOKKOS_ENABLE_CUDA AND NOT CUDA_ARCH_ALREADY_SPECIFIED)
     IF(CMAKE_CUDA_COMPILER)
       # copy our test to .cu so cmake compiles as CUDA
       CONFIGURE_FILE(
-        ${PROJECT_SOURCE_DIR}/cmake/compile_tests/cuda_compute_capability.cc
-        ${PROJECT_BINARY_DIR}/compile_tests/cuda_compute_capability.cu
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compile_tests/cuda_compute_capability.cc
+        ${CMAKE_CURRENT_BINARY_DIR}/compile_tests/cuda_compute_capability.cu
         COPYONLY
       )
       # run test again
@@ -633,7 +844,7 @@ IF(KOKKOS_ENABLE_CUDA AND NOT CUDA_ARCH_ALREADY_SPECIFIED)
         _RESULT
         _COMPILE_RESULT
         ${_BINARY_TEST_DIR}
-        ${PROJECT_BINARY_DIR}/compile_tests/cuda_compute_capability.cu
+        ${CMAKE_CURRENT_BINARY_DIR}/compile_tests/cuda_compute_capability.cu
         COMPILE_DEFINITIONS -DSM_ONLY
         RUN_OUTPUT_VARIABLE _CUDA_COMPUTE_CAPABILITY)
     ENDIF()
@@ -678,16 +889,67 @@ IF (KOKKOS_ARCH_AMPERE80 OR KOKKOS_ARCH_AMPERE86)
   SET(KOKKOS_ARCH_AMPERE ON)
 ENDIF()
 
-#Regardless of version, make sure we define the general architecture name
-IF (KOKKOS_ARCH_VEGA900 OR KOKKOS_ARCH_VEGA906 OR KOKKOS_ARCH_VEGA908 OR KOKKOS_ARCH_VEGA90A)
-  SET(KOKKOS_ARCH_VEGA ON)
+IF (KOKKOS_ARCH_HOPPER90)
+  SET(KOKKOS_ARCH_HOPPER ON)
 ENDIF()
+
+#HIP detection of gpu arch
+IF(KOKKOS_ENABLE_HIP AND NOT AMDGPU_ARCH_ALREADY_SPECIFIED)
+  FIND_PROGRAM(ROCM_ENUMERATOR rocm_agent_enumerator)
+  IF(NOT ROCM_ENUMERATOR)
+    MESSAGE(FATAL_ERROR "Autodetection of AMD GPU architecture not possible as "
+      "rocm_agent_enumerator could not be found. "
+      "Please specify an arch manually via -DKokkos_ARCH_{..}=ON")
+  ELSE()
+    EXECUTE_PROCESS(COMMAND ${ROCM_ENUMERATOR} OUTPUT_VARIABLE GPU_ARCHS)
+    STRING(LENGTH "${GPU_ARCHS}" len_str)
+    # enumerator always output gfx000 as the first line
+    IF(${len_str} LESS 8)
+      MESSAGE(SEND_ERROR "HIP enabled but no AMD GPU architecture could be automatically detected. "
+                         "Please manually specify one AMD GPU architecture via -DKokkos_ARCH_{..}=ON'.")
+    # check for known gpu archs, otherwise error out
+    ELSE()
+      SET(AMD_ARCH_DETECTED "")
+      FOREACH(ARCH IN LISTS SUPPORTED_AMD_ARCHS)
+        LIST(FIND SUPPORTED_AMD_ARCHS ${ARCH} LIST_INDEX)
+        LIST(GET CORRESPONDING_AMD_FLAGS ${LIST_INDEX} FLAG)
+        STRING(REGEX MATCH "(${FLAG})" DETECTED_GPU_ARCH ${GPU_ARCHS})
+        IF("${DETECTED_GPU_ARCH}" STREQUAL "${FLAG}")
+          SET_AND_CHECK_AMD_ARCH(${ARCH} ${FLAG})
+          SET(AMD_ARCH_DETECTED ${ARCH})
+          BREAK()
+        ENDIF()
+      ENDFOREACH()
+      IF("${AMD_ARCH_DETECTED}" STREQUAL "")
+        MESSAGE(FATAL_ERROR "HIP enabled but no automatically detected AMD GPU architecture "
+         "is supported. "
+         "Please manually specify one AMD GPU architecture via -DKokkos_ARCH_{..}=ON'.")
+      ENDIF()
+    ENDIF()
+  ENDIF()
+ENDIF()
+
+#Regardless of version, make sure we define the general architecture name
+FOREACH(ARCH IN LISTS SUPPORTED_AMD_ARCHS)
+  IF (KOKKOS_ARCH_${ARCH})
+    STRING(REGEX MATCH "(VEGA)" IS_VEGA ${ARCH})
+    IF(IS_VEGA)
+      SET(KOKKOS_ARCH_VEGA ON)
+      BREAK()
+    ENDIF()
+    STRING(REGEX MATCH "(NAVI)" IS_NAVI ${ARCH})
+    IF(IS_NAVI)
+      SET(KOKKOS_ARCH_NAVI ON)
+      BREAK()
+    ENDIF()
+  ENDIF()
+ENDFOREACH()
 
 #CMake verbose is kind of pointless
 #Let's just always print things
 MESSAGE(STATUS "Built-in Execution Spaces:")
 
-FOREACH (_BACKEND Cuda OpenMPTarget HIP SYCL)
+FOREACH (_BACKEND Cuda OpenMPTarget HIP SYCL OpenACC)
   STRING(TOUPPER ${_BACKEND} UC_BACKEND)
   IF(KOKKOS_ENABLE_${UC_BACKEND})
     IF(_DEVICE_PARALLEL)
@@ -698,10 +960,18 @@ FOREACH (_BACKEND Cuda OpenMPTarget HIP SYCL)
     ENDIF()
     IF (${_BACKEND} STREQUAL "Cuda")
        IF(KOKKOS_ENABLE_CUDA_UVM)
-          SET(_DEFAULT_DEVICE_MEMSPACE "Kokkos::${_BACKEND}UVMSpace")
+          MESSAGE(DEPRECATION "Setting Kokkos_ENABLE_CUDA_UVM is deprecated - use the portable Kokkos::SharedSpace as an explicit memory space in your code instead")
+          IF(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+            SET(_DEFAULT_DEVICE_MEMSPACE "Kokkos::${_BACKEND}UVMSpace")
+          ELSE()
+            MESSAGE(FATAL_ERROR "Kokkos_ENABLE_DEPRECATED_CODE_4 must be set to use Kokkos_ENABLE_CUDA_UVM")
+          ENDIF()
        ELSE()
           SET(_DEFAULT_DEVICE_MEMSPACE "Kokkos::${_BACKEND}Space")
        ENDIF()
+       SET(_DEVICE_PARALLEL "Kokkos::${_BACKEND}")
+    ELSEIF(${_BACKEND} STREQUAL "HIP")
+       SET(_DEFAULT_DEVICE_MEMSPACE "Kokkos::${_BACKEND}Space")
        SET(_DEVICE_PARALLEL "Kokkos::${_BACKEND}")
     ELSE()
        SET(_DEFAULT_DEVICE_MEMSPACE "Kokkos::Experimental::${_BACKEND}Space")

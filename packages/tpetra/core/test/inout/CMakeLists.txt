@@ -1,3 +1,14 @@
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_Issue11704
+  SOURCES 
+    Issue11704.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
 
 # This test should work for any number of MPI processes, as long as
 # the sparse matrix to be read in has enough rows that it may be

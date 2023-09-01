@@ -472,8 +472,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   join (const MaxNumEntTag,
-        volatile value_type& dst,
-        const volatile value_type& src) const
+        value_type& dst,
+        const value_type& src) const
   {
     if (dst < src) dst = src;
   }
@@ -701,7 +701,7 @@ unpackAndCombineIntoCrsMatrix(
   size_t bytes_per_value = PackTraits<ST>::packValueCount(ST());
 
   // Now do the actual unpack!
-  const bool atomic = XS::concurrency() != 1;
+  const bool atomic = XS().concurrency() != 1;
   using functor = UnpackCrsMatrixAndCombineFunctor<LocalMatrix, LocalMap, BufferDeviceType>;
   functor f(
     local_matrix,

@@ -289,16 +289,16 @@ namespace Amesos2 {
       // typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
       //        scalar_type, global_ordinal_type, global_size_type> ccs_helper;
     typedef Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
-        host_value_type_array, host_ordinal_type_array, host_size_type_array> ccs_helper;
+        host_value_type_array, host_ordinal_type_array, host_ordinal_type_array> ccs_helper;
     if ( is_contiguous_ == true ) {
       ccs_helper::do_get(this->matrixA_.ptr(),
                          nzvals_view_, rowind_view_, colptr_view_,
-                         nnz_ret, ROOTED, SORTED_INDICES, 0);
+                         nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
     }
     else {
       ccs_helper::do_get(this->matrixA_.ptr(),
                          nzvals_view_, rowind_view_, colptr_view_,
-                         nnz_ret, CONTIGUOUS_AND_ROOTED, SORTED_INDICES, 0);
+                         nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
     }
   }
 

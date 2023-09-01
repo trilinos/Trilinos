@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -725,7 +725,10 @@ namespace Ioad {
     // Simply to start the "else if" section with "if".
     if (type == "not supported") {}
 #define declare_template_instantiation(T)                                                          \
-  else if (type == GetType<T>()) { return get_variable_infos<T>(variable); }
+  else if (type == GetType<T>())                                                                   \
+  {                                                                                                \
+    return get_variable_infos<T>(variable);                                                        \
+  }
     ADIOS2_FOREACH_TYPE_1ARG(declare_template_instantiation)
 #undef declare_template_instantiation
     else
@@ -825,7 +828,7 @@ namespace Ioad {
       }
       properties_info = entity_property_map.at(entity_name);
     }
-    for (auto &property_info : properties_info) {
+    for (const auto &property_info : properties_info) {
       std::string property_name = property_info.first;
       std::string encoded_name  = property_info.second.first;
       std::string type          = property_info.second.second;
@@ -897,7 +900,7 @@ namespace Ioad {
 
     const EntityMapType &sidesets_map   = fields_map.at(entity_type);
     const EntityMapType &sideblocks_map = fields_map.at(sideblock_type);
-    for (auto &entity : sidesets_map) {
+    for (const auto &entity : sidesets_map) {
       std::string    entity_name = entity.first;
       Ioss::SideSet *ss          = new Ioss::SideSet(this, entity_name);
       bool           ss_added    = get_region()->add(ss);
@@ -906,7 +909,7 @@ namespace Ioad {
         delete ss;
         return count;
       }
-      for (auto &variable_pair : entity.second) {
+      for (const auto &variable_pair : entity.second) {
         // Since some fields are created automatically, we need to avoid recreating them when
         // loading the file.
         // First, check that field is actually a field and not a list of sideblocks
@@ -939,7 +942,7 @@ namespace Ioad {
             for (std::string block_name : block_names) {
               if (sideblocks_map.find(block_name) != sideblocks_map.end()) {
                 bool first = true;
-                for (auto &sideblock_field_pair : sideblocks_map.at(block_name)) {
+                for (const auto &sideblock_field_pair : sideblocks_map.at(block_name)) {
                   std::string   field_name  = sideblock_field_pair.first;
                   FieldInfoType block_infos = get_variable_infos_from_map(
                       sideblocks_map, sideblock_type, block_name, field_name);
@@ -991,7 +994,7 @@ namespace Ioad {
       return count;
     }
     const EntityMapType &entity_map = fields_map.at(entity_type);
-    for (auto &variable_pair : entity_map) {
+    for (const auto &variable_pair : entity_map) {
       std::string entity_name = variable_pair.first;
       // Get size and type info for the entity using the first element in the map.
       FieldInfoType infos_to_create_entity = get_variable_infos_from_map(
@@ -1008,7 +1011,7 @@ namespace Ioad {
       if (!added) {
         delete entity;
       }
-      for (auto &field_pair : variable_pair.second) {
+      for (const auto &field_pair : variable_pair.second) {
         // Since some fields are created automatically, we need to avoid recreating them when
         // loading the file.
         // Note: We get the information about the first field twice: once before this loop, and
@@ -1038,7 +1041,7 @@ namespace Ioad {
       return count;
     }
     const EntityMapType &entity_map = fields_map.at(entity_type);
-    for (auto &variable_pair : entity_map) {
+    for (const auto &variable_pair : entity_map) {
       std::string entity_name = variable_pair.first;
       // Get size and type info for the entity using the first element in the map.
       FieldInfoType infos_to_create_entity = get_variable_infos_from_map(
@@ -1060,7 +1063,7 @@ namespace Ioad {
       if (!added) {
         delete entity;
       }
-      for (auto &field_pair : variable_pair.second) {
+      for (const auto &field_pair : variable_pair.second) {
         // Since some fields are created automatically, we need to avoid recreating them when
         // loading the file.
         // Note: We get the information about the first field twice: once before this loop, and
@@ -1081,9 +1084,9 @@ namespace Ioad {
   std::string DatabaseIO::get_optional_string_variable(const std::string &field_name,
                                                        const std::string &string_variable) const
   {
-    std::vector<std::string> tokens = Ioss::tokenize(field_name, Name_separator);
-    std::string              entity = encode_field_name({tokens[0], tokens[1]});
-    auto                     v      = adios_wrapper.InquireVariable<std::string>(
+    auto        tokens = Ioss::tokenize(field_name, Name_separator);
+    std::string entity = encode_field_name({tokens[0], tokens[1]});
+    auto        v      = adios_wrapper.InquireVariable<std::string>(
         adios_wrapper.EncodeMetaVariable(string_variable, entity));
     if (v) {
       return adios_wrapper.GetMetaVariable<std::string>(string_variable, entity);
@@ -1105,13 +1108,13 @@ namespace Ioad {
     }
     BlockInfoType infos;
     // For each time step.
-    for (auto &blockpair : allblocks) {
-      std::vector<typename adios2::Variable<T>::Info> &blocks = blockpair.second;
+    for (const auto &blockpair : allblocks) {
+      const std::vector<typename adios2::Variable<T>::Info> &blocks = blockpair.second;
       // Find in vector if this variable is defined for the current rank process. This means
       // that there is one block for which the rank encoded as the first value in the `Start` array
       // matches the current rank.
       // Note: one block per rank.
-      for (auto &block : blocks) {
+      for (const auto &block : blocks) {
         if (block.Start[0] != rank) {
           infos.global_size += block.Count[1];
           // This is not the block corresponding to the current process (rank).
@@ -1245,9 +1248,9 @@ namespace Ioad {
     const std::map<std::string, std::map<std::string, std::string>> variables =
         adios_wrapper.AvailableVariables();
     for (const auto &vpair : variables) {
-      const std::string       &name           = vpair.first;
-      auto                     name_type_pair = std::make_pair(name, vpair.second.at("Type"));
-      std::vector<std::string> tokens         = Ioss::tokenize(name, Name_separator);
+      const std::string &name           = vpair.first;
+      auto               name_type_pair = std::make_pair(name, vpair.second.at("Type"));
+      auto               tokens         = Ioss::tokenize(name, Name_separator);
       switch (tokens.size()) {
       case 1: globals_map[tokens[0]] = name_type_pair; break;
       case 2: {
@@ -1300,7 +1303,7 @@ namespace Ioad {
     // // Also defines member variables of this class...
 
     if (nodeCount == 0) {
-      Ioss::WARNING() << "No nodes were found in the model, file '" << decoded_filename() << "'\n";
+      Ioss::WarnOut() << "No nodes were found in the model, file '" << decoded_filename() << "'\n";
     }
     else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
@@ -1311,7 +1314,7 @@ namespace Ioad {
     }
 
     if (elementCount == 0) {
-      Ioss::WARNING() << "No elements were found in the model, file: '" << decoded_filename()
+      Ioss::WarnOut() << "No elements were found in the model, file: '" << decoded_filename()
                       << "'\n";
     }
 
@@ -1328,7 +1331,7 @@ namespace Ioad {
     // add_coordinate_frames();
     if (fields_map.find(coordinate_frame_name) != fields_map.end()) {
       const EntityMapType &entity_map = fields_map.at(coordinate_frame_name);
-      for (auto &variable_pair : entity_map) {
+      for (const auto &variable_pair : entity_map) {
         std::vector<double> coord(9, 0);
 
         int64_t     id       = std::stoll(variable_pair.first);
@@ -1400,7 +1403,7 @@ namespace Ioad {
       IOSS_ERROR(errmsg);
     }
     else if (number_proc > number_proc_read) {
-      Ioss::WARNING() << "This file was originally written on " << number_proc_read
+      Ioss::WarnOut() << "This file was originally written on " << number_proc_read
                       << " processors, but is now being read using " << number_proc
                       << " processors.\n";
     }
@@ -1409,7 +1412,7 @@ namespace Ioad {
       unsigned long processor_id;
       get_data<unsigned long>(static_cast<void *>(&processor_id), Processor_id_meta);
       if (rank != processor_id) {
-        Ioss::WARNING() << "This file was originally written on processor " << processor_id
+        Ioss::WarnOut() << "This file was originally written on processor " << processor_id
                         << ", but is now being read on processor " << rank
                         << ". This may cause problems if there is any processor-dependent data on "
                            "the file.\n";
@@ -1594,7 +1597,7 @@ namespace Ioad {
         IOSS_ERROR(errmsg);
       }
       else {
-        Ioss::WARNING() << "The variable `" << encoded_name << "` was not found.\n";
+        Ioss::WarnOut() << "The variable `" << encoded_name << "` was not found.\n";
       }
     }
   }

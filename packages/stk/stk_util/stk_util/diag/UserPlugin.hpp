@@ -37,7 +37,6 @@
 
 #include "stk_util/diag/StringUtil.hpp"  // for less_nocase
 #include "stk_util/util/Fortran.hpp"     // for SIERRA_FORTRAN
-#include <functional>                    // for binary_function
 #include <iosfwd>                        // for ostream
 #include <map>                           // for map, map<>::value_compare
 #include <string>                        // for string
@@ -101,7 +100,7 @@ public:
    * less functor.
    *
    */
-  struct less_nocase : public std::binary_function<NamePair, NamePair, bool>
+  struct less_nocase
   {
     bool operator()(const NamePair &lhs, const NamePair &rhs) const {
       sierra::less_nocase<NamePair::second_type> second_less_nocase;

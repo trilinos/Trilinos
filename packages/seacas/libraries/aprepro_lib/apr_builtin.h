@@ -1,18 +1,19 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef APR_BUILTIN_H
-#define APR_BUILTIN_H
+#pragma once
 
 #include <cstdio>
 
 namespace SEAMS {
   struct array;
 
+  double do_FtoC(double F);
+  double do_CtoF(double C);
   double do_acos(double x);
   double do_acosd(double x);
   double do_acosh(double x);
@@ -115,6 +116,7 @@ namespace SEAMS {
   const char *do_extract(char *string, char *begin, char *end);
   const char *do_print_array(const array *my_array_data);
 
+  const char *do_import(char *string);
   const char *do_execute(char *string);
   const char *do_getenv(char *env);
   const char *do_tolower(char *string);
@@ -153,5 +155,3 @@ namespace SEAMS {
   array *do_transpose(const array *a);
   array *do_array_from_string(const char *string, const char *delm);
 } // namespace SEAMS
-
-#endif

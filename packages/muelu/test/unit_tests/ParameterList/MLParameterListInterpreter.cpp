@@ -69,7 +69,7 @@ namespace MueLuTests {
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Epetra, Ifpack, Amesos");
 #endif
 
-#if !defined(HAVE_MUELU_TPETRA) or !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
+#if !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Tpetra, Ifpack2, Amesos2");
 #endif
 

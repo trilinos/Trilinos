@@ -74,7 +74,7 @@ namespace MueLu {
 
     Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);
 
-    Teuchos::ArrayRCP<const SC> D = Utilities::GetMatrixDiagonal(*A);
+    Teuchos::ArrayRCP<const SC> D = Utilities::GetMatrixDiagonal_arcp(*A);
 
     RCP<CrsMatrix> Ptmp_ = CrsMatrixFactory::Build(C.GetPattern());
     Ptmp_->fillComplete(P0.getDomainMap(), P0.getRangeMap());

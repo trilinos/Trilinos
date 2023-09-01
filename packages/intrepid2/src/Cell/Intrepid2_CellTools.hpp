@@ -64,6 +64,7 @@
 #include "Intrepid2_Basis.hpp"
 
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_LINE_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 
@@ -132,6 +133,7 @@ namespace Intrepid2 {
 
       switch (cellTopo.getKey()) {
       case shards::Line<2>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Line<3>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
@@ -150,7 +152,6 @@ namespace Intrepid2 {
         //case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
 
       case shards::Quadrilateral<8>::key: 
-      case shards::Line<3>::key:
       case shards::Beam<2>::key:
       case shards::Beam<3>::key:
       case shards::ShellLine<2>::key:
@@ -315,7 +316,8 @@ public:
                  const Kokkos::DynRankView<pointValueType,pointProperties...>       points,
                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                  const shards::CellTopology cellTopo ) {
-    auto basis = createHGradBasis<pointValueType,pointValueType>(cellTopo);
+    using nonConstPointValueType = std::remove_const_t<pointValueType>;
+    auto basis = createHGradBasis<nonConstPointValueType,nonConstPointValueType>(cellTopo);
     setJacobian(jacobian, 
                 points, 
                 worksetCell, 
@@ -396,6 +398,17 @@ public:
     template<class PointScalar>
     static void setJacobianInv( Data<PointScalar,DeviceType> & jacobianInv,
                                const Data<PointScalar,DeviceType> & jacobian);
+    
+    /** \brief  Multiplies the Jacobian with shape (C,P,D,D) by the reciprocals of the determinants, with shape (C,P), entrywise.
+
+        \param  jacobianDividedByDet   [out]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobian   [in]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobianDetInv          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+    */
+    template<class PointScalar>
+    static void setJacobianDividedByDet( Data<PointScalar,DeviceType> & jacobianDividedByDet,
+                                        const Data<PointScalar,DeviceType> & jacobian,
+                                        const Data<PointScalar,DeviceType> & jacobianDetInv);
     
     //============================================================================================//
     //                                                                                            //
@@ -1071,7 +1084,8 @@ public:
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
-      auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
+    using nonConstRefPointValueType = std::remove_const_t<refPointValueType>;
+    auto basis = createHGradBasis<nonConstRefPointValueType,nonConstRefPointValueType>(cellTopo);
       mapToPhysicalFrame(physPoints, 
                          refPoints, 
                          worksetCell, 
@@ -1137,6 +1151,25 @@ public:
                            const ordinal_type subcellDim,
                            const ordinal_type subcellOrd,
                            const shards::CellTopology parentCell );
+
+
+    /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
+
+        Overload of the previous function (see explanation above) where the subcell parametrization is used instead of 
+        passing the parent cell topology.
+
+        \param  refSubcellPoints       [out] - rank-2 (P,D1) array with images of parameter space points
+        \param  paramPoints            [in]  - rank-2 (P,D2) array with points in 1D or 2D parameter domain
+        \param  subcellParametrization [in]  - parametrization map of a subcell in the cell
+        \param  subcellOrd             [in]  - subcell ordinal.
+    */
+    template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
+             typename paramPointValueType, class ...paramPointProperties>
+    static void
+    mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
+                         const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
+                         const typename RefSubcellParametrization<DeviceType>::ConstViewType              subcellParametrization,
+                         const ordinal_type subcellOrd);
 
 
     //============================================================================================//

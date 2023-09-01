@@ -118,6 +118,18 @@ enum EntityState : char { Unchanged = 0 ,
                    Created  = 1 ,
                    Modified = 2 ,
                    Deleted  = 3 };
+inline
+std::ostream& operator<<(std::ostream& os, EntityState state)
+{
+  switch(state) {
+  case Unchanged: os<<"Unchanged"; break;
+  case Created: os<<"Created"; break;
+  case Modified: os<<"Modified"; break;
+  case Deleted: os<<"Deleted"; break;
+  default: break;
+  };
+  return os;
+}
 
 template< class FieldType > struct FieldTraits ;
 
@@ -226,11 +238,16 @@ typedef PairIter< std::vector< EntityProc >::const_iterator >
 
 NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , int , proc )
 
+inline bool operator>=(const EntityCommInfo& lhs, const EntityCommInfo& rhs)
+{
+  return lhs.ghost_id >= rhs.ghost_id && lhs.proc >= rhs.proc;
+}
+
 /** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
  *          for the communication of an entity.
  */
 typedef std::vector<EntityCommInfo> EntityCommInfoVector;
-typedef PairIter<  EntityCommInfoVector::const_iterator >  PairIterEntityComm ;
+typedef PairIter<const EntityCommInfo*>  PairIterEntityComm ;
 
 #endif
 /** \} */
@@ -288,7 +305,7 @@ using ConnectivityOrdinal = uint32_t;
 constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = ~0U;
 #endif
 
-enum Permutation
+enum Permutation : unsigned char
 {
   DEFAULT_PERMUTATION = 0,
   INVALID_PERMUTATION = 128

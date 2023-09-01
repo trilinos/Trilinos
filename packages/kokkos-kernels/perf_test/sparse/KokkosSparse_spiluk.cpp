@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #include <cstdio>
 
@@ -58,13 +30,14 @@
 
 #include <Kokkos_Core.hpp>
 
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_spiluk.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_default_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 
 #if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA) && \
     (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION))
@@ -111,7 +84,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
   if (!afilename.empty()) {
     std::cout << "ILU(K) Begin: Read matrix filename " << afilename
               << std::endl;
-    crsmat_t A = KokkosKernels::Impl::read_kokkos_crst_matrix<crsmat_t>(
+    crsmat_t A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(
         afilename.c_str());           // in_matrix
     graph_t graph         = A.graph;  // in_graph
     const size_type nrows = graph.numRows();
@@ -257,6 +230,10 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
                 << std::endl;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+      // cuSPARSE requires lno_t = size_type = int. For both, int is always used
+      // (if enabled)
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+    defined(KOKKOSKERNELS_INST_OFFSET_INT)
       if (fill_lev == 0) {
         std::cout << "CUSPARSE: No KK interface added yet" << std::endl;
 
@@ -413,6 +390,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
         std::cout << "ILU(0) SUCCESS!" << std::endl;
       }  // fill_lev=0
 #endif
+#endif
 
       // Benchmark
       Kokkos::fence();
@@ -436,6 +414,10 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
       std::cout << "LOOP_MIN_TIME:  " << min_time << std::endl;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+      // cuSPARSE requires lno_t = size_type = int. For both, int is always used
+      // (if enabled)
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+    defined(KOKKOSKERNELS_INST_OFFSET_INT)
       if (fill_lev == 0) {
         lno_view_t A_row_map("A_row_map", nrows + 1);
         lno_nnz_view_t A_entries("A_entries", nnz);
@@ -466,14 +448,20 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
         std::cout << "LOOP_MIN_TIME (cuSPARSE):  " << min_time << std::endl;
       }  // fill_lev=0
 #endif
+#endif
     }  // end tests
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    // cuSPARSE requires lno_t = size_type = int. For both, int is always used
+    // (if enabled)
+#if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+    defined(KOKKOSKERNELS_INST_OFFSET_INT)
     // step 6: free resources
     cudaFree(pBuffer);
     cusparseDestroyCsrilu02Info(info);
     cusparseDestroyMatDescr(descr);
     cusparseDestroy(handle);
+#endif
 #endif
   }  // end if (!afilename.empty())
 

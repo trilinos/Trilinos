@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_ElementBlock.h>
 #include <Ioss_EntityBlock.h> // for EntityBlock
@@ -29,7 +31,7 @@ namespace Ioss {
 
   /** \brief A collection of element sides having the same topology.
    */
-  class SideBlock : public EntityBlock
+  class IOSS_EXPORT SideBlock : public EntityBlock
   {
   public:
     friend class SideSet;
@@ -108,9 +110,9 @@ namespace Ioss {
     int  get_consistent_side_number() const;
     void set_consistent_side_number(int side) { consistentSideNumber = side; }
 
-    bool operator==(const SideBlock &) const;
-    bool operator!=(const SideBlock &) const;
-    bool equal(const SideBlock &) const;
+    bool operator==(const SideBlock &rhs) const;
+    bool operator!=(const SideBlock &rhs) const;
+    bool equal(const SideBlock &rhs) const;
 
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,
@@ -119,8 +121,11 @@ namespace Ioss {
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
 
+    int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                       size_t *data_size) const override;
+
   private:
-    bool equal_(const SideBlock &, bool quiet) const;
+    bool equal_(const SideBlock &rhs, bool quiet) const;
 
     const SideSet     *owner_{nullptr};
     ElementTopology   *parentTopology_{nullptr}; // Topology of parent element (if any)

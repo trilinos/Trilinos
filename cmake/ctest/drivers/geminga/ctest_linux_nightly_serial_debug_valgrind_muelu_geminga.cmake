@@ -81,17 +81,18 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
   "-DTPL_ENABLE_SuperLU=ON"
   "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
+  "-DTeuchosCore_MemoryManagement_RCP_Abort_Verify_DISABLE=ON"
+  "-DTeuchosCore_testDisablePrintActiveRcpNodesOnExit_noprint_DISABLE=ON"
+  "-DTeuchosNumerics_DenseMatrix_example_DISABLE=ON"
+  "-DTeuchosCore_TypeConversions_UnitTest_DISABLE=ON"
+  "-DML_ValidateParameters_compareTestOutput_DISABLE=ON"
 )
 
-
-# Some tests do not valigrind cleanly
-SET(TeuchosCore_MemoryManagement_RCP_Abort_Verify_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
-SET(TeuchosCore_testDisablePrintActiveRcpNodesOnExit_noprint_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
-SET(TeuchosNumerics_DenseMatrix_example_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
-SET(TeuchosCore_TypeConversions_UnitTest_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
-
-# This test requires python to valgrind cleanly, which doesn't happen on geminga
-SET(ML_ValidateParameters_compareTestOutput_DISABLE ON CACHE BOOL "Not to be run in valgrind testing" FORCE)
+# NOTE: We cannot SET() the test disables directly in here since those get ignored by 
+# the calling file.  They have to be disabled through EXTRA_CONFIGURE_OPTIONS above.
+# - The Teuchos tests don't valgrind cleanly and probably shouldn't --- they're purposely
+# triggering error cases.  
+# - The ML test won't valgrind cleanly because of python on geminga.
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

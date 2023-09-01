@@ -59,6 +59,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <random>
 
 using std::vector;
 using std::set;
@@ -199,7 +200,9 @@ Toperator( OriginalTypeRef orig  )
       for( int i = 0; i < nCols; ++i )
         rowOrder[ i ] = i;
 #ifndef TFLOP
-      std::random_shuffle( rowOrder.begin(), rowOrder.end() );
+      std::random_device rd;
+      std::mt19937 g(rd());
+      std::shuffle( rowOrder.begin(), rowOrder.end(), g );
 #endif
     }
 
@@ -609,7 +612,9 @@ Toperator( OriginalTypeRef orig  )
       for( int i = 0; i < nRows; ++i )
         rowOrder[i] = i;
 #ifdef TFLOP
-      random_shuffle( rowOrder.begin(), rowOrder.end() );
+      std::random_device rd;
+      std::mt19937 g(rd());
+      std::shuffle( rowOrder.begin(), rowOrder.end(), g );
 #endif
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,8 +10,9 @@
 #include "ps_pario_const.h" // for Parallel_IO, PIO_Info
 #include "rf_allo.h"        // for array_alloc
 #include "rf_io_const.h"    // for Debug_Flag
-#include <cstdlib>          // for exit
-#include <cstring>          // for strlen, etc
+#include <array>
+#include <cstdlib> // for exit
+#include <cstring> // for strlen, etc
 #include <sstream>
 #include <string>
 
@@ -28,7 +29,8 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int /*proc*/, int nproc)
+void gen_disk_map(struct Parallel_IO *pio_info, const std::array<int, 6> &proc_info, int /*proc*/,
+                  int nproc)
 /*
  * This function generates a map of which processor ID writes to which
  * RAID. Note that this is for each processor in the list, not necessarily

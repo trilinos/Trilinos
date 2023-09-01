@@ -1,4 +1,4 @@
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # value types
 SET(Intrepid2_TEST_ETI_VALUETYPE_NAME "")
@@ -17,6 +17,8 @@ LIST(APPEND Intrepid2_TEST_ETI_FILE
   "test_orientation_encoding"
   "test_orientation_HEX"
   "test_orientation_HEX_newBasis"
+  "test_orientation_PYR_QuadFace_newBasis"
+  "test_orientation_PYR_TriFace_newBasis"
   "test_orientation_QUAD"
   "test_orientation_QUAD_newBasis"
   "test_orientation_TET"

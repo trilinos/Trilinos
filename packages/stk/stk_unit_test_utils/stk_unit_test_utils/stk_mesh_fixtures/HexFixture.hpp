@@ -193,14 +193,14 @@ public:
   template <typename Iterator>
   void add_elem_parts(Iterator itr, size_t num)
   {
-    ThrowRequire(!m_meta.is_commit());
+    STK_ThrowRequire(!m_meta.is_commit());
     m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
   }
 
   //template <typename Iterator>
   //void add_node_parts(Iterator itr, size_t num)
   //{
-  //  ThrowRequire(!m_meta.is_commit());
+  //  STK_ThrowRequire(!m_meta.is_commit());
   //  m_node_parts.insert(m_node_parts.end(), itr, itr + num);
   //}
 
@@ -224,6 +224,7 @@ namespace simple_fields {
 class HexFixture
 {
 public:
+  static std::string name() { return "HexFixture"; }
   typedef double        Scalar;
   typedef Field<Scalar> CoordFieldType;
 
@@ -347,14 +348,14 @@ public:
   template <typename Iterator>
   void add_elem_parts(Iterator itr, size_t num)
   {
-    ThrowRequire(!m_meta.is_commit());
+    STK_ThrowRequire(!m_meta.is_commit());
     m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
   }
 
   //template <typename Iterator>
   //void add_node_parts(Iterator itr, size_t num)
   //{
-  //  ThrowRequire(!m_meta.is_commit());
+  //  STK_ThrowRequire(!m_meta.is_commit());
   //  m_node_parts.insert(m_node_parts.end(), itr, itr + num);
   //}
 

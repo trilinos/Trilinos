@@ -50,7 +50,6 @@
 #include "MueLu_PreDropFunctionBaseClass.hpp"
 #include "MueLu_PreDropFunctionConstVal_fwd.hpp"
 
-#include "MueLu_Graph_fwd.hpp"
 
 namespace MueLu {
 

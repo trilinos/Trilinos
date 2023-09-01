@@ -84,7 +84,7 @@ void test_device_class()
 {
   int constructionFinished = 0;
   Kokkos::parallel_reduce(
-      1,
+      stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
         ngp::NgpDerived<int> derivedClass;
         localFinished = 1;
@@ -103,11 +103,11 @@ void testSimpleFunction()
 {
   ngp::SimpleStruct* devicePointer = static_cast<ngp::SimpleStruct*>(Kokkos::kokkos_malloc(sizeof(ngp::SimpleStruct)));
   Kokkos::parallel_for(
-      1, KOKKOS_LAMBDA(const int) { new (devicePointer) ngp::SimpleStruct(); });
+      stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int) { new (devicePointer) ngp::SimpleStruct(); });
 
   Kokkos::fence();
 
-  Kokkos::parallel_for(1, [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
 
   Kokkos::fence();
   Kokkos::kokkos_free(devicePointer);
@@ -121,11 +121,11 @@ TEST(PlacementNew, simple)
 void testVirtualFunction()
 {
   ngp::BaseStruct* devicePointer = static_cast<ngp::BaseStruct*>(Kokkos::kokkos_malloc(sizeof(ngp::ChildStruct)));
-  Kokkos::parallel_for(1, [devicePointer] KOKKOS_FUNCTION(const int) { new (devicePointer) ngp::ChildStruct(); });
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), [devicePointer] KOKKOS_FUNCTION(const int) { new (devicePointer) ngp::ChildStruct(); });
 
   Kokkos::fence();
 
-  Kokkos::parallel_for(1, [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
 
   Kokkos::fence();
   Kokkos::kokkos_free(devicePointer);
@@ -142,12 +142,12 @@ void testVirtualFunctionWithCopyConstructor()
   hostObject.set_i(3);
   const ngp::ChildStruct& hostReference = hostObject;
   ngp::BaseStruct* devicePointer = static_cast<ngp::BaseStruct*>(Kokkos::kokkos_malloc(sizeof(ngp::ChildStruct)));
-  Kokkos::parallel_for(1, [devicePointer, hostReference] KOKKOS_FUNCTION(
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), [devicePointer, hostReference] KOKKOS_FUNCTION(
                               const int) { new (devicePointer) ngp::ChildStruct(hostReference); });
 
   Kokkos::fence();
 
-  Kokkos::parallel_for(1, [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), [devicePointer] KOKKOS_FUNCTION(const int) { devicePointer->print(); });
 
   Kokkos::fence();
   Kokkos::kokkos_free(devicePointer);

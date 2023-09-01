@@ -50,6 +50,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Types.hpp>                 // for MeshIndex, EntityRank, etc
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
@@ -120,7 +121,7 @@ inline std::string getOption(const std::string& option, const std::string defaul
 void getMeshLineByLine(const stk::unit_test_util::BulkDataTester &stkMeshBulkData, std::vector<std::string> &output)
 {
   std::ostringstream msg;
-  stkMeshBulkData.dump_all_mesh_info(msg);
+  impl::dump_all_mesh_info(stkMeshBulkData, msg);
   std::istringstream iss(msg.str());
 
   std::string s;

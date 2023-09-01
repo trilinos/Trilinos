@@ -53,7 +53,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FineLevelInputDataFactory_fwd.hpp"
 
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
@@ -61,7 +60,6 @@
 #include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
-#include "MueLu_LWGraph_fwd.hpp"
 
 namespace MueLuTests {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

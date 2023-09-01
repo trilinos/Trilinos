@@ -80,9 +80,9 @@ using Teuchos::ParameterList;
 
 
 /** \brief Concrete subclass of <tt>Thyra::LinearSolverBuilderBase</tt> for
- * creating <tt>LinearOpWithSolveFactoryBase</tt> objects and
- * <tt>PreconditionerFactoryBase</tt> object on demand for various Trilinos
- * linear solver packages.
+ * creating <tt>Thyra::LinearOpWithSolveFactoryBase</tt> objects and
+ * <tt>Thyra::PreconditionerFactoryBase</tt> objects on demand for various
+ * Trilinos linear solver and preconditioner packages.
  *
  * For an example of how to use this class see
  *  <a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>.
@@ -132,12 +132,13 @@ public:
    * updates to the ordering of the arguments.
    */
   LinearSolverBuilder(
-    const std::string    &paramsXmlFileName                = ""
-    ,const std::string   &extraParamsXmlString             = ""
-    ,const std::string   &paramsUsedXmlOutFileName         = ""
-    ,const std::string   &paramsXmlFileNameOption          = "linear-solver-params-file"
-    ,const std::string   &extraParamsXmlStringOption       = "extra-linear-solver-params"
-    ,const std::string   &paramsUsedXmlOutFileNameOption   = "linear-solver-params-used-file"
+    const std::string &paramsXmlFileName = "",
+    const std::string &extraParamsXmlString = "",
+    const std::string &paramsUsedXmlOutFileName = "",
+    const std::string &paramsXmlFileNameOption = "linear-solver-params-file",
+    const std::string &extraParamsXmlStringOption = "extra-linear-solver-params",
+    const std::string &paramsUsedXmlOutFileNameOption = "linear-solver-params-used-file",
+    const bool &replaceDuplicateFactories = true
     );
 
   /** \brief . */
@@ -172,6 +173,11 @@ public:
    * processor that will set <tt>paramsUsedXmlOutFileName()</tt> .
    */
   STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsUsedXmlOutFileNameOption);
+
+  /** \brief Determines if duplicate registered factories are replaced or if
+   * an exception is thrown.
+   */
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(bool,replaceDuplicateFactories);
 
   /** \brief Set a new linear solver strategy factory object. */
   void setLinearSolveStrategyFactory(
@@ -330,7 +336,27 @@ private:
   void initializeDefaults();
   void justInTimeInitialize() const;
 
+  int getAndAssertExistingFactoryNameIdx(const std::string &setFunctionName,
+    const Teuchos::ArrayView<std::string> namesArray, const std::string &name) const;
+
 };
+
+
+namespace LinearSolverBuilderHelpers {
+
+
+/** \brief Return the index of a name in an array of names.
+ *
+ * If <tt>name</tt> does not exist in <tt>namesArray</tt>, then < 0 will be returned.
+ *
+ * NOTE: This function is not templated so it is better to not add it to the
+ * templated class LinearSolverBuilder above.
+ */
+int existingNameIndex(
+  const Teuchos::ArrayView<std::string> namesArray, const std::string &name);
+
+
+} // namespace LinearSolverBuilderHelpers
 
 
 } // namespace Stratimikos

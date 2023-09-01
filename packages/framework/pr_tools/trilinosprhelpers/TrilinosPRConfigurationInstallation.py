@@ -63,7 +63,7 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
                       '-Dbuild_name={}'.format(self.pullrequest_build_name),
                       '-Dskip_by_parts_submit=OFF',
                       '-Dskip_update_step=ON',
-                      '-Ddashboard_model=Experimental',
+                      f'-Ddashboard_model={self.dashboard_model}',
                       '-Ddashboard_track={}'.format(self.arg_pullrequest_cdash_track),
                       '-DPARALLEL_LEVEL={}'.format(self.concurrency_build),
                       '-DTEST_PARALLEL_LEVEL={}'.format(self.concurrency_test),

@@ -46,10 +46,10 @@
 #include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 // Instantiate tests for threads node
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP> OpenMPWrapperNode;
+typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::OpenMP> OpenMPWrapperNode;
 CRSMATRIX_MP_VECTOR_TESTS_N( OpenMPWrapperNode )
 
 int main( int argc, char* argv[] ) {
@@ -65,8 +65,8 @@ int main( int argc, char* argv[] ) {
     Kokkos::hwloc::get_available_threads_per_core();
   // const size_t num_cores = 1;
   // const size_t num_hyper_threads = 1;
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = num_cores*num_hyper_threads;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(num_cores*num_hyper_threads);
   Kokkos::initialize( init_args );
   //Kokkos::print_configuration(std::cout);
 

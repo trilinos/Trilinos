@@ -1,4 +1,4 @@
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # value types
 SET(Intrepid2_TEST_ETI_VALUETYPE_NAME "")
@@ -14,18 +14,22 @@ MATH(EXPR ETI_VALUETYPE_COUNT "${ETI_VALUETYPE_COUNT}-1")
 # Host test
 SET(Intrepid2_TEST_ETI_FILE "")
 LIST(APPEND Intrepid2_TEST_ETI_FILE 
+  "test_project_fields"
   "test_convergence_HEX"
   "test_convergence_QUAD"
   "test_convergence_TET"
   "test_convergence_TRI"
+  "test_convergence_WEDGE"
   "test_DeRham_commutativity_HEX"
   "test_DeRham_commutativity_QUAD"
   "test_DeRham_commutativity_TET"
   "test_DeRham_commutativity_TRI"
+  "test_DeRham_commutativity_WEDGE"
   "test_interpolation_projection_HEX"
   "test_interpolation_projection_QUAD"
   "test_interpolation_projection_TET"
-  "test_interpolation_projection_TRI")
+  "test_interpolation_projection_TRI"
+  "test_interpolation_projection_WEDGE")
 
 SET(Intrepid2_TEST_ETI_DEVICE_NAME "")
 SET(Intrepid2_TEST_ETI_DEVICE "")

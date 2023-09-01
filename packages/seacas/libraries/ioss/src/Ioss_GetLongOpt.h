@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,6 +8,8 @@
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 
 #pragma once
+
+#include "ioss_export.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -18,7 +20,7 @@ namespace Ioss {
    *
    *  A collection of long command line option names for a program that uses the Ioss library.
    */
-  class GetLongOption
+  class IOSS_EXPORT GetLongOption
   {
   public:
     enum OptType { NoValue, OptionalValue, MandatoryValue };
@@ -27,18 +29,17 @@ namespace Ioss {
     struct Cell
     {
       const char *option{nullptr};      // option name
-      OptType     type{NoValue};        // option type
       const char *description{nullptr}; // a description of option
       const char *value{nullptr};       // value of option (string)
       const char *opt_value{
-          nullptr};            // If optional value and value not entered, assign opt_value to value
-      Cell *next{nullptr};     // pointer to the next cell
-      bool  extra_line{false}; // True if `usage()` should output extra line at end of entry
+          nullptr};          // If optional value and value not entered, assign opt_value to value
+      Cell   *next{nullptr}; // pointer to the next cell
+      OptType type{NoValue}; // option type
+      bool    extra_line{false}; // True if `usage()` should output extra line at end of entry
 
       Cell() = default;
     };
 
-  private:
     Cell       *table{nullptr};        // option table
     const char *ustring{nullptr};      // usage message
     char       *pname{nullptr};        // program basename
@@ -46,7 +47,6 @@ namespace Ioss {
     char        optmarker;             // option marker
     bool        options_parsed{false}; // parsed options, cannot enroll anymore options
 
-  private:
     int setcell(Cell *c, char *valtoken, char *nexttoken, const char *name);
 
   public:
@@ -98,7 +98,7 @@ namespace Ioss {
       return value;
     }
 
-    std::string get_option_value(const char *option_txt, const std::string &default_value)
+    std::string get_option_value(const char *option_txt, const std::string &default_value) const
     {
       auto        value = default_value;
       const char *temp  = retrieve(option_txt);

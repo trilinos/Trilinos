@@ -52,6 +52,18 @@
 
 namespace Piro {
 
+  template<class CharT, class Traits=std::char_traits<CharT>>
+  class RolOutputBuffer : public std::basic_streambuf<CharT,Traits> {
+     public:
+     const std::stringstream& getStringStream() const;
+
+     protected:
+     inline virtual int overflow(int c = Traits::eof());
+
+     private:
+     std::stringstream ss;
+  };
+
   //! \name Top-level Thyra analysis driver
   //@{
   //! \brief Performs analysis of a solved model.
@@ -65,15 +77,6 @@ namespace Piro {
      Teuchos::RCP< ROL_ObserverBase<double> > observer = Teuchos::null
      );
   //@}
-
-  //! \brief Performs analysis of a solved model using Dakota via %TriKota.
-  //! \details Requires that the %TriKota package is available.
-  //! \ingroup Piro_Thyra_analysis_driver_grp
-  int PerformDakotaAnalysis(
-     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-     Teuchos::ParameterList& dakotaParams,
-     Teuchos::RCP< Thyra::VectorBase<double> >& p
-     );
 
   //! \brief Performs analysis of a solved model using ROL.
   //! \details Requires that the ROL package is available.
@@ -93,10 +96,10 @@ namespace Piro {
   Teuchos::RCP<const Teuchos::ParameterList>
     getValidPiroAnalysisParameters();
 
-  //! Valid parameters for the list sent to PerformDakotaAnalysis
+  //! Valid parameters for the list sent to PerformROLAnalysis
   //! \ingroup Piro_analysis_driver_grp
   Teuchos::RCP<const Teuchos::ParameterList>
-    getValidPiroAnalysisDakotaParameters();
+    getValidPiroAnalysisROLParameters(int num_parameters);
   //@}
 }
 

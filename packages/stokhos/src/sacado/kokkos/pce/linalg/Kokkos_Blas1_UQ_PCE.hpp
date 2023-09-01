@@ -274,7 +274,7 @@ struct MV_Reciprocal_Functor<
   typedef Kokkos::View<const Sacado::UQ::PCE<XS>**,XP...> XMV;
   typedef typename RMV::execution_space execution_space;
   typedef SizeType                            size_type;
-  typedef Kokkos::Details::ArithTraits<typename Kokkos::IntrinsicScalarType<XMV>::type> ATS;
+  typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<XMV>::type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -306,7 +306,7 @@ struct MV_ReciprocalSelf_Functor<
   typedef Kokkos::View<Sacado::UQ::PCE<RS>**,RP...> RMV;
   typedef typename RMV::execution_space execution_space;
   typedef SizeType                            size_type;
-  typedef Kokkos::Details::ArithTraits<typename Kokkos::IntrinsicScalarType<RMV>::type> ATS;
+  typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<RMV>::type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -340,7 +340,7 @@ struct V_Reciprocal_Functor<
   typedef Kokkos::View<const Sacado::UQ::PCE<XS>*,XP...> XV;
   typedef typename RV::execution_space execution_space;
   typedef SizeType                            size_type;
-  typedef Kokkos::Details::ArithTraits<typename Kokkos::IntrinsicScalarType<XV>::type> ATS;
+  typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<XV>::type> ATS;
 
   RV R_;
   XV X_;
@@ -365,7 +365,7 @@ struct V_ReciprocalSelf_Functor<
   typedef Kokkos::View<Sacado::UQ::PCE<RS>*,RP...> RV;
   typedef typename RV::execution_space execution_space;
   typedef SizeType                            size_type;
-  typedef Kokkos::Details::ArithTraits<typename Kokkos::IntrinsicScalarType<RV>::type> ATS;
+  typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<RV>::type> ATS;
 
   RV R_;
 
@@ -439,7 +439,7 @@ struct MV_MultFunctor<
   typedef Kokkos::View<const Sacado::UQ::PCE<BS>**,BP...> BMV;
   typedef typename CMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename Kokkos::IntrinsicScalarType<CMV>::type> ATS;
+  typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<CMV>::type> ATS;
 
   const size_type m_n;
   const size_type m_pce;
@@ -527,7 +527,7 @@ struct V_MultFunctor<
   typedef Kokkos::View<const Sacado::UQ::PCE<BS>*,BP...> BV;
   typedef typename CV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename Kokkos::IntrinsicScalarType<CV>::type> ATS;
+  typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<CV>::type> ATS;
 
   const size_type m_pce;
   const typename Kokkos::IntrinsicScalarType<CV>::type m_c;

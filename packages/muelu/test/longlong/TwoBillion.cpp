@@ -88,7 +88,7 @@
 typedef double                               Scalar;
 typedef int                                  LocalOrdinal;
 typedef long long                            GlobalOrdinal;
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 using Xpetra::global_size_t;
 

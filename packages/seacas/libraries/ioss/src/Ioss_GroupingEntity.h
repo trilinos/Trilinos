@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>       // for Complex
 #include <Ioss_DatabaseIO.h>      // for DatabaseIO
@@ -63,15 +65,15 @@ namespace Ioss {
    *
    *  -- Data items
    */
-  class GroupingEntity
+  class IOSS_EXPORT GroupingEntity
   {
   public:
     friend class Property;
 
     GroupingEntity() = default;
     GroupingEntity(DatabaseIO *io_database, const std::string &my_name, int64_t entity_count);
-    GroupingEntity(const GroupingEntity &);
-    GroupingEntity &operator=(const GroupingEntity &) = delete;
+    GroupingEntity(const GroupingEntity &other);
+    GroupingEntity &operator=(const GroupingEntity &rhs) = delete;
 
     virtual ~GroupingEntity();
 
@@ -161,18 +163,18 @@ namespace Ioss {
     // ========================================================================
     // Property-related information....
     // Just forward it through to the property manager...
-    void        property_add(const Property &new_prop);
-    void        property_erase(const std::string &property_name);
-    bool        property_exists(const std::string &property_name) const;
-    Property    get_property(const std::string &property_name) const;
-    int64_t     get_optional_property(const std::string &property, int64_t optional_value) const;
-    std::string get_optional_property(const std::string &property_name,
-                                      const std::string &optional_value) const;
-    NameList    property_describe() const;
-    int         property_describe(NameList *names) const;
-    NameList    property_describe(Ioss::Property::Origin origin) const;
-    int         property_describe(Ioss::Property::Origin origin, NameList *names) const;
-    size_t      property_count() const;
+    inline void     property_add(const Property &new_prop);
+    inline void     property_erase(const std::string &property_name);
+    inline bool     property_exists(const std::string &property_name) const;
+    inline Property get_property(const std::string &property_name) const;
+    inline int64_t get_optional_property(const std::string &property, int64_t optional_value) const;
+    inline std::string get_optional_property(const std::string &property_name,
+                                             const std::string &optional_value) const;
+    inline NameList    property_describe() const;
+    inline int         property_describe(NameList *names) const;
+    inline NameList    property_describe(Ioss::Property::Origin origin) const;
+    inline int         property_describe(Ioss::Property::Origin origin, NameList *names) const;
+    inline size_t      property_count() const;
     /** Add a property, or change its value if it already exists with
         a different value */
     void property_update(const std::string &property, int64_t value) const;
@@ -182,24 +184,34 @@ namespace Ioss {
     //                                FIELDS
     // ========================================================================
     // Just forward these through to the field manager...
-    void         field_add(Field new_field);
-    void         field_erase(const std::string &field_name);
-    bool         field_exists(const std::string &field_name) const;
-    Field        get_field(const std::string &field_name) const;
-    const Field &get_fieldref(const std::string &field_name) const;
-    int          field_describe(NameList *names) const;
-    NameList     field_describe() const;
-    int          field_describe(Field::RoleType role, NameList *names) const;
-    NameList     field_describe(Field::RoleType role) const;
-    size_t       field_count() const;
-    size_t       field_count(Field::RoleType role) const;
+    void                field_add(Field new_field);
+    inline void         field_erase(const std::string &field_name);
+    inline void         field_erase(Field::RoleType role);
+    inline bool         field_exists(const std::string &field_name) const;
+    inline Field        get_field(const std::string &field_name) const;
+    inline const Field &get_fieldref(const std::string &field_name) const;
+    inline int          field_describe(NameList *names) const;
+    inline NameList     field_describe() const;
+    inline int          field_describe(Field::RoleType role, NameList *names) const;
+    inline NameList     field_describe(Field::RoleType role) const;
+    inline size_t       field_count() const;
+    size_t              field_count(Field::RoleType role) const;
+
+    bool check_for_duplicate(const Ioss::Field &new_field) const;
 
     // Put this fields data into 'data'.
+
     // Returns number of entities for which the field was read.
     // Assumes 'data' is large enough to hold all values.
     int64_t get_field_data(const std::string &field_name, void *data, size_t data_size) const;
 
     int64_t put_field_data(const std::string &field_name, void *data, size_t data_size) const;
+
+    // Zero-copy API.  *IF* a field is zero-copyable, then this function will set the `data`
+    // pointer to point to a chunk of memory of size `data_size` bytes containing the field
+    // data for the specified field.  If the field is not zero-copyable, then the  `data`
+    // pointer will point to `nullptr` and `data_size` will be 0.
+    int64_t get_field_data(const std::string &field_name, void **data, size_t *data_size) const;
 
     // Put this fields data into the specified std::vector space.
     // Returns number of entities for which the field was read.
@@ -284,13 +296,16 @@ namespace Ioss {
     virtual int64_t internal_put_field_data(const Field &field, void *data,
                                             size_t data_size = 0) const = 0;
 
+    virtual int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                               size_t *data_size) const = 0;
+
     int64_t entityCount = 0;
 
 #if defined(IOSS_THREADSAFE)
     mutable std::mutex m_;
 #endif
 
-    bool equal_(const GroupingEntity &rhs, const bool quiet) const;
+    bool equal_(const GroupingEntity &rhs, bool quiet) const;
 
   private:
     void verify_field_exists(const std::string &field_name, const std::string &inout) const;
@@ -397,6 +412,12 @@ inline int Ioss::GroupingEntity::property_describe(Ioss::Property::Origin origin
 inline size_t Ioss::GroupingEntity::property_count() const { return properties.count(); }
 
 // ------------------------------------------------------------------------
+
+/** \brief Remove all fields of type `role` from the entity's field manager.
+ *
+ * \param[in] role Remove all fields (if any) of type `role`
+ */
+inline void Ioss::GroupingEntity::field_erase(Ioss::Field::RoleType role) { fields.erase(role); }
 
 /** \brief Remove a field from the entity's field manager.
  *

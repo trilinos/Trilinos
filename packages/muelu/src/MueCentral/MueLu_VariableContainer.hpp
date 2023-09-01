@@ -115,6 +115,23 @@ namespace MueLu {
       }
     };
 
+    template<typename T>
+    struct Checker {
+      static bool check(DataBase* data_, DataBase*& /* datah_ */) {
+        if ((data_ == NULL) || (data_->type() != typeid(T))) // NVR added guard to avoid determining typeName unless we will use it
+        {
+          return false;
+        }
+
+        Data<T>* data = dynamic_cast<Data<T>*>(data_);
+        if (!data) // NVR added guard to avoid determining typeName unless we will use it
+        {
+          return false;
+        }
+        return true;
+      }
+    };
+
 
   public:
     typedef std::map<const FactoryBase*,int> request_container;
@@ -168,6 +185,13 @@ namespace MueLu {
     template<typename T>
     T& GetData() {
       return Getter<T>::get(data_, datah_);
+    }
+
+    //! Return reference to data stored in container
+    //! NOTE: we do not check if data is available
+    template<typename T>
+    bool CheckType() {
+      return Checker<T>::check(data_, datah_);
     }
 
     std::string GetTypeName() {

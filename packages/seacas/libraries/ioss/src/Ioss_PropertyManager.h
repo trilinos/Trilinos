@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,20 +6,32 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Property.h> // for Property
 #include <cstddef>         // for size_t
 #include <string>          // for string, operator<
+#include <vector>          // for vector
+
+#define USE_ROBIN_MAP
+#if defined USE_ROBIN_MAP
+#include <robin_map.h>
+#else
 #include <unordered_map>
-#include <vector> // for vector
+#endif
 
 namespace Ioss {
+#if defined USE_ROBIN_MAP
+  using PropMapType = tsl::robin_pg_map<std::string, Property>;
+#else
   using PropMapType = std::unordered_map<std::string, Property>;
-  using ValuePair   = PropMapType::value_type;
+#endif
+  using ValuePair = PropMapType::value_type;
 
   /** \brief A collection of Ioss::Property objects
    */
-  class PropertyManager
+  class IOSS_EXPORT PropertyManager
   {
   public:
     PropertyManager() = default;

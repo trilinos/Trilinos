@@ -57,7 +57,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
 #include "ROL_DynamicConstraintCheck.hpp"
 #include "ROL_DynamicObjectiveCheck.hpp"
@@ -310,8 +310,9 @@ int main(int argc, char *argv[]) {
         (*zn)[0] = -amp * std::sin(2.0 * M_PI * Se * timeStamp[k].t[0] + ph);
       }
     }
-    ROL::OptimizationProblem<RealT> problem(obj,z);
-    ROL::OptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Ptr<ROL::Problem<RealT>> problem = ROL::makePtr<ROL::Problem<RealT>>(obj,z);
+    problem->finalize(false,true,*outStream);
+    ROL::Solver<RealT> solver(problem,*parlist);
     std::clock_t timer = std::clock();
     solver.solve(*outStream);
     *outStream << "Optimization time: "

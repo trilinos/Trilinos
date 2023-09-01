@@ -17,6 +17,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"
 
+#include "Tempus_NumericalUtils.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_IntegratorBasic.hpp"
@@ -66,5 +67,5 @@ void testFactoryConstruction(std::string stepperType,
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test
 #endif // Tempus_UnitTest_Utils_hpp

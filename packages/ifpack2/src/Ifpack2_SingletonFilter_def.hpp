@@ -262,6 +262,12 @@ size_t SingletonFilter<MatrixType>::getLocalMaxNumRowEntries() const
 }
 
 template<class MatrixType>
+typename MatrixType::local_ordinal_type SingletonFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
+
+template<class MatrixType>
 bool SingletonFilter<MatrixType>::hasColMap() const
 {
   return true;

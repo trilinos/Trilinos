@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -147,7 +147,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
     /* Names variable does not exist on the database; probably since this is an
      * older version of the database.  Return an empty array...
      */
-    for (int i = 0; i < num_attr; i++) {
+    for (size_t i = 0; i < num_attr; i++) {
       names[i][0] = '\0';
     }
   }

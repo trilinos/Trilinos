@@ -43,17 +43,19 @@ namespace mesh
 {
 
 enum ModificationObserverPriority : int {
-  STK_INTERNAL   = 0,
-  STK_TRANSITION = 5,
-  APPLICATION    = 9
+  STK_INTERNAL_HIGH_PRIORITY = 0,
+  STK_INTERNAL_LOW_PRIORITY  = 1,
+  STK_INTERNAL               = STK_INTERNAL_LOW_PRIORITY,
+  STK_TRANSITION             = 5,
+  APPLICATION                = 9
 };
 
 
 class ModificationObserver
 {
 public:
-    ModificationObserver()
-      : m_priority(STK_INTERNAL)
+    ModificationObserver(ModificationObserverPriority priority)
+      : m_priority(priority)
     {}
 
     virtual ~ModificationObserver()
@@ -130,6 +132,8 @@ public:
 
 private:
     ModificationObserverPriority m_priority;
+
+    ModificationObserver() = delete;
 };
 
 }

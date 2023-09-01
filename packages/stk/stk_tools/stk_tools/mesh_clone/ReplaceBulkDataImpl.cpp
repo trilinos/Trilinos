@@ -10,7 +10,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
@@ -47,7 +46,7 @@ stk::mesh::Selector translate_selector(const stk::mesh::Selector & in_selector, 
   {
     return in_selector;
   }
-  ThrowRequireMsg(in_selector.is_all_unions(), "Cannot translate selector " << in_selector);
+  STK_ThrowRequireMsg(in_selector.is_all_unions(), "Cannot translate selector " << in_selector);
   stk::mesh::PartVector in_parts, out_parts;
   in_selector.get_parts(in_parts);
   translate_parts(in_parts, out_meta, out_parts);
@@ -88,9 +87,9 @@ clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta, stk::mesh:
     else
     {   
       more_to_do = ipart < in_parts.size();
-      ThrowRequire(in_part->primary_entity_rank() == stk::topology::INVALID_RANK);
+      STK_ThrowRequire(in_part->primary_entity_rank() == stk::topology::INVALID_RANK);
       stk::mesh::Part & out_part = out_meta.declare_part(in_part->name());
-      ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
+      STK_ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
     }   
   }
 
@@ -102,7 +101,7 @@ clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta, stk::mesh:
         (in_part->primary_entity_rank() == stk::topology::INVALID_RANK) ?
         out_meta.declare_part(in_part->name()) :
         out_meta.declare_part(in_part->name(), in_part->primary_entity_rank(), in_part->force_no_induce());
-    ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
+    STK_ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
     if (stk::io::is_part_io_part(*in_part))
     {   
       stk::io::put_io_part_attribute(out_part);
@@ -149,7 +148,7 @@ void copy_field_data(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & o
   outField.modify_on_host();
 
   stk::mesh::EntityRank entityRank = outField.entity_rank();
-  ThrowRequire(inField.entity_rank() == entityRank);
+  STK_ThrowRequire(inField.entity_rank() == entityRank);
 
   stk::mesh::MetaData & outMeta = outMesh.mesh_meta_data();
   const bool outMeshAuraFromCommunication = outMesh.is_automatic_aura_on() && !inMesh.is_automatic_aura_on();
@@ -169,8 +168,8 @@ void copy_field_data(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & o
       stk::mesh::Entity outEntity = b[ib];
       stk::mesh::Entity inEntity = inMesh.get_entity( entityRank, outMesh.identifier(outEntity) );
       const auto inLength = stk::mesh::field_bytes_per_entity(inField, inEntity);
-      ThrowRequireMsg(inMesh.is_valid(inEntity), "Missing entity " << outMesh.entity_key(outEntity));
-      ThrowRequireMsg(inLength == outLength,
+      STK_ThrowRequireMsg(inMesh.is_valid(inEntity), "Missing entity " << outMesh.entity_key(outEntity));
+      STK_ThrowRequireMsg(inLength == outLength,
           "Mismatched field size for field " << inField.name() << " in_length = " << inLength << " outLength = " << outLength << "\n"
           << " for input entity " << inMesh.entity_key(inEntity) << " on " << inMesh.parallel_owner_rank(inEntity)
           << " and output entity " << outMesh.entity_key(outEntity) << " on " << outMesh.parallel_owner_rank(outEntity) );
@@ -189,7 +188,7 @@ void copy_field_data(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & o
 
   const stk::mesh::FieldVector & inFields = inMeta.get_fields();
   const stk::mesh::FieldVector & outFields = outMeta.get_fields();
-//  ThrowAssert(inFields.size() == outFields.size());
+//  STK_ThrowAssert(inFields.size() == outFields.size());
 
   unsigned numFields = std::min(inFields.size(), outFields.size());
   for ( unsigned fieldIndex=0; fieldIndex < numFields; ++fieldIndex ) {

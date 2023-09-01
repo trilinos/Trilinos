@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,10 +6,13 @@
 
 #pragma once
 
+#include "ioss_export.h"
+
 #include <Ioss_CoordinateFrame.h> // for CoordinateFrame
 #include <Ioss_DatabaseIO.h>      // for DatabaseIO
 #include <Ioss_EntityType.h>      // for EntityType, etc
-#include <Ioss_GroupingEntity.h>  // for GroupingEntity
+#include <Ioss_Field.h>
+#include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_MeshType.h>
 #include <Ioss_Property.h> // for Property
 #include <Ioss_State.h>    // for State
@@ -64,7 +67,7 @@ namespace Ioss {
 
   using CoordinateFrameContainer = std::vector<CoordinateFrame>;
 
-  using AliasMap = std::map<std::string, std::string, std::less<std::string>>;
+  using AliasMap = std::map<std::string, std::string, std::less<>>;
 
   /** \brief A grouping entity that contains other grouping entities.
    *
@@ -73,7 +76,7 @@ namespace Ioss {
    * GroupingEntities is through the Region class; clients of the IO subsystem have no direct
    * access to the underlying GroupingEntities (other than the Region).
    */
-  class Region : public GroupingEntity
+  class IOSS_EXPORT Region : public GroupingEntity
   {
   public:
     explicit Region(DatabaseIO *iodatabase = nullptr, const std::string &my_name = "");
@@ -85,9 +88,9 @@ namespace Ioss {
     std::string contains_string() const override { return "Entities"; }
     EntityType  type() const override { return REGION; }
 
-    MeshType          mesh_type() const;
-    const std::string mesh_type_string() const;
-    bool              node_major() const;
+    MeshType    mesh_type() const;
+    std::string mesh_type_string() const;
+    bool        node_major() const;
 
     void output_summary(std::ostream &strm, bool do_transient = true) const;
 
@@ -127,6 +130,10 @@ namespace Ioss {
      *  \returns True if the metadata related to the transient data has been set.
      */
     bool transient_defined() const { return transientDefined; }
+
+    /** \brief Remove all fields of the specified `role` from all entities in the region
+     */
+    void erase_fields(Field::RoleType role);
 
     // Return a pair consisting of the step (1-based) corresponding to
     // the maximum time on the database and the corresponding maximum
@@ -195,7 +202,7 @@ namespace Ioss {
 
     // Not guaranteed to be efficient...
     // Note that not all GroupingEntity's are guaranteed to have an 'id'...
-    GroupingEntity *get_entity(const int64_t id, EntityType io_type) const;
+    GroupingEntity *get_entity(int64_t id, EntityType io_type) const;
 
     const CoordinateFrame &get_coordinate_frame(int64_t id) const;
 
@@ -258,6 +265,10 @@ namespace Ioss {
     void add_qa_record(const std::string &code, const std::string &code_qa,
                        const std::string &date = "", const std::string &time = "");
 
+    template <typename T>
+    std::vector<size_t> get_all_block_field_data(const std::string &field_name,
+                                                 std::vector<T>    &field_data) const;
+
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,
                                     size_t data_size = 0) const override;
@@ -265,7 +276,13 @@ namespace Ioss {
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size = 0) const override;
 
+    int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                       size_t *data_size) const override;
+
   private:
+    std::vector<size_t> internal_get_all_block_field_data(const std::string &field_name, void *data,
+                                                          size_t data_size = 0) const;
+
     // Add the name 'alias' as an alias for the database entity with the
     // name 'db_name'. Returns true if alias added; false if problems
     // adding alias. Not protected by mutex -- call internally only.
@@ -313,7 +330,7 @@ inline int Ioss::Region::get_current_state() const { return currentState; }
 
 inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const
 {
-  return static_cast<unsigned int>((get_database()->entity_field_support() & fld_type) != 0u) != 0u;
+  return static_cast<unsigned int>((get_database()->entity_field_support() & fld_type) != 0U) != 0U;
 }
 
 inline int64_t Ioss::Region::node_global_to_local(int64_t global, bool must_exist) const

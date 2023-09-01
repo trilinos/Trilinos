@@ -46,13 +46,12 @@
 #include <unordered_map>
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/Ghosting.hpp"
-#include "stk_util/util/NamedPair.hpp"
+#include "stk_mesh/base/HashEntityAndEntityKey.hpp"
+#include "stk_util/util/MCSR.hpp"
 namespace stk { class CommBuffer; }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
-
-
 
 //----------------------------------------------------------------------
 
@@ -66,60 +65,51 @@ public:
     virtual void removedKey(const EntityKey& key) = 0;
 };
 
-// Struct containing things the system must know about an entity to
-// handle communication.
-struct EntityComm
-{
-  bool isShared;
-  bool isGhost;
-  EntityCommInfoVector comm_map;
-};
-
 class EntityCommDatabase
 {
-  typedef std::pair<EntityKey const, EntityComm> map_value;
-  typedef std::equal_to<EntityKey> map_predicate;
-  typedef std::unordered_map<  EntityKey
-                               , EntityComm
-                               , stk::mesh::HashValueForEntityKey
-                               , map_predicate
-                              > map_type;
+  typedef std::unordered_map<EntityKey, int, std::hash<EntityKey>> map_type;
 
 public:
-  EntityCommDatabase() : m_comm_map(), m_last_lookup(m_comm_map.end()), m_comm_map_change_listener(nullptr) {}
+  EntityCommDatabase();
 
   PairIterEntityComm shared_comm_info( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key, const Ghosting & sub ) const;
+  PairIterEntityComm comm( unsigned entityCommIndex) const;
 
-  std::pair<EntityComm*,bool> insert( const EntityKey & key, const EntityCommInfo & val, int owner );
+  std::pair<int,bool> insert( const EntityKey & key, const EntityCommInfo & val, int owner );
   bool erase( const EntityKey & key, const EntityCommInfo & val );
   bool erase( const EntityKey & key, const Ghosting & ghost );
   bool comm_clear_ghosting(const EntityKey & key );
   bool comm_clear(const EntityKey & key );
 
-  const EntityComm* entity_comm(const EntityKey& key) const;
-        EntityComm* entity_comm(const EntityKey& key);
+  int entity_comm(const EntityKey& key) const;
 
   void setCommMapChangeListener(CommMapChangeListener* listener)
   { m_comm_map_change_listener = listener; }
 
+  size_t num_comm_keys() const { return m_comm_map.size(); }
+  size_t bucket_count() const { return m_comm_map.bucket_count(); }
+
 private:
   bool cached_find(const EntityKey& key) const;
-  const EntityComm* insert(const EntityKey& key);
+  unsigned get_new_entity_comm_index();
+  int insert(const EntityKey& key);
   void internal_update_shared_ghosted(bool removedSharingProc);
 
   map_type m_comm_map;
   mutable map_type::iterator m_last_lookup;
   mutable CommMapChangeListener* m_comm_map_change_listener;
+  stk::util::MCSR<EntityCommInfo> m_entityCommInfo;
+  std::vector<int> m_removedEntityCommIndices;
 };
 
 //----------------------------------------------------------------------
 inline
-PairIterEntityComm shared_comm_info_range(const EntityCommInfoVector& comm_info_vector) {
-    EntityCommInfoVector::const_iterator i = comm_info_vector.begin();
-    EntityCommInfoVector::const_iterator end = comm_info_vector.end();
-    EntityCommInfoVector::const_iterator e = i;
+PairIterEntityComm shared_comm_info_range(PairIterEntityComm commInfo) {
+    const EntityCommInfo* i = commInfo.begin();
+    const EntityCommInfo* end = commInfo.end();
+    const EntityCommInfo* e = i;
 
     while(e != end && e->ghost_id < 1) {
       ++e;
@@ -129,10 +119,10 @@ PairIterEntityComm shared_comm_info_range(const EntityCommInfoVector& comm_info_
 }
 
 inline
-PairIterEntityComm ghost_info_range(const EntityCommInfoVector& commInfo, unsigned ghostingOrdinal)
+PairIterEntityComm ghost_info_range(PairIterEntityComm commInfo, unsigned ghostingOrdinal)
 {
-  EntityCommInfoVector::const_iterator ghostBegin = commInfo.begin();
-  EntityCommInfoVector::const_iterator ghostEnd, end = commInfo.end();
+  const EntityCommInfo* ghostBegin = commInfo.begin();
+  const EntityCommInfo* ghostEnd, *end = commInfo.end();
   while(ghostBegin != end && ghostBegin->ghost_id != ghostingOrdinal) {
     ++ghostBegin;
   } 
@@ -148,7 +138,10 @@ PairIterEntityComm ghost_info_range(const EntityCommInfoVector& commInfo, unsign
   return PairIterEntityComm( ghostBegin , end );
 }
 
-void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity );
+void pack_entity_info(const BulkData& mesh,
+                      CommBuffer& buf,
+                      const Entity entity,
+                      bool onlyPackDownwardRelations = false);
 
 void unpack_entity_info(
   CommBuffer     & buf,

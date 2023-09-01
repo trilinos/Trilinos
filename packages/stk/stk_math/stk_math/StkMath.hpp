@@ -38,6 +38,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
+#include <type_traits>
 #include <Kokkos_Macros.hpp>
 
 #define STK_MATH_FORCE_INLINE KOKKOS_FORCEINLINE_FUNCTION
@@ -223,6 +224,10 @@ STK_MATH_FORCE_INLINE float if_then_else(const bool b, float v1, float v2) {
 }
 
 STK_MATH_FORCE_INLINE double if_then_else(const bool b, double v1, double v2) {
+  return b ? v1 : v2;
+}
+
+STK_MATH_FORCE_INLINE long double if_then_else(const bool b, long double v1, long double v2) {
   return b ? v1 : v2;
 }
 

@@ -15,4 +15,3 @@ C See packages/seacas/LICENSE for details
  10   continue
       return
       end
-

@@ -13,7 +13,6 @@
 #include <percept/rfgen/RFGen_API_KLSolver.h>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace stk { namespace mesh { 
     class BulkData; 
@@ -27,7 +26,7 @@ class Percept_API_KLSolver : public RFGen::API_KLSolver
  public: 
   explicit 
   Percept_API_KLSolver(const stk::mesh::BulkData & mesh, 
-                       const stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & phi,
+                       const stk::mesh::Field<double> & phi,
                        std::vector<double> & lambda);
 
   ~Percept_API_KLSolver() {}
@@ -52,7 +51,7 @@ class Percept_API_KLSolver : public RFGen::API_KLSolver
  private:
   const stk::mesh::BulkData & m_mesh;
   const stk::mesh::MetaData & m_meta;
-  const stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & m_phi;
+  const stk::mesh::Field<double> & m_phi;
   std::vector<double> & m_lambda;
 };
 

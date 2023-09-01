@@ -50,7 +50,7 @@
 #define __INTREPID2_HDIV_TRI_IN_FEM_DEF_HPP__
 
 #include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
-#include "Intrepid2_CubatureDirectTriDefault.hpp"
+#include "Intrepid2_CubatureDirectTriSymmetric.hpp"
 
 namespace Intrepid2 {
 
@@ -198,7 +198,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HDIV;
-  pointType_ = pointType;
+  pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
   const ordinal_type card = this->basisCardinality_;
 
@@ -247,7 +247,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
   // now I need to integrate { (x,y) phi } against the big basis
   // first, get a cubature rule.
-  CubatureDirectTriDefault<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
+  CubatureDirectTriSymmetric<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> cubPoints("Hdiv::Tri::In::cubPoints", myCub.getNumPoints() , spaceDim );
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> cubWeights("Hdiv::Tri::In::cubWeights", myCub.getNumPoints() );
   myCub.getCubature( cubPoints , cubWeights );
@@ -291,7 +291,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   PointTools::getLattice( linePts,
       edgeTop,
       order+1, offset,
-      pointType );
+      pointType_ );
 
   // holds the image of the line points
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> edgePts("Hdiv::Tri::In::edgePts", numPtsPerEdge , spaceDim );
@@ -358,7 +358,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
         this->basisCellTopology_ ,
         order + 1 ,
         1 ,
-        pointType );
+        pointType_ );
 
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     phisAtInternalPoints("Hdiv::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );

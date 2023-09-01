@@ -36,6 +36,7 @@
 
 #include "../stk_unit_tests/stk_mesh/Setup8Quad4ProcMesh.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_io/FillMesh.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -90,13 +91,7 @@ TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
     {
         std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
-        {
-            stk::io::StkMeshIoBroker exodusFileReader(communicator);
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            exodusFileReader.populate_bulk_data();
-        }
+        stk::io::fill_mesh(exodusFileName, stkMeshBulkData);
     }
 
     stkMeshBulkData.set_use_entity_ids_for_resolving_sharing(false);
@@ -117,14 +112,7 @@ TEST(BulkData_test, testTwoDimProblemForSharingOfDifferentEdgesWithSameNodesFour
     {
         std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
-        {
-            stk::io::StkMeshIoBroker exodusFileReader(communicator);
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            // With in populate_bulk_data, the option set_use_entity_ids_for_resolving_sharing is set to true
-            exodusFileReader.populate_bulk_data();
-        }
+        stk::io::fill_mesh(exodusFileName, stkMeshBulkData);
 
         std::vector<size_t> globalCounts;
         stk::mesh::comm_mesh_counts(stkMeshBulkData, globalCounts);
@@ -148,10 +136,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesTwoProc)
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
             exodusFileReader.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            exodusFileReader.populate_bulk_data();
+            stk::io::fill_mesh_preexisting(exodusFileReader, exodusFileName, stkMeshBulkData);
         }
 
         std::vector<size_t> globalCounts;
@@ -174,10 +159,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
             exodusFileReader.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            exodusFileReader.populate_bulk_data();
+            stk::io::fill_mesh_preexisting(exodusFileReader, exodusFileName, stkMeshBulkData);
         }
 
         std::vector<size_t> globalCounts;
@@ -203,10 +185,7 @@ TEST(IntegrationTest, PartChangeGenerated)
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
-        exodusFileReader.set_bulk_data(stkMeshBulkData);
-        exodusFileReader.add_mesh_database("generated:1x1x4", stk::io::READ_MESH);
-        exodusFileReader.create_input_mesh();
-        exodusFileReader.populate_bulk_data();
+        stk::io::fill_mesh_preexisting(exodusFileReader, "generated:1x1x4", stkMeshBulkData);
         stkMeshBulkData.modification_begin();
         stk::mesh::EntityVector entities;
         stk::mesh::Selector select_owned(stkMeshMetaData.locally_owned_part());
@@ -242,10 +221,7 @@ TEST(IntegrationTest, ShellPartChangeCylinder)
 
   stk::io::StkMeshIoBroker exodusFileReader(communicator);
   exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
-  exodusFileReader.set_bulk_data(stkMeshBulkData);
-  exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-  exodusFileReader.create_input_mesh();
-  exodusFileReader.populate_bulk_data();
+  stk::io::fill_mesh_preexisting(exodusFileReader, exodusFileName, stkMeshBulkData);
   stk::mesh::EntityVector entities;
   stk::mesh::get_entities(stkMeshBulkData, stk::topology::ELEM_RANK, stkMeshMetaData.locally_owned_part(), entities);
   stkMeshBulkData.modification_begin();
@@ -272,10 +248,7 @@ TEST(IntegrationTest, ShellPartChange2Hexes2Shells)
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
     exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
-    exodusFileReader.set_bulk_data(stkMeshBulkData);
-    exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-    exodusFileReader.create_input_mesh();
-    exodusFileReader.populate_bulk_data();
+    stk::io::fill_mesh_preexisting(exodusFileReader, exodusFileName, stkMeshBulkData);
     stk::mesh::EntityVector entities;
     stk::mesh::Selector select_owned(stkMeshMetaData.locally_owned_part());
 

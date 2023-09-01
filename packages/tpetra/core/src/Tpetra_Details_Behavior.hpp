@@ -179,10 +179,10 @@ public:
   /// An MPI implementation is "CUDA aware" if it can accept CUDA
   /// device buffers (Kokkos::CudaSpace) as send and receive buffers.
   /// You may control this behavior at run time via the
-  /// <tt>TPETRA_ASSUME_CUDA_AWARE_MPI</tt> environment variable.
+  /// <tt>TPETRA_ASSUME_GPU_AWARE_MPI</tt> environment variable.
   ///
   /// For a discussion, see Trilinos GitHub issues #1571 and #1088.
-  static bool assumeMpiIsCudaAware ();
+  static bool assumeMpiIsGPUAware ();
 
   /// \brief Whether the CUDA_LAUNCH_BLOCKING environment variable has been set.
   static bool cudaLaunchBlocking ();
@@ -275,7 +275,26 @@ public:
   /// <tt>TPETRA_OVERLAP</tt> environment variable.
   static bool overlapCommunicationAndComputation();
 
+  /// \brief Add Teuchos timers for all host calls to Kokkos::deep_copy().
+  /// This is especially useful for identifying host/device data transfers
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY</tt> environment variable.
+  static bool timeKokkosDeepCopy();
+  
+  /// \brief Adds verbose output to Kokkos deep_copy timers
+  /// This is especially useful for identifying host/device data transfers
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE</tt> environment variable.
+  static bool timeKokkosDeepCopyVerbose();
 
+
+  /// \brief Warn if more than this many Kokkos spaces are accessed.
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_SPACE_ID_WARN_LIMIT</tt> environment variable.
+  static size_t spacesIdWarnLimit();
 };
 
 } // namespace Details

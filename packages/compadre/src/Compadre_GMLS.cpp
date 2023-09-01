@@ -237,8 +237,8 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
         Kokkos::deep_copy(_w, 0.0);
         Kokkos::deep_copy(_Z, 0.0);
 
-        auto gmls_basis_data = createGMLSBasisData(*this);
-        auto gmls_solution_data = createGMLSSolutionData(*this);
+        auto gmls_basis_data = this->extractBasisData();
+        auto gmls_solution_data = this->extractSolutionData();
 
         
         // even kernels that should run on other # of vector lanes do not (on GPU)
@@ -254,11 +254,11 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
              */
 
             //auto functor_name = Name(gmls_basis_data);
-            //Kokkos::parallel_for(tp, functor_name, "Name");
+            //Kokkos::parallel_for("Name", tp, functor_name);
             if (!_orthonormal_tangent_space_provided) { // user did not specify orthonormal tangent directions, so we approximate them first
                 // coarse tangent plane approximation construction of P^T*P
                 auto functor_compute_coarse_tangent_plane = ComputeCoarseTangentPlane(gmls_basis_data);
-                Kokkos::parallel_for(tp, functor_compute_coarse_tangent_plane, "ComputeCoarseTangentPlane");
+                Kokkos::parallel_for("ComputeCoarseTangentPlane", tp, functor_compute_coarse_tangent_plane);
 
                 // if the user provided the reference outward normal direction, then orient the computed or user provided
                 // outward normal directions in the tangent bundle
@@ -266,12 +266,12 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
                     // use the reference outward normal direction provided by the user to orient
                     // the tangent bundle
                     auto functor_fix_tangent_direction_ordering = FixTangentDirectionOrdering(gmls_basis_data);
-                    Kokkos::parallel_for(tp, functor_fix_tangent_direction_ordering, "FixTangentDirectionOrdering");
+                    Kokkos::parallel_for("FixTangentDirectionOrdering", tp, functor_fix_tangent_direction_ordering);
                 }
 
                 // assembles the P*sqrt(weights) matrix and constructs sqrt(weights)*Identity for curvature
                 auto functor_assemble_curvature_psqrtw = AssembleCurvaturePsqrtW(gmls_basis_data);
-                Kokkos::parallel_for(tp, functor_assemble_curvature_psqrtw, "AssembleCurvaturePsqrtW");
+                Kokkos::parallel_for("AssembleCurvaturePsqrtW", tp, functor_assemble_curvature_psqrtw);
 
                 if (_dense_solver_type == DenseSolverType::LU) {
                     // solves P^T*P against P^T*W with LU, stored in P
@@ -290,7 +290,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
 
                 // evaluates targets, applies target evaluation to polynomial coefficients for curvature
                 auto functor_get_accurate_tangent_directions = GetAccurateTangentDirections(gmls_basis_data);
-                Kokkos::parallel_for(tp, functor_get_accurate_tangent_directions, "GetAccurateTangentDirections");
+                Kokkos::parallel_for("GetAccurateTangentDirections", tp, functor_get_accurate_tangent_directions);
 
                 // Due to converting layout, entries that are assumed zeros may become non-zeros.
                 Kokkos::deep_copy(_P, 0.0);
@@ -305,7 +305,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             // this time assembling curvature PsqrtW matrix is using a highly accurate approximation of the tangent, previously calculated
             // assembles the P*sqrt(weights) matrix and constructs sqrt(weights)*Identity for curvature
             auto functor_assemble_curvature_psqrtw = AssembleCurvaturePsqrtW(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_assemble_curvature_psqrtw, "AssembleCurvaturePsqrtW");
+            Kokkos::parallel_for("AssembleCurvaturePsqrtW", tp, functor_assemble_curvature_psqrtw);
 
             if (_dense_solver_type == DenseSolverType::LU) {
                 // solves P^T*P against P^T*W with LU, stored in P
@@ -321,7 +321,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
 
             // evaluates targets, applies target evaluation to polynomial coefficients for curvature
             auto functor_apply_curvature_targets = ApplyCurvatureTargets(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_apply_curvature_targets, "ApplyCurvatureTargets");
+            Kokkos::parallel_for("ApplyCurvatureTargets", tp, functor_apply_curvature_targets);
             Kokkos::fence();
 
             // prestencil weights calculated here. appropriate because:
@@ -329,14 +329,14 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             // follows reconstruction of geometry
             // calculate prestencil weights
             auto functor_compute_prestencil_weights = ComputePrestencilWeights(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_compute_prestencil_weights, "ComputePrestencilWeights");
+            Kokkos::parallel_for("ComputePrestencilWeights", tp, functor_compute_prestencil_weights);
 
             // Due to converting layout, entried that are assumed zeros may become non-zeros.
             Kokkos::deep_copy(_P, 0.0);
 
             // assembles the P*sqrt(weights) matrix and constructs sqrt(weights)*Identity
             auto functor_assemble_manifold_psqrtw = AssembleManifoldPsqrtW(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_assemble_manifold_psqrtw, "AssembleManifoldPsqrtW");
+            Kokkos::parallel_for("AssembleManifoldPsqrtW", tp, functor_assemble_manifold_psqrtw);
 
             // solves P*sqrt(weights) against sqrt(weights)*Identity, stored in RHS
             if (_dense_solver_type == DenseSolverType::LU) {
@@ -359,7 +359,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             // assembles the P*sqrt(weights) matrix and constructs sqrt(weights)*Identity
             auto functor_assemble_standard_psqrtw = AssembleStandardPsqrtW(gmls_basis_data);
             //printf("size of assemble: %lu\n",  sizeof(functor_assemble_standard_psqrtw));
-            Kokkos::parallel_for(tp, functor_assemble_standard_psqrtw, "AssembleStandardPsqrtW");
+            Kokkos::parallel_for("AssembleStandardPsqrtW", tp, functor_assemble_standard_psqrtw);
             Kokkos::fence();
 
             // solves P*sqrt(weights) against sqrt(weights)*Identity, stored in RHS
@@ -378,7 +378,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             }
 
             auto functor_compute_prestencil_weights = ComputePrestencilWeights(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_compute_prestencil_weights, "ComputePrestencilWeights");
+            Kokkos::parallel_for("ComputePrestencilWeights", tp, functor_compute_prestencil_weights);
             Kokkos::fence();
         }
 
@@ -395,7 +395,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
 
             // evaluates targets, applies target evaluation to polynomial coefficients to store in _alphas
             auto functor_evaluate_manifold_targets = EvaluateManifoldTargets(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_evaluate_manifold_targets, "EvaluateManifoldTargets");
+            Kokkos::parallel_for("EvaluateManifoldTargets", tp, functor_evaluate_manifold_targets);
 
         } else {
 
@@ -405,7 +405,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
 
             // evaluates targets, applies target evaluation to polynomial coefficients to store in _alphas
             auto functor_evaluate_standard_targets = EvaluateStandardTargets(gmls_basis_data);
-            Kokkos::parallel_for(tp, functor_evaluate_standard_targets, "EvaluateStandardTargets");
+            Kokkos::parallel_for("EvaluateStandardTargets", tp, functor_evaluate_standard_targets);
         }
 
             
@@ -416,7 +416,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
         const auto tp2 = Kokkos::Experimental::require(tp, work_item_property);
         auto functor_apply_targets = ApplyTargets(gmls_solution_data);
         //printf("size of apply: %lu\n",  sizeof(functor_apply_targets));
-        Kokkos::parallel_for(tp2, functor_apply_targets, "ApplyTargets");
+        Kokkos::parallel_for("ApplyTargets", tp2, functor_apply_targets);
 
 
         _initial_index_for_batch += this_batch_size;
@@ -465,6 +465,150 @@ void GMLS::generateAlphas(const int number_of_batches, const bool keep_coefficie
 
     this->generatePolynomialCoefficients(number_of_batches, keep_coefficients, clear_cache);
 
+}
+
+const GMLSSolutionData GMLS::extractSolutionData() const {
+    auto gmls = *this;
+    auto data = GMLSSolutionData();
+    data._sampling_multiplier = gmls._sampling_multiplier;
+    data._initial_index_for_batch = gmls._initial_index_for_batch;
+    data._d_ss = gmls._d_ss;
+
+    // store results of calculation in struct
+    const int max_num_neighbors = gmls._pc._nla.getMaxNumNeighbors();
+    const int max_num_rows = gmls._sampling_multiplier*max_num_neighbors;
+
+    // applyTargetsToCoefficients currently uses data.this_num_cols for the
+    // dot product range. Even for manifold problems, it is still appropriate to
+    // use gmls._basis_multiplier*gmls._NP. If GMLSSolutionData was ever to be
+    // used for applying solution coefficients for the curvature reconstruction,
+    // the manifolf_NP would have to be used for that application (requiring an
+    // extra argument to applyTargetsToCoefficients)
+    data.this_num_cols = gmls._basis_multiplier*gmls._NP;
+
+    int RHS_dim_0, RHS_dim_1;
+    getRHSDims(gmls._dense_solver_type, gmls._constraint_type, gmls._reconstruction_space, 
+            gmls._dimensions, max_num_rows, data.this_num_cols, RHS_dim_0, RHS_dim_1);
+    int P_dim_0, P_dim_1;
+    getPDims(gmls._dense_solver_type, gmls._constraint_type, gmls._reconstruction_space, 
+            gmls._dimensions, max_num_rows, data.this_num_cols, P_dim_0, P_dim_1);
+
+    if ((gmls._constraint_type == ConstraintType::NO_CONSTRAINT) && (gmls._dense_solver_type != DenseSolverType::LU)) {
+        data.Coeffs_data = gmls._RHS.data();
+        data.Coeffs_dim_0 = RHS_dim_0;
+        data.Coeffs_dim_1 = RHS_dim_1;
+    } else {
+        data.Coeffs_data = gmls._P.data();
+        data.Coeffs_dim_0 = P_dim_1;
+        data.Coeffs_dim_1 = P_dim_0;
+    }
+
+    data.P_target_row_dim_0 = gmls._d_ss._total_alpha_values*gmls._d_ss._max_evaluation_sites_per_target;
+    data.P_target_row_dim_1 = data.this_num_cols;
+    data.P_target_row_data = gmls._Z.data();
+
+    data.operations_size = gmls._operations.size();
+
+    data.number_of_neighbors_list = gmls._pc._nla._number_of_neighbors_list;
+    data.additional_number_of_neighbors_list = gmls._additional_pc._nla._number_of_neighbors_list;
+
+    return data;
+}
+
+const GMLSBasisData GMLS::extractBasisData() const {
+    auto gmls = *this;
+    auto data = GMLSBasisData();
+    data._source_extra_data = gmls._source_extra_data;
+    data._target_extra_data = gmls._target_extra_data;
+    data._pc = gmls._pc;
+    data._epsilons  = gmls._epsilons ;
+    data._prestencil_weights  = gmls._prestencil_weights ;
+    data._additional_pc = gmls._additional_pc;
+    data._poly_order  = gmls._poly_order ;
+    data._curvature_poly_order = gmls._curvature_poly_order;
+    data._NP = gmls._NP;
+    data._global_dimensions = gmls._global_dimensions;
+    data._local_dimensions = gmls._local_dimensions;
+    data._dimensions = gmls._dimensions;
+    data._reconstruction_space = gmls._reconstruction_space;
+    data._reconstruction_space_rank = gmls._reconstruction_space_rank;
+    data._dense_solver_type = gmls._dense_solver_type;
+    data._problem_type = gmls._problem_type;
+    data._constraint_type = gmls._constraint_type;
+    data._polynomial_sampling_functional = gmls._polynomial_sampling_functional;
+    data._data_sampling_functional = gmls._data_sampling_functional;
+    data._curvature_support_operations = gmls._curvature_support_operations;
+    data._operations = gmls._operations;
+    data._weighting_type = gmls._weighting_type;
+    data._curvature_weighting_type = gmls._curvature_weighting_type;
+    data._weighting_p = gmls._weighting_p;
+    data._weighting_n = gmls._weighting_n;
+    data._curvature_weighting_p = gmls._curvature_weighting_p;
+    data._curvature_weighting_n = gmls._curvature_weighting_n;
+    data._basis_multiplier = gmls._basis_multiplier;
+    data._sampling_multiplier = gmls._sampling_multiplier;
+    data._data_sampling_multiplier = gmls._data_sampling_multiplier;
+    data._initial_index_for_batch = gmls._initial_index_for_batch;
+    data._pm = gmls._pm;
+    data._order_of_quadrature_points = gmls._order_of_quadrature_points;
+    data._dimension_of_quadrature_points = gmls._dimension_of_quadrature_points;
+    data._qm = gmls._qm;
+    data._d_ss = gmls._d_ss;
+
+    data.max_num_neighbors = gmls._pc._nla.getMaxNumNeighbors();
+    data.max_num_rows = gmls._sampling_multiplier*data.max_num_neighbors;
+    int basis_powers_space_multiplier = (gmls._reconstruction_space == BernsteinPolynomial) ? 2 : 1;
+    if (gmls._problem_type == ProblemType::MANIFOLD) {
+        data.manifold_NP = GMLS::getNP(gmls._curvature_poly_order, gmls._dimensions-1, 
+                ReconstructionSpace::ScalarTaylorPolynomial);
+        data.max_manifold_NP = (data.manifold_NP > gmls._NP) ? data.manifold_NP : gmls._NP;
+        data.this_num_cols = gmls._basis_multiplier*data.max_manifold_NP;
+        data.max_poly_order = (gmls._poly_order > gmls._curvature_poly_order) ? 
+                gmls._poly_order : gmls._curvature_poly_order;
+
+        data.ref_N_data = gmls._ref_N.data();
+        data.ref_N_dim = gmls._dimensions;
+
+        data.thread_workspace_dim = (data.max_poly_order+1)*gmls._global_dimensions*basis_powers_space_multiplier;
+        data.manifold_gradient_dim = (gmls._dimensions-1)*data.max_num_neighbors;
+
+        data.manifold_curvature_coefficients_data = gmls._manifold_curvature_coefficients.data();
+
+    } else {
+        data.manifold_NP = 0;
+        data.this_num_cols = gmls._basis_multiplier*gmls._NP;
+        data.thread_workspace_dim = (gmls._poly_order+1)*gmls._global_dimensions*basis_powers_space_multiplier;
+        data.manifold_gradient_dim = 0;
+    }
+
+
+    data.T_data = gmls._T.data();
+
+    data.P_target_row_dim_0 = gmls._d_ss._total_alpha_values*gmls._d_ss._max_evaluation_sites_per_target;
+    data.P_target_row_dim_1 = data.this_num_cols;
+    data.P_target_row_data = gmls._Z.data();
+
+    data.RHS_data = gmls._RHS.data();
+    getRHSDims(gmls._dense_solver_type, gmls._constraint_type, gmls._reconstruction_space, 
+               gmls._dimensions, data.max_num_rows, data.this_num_cols, data.RHS_dim_0, data.RHS_dim_1);
+
+    data.P_data = gmls._P.data();
+    getPDims(gmls._dense_solver_type, gmls._constraint_type, gmls._reconstruction_space, 
+             gmls._dimensions, data.max_num_rows, data.this_num_cols, data.P_dim_0, data.P_dim_1);
+
+    data.w_data = gmls._w.data();
+
+    if ((gmls._constraint_type == ConstraintType::NO_CONSTRAINT) && (gmls._dense_solver_type != DenseSolverType::LU)) {
+        data.Coeffs_data = gmls._RHS.data();
+        data.Coeffs_dim_0 = data.RHS_dim_0;
+        data.Coeffs_dim_1 = data.RHS_dim_1;
+    } else {
+        data.Coeffs_data = gmls._P.data();
+        data.Coeffs_dim_0 = data.P_dim_1;
+        data.Coeffs_dim_1 = data.P_dim_0;
+    }
+
+    return data;
 }
 
 } // Compadre

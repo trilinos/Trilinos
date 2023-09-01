@@ -40,9 +40,6 @@
 #include <Ioss_PropertyManager.h>           // for PropertyManager
       // file exists and is readable and will throw an exception if not.
 #include <cstddef>                          // for size_t
-#include "Teuchos_RCPDecl.hpp"              // for RCP
-#include <Teuchos_RCP.hpp>                  // for RCP::operator->, RCP::RCP<T>
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <stk_io/DatabasePurpose.hpp>       // for DatabasePurpose
 #include <stk_io/Heartbeat.hpp>             // for Heartbeat, HeartbeatType
 #include <stk_io/IossBridge.hpp>            // for STKIORequire, FieldNameTo...
@@ -119,9 +116,9 @@ namespace stk {
       bool property_exists(const std::string &property_name) const;
       void copy_property(const StkMeshIoBroker& src_broker, const std::string &property_name);
 
-      Teuchos::RCP<Ioss::Region> get_input_io_region() const;
-      Teuchos::RCP<Ioss::Region> get_output_io_region(size_t output_file_index) const;
-      Teuchos::RCP<Ioss::Region> get_heartbeat_io_region(size_t heartbeat_file_index) const;
+      std::shared_ptr<Ioss::Region> get_input_ioss_region() const;
+      std::shared_ptr<Ioss::Region> get_output_ioss_region(size_t output_file_index) const;
+      std::shared_ptr<Ioss::Region> get_heartbeat_ioss_region(size_t heartbeat_file_index) const;
 
       void begin_define_transient_for_heartbeat(size_t heartbeat_file_index);
       void end_define_transient_for_heartbeat(size_t heartbeat_file_index);
@@ -149,16 +146,16 @@ namespace stk {
       // optional selector will be 'anded' with the normal selector
       // (typically locally owned part) used to associate entities
       // when generating the output database.
-      void set_subset_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_subset_selector(size_t output_file_index, std::shared_ptr<stk::mesh::Selector> my_selector);
       void set_subset_selector(size_t output_file_index, const stk::mesh::Selector &my_selector);
 
-      void set_skin_mesh_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_skin_mesh_selector(size_t output_file_index, std::shared_ptr<stk::mesh::Selector> my_selector);
       void set_skin_mesh_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
-      void set_shared_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_shared_selector(size_t output_file_index, std::shared_ptr<stk::mesh::Selector> my_selector);
       void set_shared_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
-      void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, std::shared_ptr<stk::mesh::Selector> my_selector);
       void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, stk::mesh::Selector &my_selector);
 
       void set_ghosting_filter(size_t output_file_index, bool hasGhosting);
@@ -170,9 +167,6 @@ namespace stk {
 
       stk::mesh::Selector get_active_selector() const;
       void set_active_selector(stk::mesh::Selector my_selector);
-
-      Teuchos::RCP<stk::mesh::Selector> deprecated_selector() const;
-      void deprecated_set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
 
       // Set bulk data directly with your own bulk data. If this is
       // not called prior to the populate_bulk_data() call, it will be
@@ -201,7 +195,7 @@ namespace stk {
 
       void set_sideset_face_creation_behavior(SideSetFaceCreationBehavior behavior)
       {
-          ThrowRequireWithSierraHelpMsg(behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
+          STK_ThrowRequireWithSierraHelpMsg(behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
           m_sidesetFaceCreationBehavior = behavior;
       }
 
@@ -213,6 +207,11 @@ namespace stk {
       void set_auto_load_distribution_factor_per_nodeset(bool shouldAutoLoad)
       {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
+      }
+
+      void cache_entity_list_for_transient_steps(bool cacheEntityList)
+      {
+          m_cacheEntityListForTransientSteps = cacheEntityList;
       }
 
       bool get_filter_empty_input_entity_blocks() const;
@@ -282,7 +281,7 @@ namespace stk {
       // [2013-11-13: GDS: Currently
       // only used in Salinas/tools/superelem/MkSuperStkMesh.C:
       // The use-case is adding new parts to a mesh]
-      size_t add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region);
+      size_t add_mesh_database(std::shared_ptr<Ioss::Region> ioss_input_region);
 
       // Get a reference to an existing mesh database so it can be modified
       // Typical modifications deal with
@@ -464,6 +463,9 @@ namespace stk {
 				Ioss::PropertyManager &properties,
                                 double time,
                                 char const* type = "exodus", bool openFileImmediately = true);
+ 
+      // Free up memory by removing resouces associated with output files that will no longer be used by the run
+      void close_output_mesh(size_t output_file_index);
 
       void write_output_mesh(size_t output_file_index);
 
@@ -746,15 +748,15 @@ namespace stk {
 
       stk::mesh::Selector m_activeSelector;
       stk::mesh::Selector m_subsetSelector;
-      Teuchos::RCP<stk::mesh::Selector> m_deprecatedSelector;
+      std::shared_ptr<stk::mesh::Selector> m_deprecatedSelector;
 
     protected:
       std::vector<std::vector<int>> attributeFieldOrderingByPartOrdinal;
-      std::vector<Teuchos::RCP<impl::OutputFile> > m_outputFiles;
+      std::vector<std::shared_ptr<impl::OutputFile> > m_outputFiles;
     private:
-      std::vector<Teuchos::RCP<impl::Heartbeat> > m_heartbeat;
+      std::vector<std::shared_ptr<impl::Heartbeat> > m_heartbeat;
     protected:
-      std::vector<Teuchos::RCP<InputFile> > m_inputFiles;
+      std::vector<std::shared_ptr<InputFile> > m_inputFiles;
     private:
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
@@ -767,17 +769,18 @@ namespace stk {
       bool m_autoLoadAttributes;
       bool m_autoLoadDistributionFactorPerNodeSet;
       bool m_enableEdgeIO;
+      bool m_cacheEntityListForTransientSteps;
       bool m_useSimpleFields;
     };
 
-    inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) const {
+    inline std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_output_ioss_region(size_t output_file_index) const {
       validate_output_file_index(output_file_index);
-      return m_outputFiles[output_file_index]->get_output_io_region();
+      return m_outputFiles[output_file_index]->get_output_ioss_region();
     }
 
-    inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_heartbeat_io_region(size_t heartbeat_file_index) const {
+    inline std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_heartbeat_ioss_region(size_t heartbeat_file_index) const {
       validate_heartbeat_file_index(heartbeat_file_index);
-      return m_heartbeat[heartbeat_file_index]->get_heartbeat_io_region();
+      return m_heartbeat[heartbeat_file_index]->get_heartbeat_ioss_region();
     }
 
     inline void StkMeshIoBroker::begin_define_transient_for_heartbeat(size_t heartbeat_file_index) {
@@ -791,7 +794,7 @@ namespace stk {
     }
 
     inline void StkMeshIoBroker::set_subset_selector(size_t output_file_index,
-						     Teuchos::RCP<stk::mesh::Selector> my_selector) {
+						     std::shared_ptr<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->set_subset_selector(my_selector);
     }
@@ -800,11 +803,11 @@ namespace stk {
 						     const stk::mesh::Selector &my_selector) {
       m_subsetSelector = my_selector;
       validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->set_subset_selector(Teuchos::rcpFromRef(m_subsetSelector));
+      m_outputFiles[output_file_index]->set_subset_selector(std::make_shared<stk::mesh::Selector>(m_subsetSelector));
     }
 
     inline void StkMeshIoBroker::set_skin_mesh_selector(size_t output_file_index,
-						     Teuchos::RCP<stk::mesh::Selector> my_selector) {
+						     std::shared_ptr<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->set_skin_mesh_selector(my_selector);
     }
@@ -812,11 +815,11 @@ namespace stk {
     inline void StkMeshIoBroker::set_skin_mesh_selector(size_t output_file_index,
 						     stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->set_skin_mesh_selector(Teuchos::rcpFromRef(my_selector));
+      m_outputFiles[output_file_index]->set_skin_mesh_selector(std::make_shared<stk::mesh::Selector>(my_selector));
     }
 
     inline void StkMeshIoBroker::set_shared_selector(size_t output_file_index,
-                                                     Teuchos::RCP<stk::mesh::Selector> my_selector) {
+                                                     std::shared_ptr<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->set_shared_selector(my_selector);
     }
@@ -824,12 +827,12 @@ namespace stk {
     inline void StkMeshIoBroker::set_shared_selector(size_t output_file_index,
                                                      stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->set_shared_selector(Teuchos::rcpFromRef(my_selector));
+      m_outputFiles[output_file_index]->set_shared_selector(std::make_shared<stk::mesh::Selector>(my_selector));
     }
 
     inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
                                                      stk::topology::rank_t rank,
-                                                     Teuchos::RCP<stk::mesh::Selector> my_selector) {
+                                                     std::shared_ptr<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->set_output_selector(rank, my_selector);
     }
@@ -838,7 +841,7 @@ namespace stk {
                                                      stk::topology::rank_t rank,
                                                      stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->set_output_selector(rank, Teuchos::rcpFromRef(my_selector));
+      m_outputFiles[output_file_index]->set_output_selector(rank, std::make_shared<stk::mesh::Selector>(my_selector));
     }
 
     inline void StkMeshIoBroker::set_ghosting_filter(size_t output_file_index, bool hasGhosting) {
@@ -872,14 +875,6 @@ namespace stk {
 
     inline void StkMeshIoBroker::set_active_selector(stk::mesh::Selector my_selector) {
       m_activeSelector = my_selector;
-    }
-
-    inline Teuchos::RCP<stk::mesh::Selector> StkMeshIoBroker::deprecated_selector() const {
-      return m_deprecatedSelector;
-    }
-    
-    inline void StkMeshIoBroker::deprecated_set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector) {
-      m_deprecatedSelector = my_selector;
     }
 
     inline void StkMeshIoBroker::set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
@@ -972,25 +967,25 @@ namespace stk {
 
     inline stk::mesh::MetaData &StkMeshIoBroker::meta_data()
     {
-      ThrowAssert(!is_meta_data_null());
+      STK_ThrowAssert(!is_meta_data_null());
       return *m_metaData;
     }
 
     inline stk::mesh::BulkData &StkMeshIoBroker::bulk_data()
     {
-      ThrowAssert(!is_bulk_data_null());
+      STK_ThrowAssert(!is_bulk_data_null());
       return *m_bulkData;
     }
 
     inline const stk::mesh::MetaData &StkMeshIoBroker::meta_data() const
     {
-      ThrowAssert(!is_meta_data_null());
+      STK_ThrowAssert(!is_meta_data_null());
       return *m_metaData;
     }
 
     inline const stk::mesh::BulkData &StkMeshIoBroker::bulk_data() const
     {
-      ThrowAssert(!is_bulk_data_null());
+      STK_ThrowAssert(!is_bulk_data_null());
       return *m_bulkData;
     }
   }

@@ -51,4 +51,4 @@ TEUCHOS_UNIT_TEST(DIRK_1Stage1stOrderRadauIA, AppAction)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

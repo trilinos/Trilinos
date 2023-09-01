@@ -69,7 +69,7 @@ GLOBAL Int TRILINOS_AMD_valid
 	    TRILINOS_AMD_DEBUG0 (("column "ID" pointer bad\n", j)) ;
 	    return (TRILINOS_AMD_INVALID) ;
 	}
-	ilast = EMPTY ;
+	ilast = TRILINOS_AMD_EMPTY ;
 	for (p = p1 ; p < p2 ; p++)
 	{
 	    i = Ai [p] ;

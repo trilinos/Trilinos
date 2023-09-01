@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,6 +9,8 @@
 
 #include <exodusII.h>
 #if defined PARALLEL_AWARE_EXODUS
+
+#include "ioex_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <vector>
@@ -28,11 +30,24 @@ namespace Ioss {
   class Field;
 }
 namespace Ioex {
+  struct IOEX_EXPORT BlockFieldData
+  {
+    int64_t                  id{0};
+    size_t                   comp_count{0};
+    std::vector<std::string> var_name;
+    std::vector<size_t>      var_index;
 
-  class DecompositionDataBase
+    BlockFieldData() : id(0), comp_count(0) {}
+    BlockFieldData(const int64_t id_) : id(id_), comp_count(0) {}
+    BlockFieldData(const int64_t id_, size_t comp_count_) : id(id_), comp_count(comp_count_) {}
+  };
+
+  class IOEX_EXPORT DecompositionDataBase
   {
   public:
     DecompositionDataBase(Ioss_MPI_Comm comm) : comm_(comm) {}
+    DecompositionDataBase(const DecompositionDataBase &)            = delete;
+    DecompositionDataBase &operator=(const DecompositionDataBase &) = delete;
 
     virtual ~DecompositionDataBase()            = default;
     virtual int    int_size() const             = 0;
@@ -71,6 +86,17 @@ namespace Ioex {
     void get_block_connectivity(int filePtr, void *data, int64_t id, size_t blk_seq,
                                 size_t nnpe) const;
 
+    std::vector<size_t> get_all_block_connectivity(int filePtr, void *data) const;
+    size_t              get_all_block_connectivity_size() const;
+    std::vector<int>    get_all_block_connectivity_component_count() const;
+
+    std::vector<size_t> get_all_block_offset(const std::vector<int> &block_component_count) const;
+    std::vector<size_t>
+    get_all_block_file_offset(const std::vector<int> &block_component_count) const;
+
+    void get_all_block_field(int filePtr, void *data, size_t step,
+                             const std::vector<BlockFieldData> &block_data) const;
+
     void read_elem_proc_map(int filePtr, void *data) const;
 
     void get_node_entity_proc_data(void *entity_proc, const Ioss::MapContainer &node_map,
@@ -85,13 +111,15 @@ namespace Ioex {
     virtual size_t get_commset_node_size() const = 0;
 
     virtual int get_node_coordinates(int filePtr, double *ioss_data,
-                                     const Ioss::Field &field) const         = 0;
+                                     const Ioss::Field &field) const                 = 0;
     virtual int get_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
-                             int attrib_index, double *attrib) const         = 0;
+                             int attrib_index, double *attrib) const                 = 0;
     virtual int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, size_t attr_count,
-                         double *attrib) const                               = 0;
+                         double *attrib) const                                       = 0;
     virtual int get_var(int filePtr, int step, ex_entity_type type, int var_index, ex_entity_id id,
-                        int64_t num_entity, std::vector<double> &data) const = 0;
+                        int64_t num_entity, std::vector<double> &data) const         = 0;
+    virtual int get_user_map(int exoid, ex_entity_type obj_type, ex_entity_id id, int map_index,
+                             size_t offset, size_t num_entity, void *map_data) const = 0;
   };
 
   template <typename INT> class DecompositionData : public DecompositionDataBase
@@ -138,8 +166,17 @@ namespace Ioex {
       m_decomposition.communicate_node_data(file_data, ioss_data, comp_count);
     }
 
-    void   get_block_connectivity(int filePtr, INT *data, int64_t id, size_t blk_seq,
-                                  size_t nnpe) const;
+    void get_block_connectivity(int filePtr, INT *data, int64_t id, size_t blk_seq,
+                                size_t nnpe) const;
+
+    std::vector<size_t> get_all_block_connectivity(int filePtr, INT *data) const;
+
+    void get_all_block_field_impl(int filePtr, void *data, size_t step,
+                                  const std::vector<BlockFieldData> &block_data) const;
+
+    std::vector<size_t>
+    get_all_block_file_offset_impl(const std::vector<int> &block_component_count) const;
+
     size_t get_commset_node_size() const { return m_decomposition.m_nodeCommMap.size() / 2; }
 
     int get_attr(int filePtr, ex_entity_type obj_type, ex_entity_id id, size_t attr_count,
@@ -149,6 +186,9 @@ namespace Ioex {
 
     int get_var(int filePtr, int step, ex_entity_type type, int var_index, ex_entity_id id,
                 int64_t num_entity, std::vector<double> &data) const;
+
+    int get_user_map(int exoid, ex_entity_type obj_type, ex_entity_id id, int map_index,
+                     size_t offset, size_t num_entity, void *map_data) const;
 
     template <typename T>
     int get_set_mesh_var(int filePtr, ex_entity_type type, ex_entity_id id,
@@ -163,6 +203,8 @@ namespace Ioex {
                                     int64_t *locally_owned_count, int64_t *processor_offset);
 
   private:
+    std::vector<size_t> get_all_block_connectivity_file_offset() const;
+
 #if !defined(NO_ZOLTAN_SUPPORT)
     void zoltan_decompose(const std::string &method);
 #endif
@@ -194,6 +236,11 @@ namespace Ioex {
     int get_node_attr(int filePtr, ex_entity_id id, size_t comp_count, double *ioss_data) const;
     int get_elem_attr(int filePtr, ex_entity_id id, size_t comp_count, double *ioss_data) const;
 
+    int get_elem_map(int filePtr, ex_entity_id blk_id, int map_index, size_t offset, size_t count,
+                     void *ioss_data) const;
+    int get_node_map(int filePtr, int map_index, size_t offset, size_t count,
+                     void *ioss_data) const;
+
     int get_node_var(int filePtr, int step, int var_index, ex_entity_id id, int64_t num_entity,
                      std::vector<double> &ioss_data) const;
 
@@ -203,14 +250,14 @@ namespace Ioex {
     int get_set_var(int filePtr, int step, int var_index, ex_entity_type type, ex_entity_id id,
                     int64_t num_entity, std::vector<double> &ioss_data) const;
 
-    bool i_own_node(size_t node)
-        const // T/F if node with global index node owned by this processors ioss-decomp.
+    bool i_own_node(size_t node) const
     {
+      // T/F if the node with global index `node` is owned by this processors ioss-decomp.
       return m_decomposition.i_own_node(node);
     }
 
-    bool i_own_elem(size_t elem)
-        const // T/F if node with global index elem owned by this processors ioss-decomp.
+    bool i_own_elem(size_t elem) const
+    // T/F if the element with global index `elem` is owned by this processors ioss-decomp.
     {
       return m_decomposition.i_own_elem(elem);
     }
@@ -228,10 +275,7 @@ namespace Ioex {
       return m_decomposition.elem_global_to_local(global_index);
     }
 
-    void build_global_to_local_elem_map()
-    {
-      return m_decomposition.build_global_to_local_elem_map();
-    }
+    void build_global_to_local_elem_map() { m_decomposition.build_global_to_local_elem_map(); }
 
     void get_element_block_communication()
     {

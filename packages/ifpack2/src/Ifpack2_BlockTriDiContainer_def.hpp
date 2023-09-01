@@ -56,7 +56,6 @@
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Gemm_Serial_Impl.hpp>
 #include <KokkosBatched_Gemv_Decl.hpp>
-#include <KokkosBatched_Gemv_Serial_Impl.hpp>
 #include <KokkosBatched_Trsm_Decl.hpp>
 #include <KokkosBatched_Trsm_Serial_Impl.hpp>
 #include <KokkosBatched_Trsv_Decl.hpp>
@@ -89,7 +88,7 @@ namespace Ifpack2 {
     impl_ = Teuchos::rcp(new BlockTriDiContainerDetails::ImplObject<MatrixType>());
 
     using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
-    using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
+    // using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
     impl_->A = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
     TEUCHOS_TEST_FOR_EXCEPT_MSG

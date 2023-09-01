@@ -50,7 +50,7 @@ message("*******************************")
 message("")
 
 
-cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
 set(THIS_CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
@@ -559,7 +559,7 @@ include(TribitsCTestDriverCoreHelpers)
 #     the specific set of packages to test.  If left at the default value of
 #     empty "", then `${PROJECT_NAME}_ENABLE_ALL_PACKAGES`_ is set to ``ON``
 #     and that enables packages as described in `<Project>_ENABLE_ALL_PACKAGES
-#     enables all PT (cond. ST) SE packages`_.  This variable can use ',' to
+#     enables all PT (cond. ST) packages`_.  This variable can use ',' to
 #     separate package names instead of ';'.  The default value is empty "".
 #
 #   .. _${PROJECT_NAME}_ADDITIONAL_PACKAGES:
@@ -1290,9 +1290,9 @@ include(TribitsCTestDriverCoreHelpers)
 # packages and therefore is more robust.  But the package-by-package mode is
 # more expensive in several respects for many projects.
 #
-# For versions of CMake 3.17.0 and above and newer versions of CDash, the
-# CDash server for the all-at-once mode will break down build and test results
-# on a package-by-package basis on CDash together.
+# For newer versions of CDash 3.1+, for the all-at-once mode, the CDash server
+# will break down build and test results on a package-by-package basis on
+# CDash together.
 #
 # .. _Multiple ctest -S invocations (tribits_ctest_driver()):
 #
@@ -2269,13 +2269,14 @@ function(tribits_ctest_driver)
   set(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   set(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
   tribits_adjust_and_print_package_dependencies()
-  # Above sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
+  # Above sets ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES
 
   select_final_set_of_packages_to_directly_test()
   # Above sets ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
 
-  tribits_print_enabled_packages_list_from_var( ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
-    "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
+  tribits_print_packages_list_enable_status_from_var(
+    ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
+    "\nFinal set of packages to be explicitly processed by CTest/CDash" "" ON NONEMPTY)
 
   message(
     "\n***"
@@ -2283,7 +2284,7 @@ function(tribits_ctest_driver)
     "\n***")
 
   if (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY
-    AND ${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0
+    AND ${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES GREATER 0
     AND MODIFIED_PACKAGES_LIST
     )
     message("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
@@ -2294,13 +2295,13 @@ function(tribits_ctest_driver)
       "  Running in regular mode, processing all enabled packages!\n")
   endif()
 
-  if (${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0)
+  if (${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES GREATER 0)
     message(
-      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
+      "\n${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES}:"
       "  Configuring packages!\n")
   else()
     message(
-      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
+      "\n${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_INTERNAL_TOPLEVEL_PACKAGES}:"
       "  Exiting the script!\n")
     report_queued_errors()
     return()

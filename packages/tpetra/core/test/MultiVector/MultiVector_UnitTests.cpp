@@ -42,6 +42,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_DeepCopyCounter.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -1003,7 +1004,7 @@ namespace {
     typedef Tpetra::Map<LO,GO,Node> map_type;
     typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
     typedef Tpetra::Vector<ST,LO,GO,Node> V;
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
 
     out << "Tpetra::MultiVector::elementWiseMultiply test" << endl;
     Teuchos::OSTab tab0 (out);
@@ -1053,7 +1054,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S0, A, B, S0);
@@ -1073,7 +1074,7 @@ namespace {
         const ST S3 = S1 + S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S3);
@@ -1093,7 +1094,7 @@ namespace {
       // update rules.
       {
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1115,7 +1116,7 @@ namespace {
         const ST S2 = S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1139,7 +1140,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S1, A, B, S0);
@@ -1161,7 +1162,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (-S1, A, B, S0);
@@ -1266,7 +1267,7 @@ namespace {
         B.putScalar (S4);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S2, A, B, S0);
@@ -1328,7 +1329,7 @@ namespace {
     typedef Tpetra::Map<LO,GO,Node> map_type;
     typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
     typedef Tpetra::Vector<ST,LO,GO,Node> V;
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
 
     out << "Tpetra::MultiVector::elementWiseMultiplyLg test" << endl;
     Teuchos::OSTab tab0 (out);
@@ -1378,7 +1379,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S0, A, B, S0);
@@ -1398,7 +1399,7 @@ namespace {
         const ST S3 = S1 + S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S3);
@@ -1418,7 +1419,7 @@ namespace {
       // update rules.
       {
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1440,7 +1441,7 @@ namespace {
         const ST S2 = S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1464,7 +1465,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S1, A, B, S0);
@@ -1486,7 +1487,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (-S1, A, B, S0);
@@ -1591,7 +1592,7 @@ namespace {
         B.putScalar (S4);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S2, A, B, S0);
@@ -5202,12 +5203,73 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyCounterCheck, LO , GO , Scalar , Node ) {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    using device_view = typename MV::dual_view_type::t_dev;
+    using host_view   = typename MV::dual_view_type::t_host;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<const map_type> map = rcp (new map_type (100, 0, comm));
+    MV x(map, 1);
+    x.putScalar(Teuchos::ScalarTraits<Scalar>::one());
+
+    const device_view x_d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    host_view y_h = create_mirror_view(x_d);  
+
+    size_t correct_count;
+    // Check to see if we'll be deep_copy-ing between memory spaces
+    if(std::is_same<typename device_view::memory_space,typename host_view::memory_space>::value) {
+      correct_count = 0;
+    }
+    else {
+      correct_count = 1;
+    }
+
+
+    // Stop / Start  (reset first to clear counts from previous unit test calls)
+    Tpetra::Details::DeepCopyCounter::reset();   
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    size_t count = Tpetra::Details::DeepCopyCounter::stop();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // Reset / get_count (should be zero now)
+    Tpetra::Details::DeepCopyCounter::reset();   
+    count = Tpetra::Details::DeepCopyCounter::get_count();   
+    TEST_EQUALITY(count,0);
+
+
+    // Second  Stop / Start (should have the original count)
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::stop();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // This guy should not get counted, since the counter is stopped
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::get_count();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // Third Second  Stop / Start (should have double the original count)
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::stop();   
+    TEST_EQUALITY(count,2*correct_count);
+          
+  }
+
+
 
 #ifdef KOKKOS_ENABLE_OPENMP
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OpenMP_ThreadedSum, LO , GO , Scalar , Node ) {
     // Restrict to OpenMPNode and disable in debug mode (weird things happen w/ GCC 8.3.0 since RCP's
     // are not necessarily thread-safe
-    if(typeid(Node)!=typeid(Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>) ||
+    if(typeid(Node)!=typeid(Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>) ||
        ::Tpetra::Details::Behavior::debug())
        return;
 
@@ -5274,7 +5336,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyCounterCheck, LO, GO, SCALAR, NODE )
 
 #ifdef KOKKOS_ENABLE_OPENMP
   // Add special test for OpenMP

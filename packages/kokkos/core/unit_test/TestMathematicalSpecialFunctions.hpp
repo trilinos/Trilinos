@@ -1,3 +1,19 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
+
 #include <fstream>
 #include <gtest/gtest.h>
 #include "Kokkos_Core.hpp"
@@ -17,7 +33,7 @@ struct TestExponentialIntergral1Function {
   HostViewType h_ref;
 
   void testit() {
-    using Kokkos::Experimental::fabs;
+    using Kokkos::fabs;
     using Kokkos::Experimental::infinity;
 
     d_x      = ViewType("d_x", 15);
@@ -489,7 +505,13 @@ struct TestComplexBesselJ0Y0Function {
     Kokkos::deep_copy(d_z, h_z);
 
     // Call Bessel functions
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, N), *this);
+#if (HIP_VERSION_MAJOR == 5) && (HIP_VERSION_MINOR == 4)
+    using Property =
+        Kokkos::Experimental::WorkItemProperty::ImplForceGlobalLaunch_t;
+#else
+    using Property = Kokkos::Experimental::WorkItemProperty::None_t;
+#endif
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, Property>(0, N), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_cbj0, d_cbj0);
@@ -618,8 +640,8 @@ struct TestComplexBesselJ0Y0Function {
 
     Kokkos::deep_copy(d_z_large, h_z_large);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, TestLargeArgTag>(0, 1),
-                         *this);
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<ExecSpace, Property, TestLargeArgTag>(0, 1), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_cbj0_large, d_cbj0_large);
@@ -779,7 +801,13 @@ struct TestComplexBesselJ1Y1Function {
     Kokkos::deep_copy(d_z, h_z);
 
     // Call Bessel functions
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, N), *this);
+#if (HIP_VERSION_MAJOR == 5) && (HIP_VERSION_MINOR == 4)
+    using Property =
+        Kokkos::Experimental::WorkItemProperty::ImplForceGlobalLaunch_t;
+#else
+    using Property = Kokkos::Experimental::WorkItemProperty::None_t;
+#endif
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, Property>(0, N), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_cbj1, d_cbj1);
@@ -908,8 +936,8 @@ struct TestComplexBesselJ1Y1Function {
 
     Kokkos::deep_copy(d_z_large, h_z_large);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, TestLargeArgTag>(0, 1),
-                         *this);
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<ExecSpace, Property, TestLargeArgTag>(0, 1), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_cbj1_large, d_cbj1_large);
@@ -1067,7 +1095,13 @@ struct TestComplexBesselI0K0Function {
     Kokkos::deep_copy(d_z, h_z);
 
     // Call Bessel functions
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, N), *this);
+#if (HIP_VERSION_MAJOR == 5) && (HIP_VERSION_MINOR == 4)
+    using Property =
+        Kokkos::Experimental::WorkItemProperty::ImplForceGlobalLaunch_t;
+#else
+    using Property = Kokkos::Experimental::WorkItemProperty::None_t;
+#endif
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, Property>(0, N), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_cbi0, d_cbi0);
@@ -1189,8 +1223,8 @@ struct TestComplexBesselI0K0Function {
 
     Kokkos::deep_copy(d_z_large, h_z_large);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, TestLargeArgTag>(0, 1),
-                         *this);
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<ExecSpace, Property, TestLargeArgTag>(0, 1), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_cbi0_large, d_cbi0_large);
@@ -1302,7 +1336,13 @@ struct TestComplexBesselI1K1Function {
     Kokkos::deep_copy(d_z, h_z);
 
     // Call Bessel functions
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, N), *this);
+#if (HIP_VERSION_MAJOR == 5) && (HIP_VERSION_MINOR == 4)
+    using Property =
+        Kokkos::Experimental::WorkItemProperty::ImplForceGlobalLaunch_t;
+#else
+    using Property = Kokkos::Experimental::WorkItemProperty::None_t;
+#endif
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, Property>(0, N), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_cbi1, d_cbi1);
@@ -1424,8 +1464,8 @@ struct TestComplexBesselI1K1Function {
 
     Kokkos::deep_copy(d_z_large, h_z_large);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, TestLargeArgTag>(0, 1),
-                         *this);
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<ExecSpace, Property, TestLargeArgTag>(0, 1), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_cbi1_large, d_cbi1_large);
@@ -1533,7 +1573,13 @@ struct TestComplexBesselH1Function {
     Kokkos::deep_copy(d_z, h_z);
 
     // Call Hankel functions
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, N), *this);
+#if (HIP_VERSION_MAJOR == 5) && (HIP_VERSION_MINOR == 4)
+    using Property =
+        Kokkos::Experimental::WorkItemProperty::ImplForceGlobalLaunch_t;
+#else
+    using Property = Kokkos::Experimental::WorkItemProperty::None_t;
+#endif
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace, Property>(0, N), *this);
     Kokkos::fence();
 
     Kokkos::deep_copy(h_ch10, d_ch10);
@@ -1641,27 +1687,17 @@ struct TestComplexBesselH1Function {
         Kokkos::complex<double>(-5.430453818237824e-02, -1.530182458039000e-02);
 
     EXPECT_EQ(h_ref_ch10(0), h_ch10(0));
-    std::cout << "h_ch10(0): " << h_ch10(0)
-              << ", h_ref_ch10(0): " << h_ref_ch10(0) << std::endl;
     for (int i = 1; i < N; i++) {
       EXPECT_LE(Kokkos::abs(h_ch10(i) - h_ref_ch10(i)),
-                Kokkos::abs(h_ref_ch10(i)) * 1e-13);
-      std::cout << i
-                << ", actual diff: " << Kokkos::abs(h_ch10(i) - h_ref_ch10(i))
-                << ", expected diff: " << Kokkos::abs(h_ref_ch10(i)) * 1e-13
-                << std::endl;
+                Kokkos::abs(h_ref_ch10(i)) * 1e-13)
+          << "at index " << i;
     }
 
     EXPECT_EQ(h_ref_ch11(0), h_ch11(0));
-    std::cout << "h_ch11(0): " << h_ch11(0)
-              << ", h_ref_ch11(0): " << h_ref_ch11(0) << std::endl;
     for (int i = 1; i < N; i++) {
       EXPECT_LE(Kokkos::abs(h_ch11(i) - h_ref_ch11(i)),
-                Kokkos::abs(h_ref_ch11(i)) * 1e-13);
-      std::cout << i
-                << ", actual diff: " << Kokkos::abs(h_ch11(i) - h_ref_ch11(i))
-                << ", expected diff: " << Kokkos::abs(h_ref_ch11(i)) * 1e-13
-                << std::endl;
+                Kokkos::abs(h_ref_ch11(i)) * 1e-13)
+          << "at index " << i;
     }
   }
 

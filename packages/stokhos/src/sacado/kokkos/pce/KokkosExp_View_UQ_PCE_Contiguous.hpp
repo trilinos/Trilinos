@@ -45,7 +45,18 @@
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
 #include "Kokkos_View_UQ_PCE_Fwd.hpp"
+
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 #include "Kokkos_Layout.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 #include "Kokkos_AnalyzeStokhosShape.hpp"
 #include "Kokkos_View_Utils.hpp"
@@ -576,7 +587,7 @@ void deep_copy( const ExecSpace &,
         src_dims[5] = src.extent(5);
         src_dims[6] = src.extent(6);
         src_dims[7] = src.extent(7);
-        src_dims[src_type::Rank] = dimension_scalar(src);
+        src_dims[src_type::rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
           view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
@@ -601,7 +612,7 @@ void deep_copy( const ExecSpace &,
         dst_dims[5] = dst.extent(5);
         dst_dims[6] = dst.extent(6);
         dst_dims[7] = dst.extent(7);
-        dst_dims[dst_type::Rank] = dimension_scalar(dst);
+        dst_dims[dst_type::rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
           view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
@@ -625,7 +636,7 @@ void deep_copy( const ExecSpace &,
         src_dims[5] = src.extent(5);
         src_dims[6] = src.extent(6);
         src_dims[7] = src.extent(7);
-        src_dims[src_type::Rank] = dimension_scalar(src);
+        src_dims[src_type::rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
           view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
@@ -641,7 +652,7 @@ void deep_copy( const ExecSpace &,
         dst_dims[5] = dst.extent(5);
         dst_dims[6] = dst.extent(6);
         dst_dims[7] = dst.extent(7);
-        dst_dims[dst_type::Rank] = dimension_scalar(dst);
+        dst_dims[dst_type::rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
           view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
@@ -672,6 +683,35 @@ void deep_copy( const View<DT,DP...> & dst ,
   Kokkos::fence();
   Kokkos::deep_copy(exec_space(), dst, src);
   Kokkos::fence();
+}
+
+namespace Impl {
+
+template <unsigned N, typename... Args>
+KOKKOS_FUNCTION std::enable_if_t<
+    N == View<Args...>::rank &&
+    std::is_same<typename ViewTraits<Args...>::specialize,
+                 Kokkos::Experimental::Impl::ViewPCEContiguous>::value,
+    View<Args...>>
+as_view_of_rank_n(View<Args...> v) {
+  return v;
+}
+
+// Placeholder implementation to compile generic code for DynRankView; should
+// never be called
+template <unsigned N, typename T, typename... Args>
+std::enable_if_t<
+    N != View<T, Args...>::rank &&
+        std::is_same<typename ViewTraits<T, Args...>::specialize,
+                     Kokkos::Experimental::Impl::ViewPCEContiguous>::value,
+    View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
+         Args...>>
+as_view_of_rank_n(View<T, Args...>) {
+  Kokkos::Impl::throw_runtime_exception(
+      "Trying to get at a View of the wrong rank");
+  return {};
+}
+
 }
 
 }
@@ -1357,6 +1397,7 @@ public:
     //  Only set the the pointer and initialize if the allocation is non-zero.
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
+      auto space = ((ViewCtorProp<void,execution_space> const &) prop).value;
 
       m_impl_handle.set( reinterpret_cast< pointer_type >( record->data() ),
                     m_impl_offset.span(), m_sacado_size );
@@ -1364,7 +1405,7 @@ public:
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
       record->m_destroy = m_impl_handle.create_functor(
-        ( (ViewCtorProp<void,execution_space> const &) prop).value
+        space
         , ctor_prop::initialize
         , m_impl_offset.span()
         , m_sacado_size
@@ -1372,9 +1413,19 @@ public:
 
       // Construct values
       record->m_destroy.construct_shared_allocation();
+      space.fence();
     }
 
     return record ;
+  }
+
+  template< class ... P >
+  SharedAllocationRecord<> *
+  allocate_shared( ViewCtorProp< P... > const & prop
+                 , typename Traits::array_layout const & layout
+                 , bool /*execution_space_specified*/)
+  {
+    return allocate_shared(prop, layout);
   }
 
 };
@@ -1577,7 +1628,11 @@ public:
                                       typename DstTraits::array_layout(
                                         dims[0] , dims[1] , dims[2] , dims[3] ,
                                         dims[4] , dims[5] , dims[6] , dims[7] ) );
-      dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
+
+      // For CudaLDGFetch, which doesn't define operator=() for pointer RHS
+      // but does define a constructor
+      //dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
+      dst.m_impl_handle = typename DstType::handle_type(src.m_impl_handle.scalar_ptr);
     }
 };
 

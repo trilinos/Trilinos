@@ -27,7 +27,7 @@
 // ***********************************************************************
 // @HEADER
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Error.hpp"
 #endif
@@ -308,7 +308,7 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 //-------------------------- Atomic Operators -----------------------
 
@@ -348,4 +348,4 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#endif // HAVE_SACADO_KOKKOSCORE
+#endif // HAVE_SACADO_KOKKOS

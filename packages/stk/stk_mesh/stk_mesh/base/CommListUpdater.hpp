@@ -44,10 +44,10 @@ namespace mesh {
 class CommListUpdater  : public CommMapChangeListener {
 public:
     CommListUpdater(EntityCommListInfoVector& comm_list,
-                    std::vector<EntityComm*>& entity_comms,
+                    std::vector<int>& entityCommIndices,
                     std::vector<std::pair<EntityKey,EntityCommInfo>>& removedGhosts)
     : m_comm_list(comm_list),
-      m_entity_comms(entity_comms),
+      m_entityCommIndices(entityCommIndices),
       m_removedGhosts(removedGhosts)
     {}
     virtual ~CommListUpdater(){}
@@ -60,14 +60,14 @@ public:
         EntityCommListInfoVector::iterator iter =
                 std::lower_bound(m_comm_list.begin(), m_comm_list.end(), key);
         if (iter != m_comm_list.end() && iter->key == key) {
-            iter->entity_comm = nullptr;
-            m_entity_comms[iter->entity.local_offset()] = nullptr;
+            iter->entity_comm = -1;
+            m_entityCommIndices[iter->entity.local_offset()] = -1;
         }
     }
 
 private:
   EntityCommListInfoVector& m_comm_list;
-  std::vector<EntityComm*>& m_entity_comms;
+  std::vector<int>& m_entityCommIndices;
   std::vector<std::pair<EntityKey,EntityCommInfo>>& m_removedGhosts;
 };
 

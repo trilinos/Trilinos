@@ -532,7 +532,7 @@ namespace Belos {
         KokkosBlas::gemm (
           &ctransA, &ctransB,
           alpha, flat_A_view, flat_B_view,
-          Kokkos::Details::ArithTraits<dot_type>::zero(),
+          Kokkos::ArithTraits<dot_type>::zero(),
           C_view_dev);
       }
 

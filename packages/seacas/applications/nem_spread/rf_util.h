@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef _RF_UTIL_H
-#define _RF_UTIL_H
+#pragma once
 #include <climits>
 
 template <typename T> inline void my_swap(T &r, T &s)
@@ -56,5 +55,3 @@ template <typename T, typename U> void my_sort(int64_t count, T ra[], U rb[])
 /*****************************************************************************/
 /*****************************************************************************/
 extern void print_line(const char *charstr, int ntimes);
-
-#endif /* #ifndef _RF_UTIL_H */

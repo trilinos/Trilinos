@@ -342,7 +342,7 @@
                   {
                     stk::mesh::Entity node = createOrGetNode(nodeRegistry, eMesh, kc);
                     VERIFY_OP_ON(m_eMesh.is_valid(node), ==, true, " hmmm");
-                    double *coord = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+                    double *coord = static_cast<double*>(stk::mesh::field_data( *eMesh.get_coordinates_field() , node ));
                     std::cout << "P[" << eMesh.get_rank() << "] tmp srk createOrGetNode id= " << kc 
                               << " coord = " << coord[0] << " " << coord[1] << " " << coord[2]
                               << " jc= " << jc << std::endl;
@@ -360,7 +360,7 @@
 
             if (proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = static_cast<double*>(stk::mesh::field_data( *proc_rank_field , newElement ));
                 fdata[0] = double(eMesh.owner_rank(newElement));
               }
 

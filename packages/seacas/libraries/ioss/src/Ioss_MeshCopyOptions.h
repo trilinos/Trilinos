@@ -1,6 +1,6 @@
 #pragma once
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,13 +8,19 @@
  */
 #include <vector>
 
+#include "ioss_export.h"
+
 namespace Ioss {
-  struct MeshCopyOptions
+  struct IOSS_EXPORT MeshCopyOptions
   {
     std::vector<double> selected_times{};
     double              minimum_time{0.0};
     double              maximum_time{0.0};
     double              delay{0.0};
+
+    double rel_tolerance{};
+    double abs_tolerance{};
+    double tol_floor{};
 
     // POINTER=1, STD_VECTOR=2, KOKKOS_VIEW_1D=3, KOKKOS_VIEW_2D=4,
     // KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE=5
@@ -22,6 +28,7 @@ namespace Ioss {
     bool memory_statistics{false};
     bool debug{false};
     bool verbose{false};
+    bool output_summary{false};
     bool ints_64_bit{false};
     bool delete_timesteps{false};
     bool reverse{false};          // Used for testing CGNS

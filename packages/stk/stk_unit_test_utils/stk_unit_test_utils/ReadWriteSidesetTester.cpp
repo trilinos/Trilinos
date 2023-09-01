@@ -48,7 +48,7 @@ void compare_sidesets(const std::string& inputFileName,
     for(size_t ss=0; ss<bulk.get_number_of_sidesets(); ++ss)
     {
         stk::mesh::Part *surface_part = get_surface_part_with_id(bulk.mesh_meta_data(), expected[ss].id);
-        ThrowRequire(surface_part != nullptr);
+        STK_ThrowRequire(surface_part != nullptr);
         const stk::mesh::SideSet& sideSet = bulk.get_sideset(*surface_part);
         const std::vector<ElemIdSide>& expectedSideSet = expected[ss].sideSet;
         EXPECT_EQ(expected[ss].id, surface_part->id());
@@ -162,7 +162,7 @@ void compare_sidesets(const std::string& inputFileName,
     for(size_t ss=0; ss<bulk.get_number_of_sidesets(); ++ss)
     {
         stk::mesh::Part *surface_part = get_surface_part_with_id(bulk.mesh_meta_data(), expected[ss].id);
-        ThrowRequire(surface_part != nullptr);
+        STK_ThrowRequire(surface_part != nullptr);
         const stk::mesh::SideSet& sideSet = bulk.get_sideset(*surface_part);
         const std::vector<ElemIdSide>& expectedSideSet = expected[ss].sideSet;
         EXPECT_EQ(expected[ss].id, surface_part->id());

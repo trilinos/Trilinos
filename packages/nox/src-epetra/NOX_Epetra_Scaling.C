@@ -112,7 +112,7 @@ void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
     std::cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
          << "For \"Row Sum\" scaling, the Matrix must be an "
          << "Epetra_RowMatrix derived object!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
       }
 
       test->InvRowSums(*diagonal);
@@ -132,7 +132,7 @@ void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
     std::cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
          << "For \"Column Sum\" scaling, the Matrix must be an "
          << "Epetra_RowMatrix derived object!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
       }
 
       test->InvColSums(*diagonal);

@@ -127,14 +127,13 @@ int main(int argc, char *argv[])
   // ================================================== //
 
   Time.ResetStartTime();
-  Epetra_CrsMatrix& C =
-    *(Ifpack_CreateOverlappingCrsMatrix(&*A,OverlapLevel));
+  Teuchos::RCP<Epetra_CrsMatrix> C(Ifpack_CreateOverlappingCrsMatrix(&*A,OverlapLevel));
   if (Comm.MyPID() == 0)
     cout << "Time to create C = " << Time.ElapsedTime() << endl;
 
   // simple checks on global quantities
-  long long NumGlobalRowsC = C.NumGlobalRows64();
-  long long NumGlobalNonzerosC = C.NumGlobalNonzeros64();
+  long long NumGlobalRowsC = C->NumGlobalRows64();
+  long long NumGlobalNonzerosC = C->NumGlobalNonzeros64();
   if (NumGlobalRowsB != NumGlobalRowsC) {
     std::ostringstream os;
     os << "NumGlobalRowsB = " << NumGlobalRowsB
@@ -148,12 +147,12 @@ int main(int argc, char *argv[])
     throw std::logic_error (os.str ());
   }
 
-  Epetra_Vector ExtX_C(C.RowMatrixRowMap());
-  Epetra_Vector ExtY_C(C.RowMatrixRowMap());
+  Epetra_Vector ExtX_C(C->RowMatrixRowMap());
+  Epetra_Vector ExtY_C(C->RowMatrixRowMap());
   ExtY_C.PutScalar(0.0);
   Y.PutScalar(0.0);
 
-  IFPACK_CHK_ERR(C.Multiply(false,X,Y));
+  IFPACK_CHK_ERR(C->Multiply(false,X,Y));
 
   double Norm_C;
   Y.Norm2(&Norm_C);

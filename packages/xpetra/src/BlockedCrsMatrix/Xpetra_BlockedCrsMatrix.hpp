@@ -46,7 +46,7 @@
 #ifndef XPETRA_BLOCKEDCRSMATRIX_HPP
 #define XPETRA_BLOCKEDCRSMATRIX_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
@@ -97,7 +97,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class BlockedCrsMatrix :
     public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
@@ -1488,7 +1488,6 @@ namespace Xpetra {
     }
     //@}
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     local_matrix_type getLocalMatrixDevice () const {
@@ -1505,8 +1504,6 @@ namespace Xpetra {
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::getLocalMatrix(): operation not supported.");
     }
 
-
-#endif
 
 #ifdef HAVE_XPETRA_THYRA
     Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > getThyraOperator() {

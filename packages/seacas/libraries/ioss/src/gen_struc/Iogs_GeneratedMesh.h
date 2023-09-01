@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "iogs_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityType.h> // for EntityType
@@ -17,7 +19,7 @@
 #include <vector>  // for vector
 
 namespace Iogs {
-  class GeneratedMesh
+  class IOGS_EXPORT GeneratedMesh
   {
   public:
     enum ShellLocation { MX = 0, PX = 1, MY = 2, PY = 3, MZ = 4, PZ = 5 };
@@ -224,7 +226,7 @@ namespace Iogs {
     /**
      * Return number of elements in all structured blocks on this processor.
      */
-    virtual int64_t element_count_proc() const;
+    int64_t element_count_proc() const;
 
     int64_t timestep_count() const { return timestepCount; }
     /**
@@ -239,7 +241,7 @@ namespace Iogs {
      * block with id 'block_number'. The 'block_number' ranges from
      * '1' to 'block_count()'.
      */
-    virtual int64_t element_count_proc(int64_t block_number) const;
+    int64_t element_count_proc(int64_t block_number) const;
 
     /**
      * Returns pair containing "topology type string" and "number of

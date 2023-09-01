@@ -1,10 +1,9 @@
-// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef ZE_Grid_H
-#define ZE_Grid_H
+#pragma once
 
 #include <vector>
 
@@ -119,6 +118,7 @@ private:
   Ioss::ParallelUtils                        m_pu{};
   size_t                                     m_gridI{0};
   size_t                                     m_gridJ{0};
+  vector3d                                   m_offset{0.0, 0.0, 0.0};
   double                                     m_scaleFactor{1.0};
   int                                        m_parallelSize{1}; //! Number of ranks to decompose for
   int          m_rankCount{1}; //! Number of ranks to process at a time.
@@ -129,4 +129,3 @@ private:
   Minimize     m_minimizeOpenFiles{Minimize::NONE}; // 1: Unit, 2: output, 3: all
   unsigned int m_generatedSideSets{0};
 };
-#endif

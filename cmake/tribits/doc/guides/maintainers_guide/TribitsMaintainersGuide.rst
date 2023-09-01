@@ -53,8 +53,8 @@ TriBITS System Maintainers Documentation
 This section contains more detailed information about the internal
 implementation of TriBITS.  This information is meant to make it easier to
 understand and manipulate the data-structures and macros/functions that make
-up internal implementation of TriBITS.
-
+up internal implementation of TriBITS and is important for `TriBITS System
+Developers`_ and `TriBITS System Architects`_.
 
 .. include:: ../../../core/package_arch/TribitsSystemDataStructuresMacrosFunctions.rst
 
@@ -70,6 +70,8 @@ up internal implementation of TriBITS.
 
 Appendix
 ========
+
+.. include:: ../TribitsCMakeLanguageOverviewAndGotchas.rst
 
 .. include:: ../TribitsHistory.rst
 

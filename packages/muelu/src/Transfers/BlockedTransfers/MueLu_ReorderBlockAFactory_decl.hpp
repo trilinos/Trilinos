@@ -56,7 +56,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SubBlockAFactory_fwd.hpp"
 
 
 namespace MueLu {
@@ -81,16 +80,6 @@ namespace MueLu {
     #include "MueLu_UseShortNames.hpp"
 
   public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    ReorderBlockAFactory() { }
-
-    //! Destructor.
-    virtual ~ReorderBlockAFactory() { }
-    //@}
-
     //! Input
     //@{
 
@@ -108,9 +97,6 @@ namespace MueLu {
     void Build(Level & currentLevel) const;
 
     //@}
-
-  private:
-
   }; // class ReorderBlockAFactory
 
 } // namespace MueLu

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -25,7 +25,6 @@ void ch_evals3(double  H[3][3], /* 3x3 sym matrix for lowest eigenvalue */
   double tol = 1.0e-6;        /* allowed deviation */
   double xmax;                /* largest matrix element for scaling */
   int    i, j;                /* loop indices */
-  double determinant();
 
   /* This first requires solving a cubic equation. */
   /* Normalize to avoid any numerical problems. */
@@ -116,10 +115,7 @@ void kramer3(                                         /* Use Kramer's rule to so
              double A[3][3], double b[3], double x[3] /* Solve Ax=b */
 )
 {
-  double det; /* determinant of system */
-  double determinant();
-
-  det = 1.0 / determinant(A, 3);
+  double det = 1.0 / determinant(A, 3);
 
   x[0] = (b[0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) -
           b[1] * (A[0][1] * A[2][2] - A[0][2] * A[2][1]) +

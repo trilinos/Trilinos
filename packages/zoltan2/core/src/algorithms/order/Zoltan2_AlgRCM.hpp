@@ -64,9 +64,11 @@ class AlgRCM : public Algorithm<Adapter>
 {
   private:
 
-  const RCP<GraphModel<Adapter> > model;
+  const RCP<const typename Adapter::base_adapter_t> adapter;
   const RCP<Teuchos::ParameterList> pl;
   const RCP<const Teuchos::Comm<int> > comm;
+  RCP<const Environment> env;
+  modelFlag_t graphFlags;
 
   public:
 
@@ -76,10 +78,12 @@ class AlgRCM : public Algorithm<Adapter>
   typedef typename Adapter::scalar_t scalar_t;
 
   AlgRCM(
-    const RCP<GraphModel<Adapter> > &model__,
+    const RCP<const typename Adapter::base_adapter_t> &adapter__,
     const RCP<Teuchos::ParameterList> &pl__,
-    const RCP<const Teuchos::Comm<int> > &comm__
-  ) : model(model__), pl(pl__), comm(comm__)
+    const RCP<const Teuchos::Comm<int> > &comm__,
+    RCP<const Environment> &env__,
+    const modelFlag_t &graphFlags__
+  ) : adapter(adapter__), pl(pl__), comm(comm__), env(env__), graphFlags(graphFlags__)
   {
   }
 
@@ -93,19 +97,20 @@ class AlgRCM : public Algorithm<Adapter>
     int ierr= 0;
 
     HELLO;
-  
+
     // Get local graph.
     ArrayView<const gno_t> edgeIds;
     ArrayView<const offset_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts;
-  
+
+    const auto model = rcp(new GraphModel<Adapter>(adapter, env, comm, graphFlags));
     const size_t nVtx = model->getLocalNumVertices();
-    model->getEdgeList(edgeIds, offsets, wgts); 
+    model->getEdgeList(edgeIds, offsets, wgts);
     const int numWeightsPerEdge = model->getNumWeightsPerEdge();
     if (numWeightsPerEdge > 1){
       throw std::runtime_error("Multiple weights not supported.");
     }
-  
+
 #if 0
     // Debug
     cout << "Debug: Local graph from getLocalEdgeList" << endl;
@@ -113,11 +118,11 @@ class AlgRCM : public Algorithm<Adapter>
     cout << "rank " << comm->getRank() << ": edgeIds: " << edgeIds << endl;
     cout << "rank " << comm->getRank() << ": offsets: " << offsets << endl;
 #endif
-  
+
     // RCM constructs invPerm, not perm
     const ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
     const ArrayRCP<lno_t> tmpPerm(invPerm.size()); //temporary array used in reversing order
-  
+
     // Check if there are actually edges to reorder.
     // If there are not, then just use the natural ordering.
     if (offsets[nVtx] == 0) {
@@ -127,13 +132,13 @@ class AlgRCM : public Algorithm<Adapter>
       solution->setHaveInverse(true);
       return 0;
     }
-  
+
     // Set the label of each vertex to invalid.
     Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     for (size_t i = 0; i < nVtx; ++i) {
       invPerm[i] = INVALID;
     }
-  
+
     // Loop over all connected components.
     // Do BFS within each component.
     gno_t root = 0;
@@ -167,13 +172,13 @@ class AlgRCM : public Algorithm<Adapter>
       //cout << "Debug: invPerm[" << root << "] = " << count << endl;
       invPerm[root] = count++;
       tmpPerm[invPerm[root]] = root;
-  
+
       while (Q.size()){
         // Get a vertex from the queue
         gno_t v = Q.front();
         Q.pop();
         //cout << "Debug: v= " << v << ", offsets[v] = " << offsets[v] << endl;
-  
+
         // Add unmarked children to list of pairs, to be added to queue.
         children.resize(0);
         for (offset_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
@@ -183,7 +188,7 @@ class AlgRCM : public Algorithm<Adapter>
             std::pair<gno_t,offset_t> newchild;
             newchild.first = child;
             newchild.second = offsets[child+1] - offsets[child];
-            children.push_back(newchild); 
+            children.push_back(newchild);
           }
         }
         // Sort children by increasing degree
@@ -221,7 +226,7 @@ class AlgRCM : public Algorithm<Adapter>
       }
 
     }
-  
+
     solution->setHaveInverse(true);
     return ierr;
   }
@@ -261,7 +266,7 @@ class AlgRCM : public Algorithm<Adapter>
       for (offset_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
         gno_t child = edgeIds[ptr];
         if (!mark[child]){
-          mark[child] = true; 
+          mark[child] = true;
           Q.push(child);
         }
       }
@@ -295,7 +300,7 @@ class AlgRCM : public Algorithm<Adapter>
         for (offset_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
           gno_t child = edgeIds[ptr];
           if (!mark[child]){
-            mark[child] = true; 
+            mark[child] = true;
             Q.push(child);
           }
         }
@@ -303,7 +308,7 @@ class AlgRCM : public Algorithm<Adapter>
     }
     return v;
   }
-  
+
 };
 }
 #endif

@@ -129,7 +129,6 @@
 #include "AztecOO.h"
 
 // MueLu Includes
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #  include "MueLu.hpp"
 #  include "MueLu_ParameterListInterpreter.hpp"
 #  include "MueLu_TpetraOperator.hpp"
@@ -142,16 +141,13 @@
 #  include "MueLu_AvatarInterface.hpp"
 #endif
 
-#endif // HAVE_TRILINOSCOUPLINGS_MUELU
-
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef HAVE_INTREPID_KOKKOS
 #include "Sacado.hpp"
 #else
 // Sacado includes
 #include "Sacado_No_Kokkos.hpp"
 #endif
 
-//#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
@@ -159,7 +155,6 @@
 #include <BelosFixedPointSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-//#endif
 
 using namespace std;
 using namespace Intrepid;
@@ -209,7 +204,7 @@ typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
 typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;

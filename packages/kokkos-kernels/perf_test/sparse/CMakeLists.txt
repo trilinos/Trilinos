@@ -65,10 +65,6 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
     )
 ENDIF ()
 
-KOKKOSKERNELS_ADD_EXECUTABLE(
-        sparse_spmv_blockcrs
-        SOURCES KokkosSparse_spmv_blockcrs.cpp
-)
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_spmv_bsr
@@ -85,7 +81,12 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         SOURCES KokkosSparse_sptrsv_cholmod.cpp
 )
 
-IF (NOT ${KOKKOS_HAS_TRILINOS})
+IF (KOKKOS_HAS_TRILINOS)
+    SET (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU OFF)
+ELSE ()
+    SET (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU ON)
+ENDIF ()
+IF (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU)
     # Disable this perf test with Trilinos builds to workaround
     # -Werror issues error: declaration of xyz with C language linkage
     KOKKOSKERNELS_ADD_EXECUTABLE(
@@ -109,3 +110,29 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_spiluk
         SOURCES KokkosSparse_spiluk.cpp
 )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+        sparse_mdf
+        SOURCES KokkosSparse_mdf.cpp
+)
+
+if (KokkosKernels_ENABLE_BENCHMARK)
+  KOKKOSKERNELS_ADD_BENCHMARK(
+    sparse_par_ilut
+    SOURCES KokkosSparse_par_ilut.cpp
+  )
+
+  # Provide -DGinkgo_DIR to cmake to enable the ginkgo test in sparse_par_ilut. Ginkgo_DIR should
+  # point to the dir in the ginkgo install area that contains the GinkgoConfig.cmake file.
+  # For me, this was $gingko_install_dir/lib64/cmake/Ginkgo
+  if (Ginkgo_DIR)
+    find_package(Ginkgo REQUIRED)
+
+    target_compile_definitions(KokkosKernels_sparse_par_ilut PRIVATE "USE_GINKGO")
+    target_link_libraries(KokkosKernels_sparse_par_ilut PRIVATE Ginkgo::ginkgo)
+  endif()
+
+  KOKKOSKERNELS_ADD_BENCHMARK(
+    sparse_spmv_benchmark SOURCES KokkosSparse_spmv_benchmark.cpp
+  )
+endif()

@@ -93,9 +93,9 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   }
 
 
-  stk::mesh::EntityLess my_less(bulk);
-  std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> entitiesWithClosure(my_less);
+  stk::mesh::EntityProcVec entitiesWithClosure;
   bulk.my_add_closure_entities(custom_shared_ghosting, ownedEntitiesToGhost, entitiesWithClosure);
+  stk::util::sort_and_unique(entitiesWithClosure, stk::mesh::EntityLess(bulk));
 
   if (procId == 1)
   {
@@ -113,14 +113,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }
@@ -130,6 +128,7 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   }
 
   stk::mesh::impl::move_unowned_entities_for_owner_to_ghost(bulk, entitiesWithClosure);
+  stk::util::sort_and_unique(entitiesWithClosure, stk::mesh::EntityLess(bulk));
 
   if (procId==0)
   {
@@ -141,14 +140,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }
@@ -163,14 +160,12 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
     ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
 
-    unsigned i=0;
     int otherProc = 2;
 
-    for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
-        iter != entitiesWithClosure.end(); ++iter)
-    {
-      EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
-      EXPECT_EQ(otherProc, iter->second);
+    unsigned i=0;
+    for(const stk::mesh::EntityProc& entProc : entitiesWithClosure) {
+      EXPECT_EQ(gold_keys[i], bulk.entity_key(entProc.first));
+      EXPECT_EQ(otherProc, entProc.second);
       ++i;
     }
   }
@@ -182,7 +177,7 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
   bulk.modification_begin();
 
   stk::mesh::Ghosting &ghosting = bulk.create_ghosting("custom ghost unit test");
-  bulk.my_ghost_entities_and_fields(ghosting, entitiesWithClosure);
+  bulk.my_ghost_entities_and_fields(ghosting, std::move(entitiesWithClosure));
   bulk.my_internal_modification_end_for_change_ghosting();
 
   if (procId == 0)
@@ -298,7 +293,7 @@ TEST(UnitTestGhosting, WithShared)
 
   int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs != 3) {
-    return;
+    GTEST_SKIP();
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
@@ -348,6 +343,17 @@ TEST(UnitTestGhosting, WithShared)
   }
 
   stkMeshBulkData.change_ghosting(custom_shared_ghosting, send_shared);
+
+  if (myProc == otherProc) {
+    stk::mesh::Entity node9 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,9);
+    stk::mesh::Entity node10 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,10);
+    stk::mesh::Entity node11 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,11);
+    stk::mesh::Entity node12 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK,12);
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node9));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node10));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node11));
+    EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(node12));
+  }
 
   stkMeshBulkData.modification_end();
 
@@ -400,6 +406,12 @@ void create_mesh_with_1_tri_per_proc(stk::mesh::BulkData& bulk)
 void delete_node_2_and_connect_node_5_to_elem_1(stk::mesh::BulkData& bulk)
 {
   bulk.modification_begin();
+{
+std::ostringstream os;
+os<<"P"<<bulk.parallel_rank()<<"  **** doing test mod ****" << std::endl;
+std::cerr<<os.str();
+stk::parallel_machine_barrier(bulk.parallel());
+}
   if (bulk.parallel_rank() == 0) {
     stk::mesh::Entity node5 = bulk.declare_node(5);
     stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
@@ -417,7 +429,7 @@ void delete_node_2_and_connect_node_5_to_elem_1(stk::mesh::BulkData& bulk)
 
 TEST(UnitTestGhosting, sharedBecomesAuraGhost)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
 
   const unsigned spatialDim = 2;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA);

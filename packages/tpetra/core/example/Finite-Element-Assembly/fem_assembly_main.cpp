@@ -49,7 +49,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
-
+#include "Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp"
 #include "fem_assembly_commandLineOpts.hpp"
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"
@@ -104,6 +104,9 @@ int main (int argc, char *argv[])
     timer = rcp(new StackedTimer("X) Global", false));
     TimeMonitor::setStackedTimer(timer);
   }
+
+  // Force timing of the Kokkos::deep_copy calls
+  Tpetra::Details::AddKokkosDeepCopyToTimeMonitor(true);
 
   // Entry point
   if(opts.execInsertGlobalIndicesFE && executeInsertGlobalIndicesFESP(comm, opts))

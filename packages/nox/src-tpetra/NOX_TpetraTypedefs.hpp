@@ -20,7 +20,7 @@ namespace NOX {
   using GlobalOrdinal = Tpetra::Map<>::global_ordinal_type;
   using GlobalSizeType = Tpetra::global_size_t;
   using DeviceSpace = Kokkos::DefaultExecutionSpace;
-  using NodeType = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceSpace>;
+  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceSpace>;
   
   using TMap = Tpetra::Map<LocalOrdinal, GlobalOrdinal, NodeType>;
   using ConstTMap = const Tpetra::Map<LocalOrdinal, GlobalOrdinal, NodeType>;

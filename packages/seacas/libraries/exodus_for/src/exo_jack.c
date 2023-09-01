@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -104,15 +104,20 @@ static void ex_fcdcpy(char *fstring, /* output string to be blank-filled */
 static void ex_fstrncpy(char *target, /* space to be copied into */
                         char *source, /* string to be copied */
                         int   maxlen)
-{ /* maximum length of *source */
-  int len = maxlen;
-
-  while (len-- && *source != '\0') {
-    *target++ = *source++;
+{
+  if (*source == '\0') {
+    *target = '\0';
+    return;
   }
 
-  len = maxlen;
-  while (len-- && *(--target) == ' ') {
+  int len = maxlen;
+  int lcp = 0;
+  while (len-- && *source != '\0') {
+    *target++ = *source++;
+    lcp++;
+  }
+
+  while (lcp-- && *(--target) == ' ') {
     ; /* strip blanks */
   }
   *(++target) = '\0'; /* insert new EOS marker */
@@ -2509,7 +2514,8 @@ void
 void F2C(exgpem, EXGPEM)(int *idexo, entity_id *map_id, void_int *start, void_int *count,
                          void_int *elem_map, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2614,7 +2620,8 @@ void F2C(expem, EXPEM)(int *idexo, entity_id *map_id, void_int *elem_map, int *i
 void F2C(exppem, EXPPEM)(int *idexo, entity_id *map_id, void_int *start, void_int *count,
                          void_int *elem_map, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -2710,7 +2717,7 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
   /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
               the Fortran programmer passed it. It is best at
               this time to hard code it per NEPII spec. */
-  if (ftypelen != 1) {
+  if (ftypelen > 1) {
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: file type string length is %lu in file id %d\n",
@@ -2747,7 +2754,7 @@ void F2C(expii, EXPII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
   /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
               the Fortran programmer passed it. It is best at
               this time to hard code it per NEPII spec. */
-  if (ftypelen != 1) {
+  if (ftypelen > 1) {
     slen = ftypelen;
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     char errmsg[MAX_ERR_LENGTH];
@@ -2989,7 +2996,8 @@ void F2C(expebig, EXPEBIG)(int *idne, void_int *el_blk_ids, void_int *el_blk_cnt
 void F2C(exgnss, EXGNSS)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
                          void_int *ss_elem_list, void_int *ss_side_list, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3015,7 +3023,8 @@ void F2C(exgnss, EXGNSS)(int *idne, entity_id *ss_id, void_int *start, void_int 
 void F2C(expnss, EXPNSS)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
                          void_int *ss_elem_list, void_int *ss_side_list, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3041,7 +3050,8 @@ void F2C(expnss, EXPNSS)(int *idne, entity_id *ss_id, void_int *start, void_int 
 void F2C(exgnssd, EXGNSSD)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
                            real *ss_df, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3066,7 +3076,8 @@ void F2C(exgnssd, EXGNSSD)(int *idne, entity_id *ss_id, void_int *start, void_in
 void F2C(expnssd, EXPNSSD)(int *idne, entity_id *ss_id, void_int *start, void_int *count,
                            real *ss_df, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3091,7 +3102,8 @@ void F2C(expnssd, EXPNSSD)(int *idne, entity_id *ss_id, void_int *start, void_in
 void F2C(exgnns, EXGNNS)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
                          void_int *ns_node_list, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3116,7 +3128,8 @@ void F2C(exgnns, EXGNNS)(int *idne, entity_id *ns_id, void_int *start, void_int 
 void F2C(expnns, EXPNNS)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
                          void_int *ns_node_list, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3141,7 +3154,8 @@ void F2C(expnns, EXPNNS)(int *idne, entity_id *ns_id, void_int *start, void_int 
 void F2C(exgnnsd, EXGNNSD)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
                            real *ns_df, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3166,7 +3180,8 @@ void F2C(exgnnsd, EXGNNSD)(int *idne, entity_id *ns_id, void_int *start, void_in
 void F2C(expnnsd, EXPNNSD)(int *idne, entity_id *ns_id, void_int *start, void_int *count,
                            real *ns_df, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3191,7 +3206,8 @@ void F2C(expnnsd, EXPNNSD)(int *idne, entity_id *ns_id, void_int *start, void_in
 void F2C(exgncor, EXGNCOR)(int *idne, void_int *start, void_int *count, real *x_coor, real *y_coor,
                            real *z_coor, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3216,7 +3232,8 @@ void F2C(exgncor, EXGNCOR)(int *idne, void_int *start, void_int *count, real *x_
 void F2C(expncor, EXPNCOR)(int *idne, void_int *start, void_int *count, real *x_coor, real *y_coor,
                            real *z_coor, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3241,7 +3258,8 @@ void F2C(expncor, EXPNCOR)(int *idne, void_int *start, void_int *count, real *x_
 void F2C(exgnec, EXGNEC)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *count,
                          void_int *connect, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3267,7 +3285,8 @@ void F2C(exgnec, EXGNEC)(int *idne, entity_id *elem_blk_id, void_int *start, voi
 void F2C(expnec, EXPNEC)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *count,
                          void_int *connect, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3293,7 +3312,8 @@ void F2C(expnec, EXPNEC)(int *idne, entity_id *elem_blk_id, void_int *start, voi
 void F2C(exgneat, EXGNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *count,
                            real *attrib, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3318,7 +3338,8 @@ void F2C(exgneat, EXGNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, v
 void F2C(expneat, EXPNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, void_int *count,
                            real *attrib, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3343,7 +3364,7 @@ void F2C(expneat, EXPNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, v
 void F2C(exgelt, EXGELT)(int *idne, entity_id *elem_blk_id, char *elem_type, int *ierr,
                          size_t elem_typelen)
 {
-  /* WARNING: ftypelen SHOULD be MAX_STR_LENGTH, but may not be depending
+  /* WARNING: elem_typelen SHOULD be MAX_STR_LENGTH, but may not be depending
               on how the Fortran programmer passed it. It is best at
               this time to hard code it per NEMESIS spec. */
   size_t slen = MAX_STR_LENGTH;
@@ -3381,7 +3402,8 @@ void F2C(exgnev, EXGNEV)(int *idne, int *time_step, int *elem_var_index, entity_
                          void_int *num_elem_this_blk, void_int *start, void_int *count,
                          real *elem_var_vals, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3407,7 +3429,8 @@ void F2C(exgnev, EXGNEV)(int *idne, int *time_step, int *elem_var_index, entity_
 void F2C(expevs, EXPEVS)(int *idne, int *time_step, int *elem_var_index, entity_id *elem_blk_id,
                          void_int *start, void_int *count, real *elem_var_vals, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3433,7 +3456,8 @@ void F2C(expevs, EXPEVS)(int *idne, int *time_step, int *elem_var_index, entity_
 void F2C(exgnnv, EXGNNV)(int *idne, int *time_step, int *nodal_var_index, void_int *start,
                          void_int *count, real *nodal_vars, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3458,7 +3482,8 @@ void F2C(exgnnv, EXGNNV)(int *idne, int *time_step, int *nodal_var_index, void_i
 void F2C(expnvs, EXPNVS)(int *idne, int *time_step, int *nodal_var_index, void_int *start,
                          void_int *count, real *nodal_var_vals, int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)start;
     cnt = *(int64_t *)count;
@@ -3484,7 +3509,8 @@ void F2C(expnvs, EXPNVS)(int *idne, int *time_step, int *nodal_var_index, void_i
 void F2C(exgnenm, EXGNENM)(int *idne, void_int *starte, void_int *num_ent, void_int *elem_map,
                            int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)starte;
     cnt = *(int64_t *)num_ent;
@@ -3509,7 +3535,8 @@ void F2C(exgnenm, EXGNENM)(int *idne, void_int *starte, void_int *num_ent, void_
 void F2C(expnenm, EXPNENM)(int *idne, void_int *starte, void_int *num_ent, void_int *elem_map,
                            int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)starte;
     cnt = *(int64_t *)num_ent;
@@ -3534,7 +3561,8 @@ void F2C(expnenm, EXPNENM)(int *idne, void_int *starte, void_int *num_ent, void_
 void F2C(exgnnnm, EXGNNNM)(int *idne, void_int *startn, void_int *num_ent, void_int *node_map,
                            int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)startn;
     cnt = *(int64_t *)num_ent;
@@ -3559,7 +3587,8 @@ void F2C(exgnnnm, EXGNNNM)(int *idne, void_int *startn, void_int *num_ent, void_
 void F2C(expnnnm, EXPNNNM)(int *idne, void_int *startn, void_int *num_ent, void_int *node_map,
                            int *ierr)
 {
-  int64_t st, cnt;
+  int64_t st;
+  int64_t cnt;
   if (ex_int64_status(*idne) & EX_BULK_INT64_API) {
     st  = *(int64_t *)startn;
     cnt = *(int64_t *)num_ent;
@@ -3745,5 +3774,108 @@ void F2C(expecm, EXPECM)(int *idne, entity_id *map_id, void_int *elem_ids, void_
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write elemental comm map to file id %d",
              *idne);
     ex_err_fn(*idne, __func__, errmsg, EX_MSG);
+  }
+}
+
+/*
+ * read the values of a single variable for a partial block at one time
+ * step to the database; assume the first time step and variable index
+ * are 1
+ * \sa ex_get_partial_var()
+ */
+void F2C(exgpv, EXGPV)(int *idexo, int *time_step, int *var_type, int *var_index, entity_id *obj_id,
+                       void_int *start_index, void_int *num_entities, real *var_vals, int *ierr)
+{
+  int64_t start_index64, num_entities64;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    start_index64  = *(int64_t *)start_index;
+    num_entities64 = *(int64_t *)num_entities;
+  }
+  else {
+    start_index64  = *(int *)start_index;
+    num_entities64 = *(int *)num_entities;
+  }
+  if ((*ierr = ex_get_partial_var(*idexo, *time_step, (ex_entity_type)*var_type, *var_index,
+                                  *obj_id, start_index64, num_entities64, var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write variable slab to file id %d", *idexo);
+    ex_err_fn(*idexo, __func__, errmsg, EX_MSG);
+  }
+}
+
+/*!
+ * writes the values of a single variable for a partial block at one time
+ * step to the database; assume the first time step and variable index
+ * are 1
+ * \sa ex_put_partial_var()
+ */
+void F2C(exppv, EXPPV)(int *idexo, int *time_step, int *var_type, int *var_index, entity_id *obj_id,
+                       void_int *start_index, void_int *num_entities, real *var_vals, int *ierr)
+{
+  int64_t start_index64, num_entities64;
+  if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
+    start_index64  = *(int64_t *)start_index;
+    num_entities64 = *(int64_t *)num_entities;
+  }
+  else {
+    start_index64  = *(int *)start_index;
+    num_entities64 = *(int *)num_entities;
+  }
+  if ((*ierr = ex_put_partial_var(*idexo, *time_step, (ex_entity_type)*var_type, *var_index,
+                                  *obj_id, start_index64, num_entities64, var_vals)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write variable slab to file id %d", *idexo);
+    ex_err_fn(*idexo, __func__, errmsg, EX_MSG);
+  }
+}
+
+/*!
+ * reads the coordinates of some of the nodes in the model for the specified component
+ * \sa ex_get_partial_coord_component
+ */
+void F2C(exgpcc, EXGPCC)(int *exoid, void_int *start_node_num, void_int *num_nodes, int *component,
+                         real *coor, int *ierr)
+{
+  int64_t start_node_num64, num_nodes64;
+  if (ex_int64_status(*exoid) & EX_BULK_INT64_API) {
+    start_node_num64 = *(int64_t *)start_node_num;
+    num_nodes64      = *(int64_t *)num_nodes;
+  }
+  else {
+    start_node_num64 = *(int *)start_node_num;
+    num_nodes64      = *(int *)num_nodes;
+  }
+  if ((*ierr = ex_get_partial_coord_component(*exoid, start_node_num64, num_nodes64, *component,
+                                              coor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Error: failed to read coordinate component  slab to file id %d", *exoid);
+    ex_err_fn(*exoid, __func__, errmsg, EX_MSG);
+  }
+}
+
+/*!
+ * writes the coordinates of some of the nodes in the model for the specified component
+ * \sa ex_put_partial_coord_component
+ */
+
+void F2C(exppcc, EXPPCC)(int *exoid, void_int *start_node_num, void_int *num_nodes, int *component,
+                         real *coor, int *ierr)
+{
+  int64_t start_node_num64, num_nodes64;
+  if (ex_int64_status(*exoid) & EX_BULK_INT64_API) {
+    start_node_num64 = *(int64_t *)start_node_num;
+    num_nodes64      = *(int64_t *)num_nodes;
+  }
+  else {
+    start_node_num64 = *(int *)start_node_num;
+    num_nodes64      = *(int *)num_nodes;
+  }
+  if ((*ierr = ex_put_partial_coord_component(*exoid, start_node_num64, num_nodes64, *component,
+                                              coor)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "Error: failed to write coordinate component  slab to file id %d", *exoid);
+    ex_err_fn(*exoid, __func__, errmsg, EX_MSG);
   }
 }

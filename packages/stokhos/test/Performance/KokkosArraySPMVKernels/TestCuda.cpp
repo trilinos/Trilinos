@@ -94,8 +94,8 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
 {
   typedef unsigned long long int IntType ;
 
-  Kokkos::InitArguments init_args;
-  init_args.device_id = device_id;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_device_id(device_id);
   Kokkos::initialize( init_args );
   Kokkos::print_configuration( std::cout );
 

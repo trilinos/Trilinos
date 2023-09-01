@@ -59,7 +59,8 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
 #include <KokkosKernels_Sorting.hpp>
-#include <KokkosKernels_SparseUtils.hpp>
+#include <KokkosSparse_Utils.hpp>
+#include <KokkosSparse_SortCrs.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosSparse_sptrsv.hpp>
 #include <KokkosSparse_trsv.hpp>
@@ -450,32 +451,30 @@ class FastILUPrec
             using std::sort;
             OrdinalArrayMirror ia = aRowMapHost;
             OrdinalArrayMirror ja = aColIdxHost;
-            int *nzu;
-            int *nzl;
-            nzu = new int[1];
-            nzl = new int[1];
+            int nzu;
+            int nzl;
             Ordinal i;
 
             //Compute sparsity structure of ILU
-            *nzl = aRowMapHost[nRows];
-            *nzu = aRowMapHost[nRows];
+            nzl = aRowMapHost[nRows];
+            nzu = aRowMapHost[nRows];
 
-            *nzl *= (level + 2);
-            *nzu *= (level + 2);
+            nzl *= (level + 2);
+            nzu *= (level + 2);
             vector<int> ial(nRows+1);
-            vector<int> jal(*nzl);
-            vector<int> levell(*nzl);
+            vector<int> jal(nzl);
+            vector<int> levell(nzl);
             vector<int> iau(nRows+1);
-            vector<int> jau(*nzu);
-            vector<int> levelu(*nzu);
+            vector<int> jau(nzu);
+            vector<int> levelu(nzu);
 
             // TODO: if (initGuess & level > 0), call this with (aRowMap_, aColIdx_) and level = 1
             findFills(level, aRowMapHost, aColIdxHost, // input
-                      nzl, ial, jal, levell, // output L in CSR
-                      nzu, iau, jau, levelu  // output U in CSR
+                      &nzl, ial, jal, levell, // output L in CSR
+                      &nzu, iau, jau, levelu  // output U in CSR
                      );
-            int knzl = *nzl;
-            int knzu = *nzu;
+            int knzl = nzl;
+            int knzu = nzu;
             #ifdef FASTILU_INIT_TIMER
             std::cout << " findFills time : " << timer.seconds() << std::endl;
             timer.reset();
@@ -535,7 +534,7 @@ class FastILUPrec
             #endif
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             using host_space = typename HostSpace::execution_space;
-            KokkosKernels::sort_crs_graph<host_space, OrdinalArrayMirror, OrdinalArrayMirror>
+            KokkosSparse::sort_crs_graph<host_space, OrdinalArrayMirror, OrdinalArrayMirror>
               (aRowMap_, aColIdx_);
             #ifdef FASTILU_INIT_TIMER
             host_space().fence();
@@ -631,7 +630,7 @@ class FastILUPrec
             }
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             //using host_space = Kokkos::HostSpace::execution_space;
-            //KokkosKernels::sort_crs_matrix<host_space, OrdinalArrayMirror, OrdinalArrayMirror, ScalarArrayMirror>
+            //KokkosSparse::sort_crs_matrix<host_space, OrdinalArrayMirror, OrdinalArrayMirror, ScalarArrayMirror>
             //  (aRowMap_, aColIdx_, aVal_);
             //host_space().fence();
 
@@ -694,7 +693,7 @@ class FastILUPrec
             }
             //Sort each row of A by ColIdx
             if (!skipSortMatrix || useMetis) {
-              KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
+              KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
             }
 
             //Copy the host matrix into the initialized a;
@@ -907,7 +906,7 @@ class FastILUPrec
             #endif
 
             // sort
-            KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
+            KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
               (uRowMap, uColIdx, uVal);
             ExecSpace().fence();
             #ifdef FASTILU_TIMER
@@ -1633,13 +1632,12 @@ class FastILUPrec
             #if 1
             // transpose
             Kokkos::deep_copy(utRowMap, 0);
-            KokkosKernels::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
+            KokkosSparse::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
               (nRows, nRows, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
             // sort, if the triangular solve algorithm requires a sorted matrix.
-            // Currently, only Fast does not require this.
-            bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast;
+            bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
             if(sortRequired) {
-              KokkosKernels::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
+              KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
                 (utRowMap, utColIdx, utVal);
             }
             if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
@@ -1750,7 +1748,8 @@ class FastILUPrec
         void apply(ScalarArray &x, ScalarArray &y)
         {
             Kokkos::Timer timer;
-            const Scalar one  = STS::one();
+            const Scalar one(1.0);
+            const Scalar minus_one(-1.0);
 
             //required to prevent contamination of the input.
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(xTemp, x);
@@ -1853,13 +1852,13 @@ class FastILUPrec
                                 // > y = x
                                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copy_x2y);
                                 // > y = y - L*x_old
-                                KokkosSparse::spmv("N", -one, crsmatL, x2d_old, one, y2d);
+                                KokkosSparse::spmv("N", minus_one, crsmatL, x2d_old, one, y2d);
                             } else {
                                 // x_old = x_old - L*y
                                 // > x_old = x
                                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copy_x2xold);
                                 // > x_old = x_old - L*y
-                                KokkosSparse::spmv("N", -one, crsmatL, y2d, one, x2d_old);
+                                KokkosSparse::spmv("N", minus_one, crsmatL, y2d, one, x2d_old);
 
                                 if (i == nTrisol-1) {
                                     // y = x_old
@@ -1891,7 +1890,7 @@ class FastILUPrec
                                 // > x = y
                                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copy_y2x);
                                 // > x = x - U*x_old
-                                KokkosSparse::spmv("N", -one, crsmatU, x2d_old, one, x2d);
+                                KokkosSparse::spmv("N", minus_one, crsmatU, x2d_old, one, x2d);
                                 // > scale x = inv(diag(U))*x
                                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), scal_x);
                             } else {
@@ -1899,7 +1898,7 @@ class FastILUPrec
                                 // > xold = y
                                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copy_y2xold);
                                 // > x = x - U*x_old
-                                KokkosSparse::spmv("N", -one, crsmatU, x2d, one, x2d_old);
+                                KokkosSparse::spmv("N", minus_one, crsmatU, x2d, one, x2d_old);
                                 // > scale x = inv(diag(U))*x
                                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), scal_xold);
 

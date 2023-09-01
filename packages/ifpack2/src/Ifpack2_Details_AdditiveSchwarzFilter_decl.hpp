@@ -167,6 +167,9 @@ public:
   //! Returns the RowGraph associated with this matrix.
   virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;
 
+  //! The number of degrees of freedom per mesh point.
+  virtual local_ordinal_type getBlockSize() const;
+
   //! Returns the number of global rows in this matrix.
   virtual global_size_t getGlobalNumRows() const;
 

@@ -70,6 +70,7 @@ public:
   LOCAAdaptiveSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &ajdointModel,
       const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
       const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy);
 
@@ -117,6 +118,7 @@ Teuchos::RCP<LOCAAdaptiveSolver<Scalar> >
 observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel,
     const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer);
 

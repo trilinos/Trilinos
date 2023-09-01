@@ -29,14 +29,12 @@
   template <typename MeshType>
   ReferenceMeshSmootherBaseImpl<MeshType>::
   ReferenceMeshSmootherBaseImpl(PerceptMesh *eMesh,
-//                            typename MeshType::MTSelector *boundary_selector,
                             STKMesh::MTSelector *stk_select,
-                            StructuredGrid::MTSelector *sgrid_select,
                             typename MeshType::MTMeshGeometry *meshGeometry,
                             int inner_iterations,
                             double grad_norm,
                             int parallel_iterations)
-    : MeshSmootherImpl<MeshType>(eMesh, stk_select,sgrid_select, meshGeometry, inner_iterations, grad_norm, parallel_iterations),
+    : MeshSmootherImpl<MeshType>(eMesh, stk_select,meshGeometry, inner_iterations, grad_norm, parallel_iterations),
       m_scale(0),
       m_dmax(0),
       m_dmax_relative(0),
@@ -97,10 +95,6 @@
       stk::mesh::copy_owned_to_shared(*m_eMesh->get_bulk_data(), fields);
       stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->aura_ghosting(), fields);
     }
-
-    template<>
-    void ReferenceMeshSmootherBaseImpl<StructuredGrid>::sync_fields(int iter)
-    {}
 
     template<>
     void ReferenceMeshSmootherBaseImpl<STKMesh>::check_project_all_delta_to_tangent_plane(stk::mesh::FieldBase *field)
@@ -180,17 +174,6 @@
       std::string oname = "anim_all.e";
       if (anim_step > 0) oname += "-s" + fileid_ss.str();
       eMesh->save_as(oname);
-      ++anim_step;
-    }
-
-    template<>
-    void anim<StructuredGrid>(PerceptMesh *eMesh, int& anim_step)
-    {
-      std::ostringstream fileid_ss;
-      fileid_ss << "."  << anim_step;
-
-      std::string oname = "anim_all"+fileid_ss.str();
-      eMesh->get_block_structured_grid()->dump_vtk(oname);
       ++anim_step;
     }
 
@@ -339,19 +322,7 @@
     	m_coord_field_current   = eMesh->get_coordinates_field();
 	}
 
-    template<>
-	void ReferenceMeshSmootherBaseImpl<StructuredGrid>::set_local_field_ptrs(PerceptMesh *eMesh)
-	{
-        std::shared_ptr<BlockStructuredGrid> bsg = m_eMesh->get_block_structured_grid();
-
-        m_coord_field_original  = bsg->m_fields["coordinates_NM1"].get();
-        m_coord_field_projected = bsg->m_fields["coordinates_N"].get();
-        m_coord_field_lagged    = bsg->m_fields["coordinates_lagged"].get();
-        m_coord_field_current   = bsg->m_fields["coordinates"].get();
-	}
-
     template class ReferenceMeshSmootherBaseImpl<STKMesh>;
-    template class ReferenceMeshSmootherBaseImpl<StructuredGrid>;
   }
 
 #endif

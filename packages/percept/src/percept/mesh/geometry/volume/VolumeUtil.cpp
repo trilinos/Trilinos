@@ -155,7 +155,7 @@
       const double *x2d[3] = {0,0,0};
       //const double *x3d[4] = {0,0,0,0};
 
-#define VERTEX(vi)  stk::mesh::field_data( *static_cast<const CoordinatesFieldType *>(coord_field) , vi.entity() )
+#define VERTEX(vi)  static_cast<double*>(stk::mesh::field_data( *coord_field, vi.entity() ))
 
       switch(topology_data->key)
         {

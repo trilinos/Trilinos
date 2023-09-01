@@ -103,7 +103,7 @@ TEST(ParallelComm, comm_recv_procs_and_msg_sizes)
     }
     else {
       unsigned expected = p+1;
-      ThrowRequireMsg( recv_bufs[p].size() == expected, "proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl);
+      STK_ThrowRequireMsg( recv_bufs[p].size() == expected, "proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl);
       EXPECT_EQ(expected, recv_bufs[p].size());
     }
   }
@@ -337,6 +337,20 @@ TEST(ParallelComm, CommSparse_communicate_with_unpack)
       EXPECT_EQ(srcProc, recvData);
     }
   });
+}
+
+TEST(ParallelComm, serialConstructCommSparse_forMemoryLeakCheck)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  {
+    stk::CommSparse comm(MPI_COMM_WORLD);
+    EXPECT_EQ(1, comm.parallel_size());
+  }
+  {
+    stk::CommSparse comm(MPI_COMM_WORLD);
+    EXPECT_EQ(1, comm.parallel_size());
+  }
 }
 
 #endif

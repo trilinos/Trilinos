@@ -36,7 +36,7 @@ void test_bucket_topology(stk::mesh::BulkData& bulk)
   stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
   stk::topology hostTopo = bulk.bucket(elem1).topology();
 
-  Kokkos::parallel_for(1,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                        KOKKOS_LAMBDA(const int& i)
                        {
                          stk::mesh::FastMeshIndex fmi = ngpMesh.device_mesh_index(elem1);
@@ -72,7 +72,7 @@ void test_bucket_part_info(stk::mesh::BulkData& bulk)
   int firstPartOrd = bulk.bucket(node8).supersets()[0]->mesh_meta_data_ordinal();
   int lastPartOrd = bulk.bucket(node8).supersets().back()->mesh_meta_data_ordinal();
 
-  Kokkos::parallel_for(1,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                        KOKKOS_LAMBDA(const int& i)
                        {
                          stk::mesh::FastMeshIndex fmi = ngpMesh.device_mesh_index(node8);
@@ -84,14 +84,14 @@ void test_bucket_part_info(stk::mesh::BulkData& bulk)
                          result.d_view(3) = bucket.is_member(firstPartOrd) ? 1 : 0;
                          result.d_view(4) = bucket.is_member(lastPartOrd) ? 1 : 0;
                          unsigned numElemBuckets = ngpMesh.num_buckets(stk::topology::ELEM_RANK);
-                         NGP_ThrowRequire(2u == numElemBuckets);
+                         STK_NGP_ThrowRequire(2u == numElemBuckets);
                          const stk::mesh::DynamicBucket& bucket0 = ngpMesh.get_bucket(stk::topology::ELEM_RANK, 0);
                          const stk::mesh::UnmanagedPartOrdViewType& parts0 = bucket0.get_parts();
                          const stk::mesh::DynamicBucket& bucket1 = ngpMesh.get_bucket(stk::topology::ELEM_RANK, 1);
                          const stk::mesh::UnmanagedPartOrdViewType& parts1 = bucket1.get_parts();
                          unsigned numParts0 = parts0(0);
                          unsigned numParts1 = parts1(0);
-                         NGP_ThrowRequire(numParts0 == numParts1);
+                         STK_NGP_ThrowRequire(numParts0 == numParts1);
                          result.d_view(5) = stk::mesh::all_parts_match(parts0, parts1) ? 0 : 1; //expecting false
                        });
 
@@ -114,7 +114,7 @@ void test_find_bucket_with_parts(stk::mesh::BulkData& bulk)
 
   stk::mesh::Entity node8 = bulk.get_entity(stk::topology::NODE_RANK, 8);
 
-  Kokkos::parallel_for(1,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                        KOKKOS_LAMBDA(const int& i)
                        {
                          stk::mesh::FastMeshIndex fmi = ngpMesh.device_mesh_index(node8);
@@ -146,7 +146,7 @@ void test_create_new_part_ord_view(stk::mesh::BulkData& bulk)
 
   unsigned biggestPartOrd = bulk.mesh_meta_data().get_parts().back()->mesh_meta_data_ordinal();
 
-  Kokkos::parallel_for(1,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                        KOKKOS_LAMBDA(const int& i)
                        {
                          const stk::mesh::DynamicBucket& bucket = ngpMesh.get_bucket(stk::topology::NODE_RANK, 0);
@@ -176,7 +176,7 @@ void test_add_bucket_on_device(stk::mesh::BulkData& bulk)
 
   unsigned biggestPartOrd = bulk.mesh_meta_data().get_parts().back()->mesh_meta_data_ordinal();
 
-  Kokkos::parallel_for(1,
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
                        KOKKOS_LAMBDA(const int& i)
                        {
                          unsigned numNodeBuckets = ngpMesh.num_buckets(stk::topology::NODE_RANK);

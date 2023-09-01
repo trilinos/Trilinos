@@ -49,7 +49,6 @@
 #ifndef Intrepid2_LegendreBasis_HVOL_TRI_h
 #define Intrepid2_LegendreBasis_HVOL_TRI_h
 
-#include <Kokkos_View.hpp>
 #include <Kokkos_DynRankView.hpp>
 
 #include <Intrepid2_config.h>
@@ -87,11 +86,6 @@ namespace Intrepid2
     int numFields_, numPoints_;
     
     size_t fad_size_output_;
-    
-    static const int numVertices = 3;
-    static const int numEdges    = 3;
-    const int edge_start_[numEdges] = {0,1,0}; // edge i is from edge_start_[i] to edge_end_[i]
-    const int edge_end_[numEdges]   = {1,2,2}; // edge i is from edge_start_[i] to edge_end_[i]
     
     Hierarchical_HVOL_TRI_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
@@ -195,6 +189,7 @@ namespace Intrepid2
   {
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+    using HostBasis = LegendreBasis_HVOL_TRI<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar>;
 
     using typename BasisBase::OrdinalTypeArray1DHost;
     using typename BasisBase::OrdinalTypeArray2DHost;
@@ -230,7 +225,8 @@ namespace Intrepid2
       this->functionSpace_     = FUNCTION_SPACE_HVOL;
       
       const int degreeLength = 1;
-      this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(vol) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Legendre H(vol) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Legendre H(grad) line polynomial degree lookup",  this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
       // **** face functions **** //
@@ -240,7 +236,8 @@ namespace Intrepid2
         for (int i=0; i<=ij_sum; i++)
         {
           const int j = ij_sum - i;
-          this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j;
+          this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = i+j;
+          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = i+j+1;  // H^1 degree is one greater
           fieldOrdinalOffset++;
         }
       }
@@ -290,7 +287,7 @@ namespace Intrepid2
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const override {
-      return (this->getDegree() > 2);
+      return false;
     }
 
     // since the getValues() below only overrides the FEM variant, we specify that
@@ -331,7 +328,7 @@ namespace Intrepid2
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
 
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
-      Kokkos::parallel_for( policy , functor, "Hierarchical_HVOL_TRI_Functor");
+      Kokkos::parallel_for("Hierarchical_HVOL_TRI_Functor", policy, functor);
     }
 
     /** \brief returns the basis associated to a subCell.
@@ -344,11 +341,7 @@ namespace Intrepid2
      */
     BasisPtr<DeviceType,OutputScalar,PointScalar>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
-      if(subCellDim == 1) {
-        return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar>
-                    (this->basisDegree_));
-      }
+      // no subcell ref basis for HVOL
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
 

@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_Property.h>       // for Property
@@ -31,7 +33,7 @@ namespace Ioss {
    *                      attributes, ...)
    *      0d, 1d, 2d, 3d topology possible -- e.g., sphere, bar, quad, hex
    */
-  class EntityBlock : public GroupingEntity
+  class IOSS_EXPORT EntityBlock : public GroupingEntity
   {
   public:
     EntityBlock &operator=(const EntityBlock &) = delete;
@@ -99,9 +101,8 @@ namespace Ioss {
 
     ElementTopology *topology_{nullptr};
 
-  protected:
     size_t idOffset{0};
 
-    bool equal_(const Ioss::EntityBlock &rhs, const bool quiet) const;
+    bool equal_(const Ioss::EntityBlock &rhs, bool quiet) const;
   };
 } // namespace Ioss

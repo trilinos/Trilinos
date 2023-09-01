@@ -56,7 +56,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class AlgebraicOverlappingOperator : public OverlappingOperator<SC,LO,GO,NO> {
 
     protected:
@@ -81,7 +81,6 @@ namespace FROSch {
         virtual int initialize()
         {
             FROSCH_ASSERT(false,"AlgebraicOverlappingOperator cannot be built without input parameters.");
-            return 0;
         };
 
         int initialize(int overlap,
@@ -100,7 +99,9 @@ namespace FROSch {
                                      ConstXMapPtr repeatedMap);
 
         virtual int updateLocalOverlappingMatrices();
+        virtual int updateLocalOverlappingMatrices_Symbolic();
 
+        virtual void extractLocalSubdomainMatrix_Symbolic();
 
         AddingLayersStrategy AddingLayersStrategy_ = LayersFromGraph;
     };

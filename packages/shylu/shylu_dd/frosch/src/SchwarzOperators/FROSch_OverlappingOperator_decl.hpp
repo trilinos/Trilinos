@@ -53,7 +53,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class OverlappingOperator : public SchwarzOperator<SC,LO,GO,NO> {
 
     protected:
@@ -105,6 +105,8 @@ namespace FROSch {
         enum CombinationType {Averaging,Full,Restricted};
 
         virtual int initializeOverlappingOperator();
+
+        virtual int initializeSubdomainSolver(ConstXMatrixPtr localMat);
 
         virtual int computeOverlappingOperator();
 

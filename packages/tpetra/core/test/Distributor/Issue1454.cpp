@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
                    Kokkos::HostSpace>::value,
                  "imports_host should be a HostSpace View, but is not.");
   #endif
-  if (Tpetra::Details::Behavior::assumeMpiIsCudaAware ()) {
+  if (Tpetra::Details::Behavior::assumeMpiIsGPUAware ()) {
     distributor.doPostsAndWaits (exports, 1, imports);
     Kokkos::deep_copy (imports_host, imports);
   }

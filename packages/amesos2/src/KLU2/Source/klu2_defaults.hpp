@@ -79,13 +79,13 @@ Int KLU_defaults
     /* statistics */
     Common->status = KLU_OK ;
     Common->nrealloc = 0 ;
-    Common->structural_rank = EMPTY ;
-    Common->numerical_rank = EMPTY ;
-    Common->noffdiag = EMPTY ;
-    Common->flops = EMPTY ;
-    Common->rcond = EMPTY ;
-    Common->condest = EMPTY ;
-    Common->rgrowth = EMPTY ;
+    Common->structural_rank = AMESOS2_KLU2_EMPTY ;
+    Common->numerical_rank = AMESOS2_KLU2_EMPTY ;
+    Common->noffdiag = AMESOS2_KLU2_EMPTY ;
+    Common->flops = AMESOS2_KLU2_EMPTY ;
+    Common->rcond = AMESOS2_KLU2_EMPTY ;
+    Common->condest = AMESOS2_KLU2_EMPTY ;
+    Common->rgrowth = AMESOS2_KLU2_EMPTY ;
     Common->work = 0 ;          /* work done by btf_order */
 
     Common->memusage = 0 ;
