@@ -203,11 +203,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     OrdinalArray localColInds_;   //set in initialize()
     OrdinalArrayHost localRowPtrsHost_; //set in initialize() and used to get localValues_ in compute()
 
-    ImplScalarArray localValues2_; //set at beginning of compute()
-    OrdinalArray localRowPtrs2_;   //set in initialize()
-    OrdinalArray localColInds2_;   //set in initialize()
-    OrdinalArrayHost localRowPtrsHost2_; //set in initialize() and used to get localValues_ in compute()
-
     double initTime_;
     double computeTime_;
     mutable double applyTime_;

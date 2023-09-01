@@ -177,11 +177,6 @@ initialize()
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
     CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
 
-    localRowPtrsHost2_ = localRowPtrsHost_;
-    localRowPtrs2_     = localRowPtrs_;
-    localColInds2_     = localColInds_;
-    localValues2_      = localValues_;
-
     // Create new TCrsMatrix with the new filled data
     if (params_.blockCrsSize > 1) {
       if (params_.fillBlocks) {
