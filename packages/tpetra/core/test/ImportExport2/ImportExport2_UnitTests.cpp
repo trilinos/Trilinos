@@ -2410,10 +2410,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     auto numImportPacketsView_d = Kokkos::create_mirror_view(Node::device_type::memory_space(),numImportPacketsView);
     deep_copy(numImportPacketsView_d,numImportPacketsView);
 
-
-    const Kokkos::View<LO const *, typename Node::device_type> RemoteLIDs_d = Importer->getRemoteLIDs_dv().view_device();
-    const Kokkos::View<LO const *, typename Node::device_type> PermuteToLIDs_d = Importer->getPermuteToLIDs_dv().view_device();
-    const Kokkos::View<LO const *, typename Node::device_type> PermuteFromLIDs_d = Importer->getPermuteFromLIDs_dv().view_device();
+    auto RemoteLIDs_d = Importer->getRemoteLIDs_dv().view_device();
+    auto PermuteToLIDs_d = Importer->getPermuteToLIDs_dv().view_device();
+    auto PermuteFromLIDs_d = Importer->getPermuteFromLIDs_dv().view_device();
 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
