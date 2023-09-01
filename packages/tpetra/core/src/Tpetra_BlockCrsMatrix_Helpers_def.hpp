@@ -473,7 +473,7 @@ namespace Tpetra {
     const int max_threads = execution_space::concurrency();
     assert(blockSize > 1);
     assert(nrows % blockSize == 0);
-    const int mem_level = 0;
+    const int mem_level = 1;
     const int bytes = scratch_view::shmem_size(blocks_per_row);
 
     if (max_threads >= blockSize) {
