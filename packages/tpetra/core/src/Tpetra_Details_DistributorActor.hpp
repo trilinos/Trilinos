@@ -268,6 +268,18 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
                               << Teuchos::mpiErrorCodeToString (err) << "\".");v
 
     return;
+  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV == sendType) {
+    MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
+    
+    const int err = MPIX_Neighbor_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
+                                    imports.data(), recvcounts.data(), rdispls.data(), rawType,
+                                    mpixComm);
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                              "MPIX_Neighbor_Alltoallv failed with error \""
+                              << Teuchos::mpiErrorCodeToString (err) << "\".");
+    
+    return;
   }
 #endif
 
