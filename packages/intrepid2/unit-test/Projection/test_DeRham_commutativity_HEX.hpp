@@ -270,12 +270,18 @@ int DeRhamCommutativityHex(const bool verbose) {
     degree() {return 4;}
   };
 
-  typedef std::array<ordinal_type,4> faceType;
-  typedef CellTools<DeviceType> ct;
-  typedef OrientationTools<DeviceType> ots;
-  typedef Experimental::ProjectionTools<DeviceType> pts;
-  typedef RealSpaceTools<DeviceType> rst;
-  typedef FunctionSpaceTools<DeviceType> fst;
+  using faceType = std::array<ordinal_type,4>;
+  using ct = CellTools<DeviceType>;
+  using ots = OrientationTools<DeviceType>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  using pts = Experimental::ProjectionTools<DeviceType>;
+  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
+  #else
+  using pts = ProjectionTools<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+  #endif
+  using rst = RealSpaceTools<DeviceType>;
+  using fst = FunctionSpaceTools<DeviceType>;
 
   constexpr ordinal_type dim = 3;
   constexpr ordinal_type numCells = 2;
@@ -386,7 +392,7 @@ int DeRhamCommutativityHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(Fun::degree()),targetDerivCubDegree(GradFun::degree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
           auto evaluationPoints = projStruct.getAllEvalPoints();
           auto evaluationGradPoints = projStruct.getAllDerivEvalPoints();
@@ -451,7 +457,7 @@ int DeRhamCommutativityHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(GradFun::degree()),targetDerivCubDegree(0);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createHCurlProjectionStruct(&basisHCurl, targetCubDegree, targetDerivCubDegree);
 
           auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -701,7 +707,7 @@ int DeRhamCommutativityHex(const bool verbose) {
           ordinal_type targetCubDegree(FunCurl::degree()),targetDerivCubDegree(CurlFunCurl::degree());
 
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
 
           auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -781,7 +787,7 @@ int DeRhamCommutativityHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(CurlFunCurl::degree()),targetDerivCubDegree(0);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createHDivProjectionStruct(&basisHDiv, targetCubDegree, targetDerivCubDegree);
 
           auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1026,7 +1032,7 @@ int DeRhamCommutativityHex(const bool verbose) {
           ordinal_type targetCubDegree(FunDiv::degree()),targetDerivCubDegree(DivFunDiv::degree());
 
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
 
           auto evaluationPoints = projStruct.getAllEvalPoints();
@@ -1099,7 +1105,7 @@ int DeRhamCommutativityHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(DivFunDiv::degree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createHVolProjectionStruct(&basisHVol, targetCubDegree);
 
           auto evaluationPoints = projStruct.getAllEvalPoints();

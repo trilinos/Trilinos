@@ -1,8 +1,0 @@
-<ParameterList name="Rythmos Stepper">
-  <ParameterList name="VerboseObject">
-    <Parameter name="Verbosity Level" type="string" value="high"/>
-  </ParameterList>
-  <ParameterList name="Step Control Settings">
-    <Parameter name="Theta Stepper Type" type="string" value="Implicit Euler"/>
-  </ParameterList>
-</ParameterList>

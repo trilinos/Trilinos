@@ -207,7 +207,13 @@ int ConvergenceQuad(const bool verbose) {
 
   using ct = CellTools<DeviceType>;
   using ots = OrientationTools<DeviceType>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   using pts = Experimental::ProjectionTools<DeviceType>;
+  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
+  #else
+  using pts = ProjectionTools<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+  #endif
   using rst = RealSpaceTools<DeviceType>;
   using fst = FunctionSpaceTools<DeviceType>;
 
@@ -350,7 +356,7 @@ int ConvergenceQuad(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -581,7 +587,7 @@ int ConvergenceQuad(const bool verbose) {
         {
           ordinal_type targetCubDegree(cub_degree),targetDerivCubDegree(cub_degree-1);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -824,7 +830,7 @@ int ConvergenceQuad(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -1064,7 +1070,7 @@ int ConvergenceQuad(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -1186,7 +1192,7 @@ int ConvergenceQuad(const bool verbose) {
       errorFlag = -1000;
     }
   }
-//*
+/*
   *outStream << "\nHGRAD ERROR:";
   for(int iter = 0; iter<numRefinements; iter++)
     *outStream << " " << hgradNorm[iter];
@@ -1200,7 +1206,7 @@ int ConvergenceQuad(const bool verbose) {
   for(int iter = 0; iter<numRefinements; iter++)
     *outStream << " " << hvolNorm[iter];
   *outStream << std::endl;
- //*/
+ */
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED = " << errorFlag << "\n";

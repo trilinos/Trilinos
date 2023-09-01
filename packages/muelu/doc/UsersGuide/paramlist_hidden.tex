@@ -142,6 +142,8 @@
         
 \cbb{aggregation: match ML phase2a}{bool}{false}{Match ML's phase 2a. In particular, setting this to true will include the root node into the tentative aggregates in phase 2a.}
         
+\cbb{aggregation: match ML phase2b}{bool}{false}{Match ML's phase 2a.}
+        
 \cbb{aggregation: phase2a agg factor}{double}{0.5}{Agg factor for Phase 2a sizes}
         
 \cbb{aggregation: error on nodes with no on-rank neighbors}{bool}{false}{Causes phase 3 aggregation to throw an error for
@@ -280,6 +282,8 @@
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
         
 \cbb{sa: calculate eigenvalue estimate}{bool}{false}{Force calculation of eigenvalue estimate during prolongator smoothing.}
+        
+\cbb{sa: eigen-analysis type}{string}{power-method}{Algorithm for eigen-analysis for SA.  Options: "power-method" (default) or "cg".}
         
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
         

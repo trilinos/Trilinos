@@ -160,9 +160,14 @@ int ProjectFields(const bool verbose) {
     }
   };
 
-  typedef OrientationTools<DeviceType> ots;
-  typedef Experimental::ProjectionTools<DeviceType> pts;
-
+  using ots = OrientationTools<DeviceType>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  using pts = Experimental::ProjectionTools<DeviceType>;
+  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
+#else
+  using pts = ProjectionTools<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+#endif
   using basisPtrType = BasisPtr<DeviceType,ValueType,ValueType>;
   using CG_NBasis = DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>;
 
@@ -376,7 +381,7 @@ int ProjectFields(const bool verbose) {
       {
         ordinal_type srcCubDegree(srcBasisPtr->getDegree());
 
-        Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+        ProjStruct projStruct;
         projStruct.createL2ProjectionStruct(srcBasisPtr.get(), srcCubDegree);
         
         auto evaluationPoints = projStruct.getAllEvalPoints();
