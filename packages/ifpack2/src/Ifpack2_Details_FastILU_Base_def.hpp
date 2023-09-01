@@ -157,6 +157,13 @@ setParameters (const Teuchos::ParameterList& List)
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+isBlockCrs() const
+{
+  return params_.blockCrs && params_.blockCrsSize > 1;
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initialize()
 {
@@ -172,30 +179,25 @@ initialize()
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
   }
 
-  if (params_.blockCrs) {
+  if (isBlockCrs()) {
     auto crs_matrix = Ifpack2::Details::getCrsMatrix(this->mat_);
-    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
-    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
 
-    // Create new TCrsMatrix with the new filled data
-    if (params_.blockCrsSize > 1) {
-      if (params_.fillBlocks) {
-        auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*crs_matrix, params_.blockCrsSize);
-        auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, params_.blockCrsSize);
-        mat_ = bcrs_matrix;
-      }
-      else {
-        auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix, params_.blockCrsSize);
-        mat_ = bcrs_matrix;
-      }
-
-      CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
-      CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+    if (params_.fillBlocks) {
+      // Create new TCrsMatrix with the new filled data and conver to Bcrs
+      auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*crs_matrix, params_.blockCrsSize);
+      auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, params_.blockCrsSize);
+      mat_ = bcrs_matrix;
+    }
+    else {
+      // Assume input is already filled, just convert to Bcrs
+      auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix, params_.blockCrsSize);
+      mat_ = bcrs_matrix;
     }
   }
 
   Kokkos::Timer copyTimer;
   CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
   crsCopyTime_ = copyTimer.seconds();
 
   if (params_.use_metis)

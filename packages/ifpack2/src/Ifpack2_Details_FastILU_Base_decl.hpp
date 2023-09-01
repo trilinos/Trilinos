@@ -131,6 +131,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
      */
     void setParameters (const Teuchos::ParameterList& List);
 
+    bool isBlockCrs() const;
+
     //! Initialize the preconditioner
     void initialize();
 

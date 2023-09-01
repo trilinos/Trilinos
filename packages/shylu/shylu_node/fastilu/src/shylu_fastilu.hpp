@@ -78,7 +78,8 @@
 // whether to print timings
 //#define FASTILU_TIMER
 
-// Whether to try to maintain exact behavior with unblocked impl
+// Whether to try to maintain exact behavior with unblocked impl. Comes at
+// a steep performance cost.
 //#define FASTILU_ONE_TO_ONE_UNBLOCKED
 
 template <typename Ordinal>
@@ -1847,7 +1848,7 @@ class FastILUPrec
             }
 
             // sort, if the triangular solve algorithm requires a sorted matrix.
-            bool sortRequired = true; //sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
+            bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
             if (sortRequired) {
               if (blockCrsSize == 1) {
                 KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>

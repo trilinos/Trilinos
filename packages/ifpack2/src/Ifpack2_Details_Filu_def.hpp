@@ -110,10 +110,10 @@ initLocalPrec()
 
   bool skipSortMatrix = !matCrs.is_null() && matCrs->getCrsGraph()->isSorted() &&
                         !p.use_metis;
-  const int blockCrsSize = p.blockCrs ? p.blockCrsSize : 1;
-  localPrec_ = Teuchos::rcp(new LocalFILUB(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
-                                          p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
-                                          blockCrsSize));
+  localPrec_ =
+    Teuchos::rcp(new LocalFILU(skipSortMatrix, this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
+                               p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize,
+                               p.blockCrsSize));
 
   #ifdef HAVE_IFPACK2_METIS
   if (p.use_metis) {
