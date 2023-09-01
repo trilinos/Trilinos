@@ -184,9 +184,15 @@ initialize()
 
     // Create new TCrsMatrix with the new filled data
     if (params_.blockCrsSize > 1) {
-      auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*crs_matrix, params_.blockCrsSize);
-      auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, params_.blockCrsSize);
-      mat_ = bcrs_matrix;
+      if (params_.fillBlocks) {
+        auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*crs_matrix, params_.blockCrsSize);
+        auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, params_.blockCrsSize);
+        mat_ = bcrs_matrix;
+      }
+      else {
+        auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix, params_.blockCrsSize);
+        mat_ = bcrs_matrix;
+      }
 
       CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
       CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
@@ -448,6 +454,7 @@ Params::getDefaults()
   p.blockSize = 1;      // # of rows / thread, for SpTRSV
   p.blockCrs = false;   // whether to use block CRS for fastILU
   p.blockCrsSize = 1;   // block size for block CRS
+  p.fillBlocks = false; // whether input matrix needs to be filled
   return p;
 }
 
@@ -583,6 +590,15 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     else
       TYPE_ERROR("block crs block size", "int");
   }
+  //"fill blocks for input" aka fillBlocks
+  if(pL.isParameter("fill blocks for input"))
+  {
+    if(pL.isType<bool>("fill blocks for input"))
+      blockCrsSize = pL.get<bool>("fill blocks for input");
+    else
+      TYPE_ERROR("fill blocks for input", "bool");
+  }
+
   #undef CHECK_VALUE
   #undef TYPE_ERROR
 }

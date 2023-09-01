@@ -231,6 +231,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
       int blockSize;
       bool blockCrs;
       int blockCrsSize;
+      bool fillBlocks;
       static Params getDefaults();
     };
 
