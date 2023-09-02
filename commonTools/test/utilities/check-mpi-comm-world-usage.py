@@ -67,6 +67,9 @@ def parse_diff_output(changed_files):
 
     return files
 
+def get_common_ancestor(target_branch, feature_branch):
+    cmd = ["git", "merge-base", target_branch, feature_branch]
+    return subprocess.check_output(cmd).decode("utf-8").strip()
 
 def get_changed_files_uncommitted():
     """Get a dictionary of files and their changed lines where MPI_COMM_WORLD was added from uncommitted changes."""
@@ -75,10 +78,10 @@ def get_changed_files_uncommitted():
 
     return parse_diff_output(result)
 
-
-def get_changed_files(start_commit, end_commit):
-    """Get a dictionary of files and their changed lines between two commits where MPI_COMM_WORLD was added."""
-    cmd = ["git", "diff", "-U0", "--ignore-all-space", start_commit, end_commit]
+def get_changed_files(target_branch, feature_branch):
+    """Get a dictionary of files and their changed lines between the common ancestor and feature_branch."""
+    start_commit = get_common_ancestor(target_branch, feature_branch)
+    cmd = ["git", "diff", "-U0", "--ignore-all-space", start_commit, feature_branch, "--name-only"]
     result = subprocess.check_output(cmd).decode("utf-8")
 
     return parse_diff_output(result)
