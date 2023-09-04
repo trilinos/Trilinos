@@ -373,7 +373,7 @@ namespace MueLuTests {
       RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
       invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
       invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
-      invapproxFact->SetParameter("inverse: level-of-fill", Teuchos::ParameterEntry(3));
+      invapproxFact->SetParameter("inverse: level-of-fill", Teuchos::ParameterEntry(4));
 
       // request InverseApproximation operator
       level.Request("Ainv", invapproxFact.get());

@@ -81,21 +81,18 @@ public:
 
     @return Exponential CrsGraph with increased fill-in
   */
-  static RCP<const CrsGraph> getExponentialCrsGraph(const RCP<const CrsGraph>& graph, int levelFill, Teuchos::FancyOStream &out) {
+  static RCP<const CrsGraph> getExponentialCrsGraph(const RCP<const CrsGraph>& graph, int levelFill, Teuchos::FancyOStream &fos) {
 
-    RCP<const CrsGraph> exponentialGraph = graph;
+    RCP<Matrix> adjacency = MatrixFactory::Build(graph);
+    adjacency->setAllToScalar(1.0);
+    adjacency->fillComplete();
 
-    for(int power=levelFill; power>1; power--) {
+    RCP<Matrix> exponentialAdjacency = adjacency;
 
-      RCP<Matrix> adjacency = MatrixFactory::Build(exponentialGraph);
-      adjacency->setAllToScalar(1.0);
-      adjacency->fillComplete();
+    for(int power=levelFill; power>1; power--)
+      exponentialAdjacency = MatrixMatrix::Multiply(*exponentialAdjacency, false, *adjacency, false, fos);
 
-      RCP<Matrix> adjacencySquare = MatrixMatrix::Multiply(*adjacency, false, *adjacency, false, out);
-      exponentialGraph = adjacencySquare->getCrsGraph();
-    }
-
-    return exponentialGraph;
+    return exponentialAdjacency->getCrsGraph();
   }
 
 };
