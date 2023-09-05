@@ -94,8 +94,6 @@ int main(int argc, char *argv[])
 
   const ST ONE = SCT::one ();
 
-  int info = 0;
-
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   const int MyPID = comm->getRank ();

@@ -93,7 +93,6 @@ int main(int argc, char *argv[])
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   const ST ONE  = SCT::one();
-  int info = 0;
   int MyPID = 0;
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();

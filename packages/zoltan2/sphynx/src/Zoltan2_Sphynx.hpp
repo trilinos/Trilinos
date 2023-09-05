@@ -720,7 +720,6 @@ namespace Zoltan2 {
         for (int j = 1; j < numEigenVectors; j++)
           ivec->getVectorNonConst(j)->putScalar(0.);
 
-        auto map = laplacian_->getRangeMap();
         gno_t blkSize = map->getGlobalNumElements() / numEigenVectors;
         TEUCHOS_TEST_FOR_EXCEPTION(blkSize <= 0, std::runtime_error, "Blocksize too small for \"constants\" initial guess. Try \"random\".");
 
