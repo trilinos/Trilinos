@@ -483,6 +483,9 @@ namespace Belos {
         else if(lp_->isRightPrec()) {
           lp_->applyRightPrec(*AxR_sub, *C_sub);
         }
+        else { // no preconditioner
+          MVT::Assign(*AxR_sub, *C_sub);
+        }
 
         MagnitudeType betaMin = 1.0e10;
 
