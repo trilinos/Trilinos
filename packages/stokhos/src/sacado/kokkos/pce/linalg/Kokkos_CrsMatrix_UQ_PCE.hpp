@@ -1619,53 +1619,6 @@ spmv(
   spmv(mode, a, A, x, b, y, RANK_TWO());
 }
 
-template <typename AlphaType,
-          typename BetaType,
-          typename MatrixType,
-          typename InputType,
-          typename ... InputP,
-          typename OutputType,
-          typename ... OutputP>
-std::enable_if_t<
-  Kokkos::is_view_uq_pce< Kokkos::View< InputType, InputP... > >::value &&
-  Kokkos::is_view_uq_pce< Kokkos::View< OutputType, OutputP... > >::value &&
-  KokkosSparse::is_crs_matrix<MatrixType>::value>
-spmv(
-  KokkosKernels::Experimental::Controls controls,
-  const char mode[],
-  const AlphaType& a,
-  const MatrixType& A,
-  const Kokkos::View< InputType, InputP... >& x,
-  const BetaType& b,
-  const Kokkos::View< OutputType, OutputP... >& y)
-{
-  using RANK_SPECIALISE = std::conditional_t<std::decay_t<decltype(x)>::rank == 2, RANK_TWO, RANK_ONE>;
-  spmv(controls, mode, a, A, x, b, y, RANK_SPECIALISE());
-}
-
-template <typename AlphaType,
-          typename BetaType,
-          typename MatrixType,
-          typename InputType,
-          typename ... InputP,
-          typename OutputType,
-          typename ... OutputP>
-std::enable_if_t<
-  Kokkos::is_view_uq_pce< Kokkos::View< InputType, InputP... > >::value &&
-  Kokkos::is_view_uq_pce< Kokkos::View< OutputType, OutputP... > >::value &&
-  KokkosSparse::is_crs_matrix<MatrixType>::value>
-spmv(
-  const char mode[],
-  const AlphaType& a,
-  const MatrixType& A,
-  const Kokkos::View< InputType, InputP... >& x,
-  const BetaType& b,
-  const Kokkos::View< OutputType, OutputP... >& y)
-{
-  using RANK_SPECIALISE = std::conditional_t<std::decay_t<decltype(x)>::rank == 2, RANK_TWO, RANK_ONE>;
-  spmv(mode, a, A, x, b, y, RANK_SPECIALISE());
-}
-
 }
 
 #endif /* #ifndef KOKKOS_CRSMATRIX_UQ_PCE_HPP */
