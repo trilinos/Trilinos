@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   bool testFailed = true;
   //bool verbose = true;
   std::string ortho("ICGS");
-  std::string filename("bcsstk12.mtx");
+  std::string filename("simple.mtx");
   int nev = 4;
   int nsteps = 3;
   int blockSize = 6;

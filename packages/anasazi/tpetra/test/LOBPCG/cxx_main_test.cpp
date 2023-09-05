@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for the LOBPCG solver manager on a standard (Ax=xl) complex Hermitian
+// This test is for the LOBPCG solver manager on a standard (Ax=xl) real Hermitian
 // eigenvalue problem.
 //
 // The matrix used is from MatrixMarket:
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
-  std::string filename("Brick3D100.mtx");
+  std::string filename("simple.mtx");
   std::string which("LM");
   std::string ortho("SVQB");
   int nev = 4;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
 
-    os << "Direct residual norms computed in Tpetra_LOBPCG_complex_test.exe" << endl
+    os << "Direct residual norms computed in Tpetra_LOBPCG_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {

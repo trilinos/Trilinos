@@ -18,9 +18,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockKrylovSchur_DoubleFloatCopyFiles
+  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
+  SOURCE_FILES simple.mtx
+  EXEDEPS Tpetra_BlockKrylovSchur_test
+  )
+
 
 IF (Tpetra_INST_COMPLEX_DOUBLE)
-  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
   IF (${PACKAGE_NAME}_ENABLE_Triutils)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Tpetra_BlockKrylovSchur_Complex_test

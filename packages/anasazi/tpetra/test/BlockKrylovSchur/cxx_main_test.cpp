@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for BlockKrylovSchur solving a standard (Ax=xl) complex Hermitian
+// This test is for BlockKrylovSchur solving a standard (Ax=xl) real Hermitian
 // eigenvalue problem.
 //
 // The matrix used is from MatrixMarket:
@@ -70,9 +70,6 @@ using std::vector;
 
 int main(int argc, char *argv[])
 {
-#ifndef HAVE_TPETRA_COMPLEX_DOUBLE
-#  error "Anasazi: This test requires Scalar = std::complex<double> to be enabled in Tpetra."
-#else
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
@@ -83,7 +80,6 @@ int main(int argc, char *argv[])
   typedef Teuchos::ScalarTraits<ST>          SCT;
   typedef SCT::magnitudeType                  MT;
   typedef Tpetra::MultiVector<ST>             MV;
-  typedef MV::global_ordinal_type             GO;
   typedef Tpetra::Operator<ST>                OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
@@ -125,7 +121,7 @@ int main(int argc, char *argv[])
   }
   if (debug) verbose = true;
   if (filename == "") {
-    filename = "Brick3D100.mtx";
+    filename = "simple.mtx";
   }
 
   if (MyPID == 0) {
@@ -214,7 +210,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
 
-    os << "Direct residual norms computed in BlockKrylovSchurComplex_test.exe" << endl
+    os << "Direct residual norms computed in BlockKrylovSchur_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
@@ -237,5 +233,4 @@ int main(int argc, char *argv[])
   }
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-#endif // HAVE_TPETRA_COMPLEX_DOUBLE
 }
