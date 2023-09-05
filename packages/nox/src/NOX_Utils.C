@@ -222,7 +222,7 @@ NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p)
 
 std::ostream& NOX::operator<<(std::ostream& os, const NOX::Utils::Sci& s)
 {
-  os.setf(std::ios::scientific);
+  os.setf(std::ios::scientific, std::ios::floatfield);
   std::streamsize p = os.precision();
   os.precision(s.p);
   os << std::setw(s.p + 6) << s.d;
