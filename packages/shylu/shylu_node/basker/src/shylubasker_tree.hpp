@@ -1342,7 +1342,7 @@ namespace BaskerNS
       #endif
     }
 
-    //if(btf_nblks > 1)
+    // Initialize C & B blocks
     {
       sort_matrix(BTF_C);
       permute_col(BTF_C, order_c_csym_array);
@@ -1417,12 +1417,9 @@ namespace BaskerNS
       #endif
     }
 
-    //if(btf_nblks > 1)
+    if(Options.verbose_matrix_out == BASKER_TRUE)
     {
-      if(Options.verbose_matrix_out == BASKER_TRUE)
-      {
-        printMTX("C_Factor.mtx", BTF_C);
-      }
+      printMTX("C_Factor.mtx", BTF_C);
     }
 
     //If same pattern, permute using pivot, and reset

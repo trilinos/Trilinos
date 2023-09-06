@@ -1,6 +1,9 @@
 #ifndef SHYLUBASKER_UTIL_HPP
 #define SHYLUBASKER_UTIL_HPP
 
+/*Teuchos Includes*/
+#include "Teuchos_ScalarTraits.hpp"
+
 /*Basker Includes*/
 #include "shylubasker_decl.hpp"
 #include "shylubasker_matrix_decl.hpp"
@@ -112,10 +115,7 @@ namespace BaskerNS
         {
           basker->t_reset_ND_factor(kid);
         }
-        //if(basker->btf_nblks > 1)
-        {
-          basker->t_reset_BTF_factor(kid);
-        }
+        basker->t_reset_BTF_factor(kid);
       }
 #if defined(BASKER_SPLIT_A) 
       if (basker->btf_top_nblks > 0) {
@@ -875,7 +875,6 @@ namespace BaskerNS
       } //end if btf_tabs_offset != 0
       //else // though offset=0, there may be still BLK factorization
       {
-        //if(btf_nblks > 1 && (btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset))
         if(btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset)
         { // if any left over for BLK factorization
           if(Options.btf == BASKER_TRUE)
@@ -2284,14 +2283,14 @@ namespace BaskerNS
    Int n
   )
   {
-    printf("---VECTOR: %d ----\n", n);
+    printf("---VECTOR: %d ----\n", int(n));
 
     for(Int i = 0 ; i < n;  i++)
     {
       printf("%ld %ld, \n", (long)i, (long)x(i));
     }
 
-    printf("---END VECTOR %d --\n", n);
+    printf("---END VECTOR %d --\n", int(n));
   }//end printVec(Int)
 
 
@@ -2303,15 +2302,16 @@ namespace BaskerNS
    Int n
   )
   {
-    printf("---VECTOR: %d ----\n", n);
+    using STS = Teuchos::ScalarTraits<Entry>;
+    printf("---VECTOR: %d ----\n", int(n));
 
     for(Int i = 0; i< n; i++)
     {
       //printf("%ld %g, \n", (long)i, x[i]);
-      printf("%ld %.16e\n", (long)i, x[i]);
+      printf("%ld %.16e\n", (long)i, STS::real(x[i]));
     }
 
-    printf("---END VECTOR: %d ---\n", n);
+    printf("---END VECTOR: %d ---\n", int(n));
   }//end printVec Entry
 
 
@@ -2324,12 +2324,13 @@ namespace BaskerNS
    Int n
   )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
     FILE *fp;
     fp = fopen(fname.c_str(), "w");
 
     for(Int i = 0; i < n; i++)
     {
-      fprintf(fp, "%.16e\n", x[i]);
+      fprintf(fp, "%.16e\n", STS::real(x[i]));
     }
 
     fclose(fp);

@@ -355,20 +355,6 @@ namespace BaskerNS
     //1. Run backward through the btf_tabs to find size C
     //2. Form A,B,C based on size in 1.
 
-    //Short circuit, 
-    //If nblks  == 1, than only BTF_A exists
-    /*if(nblks == 1)
-    {
-
-    #ifdef BASKER_DEBUG_ORDER_BTF
-      printf("Short Circuit part_call \n");
-    #endif
-      BTF_A = A;
-      //Options.btf = BASKER_FALSE;
-      btf_tabs_offset = 1;
-      return 0;
-    }*/
-
     //Step 1.
     Int t_size            = 0;
     Int scol              = M.ncol;
@@ -661,9 +647,6 @@ namespace BaskerNS
         }
         Options.replace_zero_pivot = BASKER_FALSE;
       }
-      //BTF_A = A;
-      //btf_tabs_offset = 1;
-      //return 0;
     }
 
     //Short circuit for incomplete
@@ -709,7 +692,7 @@ namespace BaskerNS
       #if 0 // forcing to have the big A bloock for debug
       double break_work_size = 0.0;
       //double break_block_size = 0.0;
-      double break_block_size = 10.0;
+      double break_block_size = 0.0;
       printf( " > debug: break_size = %f, %f\n",break_work_size,break_block_size );
       #else
       // A block if it is larger than work esitimate assigned to one thread

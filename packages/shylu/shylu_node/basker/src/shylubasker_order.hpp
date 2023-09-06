@@ -405,26 +405,23 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //================================================================
     // allocate mapping into C block
     btfc_nnz = BTF_C.nnz;
-    //if(btf_nblks > 1) //else only BTF_A exists, A is assigned directly to it...
-    {
-      if ( btf_tabs_offset == 0 && BTF_C.nnz > 0 ) {
-        // NDE: May need to add permutation for this case...
-        //new for sfactor_copy2 replacement
-        MALLOC_INT_1DARRAY(vals_order_ndbtfc_array, BTF_C.nnz); //track nd perms; BTF_A must be declared here, else it does not exist
-        MALLOC_INT_1DARRAY(inv_vals_order_ndbtfc_array, BTF_C.nnz);
-        for (Int i = 0; i < BTF_C.nnz; ++i) {
-          vals_order_ndbtfc_array(i) = i;
-          inv_vals_order_ndbtfc_array(i) = i;
-        }
-        // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
-        //sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
-        //permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
+    if ( btf_tabs_offset == 0 && BTF_C.nnz > 0 ) {
+      // NDE: May need to add permutation for this case...
+      //new for sfactor_copy2 replacement
+      MALLOC_INT_1DARRAY(vals_order_ndbtfc_array, BTF_C.nnz); //track nd perms; BTF_A must be declared here, else it does not exist
+      MALLOC_INT_1DARRAY(inv_vals_order_ndbtfc_array, BTF_C.nnz);
+      for (Int i = 0; i < BTF_C.nnz; ++i) {
+        vals_order_ndbtfc_array(i) = i;
+        inv_vals_order_ndbtfc_array(i) = i;
       }
+      // NDE: already sorted above; this is redundant, unless btf_tabs_offset = 0
+      //sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
+      //permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
+    }
 
-      if(Options.verbose_matrix_out == BASKER_TRUE)
-      {
-        printMTX("C_Symbolic.mtx", BTF_C);
-      }
+    if(Options.verbose_matrix_out == BASKER_TRUE)
+    {
+      printMTX("C_Symbolic.mtx", BTF_C);
     }
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
@@ -665,7 +662,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           {
             printf(" == matching result ==\n" );
             printf("p=[\n");
-            for(Int i = 0; i < A.nrow; i++) printf( "%d\n",order_match_array(i));
+            for(Int i = 0; i < A.nrow; i++) printf( "%d\n",int(order_match_array(i)));
             printf("];\n");
           }
           FREE_INT_1DARRAY(WORK);
@@ -677,7 +674,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           printf("A=[\n");
           for(Int j = 0; j < A.ncol; j++) {
             for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-              printf("%d %d %.16e\n",A.row_idx(k),j,A.val(k));
+              printf("%d %d %.16e\n",int(A.row_idx(k)),int(j),A.val(k));
             }
           }
           printf("];\n");
