@@ -557,7 +557,7 @@ namespace Ioex {
       ex_put_qa(get_file_pointer(), num_qa_records + 1, nullptr);
     }
     else {
-      auto *qa = new qa_element[num_qa_records + 1];
+      std::vector<qa_element> qa(num_qa_records + 1);
       for (size_t i = 0; i < num_qa_records + 1; i++) {
         for (int j = 0; j < 4; j++) {
           qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH + 1];
@@ -600,7 +600,6 @@ namespace Ioex {
           delete[] qa[i].qa_record[0][j];
         }
       }
-      delete[] qa;
     }
   }
 

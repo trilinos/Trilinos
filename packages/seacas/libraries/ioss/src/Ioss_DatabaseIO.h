@@ -150,7 +150,7 @@ namespace Ioss {
     }
 
     /** \brief We call this ONLY after we assure that using_dw() is TRUE
-     *  \ returns mount point of Datawarp namespace, e.g: `/opt/cray/....<jobid>`
+     *  \returns mount point of Datawarp namespace, e.g: `/opt/cray/....<jobid>`
      */
     std::string get_dw_path() const { return dwPath; }
 
@@ -179,7 +179,7 @@ namespace Ioss {
 
     /** \brief Get a file-per-processor filename associated with the database.
      *
-     * \ returns The file-per-processor name for a file on this processor.
+     * \returns The file-per-processor name for a file on this processor.
      */
     const std::string &decoded_filename() const;
 
@@ -568,8 +568,9 @@ namespace Ioss {
       }
     }
 
-    virtual std::vector<size_t> get_all_block_field_data(const std::string &field_name, void *data,
-                                                         size_t data_size) const;
+    virtual std::vector<size_t> get_entity_field_data(const std::string &field_name,
+                                                      const std::vector<Ioss::ElementBlock*>& elem_blocks,
+                                                      void *data, size_t data_size) const;
 
   protected:
     DatabaseIO(Region *region, std::string filename, Ioss::DatabaseUsage db_usage,
@@ -872,6 +873,11 @@ namespace Ioss {
                                           size_t *data_size) const;
     virtual int64_t get_zc_field_internal(const StructuredBlock *sb, const Field &field,
                                           void **data, size_t *data_size) const;
+
+    template <typename T>
+    std::vector<size_t> get_entity_field_data_internal(const std::string &field_name,
+                                                       const std::vector<T*>& entity_container,
+                                                       void *data, size_t data_size) const;
 
     mutable std::map<std::string, AxisAlignedBoundingBox> elementBlockBoundingBoxes;
 

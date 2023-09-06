@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -25,37 +25,37 @@ namespace Iogn {
     enum ShellLocation { MX = 0, PX = 1, MY = 2, PY = 3, MZ = 4, PZ = 5 };
 
     /**
-       Generate a cube mesh of size 'num_x' by 'num_y' by 'num_z' elements.
-       By default, the mesh is generated on a single processor.  If 'proc_count' is
-       greater than 1, then the mesh will be distributed over 'proc_count' processors
-       and this process will get the portion of the mesh for 'my_proc'.
-       The mesh will be decomposed along the 'Z' axis so 'num_z' must be greater than
-       or equal to 'proc_count' and for even distribution of the hexes 'num_z' mod 'proc_count'
+       Generate a cube mesh of size `num_x` by `num_y` by `num_z` elements.
+       By default, the mesh is generated on a single processor.  If `proc_count` is
+       greater than 1, then the mesh will be distributed over `proc_count` processors
+       and this process will get the portion of the mesh for `my_proc`.
+       The mesh will be decomposed along the `Z` axis so `num_z` must be greater than
+       or equal to `proc_count` and for even distribution of the hexes `num_z` mod `proc_count`
        should be zero.
 
        The mesh can optionally include shell elements along each face of the cube mesh.
-       These are specified via the 'add_shell_block' function.
+       These are specified via the `add_shell_block` function.
 
        The mesh can optionally include nodesets/sidesets along each
        face of the cube mesh.  These are specified via the
-       'add_nodesets' and 'add_sidesets' functions.
+       `add_nodesets` and `add_sidesets` functions.
 
-       If the 'parameters' string constructor is used, the string
+       If the `parameters` string constructor is used, the string
        is parsed to determine the intervals in each direction and,
        optionally, additional information.  The form of the string
        is "IxJxK" where I, J, and K are  the number of intervals
        in the X, Y, and Z directions respectively and the "x" are
-       literal 'x' characters.  For example, the constructor
+       literal `x` characters.  For example, the constructor
        GeneratedMesh("10x12x14") will create the same mesh as
        GeneratedMesh(10,12,14)
 
        Additional valid options are:
-       - help -- no argument, shows valid options
-       - show -- no argument, prints out a summary of the
+       - `help` -- no argument, shows valid options
+       - `show` -- no argument, prints out a summary of the
        GeneratedMesh() parameters. The output will look similar
        to:
-       \code
-       "10x12x8|shell:xX|bbox:-10,-10,-10,10,10,10|nodeset:xyz|sideset:XYZ|show"
+       ```
+       10x12x8|shell:xX|bbox:-10,-10,-10,10,10,10|nodeset:xyz|sideset:XYZ|show
 
        Mesh Parameters:
        Intervals: 10 by 12 by 8
@@ -67,33 +67,33 @@ namespace Iogn {
        Block Count           = 3
        NodeSet Count         = 3
        SideSet Count         = 3
-       \endcode
+       ```
 
-       - tets -- no argument - specifies that each hex should be
+       - `tets` -- no argument - specifies that each hex should be
        split into 6 tetrahedral elements.  Cannot currently be used with
        shells or sidesets.
 
-       - pyramids -- no argument - specifies that each hex should be
+       - `pyramids` -- no argument - specifies that each hex should be
        split into 6 pyramidal elements.
 
-       - shell -- argument = xXyYzZ which specifies whether there is a shell
-       block at that location. 'x' is minimum x face, 'X' is maximum x face,
+       - `shell` -- argument = xXyYzZ which specifies whether there is a shell
+       block at that location. `x` is minimum x face, `X` is maximum x face,
        similarly for y and z.  Note that the argument string is a single
        multicharacter string.  You can add multiple shell blocks to a face,
        for example, shell:xxx would add three layered shell blocks on the
        minimum x face.  An error is output if a non xXyYzZ character is
        found, but execution continues.
 
-       - nodeset -- argument = xXyYzZ which specifies whether there is
-       a nodeset at that location. 'x' is minimum x face, 'X' is
+       - `nodeset` -- argument = xXyYzZ which specifies whether there is
+       a nodeset at that location. `x` is minimum x face, `X` is
        maximum x face, similarly for y and z.  Note that the argument
        string is a single multicharacter string.  You can add multiple
        nodesets to a face, for example, nodeset:xxx would add three
        nodesets on the minimum x face.  An error is output if a non
        xXyYzZ character is found, but execution continues.
 
-       - sideset -- argument = xXyYzZ which specifies whether there is
-       a sideset at that location. 'x' is minimum x face, 'X' is
+       - `sideset` -- argument = xXyYzZ which specifies whether there is
+       a sideset at that location. `x` is minimum x face, `X` is
        maximum x face, similarly for y and z.  Note that the argument
        string is a single multicharacter string.  You can add multiple
        sidesets to a face, for example, sideset:xxx would add three
@@ -103,7 +103,7 @@ namespace Iogn {
        be on the shell elements; else the sideset will be on the hex
        elements.
 
-       - zdecomp -- argument = n0, n1, n2, ..., n#proc-1 which are the number
+       - `zdecomp` -- argument = n0, n1, n2, ..., n#proc-1 which are the number
        of intervals in the z direction for each processor in a pallel run.
        If this option is specified, then the total number of intervals in the
        z direction is the sum of the n0, n1, ... An interval count must be
@@ -111,15 +111,15 @@ namespace Iogn {
        the number of intervals on each processor in the z direction is
        numZ/numProc with the extras added to the lower numbered processors.
 
-       - scale -- argument = xs, ys, zs which are the scale factors in the x,
+       - `scale` -- argument = xs, ys, zs which are the scale factors in the x,
        y, and z directions. All three must be specified if this option is
        present.
 
-       - offset -- argument = xoff, yoff, zoff which are the offsets in the
+       - `offset` -- argument = xoff, yoff, zoff which are the offsets in the
        x, y, and z directions.  All three must be specified if this option
        is present.
 
-       - bbox -- argument = xmin, ymin, zmin, xmax, ymax, zmax
+       - `bbox` -- argument = xmin, ymin, zmin, xmax, ymax, zmax
        which specify the lower left and upper right corners of
        the bounding box for the generated mesh.  This will
        calculate the scale and offset which will fit the mesh in
@@ -128,8 +128,8 @@ namespace Iogn {
        specified later in the option list, you may not get the
        desired bounding box.
 
-       - rotate -- argument = axis,angle,axis,angle,...
-       where axis is 'x', 'y', or 'z' and angle is the rotation angle in
+       - `rotate` -- argument = axis,angle,axis,angle,...
+       where axis is `x`, `y`, or `z` and angle is the rotation angle in
        degrees. Multiple rotations are cumulative. The composite rotation
        matrix is applied at the time the coordinates are retrieved after
        scaling and offset are applied.
@@ -152,9 +152,7 @@ namespace Iogn {
        output and execution will continue.
 
        An example of valid input is:
-       \code
-       "10x20x40|scale:1,0.5,0.25|offset:-5,-5,-5|shell:xX"
-       \endcode
+       `"10x20x40|scale:1,0.5,0.25|offset:-5,-5,-5|shell:xX"`
 
        This would create a mesh with 10 intervals in x, 20 in y, 40 in z
        The mesh would be centered on 0,0,0 with a range of 10 in each
@@ -253,7 +251,7 @@ namespace Iogn {
 
     /**
      * Set rotation.  Multiple calls are cumulative.
-     * Rotate 'angle_degrees' degrees about the axis 'axis'
+     * Rotate `angle_degrees` degrees about the axis `axis`
      * Center of rotation is about the origin and operates
      * on the scaled/offset coordinates of the mesh.
      */
@@ -280,12 +278,12 @@ namespace Iogn {
     virtual int nodeset_count() const;
 
     /**
-     * Return number of nodeset nodes on nodeset 'id'
+     * Return number of nodeset nodes on nodeset `id`
      */
     int64_t nodeset_node_count(int64_t id) const;
 
     /**
-     * Return number of nodeset nodes on nodeset 'id' on the current processor
+     * Return number of nodeset nodes on nodeset `id` on the current processor
      */
     virtual int64_t nodeset_node_count_proc(int64_t id) const;
 
@@ -300,12 +298,12 @@ namespace Iogn {
     virtual int sideset_count() const;
 
     /**
-     * Return number of sideset 'sides' on sideset 'id'
+     * Return number of sideset `sides` on sideset `id`
      */
     int64_t sideset_side_count(int64_t id) const;
 
     /**
-     * Return number of sideset 'sides' on sideset 'id' on the current
+     * Return number of sideset `sides` on sideset `id` on the current
      * processor.
      */
     virtual int64_t sideset_side_count_proc(int64_t id) const;
@@ -333,15 +331,15 @@ namespace Iogn {
     int timestep_count() const { return timestepCount; }
     /**
      * Return number of elements in the element block with id
-     * 'block_number'. The 'block_number' ranges from '1' to
-     * 'block_count()'.
+     * `block_number`. The `block_number` ranges from `1` to
+     * `block_count()`.
      */
     virtual int64_t element_count(int64_t block_number) const;
 
     /**
      * Return number of elements on this processor in the element
-     * block with id 'block_number'. The 'block_number' ranges from
-     * '1' to 'block_count()'.
+     * block with id `block_number`. The `block_number` ranges from
+     * `1` to `block_count()`.
      */
     virtual int64_t element_count_proc(int64_t block_number) const;
 
@@ -359,7 +357,7 @@ namespace Iogn {
     virtual void    owning_processor(int *owner, int64_t num_node);
 
     /**
-     * Fill the passed in 'map' argument with the node map
+     * Fill the passed in `map` argument with the node map
      * "map[local_position] = global_id" for the nodes on this
      * processor.
      */
@@ -367,7 +365,7 @@ namespace Iogn {
     virtual void node_map(Ioss::IntVector &map) const;
 
     /**
-     * Fill the passed in 'map' argument with the element map
+     * Fill the passed in `map` argument with the element map
      * "map[local_position] = global_id" for the elements on this
      * processor in block "block_number".
      */
@@ -375,7 +373,7 @@ namespace Iogn {
     virtual void element_map(int64_t block_number, Ioss::IntVector &map) const;
 
     /**
-     * Fill the passed in 'map' argument with the element map
+     * Fill the passed in `map` argument with the element map
      * "map[local_position] = global_id" for all elements on this
      * processor
      */
@@ -383,7 +381,7 @@ namespace Iogn {
     virtual void element_map(Ioss::IntVector &map) const;
 
     /**
-     * Fill the passed in 'map' argument with the element map pair
+     * Fill the passed in `map` argument with the element map pair
      * "map[local_position] = element global_id" and
      * "map[local_position+1] = element local face id (0-based)" for
      * all elements on the current processor having a face on the
@@ -393,13 +391,13 @@ namespace Iogn {
 
     /**
      * Return the connectivity for the elements on this processor in
-     * the block with id 'block_number'. If the elements in this block
-     * have 'npe' nodes per element, then the first 'npe' entries in
-     * the 'conn' vector will be the nodal connectivity for the first
-     * element; the next 'npe' entries are the nodal connectivity for
-     * the second element.  The 'connect' vector will be resized to the
+     * the block with id `block_number`. If the elements in this block
+     * have `npe` nodes per element, then the first `npe` entries in
+     * the `conn` vector will be the nodal connectivity for the first
+     * element; the next `npe` entries are the nodal connectivity for
+     * the second element.  The `connect` vector will be resized to the
      * size required to contain the nodal connectivity for the
-     * specified block; all information in 'connect' will be overwritten.
+     * specified block; all information in `connect` will be overwritten.
      */
     void         connectivity(int64_t block_number, Ioss::Int64Vector &connect) const;
     void         connectivity(int64_t block_number, Ioss::IntVector &connect) const;
@@ -408,10 +406,10 @@ namespace Iogn {
 
     /**
      * Return the coordinates for all nodes on this processor.  The
-     * first 3 entries in the 'coord' vector are the x, y, and z
-     * coordinates of the first node, etc.  The 'coord' vector will be
+     * first 3 entries in the `coord` vector are the x, y, and z
+     * coordinates of the first node, etc.  The `coord` vector will be
      * resized to the size required to contain the nodal coordinates;
-     * all information in 'coord' will be overwritten.
+     * all information in `coord` will be overwritten.
      */
     virtual void coordinates(std::vector<double> &coord) const;
     virtual void coordinates(double *coord) const;
@@ -426,7 +424,7 @@ namespace Iogn {
                              std::vector<double> &z) const;
 
     /**
-     * Return the coordinates for componenet 'comp' (1=x, 2=y, 3=z)
+     * Return the coordinates for componenet `comp` (1=x, 2=y, 3=z)
      * for all nodes on this processor. The
      * vector will be resized to the size required to contain the
      * nodal coordinates; all information in the vector will be
@@ -438,8 +436,8 @@ namespace Iogn {
     virtual void coordinates(int component, double *xyz) const;
 
     /**
-     * Return the list of nodes in nodeset 'id' on this processor.
-     * The 'nodes' vector will be resized to the size required to
+     * Return the list of nodes in nodeset `id` on this processor.
+     * The `nodes` vector will be resized to the size required to
      * contain the node list. The ids are global ids.
      */
     virtual void nodeset_nodes(int64_t id, Ioss::Int64Vector &nodes) const;
@@ -448,8 +446,8 @@ namespace Iogn {
      * Return the list of the face/ordinal pairs
      * "elem_sides[local_position]   = element global_id" and
      * "elem_sides[local_position+1] = element local face id (0-based)"
-     * for the faces in sideset 'id' on this
-     * processor.  The 'elem_sides' vector will be resized to the size
+     * for the faces in sideset `id` on this
+     * processor.  The `elem_sides` vector will be resized to the size
      * required to contain the list. The element ids are global ids,
      * the side ordinal is 0-based.
      */

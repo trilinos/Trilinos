@@ -1,18 +1,30 @@
 
 TRIBITS_ADD_EXECUTABLE(
  Utst_textmesh
- SOURCES unitMain.C UnitTestTextMesh.C UnitTestReadAllBlockData.C
+ SOURCES unitMain.C UnitTestTextMesh.C
 )
 
 TRIBITS_ADD_EXECUTABLE(
- Utst_allblockread
- SOURCES unitMain.C UnitTestReadAllBlockData.C
+ Utst_blockbatchread
+ SOURCES unitMain.C UnitTestElementBlockBatchRead.C
 )
 
 TRIBITS_ADD_TEST(
-        Utst_allblockread
-        NAME Utst_allblockread
-        NUM_MPI_PROCS 1
+        Utst_blockbatchread
+        NAME Utst_blockbatchread
+        NUM_MPI_PROCS 2
+)
+
+TRIBITS_ADD_TEST(
+        Utst_blockbatchread
+        NAME Utst_blockbatchread
+        NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+        Utst_blockbatchread
+        NAME Utst_blockbatchread
+        NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(

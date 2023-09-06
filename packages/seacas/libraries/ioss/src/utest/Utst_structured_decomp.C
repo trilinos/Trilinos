@@ -283,6 +283,18 @@ DOCTEST_TEST_CASE("cube_2blocks")
   cleanup(zones);
 }
 
+DOCTEST_TEST_CASE("2blocks_example")
+{
+  int                                       zone = 1;
+  std::vector<Iocgns::StructuredZoneData *> zones;
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "8x4x1"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "8x8x1"));
+  double load_balance_tolerance = 1.1;
+
+  check_split_assign(zones, load_balance_tolerance, 4, 0.9, 1.1);
+  cleanup(zones);
+}
+
 DOCTEST_TEST_CASE("bump")
 {
   int                                       zone = 1;

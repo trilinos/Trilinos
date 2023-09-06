@@ -28,6 +28,7 @@
 #include <vector>   // for vector
 namespace Ioex {
   class DecompositionDataBase;
+  struct BlockFieldData;
 }
 namespace Ioex {
   template <typename INT> class DecompositionData;
@@ -74,8 +75,9 @@ namespace Ioex {
     int  get_file_pointer() const override; // Open file and set exodusFilePtr.
     bool needs_shared_node_information() const override { return true; }
 
-    std::vector<size_t> get_all_block_field_data(const std::string &field_name, void *data,
-                                                 size_t data_size) const override;
+    std::vector<size_t> get_entity_field_data(const std::string &field_name,
+                                              const std::vector<Ioss::ElementBlock*>& elem_blocks,
+                                              void *data, size_t data_size) const override;
 
   private:
     void compute_node_status() const;
@@ -240,11 +242,20 @@ namespace Ioex {
     int64_t put_side_field(const Ioss::SideBlock *sd_blk, const Ioss::Field &field, void *data,
                            size_t data_size) const;
 
-    std::vector<size_t> get_all_block_connectivity(const std::string &field_name, void *data,
-                                                   size_t data_size) const;
-    std::vector<size_t> get_all_block_transient_field_data(const Ioex::VariableNameMap &variables,
-                                                           const std::string           &field_name,
-                                                           void                        *data) const;
+    template <typename T>
+    std::vector<Ioex::BlockFieldData>
+    get_entity_block_field_data(const Ioex::VariableNameMap &variables,
+                                const std::string& field_name,
+                                const std::vector<T*>& entity_container) const;
+
+    std::vector<size_t> get_entity_connectivity_field_data(const std::string &field_name,
+                                                           const std::vector<Ioss::ElementBlock*>& elem_blocks,
+                                                           void *data, size_t data_size) const;
+
+    std::vector<size_t> get_entity_transient_field_data(const Ioex::VariableNameMap &variables,
+                                                        const std::string &field_name,
+                                                        const std::vector<Ioss::ElementBlock*>& elem_blocks,
+                                                        void *data) const;
 
     // Private member data...
     mutable std::unique_ptr<DecompositionDataBase> decomp;

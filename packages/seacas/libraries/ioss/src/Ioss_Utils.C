@@ -1259,7 +1259,7 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
   }
 }
 
-// Safer than Ioss::Utils::copy_string -- guarantees null termination
+// Safer than strcpy -- guarantees null termination
 void Ioss::Utils::copy_string(char *dest, char const *source, size_t elements)
 {
   char *d;

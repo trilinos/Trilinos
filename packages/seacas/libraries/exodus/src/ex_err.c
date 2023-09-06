@@ -106,9 +106,7 @@ void ex_err(const char *module_name, const char *message, int err_num)
   if (err_num == EX_PRTLASTMSG) {
     fprintf(stderr, "\n[%s] %s\n", EX_PNAME, EX_ERRMSG);
     fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
-    if (EX_ERR_NUM < 0) {
-      fprintf(stderr, "\t%s\n", ex_strerror(EX_ERR_NUM));
-    }
+    fprintf(stderr, "\t%s\n", ex_strerror(EX_ERR_NUM));
     EX_FUNC_VOID();
   }
 
@@ -128,9 +126,7 @@ void ex_err(const char *module_name, const char *message, int err_num)
 
   else if (exoptval & EX_VERBOSE) { /* check see if we really want to hear this */
     fprintf(stderr, "\nExodus Library Warning/Error: [%s]\n\t%s\n", module_name, message);
-    if (err_num < 0) {
-      fprintf(stderr, "\t%s\n", ex_strerror(err_num));
-    }
+    fprintf(stderr, "\t%s\n", ex_strerror(err_num));
   }
   fflush(stderr);
 
@@ -228,10 +224,7 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
     }
 
     fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
-
-    if (EX_ERR_NUM < 0) {
-      fprintf(stderr, "\t%s\n", ex_strerror(EX_ERR_NUM));
-    }
+    fprintf(stderr, "\t%s\n", ex_strerror(EX_ERR_NUM));
     EX_FUNC_VOID();
   }
 
@@ -268,9 +261,7 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
     else {
       fprintf(stderr, "\nExodus Library Warning/Error: [%s]\n\t%s\n", module_name, message);
     }
-    if (err_num < 0) {
-      fprintf(stderr, "\t%s\n", ex_strerror(err_num));
-    }
+    fprintf(stderr, "\t%s\n", ex_strerror(err_num));
   }
   fflush(stderr);
 

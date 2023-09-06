@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -94,13 +94,13 @@ int main(int argc, char *argv[])
     std::fstream infile(input_files[0], std::fstream::in);
     if (!infile.good()) {
       if (!aprepro.ap_options.include_path.empty() && input_files[0][0] != '/') {
-	std::string filename = aprepro.ap_options.include_path + "/" + input_files[0];
-	infile.open(filename, std::fstream::in);
+        std::string filename = aprepro.ap_options.include_path + "/" + input_files[0];
+        infile.open(filename, std::fstream::in);
       }
       if (!infile.good()) {
-	std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << '\n'
-		  << "                Error Code: " << strerror(errno) << '\n';
-	return EXIT_FAILURE;
+        std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << '\n'
+                  << "                Error Code: " << strerror(errno) << '\n';
+        return EXIT_FAILURE;
       }
     }
 
@@ -167,6 +167,9 @@ int main(int argc, char *argv[])
   }
   if (aprepro.ap_options.dumpvars_json) {
     aprepro.dumpsym_json();
+  }
+  if (aprepro.get_error_count() > 0) {
+    exit_status = EXIT_FAILURE;
   }
   return exit_status;
 }

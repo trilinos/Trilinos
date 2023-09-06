@@ -321,9 +321,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   if (globals.Num_Assemblies > 0) {
     globals.Assemblies.resize(globals.Num_Assemblies);
-    for (int i = 0; i < globals.Num_Assemblies; i++) {
-      globals.Assemblies[i].name        = nullptr;
-      globals.Assemblies[i].entity_list = nullptr;
+    for (auto &assembly : globals.Assemblies) {
+      assembly.name        = nullptr;
+      assembly.entity_list = nullptr;
     }
     ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
 
@@ -641,6 +641,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     safe_free((void **)&globals.Coordinate_Frame_Ids);
     safe_free((void **)&globals.Coordinate_Frame_Coordinates);
     safe_free((void **)&globals.Coordinate_Frame_Tags);
+  }
+
+  // Clear out allocated memory for assembly entity_list...
+  for (auto &assembly : globals.Assemblies) {
+    free(assembly.name);
+    delete[] assembly.entity_list;
+    assembly.name        = nullptr;
+    assembly.entity_list = nullptr;
   }
 
   /* done with the Coordinate names */

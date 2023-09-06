@@ -158,106 +158,110 @@ namespace Ioss {
     return valid_methods;
   }
 
-  size_t get_all_block_ioss_element_size(const std::vector<BlockDecompositionData> &blocks)
+  size_t ElementBlockBatchOffset::get_ioss_element_size(const std::vector<int64_t>& blockSubsetIndex) const
   {
     size_t count = 0;
 
-    for (const Ioss::BlockDecompositionData &block : blocks) {
-      // Determine total number of ioss decomp elements
+    // Determine total number of ioss subset decomp elements
+    for(int64_t i : blockSubsetIndex) {
+      const Ioss::BlockDecompositionData& block = m_data[i];
       count += (block.importMap.size() + block.localMap.size());
     }
 
     return count;
   }
 
-  size_t get_all_block_ioss_offset_size(const std::vector<BlockDecompositionData> &blocks,
-                                        const std::vector<int> &block_field_component_count)
+  size_t ElementBlockBatchOffset::get_ioss_offset_size(const std::vector<int64_t>& blockSubsetIndex,
+                                                       const std::vector<int>& blockSubsetFieldComponentCount) const
   {
     size_t count = 0;
 
-    for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
-      const Ioss::BlockDecompositionData &block = blocks[blk_seq];
-      // Determine total number of ioss decomp entries based on field component count per block.
-      count +=
-          block_field_component_count[blk_seq] * (block.importMap.size() + block.localMap.size());
+    for(size_t i = 0; i < blockSubsetIndex.size(); i++) {
+      int64_t blk_seq = blockSubsetIndex[i];
+      const Ioss::BlockDecompositionData& block = m_data[blk_seq];
+      // Determine total number of ioss decomp entries based on subset field component count per block.
+      count += blockSubsetFieldComponentCount[i]*(block.importMap.size() + block.localMap.size());
     }
 
     return count;
   }
 
-  std::vector<size_t> get_all_block_ioss_offset(const std::vector<BlockDecompositionData> &blocks,
-                                                const std::vector<int> &block_component_count)
+  std::vector<size_t>
+  ElementBlockBatchOffset::get_ioss_offset(const std::vector<int64_t>& blockSubsetIndex,
+                                           const std::vector<int>& blockSubsetFieldComponentCount) const
   {
-    std::vector<size_t> ioss_offset(blocks.size() + 1, 0);
+    std::vector<size_t> offset(blockSubsetIndex.size()+1, 0);
 
-    for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
-      const Ioss::BlockDecompositionData &block = blocks[blk_seq];
+    for(size_t i = 0; i < blockSubsetIndex.size(); i++) {
+      int64_t blk_seq = blockSubsetIndex[i];
+      const Ioss::BlockDecompositionData& block = m_data[blk_seq];
 
-      // Determine number of ioss decomp entries based on field component count per block.
-      ioss_offset[blk_seq + 1] =
-          block_component_count[blk_seq] * (block.importMap.size() + block.localMap.size());
+      // Determine number of ioss decomp entries based on subset field component count per block.
+      offset[i+1] = blockSubsetFieldComponentCount[i]*(block.importMap.size() + block.localMap.size());
     }
 
     // Compute offsets
-    for (size_t i = 1; i <= blocks.size(); ++i) {
-      ioss_offset[i] += ioss_offset[i - 1];
+    for(size_t i=1; i<=blockSubsetIndex.size(); ++i) {
+      offset[i] += offset[i-1];
     }
 
-    return ioss_offset;
+    return offset;
   }
 
-  std::vector<size_t> get_all_block_import_offset(const std::vector<BlockDecompositionData> &blocks,
-                                                  const std::vector<int> &block_component_count)
+  std::vector<size_t>
+  ElementBlockBatchOffset::get_import_offset(const std::vector<int64_t>& blockSubsetIndex,
+                                             const std::vector<int>& blockSubsetFieldComponentCount) const
   {
-    std::vector<size_t> ioss_offset(blocks.size() + 1, 0);
+    std::vector<size_t> offset(blockSubsetIndex.size()+1, 0);
 
-    for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
-      const Ioss::BlockDecompositionData &block = blocks[blk_seq];
+    for(size_t i = 0; i < blockSubsetIndex.size(); i++) {
+      int64_t blk_seq = blockSubsetIndex[i];
+      const Ioss::BlockDecompositionData& block = m_data[blk_seq];
 
-      // Determine number of imported ioss decomp entries based on field component count per block.
-      ioss_offset[blk_seq + 1] = block_component_count[blk_seq] * block.importMap.size();
+      // Determine number of imported ioss decomp entries based on subset field component count per block.
+      offset[i+1] = blockSubsetFieldComponentCount[i]*block.importMap.size();
     }
 
     // Compute offsets
-    for (size_t i = 1; i <= blocks.size(); ++i) {
-      ioss_offset[i] += ioss_offset[i - 1];
+    for(size_t i=1; i<=blockSubsetIndex.size(); ++i) {
+      offset[i] += offset[i-1];
     }
 
-    return ioss_offset;
+    return offset;
   }
 
   std::vector<int>
-  get_all_block_connectivity_ioss_component_count(const std::vector<BlockDecompositionData> &blocks)
+  ElementBlockBatchOffset::get_connectivity_ioss_component_count(const std::vector<int64_t>& blockSubsetIndex) const
   {
-    std::vector<int> block_connectivity_component_count(blocks.size());
+    std::vector<int> blockSubsetConnectivityComponentCount(blockSubsetIndex.size());
 
-    for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
-      const Ioss::BlockDecompositionData &block   = blocks[blk_seq];
-      block_connectivity_component_count[blk_seq] = block.nodesPerEntity;
+    for(size_t i = 0; i < blockSubsetIndex.size(); i++) {
+      int64_t blk_seq = blockSubsetIndex[i];
+      const Ioss::BlockDecompositionData& block = m_data[blk_seq];
+      blockSubsetConnectivityComponentCount[i] = block.nodesPerEntity;
     }
 
-    return block_connectivity_component_count;
+    return blockSubsetConnectivityComponentCount;
   }
 
-  size_t
-  get_all_block_connectivity_ioss_offset_size(const std::vector<BlockDecompositionData> &blocks)
+  size_t ElementBlockBatchOffset::get_connectivity_ioss_offset_size(const std::vector<int64_t>& blockSubsetIndex) const
   {
-    return get_all_block_ioss_offset_size(blocks,
-                                          get_all_block_connectivity_ioss_component_count(blocks));
-  }
-
-  std::vector<size_t>
-  get_all_block_connectivity_ioss_offset(const std::vector<BlockDecompositionData> &blocks)
-  {
-    return get_all_block_ioss_offset(blocks,
-                                     get_all_block_connectivity_ioss_component_count(blocks));
+    return get_ioss_offset_size(blockSubsetIndex,
+                                get_connectivity_ioss_component_count(blockSubsetIndex));
   }
 
   std::vector<size_t>
-  get_all_block_connectivity_import_offset(const std::vector<BlockDecompositionData> &blocks)
+  ElementBlockBatchOffset::get_connectivity_ioss_offset(const std::vector<int64_t>& blockSubsetIndex) const
   {
-    return get_all_block_import_offset(blocks,
-                                       get_all_block_connectivity_ioss_component_count(blocks));
+    return get_ioss_offset(blockSubsetIndex,
+                           get_connectivity_ioss_component_count(blockSubsetIndex));
+  }
+
+  std::vector<size_t>
+  ElementBlockBatchOffset::get_connectivity_import_offset(const std::vector<int64_t>& blockSubsetIndex) const
+  {
+    return get_import_offset(blockSubsetIndex,
+                             get_connectivity_ioss_component_count(blockSubsetIndex));
   }
 
   template IOSS_EXPORT Decomposition<int>::Decomposition(const Ioss::PropertyManager &props,

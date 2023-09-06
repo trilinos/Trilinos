@@ -118,7 +118,12 @@ namespace {
     char  group_name[33];
     // Print name of this group...
     ex_inquire(exoid, EX_INQ_GROUP_NAME, &idum, &rdum, group_name);
-    fmt::print("{}{}\n", prefix, group_name);
+    if (group_name[0] == '/') {
+      fmt::print("{}/ (root)\n", prefix);
+    }
+    else {
+      fmt::print("{}{}\n", prefix, group_name);
+    }
 
     int              num_children = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
     std::vector<int> children(num_children);
@@ -142,7 +147,7 @@ namespace {
 
     int exoid = ex_open(inpfile.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &vers);
 
-    print_groups(exoid, "");
+    print_groups(exoid, "\t");
 #endif
   }
 

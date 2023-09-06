@@ -89,7 +89,6 @@ $ Test int and [] (shortcut for int)
 5	-5
 
 $ Test looping - print sin, cos from 0 to 90 by 5
--5
 0	0	1 1 
 5	0.08715574275	0.9961946981 1 
 10	0.1736481777	0.984807753 1 
@@ -111,7 +110,7 @@ $ Test looping - print sin, cos from 0 to 90 by 5
 90	1	6.123233996e-17 1 
 
 $$$$ Test formatting and string concatenation
-0 %.10g
+%.10g
 1 Using the format %.1g,	PI = 3
 2 Using the format %.2g,	PI = 3.1
 3 Using the format %.3g,	PI = 3.14
@@ -169,7 +168,6 @@ string =  one two, three
 delimiter " ,"
 word count = 3
 
-0
 word 1 = "one"
 word 2 = "two"
 word 3 = "three"
@@ -187,5 +185,17 @@ $ Test variable deletion
 $ Test extract
 test string is found
 
+
+$ Test string tokenization optimization
+51,52,53,54,61,62,63,64
+71,72,73,74,81,82,83,84
+Word 1 of list1 and list2 are 51 and 71
+Word 2 of list1 and list2 are 52 and 72
+Word 3 of list1 and list2 are 53 and 73
+Word 4 of list1 and list2 are 54 and 74
+Word 5 of list1 and list2 are 61 and 81
+Word 6 of list1 and list2 are 62 and 82
+Word 7 of list1 and list2 are 63 and 83
+Word 8 of list1 and list2 are 64 and 84
 
 $End of test file

@@ -1432,7 +1432,7 @@ class ExodusModel(object):
                                                              1) *
                                           nodes_per_element]
                 local_node = tuple(local_node[x] for x in face_element_map[1])
-                if not face_element_map[0] in faces:
+                if face_element_map[0] not in faces:
                     faces[face_element_map[0]] = [local_node]
                 else:
                     faces[face_element_map[0]].append(local_node)
@@ -6545,7 +6545,7 @@ class ExodusModel(object):
                 'identical lowercase representations.  One will be '
                 'chosen at random.')
         for item in new_list:
-            if not item.lower() in original_case:
+            if item.lower() not in original_case:
                 self._bug(
                     'Unrecognized string.',
                     'The string "%s" appears in the new list but '

@@ -25,6 +25,7 @@ namespace Skinner {
     bool ints_64_bit() const { return ints64Bit_; }
 
     bool no_output() const { return noOutput_; }
+    bool output_transient() const { return outputTransient_; }
 
     std::string input_filename() const { return inputFile_; }
     std::string output_filename() const { return outputFile_; }
@@ -44,6 +45,8 @@ namespace Skinner {
   public:
     std::string decomp_method;
     std::string compose_output{"default"};
+    double      maximum_time{std::numeric_limits<double>::max()};
+    double      minimum_time{-std::numeric_limits<double>::max()};
     int         compression_level{0};
     bool        shuffle{false};
     bool        debug{false};
@@ -52,6 +55,10 @@ namespace Skinner {
     bool        netcdf4_{false};
     bool        useFaceHashIds_{true};
     bool        noOutput_{false};
+    bool        outputTransient_{false};
     bool        blocks_{false};
+
+    //! If non-empty, then it is a list of times that should be transferred to the output file.
+    std::vector<double> selected_times{};
   };
 } // namespace Skinner

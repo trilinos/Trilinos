@@ -16,10 +16,12 @@
 #include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_Region.h>
+#include <Ioss_SmartAssert.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <cassert>
+#include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <init/Ionit_Initializer.h>
@@ -187,9 +189,23 @@ namespace {
   {
     const auto &blocks = region.get_element_blocks();
     size_t      offset = 0;
+
+    // Convert is outputting to 64-bit database...
+    std::vector<INT> elem_to_proc64;
+    if (sizeof(INT) == 8) {
+      elem_to_proc64.reserve(elem_to_proc.size());
+      for (const auto &etp : elem_to_proc) {
+	elem_to_proc64.push_back(etp);
+      }
+    }
     for (const auto &block : blocks) {
       size_t num_elem = block->entity_count();
-      block->put_field_data(decomp_variable_name, (void *)&elem_to_proc[offset], -1);
+      if (sizeof(INT) == 8) {
+	block->put_field_data(decomp_variable_name, (void *)&elem_to_proc64[offset], -1);
+      }
+      else {
+	block->put_field_data(decomp_variable_name, (void *)&elem_to_proc[offset], -1);
+      }
       if (add_chain_info) {
         std::vector<INT> chain;
         chain.reserve(num_elem * 2);
@@ -294,6 +310,9 @@ namespace {
   }
 
   void filename_substitution(std::string &filename, const SystemInterface &interFace);
+
+  template <typename INT>
+  void output_decomposition_statistics(const std::vector<INT> &elem_to_proc, int proc_count, size_t number_elements);
 
   template <typename INT>
   void slice(Ioss::Region &region, const std::string &nemfile, SystemInterface &interFace,
@@ -836,10 +855,12 @@ namespace {
 
     for (size_t i = 0; i < element_chains.size(); i++) {
       auto &chain_entry = element_chains[i];
-      chains[chain_entry.element].push_back(i + 1);
-      if ((debug_level & 16) != 0) {
-        fmt::print("[{}]: element {}, link {}, processor {}\n", i + 1, chain_entry.element,
-                   chain_entry.link, elem_to_proc[i]);
+      if (chain_entry.link >= 0) {
+	chains[chain_entry.element].push_back(i + 1);
+	if ((debug_level & 16) != 0) {
+	  fmt::print("[{}]: element {}, link {}, processor {}\n", i + 1, chain_entry.element,
+		     chain_entry.link, elem_to_proc[i]);
+	}
       }
     }
 
@@ -1888,12 +1909,19 @@ namespace {
     decompose_elements(region, interFace, elem_to_proc, dummy);
     double end = seacas_timer();
     fmt::print(stderr, "Decompose elements = {:.5}\n", end - start);
+    progress("exit decompose_elements");
 
     Ioss::chain_t<INT> element_chains;
     if (interFace.lineDecomp_) {
       element_chains =
           Ioss::generate_element_chains(region, interFace.lineSurfaceList_, debug_level, dummy);
+      progress("Ioss::generate_element_chains");
       line_decomp_modify(element_chains, elem_to_proc, interFace.processor_count(), dummy);
+      progress("line_decomp_modify");
+    }
+
+    if (debug_level & 32) {
+      output_decomposition_statistics(elem_to_proc, interFace.processor_count(), elem_to_proc.size());
     }
 
     if (!create_split_files) {
@@ -1901,6 +1929,9 @@ namespace {
           "exodus", nemfile, Ioss::WRITE_RESTART, Ioss::ParallelUtils::comm_world(), properties);
       if (dbo == nullptr || !dbo->ok(true)) {
         std::exit(EXIT_FAILURE);
+      }
+      if (ints64) {
+        dbo->set_int_byte_size_api(Ioss::USE_INT64_API);
       }
 
       // NOTE: 'output_region' owns 'dbo' pointer at this time
@@ -1928,6 +1959,7 @@ namespace {
         add_decomp_map(output_region, interFace.decomposition_variable(), line_decomp);
         output_decomp_map(output_region, elem_to_proc, element_chains,
                           interFace.decomposition_variable(), line_decomp);
+	progress("output_decomp_map");
       }
 
       if (interFace.outputDecompField_) {
@@ -1935,6 +1967,7 @@ namespace {
         add_decomp_field(output_region, interFace.decomposition_variable(), line_decomp);
         output_decomp_field(output_region, elem_to_proc, element_chains,
                             interFace.decomposition_variable(), line_decomp);
+	progress("output_decomp_field");
       }
 
       return;
@@ -2142,6 +2175,122 @@ namespace {
       tmp += method_name;
       tmp += filename.substr(pos + 2);
       filename = tmp;
+    }
+  }
+
+  void output_histogram(const std::vector<size_t> &proc_work, size_t avg_work, size_t median)
+  {
+    fmt::print("Work-per-processor Histogram\n");
+    std::array<size_t, 16> histogram{};
+
+    auto wmin = *std::min_element(proc_work.begin(), proc_work.end());
+    auto wmax = *std::max_element(proc_work.begin(), proc_work.end());
+
+    size_t hist_size = std::min(size_t(16), (wmax - wmin));
+    hist_size        = std::min(hist_size, proc_work.size());
+
+    if (hist_size <= 1) {
+      fmt::print("\tWork is the same on all processors; no histogram needed.\n\n");
+      return;
+    }
+
+    auto delta = double(wmax + 1 - wmin) / hist_size;
+    for (const auto &pw : proc_work) {
+      auto bin = size_t(double(pw - wmin) / delta);
+      SMART_ASSERT(bin < hist_size)(bin)(hist_size);
+      histogram[bin]++;
+    }
+
+    size_t proc_width = Ioss::Utils::number_width(proc_work.size(), true);
+    size_t work_width = Ioss::Utils::number_width(wmax, true);
+
+    fmt::print("\n\t{:^{}} {:^{}}\n", "Work Range", 2 * work_width + 2, "#", proc_width);
+    auto hist_max = *std::max_element(histogram.begin(), histogram.end());
+    for (size_t i = 0; i < hist_size; i++) {
+      int         max_star = 50;
+      int         star_cnt = ((double)histogram[i] / hist_max * max_star);
+      std::string stars(star_cnt, '*');
+      for (int j = 9; j < star_cnt;) {
+        stars[j] = '|';
+        j += 10;
+      }
+      if (histogram[i] > 0 && star_cnt == 0) {
+        stars = '.';
+      }
+      size_t      w1 = wmin + size_t(i * delta);
+      size_t      w2 = wmin + size_t((i + 1) * delta);
+      std::string postfix;
+      if (w1 <= avg_work && avg_work < w2) {
+        postfix += "average";
+      }
+      if (w1 <= median && median < w2) {
+        if (!postfix.empty()) {
+          postfix += ", ";
+        }
+        postfix += "median";
+      }
+      fmt::print("\t{:{}}..{:{}} ({:{}}):\t{:{}}  {}\n", fmt::group_digits(w1), work_width,
+                 fmt::group_digits(w2), work_width, fmt::group_digits(histogram[i]), proc_width,
+                 stars, max_star, postfix);
+    }
+    fmt::print("\n");
+  }
+
+  template <typename INT>
+  void output_decomposition_statistics(const std::vector<INT> &elem_to_proc, int proc_count, size_t number_elements)
+ {
+    // Output histogram of elements / rank...
+    std::vector<size_t> elem_per_rank(proc_count);
+    for (INT proc : elem_to_proc) {
+      elem_per_rank[proc]++;
+    }
+
+    size_t proc_width = Ioss::Utils::number_width(proc_count, false);
+    size_t work_width = Ioss::Utils::number_width(number_elements, true);
+
+    auto   min_work = *std::min_element(elem_per_rank.begin(), elem_per_rank.end());
+    auto   max_work = *std::max_element(elem_per_rank.begin(), elem_per_rank.end());
+    size_t median   = 0;
+    {
+      auto pw_copy(elem_per_rank);
+      std::nth_element(pw_copy.begin(), pw_copy.begin() + pw_copy.size() / 2, pw_copy.end());
+      median = pw_copy[pw_copy.size() / 2];
+      fmt::print("\nElements per processor:\n\tMinimum = {}, Maximum = {}, Median = {}, Ratio = "
+                 "{:.3}\n\n",
+                 fmt::group_digits(min_work), fmt::group_digits(max_work),
+                 fmt::group_digits(median), (double)(max_work) / min_work);
+    }
+    if (min_work == max_work) {
+      fmt::print("\nWork on all processors is {}\n\n", fmt::group_digits(min_work));
+    }
+    else {
+      int max_star = 40;
+      int min_star = max_star * ((double)min_work / (double)(max_work));
+      min_star = std::max(1, min_star);
+      int delta    = max_star - min_star;
+
+      double avg_work = (double)number_elements / (double)proc_count;
+      for (size_t i = 0; i < elem_per_rank.size(); i++) {
+	int star_cnt =
+	  (double)(elem_per_rank[i] - min_work) / (max_work - min_work) * delta + min_star;
+	std::string stars(star_cnt, '*');
+	std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
+	if (elem_per_rank[i] == max_work) {
+	  fmt::print(fg(fmt::color::red), format, i, proc_width, fmt::group_digits(elem_per_rank[i]),
+		     work_width, (double)elem_per_rank[i] / avg_work, stars);
+	}
+	else if (elem_per_rank[i] == min_work) {
+	  fmt::print(fg(fmt::color::green), format, i, proc_width,
+		     fmt::group_digits(elem_per_rank[i]), work_width, elem_per_rank[i] / avg_work, stars);
+	}
+	else {
+	  fmt::print(format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
+		     elem_per_rank[i] / avg_work, stars);
+	}
+      }
+
+      // Output Histogram...
+      output_histogram(elem_per_rank, (size_t)avg_work, median);
     }
   }
 } // namespace

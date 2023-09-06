@@ -28,7 +28,7 @@ namespace SEAMS {
       {"acosd", do_acosd, "acosd(x)", "Inverse cosine of x, returns degrees."},
       {"acosh", do_acosh, "acosh(x)", "Inverse hyperbolic cosine of x."},
       {"asin", do_asin, "asin(x)", "Inverse sine of x, returns radians."},
-      {"asind", do_asind, "asin(x)", "Inverse sine of x, returns degrees."},
+      {"asind", do_asind, "asind(x)", "Inverse sine of x, returns degrees."},
       {"asinh", do_asinh, "asinh(x)", "Inverse hyperbolic sine of x."},
       {"atan", do_atan, "atan(x)", "Inverse tangent of x, returns radians."},
       {"atand", do_atand, "atand(x)", "Inverse tangent of x, returns degrees."},
@@ -358,6 +358,7 @@ namespace SEAMS {
   // clang-format on
 
   svar_init svariables[] = {{"_FORMAT", "%.10g"}, /* Default output format */
+                            {"_UNITS_SYSTEM", "none"},
                             {nullptr, nullptr}};
   /* NOTE: The current comment is stored in "_C_"
    *     Since it can be changed by user on command line, we

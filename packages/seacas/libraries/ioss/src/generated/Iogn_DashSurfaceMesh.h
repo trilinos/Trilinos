@@ -65,7 +65,7 @@ namespace Iogn {
     std::vector<std::vector<int>>         sidesetConnectivity;
     std::vector<std::vector<std::string>> sidesetTouchingBlocks;
 
-    ExodusData() = default;
+    ExodusData() = delete;
     ExodusData(std::vector<double> coords, std::vector<std::vector<int>> elemBlockConnectivity,
                std::vector<int> globalNumOfElemsInBlock, std::vector<int> localNumOfElemsInBlock,
                std::vector<Topology> blockTopoData, int globalNumNodes,

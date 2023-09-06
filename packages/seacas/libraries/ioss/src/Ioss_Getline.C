@@ -39,6 +39,7 @@
 #endif
 
 /********************* C library headers ********************************/
+#include <array>
 #include <cctype>
 #include <cerrno>
 #include <cstdio>
@@ -721,9 +722,9 @@ namespace {
 #define HIST_SIZE 100
 #endif
 
-  int   hist_pos = 0, hist_last = 0;
-  char *hist_buf[HIST_SIZE];
-  char  hist_empty_elem[2] = "";
+  int                           hist_pos = 0, hist_last = 0;
+  std::array<char *, HIST_SIZE> hist_buf;
+  char                          hist_empty_elem[2] = "";
 
   void hist_init()
   {

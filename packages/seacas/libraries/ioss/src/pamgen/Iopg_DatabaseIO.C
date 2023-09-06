@@ -17,10 +17,10 @@
 #include <algorithm>
 #include <cctype>
 #include <cfloat>
-#include <ctime>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <iterator>

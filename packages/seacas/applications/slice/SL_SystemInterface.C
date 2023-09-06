@@ -160,7 +160,8 @@ void SystemInterface::enroll_options()
                   "\t\t  2 = Communication, NodeSet, Sideset information.\n"
                   "\t\t  4 = Progress information in File/Rank.\n"
                   "\t\t  8 = File/Rank Decomposition information.\n"
-                  "\t\t 16 = Chain/Line generation/decomp information.",
+                  "\t\t 16 = Chain/Line generation/decomp information.\n",
+                  "\t\t 32 = Show decomposition histogram (elements / rank).",
                   "0");
 
   options_.enroll("version", GetLongOption::NoValue, "Print version and exit", nullptr);

@@ -35,7 +35,7 @@
 #endif
 
 namespace {
-  const std::string version_string{"6.17 (2023/07/20)"};
+  const std::string version_string{"6.20 (2023/08/24)"};
 
   void output_copyright();
 
@@ -94,12 +94,19 @@ namespace SEAMS {
     ap_file_list.emplace(file_rec());
     init_table("$");
     aprepro = this;
+
+    add_variable("__loop_level__", 0, false, true);
   }
 
   Aprepro::~Aprepro()
   {
     if (!outputStream.empty()) {
       outputStream.top()->flush();
+      while (outputStream.size() > 1) {
+        std::ostream *output = outputStream.top();
+        outputStream.pop();
+        delete output;
+      }
     }
 
     // May need to delete this if set via --info=filename command.
