@@ -446,7 +446,7 @@ getPool(unsigned int seed) {
   if(host_pool_ == nullptr) {
     host_pool_ = new pool_type(seed);
     if (! created_host_finalize_hook) {
-      Kokkos::push_finalize_hook (finalize_cuda_memory);
+      Kokkos::push_finalize_hook (finalize_host_memory);
       created_host_finalize_hook = true;
     }
   }
