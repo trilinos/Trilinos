@@ -63,7 +63,7 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
-#include "Tpetra_Details_StaticView.hpp"
+#include "Tpetra_Details_Random.hpp"
 #ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
 #  include "Teuchos_SerialDenseMatrix.hpp"
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
@@ -2682,24 +2682,14 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   randomize (const Scalar& minVal, const Scalar& maxVal)
   {
     typedef impl_scalar_type IST;
+    typedef Tpetra::Details::Static_Random_XorShift64_Pool<typename device_type::execution_space> tpetra_pool_type;
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
 
-    // Seed the pseudorandom number generator using the calling
-    // process' rank.  This helps decorrelate different process'
-    // pseudorandom streams.  It's not perfect but it's effective and
-    // doesn't require MPI communication.  The seed also includes bits
-    // from the standard library's rand().
-    //
-    // FIXME (mfh 07 Jan 2015) Should we save the seed for later use?
-    // The code below just makes a new seed each time.
+    // Seed the pool based on the system RNG and the MPI rank, if needed
+    if(!tpetra_pool_type::isInitialized())
+      tpetra_pool_type::setSeed(this->getMap()->getComm()->getRank());
 
-    const uint64_t myRank =
-      static_cast<uint64_t> (this->getMap ()->getComm ()->getRank ());
-    uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + myRank + 17311uLL;
-    unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
-
-    pool_type & rand_pool = Tpetra::Details::Impl::Static_Random_XorShift64_Pool<typename device_type::execution_space>::getPool(seed);
-    //    static pool_type rand_pool (seed);
+    pool_type & rand_pool = tpetra_pool_type::getPool();
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
