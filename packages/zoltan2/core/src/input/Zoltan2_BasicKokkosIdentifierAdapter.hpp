@@ -171,8 +171,8 @@ public:
 private:
   Kokkos::View<gno_t *, device_t> idsView_;
   Kokkos::View<scalar_t **, device_t> weightsView_;
-  lno_t localNumIds_;
-  size_t numWeightsPerID_;
+  lno_t localNumIds_ = 0;
+  int numWeightsPerID_ = 0;
 };
 
 ////////////////////////////////////////////////////////////////
