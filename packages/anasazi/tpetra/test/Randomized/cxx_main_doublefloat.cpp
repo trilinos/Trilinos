@@ -90,11 +90,11 @@ int main(int argc, char *argv[])
   std::string ortho("ICGS");
   std::string filename("simple.mtx");
   int nev = 4;
-  int nsteps = 3;
-  int blockSize = 6;
-  MT tol = 1.0e-2;
+  int nsteps = 50;
+  int blockSize = 5;
+  MT tol = 1.0e-1;
   int resFreq = 0;
-  int orthoFreq = 0;
+  int orthoFreq = 1;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");

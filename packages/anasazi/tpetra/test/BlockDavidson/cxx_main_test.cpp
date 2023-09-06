@@ -103,9 +103,8 @@ int main(int argc, char *argv[])
   std::string filename("simple.mtx");
   std::string which("LM");
   int nev = 4;
-  int nsteps = 3;
   int blockSize = 4;
-  MT tol = 1.0e-6;
+  MT tol = 1.0e-2;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -115,7 +114,6 @@ int main(int argc, char *argv[])
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
-  cmdp.setOption("nsteps",&nsteps,"Maximum number of iterations.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -139,7 +137,7 @@ int main(int argc, char *argv[])
   RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
-  problem->setHermitian(false);
+  problem->setHermitian(true);
   //
   // Set the number of eigenvalues requested
   problem->setNEV( nev );
@@ -164,8 +162,8 @@ int main(int argc, char *argv[])
   }
 
   // Eigensolver parameters
-  int numBlocks = nsteps+1;
-  int maxRestarts = 0;
+  int numBlocks = 8;
+  int maxRestarts = 10;
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;

@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
   std::string which("LM");
   std::string ortho("SVQB");
   int nev = 4;
-  int nsteps = 3;
+  int nsteps = 10;
   int blockSize = 6;
   MT tol = 1.0e-2;
 

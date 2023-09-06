@@ -97,13 +97,13 @@ int main(int argc, char *argv[])
   bool verbose = false;
   bool debug = false;
   bool insitu = false;
-  bool herm = false;
+  bool herm = true;
   std::string which("LM");
   std::string filename;
   int nev = 4;
   int blockSize = 4;
-  int nsteps = 3;
-  MT tol = 1.0e-6;
+  //int nsteps = 10;
+  MT tol = 1.0e-2;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("herm","nonherm",&herm,"Solve Hermitian or non-Hermitian problem.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix (assumes non-Hermitian unless specified otherwise).");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
-  cmdp.setOption("nsteps",&nsteps,"Maximum number of iterations.");
+  //cmdp.setOption("nsteps",&nsteps,"Maximum number of iterations.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -165,18 +165,11 @@ int main(int argc, char *argv[])
     verbosity += Anasazi::Debug;
   }
 
-
-  // Eigensolver parameters
-  int numBlocks = nsteps+1;
-  int maxRestarts = 0;
-  //
   // Create parameter list to pass into the solver manager
   Teuchos::ParameterList MyPL;
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Num Blocks", numBlocks );
-  MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "In Situ Restarting", insitu );
   //
