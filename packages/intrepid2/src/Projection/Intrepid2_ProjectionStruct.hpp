@@ -42,7 +42,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionStruct.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionStruct.
+    \brief  Header file for the Intrepid2::ProjectionStruct.
     \author Created by Mauro Perego
  */
 #ifndef __INTREPID2_PROJECTIONSTRUCT_HPP__
@@ -56,11 +56,8 @@
 #include <array>
 
 namespace Intrepid2 {
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-#endif
 
-/** \class  Intrepid2::Experimental::ProjectionStruct
+/** \class  Intrepid2::ProjectionStruct
     \brief  An helper class to compute the evaluation points and weights needed for performing projections
 
     In order to perform projections, the basis functions and the target function need to be evaluated
@@ -528,9 +525,7 @@ public:
   ordinal_type maxNumBasisDerivEvalPoints;
   ordinal_type maxNumTargetDerivEvalPoints;
 };
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
+
 } // Intrepid2 namespace
 #include "Intrepid2_ProjectionStructDef.hpp"
 #endif

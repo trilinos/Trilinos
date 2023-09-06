@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionToolsDefHGRAD.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionTools
+    \brief  Header file for the Intrepid2::ProjectionTools
             containing definitions for HGRAD projections.
     \author Created by Mauro Perego
  */
@@ -321,36 +321,6 @@ struct ComputeBasisCoeffsOnCells_HGRAD {
 
 } // FunctorsProjectionTools namespace
 
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-
-template<typename DeviceType>
-template<typename BasisType, typename OrientationViewType>
-void
-ProjectionTools<DeviceType>::getHGradEvaluationPoints(typename BasisType::ScalarViewType ePoints,
-    typename BasisType::ScalarViewType gradEPoints,
-    const OrientationViewType,// orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
-    const EvalPointsType evalPointType) {
-      RealSpaceTools<DeviceType>::clone(ePoints, projStruct->getAllEvalPoints(evalPointType));
-      RealSpaceTools<DeviceType>::clone(gradEPoints, projStruct->getAllDerivEvalPoints(evalPointType));
-}
-
-template<typename DeviceType>
-template<class BasisCoeffsViewType, class TargetValueViewType, class TargetGradViewType, class BasisType, class OrientationViewType>
-void
-ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs,
-                                          const TargetValueViewType targetAtTargetEPoints,
-                                          const TargetGradViewType targetGradAtTargetGradEPoints,
-                                          const typename BasisType::ScalarViewType,// targetEPoints,
-                                          const typename BasisType::ScalarViewType,// targetGradEPoints,
-                                          const OrientationViewType orts,
-                                          const BasisType* cellBasis,
-                                          ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct) {
-                                            getHGradBasisCoeffs(basisCoeffs, targetAtTargetEPoints, targetGradAtTargetGradEPoints, orts, cellBasis, projStruct);
-                                          }
-#endif
 
 template<typename DeviceType>
 template<class BasisCoeffsViewType, class TargetValueViewType, class TargetGradViewType, class BasisType, class OrientationViewType>
@@ -405,9 +375,7 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
   ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints);
   {
     ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",basisCardinality, numTotalTargetEPoints);
-    for(ordinal_type ic=0; ic<numCells; ++ic) {
-      cellBasis->getValues(nonOrientedBasisAtTargetEPoints, targetEPoints);
-    }
+    cellBasis->getValues(nonOrientedBasisAtTargetEPoints, targetEPoints);
     OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
   }
 
@@ -421,11 +389,8 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
     basisGradAtTargetGradEPoints = ScalarViewType("basisGradAtTargetGradEPoints",numCells,basisCardinality, numTotalTargetGradEPoints, dim);
     nonOrientedBasisGradAtTargetGradEPoints = ScalarViewType("nonOrientedBasisGradAtTargetGradEPoints",basisCardinality, numTotalTargetGradEPoints, dim);
 
-    for(ordinal_type ic=0; ic<numCells; ++ic) {
-      cellBasis->getValues(nonOrientedBasisGradAtBasisGradEPoints, basisGradEPoints, OPERATOR_GRAD);
-      cellBasis->getValues(nonOrientedBasisGradAtTargetGradEPoints, targetGradEPoints, OPERATOR_GRAD);
-    }
-
+    cellBasis->getValues(nonOrientedBasisGradAtBasisGradEPoints, basisGradEPoints, OPERATOR_GRAD);
+    cellBasis->getValues(nonOrientedBasisGradAtTargetGradEPoints, targetGradEPoints, OPERATOR_GRAD);
     OrientationTools<DeviceType>::modifyBasisByOrientation(basisGradAtBasisGradEPoints, nonOrientedBasisGradAtBasisGradEPoints, orts, cellBasis);
     OrientationTools<DeviceType>::modifyBasisByOrientation(basisGradAtTargetGradEPoints, nonOrientedBasisGradAtTargetGradEPoints, orts, cellBasis);
   }
@@ -602,9 +567,7 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
     cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
   }
 }
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
+
 }  // Intrepid2 namespace
 
 #endif

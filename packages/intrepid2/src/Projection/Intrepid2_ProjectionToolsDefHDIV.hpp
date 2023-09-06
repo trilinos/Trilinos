@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionToolsDefHDIV.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionTools
+    \brief  Header file for the Intrepid2::ProjectionTools
             containing definitions for HDIV projections.
     \author Created by Mauro Perego
  */
@@ -242,43 +242,6 @@ struct ComputeHCurlBasisCoeffsOnCells_HDiv {
 };
 }  // FunctorsProjectionTools namespace
 
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-
-
-template<typename DeviceType>
-template<typename BasisType,
-typename ortValueType,       class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getHDivEvaluationPoints(typename BasisType::ScalarViewType ePoints,
-    typename BasisType::ScalarViewType divEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>,//  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
-    const EvalPointsType evalPointType){
-      RealSpaceTools<DeviceType>::clone(ePoints, projStruct->getAllEvalPoints(evalPointType));
-      RealSpaceTools<DeviceType>::clone(divEPoints, projStruct->getAllDerivEvalPoints(evalPointType));
-}
-
-
-template<typename DeviceType>
-template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
-typename funValsValueType, class ...funValsProperties,
-typename BasisType,
-typename ortValueType,class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEPoints,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetDivAtDivEPoints,
-    const typename BasisType::ScalarViewType, // targetEPoints,
-    const typename BasisType::ScalarViewType,// divEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
-      getHDivBasisCoeffs(basisCoeffs, targetAtEPoints, targetDivAtDivEPoints, orts, cellBasis, projStruct);
-}
-
-#endif
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -528,9 +491,6 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   cellSystem.solve(basisCoeffs, massMat_, rhsMatTrans, t_, w_, cellDofs, numCellDofs, numCurlInteriorDOFs);
 }
 
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
 }  // Intrepid2 namespace
 
 #endif

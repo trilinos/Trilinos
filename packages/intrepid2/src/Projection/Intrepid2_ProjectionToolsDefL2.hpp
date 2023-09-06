@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionToolsDefL2.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionTools
+    \brief  Header file for the Intrepid2::ProjectionTools
             containing definitions for L2 projections.
     \author Created by Mauro Perego
  */
@@ -393,38 +393,6 @@ struct MultiplyBasisByWeights {
 
 } // FunctorsProjectionTools namespace
 
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-
-template<typename DeviceType>
-template<typename BasisType,
-typename ortValueType,       class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getL2EvaluationPoints(typename BasisType::ScalarViewType ePoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>, //  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
-    const EvalPointsType ePointType) {
-      RealSpaceTools<DeviceType>::clone(ePoints, projStruct->getAllEvalPoints(ePointType));
-}
-
-template<typename DeviceType>
-template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
-typename funValsValueType, class ...funValsProperties,
-typename BasisType,
-typename ortValueType,class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
-    const typename BasisType::ScalarViewType, // targetEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
-
-  getL2BasisCoeffs(basisCoeffs, targetAtTargetEPoints, orts, cellBasis, projStruct);
-}
-#endif
-
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -703,17 +671,6 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
   }
 }
 
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-template<typename DeviceType>
-template<typename BasisType>
-void
-ProjectionTools<DeviceType>::getL2DGEvaluationPoints(typename BasisType::ScalarViewType ePoints,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
-    const EvalPointsType ePointType) {
-  RealSpaceTools<DeviceType>::clone(ePoints, projStruct->getAllEvalPoints(ePointType));
-}
-#endif
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -882,9 +839,6 @@ ProjectionTools<DeviceType>::getL2DGBasisCoeffs(basisViewType basisCoeffs,
   cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
 }
 
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
 } //Intrepid2 namespace
 
 #endif

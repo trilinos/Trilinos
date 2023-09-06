@@ -69,8 +69,6 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "struct_mesh_utils.hpp"
 
-#define Intrepid2_Experimental
-
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -225,13 +223,8 @@ int ConvergenceWedge(const bool verbose) {
 
   using ct = CellTools<DeviceType>;
   using ots = OrientationTools<DeviceType>;
-  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  using pts = Experimental::ProjectionTools<DeviceType>;
-  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
-  #else
   using pts = ProjectionTools<DeviceType>;
   using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
-  #endif
   using rst = RealSpaceTools<DeviceType>;
   using fst = FunctionSpaceTools<DeviceType>;
 

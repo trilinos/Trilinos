@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionToolsDefHCURL.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionTools
+    \brief  Header file for the Intrepid2::ProjectionTools
             containing definitions for HCURL projections.
     \author Created by Mauro Perego
  */
@@ -411,43 +411,6 @@ struct ComputeBasisCoeffsOnCell_HCurl {
 };
 
 } // FunctorsProjectionTools namespace
-
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-
-
-template<typename DeviceType>
-template<typename BasisType,
-typename ortValueType,       class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getHCurlEvaluationPoints(typename BasisType::ScalarViewType ePoints,
-    typename BasisType::ScalarViewType curlEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>, //  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
-    const EvalPointsType evalPointType) {    
-      RealSpaceTools<DeviceType>::clone(ePoints, projStruct->getAllEvalPoints(evalPointType));
-      RealSpaceTools<DeviceType>::clone(curlEPoints, projStruct->getAllDerivEvalPoints(evalPointType));
-}
-
-template<typename DeviceType>
-template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
-typename funValsValueType, class ...funValsProperties,
-typename BasisType,
-typename ortValueType,class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetCurlAtTargetCurlEPoints,
-    const typename BasisType::ScalarViewType, // targetEPoints,
-    const typename BasisType::ScalarViewType, // targetCurlEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
-    
-    getHCurlBasisCoeffs(basisCoeffs, targetAtTargetEPoints, targetCurlAtTargetCurlEPoints, orts, cellBasis, projStruct);
-}
-#endif
 
 
 template<typename DeviceType>
@@ -820,9 +783,7 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
     delete hgradBasis;
   }
 }
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
+
 }   // Intrepid2 namespace
 
 #endif
