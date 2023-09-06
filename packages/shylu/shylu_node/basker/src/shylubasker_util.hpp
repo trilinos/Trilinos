@@ -112,7 +112,7 @@ namespace BaskerNS
         {
           basker->t_reset_ND_factor(kid);
         }
-        if(basker->btf_nblks > 1)
+        //if(basker->btf_nblks > 1)
         {
           basker->t_reset_BTF_factor(kid);
         }
@@ -875,7 +875,8 @@ namespace BaskerNS
       } //end if btf_tabs_offset != 0
       //else // though offset=0, there may be still BLK factorization
       {
-        if(btf_nblks > 1 && (btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset))
+        //if(btf_nblks > 1 && (btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset))
+        if(btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset)
         { // if any left over for BLK factorization
           if(Options.btf == BASKER_TRUE)
           {

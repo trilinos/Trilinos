@@ -986,8 +986,13 @@ namespace BaskerNS
     Kokkos::Timer copyperm_timer;
     //printf( " A.nnz= %d vs (%d, %d) nblks=%d, btfa_nnz=%d, btfb_nnz=%d, btfc_nnz=%d\n",(int)nnz, (int)A.nnz,(int)A.val.extent(0),
     //        btf_nblks,btfa_nnz,btfb_nnz,btfc_nnz );
-
-    if ( btf_nblks > 1 ) { //non-single block case
+    if (btf_nblks == 0) {
+      std::cout << "Basker Factor error: Case for btf_nbkls = 0 is not implemented" << std::endl;
+        //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
+      return BASKER_ERROR;
+    }
+    else //if ( btf_nblks > 1 ) 
+    { //non-single block case
     #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
     #endif
@@ -1034,7 +1039,7 @@ namespace BaskerNS
         }
       } //end for
     } //end if
-    else if ( btf_nblks == 1 )
+    /*else if ( btf_nblks == 1 )
     {
     #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
@@ -1043,12 +1048,7 @@ namespace BaskerNS
         BTF_A.val( inv_vals_order_ndbtfa_array(i) ) = val[ vals_perm_composition(i) ];
       }
       //BTF_A = A; //unnecessary - this equality was set during break_into_parts2, they point to the same data; for safety, should this simply be copied instead (i.e. deep copy the data)?
-    } //end single block case
-    else {
-      std::cout << "Basker Factor error: Case for btf_nbkls = 0 is not implemented" << std::endl;
-        //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
-      return BASKER_ERROR;
-    }
+    }*/ //end single block case
     if(Options.verbose == BASKER_TRUE) {
       std::cout << "Basker Factor: Time to permute and copy from input vals to new vals and blocks: "
                 << copyperm_timer.seconds() << std::endl;

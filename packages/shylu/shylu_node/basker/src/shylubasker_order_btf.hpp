@@ -357,7 +357,7 @@ namespace BaskerNS
 
     //Short circuit, 
     //If nblks  == 1, than only BTF_A exists
-    if(nblks == 1)
+    /*if(nblks == 1)
     {
 
     #ifdef BASKER_DEBUG_ORDER_BTF
@@ -367,7 +367,7 @@ namespace BaskerNS
       //Options.btf = BASKER_FALSE;
       btf_tabs_offset = 1;
       return 0;
-    }
+    }*/
 
     //Step 1.
     Int t_size            = 0;
@@ -647,8 +647,6 @@ namespace BaskerNS
     #ifdef BASKER_DEBUG_ORDER_BTF
       printf("Basker: break_into_parts2 - short circuit for single block case\n");
     #endif
-      BTF_A = A;
-      btf_tabs_offset = 1;
       #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
       if (Options.run_nd_on_leaves == BASKER_TRUE) {
         if(Options.verbose == BASKER_TRUE) {
@@ -663,7 +661,9 @@ namespace BaskerNS
         }
         Options.replace_zero_pivot = BASKER_FALSE;
       }
-      return 0;
+      //BTF_A = A;
+      //btf_tabs_offset = 1;
+      //return 0;
     }
 
     //Short circuit for incomplete

@@ -156,7 +156,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
   if(Options.btf == BASKER_TRUE)
   {
-    if(btf_nblks > 1)
+    //if(btf_nblks > 1)
     {
       btf_last_dense(setup_flag);
     }	 

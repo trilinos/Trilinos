@@ -1342,7 +1342,7 @@ namespace BaskerNS
       #endif
     }
 
-    if(btf_nblks > 1)
+    //if(btf_nblks > 1)
     {
       sort_matrix(BTF_C);
       permute_col(BTF_C, order_c_csym_array);
@@ -1417,7 +1417,7 @@ namespace BaskerNS
       #endif
     }
 
-    if(btf_nblks > 1)
+    //if(btf_nblks > 1)
     {
       if(Options.verbose_matrix_out == BASKER_TRUE)
       {
