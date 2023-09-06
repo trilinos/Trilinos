@@ -54,7 +54,7 @@ namespace Amesos2 {
     return query (solver);
   }
 
-  bool query (const std::string solver_name) {
+  bool query (const std::string& solver_name) {
     // Make the input name canonical by converting to lower case.
     const std::string solverName = tolower (solver_name);
     //
