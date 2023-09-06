@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
     bool proc_verbose = false;
     bool debug = false;
     int frequency = -1;  // how often residuals are printed by solver
-    int numrhs = 1;      // total number of right-hand sides to solve for
-    int numKrlov = 150;  // maximum Krylov space in GCR
+    int numrhs   = 1;    // total number of right-hand sides to solve for
+    int numKrlov = 40;   // maximum Krylov space in GCR
     int maxiters = 500;  // maximum number of iterations for solver to use
     std::string filename("bcsstk14.hb");
     MT tol = 1.0e-5;     // relative residual tolerance
