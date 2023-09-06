@@ -92,7 +92,7 @@ namespace Intrepid2
     InputPointsType  inputPoints_; // P,D
     
     int polyOrder_;
-    bool defineVertexFunctions_;
+    bool useCGBasis_;
     int numFields_, numPoints_;
     
     size_t fad_size_output_;
@@ -117,24 +117,25 @@ namespace Intrepid2
     const int tri_face_vertex_2[numTriFaces] = {4,4,4,4};
     
     Hierarchical_HDIV_PYR_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints,
-                                   int polyOrder, bool defineVertexFunctions)
+                                   int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
-      polyOrder_(polyOrder), defineVertexFunctions_(defineVertexFunctions),
+      polyOrder_(polyOrder),
       fad_size_output_(getScalarDimensionForView(output))
     {
       numFields_ = output.extent_int(0);
       numPoints_ = output.extent_int(1);
       const auto & p = polyOrder;
-      const auto p3  = p * p * p;
+      const auto basisCardinality = p * p + 2 * p * (p+1) + 3 * p * p * (p-1);
+      
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
-      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != p3 + 3 * p + 1, std::invalid_argument, "output field size does not match basis cardinality");
+      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != basisCardinality, std::invalid_argument, "output field size does not match basis cardinality");
     }
     
     //! cross product: c = a x b
     KOKKOS_INLINE_FUNCTION
     void cross(Kokkos::Array<OutputScalar,3> &c,
                const Kokkos::Array<OutputScalar,3> &a,
-               const Kokkos::Array<OutputScalar,3> &b)
+               const Kokkos::Array<OutputScalar,3> &b) const
     {
       c[0] = a[1] * b[2] - a[2] * b[1];
       c[1] = a[0] * b[2] - a[2] * b[0];
@@ -147,7 +148,7 @@ namespace Intrepid2
              const OutputScratchView &PHom,
              const PointScalar &s0, const PointScalar &s1,
              const Kokkos::Array<PointScalar,3> &s0_grad,
-             const Kokkos::Array<PointScalar,3> &s1_grad)
+             const Kokkos::Array<PointScalar,3> &s1_grad) const
     {
       const auto & P_i = PHom(i);
       for (ordinal_type d=0; d<3; d++)
@@ -168,7 +169,7 @@ namespace Intrepid2
                 const OutputScratchView &PHom_t,
                 const PointScalar &t0, const PointScalar &t1,
                 const Kokkos::Array<PointScalar,3> &t0_grad,
-                const Kokkos::Array<PointScalar,3> &t1_grad)
+                const Kokkos::Array<PointScalar,3> &t1_grad) const
     {
       Kokkos::Array<OutputScalar,3> EE_i, EE_j;
       
@@ -261,7 +262,8 @@ namespace Intrepid2
           Polynomials::shiftedScaledLegendreValues(Pi, polyOrder_-1, s1, s0 + s1);
           Polynomials::shiftedScaledLegendreValues(Pj, polyOrder_-1, t1, t0 + t1);
           
-          OutputScalar mu0_cubed = mu[2][0] * mu[2][0] * mu[2][0];
+          const auto & muZ_0 = mu[0][2];
+          OutputScalar mu0_cubed = muZ_0 * muZ_0 * muZ_0;
           
           // following the ESEAS ordering: j increments first
           for (int j=0; j<polyOrder_; j++)
@@ -308,6 +310,13 @@ namespace Intrepid2
             const auto & s2 = nu[2][a-1];
             const PointScalar jacobiScaling = s0 + s1 + s2;
             
+            {
+              // TEMP use of variables to avoid compiler warnings:
+              if (b == -1) std::cout << "Delete this line of code.\n";
+              if (c == -1) std::cout << "Delete this line of code.\n";
+              if (jacobiScaling == 0) std::cout << "Delete this line of code.\n";
+            }
+            
             // TODO: finish this
 //            // compute integrated Jacobi values for each desired value of alpha
 //            // relabel scratch2D_1
@@ -349,24 +358,24 @@ namespace Intrepid2
           // [L_k](mu_{0}^zeta, mu_1^zeta)
             
           // rename scratch
-                 Li = scratch1D_1;
-                 Lj = scratch1D_2;
-          auto & Lk = scratch1D_3;
-          Polynomials::shiftedScaledIntegratedLegendreValues(Li, polyOrder_, mu[1][0], mu[0][0] + mu[1][0]);
-          Polynomials::shiftedScaledIntegratedLegendreValues(Lj, polyOrder_, mu[1][1], mu[0][1] + mu[1][1]);
-          Polynomials::shiftedScaledIntegratedLegendreValues(Lk, polyOrder_, mu[1][2], mu[0][2] + mu[1][2]);
-          // following the ESEAS ordering: k increments first
-          for (int k=2; k<=polyOrder_; k++)
-          {
-            for (int j=2; j<=polyOrder_; j++)
-            {
-              for (int i=2; i<=polyOrder_; i++)
-              {
-                output_(fieldOrdinalOffset,pointOrdinal) = Lk(k) * Li(i) * Lj(j);
-                fieldOrdinalOffset++;
-              }
-            }
-          }
+//                 Li = scratch1D_1;
+//                 Lj = scratch1D_2;
+//          auto & Lk = scratch1D_3;
+//          Polynomials::shiftedScaledIntegratedLegendreValues(Li, polyOrder_, mu[1][0], mu[0][0] + mu[1][0]);
+//          Polynomials::shiftedScaledIntegratedLegendreValues(Lj, polyOrder_, mu[1][1], mu[0][1] + mu[1][1]);
+//          Polynomials::shiftedScaledIntegratedLegendreValues(Lk, polyOrder_, mu[1][2], mu[0][2] + mu[1][2]);
+//          // following the ESEAS ordering: k increments first
+//          for (int k=2; k<=polyOrder_; k++)
+//          {
+//            for (int j=2; j<=polyOrder_; j++)
+//            {
+//              for (int i=2; i<=polyOrder_; i++)
+//              {
+//                output_(fieldOrdinalOffset,pointOrdinal) = Lk(k) * Li(i) * Lj(j);
+//                fieldOrdinalOffset++;
+//              }
+//            }
+//          }
         } // end OPERATOR_VALUE
           break;
         case OPERATOR_GRAD:
@@ -375,7 +384,7 @@ namespace Intrepid2
           // TODO: rewrite this -- the below comes from the H^1 implementation
           // vertex functions
           
-          for (int vertexOrdinal=0; vertexOrdinal<numVertices; vertexOrdinal++)
+          /*for (int vertexOrdinal=0; vertexOrdinal<numVertices; vertexOrdinal++)
           {
             for (int d=0; d<3; d++)
             {
@@ -645,7 +654,7 @@ namespace Intrepid2
             auto &dz_int2 = output_(basisOrdinal,pointOrdinal,2);
             
             transformFromESEASPyramidGradient(dx_int2, dy_int2, dz_int2, dx_eseas, dy_eseas, dz_eseas);
-          }
+          }*/
           
         } // end OPERATOR_GRAD block
           break;
@@ -707,17 +716,11 @@ namespace Intrepid2
                "Orientation embedded high order shape functions for the exact sequence elements of all shapes."
                Computers & Mathematics with Applications, Volume 70, Issue 4, 2015, Pages 353-458, ISSN 0898-1221.
                https://doi.org/10.1016/j.camwa.2015.04.027.
-   
-               Note that the template argument defineVertexFunctions controls whether this basis is defined in a
-               strictly hierarchical way.  If defineVertexFunctions is false, then the first basis function is the
-               constant 1.0, and this basis will be suitable for discontinuous discretizations.  If defineVertexFunctions
-               is true, then the first basis function will instead be 1.0-x-y, and the basis will be suitable for
-               continuous discretizations.
   */
   template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double,
-           bool defineVertexFunctions = true>  // if defineVertexFunctions is true, first four basis functions are 1-x-y-z, x, y, and z.  Otherwise, they are 1, x, y, and z.
+           bool useCGBasis = true>  // if useCGBasis is true, basis functions are associated with either faces or the interior.  If false, basis functions are all associated with interior
   class HierarchicalBasis_HDIV_PYR
   : public Basis<DeviceType,OutputScalar,PointScalar>
   {
@@ -742,9 +745,9 @@ namespace Intrepid2
      
      The basis will have polyOrder^3 + 3 * polyOrder + 1 members.
      
-     If defineVertexFunctions is false, then all basis functions are identified with the interior of the element, and the first basis function is 1.
+     If useCGBasis is false, then all basis functions are identified with the interior of the element.
      
-     If defineVertexFunctions is true, then the first basis functions are nodal functions of the vertices of the cell.
+     If useCGBasis is true, then basis functions are are associated with either faces or the interior.
      
      */
     HierarchicalBasis_HDIV_PYR(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
@@ -753,8 +756,9 @@ namespace Intrepid2
     pointType_(pointType)
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
-      this->basisCardinality_  = polyOrder * polyOrder * polyOrder + 3 * polyOrder + 1;
-      this->basisDegree_       = polyOrder;
+      const auto & p           = polyOrder;
+      this->basisCardinality_  = p * p + 2 * p * (p+1) + 3 * p * p * (p-1);
+      this->basisDegree_       = p;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<> >() );
       this->basisType_         = BASIS_FEM_HIERARCHICAL;
       this->basisCoordinates_  = COORDINATES_CARTESIAN;
@@ -765,91 +769,142 @@ namespace Intrepid2
       this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) pyramid polynomial H^1 degree lookup", this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
-      // **** vertex functions **** //
-      const int numVertices = this->basisCellTopology_.getVertexCount();
-      for (int i=0; i<numVertices; i++)
-      {
-        // for H(grad) on Pyramid, if defineVertexFunctions is false, first five basis members are linear
-        // if not, then the only difference is that the first member is constant
-        this->fieldOrdinalPolynomialDegree_  (i,0) = 1;
-        this->fieldOrdinalH1PolynomialDegree_(i,0) = 1;
-      }
-      if (!defineVertexFunctions)
-      {
-        this->fieldOrdinalPolynomialDegree_  (0,0) = 0;
-        this->fieldOrdinalH1PolynomialDegree_(0,0) = 0;
-      }
-      fieldOrdinalOffset += numVertices;
-      
-      // **** edge functions **** //
-      const int numFunctionsPerEdge = polyOrder - 1; // bubble functions: all but the vertices
-      const int numEdges            = this->basisCellTopology_.getEdgeCount();
-      for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
-      {
-        for (int i=0; i<numFunctionsPerEdge; i++)
-        {
-          this->fieldOrdinalPolynomialDegree_(i+fieldOrdinalOffset,0)   = i+2; // vertex functions are 1st order; edge functions start at order 2
-          this->fieldOrdinalH1PolynomialDegree_(i+fieldOrdinalOffset,0) = i+2; // vertex functions are 1st order; edge functions start at order 2
-        }
-        fieldOrdinalOffset += numFunctionsPerEdge;
-      }
       
       // **** face functions **** //
       // one quad face
-      const int numFunctionsPerQuadFace =  (polyOrder-1)*(polyOrder-1);
+      const int numFunctionsPerQuadFace = p*p;
       
       // following the ESEAS ordering: j increments first
-      for (int j=2; j<=polyOrder_; j++)
+      for (int j=0; j<p; j++)
       {
-        for (int i=2; i<=polyOrder_; i++)
+        for (int i=0; i<p; i++)
         {
           this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = std::max(i,j);
-          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = std::max(i,j);
+          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = std::max(i,j)+1;
           fieldOrdinalOffset++;
         }
       }
       
-      const int numFunctionsPerTriFace = ((polyOrder-1)*(polyOrder-2))/2;
+      const int numFunctionsPerTriFace = 2 * p * (p+1) / 4;
       const int numTriFaces = 4;
       for (int faceOrdinal=0; faceOrdinal<numTriFaces; faceOrdinal++)
       {
-        for (int totalPolyOrder=3; totalPolyOrder<=polyOrder_; totalPolyOrder++)
+        for (int totalPolyOrder=0; totalPolyOrder<polyOrder_; totalPolyOrder++)
         {
-          const int totalFaceDofs         = (totalPolyOrder-2)*(totalPolyOrder-1)/2;
-          const int totalFaceDofsPrevious = (totalPolyOrder-3)*(totalPolyOrder-2)/2;
-          const int faceDofsForPolyOrder  = totalFaceDofs - totalFaceDofsPrevious;
+          const int totalFaceDofs         = (totalPolyOrder+1) * (totalPolyOrder+2) / 2; // number of dofs for which i+j <= totalPolyOrder
+          const int totalFaceDofsPrevious =  totalPolyOrder    * (totalPolyOrder+1) / 2; // number of dofs for which i+j <= totalPolyOrder-1
+          const int faceDofsForPolyOrder  = totalFaceDofs - totalFaceDofsPrevious; // number of dofs for which i+j == totalPolyOrder
           for (int i=0; i<faceDofsForPolyOrder; i++)
           {
             this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = totalPolyOrder;
-            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = totalPolyOrder;
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = totalPolyOrder+1;
             fieldOrdinalOffset++;
           }
         }
       }
 
       // **** interior functions **** //
-      const int numFunctionsPerVolume = (polyOrder-1)*(polyOrder-1)*(polyOrder-1);
-      const int numVolumes = 1; // interior
-      for (int volumeOrdinal=0; volumeOrdinal<numVolumes; volumeOrdinal++)
+      const int numFunctionsPerVolume = 3 * p * p * (p-1);
+      
+      // FAMILY I
+      // following the ESEAS ordering: k increments first
+      for (int k=2; k<=polyOrder_; k++)
       {
-        // following the ESEAS ordering: k increments first
-        for (int k=2; k<=polyOrder_; k++)
+        for (int j=2; j<=polyOrder_; j++)
         {
-          for (int j=2; j<=polyOrder_; j++)
+          for (int i=0; i<polyOrder_; i++)
           {
-            for (int i=2; i<=polyOrder_; i++)
-            {
-              const int max_ij  = std::max(i,j);
-              const int max_ijk = std::max(max_ij,k);
-              this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = max_ijk;
-              this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = max_ijk;
-              fieldOrdinalOffset++;
-            }
+            const int max_jk  = std::max(j,k);
+            const int max_ijk = std::max(max_jk,i);
+            const int max_ip1jk = std::max(max_jk,i+1);
+            this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = max_ijk;
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = max_ip1jk;
+            fieldOrdinalOffset++;
           }
         }
       }
       
-      INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != this->basisCardinality_, std::invalid_argument, "Internal error: basis enumeration is incorrect");
+      // FAMILY II
+      for (int k=2; k<=polyOrder_; k++)
+      {
+        for (int j=2; j<=polyOrder_; j++)
+        {
+          for (int i=0; i<polyOrder_; i++)
+          {
+            const int max_jk  = std::max(j,k);
+            const int max_ijk = std::max(max_jk,i);
+            const int max_ip1jk = std::max(max_jk,i+1);
+            this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = max_ijk;
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = max_ip1jk;
+            fieldOrdinalOffset++;
+          }
+        }
+      }
+      
+      // FAMILY III
+      for (int j=2; j<=polyOrder_; j++)
+      {
+        for (int i=2; i<=polyOrder_; i++)
+        {
+          const int max_ij  = std::max(i,j);
+          this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = max_ij;
+          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = max_ij;
+          fieldOrdinalOffset++;
+        }
+      }
+      
+      // FAMILY IV
+      for (int k=2; k<=polyOrder_; k++)
+      {
+        for (int j=0; j<polyOrder_; j++)
+        {
+          for (int i=0; i<polyOrder_; i++)
+          {
+            const int max_jk  = std::max(j,k);
+            const int max_ijk = std::max(max_jk,i);
+            const int max_ip1jp1k = std::max(std::max(j+1,k),i+1);
+            this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = max_ijk;
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = max_ip1jp1k;
+            fieldOrdinalOffset++;
+          }
+        }
+      }
+      
+      // FAMILY V
+      for (int j=2; j<=polyOrder_; j++)
+      {
+        for (int i=2; i<=polyOrder_; i++)
+        {
+          const int max_ij  = std::max(i,j);
+          this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = max_ij;
+          this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = max_ij;
+          fieldOrdinalOffset++;
+        }
+      }
+      
+      // FAMILY VI
+      for (int i=2; i<=polyOrder_; i++)
+      {
+        this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = i;
+        this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = i;
+        fieldOrdinalOffset++;
+      }
+      
+      // FAMILY VII
+      for (int j=2; j<=polyOrder_; j++)
+      {
+        this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = j;
+        this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = j;
+        fieldOrdinalOffset++;
+      }
+      
+      if (fieldOrdinalOffset != this->basisCardinality_)
+      {
+        std::cout << "Internal error: basis enumeration is incorrect; fieldOrdinalOffset = " << fieldOrdinalOffset;
+        std::cout << "; basisCardinality_ = " << this->basisCardinality_ << std::endl;
+        
+        INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != this->basisCardinality_, std::invalid_argument, "Internal error: basis enumeration is incorrect");
+      }
       
       // initialize tags
       {
@@ -886,30 +941,11 @@ namespace Intrepid2
         const ordinal_type posDfOrd = 2; // position in the tag, counting from 0, of DoF ordinal relative to the subcell
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-        const int vertexDim = 0, edgeDim = 1, faceDim = 2, volumeDim = 3;
+        const int faceDim = 2, volumeDim = 3;
 
-        if (defineVertexFunctions) {
+        if (useCGBasis) {
           {
             int tagNumber = 0;
-            for (int vertexOrdinal=0; vertexOrdinal<numVertices; vertexOrdinal++)
-            {
-              tagView(tagNumber*tagSize+0) = vertexDim;             // vertex dimension
-              tagView(tagNumber*tagSize+1) = vertexOrdinal;         // vertex id
-              tagView(tagNumber*tagSize+2) = 0;                     // local dof id
-              tagView(tagNumber*tagSize+3) = 1;                     // total number of dofs at this vertex
-              tagNumber++;
-            }
-            for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
-            {
-              for (int functionOrdinal=0; functionOrdinal<numFunctionsPerEdge; functionOrdinal++)
-              {
-                tagView(tagNumber*tagSize+0) = edgeDim;               // edge dimension
-                tagView(tagNumber*tagSize+1) = edgeOrdinal;           // edge id
-                tagView(tagNumber*tagSize+2) = functionOrdinal;       // local dof id
-                tagView(tagNumber*tagSize+3) = numFunctionsPerEdge;   // total number of dofs on this edge
-                tagNumber++;
-              }
-            }
             {
               // quad face
               const int faceOrdinalESEAS = 0;
@@ -937,16 +973,13 @@ namespace Intrepid2
                 tagNumber++;
               }
             }
-            for (int volumeOrdinal=0; volumeOrdinal<numVolumes; volumeOrdinal++)
+            for (int functionOrdinal=0; functionOrdinal<numFunctionsPerVolume; functionOrdinal++)
             {
-              for (int functionOrdinal=0; functionOrdinal<numFunctionsPerVolume; functionOrdinal++)
-              {
-                tagView(tagNumber*tagSize+0) = volumeDim;               // volume dimension
-                tagView(tagNumber*tagSize+1) = volumeOrdinal;           // volume id
-                tagView(tagNumber*tagSize+2) = functionOrdinal;         // local dof id
-                tagView(tagNumber*tagSize+3) = numFunctionsPerVolume;   // total number of dofs in this volume
-                tagNumber++;
-              }
+              tagView(tagNumber*tagSize+0) = volumeDim;               // volume dimension
+              tagView(tagNumber*tagSize+1) = 0;                       // volume id
+              tagView(tagNumber*tagSize+2) = functionOrdinal;         // local dof id
+              tagView(tagNumber*tagSize+3) = numFunctionsPerVolume;   // total number of dofs in this volume
+              tagNumber++;
             }
             INTREPID2_TEST_FOR_EXCEPTION(tagNumber != this->basisCardinality_, std::invalid_argument, "Internal error: basis tag enumeration is incorrect");
           }
@@ -1016,7 +1049,7 @@ namespace Intrepid2
       
       using FunctorType = Hierarchical_HDIV_PYR_Functor<DeviceType, OutputScalar, PointScalar, OutputViewType, PointViewType>;
       
-      FunctorType functor(operatorType, outputValues, inputPoints, polyOrder_, defineVertexFunctions);
+      FunctorType functor(operatorType, outputValues, inputPoints, polyOrder_);
       
       const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputScalar>();
       const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointScalar>();
@@ -1062,7 +1095,7 @@ namespace Intrepid2
     virtual BasisPtr<typename Kokkos::HostSpace::device_type, OutputScalar, PointScalar>
     getHostBasis() const override {
       using HostDeviceType = typename Kokkos::HostSpace::device_type;
-      using HostBasisType  = HierarchicalBasis_HDIV_PYR<HostDeviceType, OutputScalar, PointScalar, defineVertexFunctions>;
+      using HostBasisType  = HierarchicalBasis_HDIV_PYR<HostDeviceType, OutputScalar, PointScalar, useCGBasis>;
       return Teuchos::rcp( new HostBasisType(polyOrder_, pointType_) );
     }
   };
