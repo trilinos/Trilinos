@@ -118,7 +118,7 @@ void testBasisVector(Zoltan2::BasicVectorAdapter<userTypes_t> *ia, int *valueStr
 
         ia->getCoordinatesView(coords, stride, v);
 
-        bool success = true;
+        success = true;
         for (size_t i = 0; i < ia->getLocalNumIDs(); ++i) {
           TEUCHOS_TEST_EQUALITY(coords[i*stride], kHostCoordsMV(i, v), std::cout, success);
           TEUCHOS_TEST_EQUALITY(coords[i*stride], kDeviceCoordsMV(i, v), std::cout, success);
