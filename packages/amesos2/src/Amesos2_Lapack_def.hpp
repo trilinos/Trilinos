@@ -150,12 +150,10 @@ namespace Amesos2 {
 #endif
       typedef Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
                                        scalar_type> copy_helper;
-      if ( is_contiguous_ == true ) {
-        copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), ROOTED, 0);
-      }
-      else {
-        copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, 0);
-      }
+      copy_helper::do_get(B, rhsvals_(),
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        0);
     }
 
     int solve_ierr         = 0;
@@ -193,18 +191,10 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      if ( is_contiguous_ == true ) {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
-              as<size_t>(ld_rhs),
-              ROOTED);
-      }
-      else {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
-              as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED);
-      }
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
     }
 
     return( 0 );
@@ -290,16 +280,12 @@ namespace Amesos2 {
       //        scalar_type, global_ordinal_type, global_size_type> ccs_helper;
     typedef Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
         host_value_type_array, host_ordinal_type_array, host_ordinal_type_array> ccs_helper;
-    if ( is_contiguous_ == true ) {
-      ccs_helper::do_get(this->matrixA_.ptr(),
-                         nzvals_view_, rowind_view_, colptr_view_,
-                         nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
-    }
-    else {
-      ccs_helper::do_get(this->matrixA_.ptr(),
-                         nzvals_view_, rowind_view_, colptr_view_,
-                         nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
-    }
+
+    ccs_helper::do_get(this->matrixA_.ptr(),
+      nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
+      (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+      ARBITRARY,
+      this->rowIndexBase_);
   }
 
     if( this->root_ ){
