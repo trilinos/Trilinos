@@ -189,6 +189,7 @@ APPEND_SET(HEADERS
   NOX_Observer_Log.hpp
   NOX_Observer_Print.hpp
   NOX_Assert.H
+  NOX_GlobalComm.H
   )
 APPEND_SET(SOURCES
   NOX_Utils.C

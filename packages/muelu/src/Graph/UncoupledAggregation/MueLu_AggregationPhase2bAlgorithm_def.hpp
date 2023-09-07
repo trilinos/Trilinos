@@ -63,8 +63,9 @@ namespace MueLu {
   // Try to stick unaggregated nodes into a neighboring aggregate if they are
   // not already too big
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& /* params */, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params , const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
+    bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2b");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -108,9 +109,12 @@ namespace MueLu {
 
         for (int j = 0; j < neighOfINode.size(); j++) {
           LO neigh = neighOfINode[j];
+          int aggId = vertex2AggId[neigh];
 
-          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED) {
-            int aggId = vertex2AggId[neigh];
+          // Note: The third condition is only relevant if the ML matching is enabled
+          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED 
+            && (!matchMLbehavior || aggWeight[aggId] != 0) ) {
+
             int score = aggWeight[aggId] - aggPenalties[aggId];
 
             if (score > bestScore) {

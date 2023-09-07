@@ -46,6 +46,7 @@
 #include "Test_Sparse_ccs2crs.hpp"
 #include "Test_Sparse_crs2ccs.hpp"
 #include "Test_Sparse_removeCrsMatrixZeros.hpp"
+#include "Test_Sparse_extractCrsDiagonalBlocks.hpp"
 
 // TPL specific tests, these require
 // particular pairs of backend and TPL

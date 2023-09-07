@@ -170,7 +170,7 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
   INTREPID2_TEST_FOR_EXCEPTION( latticeSize != ndofSubcell,
       std::logic_error,
       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-      "Lattice size should be equal to the onber of subcell internal DoFs");
+      "Lattice size should be equal to the number of subcell internal DoFs");
   PointTools::getLattice(refPtsSubcell, subcellTopo, subcellBasis.getDegree(), 1, POINTTYPE_WARPBLEND);
 
   // map the points into the parent, cell accounting for orientation
