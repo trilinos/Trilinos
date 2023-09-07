@@ -139,7 +139,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 
     if(timedeepcopy)
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor(true);
-    if(timedeepfence)
+    if(timefence)
       Tpetra::Details::AddKokkosFenceToTimeMonitor(true);
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
