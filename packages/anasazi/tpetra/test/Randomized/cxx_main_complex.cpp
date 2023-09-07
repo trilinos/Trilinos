@@ -51,6 +51,7 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Trilinos_Util_iohb.h>
 
 template <class ST>
 void print(std::vector<ST> const &a) {
@@ -62,18 +63,20 @@ void print(std::vector<ST> const &a) {
 
 int main(int argc, char *argv[])
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::tuple;
+  using namespace Teuchos;
+  using Tpetra::Operator;
   using Tpetra::CrsMatrix;
+  using Tpetra::MultiVector;
   using Tpetra::Map;
+  using std::vector;
   using std::cout;
   using std::endl;
 
-  typedef double                              ST;
+  typedef std::complex<double>                ST;
   typedef Teuchos::ScalarTraits<ST>          SCT;
   typedef SCT::magnitudeType                  MT;
   typedef Tpetra::MultiVector<ST>             MV;
+  typedef MV::global_ordinal_type             GO;
   typedef Tpetra::Operator<ST>                OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
@@ -82,13 +85,14 @@ int main(int argc, char *argv[])
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
+  int info = 0;
   const int MyPID = comm->getRank ();
 
   bool testFailed;
   bool verbose = true;
   bool debug = false;
   std::string ortho("ICGS");
-  std::string filename("simple.mtx");
+  std::string filename("mhd1280b.mtx");
   int nev = 4;
   int nsteps = 50;
   int blockSize = 5;
@@ -115,9 +119,76 @@ int main(int argc, char *argv[])
     blockSize = nev;
   }
 
-  RCP<CrsMatrix<ST>> A = Tpetra::MatrixMarket::Reader<CrsMatrix<ST> >::readSparseFile(filename,comm);
-  RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
+  RCP<CrsMatrix<ST>> A;
+  RCP<const Tpetra::Map<> > map;
+  std::string mtx = ".mtx", mm = ".mm", cua = ".cua";
+
+  if(std::equal(mtx.rbegin(), mtx.rend(), filename.rbegin()) || std::equal(mm.rbegin(), mm.rend(), filename.rbegin())) {
+    A = Tpetra::MatrixMarket::Reader<CrsMatrix<ST> >::readSparseFile(filename,comm);
+    map = A->getDomainMap();
+  } else if(std::equal(cua.rbegin(), cua.rend(), filename.rbegin())) {
+    int dim,dim2,nnz;
+    int rnnzmax;
+    double *dvals;
+    int *colptr,*rowind;
+    nnz = -1;
+    if (MyPID == 0) {
+      info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+      // find maximum NNZ over all rows
+      vector<int> rnnz(dim,0);
+      for (int *ri=rowind; ri<rowind+nnz; ++ri) {
+        ++rnnz[*ri-1];
+      }
+      rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
+    }
+    else {
+      // address uninitialized data warnings
+      dvals = NULL;
+      colptr = NULL;
+      rowind = NULL;
+    }
+    Teuchos::broadcast(*comm,0,&info);
+    Teuchos::broadcast(*comm,0,&nnz);
+    Teuchos::broadcast(*comm,0,&dim);
+    Teuchos::broadcast(*comm,0,&rnnzmax);
+    if (info == 0 || nnz < 0) {
+      if (MyPID == 0) {
+        cout << "Error reading '" << filename << "'" << endl
+          << "End Result: TEST FAILED" << endl;
+      }
+      return -1;
+    }
+    // create map
+    map = rcp (new Map<> (dim, 0, comm));
+    A = rcp (new CrsMatrix<ST> (map, rnnzmax));
+    if (MyPID == 0) {
+      // Convert interleaved doubles to complex values
+      // HB format is compressed column. CrsMatrix is compressed row.
+      const double *dptr = dvals;
+      const int *rptr = rowind;
+      for (int c=0; c<dim; ++c) {
+        for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
+          A->insertGlobalValues (static_cast<GO> (*rptr++ - 1), tuple<GO> (c), tuple (ST (dptr[0], dptr[1])));
+          dptr += 2;
+        }
+      }
+    }
+    if (MyPID == 0) {
+      // Clean up.
+      free( dvals );
+      free( colptr );
+      free( rowind );
+    }
+    A->fillComplete();
+
+  } else {
+    if (MyPID == 0) {
+      cout << "Error reading '" << filename << "'" << endl
+           << "End Result: TEST FAILED" << endl;
+    }
+    return -1;
+  }
   // Create initial vectors
   RCP<MV> randVecs = rcp(new MV(map,blockSize));
   randVecs->randomize();
@@ -197,7 +268,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Avecs );
     MVT::MvNorm( *Avecs, normV );
 
-    os << "Direct residual norms computed in Tpetra_RandSolve_test.exe" << endl
+    os << "Direct residual norms computed in Tpetra_RandomizedSolver_complex_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {

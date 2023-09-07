@@ -1,9 +1,3 @@
-#TRIBITS_ADD_EXECUTABLE(
-#   Matrix_Reader 
-#   SOURCES reader.cpp
-#   COMM serial mpi
-#)
-
 TRIBITS_ADD_EXECUTABLE(
     Sphynx_Research_Driver
     SOURCES Sphynx_Research_Driver.cpp

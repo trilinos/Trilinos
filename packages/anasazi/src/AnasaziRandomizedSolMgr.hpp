@@ -423,7 +423,7 @@ namespace Anasazi {
               evecs = sol.Evecs;
               numev = sol.numVecs;       
 
-              // Verify residuals by hand
+              // Check residuals for convergence
               if (numev > 0 ) {
                 for ( j = 0; j < numev; ++j ) T(j, j) = sol.Evals[j].realpart;
 
