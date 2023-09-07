@@ -173,6 +173,7 @@ int main(int argc, char *argv[])
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     std::map<int,std::string> responseIndexToName;
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh;
     {
       panzer_stk::ModelEvaluatorFactory<double> me_factory;
 
@@ -212,6 +213,7 @@ int main(int argc, char *argv[])
       physics = me_factory.getPhysicsModelEvaluator();
       rLibrary = me_factory.getResponseLibrary();
       linObjFactory = me_factory.getLinearObjFactory();
+      mesh = me_factory.getMesh();
 
       // Add in the application specific observer factories
       {
@@ -242,6 +244,17 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////
 
     stkIOResponseLibrary->initialize(*rLibrary);
+    // TODO BWR try something like this?
+    panzer_stk::RespFactorySolnWriter_Builder rfsw_builder;
+    rfsw_builder.mesh = mesh;
+    auto T_basis = physicsBlocks[0]->getFieldLibrary()->lookupBasis("TEMPERATURE");
+    rfsw_builder.addAdditionalField("SOURCE_TEMPERATURE",T_basis);
+    std::vector<std::string> blocks;
+    mesh->getElementBlockNames(blocks);
+    for (auto& b : blocks) mesh->addSolutionField("SOURCE_TEMPERATURE",b);
+    // TODO BWR THIS DOES NOT UPDATE MESHDATA_ so the data never actually gets to the exo file this way
+    // TODO BWR can we get IOSS to know about this?
+    stkIOResponseLibrary->addResponse("SOURCE_TEMPERATURE",blocks,rfsw_builder);
 
     // 1. Register correct aggregator and reserve response - this was done in the appropriate observer object
 

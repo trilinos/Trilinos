@@ -98,6 +98,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
   if(addSolutionFields_)
     allFields.insert(allFields.end(),physicsBlock.getTangentFields().begin(),physicsBlock.getTangentFields().end());
 
+  std::cout << " ADDITIONAL FIELDS " << additionalFields_.size() << std::endl;
   // add in bases for any additional fields
   for(std::size_t i=0;i<additionalFields_.size();i++)
     bases[additionalFields_[i].second->name()] = additionalFields_[i].second;
@@ -166,9 +167,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
         fields_concat += fields[f];
       }
 
-      // TODO BWR Given the physics block, what is the mesh basis?
       // get eblock, get mesh basis, check and see if we need to project
-
       auto eBlock = physicsBlock.elementBlockID();
       auto meshBasis = mesh_->getMeshGeometryManager(eBlock)->getMeshPureBasis(basis->numCells());
 
@@ -178,10 +177,6 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
 
         // Project from the solution basis to the mesh
         // Keep the field name the same so scatter can find the projected fields 
-        // TODO BWR CAN ONLY DO RESID
-        // TODO BWR ASK ABOUT THAT ^
-        // TODO BWR This seems to be OK...
-        // TODO BWR Going to watch to batch
         for (auto & f : fields) {
           Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval =
             Teuchos::rcp(new ProjectField<panzer::Traits::Residual,panzer::Traits>(f, basis, meshBasis));

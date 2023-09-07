@@ -171,7 +171,13 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
       if ( initialized_ )  {
         metaData_->enable_late_fields();
         stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(), nullptr);
+#ifdef PANZER_HAVE_IOSS
+        // If, for some reason, the field has already been added, this will do nothing
+        // TODO IS THIS OK? SHOULD WE ADD CELL, ETC FIELDS THIS WAY TOO?
+        meshData_->add_field(meshIndex_, *field);
+#endif
       }
+      std::cout << " HERE " << fieldName << std::endl;
       fieldNameToSolution_[key] = field;
    }
 }
