@@ -45,12 +45,10 @@
 #include "TpetraCore_config.h"
 //#include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_DualView.hpp"
-#include "Kokkos_Random.hpp"
 
 namespace Tpetra {
 namespace Details {
 namespace Impl {
-
 
 template<class MemorySpace>
 class StaticKokkosAllocation {
@@ -66,14 +64,6 @@ public:
   // Kokkos::finalize.  Reallocation only happens if needed.
   static void* resize (MemorySpace space, const size_t size);
 };
-
-template<class ExecutionSpace>
-class Static_Random_XorShift64_Pool {
-public:
-  // The seed argument is only used on the initial call
-  static Kokkos::Random_XorShift64_Pool<ExecutionSpace> & getPool(unsigned int seed);
-};
-
 
 #ifdef KOKKOS_ENABLE_CUDA
 template<>
@@ -114,14 +104,6 @@ public:
 
   static void* resize (Kokkos::CudaHostPinnedSpace space, const size_t size);
 };
-
-template<>
-class Static_Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> {
-public:
-  static Kokkos::Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> & getPool(unsigned int seed);
-};
-
-
 #endif // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_HIP
@@ -150,54 +132,7 @@ public:
 
   static void* resize (Kokkos::Experimental::HIPHostPinnedSpace space, const size_t size);
 };
-
-template<>
-class Static_Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space> {
-public:
-  static Kokkos::Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space> & getPool(unsigned int seed);
-};
-
-
 #endif // KOKKOS_ENABLE_HIP
-
-
-
-#ifdef KOKKOS_ENABLE_SYCL
-template<>
-class StaticKokkosAllocation<Kokkos::Experimental::SYCLDeviceUSMSpace> {
-public:
-  StaticKokkosAllocation () = delete;
-  ~StaticKokkosAllocation () = delete;
-  StaticKokkosAllocation (const StaticKokkosAllocation&) = delete;
-  StaticKokkosAllocation& operator= (const StaticKokkosAllocation&) = delete;
-  StaticKokkosAllocation (StaticKokkosAllocation&&) = delete;
-  StaticKokkosAllocation& operator= (StaticKokkosAllocation&&) = delete;
-
-  static void* resize (Kokkos::Experimental::HIPSpace space, const size_t size);
-};
-
-template<>
-class StaticKokkosAllocation<Kokkos::Experimental::SYCLSharedUSMSpace> {
-public:
-  StaticKokkosAllocation () = delete;
-  ~StaticKokkosAllocation () = delete;
-  StaticKokkosAllocation (const StaticKokkosAllocation&) = delete;
-  StaticKokkosAllocation& operator= (const StaticKokkosAllocation&) = delete;
-  StaticKokkosAllocation (StaticKokkosAllocation&&) = delete;
-  StaticKokkosAllocation& operator= (StaticKokkosAllocation&&) = delete;
-
-  static void* resize (Kokkos::Experimental::HIPHostPinnedSpace space, const size_t size);
-};
-
-template<>
-class Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> {
-public:
-  static Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> & getPool(unsigned int seed);
-};
-
-
-#endif // KOKKOS_ENABLE_SYCL
-
 
 template<>
 class StaticKokkosAllocation<Kokkos::HostSpace> {
@@ -211,13 +146,6 @@ public:
 
   static void* resize (Kokkos::HostSpace space, const size_t size);
 };
-
-template<>
-class Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> {
-public:
-  static Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> & getPool(unsigned int seed);
-};
-
 
 template<class ValueType, class MemorySpace>
 ValueType*
