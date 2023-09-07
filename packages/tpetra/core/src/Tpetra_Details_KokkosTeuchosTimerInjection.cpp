@@ -38,7 +38,7 @@
 // ************************************************************************
 // @HEADER
 */
-#include "Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp"
+#include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
@@ -120,8 +120,6 @@ namespace Details {
     }
   }// end DeepCopyTimerInjection
 
-
-
   void AddKokkosDeepCopyToTimeMonitor(bool force) {
     if (!DeepCopyTimerInjection::initialized_) {
       if (force || Tpetra::Details::Behavior::timeKokkosDeepCopy() || Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose()) {
@@ -132,6 +130,77 @@ namespace Details {
       }
     }
   }
+  
+  namespace FenceTimerInjection {
+    Teuchos::RCP<Teuchos::Time> timer_;
+    bool initialized_ = false;
+    uint64_t active_handle;
+
+    void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
+                             uint64_t* handle) {
+
+      // Nested fences are not allowed
+      if(timer_ != Teuchos::null)
+        return;        
+      active_handle = (active_handle+1) % 1024;
+      *handle = active_handle;
+      timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::fence ")+name + " " + std::to_string(deviceId));
+      timer_->start();
+      timer_->incrementNumCalls();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+      const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+      if (nonnull(stackedTimer))
+        stackedTimer->start(timer_->name());
+#endif
+      
+    }
+
+
+    void kokkosp_end_fence(const uint64_t handle) {
+      if(handle == active_handle) {
+        if (timer_ != Teuchos::null) {
+          timer_->stop();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+          try {
+            const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+            if (nonnull(stackedTimer))
+              stackedTimer->stop(timer_->name());
+          }
+          catch (std::runtime_error&) {
+            std::ostringstream warning;
+            warning <<
+              "\n*********************************************************************\n"
+              "WARNING: Overlapping timers detected!\n"
+              "A TimeMonitor timer was stopped before a nested subtimer was\n"
+              "stopped. This is not allowed by the StackedTimer. This corner case\n"
+              "typically occurs if the TimeMonitor is stored in an RCP and the RCP is\n"
+              "assigned to a new timer. To disable this warning, either fix the\n"
+              "ordering of timer creation and destuction or disable the StackedTimer\n";
+            std::cout << warning.str() << std::endl;
+            Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+          }
+#endif
+        }
+        
+        timer_ = Teuchos::null;
+        
+      }
+      // Else: We've nested our fences, and we need to ignore the inner fences
+    }
+
+
+  }//end FenceTimerInjection
+
+  void AddKokkosFenceToTimeMonitor(bool force) {
+    if (!FenceTimerInjection::initialized_) {
+      if (force || Tpetra::Details::Behavior::timeKokkosFence()) {
+        Kokkos::Tools::Experimental::set_begin_fence_callback(FenceTimerInjection::kokkosp_begin_fence);
+        Kokkos::Tools::Experimental::set_end_fence_callback(FenceTimerInjection::kokkosp_end_fence);
+        FenceTimerInjection::initialized_=true;
+      }
+    }
+  }
+
 
 
 } // namespace Details
