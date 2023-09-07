@@ -104,7 +104,6 @@ For all templated types, the CMake options have the pattern: ``Tpetra_INST_<TYPE
 
    Concerning (2), some of the types can only be enabled if certain requirements are fulfilled.
 
-Tpetra also keeps a list of the Kokkos Device types (specializations of ``Kokkos::Device``) over which it does instantiations and/or tests.  This is the ``Tpetra_ETI_DEVICES`` CMake variable.  Eventually, we will deprecate and remove the above ``Node`` instantiation list, and just use the list of enabled Devices.  We use devices rather than execution spaces, because a ``Kokkos::Device`` is an (execution space, memory space) pair.  This means that it is more general.  For example, ``Device<Cuda, CudaSpace> != Device<Cuda, CudaUVMSpace>``, yet some users may want both represented.  The particular use case is ``Device<OpenMP, $MEM_SPACE>`` where ``$MEM_SPACE`` could be either ``HostSpace`` or the ``HBM`` (high-bandwidth memory) memory space.
 
 Kokkos Execution Space Types
 ----------------------------
