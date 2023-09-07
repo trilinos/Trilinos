@@ -128,12 +128,12 @@ int main(int argc, char *argv[])
   if (debug) verbose = true;
   if (filename == "") {
     // get default based on herm
-    if (herm) {
+//    if (herm) {
       filename = "mhd1280b.cua";
-    }
-    else {
-      filename = "mhd1280a.cua";
-    }
+//    }
+//    else {
+//      filename = "mhd1280a.cua";
+//    }
   }
 
   if (MyPID == 0) {
