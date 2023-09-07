@@ -84,6 +84,7 @@ public:
 
   /** \brief Compute value.
   */
+#ifdef ENABLE_PYROL 
   virtual Real value_3( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     return Real(0);
   }
@@ -101,7 +102,15 @@ public:
   Real value( const Vector<Real> &x, Real &tol ) {
     return value_2(x, tol);
   }
+#else  // Default build 
+  virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
 
+  Real value( const Vector<Real> &x, Real &tol ) {
+    const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
+      dynamic_cast<const ROL::Vector<Real>&>(x));
+    return this->value(*(xs.get_1()),*(xs.get_2()),tol);
+  }
+#endif // ENABLE_PYROL
 
   /** \brief Compute gradient with respect to first component.
   */
