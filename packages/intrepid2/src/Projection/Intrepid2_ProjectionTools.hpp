@@ -369,7 +369,7 @@ public:
   static void
   getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
       const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
-      const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
+      [[maybe_unused]] const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
       ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
