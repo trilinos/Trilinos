@@ -106,7 +106,6 @@ namespace {
   // using Amesos2::MatrixAdapter;
   // using Amesos2::MultiVecAdapter;
   using Amesos2::ShyLUBasker;
-  using Amesos2::Meta::is_same;
 
   typedef Tpetra::Map<>::node_type Node;
 

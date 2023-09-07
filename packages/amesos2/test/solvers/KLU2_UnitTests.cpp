@@ -101,8 +101,6 @@ namespace {
   // using Amesos2::MultiVecAdapter;
   using Amesos2::KLU2;
 
-  using Amesos2::Meta::is_same;
-
   typedef Tpetra::Map<>::node_type Node;
 
   bool testMpi = true;

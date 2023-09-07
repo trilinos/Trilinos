@@ -86,10 +86,10 @@ namespace Amesos2 {
           Teuchos::RCP<const Vector> B )
     {
       ctassert<
-        Meta::is_same<
+        std::is_same_v<
           typename MatrixTraits<Matrix>::scalar_t,
           typename MultiVecAdapter<Vector>::scalar_t
-        >::value
+        >
       > same_scalar_assertion;
       (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
 

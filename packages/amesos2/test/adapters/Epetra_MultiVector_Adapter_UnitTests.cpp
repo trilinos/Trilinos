@@ -89,8 +89,6 @@ namespace {
   using Amesos2::MultiVecAdapter;
   using Amesos2::createMultiVecAdapter;
 
-  using Amesos2::Meta::is_same;
-
   using Amesos2::Util::getDistributionMap;
   using Amesos2::Util::to_teuchos_comm;
   using Amesos2::Util::get_1d_copy_helper;

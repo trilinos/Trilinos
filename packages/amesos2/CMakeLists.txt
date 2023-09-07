@@ -6,7 +6,6 @@
 TRIBITS_PACKAGE(Amesos2)
 
 SET(${PACKAGE_NAME_UC}_VERSION "0.3d")
-SET(${PACKAGE_NAME_UC}_RELEASE_DATE "07/28/2011")
 
 #
 # B) Set up package-specific options

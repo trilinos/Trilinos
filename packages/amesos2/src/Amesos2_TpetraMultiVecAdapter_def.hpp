@@ -241,7 +241,7 @@ namespace Amesos2 {
                 Node> >::get1dCopy_kokkos_view(
                                    bool bInitialize,
                                    KV& kokkos_view,
-                                   size_t lda,
+                                   size_t /* lda */,
                                    Teuchos::Ptr<
                                      const Tpetra::Map<LocalOrdinal,
                                                        GlobalOrdinal,

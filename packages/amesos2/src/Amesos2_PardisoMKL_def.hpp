@@ -92,7 +92,7 @@ namespace Amesos2 {
     }
 
     // set single or double precision
-    if( Meta::is_same<solver_magnitude_type, PMKL::_REAL_t>::value ){
+    if constexpr ( std::is_same_v<solver_magnitude_type, PMKL::_REAL_t> ) {
       iparm_[27] = 1;           // single-precision
     } else {
       iparm_[27] = 0;           // double-precision

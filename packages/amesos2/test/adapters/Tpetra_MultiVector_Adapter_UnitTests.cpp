@@ -81,8 +81,6 @@ namespace {
   using Amesos2::MultiVecAdapter;
   using Amesos2::createMultiVecAdapter;
 
-  using Amesos2::Meta::is_same;
-
   using Amesos2::Util::get_1d_copy_helper;
   using Amesos2::Util::put_1d_data_helper;
   using Amesos2::ROOTED;

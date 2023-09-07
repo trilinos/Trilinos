@@ -97,7 +97,6 @@ namespace {
   using Tpetra::createUniformContigMap;
 
   using Amesos2::MUMPS;
-  using Amesos2::Meta::is_same;
 
   typedef Tpetra::Map<>::node_type Node;
 

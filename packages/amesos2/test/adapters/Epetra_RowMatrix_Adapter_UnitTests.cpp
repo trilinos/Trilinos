@@ -87,8 +87,6 @@ namespace {
   using Amesos2::MatrixAdapter;
   using Amesos2::MatrixTraits;
 
-  using Amesos2::Meta::is_same;
-
   using Amesos2::ROOTED;
   using Amesos2::GLOBALLY_REPLICATED;
 

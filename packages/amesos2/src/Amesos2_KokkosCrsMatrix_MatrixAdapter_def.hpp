@@ -102,7 +102,7 @@ namespace Amesos2 {
   Teuchos::RCP<const MatrixAdapter<KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace> > >
   ConcreteMatrixAdapter<
     KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>
-    >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
+    >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > /* map */, EDistribution /* distribution */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
                         std::runtime_error,
@@ -147,7 +147,7 @@ namespace Amesos2 {
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
   size_t
   ConcreteMatrixAdapter<
-    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getGlobalRowNNZ_impl(global_ordinal_t row) const
+    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getGlobalRowNNZ_impl(global_ordinal_t /* row */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
                         std::runtime_error,
@@ -193,10 +193,10 @@ namespace Amesos2 {
   template <typename KV_GO, typename KV_S>
   void
   ConcreteMatrixAdapter<
-    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getGlobalRowCopy_kokkos_view_impl(global_ordinal_t row,
-                                                   KV_GO & indices,
-                                                   KV_S & vals,
-                                                   size_t& nnz) const
+    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getGlobalRowCopy_kokkos_view_impl(global_ordinal_t /* row */,
+                                                   KV_GO & /* indices */,
+                                                   KV_S & /* vals */,
+                                                   size_t& /* nnz */) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION( true,
                         std::runtime_error,

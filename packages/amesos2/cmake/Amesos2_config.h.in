@@ -48,8 +48,6 @@
 
 #define AMESOS2_VERSION "${AMESOS2_VERSION}"
 
-#define AMESOS2_RELEASE_DATE "${AMESOS2_RELEASE_DATE}"
-
 /******************
  * Config Options *
  ******************/

@@ -83,7 +83,7 @@ update_dst_size(dst_t & dst, const src_t & src) {  // templated just for 2d
 template<class dst_t, class src_t> // version for same memory spaces
 typename std::enable_if<std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
-implement_copy_or_assign_same_mem_check_types(bool bInitialize, dst_t & dst, const src_t & src, bool & bAssigned) {
+implement_copy_or_assign_same_mem_check_types(bool /* bInitialize */, dst_t & dst, const src_t & src, bool & bAssigned) {
   dst = src; // just assign the ptr - no need to copy
   bAssigned = true;
 }

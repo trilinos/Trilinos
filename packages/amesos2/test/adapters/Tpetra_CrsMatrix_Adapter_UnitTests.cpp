@@ -105,8 +105,6 @@ namespace {
 
   using Amesos2::MatrixAdapter;
 
-  using Amesos2::Meta::is_same;
-
   using Amesos2::ROOTED;
   using Amesos2::ARBITRARY;
   using Amesos2::SORTED_INDICES;
