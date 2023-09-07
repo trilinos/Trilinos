@@ -55,6 +55,8 @@
 
 
 namespace Intrepid2 {
+
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 namespace Experimental {
 
 template<typename DeviceType>
@@ -83,6 +85,7 @@ ProjectionTools<DeviceType>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
       getHVolBasisCoeffs(basisCoeffs, targetAtTargetEPoints, orts, cellBasis, projStruct);
 }
+#endif
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -163,9 +166,10 @@ ProjectionTools<DeviceType>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   ElemSystem cellSystem("cellSystem", true);
   cellSystem.solve(basisCoeffs, massMat, rhsMat, t_, w_, cellDofs, basisCardinality);
 }
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 }
-}
+#endif
+} // Intrepid2 namespace
 
 #endif
 

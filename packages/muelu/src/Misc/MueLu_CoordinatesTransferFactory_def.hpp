@@ -183,23 +183,35 @@ namespace MueLu {
       // coarseMap is being used to set up the domain map of tentative P, and therefore, the row map of Ac
       // Therefore, if we amalgamate coarseMap, logical nodes in the coordinates vector would correspond to
       // logical blocks in the matrix
-
-      ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
-
       LO                  blkSize      = 1;
       if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
         blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
 
-      GO                  indexBase    = coarseMap->getIndexBase();
-      size_t              numElements  = elementAList.size() / blkSize;
-      Array<GO>           elementList(numElements);
-
-      // Amalgamate the map
-      for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
-        elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
-
+      RCP<const Map>   coarseCoordMap;
       RCP<const Map>   uniqueMap      = fineCoords->getMap();
-      RCP<const Map>   coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
+      if(blkSize > 1) {
+        // If the block size is greater than one, we need to create a coarse coordinate map
+        // FIXME: The amalgamation should really be done on device.
+        GO                  indexBase    = coarseMap->getIndexBase();
+        ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
+        size_t              numElements  = elementAList.size() / blkSize;
+        Array<GO>           elementList(numElements);
+        
+        // Amalgamate the map
+        for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
+          elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+                       
+        {
+          SubFactoryMonitor sfm(*this, "MapFactory: coarseCoordMap", fineLevel);
+          coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
+        }
+      }
+      else {
+        // If the block size is one, we can just use the coarse map for coordinates
+        coarseCoordMap = coarseMap;
+      }
+
+      // Build the coarseCoords MultiVector
       coarseCoords   = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
 
 

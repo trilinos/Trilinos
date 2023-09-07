@@ -45,6 +45,7 @@
 #include "Kokkos_DualView.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_DistObject_decl.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
 /// \file Tpetra_Details_unpackCrsMatrixAndCombine_decl.hpp
 /// \brief Declaration of functions for unpacking the entries of a
@@ -213,10 +214,6 @@ unpackAndCombineWithOwningPIDsCount (
 
 /// \brief unpackAndCombineIntoCrsArrays
 ///
-/// \note You should call unpackAndCombineWithOwningPIDsCount first
-///   and allocate all arrays accordingly, before calling this
-///   function.
-///
 /// Note: The SourcePids vector (on input) should contain owning PIDs
 /// for each column in the (source) ColMap, as from
 /// Tpetra::Import_Util::getPids, with the "-1 for local" option being
@@ -225,27 +222,43 @@ unpackAndCombineWithOwningPIDsCount (
 /// Note: The TargetPids vector (on output) will contain owning PIDs
 /// for each entry in the matrix, with the "-1 for local" for locally
 /// owned entries.
+///
+/// Note: This method does the work previously done in unpackAndCombineWithOwningPIDsCount,
+/// namely, calculating the local number of nonzeros, and allocates CRS
+/// arrays of the correct sizes.
+
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
 unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-    const Teuchos::ArrayView<const char>& imports,
-    const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    const size_t constantNumPackets,
-    const CombineMode combineMode,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
+    const Kokkos::View<const char*, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+          ,void, void >,
+    const Kokkos::View<const size_t*, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+          ,void, void >,
     const size_t numSameIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
     size_t TargetNumRows,
-    size_t TargetNumNonzeros,
     const int MyTargetPID,
-    const Teuchos::ArrayView<size_t>& CRS_rowptr,
-    const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
-    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals,
+    Teuchos::ArrayRCP<size_t>& CRS_rowptr,
+    Teuchos::ArrayRCP<GlobalOrdinal>& CRS_colind,
+    Teuchos::ArrayRCP<Scalar>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);
-
 } // namespace Details
 } // namespace Tpetra
 

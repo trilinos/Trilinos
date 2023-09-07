@@ -51,7 +51,6 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_Range1D.hpp>
 
@@ -102,7 +101,6 @@ namespace {
   using std::ostream_iterator;
   using std::string;
 
-  using Teuchos::TypeTraits::is_same;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -540,10 +538,10 @@ namespace {
 
     // Norms are not computed by Epetra_IntMultiVector so far
     #ifdef HAVE_XPETRA_EPETRA
-    if(!is_same<typename MV::node_type, Xpetra::EpetraNode>::value)
+    if(!std::is_same_v<typename MV::node_type, Xpetra::EpetraNode>)
     #endif
     {
-      if(!(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value)) {
+      if(!(std::is_same_v<typename MV::scalar_type, int> || std::is_same_v<typename MV::scalar_type, long long int>)) {
         out << "Running the norm tests!" << std::endl;
         // we zeroed it out in the constructor; all norms should be zero
         Array<Magnitude> norms(numVecs), zeros(numVecs);
@@ -572,7 +570,7 @@ namespace {
     ArrayRCP<const Scalar> replaceGlobalData = mvec.getData(5);
     ArrayRCP<const Scalar> sumIntoGlobalData = mvec.getData(6);
 
-    if(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value) {
+    if(std::is_same_v<typename MV::scalar_type, int> || std::is_same_v<typename MV::scalar_type, long long int>) {
       TEST_EQUALITY( replaceLocalData[testLID], testValue );
       TEST_EQUALITY( sumIntoLocalData[testLID], testValue + sumValue );
       TEST_EQUALITY( replaceGlobalData[testLID], testValue );
@@ -2532,10 +2530,10 @@ namespace {
     typedef typename MV::local_ordinal_type local_ordinal_type;
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
-    TEST_EQUALITY_CONST( (is_same< scalar_type         , Scalar        >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LocalOrdinal  >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GlobalOrdinal >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< node_type           , Node          >::value) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same_v< scalar_type         , Scalar        >) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same_v< local_ordinal_type  , LocalOrdinal  >) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same_v< global_ordinal_type , GlobalOrdinal >) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same_v< node_type           , Node          >) == true, true );
 #endif
   }
 

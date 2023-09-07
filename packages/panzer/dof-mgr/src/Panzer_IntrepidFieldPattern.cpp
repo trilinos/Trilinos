@@ -133,6 +133,8 @@ namespace panzer {
   Intrepid2FieldPattern::
   getCellTopology() const
   {
+    // TODO BWR Probably should change the name of this call...
+    // TODO BWR However this is a virtual function
     return intrepidBasis_->getBaseCellTopology();
   }
 
@@ -241,12 +243,13 @@ namespace panzer {
    */
   void 
   Intrepid2FieldPattern::
-  getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellVertices,
-                              Kokkos::DynRankView<double,PHX::Device> & coords) const
+  getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellNodes,
+                              Kokkos::DynRankView<double,PHX::Device> & coords,
+                              Teuchos::RCP<const shards::CellTopology> meshCellTopology) const
   {
-    TEUCHOS_ASSERT(cellVertices.rank()==3);
+    TEUCHOS_ASSERT(cellNodes.rank()==3);
 
-    int numCells = cellVertices.extent(0);
+    int numCells = cellNodes.extent(0);
 
     // grab the local coordinates
     Kokkos::DynRankView<double,PHX::Device> localCoords;
@@ -257,7 +260,14 @@ namespace panzer {
 
     if(numCells>0) {
       Intrepid2::CellTools<PHX::Device> cellTools;
-      cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
+      // For backwards compatability, allow the FE basis to supply the mesh cell topology (via the FEM base cell topo)
+      // This will occur if no meshCellTopology is provided (defaults to Teuchos::null)
+      // If provided, use the mesh topology directly
+      if (meshCellTopology==Teuchos::null) {
+        cellTools.mapToPhysicalFrame(coords,localCoords,cellNodes,intrepidBasis_->getBaseCellTopology());
+      } else {
+        cellTools.mapToPhysicalFrame(coords,localCoords,cellNodes,*meshCellTopology);
+      }
     }
   }
 

@@ -943,7 +943,6 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
         int offset=0;
         for (int c = 0; c < connSize; ++c) {
           size_t lid = overlapmap->getLocalElement(elmtConn[c]);
-
           for(std::size_t i=0;i<working.size();i++)
             working[i] = 0;
           for (int n = 0; n < numFields[c]; ++n) {

@@ -49,6 +49,8 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include "Kokkos_Core.hpp"
+
 #include "Tpetra_Core.hpp"
 
 #include <mpi_advance.h>
@@ -60,9 +62,11 @@
 
     Passes if it does not crash or error out
 */
+template <typename Device>
 void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
                   bool emptyTypes, Teuchos::FancyOStream &out, bool &success) {
-
+  static_assert(Kokkos::is_device_v<Device>, "");
+                    
   int size, rank;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
@@ -132,9 +136,11 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
 
 /*! \brief all ranks send and receive some
  */
+template <typename Device>
 void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
                  bool &success) {
-
+  static_assert(Kokkos::is_device_v<Device>, "");
+  
   int size, rank;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
@@ -258,10 +264,11 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   // allocate send/recv bufs
   // displs are in bytes, so the displs are correct no matter types below.
   // (guarranteed by loops above about types)
-  std::vector<char> sbuf(sdispl), exp(rdispl), act(rdispl);
+  Kokkos::View<char *, typename Device::memory_space>
+    sbuf("sbuf", sdispl), exp("exp", rdispl), act("act", nbrrdispl);
 
   // fill send buf
-  std::iota(sbuf.begin(), sbuf.end(), 0); // 0, 1, 2, ...
+  Kokkos::parallel_for(sbuf.size(), KOKKOS_LAMBDA (size_t i) {sbuf(i) = i;});
 
   // Use reference and MPI_Advance implementation to fill buffers
   Fake_Alltoallw(sbuf.data(), sendcounts.data(), senddispls.data(), sendtypes.data(),
@@ -282,8 +289,11 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   MPIX_Comm_free(mpixComm);
 
   // two recv buffers should be the same
-  for (int i = 0; i < rdispl; ++i) {
-    TEST_ASSERT(exp[i] == act[i]);
+  auto exp_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), exp);
+  auto act_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), act);
+  TEST_ASSERT(exp_h.size() == act_h.size());
+  for (int i = 0; i < exp_h.size(); ++i) {
+    TEST_ASSERT(exp_h(i) == act_h(i));
   }
 }
 
@@ -302,46 +312,84 @@ static MPI_Comm tpetra_default_comm_as_mpi_comm() {
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_nothing(comm, false, false, false, out, success);
+  test_nothing<device_type>(comm, false, false, false, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_emptytypes) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_nothing(comm, false, false, true, out, success);
+  test_nothing<device_type>(comm, false, false, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_null) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_nothing(comm, true, false, false, out, success);
+  test_nothing<device_type>(comm, true, false, false, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nullemptytypes) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_nothing(comm, true, false, true, out, success);
+  test_nothing<device_type>(comm, true, false, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_same) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_nothing(comm, false, true, false, out, success);
+  test_nothing<device_type>(comm, false, true, false, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_sameemptytypes) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_nothing(comm, false, true, true, out, success);
+  test_nothing<device_type>(comm, false, true, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nullsame) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_nothing(comm, true, true, false, out, success);
+  test_nothing<device_type>(comm, true, true, false, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_nothing_nullsameemptytypes) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_nothing(comm, true, true, true, out, success);
+  test_nothing<device_type>(comm, true, true, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllW_random) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using memory_space = execution_space::memory_space;
+  using device_type = Kokkos::Device<execution_space, memory_space>;
   MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
-  test_random(comm, 42, out, success);
+  test_random<device_type>(comm, 42, out, success);
+}
+
+// Let Tpetra initialize Kokkos
+// We define this because we don't also include ${TEUCHOS_STD_UNIT_TEST_MAIN}
+// in the CMakeLists.txt
+int main(int argc, char* argv[])
+{
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  const int errCode =
+    Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
+  return errCode;
 }

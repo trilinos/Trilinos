@@ -26,7 +26,11 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   typedef PHX::Device DeviceSpace;
   typedef Kokkos::HostSpace HostSpace;
   typedef Intrepid2::OrientationTools<DeviceSpace> ots;
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
+#else
+  typedef Intrepid2::LagrangianInterpolation<DeviceSpace> li;
+#endif
 
   typedef Kokkos::DynRankView<double,DeviceSpace> DynRankDeviceView;
 
@@ -49,11 +53,6 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
     blockedDOFMngr = tblof->getGlobalIndexer();
 #ifdef PANZER_HAVE_EPETRA_STACK
   } else if (eblof != Teuchos::null) {
-    TEUCHOS_ASSERT(false);
-    // The Epetra code path works, expect for the fact that Epetra
-    // does not implement the needed matrix entry insertion. We'd need
-    // to handle the overwriting (instead of summing into) of already
-    // existing entries by hand.
     blockedDOFMngr = eblof->getGlobalIndexer();
 #endif
   } else {
@@ -323,8 +322,13 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 #ifdef PANZER_HAVE_EPETRA_STACK
             if (tblof != Teuchos::null)
               tp_interp_matrix->insertLocalValues(ho_row, rowNNZ, values_h.data(), indices_h.data(), Tpetra::INSERT);
-            else
-              ep_interp_matrix->InsertMyValues(ho_row, rowNNZ, values_h.data(), indices_h.data());
+            else {
+              int ret = ep_interp_matrix->ReplaceMyValues(ho_row, rowNNZ, values_h.data(), indices_h.data());
+              if (ret != 0) {
+                ret = ep_interp_matrix->InsertMyValues(ho_row, rowNNZ, values_h.data(), indices_h.data());
+                TEUCHOS_ASSERT(ret == 0);
+              }
+            }
 #else
             tp_interp_matrix->insertLocalValues(ho_row, rowNNZ, values_h.data(), indices_h.data(), Tpetra::INSERT);
 #endif

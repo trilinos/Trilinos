@@ -56,8 +56,9 @@
 #include <array>
 
 namespace Intrepid2 {
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 namespace Experimental {
+#endif
 
 /** \class  Intrepid2::Experimental::ProjectionStruct
     \brief  An helper class to compute the evaluation points and weights needed for performing projections
@@ -527,9 +528,10 @@ public:
   ordinal_type maxNumBasisDerivEvalPoints;
   ordinal_type maxNumTargetDerivEvalPoints;
 };
-
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
 }
-}
+#endif
+} // Intrepid2 namespace
 #include "Intrepid2_ProjectionStructDef.hpp"
 #endif
 
