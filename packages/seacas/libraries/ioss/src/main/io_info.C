@@ -263,7 +263,7 @@ namespace {
       if (!sb->m_zoneConnectivity.empty()) {
         fmt::print("\tConnectivity with other blocks:\n");
         for (const auto &zgc : sb->m_zoneConnectivity) {
-          fmt::print("{}\n", zgc);
+	  std::cout <<  zgc << "\n";
         }
       }
       if (!sb->m_boundaryConditions.empty()) {
@@ -277,7 +277,7 @@ namespace {
                    });
 
         for (const auto &bc : sb_bc) {
-          fmt::print("{}\n", bc);
+	  std::cout <<  bc << "\n";
         }
       }
       if (interFace.compute_bbox()) {
