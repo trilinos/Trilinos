@@ -126,7 +126,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
 
     bool timedeepcopy = false;   clp.setOption("timedeepcopy", "notimedeepcopy", &timedeepcopy, "instrument Kokkos::deep_copy() with Teuchos timers.  This can also be done with by setting the environment variable TPETRA_TIME_KOKKOS_DEEP_COPY=ON");
-    bool timefence = false;   clp.setOption("timefence", "notimefence", &timedeepcopy, "instrument Kokkos::deep_fence() with Teuchos timers.  This can also be done with by setting the environment variable TPETRA_TIME_KOKKOS_FENCE=ON");
+    bool timefence = false;   clp.setOption("timefence", "notimefence", &timedwbxw, "instrument Kokkos::fence() with Teuchos timers.  This can also be done with by setting the environment variable TPETRA_TIME_KOKKOS_FENCE=ON");
     Xpetra::Parameters xpetraParameters(clp);
 
     clp.recogniseAllOptions(false);
