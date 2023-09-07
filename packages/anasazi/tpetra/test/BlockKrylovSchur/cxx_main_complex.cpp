@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
   bool verbose = false;
   bool debug = false;
   bool insitu = false;
-  bool herm = true;
+  bool herm = false;
   std::string which("LM");
   std::string filename;
   int nev = 4;
@@ -127,13 +127,15 @@ int main(int argc, char *argv[])
   }
   if (debug) verbose = true;
   if (filename == "") {
-    // get default based on herm
-//    if (herm) {
+    filename = "mhd1280b.cua";
+/*    // get default based on herm
+    if (herm) {
       filename = "mhd1280b.cua";
-//    }
-//    else {
-//      filename = "mhd1280a.cua";
-//    }
+    }
+    else {
+      filename = "mhd1280a.cua";
+      which = "L";
+    } */
   }
 
   if (MyPID == 0) {
@@ -246,8 +248,6 @@ int main(int argc, char *argv[])
   if (debug) {
     verbosity += Anasazi::Debug;
   }
-
-
 
   // Eigensolver parameters
   int numBlocks = 8;
