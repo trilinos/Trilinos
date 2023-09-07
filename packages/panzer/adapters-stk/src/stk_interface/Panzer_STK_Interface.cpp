@@ -177,7 +177,6 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
         meshData_->add_field(meshIndex_, *field);
 #endif
       }
-      std::cout << " HERE " << fieldName << std::endl;
       fieldNameToSolution_[key] = field;
    }
 }
