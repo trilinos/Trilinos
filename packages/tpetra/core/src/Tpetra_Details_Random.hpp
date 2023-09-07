@@ -51,11 +51,11 @@ namespace Details {
 template<class ExecutionSpace>
 class Static_Random_XorShift64_Pool {
 public:
-  // The setSeed function will re-initialize the pool based on the system RNG and the MPI rank.
+  // The resetPool function will re-initialize the pool based on the system RNG and the MPI rank.
   // On GPU architectures, this will likely involve non-trivial host-to-device transfers.
-  static void setSeed(int mpi_rank);
+  static void resetPool(int mpi_rank);
 
-  // The isInitialized function returns true if setSeed has been callled.
+  // The isInitialized function returns true if resetPool has been callled.
   static bool isInitialized();
   // The getPool function will return the existing pool.
   static Kokkos::Random_XorShift64_Pool<ExecutionSpace> & getPool();
@@ -66,7 +66,7 @@ public:
 template<>
 class Static_Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> {
 public:
-  static void setSeed(int mpi_rank);
+  static void resetPool(int mpi_rank);
   static bool isInitialized();
   static Kokkos::Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> & getPool();
 };
@@ -77,7 +77,7 @@ public:
 template<>
 class Static_Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space> {
 public:
-  static void setSeed(int mpi_rank);
+  static void resetPool(int mpi_rank);
   static bool isInitialized();
   static Kokkos::Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space> & getPool();
 };
@@ -88,7 +88,7 @@ public:
 template<>
 class Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> {
 public:
-  static void setSeed(int mpi_rank);
+  static void resetPool(int mpi_rank);
   static bool isInitialized();
   static Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> & getPool();
 };
@@ -97,7 +97,7 @@ public:
 template<>
 class Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> {
 public:
-  static void setSeed(int mpi_rank);
+  static void resetPool(int mpi_rank);
   static bool isInitialized();
   static Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> & getPool();
 };

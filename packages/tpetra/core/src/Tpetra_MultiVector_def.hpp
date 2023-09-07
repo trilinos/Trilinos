@@ -2687,7 +2687,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
 
     // Seed the pool based on the system RNG and the MPI rank, if needed
     if(!tpetra_pool_type::isInitialized())
-      tpetra_pool_type::setSeed(this->getMap()->getComm()->getRank());
+      tpetra_pool_type::resetPool(this->getMap()->getComm()->getRank());
 
     pool_type & rand_pool = tpetra_pool_type::getPool();
     const IST max = static_cast<IST> (maxVal);
