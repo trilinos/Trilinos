@@ -2468,7 +2468,6 @@ namespace {
         x[el] /= blk_element_nodes;
         y[el] /= blk_element_nodes;
         z[el] /= blk_element_nodes;
-        fmt::print("Centroid for element {} is {}, {}, {}\n", el + 1, x[el], y[el], z[el]);
         el++;
       }
     }
