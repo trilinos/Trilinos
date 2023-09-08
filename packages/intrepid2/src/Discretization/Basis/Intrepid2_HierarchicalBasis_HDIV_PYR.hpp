@@ -653,70 +653,65 @@ namespace Intrepid2
             Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muY01, Pi_muY01, polyOrder_, muY_1, muY_0 + muY_1);
             Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muZ01, Pi_muZ01, polyOrder_, muZ_1, muZ_0 + muZ_1);
             
-            // FAMILY I -- a divergence-free family
+            // FAMILIES I & II -- divergence-free families
             // following the ESEAS ordering: k increments first
-            for (int k=2; k<=polyOrder_; k++)
+            for (int f=0; f<2; f++)
             {
-              const auto & phi_k = Li_muZ01(k);
-              Kokkos::Array<OutputScalar,3> phi_k_grad;
-              computeGradHomLi(phi_k_grad, k, Pi_muZ01, Li_dt_muZ01, muZ_0_grad, muZ_1_grad);
+              const auto &s0 = (f==0) ? muX_0 : muY_0;  const auto & s0_grad = (f==0) ? muX_0_grad : muY_0_grad;
+              const auto &s1 = (f==0) ? muX_1 : muY_1;  const auto & s1_grad = (f==0) ? muX_1_grad : muY_1_grad;
+                                                        const auto & t0_grad = (f==0) ? muY_0_grad : muX_0_grad;
+                                                        const auto & t1_grad = (f==0) ? muY_1_grad : muX_1_grad;
+              const auto & Pi_s01    = (f==0) ? Pi_muX01    : Pi_muY01;
+              const auto & Pi_t01    = (f==0) ? Pi_muY01    : Pi_muX01;
+              const auto & Li_t01    = (f==0) ? Li_muY01    : Li_muX01;
+              const auto & Li_dt_t01 = (f==0) ? Li_dt_muY01 : Li_dt_muX01;
               
-              for (int j=2; j<=polyOrder_; j++)
+              for (int k=2; k<=polyOrder_; k++)
               {
-                for (int i=0; i<polyOrder_; i++)
+                const auto & phi_k = Li_muZ01(k);
+                Kokkos::Array<OutputScalar,3> phi_k_grad;
+                computeGradHomLi(phi_k_grad, k, Pi_muZ01, Li_dt_muZ01, muZ_0_grad, muZ_1_grad);
+                
+                Kokkos::Array<OutputScalar,3> muZ0_grad_phi_k_plus_phi_k_grad_muZ0;
+                for (ordinal_type d=0; d<3; d++)
                 {
-                  Kokkos::Array<OutputScalar,3> EQUAD_ij_12; // 12: (xi_1, xi_2) arguments
-                  Kokkos::Array<OutputScalar,3> curl_EQUAD_ij_12;
-                  
-                  const auto &s0 = muX_0; const auto s0_grad = muX_0_grad;
-                  const auto &s1 = muX_1; const auto s1_grad = muX_1_grad;
-                                          const auto t0_grad = muY_0_grad;
-                                          const auto t1_grad = muY_1_grad;
-                  
-                  E_QUAD(EQUAD_ij_12, i, j, Pi_muX01, s0, s1, s0_grad, s1_grad, Li_muY01);
-                  
-                  E_QUAD_CURL(curl_EQUAD_ij_12, i, j, Pi_muX01, s0, s1, s0_grad, s1_grad,
-                              Pi_muY01, Li_muY01, Li_dt_muY01, t0_grad, t1_grad);
-                  
-                  // first term: muZ_0 phi^E_k curl EQUAD
-                  // we can reuse the memory for curl_EQUAD_ij_12; we won't need the values there again
-                  Kokkos::Array<OutputScalar,3> & firstTerm = curl_EQUAD_ij_12;
-                  for (ordinal_type d=0; d<3; d++)
+                  muZ0_grad_phi_k_plus_phi_k_grad_muZ0[d] = muZ_0 * phi_k_grad[d] + phi_k * muZ_0_grad[d];
+                }
+                
+                for (int j=2; j<=polyOrder_; j++)
+                {
+                  for (int i=0; i<polyOrder_; i++)
                   {
-                    firstTerm[d] *= muZ_0 * phi_k;
+                    Kokkos::Array<OutputScalar,3> EQUAD_ij;
+                    Kokkos::Array<OutputScalar,3> curl_EQUAD_ij;
+                    
+                    E_QUAD(EQUAD_ij, i, j, Pi_s01, s0, s1, s0_grad, s1_grad, Li_t01);
+                    
+                    E_QUAD_CURL(curl_EQUAD_ij, i, j, Pi_s01, s0, s1, s0_grad, s1_grad,
+                                Pi_t01, Li_t01, Li_dt_t01, t0_grad, t1_grad);
+                    
+                    // first term: muZ_0 phi^E_k curl EQUAD
+                    // we can reuse the memory for curl_EQUAD_ij_12; we won't need the values there again
+                    Kokkos::Array<OutputScalar,3> & firstTerm = curl_EQUAD_ij;
+                    for (ordinal_type d=0; d<3; d++)
+                    {
+                      firstTerm[d] *= muZ_0 * phi_k;
+                    }
+                    
+                    Kokkos::Array<OutputScalar,3> secondTerm; //(muZ0 grad phi + phi grad muZ0) x EQUAD
+                    
+                    cross(secondTerm, muZ0_grad_phi_k_plus_phi_k_grad_muZ0, EQUAD_ij);
+                    
+                    for (ordinal_type d=0; d<3; d++)
+                    {
+                      output_(fieldOrdinalOffset,pointOrdinal,d) = firstTerm[d] + secondTerm[d];
+                    }
+                    
+                    fieldOrdinalOffset++;
                   }
-                  
-                  Kokkos::Array<OutputScalar,3> secondTerm; //(muZ0 grad phi + phi grad muZ0) x EQUAD
-                  
-                  Kokkos::Array<OutputScalar,3> muZ0_grad_phi_k_plus_phi_k_grad_muZ0;
-                  for (ordinal_type d=0; d<3; d++)
-                  {
-                    muZ0_grad_phi_k_plus_phi_k_grad_muZ0[d] = muZ_0 * phi_k_grad[d] + phi_k * muZ_0_grad[d];
-                  }
-                  
-                  cross(secondTerm, muZ0_grad_phi_k_plus_phi_k_grad_muZ0, EQUAD_ij_12);
-                  
-                  for (ordinal_type d=0; d<3; d++)
-                  {
-                    output_(fieldOrdinalOffset,pointOrdinal,d) = firstTerm[d] + secondTerm[d];
-                  }
-                  
-                  fieldOrdinalOffset++;
                 }
               }
-            }
-            
-            // FAMILY II -- a divergence-free family
-            for (int k=2; k<=polyOrder_; k++)
-            {
-              for (int j=2; j<=polyOrder_; j++)
-              {
-                for (int i=0; i<polyOrder_; i++)
-                {
-                  fieldOrdinalOffset++;
-                }
-              }
-            }
+            } // family I, II loop
             
             // FAMILY III -- a divergence-free family
             for (int j=2; j<=polyOrder_; j++)
