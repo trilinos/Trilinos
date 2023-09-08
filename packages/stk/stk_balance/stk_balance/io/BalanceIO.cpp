@@ -59,7 +59,7 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
   stkIo.create_input_mesh();
   stkIo.add_all_mesh_fields_as_input_fields();
 
-  internal::register_internal_fields(bulkData, balanceSettings);
+  internal::register_internal_fields_and_parts(bulkData, balanceSettings);
 
   stkIo.populate_bulk_data();
 

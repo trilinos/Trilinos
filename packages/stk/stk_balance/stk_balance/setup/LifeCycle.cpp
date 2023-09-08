@@ -173,7 +173,7 @@ void LifeCycle::rebalance()
   stk::io::StkMeshIoBroker ioBroker;
 
   meta.set_coordinate_field_name(m_settings.getCoordinateFieldName());
-  stk::balance::internal::register_internal_fields(*bulk, m_settings);
+  stk::balance::internal::register_internal_fields_and_parts(*bulk, m_settings);
   stk::io::fill_mesh_preexisting(ioBroker, m_settings.get_input_filename(), *bulk);
 
   if (rebalance_will_corrupt_data(ioBroker, meta)) {

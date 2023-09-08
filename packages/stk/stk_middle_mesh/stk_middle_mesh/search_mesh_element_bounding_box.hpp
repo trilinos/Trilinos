@@ -39,7 +39,8 @@
 #include "create_mesh.hpp"
 #include "mesh_io.hpp"
 #include "predicates/point_classifier_normal_wrapper.hpp"
-#include "bounding_box_search.hpp"
+//#include "bounding_box_search.hpp"
+#include <stk_search/CoarseSearch.hpp>
 #include "stk_search/Box.hpp"
 //#include "stk_transfer/GeometricTransfer.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
@@ -53,22 +54,47 @@ namespace mesh {
 namespace impl {
 
 
-class SearchMesh {
+class SearchMeshElementBoundingBox {
  public:
   using Entity        = mesh::MeshEntity;
   using EntityKey     = int64_t;
 
   using EntityProc    = stk::search::IdentProc<EntityKey, unsigned>;
   using EntityProcVec = std::vector<EntityProc>;
-  using Point         = stk::search::Point<double>;
   using Box           = stk::search::Box<double>;
   using BoundingBox   = std::pair<Box, EntityProc>;
 
-  SearchMesh(std::shared_ptr<mesh::Mesh> inputMesh)
+  SearchMeshElementBoundingBox(std::shared_ptr<mesh::Mesh> inputMesh, MPI_Comm unionComm)
     : m_mesh(inputMesh)
+    , m_unionComm(unionComm)
     {}
 
-  MPI_Comm get_comm() const {return m_mesh->get_comm(); }
+  //MPI_Comm get_comm() const {return m_mesh->get_comm(); }
+
+  void fill_bounding_boxes(std::vector<BoundingBox>& boundingBoxes) const
+  {
+    int proc;
+    MPI_Comm_rank(m_unionComm, &proc);
+    auto entities = m_mesh->get_elements();
+
+    stk::search::Point<double> minCorner, maxCorner;
+
+    for(auto entity : entities) {
+      fill_bounding_box(entity, minCorner, maxCorner);
+      EntityProc entityProc(entity->get_id(), proc);
+
+      BoundingBox boundingBox(Box(minCorner, maxCorner), entityProc);
+      boundingBoxes.push_back(boundingBox);
+    }
+
+    std::sort(boundingBoxes.begin(), boundingBoxes.end(),
+              [](const BoundingBox& a, const BoundingBox& b) { return a.second.id() < b.second.id(); });
+  };
+
+  std::shared_ptr<mesh::Mesh> get_mesh() const { return m_mesh; }
+
+ private:
+  using Point         = stk::search::Point<double>;
 
   void fill_bounding_box(mesh::MeshEntityPtr element, stk::search::Point<double>& minCorner,
                          stk::search::Point<double>& maxCorner) const
@@ -95,44 +121,12 @@ class SearchMesh {
     }
   }
 
-  void fill_bounding_boxes(std::vector<BoundingBox>& boundingBoxes) const
-  {
-    int proc;
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-    auto entities = m_mesh->get_elements();
-
-    stk::search::Point<double> minCorner, maxCorner;
-
-    for(auto entity : entities) {
-      fill_bounding_box(entity, minCorner, maxCorner);
-      EntityProc entityProc(entity->get_id(), proc);
-
-      BoundingBox boundingBox(Box(minCorner, maxCorner), entityProc);
-      boundingBoxes.push_back(boundingBox);
-    }
-
-    std::sort(boundingBoxes.begin(), boundingBoxes.end(),
-              [](const BoundingBox& a, const BoundingBox& b) { return a.second.id() < b.second.id(); });
-  };
-
-  std::shared_ptr<mesh::Mesh> get_mesh() const { return m_mesh; }
-
- private:
   std::shared_ptr<mesh::Mesh> m_mesh;
+  MPI_Comm m_unionComm;
 };
 
-using BoundingBoxSearch =
-    stk::middle_mesh::search::BoundingBoxSearch<
-        stk::middle_mesh::search::BoundingBoxSearchType<SearchMesh, SearchMesh>>;
 
-using SearchRelationVec = BoundingBoxSearch::EntityProcRelationVec;
-using UnpairedRelationVec = std::vector<SearchMesh::BoundingBox>;
 
-enum class SplitCommColor {
-      RECV = 0,
-      SEND,
-      INVALID
-};
 
 }
 }

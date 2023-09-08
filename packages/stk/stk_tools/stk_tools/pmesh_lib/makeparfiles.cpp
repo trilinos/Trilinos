@@ -3,12 +3,13 @@
 #include "makeparfiles.H"
 #include <assert.h>       // for assert
 #include <exodusII.h>     // for ex_put_node_set_param, ex_put_node_set, ex_...
-#include <mpi.h>          // for MPI_Abort, MPI_COMM_WORLD
+#include <mpi.h>
 #include <ne_nemesisI.h>  // for ne_put_cmap_params, ne_put_eb_info_global
 #include <stdio.h>        // for sprintf, printf
 #include <stdlib.h>       // for exit
 #include <cstring>        // for strcpy
 #include <iostream>       // for operator<<, basic_ostream, char_traits, cerr
+#include <sstream>
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -523,9 +524,7 @@ void SetFileName(char dirloc[], int total_subdomains, int i,
     sprintf(fn, "%s%d.%.6d", base_fn, total_subdomains, i);
     break;
   default:
-    std::cerr << "no more than 6 digits are supported " << std::endl;
-    MPI_Abort(MPI_COMM_WORLD, digit);
-    exit(-1);
+    throw std::runtime_error("no more than 6 digits are supported");
   }
 
 
@@ -549,10 +548,9 @@ int OpenExoFile(char filename[300] )
   // Check for errors in creating the Exodus file
   if(exoid < 0)
   {
-    int ierr=0;
-    std::cerr << "\nCould not create file " << filename << "\n. Aborting.\n\n";
-    MPI_Abort(MPI_COMM_WORLD, ierr);
-    exit(-1);
+    std::ostringstream os;
+    os<<"\nCould not create file " << filename << "\n.";
+    throw std::runtime_error(os.str());
   }
   return exoid;
 }

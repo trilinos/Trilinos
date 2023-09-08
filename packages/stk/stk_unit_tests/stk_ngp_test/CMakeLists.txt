@@ -32,13 +32,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_ngp_test_unit_tests
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_ngp_test_unit_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     ARGS "--gtest_filter=-*Device*"
@@ -46,4 +43,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     NUM_MPI_PROCS 1-4
     NOEXEPREFIX
     )
+else()
+  add_executable(stk_ngp_test_unit_tests ${SOURCES})
+  target_link_libraries(stk_ngp_test_unit_tests stk_unit_test_utils)
+  target_link_libraries(stk_ngp_test_unit_tests stk_util_parallel)
+  target_link_libraries(stk_ngp_test_unit_tests stk_util_ngp)
+  target_link_libraries(stk_ngp_test_unit_tests stk_unit_main)
+
+  add_test(NAME "stk_ngp_test_unit_tests" COMMAND stk_ngp_test_unit_tests)
+endif()
 
