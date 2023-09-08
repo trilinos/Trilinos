@@ -1413,11 +1413,11 @@ class FastILUPrec
             Kokkos::deep_copy(aRowMapHost, aRowMapIn_);
             Kokkos::deep_copy(aColIdxHost, aColIdxIn_);
             Kokkos::deep_copy(aValHost,    aValIn_);
-            if (blockCrsSize > 1) {
 #ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
+            if (blockCrsSize > 1) {
               unblock(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
-#endif
             }
+#endif
 
             if ((level > 0) && (guessFlag != 0))
             {
