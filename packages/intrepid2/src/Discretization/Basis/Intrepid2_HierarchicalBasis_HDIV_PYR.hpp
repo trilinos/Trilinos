@@ -156,6 +156,18 @@ namespace Intrepid2
     }
     
     KOKKOS_INLINE_FUNCTION
+    OutputScalar dot(const Kokkos::Array<OutputScalar,3> &a,
+                     const Kokkos::Array<OutputScalar,3> &b) const
+    {
+      OutputScalar c = 0;
+      for (ordinal_type d=0; d<3; d++)
+      {
+        c += a[d] * b[d];
+      }
+      return c;
+    }
+    
+    KOKKOS_INLINE_FUNCTION
     void E_E(Kokkos::Array<OutputScalar,3> &EE,
              const ordinal_type &i,
              const OutputScratchView &PHom,
@@ -200,7 +212,7 @@ namespace Intrepid2
                const ordinal_type &j, // j >= 0
                const OutputScratchView &P,      // container in which shiftedScaledLegendreValues have been computed for the appropriate face
                const OutputScratchView &P_2ip1, // container in which shiftedScaledJacobiValues have been computed for (2i+1) for the appropriate face
-               const Kokkos::Array<PointScalar,3> &vectorWeight) const // s0 (grad s1 x grad s2) + s1 (grad s2 x grad s0) + s2 (grad s0 x grad s1)
+               const Kokkos::Array<PointScalar,3> &vectorWeight) const // s0 (grad s1 x grad s2) + s1 (grad s2 x grad s0) + s2 (grad s0 x grad s1) -- see computeFaceVectorWeight()
     {
       const auto &P_i      = P(i);
       const auto &P_2ip1_j = P_2ip1(j);
@@ -232,6 +244,7 @@ namespace Intrepid2
                                  Kokkos::Array<Kokkos::Array<PointScalar,2>,3> &nu,
                                  Kokkos::Array<Kokkos::Array<Kokkos::Array<PointScalar,3>,2>,3> &nuGrad) const
     {
+      // TODO: rewrite the call(s) to this method to use the other computeFaceVectorWeight()
       // compute s0 (grad s1 x grad s2) + s1 (grad s2 x grad s0) + s2 (grad s0 x grad s1)
       // where s = nu
       
@@ -271,17 +284,13 @@ namespace Intrepid2
     {
       // compute s0 (grad s1 x grad s2) + s1 (grad s2 x grad s0) + s2 (grad s0 x grad s1)
       
-      Kokkos::Array<PointScalar,3> grad_s1_cross_grad_s2;
-      Kokkos::Array<PointScalar,3> grad_s2_cross_grad_s0;
-      Kokkos::Array<PointScalar,3> grad_s0_cross_grad_s1;
+      Kokkos::Array<Kokkos::Array<PointScalar,3>,3> cross_products;
       
-      cross(grad_s1_cross_grad_s2, s1Grad, s2Grad);
-      cross(grad_s2_cross_grad_s0, s2Grad, s0Grad);
-      cross(grad_s0_cross_grad_s1, s0Grad, s1Grad);
+      cross(cross_products[0], s1Grad, s2Grad);
+      cross(cross_products[1], s2Grad, s0Grad);
+      cross(cross_products[2], s0Grad, s1Grad);
       
       Kokkos::Array<PointScalar,3> s {s0,s1,s2};
-      
-      Kokkos::Array<Kokkos::Array<PointScalar,3>,3> cross_products {grad_s1_cross_grad_s2, grad_s2_cross_grad_s0, grad_s0_cross_grad_s1};
       
       for (ordinal_type d=0; d<3; d++)
       {
@@ -292,6 +301,20 @@ namespace Intrepid2
         }
         vectorWeight[d] = v_d;
       }
+    }
+    
+    KOKKOS_INLINE_FUNCTION
+    void computeFaceDivWeight(OutputScalar &divWeight,
+                              const Kokkos::Array<PointScalar,3> &s0Grad,
+                              const Kokkos::Array<PointScalar,3> &s1Grad,
+                              const Kokkos::Array<PointScalar,3> &s2Grad) const
+    {
+      // grad s0 \dot (grad s1 x grad s2)
+      
+      Kokkos::Array<PointScalar,3> grad_s1_cross_grad_s2;
+      cross(grad_s1_cross_grad_s2, s1Grad, s2Grad);
+      
+      dot(divWeight, s0Grad, grad_s1_cross_grad_s2);
     }
     
     KOKKOS_INLINE_FUNCTION
@@ -449,9 +472,28 @@ namespace Intrepid2
             const auto lambda2_index = tri_face_vertex_2[faceOrdinal];
             
             const auto & mu_c_b = mu[c][b-1];
+//            const PointScalar mu_s0 = mu_c_b * s0;
+//            const PointScalar mu_s1 = mu_c_b * s1;
+//            const PointScalar mu_s2 = mu_c_b * s2;
             const auto & mu_s0 = lambda[lambda0_index];
             const auto & mu_s1 = lambda[lambda1_index];
             const auto & mu_s2 = lambda[lambda2_index];
+            
+            {
+              // DEBUGGING
+              double s0_diff = std::abs(mu_s0 - mu_c_b * s0);
+              double s1_diff = std::abs(mu_s1 - mu_c_b * s1);
+              const double tol = 1e-14;
+              if (s0_diff > tol)
+              {
+                std::cout << "s0_diff: " << s0_diff << std::endl;
+              }
+              if (s1_diff > tol)
+              {
+                std::cout << "s1_diff: " << s1_diff << std::endl;
+              }
+            }
+            
             const PointScalar muJacobiScaling = mu_s0 + mu_s1 + mu_s2;
             
             const PointScalar muLegendreScaling = mu_s0 + mu_s1;
@@ -460,9 +502,9 @@ namespace Intrepid2
             Kokkos::Array<PointScalar, 3> vectorWeight;
             computeFaceVectorWeight(vectorWeight, a, nu, nuGrad);
             
-            Kokkos::Array<PointScalar,3> mu_s0_grad = lambdaGrad[lambda0_index];
-            Kokkos::Array<PointScalar,3> mu_s1_grad = lambdaGrad[lambda1_index];
-            Kokkos::Array<PointScalar,3> mu_s2_grad = lambdaGrad[lambda2_index];
+            Kokkos::Array<PointScalar,3> & mu_s0_grad = lambdaGrad[lambda0_index];
+            Kokkos::Array<PointScalar,3> & mu_s1_grad = lambdaGrad[lambda1_index];
+            Kokkos::Array<PointScalar,3> & mu_s2_grad = lambdaGrad[lambda2_index];
             
             Kokkos::Array<PointScalar, 3> muVectorWeight;
             computeFaceVectorWeight(muVectorWeight, mu_s0, mu_s0_grad, mu_s1, mu_s1_grad, mu_s2, mu_s2_grad);
@@ -524,40 +566,120 @@ namespace Intrepid2
         {
           ordinal_type fieldOrdinalOffset = 0;
           // quadrilateral face
-          // rename scratch1, scratch2
-          auto & Pi = scratch1D_1;
-          auto & Pj = scratch1D_2;
-          
-          auto & s0      =     mu[0][0], s1      =     mu[1][0];
-          auto & s0_grad = muGrad[0][0], s1_grad = muGrad[1][0];
-          auto & t0      =     mu[0][1], t1      =     mu[1][1];
-          auto & t0_grad = muGrad[0][1], t1_grad = muGrad[1][1];
-          
-          Polynomials::shiftedScaledLegendreValues(Pi, polyOrder_-1, s1, s0 + s1);
-          Polynomials::shiftedScaledLegendreValues(Pj, polyOrder_-1, t1, t0 + t1);
-          
-          const auto & muZ0      =     mu[0][2];
-          const auto & muZ0_grad = muGrad[0][2];
-          OutputScalar three_mu0_squared = 3.0 * muZ0 * muZ0;
-          
-          // following the ESEAS ordering: j increments first
-          for (int j=0; j<polyOrder_; j++)
           {
-            for (int i=0; i<polyOrder_; i++)
+            // rename scratch1, scratch2
+            auto & Pi = scratch1D_1;
+            auto & Pj = scratch1D_2;
+            
+            auto & s0      =     mu[0][0], s1      =     mu[1][0];
+            auto & s0_grad = muGrad[0][0], s1_grad = muGrad[1][0];
+            auto & t0      =     mu[0][1], t1      =     mu[1][1];
+            auto & t0_grad = muGrad[0][1], t1_grad = muGrad[1][1];
+            
+            Polynomials::shiftedScaledLegendreValues(Pi, polyOrder_-1, s1, s0 + s1);
+            Polynomials::shiftedScaledLegendreValues(Pj, polyOrder_-1, t1, t0 + t1);
+            
+            const auto & muZ0      =     mu[0][2];
+            const auto & muZ0_grad = muGrad[0][2];
+            OutputScalar three_mu0_squared = 3.0 * muZ0 * muZ0;
+            
+            // following the ESEAS ordering: j increments first
+            for (int j=0; j<polyOrder_; j++)
             {
-              Kokkos::Array<OutputScalar,3> VQUAD; // output from V_QUAD
-              V_QUAD(VQUAD, i, j,
-                     Pi, s0, s1, s0_grad, s1_grad,
-                     Pj, t0, t1, t0_grad, t1_grad);
-              
-              OutputScalar grad_muZ0_dot_VQUAD;
-              dot(grad_muZ0_dot_VQUAD, muZ0_grad, VQUAD);
-              
-              output_(fieldOrdinalOffset,pointOrdinal) = three_mu0_squared * grad_muZ0_dot_VQUAD;
-              fieldOrdinalOffset++;
+              for (int i=0; i<polyOrder_; i++)
+              {
+                Kokkos::Array<OutputScalar,3> VQUAD; // output from V_QUAD
+                V_QUAD(VQUAD, i, j,
+                       Pi, s0, s1, s0_grad, s1_grad,
+                       Pj, t0, t1, t0_grad, t1_grad);
+                
+                OutputScalar grad_muZ0_dot_VQUAD;
+                dot(grad_muZ0_dot_VQUAD, muZ0_grad, VQUAD);
+                
+                output_(fieldOrdinalOffset,pointOrdinal) = three_mu0_squared * grad_muZ0_dot_VQUAD;
+                fieldOrdinalOffset++;
+              }
             }
-          }
-          // TODO: triangle faces
+          } // end quad face block
+          
+          // triangle faces
+          {
+            const auto & P        = scratch1D_1; // for V_TRI( nu_012)
+            const auto & P_2ip1   = scratch1D_2;
+            const auto & Pmu      = scratch1D_3; // for V_TRI( mu * nu_012)
+            const auto & Pmu_2ip1 = scratch1D_4;
+            for (int faceOrdinal=0; faceOrdinal<numTriFaces; faceOrdinal++)
+            {
+              // face 0,2 --> a=1, b=2
+              // face 1,3 --> a=2, b=1
+              int a = (faceOrdinal % 2 == 0) ? 1 : 2;
+              int b = 3 - a;
+              // face 0,3 --> c=0
+              // face 1,2 --> c=1
+              int c = ((faceOrdinal == 0) || (faceOrdinal == 3)) ? 0 : 1;
+              
+              const auto & s0 = nu[0][a-1];
+              const auto & s1 = nu[1][a-1];
+              const auto & s2 = nu[2][a-1];
+              const PointScalar jacobiScaling = s0 + s1 + s2; // we can actually assume that this is 1; see comment at bottom of p. 425 of Fuentes et al. 
+              
+              const PointScalar legendreScaling = s0 + s1;
+              Polynomials::shiftedScaledLegendreValues(P, polyOrder_-1, s1, legendreScaling);
+              
+              const auto lambda0_index = tri_face_vertex_0[faceOrdinal];
+              const auto lambda1_index = tri_face_vertex_1[faceOrdinal];
+              const auto lambda2_index = tri_face_vertex_2[faceOrdinal];
+              
+              const auto & mu_c_b = mu[c][b-1];
+              const auto & mu_c_b_grad = muGrad[c][b-1];
+              
+              const auto & mu_s0 = lambda[lambda0_index];
+              const auto & mu_s1 = lambda[lambda1_index];
+              const auto & mu_s2 = lambda[lambda2_index]; // == s2
+              
+              const PointScalar muJacobiScaling = mu_s0 + mu_s1 + mu_s2;
+              
+              const PointScalar muLegendreScaling = mu_s0 + mu_s1;
+              Polynomials::shiftedScaledLegendreValues(Pmu, polyOrder_-1, mu_s1, muLegendreScaling);
+              
+              Kokkos::Array<PointScalar, 3> vectorWeight;
+              computeFaceVectorWeight(vectorWeight, a, nu, nuGrad);
+              
+              Kokkos::Array<PointScalar,3> & mu_s0_grad = lambdaGrad[lambda0_index];
+              Kokkos::Array<PointScalar,3> & mu_s1_grad = lambdaGrad[lambda1_index];
+              Kokkos::Array<PointScalar,3> & mu_s2_grad = lambdaGrad[lambda2_index]; // == s2_grad
+              
+              Kokkos::Array<PointScalar, 3> muVectorWeight;
+              computeFaceVectorWeight(muVectorWeight, mu_s0, mu_s0_grad, mu_s1, mu_s1_grad, mu_s2, mu_s2_grad);
+              
+              OutputScalar muDivWeight;
+              computeFaceDivWeight(muDivWeight, mu_s0_grad, mu_s1_grad, mu_s2_grad);
+              
+              for (int totalPolyOrder=0; totalPolyOrder<polyOrder_; totalPolyOrder++)
+              {
+                for (int i=0; i<=totalPolyOrder; i++)
+                {
+                  const int j = totalPolyOrder - i;
+                  
+                  const double alpha = i*2.0 + 1;
+                  Polynomials::shiftedScaledJacobiValues(  P_2ip1, alpha, polyOrder_-1,    s2,   jacobiScaling);
+                  Polynomials::shiftedScaledJacobiValues(Pmu_2ip1, alpha, polyOrder_-1, mu_s2, muJacobiScaling);
+                  
+                  Kokkos::Array<OutputScalar,3> VTRI, VTRI_mu; // output from V_TRI
+                  
+                  V_TRI(VTRI,    i, j, P,   P_2ip1,     vectorWeight);
+                  V_TRI(VTRI_mu, i, j, Pmu, Pmu_2ip1, muVectorWeight);
+                  
+                  OutputScalar VTRI_mu_DIV;
+                  V_TRI_DIV(VTRI_mu_DIV, i, j, Pmu, Pmu_2ip1, muDivWeight);
+                  
+                  output_(fieldOrdinalOffset,pointOrdinal) = 0.5 * (dot(mu_c_b_grad, VTRI) + VTRI_mu_DIV / mu_c_b - dot(mu_c_b_grad, VTRI_mu)/(mu_c_b * mu_c_b));
+                  
+                  fieldOrdinalOffset++;
+                }
+              }
+            }
+          } // end triangle face block
           // TODO: interior functions
         } // end OPERATOR_DIV block
           break;
