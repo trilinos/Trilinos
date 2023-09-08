@@ -678,20 +678,28 @@ namespace Intrepid2
                   muZ0_grad_phi_k_plus_phi_k_grad_muZ0[d] = muZ_0 * phi_k_grad[d] + phi_k * muZ_0_grad[d];
                 }
                 
-                for (int j=2; j<=polyOrder_; j++)
+                // for reasons that I don't entirely understand, ESEAS switches whether i or j are the fastest-moving indices depending on whether it's family I or II.  Following their code, I'm calling the outer loop variable jg, inner ig.
+                // (Cross-code comparisons are considerably simpler if we number the dofs in the same way.)
+                ordinal_type jg_min = (f==0) ? 2 : 0;
+                ordinal_type jg_max = (f==0) ? polyOrder_ : polyOrder_-1;
+                ordinal_type ig_min = (f==0) ? 0 : 2;
+                ordinal_type ig_max = (f==0) ? polyOrder_ -1 : polyOrder_;
+                for (ordinal_type jg=jg_min; jg<=jg_max; jg++)
                 {
-                  for (int i=0; i<polyOrder_; i++)
+                  for (ordinal_type ig=ig_min; ig<=ig_max; ig++)
                   {
+                    const ordinal_type &i = (f==0) ? ig : jg;
+                    const ordinal_type &j = (f==0) ? jg : ig;
                     Kokkos::Array<OutputScalar,3> EQUAD_ij;
                     Kokkos::Array<OutputScalar,3> curl_EQUAD_ij;
                     
                     E_QUAD(EQUAD_ij, i, j, Pi_s01, s0, s1, s0_grad, s1_grad, Li_t01);
                     
                     E_QUAD_CURL(curl_EQUAD_ij, i, j, Pi_s01, s0, s1, s0_grad, s1_grad,
-                                Pi_t01, Li_t01, Li_dt_t01, t0_grad, t1_grad);
+                                                     Pi_t01, Li_t01, Li_dt_t01, t0_grad, t1_grad);
                     
                     // first term: muZ_0 phi^E_k curl EQUAD
-                    // we can reuse the memory for curl_EQUAD_ij_12; we won't need the values there again
+                    // we can reuse the memory for curl_EQUAD_ij; we won't need the values there again
                     Kokkos::Array<OutputScalar,3> & firstTerm = curl_EQUAD_ij;
                     for (ordinal_type d=0; d<3; d++)
                     {
@@ -716,8 +724,31 @@ namespace Intrepid2
             // FAMILY III -- a divergence-free family
             for (int j=2; j<=polyOrder_; j++)
             {
+              // phi_ij_QUAD: phi_j(mu_X01) * phi_i(mu_Y01)
+              const auto & phi_j = Li_muX01(j);
+              Kokkos::Array<OutputScalar,3> phi_j_grad;
+              computeGradHomLi(phi_j_grad, j, Pi_muX01, Li_dt_muX01, muX_0_grad, muX_1_grad);
               for (int i=2; i<=polyOrder_; i++)
               {
+                const auto & phi_i = Li_muY01(i);
+                Kokkos::Array<OutputScalar,3> phi_i_grad;
+                computeGradHomLi(phi_i_grad, i, Pi_muY01, Li_dt_muY01, muY_0_grad, muY_1_grad);
+                
+                Kokkos::Array<OutputScalar,3> phi_ij_grad;
+                for (ordinal_type d=0; d<3; d++)
+                {
+                  phi_ij_grad[d] = phi_i * phi_j_grad[d] + phi_j * phi_i_grad[d];
+                }
+                
+                Kokkos::Array<OutputScalar,3> cross_product; // phi_ij_grad x grad_muZ0
+                cross(cross_product, phi_ij_grad, muZ_0_grad);
+                
+                ordinal_type n = max(i,j);
+                OutputScalar weight = n * pow(muZ_0,n-1);
+                for (ordinal_type d=0; d<3; d++)
+                {
+                  output_(fieldOrdinalOffset,pointOrdinal,d) = weight * cross_product[d];
+                }
                 fieldOrdinalOffset++;
               }
             }
