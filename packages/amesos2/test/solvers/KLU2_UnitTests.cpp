@@ -476,6 +476,7 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
+  //! @test Test for non-contiguous GIDs.
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, NonContigGID, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -622,11 +623,6 @@ namespace {
       B->describe(out, Teuchos::VERB_EXTREME);
       Xhat->describe(out, Teuchos::VERB_EXTREME);
       X->describe(out, Teuchos::VERB_EXTREME);
-
-      //A->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-      //B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-      //Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-      //X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
       // Check result of solve
       Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
