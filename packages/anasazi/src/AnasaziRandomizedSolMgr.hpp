@@ -74,7 +74,11 @@
   \brief The Anasazi::RandomizedSolMgr approximates largest eigenvalues/eigenvectors
   by performing a simple Rayleigh-Ritz projection over a random block of vectors. 
 
-  The algorithms is well-known. See \\TODO citations. 
+  This algorithm is well-known. The implementation is adapted from
+  that found in N. Halko et al, "Finding Structure with Randomness:
+  Probabilistic Algorithms for Constructing Approximate Matrix 
+  Decompositions", SIAM Review, 53 (2011), pp. 217-288, 
+  https://doi.org/10.1137/090771806
 
   \ingroup anasazi_solver_framework
 

@@ -240,35 +240,6 @@ namespace Zoltan2 {
       this->algName_ = std::string("sphynx");
     }
 
-  /*template <typename Adapter>
-    void SphynxProblem<Adapter>::solve(Teuchos::RCP<mvector_t> &userEigenVects)
-    {
-
-    this->createPartitioningProblem(true);
-  // Create the algorithm
-  try {
-  this->createAlgorithm();
-  }
-  Z2_FORWARD_EXCEPTIONS;
-
-  PartitioningSolution<Adapter> *soln = NULL;
-
-  try{
-
-  soln = new PartitioningSolution<Adapter>(this->envConst_, this->comm_, this->numberOfWeights_,
-  this->partIds_.view(0, this->numberOfCriteria_),
-  this->partSizes_.view(0, this->numberOfCriteria_), this->algorithm_);
-  }
-  Z2_FORWARD_EXCEPTIONS;
-  this->solution_ = Teuchos::rcp(soln);
-
-  // Call the algorithm
-  try {
-  this->algorithm_->partition(this->solution_, userEigenVects);
-  }
-  Z2_FORWARD_EXCEPTIONS;
-  }*/
-
   template <typename Adapter>
     void SphynxProblem<Adapter>::createAlgorithm()
     {

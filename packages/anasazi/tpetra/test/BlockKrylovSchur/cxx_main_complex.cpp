@@ -126,17 +126,7 @@ int main(int argc, char *argv[])
     return -1;
   }
   if (debug) verbose = true;
-  if (filename == "") {
-    filename = "mhd1280b.cua";
-/*    // get default based on herm
-    if (herm) {
-      filename = "mhd1280b.cua";
-    }
-    else {
-      filename = "mhd1280a.cua";
-      which = "L";
-    } */
-  }
+  if (filename == "") filename = "mhd1280b.cua";
 
   if (MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;

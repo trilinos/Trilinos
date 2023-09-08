@@ -1,3 +1,49 @@
+// @HEADER
+// //
+// // ***********************************************************************
+// //
+// //   Zoltan2: A package of combinatorial algorithms for scientific computing
+// //                  Copyright 2012 Sandia Corporation
+// //
+// // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// // the U.S. Government retains certain rights in this software.
+// //
+// // Redistribution and use in source and binary forms, with or without
+// // modification, are permitted provided that the following conditions are
+// // met:
+// //
+// // 1. Redistributions of source code must retain the above copyright
+// // notice, this list of conditions and the following disclaimer.
+// //
+// // 2. Redistributions in binary form must reproduce the above copyright
+// // notice, this list of conditions and the following disclaimer in the
+// // documentation and/or other materials provided with the distribution.
+// //
+// // 3. Neither the name of the Corporation nor the names of the
+// // contributors may be used to endorse or promote products derived from
+// // this software without specific prior written permission.
+// //
+// // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// //
+// // Questions? Contact Seher Acer        (sacer@sandia.gov)
+// //                    Erik Boman        (egboman@sandia.gov)
+// //                    Siva Rajamanickam (srajama@sandia.gov)
+// //                    Jennifer Loe      (jloe@sandia.gov)
+// //
+// // ***********************************************************************
+// //
+// @HEADER
+
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
@@ -9,27 +55,18 @@
 
 #include "Teuchos_TimeMonitor.hpp" 
 #include "Teuchos_StackedTimer.hpp"
-#include "ReadMatrixFromFile.hpp"
+#include "readMatrixFromBinaryFile.hpp"
 
 #include <Galeri_MultiVectorTraits.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraParameters.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
-//#include <AnasaziTpetraAdapter.hpp>
-//#include "AnasaziBasicEigenproblem.hpp"
-
-/*
-// Include header to define eigenproblem Ax = \lambda*x
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziSimpleLOBPCGSolMgr.hpp"
-#include "AnasaziBasicOutputManager.hpp"
-#include "AnasaziEpetraAdapter.hpp"
-#include "Epetra_CrsMatrix.h"
-//#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_Assert.hpp"
-#include "AnasaziTypes.hpp"
-*/
+/////////////////////////////////////////////////////////////////////////////
+//// This is a driver with many available options that can be used to test
+//// a variety of features of Sphynx.
+//// Note: This is research code. We do not guarantee it is without bugs. 
+///////////////////////////////////////////////////////////////////////////////
 
   template <typename lno_t, typename gno_t, typename scalar_t, typename nod_t>
 int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
@@ -221,7 +258,6 @@ int main(int narg, char *arg[])
     int resFreq = 0;
     int orthoFreq = 0;
     std::string matrix_file = "";
-    std::string vector_file = "";
     std::string eigensolve = "LOBPCG"; 
     bool parmetis = false;
     bool pulp = false;
@@ -243,12 +279,10 @@ int main(int narg, char *arg[])
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("matrix_file",&matrix_file,
         "Path and filename of the matrix to be read.");
-    cmdp.setOption("vector_file",&vector_file,
-        "Path and filename of the vector to be read.");
     cmdp.setOption("nparts",&nparts,
         "Number of global parts desired in the resulting partition.");
     cmdp.setOption("rand_seed",&rand_seed,
-        "Seed for the random multivector."); //TODO: Final randomized solver maybe should have param??  Or notes in the docs?
+        "Seed for the random multivector.");
     cmdp.setOption("max_iters",&max_iters,
         "Maximum iters for the eigensolver.");
     cmdp.setOption("block_size",&block_size,
@@ -282,7 +316,6 @@ int main(int narg, char *arg[])
       std::cout << "| Sphynx Parameters                              |" << matrix_file << std::endl;
       std::cout << "--------------------------------------------------" << matrix_file << std::endl;
       std::cout << "  matrix file = " << matrix_file << std::endl;
-      std::cout << "  vector file = " << vector_file << std::endl;
       std::cout << "  nparts      = " << nparts << std::endl;
       std::cout << "  verbosity   = " << verbosity << std::endl;
       std::cout << "  parmetis    = " << parmetis << std::endl;
@@ -305,8 +338,6 @@ int main(int narg, char *arg[])
     using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;  
     using adapter_type = Zoltan2::XpetraCrsGraphAdapter<typename crs_matrix_type::crs_graph_type>;
     using solution_type = Zoltan2::PartitioningSolution<adapter_type>;  
-    //using ST = double;
-    //using MultiVector  = Tpetra::MultiVector<ST>;
 
     // Read the input matrix
     Teuchos::RCP<adapter_type> adapter;
@@ -315,16 +346,17 @@ int main(int narg, char *arg[])
     // Set the random seed and hope it goes through to Tpetra.
     std::srand(rand_seed);
 
-    std::string mtx = ".mtx", lc = ".largestComp", lc2 = ".bin";
+    // Read in user-specified matrix or create default Brick3D matrix (100^3)
+    std::string mtx = ".mtx", mm = ".mm", lc = ".largestComp", lc2 = ".bin";
     if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin()) || std::equal(lc2.rbegin(), lc2.rend(), matrix_file.rbegin())) {
-      tmatrix  = readMatrixFromFile<crs_matrix_type>(matrix_file, pComm, true, verbosity>0);
+      tmatrix  = readMatrixFromBinaryFile<crs_matrix_type>(matrix_file, pComm, true, verbosity>0);
       if(me == 0 && verbosity > 1) std::cout << "Used Seher's reader for Largest Comp." << std::endl;
     }
-    else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin())) {
+    else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin()) || std::equal(mm.rbegin(), mm.rend(), matrix_file.rbegin())) {
       typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
       reader_type r;
       tmatrix = r.readSparseFile(matrix_file, pComm);
-      if(me == 0 && verbosity > 1) std::cout << "Used standard reader." << std::endl;
+      if(me == 0 && verbosity > 1) std::cout << "Used standard Matrix Market reader." << std::endl;
     }
     else {
       int meshdim = 100;
@@ -344,27 +376,15 @@ int main(int narg, char *arg[])
         (meshdim, meshdim, meshdim, "Brick3D", pComm, tmatrix);
       if (ierr != 0) std::cout << "Error! Brick3D failed to build!" << std::endl;
     }
+
     if(me == 0 && verbosity > 0) std::cout << "Done with reading/creating the matrix." << std::endl;
+
     Teuchos::RCP<const Tpetra::Map<> > map = tmatrix->getMap();
 
-    /*Teuchos::RCP<MultiVector> V;
-      if (vector_file ==""){
-      V = Teuchos::rcp(new MultiVector(map, 10));
-      V->randomize();
-    // std::cout << "Randomized some pretend evects." << std::endl;
-    }
-    else{
-    V = Tpetra::MatrixMarket::Reader<MultiVector >::readDenseFile(vector_file,pComm,map);
-    Teuchos::RCP<const Tpetra::Map<> > vector_map = V->getMap();
-    if(me == 0)
-    std::cout << "Done with reading/creating the eigenvector." << std::endl;
-    }*/
-    // TODO Insert MultiVector Reader
-    //
     adapter = Teuchos::rcp(new adapter_type(tmatrix->getCrsGraph(), 1));
     adapter->setVertexWeightIsDegree(0);
 
-    // Set the parameters
+    // Set the Sphynx parameters
     Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
     Teuchos::RCP<Teuchos::ParameterList> sphynxParams(new Teuchos::ParameterList);
     params->set("num_global_parts", nparts);
@@ -405,8 +425,7 @@ int main(int narg, char *arg[])
       solution_type solution = problem->getSolution();
       compute_edgecut<adapter_type>(adapter, solution);
 
-    }
-    else {
+    } else {
 
       sphynxParams->set("sphynx_verbosity", verbosity);
       sphynxParams->set("sphynx_max_iterations", max_iters);
@@ -430,18 +449,8 @@ int main(int narg, char *arg[])
           problem = Teuchos::rcp(new problem_type(adapter.get(), params.get(), sphynxParams, Tpetra::getDefaultComm()));
         }
         {
-          Teuchos::TimeMonitor t3(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
-          if (vector_file ==""){
-            if(me == 0)
-              std::cout << eigensolve << "will be used to solve the partitioning problem." << std::endl;
-            problem->solve();
-          }
-          else{
-            std::cout << "Problem to be solved with user-provided vectors." << std::endl;
-            std::cout << "NEVERMIND. That option has beend disabled." << std::endl;
-            return 0;
-            //problem->solve(V);
-          }
+          if(me == 0) std::cout << eigensolve << " will be used to solve the partitioning problem." << std::endl;
+          problem->solve();
         }
         pComm->barrier();
       }

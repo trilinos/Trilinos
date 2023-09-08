@@ -209,8 +209,6 @@ namespace Zoltan2 {
           const Teuchos::RCP<PartitioningSolution<Adapter>> &solution);
 
       void setUserEigenvectors(const Teuchos::RCP<mvector_t> &userEvects);
-
-      Teuchos::RCP<mvector_t> getSphynxEigenvectors();
       ///////////////////////////////////////////////////////////////////////////
       ///////////////////// MEMBER FUNCTIONS - Laplacian-related ones ///////////
       ///////////////////////////////////////////////////////////////////////////
@@ -499,18 +497,7 @@ namespace Zoltan2 {
             }
             );
         Kokkos::fence ();
-        /*      }
-                else{
-        // Put 0's on the diagonal of A plus shift by +I -> 1's on diagonal
-        Kokkos::parallel_for("Zero Diagonal", range_policy(0, numRows),
-        KOKKOS_LAMBDA(const lno_t i){
-        newVal(rowOffsets(i) + diagOffsets(i)) = 1.0;
-        deginvsqrt(i,0) = 1.0/KAT::sqrt(rowOffsets(i+1) - rowOffsets(i) - 1);
-        }
-        );
-        Kokkos::fence ();
-        }
-        */
+
         // Create the Laplacian graph using the same graph structure with the new values
         Teuchos::RCP<matrix_t> laplacian (new matrix_t(graph_, newVal));
         laplacian->fillComplete (graph_->getDomainMap(), graph_->getRangeMap());
@@ -555,8 +542,6 @@ namespace Zoltan2 {
       bool skipPrep_;            // obtained from user params
   };
 
-
-
   ///////////////////////////////////////////////////////////////////////////
   /////////////////////// MORE MEMBER FUNCTIONS  ////////////////////////////
   ///////////////////////////////////////////////////////////////////////////
@@ -570,16 +555,6 @@ namespace Zoltan2 {
     void Sphynx<Adapter>::setUserEigenvectors(const Teuchos::RCP<mvector_t> &userEvects)
     {
       eigenVectors_ = userEvects; 
-    }
-
-  ///////////////////////////////////////////////////////////////////////////
-  // Returns an RCP containing a deep copy of the eigenvectors used by Sphynx.
-  ///////////////////////////////////////////////////////////////////////////
-  template <typename Adapter>
-    Teuchos::RCP<Tpetra::MultiVector<double, typename Adapter::lno_t, typename Adapter::gno_t, typename Adapter::node_t> >
-    Sphynx<Adapter>::getSphynxEigenvectors()
-    {
-      return Anasazi::MultiVecTraits<scalar_t, mvector_t>::CloneCopy(eigenVectors_);
     }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -666,10 +641,10 @@ namespace Zoltan2 {
       bool relLockTol = false;
       bool lock = false;
       bool useFullOrtho = sphynxParams_->get("sphynx_use_full_ortho",true);
+
       // Information to output in a verbose run
       int numfailed = 0;
       int iter = 0;
-      //double solvetime = 0;
 
       // Set Anasazi verbosity level
       int anasaziVerbosity = Anasazi::Errors + Anasazi::Warnings;
@@ -703,8 +678,8 @@ namespace Zoltan2 {
       }
 
       // Create and set initial vectors
-      Teuchos::RCP<mvector_t> ivec( new mvector_t(laplacian_->getRangeMap(), numEigenVectors));
       auto map = laplacian_->getRangeMap();
+      Teuchos::RCP<mvector_t> ivec( new mvector_t(map, numEigenVectors));
 
       if (randomInit_) {
         // 0-th vector constant 1, rest random
@@ -712,7 +687,6 @@ namespace Zoltan2 {
         ivec->getVectorNonConst(0)->putScalar(1.);
       }
       else { // This implies we will use constant initial vectors.
-
         // 0-th vector constant 1, other vectors constant per block
         // Create numEigenVectors blocks, but only use numEigenVectors-1 of them.
         // This assures orthogonality.
@@ -796,6 +770,7 @@ namespace Zoltan2 {
         std::cout << "No of comp. vecs. :    " << numev << std::endl;
       }
 
+      std::cout << "Solver type: " << solverType_ << std::endl;
       // Compute residuals (LOBPCG does this internally)
       if(solverType_ == "randomized") {
         std::vector<double> normR(numev);
