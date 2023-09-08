@@ -5,6 +5,7 @@ build_dir=${BUILD_DIR:-${PWD}}
 build_type=${CMAKE_BUILD_TYPE:-release}
 trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install_dir}
 cmake_cxx_flags=${CMAKE_CXX_FLAGS}
+clear_cache=${CLEAR_CACHE:-ON}
 
 printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
 printf "BUILD_DIR=${build_dir}\n";
@@ -13,9 +14,15 @@ printf "CMAKE_CXX_FLAGS=${cmake_cxx_flags}\n";
 printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
 printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk_serial'\n\n";
 
+mkdir -p $trilinos_install_dir
+mkdir -p $build_dir
+
 cd ${build_dir}
 
-mkdir -p $trilinos_install_dir
+if [ "${clear_cache}" == "ON" ] ; then
+# Cleanup old cache before we configure
+  rm -rf CMakeFiles CMakeCache.txt
+fi
 
 rm -rf CMakeFiles CMakeCache.txt
 

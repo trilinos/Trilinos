@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "stk_middle_mesh/mesh.hpp"
 #include "stk_middle_mesh/mesh_entity.hpp"
-#include "stk_middle_mesh/parallel_search.hpp"
 #include "stk_middle_mesh/field.hpp"
 #include "stk_middle_mesh/mesh_scatter.hpp"
+#include "stk_middle_mesh/variable_size_field.hpp"
 
 using namespace stk::middle_mesh;
 
@@ -33,6 +33,16 @@ mesh::MeshEntityPtr get_closest_entity(std::shared_ptr<mesh::Mesh> mesh, int dim
     }
 
   return minEntity;
+}
+
+mesh::RemoteSharedEntity get_remote(mesh::VariableSizeFieldPtr<mesh::RemoteSharedEntity> fieldPtr, mesh::MeshEntityPtr entity, int rank)
+{
+  auto& field = *fieldPtr;
+  for (int i=0; i < field.get_num_comp(entity, 0); ++i)
+    if (field(entity, 0, i).remoteRank == rank)
+      return field(entity, 0, i);
+
+  throw std::runtime_error("unable to find remote");
 }
 
 
@@ -159,11 +169,138 @@ TEST(MeshScatter, 2x2FromOneProc)
     scatterSpec->add_destination(el4, 4);
   }
 
-  mesh::impl::MeshScatter scatter(scatterSpec, mesh, color == 1 ? meshComm : MPI_COMM_NULL);
+  mesh::impl::MeshScatter scatter(scatterSpec, mesh, color == 1 ? meshComm : MPI_COMM_NULL, true);
   auto meshScattered  = scatter.scatter();
   auto elementOrigins = scatter.get_element_origins();
+  auto entityOrigins  = scatter.get_entity_origins();
+  auto entityDests    = scatter.get_entity_destinations();
 
-  if (color == 1)
+  if (color == 0)
+  {
+    EXPECT_EQ(entityOrigins, nullptr);
+    EXPECT_NE(entityDests, nullptr);
+
+    auto v1 = get_closest_entity(mesh, 0, {0,   0,   0});
+    auto v2 = get_closest_entity(mesh, 0, {0.5, 0,   0});
+    auto v3 = get_closest_entity(mesh, 0, {1.0, 0,   0});
+    auto v4 = get_closest_entity(mesh, 0, {0,   0.5, 0});
+    auto v5 = get_closest_entity(mesh, 0, {0.5, 0.5, 0});
+    auto v6 = get_closest_entity(mesh, 0, {1.0, 0.5, 0});
+    auto v7 = get_closest_entity(mesh, 0, {0,   1.0, 0});
+    auto v8 = get_closest_entity(mesh, 0, {0.5, 1.0, 0});
+    auto v9 = get_closest_entity(mesh, 0, {1.0, 1.0, 0});
+
+    auto edge1  = get_closest_entity(mesh, 1, {0.25,   0,   0});
+    auto edge2  = get_closest_entity(mesh, 1, {0.50, 0.25,   0});
+    auto edge3  = get_closest_entity(mesh, 1, {0.25, 0.50,   0});
+    auto edge4  = get_closest_entity(mesh, 1, {0.0,  0.25,   0});
+
+    auto edge5  = get_closest_entity(mesh, 1, {0.75,   0,   0});
+    auto edge6  = get_closest_entity(mesh, 1, {1.0,  0.25,   0});
+    auto edge7  = get_closest_entity(mesh, 1, {0.75, 0.50,   0});
+
+    auto edge8  = get_closest_entity(mesh, 1, {0.50, 0.75,   0});
+    auto edge9  = get_closest_entity(mesh, 1, {0.25, 1.0,   0});
+    auto edge10 = get_closest_entity(mesh, 1, {0,    0.75,   0});
+
+    auto edge11 = get_closest_entity(mesh, 1, {1.0,  0.75,   0});
+    auto edge12 = get_closest_entity(mesh, 1, {0.75, 1.0,   0});
+
+    auto el1 = get_closest_entity(mesh, 2, {0.25, 0.25, 0});
+    auto el2 = get_closest_entity(mesh, 2, {0.75, 0.25, 0});
+    auto el3 = get_closest_entity(mesh, 2, {0.25, 0.75, 0});
+    auto el4 = get_closest_entity(mesh, 2, {0.75, 0.75, 0});
+
+
+    EXPECT_EQ(entityDests->get_num_comp(v1, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(v2, 0), 2);
+    EXPECT_EQ(entityDests->get_num_comp(v3, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(v4, 0), 2);
+    EXPECT_EQ(entityDests->get_num_comp(v5, 0), 4);
+    EXPECT_EQ(entityDests->get_num_comp(v6, 0), 2);
+    EXPECT_EQ(entityDests->get_num_comp(v7, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(v8, 0), 2);
+    EXPECT_EQ(entityDests->get_num_comp(v9, 0), 1);
+
+    EXPECT_EQ(get_remote(entityDests, v1, 1), mesh::RemoteSharedEntity(1, 0));
+
+    EXPECT_EQ(get_remote(entityDests, v2, 1), mesh::RemoteSharedEntity(1, 1));
+    EXPECT_EQ(get_remote(entityDests, v2, 2), mesh::RemoteSharedEntity(2, 0));
+
+    EXPECT_EQ(get_remote(entityDests, v3, 2), mesh::RemoteSharedEntity(2, 1));
+
+    EXPECT_EQ(get_remote(entityDests, v4, 1), mesh::RemoteSharedEntity(1, 2));
+    EXPECT_EQ(get_remote(entityDests, v4, 3), mesh::RemoteSharedEntity(3, 0));
+
+    EXPECT_EQ(get_remote(entityDests, v5, 1), mesh::RemoteSharedEntity(1, 3));
+    EXPECT_EQ(get_remote(entityDests, v5, 2), mesh::RemoteSharedEntity(2, 2));
+    EXPECT_EQ(get_remote(entityDests, v5, 3), mesh::RemoteSharedEntity(3, 1));
+    EXPECT_EQ(get_remote(entityDests, v5, 4), mesh::RemoteSharedEntity(4, 0));
+
+    EXPECT_EQ(get_remote(entityDests, v6, 2), mesh::RemoteSharedEntity(2, 3));
+    EXPECT_EQ(get_remote(entityDests, v6, 4), mesh::RemoteSharedEntity(4, 1));
+
+    EXPECT_EQ(get_remote(entityDests, v7, 3), mesh::RemoteSharedEntity(3, 2));
+
+    EXPECT_EQ(get_remote(entityDests, v8, 3), mesh::RemoteSharedEntity(3, 3));
+    EXPECT_EQ(get_remote(entityDests, v8, 4), mesh::RemoteSharedEntity(4, 2));
+
+    EXPECT_EQ(get_remote(entityDests, v9, 4), mesh::RemoteSharedEntity(4, 3));
+
+    EXPECT_EQ(entityDests->get_num_comp(edge1, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(edge2, 0), 2);
+    EXPECT_EQ(entityDests->get_num_comp(edge3, 0), 2);
+    EXPECT_EQ(entityDests->get_num_comp(edge4, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(edge5, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(edge6, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(edge7, 0), 2);
+    EXPECT_EQ(entityDests->get_num_comp(edge8, 0), 2);
+    EXPECT_EQ(entityDests->get_num_comp(edge9, 0), 1);    
+    EXPECT_EQ(entityDests->get_num_comp(edge10, 0), 1);    
+    EXPECT_EQ(entityDests->get_num_comp(edge11, 0), 1);    
+    EXPECT_EQ(entityDests->get_num_comp(edge12, 0), 1);
+
+    
+    EXPECT_EQ(get_remote(entityDests, edge1, 1), mesh::RemoteSharedEntity(1, 0));
+
+    EXPECT_EQ(get_remote(entityDests, edge2, 1), mesh::RemoteSharedEntity(1, 1));
+    EXPECT_EQ(get_remote(entityDests, edge2, 2), mesh::RemoteSharedEntity(2, 0));
+    
+    EXPECT_EQ(get_remote(entityDests, edge3, 1), mesh::RemoteSharedEntity(1, 2));
+    EXPECT_EQ(get_remote(entityDests, edge3, 3), mesh::RemoteSharedEntity(3, 0));
+
+    EXPECT_EQ(get_remote(entityDests, edge4, 1), mesh::RemoteSharedEntity(1, 3));
+
+    EXPECT_EQ(get_remote(entityDests, edge5, 2), mesh::RemoteSharedEntity(2, 1));
+
+    EXPECT_EQ(get_remote(entityDests, edge6, 2), mesh::RemoteSharedEntity(2, 2));
+
+    EXPECT_EQ(get_remote(entityDests, edge7, 2), mesh::RemoteSharedEntity(2, 3));
+    EXPECT_EQ(get_remote(entityDests, edge7, 4), mesh::RemoteSharedEntity(4, 0));
+
+    EXPECT_EQ(get_remote(entityDests, edge8, 3), mesh::RemoteSharedEntity(3, 1));
+    EXPECT_EQ(get_remote(entityDests, edge8, 4), mesh::RemoteSharedEntity(4, 1));
+
+    EXPECT_EQ(get_remote(entityDests, edge9, 3), mesh::RemoteSharedEntity(3, 2));
+
+    EXPECT_EQ(get_remote(entityDests, edge10, 3), mesh::RemoteSharedEntity(3, 3));
+
+    EXPECT_EQ(get_remote(entityDests, edge11, 4), mesh::RemoteSharedEntity(4, 2));
+
+    EXPECT_EQ(get_remote(entityDests, edge12, 4), mesh::RemoteSharedEntity(4, 3));
+
+    EXPECT_EQ(entityDests->get_num_comp(el1, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(el2, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(el3, 0), 1);
+    EXPECT_EQ(entityDests->get_num_comp(el4, 0), 1);
+
+    EXPECT_EQ(get_remote(entityDests, el1, 1), mesh::RemoteSharedEntity(1, 0));
+    EXPECT_EQ(get_remote(entityDests, el2, 2), mesh::RemoteSharedEntity(2, 0));
+    EXPECT_EQ(get_remote(entityDests, el3, 3), mesh::RemoteSharedEntity(3, 0));
+    EXPECT_EQ(get_remote(entityDests, el4, 4), mesh::RemoteSharedEntity(4, 0));
+
+    
+  } else if (color == 1)
   {
     EXPECT_EQ(mesh::count_valid(meshScattered->get_vertices()), 4);
     EXPECT_EQ(mesh::count_valid(meshScattered->get_edges()), 4);
@@ -209,6 +346,29 @@ TEST(MeshScatter, 2x2FromOneProc)
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(1), 1));
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(2), 2));
 
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[0], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[1], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[2], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[3], 0), 1);
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 0), mesh::RemoteSharedEntity(0, 0));
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 0), mesh::RemoteSharedEntity(0, 1));
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 0), mesh::RemoteSharedEntity(0, 4));
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 0), mesh::RemoteSharedEntity(0, 3));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(0), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(1), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(2), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(3), 0), 1);
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(0), 0), mesh::RemoteSharedEntity(0, 0));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 0), mesh::RemoteSharedEntity(0, 1));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(2), 0), mesh::RemoteSharedEntity(0, 2));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 0), mesh::RemoteSharedEntity(0, 3));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el, 0), 1);
+      EXPECT_EQ(get_remote(entityOrigins, el, 0), mesh::RemoteSharedEntity(0, 0));
+
     } else if (myRank == 1)
     {
       EXPECT_EQ(verts[0]->count_remote_shared_entities(), 1);
@@ -229,6 +389,29 @@ TEST(MeshScatter, 2x2FromOneProc)
 
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(2), 3));
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(3), 0));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[0], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[1], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[2], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[3], 0), 1);
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 0), mesh::RemoteSharedEntity(0, 1));
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 0), mesh::RemoteSharedEntity(0, 2));
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 0), mesh::RemoteSharedEntity(0, 5));
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 0), mesh::RemoteSharedEntity(0, 4));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(0), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(1), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(2), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(3), 0), 1);
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(0), 0), mesh::RemoteSharedEntity(0, 4));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 0), mesh::RemoteSharedEntity(0, 5));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(2), 0), mesh::RemoteSharedEntity(0, 6));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 0), mesh::RemoteSharedEntity(0, 1));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el, 0), 1);
+      EXPECT_EQ(get_remote(entityOrigins, el, 0), mesh::RemoteSharedEntity(0, 1));      
     } else if (myRank == 2)
     {
       EXPECT_EQ(verts[0]->count_remote_shared_entities(), 1);
@@ -248,7 +431,30 @@ TEST(MeshScatter, 2x2FromOneProc)
       EXPECT_EQ(el->get_down(3)->count_remote_shared_entities(), 0);   
 
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(0), 0));
-      EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(1), 3));            
+      EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(1), 3)); 
+
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[0], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[1], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[2], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[3], 0), 1);
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 0), mesh::RemoteSharedEntity(0, 3));
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 0), mesh::RemoteSharedEntity(0, 4));
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 0), mesh::RemoteSharedEntity(0, 7));
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 0), mesh::RemoteSharedEntity(0, 6));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(0), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(1), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(2), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(3), 0), 1);
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(0), 0), mesh::RemoteSharedEntity(0, 2));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 0), mesh::RemoteSharedEntity(0, 7));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(2), 0), mesh::RemoteSharedEntity(0, 8));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 0), mesh::RemoteSharedEntity(0, 9));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el, 0), 1);
+      EXPECT_EQ(get_remote(entityOrigins, el, 0), mesh::RemoteSharedEntity(0, 2));                 
     } else if (myRank == 3)
     {
       EXPECT_EQ(verts[0]->count_remote_shared_entities(), 3);
@@ -268,7 +474,30 @@ TEST(MeshScatter, 2x2FromOneProc)
       EXPECT_EQ(el->get_down(3)->count_remote_shared_entities(), 1);
 
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(0), 1));
-      EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(3), 2));     
+      EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(3), 2));   
+
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[0], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[1], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[2], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[3], 0), 1);
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 0), mesh::RemoteSharedEntity(0, 4));
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 0), mesh::RemoteSharedEntity(0, 5));
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 0), mesh::RemoteSharedEntity(0, 8));
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 0), mesh::RemoteSharedEntity(0, 7));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(0), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(1), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(2), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(3), 0), 1);
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(0), 0), mesh::RemoteSharedEntity(0, 6));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 0), mesh::RemoteSharedEntity(0, 10));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(2), 0), mesh::RemoteSharedEntity(0, 11));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 0), mesh::RemoteSharedEntity(0, 7));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el, 0), 1);
+      EXPECT_EQ(get_remote(entityOrigins, el, 0), mesh::RemoteSharedEntity(0, 3));        
     }
 
     mesh::check_topology(meshScattered);
@@ -294,12 +523,12 @@ TEST(MeshScatter, 2x2FromTwoProcs)
   MPI_Comm meshComm;
   int color = utils::impl::comm_rank(unionComm) <= 1 ? 0 : 1;
   MPI_Comm_split(unionComm, color, 0, &meshComm);
+  double xStart = utils::impl::comm_rank(meshComm) * 0.5;
 
   if (color == 0)
   {
     mesh = mesh::make_empty_mesh(meshComm);
     int myRank = utils::impl::comm_rank(meshComm);
-    double xStart = myRank * 0.5;
     auto v1 = mesh->create_vertex(xStart + 0,   0,   0);
     auto v2 = mesh->create_vertex(xStart + 0.5, 0,   0);
     auto v3 = mesh->create_vertex(xStart + 0,   0.5, 0);
@@ -332,15 +561,163 @@ TEST(MeshScatter, 2x2FromTwoProcs)
     scatterSpec->add_destination(el2, 2*myRank + 3);
   }
 
-  mesh::impl::MeshScatter scatter(scatterSpec, mesh, color == 1 ? meshComm : MPI_COMM_NULL);
+  mesh::impl::MeshScatter scatter(scatterSpec, mesh, color == 1 ? meshComm : MPI_COMM_NULL, true);
   auto meshScattered  = scatter.scatter();
   auto elementOrigins = scatter.get_element_origins();
+  auto entityOrigins  = scatter.get_entity_origins();
+  auto entityDests    = scatter.get_entity_destinations();
 
-  if (color == 1)
+  if (color == 0)
+  {
+    EXPECT_EQ(entityOrigins, nullptr);
+    EXPECT_NE(entityDests, nullptr);
+
+    auto v1 = get_closest_entity(mesh, 0, {xStart,       0,   0});
+    auto v2 = get_closest_entity(mesh, 0, {xStart + 0.5, 0,   0});
+    auto v3 = get_closest_entity(mesh, 0, {xStart,       0.5,   0});
+    auto v4 = get_closest_entity(mesh, 0, {xStart + 0.5, 0.5, 0});
+    auto v5 = get_closest_entity(mesh, 0, {xStart,       1.0, 0});
+    auto v6 = get_closest_entity(mesh, 0, {xStart + 0.5, 1.0, 0});
+
+    double x1 = xStart, x2 = xStart + 0.5;
+    auto edge1 = get_closest_entity(mesh, 1, {(x1 + x2)/2, 0,    0});
+    auto edge2 = get_closest_entity(mesh, 1, {x1 + 0.5,    0.25, 0});
+    auto edge3 = get_closest_entity(mesh, 1, {(x1 + x2)/2, 0.5,  0});
+    auto edge4 = get_closest_entity(mesh, 1, {x1,          0.25, 0});
+    auto edge5 = get_closest_entity(mesh, 1, {x1 + 0.5,    0.75, 0});
+    auto edge6 = get_closest_entity(mesh, 1, {(x1 + x2)/2, 1.0, 0});
+    auto edge7 = get_closest_entity(mesh, 1, {x1,          0.75, 0});
+
+    auto el1 = get_closest_entity(mesh, 2, {(x1 + x2)/2,  0.25, 0});
+    auto el2 = get_closest_entity(mesh, 2, {(x1 + x2)/2,  0.75, 0});
+
+    int myRank = utils::impl::comm_rank(meshComm);
+
+    if (myRank == 0)
+    {
+      EXPECT_EQ(entityDests->get_num_comp(v1, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(v2, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(v3, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(v4, 0), 4);
+      EXPECT_EQ(entityDests->get_num_comp(v5, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(v6, 0), 2);
+
+      EXPECT_EQ(entityDests->get_num_comp(edge1, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(edge2, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(edge3, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(edge4, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(edge5, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(edge6, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(edge7, 0), 1);
+
+      EXPECT_EQ(entityDests->get_num_comp(el1, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(el2, 0), 1);
+
+      EXPECT_EQ(get_remote(entityDests, v1, 2), mesh::RemoteSharedEntity(2, 0));
+
+      EXPECT_EQ(get_remote(entityDests, v2, 2), mesh::RemoteSharedEntity(2, 1));
+      EXPECT_EQ(get_remote(entityDests, v2, 4), mesh::RemoteSharedEntity(4, 0));
+
+      EXPECT_EQ(get_remote(entityDests, v3, 2), mesh::RemoteSharedEntity(2, 2));
+      EXPECT_EQ(get_remote(entityDests, v3, 3), mesh::RemoteSharedEntity(3, 0));
+
+      EXPECT_EQ(get_remote(entityDests, v4, 2), mesh::RemoteSharedEntity(2, 3));
+      EXPECT_EQ(get_remote(entityDests, v4, 3), mesh::RemoteSharedEntity(3, 1));
+      EXPECT_EQ(get_remote(entityDests, v4, 4), mesh::RemoteSharedEntity(4, 1));
+      EXPECT_EQ(get_remote(entityDests, v4, 5), mesh::RemoteSharedEntity(5, 0));
+
+      EXPECT_EQ(get_remote(entityDests, v5, 3), mesh::RemoteSharedEntity(3, 2));
+
+      EXPECT_EQ(get_remote(entityDests, v6, 3), mesh::RemoteSharedEntity(3, 3));
+      EXPECT_EQ(get_remote(entityDests, v6, 5), mesh::RemoteSharedEntity(5, 1));
+
+      EXPECT_EQ(get_remote(entityDests, edge1, 2), mesh::RemoteSharedEntity(2, 0));
+
+      EXPECT_EQ(get_remote(entityDests, edge2, 2), mesh::RemoteSharedEntity(2, 1));
+      EXPECT_EQ(get_remote(entityDests, edge2, 4), mesh::RemoteSharedEntity(4, 0));
+
+      EXPECT_EQ(get_remote(entityDests, edge3, 2), mesh::RemoteSharedEntity(2, 2));
+      EXPECT_EQ(get_remote(entityDests, edge3, 3), mesh::RemoteSharedEntity(3, 0));
+
+      EXPECT_EQ(get_remote(entityDests, edge4, 2), mesh::RemoteSharedEntity(2, 3));
+
+      EXPECT_EQ(get_remote(entityDests, edge5, 3), mesh::RemoteSharedEntity(3, 1));
+      EXPECT_EQ(get_remote(entityDests, edge5, 5), mesh::RemoteSharedEntity(5, 0));
+
+      EXPECT_EQ(get_remote(entityDests, edge6, 3), mesh::RemoteSharedEntity(3, 2));
+
+      EXPECT_EQ(get_remote(entityDests, edge7, 3), mesh::RemoteSharedEntity(3, 3));
+
+      EXPECT_EQ(get_remote(entityDests, el1, 2), mesh::RemoteSharedEntity(2, 0));
+      EXPECT_EQ(get_remote(entityDests, el2, 3), mesh::RemoteSharedEntity(3, 0));
+
+
+    } else if (myRank == 1)
+    {
+      EXPECT_EQ(entityDests->get_num_comp(v1, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(v2, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(v3, 0), 4);
+      EXPECT_EQ(entityDests->get_num_comp(v4, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(v5, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(v6, 0), 1); 
+
+      EXPECT_EQ(entityDests->get_num_comp(edge1, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(edge2, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(edge3, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(edge4, 0), 2);
+      EXPECT_EQ(entityDests->get_num_comp(edge5, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(edge6, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(edge7, 0), 2);      
+
+      EXPECT_EQ(entityDests->get_num_comp(el1, 0), 1);
+      EXPECT_EQ(entityDests->get_num_comp(el2, 0), 1);
+
+      EXPECT_EQ(get_remote(entityDests, v1, 2), mesh::RemoteSharedEntity(2, 1));
+      EXPECT_EQ(get_remote(entityDests, v1, 4), mesh::RemoteSharedEntity(4, 0));
+
+      EXPECT_EQ(get_remote(entityDests, v2, 4), mesh::RemoteSharedEntity(4, 2));
+
+      EXPECT_EQ(get_remote(entityDests, v3, 2), mesh::RemoteSharedEntity(2, 3));
+      EXPECT_EQ(get_remote(entityDests, v3, 3), mesh::RemoteSharedEntity(3, 1));
+      EXPECT_EQ(get_remote(entityDests, v3, 4), mesh::RemoteSharedEntity(4, 1));
+      EXPECT_EQ(get_remote(entityDests, v3, 5), mesh::RemoteSharedEntity(5, 0));
+
+      EXPECT_EQ(get_remote(entityDests, v4, 4), mesh::RemoteSharedEntity(4, 3));
+      EXPECT_EQ(get_remote(entityDests, v4, 5), mesh::RemoteSharedEntity(5, 2));
+
+      EXPECT_EQ(get_remote(entityDests, v5, 3), mesh::RemoteSharedEntity(3, 3));
+      EXPECT_EQ(get_remote(entityDests, v5, 5), mesh::RemoteSharedEntity(5, 1));
+
+      EXPECT_EQ(get_remote(entityDests, v6, 5), mesh::RemoteSharedEntity(5, 3));
+
+      EXPECT_EQ(get_remote(entityDests, edge1, 4), mesh::RemoteSharedEntity(4, 1));
+            
+      EXPECT_EQ(get_remote(entityDests, edge2, 4), mesh::RemoteSharedEntity(4, 2));
+
+      EXPECT_EQ(get_remote(entityDests, edge3, 4), mesh::RemoteSharedEntity(4, 3));
+      EXPECT_EQ(get_remote(entityDests, edge3, 5), mesh::RemoteSharedEntity(5, 1));
+
+      EXPECT_EQ(get_remote(entityDests, edge4, 2), mesh::RemoteSharedEntity(2, 1));
+      EXPECT_EQ(get_remote(entityDests, edge4, 4), mesh::RemoteSharedEntity(4, 0));
+
+      EXPECT_EQ(get_remote(entityDests, edge5, 5), mesh::RemoteSharedEntity(5, 2));
+
+      EXPECT_EQ(get_remote(entityDests, edge6, 5), mesh::RemoteSharedEntity(5, 3));
+
+      EXPECT_EQ(get_remote(entityDests, edge7, 3), mesh::RemoteSharedEntity(3, 1));
+      EXPECT_EQ(get_remote(entityDests, edge7, 5), mesh::RemoteSharedEntity(5, 0));
+
+      EXPECT_EQ(get_remote(entityDests, el1, 4), mesh::RemoteSharedEntity(4, 0));
+      EXPECT_EQ(get_remote(entityDests, el2, 5), mesh::RemoteSharedEntity(5, 0));
+    }
+  } else if (color == 1)
   {
     EXPECT_EQ(mesh::count_valid(meshScattered->get_vertices()), 4);
     EXPECT_EQ(mesh::count_valid(meshScattered->get_edges()), 4);
     EXPECT_EQ(mesh::count_valid(meshScattered->get_elements()), 1);
+
+    EXPECT_NE(entityOrigins, nullptr);
+    EXPECT_EQ(entityDests, nullptr);
 
     int myRank = utils::impl::comm_rank(meshComm);
     utils::Point lowerLeftCorner;
@@ -382,6 +759,38 @@ TEST(MeshScatter, 2x2FromTwoProcs)
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(1), 2));
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(2), 1));
 
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[0], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[1], 0), 2);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[2], 0), 2);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[3], 0), 1);
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(0), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(1), 0), 2);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(2), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(3), 0), 1);      
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el, 0), 1);      
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 0), mesh::RemoteSharedEntity(0, 0));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 0), mesh::RemoteSharedEntity(0, 1));
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 1), mesh::RemoteSharedEntity(1, 0));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 0), mesh::RemoteSharedEntity(0, 3));
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 1), mesh::RemoteSharedEntity(1, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 0), mesh::RemoteSharedEntity(0, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(0), 0), mesh::RemoteSharedEntity(0, 0));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 0), mesh::RemoteSharedEntity(0, 1));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 1), mesh::RemoteSharedEntity(1, 3));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(2), 0), mesh::RemoteSharedEntity(0, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 0), mesh::RemoteSharedEntity(0, 3));
+
+      EXPECT_EQ(get_remote(entityOrigins, el, 0), mesh::RemoteSharedEntity(0, 0));
     } else if (myRank == 1)
     {
       EXPECT_EQ(verts[0]->count_remote_shared_entities(), 1);
@@ -402,6 +811,39 @@ TEST(MeshScatter, 2x2FromTwoProcs)
 
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(0), 0));
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(1), 3));
+
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[0], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[1], 0), 2);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[2], 0), 2);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[3], 0), 1);
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(0), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(1), 0), 2);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(2), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(3), 0), 1);      
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el, 0), 1);      
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 0), mesh::RemoteSharedEntity(0, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 0), mesh::RemoteSharedEntity(0, 3));
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 1), mesh::RemoteSharedEntity(1, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 0), mesh::RemoteSharedEntity(0, 5));
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 1), mesh::RemoteSharedEntity(1, 4));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 0), mesh::RemoteSharedEntity(0, 4));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(0), 0), mesh::RemoteSharedEntity(0, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 0), mesh::RemoteSharedEntity(0, 4));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 1), mesh::RemoteSharedEntity(1, 6));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(2), 0), mesh::RemoteSharedEntity(0, 5));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 0), mesh::RemoteSharedEntity(0, 6));
+
+      EXPECT_EQ(get_remote(entityOrigins, el, 0), mesh::RemoteSharedEntity(0, 1));      
     } else if (myRank == 2)
     {
       EXPECT_EQ(verts[0]->count_remote_shared_entities(), 1);
@@ -421,7 +863,40 @@ TEST(MeshScatter, 2x2FromTwoProcs)
       EXPECT_EQ(el->get_down(3)->count_remote_shared_entities(), 1);   
 
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(2), 3));
-      EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(3), 0));            
+      EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(3), 0));   
+
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[0], 0), 2);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[1], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[2], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[3], 0), 2);
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(0), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(1), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(2), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(3), 0), 2);      
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el, 0), 1);      
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 0), mesh::RemoteSharedEntity(0, 1));
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 1), mesh::RemoteSharedEntity(1, 0));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 1), mesh::RemoteSharedEntity(1, 1));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 1), mesh::RemoteSharedEntity(1, 3));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 0), mesh::RemoteSharedEntity(0, 3));
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 1), mesh::RemoteSharedEntity(1, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(0), 1), mesh::RemoteSharedEntity(1, 0));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 1), mesh::RemoteSharedEntity(1, 1));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(2), 1), mesh::RemoteSharedEntity(1, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 0), mesh::RemoteSharedEntity(0, 1));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 1), mesh::RemoteSharedEntity(1, 3));
+
+      EXPECT_EQ(get_remote(entityOrigins, el, 1), mesh::RemoteSharedEntity(1, 0));
     } else if (myRank == 3)
     {
       EXPECT_EQ(verts[0]->count_remote_shared_entities(), 3);
@@ -441,7 +916,40 @@ TEST(MeshScatter, 2x2FromTwoProcs)
       EXPECT_EQ(el->get_down(3)->count_remote_shared_entities(), 1);
 
       EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(0), 2));
-      EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(3), 1));     
+      EXPECT_NO_THROW(mesh::get_remote_shared_entity(el->get_down(3), 1));  
+
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[0], 0), 2);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[1], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[2], 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(verts[3], 0), 2);
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(0), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(1), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(2), 0), 1);
+      EXPECT_EQ(entityOrigins->get_num_comp(el->get_down(3), 0), 2);
+
+      EXPECT_EQ(entityOrigins->get_num_comp(el, 0), 1);      
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 0), mesh::RemoteSharedEntity(0, 3));
+      EXPECT_EQ(get_remote(entityOrigins, verts[0], 1), mesh::RemoteSharedEntity(1, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[1], 1), mesh::RemoteSharedEntity(1, 3));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[2], 1), mesh::RemoteSharedEntity(1, 5));
+
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 0), mesh::RemoteSharedEntity(0, 5));
+      EXPECT_EQ(get_remote(entityOrigins, verts[3], 1), mesh::RemoteSharedEntity(1, 4));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(0), 1), mesh::RemoteSharedEntity(1, 2));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(1), 1), mesh::RemoteSharedEntity(1, 4));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(2), 1), mesh::RemoteSharedEntity(1, 5));
+
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 0), mesh::RemoteSharedEntity(0, 4));
+      EXPECT_EQ(get_remote(entityOrigins, el->get_down(3), 1), mesh::RemoteSharedEntity(1, 6));
+
+      EXPECT_EQ(get_remote(entityOrigins, el, 1), mesh::RemoteSharedEntity(1, 1));         
     }
 
     check_remotes_centroids(meshScattered);

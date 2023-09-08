@@ -2,6 +2,9 @@
 
 #include "adjacency_search.hpp"
 #include "mesh_entity.hpp"
+#include "bounding_box_search.hpp"
+#include "variable_size_field.hpp"
+#include <cstdint>
 #include <limits>
 
 namespace stk {
@@ -11,7 +14,7 @@ namespace impl {
 
 using predicates::impl::PointClassification;
 
-std::shared_ptr<mesh::Mesh> MeshProjectionCalculator::project()
+void MeshProjectionCalculator::project()
 {
   create_mesh1_fake_verts();
   project_mesh2_vertices_onto_mesh1();
@@ -19,8 +22,6 @@ std::shared_ptr<mesh::Mesh> MeshProjectionCalculator::project()
   // sortEdge2FakeVerts();
 
   m_relationalData->fakeVertsToVertsIn.resize(m_fakeVertGen.get_num_verts());
-
-  return m_meshIn;
 }
 
 void MeshProjectionCalculator::create_mesh1_fake_verts()
@@ -43,79 +44,98 @@ void MeshProjectionCalculator::create_mesh1_fake_verts()
     }
 }
 
+
+mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr>
+MeshProjectionCalculator::compute_mesh2_to_mesh1_element_maps()
+{
+  using SearchMesh1 = mesh::impl::SearchMeshElementBoundingBox;
+  using SearchMesh2 = mesh::impl::SearchMeshVertex;
+  using CoarseSearch = search::ElementToVertBoundingBoxSearch;
+  auto mesh2VertsToMesh1Els = mesh::create_variable_size_field<mesh::MeshEntityPtr>(m_mesh2, mesh::FieldShape(1, 0, 0));
+
+
+  auto searchMesh1 = std::make_shared<SearchMesh1>(m_mesh1, MPI_COMM_SELF);
+  auto searchMesh2 = std::make_shared<SearchMesh2>(m_mesh2, MPI_COMM_SELF);
+
+  bool doParallelSearch = false;
+  CoarseSearch coarseSearch(searchMesh1, searchMesh2, "local_coarse_search", MPI_COMM_SELF, doParallelSearch);
+  coarseSearch.coarse_search();
+
+  if (coarseSearch.get_unpaired_recv_entities().size() > 0)
+  {
+    throw std::runtime_error("local coarse search could not find candidate elements for some vertices");
+  }
+
+  const CoarseSearch::EntityProcRelationVec& mesh2To1Relations = coarseSearch.get_range_to_domain();
+  for (const CoarseSearch::EntityProcRelation& relation : mesh2To1Relations)
+  {
+    SearchMesh2::EntityKey mesh2VertId = relation.first.id();
+    SearchMesh1::EntityKey mesh1ElId = relation.second.id();
+    mesh::MeshEntityPtr mesh1El = m_mesh1->get_elements()[mesh1ElId];
+    mesh::MeshEntityPtr mesh2Vert = m_mesh2->get_vertices()[mesh2VertId];
+    mesh2VertsToMesh1Els->insert(mesh2Vert, 0, mesh1El);
+  }
+
+
+  return mesh2VertsToMesh1Els;
+
+}
+
 void MeshProjectionCalculator::project_mesh2_vertices_onto_mesh1()
 {
   if (m_output)
     std::cout << "\nprojecting mesh1 vertices onto mesh1 " << std::endl;
-  // TODO: for memory savings, could
-  //   1. put first result into the regular field
-  //   2. when second result is found, copy them both to variable size field
-  //   3. Need to initialize regular field to type == Exterior, so we can detect
-  //      vertices that don't project to anywhere
-  mesh::VariableSizeFieldPtr<predicates::impl::PointRecord> verts2AllClassificationsPtr =
-      mesh::create_variable_size_field<predicates::impl::PointRecord>(m_mesh2, mesh::FieldShape(1, 0, 0));
 
-  mesh::MeshEntityPtr el1;
-  std::vector<mesh::MeshEntityPtr> mesh2Els;
-  SetType<mesh::MeshEntityPtr> seenVerts; // TODO: this isn't quite what we want: there can
-                                          //       be multiple equivalent result if a vertex
-                                          //       projects onto a vertex or edge
-  auto& verts2AllClassifications = *verts2AllClassificationsPtr;
-  auto& mesh1ElToMesh2Els        = *(m_relationalData->mesh1ElementsToMesh2Elements);
-  mesh::impl::AdjacencySearch search(m_mesh1, m_mesh2);
-  while ((el1 = search.get_next(mesh2Els)))
+  std::vector<mesh::MeshEntityPtr> mesh1Els;
+
+  std::vector<predicates::impl::PointRecord> vert2AllClassifications;
+
+  auto mesh2VertsToMesh1ElsPtr = compute_mesh2_to_mesh1_element_maps(); 
+  const auto& mesh2VertsToMesh1Els = *(mesh2VertsToMesh1ElsPtr);  
+
+  for (auto& vert : m_mesh2->get_vertices())
   {
-    seenVerts.clear();
-    std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> verts;
-    for (auto& el2 : mesh2Els)
+    if (vert)
     {
-      int nverts = get_downward(el2, 0, verts.data());
-      for (int i = 0; i < nverts; ++i)
-        if (seenVerts.count(verts[i]) == 0)
+      mesh::MeshEntityPtr el2 = vert->get_up(0)->get_up(0);
+      vert2AllClassifications.clear();
+      for (auto& el1 : mesh2VertsToMesh1Els(vert, 0))
+      {
+        predicates::impl::PointRecord record = m_pointClassifier->classify(el1, el2, vert->get_point_orig(0));
+
+        if (record.type != PointClassification::Exterior)
         {
-          predicates::impl::PointRecord record = m_pointClassifier->classify(el1, el2, verts[i]->get_point_orig(0));
-
-          if (record.type != PointClassification::Exterior)
+          vert2AllClassifications.push_back(record);
+          if (m_output && vert->get_id() == 1001)
           {
-            verts2AllClassifications.insert(verts[i], 0, record);
-            if (m_output && verts[i]->get_id() == 1001)
-            {
-              std::cout << "classified vertex with id " << verts[i]->get_id() << " on element " << el1
-                        << ", record = " << record << std::endl;
-              utils::Point ptOrig = verts[i]->get_point_orig(0);
-              utils::Point ptProj = m_pointClassifier->compute_xyz_coords(record);
-              std::cout << "vertex coords = " << ptOrig << ", projected coordinates = " << ptProj << std::endl;
-              std::cout << "distance = " << std::sqrt(dot(ptOrig - ptProj, ptOrig - ptProj)) << std::endl;
-            }
+            std::cout << "classified vertex with id " << vert->get_id() << " on element " << el1
+                      << ", record = " << record << std::endl;
+            utils::Point ptOrig = vert->get_point_orig(0);
+            utils::Point ptProj = m_pointClassifier->compute_xyz_coords(record);
+            std::cout << "vertex coords = " << ptOrig << ", projected coordinates = " << ptProj << std::endl;
+            std::cout << "distance = " << std::sqrt(dot(ptOrig - ptProj, ptOrig - ptProj)) << std::endl;
           }
-
-          seenVerts.insert(verts[i]);
         }
+      }
+
+      choose_unique_vert_projection(vert, vert2AllClassifications);
     }
-
-    for (auto& el2 : mesh2Els)
-      mesh1ElToMesh2Els.insert(el1, 0, el2);
   }
-
-  choose_unique_vert_projection(verts2AllClassificationsPtr);
 }
 
 void MeshProjectionCalculator::choose_unique_vert_projection(
-    mesh::VariableSizeFieldPtr<predicates::impl::PointRecord> verts2AllClassificationsPtr)
+    mesh::MeshEntityPtr vert2, const std::vector<predicates::impl::PointRecord>& verts2AllClassifications)
 {
-  auto& verts2AllClassifications = *verts2AllClassificationsPtr;
-  for (auto& vert2 : m_mesh2->get_vertices())
-    if (vert2)
-    {
-      int nprojections = verts2AllClassifications.get_num_comp(vert2, 0);
-      if (nprojections > 0)
-      {
-        utils::Point closestPt;
-        int minIdx = get_closest_projection(verts2AllClassificationsPtr, vert2, closestPt);
-        record_vert2_classification(vert2, verts2AllClassifications(vert2, 0, minIdx), closestPt);
-      } else
-        throw std::runtime_error("vertex does not projection onto any mesh1 element");
-    }
+
+  int nprojections = verts2AllClassifications.size();
+  if (nprojections > 0)
+  {
+    utils::Point closestPt;
+    int minIdx = get_closest_projection(verts2AllClassifications, vert2, closestPt);
+    record_vert2_classification(vert2, verts2AllClassifications[minIdx], closestPt);
+  } else
+    throw std::runtime_error("vertex does not projection onto any mesh1 element");
+
 }
 
 void MeshProjectionCalculator::record_vert2_classification(mesh::MeshEntityPtr vert2,
@@ -143,31 +163,12 @@ void MeshProjectionCalculator::record_vert2_classification(mesh::MeshEntityPtr v
   verts2ClassOnMesh1(vert2, 0, 0) = record;
   verts2ToFakeVerts(vert2, 0, 0)  = fv;
   record_edge2_vertex_association(edges2ToFakeVertsIn, vert2, fv);
-  /*
-    for (int i=0; i < vert2->count_up(); ++i)
-    {
-      mesh::MeshEntityPtr edge2 = vert2->get_up(i);
-      double xi = edge2->get_down(0) == vert2 ? 0 : 1;
-      edges2_to_fake_verts_in.insert(edge2, 0, {fv, xi});
-
-      if (edges2_to_fake_verts_in.get_num_comp(edge2, 0) == 0)
-      {
-        edges2_to_fake_verts_in.insert(edge2, 0);
-        edges2_to_fake_verts_in.insert(edge2, 0);
-      }
-
-      int idx = edge2->get_down(0) == vert2 ? 0 : 1;
-      assert(edge2->get_down(idx) == vert2);
-      edges2_to_fake_verts_in(edge2, 0, idx) = VertOnEdge{fv, xi};
-
-    }
-  */
 
   if (record.type == PointClassification::Edge)
   {
     double xi                = m_pointClassifier->get_edge_xi(record);
     mesh::MeshEntityPtr edge = get_entity(record);
-    mesh1EdgesToSplit.insert(edge, 0, EdgeSplitRecord{fv, xi});
+    mesh1EdgesToSplit.insert(edge, 0, EdgeSplitRecord{fv, xi, vert2});
 
     if (m_output && m_vertIds.count(fv.id) > 0)
     {
@@ -200,16 +201,15 @@ void MeshProjectionCalculator::record_edge2_vertex_association(mesh::VariableSiz
 }
 
 int MeshProjectionCalculator::get_closest_projection(
-    mesh::VariableSizeFieldPtr<predicates::impl::PointRecord> verts2AllClassificationsPtr, mesh::MeshEntityPtr vert2,
+    const std::vector<predicates::impl::PointRecord>& verts2AllClassifications, mesh::MeshEntityPtr vert2,
     utils::Point& closestPt)
 {
-  auto& verts2AllClassifications = *verts2AllClassificationsPtr;
-  int nprojections               = verts2AllClassifications.get_num_comp(vert2, 0);
+  int nprojections = verts2AllClassifications.size();
   assert(nprojections >= 1);
 
   if (nprojections == 1)
   {
-    closestPt = m_pointClassifier->compute_xyz_coords(verts2AllClassifications(vert2, 0, 0));
+    closestPt = m_pointClassifier->compute_xyz_coords(verts2AllClassifications[0]);
     return 0;
   }
 
@@ -219,7 +219,7 @@ int MeshProjectionCalculator::get_closest_projection(
   int minIdx         = -1;
   for (int i = 0; i < nprojections; ++i)
   {
-    utils::Point destPt = m_pointClassifier->compute_xyz_coords(verts2AllClassifications(vert2, 0, i));
+    utils::Point destPt = m_pointClassifier->compute_xyz_coords(verts2AllClassifications[i]);
     utils::Point disp   = destPt - srcPt;
     double distSquared  = dot(disp, disp);
     if (distSquared < minDist)
@@ -362,7 +362,7 @@ void MeshProjectionCalculator::record_mesh2_edge_intersects_mesh1_edge(mesh::Mes
       //std::cout << std::endl;
     }
   */
-  mesh1EdgesToSplit.insert(edge1, 0, EdgeSplitRecord{fv, xi});
+  mesh1EdgesToSplit.insert(edge1, 0, EdgeSplitRecord{fv, xi, edge2});
   edges2ToFakeVertsIn.insert(edge2, 0, {fv, intersection.alpha});
 }
 

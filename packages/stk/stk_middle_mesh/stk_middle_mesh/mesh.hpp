@@ -137,7 +137,7 @@ int count_valid(const std::vector<MeshEntityPtr> entities);
 // [theta_min, theta_max], angles in degrees
 int check_angles(std::shared_ptr<Mesh> mesh, const double thetaMin, const double thetaMax);
 
-void check_topology(std::shared_ptr<Mesh> mesh);
+void check_topology(std::shared_ptr<Mesh> mesh, int maxDim=2);
 
 void check_topology_down(const std::vector<MeshEntityPtr>& entities, const std::vector<MeshEntityPtr>& entitiesDown);
 
@@ -163,6 +163,8 @@ int get_upward(MeshEntityPtr e, int dim, std::vector<MeshEntityPtr>& up);
 int get_bridge_adjacent(MeshEntityPtr e, const int viaDim, const int targetDim, std::vector<MeshEntityPtr>& entities);
 
 int get_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
+
+int get_local_id(MeshEntityPtr higherDimensionEntity, MeshEntityPtr lowerDimensionEntity);
 
 RemoteSharedEntity get_owner_remote(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
 bool check_is_entity_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);

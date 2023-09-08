@@ -35,25 +35,26 @@
 #ifndef STK_STK_SEARCH_STK_SEARCH_SEARCHINTERFACE_HPP_
 #define STK_STK_SEARCH_STK_SEARCH_SEARCHINTERFACE_HPP_
 
-#include <memory>
-#include <vector>
-#include <utility>
-#include <sstream>
-#include <iostream>
-#include <ostream>
-#include <string>
-#include <limits>
-#include <cmath>
-#include <string>
 #include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machin...
 
-namespace stk {
-namespace search {
-
+namespace stk
+{
+namespace search
+{
 template <typename TOPOLOGY, typename ENTITYKEY>
-class EvaluatePointsInterface {
+class EvaluatePointsInterface
+{
  public:
   virtual size_t num_points(ENTITYKEY, TOPOLOGY) = 0;
   virtual const double* coords(ENTITYKEY, size_t) = 0;
@@ -62,45 +63,48 @@ class EvaluatePointsInterface {
 };
 
 template <typename ENTITYKEY>
-class ExternalPointHandlerInterface {
+class ExternalPointHandlerInterface
+{
  public:
-  virtual bool
-  handle_point(const ENTITYKEY k, const double* toCoords,
-               std::vector<double>& parametricCoords,
-               double& geometricDistanceSquared,
-               bool& isWithinGeometricTolerance) const = 0;
+  virtual bool handle_point(const ENTITYKEY k,
+      const double* toCoords,
+      std::vector<double>& parametricCoords,
+      double& geometricDistanceSquared,
+      bool& isWithinGeometricTolerance) const = 0;
 
   virtual ~ExternalPointHandlerInterface() {}
 };
 
 template <typename ENTITYKEY>
-class FindParametricCoordsInterface {
+class FindParametricCoordsInterface
+{
  public:
-  virtual void
-  find_parametric_coords(const ENTITYKEY k, const double* toCoords,
-                         std::vector<double>& paramCoords, double& paramDistance,
-                         bool& isWithinParametricTolerance) const = 0;
-  virtual void
-  evaluate_parametric_coords(const ENTITYKEY k, const std::vector<double>& paramCoords,
-                             std::vector<double>& evalPoint) const = 0;
+  virtual void find_parametric_coords(const ENTITYKEY k,
+      const double* toCoords,
+      std::vector<double>& paramCoords,
+      double& paramDistance,
+      bool& isWithinParametricTolerance) const = 0;
+  virtual void evaluate_parametric_coords(
+      const ENTITYKEY k, const std::vector<double>& paramCoords, std::vector<double>& evalPoint) const = 0;
   virtual ~FindParametricCoordsInterface() {}
 };
 
 template <typename TOPOLOGY>
-class ProvideMasterElementInterface {
+class ProvideMasterElementInterface
+{
  public:
   virtual void evaluate_field(const TOPOLOGY& topo,
-                              const std::vector<double>& paramCoords, // (numParamCoords)
-                              const unsigned numFieldComponents,
-                              const std::vector<double>& fieldData, // (numFieldComponents x numNodes)
-                              std::vector<double>& result) = 0; // (numFieldComponents)
+      const std::vector<double>& paramCoords,  // (numParamCoords)
+      const unsigned numFieldComponents,
+      const std::vector<double>& fieldData,  // (numFieldComponents x numNodes)
+      std::vector<double>& result) = 0;      // (numFieldComponents)
 
   virtual void find_parametric_coordinates(const TOPOLOGY& topo,
-                                           const unsigned numCoordComponents,
-                                           const std::vector<double>& elemNodeCoords,  // (numCoordComponents x numNodes)
-                                           const std::vector<double>& inputCoords, // (numCoordComponents)
-                                           std::vector<double>& paramCoords,
-                                           double& paramDistance) = 0;
+      const unsigned numCoordComponents,
+      const std::vector<double>& elemNodeCoords,  // (numCoordComponents x numNodes)
+      const std::vector<double>& inputCoords,     // (numCoordComponents)
+      std::vector<double>& paramCoords,
+      double& paramDistance) = 0;
 
   virtual void coordinate_center(const TOPOLOGY& topo, std::vector<double>&) = 0;
   virtual unsigned num_parametric_coordinates(const TOPOLOGY& topo) = 0;
@@ -109,15 +113,22 @@ class ProvideMasterElementInterface {
   virtual ~ProvideMasterElementInterface() {}
 };
 
+//BEGINSearch_Interface
 template <typename MESH>
 struct MeshTraits;
 
 template <typename SENDMESH>
 class SourceMeshInterface
 {
-public:
-  using BOUNDINGBOX = typename MeshTraits<SENDMESH>::BoundingBox;
-  using ENTITYKEY = typename MeshTraits<SENDMESH>::EntityKey;
+ public:
+  using Entity = typename MeshTraits<SENDMESH>::Entity;
+  using EntityVec = typename MeshTraits<SENDMESH>::EntityVec;
+  using EntityKey = typename MeshTraits<SENDMESH>::EntityKey;
+  using EntityProc = typename MeshTraits<SENDMESH>::EntityProc;
+  using EntityProcVec = typename MeshTraits<SENDMESH>::EntityProcVec;
+  using Point = typename MeshTraits<SENDMESH>::Point;
+  using Box = typename MeshTraits<SENDMESH>::Box;
+  using BoundingBox = typename MeshTraits<SENDMESH>::BoundingBox;
 
   SourceMeshInterface() = default;
   virtual ~SourceMeshInterface() = default;
@@ -126,38 +137,51 @@ public:
 
   virtual std::string name() const = 0;
 
-  virtual void bounding_boxes(std::vector<BOUNDINGBOX>& boxes) const = 0;
+  virtual void bounding_boxes(std::vector<BoundingBox>& boxes) const = 0;
 
-  virtual void find_parametric_coords(const ENTITYKEY k, const double* toCoords,
-                                      std::vector<double>& parametricCoords,
-                                      double& parametricDistance,
-                                      bool& isWithinParametricTolerance) const = 0;
+  virtual void find_parametric_coords(
+    const EntityKey k,
+    const double* toCoords,
+    std::vector<double>& parametricCoords,
+    double& parametricDistance,
+    bool& isWithinParametricTolerance) const = 0;
 
-  virtual bool modify_search_outside_parametric_tolerance(const ENTITYKEY k,
-                                                          const double* toCoords,
-                                                          std::vector<double>& parametricCoords,
-                                                          double& geometricDistanceSquared,
-                                                          bool& isWithinGeometricTolerance) const = 0;
+  virtual bool modify_search_outside_parametric_tolerance(
+    const EntityKey k,
+    const double* toCoords,
+    std::vector<double>& parametricCoords,
+    double& geometricDistanceSquared,
+    bool& isWithinGeometricTolerance) const = 0;
 
-  virtual double get_distance_from_nearest_node(const ENTITYKEY k, const double* point) const = 0;
+  virtual double get_distance_from_nearest_node(
+    const EntityKey k, const double* point) const = 0;
 
-  virtual double get_closest_geometric_distance_squared(const ENTITYKEY k, const double* toCoords) const = 0;
+  virtual double get_closest_geometric_distance_squared(
+    const EntityKey k, const double* toCoords) const = 0;
 
-  virtual double get_distance_from_centroid(const ENTITYKEY k, const double* toCoords) const = 0;
+  virtual double get_distance_from_centroid(
+    const EntityKey k, const double* toCoords) const = 0;
 
-  virtual double get_distance_squared_from_centroid(const ENTITYKEY k, const double* toCoords) const = 0;
+  virtual double get_distance_squared_from_centroid(
+    const EntityKey k, const double* toCoords) const = 0;
 
-  virtual void centroid(const ENTITYKEY k, std::vector<double>& centroidVec) const = 0;
+  virtual void centroid(const EntityKey k, std::vector<double>& centroidVec) const = 0;
 
-  virtual const double* coord(const ENTITYKEY k) const = 0;
+  virtual const double* coord(const EntityKey k) const = 0;
 };
 
 template <typename RECVMESH>
 class DestinationMeshInterface
 {
-public:
-  using BOUNDINGBOX = typename MeshTraits<RECVMESH>::BoundingBox;
-  using ENTITYKEY = typename MeshTraits<RECVMESH>::EntityKey;
+ public:
+  using Entity = typename MeshTraits<RECVMESH>::Entity;
+  using EntityVec = typename MeshTraits<RECVMESH>::EntityVec;
+  using EntityKey = typename MeshTraits<RECVMESH>::EntityKey;
+  using EntityProc = typename MeshTraits<RECVMESH>::EntityProc;
+  using EntityProcVec = typename MeshTraits<RECVMESH>::EntityProcVec;
+  using Point = typename MeshTraits<RECVMESH>::Point;
+  using Sphere = typename MeshTraits<RECVMESH>::Sphere;
+  using BoundingBox = typename MeshTraits<RECVMESH>::BoundingBox;
 
   DestinationMeshInterface() = default;
   virtual ~DestinationMeshInterface() = default;
@@ -166,16 +190,19 @@ public:
 
   virtual std::string name() const = 0;
 
-  virtual void bounding_boxes(std::vector<BOUNDINGBOX>& v) const = 0;
+  virtual void bounding_boxes(std::vector<BoundingBox>& v) const = 0;
 
-  virtual const double* coord(const ENTITYKEY k) const = 0;
+  virtual const double* coord(const EntityKey k) const = 0;
   virtual double get_search_tolerance() const = 0;
   virtual double get_parametric_tolerance() const = 0;
 
-  virtual void centroid(const ENTITYKEY k, std::vector<double>& centroidVec) const = 0;
-  virtual double get_distance_from_nearest_node(const ENTITYKEY k, const double* toCoords) const = 0;
+  virtual void centroid(const EntityKey k, std::vector<double>& centroidVec) const = 0;
+  virtual double get_distance_from_nearest_node(
+    const EntityKey k, const double* toCoords) const = 0;
 };
+//ENDSearch_Interface
 
-}}
+}  // namespace search
+}  // namespace stk
 
 #endif /* STK_STK_SEARCH_STK_SEARCH_SEARCHINTERFACE_HPP_ */
