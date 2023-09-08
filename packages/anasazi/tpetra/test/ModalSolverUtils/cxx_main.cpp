@@ -85,7 +85,6 @@ int run(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
   const auto comm = Tpetra::getDefaultComm();
   const int MyPID = comm->getRank();
-  const int numProc = comm->getSize();
 
   bool verbose = false;
   if (argc>1) if (strncmp("-v",argv[1],2) == 0) verbose = true;
