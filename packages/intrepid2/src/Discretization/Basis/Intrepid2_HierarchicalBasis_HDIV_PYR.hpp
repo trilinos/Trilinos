@@ -182,6 +182,23 @@ namespace Intrepid2
       }
     }
     
+    KOKKOS_INLINE_FUNCTION
+    void E_E_CURL(Kokkos::Array<OutputScalar,3> &curl_EE,
+                  const ordinal_type &i,
+                  const OutputScratchView &PHom,
+                  const PointScalar &s0, const PointScalar &s1,
+                  const Kokkos::Array<PointScalar,3> &s0_grad,
+                  const Kokkos::Array<PointScalar,3> &s1_grad) const
+    {
+      // curl (E_i^E)(s0,s1) = (i+2) [P_i](s0,s1) (grad s0 x grad s1)
+      OutputScalar ip2_Pi = (i+2) * PHom(i);
+      cross(curl_EE, s0_grad, s1_grad);
+      for (ordinal_type d=0; d<3; d++)
+      {
+        curl_EE[d] *= ip2_Pi;
+      }
+    }
+    
     //! The "quadrilateral face" H(div) functions defined by Fuentes et al., Appendix E.2., p. 433
     //! Here, PHom are the homogenized Legendre polynomials [P](s0,s1) and [P](t0,t1), given in Appendix E.1, p. 430
     KOKKOS_INLINE_FUNCTION
@@ -203,6 +220,59 @@ namespace Intrepid2
       
       // VQUAD = EE_i x EE_j:
       cross(VQUAD, EE_i, EE_j);
+    }
+    
+    //! The "quadrilateral face" H(curl) functions defined by Fuentes et al., Appendix E.2., p. 432
+    //! Here, HomPi_s01, HomLi_t01 are the homogenized Legendre polynomials [P](s0,s1) and homogenized integrated Legendre polynomials [L](t0,t1), given in Appendix E.1, p. 430
+    KOKKOS_INLINE_FUNCTION
+    void E_QUAD(Kokkos::Array<OutputScalar,3> &EQUAD,
+                const ordinal_type &i, const ordinal_type &j,
+                const OutputScratchView &HomPi_s01,
+                const PointScalar &s0, const PointScalar &s1,
+                const Kokkos::Array<PointScalar,3> &s0_grad,
+                const Kokkos::Array<PointScalar,3> &s1_grad,
+                const OutputScratchView &HomLi_t01) const
+    {
+      const OutputScalar &phiE_j = HomLi_t01(j);
+      
+      Kokkos::Array<OutputScalar,3> EE_i;
+      E_E(EE_i, i, HomPi_s01, s0, s1, s0_grad, s1_grad);
+      
+      for (ordinal_type d=0; d<3; d++)
+      {
+        EQUAD[d] = phiE_j * EE_i[d];
+      }
+    }
+    
+    KOKKOS_INLINE_FUNCTION
+    void E_QUAD_CURL(Kokkos::Array<OutputScalar,3> &EQUAD_CURL,
+                     const ordinal_type &i, const ordinal_type &j,
+                     const OutputScratchView &HomPi_s01,
+                     const PointScalar &s0, const PointScalar &s1,
+                     const Kokkos::Array<PointScalar,3> &s0_grad,
+                     const Kokkos::Array<PointScalar,3> &s1_grad,
+                     const OutputScratchView &HomPj_t01,
+                     const OutputScratchView &HomLj_t01,
+                     const OutputScratchView &HomLj_dt_t01,
+                     const Kokkos::Array<PointScalar,3> &t0_grad,
+                     const Kokkos::Array<PointScalar,3> &t1_grad) const
+    {
+      const OutputScalar &phiE_j = HomLj_t01(j);
+      
+      Kokkos::Array<OutputScalar,3> curl_EE_i;
+      E_E_CURL(curl_EE_i, i, HomPi_s01, s0, s1, s0_grad, s1_grad);
+      
+      Kokkos::Array<OutputScalar,3> EE_i;
+      E_E(EE_i, i, HomPi_s01, s0, s1, s0_grad, s1_grad);
+      
+      Kokkos::Array<OutputScalar,3> grad_phiE_j;
+      computeGradHomLi(grad_phiE_j, j, HomPj_t01, HomLj_dt_t01, t0_grad, t1_grad);
+      
+      cross(EQUAD_CURL, grad_phiE_j, EE_i);
+      for (ordinal_type d=0; d<3; d++)
+      {
+        EQUAD_CURL[d] += phiE_j * curl_EE_i[d];
+      }
     }
     
     // This is the "Ancillary Operator" V^{tri}_{ij} on p. 433 of Fuentes et al.
@@ -315,6 +385,23 @@ namespace Intrepid2
       cross(grad_s1_cross_grad_s2, s1Grad, s2Grad);
       
       dot(divWeight, s0Grad, grad_s1_cross_grad_s2);
+    }
+    
+    KOKKOS_INLINE_FUNCTION
+    void computeGradHomLi(Kokkos::Array<OutputScalar,3> &HomLi_grad, // grad [L_i](s0,s1)
+                          const ordinal_type i,
+                          const OutputScratchView &HomPi_s0s1,    // [P_i](s0,s1)
+                          const OutputScratchView &HomLi_dt_s0s1, // [d/dt L_i](s0,s1)
+                          const Kokkos::Array<PointScalar,3> &s0Grad,
+                          const Kokkos::Array<PointScalar,3> &s1Grad) const
+    {
+//      grad [L_i](s0,s1) = [P_{i-1}](s0,s1) * grad s1 + [R_{i-1}](s0,s1) * grad (s0 + s1)
+      const auto & R_i_minus_1 = HomLi_dt_s0s1(i); // d/dt L_i = R_{i-1}
+      const auto & P_i_minus_1 = HomPi_s0s1(i-1);
+      for (ordinal_type d=0; d<3; d++)
+      {
+        HomLi_grad[d] = P_i_minus_1 * s1Grad[d] + R_i_minus_1 * (s0Grad[d] + s1Grad[d]);
+      }
     }
     
     KOKKOS_INLINE_FUNCTION
@@ -534,6 +621,147 @@ namespace Intrepid2
             }
           }
           
+          // interior functions
+          {
+            // label scratch
+            const auto & Li_muZ01    = scratch1D_1; // used for phi_k^E values in Family I, II, IV
+            const auto & Li_muX01    = scratch1D_2; // used for E_QUAD computations
+            const auto & Li_muY01    = scratch1D_3; // used for E_QUAD computations
+            const auto & Pi_muX01    = scratch1D_4; // used for E_QUAD computations where xi_1 comes first
+            const auto & Pi_muY01    = scratch1D_5; // used for E_QUAD computations where xi_2 comes first
+            const auto & Pi_muZ01    = scratch1D_6; // used for E_QUAD computations where xi_2 comes first
+            const auto & Li_dt_muX01 = scratch1D_7; // used for E_QUAD computations
+            const auto & Li_dt_muY01 = scratch1D_8; // used for E_QUAD computations
+            const auto & Li_dt_muZ01 = scratch1D_9; // used for E_QUAD computations
+            
+            const auto & muX_0 = mu[0][0]; const auto & muX_0_grad = muGrad[0][0];
+            const auto & muX_1 = mu[1][0]; const auto & muX_1_grad = muGrad[1][0];
+            const auto & muY_0 = mu[0][1]; const auto & muY_0_grad = muGrad[0][1];
+            const auto & muY_1 = mu[1][1]; const auto & muY_1_grad = muGrad[1][1];
+            const auto & muZ_0 = mu[0][2]; const auto & muZ_0_grad = muGrad[0][2];
+            const auto & muZ_1 = mu[1][2]; const auto & muZ_1_grad = muGrad[1][2];
+            
+            Polynomials::shiftedScaledIntegratedLegendreValues(Li_muX01, polyOrder_, muX_1, muX_0 + muX_1);
+            Polynomials::shiftedScaledIntegratedLegendreValues(Li_muY01, polyOrder_, muY_1, muY_0 + muY_1);
+            Polynomials::shiftedScaledIntegratedLegendreValues(Li_muZ01, polyOrder_, muZ_1, muZ_0 + muZ_1);
+            
+            Polynomials::shiftedScaledLegendreValues(Pi_muX01, polyOrder_, muX_1, muX_0 + muX_1);
+            Polynomials::shiftedScaledLegendreValues(Pi_muY01, polyOrder_, muY_1, muY_0 + muY_1);
+            Polynomials::shiftedScaledLegendreValues(Pi_muZ01, polyOrder_, muZ_1, muZ_0 + muZ_1);
+            
+            Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muX01, Pi_muX01, polyOrder_, muX_1, muX_0 + muX_1);
+            Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muY01, Pi_muY01, polyOrder_, muY_1, muY_0 + muY_1);
+            Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muZ01, Pi_muZ01, polyOrder_, muZ_1, muZ_0 + muZ_1);
+            
+            // FAMILY I -- a divergence-free family
+            // following the ESEAS ordering: k increments first
+            for (int k=2; k<=polyOrder_; k++)
+            {
+              const auto & phi_k = Li_muZ01(k);
+              Kokkos::Array<OutputScalar,3> phi_k_grad;
+              computeGradHomLi(phi_k_grad, k, Pi_muZ01, Li_dt_muZ01, muZ_0_grad, muZ_1_grad);
+              
+              for (int j=2; j<=polyOrder_; j++)
+              {
+                for (int i=0; i<polyOrder_; i++)
+                {
+                  Kokkos::Array<OutputScalar,3> EQUAD_ij_12; // 12: (xi_1, xi_2) arguments
+                  Kokkos::Array<OutputScalar,3> curl_EQUAD_ij_12;
+                  
+                  const auto &s0 = muX_0; const auto s0_grad = muX_0_grad;
+                  const auto &s1 = muX_1; const auto s1_grad = muX_1_grad;
+                                          const auto t0_grad = muY_0_grad;
+                                          const auto t1_grad = muY_1_grad;
+                  
+                  E_QUAD(EQUAD_ij_12, i, j, Pi_muX01, s0, s1, s0_grad, s1_grad, Li_muY01);
+                  
+                  E_QUAD_CURL(curl_EQUAD_ij_12, i, j, Pi_muX01, s0, s1, s0_grad, s1_grad,
+                              Pi_muY01, Li_muY01, Li_dt_muY01, t0_grad, t1_grad);
+                  
+                  // first term: muZ_0 phi^E_k curl EQUAD
+                  // we can reuse the memory for curl_EQUAD_ij_12; we won't need the values there again
+                  Kokkos::Array<OutputScalar,3> & firstTerm = curl_EQUAD_ij_12;
+                  for (ordinal_type d=0; d<3; d++)
+                  {
+                    firstTerm[d] *= muZ_0 * phi_k;
+                  }
+                  
+                  Kokkos::Array<OutputScalar,3> secondTerm; //(muZ0 grad phi + phi grad muZ0) x EQUAD
+                  
+                  Kokkos::Array<OutputScalar,3> muZ0_grad_phi_k_plus_phi_k_grad_muZ0;
+                  for (ordinal_type d=0; d<3; d++)
+                  {
+                    muZ0_grad_phi_k_plus_phi_k_grad_muZ0[d] = muZ_0 * phi_k_grad[d] + phi_k * muZ_0_grad[d];
+                  }
+                  
+                  cross(secondTerm, muZ0_grad_phi_k_plus_phi_k_grad_muZ0, EQUAD_ij_12);
+                  
+                  for (ordinal_type d=0; d<3; d++)
+                  {
+                    output_(fieldOrdinalOffset,pointOrdinal,d) = firstTerm[d] + secondTerm[d];
+                  }
+                  
+                  fieldOrdinalOffset++;
+                }
+              }
+            }
+            
+            // FAMILY II -- a divergence-free family
+            for (int k=2; k<=polyOrder_; k++)
+            {
+              for (int j=2; j<=polyOrder_; j++)
+              {
+                for (int i=0; i<polyOrder_; i++)
+                {
+                  fieldOrdinalOffset++;
+                }
+              }
+            }
+            
+            // FAMILY III -- a divergence-free family
+            for (int j=2; j<=polyOrder_; j++)
+            {
+              for (int i=2; i<=polyOrder_; i++)
+              {
+                fieldOrdinalOffset++;
+              }
+            }
+            
+            // FAMILY IV (non-trivial divergences)
+            for (int k=2; k<=polyOrder_; k++)
+            {
+              for (int j=0; j<polyOrder_; j++)
+              {
+                for (int i=0; i<polyOrder_; i++)
+                {
+                  fieldOrdinalOffset++;
+                }
+              }
+            }
+            
+            // FAMILY V (non-trivial divergences)
+            for (int j=2; j<=polyOrder_; j++)
+            {
+              for (int i=2; i<=polyOrder_; i++)
+              {
+                fieldOrdinalOffset++;
+              }
+            }
+            
+            // FAMILY VI (non-trivial divergences)
+            for (int i=2; i<=polyOrder_; i++)
+            {
+              fieldOrdinalOffset++;
+            }
+            
+            // FAMILY VII (non-trivial divergences)
+            for (int j=2; j<=polyOrder_; j++)
+            {
+              fieldOrdinalOffset++;
+            }
+          }
+          
+          
           // end rewritten portion
           
           // TODO: interior functions (below is from H^1 implementation)
@@ -621,7 +849,7 @@ namespace Intrepid2
               const auto & s0 = nu[0][a-1];
               const auto & s1 = nu[1][a-1];
               const auto & s2 = nu[2][a-1];
-              const PointScalar jacobiScaling = s0 + s1 + s2; // we can actually assume that this is 1; see comment at bottom of p. 425 of Fuentes et al. 
+              const PointScalar jacobiScaling = s0 + s1 + s2; // we can actually assume that this is 1; see comment at bottom of p. 425 of Fuentes et al.
               
               const PointScalar legendreScaling = s0 + s1;
               Polynomials::shiftedScaledLegendreValues(P, polyOrder_-1, s1, legendreScaling);
@@ -681,6 +909,48 @@ namespace Intrepid2
             }
           } // end triangle face block
           // TODO: interior functions
+          
+          {
+            // FAMILY I -- divergence free
+            // following the ESEAS ordering: k increments first
+            for (int k=2; k<=polyOrder_; k++)
+            {
+              for (int j=2; j<=polyOrder_; j++)
+              {
+                for (int i=0; i<polyOrder_; i++)
+                {
+                  output_(fieldOrdinalOffset,pointOrdinal) = 0.0;
+                  fieldOrdinalOffset++;
+                }
+              }
+            }
+            
+            // FAMILY II -- divergence free
+            // following the ESEAS ordering: k increments first
+            for (int k=2; k<=polyOrder_; k++)
+            {
+              for (int j=2; j<=polyOrder_; j++)
+              {
+                for (int i=0; i<polyOrder_; i++)
+                {
+                  output_(fieldOrdinalOffset,pointOrdinal) = 0.0;
+                  fieldOrdinalOffset++;
+                }
+              }
+            }
+            
+            // FAMILY III -- divergence free
+            for (int j=2; j<=polyOrder_; j++)
+            {
+              for (int i=2; i<=polyOrder_; i++)
+              {
+                output_(fieldOrdinalOffset,pointOrdinal) = 0.0;
+                fieldOrdinalOffset++;
+              }
+            }
+            
+          } // end interior function block
+          
         } // end OPERATOR_DIV block
           break;
         case OPERATOR_GRAD:
