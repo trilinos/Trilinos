@@ -1,11 +1,11 @@
-// @HEADER
-// ***********************************************************************
+//@HEADER
+// ************************************************************************
 //
-//                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -36,42 +36,33 @@
 //
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
-// @HEADER
+// ************************************************************************
+//@HEADER
 
-#ifndef _TEUCHOS_TYPE_TRAITS_HPP_
-#define _TEUCHOS_TYPE_TRAITS_HPP_
+#ifndef BELOS_GLOBAL_COMM_HPP
+#define BELOS_GLOBAL_COMM_HPP
 
-/*! \file Teuchos_TypeTraits.hpp
- \brief Defines basic traits allowing evaluation of type equality.
-*/
+#ifdef HAVE_MPI
 
-namespace  Teuchos {
+#include <mpi.h>
+#include <mutex>
 
-namespace TypeTraits {
+namespace Belos {
 
-/** \brief Default is_equal traits class has \c value equal to \c false, indicating that T1 and T2 are not equal,
- *
- * \ingroup teuchos_language_support_grp
- */
-template<typename T1, typename T2>
-struct is_same {
-  enum {value = false};
-};
+static std::mutex mpi_mutex;
+static MPI_Comm Global_MPI_Comm = MPI_COMM_WORLD; // CHECK: ALLOW MPI_COMM_WORLD
 
-/** \brief Partial specialization of is_equal class for equal types, where \c value equal to \c true.
- *
- * \ingroup teuchos_language_support_grp
- */
-template<typename T>
-struct is_same<T,T> {
-  enum {value = true};
-};
+inline void initialize_global_comm(MPI_Comm comm) {
+    std::lock_guard<std::mutex> guard(mpi_mutex);
+    Global_MPI_Comm = comm;
+}
+
+inline MPI_Comm get_global_comm() {
+    std::lock_guard<std::mutex> guard(mpi_mutex);
+    return Global_MPI_Comm;
+}
 
 }
 
-} // namespace Teuchos
-
-
-#endif // _TEUCHOS_TYPE_TRAITS_HPP_
-
+#endif // HAVE_MPI
+#endif // BELOS_GLOBAL_COMM_HPP
