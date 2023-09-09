@@ -89,6 +89,7 @@ namespace {
   using Teuchos::TRANS;
   using Teuchos::NO_TRANS;
 
+
   using Tpetra::global_size_t;
   using Tpetra::CrsMatrix;
   using Tpetra::MultiVector;
@@ -96,11 +97,13 @@ namespace {
   using Tpetra::createContigMap;
   using Tpetra::createUniformContigMap;
 
+
+
   using Amesos2::STRUMPACK;
+
   using Amesos2::Meta::is_same;
 
   typedef Tpetra::Map<>::node_type Node;
-
 
   bool testMpi = true;
 
@@ -700,7 +703,25 @@ namespace {
   UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)                \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
+  // UNIT_TEST_GROUP_ORDINAL(int)
+
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   UNIT_TEST_GROUP_ORDINAL(int)
+  typedef long int LongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
+  #ifdef HAVE_TPETRA_INT_LONG_LONG
+  typedef long long int LongLongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
+  #endif
+#else  //ETI
+  #ifdef HAVE_TPETRA_INST_INT_INT
+  UNIT_TEST_GROUP_ORDINAL(int)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+  typedef long int LongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongInt)
+  #endif
+#endif  // EXPL-INST
 
   //#  ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   //typedef long int LongInt;
