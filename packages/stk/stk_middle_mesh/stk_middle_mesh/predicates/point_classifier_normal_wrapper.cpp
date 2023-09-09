@@ -148,15 +148,15 @@ PointRecord PointClassifierNormalWrapper::create_vert_record(mesh::MeshEntityPtr
     return m_quadToTriangles.create_record(el, vertId);
 }
 
-PointRecord PointClassifierNormalWrapper::create_edge_record(mesh::MeshEntityPtr el, int edgeId, double edgeXi)
+PointRecord PointClassifierNormalWrapper::create_edge_record(mesh::MeshEntityPtr el, int edgeId, double edgeXiOnReferenceEl)
 {
   assert(el->get_type() == mesh::MeshEntityType::Triangle || el->get_type() == mesh::MeshEntityType::Quad);
 
   if (el->get_type() == mesh::MeshEntityType::Triangle) {
-    PointRecordForTriangle record = m_triangleCoordUtils.create_record(el, edgeId, edgeXi);
+    PointRecordForTriangle record = m_triangleCoordUtils.create_record(el, edgeId, edgeXiOnReferenceEl);
     return PointRecord(PointClassification::Edge, edgeId, el, record);
   } else // quad
-    return m_quadToTriangles.create_record(el, edgeId, edgeXi);
+    return m_quadToTriangles.create_record(el, edgeId, edgeXiOnReferenceEl);
 }
 
 PointRecord PointClassifierNormalWrapper::classify_onto(const PointRecord& record, mesh::MeshEntityPtr el)
@@ -313,70 +313,15 @@ utils::Point PointClassifierNormalWrapper::compute_triangle_xi_coords(std::array
 
   std::array<utils::Point, 3> vertsProjected;
   for (int i = 0; i < 3; ++i)
+  {
     vertsProjected[i] = utils::Point(verts[i][coord1], verts[i][coord2]);
+  }
   utils::Point ptProjected(pt[coord1], pt[coord2]);
 
   mesh::impl::ElementOperations2D elemOps;
   return elemOps.compute_tri_xi_coords(vertsProjected, ptProjected);
 }
 
-namespace {
-int get_vert_idx(const std::array<mesh::MeshEntityPtr, 4>& verts, int nverts, mesh::MeshEntityPtr vert)
-{
-  for (int i = 0; i < nverts; ++i)
-    if (verts[i] == vert)
-      return i;
-
-  return -1;
-}
-} // namespace
-
-void PointClassifierNormalWrapper::compute_averaged_normal_vectors(std::shared_ptr<mesh::Mesh> mesh)
-{
-  m_normalField = mesh::create_field<utils::Point>(mesh, mesh::FieldShape(1, 0, 0), 1, utils::Point(0, 0, 0));
-  auto& field   = *m_normalField;
-
-  std::vector<mesh::MeshEntityPtr> elements;
-  std::array<mesh::MeshEntityPtr, 4> verts;
-  for (auto& vert : mesh->get_vertices())
-    if (vert)
-    {
-      elements.clear();
-      get_upward(vert, 2, elements);
-
-      for (auto el : elements)
-      {
-        // get index of vert
-        int nverts  = get_downward(el, 0, verts.data());
-        int vertIdx = get_vert_idx(verts, nverts, vert);
-        assert(vertIdx >= 0 && vertIdx < nverts);
-
-        // get two adjacent vertices
-        mesh::MeshEntityPtr vertNext = verts[(vertIdx + 1) % nverts];
-        mesh::MeshEntityPtr vertPrev = verts[(vertIdx - 1 + nverts) % nverts];
-
-        // form form vector v_i+1 - v_i and v_i-1 - v_i
-        utils::Point b1 = vertNext->get_point_orig(0) - vert->get_point_orig(0);
-        utils::Point b2 = vertPrev->get_point_orig(0) - vert->get_point_orig(0);
-
-        // compute normal
-        field(vert, 0, 0) += cross(b1, b2);
-      }
-
-      double totalEdgeLength = 0;
-      for (int i = 0; i < vert->count_up(); ++i)
-      {
-        mesh::MeshEntityPtr edge = vert->get_up(i);
-        utils::Point disp        = edge->get_down(1)->get_point_orig(0) - edge->get_down(0)->get_point_orig(0);
-        totalEdgeLength += std::sqrt(dot(disp, disp));
-      }
-      double avgEdgeLength = totalEdgeLength / vert->count_up();
-
-      utils::Point normal = field(vert, 0, 0);
-      normal              = avgEdgeLength * normal / std::sqrt(dot(normal, normal));
-      field(vert, 0, 0)   = normal;
-    }
-}
 
 bool PointClassifierNormalWrapper::is_entity_on_mesh(mesh::MeshEntityPtr entity)
 {

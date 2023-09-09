@@ -32,40 +32,28 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-
-#
-# A) Package-specific configuration options
-#
-
-#TRIBITS_CONFIGURE_FILE(STK_config.h)
-
-#
-# B) Define the header and source files (and directories)
-#
-
 ADD_SUBDIRECTORY(kokkos_simd)
-
-#
-# src
-#
 
 SET(HEADERS "")
 SET(SOURCES "")
 
-#
-# Core headers
-#
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
-
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB KOKKOS_SIMD_HEADERS kokkos_simd/*.hpp)
 
-#
-# C) Define the targets for package's library(s)
-#
+IF(HAVE_STK_Trilinos)
+  message("in stk_simd, PACKAGE_NAME: ${PACKAGE_NAME} PARENT_PACKAGE_NAME: ${PARENT_PACKAGE_NAME}")
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
+  TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_simd)
+ELSE()
+  add_library(stk_simd INTERFACE ${HEADERS})
+  target_link_libraries(stk_simd INTERFACE stk_math)
+  target_link_libraries(stk_simd INTERFACE stk_util_util)
+
+  target_include_directories(stk_simd INTERFACE
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_simd>
+    $<INSTALL_INTERFACE:include>
+  )
+ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION
   ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_simd/)

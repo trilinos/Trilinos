@@ -65,8 +65,8 @@ struct DeduceFunctorExecutionSpace {
 template <typename Func>
 KOKKOS_INLINE_FUNCTION
 constexpr bool is_gpu() {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 using execution_space = typename internal::DeduceFunctorExecutionSpace<Func>::execution_space;
-#ifdef KOKKOS_ENABLE_CUDA
   return std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   return false;

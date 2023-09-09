@@ -397,15 +397,16 @@ std::pair<int, int> get_comm_sizes_on_root(MPI_Comm comm1, MPI_Comm comm2, MPI_C
   MPI_Request sendReq1 = MPI_REQUEST_NULL, sendReq2 = MPI_REQUEST_NULL, recvReq1 = MPI_REQUEST_NULL,
               recvReq2 = MPI_REQUEST_NULL;
 
+  int mesh1CommSizeSend = 0, mesh2CommSizeSend = 0;
   if (comm1 != MPI_COMM_NULL && utils::impl::comm_rank(comm1) == 0)
   {
-    int mesh1CommSizeSend = utils::impl::comm_size(comm1);
+    mesh1CommSizeSend = utils::impl::comm_size(comm1);
     MPI_Isend(&mesh1CommSizeSend, 1, MPI_INT, rootRank, tag1, unionComm, &sendReq1);
   }
 
   if (comm2 != MPI_COMM_NULL && utils::impl::comm_rank(comm2) == 0)
   {
-    int mesh2CommSizeSend = utils::impl::comm_size(comm2);
+    mesh2CommSizeSend = utils::impl::comm_size(comm2);
     MPI_Isend(&mesh2CommSizeSend, 1, MPI_INT, rootRank, tag2, unionComm, &sendReq2);
   }
 

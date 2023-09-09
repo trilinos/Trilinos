@@ -18,18 +18,17 @@ class MeshProjectionCalculator
 
   public:
     MeshProjectionCalculator(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,
-                             std::shared_ptr<mesh::Mesh> meshIn, std::shared_ptr<MeshRelationalData> relationalData,
+                             std::shared_ptr<MeshRelationalData> relationalData,
                              std::shared_ptr<predicates::impl::PointClassifierNormalWrapper> pointClassifier,
                              const middle_mesh::impl::EdgeTracerTolerances& edgeTracerTolerances)
       : m_mesh1(mesh1)
       , m_mesh2(mesh2)
-      , m_meshIn(meshIn)
       , m_pointClassifier(pointClassifier)
       , m_edgeTracer(m_mesh2, m_pointClassifier->get_normal_field(), edgeTracerTolerances)
       , m_relationalData(relationalData)
     {}
 
-    std::shared_ptr<mesh::Mesh> project();
+    void project();
 
   private:
     template <typename T>
@@ -39,10 +38,12 @@ class MeshProjectionCalculator
 
     void create_mesh1_fake_verts();
 
+    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> compute_mesh2_to_mesh1_element_maps();
+
     void project_mesh2_vertices_onto_mesh1();
 
     void choose_unique_vert_projection(
-        mesh::VariableSizeFieldPtr<predicates::impl::PointRecord> verts2AllClassificationsPtr);
+        mesh::MeshEntityPtr vert2, const std::vector<predicates::impl::PointRecord>& verts2AllClassificationsPtr);
 
     void record_vert2_classification(mesh::MeshEntityPtr vert2, const predicates::impl::PointRecord& record,
                                      const utils::Point& pt);
@@ -50,7 +51,7 @@ class MeshProjectionCalculator
     void record_edge2_vertex_association(mesh::VariableSizeField<VertOnEdge>& edges2ToFakeVertsIn,
                                          mesh::MeshEntityPtr vert2, FakeVert fv);
 
-    int get_closest_projection(mesh::VariableSizeFieldPtr<predicates::impl::PointRecord> verts2AllClassificationsPtr,
+    int get_closest_projection(const std::vector<predicates::impl::PointRecord>& verts2AllClassificationsPtr,
                                mesh::MeshEntityPtr vert2, utils::Point& closestPt);
 
     void intersect_mesh2_edges_with_mesh1();
@@ -63,7 +64,6 @@ class MeshProjectionCalculator
 
     std::shared_ptr<mesh::Mesh> m_mesh1;
     std::shared_ptr<mesh::Mesh> m_mesh2;
-    std::shared_ptr<mesh::Mesh> m_meshIn;
     std::shared_ptr<predicates::impl::PointClassifierNormalWrapper> m_pointClassifier;
     EdgeTracer m_edgeTracer;
     FakeVertGenerator m_fakeVertGen;

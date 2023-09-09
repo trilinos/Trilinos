@@ -40,19 +40,21 @@ VariableSizeFieldPtr<int> DestinationFieldGatherer::gather_vert_and_edge_destina
 void DestinationFieldGatherer::get_local_destinations_and_pack_buffers(Exchanger& exchanger,
                                                                        int dim, VariableSizeFieldPtr<int> fieldPtr)
 {
-  int myRank = utils::impl::comm_rank(m_mesh->get_comm());
   std::vector<int> destRanks;
   for (auto& entity : m_mesh->get_mesh_entities(dim))
     if (entity)
     {
       get_destinations_from_scatterspec(entity, destRanks);
 
-      RemoteSharedEntity owner = get_owner_remote(m_mesh, entity);
-      if (owner.remoteRank != myRank)
+
+      for (int i=0; i < entity->count_remote_shared_entities(); ++i)      
       {
-        exchanger.get_send_buf(owner.remoteRank).pack(owner.remoteId);
-        exchanger.get_send_buf(owner.remoteRank).pack(destRanks);
-      } else if (fieldPtr)
+        RemoteSharedEntity remote = entity->get_remote_shared_entity(i);
+        exchanger.get_send_buf(remote.remoteRank).pack(remote.remoteId);
+        exchanger.get_send_buf(remote.remoteRank).pack(destRanks);
+      }
+
+      if (fieldPtr)
       {
         for (auto& destRank : destRanks)
           fieldPtr->insert(entity, 0, destRank);
@@ -98,8 +100,6 @@ void DestinationFieldGatherer::unpack_buffer(int rank, int dim, stk::CommBuffer&
     {
       field.insert(entity, 0, destRank);
     }
-
-
   }
 }
 

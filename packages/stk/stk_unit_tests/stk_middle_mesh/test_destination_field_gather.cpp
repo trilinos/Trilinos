@@ -112,21 +112,21 @@ TEST(DestinationFieldGatherer, 2Procs)
     auto el2 = find_closest_entity(mesh, 2, {0.75, 0.75, 0});
 
 
-    expect_eq(get_values(gatheredDestField, v1, 0), {});
+    expect_eq(get_values(gatheredDestField, v1, 0), {0, 2});
     expect_eq(get_values(gatheredDestField, v2, 0), {2});
-    expect_eq(get_values(gatheredDestField, v3, 0), {});
+    expect_eq(get_values(gatheredDestField, v3, 0), {0, 1, 2, 3});
     expect_eq(get_values(gatheredDestField, v4, 0), {2, 3});
-    expect_eq(get_values(gatheredDestField, v5, 0), {});
+    expect_eq(get_values(gatheredDestField, v5, 0), {1, 3});
     expect_eq(get_values(gatheredDestField, v6, 0), {3});
 
     expect_eq(get_values(gatheredDestField, el1->get_down(0), 0), {2});
     expect_eq(get_values(gatheredDestField, el1->get_down(1), 0), {2});
     expect_eq(get_values(gatheredDestField, el1->get_down(2), 0), {2, 3});
-    expect_eq(get_values(gatheredDestField, el1->get_down(3), 0), {});
+    expect_eq(get_values(gatheredDestField, el1->get_down(3), 0), {0, 2});
 
     expect_eq(get_values(gatheredDestField, el2->get_down(1), 0), {3});
     expect_eq(get_values(gatheredDestField, el2->get_down(2), 0), {3});
-    expect_eq(get_values(gatheredDestField, el2->get_down(3), 0), {});
+    expect_eq(get_values(gatheredDestField, el2->get_down(3), 0), {1, 3});
   }
 }
 
@@ -195,15 +195,15 @@ TEST(DestinationFieldGatherer, 4ProcsMultipleDestinations)
     auto v4 = find_closest_entity(mesh, 0, {1.0, 0.5, 0});
     auto el1 = find_closest_entity(mesh, 2, {0.75, 0.25, 0});
 
-    expect_eq(get_values(gatheredDestField, v1, 0), {});
+    expect_eq(get_values(gatheredDestField, v1, 0), {0, 1, 2});
     expect_eq(get_values(gatheredDestField, v2, 0), {1, 2});
-    expect_eq(get_values(gatheredDestField, v3, 0), {});
+    expect_eq(get_values(gatheredDestField, v3, 0), {0, 1, 2, 3});
     expect_eq(get_values(gatheredDestField, v4, 0), {1, 2, 3});
 
     expect_eq(get_values(gatheredDestField, el1->get_down(0), 0), {1, 2});
     expect_eq(get_values(gatheredDestField, el1->get_down(1), 0), {1, 2});
     expect_eq(get_values(gatheredDestField, el1->get_down(2), 0), {1, 2, 3});
-    expect_eq(get_values(gatheredDestField, el1->get_down(3), 0), {});
+    expect_eq(get_values(gatheredDestField, el1->get_down(3), 0), {0, 1, 2});
   } else if (myrank == 2)
   {
     auto v1 = find_closest_entity(mesh, 0, {0.0, 0.5, 0});
@@ -212,12 +212,12 @@ TEST(DestinationFieldGatherer, 4ProcsMultipleDestinations)
     auto v4 = find_closest_entity(mesh, 0, {0.5, 1.0, 0});
     auto el1 = find_closest_entity(mesh, 2, {0.25, 0.75, 0});
 
-    expect_eq(get_values(gatheredDestField, v1, 0), {});
-    expect_eq(get_values(gatheredDestField, v2, 0), {});
+    expect_eq(get_values(gatheredDestField, v1, 0), {0, 1, 2, 3});
+    expect_eq(get_values(gatheredDestField, v2, 0), {0, 1, 2, 3});
     expect_eq(get_values(gatheredDestField, v3, 0), {2, 3});
     expect_eq(get_values(gatheredDestField, v4, 0), {1, 2, 3});
 
-    expect_eq(get_values(gatheredDestField, el1->get_down(0), 0), {});
+    expect_eq(get_values(gatheredDestField, el1->get_down(0), 0), {0, 1, 2, 3});
     expect_eq(get_values(gatheredDestField, el1->get_down(1), 0), {1, 2, 3});
     expect_eq(get_values(gatheredDestField, el1->get_down(2), 0), {2, 3});
     expect_eq(get_values(gatheredDestField, el1->get_down(3), 0), {2, 3});    
@@ -229,16 +229,14 @@ TEST(DestinationFieldGatherer, 4ProcsMultipleDestinations)
     auto v4 = find_closest_entity(mesh, 0, {1.0, 1.0, 0});
     auto el1 = find_closest_entity(mesh, 2, {0.75, 0.75, 0});
 
-    expect_eq(get_values(gatheredDestField, v1, 0), {});
-    expect_eq(get_values(gatheredDestField, v2, 0), {});
-    expect_eq(get_values(gatheredDestField, v3, 0), {});
+    expect_eq(get_values(gatheredDestField, v1, 0), {0, 1, 2, 3});
+    expect_eq(get_values(gatheredDestField, v2, 0), {1, 2, 3});
+    expect_eq(get_values(gatheredDestField, v3, 0), {1, 2, 3});
     expect_eq(get_values(gatheredDestField, v4, 0), {1, 3});
 
-    expect_eq(get_values(gatheredDestField, el1->get_down(0), 0), {});
+    expect_eq(get_values(gatheredDestField, el1->get_down(0), 0), {1, 2, 3});
     expect_eq(get_values(gatheredDestField, el1->get_down(1), 0), {1, 3});
     expect_eq(get_values(gatheredDestField, el1->get_down(2), 0), {1, 3});
-    expect_eq(get_values(gatheredDestField, el1->get_down(3), 0), {});     
+    expect_eq(get_values(gatheredDestField, el1->get_down(3), 0), {1, 2, 3});     
   }
 }
-
-//TODO: test 4 procs, test multiple destinations

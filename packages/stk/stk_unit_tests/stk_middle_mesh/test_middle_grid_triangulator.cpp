@@ -110,11 +110,7 @@ TEST_F(Nonconformal4Tester, El1ContainedInEl2)
   std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 2, 3}};
   create_mesh2(mesh2Verts, mesh2Els);
 
-  stk::middle_mesh::mesh::impl::print_vert_edges("mesh1", mMesh1);
-  stk::middle_mesh::mesh::impl::print_vert_edges("mesh2", mMesh2);
-
   run();
-  stk::middle_mesh::mesh::impl::print_vert_edges("mesh_in", mMeshIn);
 
   stk::middle_mesh::test_util::test_number_of_elements(mMeshIn, 10);
 }

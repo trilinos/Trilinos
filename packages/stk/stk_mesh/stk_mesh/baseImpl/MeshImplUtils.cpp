@@ -46,6 +46,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/EntityGhostData.hpp>
+#include <stk_mesh/baseImpl/Visitors.hpp>
 
 #include <vector>
 
@@ -1314,7 +1315,8 @@ void comm_sync_nonowned_sends(
       Entity const e = mesh.get_entity( entity_key );
 
       STK_ThrowAssert(parallel_rank != proc);
-      STK_ThrowAssert(mesh.is_valid(e));
+      STK_ThrowAssertMsg(mesh.is_valid(e), "comm_sync_nonowned_sends mod-cycle="<<mesh.synchronized_count()<<": P"<<parallel_rank
+                                           <<" recvd "<<entity_key<<" from P"<<p<<" but valid entity not found.");
 
       //Receiving a ghosting need for an entity I own, add it.
       entityProcMapping.addEntityProc(e, proc);
@@ -1811,6 +1813,52 @@ bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entit
   return bulk.is_valid(entity) && !impl::has_upward_connectivity(bulk, entity);
 }
   
+void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk,
+                                            stk::mesh::Entity connectedEntity,
+                                            EntityVector& scratchSpace)
+{
+  impl::StoreEntity storeEntity(bulk);
+  impl::VisitUpwardClosure(bulk, connectedEntity, storeEntity);
+
+  storeEntity.store_visited_entities_in_vec(scratchSpace);
+  stk::util::sort_and_unique(scratchSpace, EntityLess(bulk));
+
+  for(unsigned i=0; i<scratchSpace.size(); ++i) {
+    int reverseIdx = scratchSpace.size() - 1 - i;
+    Entity upwardEntity = scratchSpace[reverseIdx];
+
+    if (bulk.is_valid(upwardEntity) && bulk.bucket(upwardEntity).in_aura()) {
+      bulk.destroy_entity(upwardEntity);
+    }
+  }
+}
+
+void print_upward_connected_entities(stk::mesh::BulkData& bulk,
+                                     stk::mesh::Entity entity,
+                                     std::ostream& os)
+{
+  impl::StoreEntity storeEntity(bulk);
+  impl::VisitUpwardClosure(bulk, entity, storeEntity);
+
+  EntityVector scratchSpace;
+  storeEntity.store_visited_entities_in_vec(scratchSpace);
+  stk::util::sort_and_unique(scratchSpace, EntityLess(bulk));
+
+  os << "upw-conn-entities of " << bulk.entity_key(entity) << ": ";
+  for(unsigned i=0; i<scratchSpace.size(); ++i) {
+    Entity upwardEntity = scratchSpace[i];
+    if (upwardEntity != entity) {
+      const bool owned = bulk.bucket(upwardEntity).owned();
+      const bool shrd = bulk.bucket(upwardEntity).shared();
+      const bool recvAura = bulk.bucket(upwardEntity).in_aura();
+      const bool recvCG = bulk.in_receive_custom_ghost(bulk.entity_key(upwardEntity));
+      os << bulk.entity_key(upwardEntity) << "{"<<(owned?"Owned":"")<<(shrd?"Shrd":"")<<(recvAura?"RcvAu":"")<<(recvCG?"RcvCG":"")
+         << bulk.state(upwardEntity) << "} ";
+    }
+  }
+  os << std::endl;
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

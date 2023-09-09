@@ -32,24 +32,31 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
-
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_EXECUTABLE(
-    stk_search_utest
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE(stk_search_utest
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
-    )
+  )
 
-TRIBITS_ADD_TEST(
-    stk_search_utest
+  TRIBITS_ADD_TEST(stk_search_utest
     ARGS ""
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
     NUM_MPI_PROCS 1
     NOEXEPREFIX
-)
+  )
+else()
+  add_executable(stk_search_utest ${SOURCES})
+  target_link_libraries(stk_search_utest stk_search)
+  target_link_libraries(stk_search_utest stk_unit_test_utils)
+  target_link_libraries(stk_search_utest stk_util_diag)
+  target_link_libraries(stk_search_utest stk_util_parallel)
+  target_link_libraries(stk_search_utest stk_unit_main)
+
+  add_test(NAME "stk_search_utest" COMMAND stk_search_utest)
+endif()
