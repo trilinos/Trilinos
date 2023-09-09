@@ -241,7 +241,7 @@ bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
 {
-  stk::balance::internal::register_internal_fields(stkMeshBulkData, balanceSettings);
+  stk::balance::internal::register_internal_fields_and_parts(stkMeshBulkData, balanceSettings);
 
   if (balanceSettings.shouldPrintDiagnostics()) {
     set_up_diagnostics(balanceSettings);
@@ -259,7 +259,7 @@ bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData&
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
 {
-  stk::balance::internal::register_internal_fields(stkMeshBulkData, balanceSettings);
+  stk::balance::internal::register_internal_fields_and_parts(stkMeshBulkData, balanceSettings);
 
   if (balanceSettings.shouldPrintDiagnostics()) {
     set_up_diagnostics(balanceSettings);
@@ -279,7 +279,7 @@ bool balanceStkMeshNodes(const BalanceSettings& balanceSettings, stk::mesh::Bulk
 {
   if ((balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE) && balanceSettings.useNodeBalancer())
   {
-    stk::balance::internal::register_internal_fields(stkMeshBulkData, balanceSettings);
+    stk::balance::internal::register_internal_fields_and_parts(stkMeshBulkData, balanceSettings);
 
     if (balanceSettings.shouldPrintDiagnostics()) {
       set_up_diagnostics(balanceSettings);

@@ -45,7 +45,6 @@ MeshBuilder::MeshBuilder()
    m_haveComm(false),
    m_auraOption(BulkData::AUTO_AURA),
    m_addFmwkData(false),
-   m_fieldDataManager(nullptr),
    m_initialBucketCapacity(stk::mesh::get_default_initial_bucket_capacity()),
    m_maximumBucketCapacity(stk::mesh::get_default_maximum_bucket_capacity()),
    m_spatialDimension(0),
@@ -59,7 +58,6 @@ MeshBuilder::MeshBuilder(ParallelMachine comm)
    m_haveComm(true),
    m_auraOption(BulkData::AUTO_AURA),
    m_addFmwkData(false),
-   m_fieldDataManager(nullptr),
    m_initialBucketCapacity(stk::mesh::get_default_initial_bucket_capacity()),
    m_maximumBucketCapacity(stk::mesh::get_default_maximum_bucket_capacity()),
    m_spatialDimension(0),
@@ -99,9 +97,17 @@ MeshBuilder& MeshBuilder::set_add_fmwk_data(bool addFmwkData)
   return *this;
 }
 
-MeshBuilder& MeshBuilder::set_field_data_manager(FieldDataManager* fieldDataManager)
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2023-09-27
+STK_DEPRECATED MeshBuilder& MeshBuilder::set_field_data_manager(FieldDataManager* fieldDataManager)
 {
-  m_fieldDataManager = fieldDataManager;
+  m_fieldDataManager = std::unique_ptr<FieldDataManager>(fieldDataManager);
+  return *this;
+}
+#endif
+
+MeshBuilder& MeshBuilder::set_field_data_manager(std::unique_ptr<FieldDataManager> fieldDataManager)
+{
+  m_fieldDataManager = std::move(fieldDataManager);
   return *this;
 }
 
@@ -157,7 +163,7 @@ std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData
 #ifdef SIERRA_MIGRATION
                                                 m_addFmwkData,
 #endif
-                                                m_fieldDataManager,
+                                                std::move(m_fieldDataManager),
                                                 m_initialBucketCapacity,
                                                 m_maximumBucketCapacity,
                                                 create_aura_ghosting(),
