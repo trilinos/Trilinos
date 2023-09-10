@@ -28,9 +28,9 @@
 
 #ifndef AMESOS_CSPARSE_H
 #define AMESOS_CSPARSE_H
-#ifdef HAVE_AMESOS_CSPARSE
 
 #include "Amesos_ConfigDefs.h"
+#ifdef HAVE_AMESOS_CSPARSE
 #include "Amesos_BaseSolver.h"
 #include "Amesos_NoCopiable.h"
 #include "Amesos_Utils.h"
