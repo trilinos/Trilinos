@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,6 +8,7 @@
 /* symmlq.f -- translated by f2c (version of 16 May 1991  13:06:06).
  */
 
+#include "prototypes.h"
 #include <math.h>
 
 /* Table of constant values */
@@ -37,12 +38,9 @@ int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w,
   extern int    aprod(long *lnvtxs, double *x, double *y, double *dA, double *vwsqrt, double *work,
                       double *dorthlist /* vectors to orthogonalize against */);
   static double bstep;
-  extern /* Subroutine */ int chdcopy();
-  static double               epsln;
-  extern /* Subroutine */ int chdaxpy();
-  static double               tnorm, cs, ynorm2, sn, cgnorm;
-  extern /* Subroutine */ int msolve(long int *nvtxs, double *x, double *y);
-  static double               snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
+  static double epsln;
+  static double tnorm, cs, ynorm2, sn, cgnorm;
+  static double snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
 
   /*     ------------------------------------------------------------------
    */

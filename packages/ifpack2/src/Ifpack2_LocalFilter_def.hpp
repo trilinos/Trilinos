@@ -853,8 +853,8 @@ typename
 LocalFilter<MatrixType>::mag_type
 LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
-  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
-  typedef Kokkos::Details::ArithTraits<mag_type> STM;
+  typedef Kokkos::ArithTraits<scalar_type> STS;
+  typedef Kokkos::ArithTraits<mag_type> STM;
   typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
   const size_type maxNumRowEnt = getLocalMaxNumRowEntries ();

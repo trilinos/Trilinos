@@ -27,19 +27,6 @@ void impl_test_axpby(int N) {
   using ScalarB    = typename ViewTypeB::value_type;
   using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
 
-  using BaseTypeA = Kokkos::View<
-      ScalarA * [2],
-      typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>;
-  using BaseTypeB = Kokkos::View<
-      ScalarB * [2],
-      typename std::conditional<std::is_same<typename ViewTypeB::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>;
-
   ScalarA a = 3;
   ScalarB b = 5;
   // eps should probably be based on ScalarB since that is the type
@@ -51,22 +38,9 @@ void impl_test_axpby(int N) {
        Kokkos::ArithTraits<ScalarB>::abs(b)) *
       max_val * eps;
 
-  BaseTypeA b_x("X", N);
-  BaseTypeB b_y("Y", N);
-  BaseTypeB b_org_y("Org_Y", N);
-
-  auto h_b_org_y =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_y);
-  ViewTypeA x                        = Kokkos::subview(b_x, Kokkos::ALL(), 0);
-  ViewTypeB y                        = Kokkos::subview(b_y, Kokkos::ALL(), 0);
-  typename ViewTypeA::const_type c_x = x;
-  typename ViewTypeB::const_type c_y = y;
-
-  typename BaseTypeA::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
-  typename BaseTypeB::HostMirror h_b_y = Kokkos::create_mirror_view(b_y);
-
-  typename ViewTypeA::HostMirror h_x = Kokkos::subview(h_b_x, Kokkos::ALL(), 0);
-  typename ViewTypeB::HostMirror h_y = Kokkos::subview(h_b_y, Kokkos::ALL(), 0);
+  view_stride_adapter<ViewTypeA> x("X", N);
+  view_stride_adapter<ViewTypeB> y("Y", N);
+  view_stride_adapter<ViewTypeB> org_y("Org_Y", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
@@ -74,34 +48,28 @@ void impl_test_axpby(int N) {
   {
     ScalarA randStart, randEnd;
     Test::getRandomBounds(max_val, randStart, randEnd);
-    Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
-  }
-  {
-    ScalarB randStart, randEnd;
-    Test::getRandomBounds(max_val, randStart, randEnd);
-    Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
 
-  Kokkos::deep_copy(b_org_y, b_y);
-  Kokkos::deep_copy(h_b_org_y, b_org_y);
+  Kokkos::deep_copy(x.h_base, x.d_base);
+  Kokkos::deep_copy(org_y.h_base, y.d_base);
 
-  Kokkos::deep_copy(h_b_x, b_x);
-
-  // Run with non-const input (x) and verify
-  KokkosBlas::axpby(a, x, b, y);
-  Kokkos::deep_copy(h_b_y, b_y);
+  // Run with non-const input and verify
+  KokkosBlas::axpby(a, x.d_view, b, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i) + b * h_b_org_y(i, 0)),
-                   h_y(i), 2 * max_error);
+    EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i) + b * org_y.h_view(i)),
+                   y.h_view(i), 2 * max_error);
   }
 
-  Kokkos::deep_copy(b_y, b_org_y);
-  // Run again with const input (c_x)
-  KokkosBlas::axpby(a, c_x, b, y);
-  Kokkos::deep_copy(h_b_y, b_y);
+  // Re-randomize y
+  Kokkos::deep_copy(y.d_base, org_y.h_base);
+  // Run again with const input
+  KokkosBlas::axpby(a, x.d_view_const, b, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i) + b * h_b_org_y(i, 0)),
-                   h_y(i), 2 * max_error);
+    EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i) + b * org_y.h_view(i)),
+                   y.h_view(i), 2 * max_error);
   }
 }
 
@@ -111,24 +79,9 @@ void impl_test_axpby_mv(int N, int K) {
   using ScalarB    = typename ViewTypeB::value_type;
   using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-  typedef multivector_layout_adapter<ViewTypeB> vfB_type;
-
-  typename vfA_type::BaseType b_x("A", N, K);
-  typename vfB_type::BaseType b_y("B", N, K);
-  typename vfB_type::BaseType b_org_y("B", N, K);
-
-  ViewTypeA x = vfA_type::view(b_x);
-  ViewTypeB y = vfB_type::view(b_y);
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-  typedef multivector_layout_adapter<typename ViewTypeB::HostMirror> h_vfB_type;
-
-  typename h_vfA_type::BaseType h_b_x = Kokkos::create_mirror_view(b_x);
-  typename h_vfB_type::BaseType h_b_y = Kokkos::create_mirror_view(b_y);
-
-  typename ViewTypeA::HostMirror h_x = h_vfA_type::view(h_b_x);
-  typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
+  view_stride_adapter<ViewTypeA> x("X", N, K);
+  view_stride_adapter<ViewTypeB> y("Y", N, K);
+  view_stride_adapter<ViewTypeB> org_y("Org_Y", N, K);
 
   ScalarA a                = 3;
   ScalarB b                = 5;
@@ -145,44 +98,39 @@ void impl_test_axpby_mv(int N, int K) {
   {
     ScalarA randStart, randEnd;
     Test::getRandomBounds(10.0, randStart, randEnd);
-    Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
     Test::getRandomBounds(10.0, randStart, randEnd);
-    Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
 
-  Kokkos::deep_copy(b_org_y, b_y);
-  ViewTypeB org_y = vfB_type::view(b_org_y);
-  auto h_org_y =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), org_y);
-
-  Kokkos::deep_copy(h_b_x, b_x);
-  Kokkos::deep_copy(h_b_y, b_y);
-
-  typename ViewTypeA::const_type c_x = x;
+  Kokkos::deep_copy(org_y.h_base, y.d_base);
+  Kokkos::deep_copy(x.h_base, x.d_base);
 
   Kokkos::View<ScalarB*, Kokkos::HostSpace> r("Dot::Result", K);
 
-  KokkosBlas::axpby(a, x, b, y);
-  Kokkos::deep_copy(h_b_y, b_y);
+  KokkosBlas::axpby(a, x.d_view, b, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + b * h_org_y(i, j)),
-                     h_y(i, j), 2 * max_error);
+      EXPECT_NEAR_KK(
+          static_cast<ScalarB>(a * x.h_view(i, j) + b * org_y.h_view(i, j)),
+          y.h_view(i, j), 2 * max_error);
     }
   }
 
-  Kokkos::deep_copy(b_y, b_org_y);
-  KokkosBlas::axpby(a, c_x, b, y);
-  Kokkos::deep_copy(h_b_y, b_y);
+  Kokkos::deep_copy(y.d_base, org_y.h_base);
+  KokkosBlas::axpby(a, x.d_view_const, b, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + b * h_org_y(i, j)),
-                     h_y(i, j), 2 * max_error);
+      EXPECT_NEAR_KK(
+          static_cast<ScalarB>(a * x.h_view(i, j) + b * org_y.h_view(i, j)),
+          y.h_view(i, j), 2 * max_error);
     }
   }
 }
@@ -212,8 +160,7 @@ int test_axpby() {
   Test::impl_test_axpby<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
@@ -256,8 +203,7 @@ int test_axpby_mv() {
   Test::impl_test_axpby_mv<view_type_a_lr, view_type_b_lr, Device>(132231, 5);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;

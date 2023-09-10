@@ -19,6 +19,7 @@ public:
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields);
 
+  virtual bool might_have_interior_or_face_intersections() const override { return mySurfaceIdentifiers.size() > 1; }
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
   virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,

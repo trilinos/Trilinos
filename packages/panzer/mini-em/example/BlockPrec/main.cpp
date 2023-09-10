@@ -45,10 +45,6 @@
 #include "MiniEM_HigherOrderMaxwellPreconditionerFactory.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory_Augmentation.hpp"
 #include "MiniEM_FullDarcyPreconditionerFactory.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-# include "MiniEM_DiscreteGradient.hpp"
-# include "MiniEM_DiscreteCurl.hpp"
-#endif
 #include "MiniEM_Interpolation.hpp"
 #include "MiniEM_helpers.hpp"
 
@@ -238,7 +234,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       if (dt <= 0.) {
         if (mesh_pl.get<std::string>("Source") == "Exodus File" || meshFile != "") {
           RCP<Teuchos::ParameterList> input_pl = rcp(new Teuchos::ParameterList(mesh_pl.sublist("Exodus File")));
-          dt = input_pl->get<double>("dt");
+          if (input_pl->isType<double>("dt"))
+            dt = input_pl->get<double>("dt");
+          if (input_pl->isType<int>("num time steps"))
+            numTimeSteps = input_pl->get<int>("num time steps");
+          if (input_pl->isType<double>("final time"))
+            finalTime = input_pl->get<double>("final time");
         } else if (mesh_pl.get<std::string>("Source") ==  "Pamgen Mesh") {
           Teuchos::ParameterList & pamgen_pl = mesh_pl.sublist("Pamgen Mesh");
           dt = pamgen_pl.get<double>("dt");
@@ -429,9 +430,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                                                        rcp_dynamic_cast<panzer::BlockedDOFManager>(auxDofManager,true)));
     req_handler->addRequestCallback(callback);
 
-    if (useTpetra) {
-      // The assembly of interpolation type operators only works for Tpetra.
-
+    {
       if (physics == MAXWELL) {
         // add discrete curl
         ops_pl.sublist("Discrete Curl").set("Source", "E_edge");
@@ -478,21 +477,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         }
       }
     }
-#ifdef PANZER_HAVE_EPETRA_STACK
-    else if ((solver == MUELU_REFMAXWELL) or (solver == ML_REFMAXWELL)) {
-      // add discrete gradient, Epetra
-      {
-        Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
-        addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
-      }
-
-      // add discrete curl, Epetra
-      {
-        Teuchos::TimeMonitor tMdiscCurl(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete curl")));
-        addDiscreteCurlToRequestHandler(linObjFactory,req_handler);
-      }
-    }
-#endif
 
     // build linear solver
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > lowsFactory

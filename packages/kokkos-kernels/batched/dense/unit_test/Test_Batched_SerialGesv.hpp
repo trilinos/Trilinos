@@ -71,10 +71,9 @@ template <typename DeviceType, typename MatrixType, typename VectorType,
           typename AlgoTagType>
 void impl_test_batched_gesv(const int N, const int BlkSize) {
   typedef typename MatrixType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
-  using MagnitudeType =
-      typename Kokkos::Details::ArithTraits<value_type>::mag_type;
+  using MagnitudeType = typename Kokkos::ArithTraits<value_type>::mag_type;
   using NormViewType =
       Kokkos::View<MagnitudeType *, Kokkos::LayoutLeft, DeviceType>;
 

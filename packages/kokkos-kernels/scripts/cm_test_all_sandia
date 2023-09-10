@@ -77,6 +77,8 @@ print_help() {
   echo ""
   echo "--no-default-eti:  Do not include default ETI types for Kokkos Kernels"
   echo ""
+  echo "--disable-test-eti-only:  Do not restrict testing to ETI types for Kokkos Kernels"
+  echo ""
   echo "--with-spaces=SPACES:       Set spaces to be instantiated."
   echo "                                Options: hostspace, cudaspace, cudauvmspace"
   echo ""
@@ -153,6 +155,10 @@ if [[ "$HOSTNAME" == *blake* ]]; then # Warning: very generic name
   module load git
 fi
 
+if [[ "$HOSTNAME" == *solo* ]]; then # Warning: very generic name
+  MACHINE=solo
+fi
+
 if [[ "$HOSTNAME" == kokkos-dev-2* ]]; then
   MACHINE=kokkos-dev-2
 fi
@@ -167,6 +173,14 @@ if [[ "$HOSTNAME" == cn* ]]; then # Warning: very generic name
 fi
 
 if [[ "$HOSTNAME" == caraway* ]]; then # Warning: very generic name
+  MACHINE=caraway
+fi
+
+if [[ "$HOSTNAME" == fat* ]]; then # Caraway MI250 queues
+  MACHINE=caraway
+fi
+
+if [[ "$HOSTNAME" == lean* ]]; then # Caraway MI210 queues
   MACHINE=caraway
 fi
 
@@ -224,6 +238,7 @@ SKIP_HWLOC=False
 SPOT_CHECK=False
 NO_DEFAULT_ETI=False
 ENABLE_PERFTESTS=True
+ENABLE_TEST_ETI_ONLY=True
 
 PRINT_HELP=False
 OPT_FLAG=""
@@ -387,6 +402,9 @@ do
       ;;
     --no-default-eti*)
       NO_DEFAULT_ETI=True
+      ;;
+    --disable-test-eti-only*)
+      ENABLE_TEST_ETI_ONLY=False
       ;;
     --disable-perftests*)
       ENABLE_PERFTESTS=False
@@ -577,63 +595,37 @@ elif [ "$MACHINE" = "inouye" ]; then
 
   SPACK_HOST_ARCH="+a64fx"
 elif [ "$MACHINE" = "weaver" ]; then
-  MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
+  # Use the legacy env for now until all modules are part of the new system
+  MODULE_ENVIRONMENT="source /projects/ppc64le-pwr9-rhel8/legacy-env.sh"
   eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
 
-# used with rhel7W queue
-  BASE_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>"
-  CUDA_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,ibm/xl/16.1.1,gcc/7.2.0"
-  CUDA10_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,ibm/xl/16.1.1,gcc/7.4.0"
-
-  GCC72_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0"
-  GCC74_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0,gcc/7.4.0"
   GCC93_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0,gcc/9.3.0"
-  CUDA_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
-  CUDA10_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,openblas/0.2.20/gcc/7.2.0"
-
-    # Issues finding CUBLAS with cuda/10.1.243 module at configure
-    # "Could NOT find TPLCUBLAS (missing: CUDA_CUBLAS_LIBRARIES)"
-    # Once resolved add the compiler + modules below to the SPOT_CHECK_TPLS
-#               "cuda/10.1.243 $CUDA10_MODULE_TPL_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
   CLANG13_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0,cuda/10.1.243"
 
-# used with rhel8 queue
-  RHEL8_BASE_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>"
-  # Cuda/11 modules available only on the dev queue (rhel8 OS); gcc/8.3.1 load by default
-  RHEL8_CUDA11_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0"
+  BASE_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>"
+  # Cuda/11 modules available rhel8 queue (rhel8 OS); gcc/8.3.1 load by default
+  RHEL8_CUDA11_MODULE_LIST="cmake/3.23.1,cuda/11.2.2/gcc/8.3.1,openblas/0.3.18/gcc/8.3.1"
 
   # Don't do Threads on weaver
   GCC_IBM_BUILD_LIST="OpenMP,Serial,OpenMP_Serial"
 
   if [ "$SPOT_CHECK" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/7.2.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "cuda/10.1.243 $CUDA10_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/11.2.2/gcc/8.3.1 $RHEL8_CUDA11_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "gcc/9.3.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/7.2.0 $GCC72_MODULE_TPL_LIST "Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
-               "gcc/7.4.0 $GCC74_MODULE_TPL_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
-               "cuda/9.2.88 $CUDA_MODULE_TPL_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/10.1.243 $CUDA10_MODULE_TPL_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/11.2.2/gcc/8.3.1 $RHEL8_CUDA11_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "gcc/9.3.0 $GCC93_MODULE_TPL_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
                "clang/13.0.0 $CLANG13_MODULE_TPL_LIST "Cuda" clang++ $CUDA_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/7.2.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "gcc/7.4.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "gcc/8.3.1 $RHEL8_BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+    COMPILERS=("gcc/8.3.1 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/9.3.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "cuda/10.0.130 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/10.1.105 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/10.1.243 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/10.2.089 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/11.2.2/gcc/8.3.1 $RHEL8_CUDA11_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "clang/13.0.0 $CLANG13_MODULE_TPL_LIST $CUDA_IBM_BUILD_LIST clang++ $CUDA_WARNING_FLAGS"
     )
   fi
@@ -682,17 +674,26 @@ elif [ "$MACHINE" = "caraway" ]; then
   #   output description and success based only on build succes; build time output (no run-time)
 
   BASE_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>"
+  ROCM520_MODULE_LIST="$BASE_MODULE_LIST,openblas/0.3.20/rocm/5.2.0"
 
   HIPCLANG_BUILD_LIST="Hip_Serial"
   HIPCLANG_WARNING_FLAGS=""
 
-  # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("rocm/5.2.0 $BASE_MODULE_LIST $HIPCLANG_BUILD_LIST hipcc $HIPCLANG_WARNING_FLAGS"
-             "gcc/8.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-             "gcc/9.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-             "gcc/10.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-             "gcc/11.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-  )
+  if [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("rocm/5.2.0 $ROCM520_MODULE_LIST $HIPCLANG_BUILD_LIST hipcc $HIPCLANG_WARNING_FLAGS"
+    )
+  else
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("rocm/5.2.0 $BASE_MODULE_LIST $HIPCLANG_BUILD_LIST hipcc $HIPCLANG_WARNING_FLAGS"
+              "gcc/8.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+              "gcc/9.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+              "gcc/10.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+              "gcc/11.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+    )
+  fi
+
+
 
   if [ -z "$ARCH_FLAG" ]; then
     ARCH_FLAG="--arch=VEGA908"
@@ -707,10 +708,9 @@ elif [ "$MACHINE" = "blake" ]; then
 
   BASE_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>"
   BASE_MODULE_LIST_INTEL="cmake/3.19.3,<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
-  BASE_MODULE_LIST_ONEAPI="cmake/3.19.3,<COMPILER_NAME>/oneAPI/base-toolkit/<COMPILER_VERSION>"
+  BASE_MODULE_LIST_ONEAPI="cmake/3.19.3,<COMPILER_NAME>/oneAPI/base-toolkit/<COMPILER_VERSION>,<COMPILER_NAME>/oneAPI/hpc-toolkit/<COMPILER_VERSION>"
   ONEAPI_WARNING_FLAGS=""
 
-  GCC72_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.2.20/gcc/7.2.0"
   GCC102_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.3.21/gcc/10.2.0"
 
   if [ "$SPOT_CHECK" = "True" ]; then
@@ -718,31 +718,26 @@ elif [ "$MACHINE" = "blake" ]; then
       # TODO: Failing toolchains:
       #"intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
       #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
-    COMPILERS=("intel/19.1.144 $BASE_MODULE_LIST_INTEL "OpenMP_Serial" icpc $INTEL_WARNING_FLAGS"
-               "gcc/7.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
-               "clang/10.0.1 $BASE_MODULE_LIST "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
+    COMPILERS=("clang/10.0.1 $BASE_MODULE_LIST "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
                "intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
                "gcc/10.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
                "gcc/11.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
       # Format: (compiler module-list build-list exe-name warning-flag)
-      # TODO: Failing toolchains:
-      #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
-    COMPILERS=("gcc/7.2.0 $GCC72_MODULE_TPL_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
-               "intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
+    COMPILERS=("intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
                "gcc/10.2.0 $GCC102_MODULE_TPL_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
     )
   else
-    COMPILERS=("intel/19.1.144 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/19.3.199 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/19.5.281 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/2021.1.1 $BASE_MODULE_LIST_ONEAPI $INTEL_BUILD_LIST icpx $ONEAPI_WARNING_FLAGS"
-               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "gcc/8.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+    COMPILERS=("intel/19.5.281 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/2021.2.0 $BASE_MODULE_LIST_ONEAPI $INTEL_BUILD_LIST icpx $ONEAPI_WARNING_FLAGS"
+               "intel/2021.4.0 $BASE_MODULE_LIST_ONEAPI $INTEL_BUILD_LIST icpx $ONEAPI_WARNING_FLAGS"
+               "intel/2022.1.2 $BASE_MODULE_LIST_ONEAPI $INTEL_BUILD_LIST icpx $ONEAPI_WARNING_FLAGS"
                "gcc/8.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/8.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/9.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/10.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/11.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "clang/10.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
     )
 
@@ -752,6 +747,40 @@ elif [ "$MACHINE" = "blake" ]; then
     ARCH_FLAG="--arch=SKX"
   fi
   SPACK_HOST_ARCH="+skx"
+elif [ "$MACHINE" = "solo" ]; then
+  SKIP_HWLOC=True
+  export SLURM_TASKS_PER_NODE=32
+
+  module load cmake/3.22.3
+
+  BASE_MODULE_LIST="cmake/3.22.3,<COMPILER_NAME>/<COMPILER_VERSION>"
+  BASE_MODULE_LIST_LLVM="cmake/3.22.3,<COMPILER_NAME>/<COMPILER_VERSION>,gnu/10.2.1"
+  BASE_MODULE_LIST_INTEL="cmake/3.22.3,gnu/8.2.1,<COMPILER_NAME>/<COMPILER_VERSION>"
+  ONEAPI_WARNING_FLAGS=""
+
+  GNU102_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.3.21"
+
+  if [ "$SPOT_CHECK" = "True" ]; then
+    COMPILERS=(
+               "gnu/10.2.1 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GNU_WARNING_FLAGS"
+               "llvm/10.0.1 $BASE_MODULE_LIST_LLVM "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
+    )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    COMPILERS=("intel/19.0.5.281 $BASE_MODULE_LIST_INTEL,mkl/19.0.5.281 "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
+               "gnu/10.2.1 $GNU102_MODULE_TPL_LIST "OpenMP_Serial" g++ $GNU_WARNING_FLAGS"
+    )
+  else
+      ###"clang/10.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+    COMPILERS=(
+               "gnu/10.2.1 $BASE_MODULE_LIST $GNU_BUILD_LIST g++ $GNU_WARNING_FLAGS"
+    )
+
+  fi
+
+  if [ -z "$ARCH_FLAG" ]; then
+    ARCH_FLAG="--arch=BDW"
+  fi
+  SPACK_HOST_ARCH="+bdw"
 elif [ "$MACHINE" = "kokkos-dev-2" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh ; module use /home/projects/x86-64/modulefiles/local"
   eval "$MODULE_ENVIRONMENT"
@@ -1025,6 +1054,9 @@ setup_env() {
       NEW_TPL_LIST="cublas,cusparse,"
       export KOKKOS_CUDA_OPTIONS="${KOKKOS_CUDA_OPTIONS},enable_lambda"
     fi
+    if [[ "$compiler" == rocm* ]]; then
+      NEW_TPL_LIST="rocblas,rocsparse,"
+    fi
     # host tpls - use mkl with intel, else use host blas
     if [[ "$compiler" == intel* ]]; then
       NEW_TPL_LIST="mkl,"
@@ -1139,6 +1171,9 @@ single_build_and_test() {
   fi
   echo "        module purge" &>> reload_modules.sh
   echo "        module load $compiler_modules_list" &>> reload_modules.sh
+  echo "        export OMP_NUM_THREADS=$omp_num_threads" &>> reload_modules.sh
+  echo "        export OMP_PROC_BIND=$omp_proc_bind" &>> reload_modules.sh
+  echo "        export OMP_PLACES=$omp_places" &>> reload_modules.sh
   echo "" &>> reload_modules.sh
   chmod +x reload_modules.sh
 
@@ -1171,6 +1206,10 @@ single_build_and_test() {
 
   if [ "${NO_DEFAULT_ETI}" = "True" ]; then
     local extra_args="$extra_args --no-default-eti"
+  fi
+
+  if [ "${ENABLE_TEST_ETI_ONLY}" = "False" ]; then
+    local extra_args="$extra_args --disable-test-eti-only"
   fi
 
   if [ "${ENABLE_PERFTESTS}" = "False" ]; then

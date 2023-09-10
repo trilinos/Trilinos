@@ -24,12 +24,6 @@
 #include "NOX_Thyra.H"
 
 
-#ifdef Tempus_ENABLE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
 #include <fstream>
 #include <limits>
 #include <sstream>

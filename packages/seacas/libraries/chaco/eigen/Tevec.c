@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,7 +7,8 @@
  */
 
 #include "params.h" // for MAXDIMS
-#include <math.h>   // for fabs, sqrt
+#include "prototypes.h"
+#include <math.h> // for fabs, sqrt
 
 int SRES_SWITCHES = 0; /* # switches to backup routine for computing evec of T */
 
@@ -56,12 +57,6 @@ double Tevec(double *alpha, /* vector of Lanczos scalars */
   long          long_j;             /* long copy of j for tinvit interface */
   double        hurdle;             /* hurdle for local maximum in recurrence */
   double        prev_resid;         /* stores residual from previous computation */
-
-  int     tinvit();                 /* eispack's tinvit for evecs of symmetric T */
-  double *mkvec(int nl, int nh);    /* allocates double vectors */
-  void    frvec(double *v, int nl); /* frees double vectors */
-  double  bidir();                  /* bidirectional recurrence for evec of T */
-  void    cpvec();                  /* vector copy routine */
 
   s[1] = 1.0;
 

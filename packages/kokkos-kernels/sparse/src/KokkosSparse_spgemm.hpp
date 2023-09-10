@@ -23,6 +23,20 @@
 
 namespace KokkosSparse {
 
+///
+/// @brief
+///
+/// @tparam KernelHandle
+/// @tparam AMatrix
+/// @tparam BMatrix
+/// @tparam CMatrix
+/// @param kh
+/// @param A
+/// @param Amode
+/// @param B
+/// @param Bmode
+/// @param C
+////
 template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
 void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
                      const BMatrix& B, const bool Bmode, CMatrix& C) {
@@ -54,7 +68,20 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
               entriesC);
 }
 
-// Symbolic phase for block SpGEMM (BSR matrices)
+///
+/// @brief Symbolic phase for block SpGEMM (BSR matrices)
+///
+/// @tparam KernelHandle
+/// @tparam AMatrixType
+/// @tparam BMatrixType
+/// @tparam CMatrixType
+/// @param kh
+/// @param A
+/// @param transposeA
+/// @param B
+/// @param transposeB
+/// @param C
+///
 template <class KernelHandle, class AMatrixType, class BMatrixType,
           class CMatrixType>
 void block_spgemm_symbolic(KernelHandle& kh, const AMatrixType& A,
@@ -95,6 +122,20 @@ void block_spgemm_symbolic(KernelHandle& kh, const AMatrixType& A,
                   row_mapC, entriesC, blockDim);
 }
 
+///
+/// @brief
+///
+/// @tparam KernelHandle
+/// @tparam AMatrix
+/// @tparam BMatrix
+/// @tparam CMatrix
+/// @param kh
+/// @param A
+/// @param Amode
+/// @param B
+/// @param Bmode
+/// @param C
+///
 template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
 void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
                     const BMatrix& B, const bool Bmode, CMatrix& C) {
@@ -108,6 +149,20 @@ void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
       B.values, Bmode, C.graph.row_map, C.graph.entries, C.values);
 }
 
+///
+/// @brief
+///
+/// @tparam KernelHandle
+/// @tparam AMatrix
+/// @tparam BMatrix
+/// @tparam CMatrix
+/// @param kh
+/// @param A
+/// @param Amode
+/// @param B
+/// @param Bmode
+/// @param C
+///
 template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
 void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
                           const BMatrix& B, const bool Bmode, CMatrix& C) {
@@ -123,6 +178,18 @@ void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
       B.values, Bmode, C.graph.row_map, C.graph.entries, C.values, blockDim);
 }
 
+///
+/// @brief
+///
+/// @tparam CMatrix
+/// @tparam AMatrix
+/// @tparam BMatrix
+/// @param A
+/// @param Amode
+/// @param B
+/// @param Bmode
+/// @return CMatrix
+///
 template <class CMatrix, class AMatrix, class BMatrix>
 CMatrix spgemm(const AMatrix& A, const bool Amode, const BMatrix& B,
                const bool Bmode) {

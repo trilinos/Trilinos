@@ -95,6 +95,8 @@
         
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
         
+\cbb{aggregation: use ml scaling of drop tol}{bool}{false}{Enables ML-style scaling of drop tol, where the drop tol halves with each successive level.}
+        
 \cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
         
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
@@ -298,6 +300,8 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{replicate: npdes}{int}{1}{ Used with multigrid algorithm 'replicate' to transform scalar prolongator to one  for PDE systems with npdes dofs per node. }
         
+\cbb{combine: numBlks}{int}{1}{ Used with multigrid algorithm 'combine' to combine multiple sub-block prolongators into one  for PDE systems (numBlks x numBlks). }
+        
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         
 \cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
@@ -385,6 +389,8 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{repartition: rebalance P and R}{bool}{false}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
         
+\cbb{repartition: explicit via new copy rebalance P and R}{bool}{false}{Fully explicit rebalancing of R and P during setup that makes new copy and invokes fill copy.  Slowest rebalancing option, but needed by combine mg algo.}
+        
 \cbb{repartition: rebalance Nullspace}{bool}{true}{Rebalancing of Nullspace during the setup.}
         
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
@@ -434,6 +440,8 @@ optimized neighbor discovery for Importer construction.}
 \cba{maxwell1: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
         
 \cbb{maxwell1: dump matrices}{bool}{false}{Dump matrices to disk.}
+        
+\cbb{maxwell1: nodal smoother fix zero diagonal threshold}{double}{1e-10}{Specifies the fix zero diagonals threshold to be used for the nodal smoothing matrices.}
         
 \cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
         

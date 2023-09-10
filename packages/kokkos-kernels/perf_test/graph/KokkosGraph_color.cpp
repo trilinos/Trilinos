@@ -379,7 +379,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
       }
     }
 
-    if (params.coloring_output_file != NULL) {
+    if (params.coloring_output_file != "") {
       std::ofstream os(params.coloring_output_file, std::ofstream::out);
       KokkosKernels::Impl::print_1Dview(os, colors, true, "\n");
     }
@@ -420,7 +420,7 @@ void run_multi_mem_experiment(Parameters params) {
   // typedef typename slow_graph_t::entries_type::const_type
   // const_slow_cols_view_t;
 
-  char *a_mat_file = params.a_mtx_bin_file;
+  const char *a_mat_file = params.a_mtx_bin_file.c_str();
   // char *b_mat_file = params.b_mtx_bin_file;
   // char *c_mat_file = params.c_mtx_bin_file;
 
@@ -581,7 +581,7 @@ int main(int argc, char **argv) {
   if (parse_inputs(params, argc, argv)) {
     return 1;
   }
-  if (params.a_mtx_bin_file == NULL) {
+  if (params.a_mtx_bin_file == "") {
     std::cerr << "Provide a matrix file" << std::endl;
     return 0;
   }

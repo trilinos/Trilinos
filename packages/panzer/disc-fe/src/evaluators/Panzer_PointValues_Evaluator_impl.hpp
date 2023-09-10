@@ -177,13 +177,13 @@ evaluateFields(
     panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,
+    pointValues.evaluateValues(this->wda(workset).cell_node_coordinates,
                                basisValues.basis_coordinates_ref,
                                workset.num_cells);
   }
   else {
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray,
+    pointValues.evaluateValues(this->wda(workset).cell_node_coordinates,refPointArray,
                                workset.num_cells);
   }
 }

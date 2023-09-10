@@ -152,7 +152,7 @@ template <typename T, int l>
 KOKKOS_FORCEINLINE_FUNCTION static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T, l)
 operator++(Vector<SIMD<T>, l> &a, int) {
   Vector<SIMD<T>, l> a0 = a;
-  a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
+  a                     = a + typename Kokkos::ArithTraits<T>::mag_type(1);
   return a0;
 }
 
@@ -160,7 +160,7 @@ template <typename T, int l>
 KOKKOS_FORCEINLINE_FUNCTION static KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(
     T, l)
 operator++(Vector<SIMD<T>, l> &a) {
-  a = a + typename Kokkos::Details::ArithTraits<T>::mag_type(1);
+  a = a + typename Kokkos::ArithTraits<T>::mag_type(1);
   return a;
 }
 
@@ -355,7 +355,7 @@ template <typename T, int l>
 KOKKOS_FORCEINLINE_FUNCTION static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T, l)
 operator--(Vector<SIMD<T>, l> &a, int) {
   Vector<SIMD<T>, l> a0 = a;
-  a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
+  a                     = a - typename Kokkos::ArithTraits<T>::mag_type(1);
   return a0;
 }
 
@@ -363,7 +363,7 @@ template <typename T, int l>
 KOKKOS_FORCEINLINE_FUNCTION static KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(
     T, l)
 operator--(Vector<SIMD<T>, l> &a) {
-  a = a - typename Kokkos::Details::ArithTraits<T>::mag_type(1);
+  a = a - typename Kokkos::ArithTraits<T>::mag_type(1);
   return a;
 }
 

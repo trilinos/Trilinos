@@ -283,4 +283,4 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, AppAction_ModifierX)
   TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-14);
 }
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

@@ -594,6 +594,19 @@ bool Behavior::timeKokkosDeepCopy()
 
 }    
 
+bool Behavior::timeKokkosDeepCopyVerbose() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}    
+
+
 
 } // namespace Details
 } // namespace Tpetra

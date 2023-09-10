@@ -248,7 +248,7 @@ struct PODViewDeepCopyType< ViewType, typename std::enable_if< is_view_fad<ViewT
 
   typedef ViewType view_type;
   typedef typename ArrayScalar< typename view_type::value_type >::type fad_converted_type;
-  typedef typename AppendRankToConvertedFad< fad_converted_type, view_type::Rank >::type new_data_type;
+  typedef typename AppendRankToConvertedFad< fad_converted_type, view_type::rank >::type new_data_type;
 
   typedef typename ViewArrayLayoutSelector<typename view_type::array_layout>::type layout;
   //typedef typename view_type::array_layout layout;

@@ -24,6 +24,9 @@ template <class CrsType, class IdType, class MapType, class ValsType,
 void check_crs_matrix(CrsType crsMat, IdType ccs_row_ids_d,
                       MapType ccs_col_map_d, ValsType ccs_vals_d,
                       ColsType cols) {
+  using ordinal_type = typename CrsType::ordinal_type;
+  using size_type    = typename CrsType::size_type;
+
   using ViewTypeRowIds = decltype(ccs_row_ids_d);
   using ViewTypeColMap = decltype(ccs_col_map_d);
   using ViewTypeVals   = decltype(ccs_vals_d);
@@ -60,11 +63,11 @@ void check_crs_matrix(CrsType crsMat, IdType ccs_row_ids_d,
 
   Kokkos::fence();
 
-  for (int j = 0; j < cols; ++j) {
+  for (ordinal_type j = 0; j < cols; ++j) {
     auto col_start = ccs_col_map(j);
     auto col_len   = ccs_col_map(j + 1) - col_start;
 
-    for (int k = 0; k < col_len; ++k) {
+    for (size_type k = 0; k < col_len; ++k) {
       auto i = col_start + k;
 
       auto row_start = crs_row_map(ccs_row_ids(i));
@@ -74,7 +77,7 @@ void check_crs_matrix(CrsType crsMat, IdType ccs_row_ids_d,
       if (row_len == 0) continue;
 
       // Linear search for corresponding element in crs matrix
-      int l = row_start;
+      auto l = row_start;
       while (l < row_end && crs_col_ids(l) != j) {
         ++l;
       }

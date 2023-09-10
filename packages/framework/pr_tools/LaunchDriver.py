@@ -83,6 +83,8 @@ def main(argv):
                       help='The INI file containing supported systems')
   parser.add_argument('--in-container', default=False, action="store_true",
                       help="Build is happening in a container")
+  parser.add_argument("--kokkos-develop", default=False, action="store_true",
+                       help="Build is requiring to pull the current develop of kokkos and kokkos-kernels packages")
   args = parser.parse_args(argv)
 
   if os.getenv("TRILINOS_DIR") == None:
@@ -107,6 +109,9 @@ def main(argv):
 
   if args.in_container:
      cmd += " --no-bootstrap"
+
+  if args.kokkos_develop:
+     cmd += " --kokkos-develop"
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 

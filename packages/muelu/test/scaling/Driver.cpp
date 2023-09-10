@@ -47,6 +47,7 @@
 #include <iomanip>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
 #include <sys/resource.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -77,6 +78,7 @@
 #include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
+#include <MueLu_PerfModelReporter.hpp>
 #include <MatrixLoad.hpp>
 #include <DriverCore.hpp>
 
@@ -277,8 +279,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int numReruns = 1;                                  clp.setOption("reruns",                &numReruns,  "number of reruns");
   std::string rerunFilePrefix;                             clp.setOption("fileprefix",              &rerunFilePrefix,      "if doing reruns, optional prefix to prepend to output files");
   std::string rerunFileSuffix;                             clp.setOption("filesuffix",              &rerunFileSuffix,      "if doing reruns, optional suffix to append to output files");
-
+  std::string  levelPerformanceModel  = "no";          clp.setOption("performance-model", &levelPerformanceModel,  "runs the level-by-level performance mode options- 'no', 'yes' or 'verbose'");
   clp.recogniseAllOptions(true);
+
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -542,6 +545,25 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
 
       tm = Teuchos::null;
+
+
+      // If we want Level-specific performance model diagnostics, now is the time!
+      if( (levelPerformanceModel=="yes" || levelPerformanceModel=="verbose")
+          && !H.is_null()) {
+        for(int i=0; i < H->GetNumLevels(); i++) {
+          RCP<Level> level = H->GetLevel(i);
+          try {
+            RCP<Matrix> A_level = level->Get<RCP<Matrix> >("A");            
+            std::string level_name = std::string("Level-") + std::to_string(i) + std::string(": ");
+            std::vector<const char *> timers;//MueLu: Laplace2D: Hierarchy: Solve (level=0)  
+            MueLu::report_spmv_performance_models<Matrix>(A_level,100,timers,globalTimeMonitor,level_name,levelPerformanceModel=="verbose");
+          }
+          catch(...) {;}
+        }        
+      }
+     
+
+
       globalTimeMonitor = Teuchos::null;
       if (useStackedTimer)
         resetStackedTimer = true;

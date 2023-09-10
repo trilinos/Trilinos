@@ -153,11 +153,11 @@ namespace {
     {
       for (size_t i = 0; i < m_assemblies.size(); ++i) {
         if (m_visitedAssemblies[i]) {
-          assemblyFilterList.push_back(m_assemblies[i].name);
+          assemblyFilterList.emplace_back(m_assemblies[i].name);
         }
       }
 
-      std::sort(assemblyFilterList.begin(), assemblyFilterList.end(), std::less<std::string>());
+      std::sort(assemblyFilterList.begin(), assemblyFilterList.end(), std::less<>());
       auto endIter = std::unique(assemblyFilterList.begin(), assemblyFilterList.end());
       assemblyFilterList.resize(endIter - assemblyFilterList.begin());
     }
@@ -416,7 +416,7 @@ namespace Ioex {
       double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
       ex_close(m_exodusFilePtr);
-      closeDW();
+      close_dw();
       if (do_timer && isParallel) {
         double t_end    = Ioss::Utils::timer();
         double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
@@ -626,7 +626,7 @@ namespace Ioex {
       std::replace(std::begin(config), std::end(config), '\t', ' ');
       auto lines = Ioss::tokenize(config, "\n");
       lines.erase(std::remove_if(lines.begin(), lines.end(),
-                                 [](const std::string &line) { return line == ""; }),
+                                 [](const std::string &line) { return line.empty(); }),
                   lines.end());
 
       // See if the client added any "information_records"
@@ -1522,7 +1522,7 @@ namespace Ioex {
 #if GLOBALS_ARE_TRANSIENT
     int field_count = add_results_fields(get_region());
 #else
-    int field_count = add_reduction_results_fields(get_region());
+    int field_count     = add_reduction_results_fields(get_region());
 #endif
     m_reductionValues[EX_GLOBAL][0].resize(field_count);
     add_mesh_reduction_fields(0, get_region());
@@ -2330,12 +2330,12 @@ namespace Ioex {
             std::string att_name = "nodal_thickness";
 
             std::string storage = fmt::format("Real[{}]", attribute_count);
-            block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
+            block->field_add(Ioss::Field(std::move(att_name), Ioss::Field::REAL, storage,
                                          Ioss::Field::ATTRIBUTE, my_element_count, 1));
           }
           else {
             std::string att_name = "thickness";
-            block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
+            block->field_add(Ioss::Field(std::move(att_name), Ioss::Field::REAL, IOSS_SCALAR(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, 1));
             unknown_attributes = attribute_count - 1;
           }
@@ -2383,7 +2383,7 @@ namespace Ioex {
             // which is the volume of the cube which would surround a
             // sphere of the given radius.
             att_name = "volume";
-            block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
+            block->field_add(Ioss::Field(std::move(att_name), Ioss::Field::REAL, IOSS_SCALAR(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, offset++));
           }
           unknown_attributes = attribute_count - 2;
@@ -2396,7 +2396,7 @@ namespace Ioex {
           // same and put "beam-type" attributes on bars...
           int         index    = 1;
           std::string att_name = "area";
-          block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
+          block->field_add(Ioss::Field(std::move(att_name), Ioss::Field::REAL, IOSS_SCALAR(),
                                        Ioss::Field::ATTRIBUTE, my_element_count, index++));
 
           if (spatialDimension == 2 && attribute_count >= 3) {
@@ -2435,8 +2435,8 @@ namespace Ioex {
           att_name += std::to_string(unknown_attributes);
           std::string storage = fmt::format("Real[{}]", unknown_attributes);
           size_t      index   = attribute_count - unknown_attributes + 1;
-          block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage, Ioss::Field::ATTRIBUTE,
-                                       my_element_count, index));
+          block->field_add(Ioss::Field(std::move(att_name), Ioss::Field::REAL, storage,
+                                       Ioss::Field::ATTRIBUTE, my_element_count, index));
         }
       }
 
@@ -2445,8 +2445,8 @@ namespace Ioex {
       std::string att_name = "attribute"; // Default
       std::string storage  = fmt::format("Real[{}]", attribute_count);
 
-      block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage, Ioss::Field::ATTRIBUTE,
-                                   my_element_count, 1));
+      block->field_add(Ioss::Field(std::move(att_name), Ioss::Field::REAL, storage,
+                                   Ioss::Field::ATTRIBUTE, my_element_count, 1));
 
       // Release memory...
       Ioss::Utils::delete_name_array(names, attribute_count);
@@ -3140,7 +3140,7 @@ namespace {
   void insert_sort_and_unique(const std::vector<std::string> &src, std::vector<std::string> &dest)
   {
     dest.insert(dest.end(), src.begin(), src.end());
-    std::sort(dest.begin(), dest.end(), std::less<std::string>());
+    std::sort(dest.begin(), dest.end(), std::less<>());
     auto endIter = std::unique(dest.begin(), dest.end());
     dest.resize(endIter - dest.begin());
   }

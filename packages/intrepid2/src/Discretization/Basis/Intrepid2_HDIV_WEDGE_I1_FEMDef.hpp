@@ -214,6 +214,7 @@ namespace Intrepid2 {
     dofCoeffs(4,0) =  0.0;   dofCoeffs(4,1) =  0.0;   dofCoeffs(4,2) =  1.0;
 
     this->dofCoeffs_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoeffs);
+    Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
   }
 
 }// namespace Intrepid2

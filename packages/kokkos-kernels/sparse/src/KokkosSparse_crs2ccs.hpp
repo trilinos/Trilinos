@@ -113,7 +113,7 @@ auto crs2ccs(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
 ///
 /// \tparam ScalarType   The crsMatrix::scalar_type
 /// \tparam OrdinalType  The crsMatrix::ordinal_type
-/// \tparam Device       The crsMatrix::device_type
+/// \tparam DeviceType   The crsMatrix::device_type
 /// \tparam MemoryTraits The crsMatrix::memory_traits
 /// \tparam SizeType     The crsMatrix::size_type
 /// \param crsMatrix The KokkosSparse::CrsMatrix.

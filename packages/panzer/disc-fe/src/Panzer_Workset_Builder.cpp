@@ -52,7 +52,7 @@ Teuchos::RCP<std::vector<panzer::Workset> >
 panzer::buildWorksets(const WorksetNeeds & needs,
                       const std::string & elementBlock,
                       const std::vector<std::size_t>& local_cell_ids,
-                      const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates);
+                      const Kokkos::DynRankView<double,PHX::Device>& node_coordinates);
 
 template
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
@@ -60,7 +60,7 @@ panzer::buildBCWorkset(const WorksetNeeds& needs,
                        const std::string& elementBlock,
                        const std::vector<std::size_t>& local_cell_ids,
                        const std::vector<std::size_t>& local_side_ids,
-                       const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates,
+                       const Kokkos::DynRankView<double,PHX::Device>& node_coordinates,
                        const bool populate_value_arrays);
 
 template
@@ -69,12 +69,12 @@ panzer::buildBCWorkset(const WorksetNeeds & needs_a,
                        const std::string & blockid_a,
                        const std::vector<std::size_t>& local_cell_ids_a,
                        const std::vector<std::size_t>& local_side_ids_a,
-                       const Kokkos::DynRankView<double,PHX::Device> & vertex_coordinates_a,
+                       const Kokkos::DynRankView<double,PHX::Device> & node_coordinates_a,
                        const panzer::WorksetNeeds & needs_b,
                        const std::string & blockid_b,
                        const std::vector<std::size_t>& local_cell_ids_b,
                        const std::vector<std::size_t>& local_side_ids_b,
-                       const Kokkos::DynRankView<double,PHX::Device> & vertex_coordinates_b);
+                       const Kokkos::DynRankView<double,PHX::Device> & node_coordinates_b);
 
 template
 Teuchos::RCP<std::vector<panzer::Workset> > 
@@ -82,12 +82,12 @@ panzer::buildEdgeWorksets(const panzer::WorksetNeeds & needs_a,
                           const std::string & eblock_a,
                           const std::vector<std::size_t>& local_cell_ids_a,
                           const std::vector<std::size_t>& local_side_ids_a,
-                          const Kokkos::DynRankView<double,PHX::Device> & vertex_coordinates_a,
+                          const Kokkos::DynRankView<double,PHX::Device> & node_coordinates_a,
                           const panzer::WorksetNeeds & needs_b,
                           const std::string & eblock_b,
                           const std::vector<std::size_t>& local_cell_ids_b,
                           const std::vector<std::size_t>& local_side_ids_b,
-                          const Kokkos::DynRankView<double,PHX::Device> & vertex_coordinates_b);
+                          const Kokkos::DynRankView<double,PHX::Device> & node_coordinates_b);
 
 namespace panzer {
 
@@ -138,9 +138,9 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
         rcp(new panzer::IntegrationValues2<double>("",true));
     iv2->setupArrays(int_rules[i]);
     if (Teuchos::nonnull(other_details))
-      iv2->evaluateValues(details.cell_vertex_coordinates, other_details->int_rules[i]->ip_coordinates,num_cells);
+      iv2->evaluateValues(details.cell_node_coordinates, other_details->int_rules[i]->ip_coordinates,num_cells);
     else
-      iv2->evaluateValues(details.cell_vertex_coordinates,num_cells);
+      iv2->evaluateValues(details.cell_node_coordinates,num_cells);
       
     details.int_rules.push_back(iv2);
       
@@ -161,7 +161,7 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
                           details.int_rules[int_degree_index]->jac_det,
                           details.int_rules[int_degree_index]->jac_inv,
                           details.int_rules[int_degree_index]->weighted_measure,
-                          details.cell_vertex_coordinates,
+                          details.cell_node_coordinates,
                           true,
                           num_cells);
 

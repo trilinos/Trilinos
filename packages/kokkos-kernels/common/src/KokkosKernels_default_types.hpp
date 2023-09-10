@@ -65,7 +65,7 @@ using default_device    = Kokkos::Experimental::HIP;
 using default_device    = Kokkos::Experimental::OpenMPTarget;
 #elif defined(KOKKOS_ENABLE_OPENMP)
 using default_device = Kokkos::OpenMP;
-#elif defined(KOKKOS_ENABLE_PTHREAD) || defined(KOKKOS_ENABLE_THREADS)
+#elif defined(KOKKOS_ENABLE_THREADS)
 using default_device = Kokkos::Threads;
 #else
 using default_device = Kokkos::Serial;

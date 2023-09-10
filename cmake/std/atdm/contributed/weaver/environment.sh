@@ -77,6 +77,8 @@ else
 fi
 
 source /etc/profile.d/modules.sh
+# Temporary script to source while older modules are migrated to new system
+source /projects/ppc64le-pwr9-rhel8/legacy-env.sh
 module purge
 
 module load git/2.10.1 python/3.7.3

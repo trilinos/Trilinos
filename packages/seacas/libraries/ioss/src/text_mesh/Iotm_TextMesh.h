@@ -130,7 +130,7 @@ namespace Iotm {
     /**
      * Return number of elements in all element blocks on this processor.
      */
-    virtual int64_t element_count_proc() const;
+    int64_t element_count_proc() const;
 
     int64_t timestep_count() const { return m_timestepCount; }
     /**
@@ -143,7 +143,7 @@ namespace Iotm {
      * Return number of elements on this processor in the element
      * block with id 'block_number'.
      */
-    virtual int64_t element_count_proc(int64_t block_number) const;
+    int64_t element_count_proc(int64_t block_number) const;
 
     /**
      * Return number of assemblies in the entire model.

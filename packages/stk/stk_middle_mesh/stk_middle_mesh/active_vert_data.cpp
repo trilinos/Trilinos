@@ -68,7 +68,6 @@ void ActiveVertData::set_triangles(mesh::MeshEntityPtr vert)
   m_allPoints = m_allPointsOrig;
 }
 
-
 // gets the local index of vert in each triangle and writes it to
 // m_current_entity
 void ActiveVertData::set_current_indices(mesh::MeshEntityPtr vert)

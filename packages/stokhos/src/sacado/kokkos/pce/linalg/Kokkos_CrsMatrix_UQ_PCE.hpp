@@ -55,6 +55,28 @@
 
 namespace Stokhos {
 
+namespace Impl {
+  // Remove MemoryRandomAccess memory trait from a given view
+  template <typename ViewType, typename Enabled = void>
+  class RemoveRandomAccess {
+  public:
+    typedef ViewType type;
+  };
+  template <typename ViewType>
+  class RemoveRandomAccess<
+    ViewType,
+    std::enable_if_t<ViewType::memory_traits::is_random_access> > {
+  public:
+    static constexpr unsigned M0 = ViewType::memory_traits::impl_value;
+    static constexpr unsigned M1 =
+      M0 & (Kokkos::Unmanaged | Kokkos::Atomic | Kokkos::Restrict | Kokkos::Aligned);
+    typedef Kokkos::View<typename ViewType::data_type,
+                         typename ViewType::array_layout,
+                         typename ViewType::device_type,
+                         Kokkos::MemoryTraits<M1> > type;
+  };
+}
+
 //----------------------------------------------------------------------------
 // Specialization of KokkosSparse::CrsMatrix for Sacado::UQ::PCE scalar type
 //----------------------------------------------------------------------------
@@ -107,8 +129,8 @@ private:
 
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_values_type::array_type matrix_array_type;
-  typedef typename input_vector_type::array_type input_array_type;
-  typedef typename output_vector_type::array_type output_array_type;
+  typedef typename Impl::RemoveRandomAccess< typename input_vector_type::array_type >::type input_array_type;
+  typedef typename Impl::RemoveRandomAccess< typename output_vector_type::array_type >::type output_array_type;
 
   typedef typename MatrixValue::value_type matrix_scalar;
   typedef typename InputVectorValue::value_type input_scalar;
@@ -504,8 +526,8 @@ private:
 
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_values_type::array_type matrix_array_type;
-  typedef typename input_vector_type::array_type input_array_type;
-  typedef typename output_vector_type::array_type output_array_type;
+  typedef typename Impl::RemoveRandomAccess< typename input_vector_type::array_type >::type input_array_type;
+  typedef typename Impl::RemoveRandomAccess< typename output_vector_type::array_type >::type output_array_type;
 
   typedef typename MatrixValue::value_type matrix_scalar;
   typedef typename InputVectorValue::value_type input_scalar;
@@ -1043,8 +1065,8 @@ public:
   struct BlockKernel {
     typedef typename MatrixDevice::execution_space execution_space;
     typedef typename Kokkos::FlatArrayType<matrix_values_type>::type matrix_array_type;
-    typedef typename input_vector_type::array_type input_array_type;
-    typedef typename output_vector_type::array_type output_array_type;
+    typedef typename Impl::RemoveRandomAccess< typename input_vector_type::array_type >::type input_array_type;
+    typedef typename Impl::RemoveRandomAccess< typename output_vector_type::array_type >::type output_array_type;
 
     const matrix_array_type   m_A_values ;
     const matrix_graph_type   m_A_graph ;
@@ -1166,8 +1188,8 @@ public:
   struct Kernel {
     typedef typename MatrixDevice::execution_space execution_space;
     typedef typename Kokkos::FlatArrayType<matrix_values_type>::type matrix_array_type;
-    typedef typename input_vector_type::array_type input_array_type;
-    typedef typename output_vector_type::array_type output_array_type;
+    typedef typename Impl::RemoveRandomAccess< typename input_vector_type::array_type >::type input_array_type;
+    typedef typename Impl::RemoveRandomAccess< typename output_vector_type::array_type >::type output_array_type;
 
     const matrix_array_type   m_A_values ;
     const matrix_graph_type   m_A_graph ;

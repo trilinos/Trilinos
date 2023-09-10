@@ -50,7 +50,7 @@ class ModifyEvenNumberedRows {
       ordinal_type cols[1];
       value_type vals[1];
 
-      const value_type ONE   = Kokkos::Details::ArithTraits<value_type>::one();
+      const value_type ONE   = Kokkos::ArithTraits<value_type>::one();
       const value_type THREE = ONE + ONE + ONE;
 
       cols[0] = lclRow;
@@ -97,7 +97,7 @@ bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A,
   typedef typename CrsMatrixType::value_type SC;
   typedef typename CrsMatrixType::ordinal_type LO;
 
-  const SC ONE   = Kokkos::Details::ArithTraits<SC>::one();
+  const SC ONE   = Kokkos::ArithTraits<SC>::one();
   const SC TWO   = ONE + ONE;
   const SC THREE = ONE + ONE + ONE;
 
@@ -135,7 +135,7 @@ void testOneCase(bool& /*success*/,
                  // Teuchos::FancyOStream& out,
                  std::ostream& out, const CrsMatrixType& A, const bool replace,
                  const bool sorted, const bool atomic) {
-  using Kokkos::Details::ArithTraits;
+  using Kokkos::ArithTraits;
   typedef typename CrsMatrixType::value_type value_type;
 
   // Teuchos::OSTab tab0 (out);

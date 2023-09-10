@@ -141,4 +141,4 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyConstant, getValidParameters)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

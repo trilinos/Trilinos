@@ -91,7 +91,7 @@ struct V_ReciprocalThresholdSelfFunctor
   typedef typename XV::execution_space execution_space;
   typedef typename XV::non_const_value_type value_type;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<value_type> KAT;
+  typedef Kokkos::ArithTraits<value_type> KAT;
   typedef typename KAT::mag_type mag_type;
 
   XV X_;
@@ -144,7 +144,7 @@ struct GlobalReciprocalThreshold<TpetraVectorType, true> {
   {
     typedef typename TpetraVectorType::scalar_type scalar_type;
     typedef typename TpetraVectorType::mag_type mag_type;
-    typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+    typedef Kokkos::ArithTraits<scalar_type> STS;
 
     const scalar_type ONE = STS::one ();
     const mag_type min_val_abs = STS::abs (min_val);
@@ -1170,8 +1170,8 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
       typedef typename MV::impl_scalar_type IST;
       typedef typename MV::local_ordinal_type LO;
-      typedef Kokkos::Details::ArithTraits<IST> ATS;
-      typedef Kokkos::Details::ArithTraits<typename ATS::mag_type> STM;
+      typedef Kokkos::ArithTraits<IST> ATS;
+      typedef Kokkos::ArithTraits<typename ATS::mag_type> STM;
 
       const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
       for (LO i = 0; i < lclNumRows; ++i) {

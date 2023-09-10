@@ -15,15 +15,15 @@
 //@HEADER
 
 /// \file ArithTraitsTest.hpp
-/// \brief Templated test for Kokkos::Details::ArithTraits
+/// \brief Templated test for Kokkos::ArithTraits
 ///
 /// This header file is an implementation detail of the tests for
-/// Kokkos::Details::ArithTraits.  Users must not rely on it existing,
+/// Kokkos::ArithTraits.  Users must not rely on it existing,
 /// or on its contents.  This header file should <i>not</i> be
 /// installed with Kokkos' other header files.
 ///
 /// On the other hand, this header file does give examples of how to
-/// use Kokkos::Details::ArithTraits, so it may be useful for users to
+/// use Kokkos::ArithTraits, so it may be useful for users to
 /// read it.
 
 #ifndef KOKKOS_ARITHTRAITSTEST_HPP
@@ -51,7 +51,7 @@
 #endif
 
 namespace {
-// Whether Kokkos::Details::ArithTraits<ScalarType> implements
+// Whether Kokkos::ArithTraits<ScalarType> implements
 // transcendental functions.  These include sqrt, pow, log, and
 // log10.
 template <class ScalarType>
@@ -92,8 +92,8 @@ struct HasTranscendentals<long double> {
 }  // namespace
 
 /// \class ArithTraitsTesterBase
-/// \brief Base class providing tests for Kokkos::Details::ArithTraits
-/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+/// \brief Base class providing tests for Kokkos::ArithTraits
+/// \tparam ScalarType Any type for which Kokkos::ArithTraits
 ///   has a specialization, and which can be executed on the parallel
 ///   device.
 /// \tparam DeviceType A Kokkos parallel device type.
@@ -107,8 +107,8 @@ struct HasTranscendentals<long double> {
 /// types.
 ///
 /// This class provides a Kokkos reduction operator for testing
-/// Kokkos::Details::ArithTraits.  This test works for any type
-/// <tt>ScalarType</tt> for which Kokkos::Details::ArithTraits has a
+/// Kokkos::ArithTraits.  This test works for any type
+/// <tt>ScalarType</tt> for which Kokkos::ArithTraits has a
 /// specialization, and which can be executed on the parallel device.
 ///
 /// The tests include those suitable for execution on the parallel
@@ -162,7 +162,7 @@ class ArithTraitsTesterBase {
   KOKKOS_INLINE_FUNCTION void operator()(size_type iwork,
                                          value_type& dst) const {
     TRACE();
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     (void)iwork;  // not using this argument
     int success = 1;
 
@@ -273,7 +273,7 @@ class ArithTraitsTesterBase {
   ///
   /// \return \c 1 if all the tests pass, else \c 0.
   int testHost(std::ostream& out) const {
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     using std::endl;
     int success = 1;
 
@@ -378,7 +378,7 @@ class ArithTraitsTesterBase {
 /// \brief Base class of ArithTraitsTester that exercises
 ///   transcendental functions, if and only if ArithTraits<ScalarType>
 ///   implements them.
-/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+/// \tparam ScalarType Any type for which Kokkos::ArithTraits
 ///   implements transcendental functions, along with the requirements
 ///   imposed by ArithTraitsTesterBase.
 /// \tparam DeviceType A Kokkos parallel device type.
@@ -441,7 +441,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 0>
   KOKKOS_INLINE_FUNCTION void operator()(size_type iwork,
                                          value_type& dst) const {
     TRACE();
-    // typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    // typedef Kokkos::ArithTraits<ScalarType> AT;
     (void)iwork;  // forestall compiler warning for unused variable
     int success = 1;
 
@@ -462,7 +462,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 0>
  protected:
   virtual int testHostImpl(std::ostream& out) const {
     using std::endl;
-    // typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    // typedef Kokkos::ArithTraits<ScalarType> AT;
     int success = 1;
 
     if (HasTranscendentals<ScalarType>::value) {
@@ -495,20 +495,16 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
 
   KOKKOS_INLINE_FUNCTION
   bool equal(const ScalarType& a, const ScalarType& b) const {
-    if (b != Kokkos::Details::ArithTraits<ScalarType>::zero()) {
+    if (b != Kokkos::ArithTraits<ScalarType>::zero()) {
       if (a > b)
-        return (a - b) / b <
-               2 * Kokkos::Details::ArithTraits<ScalarType>::epsilon();
+        return (a - b) / b < 2 * Kokkos::ArithTraits<ScalarType>::epsilon();
       else
-        return (b - a) / b <
-               2 * Kokkos::Details::ArithTraits<ScalarType>::epsilon();
+        return (b - a) / b < 2 * Kokkos::ArithTraits<ScalarType>::epsilon();
     } else {
       if (a > b)
-        return (a - b) <
-               2 * Kokkos::Details::ArithTraits<ScalarType>::epsilon();
+        return (a - b) < 2 * Kokkos::ArithTraits<ScalarType>::epsilon();
       else
-        return (b - a) <
-               2 * Kokkos::Details::ArithTraits<ScalarType>::epsilon();
+        return (b - a) < 2 * Kokkos::ArithTraits<ScalarType>::epsilon();
     }
   }
 
@@ -524,7 +520,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
   KOKKOS_INLINE_FUNCTION void operator()(size_type iwork,
                                          value_type& dst) const {
     TRACE();
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     (void)iwork;  // forestall compiler warning for unused variable
     int success = 1;
 
@@ -733,7 +729,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
  protected:
   virtual int testHostImpl(std::ostream& out) const {
     using std::endl;
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     int success = 1;
 
     if (!HasTranscendentals<ScalarType>::value) {
@@ -946,7 +942,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
 };
 
 /// \class ArithTraitsTesterComplexBase
-/// \brief Execute Kokkos::Details::ArithTraits tests relevant to
+/// \brief Execute Kokkos::ArithTraits tests relevant to
 ///   complex numbers (whether or not \c ScalarType is itself a
 ///   complex-valued type).
 ///
@@ -958,8 +954,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
 /// complex, but the specific tests that are run will depend on
 /// <tt>ScalarType</tt>.
 template <class ScalarType, class DeviceType,
-          const int is_complex =
-              Kokkos::Details::ArithTraits<ScalarType>::is_complex>
+          const int is_complex = Kokkos::ArithTraits<ScalarType>::is_complex>
 class ArithTraitsTesterComplexBase
     : public ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> {
  private:
@@ -1009,7 +1004,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 0>
   KOKKOS_INLINE_FUNCTION void operator()(size_type iwork,
                                          value_type& dst) const {
     TRACE();
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     (void)iwork;  // forestall compiler warning for unused variable
     int success = 1;
 
@@ -1048,7 +1043,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 0>
  protected:
   virtual int testHostImpl(std::ostream& out) const {
     using std::endl;
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
 
     int success = 1;
     // Apparently, std::numeric_limits<ScalarType>::is_signed is 1 only for real
@@ -1095,7 +1090,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1>
   KOKKOS_INLINE_FUNCTION void operator()(size_type iwork,
                                          value_type& dst) const {
     TRACE();
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     (void)iwork;  // forestall compiler warning for unused variable
     int success = 1;
 
@@ -1103,7 +1098,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1>
       FAILURE();
     }
     typedef typename AT::mag_type mag_type;
-    const mag_type one = Kokkos::Details::ArithTraits<mag_type>::one();
+    const mag_type one = Kokkos::ArithTraits<mag_type>::one();
 
     // This presumes that ScalarType, being a complex number, has a
     // constructor which takes two mag_type arguments.
@@ -1129,7 +1124,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1>
  protected:
   virtual int testHostImpl(std::ostream& out) const {
     using std::endl;
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     int success = 1;
 
     if (!AT::is_complex) {
@@ -1137,7 +1132,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1>
       FAILURE();
     }
     typedef typename AT::mag_type mag_type;
-    const mag_type one = Kokkos::Details::ArithTraits<mag_type>::one();
+    const mag_type one = Kokkos::ArithTraits<mag_type>::one();
 
     // This presumes that ScalarType, being a complex number, has a
     // constructor which takes two mag_type arguments.
@@ -1173,7 +1168,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1>
 /// \tparam DeviceType A Kokkos parallel device type.
 ///
 /// Kokkos reduction operator for testing those attributes of
-/// Kokkos::Details::ArithTraits relevant to floating-point types.
+/// Kokkos::ArithTraits relevant to floating-point types.
 ///
 /// The tests include those suitable for execution on the parallel
 /// device (operator()) and those suitable for execution on the host
@@ -1181,17 +1176,14 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1>
 /// executions of the test.  All redundant executions must return
 /// '1' (passed).
 template <class ScalarType, class DeviceType,
-          const int is_exact =
-              Kokkos::Details::ArithTraits<ScalarType>::is_exact>
+          const int is_exact = Kokkos::ArithTraits<ScalarType>::is_exact>
 class ArithTraitsTesterFloatingPointBase
     : public ArithTraitsTesterComplexBase<
-          ScalarType, DeviceType,
-          Kokkos::Details::ArithTraits<ScalarType>::is_complex> {
+          ScalarType, DeviceType, Kokkos::ArithTraits<ScalarType>::is_complex> {
  private:
   //! The base class of this class.
   typedef ArithTraitsTesterComplexBase<
-      ScalarType, DeviceType,
-      Kokkos::Details::ArithTraits<ScalarType>::is_complex>
+      ScalarType, DeviceType, Kokkos::ArithTraits<ScalarType>::is_complex>
       base_type;
 
  public:
@@ -1217,13 +1209,11 @@ class ArithTraitsTesterFloatingPointBase
 template <class ScalarType, class DeviceType>
 class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
     : public ArithTraitsTesterComplexBase<
-          ScalarType, DeviceType,
-          Kokkos::Details::ArithTraits<ScalarType>::is_complex> {
+          ScalarType, DeviceType, Kokkos::ArithTraits<ScalarType>::is_complex> {
  private:
   //! The base class of this class.
   typedef ArithTraitsTesterComplexBase<
-      ScalarType, DeviceType,
-      Kokkos::Details::ArithTraits<ScalarType>::is_complex>
+      ScalarType, DeviceType, Kokkos::ArithTraits<ScalarType>::is_complex>
       base_type;
 
  public:
@@ -1238,7 +1228,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
   KOKKOS_INLINE_FUNCTION void operator()(size_type iwork,
                                          value_type& dst) const {
     TRACE();
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     (void)iwork;  // forestall compiler warning for unused variable
     int success = 1;
 
@@ -1284,7 +1274,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
 
  protected:
   virtual int testHostImpl(std::ostream& out) const {
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     using std::endl;
     int success = 1;
 
@@ -1338,13 +1328,11 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
 template <class ScalarType, class DeviceType>
 class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
     : public ArithTraitsTesterComplexBase<
-          ScalarType, DeviceType,
-          Kokkos::Details::ArithTraits<ScalarType>::is_complex> {
+          ScalarType, DeviceType, Kokkos::ArithTraits<ScalarType>::is_complex> {
  private:
   //! The base class of this class.
   typedef ArithTraitsTesterComplexBase<
-      ScalarType, DeviceType,
-      Kokkos::Details::ArithTraits<ScalarType>::is_complex>
+      ScalarType, DeviceType, Kokkos::ArithTraits<ScalarType>::is_complex>
       base_type;
 
  public:
@@ -1359,7 +1347,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
   KOKKOS_INLINE_FUNCTION void operator()(size_type iwork,
                                          value_type& dst) const {
     TRACE();
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     (void)iwork;  // forestall compiler warning for unused variable
     int success = 1;
 
@@ -1380,7 +1368,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
 
  protected:
   virtual int testHostImpl(std::ostream& out) const {
-    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    typedef Kokkos::ArithTraits<ScalarType> AT;
     using std::endl;
     int success = 1;
 
@@ -1399,8 +1387,8 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
 };
 
 /// \class ArithTraitsTester
-/// \brief Tests for Kokkos::Details::ArithTraits
-/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+/// \brief Tests for Kokkos::ArithTraits
+/// \tparam ScalarType Any type for which Kokkos::ArithTraits
 ///   has a specialization, and which can be executed on the parallel
 ///   device.
 /// \tparam DeviceType A Kokkos parallel device type.
@@ -1415,9 +1403,9 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
 /// for host functions <i>do</i> use run-time polymorphism.
 ///
 /// This class (through its base class) provides a Kokkos reduction
-/// operator for testing Kokkos::Details::ArithTraits.  This test
+/// operator for testing Kokkos::ArithTraits.  This test
 /// works for any type <tt>ScalarType</tt> for which
-/// Kokkos::Details::ArithTraits has a specialization, and which can
+/// Kokkos::ArithTraits has a specialization, and which can
 /// be executed on the parallel device.
 ///
 /// The tests include those suitable for execution on the parallel
@@ -1438,8 +1426,8 @@ class ArithTraitsTester
   KOKKOS_INLINE_FUNCTION ArithTraitsTester() {}
 };
 
-/// \brief Run the Kokkos::Details::ArithTraits tests on the parallel device.
-/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+/// \brief Run the Kokkos::ArithTraits tests on the parallel device.
+/// \tparam ScalarType Any type for which Kokkos::ArithTraits
 ///   has a specialization, and which can be executed on the parallel
 ///   device.
 /// \tparam DeviceType A Kokkos parallel device type.
@@ -1457,17 +1445,15 @@ int testArithTraitsOnDevice(std::ostream& out, const int verbose) {
                           functor_type(), success);
   if (success) {
     if (verbose)
-      out << Kokkos::Details::ArithTraits<ScalarType>::name() << " passed"
-          << endl;
+      out << Kokkos::ArithTraits<ScalarType>::name() << " passed" << endl;
   } else {
-    out << Kokkos::Details::ArithTraits<ScalarType>::name() << " FAILED"
-        << endl;
+    out << Kokkos::ArithTraits<ScalarType>::name() << " FAILED" << endl;
   }
   return success;
 }
 
-/// \brief Run the Kokkos::Details::ArithTraits tests on the host.
-/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+/// \brief Run the Kokkos::ArithTraits tests on the host.
+/// \tparam ScalarType Any type for which Kokkos::ArithTraits
 ///   has a specialization.
 /// \tparam DeviceType A Kokkos parallel device type.
 ///
@@ -1482,16 +1468,14 @@ int testArithTraitsOnHost(std::ostream& out, const int verbose) {
 
   if (localSuccess) {
     if (verbose)
-      out << Kokkos::Details::ArithTraits<ScalarType>::name() << " passed"
-          << endl;
+      out << Kokkos::ArithTraits<ScalarType>::name() << " passed" << endl;
   } else {
-    out << Kokkos::Details::ArithTraits<ScalarType>::name() << " FAILED"
-        << endl;
+    out << Kokkos::ArithTraits<ScalarType>::name() << " FAILED" << endl;
   }
   return localSuccess;
 }
 
-/// \brief Run the Kokkos::Details::ArithTraits tests for all (valid)
+/// \brief Run the Kokkos::ArithTraits tests for all (valid)
 ///   scalar types, on the given parallel device.
 /// \tparam DeviceType A Kokkos parallel device type.
 ///
@@ -1586,7 +1570,7 @@ int runAllArithTraitsDeviceTests(std::ostream& out, const int verbose) {
   return success && curSuccess;
 }
 
-/// \brief Run the Kokkos::Details::ArithTraits tests for all scalar
+/// \brief Run the Kokkos::ArithTraits tests for all scalar
 ///   types, on the host.
 /// \tparam DeviceType A Kokkos parallel device type.
 ///

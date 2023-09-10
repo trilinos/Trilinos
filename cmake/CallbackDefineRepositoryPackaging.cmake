@@ -1,11 +1,8 @@
 MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
-
-  #MESSAGE("TRIBITS_REPOSITORY_DEFINE_PACKAGING() called for Trilinos!")
  
   # We need to make sure that these excludes only apply to Trilinos, not the global
   # project.
   SET(Trilinos_SOURCE_EXCLUDE_DIR ${Trilinos_SOURCE_DIR})
-  #PRINT_VAR(Trilinos_SOURCE_EXCLUDE_DIR)
 
   SET(CPACK_SOURCE_IGNORE_FILES
     ${CPACK_SOURCE_IGNORE_FILES}
@@ -47,6 +44,17 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_EXCLUDE_DIR}/bootstrap$
     ${Trilinos_SOURCE_EXCLUDE_DIR}/config/
     )
+
+  if (NOT ${CMAKE_PROJECT_NAME}_ENABLE_TrilinosBuildStats)
+    # Don't strip out all of commonTools/build_stats/, just the TriBITS
+    # package-related files.  We want to keep these, even for a tarball
+    # release.
+    set(buildStatsPkgDir "${Trilinos_SOURCE_DIR}/commonTools/build_stats")
+    list(REMOVE_ITEM CPACK_SOURCE_IGNORE_FILES "${buildStatsPkgDir}/")
+    list(APPEND CPACK_SOURCE_IGNORE_FILES
+      "${buildStatsPkgDir}/cmake/Dependencies.cmake"
+      "${buildStatsPkgDir}/CMakeLists.txt" )
+  endif()
 
   APPEND_SET(TRIBITS_CPACK_PACKAGES_TO_NOT_IGNORE TriBITS)
   

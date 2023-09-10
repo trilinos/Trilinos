@@ -24,7 +24,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Supported Kokkos version in Trilinos
 # NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
 # compatibility with external Kokkos
-SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.0.1")
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.1.00")
 
 
 # Option to allow developers to ignore incompatible Kokkos versions
@@ -808,6 +808,20 @@ IF(Tpetra_INST_INT_UNSIGNED_LONG)
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned long")
 ENDIF()
 
+# ============================================================
+# MPI advance
+# ============================================================
+
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_mpi_advance)
+  IF (DEFINED TpetraCore_ENABLE_mpi_advance)
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TpetraCore_ENABLE_mpi_advannce}")
+  ELSEIF (DEFINED TPL_ENABLE_mpi_advance)
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TPL_ENABLE_mpi_advance}")
+  ELSE ()
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance OFF)
+  ENDIF ()
+ENDIF ()
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_mpi_advance)
 
 # ============================================================
 # Scalar types
@@ -1265,7 +1279,6 @@ TRIBITS_PACKAGE_DEF()
 #
 # Identify what files to exclude when making a source tarball.
 #
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 TRIBITS_EXCLUDE_FILES(
   core/doc/CodingGuidelines

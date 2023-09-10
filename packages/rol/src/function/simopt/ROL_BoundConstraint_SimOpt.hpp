@@ -93,24 +93,6 @@ public:
     }
   }
 
-  /** \brief Update bounds.
-
-      The update function allows the user to update the bounds at each new iterations.
-          @param[in]      x      is the optimization variable.
-          @param[in]      flag   is set to true if control is changed.
-          @param[in]      iter   is the outer algorithm iterations count.
-  */
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->update(*(xs.get_1()),flag,iter);
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->update(*(xs.get_2()),flag,iter);
-    }
-  }
-
   /** \brief Project optimization variables onto the bounds.
 
       This function implements the projection of \f$x\f$ onto the bounds, i.e.,
@@ -149,28 +131,6 @@ public:
     if ( bnd2_->isActivated() ) {
       bnd2_->projectInterior(*(xs.get_2()));
     }
-  }
-
-  /** \brief Determine if a vector of Lagrange multipliers is nonnegative components.
-
-      This function returns true if components of \f$l\f$ corresponding to the components of \f$x\f$
-      that are active at the upper bound are nonpositive or the components of \f$l\f$ corresponding
-      to the components of \f$x\f$ that are active at the lower bound are nonnegative.
-  */
-  bool checkMultipliers( const Vector<Real> &l, const Vector<Real> &x ) {
-    const Vector_SimOpt<Real> &ls = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(l));
-    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(x));
-    bool nn1 = true;
-    if ( bnd1_->isActivated() ) {
-      nn1 = bnd1_->checkMultipliers(*(ls.get_1()),*(xs.get_1()));
-    }
-    bool nn2 = true;
-    if ( bnd2_->isActivated() ) {
-      nn2 = bnd2_->checkMultipliers(*(ls.get_2()),*(xs.get_2()));
-    }
-    return (nn1 && nn2);
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.

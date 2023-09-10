@@ -108,12 +108,6 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(tutorial)
 
 #
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-#
 # D) Do standard postprocessing
 #
 

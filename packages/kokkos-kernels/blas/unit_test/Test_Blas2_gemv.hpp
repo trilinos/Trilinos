@@ -28,12 +28,9 @@ void impl_test_gemv(const char* mode, int M, int N) {
   typedef typename ViewTypeY::value_type ScalarY;
   typedef Kokkos::ArithTraits<ScalarY> KAT_Y;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-
-  ScalarA alpha = 3;
-  ScalarY beta  = 5;
-  double eps =
-      (std::is_same<typename KAT_Y::mag_type, float>::value ? 1e-2 : 5e-10);
+  const ScalarA alpha                = 3;
+  ScalarY beta                       = 5;
+  typename KAT_Y::mag_type const eps = KAT_Y::epsilon();
 
   int ldx;
   int ldy;
@@ -44,84 +41,79 @@ void impl_test_gemv(const char* mode, int M, int N) {
     ldx = M;
     ldy = N;
   }
-  typename vfA_type::BaseType b_A("A", M, N);
-  ViewTypeX x("X", ldx);
-  ViewTypeY y("Y", ldy);
-  ViewTypeY org_y("Org_Y", ldy);
 
-  ViewTypeA A                        = vfA_type::view(b_A);
-  typename ViewTypeX::const_type c_x = x;
-  typename ViewTypeA::const_type c_A = A;
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-
-  typename h_vfA_type::BaseType h_b_A = Kokkos::create_mirror_view(b_A);
-
-  typename ViewTypeA::HostMirror h_A = h_vfA_type::view(h_b_A);
-  typename ViewTypeX::HostMirror h_x = Kokkos::create_mirror_view(x);
-  typename ViewTypeY::HostMirror h_y = Kokkos::create_mirror_view(y);
+  view_stride_adapter<ViewTypeA> A("A", M, N);
+  view_stride_adapter<ViewTypeX> x("X", ldx);
+  view_stride_adapter<ViewTypeY> y("Y", ldy);
+  view_stride_adapter<ViewTypeY> org_y("Org_Y", ldy);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
+  constexpr double max_valX = 1;
+  constexpr double max_valY = 1;
+  constexpr double max_valA = 1;
   {
     ScalarX randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(x, rand_pool, randStart, randEnd);
+    Test::getRandomBounds(max_valX, randStart, randEnd);
+    Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarY randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(y, rand_pool, randStart, randEnd);
+    Test::getRandomBounds(max_valY, randStart, randEnd);
+    Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_A, rand_pool, randStart, randEnd);
+    Test::getRandomBounds(max_valA, randStart, randEnd);
+    Kokkos::fill_random(A.d_view, rand_pool, randStart, randEnd);
   }
 
-  Kokkos::deep_copy(org_y, y);
-  auto h_org_y =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), org_y);
+  const typename KAT_Y::mag_type max_error =
+      KAT_Y::abs(alpha * max_valA * max_valX * ldx + beta * max_valY);
+  const typename KAT_Y::mag_type tol =
+      max_error * eps * 2;  // adding small fudge factor of 2
 
-  Kokkos::deep_copy(h_x, x);
-  Kokkos::deep_copy(h_y, y);
-  Kokkos::deep_copy(h_b_A, b_A);
+  Kokkos::deep_copy(org_y.h_base, y.d_base);
+  Kokkos::deep_copy(x.h_base, x.d_base);
+  Kokkos::deep_copy(A.h_base, A.d_base);
 
   Kokkos::View<ScalarY*, Kokkos::HostSpace> expected("expected aAx+by", ldy);
-  Kokkos::deep_copy(expected, h_org_y);
-  vanillaGEMV(mode[0], alpha, h_A, h_x, beta, expected);
+  Kokkos::deep_copy(expected, org_y.h_view);
+  vanillaGEMV(mode[0], alpha, A.h_view, x.h_view, beta, expected);
 
-  KokkosBlas::gemv(mode, alpha, A, x, beta, y);
-  Kokkos::deep_copy(h_y, y);
+  KokkosBlas::gemv(mode, alpha, A.d_view, x.d_view, beta, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   int numErrors = 0;
   for (int i = 0; i < ldy; i++) {
-    if (KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
+    if (KAT_Y::abs(expected(i) - y.h_view(i)) > tol) {
       numErrors++;
+      std::cerr << __FILE__ << ":" << __LINE__
+                << ": expected(i)=" << expected(i) << ", h_y(i)=" << y.h_view(i)
+                << std::endl;
+    }
   }
   EXPECT_EQ(numErrors, 0) << "Nonconst input, " << M << 'x' << N
                           << ", alpha = " << alpha << ", beta = " << beta
                           << ", mode " << mode << ": gemv incorrect";
 
-  Kokkos::deep_copy(y, org_y);
-  KokkosBlas::gemv(mode, alpha, A, c_x, beta, y);
-  Kokkos::deep_copy(h_y, y);
+  Kokkos::deep_copy(y.d_base, org_y.h_base);
+  KokkosBlas::gemv(mode, alpha, A.d_view, x.d_view_const, beta, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   numErrors = 0;
   for (int i = 0; i < ldy; i++) {
-    if (KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
-      numErrors++;
+    if (KAT_Y::abs(expected(i) - y.h_view(i)) > tol) numErrors++;
   }
   EXPECT_EQ(numErrors, 0) << "Const vector input, " << M << 'x' << N
                           << ", alpha = " << alpha << ", beta = " << beta
                           << ", mode " << mode << ": gemv incorrect";
 
-  Kokkos::deep_copy(y, org_y);
-  KokkosBlas::gemv(mode, alpha, c_A, c_x, beta, y);
-  Kokkos::deep_copy(h_y, y);
+  Kokkos::deep_copy(y.d_base, org_y.h_base);
+  KokkosBlas::gemv(mode, alpha, A.d_view_const, x.d_view_const, beta, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   numErrors = 0;
   for (int i = 0; i < ldy; i++) {
-    if (KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
-      numErrors++;
+    if (KAT_Y::abs(expected(i) - y.h_view(i)) > tol) numErrors++;
   }
   EXPECT_EQ(numErrors, 0) << "Const matrix/vector input, " << M << 'x' << N
                           << ", alpha = " << alpha << ", beta = " << beta
@@ -130,15 +122,21 @@ void impl_test_gemv(const char* mode, int M, int N) {
   // This should overwrite the NaNs with the correct result.
   beta = KAT_Y::zero();
   // beta changed, so update the correct answer
-  vanillaGEMV(mode[0], alpha, h_A, h_x, beta, expected);
-  Kokkos::deep_copy(y, KAT_Y::nan());
-  KokkosBlas::gemv(mode, alpha, A, x, beta, y);
-  Kokkos::deep_copy(h_y, y);
+  vanillaGEMV(mode[0], alpha, A.h_view, x.h_view, beta, expected);
+  Kokkos::deep_copy(y.d_view, KAT_Y::nan());
+  KokkosBlas::gemv(mode, alpha, A.d_view, x.d_view, beta, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
   numErrors = 0;
   for (int i = 0; i < ldy; i++) {
-    if (KAT_Y::isNan(h_y(i)) ||
-        KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
+    if (KAT_Y::isNan(y.h_view(i)) ||
+        KAT_Y::abs(expected(i) - y.h_view(i)) >
+            KAT_Y::abs(alpha * max_valA * max_valX * ldx * eps * 2)) {
       numErrors++;
+      std::cerr << __FILE__ << ":" << __LINE__ << ": expected(" << i
+                << ")=" << expected(i) << ", h_y(" << i << ")=" << y.h_view(i)
+                << ", eps=" << eps
+                << ", 1024*2*eps=" << 1024 * 2 * KAT_Y::epsilon() << std::endl;
+    }
   }
   EXPECT_EQ(numErrors, 0) << "beta = 0, input contains NaN, A is " << M << 'x'
                           << N << ", mode " << mode << ": gemv incorrect";
@@ -203,33 +201,36 @@ int test_gemv(const char* mode) {
   // Device>(mode,132231,1024);
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
-  view_type_a_ls; typedef Kokkos::View<ScalarX*, Kokkos::LayoutStride, Device>
-  view_type_b_ls; typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device>
-  view_type_c_ls; Test::impl_test_gemv<view_type_a_ls, view_type_b_ls,
-  view_type_c_ls, Device>( mode, 0, 1024); Test::impl_test_gemv<view_type_a_ls,
-  view_type_b_ls, view_type_c_ls, Device>( mode, 1024, 0);
-    Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-  Device>( mode, 13, 13); Test::impl_test_gemv<view_type_a_ls, view_type_b_ls,
-  view_type_c_ls, Device>( mode, 13, 1024); Test::impl_test_gemv<view_type_a_ls,
-  view_type_b_ls, view_type_c_ls, Device>( mode, 50, 40);
-    Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-  Device>( mode, 1024, 1024); Test::impl_test_gemv<view_type_a_ls,
-  view_type_b_ls, view_type_c_ls, Device>( mode, 2131, 2131);
-    // Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-    // Device>(mode,132231,1024);
-  #endif
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
+  typedef Kokkos::View<ScalarX*, Kokkos::LayoutStride, Device> view_type_b_ls;
+  typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device> view_type_c_ls;
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 0, 1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 1024, 0);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 13, 13);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 13, 1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 50, 40);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 1024, 1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 2131, 2131);
+  // Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
+  // Device>(mode,132231,1024);
+#endif
 
-  #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-    Test::impl_test_gemv<view_type_a_ls, view_type_b_ll, view_type_c_lr,
-  Device>( mode, 1024, 1024); Test::impl_test_gemv<view_type_a_ll,
-  view_type_b_ls, view_type_c_lr, Device>( mode, 1024, 1024); #endif
-  */
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(
+      mode, 1024, 1024);
+  Test::impl_test_gemv<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(
+      mode, 1024, 1024);
+#endif
 
   return 1;
 }
