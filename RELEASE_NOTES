@@ -1,6 +1,23 @@
 
 ###############################################################################
 #                                                                             #
+# Trilinos Release 15.0 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+CMake
+
+  - Change the default for `Trilinos_MUST_FIND_ALL_TPL_LIBS` from `OFF` to
+    `ON`, by setting `Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT` to `ON`. It was
+    turned off by default because it breaks backward compatibility but it also
+    causes problems for new users and new configurations.
+
+    Users that do not want this new behavior can set
+    `-D Trilinos_MUST_FIND_ALL_TPL_LIBS=OFF`, which is backward compatible.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 14.2 Release Notes                                         #
 #                                                                             #
 ###############################################################################

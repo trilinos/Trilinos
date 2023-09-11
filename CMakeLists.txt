@@ -105,6 +105,9 @@ INSTALL_BUILD_STATS_SCRIPTS()
 # Install TriBITS so that other projects can use it
 include(SetupTribitsInstall)
 
+# See https://tribitspub.github.io/TriBITS/users_guide/index.html#project-name-must-find-all-tpl-libs
+SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
+
 IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
 ENDIF()
