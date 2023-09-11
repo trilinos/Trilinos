@@ -12,15 +12,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  prepare:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Remove Label
-        uses: actions-ecosystem/action-remove-labels@v1.3.0
-        with:
-          labels: "AT: PRE-TEST INSPECTED"
   inteloneapi:
-    needs: prepare
     runs-on: [self-hosted, trilogpu01]
     container:
       image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers
@@ -68,13 +60,3 @@ jobs:
       - name: ctest
         working-directory: /home/Trilinos/build/
         run: bash -l -c "ctest -j8"
-  cleanup-labels:
-    if: always()
-    needs: [inteloneapi]
-    runs-on: ubuntu-22.04
-    steps:
-    - name: Remove Labels
-      uses: actions-ecosystem/action-remove-labels@v1.3.0
-      with:
-        labels: |
-          AT: PRE-TEST INSPECTED
