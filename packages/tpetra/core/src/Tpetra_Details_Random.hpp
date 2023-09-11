@@ -55,8 +55,8 @@ public:
   // On GPU architectures, this will likely involve non-trivial host-to-device transfers.
   static void resetPool(int mpi_rank);
 
-  // The isInitialized function returns true if resetPool has been callled.
-  static bool isInitialized();
+  // The isSet function returns true if resetPool has been callled.
+  static bool isSet();
   // The getPool function will return the existing pool.
   static Kokkos::Random_XorShift64_Pool<ExecutionSpace> & getPool();
 };
@@ -67,7 +67,7 @@ template<>
 class Static_Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> {
 public:
   static void resetPool(int mpi_rank);
-  static bool isInitialized();
+  static bool isSet();
   static Kokkos::Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> & getPool();
 };
 #endif // KOKKOS_ENABLE_CUDA
@@ -78,7 +78,7 @@ template<>
 class Static_Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space> {
 public:
   static void resetPool(int mpi_rank);
-  static bool isInitialized();
+  static bool isSet();
   static Kokkos::Random_XorShift64_Pool<typename Kokkos::HIPSpace::execution_space> & getPool();
 };
 #endif // KOKKOS_ENABLE_HIP
@@ -89,7 +89,7 @@ template<>
 class Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> {
 public:
   static void resetPool(int mpi_rank);
-  static bool isInitialized();
+  static bool isSet();
   static Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> & getPool();
 };
 #endif // KOKKOS_ENABLE_SYCL
@@ -98,7 +98,7 @@ template<>
 class Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> {
 public:
   static void resetPool(int mpi_rank);
-  static bool isInitialized();
+  static bool isSet();
   static Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> & getPool();
 };
 

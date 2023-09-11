@@ -113,7 +113,7 @@ Static_Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space>::
 resetPool(int mpi_rank) {
   using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space>;
 
-  if(isInitialized())
+  if(isSet())
     delete cuda_pool_;
   else
     Kokkos::push_finalize_hook(finalize_cuda_pool);
@@ -123,14 +123,14 @@ resetPool(int mpi_rank) {
 
 bool 
 Static_Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space>::
-isInitialized() {
+isSet() {
   return cuda_pool_!=nullptr;
 }
 
 Kokkos::Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space> &
 Static_Random_XorShift64_Pool<typename Kokkos::CudaSpace::execution_space>::
 getPool() {
-  TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
+  TEUCHOS_TEST_FOR_EXCEPTION(!isSet(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
   return *cuda_pool_;
 }
 #endif // KOKKOS_ENABLE_CUDA
@@ -143,7 +143,7 @@ Static_Random_XorShift64_Pool<typename Kokkos::HipSpace::execution_space>::
 resetPool(int mpi_rank) {
   using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::HipSpace::execution_space>;
 
-  if(isInitialized())
+  if(isSet())
     delete hip_pool_;
   else
     Kokkos::push_finalize_hook(finalize_hip_pool);
@@ -153,14 +153,14 @@ resetPool(int mpi_rank) {
 
 bool 
 Static_Random_XorShift64_Pool<typename Kokkos::HipSpace::execution_space>::
-isInitialized() {
+isSet() {
   return hip_pool_!=nullptr;
 }
 
 Kokkos::Random_XorShift64_Pool<typename Kokkos::HipSpace::execution_space> &
 Static_Random_XorShift64_Pool<typename Kokkos::HipSpace::execution_space>::
 getPool() {
-  TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
+  TEUCHOS_TEST_FOR_EXCEPTION(!isSet(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
   return *hip_pool_;
 }
 #endif // KOKKOS_ENABLE_HIP
@@ -173,7 +173,7 @@ Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_spa
 resetPool(int mpi_rank) {
   using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>;
 
-  if(isInitialized())
+  if(isSet())
     delete sycl_pool_;
   else
     Kokkos::push_finalize_hook(finalize_sycl_pool);
@@ -183,14 +183,14 @@ resetPool(int mpi_rank) {
 
 bool 
 Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>::
-isInitialized() {
+isSet() {
   return sycl_pool_!=nullptr;
 }
 
 Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> &
 Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>::
 getPool() {
-  TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
+  TEUCHOS_TEST_FOR_EXCEPTION(!isSet(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
   return *sycl_pool_;
 }
 #endif // KOKKOS_ENABLE_SYCL
@@ -202,7 +202,7 @@ Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>::
 resetPool(int mpi_rank) {
   using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>;
 
-  if(isInitialized())
+  if(isSet())
     delete host_pool_;
   else
     Kokkos::push_finalize_hook(finalize_host_pool);
@@ -212,14 +212,14 @@ resetPool(int mpi_rank) {
 
 bool 
 Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>::
-isInitialized() {
+isSet() {
   return host_pool_!=nullptr;
 }
 
 Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> &
 Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>::
 getPool() {
-  TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
+  TEUCHOS_TEST_FOR_EXCEPTION(!isSet(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
   return *host_pool_;
 }
 

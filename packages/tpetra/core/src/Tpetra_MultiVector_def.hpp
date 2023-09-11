@@ -2686,7 +2686,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
 
     // Seed the pool based on the system RNG and the MPI rank, if needed
-    if(!tpetra_pool_type::isInitialized())
+    if(!tpetra_pool_type::isSet())
       tpetra_pool_type::resetPool(this->getMap()->getComm()->getRank());
 
     pool_type & rand_pool = tpetra_pool_type::getPool();
