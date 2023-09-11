@@ -64,6 +64,7 @@ class PartitioningSolution;
 #include <algorithm>
 #include <vector>
 #include <limits>
+#include <sstream>
 
 #ifdef _MSC_VER
 #define NOMINMAX
@@ -1705,10 +1706,13 @@ void PartitioningSolution<Adapter>::RemapParts()
   int np = comm_->getSize();
 
   if (np < nGlobalParts_) {
-    if (me == 0)
-      std::cout << "Remapping not yet supported for "
+    if (me == 0) {
+      std::ostringstream msg; 
+      msg << "Remapping not yet supported for "
            << "num_global_parts " << nGlobalParts_
            << " > num procs " << np << std::endl;
+      env_->debug(DETAILED_STATUS, msg.str());
+    }
     return;
   }
   // Build edges of a bipartite graph with np + nGlobalParts_ vertices,
@@ -1892,11 +1896,13 @@ void PartitioningSolution<Adapter>::RemapParts()
     long newgstaying = measure_stays(remap, idx, adj, wgt,
                                                       nGlobalParts_, np);
     doRemap = (newgstaying > gstaying);
-    std::cout << "gstaying " << gstaying << " measure(input) "
+    std::ostringstream msg;
+    msg << "gstaying " << gstaying << " measure(input) "
          << measure_stays(NULL, idx, adj, wgt, nGlobalParts_, np)
          << " newgstaying " << newgstaying
          << " nontrivial " << nontrivial
          << " doRemap " << doRemap << std::endl;
+    env_->debug(DETAILED_STATUS, msg.str());
   }
   delete [] idx;
   delete [] sizes;
