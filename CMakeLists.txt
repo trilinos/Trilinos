@@ -92,7 +92,7 @@ SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
 # See https://docs.trilinos.org/files/TrilinosBuildReference.html#setting-the-install-prefix
-SET(Trilinos_USE_GNUINSTALLDIRS ON)
+SET(Trilinos_USE_GNUINSTALLDIRS_DEFAULT ON)
 
 # Set up C++ language standard selection
 include(SetTrilinosCxxStandard)
