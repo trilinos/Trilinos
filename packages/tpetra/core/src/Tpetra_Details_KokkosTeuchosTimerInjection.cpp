@@ -150,6 +150,7 @@ namespace Details {
       std::string device_label("(");
       {
         using namespace Kokkos::Tools::Experimental;
+
         ExecutionSpaceIdentifier eid = identifier_from_devid(deviceId);
         if      (eid.type == DeviceType::Serial)       device_label+="Serial";
         else if (eid.type == DeviceType::OpenMP)       device_label+="OpenMP";
@@ -163,7 +164,12 @@ namespace Details {
         else if (eid.type == DeviceType::Unknown)      device_label+="Unknown";
         else                                           device_label+="Unknown to Tpetra";
 
-        device_label += " " + std::to_string(eid.instance_id) + ")";
+        if(eid.instance_id == Impl::int_for_synchronization_reason(SpecialSynchronizationCases::GlobalDeviceSynchronization))
+           device_label += " All Instances)";
+        else if(eid.instance_id == Impl::int_for_synchronization_reason(SpecialSynchronizationCases::DeepCopyResourceSynchronization))
+          device_label += " DeepCopyResource)";
+        else
+          device_label += " Instance " + std::to_string(eid.instance_id) + ")";
       }
 
       timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::fence ")+name + " " + device_label);
