@@ -461,4 +461,5 @@ int run(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   run<double>(argc,argv);
   // run<float>(argc,argv);
+  return 0;
 }
