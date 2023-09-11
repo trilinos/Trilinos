@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
       MyOM->stream(Warnings) << "   || <X1,X1> - I || : " << err << endl;
       // X2
       MVT::MvRandom(*X2);
-      dummy = OM->projectAndNormalize(*X2,tuple<RCP<const MV> >(X1));
+      dummy = OM->projectAndNormalize(*X2,Teuchos::tuple<RCP<const MV> >(X1));
       TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error, 
           "projectAndNormalize(X2,X1) returned rank " << dummy << " from " 
           << sizeX2 << " vectors. Cannot continue.");
@@ -450,21 +450,21 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
     }
     else if ( (t && 3) == 1 ) {
       // X1
-      theX = tuple(X1);
-      theMX = tuple(lclMX1);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      theX = Teuchos::tuple(X1);
+      theMX = Teuchos::tuple(lclMX1);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // X2
-      theX = tuple(X2);
-      theMX = tuple(lclMX2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      theX = Teuchos::tuple(X2);
+      theMX = Teuchos::tuple(lclMX2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
     else {
       // X1 and X2, and the reverse.
-      theX = tuple(X1,X2);
-      theMX = tuple(lclMX1,lclMX2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      theX = Teuchos::tuple(X1,X2);
+      theMX = Teuchos::tuple(lclMX1,lclMX2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -551,8 +551,8 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
-        theX = tuple( theX[1], theX[0] );
-        theMX = tuple( theMX[1], theMX[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
+        theMX = Teuchos::tuple( theMX[1], theMX[0] );
         // run test
         ret = OM->projectAndNormalizeMat(*Scopy,theX,C,B,MScopy,theMX);
         sout << "projectAndNormalizeMat() returned rank " << ret << endl;
@@ -594,8 +594,8 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
-        theMX = tuple( theMX[1], theMX[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
+        theMX = Teuchos::tuple( theMX[1], theMX[0] );
       }
 
 
@@ -928,21 +928,21 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
     }
     else if ( (t && 3) == 1 ) {
       // X1
-      theX = tuple(X1);
-      theMX = tuple(lclMX1);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      theX = Teuchos::tuple(X1);
+      theMX = Teuchos::tuple(lclMX1);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // X2
-      theX = tuple(X2);
-      theMX = tuple(lclMX2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      theX = Teuchos::tuple(X2);
+      theMX = Teuchos::tuple(lclMX2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
     else {
       // X1 and X2, and the reverse.
-      theX = tuple(X1,X2);
-      theMX = tuple(lclMX1,lclMX2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      theX = Teuchos::tuple(X1,X2);
+      theMX = Teuchos::tuple(lclMX1,lclMX2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -995,8 +995,8 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
-        theX = tuple( theX[1], theX[0] );
-        theMX = tuple( theMX[1], theMX[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
+        theMX = Teuchos::tuple( theMX[1], theMX[0] );
         // run test
         OM->projectMat(*Scopy,theX,C,MScopy,theMX);
         // we allocate S and MS for each test, so we can save these as views
@@ -1010,8 +1010,8 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
-        theMX = tuple( theMX[1], theMX[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
+        theMX = Teuchos::tuple( theMX[1], theMX[0] );
       }
 
       // test all outputs for correctness

@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
       MyOM->stream(Warnings) << "   || <X1,X1> - I || : " << err << endl;
       // X2
       MVT::MvRandom(*X2);
-      dummy = OM->projectAndNormalize(*X2,tuple<RCP<const MV> >(X1));
+      dummy = OM->projectAndNormalize(*X2,Teuchos::tuple<RCP<const MV> >(X1));
       TEUCHOS_TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error, 
           "projectAndNormalize(X2,X1) returned rank " << dummy << " from " 
           << sizeX2 << " vectors. Cannot continue.");
@@ -425,18 +425,18 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
     }
     else if ( (t && 3) == 1 ) {
       // X1
-      theX = tuple(X1);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      theX = Teuchos::tuple(X1);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // X2
-      theX = tuple(X2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      theX = Teuchos::tuple(X2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
     else {
       // X1 and X2, and the reverse.
-      theX = tuple(X1,X2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      theX = Teuchos::tuple(X1,X2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -509,7 +509,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
-        theX = tuple( theX[1], theX[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
         // run test
         ret = OM->projectAndNormalize(*Scopy,theX,C,B);
         sout << "projectAndNormalize() returned rank " << ret << endl;
@@ -544,7 +544,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
       }
 
 
@@ -661,7 +661,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
       // copies of S,MS
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
-      Anasazi::randomSDM(B);
+      Anasazi::randomSDM(*B);
       // run test
       ret = OM->normalize(*Scopy,B);
       sout << "normalize() returned rank " << ret << endl;
@@ -789,18 +789,18 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
     }
     else if ( (t && 3) == 1 ) {
       // X1
-      theX = tuple(X1);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      theX = Teuchos::tuple(X1);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // X2
-      theX = tuple(X2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      theX = Teuchos::tuple(X2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
     else {
       // X1 and X2, and the reverse.
-      theX = tuple(X1,X2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      theX = Teuchos::tuple(X1,X2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -845,7 +845,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
-        theX = tuple( theX[1], theX[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
         // run test
         OM->project(*Scopy,theX,C);
         // we allocate S and MS for each test, so we can save these as views
@@ -858,7 +858,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
       }
 
       // test all outputs for correctness

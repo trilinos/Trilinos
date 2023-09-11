@@ -80,12 +80,13 @@ using std::endl;
 using std::vector;
 
 typedef std::complex<double>                ST;
-typedef ScalarTraits< ST >                 SCT;
+typedef ScalarTraits<ST>                   SCT;
 typedef SCT::magnitudeType                  MT;
-typedef MultiVector< ST, int >              MV;
-typedef Operator< ST, int >                 OP;
-typedef MultiVecTraits< ST, MV >           MVT;
-typedef OperatorTraits< ST, MV, OP >       OPT;
+typedef MultiVector<ST>                     MV;
+typedef MV::global_ordinal_type             GO;
+typedef Operator<ST>                        OP;
+typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
+typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
 
 // this is the tolerance that all tests are performed against
 const MT TOL = 1.0e-12;
@@ -105,6 +106,7 @@ int main(int argc, char *argv[])
 {
   const ST ONE = SCT::one();
   const MT ZERO = SCT::magnitude(SCT::zero());
+
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   int info = 0;
@@ -188,33 +190,32 @@ int main(int argc, char *argv[])
         }
         return -1;
       }
-      // create map
-      map = rcp(new Map<int>(dim,0,comm));
-      M = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
-      if (MyPID == 0) {
-        // Convert interleaved doubles to complex values
-        // HB format is compressed column. CrsMatrix is compressed row.
-        const double *dptr = dvals;
-        const int *rptr = rowind;
-        for (int c=0; c<dim; ++c) {
-          for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-            M->insertGlobalValues(*rptr++ - 1,tuple(c),tuple(ST(dptr[0],dptr[1])));
-            dptr += 2;
-          }
-        }
-      }
-      if (MyPID == 0) {
-        // Clean up.
-        free( dvals );
-        free( colptr );
-        free( rowind );
-      }
-      M->fillComplete();
-    } // else M == null
-    else {
-      // let M remain null, allocate map with command-line specified dim
-      map = rcp(new Map<int>(dim,0,comm));
-    }
+     // create map
+     map = rcp (new Map<> (dim, 0, comm));
+     M = rcp (new CrsMatrix<ST> (map, rnnzmax));
+     if (MyPID == 0) {
+       // Convert interleaved doubles to complex values
+       // HB format is compressed column. CrsMatrix is compressed row.
+       const double *dptr = dvals;
+       const int *rptr = rowind;
+       for (int c=0; c<dim; ++c) {
+         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
+           M->insertGlobalValues (static_cast<GO> (*rptr++ - 1), tuple<GO> (c), tuple (ST (dptr[0], dptr[1])));
+           dptr += 2;
+         }
+       }
+ 
+       // Clean up.
+       free( dvals );
+       free( colptr );
+       free( rowind );
+     }
+     M->fillComplete();
+   } // else M == null
+   else {
+     // let M remain null, allocate map with command-line specified dim
+     map = rcp(new Map<>(dim,0,comm));
+   }
 
     // Create ortho managers
     RCP<OrthoManager<ST,MV> > OM;

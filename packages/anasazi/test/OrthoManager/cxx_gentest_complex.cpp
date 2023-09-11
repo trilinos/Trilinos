@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 
       // X1 ortho to Y2
       MVT::MvRandom(*X1);
-      OM_basic->project(*X1,tuple<RCP<const MV> >(Y2));
+      OM_basic->project(*X1,Teuchos::tuple<RCP<const MV> >(Y2));
       err = OM_basic->orthogError(*X1,*Y2);
       TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "project(X1,Y2) did not meet tolerance: orthog(X1,Y2) == " << err);
@@ -278,14 +278,14 @@ int main(int argc, char *argv[])
       lapack.POTRF('U',yTx1.numCols(),yTx1.values(),yTx1.stride(),&info);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
           "New <Y1,X1> not s.p.d.: couldn't computed Cholesky: info == " << info
-          << "\nyTx1: \n" << yTx1);
+          << "\nyTx1: \n" << printMat(yTx1));
 
       // X2 ortho to Y1
       MVT::MvRandom(*X2);
       MVT::MvNorm(*X2,norms2);
       for (unsigned int i=0; i<norms2.size(); i++) scale2[i] = ONE/norms2[i];
       MVT::MvScale(*X2,scale2);
-      OM_basic->project(*X2,tuple<RCP<const MV> >(Y1));
+      OM_basic->project(*X2,Teuchos::tuple<RCP<const MV> >(Y1));
       err = OM_basic->orthogError(*X2,*Y1);
       TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "project(X2,Y1) did not meet tolerance: orthog(X2,Y1) == " << err);
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
       lapack.POTRF('U',yTx2.numCols(),yTx2.values(),yTx2.stride(),&info);
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
           "New <Y2,X2> not s.p.d.: couldn't computed Cholesky: info == " << info
-          << "\nyTx2: \n" << yTx2);
+          << "\nyTx2: \n" << printMat(yTx2));
     }
     MyOM->stream(Warnings) << endl;
 
@@ -616,27 +616,27 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
     }
     else if ( (t && 3) == 1 ) {
       // <X1,Y1>
-      theX = tuple(X1);
-      theY = tuple(Y1);
-      theMX = tuple(MX1);
-      theMY = tuple(MY1);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      theX = Teuchos::tuple(X1);
+      theY = Teuchos::tuple(Y1);
+      theMX = Teuchos::tuple(MX1);
+      theMY = Teuchos::tuple(MY1);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // <X2,Y2>
-      theX = tuple(X2);
-      theY = tuple(Y2);
-      theMX = tuple(MX2);
-      theMY = tuple(MY2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      theX = Teuchos::tuple(X2);
+      theY = Teuchos::tuple(Y2);
+      theMX = Teuchos::tuple(MX2);
+      theMY = Teuchos::tuple(MY2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
     else {
       // <X1,Y2> and <X2,Y2>, and the reverse.
-      theX = tuple(X1,X2);
-      theY = tuple(Y1,Y2);
-      theMX = tuple(MX1,MX2);
-      theMY = tuple(MY1,MY2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      theX = Teuchos::tuple(X1,X2);
+      theY = Teuchos::tuple(Y1,Y2);
+      theMX = Teuchos::tuple(MX1,MX2);
+      theMY = Teuchos::tuple(MY1,MY2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -731,10 +731,10 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
-        theX = tuple( theX[1], theX[0] );
-        theY = tuple( theY[1], theY[0] );
-        theMX = tuple( theMX[1], theMX[0] );
-        theMY = tuple( theMY[1], theMY[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
+        theY = Teuchos::tuple( theY[1], theY[0] );
+        theMX = Teuchos::tuple( theMX[1], theMX[0] );
+        theMY = Teuchos::tuple( theMY[1], theMY[0] );
         // run test
         ret = OM->projectAndNormalizeGen(
             *Scopy,theX,theY,localIsBiortho,C,B,MScopy,theMX,theMY);
@@ -777,10 +777,10 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
-        theY = tuple( theY[1], theY[0] );
-        theMX = tuple( theMX[1], theMX[0] );
-        theMY = tuple( theMY[1], theMY[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
+        theY = Teuchos::tuple( theY[1], theY[0] );
+        theMX = Teuchos::tuple( theMX[1], theMX[0] );
+        theMY = Teuchos::tuple( theMY[1], theMY[0] );
       }
 
 
@@ -968,27 +968,27 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
     }
     else if ( (t && 3) == 1 ) {
       // <X1,Y1>
-      theX = tuple(X1);
-      theY = tuple(Y1);
-      theMX = tuple(MX1);
-      theMY = tuple(MY1);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      theX = Teuchos::tuple(X1);
+      theY = Teuchos::tuple(Y1);
+      theMX = Teuchos::tuple(MX1);
+      theMY = Teuchos::tuple(MY1);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // <X2,Y2>
-      theX = tuple(X2);
-      theY = tuple(Y2);
-      theMX = tuple(MX2);
-      theMY = tuple(MY2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      theX = Teuchos::tuple(X2);
+      theY = Teuchos::tuple(Y2);
+      theMX = Teuchos::tuple(MX2);
+      theMY = Teuchos::tuple(MY2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
     else {
       // <X1,Y2> and <X2,Y2>, and the reverse.
-      theX = tuple(X1,X2);
-      theY = tuple(Y1,Y2);
-      theMX = tuple(MX1,MX2);
-      theMY = tuple(MY1,MY2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      theX = Teuchos::tuple(X1,X2);
+      theY = Teuchos::tuple(Y1,Y2);
+      theMX = Teuchos::tuple(MX1,MX2);
+      theMY = Teuchos::tuple(MY1,MY2);
+      C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -1048,10 +1048,10 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
-        theX = tuple( theX[1], theX[0] );
-        theY = tuple( theY[1], theY[0] );
-        theMX = tuple( theMX[1], theMX[0] );
-        theMY = tuple( theMY[1], theMY[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
+        theY = Teuchos::tuple( theY[1], theY[0] );
+        theMX = Teuchos::tuple( theMX[1], theMX[0] );
+        theMY = Teuchos::tuple( theMY[1], theMY[0] );
         // run test
         OM->projectGen(*Scopy,theX,theY,localIsBiortho,C,MScopy,theMX,theMY);
         // we allocate S and MS for each test, so we can save these as views
@@ -1065,10 +1065,10 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
-        theY = tuple( theY[1], theY[0] );
-        theMX = tuple( theMX[1], theMX[0] );
-        theMY = tuple( theMY[1], theMY[0] );
+        theX = Teuchos::tuple( theX[1], theX[0] );
+        theY = Teuchos::tuple( theY[1], theY[0] );
+        theMX = Teuchos::tuple( theMX[1], theMX[0] );
+        theMY = Teuchos::tuple( theMY[1], theMY[0] );
       }
 
       // test all outputs for correctness
