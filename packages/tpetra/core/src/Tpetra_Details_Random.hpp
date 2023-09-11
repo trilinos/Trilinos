@@ -94,14 +94,25 @@ public:
 };
 #endif // KOKKOS_ENABLE_SYCL
 
+#ifdef KOKKOS_ENABLE_OPENMP
 template<>
-class Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> {
+class Static_Random_XorShift64_Pool<typename Kokkos::OpenMP> {
 public:
   static void resetPool(int mpi_rank);
   static bool isSet();
-  static Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> & getPool();
+  static Kokkos::Random_XorShift64_Pool<typename Kokkos::OpenMP> & getPool();
 };
+#endif // KOKKOS_ENABLE_OPENMP
 
+#ifdef KOKKOS_ENABLE_SERIAL
+template<>
+class Static_Random_XorShift64_Pool<typename Kokkos::Serial> {
+public:
+  static void resetPool(int mpi_rank);
+  static bool isSet();
+  static Kokkos::Random_XorShift64_Pool<typename Kokkos::Serial> & getPool();
+};
+#endif // KOKKOS_ENABLE_SERIAL
 
 } // namespace Details
 } // namespace Tpetra

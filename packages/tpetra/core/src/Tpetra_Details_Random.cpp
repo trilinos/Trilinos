@@ -94,14 +94,28 @@ void finalize_sycl_pool() {
 #endif // KOKKOS_ENABLE_SYCL
 
 
-Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> * host_pool_=nullptr;
+#ifdef KOKKOS_ENABLE_OPENMP
+Kokkos::Random_XorShift64_Pool<Kokkos::OpenMP> * openmp_pool_=nullptr;
 
-void finalize_host_pool() {
-  if(host_pool_ != nullptr) {
-    delete host_pool_;
-    host_pool_ = nullptr;
+void finalize_openmp_pool() {
+  if(openmp_pool_ != nullptr) {
+    delete openmp_pool_;
+    openmp_pool_ = nullptr;
   }   
 }
+#endif // KOKKOS_ENABLE_OPENMP
+
+
+#ifdef KOKKOS_ENABLE_SERIAL
+Kokkos::Random_XorShift64_Pool<Kokkos::Serial> * serial_pool_=nullptr;
+
+void finalize_serial_pool() {
+  if(serial_pool_ != nullptr) {
+    delete serial_pool_;
+    serial_pool_ = nullptr;
+  }   
+}
+#endif // KOKKOS_ENABLE_SERIAL
 
 } // namespace (anonymous)
 
@@ -197,33 +211,63 @@ getPool() {
 
 
 /********************************************************************************/
+#ifdef KOKKOS_ENABLE_OPENMP
 void 
-Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>::
+Static_Random_XorShift64_Pool<Kokkos::OpenMP>::
 resetPool(int mpi_rank) {
-  using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>;
+  using pool_type = Kokkos::Random_XorShift64_Pool<Kokkos::OpenMP>;
 
   if(isSet())
-    delete host_pool_;
+    delete openmp_pool_;
   else
-    Kokkos::push_finalize_hook(finalize_host_pool);
+    Kokkos::push_finalize_hook(finalize_openmp_pool);
 
-  host_pool_ = new pool_type(getSeedFromRank(mpi_rank));
+  openmp_pool_ = new pool_type(getSeedFromRank(mpi_rank));
 } 
 
 bool 
-Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>::
+Static_Random_XorShift64_Pool<Kokkos::OpenMP>::
 isSet() {
-  return host_pool_!=nullptr;
+  return openmp_pool_!=nullptr;
 }
 
-Kokkos::Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space> &
-Static_Random_XorShift64_Pool<typename Kokkos::HostSpace::execution_space>::
+Kokkos::Random_XorShift64_Pool<Kokkos::OpenMP> &
+Static_Random_XorShift64_Pool<Kokkos::OpenMP>::
 getPool() {
   TEUCHOS_TEST_FOR_EXCEPTION(!isSet(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
-  return *host_pool_;
+  return *openmp_pool_;
+}
+#endif // KOKKOS_ENABLE_OPENMP
+
+
+/********************************************************************************/
+#ifdef KOKKOS_ENABLE_SERIAL
+void 
+Static_Random_XorShift64_Pool<Kokkos::Serial>::
+resetPool(int mpi_rank) {
+  using pool_type = Kokkos::Random_XorShift64_Pool<Kokkos::Serial>;
+
+  if(isSet())
+    delete serial_pool_;
+  else
+    Kokkos::push_finalize_hook(finalize_serial_pool);
+
+  serial_pool_ = new pool_type(getSeedFromRank(mpi_rank));
+} 
+
+bool 
+Static_Random_XorShift64_Pool<Kokkos::Serial>::
+isSet() {
+  return serial_pool_!=nullptr;
 }
 
-
+Kokkos::Random_XorShift64_Pool<Kokkos::Serial> &
+Static_Random_XorShift64_Pool<Kokkos::Serial>::
+getPool() {
+  TEUCHOS_TEST_FOR_EXCEPTION(!isSet(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
+  return *serial_pool_;
+}
+#endif // KOKKOS_ENABLE_SERIAL
 
 
 } // namespace Details
