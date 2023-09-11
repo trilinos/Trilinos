@@ -144,7 +144,29 @@ namespace Details {
         return;        
       active_handle = (active_handle+1) % 1024;
       *handle = active_handle;
-      timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::fence ")+name + " " + std::to_string(deviceId));
+
+      // Get a useful label from the deviceId
+      // NOTE: Relevant code is in: kokkos/core/src/impl/Kokkos_Profiling_Interface.hpp
+      std::string device_label("(");
+      {
+        using namespace Kokkos::Tools::Experimental;
+        ExecutionSpaceIdentifier eid = identifier_from_devid(deviceId);
+        if      (eid.type == DeviceType::Serial)       device_label+="Serial";
+        else if (eid.type == DeviceType::OpenMP)       device_label+="OpenMP";
+        else if (eid.type == DeviceType::Cuda)         device_label+="Cuda";
+        else if (eid.type == DeviceType::HIP)          device_label+="HIP";
+        else if (eid.type == DeviceType::OpenMPTarget) device_label+="OpenMPTarget";
+        else if (eid.type == DeviceType::HPX)          device_label+="HPX";
+        else if (eid.type == DeviceType::Threads)      device_label+="Threats";
+        else if (eid.type == DeviceType::SYCL)         device_label+="SYCL";
+        else if (eid.type == DeviceType::OpenACC)      device_label+="OpenACC";
+        else if (eid.type == DeviceType::Unknown)      device_label+="Unknown";
+        else                                           device_label+="Unknown to Tpetra";
+
+        device_label += " " + std::to_string(eid.instance_id) + ")";
+      }
+
+      timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::fence ")+name + " " + device_label);
       timer_->start();
       timer_->incrementNumCalls();
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
