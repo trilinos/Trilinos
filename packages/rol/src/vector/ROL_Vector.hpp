@@ -78,6 +78,9 @@ namespace ROL {
 
 template <class Real>
 class Vector
+#ifdef ENABLE_PYROL
+ : public std::enable_shared_from_this<Vector<Real>> 
+#endif 
 {
 public:
 

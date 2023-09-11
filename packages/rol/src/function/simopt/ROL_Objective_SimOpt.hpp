@@ -84,7 +84,7 @@ public:
 
   /** \brief Compute value.
   */
-#ifdef ENABLE_PYROL 
+#ifdef ENABLE_PYBIND11_PYROL 
   virtual Real value_3( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     return Real(0);
   }
@@ -110,7 +110,7 @@ public:
       dynamic_cast<const ROL::Vector<Real>&>(x));
     return this->value(*(xs.get_1()),*(xs.get_2()),tol);
   }
-#endif // ENABLE_PYROL
+#endif // ENABLE_PYBIND11_PYROL
 
   /** \brief Compute gradient with respect to first component.
   */
