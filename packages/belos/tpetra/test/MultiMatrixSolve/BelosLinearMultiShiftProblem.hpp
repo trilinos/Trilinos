@@ -43,7 +43,7 @@
 #ifndef BELOS_LINEAR_MULTIPROBLEM_HPP
 #define BELOS_LINEAR_MULTIPROBLEM_HPP
 
-/// \file BelosLinearMultiShiftProblem.hpp 
+/// \file BelosLinearMultiShiftProblem.hpp
 /// \brief Class which describes the linear problem to be solved by
 ///   the iterative solver.
 #include "BelosLinearProblem.hpp"
@@ -56,7 +56,7 @@ namespace Belos {
 
   //@}
 
-  /// \class LinearMultiShiftProblem  
+  /// \class LinearMultiShiftProblem
   /// \brief A linear system to solve multiple matrix and right-hand sides.
   ///
   /// This class encapsulates the general information needed for
@@ -72,9 +72,9 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   class LinearMultiShiftProblem : public LinearProblem<ScalarType, MV, OP> {
   public:
-    
+
     //! @name Constructors/Destructor
-    //@{ 
+    //@{
 
     /// \brief Default constructor.
     ///
@@ -83,25 +83,25 @@ namespace Belos {
     /// the \c setOperator(), \c setLHS(), and \c setRHS() methods
     /// respectively.
     LinearMultiShiftProblem (void);
-    
+
     /// \brief Unpreconditioned linear system constructor.
     ///
     /// Creates an unpreconditioned LinearMultiShiftProblem instance with the
     /// operator (\c A), initial guess (\c X), and right hand side (\c
     /// B).  Preconditioners can be set using the \c setLeftPrec() and
     /// \c setRightPrec() methods.
-    LinearMultiShiftProblem (const Teuchos::RCP<const OP> &A, 
-		   const Teuchos::RCP<MV> &X, 
+    LinearMultiShiftProblem (const Teuchos::RCP<const OP> &A,
+		   const Teuchos::RCP<MV> &X,
 		   const Teuchos::RCP<const MV> &B);
-    
+
     //! Destructor (declared virtual for memory safety of derived classes).
     virtual ~LinearMultiShiftProblem (void) {}
 
     //@}
-    
+
     //! @name Set / Reset method
-    //@{ 
-    
+    //@{
+
     /// \brief Set up the linear problem manager.
     ///
     /// Call this method if you want to solve the linear system with a
@@ -127,22 +127,22 @@ namespace Belos {
     ///   Successful setup requires at least that the matrix operator
     ///   A, the left-hand side X, and the right-hand side B all be
     ///   non-null.
-    bool 
-    setProblem (const Teuchos::RCP<MV> &newX = Teuchos::null, 
+    bool
+    setProblem (const Teuchos::RCP<MV> &newX = Teuchos::null,
 		const Teuchos::RCP<const MV> &newB = Teuchos::null);
 
 
-    void 
+    void
     setShift( bool addShift )
     {
-      addShift_ = addShift; 
+      addShift_ = addShift;
     }
 
     //@}
-    
+
     //! @name Apply / Compute methods
-    //@{ 
-    
+    //@{
+
     /// \brief Apply ONLY the operator to \c x, returning \c y.
     ///
     /// This method only applies the linear problem's operator,
@@ -151,9 +151,9 @@ namespace Belos {
     /// no operator has been defined, this method just copies x into
     /// y.
     void applyOp( const MV& x, MV& y ) const;
-    
+
     //@}
-  
+
   private:
     bool addShift_;
 
@@ -177,26 +177,26 @@ namespace Belos {
     using LinearProblem<ScalarType, MV, OP>::isSet_;
     using LinearProblem<ScalarType, MV, OP>::solutionUpdated_;
     using LinearProblem<ScalarType, MV, OP>::label_;
-    
+
     typedef MultiVecTraits<ScalarType,MV>  MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
   };
-  
+
   //--------------------------------------------
   //  Constructor Implementations
   //--------------------------------------------
-  
+
   template <class ScalarType, class MV, class OP>
   LinearMultiShiftProblem<ScalarType,MV,OP>::LinearMultiShiftProblem(void)
   : LinearProblem<ScalarType,MV,OP>(),
     addShift_(true)
   {}
-  
+
   template <class ScalarType, class MV, class OP>
   LinearMultiShiftProblem<ScalarType,MV,OP>::LinearMultiShiftProblem(const Teuchos::RCP<const OP> &A, 
-						 const Teuchos::RCP<MV> &X, 
+						 const Teuchos::RCP<MV> &X,
 						 const Teuchos::RCP<const MV> &B
-						 ) 
+						 )
   : LinearProblem<ScalarType,MV,OP>(A, X, B),
     addShift_(true)
   {
@@ -205,11 +205,11 @@ namespace Belos {
     for (int i=0; i<numVecs; ++i)
       rhsIndex_[i] = i;
   }
-  
+
   template <class ScalarType, class MV, class OP>
-  bool 
+  bool
   LinearMultiShiftProblem<ScalarType,MV,OP>::
-  setProblem (const Teuchos::RCP<MV> &newX, 
+  setProblem (const Teuchos::RCP<MV> &newX,
 	      const Teuchos::RCP<const MV> &newB)
   {
     // Create timers if the haven't been created yet.
@@ -255,7 +255,7 @@ namespace Belos {
     // setting the problem now, so of course we haven't updated the
     // solution yet.)
     solutionUpdated_ = false;
-    
+
     // Compute the initial residuals.
     if(Teuchos::is_null(R0_user_)) {
       if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *B_ )) {
@@ -268,7 +268,7 @@ namespace Belos {
           PR0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
         }
         this->applyLeftPrec( *R0_, *PR0_ );
-      } 
+      }
       else {
         PR0_ = R0_;
       }
@@ -285,10 +285,10 @@ namespace Belos {
       if (LP_!=Teuchos::null) {
         // If the user provided preconditioned residual is the wrong size or pointing at
         // the wrong object, create one and set the PR0_user_ to null.
-        if (PR0_user_==Teuchos::null || (PR0_user_==R0_) || (PR0_user_==R0_user_) 
+        if (PR0_user_==Teuchos::null || (PR0_user_==R0_) || (PR0_user_==R0_user_)
           || (MVT::GetNumberVecs(*PR0_user_)!=MVT::GetNumberVecs(*B_))) {
           Teuchos::RCP<MV> helper = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
-   
+
           // Get the initial residual from getInitResVec because R0_user_ may be null from above.
           this->applyLeftPrec( *(this->getInitResVec()), *helper );
           PR0_user_ = Teuchos::null;
@@ -298,7 +298,7 @@ namespace Belos {
       else {
         // The preconditioned initial residual vector is the residual vector.
         // NOTE:  R0_user_ could be null if incompatible.
-        if (R0_user_!=Teuchos::null)  
+        if (R0_user_!=Teuchos::null)
         {
           PR0_user_ = R0_user_;
         }
@@ -315,7 +315,7 @@ namespace Belos {
 
     // The problem has been set and is ready for use.
     isSet_ = true;
-    
+
     // Return isSet.
     return isSet_;
   }
@@ -323,13 +323,13 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void LinearMultiShiftProblem<ScalarType,MV,OP>::applyOp( const MV& x, MV& y ) const {
 
-    if (A_.get()) 
+    if (A_.get())
     {
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor OpTimer(*timerOp_);
 #endif
-      OPT::Apply( *A_,x, y);   
+      OPT::Apply( *A_,x, y);
       }
       // Now add in shift based on rhsIndex_
       if (addShift_)
@@ -346,11 +346,11 @@ namespace Belos {
       }
     }
     else {
-      MVT::MvAddMv( Teuchos::ScalarTraits<ScalarType>::one(), x, 
+      MVT::MvAddMv( Teuchos::ScalarTraits<ScalarType>::one(), x,
 		    Teuchos::ScalarTraits<ScalarType>::zero(), x, y );
     }
   }
-  
+
 } // end Belos namespace
 
 #endif /* BELOS_LINEAR_MULTIPROBLEM_HPP */
