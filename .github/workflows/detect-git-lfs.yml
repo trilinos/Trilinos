@@ -18,4 +18,4 @@ jobs:
         git diff -U0 --ignore-all-space $(git merge-base origin/${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.sha }}) \
         | grep "^oid sha236" \
         || { echo "No pointers found!" ; exit 0 } \
-        && { echo "Git LFS pointers found; not allowed to add LFS files to Trilinos!" ; exit 1 
+        && { echo "Git LFS pointers found; not allowed to add LFS files to Trilinos!" ; exit 1 }
