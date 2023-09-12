@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -42,7 +42,7 @@ SystemInterface::~SystemInterface() = default;
 
 void SystemInterface::enroll_options()
 {
-  options_.usage("[options] file_to_split");
+  options_.usage("[options] file_to_split [output_file]");
 
   options_.enroll("help", GetLongOption::NoValue, "Print this summary and exit", nullptr);
 
@@ -58,8 +58,15 @@ void SystemInterface::enroll_options()
       "\t\t'linear'   : #elem/#proc to each processor\n"
       "\t\t'scattered': Shuffle elements to each processor (cyclic)\n"
       "\t\t'random'   : Random distribution of elements, maintains balance\n"
+#if USE_METIS
       "\t\t'rb'       : Metis multilevel recursive bisection\n"
       "\t\t'kway'     : Metis multilevel k-way graph partitioning\n"
+#endif
+#if USE_ZOLTAN
+      "\t\t'rib'      : Zoltan recursive-inertial-bisection\n"
+      "\t\t'rcb'      : Zoltan recursive-coordinate-bisection\n"
+      "\t\t'hsfc'     : Zoltan hilbert-space-filling curve\n"
+#endif
       "\t\t'variable' : Read element-processor assignment from an element variable\n"
       "\t\t'map'      : Read element-processor assignment from an element map [processor_id]\n"
       "\t\t'file'     : Read element-processor assignment from file",
@@ -83,6 +90,21 @@ void SystemInterface::enroll_options()
                   "\t\tIf two integers (count proc), they specify that the next\n"
                   "\t\t\t'count' elements are on processor 'proc'",
                   nullptr);
+
+#if USE_ZOLTAN
+  options_.enroll(
+      "ignore_x", GetLongOption::NoValue,
+      "If using `rcb`, `rib`, or `hsfc`, decompose as if mesh in yz plane. Ignore x dimension.",
+      nullptr);
+  options_.enroll(
+      "ignore_y", GetLongOption::NoValue,
+      "If using `rcb`, `rib`, or `hsfc`, decompose as if mesh in xz plane. Ignore y dimension.",
+      nullptr);
+  options_.enroll(
+      "ignore_z", GetLongOption::NoValue,
+      "If using `rcb`, `rib`, or `hsfc`, decompose as if mesh in xy plane. Ignore z dimension.",
+      nullptr);
+#endif
   options_.enroll("contiguous_decomposition", GetLongOption::NoValue,
                   "If the input mesh is contiguous, create contiguous decompositions", nullptr,
                   nullptr);
@@ -94,7 +116,6 @@ void SystemInterface::enroll_options()
                   "\t\tOmit or enter 'ALL' for all surfaces in model\n"
                   "\t\tDo not split a line/column across processors.",
                   nullptr, "ALL", true);
-
   options_.enroll("output_decomp_map", GetLongOption::NoValue,
                   "Do not output the split files; instead write the decomposition information to "
                   "an element map.\n"
@@ -160,7 +181,8 @@ void SystemInterface::enroll_options()
                   "\t\t  2 = Communication, NodeSet, Sideset information.\n"
                   "\t\t  4 = Progress information in File/Rank.\n"
                   "\t\t  8 = File/Rank Decomposition information.\n"
-                  "\t\t 16 = Chain/Line generation/decomp information.",
+                  "\t\t 16 = Chain/Line generation/decomp information.\n"
+                  "\t\t 32 = Show decomposition histogram (elements / rank).",
                   "0");
 
   options_.enroll("version", GetLongOption::NoValue, "Print version and exit", nullptr);
@@ -218,7 +240,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("help") != nullptr) {
     options_.usage();
     fmt::print(stderr, "\n\t   Can also set options via SLICE_OPTIONS environment variable.\n");
-    fmt::print(stderr, "\n\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#slice\n");
+    fmt::print(stderr, "\n\tDocumentation: "
+                       "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#slice\n");
     fmt::print(stderr, "\n\t->->-> Send email to gsjaardema@gmail.com for slice support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
@@ -322,6 +345,16 @@ bool SystemInterface::parse_options(int argc, char **argv)
   contig_            = options_.retrieve("contiguous_decomposition") != nullptr;
   outputDecompMap_   = options_.retrieve("output_decomp_map") != nullptr;
   outputDecompField_ = options_.retrieve("output_decomp_field") != nullptr;
+#if USE_ZOLTAN
+  ignore_x_ = options_.retrieve("ignore_x") != nullptr;
+  ignore_y_ = options_.retrieve("ignore_y") != nullptr;
+  ignore_z_ = options_.retrieve("ignore_z") != nullptr;
+  if ((ignore_x_ ? 1 : 0) + (ignore_y_ ? 1 : 0) + (ignore_z_ ? 1 : 0) > 1) {
+    fmt::print(stderr,
+               "\nERROR: Can only specify one of `ignore_x`, `ignore_y`, or `ignore_z`.\n\n");
+    exit(EXIT_FAILURE);
+  }
+#endif
 
   if (outputDecompMap_ && outputDecompField_) {
     fmt::print(
