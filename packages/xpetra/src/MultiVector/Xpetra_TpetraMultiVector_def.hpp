@@ -55,6 +55,7 @@
 #include "Xpetra_TpetraMultiVector_decl.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_Random.hpp"
 
 namespace Xpetra {
 
@@ -464,7 +465,12 @@ namespace Xpetra {
   //! Set seed for Random function.
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
-  setSeed(unsigned int seed) { XPETRA_MONITOR("TpetraMultiVector::seedrandom"); Teuchos::ScalarTraits< Scalar >::seedrandom(seed); }
+  setSeed(unsigned int seed) { 
+    XPETRA_MONITOR("TpetraMultiVector::seedrandom"); 
+    Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
+    // Tell Tpetra to update its RNG pool for the new random seed
+    Tpetra::Details::Static_Random_XorShift64_Pool<typename Node::device_type::execution_space>::resetPool(getMap()->getComm()->getRank());
+  }
   
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
