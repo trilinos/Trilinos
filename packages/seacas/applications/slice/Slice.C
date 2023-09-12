@@ -4,11 +4,10 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <SL_Decompose.h>
 #include <SL_SystemInterface.h>
 #include <SL_Version.h>
-#include <SL_tokenize.h>
 
-#include <Ioss_ChainGenerator.h>
 #include <Ioss_CodeTypes.h>
 #include <Ioss_CopyDatabase.h>
 #include <Ioss_DatabaseIO.h>
@@ -20,6 +19,7 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <cassert>
+#include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <init/Ionit_Initializer.h>
@@ -32,18 +32,10 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <map>
 #include <numeric>
-#include <random>
 #include <string>
 #include <vector>
-
-#if USE_METIS
-#include <metis.h>
-#else
-using idx_t = int;
-#endif
 
 #include <sys/types.h>
 
@@ -65,24 +57,54 @@ int           debug_level = 0;
 // size_t partial_count = 1'00'000;
 size_t partial_count = 1'000'000'000;
 
-namespace {
-  void progress(const std::string &output)
-  {
-    static auto start = std::chrono::steady_clock::now();
+void progress(const std::string &output)
+{
+  static auto start = std::chrono::steady_clock::now();
 
-    if ((debug_level & 1) != 0) {
-      auto                          now  = std::chrono::steady_clock::now();
-      std::chrono::duration<double> diff = now - start;
-      fmt::print(stderr, " [{:.2f} - {}]\t{}\n", diff.count(),
-                 fmt::group_digits(Ioss::MemoryUtils::get_memory_info()), output);
-    }
+  if ((debug_level & 1) != 0) {
+    auto                          now  = std::chrono::steady_clock::now();
+    std::chrono::duration<double> diff = now - start;
+    fmt::print(stderr, " [{:.2f} - {}]\t{}\n", diff.count(),
+               fmt::group_digits(Ioss::MemoryUtils::get_memory_info()), output);
   }
+}
 
+namespace {
   void proc_progress(int p, int proc_count)
   {
     if (((debug_level & 8) != 0) && ((proc_count <= 20) || ((p + 1) % (proc_count / 20) == 0))) {
       progress("\t\tProcessor " + std::to_string(p + 1));
     }
+  }
+
+  Ioss::PropertyManager set_properties(SystemInterface &interFace)
+  {
+    Ioss::PropertyManager properties;
+    if (interFace.netcdf4_) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+    }
+
+    if (interFace.netcdf5_) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf5"));
+    }
+
+    if (interFace.compressionLevel_ > 0 || interFace.shuffle_ || interFace.szip_) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+      properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compressionLevel_));
+      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", static_cast<int>(interFace.shuffle_)));
+      if (interFace.szip_) {
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "szip"));
+      }
+      else if (interFace.zlib_) {
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+      }
+    }
+
+    if (interFace.ints64Bit_) {
+      properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+      properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
+    }
+    return properties;
   }
 
   // Add the chain maps for file-per-rank output...
@@ -92,41 +114,36 @@ namespace {
                          INT /* dummy */)
   {
     progress(__func__);
+
+    // Build the proc-local chain map and then output it on a block-by-block basis...
+    size_t                        proc_count = proc_region.size();
+    std::vector<std::vector<INT>> map(proc_count);
+
+    size_t global_element_count = elem_to_proc.size();
+    for (size_t j = 0; j < global_element_count; j++) {
+      size_t p = elem_to_proc[j];
+      if (p >= proc_begin && p < proc_begin + proc_size) {
+        auto &chain_entry = chains[j];
+        // TODO: Map this from global to local element number...
+        size_t loc_elem =
+            chain_entry.element > 0
+                ? proc_region[p]->get_database()->element_global_to_local(chain_entry.element)
+                : 0;
+        map[p].push_back(loc_elem);
+        map[p].push_back(chain_entry.link);
+      }
+    }
+
+    // Now iterate through the blocks on each rank and output that portion of the map...
     size_t block_count = proc_region[0]->get_property("element_block_count").get_int();
 
-    size_t offset = 0;
-    for (size_t b = 0; b < block_count; b++) {
-      if (debug_level & 4) {
-        progress("\tBlock " + std::to_string(b + 1));
-      }
-
-      size_t                        proc_count = proc_region.size();
-      std::vector<std::vector<INT>> map(proc_count);
-      for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
-        const auto &proc_ebs           = proc_region[p]->get_element_blocks();
-        size_t      proc_element_count = proc_ebs[b]->entity_count();
-        map[p].reserve(proc_element_count * 2);
-      }
-
-      size_t global_element_count = elem_to_proc.size();
-      for (size_t j = 0; j < global_element_count; j++) {
-        size_t p = elem_to_proc[offset + j];
-        if (p >= proc_begin && p < proc_begin + proc_size) {
-          auto &chain_entry = chains[j + offset];
-          // TODO: Map this from global to local element number...
-          size_t loc_elem =
-              proc_region[p]->get_database()->element_global_to_local(chain_entry.element);
-          map[p].push_back(loc_elem);
-          map[p].push_back(chain_entry.link);
-        }
-      }
-      offset += global_element_count;
-
-      for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
-        const auto &proc_ebs = proc_region[p]->get_element_blocks();
-        proc_ebs[b]->put_field_data("chain", map[p]);
-        map[p].clear();
-        proc_progress(p, proc_count);
+    for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
+      const auto &proc_ebs = proc_region[p]->get_element_blocks();
+      size_t      offset   = 0;
+      for (size_t b = 0; b < block_count; b++) {
+        size_t proc_element_count = proc_ebs[b]->entity_count();
+        proc_ebs[b]->put_field_data("chain", &map[p][offset], proc_element_count * 2 * sizeof(INT));
+        offset += proc_element_count;
       }
     }
   }
@@ -187,9 +204,23 @@ namespace {
   {
     const auto &blocks = region.get_element_blocks();
     size_t      offset = 0;
+
+    // Convert is outputting to 64-bit database...
+    std::vector<INT> elem_to_proc64;
+    if (sizeof(INT) == 8) {
+      elem_to_proc64.reserve(elem_to_proc.size());
+      for (const auto &etp : elem_to_proc) {
+        elem_to_proc64.push_back(etp);
+      }
+    }
     for (const auto &block : blocks) {
       size_t num_elem = block->entity_count();
-      block->put_field_data(decomp_variable_name, (void *)&elem_to_proc[offset], -1);
+      if (sizeof(INT) == 8) {
+        block->put_field_data(decomp_variable_name, (void *)&elem_to_proc64[offset], -1);
+      }
+      else {
+        block->put_field_data(decomp_variable_name, (void *)&elem_to_proc[offset], -1);
+      }
       if (add_chain_info) {
         std::vector<INT> chain;
         chain.reserve(num_elem * 2);
@@ -238,39 +269,6 @@ namespace {
   }
 
   template <typename INT>
-  void line_decomp_modify(const Ioss::chain_t<INT> &element_chains,
-                          const std::vector<int> &elem_to_proc, int proc_count, INT dummy);
-
-  int case_compare(const char *s1, const char *s2)
-  {
-    const char *c1 = s1;
-    const char *c2 = s2;
-    for (;;) {
-      if (::toupper(*c1) != ::toupper(*c2)) {
-        return (::toupper(*c1) - ::toupper(*c2));
-      }
-      if (*c1 == '\0') {
-        return 0;
-      }
-      c1++;
-      c2++;
-    }
-  }
-
-  void exodus_error(int lineno)
-  {
-    std::ostringstream errmsg;
-    fmt::print(
-        errmsg,
-        "Exodus error ({}) {} at line {} in file Slice.C. Please report to gdsjaar@sandia.gov "
-        "if you need help.",
-        exerrval, ex_strerror(exerrval), lineno);
-
-    ex_err(nullptr, nullptr, EX_PRTLASTMSG);
-    throw std::runtime_error(errmsg.str());
-  }
-
-  template <typename INT>
   void populate_proc_node(size_t count, size_t offset, size_t element_nodes,
                           const std::vector<int> &elem_to_proc, const std::vector<INT> &glob_conn,
                           std::vector<std::vector<int>> &proc_node,
@@ -310,42 +308,6 @@ namespace {
     return true;
   }
 
-#if USE_METIS
-  int get_common_node_count(const Ioss::Region &region)
-  {
-    progress(__func__);
-    // Determine number of nodes that elements must share to be
-    // considered connected.  A 8-node hex-only mesh would have 4
-    // A 3D shell mesh should have 2.  Basically, use the minimum
-    // number of nodes per side for all element blocks...  Omit sphere
-    // elements; ignore bars(?)...
-
-    int common_nodes = 999;
-
-    const auto &ebs = region.get_element_blocks();
-    for (const auto &eb : ebs) {
-      const Ioss::ElementTopology *topology = eb->topology();
-      const Ioss::ElementTopology *boundary = topology->boundary_type(0);
-      if (boundary != nullptr) {
-        common_nodes = std::min(common_nodes, boundary->number_boundaries());
-      }
-      else {
-        // Different topologies on some element faces...
-        size_t nb = topology->number_boundaries();
-        for (size_t bb = 1; bb <= nb; bb++) {
-          boundary = topology->boundary_type(bb);
-          if (boundary != nullptr) {
-            common_nodes = std::min(common_nodes, boundary->number_boundaries());
-          }
-        }
-      }
-    }
-
-    common_nodes = std::max(1, common_nodes);
-    fmt::print(stderr, "Setting common_nodes to {}\n", common_nodes);
-    return common_nodes;
-  }
-#endif
 } // namespace
 // ========================================================================
 
@@ -456,460 +418,6 @@ int main(int argc, char *argv[])
 }
 
 namespace {
-
-  template <typename INT>
-  void create_adjacency_list(const Ioss::Region &region, std::vector<idx_t> &pointer,
-                             std::vector<idx_t> &adjacency, INT)
-  {
-    progress(__func__);
-    // Size of pointer list is element count + 1;
-    // Size of adjacency list is sum of nodes-per-element for each element.
-    size_t      sum   = 0;
-    size_t      count = 0;
-    const auto &ebs   = region.get_element_blocks();
-    for (const auto &eb : ebs) {
-      size_t element_count = eb->entity_count();
-      size_t element_nodes = eb->topology()->number_nodes();
-      sum += element_count * element_nodes;
-      count += element_count;
-    }
-
-    pointer.reserve(count + 1);
-    adjacency.reserve(sum);
-    fmt::print(stderr, "\tAdjacency Size = {} for {} elements.\n", fmt::group_digits(sum),
-               fmt::group_digits(count));
-
-    // Now, iterate the blocks again, get connectivity and build adjacency structure.
-    std::vector<INT> connectivity;
-    for (const auto &eb : ebs) {
-      eb->get_field_data("connectivity_raw", connectivity);
-      size_t element_count = eb->entity_count();
-      size_t element_nodes = eb->topology()->number_nodes();
-
-      size_t el = 0;
-      for (size_t j = 0; j < element_count; j++) {
-        pointer.push_back(adjacency.size());
-        for (size_t k = 0; k < element_nodes; k++) {
-          INT node = connectivity[el++] - 1;
-          adjacency.push_back(node);
-        }
-      }
-    }
-    pointer.push_back(adjacency.size());
-    assert(pointer.size() == count + 1);
-    assert(adjacency.size() == sum);
-  }
-
-  template <typename INT>
-  void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                          std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED INT dummy)
-  {
-    progress(__func__);
-    // Populate the 'elem_to_proc' vector with a mapping from element to processor.
-
-    size_t element_count = region.get_property("element_count").get_int();
-    size_t elem_per_proc = element_count / interFace.processor_count();
-    size_t extra         = element_count % interFace.processor_count();
-
-    elem_to_proc.reserve(element_count);
-
-    fmt::print(stderr, "\nDecomposing {} elements across {} processors using method '{}'.\n",
-               fmt::group_digits(element_count), fmt::group_digits(interFace.processor_count()),
-               interFace.decomposition_method());
-    if (interFace.lineDecomp_) {
-      fmt::print(stderr, "\tDecomposition will be modified to put element lines/chains/columns on "
-                         "same processor rank\n");
-    }
-
-    if (interFace.outputDecompMap_) {
-      fmt::print(stderr, "\tDecomposition will be output to an element map named '{}'.\n",
-                 interFace.decomposition_variable());
-    }
-    if (interFace.outputDecompField_) {
-      fmt::print(stderr, "\tDecomposition will be output to an element field named '{}'.\n",
-                 interFace.decomposition_variable());
-    }
-    fmt::print(stderr, "\n");
-
-    if (interFace.decomposition_method() == "linear") {
-      size_t elem_beg = 0;
-      for (size_t proc = 0; proc < interFace.processor_count(); proc++) {
-        size_t add      = (proc < extra) ? 1 : 0;
-        size_t elem_end = elem_beg + elem_per_proc + add;
-
-        for (size_t elem = elem_beg; elem < elem_end; elem++) {
-          elem_to_proc.push_back(proc);
-        }
-        elem_beg = elem_end;
-      }
-    }
-    else if (interFace.decomposition_method() == "scattered") {
-      // Scattered...
-      size_t proc = 0;
-      for (size_t elem = 0; elem < element_count; elem++) {
-        elem_to_proc.push_back(proc++);
-        if (proc >= interFace.processor_count()) {
-          proc = 0;
-        }
-      }
-    }
-
-    else if (interFace.decomposition_method() == "rb" ||
-             interFace.decomposition_method() == "kway") {
-#if USE_METIS
-      std::vector<idx_t> pointer;
-      std::vector<idx_t> adjacency;
-
-      double start = seacas_timer();
-      create_adjacency_list(region, pointer, adjacency, dummy);
-      double end = seacas_timer();
-      fmt::print(stderr, "\tCreate Adjacency List = {:.5}\n", end - start);
-
-      // Call Metis to get the partition...
-      {
-        start                         = seacas_timer();
-        idx_t              elem_count = element_count;
-        idx_t              common     = get_common_node_count(region);
-        idx_t              proc_count = interFace.processor_count();
-        idx_t              obj_val    = 0;
-        std::vector<idx_t> options((METIS_NOPTIONS));
-        METIS_SetDefaultOptions(&options[0]);
-        if (interFace.decomposition_method() == "kway") {
-          options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY;
-        }
-        else {
-          options[METIS_OPTION_PTYPE] = METIS_PTYPE_RB;
-        }
-
-        options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
-        if (interFace.contiguous_decomposition()) {
-          options[METIS_OPTION_CONTIG] = 1;
-        }
-        options[METIS_OPTION_DBGLVL]  = 2;
-        options[METIS_OPTION_MINCONN] = 1;
-
-        idx_t              node_count = region.get_property("node_count").get_int();
-        std::vector<idx_t> node_partition(node_count);
-        std::vector<idx_t> elem_partition(element_count);
-
-        fmt::print(stderr, "\tCalling METIS Decomposition routine.\n");
-
-        METIS_PartMeshDual(&elem_count, &node_count, &pointer[0], &adjacency[0], nullptr, nullptr,
-                           &common, &proc_count, nullptr, &options[0], &obj_val, &elem_partition[0],
-                           &node_partition[0]);
-
-        Ioss::Utils::clear(node_partition);
-        elem_to_proc.reserve(element_count);
-        std::copy(elem_partition.begin(), elem_partition.end(), std::back_inserter(elem_to_proc));
-
-        end = seacas_timer();
-        fmt::print(stderr, "\tMETIS Partition = {:.5}\n", end - start);
-        fmt::print(stderr, "Objective value = {}\n", obj_val);
-
-        // TODO Check Error...
-      }
-#else
-      fmt::print(stderr, "ERROR: Metis library not enabled in this version of slice.\n"
-                         "       The 'rb' and 'kway' methods are not available.\n\n");
-      std::exit(1);
-#endif
-    }
-
-    else if (interFace.decomposition_method() == "random") {
-      // Random...  Use scattered method and then random_shuffle() the vector.
-      // Ensures that each processor has correct number of elements, but
-      // they are randomly distributed.
-      size_t proc = 0;
-      for (size_t elem = 0; elem < element_count; elem++) {
-        elem_to_proc.push_back(proc++);
-        if (proc >= interFace.processor_count()) {
-          proc = 0;
-        }
-      }
-      std::random_device rd;
-      std::mt19937       g(rd());
-      std::shuffle(elem_to_proc.begin(), elem_to_proc.end(), g);
-    }
-
-    else if (interFace.decomposition_method() == "variable") {
-      const std::string &elem_variable = interFace.decomposition_variable();
-      if (elem_variable.empty()) {
-        fmt::print(stderr, "\nERROR: No element decomposition variable specified.\n");
-        exit(EXIT_FAILURE);
-      }
-      // Get all element blocks and cycle through each reading the
-      // values for the processor...
-      const auto &blocks   = region.get_element_blocks();
-      auto       *c_region = (Ioss::Region *)(&region);
-      c_region->begin_state(1);
-      for (const auto &block : blocks) {
-        if (!block->field_exists(elem_variable)) {
-          fmt::print(stderr, "\nERROR: Element variable '{}' does not exist on block {}.\n",
-                     elem_variable, block->name());
-          exit(EXIT_FAILURE);
-        }
-        std::vector<double> tmp_vals;
-        block->get_field_data(elem_variable, tmp_vals);
-        auto block_count = block->entity_count();
-        for (int64_t i = 0; i < block_count; i++) {
-          elem_to_proc.push_back((int)tmp_vals[i]);
-        }
-      }
-    }
-    else if (interFace.decomposition_method() == "map") {
-      std::string map_name = interFace.decomposition_variable();
-      if (map_name.empty()) {
-        fmt::print(stderr, "\nERROR: No element decomposition map specified.\n");
-        exit(EXIT_FAILURE);
-      }
-
-      // If the "map_name" string contains a comma, then the value
-      // following the comma is either an integer "scale" which is
-      // divided into each entry in `elem_to_proc`, or it is the
-      // string "auto" which will automatically scale all values by
-      // the *integer* "max/processorCount"
-      //
-      // NOTE: integer division with *no* rounding is used.
-
-      int  iscale = 1;
-      auto pos    = map_name.find(",");
-      if (pos != std::string::npos) {
-        // Extract the string following the comma...
-        auto scale = map_name.substr(pos + 1);
-        if (scale == "AUTO" || scale == "auto") {
-          iscale = 0;
-        }
-        else {
-          iscale = std::stoi(scale);
-        }
-      }
-      map_name = map_name.substr(0, pos);
-
-      Ioss::DatabaseIO *db    = region.get_database();
-      int               exoid = db->get_file_pointer();
-
-      bool map_read  = false;
-      int  map_count = ex_inquire_int(exoid, EX_INQ_ELEM_MAP);
-      if (map_count > 0) {
-        int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-        max_name_length     = max_name_length < 32 ? 32 : max_name_length;
-        char **names        = Ioss::Utils::get_name_array(map_count, max_name_length);
-        int    error        = ex_get_names(exoid, EX_ELEM_MAP, names);
-        if (error < 0) {
-          exodus_error(__LINE__);
-        }
-
-        for (int i = 0; i < map_count; i++) {
-          if (case_compare(names[i], map_name.c_str()) == 0) {
-            elem_to_proc.resize(element_count);
-            error = ex_get_num_map(exoid, EX_ELEM_MAP, i + 1, elem_to_proc.data());
-            if (error < 0) {
-              exodus_error(__LINE__);
-            }
-            map_read = true;
-            break;
-          }
-        }
-        Ioss::Utils::delete_name_array(names, map_count);
-      }
-
-      if (!map_read) {
-        fmt::print(stderr, "\nERROR: Element decomposition map '{}' could not be read from file.\n",
-                   map_name);
-        exit(EXIT_FAILURE);
-      }
-
-      // Do the scaling (integer division...)
-      if (iscale == 0) {
-        // Auto scaling was asked for.  Determine max entry in `elem_to_proc` and
-        // set the scale factor.
-        auto max_proc = *std::max_element(elem_to_proc.begin(), elem_to_proc.end());
-
-        iscale = (max_proc + 1) / interFace.processor_count();
-        fmt::print(" Element Processor Map automatic scaling factor = {}\n", iscale);
-
-        if (iscale == 0) {
-          fmt::print(stderr,
-                     "ERROR: Max value in element processor map is {} which is\n"
-                     "\tless than the processor count ({}). Scaling values is not possible.",
-                     max_proc, interFace.processor_count());
-          exit(EXIT_FAILURE);
-        }
-      }
-      std::transform(elem_to_proc.begin(), elem_to_proc.end(), elem_to_proc.begin(),
-                     [iscale](int p) { return p / iscale; });
-    }
-    else if (interFace.decomposition_method() == "file") {
-      // Read the element decomposition mapping from a file.  The
-      // syntax of the file is an optional element count followed by
-      // the processor for this range.  If the element range is
-      // omitted, then the processor applies to the next element in
-      // the sequence. All elements must be specified or an error will
-      // be raised.
-      //
-      // Example:
-      // 0
-      // 100 1
-      // 0
-      //
-      // Will assign:
-      // * element 1 to processor 0;
-      // * followed by the next 100 elements (2 to 101) to processor 1;
-      // * followed by the next element (102) to processor 0.
-      //
-      // The resulting decomposition will have 2 elements (1, 102) on
-      // processor 0 and 100 elements (2..101) on processor 1.
-
-      const std::string &filename = interFace.decomposition_file();
-      if (filename.empty()) {
-        fmt::print(stderr, "\nERROR: No element decomposition file specified.\n");
-        exit(EXIT_FAILURE);
-      }
-
-      std::ifstream decomp_file(filename, std::ios::in);
-      if (!decomp_file.good()) {
-        fmt::print(
-            stderr,
-            "\nERROR: Element decomposition file '{}' does not exist or could not be opened.\n",
-            filename);
-        exit(EXIT_FAILURE);
-      }
-
-      std::string line;
-      size_t      line_num = 0;
-      while (std::getline(decomp_file, line)) {
-        line_num++;
-        // See if 1 or 2 tokens on line...
-        std::vector<std::string> tokens;
-        tokens       = SLIB::tokenize(line, ", \t");
-        size_t proc  = 0;
-        size_t count = 1;
-        if (tokens.empty()) {
-          break;
-        }
-        if (tokens.size() == 1) {
-          // Just a processor specification for the next element...
-          proc = std::stoi(tokens[0]);
-          elem_to_proc.push_back(proc);
-        }
-        else {
-          // Count and processor specified.
-          count = std::stoi(tokens[0]);
-          proc  = std::stoi(tokens[1]);
-        }
-        if (proc > interFace.processor_count()) {
-          fmt::print(stderr,
-                     "\nERROR: Invalid processor {} specified on line {} of decomposition file.\n"
-                     "\tValid range is 0..{}\n",
-                     fmt::group_digits(proc), fmt::group_digits(line_num),
-                     fmt::group_digits(interFace.processor_count() - 1));
-          exit(EXIT_FAILURE);
-        }
-
-        if (elem_to_proc.size() + count > element_count) {
-          fmt::print(stderr,
-                     "\nERROR: The processor specification on line {}"
-                     " of the decomposition file results in too many elements being specified.\n"
-                     "\tThe total number of elements in the model is {}\n"
-                     "\tPrior to this line, {} elements were specified.\n"
-                     "\tIncluding this line, {} elements will be specified.\n",
-                     fmt::group_digits(line_num), fmt::group_digits(element_count),
-                     fmt::group_digits(elem_to_proc.size()),
-                     fmt::group_digits(elem_to_proc.size() + count));
-          exit(EXIT_FAILURE);
-        }
-
-        for (size_t i = 0; i < count; i++) {
-          elem_to_proc.push_back(proc);
-        }
-      }
-    }
-    assert(elem_to_proc.size() == element_count);
-  }
-
-  template <typename INT>
-  void line_decomp_modify(const Ioss::chain_t<INT> &element_chains, std::vector<int> &elem_to_proc,
-                          int proc_count, INT /* dummy */)
-  {
-    // Get a map of all chains and the elements in the chains.  Map key will be root.
-    std::map<INT, std::vector<INT>> chains;
-
-    for (size_t i = 0; i < element_chains.size(); i++) {
-      auto &chain_entry = element_chains[i];
-      chains[chain_entry.element].push_back(i + 1);
-      if ((debug_level & 16) != 0) {
-        fmt::print("[{}]: element {}, link {}, processor {}\n", i + 1, chain_entry.element,
-                   chain_entry.link, elem_to_proc[i]);
-      }
-    }
-
-    // Delta: elements added/removed from each processor...
-    std::vector<int> delta(proc_count);
-
-    // Now, for each chain...
-    for (auto &chain : chains) {
-      if ((debug_level & 16) != 0) {
-        fmt::print("Chain Root: {} contains: {}\n", chain.first, fmt::join(chain.second, ", "));
-      }
-
-      std::vector<INT> chain_proc_count(proc_count);
-      const auto      &chain_elements = chain.second;
-
-      // * get processors used by elements in the chain...
-      for (const auto &element : chain_elements) {
-        auto proc = elem_to_proc[element - 1];
-        chain_proc_count[proc]++;
-      }
-
-      // * Now, subtract the `delta` from each count
-      for (int i = 0; i < proc_count; i++) {
-        chain_proc_count[i] -= delta[i];
-      }
-
-      // * Find the maximum value in `chain_proc_count`
-      auto max      = std::max_element(chain_proc_count.begin(), chain_proc_count.end());
-      auto max_proc = std::distance(chain_proc_count.begin(), max);
-
-      // * Assign all elements in the chain to `max_proc`.
-      // * Update the deltas for all processors that gain/lose elements...
-      for (const auto &element : chain_elements) {
-        if (elem_to_proc[element - 1] != max_proc) {
-          auto old_proc             = elem_to_proc[element - 1];
-          elem_to_proc[element - 1] = max_proc;
-          delta[max_proc]++;
-          delta[old_proc]--;
-        }
-      }
-    }
-
-    std::vector<INT> proc_element_count(proc_count);
-    for (auto proc : elem_to_proc) {
-      proc_element_count[proc]++;
-    }
-    if ((debug_level & 16) != 0) {
-      fmt::print("\nElements/Processor: {}\n", fmt::join(proc_element_count, ", "));
-      fmt::print("Delta/Processor:    {}\n", fmt::join(delta, ", "));
-    }
-  }
-
-  template <typename INT>
-  void free_connectivity_storage(std::vector<std::vector<std::vector<INT>>> &connectivity,
-                                 size_t proc_begin, size_t proc_size)
-  {
-    progress(__func__);
-    for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
-      size_t block_count = connectivity[p].size();
-      for (size_t b = 0; b < block_count; b++) {
-        Ioss::Utils::clear(connectivity[p][b]);
-      }
-      Ioss::Utils::clear(connectivity[p]);
-    }
-
-    size_t processor_count = connectivity.size();
-    if (proc_begin + proc_size == processor_count) {
-      Ioss::Utils::clear(connectivity);
-    }
-  }
 
   template <typename INT>
   void get_sidesets(const Ioss::Region &region, std::vector<Ioss::Region *> &proc_region,
@@ -1857,43 +1365,27 @@ namespace {
     }
     bool ints64 = (sizeof(INT) == 8);
 
-    Ioss::PropertyManager properties;
-    if (interFace.netcdf4_) {
-      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
-    }
-
-    if (interFace.netcdf5_) {
-      properties.add(Ioss::Property("FILE_TYPE", "netcdf5"));
-    }
-
-    if (interFace.compressionLevel_ > 0 || interFace.shuffle_ || interFace.szip_) {
-      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
-      properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compressionLevel_));
-      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", static_cast<int>(interFace.shuffle_)));
-      if (interFace.szip_) {
-        properties.add(Ioss::Property("COMPRESSION_METHOD", "szip"));
-      }
-      else if (interFace.zlib_) {
-        properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
-      }
-    }
-
-    if (interFace.ints64Bit_) {
-      properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
-      properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
-    }
+    Ioss::PropertyManager properties = set_properties(interFace);
 
     double           start = seacas_timer();
     std::vector<int> elem_to_proc;
     decompose_elements(region, interFace, elem_to_proc, dummy);
     double end = seacas_timer();
     fmt::print(stderr, "Decompose elements = {:.5}\n", end - start);
+    progress("exit decompose_elements");
 
     Ioss::chain_t<INT> element_chains;
     if (interFace.lineDecomp_) {
       element_chains =
           Ioss::generate_element_chains(region, interFace.lineSurfaceList_, debug_level, dummy);
-      line_decomp_modify(element_chains, elem_to_proc, interFace.processor_count(), dummy);
+      progress("Ioss::generate_element_chains");
+      line_decomp_modify(element_chains, elem_to_proc, interFace.processor_count());
+      progress("line_decomp_modify");
+    }
+
+    if (debug_level & 32) {
+      output_decomposition_statistics(elem_to_proc, interFace.processor_count(),
+                                      elem_to_proc.size());
     }
 
     if (!create_split_files) {
@@ -1901,6 +1393,9 @@ namespace {
           "exodus", nemfile, Ioss::WRITE_RESTART, Ioss::ParallelUtils::comm_world(), properties);
       if (dbo == nullptr || !dbo->ok(true)) {
         std::exit(EXIT_FAILURE);
+      }
+      if (ints64) {
+        dbo->set_int_byte_size_api(Ioss::USE_INT64_API);
       }
 
       // NOTE: 'output_region' owns 'dbo' pointer at this time
@@ -1928,6 +1423,7 @@ namespace {
         add_decomp_map(output_region, interFace.decomposition_variable(), line_decomp);
         output_decomp_map(output_region, elem_to_proc, element_chains,
                           interFace.decomposition_variable(), line_decomp);
+        progress("output_decomp_map");
       }
 
       if (interFace.outputDecompField_) {
@@ -1935,6 +1431,7 @@ namespace {
         add_decomp_field(output_region, interFace.decomposition_variable(), line_decomp);
         output_decomp_field(output_region, elem_to_proc, element_chains,
                             interFace.decomposition_variable(), line_decomp);
+        progress("output_decomp_field");
       }
 
       return;
@@ -2072,10 +1569,10 @@ namespace {
       end = seacas_timer();
       fmt::print(stderr, "\tCommunication map Output = {:.5}\n", end - start);
 
+      start = seacas_timer();
       output_connectivity(region, proc_region, elem_to_proc, proc_begin, proc_size, (INT)1);
       end = seacas_timer();
-
-      fmt::print(stderr, "Connectivity Output = {:.5}\n", end - start);
+      fmt::print(stderr, "\tConnectivity Output = {:.5}\n", end - start);
 
       start = seacas_timer();
 #if 0
@@ -2100,7 +1597,10 @@ namespace {
       fmt::print(stderr, "\tSideset Output = {:.5}\n", end - start);
 
       if (interFace.lineDecomp_) {
+        start = seacas_timer();
         output_chain_maps(proc_region, element_chains, elem_to_proc, proc_begin, proc_size, (INT)0);
+        end = seacas_timer();
+        fmt::print(stderr, "\tChain Map Output = {:.5}\n", end - start);
       }
 
       // Close all files...
@@ -2144,4 +1644,5 @@ namespace {
       filename = tmp;
     }
   }
+
 } // namespace
