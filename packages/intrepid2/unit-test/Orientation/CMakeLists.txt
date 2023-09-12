@@ -17,6 +17,8 @@ LIST(APPEND Intrepid2_TEST_ETI_FILE
   "test_orientation_encoding"
   "test_orientation_HEX"
   "test_orientation_HEX_newBasis"
+  "test_orientation_PYR_QuadFace_newBasis"
+  "test_orientation_PYR_TriFace_newBasis"
   "test_orientation_QUAD"
   "test_orientation_QUAD_newBasis"
   "test_orientation_TET"

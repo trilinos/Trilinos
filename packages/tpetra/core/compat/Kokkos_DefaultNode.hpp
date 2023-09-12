@@ -40,7 +40,7 @@
 //@HEADER
 
 
-#include "KokkosCompat_DefaultNode.hpp"
+#include "Tpetra_KokkosCompat_DefaultNode.hpp"
 
 // This header file only exists for backwards compatibility.
 #if defined(TPETRA_ENABLE_DEPRECATED_CODE)

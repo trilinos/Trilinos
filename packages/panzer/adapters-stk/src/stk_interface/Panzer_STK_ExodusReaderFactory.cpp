@@ -74,6 +74,7 @@ int getMeshDimension(const std::string & meshStr,
                      const std::string & typeStr)
 {
   stk::io::StkMeshIoBroker meshData(parallelMach);
+  meshData.use_simple_fields();
   meshData.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
   meshData.add_mesh_database(meshStr, fileTypeToIOSSType(typeStr), stk::io::READ_MESH);
   meshData.create_input_mesh();
@@ -142,6 +143,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
 
    // read in meta data
    stk::io::StkMeshIoBroker* meshData = new stk::io::StkMeshIoBroker(parallelMach);
+   meshData->use_simple_fields();
    meshData->property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
 
    // add in "FAMILY_TREE" entity for doing refinement
@@ -230,8 +232,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    // turned on from the input file.
    if (userMeshScaling_)
    {
-     stk::mesh::Field<double,stk::mesh::Cartesian>* coord_field =
-       metaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
+     stk::mesh::Field<double>* coord_field = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
      stk::mesh::Selector select_all_local = metaData.locally_owned_part() | metaData.globally_shared_part();
      stk::mesh::BucketVector const& my_node_buckets = bulkData.get_buckets(stk::topology::NODE_RANK, select_all_local);
@@ -279,8 +280,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    mesh.endModification();
 
    if (userMeshScaling_) {
-     stk::mesh::Field<double,stk::mesh::Cartesian>* coord_field =
-       metaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
+     stk::mesh::Field<double>* coord_field = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
      std::vector< const stk::mesh::FieldBase *> fields;
      fields.push_back(coord_field);
 

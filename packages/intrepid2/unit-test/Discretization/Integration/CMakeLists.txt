@@ -55,7 +55,7 @@ FOREACH(I RANGE ${ETI_DEVICE_COUNT})
 ENDFOREACH()
 
 # Device test
-SET(Intrepid2_TEST_ETI_FILE "test_01;test_02;test_03;test_04;test_06;test_07")
+SET(Intrepid2_TEST_ETI_FILE "test_01;test_02;test_03;test_04") #tests 05, 06, 07 are too expensive on device
 
 SET(Intrepid2_TEST_ETI_DEVICE_NAME "")
 SET(Intrepid2_TEST_ETI_DEVICE "")
@@ -111,7 +111,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(IntegrationTestDataCopy
     PYR_integrals.dat
     QUAD_integrals.dat
     TET_integrals.dat
-    TRI_integrals.dat
     TRIPRISM_integrals.dat
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"

@@ -399,6 +399,9 @@ namespace MueLu {
       // make sure that MueLu's phase2a matches ML's
       mueluss << "<Parameter name=\"aggregation: match ML phase2a\"      type=\"bool\"     value=\"true\"/>" << std::endl;
 
+      // make sure that MueLu's phase2b matches ML's
+      mueluss << "<Parameter name=\"aggregation: match ML phase2b\"      type=\"bool\"     value=\"true\"/>" << std::endl;
+
       // make sure that MueLu's drop tol matches ML's
       mueluss << "<Parameter name=\"aggregation: use ml scaling of drop tol\"      type=\"bool\"     value=\"true\"/>" << std::endl;
 

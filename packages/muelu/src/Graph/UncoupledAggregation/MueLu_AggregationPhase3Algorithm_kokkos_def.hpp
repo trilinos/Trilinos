@@ -109,7 +109,7 @@ namespace MueLu {
     Kokkos::View<LO, device_type> numAggregates("numAggregates");
     Kokkos::deep_copy(numAggregates, aggregates.GetNumAggregates());
 
-    Kokkos::View<unsigned*, device_type> aggStatOld("Initial aggregation status", aggStat.extent(0));
+    Kokkos::View<unsigned*, device_type> aggStatOld(Kokkos::ViewAllocateWithoutInitializing("Initial aggregation status"), aggStat.extent(0));
     Kokkos::deep_copy(aggStatOld, aggStat);
     Kokkos::View<LO, device_type> numNonAggregated("numNonAggregated");
     Kokkos::deep_copy(numNonAggregated, numNonAggregatedNodes);

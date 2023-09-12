@@ -57,13 +57,14 @@
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#include "AnasaziGlobalComm.hpp"
 #else
 #include "Epetra_SerialComm.h"
 #endif
 
 
 namespace RBGen {
-  
+
   MatrixMarketFileIOHandler::MatrixMarketFileIOHandler()
     : num_nodes(0), isInit(false)
     {
@@ -98,7 +99,7 @@ namespace RBGen {
     if (isInit) {
 
 #ifdef EPETRA_MPI
-      Epetra_MpiComm comm( MPI_COMM_WORLD );
+      Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
       Epetra_SerialComm comm;
 #endif
@@ -126,7 +127,7 @@ namespace RBGen {
         else {
           // Check to make sure the number of rows is the same.
           TEUCHOS_TEST_FOR_EXCEPTION(rows_i!=rows, std::logic_error, "Error reading file '"+temp_filename+"', does not have same number of rows!");
-        } 
+        }
         // Add the number of columns up.
         num_vecs += cols[i];
 
@@ -138,7 +139,7 @@ namespace RBGen {
       Epetra_Map Map( rows, 0, comm );
       newMV = Teuchos::rcp( new Epetra_MultiVector( Map, num_vecs ) );
 
-      // Create a pointer to a multivector 
+      // Create a pointer to a multivector
       int col_ptr = 0;
       Epetra_MultiVector* fileMV = 0;
 
@@ -153,7 +154,7 @@ namespace RBGen {
         //  Get a view of the multivector columns.
         //
         Epetra_MultiVector subMV( View, *newMV, col_ptr, cols[i] );
-        // 
+        //
         //  Put the multivector read in from the file into this subview.
         //
         subMV.Update( 1.0, *fileMV, 0.0 );
@@ -170,7 +171,7 @@ namespace RBGen {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "File I/O handler is not initialized!");
-    }      
+    }
     // Return.
     return newMV;
   }
@@ -185,7 +186,7 @@ namespace RBGen {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "File I/O handler is not initialized!");
-    }      
+    }
   }
 
 } // namespace RBGen

@@ -128,7 +128,7 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
   #endif
-     
+
       basker_dtype * pBaskerValues = function_map::convert_scalar(host_nzvals_view_.data());
       info = basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, host_col_ptr_view_.data(), host_rows_view_.data(), pBaskerValues);
 
@@ -192,24 +192,18 @@ Basker<Matrix,Vector>::solve_impl(
         host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
     }
     else {
-      if ( is_contiguous_ == true ) {
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
-      }
-      else {
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-      }
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
 
       // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
-      if ( is_contiguous_ == true ) {
-        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
-      }
-      else {
-        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-      }
+      bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        this->rowIndexBase_);
     }
   }
 
@@ -239,18 +233,11 @@ Basker<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
-    if ( is_contiguous_ == true ) {
-      Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-            as<size_t>(ld_rhs),
-            ROOTED);
-    }
-    else {
-      Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-            as<size_t>(ld_rhs),
-            CONTIGUOUS_AND_ROOTED);
-    }
+
+    Util::put_1d_data_helper_kokkos_view<MultiVecAdapter<Vector>,
+      host_solve_array_t>::do_put(X, xValues_,
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
   }
 
   return(ierr);
@@ -330,18 +317,13 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
   #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
-        ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
-            nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
-    }
-    else {
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
-        ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
-            nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
-    }
+    Util::get_ccs_helper_kokkos_view<
+      MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
+      ::do_get(this->matrixA_.ptr(),
+        host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        ARBITRARY,
+        this->rowIndexBase_);
   }
 
   if( this->root_ ){

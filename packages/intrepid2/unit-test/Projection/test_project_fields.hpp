@@ -160,9 +160,14 @@ int ProjectFields(const bool verbose) {
     }
   };
 
-  typedef OrientationTools<DeviceType> ots;
-  typedef Experimental::ProjectionTools<DeviceType> pts;
-
+  using ots = OrientationTools<DeviceType>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  using pts = Experimental::ProjectionTools<DeviceType>;
+  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
+#else
+  using pts = ProjectionTools<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+#endif
   using basisPtrType = BasisPtr<DeviceType,ValueType,ValueType>;
   using CG_NBasis = DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>;
 
@@ -376,17 +381,11 @@ int ProjectFields(const bool verbose) {
       {
         ordinal_type srcCubDegree(srcBasisPtr->getDegree());
 
-        Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+        ProjStruct projStruct;
         projStruct.createL2ProjectionStruct(srcBasisPtr.get(), srcCubDegree);
         
-        ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-
-        DynRankView evaluationPoints("evaluationPoints", numElems, numPoints, dim);
-
-        pts::getL2EvaluationPoints(evaluationPoints,
-              elemOrts,
-              srcBasisPtr.get(),
-              &projStruct);
+        auto evaluationPoints = projStruct.getAllEvalPoints();
+        ordinal_type numPoints = evaluationPoints.extent(0);
 
         DynRankView functionAtEvalPoints; 
         
@@ -405,7 +404,7 @@ int ProjectFields(const bool verbose) {
             KOKKOS_LAMBDA (const ordinal_type &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -417,7 +416,7 @@ int ProjectFields(const bool verbose) {
             KOKKOS_LAMBDA (const ordinal_type &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -429,7 +428,7 @@ int ProjectFields(const bool verbose) {
             KOKKOS_LAMBDA (const ordinal_type &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_WEDGE_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -441,7 +440,7 @@ int ProjectFields(const bool verbose) {
             KOKKOS_LAMBDA (const ordinal_type &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_QUAD_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -453,7 +452,7 @@ int ProjectFields(const bool verbose) {
             KOKKOS_LAMBDA (const ordinal_type &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -479,7 +478,6 @@ int ProjectFields(const bool verbose) {
 
         pts::getL2BasisCoeffs(srcBasisCoeffs,
               functionAtEvalPoints,
-              evaluationPoints,
               elemOrts,
               srcBasisPtr.get(),
               &projStruct);

@@ -213,6 +213,8 @@ namespace MueLu {
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
+
+    /* FIXME: This chunk of code is still executing on the host */
     if (OnePtMap != Teuchos::null) {
       typename Kokkos::View<unsigned*,typename LWGraph_kokkos::device_type>::HostMirror aggStatHost
         = Kokkos::create_mirror_view(aggStat);
@@ -341,12 +343,14 @@ namespace MueLu {
 
         //run d2 graph coloring
         //graph is symmetric so row map/entries and col map/entries are the same
-        KokkosGraph::Experimental::graph_color_distance2(&kh, numRows, aRowptrs, aColinds);
+        {
+          SubFactoryMonitor sfm2(*this, "Algo \"Graph Coloring\": KokkosGraph Call", currentLevel);//CMS HACK
+          KokkosGraph::Experimental::graph_color_distance2(&kh, numRows, aRowptrs, aColinds);
+        }
 
         // extract the colors and store them in the aggregates
         aggregates->SetGraphColors(coloringHandle->get_vertex_colors());
         aggregates->SetGraphNumColors(static_cast<LO>(coloringHandle->get_num_colors()));
-
 
         //clean up coloring handle
         kh.destroy_distance2_graph_coloring_handle();
