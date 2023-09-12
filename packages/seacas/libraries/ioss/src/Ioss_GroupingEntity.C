@@ -452,8 +452,8 @@ bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, bool quiet) c
     auto it = std::find(rhs_properties.begin(), rhs_properties.end(), lhs_property);
     if (it == rhs_properties.end()) {
       if (!quiet) {
-        fmt::print(Ioss::OUTPUT(), "WARNING: {}: INPUT property ({}) not found in OUTPUT\n", name(),
-                   lhs_property);
+        fmt::print(Ioss::OUTPUT(), "WARNING: {}: INPUT property ({}) not found in input #2\n",
+                   name(), lhs_property);
         same = false;
       }
       continue;
@@ -506,8 +506,8 @@ bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, bool quiet) c
     for (auto &rhs_property : rhs_properties) {
       auto it = std::find(lhs_properties.begin(), lhs_properties.end(), rhs_property);
       if (it == lhs_properties.end()) {
-        fmt::print(Ioss::OUTPUT(), "WARNING: {}: OUTPUT property ({}) not found in INPUT\n", name(),
-                   rhs_property);
+        fmt::print(Ioss::OUTPUT(), "WARNING: {}: OUTPUT property ({}) not found in input #1\n",
+                   name(), rhs_property);
         same = false;
       }
     }

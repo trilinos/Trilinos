@@ -105,7 +105,7 @@ IF (${PROJECT_NAME}_ENABLE_SEACASExodus)
 	 MESSAGE(STATUS "A Python-3 version of exodus.py and exomerge.py will be installed.")
       ENDIF()
 
-      IF (BUILD_SHARED_LIBS)
+      IF (BUILD_SHARED_LIBS OR SEACASExodus_ENABLE_SHARED)
          IF (NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "")
             IF( ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR} MATCHES "^${CMAKE_INSTALL_PREFIX}.*" )
                STRING( REGEX REPLACE "^${CMAKE_INSTALL_PREFIX}" ""

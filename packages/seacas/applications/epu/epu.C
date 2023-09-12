@@ -1756,7 +1756,7 @@ namespace {
     };
 
     int   num_qa_records = ex_inquire_int(id, EX_INQ_QA);
-    auto *qaRecord       = new qa_element[num_qa_records + 1];
+    std::vector<qa_element> qaRecord(num_qa_records + 1);
     for (int i = 0; i < num_qa_records + 1; i++) {
       for (int j = 0; j < 4; j++) {
         qaRecord[i].qa_record[0][j]    = new char[MAX_STR_LENGTH + 1];
@@ -1793,7 +1793,6 @@ namespace {
         delete[] qaRecord[i].qa_record[0][j];
       }
     }
-    delete[] qaRecord;
   }
 
   template <typename T, typename INT>

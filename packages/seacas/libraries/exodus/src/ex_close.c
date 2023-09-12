@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -63,17 +63,10 @@ int ex_close(int exoid)
    * call ex__rm_file_item and ex__rm_stat_ptr on each group.
    */
 
-#if NC_HAS_HDF5
-  /* nc_inq_grp_parent() will return NC_ENOGRP error if exoid
-   * refers to the root group (which is what we want)
+  /*
+   * Get exoid of root group
    */
-  int parent_id = 0;
-  if ((status = nc_inq_grp_parent(exoid, &parent_id)) != NC_ENOGRP) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file id %d does not refer to root group.", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-#endif
+  exoid &= EX_FILE_ID_MASK;
 
   if ((status1 = nc_sync(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to update file id %d", exoid);

@@ -58,8 +58,11 @@ namespace SEAMS {
   struct file_rec
   {
     std::string name{"STDIN"};
+    symrec     *loop_index{nullptr};
+    double      loop_increment{1};
     int         lineno{1};
     int         loop_count{0};
+    int         loop_level{0};
     bool        tmp_file{false};
 
     file_rec(const char *my_name, int line_num, bool is_temp, int loop_cnt)

@@ -16,10 +16,12 @@
 #include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_Region.h>
+#include <Ioss_SmartAssert.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <cassert>
+#include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <init/Ionit_Initializer.h>
@@ -43,6 +45,12 @@
 #include <metis.h>
 #else
 using idx_t = int;
+#endif
+
+#if USE_ZOLTAN
+#include <zoltan.h>     // for Zoltan_Initialize
+#include <zoltan_cpp.h> // for Zoltan
+extern "C" int Zoltan_get_global_id_type(char **name);
 #endif
 
 #include <sys/types.h>
@@ -84,6 +92,10 @@ namespace {
       progress("\t\tProcessor " + std::to_string(p + 1));
     }
   }
+
+  template <typename INT>
+  void decompose_zoltan(const Ioss::Region &region, int ranks, const std::string &method,
+                        std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED INT dummy);
 
   // Add the chain maps for file-per-rank output...
   template <typename INT>
@@ -187,9 +199,23 @@ namespace {
   {
     const auto &blocks = region.get_element_blocks();
     size_t      offset = 0;
+
+    // Convert is outputting to 64-bit database...
+    std::vector<INT> elem_to_proc64;
+    if (sizeof(INT) == 8) {
+      elem_to_proc64.reserve(elem_to_proc.size());
+      for (const auto &etp : elem_to_proc) {
+        elem_to_proc64.push_back(etp);
+      }
+    }
     for (const auto &block : blocks) {
       size_t num_elem = block->entity_count();
-      block->put_field_data(decomp_variable_name, (void *)&elem_to_proc[offset], -1);
+      if (sizeof(INT) == 8) {
+        block->put_field_data(decomp_variable_name, (void *)&elem_to_proc64[offset], -1);
+      }
+      else {
+        block->put_field_data(decomp_variable_name, (void *)&elem_to_proc[offset], -1);
+      }
       if (add_chain_info) {
         std::vector<INT> chain;
         chain.reserve(num_elem * 2);
@@ -296,6 +322,10 @@ namespace {
   void filename_substitution(std::string &filename, const SystemInterface &interFace);
 
   template <typename INT>
+  void output_decomposition_statistics(const std::vector<INT> &elem_to_proc, int proc_count,
+                                       size_t number_elements);
+
+  template <typename INT>
   void slice(Ioss::Region &region, const std::string &nemfile, SystemInterface &interFace,
              INT dummy);
 
@@ -344,6 +374,64 @@ namespace {
     common_nodes = std::max(1, common_nodes);
     fmt::print(stderr, "Setting common_nodes to {}\n", common_nodes);
     return common_nodes;
+  }
+
+  void decompose_metis(const Ioss::Region &region, SystemInterface &interFace,
+                       std::vector<int> &elem_to_proc)
+  {
+    size_t element_count = region.get_property("element_count").get_int();
+
+    std::vector<idx_t> pointer;
+    std::vector<idx_t> adjacency;
+
+    double start = seacas_timer();
+    create_adjacency_list(region, pointer, adjacency, dummy);
+    double end = seacas_timer();
+    fmt::print(stderr, "\tCreate Adjacency List = {:.5}\n", end - start);
+
+    // Call Metis to get the partition...
+    {
+      start                         = seacas_timer();
+      idx_t              elem_count = element_count;
+      idx_t              common     = get_common_node_count(region);
+      idx_t              proc_count = interFace.processor_count();
+      idx_t              obj_val    = 0;
+      std::vector<idx_t> options((METIS_NOPTIONS));
+      METIS_SetDefaultOptions(&options[0]);
+      if (interFace.decomposition_method() == "kway") {
+        options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY;
+      }
+      else {
+        options[METIS_OPTION_PTYPE] = METIS_PTYPE_RB;
+      }
+
+      options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
+      if (interFace.contiguous_decomposition()) {
+        options[METIS_OPTION_CONTIG] = 1;
+      }
+      options[METIS_OPTION_DBGLVL]  = 2;
+      options[METIS_OPTION_MINCONN] = 1;
+
+      idx_t              node_count = region.get_property("node_count").get_int();
+      std::vector<idx_t> node_partition(node_count);
+      std::vector<idx_t> elem_partition(element_count);
+
+      fmt::print(stderr, "\tCalling METIS Decomposition routine.\n");
+
+      METIS_PartMeshDual(&elem_count, &node_count, &pointer[0], &adjacency[0], nullptr, nullptr,
+                         &common, &proc_count, nullptr, &options[0], &obj_val, &elem_partition[0],
+                         &node_partition[0]);
+
+      Ioss::Utils::clear(node_partition);
+      elem_to_proc.reserve(element_count);
+      std::copy(elem_partition.begin(), elem_partition.end(), std::back_inserter(elem_to_proc));
+
+      end = seacas_timer();
+      fmt::print(stderr, "\tMETIS Partition = {:.5}\n", end - start);
+      fmt::print(stderr, "Objective value = {}\n", obj_val);
+
+      // TODO Check Error...
+    }
   }
 #endif
 } // namespace
@@ -554,60 +642,23 @@ namespace {
       }
     }
 
+    else if (interFace.decomposition_method() == "rcb" ||
+             interFace.decomposition_method() == "rib" ||
+             interFace.decomposition_method() == "hsfc") {
+#if USE_ZOLTAN
+      decompose_zoltan(region, interFace.processor_count(), interFace.decomposition_method(),
+                       elem_to_proc, dummy);
+#else
+      fmt::print(stderr, "ERROR: Zoltan library not enabled in this version of slice.\n"
+                         "       The 'rcb', 'rib', and 'hsfc' methods are not available.\n\n");
+      std::exit(1);
+#endif
+    }
+
     else if (interFace.decomposition_method() == "rb" ||
              interFace.decomposition_method() == "kway") {
 #if USE_METIS
-      std::vector<idx_t> pointer;
-      std::vector<idx_t> adjacency;
-
-      double start = seacas_timer();
-      create_adjacency_list(region, pointer, adjacency, dummy);
-      double end = seacas_timer();
-      fmt::print(stderr, "\tCreate Adjacency List = {:.5}\n", end - start);
-
-      // Call Metis to get the partition...
-      {
-        start                         = seacas_timer();
-        idx_t              elem_count = element_count;
-        idx_t              common     = get_common_node_count(region);
-        idx_t              proc_count = interFace.processor_count();
-        idx_t              obj_val    = 0;
-        std::vector<idx_t> options((METIS_NOPTIONS));
-        METIS_SetDefaultOptions(&options[0]);
-        if (interFace.decomposition_method() == "kway") {
-          options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY;
-        }
-        else {
-          options[METIS_OPTION_PTYPE] = METIS_PTYPE_RB;
-        }
-
-        options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
-        if (interFace.contiguous_decomposition()) {
-          options[METIS_OPTION_CONTIG] = 1;
-        }
-        options[METIS_OPTION_DBGLVL]  = 2;
-        options[METIS_OPTION_MINCONN] = 1;
-
-        idx_t              node_count = region.get_property("node_count").get_int();
-        std::vector<idx_t> node_partition(node_count);
-        std::vector<idx_t> elem_partition(element_count);
-
-        fmt::print(stderr, "\tCalling METIS Decomposition routine.\n");
-
-        METIS_PartMeshDual(&elem_count, &node_count, &pointer[0], &adjacency[0], nullptr, nullptr,
-                           &common, &proc_count, nullptr, &options[0], &obj_val, &elem_partition[0],
-                           &node_partition[0]);
-
-        Ioss::Utils::clear(node_partition);
-        elem_to_proc.reserve(element_count);
-        std::copy(elem_partition.begin(), elem_partition.end(), std::back_inserter(elem_to_proc));
-
-        end = seacas_timer();
-        fmt::print(stderr, "\tMETIS Partition = {:.5}\n", end - start);
-        fmt::print(stderr, "Objective value = {}\n", obj_val);
-
-        // TODO Check Error...
-      }
+      decompose_metis(region, interFace, elem_to_proc);
 #else
       fmt::print(stderr, "ERROR: Metis library not enabled in this version of slice.\n"
                          "       The 'rb' and 'kway' methods are not available.\n\n");
@@ -824,6 +875,12 @@ namespace {
         }
       }
     }
+    else {
+      fmt::print(stderr, "ERROR: Unrecognized decomposition method '{}'\n\n",
+                 interFace.decomposition_method());
+      exit(EXIT_FAILURE);
+    }
+
     assert(elem_to_proc.size() == element_count);
   }
 
@@ -836,10 +893,12 @@ namespace {
 
     for (size_t i = 0; i < element_chains.size(); i++) {
       auto &chain_entry = element_chains[i];
-      chains[chain_entry.element].push_back(i + 1);
-      if ((debug_level & 16) != 0) {
-        fmt::print("[{}]: element {}, link {}, processor {}\n", i + 1, chain_entry.element,
-                   chain_entry.link, elem_to_proc[i]);
+      if (chain_entry.link >= 0) {
+        chains[chain_entry.element].push_back(i + 1);
+        if ((debug_level & 16) != 0) {
+          fmt::print("[{}]: element {}, link {}, processor {}\n", i + 1, chain_entry.element,
+                     chain_entry.link, elem_to_proc[i]);
+        }
       }
     }
 
@@ -1888,12 +1947,20 @@ namespace {
     decompose_elements(region, interFace, elem_to_proc, dummy);
     double end = seacas_timer();
     fmt::print(stderr, "Decompose elements = {:.5}\n", end - start);
+    progress("exit decompose_elements");
 
     Ioss::chain_t<INT> element_chains;
     if (interFace.lineDecomp_) {
       element_chains =
           Ioss::generate_element_chains(region, interFace.lineSurfaceList_, debug_level, dummy);
+      progress("Ioss::generate_element_chains");
       line_decomp_modify(element_chains, elem_to_proc, interFace.processor_count(), dummy);
+      progress("line_decomp_modify");
+    }
+
+    if (debug_level & 32) {
+      output_decomposition_statistics(elem_to_proc, interFace.processor_count(),
+                                      elem_to_proc.size());
     }
 
     if (!create_split_files) {
@@ -1901,6 +1968,9 @@ namespace {
           "exodus", nemfile, Ioss::WRITE_RESTART, Ioss::ParallelUtils::comm_world(), properties);
       if (dbo == nullptr || !dbo->ok(true)) {
         std::exit(EXIT_FAILURE);
+      }
+      if (ints64) {
+        dbo->set_int_byte_size_api(Ioss::USE_INT64_API);
       }
 
       // NOTE: 'output_region' owns 'dbo' pointer at this time
@@ -1928,6 +1998,7 @@ namespace {
         add_decomp_map(output_region, interFace.decomposition_variable(), line_decomp);
         output_decomp_map(output_region, elem_to_proc, element_chains,
                           interFace.decomposition_variable(), line_decomp);
+        progress("output_decomp_map");
       }
 
       if (interFace.outputDecompField_) {
@@ -1935,6 +2006,7 @@ namespace {
         add_decomp_field(output_region, interFace.decomposition_variable(), line_decomp);
         output_decomp_field(output_region, elem_to_proc, element_chains,
                             interFace.decomposition_variable(), line_decomp);
+        progress("output_decomp_field");
       }
 
       return;
@@ -2143,5 +2215,346 @@ namespace {
       tmp += filename.substr(pos + 2);
       filename = tmp;
     }
+  }
+
+  void output_histogram(const std::vector<size_t> &proc_work, size_t avg_work, size_t median)
+  {
+    fmt::print("Work-per-processor Histogram\n");
+    std::array<size_t, 16> histogram{};
+
+    auto wmin = *std::min_element(proc_work.begin(), proc_work.end());
+    auto wmax = *std::max_element(proc_work.begin(), proc_work.end());
+
+    size_t hist_size = std::min(size_t(16), (wmax - wmin));
+    hist_size        = std::min(hist_size, proc_work.size());
+
+    if (hist_size <= 1) {
+      fmt::print("\tWork is the same on all processors; no histogram needed.\n\n");
+      return;
+    }
+
+    auto delta = double(wmax + 1 - wmin) / hist_size;
+    for (const auto &pw : proc_work) {
+      auto bin = size_t(double(pw - wmin) / delta);
+      SMART_ASSERT(bin < hist_size)(bin)(hist_size);
+      histogram[bin]++;
+    }
+
+    size_t proc_width = Ioss::Utils::number_width(proc_work.size(), true);
+    size_t work_width = Ioss::Utils::number_width(wmax, true);
+
+    fmt::print("\n\t{:^{}} {:^{}}\n", "Work Range", 2 * work_width + 2, "#", proc_width);
+    auto hist_max = *std::max_element(histogram.begin(), histogram.end());
+    for (size_t i = 0; i < hist_size; i++) {
+      int         max_star = 50;
+      int         star_cnt = ((double)histogram[i] / hist_max * max_star);
+      std::string stars(star_cnt, '*');
+      for (int j = 9; j < star_cnt;) {
+        stars[j] = '|';
+        j += 10;
+      }
+      if (histogram[i] > 0 && star_cnt == 0) {
+        stars = '.';
+      }
+      size_t      w1 = wmin + size_t(i * delta);
+      size_t      w2 = wmin + size_t((i + 1) * delta);
+      std::string postfix;
+      if (w1 <= avg_work && avg_work < w2) {
+        postfix += "average";
+      }
+      if (w1 <= median && median < w2) {
+        if (!postfix.empty()) {
+          postfix += ", ";
+        }
+        postfix += "median";
+      }
+      fmt::print("\t{:{}}..{:{}} ({:{}}):\t{:{}}  {}\n", fmt::group_digits(w1), work_width,
+                 fmt::group_digits(w2), work_width, fmt::group_digits(histogram[i]), proc_width,
+                 stars, max_star, postfix);
+    }
+    fmt::print("\n");
+  }
+
+  template <typename INT>
+  void output_decomposition_statistics(const std::vector<INT> &elem_to_proc, int proc_count,
+                                       size_t number_elements)
+  {
+    // Output histogram of elements / rank...
+    std::vector<size_t> elem_per_rank(proc_count);
+    for (INT proc : elem_to_proc) {
+      elem_per_rank[proc]++;
+    }
+
+    size_t proc_width = Ioss::Utils::number_width(proc_count, false);
+    size_t work_width = Ioss::Utils::number_width(number_elements, true);
+
+    auto   min_work = *std::min_element(elem_per_rank.begin(), elem_per_rank.end());
+    auto   max_work = *std::max_element(elem_per_rank.begin(), elem_per_rank.end());
+    size_t median   = 0;
+    {
+      auto pw_copy(elem_per_rank);
+      std::nth_element(pw_copy.begin(), pw_copy.begin() + pw_copy.size() / 2, pw_copy.end());
+      median = pw_copy[pw_copy.size() / 2];
+      fmt::print("\nElements per processor:\n\tMinimum = {}, Maximum = {}, Median = {}, Ratio = "
+                 "{:.3}\n\n",
+                 fmt::group_digits(min_work), fmt::group_digits(max_work),
+                 fmt::group_digits(median), (double)(max_work) / min_work);
+    }
+    if (min_work == max_work) {
+      fmt::print("\nWork on all processors is {}\n\n", fmt::group_digits(min_work));
+    }
+    else {
+      int max_star = 40;
+      int min_star = max_star * ((double)min_work / (double)(max_work));
+      min_star     = std::max(1, min_star);
+      int delta    = max_star - min_star;
+
+      double avg_work = (double)number_elements / (double)proc_count;
+      for (size_t i = 0; i < elem_per_rank.size(); i++) {
+        int star_cnt =
+            (double)(elem_per_rank[i] - min_work) / (max_work - min_work) * delta + min_star;
+        std::string stars(star_cnt, '*');
+        std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
+        if (elem_per_rank[i] == max_work) {
+          fmt::print(fg(fmt::color::red), format, i, proc_width,
+                     fmt::group_digits(elem_per_rank[i]), work_width,
+                     (double)elem_per_rank[i] / avg_work, stars);
+        }
+        else if (elem_per_rank[i] == min_work) {
+          fmt::print(fg(fmt::color::green), format, i, proc_width,
+                     fmt::group_digits(elem_per_rank[i]), work_width, elem_per_rank[i] / avg_work,
+                     stars);
+        }
+        else {
+          fmt::print(format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
+                     elem_per_rank[i] / avg_work, stars);
+        }
+      }
+
+      // Output Histogram...
+      output_histogram(elem_per_rank, (size_t)avg_work, median);
+    }
+  }
+
+#ifdef USE_ZOLTAN
+#define STRINGIFY(x) #x
+#define TOSTRING(x)  STRINGIFY(x)
+#define ZCHECK(funcall)                                                                            \
+  do {                                                                                             \
+    ierr = (funcall);                                                                              \
+    if (ierr == ZOLTAN_FATAL) {                                                                    \
+      fmt::print(stderr, "Error returned from {} ({}:{})\n", TOSTRING(funcall), __FILE__,          \
+                 __LINE__);                                                                        \
+      goto End;                                                                                    \
+    }                                                                                              \
+  } while (0)
+
+  /*****************************************************************************/
+  /***** Global data structure used by Zoltan callbacks.                   *****/
+  /***** Could implement Zoltan callbacks without global data structure,   *****/
+  /***** but using the global data structure makes implementation quick.   *****/
+  struct
+  {
+    size_t  ndot; /* Length of x, y, z, and part (== # of elements) */
+    int    *vwgt; /* vertex weights */
+    double *x;    /* x-coordinates */
+    double *y;    /* y-coordinates */
+    double *z;    /* z-coordinates */
+  } Zoltan_Data;
+
+  /*****************************************************************************/
+  /***** ZOLTAN CALLBACK FUNCTIONS *****/
+  int zoltan_num_dim(void * /*data*/, int *ierr)
+  {
+    /* Return dimensionality of coordinate data.
+     * Using global data structure Zoltan_Data, initialized in ZOLTAN_RCB_assign.
+     */
+    *ierr = ZOLTAN_OK;
+    if (Zoltan_Data.z != nullptr) {
+      return 3;
+    }
+    if (Zoltan_Data.y != nullptr) {
+      return 2;
+    }
+    return 1;
+  }
+
+  int zoltan_num_obj(void * /*data*/, int *ierr)
+  {
+    /* Return number of objects.
+     * Using global data structure Zoltan_Data, initialized in ZOLTAN_RCB_assign.
+     */
+    *ierr = ZOLTAN_OK;
+    return Zoltan_Data.ndot;
+  }
+
+  void zoltan_obj_list(void * /*data*/, int /*ngid_ent*/, int /*nlid_ent*/, ZOLTAN_ID_PTR gids,
+                       ZOLTAN_ID_PTR /*lids*/, int wdim, float *wgts, int *ierr)
+  {
+    /* Return list of object IDs.
+     * Return only global IDs; don't need local IDs since running in serial.
+     * gids are array indices for coordinate and vwgts arrays.
+     * Using global data structure Zoltan_Data, initialized in ZOLTAN_RCB_assign.
+     */
+    for (size_t i = 0; i < Zoltan_Data.ndot; i++) {
+      gids[i] = i;
+      if (wdim != 0) {
+        wgts[i] = static_cast<float>(Zoltan_Data.vwgt[i]);
+      }
+    }
+
+    *ierr = ZOLTAN_OK;
+  }
+
+  void zoltan_geom(void * /*data*/, int /*ngid_ent*/, int /*nlid_ent*/, int nobj,
+                   const ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR /*lids*/, int ndim, double *geom,
+                   int *ierr)
+  {
+    /* Return coordinates for objects.
+     * gids are array indices for coordinate arrays.
+     * Using global data structure Zoltan_Data, initialized in ZOLTAN_RCB_assign.
+     */
+
+    for (int i = 0; i < nobj; i++) {
+      size_t j       = gids[i];
+      geom[i * ndim] = Zoltan_Data.x[j];
+      if (ndim > 1) {
+        geom[i * ndim + 1] = Zoltan_Data.y[j];
+      }
+      if (ndim > 2) {
+        geom[i * ndim + 2] = Zoltan_Data.z[j];
+      }
+    }
+
+    *ierr = ZOLTAN_OK;
+  }
+#endif
+
+  template <typename INT>
+  void decompose_zoltan(const Ioss::Region &region, int ranks, const std::string &method,
+                        std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED INT dummy)
+  {
+    if (ranks == 1) {
+      return;
+    }
+
+#ifdef USE_ZOLTAN
+    size_t element_count = region.get_property("element_count").get_int();
+
+    // Below here are Zoltan decompositions...
+    std::vector<double> x(element_count);
+    std::vector<double> y(element_count);
+    std::vector<double> z(element_count);
+
+    const auto         *nb = region.get_node_blocks()[0];
+    std::vector<double> coor;
+    nb->get_field_data("mesh_model_coordinates", coor);
+
+    const auto &blocks = region.get_element_blocks();
+    size_t      el     = 0;
+    for (auto &eb : blocks) {
+      std::vector<INT> connectivity;
+      eb->get_field_data("connectivity_raw", connectivity);
+      size_t blk_element_count = eb->entity_count();
+      size_t blk_element_nodes = eb->topology()->number_nodes();
+
+      for (size_t j = 0; j < blk_element_count; j++) {
+        for (size_t k = 0; k < blk_element_nodes; k++) {
+          auto node = connectivity[j * blk_element_nodes + k] - 1;
+          x[el] += coor[node * 3 + 0];
+          y[el] += coor[node * 3 + 1];
+          z[el] += coor[node * 3 + 2];
+        }
+        x[el] /= blk_element_nodes;
+        y[el] /= blk_element_nodes;
+        z[el] /= blk_element_nodes;
+        el++;
+      }
+    }
+
+    /* Copy mesh data and pointers into structure accessible from callback fns. */
+    Zoltan_Data.ndot = element_count;
+    Zoltan_Data.vwgt = nullptr;
+    Zoltan_Data.x    = x.data();
+    Zoltan_Data.y    = y.data();
+    Zoltan_Data.z    = z.data();
+
+    /* Initialize Zoltan */
+    int           argc   = 0;
+    char        **argv   = nullptr;
+    ZOLTAN_ID_PTR zgids  = nullptr;
+    ZOLTAN_ID_PTR zlids  = nullptr; /* Useful output from Zoltan_LB_Partition */
+    int          *zprocs = nullptr; /* Useful output from Zoltan_LB_Partition */
+    int          *zparts = nullptr; /* Useful output from Zoltan_LB_Partition */
+
+    int   ierr = 0;
+    float ver  = 0.0;
+    Zoltan_Initialize(argc, argv, &ver);
+    struct Zoltan_Struct *zz = Zoltan_Create(Ioss::ParallelUtils::comm_world());
+
+    /* Register Callback functions */
+    /* Using global Zoltan_Data; could register it here instead as data field. */
+    ZCHECK(Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE,
+                         reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_num_dim), nullptr));
+    ZCHECK(Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE,
+                         reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_num_obj), nullptr));
+    ZCHECK(Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
+                         reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_obj_list), nullptr));
+    ZCHECK(Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE,
+                         reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_geom), nullptr));
+
+    /* Set parameters for Zoltan */
+    ZCHECK(Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0"));
+    {
+      std::string str = fmt::format("{}", ranks);
+      ZCHECK(Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTITIONS", str.c_str()));
+      ZCHECK(Zoltan_Set_Param(zz, "LB_METHOD", method.c_str()));
+    }
+    ZCHECK(Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0"));
+    ZCHECK(Zoltan_Set_Param(zz, "REMAP", "0"));
+    ZCHECK(Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS"));
+    if (Zoltan_Data.vwgt != nullptr) {
+      ZCHECK(Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1"));
+    }
+    ZCHECK(Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"));
+
+    /* Call partitioner */
+    {
+      fmt::print(" Using Zoltan version {:.2}, method {}\n", static_cast<double>(ver), method);
+      int           zngid_ent = 0;
+      int           znlid_ent = 0; /* Useful output from Zoltan_LB_Partition */
+      int           znobj     = 0;
+      ZOLTAN_ID_PTR dummy1    = nullptr;
+      ZOLTAN_ID_PTR dummy2    = nullptr; /* Empty output from Zoltan_LB_Partition */
+      int           dummy0    = 0;
+      int          *dummy3    = nullptr;
+      int          *dummy4    = nullptr;
+      int           changes   = 0;
+
+      ZCHECK(Zoltan_LB_Partition(zz, &changes, &zngid_ent, &znlid_ent, &dummy0, &dummy1, &dummy2,
+                                 &dummy3, &dummy4, &znobj, &zgids, &zlids, &zprocs, &zparts));
+
+      /* Sanity check */
+      if (element_count != static_cast<size_t>(znobj)) {
+        fmt::print(stderr, "Sanity check failed; ndot {} != znobj {}.\n", element_count,
+                   static_cast<size_t>(znobj));
+        goto End;
+      }
+
+      elem_to_proc.resize(element_count);
+      for (size_t i = 0; i < element_count; i++) {
+        elem_to_proc[i] = zparts[i];
+      }
+    }
+
+  End:
+    /* Clean up */
+    Zoltan_LB_Free_Part(&zgids, &zlids, &zprocs, &zparts);
+    Zoltan_Destroy(&zz);
+    if (ierr != 0) {
+      MPI_Finalize();
+      exit(-1);
+    }
+#endif
   }
 } // namespace

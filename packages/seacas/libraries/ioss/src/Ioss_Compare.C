@@ -1538,8 +1538,8 @@ namespace {
   {
     bool overall_result = true;
 
-    // Iterate through the TRANSIENT-role fields of the input
-    // database and transfer to output database.
+    // Iterate through the `role` fields of the input
+    // database and compare to second database.
     Ioss::NameList in_state_fields_1 = ige_1->field_describe(role);
     Ioss::NameList in_state_fields_2 = ige_2->field_describe(role);
 
@@ -1550,6 +1550,10 @@ namespace {
       // generates overhead...
       if (field_name == "connectivity" && ige_1->type() != Ioss::ELEMENTBLOCK) {
         assert(ige_2->type() != Ioss::ELEMENTBLOCK);
+        continue;
+      }
+      if (field_name == "ids" && ige_1->type() == Ioss::COMMSET) {
+        assert(ige_2->type() == Ioss::COMMSET);
         continue;
       }
       if (Ioss::Utils::substr_equal(prefix, field_name)) {

@@ -16,6 +16,8 @@
 #include <random>
 #include <algorithm>
 #include <iostream>
+#include <functional>
+
 #include <unistd.h>                     // for unlink
 
 #include <Ionit_Initializer.h>
@@ -208,20 +210,18 @@ void generate_randomized_many_block_mesh_from_textmesh(int numBlocks, const std:
 }
 
 template<typename INT>
-std::pair<double, double> do_connectivity_timing_impl(const Ioss::Region& region)
+std::pair<double, double> do_connectivity_timing_impl(const Ioss::Region& region, const Ioss::ElementBlockContainer& elemBlocks)
 {
-  const Ioss::ElementBlockContainer& elemBlocks = region.get_element_blocks();
-
-  std::vector<INT> allConnectivity;
+  std::vector<INT> blockBatchConnectivity;
 
   double startTime = Ioss::Utils::timer();
-  std::vector<size_t> dataOffset = region.get_all_block_field_data("connectivity", allConnectivity);
-  double elapsedAllBlockConnectivityTime = Ioss::Utils::timer() - startTime;
+  std::vector<size_t> dataOffset = region.get_entity_field_data("connectivity", elemBlocks, blockBatchConnectivity);
+  double elapsedBlockBatchConnectivityTime = Ioss::Utils::timer() - startTime;
 
   double elapsedConnectivityTime = 0.0;
   for(unsigned i=0; i<elemBlocks.size(); i++) {
     const Ioss::ElementBlock* entity = elemBlocks[i];
-    int64_t iblk = elemBlocks[i]->get_optional_property("iblk", int64_t(i));
+    int64_t iblk = int64_t(i);
 
     std::vector<INT> connectivity;
     startTime = Ioss::Utils::timer();
@@ -232,61 +232,61 @@ std::pair<double, double> do_connectivity_timing_impl(const Ioss::Region& region
     int64_t numEntities = entity->entity_count();
     EXPECT_EQ(numToGet, numEntities);
 
-    int64_t allBlockNumToGet = dataOffset[iblk+1] - dataOffset[iblk];
-    EXPECT_EQ(allBlockNumToGet, numEntities*numComponents);
+    int64_t blockBatchNumToGet = dataOffset[iblk+1] - dataOffset[iblk];
+    EXPECT_EQ(blockBatchNumToGet, numEntities*numComponents);
 
     for(unsigned eIndex=0; eIndex<numEntities; eIndex++) {
       for(unsigned comp=0; comp<numComponents; comp++) {
         size_t connIndex = eIndex*numComponents + comp;
-        size_t allBlockConnIndex = dataOffset[iblk] + connIndex;
+        size_t blockBatchConnIndex = dataOffset[iblk] + connIndex;
 
         INT connValue = connectivity[connIndex];
-        INT allBlockConnValue = allConnectivity[allBlockConnIndex];
+        INT blockBatchConnValue = blockBatchConnectivity[blockBatchConnIndex];
 
-        EXPECT_EQ(connValue, allBlockConnValue);
+        EXPECT_EQ(connValue, blockBatchConnValue);
       }
     }
   }
 
-  return std::make_pair(elapsedConnectivityTime, elapsedAllBlockConnectivityTime);
+  return std::make_pair(elapsedConnectivityTime, elapsedBlockBatchConnectivityTime);
 }
 
-std::pair<double, double> do_connectivity_timing(const Ioss::Region& region)
+std::pair<double, double> do_connectivity_timing(const Ioss::Region& region, const Ioss::ElementBlockContainer& elemBlocks)
 {
   auto result = std::pair<double, double>(0.0, 0.0);
 
   bool is64Bit = (region.get_database()->int_byte_size_api() == 8);
   if(is64Bit) {
-    result = do_connectivity_timing_impl<int64_t>(region);
+    result = do_connectivity_timing_impl<int64_t>(region, elemBlocks);
   } else {
-    result = do_connectivity_timing_impl<int>(region);
+    result = do_connectivity_timing_impl<int>(region, elemBlocks);
   }
 
   return result;
 }
 
-std::pair<double, double> do_field_timing_and_verification(const Ioss::Region& region, const std::string& fieldName)
+std::pair<double, double> do_field_timing_and_verification(const Ioss::Region& region,
+                                                           const Ioss::ElementBlockContainer& elemBlocks,
+                                                           const std::string& fieldName)
 {
-  const Ioss::ElementBlockContainer& elemBlocks = region.get_element_blocks();
+  std::vector<double> blockFieldData;
 
-  std::vector<double> allFieldData;
-
-  double startAllBlockFieldTime = Ioss::Utils::timer();
-  std::vector<size_t> dataOffset = region.get_all_block_field_data(fieldName, allFieldData);
-  double elapsedAllBlockFieldTime = Ioss::Utils::timer() - startAllBlockFieldTime;
+  double startBlockFieldTime = Ioss::Utils::timer();
+  std::vector<size_t> dataOffset = region.get_entity_field_data(fieldName, elemBlocks, blockFieldData);
+  double elapsedBlockFieldTime = Ioss::Utils::timer() - startBlockFieldTime;
 
   double elapsedFieldTime = 0.0;
 
-  std::vector<double> blockFieldData;
+  std::vector<double> fieldData;
 
   for(unsigned i=0; i<elemBlocks.size(); i++) {
     const Ioss::ElementBlock* entity = elemBlocks[i];
 
-    int64_t iblk = elemBlocks[i]->get_optional_property("iblk", int64_t(i));
+    int64_t iblk = int64_t(i);
 
     if(entity->field_exists(fieldName)) {
       double startFieldTime = Ioss::Utils::timer();
-      int64_t numToGet = entity->get_field_data(fieldName, blockFieldData);
+      int64_t numToGet = entity->get_field_data(fieldName, fieldData);
       elapsedFieldTime += Ioss::Utils::timer() - startFieldTime;
 
       Ioss::Field iossField = entity->get_field(fieldName);
@@ -295,29 +295,51 @@ std::pair<double, double> do_field_timing_and_verification(const Ioss::Region& r
       int64_t expectedNumToGet = numEntities*numComponents;
       EXPECT_EQ(numToGet, expectedNumToGet);
 
-      int64_t allBlockNumToGet = dataOffset[iblk+1] - dataOffset[iblk];
-      EXPECT_EQ(allBlockNumToGet, expectedNumToGet);
+      int64_t blockNumToGet = dataOffset[iblk+1] - dataOffset[iblk];
+      EXPECT_EQ(blockNumToGet, expectedNumToGet);
 
       for(unsigned eIndex=0; eIndex<numEntities; eIndex++) {
         for(unsigned comp=0; comp<numComponents; comp++) {
           size_t fieldIndex = eIndex*numComponents + comp;
-          size_t allBlockFieldIndex = dataOffset[iblk] + fieldIndex;
+          size_t blockFieldIndex = dataOffset[iblk] + fieldIndex;
 
-          double fieldValue = blockFieldData[fieldIndex];
-          double allBlockFieldValue = allFieldData[allBlockFieldIndex];
+          double fieldValue = fieldData[fieldIndex];
+          double blockFieldValue = blockFieldData[blockFieldIndex];
 
-          EXPECT_NEAR(fieldValue, allBlockFieldValue, 1.0e-5);
+          EXPECT_NEAR(fieldValue, blockFieldValue, 1.0e-5);
         }
       }
     }
   }
 
-  return std::make_pair(elapsedFieldTime, elapsedAllBlockFieldTime);
+  return std::make_pair(elapsedFieldTime, elapsedBlockFieldTime);
 }
 
-TEST(TestReadAllBlock, readManyBlockMesh)
+Ioss::ElementBlockContainer get_all_blocks(const Ioss::Region& region)
 {
-  int numBlocks = 100;
+  return region.get_element_blocks();
+}
+
+Ioss::ElementBlockContainer get_alternate_blocks(const Ioss::Region& region)
+{
+  const Ioss::ElementBlockContainer& elemBlocks = region.get_element_blocks();
+
+  Ioss::ElementBlockContainer alternateElemBlocks;
+  alternateElemBlocks.reserve(elemBlocks.size()/2);
+
+  for(unsigned i=0; i<elemBlocks.size(); i++) {
+    if(i%2 == 0) {
+      alternateElemBlocks.push_back(elemBlocks[i]);
+    }
+  }
+
+  return alternateElemBlocks;
+}
+
+using ElemBlockFunc = std::function<Ioss::ElementBlockContainer(const Ioss::Region& region)>;
+
+void run_block_batch_test(int numBlocks, ElemBlockFunc func)
+{
   std::ostringstream oss;
   oss << "randomizedManyBlocks_";
   oss << numBlocks << ".g";
@@ -344,44 +366,62 @@ TEST(TestReadAllBlock, readManyBlockMesh)
     region.property_add(decompProp);
     region.begin_state(1);
 
-    double elapsedConnectivityTime;
-    double elapsedAllBlockConnectivityTime;
-    std::tie(elapsedConnectivityTime, elapsedAllBlockConnectivityTime) = do_connectivity_timing(region);
+    Ioss::ElementBlockContainer elemBlocks = func(region);
 
-    double maxAllBlockConnectivityDuration = util.global_minmax(elapsedAllBlockConnectivityTime, Ioss::ParallelUtils::DO_MAX);
-    double minAllBlockConnectivityDuration = util.global_minmax(elapsedAllBlockConnectivityTime, Ioss::ParallelUtils::DO_MIN);
+    double elapsedConnectivityTime;
+    double elapsedBlockBatchConnectivityTime;
+    std::tie(elapsedConnectivityTime, elapsedBlockBatchConnectivityTime) = do_connectivity_timing(region, elemBlocks);
+
+    double maxBlockBatchConnectivityDuration = util.global_minmax(elapsedBlockBatchConnectivityTime, Ioss::ParallelUtils::DO_MAX);
+    double minBlockBatchConnectivityDuration = util.global_minmax(elapsedBlockBatchConnectivityTime, Ioss::ParallelUtils::DO_MIN);
 
     double maxConnectivityDuration = util.global_minmax(elapsedConnectivityTime, Ioss::ParallelUtils::DO_MAX);
     double minConnectivityDuration = util.global_minmax(elapsedConnectivityTime, Ioss::ParallelUtils::DO_MIN);
 
     if (util.parallel_rank() == 0) {
       std::cout << std::endl;
-      std::cout << "MAX           connectivity read time = " << maxConnectivityDuration         << ": MIN           connectivity read time = " << minConnectivityDuration << std::endl;
-      std::cout << "MAX all-block connectivity read time = " << maxAllBlockConnectivityDuration << ": MIN all-block connectivity read time = " << minAllBlockConnectivityDuration << std::endl;
+      std::cout << "MAX       connectivity read time = " << std::setw(8) << std::fixed << maxConnectivityDuration
+                << " : MIN       connectivity read time = " << std::setw(8) << std::fixed << minConnectivityDuration << std::endl;
+      std::cout << "MAX BATCH connectivity read time = " << std::setw(8) << std::fixed << maxBlockBatchConnectivityDuration
+                << " : MIN BATCH connectivity read time = " << std::setw(8) << std::fixed << minBlockBatchConnectivityDuration << std::endl;
       std::cout << std::endl;
     }
 
     double elapsedFieldTime;
-    double elapsedAllBlockFieldTime;
+    double elapsedBlockBatchFieldTime;
 
-    std::tie(elapsedFieldTime, elapsedAllBlockFieldTime) = do_field_timing_and_verification(region, elemFieldName);
+    std::tie(elapsedFieldTime, elapsedBlockBatchFieldTime) = do_field_timing_and_verification(region, elemBlocks, elemFieldName);
 
-    double maxAllBlockFieldDuration = util.global_minmax(elapsedAllBlockFieldTime, Ioss::ParallelUtils::DO_MAX);
-    double minAllBlockFieldDuration = util.global_minmax(elapsedAllBlockFieldTime, Ioss::ParallelUtils::DO_MIN);
+    double maxBlockBatchFieldDuration = util.global_minmax(elapsedBlockBatchFieldTime, Ioss::ParallelUtils::DO_MAX);
+    double minBlockBatchFieldDuration = util.global_minmax(elapsedBlockBatchFieldTime, Ioss::ParallelUtils::DO_MIN);
 
     double maxFieldDuration = util.global_minmax(elapsedFieldTime, Ioss::ParallelUtils::DO_MAX);
     double minFieldDuration = util.global_minmax(elapsedFieldTime, Ioss::ParallelUtils::DO_MIN);
 
     if (util.parallel_rank() == 0) {
       std::cout << std::endl;
-      std::cout << "MAX           field read time = " << maxFieldDuration         << ": MIN           field read time = " << minFieldDuration << std::endl;
-      std::cout << "MAX all-block field read time = " << maxAllBlockFieldDuration << ": MIN all-block field read time = " << minAllBlockFieldDuration << std::endl;
+      std::cout << "MAX       field read time = " << std::setw(8) << std::fixed << maxFieldDuration
+                << " : MIN       field read time = " << std::setw(8) << std::fixed << minFieldDuration << std::endl;
+      std::cout << "MAX BATCH field read time = " << std::setw(8) << std::fixed << maxBlockBatchFieldDuration
+                << " : MIN BATCH field read time = " << std::setw(8) << std::fixed << minBlockBatchFieldDuration << std::endl;
       std::cout << std::endl;
     }
   }
 
   unlink(outFile.c_str());
+
 }
 
+TEST(TestReadBlockBatch, readAllBlocks)
+{
+  int numBlocks = 1000;
+  run_block_batch_test(numBlocks, get_all_blocks);
+}
+
+TEST(TestReadBlockBatch, readAlternateBlocks)
+{
+  int numBlocks = 1000;
+  run_block_batch_test(numBlocks, get_alternate_blocks);
+}
 
 } // namespace

@@ -40,7 +40,7 @@ namespace {
   bool mem_stats = false;
 
   void file_copy(IOShell::Interface &interFace, int rank);
-  void file_compare(IOShell::Interface &interFace, int rank);
+  bool file_compare(IOShell::Interface &interFace, int rank);
 
   Ioss::PropertyManager set_properties(IOShell::Interface &interFace);
   Ioss::MeshCopyOptions set_mesh_copy_options(IOShell::Interface &interFace)
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 
   try {
     if (interFace.compare) {
-      file_compare(interFace, rank);
+      success = file_compare(interFace, rank);
     }
     else {
       file_copy(interFace, rank);
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   if (rank == 0) {
     fmt::print(stderr, "\n{} execution successful.\n", codename);
   }
-  return EXIT_SUCCESS;
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 namespace {
@@ -421,10 +421,10 @@ namespace {
     } // loop over input files
   }
 
-  void file_compare(IOShell::Interface &interFace, int rank)
+  bool file_compare(IOShell::Interface &interFace, int rank)
   {
     Ioss::PropertyManager properties = set_properties(interFace);
-    for (const auto &inpfile : interFace.inputFile) {
+    const auto &inpfile = interFace.inputFile[0];
 
       //========================================================================
       // INPUT Database #1...
@@ -466,7 +466,7 @@ namespace {
             fmt::print(stderr, "ERROR: Unable to open group '{}' in file '{}'\n",
                        interFace.groupName, inpfile);
           }
-          return;
+          return false;
         }
       }
 
@@ -478,7 +478,7 @@ namespace {
                    "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
                    "'Structured' mesh is supported at this time.\n",
                    input_region1.mesh_type_string());
-        return;
+        return false;
       }
 
       // Get integer size being used on input file #1 and set it in
@@ -528,7 +528,7 @@ namespace {
             fmt::print(stderr, "ERROR: Unable to open group '{}' in file '{}'\n",
                        interFace.groupName, inpfile);
           }
-          return;
+          return false;
         }
       }
 
@@ -540,7 +540,7 @@ namespace {
                    "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
                    "'Structured' mesh is supported at this time.\n",
                    input_region2.mesh_type_string());
-        return;
+        return false;
       }
 
       // Get integer size being used on input file #1 and set it in
@@ -562,7 +562,7 @@ namespace {
       else {
         fmt::print(stderr, "\n\nDATABASES are NOT equal");
       }
-    } // loop over input files
+      return result;
   }
 
   Ioss::PropertyManager set_properties(IOShell::Interface &interFace)

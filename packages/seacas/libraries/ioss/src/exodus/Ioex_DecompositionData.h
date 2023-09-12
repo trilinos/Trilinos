@@ -28,6 +28,7 @@
 
 namespace Ioss {
   class Field;
+  class ElementBlock;
 }
 namespace Ioex {
   struct IOEX_EXPORT BlockFieldData
@@ -85,17 +86,6 @@ namespace Ioex {
 
     void get_block_connectivity(int filePtr, void *data, int64_t id, size_t blk_seq,
                                 size_t nnpe) const;
-
-    std::vector<size_t> get_all_block_connectivity(int filePtr, void *data) const;
-    size_t              get_all_block_connectivity_size() const;
-    std::vector<int>    get_all_block_connectivity_component_count() const;
-
-    std::vector<size_t> get_all_block_offset(const std::vector<int> &block_component_count) const;
-    std::vector<size_t>
-    get_all_block_file_offset(const std::vector<int> &block_component_count) const;
-
-    void get_all_block_field(int filePtr, void *data, size_t step,
-                             const std::vector<BlockFieldData> &block_data) const;
 
     void read_elem_proc_map(int filePtr, void *data) const;
 
@@ -169,14 +159,6 @@ namespace Ioex {
     void get_block_connectivity(int filePtr, INT *data, int64_t id, size_t blk_seq,
                                 size_t nnpe) const;
 
-    std::vector<size_t> get_all_block_connectivity(int filePtr, INT *data) const;
-
-    void get_all_block_field_impl(int filePtr, void *data, size_t step,
-                                  const std::vector<BlockFieldData> &block_data) const;
-
-    std::vector<size_t>
-    get_all_block_file_offset_impl(const std::vector<int> &block_component_count) const;
-
     size_t get_commset_node_size() const { return m_decomposition.m_nodeCommMap.size() / 2; }
 
     int get_attr(int filePtr, ex_entity_type obj_type, ex_entity_id id, size_t attr_count,
@@ -202,8 +184,20 @@ namespace Ioex {
                                     std::vector<int64_t> &global_implicit_map, Ioss::Map &node_map,
                                     int64_t *locally_owned_count, int64_t *processor_offset);
 
+    // global_index is 1-based index into global list of nodes [1..global_node_count]
+    // return value is 1-based index into local list of nodes on this
+    // processor (ioss-decomposition)
+    size_t node_global_to_local(size_t global_index) const
+    {
+      return m_decomposition.node_global_to_local(global_index);
+    }
+
+    size_t elem_global_to_local(size_t global_index) const
+    {
+      return m_decomposition.elem_global_to_local(global_index);
+    }
+
   private:
-    std::vector<size_t> get_all_block_connectivity_file_offset() const;
 
 #if !defined(NO_ZOLTAN_SUPPORT)
     void zoltan_decompose(const std::string &method);
@@ -262,20 +256,10 @@ namespace Ioex {
       return m_decomposition.i_own_elem(elem);
     }
 
-    // global_index is 1-based index into global list of nodes [1..global_node_count]
-    // return value is 1-based index into local list of nodes on this
-    // processor (ioss-decomposition)
-    size_t node_global_to_local(size_t global_index) const
+    void build_global_to_local_elem_map()
     {
-      return m_decomposition.node_global_to_local(global_index);
+      m_decomposition.build_global_to_local_elem_map();
     }
-
-    size_t elem_global_to_local(size_t global_index) const
-    {
-      return m_decomposition.elem_global_to_local(global_index);
-    }
-
-    void build_global_to_local_elem_map() { m_decomposition.build_global_to_local_elem_map(); }
 
     void get_element_block_communication()
     {
@@ -305,6 +289,59 @@ namespace Ioex {
 
   public:
     Ioss::Decomposition<INT> m_decomposition;
+  };
+
+  class IOEX_EXPORT ElementBlockBatchReader {
+  public:
+    ElementBlockBatchReader(const DecompositionDataBase* decompDB);
+    ~ElementBlockBatchReader() = default;
+
+    size_t get_connectivity_size(const std::vector<int64_t>& blocks_subset_index) const;
+
+    std::vector<size_t> get_connectivity(int filePtr,
+                                         const std::vector<int64_t>& blocks_subset_index,
+                                         void *data) const;
+
+    std::vector<size_t> get_offset(const std::vector<int64_t>& blocks_subset_index,
+                                   const std::vector<int>& block_component_count) const;
+
+    void get_field_data(int filePtr, void *data,
+                        const std::vector<int64_t>& blocks_subset_index,
+                        size_t step, const std::vector<BlockFieldData>& block_data) const;
+
+  private:
+    const DecompositionDataBase* m_decompositionDB{nullptr};
+    Ioss::ElementBlockBatchOffset m_batchOffset;
+
+    template <typename INT>
+    std::vector<size_t> get_connectivity_impl(int filePtr,
+                                              const std::vector<int64_t>& blocks_subset_index,
+                                              void *data) const;
+
+    template <typename INT>
+    void get_field_data_impl(int filePtr, void *iossData,
+                             const std::vector<int64_t>& blocks_subset_index, size_t step,
+                             const std::vector<BlockFieldData>& block_data) const;
+
+    template <typename INT>
+    std::vector<size_t> get_connectivity_file_offset(const std::vector<int64_t>& blocks_subset_index) const;
+
+    template <typename INT>
+    std::vector<size_t> get_file_offset(const std::vector<int64_t>& blocks_subset_index,
+                                        const std::vector<int>& block_component_count) const;
+
+    std::vector<int> get_connectivity_component_count(const std::vector<int64_t>& blocks_subset_index) const;
+
+    std::vector<int> get_block_component_count(const std::vector<int64_t>& blockSubsetIndex,
+                                               const std::vector<BlockFieldData>& blockFieldData) const;
+
+    template <typename INT>
+    void load_field_data(int filePtr, double *fileData,
+                         const std::vector<int64_t>& blockSubsetIndex, size_t step,
+                         const std::vector<BlockFieldData>& blockFieldData,
+                         const std::vector<int>& blockComponentCount,
+                         const std::vector<size_t>& fileConnOffset) const;
+
   };
 } // namespace Ioex
 #endif

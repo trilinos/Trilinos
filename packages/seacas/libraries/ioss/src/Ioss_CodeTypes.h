@@ -55,6 +55,7 @@ inline std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33"); }
 #include <mpi.h>
 using Ioss_MPI_Comm = MPI_Comm;
 #define IOSS_PAR_UNUSED(x)
+#define ADIOS2_USE_MPI 1
 #else
 using Ioss_MPI_Comm = int;
 #if (__cplusplus >= 201703L)

@@ -1,7 +1,7 @@
 /* -*- Mode: c++ -*- */
 
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -11,6 +11,7 @@
 
 %{
 
+#include <assert.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -23,7 +24,11 @@
 #include "apr_scanner.h"
 #include "aprepro.h"
 #include "apr_util.h"
-#include "apr_getline_int.h"
+#include "apr_getline.h"
+#include "apr_tokenize.h"
+#include "fmt/format.h"
+#include "fmt/ostream.h"
+  
 
 #define YY_NO_UNISTD_H
 /* import the parser's token type into a local typedef */
@@ -41,11 +46,13 @@ typedef SEAMS::Parser::token_type token_type;
  }
 
 namespace {
+  bool begin_double_brace = false;
+  bool end_double_brace = false;
   bool string_is_ascii(const char *line, size_t len)
   {
     for (size_t i = 0; i < len; i++) {
       if (!(std::isspace(line[i]) || std::isprint(line[i]))) {
-	return false;
+        return false;
       }
     }
     return true;
@@ -117,7 +124,7 @@ integer {D}+({E})?
   "{VERBATIM(OFF)}" { BEGIN(INITIAL);   }
   [A-Za-z0-9_ ]* |
     .               { if (echo) ECHO; }
-  "\n"              { if (echo) ECHO; aprepro.ap_file_list.top().lineno++;   }
+    "\n"            { if (echo) ECHO; aprepro.ap_file_list.top().lineno++; }
 }
 
 <INITIAL>{
@@ -132,74 +139,87 @@ integer {D}+({E})?
 
   {WS}"{"[Ll]"oop"{WS}"(" {
     BEGIN(GET_LOOP_VAR);
-    if (aprepro.ap_options.debugging)
-      std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
-                << aprepro.ap_file_list.top().name << " at line " << aprepro.ap_file_list.top().lineno << "\n";
   }
 }
 
 <GET_LOOP_VAR>{
-  {number}")".*"\n" |
-            {integer}")}".*"\n" {
-    aprepro.ap_file_list.top().lineno++;
-    /* Loop control defined by integer */
-    char *pt = strchr(yytext, ')');
-    *pt = '\0';
-    sscanf (yytext, "%lf", &yylval->val);
-
-    if (yylval->val <= 0) {
-      BEGIN(LOOP_SKIP);
-    }
-    else {/* Value defined and != 0. */
-      temp_f = get_temp_filename();
-      SEAMS::file_rec new_file(temp_f, 0, true, (int)yylval->val);
-      if (aprepro.ap_options.debugging)
-        std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-                  << " in file " << aprepro.ap_file_list.top().name
-                  << " at line " << aprepro.ap_file_list.top().lineno-1 << "\n";
-
-      outer_file = &aprepro.ap_file_list.top();
-      aprepro.ap_file_list.push(new_file);
-
-      tmp_file = new std::fstream(temp_f, std::ios::out);
-      loop_lvl++;
-      BEGIN(LOOP);
-    }
-    aprepro.isCollectingLoop = true;
-  }
-
   .+")}".*"\n"  {
     aprepro.ap_file_list.top().lineno++;
-    /* Loop control defined by variable */
-    symrec *s;
+    /* `yytext` includes closing `)}` and newline...  Strip these */
     char *pt = strchr(yytext, ')');
     *pt = '\0';
-    if (!check_valid_var(yytext)) {
-      aprepro.warning("Invalid variable name syntax '" + std::string(yytext) + "'");
-      BEGIN(LOOP_SKIP);
-    } else {
-      s = aprepro.getsym(yytext);
+    auto tokens = tokenize(yytext, " ,\t");
+    if (aprepro.ap_options.debugging) {
+      fmt::print(stderr, "DEBUG LOOP: tokens = {}\n",
+		 fmt::join(tokens, ", "));
+    }
 
-      if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
-        BEGIN(LOOP_SKIP);
-      }
-      else { /* Value defined and != 0. */
-        if (aprepro.ap_options.debugging)
-          std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-                    << " in file " << aprepro.ap_file_list.top().name
-                    << " at line " << aprepro.ap_file_list.top().lineno-1 << "\n";
-
-        temp_f = get_temp_filename();
-        SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
-	outer_file = &aprepro.ap_file_list.top();
-        aprepro.ap_file_list.push(new_file);
-
-        tmp_file = new std::fstream(temp_f, std::ios::out);
-        loop_lvl++;
-        BEGIN(LOOP);
+    /* Determine if the first token is a symbol or an explicit number... */
+    auto count = tokens[0];
+    bool all_dig = count.find_first_not_of("0123456789") == std::string::npos;
+    int loop_iterations = 0;
+    if (all_dig) {
+      loop_iterations = std::stoi(count);
+    }
+    else {
+      symrec *s;
+      if (!check_valid_var(tokens[0].c_str())) {
+	aprepro.warning("Invalid variable name syntax '" + tokens[0] + "'");
+	BEGIN(LOOP_SKIP);
+      } else {
+	s = aprepro.getsym(tokens[0]);
+	if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
+	  BEGIN(LOOP_SKIP);
+	}
+	else {
+	  loop_iterations = (int)s->value.var;
+	}
       }
     }
+
+    temp_f = get_temp_filename();
+    SEAMS::file_rec new_file(temp_f, 0, true, loop_iterations);
+    outer_file = &aprepro.ap_file_list.top();
+    new_file.loop_level = outer_file->loop_level + 1;
+
+    // Get optional loop index...
+    std::string sym_name;
+    if (tokens.size() == 1) {
+      // Default loop index variable name if not specified in loop command.
+      sym_name = fmt::format("__loop_{}", new_file.loop_level);
+    }
+    else {
+      sym_name = tokens[1];
+    }
+    SEAMS::symrec *li = aprepro.getsym(sym_name);
+    if (li == nullptr) {
+      li = aprepro.putsym(sym_name, SEAMS::Aprepro::SYMBOL_TYPE::VARIABLE, true);
+    }
+
+    // Get optional loop index initial value.  Default to 0 if not specified.
+    double init = 0.0;
+    if (tokens.size() >= 3) {
+      init = std::stod(tokens[2]);
+    }
+    li->value.var       = init;
+
+    // Get optional loop index increment value.  Default to 1 if not specified.
+    if (tokens.size() >= 4) {
+      double increment = std::stod(tokens[3]);
+      new_file.loop_increment = increment;
+    }
+
+    new_file.loop_index = li;
+    aprepro.ap_file_list.push(new_file);
+
+    tmp_file = new std::fstream(temp_f, std::ios::out);
+    loop_lvl++;
+    BEGIN(LOOP);
     aprepro.isCollectingLoop = true;
+    if (aprepro.ap_options.debugging) {
+      fmt::print(stderr, "DEBUG LOOP: iteration count = {}, loop_index variable = {}, intial value = {}, increment = {}\n",
+		 loop_iterations, sym_name, init, new_file.loop_increment);
+    }
   }
 }
 
@@ -335,7 +355,7 @@ integer {D}+({E})?
   suppress_nl = false;
   if (aprepro.ap_options.debugging)
     fprintf (stderr, "DEBUG SWITCH: 'endswitch' at line %d\n",
-	     aprepro.ap_file_list.top().lineno);
+             aprepro.ap_file_list.top().lineno);
 }
 
 <END_CASE_SKIP>.*"\n" {  aprepro.ap_file_list.top().lineno++; }
@@ -516,7 +536,7 @@ integer {D}+({E})?
       if (if_state[if_lvl] == IF_SKIP ||
           if_state[if_lvl] == INITIAL) {
             BEGIN(INITIAL);
-	    suppress_nl = false;
+            suppress_nl = false;
       }
                            /* If neither is true, this is a nested
                               if that should be skipped */
@@ -649,16 +669,53 @@ integer {D}+({E})?
 }
 
 
+<PARSING>"}}" {
+  if (begin_double_brace) {
+    end_double_brace = true;
+  }
+  else {
+    yyerror("Found an unexpected double end brace ('}}').\n\t"
+            "It can only end an expression started with a double brace ('{{').\n\tCheck syntax.");
+  }
+
+  // Add to the history string
+  save_history_string();
+
+  if (switch_skip_to_endcase)
+    BEGIN(END_CASE_SKIP);
+  else
+    BEGIN(if_state[if_lvl]);
+  return(token::RBRACE);
+}
+
+
 \\\{                      { if (echo) LexerOutput("{", 1); }
 
 \\\}                      { if (echo) LexerOutput("}", 1); }
+
+"{{"  {
+    // Check if we need to save the substitution history first.
+    if(aprepro.ap_options.keep_history &&
+            (aprepro.ap_file_list.top().name != "_string_"))
+    {
+      if (curr_index > yyleng)
+        hist_start = curr_index - yyleng;
+      else
+        hist_start = 0;
+    }
+
+    BEGIN(PARSING);
+    echo = false;
+    begin_double_brace = true;
+    return(token::LBRACE);
+  }
 
 "{"  {
     // Check if we need to save the substitution history first.
     if(aprepro.ap_options.keep_history &&
             (aprepro.ap_file_list.top().name != "_string_"))
     {
-      if (curr_index > (size_t)yyleng)
+      if (curr_index > yyleng)
         hist_start = curr_index - yyleng;
       else
         hist_start = 0;
@@ -687,7 +744,13 @@ integer {D}+({E})?
 .                          { if (echo && if_state[if_lvl] != IF_SKIP) ECHO; }
 
 "\n"                       { if (echo && !suppress_nl) ECHO; suppress_nl = false;
-                             aprepro.ap_file_list.top().lineno++;}
+                             if (end_double_brace) {
+                                echo = true;
+                                begin_double_brace = false;
+                                end_double_brace = false;
+                             }
+                             aprepro.ap_file_list.top().lineno++;
+                           }
 
 %%
 
@@ -710,9 +773,9 @@ integer {D}+({E})?
     while (aprepro.ap_file_list.size() > 1) {
       auto kk = aprepro.ap_file_list.top();
       if (kk.name != "STDIN") {
-	yyFlexLexer::yy_load_buffer_state();
-	delete yyin;
-	yyin = nullptr;
+        yyFlexLexer::yy_load_buffer_state();
+        delete yyin;
+        yyin = nullptr;
       }
       aprepro.ap_file_list.pop();
       yyFlexLexer::yypop_buffer_state();
@@ -769,7 +832,7 @@ integer {D}+({E})?
     }
 
     if (aprepro.ap_options.interactive && yyin == &std::cin && isatty(0) != 0 && isatty(1) != 0) {
-      char *line = ap_getline_int(nullptr);
+      char *line = SEAMS::getline_int(nullptr);
 
       if (strlen(line) == 0) {
         return 0;
@@ -780,7 +843,7 @@ integer {D}+({E})?
                 "be parsed incorrectly.");
       }
 
-      ap_gl_histadd(line);
+      SEAMS::gl_histadd(line);
 
       if (strlen(line) > (size_t)max_size - 2) {
         yyerror("input line is too long");
@@ -799,10 +862,10 @@ integer {D}+({E})?
         return -1;
       }
       else {
-	if (!string_is_ascii(buf, yyin->gcount())) {
-	  yyerror("input file contains non-ASCII (probably UTF-8) characters which will most likely "
-		  "be parsed incorrectly.");
-	}
+        if (!string_is_ascii(buf, yyin->gcount())) {
+          yyerror("input file contains non-ASCII (probably UTF-8) characters which will most likely "
+                  "be parsed incorrectly.");
+        }
         return yyin->gcount();
       }
     }
@@ -869,6 +932,10 @@ integer {D}+({E})?
           yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
           yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(yyin, YY_BUF_SIZE));
           aprepro.ap_file_list.top().lineno = 0;
+
+          if (aprepro.ap_file_list.top().loop_index != nullptr) {
+            aprepro.ap_file_list.top().loop_index->value.var += aprepro.ap_file_list.top().loop_increment;
+          }
         }
       }
       else {
@@ -1114,7 +1181,7 @@ integer {D}+({E})?
 
     // Don't do it if the file is the one used by execute and rescan.
     if (aprepro.ap_file_list.top().name == "_string_" ||
-	aprepro.ap_file_list.top().name == "standard input") {
+        aprepro.ap_file_list.top().name == "standard input") {
       return;
     }
 

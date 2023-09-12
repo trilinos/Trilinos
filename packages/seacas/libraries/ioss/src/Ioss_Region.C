@@ -295,64 +295,6 @@ namespace {
       entity->field_erase(role);
     }
   }
-
-  template <typename T>
-  Ioss::Field::RoleType
-  verify_field_exists_on_any_entity_group(const std::string &field_name, const Ioss::Region &region,
-                                          const std::vector<T *> &entity_container,
-                                          const std::string      &inout)
-  {
-    bool                  found = false;
-    Ioss::Field::RoleType role  = Ioss::Field::RoleType::INTERNAL;
-
-    for (const T *entity : entity_container) {
-      if (entity->field_exists(field_name)) {
-        Ioss::Field field = entity->get_field(field_name);
-
-        if (found == true && field.get_role() != role) {
-          std::string        filename = region.get_database()->get_filename();
-          std::ostringstream errmsg;
-          fmt::print(errmsg,
-                     "\nERROR: On database '{}', Field '{}' does not have a consistent role across "
-                     "element blocks on {}\n\n",
-                     filename, field_name, region.name());
-          IOSS_ERROR(errmsg);
-        }
-
-        found = true;
-        role  = field.get_role();
-      }
-    }
-
-    if (!found) {
-      std::string        filename = region.get_database()->get_filename();
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "\nERROR: On database '{}', Field '{}' does not exist for any {} element blocks "
-                 "on {} {}\n\n",
-                 filename, field_name, inout, region.type_string(), region.name());
-      IOSS_ERROR(errmsg);
-    }
-
-    return role;
-  }
-
-  template <typename T>
-  size_t get_all_block_field_data_count(const std::string      &field_name,
-                                        const std::vector<T *> &entity_container)
-  {
-    size_t count = 0;
-
-    for (const T *entity : entity_container) {
-      if (entity->field_exists(field_name)) {
-        Ioss::Field field = entity->get_field(field_name);
-
-        count += entity->entity_count() * field.raw_storage()->component_count();
-      }
-    }
-
-    return count;
-  }
 } // namespace
 
 namespace Ioss {
@@ -2799,43 +2741,6 @@ namespace Ioss {
         IOSS_ERROR(errmsg);
       }
     }
-  }
-
-  std::vector<size_t> Region::internal_get_all_block_field_data(const std::string &field_name,
-                                                                void *data, size_t data_size) const
-  {
-    return get_database()->get_all_block_field_data(field_name, data, data_size);
-  }
-
-  template IOSS_EXPORT std::vector<size_t>
-                       Region::get_all_block_field_data(const std::string &field_name,
-                                                        std::vector<int>  &field_data) const;
-  template IOSS_EXPORT std::vector<size_t>
-                       Region::get_all_block_field_data(const std::string    &field_name,
-                                                        std::vector<int64_t> &field_data) const;
-  template IOSS_EXPORT std::vector<size_t>
-                       Region::get_all_block_field_data(const std::string   &field_name,
-                                                        std::vector<double> &field_data) const;
-
-  template <typename T>
-  std::vector<size_t> Region::get_all_block_field_data(const std::string &field_name,
-                                                       std::vector<T>    &field_data) const
-  {
-    const Ioss::ElementBlockContainer &elem_blocks = get_element_blocks();
-
-    verify_field_exists_on_any_entity_group(field_name, *this, elem_blocks, "input");
-
-    size_t field_count = get_all_block_field_data_count(field_name, elem_blocks);
-    field_data.resize(field_count);
-
-    size_t data_size = field_count * sizeof(T);
-    std::vector<size_t> offsets =
-        internal_get_all_block_field_data(field_name, field_data.data(), data_size);
-
-    assert(offsets.size() == (elem_blocks.size() + 1));
-    assert(offsets[elem_blocks.size()] == field_count);
-
-    return offsets;
   }
 
 } // namespace Ioss

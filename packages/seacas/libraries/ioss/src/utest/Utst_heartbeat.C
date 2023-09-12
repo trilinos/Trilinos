@@ -18,6 +18,7 @@ namespace {
     Ioss::Init::Initializer init_db;
 
     Ioss::PropertyManager properties;
+    properties.add(Ioss::Property("FULL_PRECISION", "yes"));
     properties.add(Ioss::Property("SHOW_LABELS", "yes"));
     properties.add(Ioss::Property("SHOW_LEGEND", "no"));
     properties.add(Ioss::Property("SHOW_TIME_STAMP", 1));
