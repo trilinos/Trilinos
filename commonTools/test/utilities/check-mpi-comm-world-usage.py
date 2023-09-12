@@ -108,6 +108,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--head", default="HEAD", help="HEAD commit (default: %(default)s)"
     )
+    parser.add_argument(
+        "REGEX", help="Regular expression representing forbidden strings."
+    )
+    parser.add_argument(
+        "--file-extensions"
+    )
 
     start_commit = parser.parse_args().base
     print(f"Start commit: {start_commit}")
