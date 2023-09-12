@@ -119,8 +119,8 @@ namespace Belos {
      *
      * This constructor accepts the LinearProblem to be solved in addition
      * to a parameter list of options for the solver manager. These options include the following:
-     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 1000
-     *   - "Num KrylovVecs" - a \c int specifying the maximum number of vectors allowed in the Krylov subspace for each set of RHS solved. Default: 300
+     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 500
+     *   - "Num KrylovVecs" - a \c int specifying the maximum number of vectors allowed in the Krylov subspace for each set of RHS solved. Default: 40
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
@@ -650,6 +650,12 @@ ReturnType GCRSolMgr<ScalarType,MV,OP>::solve ()
   // Create indices for the linear systems to be solved.
   int startPtr = 0;
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (numRHS2Solve > 1, std::logic_error, "Belos::GCRSolMgr::solve: "
+     "GCR solver currently supports single RHS. Multiple RHS solve "
+     "capability will be implemented later.");
+
   int numCurrRHS = numRHS2Solve;
 
   std::vector<int> currIdx( numRHS2Solve ), currIdx2( numRHS2Solve );

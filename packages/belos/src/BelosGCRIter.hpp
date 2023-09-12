@@ -480,9 +480,9 @@ namespace Belos {
         if(lp_->isLeftPrec()) {
           lp_->applyLeftPrec(*AxR_sub, *C_sub);
         }
-        else if(lp_->isRightPrec()) {
+        /*else if(lp_->isRightPrec()) {
           lp_->applyRightPrec(*AxR_sub, *C_sub);
-        }
+        }*/
         else { // no preconditioner
           MVT::Assign(*AxR_sub, *C_sub);
         }
