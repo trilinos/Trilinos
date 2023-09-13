@@ -8599,7 +8599,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
 #endif
       // Just to be safe we always static cast the Scalar pointer
-      // to the undelying impl_scalar type.
+      // to the underlying impl_scalar type.
       typename row_ptrs_host_view_type::non_const_type            CSR_rowptr_host(CSR_rowptr.getRawPtr(), CSR_rowptr.size());
       typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
       typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
