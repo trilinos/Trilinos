@@ -244,16 +244,12 @@ namespace Amesos2
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
     #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        mumps_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
-    }
-    else {
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-        mumps_type>::do_get(B, bvals_(),as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-    }
+    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+      mumps_type>::do_get(B, bvals_(),
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        this->rowIndexBase_);
  
-    
     int ierr = 0; // returned error code
     mumps_par.nrhs = nrhs;
     mumps_par.lrhs = mumps_par.n;
@@ -276,18 +272,11 @@ namespace Amesos2
     Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
     #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(),
-            as<size_t>(ld_rhs),
-            ROOTED);
-    }
-    else {
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(),
-            as<size_t>(ld_rhs),
-            CONTIGUOUS_AND_ROOTED);
-    }
+    Util::put_1d_data_helper<
+      MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(),
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+
     // ch: see function loadA_impl()
     MUMPS_MATRIX_LOAD_PREORDERING = false;
     return(ierr);
@@ -398,18 +387,12 @@ namespace Amesos2
         Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
         #endif
     
-        if ( is_contiguous_ == true ) {
-          Util::get_ccs_helper_kokkos_view<
-            MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
-            ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
-                nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
-        }
-        else {
-          Util::get_ccs_helper_kokkos_view<
-            MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
-            ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
-                nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
-        }
+        Util::get_ccs_helper_kokkos_view<
+          MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
+          ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
   
         if( this->root_ ){
                   TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),

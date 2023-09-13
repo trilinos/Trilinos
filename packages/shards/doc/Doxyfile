@@ -32,4 +32,4 @@ EXTERNAL_GROUPS        = YES
 GENERATE_TREEVIEW      = YES
 TREEVIEW_WIDTH         = 250
 
-GENERATE_TAGFILE       = ./tags
+GENERATE_TAGFILE       = ../../common/tag_files/shards.tag

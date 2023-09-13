@@ -1,0 +1,78 @@
+#!/bin/bash
+
+exe() {
+  stdbuf -o0 -e0 echo "% $@" ;
+  eval "$@" ;
+}
+
+sierra_proj=${SIERRA_PROJ:-${PWD}}
+output_dir=${OUTPUT_DIR:-/fgs/$USER/stk-standalone-cmake-testing}
+build_type=${CMAKE_BUILD_TYPE:-release}
+clear_cache=${CLEAR_CACHE:-ON}
+date_suffix=`date +%F_%H-%M-%S`
+
+if [ ! -d ${output_dir} ] ; then
+  exe mkdir -p ${output_dir};
+fi
+
+stk_build_dir=${output_dir}/stk_standalone_build_serial_${build_type}_gcc
+if [ "${clear_cache}" == "ON" ] ; then
+  exe rm -rf $stk_build_dir
+fi
+
+exe mkdir -p $stk_build_dir
+
+stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+
+printf "\nUsing sierra project: ${sierra_proj}\n";
+printf "Using build-type: ${build_type}\n";
+printf "Putting output and logs here: ${output_dir}\n";
+
+exe cd $sierra_proj
+
+stk_config_log=${output_dir}/stk-standalone-serial-config.out.$date_suffix
+stk_make_log=${output_dir}/stk-standalone-serial-make.out.$date_suffix
+stk_install_log=${output_dir}/stk-standalone-serial-install.out.$date_suffix
+stk_ctest_log=${output_dir}/stk-standalone-serial-ctest.out.$date_suffix
+
+exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk_standalone_serial ${stk_build_dir}
+exe cd ${stk_build_dir}
+exe source ${stk_cmake_testing_source_dir}/load_gcc_modules_no_boost
+
+printf "Configuring stk (running cmake)...\n";
+exe "STK_INSTALL_DIR=${output_dir}/install_stk_serial \
+     BUILD_DIR=${stk_build_dir} \
+     CMAKE_BUILD_TYPE=${build_type} \
+     CLEAR_CACHE=${clear_cache} \
+     CMAKE_CXX_FLAGS='-Wno-pragmas -Wno-unknown-pragmas' \
+     ./run_cmake_stk_standalone_serial >& ${stk_config_log}"
+
+if [ $? -ne 0 ] ; then
+  echo "!! error in stk config, check output in ${stk_config_log} !!";
+  exit 1;
+fi
+
+printf "Now building stk using make...\n";
+exe "make VERBOSE=1 -j8 >& ${stk_make_log}";
+if [ $? -ne 0 ] ; then
+  echo "!! error in make, check output in ${stk_make_log} !!";
+  exit 1;
+fi
+
+exe "make install >& ${stk_install_log}";
+
+if [ $? -ne 0 ] ; then
+  printf "!! error installing, check output in ${stk_install_log}\n";
+  exit 1;
+fi
+
+exe "ctest >& ${stk_ctest_log}";
+
+if [ $? -ne 0 ] ; then
+  printf "!! error running ctest, check output in ${stk_ctest_log}\n";
+  exit 1;
+fi
+
+echo "all done!!";
+exit 0;
+

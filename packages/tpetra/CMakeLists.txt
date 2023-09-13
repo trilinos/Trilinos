@@ -111,18 +111,7 @@ INCLUDE(CMakeCuda.txt)
 # Note on (2) above: some of the types can only be enabled if certain
 # requirements are fulfilled.
 #
-# Tpetra also keeps a list of the Kokkos Device types (specializations
-# of Kokkos::Device) over which it does instantiations and/or tests.
-# This is the Tpetra_ETI_DEVICES CMake variable.  Eventually, we will
-# deprecate and remove the above Node instantiation list, and just use
-# the list of enabled Devices.  We use devices rather than execution
-# spaces, because a Kokkos::Device is an (execution space, memory
-# space) pair.  This means that it is more general.  For example,
-# Device<Cuda, CudaSpace> != Device<Cuda, CudaUVMSpace>, yet some
-# users may want both represented.  The particular use case I have in
-# mind here is Device<OpenMP, $MEM_SPACE> where $MEM_SPACE could be
-# either HostSpace or the HBM (high-bandwidth memory) memory space.
-#
+
 
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
@@ -138,7 +127,6 @@ SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "")
 
 SET(${PACKAGE_NAME}_ETI_LORDS "")
 SET(${PACKAGE_NAME}_ETI_GORDS "")
-SET(${PACKAGE_NAME}_ETI_DEVICES "")
 SET(${PACKAGE_NAME}_ETI_NODES "")
 
 # ============================================================
@@ -572,36 +560,21 @@ ENDIF ()
 # Construct the list of enabled Device and Node types.
 #
 IF(Tpetra_INST_SERIAL)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSerialWrapperNode")
 ENDIF()
 IF(Tpetra_INST_PTHREAD)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosThreadsWrapperNode")
 ENDIF()
 IF(Tpetra_INST_OPENMP)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode")
 ENDIF()
 IF(Tpetra_INST_CUDA)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::CudaSpace as well as
-  # Kokkos::CudaUVMSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 ENDIF()
 IF(Tpetra_INST_HIP)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::HIPSpace as well as
-  # Kokkos::HIPHostPinnedSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosHIPWrapperNode")
 ENDIF()
 IF(Tpetra_INST_SYCL)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::SYCLDeviceUSMSpace as well as
-  # Kokkos::SYCLSharedUSMSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSYCLWrapperNode")
 ENDIF()
 

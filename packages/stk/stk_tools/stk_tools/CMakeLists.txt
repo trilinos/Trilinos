@@ -33,18 +33,6 @@
 # 
 
 
-#
-# A) Package-specific configuration options
-#
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
@@ -58,8 +46,6 @@ FILE(GLOB BLOCK_EXTRACTOR_SOURCES block_extractor/*.cpp)
 FILE(GLOB TRANSFER_UTILS_HEADERS transfer_utils/*.hpp)
 FILE(GLOB TRANSFER_UTILS_SOURCES transfer_utils/*.cpp)
 LIST(REMOVE_ITEM BLOCK_EXTRACTOR_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp)
-
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 
 #
 # C) Define the targets for package's library(s)
@@ -76,6 +62,15 @@ TRIBITS_ADD_LIBRARY(
   NOINSTALLHEADERS ${MESH_CLONE_HEADERS} ${MESH_TOOLS_HEADERS} ${BLOCK_EXTRACTOR_HEADERS}
   SOURCES ${MESH_CLONE_SOURCES} ${MESH_TOOLS_SOURCES} ${BLOCK_EXTRACTOR_SOURCES}
   )
+
+target_include_directories(stk_transfer_utils_lib PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_tools>
+  $<INSTALL_INTERFACE:include>
+)
+target_include_directories(stk_tools_lib PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_tools>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${MESH_CLONE_HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_tools/mesh_clone)

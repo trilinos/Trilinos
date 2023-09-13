@@ -51,7 +51,6 @@
 #include "Teuchos_DebugDefaultAsserts.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_TypeTraits.hpp"
 #include "Stratimikos_Config.h"
 #ifdef HAVE_STRATIMIKOS_THYRATPETRAADAPTERS
 #  include "Thyra_TpetraThyraWrappers.hpp"
@@ -207,7 +206,7 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
         defaultTol_ =
           as<magnitude_type> (solverPL_->get<double> ("Convergence Tolerance"));
       }
-      else if (Teuchos::TypeTraits::is_same<double, magnitude_type>::value) {
+      else if (std::is_same_v<double, magnitude_type>) {
         // magnitude_type == double in this case, and we've already
         // checked double above.
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -257,7 +256,7 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
       defaultTol_ =
         as<magnitude_type> (defaultPL->get<double> ("Convergence Tolerance"));
     }
-    else if (Teuchos::TypeTraits::is_same<double, magnitude_type>::value) {
+    else if (std::is_same_v<double, magnitude_type>) {
       // magnitude_type == double in this case, and we've already
       // checked double above.
       TEUCHOS_TEST_FOR_EXCEPTION(

@@ -86,6 +86,8 @@ TEST(MPITagManager, timing)
 {
   const unsigned NUM_RUNS = 5;
 
+  perf_test(32, 16, 256000, 16384);
+
   stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
 
@@ -96,14 +98,12 @@ TEST(MPITagManager, timing)
     perf_test(32, 16, 1024,  96);
     perf_test(32, 16, 2048,  2048);
     perf_test(32, 16, 2048,  96);
-    perf_test(32, 16, 4096,  4096);
-    perf_test(32, 16, 4096,  96);
     perf_test(32, 16, 8192,  8192);
     perf_test(32, 16, 8192,  96);
-    perf_test(32, 16, 16384, 16384);
-    perf_test(32, 16, 16384, 96);
     perf_test(32, 16, 32768, 16384);
     perf_test(32, 16, 32768, 96);
+    perf_test(32, 16, 256000, 16384);
+    perf_test(32, 16, 256000, 96);
 
     batchTimer.stop_batch_timer();
   }

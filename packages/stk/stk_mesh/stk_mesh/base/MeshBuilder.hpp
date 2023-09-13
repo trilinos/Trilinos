@@ -48,6 +48,7 @@ class MeshBuilder
 public:
   MeshBuilder();
   explicit MeshBuilder(ParallelMachine comm);
+  virtual ~MeshBuilder() = default;
 
   MeshBuilder& set_spatial_dimension(unsigned spatialDimension);
   MeshBuilder& set_entity_rank_names(const std::vector<std::string>& entityRankNames);
@@ -55,7 +56,11 @@ public:
   MeshBuilder& set_communicator(ParallelMachine comm);
   MeshBuilder& set_aura_option(BulkData::AutomaticAuraOption auraOption);
   MeshBuilder& set_add_fmwk_data(bool addFmwkData);
-  MeshBuilder& set_field_data_manager(FieldDataManager* fieldDataManager);
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2023-09-27
+  // This deprecated function now claims ownership of the argument
+  STK_DEPRECATED MeshBuilder& set_field_data_manager(FieldDataManager* fieldDataManager);
+#endif
+  MeshBuilder& set_field_data_manager(std::unique_ptr<FieldDataManager> fieldDataManager);
 
   MeshBuilder& set_bucket_capacity(unsigned bucketCapacity);
   MeshBuilder& set_initial_bucket_capacity(unsigned initialCapacity);
@@ -63,19 +68,19 @@ public:
 
   MeshBuilder& set_upward_connectivity(bool onOrOff);
 
-  std::unique_ptr<BulkData> create();
-  std::unique_ptr<BulkData> create(std::shared_ptr<MetaData> metaData);
+  virtual std::unique_ptr<BulkData> create();
+  virtual std::unique_ptr<BulkData> create(std::shared_ptr<MetaData> metaData);
 
-  std::shared_ptr<MetaData> create_meta_data();
+  virtual std::shared_ptr<MetaData> create_meta_data();
 
-private:
+protected:
   std::shared_ptr<impl::AuraGhosting> create_aura_ghosting();
 
   ParallelMachine m_comm;
   bool m_haveComm;
   BulkData::AutomaticAuraOption m_auraOption;
   bool m_addFmwkData;
-  FieldDataManager* m_fieldDataManager;
+  std::unique_ptr<FieldDataManager> m_fieldDataManager;
   unsigned m_initialBucketCapacity;
   unsigned m_maximumBucketCapacity;
   unsigned m_spatialDimension;

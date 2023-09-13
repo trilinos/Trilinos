@@ -1,0 +1,42 @@
+#!/bin/bash
+
+build_dir=${BUILD_DIR:-${PWD}}
+build_type=${CMAKE_BUILD_TYPE:-release}
+stk_src_dir=${STK_SRC_DIR:-/fgs/william/code_votd/stk}
+stk_install_dir=${STK_INSTALL_DIR:-${PWD}/../stk_install_dir}
+cmake_cxx_flags=${CMAKE_CXX_FLAGS}
+clear_cache=${CLEAR_CACHE:-ON}
+
+printf "BUILD_DIR=${build_dir}\n";
+printf "CMAKE_BUILD_TYPE=${build_type}\n";
+printf "CMAKE_CXX_FLAGS=${cmake_cxx_flags}\n";
+printf "STK_INSTALL_DIR=${stk_install_dir}\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_pure_cmake_stk'\n\n";
+
+# before running this script, load these modules:
+# module load cde/v3/cmake/3.23.1
+# module load cde/v3/gcc/10.3.0
+# module load cde/v3/openmpi/4.1.2-gcc-10.3.0
+
+mkdir -p $build_dir
+
+cd ${build_dir}
+
+if [ "${clear_cache}" == "ON" ] ; then
+  rm -rf stk_* STK_Trilinos_config.h Makefile cmake_install.cmake C*
+fi
+
+cmake \
+-DCMAKE_INSTALL_PREFIX=${stk_install_dir} \
+-DCMAKE_BUILD_TYPE=${build_type} \
+-DCMAKE_CXX_STANDARD:STRING=17 \
+-DCMAKE_CXX_COMPILER=${OMPI_CXX} \
+-DCMAKE_CXX_FLAGS:STRING="${cmake_cxx_flags}" \
+-DSTK_ENABLE_ALL=ON \
+-DSTK_ENABLE_MPI:BOOL=OFF \
+-DSTK_ENABLE_STKMiddle_mesh=OFF \
+-DSTK_ENABLE_TESTS:BOOL=ON \
+-DKokkos_DIR=/fgs/william/kokkos/install/lib64/cmake/Kokkos \
+-DGTest_DIR=/fgs/william/googletest/install/lib64/cmake/GTest \
+${stk_src_dir}/
+
