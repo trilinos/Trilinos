@@ -8613,12 +8613,43 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
 #endif
-      Import_Util::sortAndMergeCrsEntries (CSR_rowptr (),
-                                           CSR_colind_LID (),
-                                           CSR_vals ());
+      // Just to be safe we always static cast the Scalar pointer
+      // to the undelying impl_scalar type.
+      typename row_ptrs_host_view_type::non_const_type            CSR_rowptr_host(CSR_rowptr.getRawPtr(), CSR_rowptr.size());
+      typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
+      typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
+
+      typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_dev("rowmap", CSR_rowptr.size());
+      typename local_inds_device_view_type::non_const_type CSR_colind_LID_dev("colind", CSR_colind_LID.size());
+      typename values_device_view_type::non_const_type     CSR_vals_dev("values", CSR_vals.size());
+
+      Kokkos::deep_copy(CSR_rowptr_dev, CSR_rowptr_host);
+      Kokkos::deep_copy(CSR_colind_LID_dev, CSR_colind_LID_host);
+      Kokkos::deep_copy(CSR_vals_dev, CSR_vals_host);
+
+      Import_Util::sortAndMergeCrsEntries (CSR_rowptr_dev,
+                                           CSR_colind_LID_dev,
+                                           CSR_vals_dev);
+
+      // Resize before deep_copy to have matching extents
+      // between host and device or we will run into trouble...
+      if(CSR_colind_LID_host.extent(0) != CSR_colind_LID_dev.extent(0)) {
+	Kokkos::resize(CSR_colind_LID_host, CSR_colind_LID_dev.extent(0));
+	Kokkos::resize(CSR_vals_host, CSR_vals_dev.extent(0));
+      }
+
+      Kokkos::deep_copy(CSR_rowptr_host, CSR_rowptr_dev);
+      Kokkos::deep_copy(CSR_colind_LID_host, CSR_colind_LID_dev);
+      Kokkos::deep_copy(CSR_vals_host, CSR_vals_dev);
+
       if (CSR_rowptr[N] != mynnz) {
         CSR_colind_LID.resize (CSR_rowptr[N]);
         CSR_vals.resize (CSR_rowptr[N]);
+      }
+
+      for(int entryIdx = 0; entryIdx < CSR_colind_LID_host.extent_int(0); ++entryIdx) {
+	CSR_colind_LID[entryIdx] = CSR_colind_LID_host(entryIdx);
+	CSR_vals[entryIdx] = CSR_vals_host(entryIdx);
       }
     }
     else {
