@@ -14,16 +14,20 @@ on:
 jobs:
   inteloneapi:
     runs-on: [self-hosted, trilogpu01]
+    env:
+      I_MPI_CC: icx
+      I_MPI_CXX: icpx
+      I_MPI_FC: ifx
     container:
-      image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers/gcc8.3.0
+      image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers
       options: --shm-size=8g
     steps:
-      - name: debug
+      - name: env
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
           env
-      - name: debug 2
+      - name: module list
         shell: bash
         run: |
           bash -l -c "module list"
@@ -49,7 +53,7 @@ jobs:
         working-directory: /home/Trilinos/build/
         run: |
           bash -l -c "./configure.sh"
-      - name: debug 3
+      - name: CMakeCache.txt
         if: always()
         working-directory: /home/Trilinos/build/
         run: |
