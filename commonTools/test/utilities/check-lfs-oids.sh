@@ -4,11 +4,10 @@ set -o nounset
 set -o errexit
 set -o pipefail
 
-claimed_start_of_branch=${1}
-end_of_branch=${2}
-start_of_branch=$(git merge-base ${claimed_start_of_branch} ${end_of_branch})
+target_branch=${1}
+source_branch=${2}
 
-for commit in $(git log --format=%H ${start_of_branch}..${end_of_branch})
+for commit in $(git log --format=%H ${target_branch} --not ${source_branch})
 do
     echo "Processing commit ${commit}"
     git diff -U0 --ignore-all-space ${commit}~1 ${commit} | grep "^\+oid sha256" \
