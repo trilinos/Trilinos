@@ -15,7 +15,7 @@ jobs:
   inteloneapi:
     runs-on: [self-hosted, trilogpu01]
     container:
-      image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers
+      image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers/gcc8.3.0
       options: --shm-size=8g
     steps:
       - name: debug
