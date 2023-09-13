@@ -545,13 +545,13 @@ namespace {
   }
 } // namespace
 template void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                 std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED int dummy);
+                                 std::vector<int> &elem_to_proc, int dummy);
 template void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                 std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED int64_t dummy);
+                                 std::vector<int> &elem_to_proc, int64_t dummy);
 
 template <typename INT>
 void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                        std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED INT dummy)
+                        std::vector<int> &elem_to_proc, INT dummy)
 {
   progress(__func__);
   // Populate the 'elem_to_proc' vector with a mapping from element to processor.
