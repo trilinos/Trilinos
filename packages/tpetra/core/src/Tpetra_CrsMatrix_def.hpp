@@ -4909,7 +4909,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<const MV> X;
 
     // some parameters for below
-    const bool Y_is_replicated = ! Y_in.isDistributed ();
+    const bool Y_is_replicated = (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
     const bool Y_is_overwritten = (beta == ZERO);
     if (Y_is_replicated && this->getComm ()->getRank () > 0) {
       beta = ZERO;
