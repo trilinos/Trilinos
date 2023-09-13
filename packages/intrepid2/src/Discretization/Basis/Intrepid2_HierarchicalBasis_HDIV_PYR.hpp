@@ -277,6 +277,32 @@ namespace Intrepid2
       }
     }
     
+    //! See Fuentes et al. (p. 455), definition of V_{ij}^{\trianglelefteq}
+    void V_LEFT_TRI(Kokkos::Array<OutputScalar,3> &VLEFTTRI,
+                    const OutputScalar &phi_i, const Kokkos::Array<OutputScalar,3> &phi_i_grad,
+                    const OutputScalar &phi_j, const Kokkos::Array<OutputScalar,3> &phi_j_grad,
+                    const OutputScalar &t0,    const Kokkos::Array<OutputScalar,3> &t0_grad) const {
+      cross(VLEFTTRI, phi_i_grad, phi_j_grad);
+      const OutputScalar t0_2 = t0 * t0;
+      for (ordinal_type d=0; d<3; d++)
+      {
+        VLEFTTRI[d] *= t0_2;
+      }
+      
+      Kokkos::Array<OutputScalar,3> tmp_t0_grad_t0, tmp_diff, tmp_cross;
+      for (ordinal_type d=0; d<3; d++)
+      {
+        tmp_t0_grad_t0[d] = t0 * t0_grad[d];
+        tmp_diff[d] = phi_i * phi_j_grad[d] - phi_j * phi_i_grad[d];
+      }
+      cross(tmp_cross, tmp_t0_grad_t0, tmp_diff);
+      
+      for (ordinal_type d=0; d<3; d++)
+      {
+        VLEFTTRI[d] += tmp_cross[d];
+      }
+    };
+    
     // This is the "Ancillary Operator" V^{tri}_{ij} on p. 433 of Fuentes et al.
     KOKKOS_INLINE_FUNCTION
     void V_TRI(Kokkos::Array<OutputScalar,3> &VTRI,
@@ -792,14 +818,38 @@ namespace Intrepid2
             
             // FAMILY V (non-trivial divergences)
             {
-              // See Fuentes et al. (p. 455), definition of V_{ij}^{\trianglelefteq}
-              
               for (int j=2; j<=polyOrder_; j++)
               {
+                const auto & phi_j = Li_muX01(j);
+                Kokkos::Array<OutputScalar,3> phi_j_grad;
+                computeGradHomLi(phi_j_grad, j, Pi_muY01, Li_dt_muY01, muY_0_grad, muY_1_grad);
+                
                 for (int i=2; i<=polyOrder_; i++)
                 {
-//                  const int n = max(i,j);
-//                  const OutputScalar muZ_1_nm1 = pow(muZ_1,n-1);
+                  const auto & phi_i = Li_muY01(i);
+                  Kokkos::Array<OutputScalar,3> phi_i_grad;
+                  computeGradHomLi(phi_i_grad, i, Pi_muX01, Li_dt_muX01, muX_0_grad, muX_1_grad);
+                  
+                  const int n = max(i,j);
+                  const OutputScalar muZ_1_nm1 = pow(muZ_1,n-1);
+                  
+                  Kokkos::Array<OutputScalar,3> VLEFTTRI;
+                  V_LEFT_TRI(VLEFTTRI, phi_i, phi_i_grad, phi_j, phi_j_grad, muZ_0, muZ_0_grad);
+                  
+//                  {
+//                    using namespace std;
+//                    cout << "m-1: " << fieldOrdinalOffset << endl;
+//                    cout << "i: " << i << endl;
+//                    cout << "j: " << j << endl;
+//                    cout << "VLEFTTRI: " << VLEFTTRI[0] << "," << VLEFTTRI[1] << "," << VLEFTTRI[2] << endl;
+//                    cout << "muZ_1_nm1: " << muZ_1_nm1 << endl;
+//                    cout << "Xi:" << x << "," << y << "," << z << endl;
+//                  }
+                  
+                  for (int d=0; d<3; d++)
+                  {
+                    output_(fieldOrdinalOffset,pointOrdinal,d) = muZ_1_nm1 * VLEFTTRI[d];
+                  }
                   
                   fieldOrdinalOffset++;
                 }
@@ -1008,14 +1058,14 @@ namespace Intrepid2
             }
             
             const auto & Li_muZ01    = scratch1D_1; // used in Family IV
+            const auto & Li_muX01    = scratch1D_2; // used in Family V
+            const auto & Li_muY01    = scratch1D_3; // used in Family V
             const auto & Pi_muX01    = scratch1D_4; // used in Family IV
             const auto & Pi_muY01    = scratch1D_5; // used in Family IV
             const auto & Pi_muZ01    = scratch1D_6; // used in Family IV
+            const auto & Li_dt_muX01 = scratch1D_7; // used in Family V
+            const auto & Li_dt_muY01 = scratch1D_8; // used in Family V
             const auto & Li_dt_muZ01 = scratch1D_9; // used in Family IV
-//            const auto & Li_muX01    = scratch1D_2; // used for E_QUAD computations
-//            const auto & Li_muY01    = scratch1D_3; // used for E_QUAD computations
-//            const auto & Li_dt_muX01 = scratch1D_7; // used for E_QUAD computations
-//            const auto & Li_dt_muY01 = scratch1D_8; // used for E_QUAD computations
             
             const auto & muX_0 = mu[0][0]; const auto & muX_0_grad = muGrad[0][0];
             const auto & muX_1 = mu[1][0]; const auto & muX_1_grad = muGrad[1][0];
@@ -1024,16 +1074,16 @@ namespace Intrepid2
             const auto & muZ_0 = mu[0][2]; const auto & muZ_0_grad = muGrad[0][2];
             const auto & muZ_1 = mu[1][2]; const auto & muZ_1_grad = muGrad[1][2];
             
-//            Polynomials::shiftedScaledIntegratedLegendreValues(Li_muX01, polyOrder_, muX_1, muX_0 + muX_1);
-//            Polynomials::shiftedScaledIntegratedLegendreValues(Li_muY01, polyOrder_, muY_1, muY_0 + muY_1);
+            Polynomials::shiftedScaledIntegratedLegendreValues(Li_muX01, polyOrder_, muX_1, muX_0 + muX_1);
+            Polynomials::shiftedScaledIntegratedLegendreValues(Li_muY01, polyOrder_, muY_1, muY_0 + muY_1);
             Polynomials::shiftedScaledIntegratedLegendreValues(Li_muZ01, polyOrder_, muZ_1, muZ_0 + muZ_1);
             
             Polynomials::shiftedScaledLegendreValues(Pi_muX01, polyOrder_, muX_1, muX_0 + muX_1);
             Polynomials::shiftedScaledLegendreValues(Pi_muY01, polyOrder_, muY_1, muY_0 + muY_1);
             Polynomials::shiftedScaledLegendreValues(Pi_muZ01, polyOrder_, muZ_1, muZ_0 + muZ_1);
             
-//            Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muX01, Pi_muX01, polyOrder_, muX_1, muX_0 + muX_1);
-//            Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muY01, Pi_muY01, polyOrder_, muY_1, muY_0 + muY_1);
+            Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muX01, Pi_muX01, polyOrder_, muX_1, muX_0 + muX_1);
+            Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muY01, Pi_muY01, polyOrder_, muY_1, muY_0 + muY_1);
             Polynomials::shiftedScaledIntegratedLegendreValues_dt(Li_dt_muZ01, Pi_muZ01, polyOrder_, muZ_1, muZ_0 + muZ_1);
             
             // FAMILY IV -- non-trivial divergences
@@ -1071,6 +1121,35 @@ namespace Intrepid2
                     
                     fieldOrdinalOffset++;
                   }
+                }
+              }
+            }
+            
+            // FAMILY V -- non-trivial divergences
+            {
+              for (int j=2; j<=polyOrder_; j++)
+              {
+                const auto & phi_j = Li_muX01(j);
+                Kokkos::Array<OutputScalar,3> phi_j_grad;
+                computeGradHomLi(phi_j_grad, j, Pi_muY01, Li_dt_muY01, muY_0_grad, muY_1_grad);
+                
+                for (int i=2; i<=polyOrder_; i++)
+                {
+                  const auto & phi_i = Li_muY01(i);
+                  Kokkos::Array<OutputScalar,3> phi_i_grad;
+                  computeGradHomLi(phi_i_grad, i, Pi_muX01, Li_dt_muX01, muX_0_grad, muX_1_grad);
+                  
+                  const int n = max(i,j);
+                  const OutputScalar muZ_1_nm2 = pow(muZ_1,n-2);
+                  
+                  Kokkos::Array<OutputScalar,3> VLEFTTRI;
+                  V_LEFT_TRI(VLEFTTRI, phi_i, phi_i_grad, phi_j, phi_j_grad, muZ_0, muZ_0_grad);
+                  
+                  OutputScalar dot_product;
+                  dot(dot_product, muZ_1_grad, VLEFTTRI);
+                  output_(fieldOrdinalOffset,pointOrdinal) = (n-1) * muZ_1_nm2 * dot_product;
+                  
+                  fieldOrdinalOffset++;
                 }
               }
             }
