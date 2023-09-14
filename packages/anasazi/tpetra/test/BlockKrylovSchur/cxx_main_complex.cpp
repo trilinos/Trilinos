@@ -96,7 +96,6 @@ int main(int argc, char *argv[])
 
   const ST ONE = SCT::one ();
 
-  int info = 0;
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
@@ -148,6 +147,7 @@ int main(int argc, char *argv[])
     map = K->getDomainMap();
   } else if(std::equal(cua.rbegin(), cua.rend(), filename.rbegin())) {
 
+    int info = 0;
     if (MyPID == 0) {
 
       info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
