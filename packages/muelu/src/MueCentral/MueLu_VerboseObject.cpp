@@ -61,25 +61,8 @@ namespace MueLu {
 
   VerboseObject::VerboseObject():
     verbLevel_(NotSpecified), // = use global verbose level by default
-    numProcs_(0)
-  {
-    // Note: using MPI_COMM_RANK is bad idea (because a subcommunicator may be used to run MueLu)
-    // Belos have the same problem in the class BelosOutputManager.
-    //
-    // How to fix this: the FancyOStream provides setProcRankAndSize() to change the proc rank info used by setOutputToRootOnly().
-    // Adding a method FancyOStream::getProcRank() would be enough. And it makes sense to use the info that come from the stream configuration.
-    //
-    // Documentation: after the patch, it migh be nice to add to the documentation (Teuchos and MueLu)
-    //                that users of subcommunicators have to setup the output stream (of Teuchos::VerboseObject) separately.
-    procRank_ = 0;
-#ifdef HAVE_MPI
-    int mpiStarted = 0; MPI_Initialized(&mpiStarted);
-    if (mpiStarted)     {
-      MPI_Comm_rank(MueLu::GetGlobalComm(), &procRank_);
-      MPI_Comm_size(MueLu::GetGlobalComm(), &numProcs_);
-    }
-#endif
-    }
+    procRank_(-1)
+  { }
 
   VerboseObject::~VerboseObject() { }
 
@@ -140,9 +123,7 @@ namespace MueLu {
 #ifdef HAVE_MPI
     int mpiStarted = 0; MPI_Initialized(&mpiStarted);
     if (mpiStarted)     {
-      int procRank;
-      MPI_Comm_rank(MueLu::GetGlobalComm(), &procRank);
-      fn = filename + "." + std::to_string(procRank);
+      fn = filename + "." + std::to_string(procRank_);
     } else
 #endif
       fn = filename;
