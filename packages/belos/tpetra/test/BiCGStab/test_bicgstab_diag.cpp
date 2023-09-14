@@ -60,6 +60,7 @@
 
 // Teuchos
 #include <Teuchos_Time.hpp>
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 
@@ -272,9 +273,11 @@ Iterative_Inverse_Operator<OP,ST,MP,MV>::Iterative_Inverse_Operator(int n_in, in
   timer(opString)
 {
   int n_global;
+  const int count = 1;
+  const auto reductType = Teuchos::REDUCE_SUM;
 
-  MPI_Allreduce(&n_in, &n_global, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
   pComm = Tpetra::getDefaultComm();
+  Teuchos::reduceAll<int,int>( *pComm, reductType, count, &n_in, &n_global );
 
   pMap =  rcp( new MP(n_global, n_in, 0, pComm) );
 
