@@ -699,7 +699,7 @@ namespace Tpetra {
                          nonContigGids_host.size ());
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
         Kokkos::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
-        Kokkos::fence(); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
+        Kokkos::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         glMap_ = global_to_local_table_type(nonContigGids,
                                             firstContiguousGID_,
@@ -1036,7 +1036,7 @@ namespace Tpetra {
          entryList.extent(0));
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (execution_space(), entryList_host, entryList);
-      Kokkos::fence(); // UVM follows
+      Kokkos::fence("Map::Map"); // UVM follows
       firstContiguousGID_ = entryList_host[0];
       lastContiguousGID_ = firstContiguousGID_+1;
 
