@@ -2415,6 +2415,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     auto PermuteFromLIDs_d = Importer->getPermuteFromLIDs_dv().view_device();
 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
+//#define JHU_USE_HOST_MATRIX_ARRAYS
+#ifdef JHU_USE_HOST_MATRIX_ARRAYS
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
       *A,
       RemoteLIDs_d,
@@ -2430,6 +2432,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       vals,
       SourcePids (),
       TargetPids);
+#else
+    Kokkos::View<size_t*,Node::device_type> rowptr_d;
+    Kokkos::View<GO*,Node::device_type>     colind_d;
+    Kokkos::View<Scalar*,Node::device_type> vals_d;
+
+    unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
+      *A,
+      RemoteLIDs_d,
+      importsView_d,
+      numImportPacketsView_d,
+      Importer->getNumSameIDs (),
+      PermuteToLIDs_d,
+      PermuteFromLIDs_d,
+      MapTarget->getLocalNumElements (),
+      MyPID,
+      rowptr_d,
+      colind_d,
+      vals_d,
+      SourcePids (),
+      TargetPids);
+
+    auto rowptr_h = create_mirror_view_and_copy(Kokkos::HostSpace(), rowptr_d);
+    auto colind_h = create_mirror_view_and_copy(Kokkos::HostSpace(), colind_d);
+    auto vals_h = create_mirror_view_and_copy(Kokkos::HostSpace(), vals_d);
+
+    rowptr = Teuchos::arcp(rowptr_h.data(),0,rowptr_h.size(),false);
+    colind = Teuchos::arcp(colind_h.data(),0,colind_h.size(),false);
+    vals = Teuchos::arcp(vals_h.data(),0,vals_h.size(),false);
+#endif
 
     size_t nnz2 = vals.size();
     if(nnz1!=nnz2) test_err++;

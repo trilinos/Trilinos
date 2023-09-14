@@ -8477,6 +8477,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     auto PermuteToLIDs_d = PermuteToLIDs.view_device();
     auto PermuteFromLIDs_d = PermuteFromLIDs.view_device();
 
+    Kokkos::View<size_t*,device_type> CSR_rowptr_d;
+    Kokkos::View<GO*,device_type>     CSR_colind_GID_d;
+    Kokkos::View<LO*,device_type>     CSR_colind_LID_d;
+    Kokkos::View<Scalar*,device_type>     CSR_vals_d;
+
+//#define JHU_USE_HOST_MATRIX_ARRAYS
+#ifdef JHU_USE_HOST_MATRIX_ARRAYS
     Details::unpackAndCombineIntoCrsArrays(
                                    *this, 
                                    RemoteLIDs_d,
@@ -8503,6 +8510,26 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     CSR_colind_LID.resize (CSR_colind_GID.size());
     size_t mynnz = CSR_vals.size();
+#else
+    Details::unpackAndCombineIntoCrsArrays(
+                                   *this, 
+                                   RemoteLIDs_d,
+                                   destMat->imports_.view_device(),                //hostImports
+                                   destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
+                                   NumSameIDs,
+                                   PermuteToLIDs_d,
+                                   PermuteFromLIDs_d,
+                                   N,
+                                   MyPID,
+                                   CSR_rowptr_d,
+                                   CSR_colind_GID_d,
+                                   CSR_vals_d,
+                                   SourcePids(),
+                                   TargetPids);
+
+    Kokkos::resize (CSR_colind_LID_d, CSR_colind_GID_d.size());
+    size_t mynnz = CSR_vals.size();
+#endif
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.
@@ -8531,6 +8558,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC makeColMap")));
 #endif
+#ifdef JHU_USE_HOST_MATRIX_ARRAYS
     Import_Util::lowCommunicationMakeColMapAndReindex (CSR_rowptr (),
                                                        CSR_colind_LID (),
                                                        CSR_colind_GID (),
@@ -8538,7 +8566,28 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                        TargetPids,
                                                        RemotePids,
                                                        MyColMap);
+#else
+    Import_Util::lowCommunicationMakeColMapAndReindexKokkos (CSR_rowptr_d,
+                                                       CSR_colind_LID_d,
+                                                       CSR_colind_GID_d,
+                                                       BaseDomainMap,
+                                                       TargetPids,
+                                                       RemotePids,
+                                                       MyColMap);
+#endif
     }
+
+#if !defined(JHU_USE_HOST_MATRIX_ARRAYS)
+    //FIXME temporary until Import_Util::sortCrsEntries and Import_Util::sortAndMergeCrsEntries
+    //FIXME are rewritten.
+    auto CSR_rowptr_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_rowptr_d);
+    auto CSR_colind_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_colind_LID_d);
+    auto CSR_vals_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_vals_d);
+
+    CSR_rowptr = Teuchos::arcp(CSR_rowptr_h.data(),0,CSR_rowptr_h.size(),false);
+    CSR_colind_LID = Teuchos::arcp(CSR_colind_h.data(),0,CSR_colind_h.size(),false);
+    CSR_vals = Teuchos::arcp(CSR_vals_h.data(),0,CSR_vals_h.size(),false);
+#endif
 
     if (verbose) {
       std::ostringstream os;
