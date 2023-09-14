@@ -98,7 +98,6 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
   if(addSolutionFields_)
     allFields.insert(allFields.end(),physicsBlock.getTangentFields().begin(),physicsBlock.getTangentFields().end());
 
-  std::cout << " ADDITIONAL FIELDS " << additionalFields_.size() << std::endl;
   // add in bases for any additional fields
   for(std::size_t i=0;i<additionalFields_.size();i++)
     bases[additionalFields_[i].second->name()] = additionalFields_[i].second;

@@ -250,10 +250,9 @@ int main(int argc, char *argv[])
     auto T_basis = physicsBlocks[0]->getFieldLibrary()->lookupBasis("TEMPERATURE");
     rfsw_builder.addAdditionalField("SOURCE_TEMPERATURE",T_basis);
     std::vector<std::string> blocks;
-    mesh->getElementBlockNames(blocks);
-    for (auto& b : blocks) mesh->addSolutionField("SOURCE_TEMPERATURE",b);
-    // TODO BWR THIS DOES NOT UPDATE MESHDATA_ so the data never actually gets to the exo file this way
-    // TODO BWR can we get IOSS to know about this?
+    blocks.push_back("eblock-0_0");
+    mesh->addSolutionField("SOURCE_TEMPERATURE",blocks[0]);
+
     stkIOResponseLibrary->addResponse("SOURCE_TEMPERATURE",blocks,rfsw_builder);
 
     // 1. Register correct aggregator and reserve response - this was done in the appropriate observer object

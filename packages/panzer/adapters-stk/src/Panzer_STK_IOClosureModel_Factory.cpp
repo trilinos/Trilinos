@@ -47,6 +47,7 @@
 #include "Panzer_STK_ScatterCellAvgVector.hpp"
 #include "Panzer_STK_ScatterCellQuantity.hpp"
 #include "Panzer_STK_ScatterFields.hpp"
+#include "Panzer_STK_ProjectField.hpp"
 
 template< >
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
@@ -66,6 +67,12 @@ buildClosureModels(const std::string& model_id,
   using PHX::Evaluator;
 
   // TODO BWR how do IP fields get here?
+  // TODO BWR need to know the basis or the IR associated with the closure model we want to output.
+  // TODO BWR it is not clear if its possible to get that information here
+  // TODO BWR require it from the user CMF?
+  // TODO BWR maybe require the user specify the basis type and order in the output param list if they do want to do it
+  // TODO BWR BUTTTTT that is confusing because it would be the basis type of the CM, not the mesh basis
+  // TODO BWR is the ir in the input always the ir in the CM, etc. ??
 
   // build user evaluators
   RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > user_evals = 
@@ -157,19 +164,38 @@ buildClosureModels(const std::string& model_id,
 
      // if a requested field is found then add in nodal field evaluator
      BlockIdToFields::const_iterator nodalItr = blockIdToNodalFields_.find(block_id);
-     // TODO BWR have access to block id here, can get mesh basis from MGM
      if(nodalItr!=blockIdToNodalFields_.end() ) {
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(nodalItr->second));
 
+        // TODO BWR roger says we should assume that closure models are only defined at IPs
         //Teuchos::RCP<const panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis("HGrad",1,ir->workset_size,ir->topology));
-        auto basis = mesh_->getMeshGeometryManager(block_id)->getMeshPureBasis(ir->workset_size);
 
         // TODO BWR check if we need to project...
-   
+        // get mesh basis, will always need to interpolate
+
+        auto meshBasis = mesh_->getMeshGeometryManager(block_id)->getMeshPureBasis(ir->workset_size);
+
+        //if (meshBasis->getIntrepid2Basis()->getName() != basis->getIntrepid2Basis()->getName()) {
+
+        //  // Project from the solution basis to the mesh
+        //  // Keep the field name the same so scatter can find the projected fields 
+        //  // TODO BWR CAN ONLY DO RESID
+        //  // TODO BWR ASK ABOUT THAT ^
+        //  // TODO BWR This seems to be OK...
+        //  // TODO BWR Going to watch to batch
+        //  for (auto & f : *fieldNames) {
+        //    Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval =
+        //      Teuchos::rcp(new ProjectField<panzer::Traits::Residual,panzer::Traits>(f, basis, meshBasis));
+
+        //    // register and require evaluator fields 
+        //    this->template registerEvaluator<panzer::Traits::Residual>(fm,eval);
+        //    fm.template requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
+        //  }
+        //}  
         // setup scatter nodal fields
 
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-            = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,basis,*fieldNames));
+            = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,meshBasis,*fieldNames));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    
