@@ -59,8 +59,7 @@
 namespace MueLu {
 
   VerboseObject::VerboseObject():
-    verbLevel_(NotSpecified), // = use global verbose level by default
-    procRank_(-1)
+    verbLevel_(NotSpecified) // = use global verbose level by default
   { }
 
   VerboseObject::~VerboseObject() { }
@@ -138,6 +137,7 @@ namespace MueLu {
     }
     return mueluOutputStream_;
   }
+
 
   VerbLevel VerboseObject::globalVerbLevel_ = High; // Default global verbose level.
 
