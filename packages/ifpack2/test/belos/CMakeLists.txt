@@ -353,7 +353,7 @@ TRIBITS_ADD_TEST(
 IF(Kokkos_ENABLE_CUDA)
   TRIBITS_ADD_TEST(
     tif_belos
-    NAME RILUK_hb_belos
+    NAME RILUK_2streams_hb_belos
     ARGS "--xml_file=test_2_RILUK_2streams_nos1_hb.xml"
     COMM serial mpi
     NUM_MPI_PROCS 2
@@ -362,7 +362,7 @@ IF(Kokkos_ENABLE_CUDA)
 
   TRIBITS_ADD_TEST(
     tif_belos
-    NAME RILUK_hb_belos
+    NAME RILUK_4streams_hb_belos
     ARGS "--xml_file=test_2_RILUK_4streams_nos1_hb.xml"
     COMM serial mpi
     NUM_MPI_PROCS 2
@@ -371,7 +371,7 @@ IF(Kokkos_ENABLE_CUDA)
 
   TRIBITS_ADD_TEST(
     tif_belos
-    NAME RILUK_hb_belos
+    NAME RILUK_2streams_hb_belos
     ARGS "--xml_file=test_4_RILUK_2streams_nos1_hb.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
@@ -380,7 +380,7 @@ IF(Kokkos_ENABLE_CUDA)
 
   TRIBITS_ADD_TEST(
     tif_belos
-    NAME RILUK_hb_belos
+    NAME RILUK_4streams_hb_belos
     ARGS "--xml_file=test_4_RILUK_4streams_nos1_hb.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
