@@ -61,7 +61,6 @@
 #include "MueLu_TimeMonitor.hpp"
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_VerboseObject.hpp"
-#include "MueLu_GlobalComm.hpp"
 
 #include <cuda_runtime.h>
 #include <amgx_c.h>
@@ -242,7 +241,7 @@ namespace MueLu {
 #ifdef NEW_COMM
         AMGX_resources_create(&Resources_, Config_, &mpiComm, 1/* number of GPU devices utilized by this rank */, device);
 #else
-        AMGX_resources_create(&Resources_, Config_, MueLu::GetGlobalComm(), 1/* number of GPU devices utilized by this rank */, device);
+        AMGX_resources_create(&Resources_, Config_, MPI_COMM_WORLD, 1/* number of GPU devices utilized by this rank */, device); // CHECK: ALLOW MPI_COMM_WORLD
 #endif
       }
 

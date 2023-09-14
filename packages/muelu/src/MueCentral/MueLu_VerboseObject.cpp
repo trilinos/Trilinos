@@ -55,7 +55,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_GlobalComm.hpp"
 
 namespace MueLu {
 
