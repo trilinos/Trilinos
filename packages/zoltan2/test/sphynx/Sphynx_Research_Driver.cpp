@@ -1,48 +1,49 @@
 // @HEADER
-//
-// ***********************************************************************
-//
-//   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Seher Acer        (sacer@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//                    Jennifer Loe      (jloe@sandia.gov)
-//
-// ***********************************************************************
-//
+// //
+// // ***********************************************************************
+// //
+// //   Zoltan2: A package of combinatorial algorithms for scientific computing
+// //                  Copyright 2012 Sandia Corporation
+// //
+// // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// // the U.S. Government retains certain rights in this software.
+// //
+// // Redistribution and use in source and binary forms, with or without
+// // modification, are permitted provided that the following conditions are
+// // met:
+// //
+// // 1. Redistributions of source code must retain the above copyright
+// // notice, this list of conditions and the following disclaimer.
+// //
+// // 2. Redistributions in binary form must reproduce the above copyright
+// // notice, this list of conditions and the following disclaimer in the
+// // documentation and/or other materials provided with the distribution.
+// //
+// // 3. Neither the name of the Corporation nor the names of the
+// // contributors may be used to endorse or promote products derived from
+// // this software without specific prior written permission.
+// //
+// // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// //
+// // Questions? Contact Seher Acer        (sacer@sandia.gov)
+// //                    Erik Boman        (egboman@sandia.gov)
+// //                    Siva Rajamanickam (srajama@sandia.gov)
+// //                    Jennifer Loe      (jloe@sandia.gov)
+// //
+// // ***********************************************************************
+// //
 // @HEADER
+
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
@@ -62,11 +63,12 @@
 #include <MatrixMarket_Tpetra.hpp>
 
 /////////////////////////////////////////////////////////////////////////////
-// This is a driver with many available options that can be used to test
-// a variety of features of Sphynx.
-// Note: This is research code. We do not guarantee it is without bugs. 
-/////////////////////////////////////////////////////////////////////////////
+//// This is a driver with many available options that can be used to test
+//// a variety of features of Sphynx.
+//// Note: This is research code. We do not guarantee it is without bugs. 
+///////////////////////////////////////////////////////////////////////////////
 
+<<<<<<< HEAD
 /* -------------------------------------------------------------------------
  * Function: buildCrsMatrix
  * Purpose:  When the user does not input a matrix file, buildCrsMatrix will
@@ -76,9 +78,12 @@
  * ------------------------------------------------------------------------- */
 
 template <typename lno_t, typename gno_t, typename scalar_t, typename nod_t>
+=======
+  template <typename lno_t, typename gno_t, typename scalar_t, typename nod_t>
+>>>>>>> 42618b145ad4a73991726b73dadd81bdb319b120
 int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
-                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-		   Teuchos::RCP<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>> &M_)
+    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+    Teuchos::RCP<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>> &M_)
 {
   /* Print size of the mesh being constructed */
   if (comm->getRank() == 0){
@@ -102,18 +107,18 @@ int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
   /* Build the Brick3D matrix */
   try{
     Teuchos::RCP<Galeri::Xpetra::Problem<Tpetra::Map<lno_t, gno_t>,
-					 Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>,
-					 Tpetra::MultiVector<scalar_t, lno_t, gno_t> > > Pr=
-      Galeri::Xpetra::BuildProblem<scalar_t, lno_t, gno_t,
-				   Tpetra::Map<lno_t, gno_t>,
-				   Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>,
-				   Tpetra::MultiVector<scalar_t, lno_t, gno_t, nod_t> >
-      (params.GetMatrixType(), map, params.GetParameterList());
+      Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>,
+      Tpetra::MultiVector<scalar_t, lno_t, gno_t> > > Pr=
+        Galeri::Xpetra::BuildProblem<scalar_t, lno_t, gno_t,
+      Tpetra::Map<lno_t, gno_t>,
+      Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>,
+      Tpetra::MultiVector<scalar_t, lno_t, gno_t, nod_t> >
+        (params.GetMatrixType(), map, params.GetParameterList());
 
     M_ = Pr->BuildMatrix();
   }
   catch (std::exception &e) {    // Probably not enough memory
-    std::cout << "Error returned from Galeri " << e.what() << std::endl;
+    if(comm->getRank() == 0) std::cout << "Error returned from Galeri " << e.what() << std::endl;
     exit(-1);
   }
   if (M_.is_null())
@@ -123,9 +128,9 @@ int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
 }
 
 template <typename adapter_type>
-void 
+  void 
 compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
-		Zoltan2::PartitioningSolution<adapter_type> &solution )
+    Zoltan2::PartitioningSolution<adapter_type> &solution )
 {
   typedef typename adapter_type::user_t graph_type;
   typedef typename graph_type::global_ordinal_type GO;
@@ -159,14 +164,14 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   part_view_t localParts("localParts", numGblRows);
   part_view_t globalParts("globalParts", numGblRows);
   auto localPartsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), localParts);
-  
+
   auto parts = solution.getPartListView();
   for(size_t i = 0; i < numLclRows; i++){
     GO gi = rowMap->getGlobalElement(i);
     localPartsHost(gi) = parts[i];
   }
   Kokkos::deep_copy(localParts, localPartsHost);
-  
+
   auto comm = graph->getComm();
   Teuchos::reduceAll<int, PT> (*comm, Teuchos::REDUCE_SUM, numGblRows, localParts.data(), globalParts.data());
 
@@ -178,24 +183,24 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
   using execution_space = typename NO::device_type::execution_space;
   using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
   Kokkos::parallel_reduce("Compute cut", range_policy(0, numLclRows),
-		       KOKKOS_LAMBDA(const LO i, size_t &cut){
+      KOKKOS_LAMBDA(const LO i, size_t &cut){
 
-			 const GO gRid = rowLocalToGlobal(i);
-			 const PT gi = globalParts(gRid);
-			 
-			 const size_t start = rowPtr(i);
-			 const size_t end = rowPtr(i+1);
-			 for(size_t j = start; j < end; ++j) {
-				
-			   const GO gCid = colLocalToGlobal(colInd(j)); 
-			   PT gj = globalParts(gCid);
-			   if(gi != gj)
-			     cut += 1;
-			 }
-		       }, localtotalcut);
+      const GO gRid = rowLocalToGlobal(i);
+      const PT gi = globalParts(gRid);
+
+      const size_t start = rowPtr(i);
+      const size_t end = rowPtr(i+1);
+      for(size_t j = start; j < end; ++j) {
+
+      const GO gCid = colLocalToGlobal(colInd(j)); 
+      PT gj = globalParts(gCid);
+      if(gi != gj)
+      cut += 1;
+      }
+      }, localtotalcut);
 
   Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, 1, &localtotalcut, &totalcut);
-  
+
   // compute imbalance
   auto rowPtr_h = Kokkos::create_mirror_view(rowPtr);
   Kokkos::deep_copy(rowPtr_h, rowPtr);
@@ -203,7 +208,7 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
 
   size_t *partw = new size_t[nparts];
   size_t *partc = new size_t[nparts];
-  
+
   size_t *gpartw = new size_t[nparts];
   size_t *gpartc = new size_t[nparts];
 
@@ -219,7 +224,7 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
 
   Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, nparts, partw, gpartw); 
   Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, nparts, partc, gpartc); 
-  
+
   size_t maxc = 0, totc = 0;
   size_t maxw = 0, totw = 0;
 
@@ -244,8 +249,8 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
     std::cout << "************************************************\n\n" << std::endl;
 
   }
-}
 
+<<<<<<< HEAD
 /*
 template <typename adapter_type>
 void 
@@ -333,6 +338,9 @@ compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
   
 }
 */
+=======
+}
+>>>>>>> 42618b145ad4a73991726b73dadd81bdb319b120
 
 int main(int narg, char *arg[]) 
 {
@@ -348,110 +356,115 @@ int main(int narg, char *arg[])
     int nparts = 64;     
     int max_iters = 1000;
     int block_size = -1;
-    int rand_seed = 1;
+    int rand_seed =1;
+    int resFreq = 0;
+    int orthoFreq = 0;
     std::string matrix_file = "";
-    std::string vector_file = "";
     std::string eigensolve = "LOBPCG"; 
     bool parmetis = false;
     bool pulp = false;
-    
+
     int verbosity = 1;
-    
+
     std::string ptype = "";
-    std::string prec = "";
-    std::string init = "";
-    double tol = -1;
-    
+    std::string prec = "jacobi";
+    std::string init = "random";
+    double tol = 1e-1;
+
     // Echo the command line
     if (me == 0)  {
-      for (int i = 0; i < narg; i++){
+      for (int i = 0; i < narg; i++)
         std::cout << arg[i] << " ";
-      }
       std::cout << std::endl;
     }
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("matrix_file",&matrix_file,
+<<<<<<< HEAD
 		   "Path and filename of the matrix to be read.");
     cmdp.setOption("vector_file",&vector_file,
 		   "Path and filename of the pre-computed eigenvector(s) to be read.");
+=======
+        "Path and filename of the matrix to be read.");
+>>>>>>> 42618b145ad4a73991726b73dadd81bdb319b120
     cmdp.setOption("nparts",&nparts,
-		   "Number of global parts desired in the resulting partition.");
+        "Number of global parts desired in the resulting partition.");
     cmdp.setOption("rand_seed",&rand_seed,
-		   "Seed for the random multivector."); 
+        "Seed for the random multivector.");
     cmdp.setOption("max_iters",&max_iters,
-		   "Maximum iters (LOBPCG) or mulitplies by A (randomized).");
+        "Maximum iters for the eigensolver.");
     cmdp.setOption("block_size",&block_size,
-		   "Block size (LOBPCG) or number of vectors l (randomized).");
+        "Block size.");
     cmdp.setOption("verbosity", &verbosity,
-		   "Verbosity level");
+        "Verbosity level");
     cmdp.setOption("parmetis", "sphynx", &parmetis,
-		   "Whether to use parmetis.");
+        "Whether to use parmetis.");
     cmdp.setOption("pulp", "sphynx", &pulp,
-		   "Whether to use pulp.");
+        "Whether to use pulp.");
     cmdp.setOption("prec", &prec,
-		   "Prec type to use.");
-    //cmdp.setOption("eigensolve", &eigensolve,
-		 //  "Eigensolver to use: LOBPCG or randomized."); //TODO: Uncomment when randomized eigensolver in Anasazi. 
+        "Prec type to use.");
+    cmdp.setOption("eigensolve", &eigensolve,
+        "Eigensolver to use: LOBPCG, BlockDavidson, GeneralizedDavidson, BlockKrylovSchur or randomized.");
     cmdp.setOption("prob", &ptype,
-		   "Problem type to use. Options are combinatorial, normalized or generalized.");
+        "Problem type to use. Options are combinatorial, normalized or generalized.");
     cmdp.setOption("tol", &tol,
-		   "Tolerance to use.");
+        "Tolerance to use.");
     cmdp.setOption("init",  &init,
-		   "Sphynx Initial guess. Options: random or constants. Default: random if randomized solver is used.");
+        "Sphynx Initial guess. Options: random or constants. Default: random if randomized solver is used.");
+    cmdp.setOption("resFreq",  &resFreq,
+        "(For randomized) Specify how often to check the residuals. Orthogonalization of the basis is also done.");
+    cmdp.setOption("orthoFreq",  &orthoFreq,
+        "(For randomized) Specify how often to orthogonalize the basis.");
 
-    if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-      return -1;
-    }
+    if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) return -1;
 
     // Print the most essential options (not in the MyPL parameters later)
-    if (me==0){
-      std::cout << "matrix file = " << matrix_file << std::endl;
-      std::cout << "vector file = " << vector_file << std::endl;
-      std::cout << "nparts = " << nparts << std::endl;
-      std::cout << "verbosity = " << verbosity << std::endl;
-      std::cout << "parmetis = " << parmetis << std::endl;
-      std::cout << "pulp = " << pulp << std::endl;
-      std::cout << "prec = " << prec << std::endl;
-      std::cout << "eigensolver = " << eigensolve << std::endl;
-      std::cout << "prob = " << ptype << std::endl;
-      std::cout << "tol = " << tol << std::endl;
-      std::cout << "init = " << init << std::endl;
+    if (me == 0 ){
+      std::cout << std::endl << "--------------------------------------------------" << matrix_file << std::endl;
+      std::cout << "| Sphynx Parameters                              |" << matrix_file << std::endl;
+      std::cout << "--------------------------------------------------" << matrix_file << std::endl;
+      std::cout << "  matrix file = " << matrix_file << std::endl;
+      std::cout << "  nparts      = " << nparts << std::endl;
+      std::cout << "  verbosity   = " << verbosity << std::endl;
+      std::cout << "  parmetis    = " << parmetis << std::endl;
+      std::cout << "  pulp        = " << pulp << std::endl;
+      std::cout << "  prec        = " << prec << std::endl;
+      std::cout << "  eigensolver = " << eigensolve << std::endl;
+      std::cout << "  prob        = " << ptype << std::endl;
+      std::cout << "  tol         = " << tol << std::endl;
+      std::cout << "  init        = " << init << std::endl;
+      std::cout << "  resFreq     = " << resFreq << std::endl;
+      std::cout << "  orthoFreq   = " << orthoFreq << std::endl;
+      std::cout << "--------------------------------------------------" << matrix_file << std::endl << std::endl;
     }
 
     using scalar_type = Tpetra::Details::DefaultTypes::scalar_type;
     using local_ordinal_type = Tpetra::Details::DefaultTypes::local_ordinal_type;
     using global_ordinal_type = Tpetra::Details::DefaultTypes::global_ordinal_type;
     using node_type = Tpetra::Details::DefaultTypes::node_type;
-    
+
     using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;  
-    using map_type = Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
-    using mv_type = Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
     using adapter_type = Zoltan2::XpetraCrsGraphAdapter<typename crs_matrix_type::crs_graph_type>;
     using solution_type = Zoltan2::PartitioningSolution<adapter_type>;  
-
-    // Set the random seed.
-    std::srand(rand_seed);
 
     // Read the input matrix
     Teuchos::RCP<adapter_type> adapter;
     Teuchos::RCP<crs_matrix_type> tmatrix;
 
-    // Determine whether the user input the largest component of a graph, a matrix, a mesh size, or nothing
-    std::string mtx = ".mtx", lc = ".largestComp";
-    if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin())) {		// Largest component file
+    // Set the random seed and hope it goes through to Tpetra.
+    std::srand(rand_seed);
+
+    // Read in user-specified matrix or create default Brick3D matrix (100^3)
+    std::string mtx = ".mtx", mm = ".mm", lc = ".largestComp", lc2 = ".bin";
+    if(std::equal(lc.rbegin(), lc.rend(), matrix_file.rbegin()) || std::equal(lc2.rbegin(), lc2.rend(), matrix_file.rbegin())) {
       tmatrix  = readMatrixFromBinaryFile<crs_matrix_type>(matrix_file, pComm, true, verbosity>0);
-      if (me==0){
-        std::cout << "Used reader for Largest Comp." << std::endl;
-      }
+      if(me == 0 && verbosity > 1) std::cout << "Used Seher's reader for Largest Comp." << std::endl;
     }
-    else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin())) {	// Matrix File 
+    else if(std::equal(mtx.rbegin(), mtx.rend(), matrix_file.rbegin()) || std::equal(mm.rbegin(), mm.rend(), matrix_file.rbegin())) {
       typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
       reader_type r;
       tmatrix = r.readSparseFile(matrix_file, pComm);
-      if (me==0){
-        std::cout << "Used standard Matrix Market reader." << std::endl;
-      }
+      if(me == 0 && verbosity > 1) std::cout << "Used standard Matrix Market reader." << std::endl;
     }
     else {									// Build Brick3D matrix
       /* If the user entered something that was not an .mtx or .largestComp file,
@@ -461,47 +474,34 @@ int main(int narg, char *arg[])
       if(matrix_file != "")
       {
         std::string::const_iterator it = matrix_file.begin();
-	while(it != matrix_file.end() && std::isdigit(*it)) ++it;
-	if(it == matrix_file.end())
+        while(it != matrix_file.end() && std::isdigit(*it)) ++it;
+        if(it == matrix_file.end())
         {
-	   meshdim = std::stoi(matrix_file);
-	}
-	else {
-	   std::cout << "Invalid matrix file entered. Reverting to default matrix." << std::endl;
-	}
+          meshdim = std::stoi(matrix_file);
+        }
+        else {
+          if(me == 0) std::cout << "Invalid matrix file entered. Reverting to default matrix." << std::endl;
+        }
       } 
-      buildCrsMatrix<local_ordinal_type, global_ordinal_type, scalar_type>
+      int ierr = buildCrsMatrix<local_ordinal_type, global_ordinal_type, scalar_type>
         (meshdim, meshdim, meshdim, "Brick3D", pComm, tmatrix);
-      //Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(matrix_file+".mtx", tmatrix);
-      if(me == 0){
-        std::cout << "Generated Brick3D matrix with mesh size " << meshdim << " x " << meshdim << " x " << meshdim << "." << std::endl;
-      }
-    }
-    if(me == 0){
-      std::cout << "Done with reading/creating the matrix." << std::endl;
+      if (ierr != 0) std::cout << "Error! Brick3D failed to build!" << std::endl;
     }
 
-    Teuchos::RCP<const map_type> map = tmatrix->getMap();
+    if(me == 0 && verbosity > 0) std::cout << "Done with reading/creating the matrix." << std::endl;
 
-    // If the user input their own eigenvectors - read them in
-    Teuchos::RCP<mv_type> V;
-    if (vector_file !=""){
-      V = Tpetra::MatrixMarket::Reader<mv_type >::readDenseFile(vector_file,pComm,map);
-      if(me == 0){
-        std::cout << "Done with reading user-provided eigenvectors." << std::endl;
-      }
-    }
+    Teuchos::RCP<const Tpetra::Map<> > map = tmatrix->getMap();
+
     adapter = Teuchos::rcp(new adapter_type(tmatrix->getCrsGraph(), 1));
     adapter->setVertexWeightIsDegree(0);
 
-    // Set the parameters
+    // Set the Sphynx parameters
     Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
     Teuchos::RCP<Teuchos::ParameterList> sphynxParams(new Teuchos::ParameterList);
     params->set("num_global_parts", nparts);
 
     Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;  
     stacked_timer = Teuchos::rcp(new Teuchos::StackedTimer("SphynxDriver"));
- 
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
     if(parmetis || pulp) {
 
@@ -516,14 +516,14 @@ int main(int narg, char *arg[])
         params->set("pulp_vert_imbalance", 1.01);
       }
 
-      using problem_type = Zoltan2::SphynxProblem<adapter_type>;
+      using problem_type = Zoltan2::PartitioningProblem<adapter_type>;
       Teuchos::RCP<problem_type> problem;
       pComm->barrier();
       {
-        Teuchos::TimeMonitor t1(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
+        Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
         {
           Teuchos::TimeMonitor t2(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
-          problem = Teuchos::rcp(new problem_type(adapter.getRawPtr(), params.getRawPtr(), sphynxParams, Tpetra::getDefaultComm()));
+          problem = Teuchos::rcp(new problem_type(adapter.getRawPtr(), params.getRawPtr(), Tpetra::getDefaultComm()));
         }
         {
           Teuchos::TimeMonitor t3(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
@@ -535,55 +535,37 @@ int main(int narg, char *arg[])
       solution_type solution = problem->getSolution();
       compute_edgecut<adapter_type>(adapter, solution);
 
-    }
-    else {
+    } else {
 
       sphynxParams->set("sphynx_verbosity", verbosity);
       sphynxParams->set("sphynx_max_iterations", max_iters);
-      if(block_size > 0){
-        sphynxParams->set("sphynx_block_size", block_size);
-      }
+      sphynxParams->set("sphynx_ortho_freq", orthoFreq);
+      sphynxParams->set("sphynx_res_freq", resFreq);
       sphynxParams->set("sphynx_skip_preprocessing", true);
-      //sphynxParams->set("sphynx_eigensolver", eigensolve); //TODO: Uncomment when randomized solver in Anasazi. 
+      sphynxParams->set("sphynx_eigensolver", eigensolve);
+      if (block_size > 0) sphynxParams->set("sphynx_block_size", block_size);
       if (ptype != "") sphynxParams->set("sphynx_problem_type", ptype);
       if (init != "") sphynxParams->set("sphynx_initial_guess", init);
       if (prec != "") sphynxParams->set("sphynx_preconditioner_type", prec);
       if (tol != -1) sphynxParams->set("sphynx_tolerance", tol);
-      
+
       using problem_type = Zoltan2::SphynxProblem<adapter_type>; //We found sphynx
       Teuchos::RCP<problem_type> problem;
       pComm->barrier();
       {
-        Teuchos::TimeMonitor t1b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
+        Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::All"));
         {
-          Teuchos::TimeMonitor t2b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
+          Teuchos::TimeMonitor t2(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Problem"));
           problem = Teuchos::rcp(new problem_type(adapter.get(), params.get(), sphynxParams, Tpetra::getDefaultComm()));
         }
         {
-          Teuchos::TimeMonitor t3b(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
-          if (vector_file ==""){
-            if(me == 0)
-              std::cout << eigensolve << " will be used to solve the partitioning problem." << std::endl;
-            problem->solve();
-          }
-          else{
-            std::cout << "Problem to be partitioned with user-provided eigenvectors." << std::endl;
-            problem->setUserEigenvectors(V);
-            problem->solve();
-          }
+          if(me == 0) std::cout << eigensolve << " will be used to solve the partitioning problem." << std::endl;
+          problem->solve();
         }
         pComm->barrier();
       }
       solution_type solution = problem->getSolution();
       compute_edgecut<adapter_type>(adapter, solution);
-      /*
-         const int *SolArray = solution.getPartListView();
-         std::cout << "Pointer is: " << SolArray << std::endl;
-         int numparts = int(V->getGlobalLength());
-         for(int i=0;i<numparts;i++)
-         std::cout << *(SolArray+i) << std::endl;
-         */
-      // TODO: Uncomment the above lines and use >> out.txt to isolate the solution array file
     }
     stacked_timer->stopBaseTimer();       
 
@@ -595,6 +577,6 @@ int main(int narg, char *arg[])
 
     Teuchos::TimeMonitor::summarize();
 
-  } //End Tpetra scope  guard
+  } //End Tpetra scope guard
   return 0;
 } 

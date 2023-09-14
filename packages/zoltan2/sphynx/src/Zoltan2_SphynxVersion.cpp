@@ -50,8 +50,8 @@
 
 namespace Zoltan2 {
 
-   std::string Sphynx_Version() { 
-     return("Sphynx in Trilinos " TRILINOS_VERSION_STRING); 
-   }
+  std::string Sphynx_Version() { 
+    return("Sphynx in Trilinos " TRILINOS_VERSION_STRING); 
+  }
 
 } // namespace Zoltan2
