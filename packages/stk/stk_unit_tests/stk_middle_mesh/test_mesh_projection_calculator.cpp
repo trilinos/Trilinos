@@ -37,7 +37,7 @@ class MeshProjectionCalculatorTester : public ::testing::Test
           m_mesh2, PointClassifierNormalWrapperTolerances(eps));
       mRelationalData = std::make_shared<nonconformal4::impl::MeshRelationalData>(m_mesh1, m_mesh2, m_meshIn);
       mProjector      = std::make_shared<nonconformal4::impl::MeshProjectionCalculator>(
-          m_mesh1, m_mesh2, m_meshIn, mRelationalData, mClassifier, middle_mesh::impl::EdgeTracerTolerances(eps));
+          m_mesh1, m_mesh2, mRelationalData, mClassifier, middle_mesh::impl::EdgeTracerTolerances(eps));
       mProjector->project();
     }
 

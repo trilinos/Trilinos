@@ -732,7 +732,8 @@ namespace Tpetra {
     using dev_row_view_t  = typename crs_t::local_graph_device_type::row_map_type::non_const_type;
     using dev_col_view_t  = typename crs_t::local_graph_device_type::entries_type::non_const_type;
     using dev_val_view_t  = typename crs_t::local_matrix_device_type::values_type::non_const_type;
-    using STS             = Kokkos::ArithTraits<Scalar>;
+    using impl_scalar_t   = typename Kokkos::ArithTraits<Scalar>::val_type;
+    using STS             = Kokkos::ArithTraits<impl_scalar_t>;
     using Ordinal         = typename dev_row_view_t::non_const_value_type;
     using execution_space = typename Node::execution_space;
     using range_type      = Kokkos::RangePolicy<execution_space, size_t>;
@@ -746,12 +747,12 @@ namespace Tpetra {
 
     // Sizing and rows
     dev_row_view_t new_rowmap("new_rowmap", nrows+1);
-    const Scalar zero = STS::zero();
+    const impl_scalar_t zero = STS::zero();
     Kokkos::parallel_for("sizing", range_type(0, nrows), KOKKOS_LAMBDA(const size_t row) {
       const Ordinal row_nnz_begin = row_ptrs(row);
       Ordinal row_nnzs = 0;
       for (Ordinal row_nnz = row_nnz_begin; row_nnz < row_ptrs(row+1); ++row_nnz) {
-        const Scalar value = values(row_nnz);
+        const impl_scalar_t value = values(row_nnz);
         if (value != zero) {
           ++row_nnzs;
         }
@@ -771,7 +772,7 @@ namespace Tpetra {
       const Ordinal old_row_nnz_begin = row_ptrs(row);
       const Ordinal new_row_nnz_begin = new_rowmap(row);
       for (Ordinal old_row_nnz = old_row_nnz_begin; old_row_nnz < row_ptrs(row+1); ++old_row_nnz) {
-        const Scalar value = values(old_row_nnz);
+        const impl_scalar_t value = values(old_row_nnz);
         if (value != zero) {
           new_col_ids(new_row_nnz_begin + row_nnzs) = col_inds(old_row_nnz);
           new_vals(new_row_nnz_begin + row_nnzs) = value;

@@ -289,6 +289,11 @@ public:
   /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE</tt> environment variable.
   static bool timeKokkosDeepCopyVerbose();
 
+  /// \brief Add Teuchos timers for all host calls to Kokkos::fence().
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_FENCE</tt> environment variable.
+  static bool timeKokkosFence();  
 
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///

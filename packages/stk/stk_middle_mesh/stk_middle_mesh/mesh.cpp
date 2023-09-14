@@ -4,6 +4,7 @@
 #include <set>
 #include <unordered_set>
 
+#include "mesh_entity.hpp"
 #include "newton2.hpp"
 #include "parallel_exchange.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
@@ -530,19 +531,37 @@ int check_angles(std::shared_ptr<Mesh> mesh, const double thetaMin, const double
   return count;
 }
 
-void check_topology(std::shared_ptr<Mesh> mesh)
+void check_topology(std::shared_ptr<Mesh> mesh, int maxDim)
 {
-  check_topology_down(mesh->get_edges(), mesh->get_vertices());
-  check_topology_down(mesh->get_elements(), mesh->get_edges());
+  if (maxDim >= 1)
+  {
+    check_topology_down(mesh->get_edges(), mesh->get_vertices());
+  }
+
+  if (maxDim >= 2)
+  {
+    check_topology_down(mesh->get_elements(), mesh->get_edges());
+  }
 
   // check every vertex has at least two upward adjacencies, and edges
   // have one
-  check_topology_up(mesh->get_vertices(), mesh->get_edges(), 2);
-  check_topology_up(mesh->get_edges(), mesh->get_elements(), 1);
+  if (maxDim >= 1)
+  {
+    check_topology_up(mesh->get_vertices(), mesh->get_edges(), 2);
+  }
+
+  if (maxDim >= 2)
+  {
+    check_topology_up(mesh->get_edges(), mesh->get_elements(), 1);
+  }
 
   check_remotes_unique(mesh);
   check_remotes_symmetric(mesh);
-  check_edge_orientation_parallel(mesh);
+
+  if (maxDim >= 2)
+  {
+    check_edge_orientation_parallel(mesh);
+  }
 }
 
 void check_topology_down(const std::vector<MeshEntityPtr>& entities, const std::vector<MeshEntityPtr>& entitiesDown)
@@ -1037,6 +1056,25 @@ int get_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity)
   return owner;
 }
 
+int get_local_id(MeshEntityPtr higherDimensionEntity, MeshEntityPtr lowerDimensionEntity)
+{
+  int outputDim = get_type_dimension(lowerDimensionEntity->get_type());
+  assert(get_type_dimension(higherDimensionEntity->get_type()) > outputDim);
+
+  std::array<MeshEntityPtr, MAX_DOWN> entities;
+  int nentities = get_downward(higherDimensionEntity, outputDim, entities.data());
+  for (int i=0; i < nentities; ++i)
+  {
+    if (entities[i] == lowerDimensionEntity)
+    {
+      return i;
+    }
+  }
+
+  throw std::runtime_error("unable to find entity");
+}
+
+
 RemoteSharedEntity get_owner_remote(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity)
 {
   int myrank = utils::impl::comm_rank(mesh->get_comm());
@@ -1060,10 +1098,12 @@ bool check_is_entity_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity)
 RemoteSharedEntity get_remote_shared_entity(MeshEntityPtr entity, int rank)
 {
   for (int i = 0; i < entity->count_remote_shared_entities(); ++i)
+  {
     if (entity->get_remote_shared_entity(i).remoteRank == rank)
     {
       return entity->get_remote_shared_entity(i);
     }
+  }
 
   throw std::runtime_error("unable to find remote on given rank");
 }
