@@ -3435,7 +3435,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
       // CAG: This fence was found to be required on Cuda with UVM=on.
-      Kokkos::fence();
+      Kokkos::fence("CrsMatrix::setAllToScalar");
     }
   }
 
@@ -4909,7 +4909,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<const MV> X;
 
     // some parameters for below
-    const bool Y_is_replicated = ! Y_in.isDistributed ();
+    const bool Y_is_replicated = (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
     const bool Y_is_overwritten = (beta == ZERO);
     if (Y_is_replicated && this->getComm ()->getRank () > 0) {
       beta = ZERO;
