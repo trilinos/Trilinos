@@ -8598,9 +8598,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
     typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
 
-    typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_dev("rowmap", CSR_rowptr.size());
-    typename local_inds_device_view_type::non_const_type CSR_colind_LID_dev("colind", CSR_colind_LID.size());
-    typename values_device_view_type::non_const_type     CSR_vals_dev("values", CSR_vals.size());
+    typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_dev(Kokkos::ViewAllocateWithoutInitializing("rowmap"), CSR_rowptr.size());
+    typename local_inds_device_view_type::non_const_type CSR_colind_LID_dev(Kokkos::ViewAllocateWithoutInitializing("colind"), CSR_colind_LID.size());
+    typename values_device_view_type::non_const_type     CSR_vals_dev(Kokkos::ViewAllocateWithoutInitializing("values"), CSR_vals.size());
 
     Kokkos::deep_copy(CSR_rowptr_dev, CSR_rowptr_host);
     Kokkos::deep_copy(CSR_colind_LID_dev, CSR_colind_LID_host);
