@@ -303,6 +303,22 @@ namespace Intrepid2
       }
     };
     
+    
+    //! See Fuentes et al. (p. 455), definition of V_{ij}^{\trianglerighteq}
+    void V_RIGHT_TRI(Kokkos::Array<OutputScalar,3> &VRIGHTTRI,
+                     const OutputScalar &mu1,    const Kokkos::Array<OutputScalar,3> &mu1_grad,
+                     const OutputScalar &phi_i,  const Kokkos::Array<OutputScalar,3> &phi_i_grad,
+                     const OutputScalar &t0,     const Kokkos::Array<OutputScalar,3> &t0_grad) const {
+      Kokkos::Array<OutputScalar,3> left_vector; // left vector in the cross product we take below.
+      
+      const OutputScalar t0_2 = t0 * t0;
+      for (ordinal_type d=0; d<3; d++)
+      {
+        left_vector[d] = t0_2 * phi_i_grad[d] + 2. * t0 * phi_i * t0_grad[d];
+      }
+      cross(VRIGHTTRI, left_vector, mu1_grad);
+    };
+    
     // This is the "Ancillary Operator" V^{tri}_{ij} on p. 433 of Fuentes et al.
     KOKKOS_INLINE_FUNCTION
     void V_TRI(Kokkos::Array<OutputScalar,3> &VTRI,
@@ -756,12 +772,12 @@ namespace Intrepid2
             for (int j=2; j<=polyOrder_; j++)
             {
               // phi_ij_QUAD: phi_i(mu_X01) * phi_j(mu_Y01) // (following the ESEAS *implementation*; Fuentes et al. (p. 454) actually have the arguments reversed, which leads to a different basis ordering)
-              const auto & phi_j = Li_muX01(j);
+              const auto & phi_j = Li_muY01(j);
               Kokkos::Array<OutputScalar,3> phi_j_grad;
               computeGradHomLi(phi_j_grad, j, Pi_muY01, Li_dt_muY01, muY_0_grad, muY_1_grad);
               for (int i=2; i<=polyOrder_; i++)
               {
-                const auto & phi_i = Li_muY01(i);
+                const auto & phi_i = Li_muX01(i);
                 Kokkos::Array<OutputScalar,3> phi_i_grad;
                 computeGradHomLi(phi_i_grad, i, Pi_muX01, Li_dt_muX01, muX_0_grad, muX_1_grad);
                 
@@ -820,13 +836,13 @@ namespace Intrepid2
             {
               for (int j=2; j<=polyOrder_; j++)
               {
-                const auto & phi_j = Li_muX01(j);
+                const auto & phi_j = Li_muY01(j);
                 Kokkos::Array<OutputScalar,3> phi_j_grad;
                 computeGradHomLi(phi_j_grad, j, Pi_muY01, Li_dt_muY01, muY_0_grad, muY_1_grad);
                 
                 for (int i=2; i<=polyOrder_; i++)
                 {
-                  const auto & phi_i = Li_muY01(i);
+                  const auto & phi_i = Li_muX01(i);
                   Kokkos::Array<OutputScalar,3> phi_i_grad;
                   computeGradHomLi(phi_i_grad, i, Pi_muX01, Li_dt_muX01, muX_0_grad, muX_1_grad);
                   
@@ -859,43 +875,43 @@ namespace Intrepid2
             // FAMILY VI (non-trivial divergences)
             for (int i=2; i<=polyOrder_; i++)
             {
+              const auto & phi_i = Li_muX01(i);
+              Kokkos::Array<OutputScalar,3> phi_i_grad;
+              computeGradHomLi(phi_i_grad, i, Pi_muX01, Li_dt_muX01, muX_0_grad, muX_1_grad);
+              
+              Kokkos::Array<OutputScalar,3> VRIGHTTRI;
+              V_RIGHT_TRI(VRIGHTTRI, muY_1, muY_1_grad, phi_i, phi_i_grad, muZ_0, muZ_0_grad);
+              
+              const OutputScalar muZ_1_im1 = pow(muZ_1,i-1);
+              
+              for (int d=0; d<3; d++)
+              {
+                output_(fieldOrdinalOffset,pointOrdinal,d) = muZ_1_im1 * VRIGHTTRI[d];
+              }
+              
               fieldOrdinalOffset++;
             }
             
             // FAMILY VII (non-trivial divergences)
             for (int j=2; j<=polyOrder_; j++)
             {
+              const auto & phi_j = Li_muY01(j);
+              Kokkos::Array<OutputScalar,3> phi_j_grad;
+              computeGradHomLi(phi_j_grad, j, Pi_muY01, Li_dt_muY01, muY_0_grad, muY_1_grad);
+              
+              Kokkos::Array<OutputScalar,3> VRIGHTTRI;
+              V_RIGHT_TRI(VRIGHTTRI, muX_1, muX_1_grad, phi_j, phi_j_grad, muZ_0, muZ_0_grad);
+              
+              const OutputScalar muZ_1_jm1 = pow(muZ_1,j-1);
+              
+              for (int d=0; d<3; d++)
+              {
+                output_(fieldOrdinalOffset,pointOrdinal,d) = muZ_1_jm1 * VRIGHTTRI[d];
+              }
+              
               fieldOrdinalOffset++;
             }
           }
-          
-          
-          // end rewritten portion
-          
-          // TODO: interior functions (below is from H^1 implementation)
-          // interior functions
-          // these are the product of the same quadrilateral function that we blended for the quadrilateral face and
-          // [L_k](mu_{0}^zeta, mu_1^zeta)
-            
-          // rename scratch
-//                 Li = scratch1D_1;
-//                 Lj = scratch1D_2;
-//          auto & Lk = scratch1D_3;
-//          Polynomials::shiftedScaledIntegratedLegendreValues(Li, polyOrder_, mu[1][0], mu[0][0] + mu[1][0]);
-//          Polynomials::shiftedScaledIntegratedLegendreValues(Lj, polyOrder_, mu[1][1], mu[0][1] + mu[1][1]);
-//          Polynomials::shiftedScaledIntegratedLegendreValues(Lk, polyOrder_, mu[1][2], mu[0][2] + mu[1][2]);
-//          // following the ESEAS ordering: k increments first
-//          for (int k=2; k<=polyOrder_; k++)
-//          {
-//            for (int j=2; j<=polyOrder_; j++)
-//            {
-//              for (int i=2; i<=polyOrder_; i++)
-//              {
-//                output_(fieldOrdinalOffset,pointOrdinal) = Lk(k) * Li(i) * Lj(j);
-//                fieldOrdinalOffset++;
-//              }
-//            }
-//          }
         } // end OPERATOR_VALUE
           break;
         case OPERATOR_DIV:
@@ -1152,6 +1168,44 @@ namespace Intrepid2
                   fieldOrdinalOffset++;
                 }
               }
+            }
+            
+            // FAMILY VI (non-trivial divergences)
+            for (int i=2; i<=polyOrder_; i++)
+            {
+              const auto & phi_i = Li_muX01(i);
+              Kokkos::Array<OutputScalar,3> phi_i_grad;
+              computeGradHomLi(phi_i_grad, i, Pi_muX01, Li_dt_muX01, muX_0_grad, muX_1_grad);
+              
+              Kokkos::Array<OutputScalar,3> VRIGHTTRI;
+              V_RIGHT_TRI(VRIGHTTRI, muY_1, muY_1_grad, phi_i, phi_i_grad, muZ_0, muZ_0_grad);
+              
+              OutputScalar dot_product;
+              dot(dot_product, muZ_1_grad, VRIGHTTRI);
+              
+              const OutputScalar muZ_1_im2 = pow(muZ_1,i-2);
+              output_(fieldOrdinalOffset,pointOrdinal) = (i-1) * muZ_1_im2 * dot_product;
+              
+              fieldOrdinalOffset++;
+            }
+            
+            // FAMILY VII (non-trivial divergences)
+            for (int j=2; j<=polyOrder_; j++)
+            {
+              const auto & phi_j = Li_muY01(j);
+              Kokkos::Array<OutputScalar,3> phi_j_grad;
+              computeGradHomLi(phi_j_grad, j, Pi_muY01, Li_dt_muY01, muY_0_grad, muY_1_grad);
+              
+              Kokkos::Array<OutputScalar,3> VRIGHTTRI;
+              V_RIGHT_TRI(VRIGHTTRI, muX_1, muX_1_grad, phi_j, phi_j_grad, muZ_0, muZ_0_grad);
+              
+              OutputScalar dot_product;
+              dot(dot_product, muZ_1_grad, VRIGHTTRI);
+              
+              const OutputScalar muZ_1_jm2 = pow(muZ_1,j-2);
+              output_(fieldOrdinalOffset,pointOrdinal) = (j-1) * muZ_1_jm2 * dot_product;
+              
+              fieldOrdinalOffset++;
             }
             
           } // end interior function block
