@@ -352,6 +352,79 @@ namespace Intrepid2
       VTRI_DIV = (i + j + 3.) * P_i * P_2ip1_j * divWeight;
     }
     
+    //! See Equation (B.42) in Fuentes et al.  Computes 1/mu V^{tri}_ij(mu s0, mu s1, s2).
+    KOKKOS_INLINE_FUNCTION
+    void V_TRI_B42(Kokkos::Array<OutputScalar,3> &VTRI_mus0_mus1_s2_over_mu,
+                   const Kokkos::Array<OutputScalar,3> &VTRI_00_s0_s1_s2,
+                   const Kokkos::Array<OutputScalar,3> &EE_0_s0_s1,
+                   const OutputScalar &s2,
+                   const OutputScalar &mu, const Kokkos::Array<OutputScalar,3> &mu_grad,
+                   const ordinal_type &i, // i >= 0
+                   const ordinal_type &j, // j >= 0
+                   const OutputScratchView &P_mus0_mus1,      // container in which shiftedScaledLegendreValues have been computed for the appropriate face, with arguments (mu s0, mu s1)
+                   const OutputScratchView &P_2ip1_mus0pmus1_s2 // container in which shiftedScaledJacobiValues have been computed for (2i+1) for the appropriate face, with arguments (mu s0 + mu s1, s2)
+                   ) const
+    {
+      const auto &Pi_mus0_mus1         = P_mus0_mus1(i);
+      const auto &Pj_2ip1_mus0pmus1_s2 = P_2ip1_mus0pmus1_s2(j);
+      
+      // place s2 (grad mu) x E^E_0 in result container
+      cross(VTRI_mus0_mus1_s2_over_mu, mu_grad, EE_0_s0_s1);
+      for (ordinal_type d=0; d<3; d++)
+      {
+        VTRI_mus0_mus1_s2_over_mu[d] *= s2;
+      }
+      
+      // add mu V^{tri}_00 to it:
+      for (ordinal_type d=0; d<3; d++)
+      {
+        VTRI_mus0_mus1_s2_over_mu[d] += mu * VTRI_00_s0_s1_s2[d];
+      }
+      
+      // multiply by [P_i, P^{2i+1}_j]
+      for (ordinal_type d=0; d<3; d++)
+      {
+        VTRI_mus0_mus1_s2_over_mu[d] *= Pi_mus0_mus1 * Pj_2ip1_mus0pmus1_s2;
+      }
+    }
+    
+    //! See Equation (B.42) in Fuentes et al.  Computes 1/mu V^{tri}_ij(mu s0, mu s1, s2).
+    KOKKOS_INLINE_FUNCTION
+    void V_TRI_B42_DIV(OutputScalar &div_VTRI_mus0_mus1_s2_over_mu,
+                       const Kokkos::Array<OutputScalar,3> &VTRI_00_s0_s1_s2,
+                       const Kokkos::Array<OutputScalar,3> &EE_0_s0_s1,
+                       const OutputScalar &s2, const Kokkos::Array<OutputScalar,3> &s2_grad,
+                       const OutputScalar &mu, const Kokkos::Array<OutputScalar,3> &mu_grad,
+                       const ordinal_type &i, // i >= 0
+                       const ordinal_type &j, // j >= 0
+                       const OutputScratchView &P_mus0_mus1,      // container in which shiftedScaledLegendreValues have been computed for the appropriate face, with arguments (mu s0, mu s1)
+                       const OutputScratchView &P_2ip1_mus0pmus1_s2 // container in which shiftedScaledJacobiValues have been computed for (2i+1) for the appropriate face, with arguments (mu s0 + mu s1, s2)
+                       ) const
+    {
+      const auto &Pi_mus0_mus1         = P_mus0_mus1(i);
+      const auto &Pj_2ip1_mus0pmus1_s2 = P_2ip1_mus0pmus1_s2(j);
+      
+      Kokkos::Array<OutputScalar,3> vector;
+      
+      // place E^E_0 x grad s2 in scratch vector container
+      cross(vector, EE_0_s0_s1, s2_grad);
+      // multiply by (i+j+3)
+      for (ordinal_type d=0; d<3; d++)
+      {
+        vector[d] *= i+j+3.;
+      }
+      // subtract V_00
+      for (ordinal_type d=0; d<3; d++)
+      {
+        vector[d] -= VTRI_00_s0_s1_s2[d];
+      }
+      
+      OutputScalar dot_product;
+      dot(dot_product, mu_grad, vector);
+      
+      div_VTRI_mus0_mus1_s2_over_mu = Pi_mus0_mus1 * Pj_2ip1_mus0pmus1_s2 * dot_product;
+    }
+    
     KOKKOS_INLINE_FUNCTION
     void computeFaceVectorWeight(Kokkos::Array<OutputScalar,3> &vectorWeight,
                                  const ordinal_type &a,
@@ -592,8 +665,8 @@ namespace Intrepid2
               // face 1,2 --> c=1
               int c = ((faceOrdinal == 0) || (faceOrdinal == 3)) ? 0 : 1;
               
-              const auto & s0 = nu[0][a-1];
-              const auto & s1 = nu[1][a-1];
+              const auto & s0 = nu[0][a-1]; const auto & s0_grad = nuGrad[0][a-1];
+              const auto & s1 = nu[1][a-1]; const auto & s1_grad = nuGrad[1][a-1];
               const auto & s2 = nu[2][a-1];
               const PointScalar jacobiScaling = s0 + s1 + s2;
               
@@ -604,10 +677,11 @@ namespace Intrepid2
               const auto lambda1_index = tri_face_vertex_1[faceOrdinal];
               const auto lambda2_index = tri_face_vertex_2[faceOrdinal];
               
-              const auto & mu_c_b = mu[c][b-1];
+              const auto & mu_c_b      = mu    [c][b-1];
+              const auto & mu_c_b_grad = muGrad[c][b-1];
   //            const PointScalar mu_s0 = mu_c_b * s0;
   //            const PointScalar mu_s1 = mu_c_b * s1;
-  //            const PointScalar mu_s2 = mu_c_b * s2;
+  //            const PointScalar mu_s2 =          s2;
               const auto & mu_s0 = lambda[lambda0_index];
               const auto & mu_s1 = lambda[lambda1_index];
               const auto & mu_s2 = lambda[lambda2_index];
@@ -635,12 +709,18 @@ namespace Intrepid2
               Kokkos::Array<PointScalar, 3> vectorWeight;
               computeFaceVectorWeight(vectorWeight, a, nu, nuGrad);
               
-              Kokkos::Array<PointScalar,3> & mu_s0_grad = lambdaGrad[lambda0_index];
-              Kokkos::Array<PointScalar,3> & mu_s1_grad = lambdaGrad[lambda1_index];
-              Kokkos::Array<PointScalar,3> & mu_s2_grad = lambdaGrad[lambda2_index];
+//              Kokkos::Array<PointScalar,3> & mu_s0_grad = lambdaGrad[lambda0_index];
+//              Kokkos::Array<PointScalar,3> & mu_s1_grad = lambdaGrad[lambda1_index];
+//              Kokkos::Array<PointScalar,3> & mu_s2_grad = lambdaGrad[lambda2_index];
               
-              Kokkos::Array<PointScalar, 3> muVectorWeight;
-              computeFaceVectorWeight(muVectorWeight, mu_s0, mu_s0_grad, mu_s1, mu_s1_grad, mu_s2, mu_s2_grad);
+//              Kokkos::Array<PointScalar, 3> muVectorWeight;
+//              computeFaceVectorWeight(muVectorWeight, mu_s0, mu_s0_grad, mu_s1, mu_s1_grad, mu_s2, mu_s2_grad);
+              
+              Kokkos::Array<OutputScalar,3> VTRI_00;
+              V_TRI(VTRI_00,0,0,P,P_2ip1,vectorWeight);
+              
+              Kokkos::Array<OutputScalar,3> EE_0;
+              E_E(EE_0, 0, P, s0, s1, s0_grad, s1_grad);
               
               for (int totalPolyOrder=0; totalPolyOrder<polyOrder_; totalPolyOrder++)
               {
@@ -652,14 +732,15 @@ namespace Intrepid2
                   Polynomials::shiftedScaledJacobiValues(  P_2ip1, alpha, polyOrder_-1,    s2,   jacobiScaling);
                   Polynomials::shiftedScaledJacobiValues(Pmu_2ip1, alpha, polyOrder_-1, mu_s2, muJacobiScaling);
                   
-                  Kokkos::Array<OutputScalar,3> VTRI, VTRI_mu; // output from V_TRI
-                  
+                  Kokkos::Array<OutputScalar,3> VTRI; // output from V_TRI
                   V_TRI(VTRI,    i, j, P,   P_2ip1,     vectorWeight);
-                  V_TRI(VTRI_mu, i, j, Pmu, Pmu_2ip1, muVectorWeight);
+                  
+                  Kokkos::Array<OutputScalar,3> one_over_mu_VTRI_mu; // (B.42) result
+                  V_TRI_B42(one_over_mu_VTRI_mu, VTRI_00, EE_0, s2, mu_c_b, mu_c_b_grad, i, j, Pmu, Pmu_2ip1);
                   
                   for (ordinal_type d=0; d<3; d++)
                   {
-                    output_(fieldOrdinalOffset,pointOrdinal,d) = 0.5 * (VTRI[d] * mu_c_b + VTRI_mu[d] / mu_c_b);
+                    output_(fieldOrdinalOffset,pointOrdinal,d) = 0.5 * (VTRI[d] * mu_c_b + one_over_mu_VTRI_mu[d]);
                   }
 
                   fieldOrdinalOffset++;
@@ -970,9 +1051,9 @@ namespace Intrepid2
               // face 1,2 --> c=1
               int c = ((faceOrdinal == 0) || (faceOrdinal == 3)) ? 0 : 1;
               
-              const auto & s0 = nu[0][a-1];
-              const auto & s1 = nu[1][a-1];
-              const auto & s2 = nu[2][a-1];
+              const auto & s0 = nu[0][a-1]; const auto & s0_grad = nuGrad[0][a-1];
+              const auto & s1 = nu[1][a-1]; const auto & s1_grad = nuGrad[1][a-1];
+              const auto & s2 = nu[2][a-1]; const auto & s2_grad = nuGrad[2][a-1];
               const PointScalar jacobiScaling = s0 + s1 + s2; // we can actually assume that this is 1; see comment at bottom of p. 425 of Fuentes et al.
               
               const PointScalar legendreScaling = s0 + s1;
@@ -1007,6 +1088,12 @@ namespace Intrepid2
               OutputScalar muDivWeight;
               computeFaceDivWeight(muDivWeight, mu_s0_grad, mu_s1_grad, mu_s2_grad);
               
+              Kokkos::Array<OutputScalar,3> VTRI_00;
+              V_TRI(VTRI_00,0,0,P,P_2ip1,vectorWeight);
+              
+              Kokkos::Array<OutputScalar,3> EE_0;
+              E_E(EE_0, 0, P, s0, s1, s0_grad, s1_grad);
+              
               for (int totalPolyOrder=0; totalPolyOrder<polyOrder_; totalPolyOrder++)
               {
                 for (int i=0; i<=totalPolyOrder; i++)
@@ -1017,15 +1104,14 @@ namespace Intrepid2
                   Polynomials::shiftedScaledJacobiValues(  P_2ip1, alpha, polyOrder_-1,    s2,   jacobiScaling);
                   Polynomials::shiftedScaledJacobiValues(Pmu_2ip1, alpha, polyOrder_-1, mu_s2, muJacobiScaling);
                   
-                  Kokkos::Array<OutputScalar,3> VTRI, VTRI_mu; // output from V_TRI
+                  Kokkos::Array<OutputScalar,3> VTRI; // output from V_TRI
                   
-                  V_TRI(VTRI,    i, j, P,   P_2ip1,     vectorWeight);
-                  V_TRI(VTRI_mu, i, j, Pmu, Pmu_2ip1, muVectorWeight);
+                  V_TRI(VTRI, i, j, P, P_2ip1, vectorWeight);
                   
-                  OutputScalar VTRI_mu_DIV;
-                  V_TRI_DIV(VTRI_mu_DIV, i, j, Pmu, Pmu_2ip1, muDivWeight);
+                  OutputScalar div_one_over_mu_VTRI_mu;
+                  V_TRI_B42_DIV(div_one_over_mu_VTRI_mu, VTRI_00, EE_0, s2, s2_grad, mu_c_b, mu_c_b_grad, i, j, Pmu, Pmu_2ip1);
                   
-                  output_(fieldOrdinalOffset,pointOrdinal) = 0.5 * (dot(mu_c_b_grad, VTRI) + VTRI_mu_DIV / mu_c_b - dot(mu_c_b_grad, VTRI_mu)/(mu_c_b * mu_c_b));
+                  output_(fieldOrdinalOffset,pointOrdinal) = 0.5 * (dot(mu_c_b_grad, VTRI) + div_one_over_mu_VTRI_mu);
                   
                   fieldOrdinalOffset++;
                 }
