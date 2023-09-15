@@ -18,7 +18,9 @@ void ReceiveCounter::start_receive_count(const std::vector<int> &sendCounts)
     m_recvFinished = false;
     m_sendCount.resize(sendCounts.size());
     for (unsigned int i=0; i < sendCounts.size(); ++i)
+    {
       m_sendCount[i] = sendCounts[i] > 0 ? 1 : 0;
+    }
 
     MPI_Ireduce_scatter_block(m_sendCount.data(), &m_nrecv, 1, MPI_INT, MPI_SUM, m_comm, &m_recvReq);
 }

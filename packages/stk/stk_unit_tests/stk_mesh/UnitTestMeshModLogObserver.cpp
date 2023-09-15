@@ -116,9 +116,9 @@ TEST_F(MeshModLogTest, creation)
       "P0 mod-cycle=1, declare_relation (ELEMENT_RANK,1) -> (FACE_RANK,11) ordinal=0\n"
       "P0 mod-cycle=1, declare_relation (FACE_RANK,11) -> (ELEMENT_RANK,1) ordinal=0\n"
       "start modification_end mod-cycle=1\n"
-      "P0 (FACE_RANK,11) {P0,s=0,a=0}, elems{1} edges{} nodes{1 2 6 5} \n"
+      "P0 (FACE_RANK,11) {P0Created}, elems{1} edges{} nodes{1 2 6 5} \n"
       "finish modification_end mod-cycle=1\n"
-      "P0 (FACE_RANK,11) {P0,s=0,a=0}, elems{1} edges{} nodes{1 2 6 5} \n"
+      "P0 (FACE_RANK,11) {P0Created}, elems{1} edges{} nodes{1 2 6 5} \n"
     );
     EXPECT_EQ(expected, str);
   }
@@ -141,8 +141,8 @@ TEST_F(MeshModLogTest, deletion)
   if (bulk.parallel_rank() == 0) {
     const std::string expected(
       "modification_begin mod-cycle=1\n"
-      "P0 (ELEMENT_RANK,2) {P0,s=0,a=0}, faces{21 22 23 24} edges{} nodes{5 6 8 7 9 10 12 11} \n"
-      "P0 (ELEMENT_RANK,1) {P0,s=0,a=0}, faces{11 12 13 14 15} edges{} nodes{1 2 4 3 5 6 8 7} \n"
+      "P0 (ELEMENT_RANK,2) {P0Created}, faces{21 22 23 24} edges{} nodes{5 6 8 7 9 10 12 11} \n"
+      "P0 (ELEMENT_RANK,1) {P0Created}, faces{11 12 13 14 15} edges{} nodes{1 2 4 3 5 6 8 7} \n"
       "P0 mod-cycle=2, destroy_entity (ELEMENT_RANK,1)\n"
       "P0 mod-cycle=2, destroy_relation (ELEMENT_RANK,1) -> (FACE_RANK,15) ordinal=4\n"
       "P0 mod-cycle=2, destroy_relation (ELEMENT_RANK,1) -> (FACE_RANK,14) ordinal=3\n"
@@ -158,9 +158,9 @@ TEST_F(MeshModLogTest, deletion)
       "P0 mod-cycle=2, destroy_relation (ELEMENT_RANK,1) -> (NODE_RANK,2) ordinal=1\n"
       "P0 mod-cycle=2, destroy_relation (ELEMENT_RANK,1) -> (NODE_RANK,1) ordinal=0\n"
       "start modification_end mod-cycle=2\n"
-      "P0 (ELEMENT_RANK,2) {P0,s=0,a=0}, faces{21 22 23 24} edges{} nodes{5 6 8 7 9 10 12 11} \n"
+      "P0 (ELEMENT_RANK,2) {P0Modified}, faces{21 22 23 24} edges{} nodes{5 6 8 7 9 10 12 11} \n"
       "finish modification_end mod-cycle=2\n"
-      "P0 (ELEMENT_RANK,2) {P0,s=0,a=0}, faces{21 22 23 24} edges{} nodes{5 6 8 7 9 10 12 11} \n"
+      "P0 (ELEMENT_RANK,2) {P0Modified}, faces{21 22 23 24} edges{} nodes{5 6 8 7 9 10 12 11} \n"
     );
     EXPECT_EQ(expected, str);
   }
@@ -181,7 +181,7 @@ TEST_F(MeshModLogTest, deletion_modcycle)
   if (bulk.parallel_rank() == 0) {
     const std::string expected(
       "modification_begin mod-cycle=1\n"
-      "P0 (ELEMENT_RANK,1) {P0,s=0,a=0}, faces{11 12 13 14 15} edges{} nodes{1 2 4 3 5 6 8 7} \n"
+      "P0 (ELEMENT_RANK,1) {P0Created}, faces{11 12 13 14 15} edges{} nodes{1 2 4 3 5 6 8 7} \n"
       "P0 mod-cycle=2, destroy_entity (ELEMENT_RANK,1)\n"
       "P0 mod-cycle=2, destroy_relation (ELEMENT_RANK,1) -> (FACE_RANK,15) ordinal=4\n"
       "P0 mod-cycle=2, destroy_relation (ELEMENT_RANK,1) -> (FACE_RANK,14) ordinal=3\n"
@@ -219,14 +219,14 @@ TEST_F(MeshModLogTest, relations)
   if (bulk.parallel_rank() == 0) {
     const std::string expected(
       "modification_begin mod-cycle=1\n"
-      "P0 (ELEMENT_RANK,1) {P0,s=0,a=0}, faces{11 12 13 14 15} edges{} nodes{1 2 4 3 5 6 8 7} \n"
+      "P0 (ELEMENT_RANK,1) {P0Created}, faces{11 12 13 14 15} edges{} nodes{1 2 4 3 5 6 8 7} \n"
       "P0 mod-cycle=2, destroy_relation (ELEMENT_RANK,1) -> (NODE_RANK,1) ordinal=0\n"
       "P0 mod-cycle=2, declare_relation (ELEMENT_RANK,1) -> (NODE_RANK,100) ordinal=0\n"
       "P0 mod-cycle=2, declare_relation (NODE_RANK,100) -> (ELEMENT_RANK,1) ordinal=0\n"
       "start modification_end mod-cycle=2\n"
-      "P0 (ELEMENT_RANK,1) {P0,s=0,a=0}, faces{11 12 13 14 15} edges{} nodes{100 2 4 3 5 6 8 7} \n"
+      "P0 (ELEMENT_RANK,1) {P0Modified}, faces{11 12 13 14 15} edges{} nodes{100 2 4 3 5 6 8 7} \n"
       "finish modification_end mod-cycle=2\n"
-      "P0 (ELEMENT_RANK,1) {P0,s=0,a=0}, faces{11 12 13 14 15} edges{} nodes{100 2 4 3 5 6 8 7} \n"
+      "P0 (ELEMENT_RANK,1) {P0Modified}, faces{11 12 13 14 15} edges{} nodes{100 2 4 3 5 6 8 7} \n"
     );
     EXPECT_EQ(expected, str);
   }

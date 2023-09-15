@@ -30,52 +30,36 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-
-#
-# A) Package-specific configuration options
-#
-
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
+ 
 SET(HEADERS "")
 SET(SOURCES "")
 
 SET(HEADERS_IMPL "")
 SET(SOURCES_IMPL "")
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
-
-#
-# Core headers
-#
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
-IF (TPL_ENABLE_MPI)
-ENDIF()
-
-#
-# C) Define the targets for package's library(s)
-#
-
-TRIBITS_ADD_LIBRARY(
-  stk_expreval
-  NOINSTALLHEADERS ${HEADERS} ${HEADERS_IMPL}
-  SOURCES ${SOURCES} ${SOURCES_IMPL}
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_expreval
+    NOINSTALLHEADERS ${HEADERS} ${HEADERS_IMPL}
+    SOURCES ${SOURCES} ${SOURCES_IMPL}
   )
+else()
+  add_library(stk_expreval ${SOURCES} ${SOURCES_IMPL})
+  target_link_libraries(stk_expreval PUBLIC stk_util_ngp)
+  target_link_libraries(stk_expreval PUBLIC stk_util_util)
+  target_link_libraries(stk_expreval PUBLIC Kokkos::kokkos)
+endif()
+
+target_include_directories(stk_expreval PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_expreval>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_expreval)
+
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_expreval DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

@@ -69,7 +69,7 @@ printf("GID: " ZOLTAN_ID_SPEC ", LID %d\n", my_gid, my_lid);
 
 To send a ZOLTAN_ID_TYPE in an MPI message, use ZOLTAN_ID_MPI_TYPE:
 
-MPI_Bcast(&gid, 1, ZOLTAN_ID_MPI_TYPE, 0, MPI_COMM_WORLD);
+MPI_Bcast(&gid, 1, ZOLTAN_ID_MPI_TYPE, 0, zoltan_get_global_comm());
 
 To silence compiler warnings, you can properly specify a constant of type ZOLTAN_ID_TYPE using ZOLTAN_ID_CONSTANT:
 

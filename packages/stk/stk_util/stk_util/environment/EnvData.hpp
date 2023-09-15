@@ -82,6 +82,8 @@ struct EnvData
   static EnvData &instance();
   EnvData();
 
+  void initialize(MPI_Comm worldComm);
+
   ~EnvData();
 
   static void setInputFileName(std::string value);

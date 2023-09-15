@@ -18,7 +18,7 @@ namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),useStackedTimer(false),overlapCommAndComp(false){}
+  CmdLineArgs ():blockSize(-1),numIters(10),numRepeats(1),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),useStackedTimer(false),overlapCommAndComp(false){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -26,6 +26,7 @@ struct CmdLineArgs {
   std::string lineFilename;
   int blockSize;
   int numIters;
+  int numRepeats;
   double tol;
   int nx;
   int ny;
@@ -54,7 +55,8 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("lineFilename", &args.lineFilename, "Name of Matrix Market "
                   "file with the lineid of each node listed");
   cmdp.setOption ("blockSize", &args.blockSize, "Size of block to use");
-  cmdp.setOption ("numIters", &args.numIters, "Number of iterations");
+  cmdp.setOption ("numIters", &args.numIters, "Number of iterations per Solve call");
+  cmdp.setOption ("numRepeats", &args.numRepeats, "Number of times to run preconditioner compute & solve.");
   cmdp.setOption ("tol", &args.tol, "Solver tolerance");
   cmdp.setOption ("nx", &args.nx, "If using inline meshing, number of nodes in the x direction");
   cmdp.setOption ("ny", &args.ny, "If using inline meshing, number of nodes in the y direction");
@@ -310,6 +312,7 @@ main (int argc, char* argv[])
   RCP<Time> totalTime;
   RCP<Teuchos::TimeMonitor> totalTimeMon;
   RCP<Time> precSetupTime = Teuchos::TimeMonitor::getNewTimer ("Preconditioner setup");
+  RCP<Time> precComputeTime = Teuchos::TimeMonitor::getNewTimer ("Preconditioner compute");
   RCP<Time> solveTime = Teuchos::TimeMonitor::getNewTimer ("Solve");
   if(!args.useStackedTimer)
   {
@@ -574,9 +577,6 @@ main (int argc, char* argv[])
 
     if(rank0) std::cout<<"Initializing preconditioner..."<<std::endl;
     precond->initialize ();
-
-    if(rank0) std::cout<<"Computing preconditioner..."<<std::endl;
-    precond->compute ();
     Kokkos::DefaultExecutionSpace().fence();
   }
 
@@ -589,27 +589,37 @@ main (int argc, char* argv[])
  
 
   // Solve
-  if(rank0) std::cout<<"Running solve..."<<std::endl;
-  int nits;
+  for(int repeat=0; repeat < args.numRepeats; ++repeat)
   {
-    Teuchos::TimeMonitor solveTimeMon (*solveTime);
-    nits = precond->applyInverseJacobi(*B,*X,ap); 
-    Kokkos::DefaultExecutionSpace().fence(); 
-  }
+    if(rank0) std::cout<<"Computing preconditioner..."<<std::endl;
+    {
+      Teuchos::TimeMonitor precComputeTimeMon (*precComputeTime);
+      precond->compute ();
+      Kokkos::DefaultExecutionSpace().fence();
+    }
 
-  auto norm0 = precond->getNorms0();
-  auto normF = precond->getNormsFinal();
+    if(rank0) std::cout<<"Running solve..."<<std::endl;
+    int nits;
+    {
+      Teuchos::TimeMonitor solveTimeMon (*solveTime);
+      nits = precond->applyInverseJacobi(*B,*X,ap);
+      Kokkos::DefaultExecutionSpace().fence();
+    }
 
-  if(rank0) {
-    std::cout<<"Solver run for "<<nits<<" iterations (asked for "<<args.numIters<<") with residual reduction "<<normF/norm0<<std::endl;
-    std::cout<<"  Norm0 = "<<norm0<<" NormF = "<<normF<<std::endl;
-  }
+    auto norm0 = precond->getNorms0();
+    auto normF = precond->getNormsFinal();
+
+    if(rank0) {
+      std::cout<<"Solver run for "<<nits<<" iterations (asked for "<<args.numIters<<") with residual reduction "<<normF/norm0<<std::endl;
+      std::cout<<"  Norm0 = "<<norm0<<" NormF = "<<normF<<std::endl;
+    }
 
 
-  X->norm2(normx);
-  B->norm2(normb);
-  if(rank0) {
-    std::cout<<"Final norm X = "<<normx[0]<<" norm B = "<<normb[0]<<std::endl;
+    X->norm2(normx);
+    B->norm2(normb);
+    if(rank0) {
+      std::cout<<"Final norm X = "<<normx[0]<<" norm B = "<<normb[0]<<std::endl;
+    }
   }
 
 

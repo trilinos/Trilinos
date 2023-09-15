@@ -131,7 +131,7 @@ void M2NParser::set_logfile(M2NBalanceSettings& settings) const
     settings.set_log_filename(m_commandLineParser.get_option_value<std::string>(m_optionNames.logfile));
   }
   else {
-    const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int initialNumProcs = stk::parallel_machine_size(m_comm);
     const int finalNumProcs = settings.get_num_output_processors();
     settings.set_log_filename(stk::basename(stk::tailname(settings.get_input_filename())) + "." + std::to_string(initialNumProcs) + "_to_" 
                                                                                                 + std::to_string(finalNumProcs) + ".log");
@@ -144,7 +144,7 @@ void M2NParser::set_use_nested_decomp(M2NBalanceSettings& settings) const
   const bool useNestedDecomp = m_commandLineParser.is_option_provided(m_optionNames.useNestedDecomp);
   settings.set_use_nested_decomp(useNestedDecomp);
   if (useNestedDecomp) {
-    const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int initialNumProcs = stk::parallel_machine_size(m_comm);
     const int finalNumProcs = settings.get_num_output_processors();
     const bool isValidProcCount = (finalNumProcs % initialNumProcs) == 0;
     STK_ThrowRequireMsg(isValidProcCount, "Final number of processors (" << finalNumProcs << ") must be an integer "
