@@ -8502,7 +8502,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       CSR_colind_LID.resize (CSR_colind_GID.size());
     }
     CSR_colind_LID.resize (CSR_colind_GID.size());
-    size_t mynnz = CSR_vals.size();
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.
