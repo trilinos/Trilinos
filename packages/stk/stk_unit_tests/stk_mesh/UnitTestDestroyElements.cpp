@@ -195,6 +195,42 @@ TEST_F(TetMesh, DeleteOneElement)
   }
 }
 
+TEST_F(TetMesh, DeleteOneElement_DontDeleteAnyOrphans)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    initialize_my_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part(), {}, false);
+
+    stk::mesh::EntityVector orphanedNodes{
+      get_bulk().get_entity(stk::topology::NODE_RANK, 5)
+    };
+
+    stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2)};
+
+    stk::mesh::EntityVector facesOfDestroyedElement = get_faces_for_entity(get_bulk(), elementToDestroy[0]);
+    EXPECT_EQ(facesOfDestroyedElement.size(), 4u);
+    for(stk::mesh::Entity face : facesOfDestroyedElement)
+      EXPECT_TRUE(get_bulk().is_valid(face));
+
+    expect_valid(get_bulk(), orphanedNodes, __LINE__);
+    expect_valid(get_bulk(), elementToDestroy, __LINE__);
+
+    stk::mesh::Selector selectNoOrphans;
+    stk::mesh::destroy_elements(get_bulk(), elementToDestroy, selectNoOrphans);
+
+    expect_valid(get_bulk(), orphanedNodes, __LINE__);
+    expect_invalid(get_bulk(), elementToDestroy, __LINE__);
+
+    unsigned numValid = 0;
+    for(stk::mesh::Entity face : facesOfDestroyedElement)
+      if(get_bulk().is_valid(face))
+        numValid++;
+
+    EXPECT_EQ(4u, numValid);
+  }
+}
+
 TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)

@@ -47,6 +47,8 @@
 
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/SearchMethod.hpp>
+#include "search_mesh_element_bounding_box.hpp"
+#include "search_mesh_vertex.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -99,6 +101,12 @@ bool local_is_sorted(ForwardIterator first, ForwardIterator last, Compare compar
 
 } // namespace impl
 
+enum class SplitCommColor {
+      RECV = 0,
+      SEND,
+      INVALID
+};
+
 template <class FROM, class TO> class BoundingBoxSearchType
 {
 public:
@@ -110,7 +118,6 @@ public:
   using EntityProcB               = typename MeshB::EntityProc;
   using EntityProcRelation        = std::pair<EntityProcB, EntityProcA>;
   using EntityProcRelationVec     = std::vector<EntityProcRelation>;
-  using EntityKeyMap              = std::multimap<EntityKeyB, EntityKeyA>;
 };
 
 template <typename SEARCH> class BoundingBoxSearch
@@ -125,7 +132,6 @@ public :
   using  MeshB                     = typename SearchClass::MeshB;
   using  EntityKeyA                = typename SearchClass::EntityKeyA;
   using  EntityKeyB                = typename SearchClass::EntityKeyB;
-  using  EntityKeyMap              = typename SearchClass::EntityKeyMap;
 
   using  EntityProcA               = typename SearchClass::EntityProcA;
   using  EntityProcB               = typename SearchClass::EntityProcB;
@@ -146,6 +152,7 @@ public :
                     std::shared_ptr<MeshB> recvMesh,
                     const std::string &name,
                     stk::ParallelMachine pm,
+                    const bool doParallelSearch=true,
                     const double expansion_factor = 1.5,
                     const double expansion_sum = 0.0,
                     const stk::search::SearchMethod search_method = stk::search::KDTREE);
@@ -168,6 +175,7 @@ private :
   std::shared_ptr<MeshB>               m_recvMesh;
 
   const std::string     m_name;
+  const bool            m_doParallelSearch;
   const double          m_expansion_factor;
   const double          m_expansion_sum;
   const stk::search::SearchMethod m_search_method;
@@ -204,10 +212,12 @@ template <typename SEARCH> BoundingBoxSearch<SEARCH>::BoundingBoxSearch
  std::shared_ptr<MeshB> recvMesh,
  const std::string        &name,
  stk::ParallelMachine pm,
+ const bool doParallelSearch,
  const double expansion_factor,
  const double expansion_sum,
  const stk::search::SearchMethod search_method) :
-      m_sendMesh(sendMesh), m_recvMesh(recvMesh), m_name(name), m_expansion_factor(expansion_factor),
+      m_sendMesh(sendMesh), m_recvMesh(recvMesh), m_name(name), m_doParallelSearch(doParallelSearch), 
+      m_expansion_factor(expansion_factor),
       m_expansion_sum(expansion_sum), m_search_method(search_method), m_shared_comm(pm)
   {
     //In an mpmd program, there's no guarantee that the types specified for the entity keys are honored by each program,
@@ -279,7 +289,7 @@ template <class SEARCH> void BoundingBoxSearch<SEARCH>::coarse_search()
     // in coarse_search call, but really, this is what we want.
     EntityProcRelationVec rng_to_dom;
     EntityProcRelationVec& rng_to_dom_vec = not_empty_count == 0 ? m_global_range_to_domain : rng_to_dom;
-    stk::search::coarse_search(range_vector, domain_vector, m_search_method, m_shared_comm, rng_to_dom_vec);
+    stk::search::coarse_search(range_vector, domain_vector, m_search_method, m_shared_comm, rng_to_dom_vec, m_doParallelSearch);
 
     if(not_empty_count > 0) {
       m_global_range_to_domain.insert(m_global_range_to_domain.end(), rng_to_dom_vec.begin(), rng_to_dom_vec.end());
@@ -328,6 +338,14 @@ template <class SEARCH> void BoundingBoxSearch<SEARCH>::coarse_search()
   std::sort(m_global_range_to_domain.begin(), m_global_range_to_domain.end());
 }
 
+
+using ElementToElementBoundingBoxSearch =
+    BoundingBoxSearch<BoundingBoxSearchType<mesh::impl::SearchMeshElementBoundingBox,
+                                            mesh::impl::SearchMeshElementBoundingBox>>;
+
+using ElementToVertBoundingBoxSearch = 
+    BoundingBoxSearch<BoundingBoxSearchType<mesh::impl::SearchMeshElementBoundingBox,
+                                            mesh::impl::SearchMeshVertex>>;
 }
 }
 }

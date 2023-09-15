@@ -139,7 +139,7 @@ type(ELEM_INFO), pointer :: elements(:)
   endif ! Proc == 0
 
 !   Distribute graph 
-  if (.not.chaco_dist_graph(MPI_COMM_WORLD, 0, nvtxs, vtxdist, start, adj, &
+  if (.not.chaco_dist_graph(zoltan_get_global_comm(), 0, nvtxs, vtxdist, start, adj, &
                             vwgts, ewgts, ndim, x, y, z)) then
       print *, "fatal: Error returned from chaco_dist_graph"
       read_chaco_mesh = .false.

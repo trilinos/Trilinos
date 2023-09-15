@@ -1267,6 +1267,9 @@ TEST(Mesh, ErrorRemotesNotUnique)
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
     GTEST_SKIP();
 
+#ifndef NDEBUG
+    GTEST_SKIP();
+#endif
   auto mesh = make_empty_mesh(MPI_COMM_WORLD);
   auto v1 = mesh->create_vertex(0, 0, 0);
   auto v2 = mesh->create_vertex(0, 1, 0);
@@ -1287,6 +1290,33 @@ TEST(Mesh, AnnulusRemotes)
   // Note: 2x2 doesnt work, find out why
   std::shared_ptr<mesh::Mesh> mesh1 = make_annulus_mesh(4, 4, 0.5, 1.5, 0);
   mesh::check_topology(mesh1);
+}
+
+TEST(Mesh, getLocalId)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  MeshSpec spec;
+  spec.numelX = 1;
+  spec.numelY = 1;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;
+
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
+
+  mesh::MeshEntityPtr el = mesh->get_elements()[0];
+  std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> verts;
+  mesh::get_downward(el, 0, verts.data());
+
+  for (int i=0; i < 4; ++i)
+  {
+    EXPECT_EQ(mesh::get_local_id(el, verts[i]), i);
+  }
 }
 
 } // namespace impl

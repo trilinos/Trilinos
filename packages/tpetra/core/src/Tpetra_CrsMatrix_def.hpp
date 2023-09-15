@@ -3435,7 +3435,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
       // CAG: This fence was found to be required on Cuda with UVM=on.
-      Kokkos::fence();
+      Kokkos::fence("CrsMatrix::setAllToScalar");
     }
   }
 
@@ -4909,7 +4909,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<const MV> X;
 
     // some parameters for below
-    const bool Y_is_replicated = ! Y_in.isDistributed ();
+    const bool Y_is_replicated = (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
     const bool Y_is_overwritten = (beta == ZERO);
     if (Y_is_replicated && this->getComm ()->getRank () > 0) {
       beta = ZERO;
@@ -8598,9 +8598,28 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
 #endif
-      Import_Util::sortCrsEntries (CSR_rowptr (),
-                                   CSR_colind_LID (),
-                                   CSR_vals ());
+      // Just to be safe we always static cast the Scalar pointer
+      // to the underlying impl_scalar type.
+      typename row_ptrs_host_view_type::non_const_type            CSR_rowptr_host(CSR_rowptr.getRawPtr(), CSR_rowptr.size());
+      typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
+      typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
+
+      typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_dev("rowmap", CSR_rowptr.size());
+      typename local_inds_device_view_type::non_const_type CSR_colind_LID_dev("colind", CSR_colind_LID.size());
+      typename values_device_view_type::non_const_type     CSR_vals_dev("values", CSR_vals.size());
+
+      Kokkos::deep_copy(CSR_rowptr_dev, CSR_rowptr_host);
+      Kokkos::deep_copy(CSR_colind_LID_dev, CSR_colind_LID_host);
+      Kokkos::deep_copy(CSR_vals_dev, CSR_vals_host);
+
+      Import_Util::sortCrsEntries (CSR_rowptr_dev,
+                                   CSR_colind_LID_dev,
+                                   CSR_vals_dev);
+
+      // Copy back to host so that ArrayRCPs are updated
+      Kokkos::deep_copy(CSR_rowptr_host, CSR_rowptr_dev);
+      Kokkos::deep_copy(CSR_colind_LID_host, CSR_colind_LID_dev);
+      Kokkos::deep_copy(CSR_vals_host, CSR_vals_dev);
     }
     else if ((! reverseMode && xferAsExport != nullptr) ||
              (reverseMode && xferAsImport != nullptr)) {
@@ -8613,13 +8632,49 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
 #endif
-      Import_Util::sortAndMergeCrsEntries (CSR_rowptr (),
-                                           CSR_colind_LID (),
-                                           CSR_vals ());
+      // Just to be safe we always static cast the Scalar pointer
+      // to the undelying impl_scalar type.
+      typename row_ptrs_host_view_type::non_const_type            CSR_rowptr_host(CSR_rowptr.getRawPtr(), CSR_rowptr.size());
+      typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
+      typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
+
+      typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_dev("rowmap", CSR_rowptr.size());
+      typename local_inds_device_view_type::non_const_type CSR_colind_LID_dev("colind", CSR_colind_LID.size());
+      typename values_device_view_type::non_const_type     CSR_vals_dev("values", CSR_vals.size());
+
+      Kokkos::deep_copy(CSR_rowptr_dev, CSR_rowptr_host);
+      Kokkos::deep_copy(CSR_colind_LID_dev, CSR_colind_LID_host);
+      Kokkos::deep_copy(CSR_vals_dev, CSR_vals_host);
+
+      Import_Util::sortAndMergeCrsEntries (CSR_rowptr_dev,
+                                           CSR_colind_LID_dev,
+                                           CSR_vals_dev);
+
+      // Resize before deep_copy to have matching extents
+      // between host and device or we will run into trouble...
+      if(CSR_colind_LID_host.extent(0) != CSR_colind_LID_dev.extent(0)) {
+	Kokkos::resize(CSR_colind_LID_host, CSR_colind_LID_dev.extent(0));
+	Kokkos::resize(CSR_vals_host, CSR_vals_dev.extent(0));
+      }
+
+      // Copy back to host so we can later pass it to ArrayRCPs
+      Kokkos::deep_copy(CSR_rowptr_host, CSR_rowptr_dev);
+      Kokkos::deep_copy(CSR_colind_LID_host, CSR_colind_LID_dev);
+      Kokkos::deep_copy(CSR_vals_host, CSR_vals_dev);
+
+      // First resize the ArrayRCPs correctly so meta data
+      // matches actual data and avoid suprizes down the road
       if (CSR_rowptr[N] != mynnz) {
         CSR_colind_LID.resize (CSR_rowptr[N]);
         CSR_vals.resize (CSR_rowptr[N]);
       }
+
+      // Do the actual data copy, after this the matrix local
+      // data should be correctly defined.
+      typename nonconst_local_inds_host_view_type::non_const_type tmp_CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
+      typename nonconst_values_host_view_type::non_const_type     tmp_CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
+      Kokkos::deep_copy(tmp_CSR_colind_LID_host, CSR_colind_LID_host);
+      Kokkos::deep_copy(tmp_CSR_vals_host, CSR_vals_host);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(
