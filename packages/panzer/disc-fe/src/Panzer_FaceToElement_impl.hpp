@@ -101,7 +101,7 @@ void
 FaceToElement<LocalOrdinal,GlobalOrdinal>::
 initialize(panzer::ConnManager & conn)
 {
-  Teuchos::RCP<const Teuchos::Comm<int>> comm_world(new Teuchos::MpiComm< int>(panzer::get_global_comm()));
+  Teuchos::RCP<const Teuchos::Comm<int>> comm_world(new Teuchos::MpiComm< int>(MPI_COMM_WORLD)); // CHECK: ALLOW MPI_COMM_WORLD
   initialize(conn, comm_world);
 }
 #endif
