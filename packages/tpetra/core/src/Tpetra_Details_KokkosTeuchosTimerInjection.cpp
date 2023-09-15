@@ -38,7 +38,7 @@
 // ************************************************************************
 // @HEADER
 */
-#include "Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp"
+#include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
@@ -120,8 +120,6 @@ namespace Details {
     }
   }// end DeepCopyTimerInjection
 
-
-
   void AddKokkosDeepCopyToTimeMonitor(bool force) {
     if (!DeepCopyTimerInjection::initialized_) {
       if (force || Tpetra::Details::Behavior::timeKokkosDeepCopy() || Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose()) {
@@ -132,6 +130,105 @@ namespace Details {
       }
     }
   }
+  
+  namespace FenceTimerInjection {
+    Teuchos::RCP<Teuchos::Time> timer_;
+    bool initialized_ = false;
+    uint64_t active_handle;
+
+    void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
+                             uint64_t* handle) {
+
+      // Nested fences are not allowed
+      if(timer_ != Teuchos::null)
+        return;        
+      active_handle = (active_handle+1) % 1024;
+      *handle = active_handle;
+
+      // Get a useful label from the deviceId
+      // NOTE: Relevant code is in: kokkos/core/src/impl/Kokkos_Profiling_Interface.hpp
+      std::string device_label("(");
+      {
+        using namespace Kokkos::Tools::Experimental;
+
+        ExecutionSpaceIdentifier eid = identifier_from_devid(deviceId);
+        if      (eid.type == DeviceType::Serial)       device_label+="Serial";
+        else if (eid.type == DeviceType::OpenMP)       device_label+="OpenMP";
+        else if (eid.type == DeviceType::Cuda)         device_label+="Cuda";
+        else if (eid.type == DeviceType::HIP)          device_label+="HIP";
+        else if (eid.type == DeviceType::OpenMPTarget) device_label+="OpenMPTarget";
+        else if (eid.type == DeviceType::HPX)          device_label+="HPX";
+        else if (eid.type == DeviceType::Threads)      device_label+="Threats";
+        else if (eid.type == DeviceType::SYCL)         device_label+="SYCL";
+        else if (eid.type == DeviceType::OpenACC)      device_label+="OpenACC";
+        else if (eid.type == DeviceType::Unknown)      device_label+="Unknown";
+        else                                           device_label+="Unknown to Tpetra";
+
+        if(eid.instance_id == Impl::int_for_synchronization_reason(SpecialSynchronizationCases::GlobalDeviceSynchronization))
+           device_label += " All Instances)";
+        else if(eid.instance_id == Impl::int_for_synchronization_reason(SpecialSynchronizationCases::DeepCopyResourceSynchronization))
+          device_label += " DeepCopyResource)";
+        else
+          device_label += " Instance " + std::to_string(eid.instance_id) + ")";
+      }
+
+      timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::fence ")+name + " " + device_label);
+      timer_->start();
+      timer_->incrementNumCalls();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+      const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+      if (nonnull(stackedTimer))
+        stackedTimer->start(timer_->name());
+#endif
+      
+    }
+
+
+    void kokkosp_end_fence(const uint64_t handle) {
+      if(handle == active_handle) {
+        if (timer_ != Teuchos::null) {
+          timer_->stop();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+          try {
+            const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+            if (nonnull(stackedTimer))
+              stackedTimer->stop(timer_->name());
+          }
+          catch (std::runtime_error&) {
+            std::ostringstream warning;
+            warning <<
+              "\n*********************************************************************\n"
+              "WARNING: Overlapping timers detected!\n"
+              "A TimeMonitor timer was stopped before a nested subtimer was\n"
+              "stopped. This is not allowed by the StackedTimer. This corner case\n"
+              "typically occurs if the TimeMonitor is stored in an RCP and the RCP is\n"
+              "assigned to a new timer. To disable this warning, either fix the\n"
+              "ordering of timer creation and destuction or disable the StackedTimer\n";
+            std::cout << warning.str() << std::endl;
+            Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+          }
+#endif
+        }
+        
+        timer_ = Teuchos::null;
+        
+      }
+      // Else: We've nested our fences, and we need to ignore the inner fences
+    }
+
+
+  }//end FenceTimerInjection
+
+  void AddKokkosFenceToTimeMonitor(bool force) {
+    if (!FenceTimerInjection::initialized_) {
+      if (force || Tpetra::Details::Behavior::timeKokkosFence()) {
+        Kokkos::Tools::Experimental::set_begin_fence_callback(FenceTimerInjection::kokkosp_begin_fence);
+        Kokkos::Tools::Experimental::set_end_fence_callback(FenceTimerInjection::kokkosp_end_fence);
+        FenceTimerInjection::initialized_=true;
+      }
+    }
+  }
+
 
 
 } // namespace Details

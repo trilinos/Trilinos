@@ -278,7 +278,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();
+      if (deviceMemoryIsHostAccessible) Kokkos::fence("WrappedDualView::getHostView");
       dualView.clear_sync_state();
       dualView.modify_host();
     }
@@ -327,7 +327,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfHostViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();
+      if (deviceMemoryIsHostAccessible) Kokkos::fence("WrappedDualView::getDeviceView");
       dualView.clear_sync_state();
       dualView.modify_device();
     }

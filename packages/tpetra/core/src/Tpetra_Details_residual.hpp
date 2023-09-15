@@ -549,7 +549,7 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
     RCP<const import_type> importer = A.getGraph ()->getImporter ();
     X_colmap.endImport (X_domainmap, *importer, INSERT, true);
 
-    Kokkos::fence();
+    Kokkos::fence("Tpetra::localResidualWithCommCompOverlap-1");
 
     using functor_type2 = OffRankUpdateFunctor<local_matrix_device_type,local_view_device_type,const_local_view_device_type,offset_type,false>;
     functor_type2 func2 (A_lcl, X_colmap_lcl, R_lcl, rows_per_team, offsets);
@@ -565,7 +565,7 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
     RCP<const import_type> importer = A.getGraph ()->getImporter ();
     X_colmap.endImport (X_domainmap, *importer, INSERT, true);
 
-    Kokkos::fence();
+    Kokkos::fence("Tpetra::localResidualWithCommCompOverlap-2");
 
     using functor_type2 = OffRankUpdateFunctor<local_matrix_device_type,local_view_device_type,const_local_view_device_type,offset_type,true>;
     functor_type2 func2 (A_lcl, X_colmap_lcl, R_lcl, rows_per_team, offsets);

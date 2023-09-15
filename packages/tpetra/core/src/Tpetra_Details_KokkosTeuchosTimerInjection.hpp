@@ -38,14 +38,12 @@
 // ************************************************************************
 // @HEADER
 */
-#ifndef TPETRA_DETAILS_DEEP_COPY_TEUCHOS_TIMER_INJECTION_HPP
-#define TPETRA_DETAILS_DEEP_COPY_TEUCHOS_TIMER_INJECTION_HPP
+#ifndef TPETRA_DETAILS_KOKKOS_TEUCHOS_TIMER_INJECTION_HPP
+#define TPETRA_DETAILS_KOKKOS_TEUCHOS_TIMER_INJECTION_HPP
 
-/// \file Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp
-/// \brief Declaration of Tpetra::Details::DeepCopyTeuchosTimerInjection, a class that
-///  uses Kokkos' profiling library to add deep copies between memory spaces to the Teuchos::TimeMonitor
-///  system.  The idea being that you enable this capability and your regular timer  output now prints out 
-///  all of your traffic between memory spaces.  This does have the side effect of making Kokkos::deep_copy()
+/// \file Tpetra_Details_KokkosTeuchosTimerInjection.hpp
+/// \brief Declaration functions that use Kokkos' profiling library to add deep copies between memory spaces, 
+/// and Kokkos fences to the Teuchos::TimeMonitor system. This does have the side effect of making Kokkos::deep_copy()
 ///  calls on the host also call Kokkos::fence()
 
 
@@ -57,7 +55,11 @@ namespace Details {
   // This is used for unit testing the capability
   void AddKokkosDeepCopyToTimeMonitor(bool force = false);
 
+  // The force option overrides the environment variable control via TPETRA_TIME_KOKKOS_FENCE
+  // This is used for unit testing the capability
+  void AddKokkosFenceToTimeMonitor(bool force = false);
+
 } // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_DETAILS_DEEP_COPY_TEUCHOS_TIMER_INJECTION_HPP
+#endif // TPETRA_DETAILS_KOKKOS_TEUCHOS_TIMER_INJECTION_HPP

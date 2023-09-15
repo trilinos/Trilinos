@@ -60,7 +60,7 @@
 #endif
 
 #include <TpetraCore_config.h>
-#include <Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp>
+#include <Tpetra_Details_KokkosTeuchosTimerInjection.hpp>
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_Controls.hpp>
@@ -126,6 +126,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
 
     bool timedeepcopy = false;   clp.setOption("timedeepcopy", "notimedeepcopy", &timedeepcopy, "instrument Kokkos::deep_copy() with Teuchos timers.  This can also be done with by setting the environment variable TPETRA_TIME_KOKKOS_DEEP_COPY=ON");
+    bool timefence = false;   clp.setOption("timefence", "notimefence", &timefence, "instrument Kokkos::fence() with Teuchos timers.  This can also be done with by setting the environment variable TPETRA_TIME_KOKKOS_FENCE=ON");
     Xpetra::Parameters xpetraParameters(clp);
 
     clp.recogniseAllOptions(false);
@@ -138,6 +139,8 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 
     if(timedeepcopy)
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor(true);
+    if(timefence)
+      Tpetra::Details::AddKokkosFenceToTimeMonitor(true);
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
     if (stacktrace)
