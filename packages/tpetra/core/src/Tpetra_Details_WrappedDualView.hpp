@@ -635,13 +635,13 @@ private:
     // We check to see if the memory is not aliased *or* if it is a supported accelerator (for shared host/device memory).
     bool useSync = !memoryIsAliased();
 #if defined(KOKKOS_ENABLE_CUDA)
-    useSync = useSync || std::is_same_v<typename DualViewType::execution_space, Kokkos::Cuda>;
+    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::Cuda> || useSync;
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    useSync = useSync || std::is_same_v<typename DualViewType::execution_space, Kokkos::HIP>;
+    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::HIP> || useSync;
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-    useSync = useSync || std::is_same_v<typename DualViewType::execution_space, Kokkos::Experimental::SYCL>;
+    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::Experimental::SYCL> || useSync;
 #endif
     return useSync;
       
