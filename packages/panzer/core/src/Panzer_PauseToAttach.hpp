@@ -43,7 +43,6 @@
 #ifndef PANZER_PAUSE_TO_ATTACH
 #define PANZER_PAUSE_TO_ATTACH
 
-#include "Panzer_GlobalComm.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_FancyOStream.hpp"

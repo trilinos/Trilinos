@@ -55,7 +55,6 @@
 #include "Panzer_EdgeFieldPattern.hpp"
 #include "Panzer_FaceFieldPattern.hpp"
 #include "Panzer_ElemFieldPattern.hpp"
-#include "Panzer_GlobalComm.hpp"
 
 #include <vector>
 #include <set>
