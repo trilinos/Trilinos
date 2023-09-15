@@ -127,8 +127,7 @@ int main(int argc, char *argv[])
     }
 
     // below we will assume that sizeX1 > sizeX2
-    // this does not effect our testing, since we will test P_{X1,Y1} P_{X2,Y2} as well as P_{X2,Y2} P_{X1,Y1}
-    // however, is does allow us to simplify some logic
+    // however, it does allow us to simplify some logic
     if (sizeX1 < sizeX2) {
       swap(sizeX1,sizeX2);
     }
@@ -229,12 +228,6 @@ int main(int argc, char *argv[])
 
 
     {
-      // run a X1,Y2 range multivector against P_{X1,X1} P_{Y2,Y2}
-      // note, this is allowed under the restrictions on project(), 
-      // because <X1,Y2> = 0
-      // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
-      // it should require randomization, as 
-      // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       Anasazi::randomSDM(C1);
       Anasazi::randomSDM(C2);
@@ -392,14 +385,6 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
   //
   // for each of these, we should test with C1, C2 and B
   //
-  // if hasM:
-  // with and without MX1   (1--) 
-  // with and without MX2  (1---) 
-  // with and without MS  (1----) 
-  //
-  // as hasM controls the upper level bits, we need only run test cases 0-3 if hasM==false
-  // otherwise, we run test cases 0-31
-  //
 
   int numtests;
   numtests = 4;
@@ -419,30 +404,30 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
     Array<RCP<const MV> > theX;
     RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
     Array<RCP<SerialDenseMatrix<int,ST> > > C;
-    if ( (t && 3) == 0 ) {
-      // neither <X1,Y1> nor <X2,Y2>
+    if ( (t & 3) == 0 ) {
       // C, theX and theY are already empty
     }
-    else if ( (t && 3) == 1 ) {
+    else if ( (t & 3) == 1 ) {
       // X1
       theX = Teuchos::tuple(X1);
       C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
-    else if ( (t && 3) == 2 ) {
+    else if ( (t & 3) == 2 ) {
       // X2
       theX = Teuchos::tuple(X2);
       C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
-    else {
+    else if ( (t & 3) == 3 ) {
       // X1 and X2, and the reverse.
       theX = Teuchos::tuple(X1,X2);
       C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
+    else {}
 
     try {
       // call routine
-      // if (t && 3) == 3, {
+      // if (t & 3) == 3, {
       //    call with reversed input: X2 X1
       // }
       // test all outputs for correctness
@@ -455,7 +440,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       RCP<MV> Scopy;
       Array<int> ret_out;
 
-      // copies of S,MS
+      // copies of S
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
       Anasazi::randomSDM(*B);
@@ -477,7 +462,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       //   the first "ret" columns in Scopy
       //   the first "ret" rows in B
       // save just the parts that we want
-      // we allocate S and MS for each test, so we can save these as views
+      // we allocate S for each test, so we can save these as views
       // however, save copies of the C and B
       if (ret < sizeS) {
         vector<int> ind(ret);
@@ -500,8 +485,8 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       }
 
       // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
-        // copies of S,MS
+      if ( (t & 3) == 3 ) {
+        // copies of S
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
         Anasazi::randomSDM(*B);
@@ -509,6 +494,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
+        C = Teuchos::tuple( C[1], C[0] );
         theX = Teuchos::tuple( theX[1], theX[0] );
         // run test
         ret = OM->projectAndNormalize(*Scopy,theX,C,B);
@@ -525,7 +511,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         //   the first "ret" columns in Scopy
         //   the first "ret" rows in B
         // save just the parts that we want
-        // we allocate S and MS for each test, so we can save these as views
+        // we allocate S for each test, so we can save these as views
         // however, save copies of the C and B
         if (ret < sizeS) {
           vector<int> ind(ret);
@@ -544,6 +530,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
+        C = Teuchos::tuple( C[1], C[0] );
         theX = Teuchos::tuple( theX[1], theX[0] );
       }
 
@@ -564,9 +551,9 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           RCP<MV> tmp = MVT::Clone(*S,sizeS);
           MVT::MvTimesMatAddMv(ONE,*S_outs[o],*B_outs[o],ZERO,*tmp);
           if (C_outs[o].size() > 0) {
-            MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            MVT::MvTimesMatAddMv(ONE,*theX[0],*C_outs[o][0],ONE,*tmp);
             if (C_outs[o].size() > 1) {
-              MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
+              MVT::MvTimesMatAddMv(ONE,*theX[1],*C_outs[o][1],ONE,*tmp);
             }
           }
           MT err = MVDiff(*tmp,*S);
@@ -634,12 +621,6 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
   //
   // for each of the following, we should test B
   //
-  // if hasM:
-  // with and without MS  (1)
-  //
-  // as hasM controls the upper level bits, we need only run test case 0 if hasM==false
-  // otherwise, we run test cases 0-1
-  //
 
   int numtests;
   numtests = 1;
@@ -658,7 +639,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
       RCP<MV> Scopy;
       int ret;
 
-      // copies of S,MS
+      // copies of S
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
       Anasazi::randomSDM(*B);
@@ -754,17 +735,6 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
   // P_X2 P_X1         (11)
   // the latter two should be tested to give the same answer
   //
-  // for each of these, we should test 
-  // with C1 and C2
-  //
-  // if hasM:
-  // with and without MX1   (1--) 
-  // with and without MX2  (1---) 
-  // with and without MS  (1----) 
-  //
-  // as hasM controls the upper level bits, we need only run test cases 0-3 if hasM==false
-  // otherwise, we run test cases 0-31
-  //
 
   int numtests;
   numtests = 8;
@@ -783,30 +753,31 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
     Array<RCP<const MV> > theX;
     Array<RCP<SerialDenseMatrix<int,ST> > > C;
-    if ( (t && 3) == 0 ) {
+    if ( (t & 3) == 0 ) {
       // neither X1 nor X2
       // C and theX are already empty
     }
-    else if ( (t && 3) == 1 ) {
+    else if ( (t & 3) == 1 ) {
       // X1
       theX = Teuchos::tuple(X1);
       C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
-    else if ( (t && 3) == 2 ) {
+    else if ( (t & 3) == 2 ) {
       // X2
       theX = Teuchos::tuple(X2);
       C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
-    else {
+    else if ( (t & 3) == 3 ) {
       // X1 and X2, and the reverse.
       theX = Teuchos::tuple(X1,X2);
       C = Teuchos::tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
+    else {}
 
     try {
       // call routine
-      // if (t && 3) == 3, {
+      // if (t & 3) == 3, {
       //    call with reversed input: X2 X1
       // }
       // test all outputs for correctness
@@ -817,7 +788,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       Array<Array<RCP<SerialDenseMatrix<int,ST> > > > C_outs;
       RCP<MV> Scopy;
 
-      // copies of S,MS
+      // copies of S
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
       for (unsigned int i=0; i<C.size(); i++) {
@@ -825,7 +796,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       }
       // run test
       OM->project(*Scopy,theX,C);
-      // we allocate S and MS for each test, so we can save these as views
+      // we allocate S for each test, so we can save these as views
       // however, save copies of the C
       S_outs.push_back( Scopy );
       C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >(0) );
@@ -837,18 +808,19 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       }
 
       // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
-        // copies of S,MS
+      if ( (t & 3) == 3 ) {
+        // copies of S
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
         for (unsigned int i=0; i<C.size(); i++) {
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
+        C = Teuchos::tuple( C[1], C[0] );
         theX = Teuchos::tuple( theX[1], theX[0] );
         // run test
         OM->project(*Scopy,theX,C);
-        // we allocate S and MS for each test, so we can save these as views
+        // we allocate S for each test, so we can save these as views
         // however, save copies of the C
         S_outs.push_back( Scopy );
         // we are in a special case: P_X1 and P_X2, so we know we applied 
@@ -858,6 +830,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
+        C = Teuchos::tuple( C[1], C[0] );
         theX = Teuchos::tuple( theX[1], theX[0] );
       }
 
@@ -867,9 +840,9 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         {
           RCP<MV> tmp = MVT::CloneCopy(*S_outs[o]);
           if (C_outs[o].size() > 0) {
-            MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            MVT::MvTimesMatAddMv(ONE,*theX[0],*C_outs[o][0],ONE,*tmp);
             if (C_outs[o].size() > 1) {
-              MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
+              MVT::MvTimesMatAddMv(ONE,*theX[1],*C_outs[o][1],ONE,*tmp);
             }
           }
           MT err = MVDiff(*tmp,*S);
@@ -906,10 +879,6 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       //    output 1 == output 2
       for (unsigned int o1=0; o1<S_outs.size(); o1++) {
         for (unsigned int o2=o1+1; o2<S_outs.size(); o2++) {
-          // don't need to check MS_outs because we check 
-          //   S_outs and MS_outs = M*S_outs
-          // don't need to check C_outs either
-          //   
           // check that S_outs[o1] == S_outs[o2]
           MT err = MVDiff(*S_outs[o1],*S_outs[o2]);
           if (err > TOL) {

@@ -470,30 +470,31 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
     Array<RCP<const MV> > theX;
     RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
     Array<RCP<SerialDenseMatrix<int,ST> > > C;
-    if ( (t && 3) == 0 ) {
+    if ( (t & 3) == 0 ) {
       // neither <X1,Y1> nor <X2,Y2>
       // C, theX and theY are already empty
     }
-    else if ( (t && 3) == 1 ) {
+    else if ( (t & 3) == 1 ) {
       // X1
       theX = tuple(X1);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
-    else if ( (t && 3) == 2 ) {
+    else if ( (t & 3) == 2 ) {
       // X2
       theX = tuple(X2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
-    else {
+    else if ( (t & 3) == 3 ) {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
           rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
+    else {}
 
     try {
       // call routine
-      // if (t && 3) == 3, {
+      // if (t & 3) == 3, {
       //    call with reversed input: X2 X1
       // }
       // test all outputs for correctness
@@ -551,7 +552,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       }
 
       // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
+      if ( (t & 3) == 3 ) {
         // copies of S,MS
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
@@ -560,6 +561,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
+        C = tuple( C[1], C[0] );
         theX = tuple( theX[1], theX[0] );
         // run test
         ret = OM->projectAndNormalize(*Scopy,theX,C,B);
@@ -595,6 +597,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
+        C = tuple( C[1], C[0] );
         theX = tuple( theX[1], theX[0] );
       }
 
@@ -615,9 +618,9 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           RCP<MV> tmp = MVT::Clone(*S,sizeS);
           MVT::MvTimesMatAddMv(ONE,*S_outs[o],*B_outs[o],ZERO,*tmp);
           if (C_outs[o].size() > 0) {
-            MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            MVT::MvTimesMatAddMv(ONE,*theX[0],*C_outs[o][0],ONE,*tmp);
             if (C_outs[o].size() > 1) {
-              MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
+              MVT::MvTimesMatAddMv(ONE,*theX[1],*C_outs[o][1],ONE,*tmp);
             }
           }
           MT err = MVDiff(*tmp,*S);
@@ -647,7 +650,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         }
       }
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         projectAndNormalize() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -757,7 +760,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
         sout << "  " << t << "|| S_in - S_out*B || : " << err << endl;
       }
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         normalize() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -833,30 +836,31 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
     Array<RCP<const MV> > theX;
     Array<RCP<SerialDenseMatrix<int,ST> > > C;
-    if ( (t && 3) == 0 ) {
+    if ( (t & 3) == 0 ) {
       // neither X1 nor X2
       // C and theX are already empty
     }
-    else if ( (t && 3) == 1 ) {
+    else if ( (t & 3) == 1 ) {
       // X1
       theX = tuple(X1);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
     }
-    else if ( (t && 3) == 2 ) {
+    else if ( (t & 3) == 2 ) {
       // X2
       theX = tuple(X2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
-    else {
+    else if ( (t & 3) == 3 ) {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
           rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
+    else {}
 
     try {
       // call routine
-      // if (t && 3) == 3, {
+      // if (t & 3) == 3, {
       //    call with reversed input: X2 X1
       // }
       // test all outputs for correctness
@@ -887,7 +891,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       }
 
       // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
+      if ( (t & 3) == 3 ) {
         // copies of S,MS
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
@@ -895,6 +899,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
           Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
+        C = tuple( C[1], C[0] );
         theX = tuple( theX[1], theX[0] );
         // run test
         OM->project(*Scopy,theX,C);
@@ -908,6 +913,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
         // flip the inputs back
+        C = tuple( C[1], C[0] );
         theX = tuple( theX[1], theX[0] );
       }
 
@@ -917,9 +923,9 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         {
           RCP<MV> tmp = MVT::CloneCopy(*S_outs[o]);
           if (C_outs[o].size() > 0) {
-            MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            MVT::MvTimesMatAddMv(ONE,*theX[0],*C_outs[o][0],ONE,*tmp);
             if (C_outs[o].size() > 1) {
-              MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
+              MVT::MvTimesMatAddMv(ONE,*theX[1],*C_outs[o][1],ONE,*tmp);
             }
           }
           MT err = MVDiff(*tmp,*S);
@@ -970,7 +976,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       }
 
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         project() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
