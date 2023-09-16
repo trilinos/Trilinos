@@ -20,7 +20,7 @@ jobs:
       I_MPI_FC: ifx
     container:
       image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers
-      options: --shm-size=8g
+      options: --shm-size=16g
     steps:
       - name: env
         env:
@@ -63,4 +63,4 @@ jobs:
         run: bash -l -c "make -j8 && make install -j8"
       - name: ctest
         working-directory: /home/Trilinos/build/
-        run: bash -l -c "ctest -j8 --output-on-failure"
+        run: bash -l -c "ctest -j2 --output-on-failure"
