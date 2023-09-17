@@ -63,4 +63,4 @@ jobs:
         run: bash -l -c "make -j8 && make install -j8"
       - name: ctest
         working-directory: /home/Trilinos/build/
-        run: bash -l -c "ctest -j2 --output-on-failure"
+        run: bash -l -c "ctest -j2"
