@@ -201,12 +201,12 @@ namespace MueLu {
 
     template <class exec_space, class memory_space>
     void pingpong_basic(int KERNEL_REPEATS, int MAX_SIZE,const Teuchos::Comm<int> &comm, std::vector<int> & sizes, std::vector<double> & times) {
+#ifdef HAVE_MPI
       int rank = comm.getRank();
       int nproc = comm.getSize();
-      
+
       if(nproc < 2) return;
-      
-#ifdef HAVE_MPI
+
       const int buff_size = (int) pow(2,MAX_SIZE);
       
       sizes.resize(MAX_SIZE+1);
@@ -243,6 +243,8 @@ namespace MueLu {
         sizes[i] = msg_size;
         times[i] = time_per_call;
       }
+#else
+      return;
 #endif
     }
 
