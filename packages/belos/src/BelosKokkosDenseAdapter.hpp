@@ -112,8 +112,8 @@ namespace Belos {
     static Scalar* GetRawHostPtr(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm ) { 
     //LAPACK could use the host ptr to modify entries, so mark as modified.
     //TODO: Is there a better way to handle this?
+        std::cout << "Modifying on host." << std::endl;
         dm.modify_host();
-        std::cout << "Modified on host." << std::endl;
         return reinterpret_cast<Scalar*>(dm.h_view.data());
     //TODO: Is there any way that the user could hold on to this pointer...
     // and everything works fine the first time they pass to LAPACK. 
@@ -228,8 +228,8 @@ namespace Belos {
     static IST & Value( Kokkos::DualView<IST**,Kokkos::LayoutLeft>& dm, const int i, const int j )
     { 
     //Mark as modified on host, since we don't know if it will be. 
+        std::cout << "Modifying on host." << std::endl;
       dm.modify_host();
-        std::cout << "Modified on host." << std::endl;
       return dm.h_view(i,j);
       // TODO Will this result in extra syncs? Is always marking modified the best way?
     }
@@ -252,17 +252,38 @@ namespace Belos {
     //
     static void SyncDeviceToHost(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm) { 
       std::cout << "Called Sync Device to Host. " << std::endl;
+        std::cout << "Matrix extents are: " << dm.extent_int(0) << " , " << dm.extent_int(1) << std::endl;
       if(dm.need_sync_host()){
-        std::cout << "Syncing d2h: Matrix extents are: " << dm.extent_int(0) << " , " << dm.extent_int(1) << std::endl;
+        if(dm.h_view.span_is_contiguous() && dm.d_view.span_is_contiguous()){
+        std::cout << "Syncing d2h the easy way... " << dm.extent_int(0) << " , " << dm.extent_int(1) << std::endl;
         //Stupidness to print type info: int int1 = dm.d_view;
-        dm.sync_host();
+        dm.sync_host();}
+        else{
+          std::cout << "d2h sync the hard way in progress..." << std::endl;
+          Kokkos::DualView<IST**,Kokkos::LayoutLeft> compat_view("compat view",dm.extent_int(0),dm.extent_int(1));
+          Kokkos::deep_copy(compat_view,dm);
+          compat_view.sync_host();
+          Kokkos::deep_copy(dm,compat_view);
+          dm.clear_sync_state();
+        }
       }    
     }
 
     static void SyncHostToDevice(Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm) { 
       std::cout << "Called Sync Host to Device. " << std::endl;
       if(dm.need_sync_device()){
-        dm.sync_device();
+        if(dm.h_view.span_is_contiguous() && dm.d_view.span_is_contiguous()){
+          std::cout << "h2d sync easy way..." << std::endl;
+          dm.sync_device();
+        }
+        else{
+          std::cout << "h2d sync the hard way in progress..." << std::endl;
+          Kokkos::DualView<IST**,Kokkos::LayoutLeft> compat_view("compat view",dm.extent_int(0),dm.extent_int(1));
+          Kokkos::deep_copy(compat_view,dm);
+          compat_view.sync_host();
+          Kokkos::deep_copy(dm,compat_view);
+          dm.clear_sync_state();
+        }
       }    
     }
     //@}
