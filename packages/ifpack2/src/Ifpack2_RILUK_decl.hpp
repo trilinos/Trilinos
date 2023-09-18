@@ -644,8 +644,8 @@ protected:
   bool isKokkosKernelsSpiluk_;
   Teuchos::RCP<kk_handle_type> KernelHandle_;
   std::vector< Teuchos::RCP<kk_handle_type> > KernelHandle_v_;
-  int num_streams_;
   bool isKokkosKernelsStream_;
+  int num_streams_;
   std::vector<execution_space> exec_space_instances_;
 };
 
