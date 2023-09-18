@@ -68,7 +68,6 @@
 //// Note: This is research code. We do not guarantee it is without bugs. 
 ///////////////////////////////////////////////////////////////////////////////
 
-<<<<<<< HEAD
 /* -------------------------------------------------------------------------
  * Function: buildCrsMatrix
  * Purpose:  When the user does not input a matrix file, buildCrsMatrix will
@@ -78,9 +77,6 @@
  * ------------------------------------------------------------------------- */
 
 template <typename lno_t, typename gno_t, typename scalar_t, typename nod_t>
-=======
-  template <typename lno_t, typename gno_t, typename scalar_t, typename nod_t>
->>>>>>> 42618b145ad4a73991726b73dadd81bdb319b120
 int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
     Teuchos::RCP<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, nod_t>> &M_)
@@ -250,97 +246,7 @@ compute_edgecut(Teuchos::RCP<adapter_type> &adapter,
 
   }
 
-<<<<<<< HEAD
-/*
-template <typename adapter_type>
-void 
-compute_edgecut_old(Teuchos::RCP<adapter_type> &adapter,
-		Zoltan2::PartitioningSolution<adapter_type> &solution )
-{
-  typedef typename adapter_type::user_t graph_type;
-  typedef typename graph_type::global_ordinal_type GO;
-  typedef typename graph_type::local_ordinal_type LO;
-  typedef typename graph_type::node_type NO;
-  typedef typename adapter_type::part_t PT;
-
-  using ordinal_view_t = Kokkos::View<GO*, typename NO::device_type>;
-  using part_view_t = Kokkos::View<PT*, typename NO::device_type>;
-
-  auto graph = adapter->getUserGraph();
-  auto rowMap = graph->getRowMap();
-  auto colMap = graph->getColMap();
-
-  size_t numLclRows = rowMap->getNodeNumElements();
-  size_t numGblRows = rowMap->getGlobalNumElements();
-  size_t numLclCols = colMap->getNodeNumElements();
-
-  
-  ordinal_view_t colLocalToGlobal(Kokkos::view_alloc("colLocalToGlobal", Kokkos::WithoutInitializing), numLclCols);
-  auto colMapHost = Kokkos::create_mirror_view (Kokkos::HostSpace (), colLocalToGlobal);
-  for(size_t i = 0; i < numLclCols; ++i)
-    colMapHost[i] = colMap->getGlobalElement(i);
-  Kokkos::deep_copy (colLocalToGlobal, colMapHost);
-
-  ordinal_view_t rowLocalToGlobal(Kokkos::view_alloc("rowLocalToGlobal", Kokkos::WithoutInitializing), numLclRows);
-  auto rowMapHost = Kokkos::create_mirror_view (Kokkos::HostSpace (), rowLocalToGlobal);
-  for(size_t i = 0; i < numLclRows; ++i)
-    rowMapHost[i] = rowMap->getGlobalElement(i);
-  Kokkos::deep_copy (rowLocalToGlobal, rowMapHost);
-
-  
-  part_view_t localParts(Kokkos::view_alloc("localParts", Kokkos::WithoutInitializing), numGblRows);
-  part_view_t globalParts("globalParts", numGblRows);
-  auto localPartsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), localParts);
-  
-  auto parts = solution.getPartListView();
-  for(LO i = 0; i < numLclRows; i++){
-    
-    GO gi = rowMap->getGlobalElement(i);
-    localPartsHost(gi) = parts[i];
-  }
-  Kokkos::deep_copy(localParts, localPartsHost);
-  
-  auto comm = graph->getComm();
-  Teuchos::reduceAll<int, PT> (*comm, Teuchos::REDUCE_SUM, numGblRows, localParts.data(), globalParts.data());
-
-  auto rowPtr = graph->getLocalGraphHost().row_map;
-  auto colInd = graph->getLocalGraphHost().entries;
-
-  size_t localtotalcut = 0, totalcut = 0;
-
-  using execution_space = typename NO::device_type::execution_space;
-  using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
-  Kokkos::parallel_reduce("Compute cut", range_policy(0, numLclRows),
-		       KOKKOS_LAMBDA(const LO i, size_t &cut){
-
-			 const GO gRid = rowLocalToGlobal(i);
-			 const PT gi = globalParts(gRid);
-			 
-			 const size_t start = rowPtr(i);
-			 const size_t end = rowPtr(i+1);
-			 for(size_t j = start; j < end; ++j) {
-				
-			   const GO gCid = colLocalToGlobal(colInd(j)); 
-			   PT gj = globalParts(gCid);
-			   if(gi != gj)
-			     cut += 1;
-			 }
-		       }, localtotalcut);
-
-  Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, 1, &localtotalcut, &totalcut);
-
-  if(comm->getRank() == 0) {
-    std::cout << "\n\n************************************************" << std::endl;
-    std::cout << "                              EDGECUT: " << totalcut <<  std::endl;
-    std::cout << "************************************************\n\n" << std::endl;
-
-  }
-  
 }
-*/
-=======
-}
->>>>>>> 42618b145ad4a73991726b73dadd81bdb319b120
 
 int main(int narg, char *arg[]) 
 {
@@ -380,13 +286,7 @@ int main(int narg, char *arg[])
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("matrix_file",&matrix_file,
-<<<<<<< HEAD
-		   "Path and filename of the matrix to be read.");
-    cmdp.setOption("vector_file",&vector_file,
-		   "Path and filename of the pre-computed eigenvector(s) to be read.");
-=======
         "Path and filename of the matrix to be read.");
->>>>>>> 42618b145ad4a73991726b73dadd81bdb319b120
     cmdp.setOption("nparts",&nparts,
         "Number of global parts desired in the resulting partition.");
     cmdp.setOption("rand_seed",&rand_seed,
