@@ -51,7 +51,6 @@
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
 static pthread_mutex_t zoltan_global_mpi_lock;
 static MPI_Comm Zoltan_Global_MPI_Comm = MPI_COMM_WORLD; // CHECK: ALLOW MPI_COMM_WORLD
 
