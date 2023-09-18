@@ -409,7 +409,7 @@ setParameters (const Teuchos::ParameterList& params)
 
   {
     const std::string paramName ("fact: kspiluk number-of-streams");
-    getParamTryingTypes<int, int, global_ordinal_type, double, float>
+    getParamTryingTypes<int, int, global_ordinal_type>
       (nstreams, params, paramName, prefix);
   }
   
