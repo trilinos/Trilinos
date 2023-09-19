@@ -50,6 +50,8 @@
 #if defined(HAVE_MUELU_AMESOS2)
 
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_LAPACK.hpp>
 
 #include "MueLu_Amesos2Smoother_fwd.hpp"
 
@@ -60,6 +62,23 @@
 namespace Amesos2 { template<class OP, class MV> class Solver; }
 
 namespace MueLu {
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Projection {
+
+  public:
+
+    Projection(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Nullspace);
+
+    void projectOut(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X);
+
+    Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Nullspace_;
+
+  private:
+
+    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > localMap_;
+
+  };
 
   /*!
     @class Amesos2Smoother
@@ -150,6 +169,8 @@ namespace MueLu {
 
     bool useTransformation_;
     RCP<MultiVector> X_, B_;
+
+    RCP<Projection<Scalar,LocalOrdinal,GlobalOrdinal,Node>> projection_;
 
   }; // class Amesos2Smoother
 
