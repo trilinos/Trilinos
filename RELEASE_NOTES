@@ -8,7 +8,7 @@
 CMake
 
   - Change the default for `Trilinos_MUST_FIND_ALL_TPL_LIBS` from `OFF` to
-    `ON`, by setting `Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT` to `ON`. It was
+    `ON`. It was
     turned off by default because it breaks backward compatibility but it also
     causes problems for new users and new configurations.
 
