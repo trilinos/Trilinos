@@ -108,11 +108,11 @@ private:
                const ImpView& imports);
                
   template <class ExpView, class ImpView>
-  void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
-                                const ExpView &exports,
-                                const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                                const ImpView &imports,
-                                const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+  void doPostsAllToAll(const DistributorPlan& plan,
+                       const ExpView &exports,
+                       const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                       const ImpView &imports,
+                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 #endif
   int mpiTag_;
 
@@ -202,13 +202,14 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
                                const ExpView& exports,
                                size_t numPackets,
                                const ImpView& imports) {
-
+    using size_type = Teuchos::Array<size_t>::size_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION(!plan.getIndicesTo().is_null(),
                                std::runtime_error,
                                "Send Type=\"Alltoall\" only works for fast-path communication.");
 
     auto comm = plan.getComm();
+    const int myRank = comm->getRank ();
     std::vector<int> sendcounts (comm->getSize(), 0);
     std::vector<int> sdispls    (comm->getSize(), 0);
     std::vector<int> recvcounts (comm->getSize(), 0);
@@ -226,8 +227,8 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
       sendcounts[plan.getProcsTo()[p]] = static_cast<int>(sendcount);
     }
 
-    const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
-    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+    const size_type actualNumReceives = Teuchos::as<size_type> (plan.getNumReceives()) +
+    Teuchos::as<size_type> (plan.hasSelfMessage() ? 1 : 0);
     size_t curBufferOffset = 0;
     for (size_type i = 0; i < actualNumReceives; ++i) {
       const size_t curBufLen = plan.getLengthsFrom()[i] * numPackets;
@@ -250,9 +251,8 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
-    using T = typename exports_view_type::non_const_value_type;
-    T t;
-    MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
+    using T = typename ExpView::non_const_value_type;
+    MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (T());
 
 
 #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
@@ -607,6 +607,8 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
                               std::runtime_error,
                               "Send Type=\"Alltoall\" only works for fast-path communication.");
 
+  using size_type = Teuchos::Array<size_t>::size_type;
+
   auto comm = plan.getComm();
   std::vector<int> sendcounts (comm->getSize(), 0);
   std::vector<int> sdispls    (comm->getSize(), 0);
@@ -629,8 +631,8 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
     curPKToffset += numPackets;
   }
 
-  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
-  as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+  const size_type actualNumReceives = Teuchos::as<size_type> (plan.getNumReceives()) +
+  Teuchos::as<size_type> (plan.hasSelfMessage() ? 1 : 0);
 
   size_t curBufferOffset = 0;
   size_t curLIDoffset = 0;
@@ -653,9 +655,8 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
 
   Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
-  using T = typename exports_view_type::non_const_value_type;
-  T t;
-  MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
+  using T = typename ExpView::non_const_value_type;
+  MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (T());
   
 #if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
   if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == sendType) {
@@ -753,10 +754,10 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   {
     doPostsAllToAll(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
     return;
-  } else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) [
+  } else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
     doPostsAllToAll(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
     return
-  ]
+  }
 #endif
 
 #else // HAVE_TPETRA_MPI
