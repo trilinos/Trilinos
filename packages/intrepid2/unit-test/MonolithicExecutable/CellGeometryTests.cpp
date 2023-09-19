@@ -410,7 +410,7 @@ namespace
     using PointScalar = double;
     using DeviceType = DefaultTestDeviceType;
     
-    Kokkos::Array<PointScalar,spaceDim> origin{0,0};
+    Kokkos::Array<PointScalar,spaceDim> origin{0,0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2,4};
     Kokkos::Array<int,spaceDim> gridCellCounts{2,4,2};
     
@@ -536,6 +536,32 @@ namespace
     testJacobians<spaceDim,PointScalar>(polyOrder, meshWidth, out, success);
   }
 
+  TEUCHOS_UNIT_TEST( CellGeometry, Jacobian_Linear_Pyramids )
+  {
+    const int spaceDim = 3;
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    using PointScalar = double;
+    using DeviceType = DefaultTestDeviceType;
+    
+    Kokkos::Array<PointScalar,spaceDim> origin{0,0,0};
+    Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2,4};
+    Kokkos::Array<int,spaceDim> gridCellCounts{2,4,2};
+    CellGeometry<PointScalar, spaceDim, DeviceType>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim, DeviceType>::SIX_PYRAMIDS;
+    CellGeometry<PointScalar, spaceDim, DeviceType> uniformGridCellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
+    
+    const std::vector<bool> copyAffineValues {false, true};
+    
+    for (auto copyAffine : copyAffineValues)
+    {
+      if (copyAffine) out << "testing affine path.\n";
+      else            out << "testing non-affine path (with affine geometry).\n";
+      auto nodalCellGeometry = getNodalCellGeometry(uniformGridCellGeometry,copyAffine);
+      testJacobiansAgree(nodalCellGeometry, relTol, absTol, out, success);
+    }
+  }
+
   TEUCHOS_UNIT_TEST( CellGeometry, Jacobian_Linear_Quads )
   {
     const int spaceDim = 2;
@@ -624,9 +650,6 @@ namespace
   TEUCHOS_UNIT_TEST( CellGeometry, Nodes_Uniform_Pyramids )
   {
     const int spaceDim = 3;
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
     using PointScalar = double;
     using HostDeviceType = Kokkos::HostSpace::device_type;
     
@@ -642,7 +665,7 @@ namespace
     ordinal_type numCells = cellGeometry.numCells();
     TEST_EQUALITY(numCells, expectedNumCells);
     
-    ordinal_type expectedNumNodes = 9; // 1 interior vertex, 8 vertices for the hexahedron
+//    ordinal_type expectedNumNodes = 9; // 1 interior vertex, 8 vertices for the hexahedron
     // TODO: check global node numbers.  We expect to have interior nodes listed first (there's just one per grid cell), followed by a Cartesian numbering of the vertices with x as the fastest-moving index.
     
   }
