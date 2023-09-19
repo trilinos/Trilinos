@@ -301,7 +301,6 @@ void LocalSparseTriangularSolver<MatrixType>::initializeState ()
 {
   isInitialized_ = false;
   isComputed_ = false;
-  reverseStorage_ = false;
   isInternallyChanged_ = false;
   numInitialize_ = 0;
   numCompute_ = 0;
@@ -358,14 +357,6 @@ setParameters (const Teuchos::ParameterList& pl)
     kh_ = Teuchos::rcp (new k_handle());
   }
 
-  if (pl.isParameter("trisolver: reverse U"))
-    reverseStorage_ = pl.get<bool>("trisolver: reverse U");
-
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (reverseStorage_ && (trisolverType == Details::TrisolverType::HTS || trisolverType == Details::TrisolverType::KSPTRSV),
-     std::logic_error, "Ifpack2::LocalSparseTriangularSolver::setParameters: "
-     "You are not allowed to enable both HTS or KSPTRSV and the \"trisolver: reverse U\" "
-     "options.  See GitHub issue #2647.");
 }
 
 template<class MatrixType>
@@ -405,104 +396,6 @@ initialize ()
   TEUCHOS_TEST_FOR_EXCEPTION
     (! G->isFillComplete (), std::runtime_error, "If you call this method, "
      "the matrix's graph must be fill complete.  It is not.");
-
-  // mfh 30 Apr 2018: See GitHub Issue #2658.
-  constexpr bool ignoreMapsForTriStructure = true;
-  auto lclTriStructure = [&] {
-    auto lclMatrix = A_crs_->getLocalMatrixDevice ();
-    auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
-    auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
-    auto lclTriStruct =
-      determineLocalTriangularStructure (lclMatrix.graph,
-                                         lclRowMap,
-                                         lclColMap,
-                                         ignoreMapsForTriStructure);
-    const LO lclNumRows = lclRowMap.getLocalNumElements ();
-    this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
-    this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
-      (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
-    return lclTriStruct;
-  } ();
-
-  if (reverseStorage_ && lclTriStructure.couldBeUpperTriangular &&
-      htsImpl_.is_null ()) {
-    // Reverse the storage for an upper triangular matrix
-    auto Alocal = A_crs_->getLocalMatrixDevice();
-    auto ptr    = Alocal.graph.row_map;
-    auto ind    = Alocal.graph.entries;
-    auto val    = Alocal.values;
-
-    auto numRows = Alocal.numRows();
-    auto numCols = Alocal.numCols();
-    auto numNnz = Alocal.nnz();
-
-    typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.extent (0));
-    typename decltype(ind)::non_const_type  newind ("ind", ind.extent (0));
-    decltype(val)                           newval ("val", val.extent (0));
-
-    // FIXME: The code below assumes UVM
-    typename crs_matrix_type::execution_space().fence();
-    newptr(0) = 0;
-    for (local_ordinal_type row = 0, rowStart = 0; row < numRows; ++row) {
-      auto A_r = Alocal.row(numRows-1 - row);
-
-      auto numEnt = A_r.length;
-      for (local_ordinal_type k = 0; k < numEnt; ++k) {
-        newind(rowStart + k) = numCols-1 - A_r.colidx(numEnt-1 - k);
-        newval(rowStart + k) = A_r.value (numEnt-1 - k);
-      }
-      rowStart += numEnt;
-      newptr(row+1) = rowStart;
-    }
-    typename crs_matrix_type::execution_space().fence();
-
-    // Reverse maps
-    Teuchos::RCP<map_type> newRowMap, newColMap;
-    {
-      // Reverse row map
-      auto rowMap = A_->getRowMap();
-      auto numElems = rowMap->getLocalNumElements();
-      auto rowElems = rowMap->getLocalElementList();
-
-      Teuchos::Array<global_ordinal_type> newRowElems(rowElems.size());
-      for (size_t i = 0; i < numElems; i++)
-        newRowElems[i] = rowElems[numElems-1 - i];
-
-      newRowMap = Teuchos::rcp(new map_type(rowMap->getGlobalNumElements(), newRowElems, rowMap->getIndexBase(), rowMap->getComm()));
-    }
-    {
-      // Reverse column map
-      auto colMap = A_->getColMap();
-      auto numElems = colMap->getLocalNumElements();
-      auto colElems = colMap->getLocalElementList();
-
-      Teuchos::Array<global_ordinal_type> newColElems(colElems.size());
-      for (size_t i = 0; i < numElems; i++)
-        newColElems[i] = colElems[numElems-1 - i];
-
-      newColMap = Teuchos::rcp(new map_type(colMap->getGlobalNumElements(), newColElems, colMap->getIndexBase(), colMap->getComm()));
-    }
-
-    // Construct new matrix
-    local_matrix_type newLocalMatrix("Upermuted", numRows, numCols, numNnz, newval, newptr, newind);
-
-    A_crs_ = Teuchos::rcp(new crs_matrix_type(newLocalMatrix, newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap()));
-
-    isInternallyChanged_ = true;
-
-    // FIXME (mfh 18 Apr 2019) Recomputing this is unnecessary, but I
-    // didn't want to break any invariants, especially considering
-    // that this branch is likely poorly tested.
-    auto newLclTriStructure =
-      determineLocalTriangularStructure (newLocalMatrix.graph,
-                                         newRowMap->getLocalMap (),
-                                         newColMap->getLocalMap (),
-                                         ignoreMapsForTriStructure);
-    const LO newLclNumRows = newRowMap->getLocalNumElements ();
-    this->diag_ = (newLclTriStructure.diagCount < newLclNumRows) ? "U" : "N";
-    this->uplo_ = newLclTriStructure.couldBeLowerTriangular ? "L" :
-      (newLclTriStructure.couldBeUpperTriangular ? "U" : "N");
-  }
 
   if (Teuchos::nonnull (htsImpl_))
   {
