@@ -540,21 +540,18 @@ initialize ()
       constexpr bool ignoreMapsForTriStructure = true;
       std::string prev_uplo_ = this->uplo_;
       std::string prev_diag_ = this->diag_;
-      auto lclTriStructure = [&] {
-        auto lclMatrix = A_crs_v_[i]->getLocalMatrixDevice ();
-        auto lclRowMap = A_crs_v_[i]->getRowMap ()->getLocalMap ();
-        auto lclColMap = A_crs_v_[i]->getColMap ()->getLocalMap ();
-        auto lclTriStruct =
-          determineLocalTriangularStructure (lclMatrix.graph,
-                                             lclRowMap,
-                                             lclColMap,
-                                             ignoreMapsForTriStructure);
-        const LO lclNumRows = lclRowMap.getLocalNumElements ();
-        this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
-        this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
-          (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
-        return lclTriStruct;
-      } ();
+      auto lclMatrix = A_crs_v_[i]->getLocalMatrixDevice ();
+      auto lclRowMap = A_crs_v_[i]->getRowMap ()->getLocalMap ();
+      auto lclColMap = A_crs_v_[i]->getColMap ()->getLocalMap ();
+      auto lclTriStruct =
+        determineLocalTriangularStructure (lclMatrix.graph,
+                                           lclRowMap,
+                                           lclColMap,
+                                           ignoreMapsForTriStructure);
+      const LO lclNumRows = lclRowMap.getLocalNumElements ();
+      this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
+      this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
+        (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
       if (i > 0) {
         TEUCHOS_TEST_FOR_EXCEPTION
           ((this->diag_ != prev_diag_) || (this->uplo_ != prev_uplo_),
