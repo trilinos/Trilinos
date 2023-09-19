@@ -231,24 +231,20 @@ int ConvergencePyr(const bool verbose) {
   typedef RealSpaceTools<DeviceType> rst;
   typedef FunctionSpaceTools<DeviceType> fst;
 
-  // TODO: uncomment dim for hdiv, hcurl
-//  constexpr ordinal_type dim = 3;
+  constexpr ordinal_type dim = 3;
   const ordinal_type basisDegree = 3;
   ordinal_type cub_degree = 7;
 
-
-
   // ************************************ GET INPUTS **************************************
 
-
   int NX = 2;
-  constexpr int numRefinements = 4;
+  constexpr int numRefinements = 2; // change to 4 to reproduce the full set of values below.
 
   // Expected values of the projection errors in H1, Hcurl, Hdiv and L2 norms for HGRAD, HDIV, HCURL and HVOL elements respectively.
   // These values have been computed running the code with numRefinements=4 and the convergence rates are close to the optimal ones.
   // Note that these values are independent of the basis choice (Hierarchical or Nodal) as long as they generate the same functional space.
   // We currently only test two mesh refinements to make the test run faster, so this is used as a regression test rather than
-  // a convergence test, but the test can be use for verifying optimal accuracy as well.
+  // a convergence test, but the test can be used for verifying optimal accuracy as well.
   ValueType hgradNorm[numRefinements];
 //  ValueType hcurlNorm[numRefinements];
 //  ValueType hdivNorm[numRefinements];
@@ -278,7 +274,6 @@ int ConvergencePyr(const bool verbose) {
     ordinal_type numNodesPerElem = cellTopo.getNodeCount();
 
     // *********************************** GENERATE MESH ************************************
-    const int dim = 3;
     
     Kokkos::Array<ValueType,dim> origin{-1,-1,-1};
     Kokkos::Array<ValueType,dim> domainExtents{2,2,2};
@@ -871,7 +866,7 @@ int ConvergencePyr(const bool verbose) {
     try {
       // compute orientations for cells (one time computation)
       Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numElems);
-      ots::getOrientation(elemOrts, elemNodes, cellTopo);
+      cellGeometry.orientations(elemOrts);
 
       for (auto useL2Projection:useL2Proj) { //
 
@@ -896,7 +891,7 @@ int ConvergencePyr(const bool verbose) {
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
-                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*linearBasisValuesAtRefCoords(k,j);
+                  physRefCoords(i,j,d) += cellGeometry(i,k,d)*linearBasisValuesAtRefCoords(k,j);
           });
           ExecSpaceType().fence();
         }
@@ -949,7 +944,7 @@ int ConvergencePyr(const bool verbose) {
                 Impl::Basis_HGRAD_PYR_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
-                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalPoint(k);
+                    physEvalPoints(i,j,d) += cellGeometry(i,k,d)*basisValuesAtEvalPoint(k);
               }
 
               auto basisValuesAtEvalDivPoint = Kokkos::subview(linearBasisValuesAtEvalDivPoint,i,Kokkos::ALL());
@@ -958,7 +953,7 @@ int ConvergencePyr(const bool verbose) {
                 Impl::Basis_HGRAD_PYR_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDivPoint, evalGradPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
-                    physEvalDivPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalDivPoint(k);
+                    physEvalDivPoints(i,j,d) += cellGeometry(i,k,d)*basisValuesAtEvalDivPoint(k);
               }
             });
             ExecSpaceType().fence();
