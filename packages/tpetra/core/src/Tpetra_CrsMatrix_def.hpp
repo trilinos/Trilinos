@@ -8643,17 +8643,19 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // using said views as input. This should reduce the
     // amount of data transfers required between host and
     // device and thus improve performance.
+#if defined(JHU_USE_HOST_MATRIX_ARRAYS)
     typename row_ptrs_host_view_type::non_const_type            CSR_rowptr_host(CSR_rowptr.getRawPtr(), CSR_rowptr.size());
     typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
     typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
 
-    typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_dev(Kokkos::ViewAllocateWithoutInitializing("rowmap"), CSR_rowptr.size());
-    typename local_inds_device_view_type::non_const_type CSR_colind_LID_dev(Kokkos::ViewAllocateWithoutInitializing("colind"), CSR_colind_LID.size());
-    typename values_device_view_type::non_const_type     CSR_vals_dev(Kokkos::ViewAllocateWithoutInitializing("values"), CSR_vals.size());
+    typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_d(Kokkos::ViewAllocateWithoutInitializing("rowmap"), CSR_rowptr.size());
+    typename local_inds_device_view_type::non_const_type CSR_colind_LID_d(Kokkos::ViewAllocateWithoutInitializing("colind"), CSR_colind_LID.size());
+    typename values_device_view_type::non_const_type     CSR_vals_d(Kokkos::ViewAllocateWithoutInitializing("values"), CSR_vals.size());
 
-    Kokkos::deep_copy(CSR_rowptr_dev, CSR_rowptr_host);
-    Kokkos::deep_copy(CSR_colind_LID_dev, CSR_colind_LID_host);
-    Kokkos::deep_copy(CSR_vals_dev, CSR_vals_host);
+    Kokkos::deep_copy(CSR_rowptr_d, CSR_rowptr_host);
+    Kokkos::deep_copy(CSR_colind_LID_d, CSR_colind_LID_host);
+    Kokkos::deep_copy(CSR_vals_d, CSR_vals_host);
+#endif
 
     if ((! reverseMode && xferAsImport != nullptr) ||
         (reverseMode && xferAsExport != nullptr)) {
@@ -8668,9 +8670,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Just to be safe we always static cast the Scalar pointer
       // to the underlying impl_scalar type.
 
-      Import_Util::sortCrsEntries (CSR_rowptr_dev,
-                                   CSR_colind_LID_dev,
-                                   CSR_vals_dev);
+      Import_Util::sortCrsEntries (CSR_rowptr_d,
+                                   CSR_colind_LID_d,
+                                   CSR_vals_d);
     }
     else if ((! reverseMode && xferAsExport != nullptr) ||
              (reverseMode && xferAsImport != nullptr)) {
@@ -8683,9 +8685,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
 #endif
-      Import_Util::sortAndMergeCrsEntries (CSR_rowptr_dev,
-                                           CSR_colind_LID_dev,
-                                           CSR_vals_dev);
+      Import_Util::sortAndMergeCrsEntries (CSR_rowptr_d,
+                                           CSR_colind_LID_d,
+                                           CSR_vals_d);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -8712,7 +8714,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
 #endif
-      destMat->setAllValues (CSR_rowptr_dev, CSR_colind_LID_dev, CSR_vals_dev);
+      destMat->setAllValues (CSR_rowptr_d, CSR_colind_LID_d, CSR_vals_d);
     }
 
     /***************************************************/
