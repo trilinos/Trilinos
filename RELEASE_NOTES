@@ -16,7 +16,7 @@ CMake
     `-D Trilinos_MUST_FIND_ALL_TPL_LIBS=OFF`, which is backward compatible.
 
   - Change the default for `Trilinos_USE_GNUINSTALLDIRS` from `OFF` to `ON`,
-    by setting `Trilinos_USE_GNUINSTALLDIRS_DEFAULT` to `ON`, in the goal to
+    in the goal to
     move Trilinos and TriBITS to modern CMake.
 
     TriBITS has had the ability to use that paths selected by the standard
