@@ -176,8 +176,10 @@ int main (void)
     //! Solve for @c std::complex<float>. @todo This does not compile for now!
     // solve_and_check<std::complex<float>>(float(1.e-6));
 
+#ifdef HAVE_TEUCHOS_COMPLEX
     //! Solve for @c std::complex<double>.
     solve_and_check<std::complex<double>>(double(1.e-15));
+#endif
 
     return EXIT_SUCCESS;
 }
