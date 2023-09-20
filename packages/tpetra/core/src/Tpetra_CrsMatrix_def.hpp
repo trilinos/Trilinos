@@ -7720,9 +7720,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Behavior::TAFC_OptimizationCoreCount();
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
     bool overrideAllreduce = false;
+    bool useKokkosPath = false;
     if (! params.is_null ()) {
       matrixparams = sublist (params, "CrsMatrix");
       reverseMode = params->get ("Reverse Mode", reverseMode);
+      useKokkosPath = params->get ("TAFC: use kokkos path", useKokkosPath);
       restrictComm = params->get ("Restrict Communicator", restrictComm);
       auto & slist = params->sublist("matrixmatrix: kernel params",false);
       isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
@@ -8454,10 +8456,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
-    static constexpr bool runOnHost = std::is_same_v<typename device_type::execution_space, Kokkos::Serial>;
+    bool runOnHost = std::is_same_v<typename device_type::execution_space, Kokkos::Serial> && !useKokkosPath;
 
     Teuchos::Array<int> RemotePids;
-    if constexpr (runOnHost) {
+    if (runOnHost) {
       // Backwards compatibility measure.  We'll use this again below.
   
       // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
@@ -8525,7 +8527,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Call an optimized version of makeColMap that avoids the
       // Directory lookups (since the Import object knows who owns all
       // the GIDs).
-      //Teuchos::Array<int> RemotePids;
       if (verbose) {
         std::ostringstream os;
         os << *verbosePrefix << "Calling lowCommunicationMakeColMapAndReindex"
@@ -8536,13 +8537,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC makeColMap")));
 #endif
-      Import_Util::lowCommunicationMakeColMapAndReindexSerial (CSR_rowptr (),
-                                                         CSR_colind_LID (),
-                                                         CSR_colind_GID (),
-                                                         BaseDomainMap,
-                                                         TargetPids,
-                                                         RemotePids,
-                                                         MyColMap);
+      Import_Util::lowCommunicationMakeColMapAndReindex(CSR_rowptr (),
+                                                        CSR_colind_LID (),
+                                                        CSR_colind_GID (),
+                                                        BaseDomainMap,
+                                                        TargetPids,
+                                                        RemotePids,
+                                                        MyColMap);
       }
 
       if (verbose) {
@@ -8684,37 +8685,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::View<size_t*,device_type> CSR_rowptr_d;
       Kokkos::View<GO*,device_type>     CSR_colind_GID_d;
       Kokkos::View<LO*,device_type>     CSR_colind_LID_d;
-      Kokkos::View<Scalar*,device_type>     CSR_vals_d;
+      Kokkos::View<Scalar*,device_type> CSR_vals_d;
   
-  //#define JHU_USE_HOST_MATRIX_ARRAYS
-#ifdef JHU_USE_HOST_MATRIX_ARRAYS
-      Details::unpackAndCombineIntoCrsArrays(
-                                     *this, 
-                                     RemoteLIDs_d,
-                                     destMat->imports_.view_device(),                //hostImports
-                                     destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
-                                     NumSameIDs,
-                                     PermuteToLIDs_d,
-                                     PermuteFromLIDs_d,
-                                     N,
-                                     MyPID,
-                                     CSR_rowptr,
-                                     CSR_colind_GID,
-                                     CSR_vals,
-                                     SourcePids(),
-                                     TargetPids);
-  
-      // If LO and GO are the same, we can reuse memory when
-      // converting the column indices from global to local indices.
-      if (typeid (LO) == typeid (GO)) {
-        CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO> (CSR_colind_GID);
-      }
-      else {
-        CSR_colind_LID.resize (CSR_colind_GID.size());
-      }
-      CSR_colind_LID.resize (CSR_colind_GID.size());
-      size_t mynnz = CSR_vals.size();
-#else
       Details::unpackAndCombineIntoCrsArrays(
                                      *this, 
                                      RemoteLIDs_d,
@@ -8733,7 +8705,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   
       Kokkos::resize (CSR_colind_LID_d, CSR_colind_GID_d.size());
       size_t mynnz = CSR_vals.size();
-#endif
   
       // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
       // owned entries.  Convert them to the actual PID.
@@ -8751,7 +8722,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Call an optimized version of makeColMap that avoids the
       // Directory lookups (since the Import object knows who owns all
       // the GIDs).
-      //Teuchos::Array<int> RemotePids;
       if (verbose) {
         std::ostringstream os;
         os << *verbosePrefix << "Calling lowCommunicationMakeColMapAndReindex"
@@ -8762,46 +8732,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC makeColMap")));
 #endif
-#ifdef JHU_USE_HOST_MATRIX_ARRAYS
-      auto CSR_rowptr_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_rowptr_d);
-      auto CSR_colind_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_colind_LID_d);
-      auto CSR_vals_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_vals_d);
-  
-      CSR_rowptr = Teuchos::arcp(CSR_rowptr_h.data(),0,CSR_rowptr_h.size(),false);
-      CSR_colind_LID = Teuchos::arcp(CSR_colind_h.data(),0,CSR_colind_h.size(),false);
-      CSR_vals = Teuchos::arcp(CSR_vals_h.data(),0,CSR_vals_h.size(),false);
-  
-      Import_Util::lowCommunicationMakeColMapAndReindexSerial (CSR_rowptr (),
-                                                         CSR_colind_LID (),
-                                                         CSR_colind_GID (),
-                                                         BaseDomainMap,
-                                                         TargetPids,
-                                                         RemotePids,
-                                                         MyColMap);
-#else
-      Import_Util::lowCommunicationMakeColMapAndReindexKokkos (CSR_rowptr_d,
-                                                         CSR_colind_LID_d,
-                                                         CSR_colind_GID_d,
-                                                         BaseDomainMap,
-                                                         TargetPids,
-                                                         RemotePids,
-                                                         MyColMap);
-#endif
+      Import_Util::lowCommunicationMakeColMapAndReindex(CSR_rowptr_d,
+                                                        CSR_colind_LID_d,
+                                                        CSR_colind_GID_d,
+                                                        BaseDomainMap,
+                                                        TargetPids,
+                                                        RemotePids,
+                                                        MyColMap);
       }
-  
-  /*
-#if !defined(JHU_USE_HOST_MATRIX_ARRAYS)
-      //FIXME temporary until Import_Util::sortCrsEntries and Import_Util::sortAndMergeCrsEntries
-      //FIXME are rewritten.
-      auto CSR_rowptr_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_rowptr_d);
-      auto CSR_colind_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_colind_LID_d);
-      auto CSR_vals_h = create_mirror_view_and_copy(Kokkos::HostSpace(), CSR_vals_d);
-  
-      CSR_rowptr = Teuchos::arcp(CSR_rowptr_h.data(),0,CSR_rowptr_h.size(),false);
-      CSR_colind_LID = Teuchos::arcp(CSR_colind_h.data(),0,CSR_colind_h.size(),false);
-      CSR_vals = Teuchos::arcp(CSR_vals_h.data(),0,CSR_vals_h.size(),false);
-#endif
-  */
   
       if (verbose) {
         std::ostringstream os;
@@ -8857,19 +8795,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // using said views as input. This should reduce the
       // amount of data transfers required between host and
       // device and thus improve performance.
-#if defined(JHU_USE_HOST_MATRIX_ARRAYS)
-      typename row_ptrs_host_view_type::non_const_type            CSR_rowptr_host(CSR_rowptr.getRawPtr(), CSR_rowptr.size());
-      typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
-      typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
-  
-      typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_d(Kokkos::ViewAllocateWithoutInitializing("rowmap"), CSR_rowptr.size());
-      typename local_inds_device_view_type::non_const_type CSR_colind_LID_d(Kokkos::ViewAllocateWithoutInitializing("colind"), CSR_colind_LID.size());
-      typename values_device_view_type::non_const_type     CSR_vals_d(Kokkos::ViewAllocateWithoutInitializing("values"), CSR_vals.size());
-  
-      Kokkos::deep_copy(CSR_rowptr_d, CSR_rowptr_host);
-      Kokkos::deep_copy(CSR_colind_LID_d, CSR_colind_LID_host);
-      Kokkos::deep_copy(CSR_vals_d, CSR_vals_host);
-#endif
   
       if ((! reverseMode && xferAsImport != nullptr) ||
           (reverseMode && xferAsExport != nullptr)) {

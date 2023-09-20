@@ -2415,24 +2415,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     auto PermuteFromLIDs_d = Importer->getPermuteFromLIDs_dv().view_device();
 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
-//#define JHU_USE_HOST_MATRIX_ARRAYS
-#ifdef JHU_USE_HOST_MATRIX_ARRAYS
-    unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
-      *A,
-      RemoteLIDs_d,
-      importsView_d,
-      numImportPacketsView_d,
-      Importer->getNumSameIDs (),
-      PermuteToLIDs_d,
-      PermuteFromLIDs_d,
-      MapTarget->getLocalNumElements (),
-      MyPID,
-      rowptr,
-      colind,
-      vals,
-      SourcePids (),
-      TargetPids);
-#else
     Kokkos::View<size_t*,Node::device_type> rowptr_d;
     Kokkos::View<GO*,Node::device_type>     colind_d;
     Kokkos::View<Scalar*,Node::device_type> vals_d;
@@ -2460,7 +2442,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     rowptr = Teuchos::arcp(rowptr_h.data(),0,rowptr_h.size(),false);
     colind = Teuchos::arcp(colind_h.data(),0,colind_h.size(),false);
     vals = Teuchos::arcp(vals_h.data(),0,vals_h.size(),false);
-#endif
 
     size_t nnz2 = vals.size();
     if(nnz1!=nnz2) test_err++;
