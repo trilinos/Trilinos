@@ -136,6 +136,7 @@ namespace MueLu {
       solver = rcp(new GMRESSolver(numIts));
 
     RCP<Matrix> P;
+    solver->SetProcRankVerbose(GetProcRankVerbose());
     solver->Iterate(*A, *X, *P0, P);
 
     // NOTE: EXPERIMENTAL and FRAGILE

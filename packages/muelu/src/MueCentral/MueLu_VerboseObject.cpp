@@ -121,7 +121,9 @@ namespace MueLu {
 #ifdef HAVE_MPI
     int mpiStarted = 0; MPI_Initialized(&mpiStarted);
     if (mpiStarted)     {
-      fn = filename + "." + std::to_string(procRank_);
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD , &rank); // CHECK: ALLOW MPI_COMM_WORLD
+      fn = filename + "." + std::to_string(rank);
     } else
 #endif
       fn = filename;
