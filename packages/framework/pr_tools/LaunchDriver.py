@@ -102,14 +102,15 @@ def main(argv):
   # Specify, and override the driver script for ATDM ATS2 builds. Note that
   # args.build_name is a required argument so it will be valid by the time it
   # reaches this check.
-  if args.build_name.startswith("rhel8"):
-    cmd += " --on_rhel8"
 
   if args.build_name.startswith("ats2_cuda"):
       args.driver = "./Trilinos/packages/framework/pr_tools/PullRequestLinuxCudaVortexDriver.sh"
 
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
+  if args.build_name.startswith("rhel8"):
+    cmd += " --on_rhel8"
+    
   if args.in_container:
      cmd += " --no-bootstrap"
 
