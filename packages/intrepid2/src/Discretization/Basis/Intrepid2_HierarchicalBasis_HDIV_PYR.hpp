@@ -490,7 +490,6 @@ namespace Intrepid2
       OutputScratchView scratch1D_1, scratch1D_2, scratch1D_3;
       OutputScratchView scratch1D_4, scratch1D_5, scratch1D_6;
       OutputScratchView scratch1D_7, scratch1D_8, scratch1D_9;
-      const int numAlphaValues = (polyOrder_-1 > 1) ? (polyOrder_-1) : 1; // make numAlphaValues at least 1 so we can avoid zero-extent allocations…
       if (fad_size_output_ > 0) {
         scratch1D_1 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
         scratch1D_2 = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);

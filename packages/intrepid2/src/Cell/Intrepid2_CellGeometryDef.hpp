@@ -1475,7 +1475,7 @@ namespace Intrepid2
   void CellGeometry<PointScalar,spaceDim,DeviceType>::orientations(ScalarView<Orientation,DeviceType> orientationsView, const int &startCell, const int &endCell)
   {
     auto orientationsData = getOrientations();
-    const int numCellsWorkset = (endCell == -1) ? (numCells_ - startCell) : (endCell - startCell);
+    int numCellsWorkset = (endCell == -1) ? (numCells_ - startCell) : (endCell - startCell);
     
     using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,numCellsWorkset);
