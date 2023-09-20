@@ -135,16 +135,29 @@ sortAndMergeCrsEntries (const rowptr_view_type& CRS_rowptr,
 ///   and should never be called by user code.
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowPointers,
-                                      const Teuchos::ArrayView<LocalOrdinal> &columnIndices_LID,
-                                      const Teuchos::ArrayView<GlobalOrdinal> &columnIndices_GID,
-                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
-                                      const Teuchos::ArrayView<const int> &owningPids,
-                                      Teuchos::Array<int> &remotePids,
+lowCommunicationMakeColMapAndReindex (
+                                      const Teuchos::ArrayView<const size_t> &rowptr,
+                                      const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
+                                      const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
+                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
+                                      const Teuchos::ArrayView<const int> &owningPIDs,
+                                      Teuchos::Array<int> &remotePIDs,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
-
-
+/// \brief lowCommunicationMakeColMapAndReindex
+///
+/// Accepts Kokkos::View's for compatibility with non-Serial Node path in the Transfer and FillComplete
+/// path in Tpetra::CrsMatrix, thus avoiding unnecessary deep_copy's.
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+lowCommunicationMakeColMapAndReindex (
+                                      const Kokkos::View<size_t*,typename Node::device_type>        rowptr_view,
+                                      const Kokkos::View<LocalOrdinal*,typename Node::device_type>  colind_LID_view,
+                                      const Kokkos::View<GlobalOrdinal*,typename Node::device_type> colind_GID_view,
+                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
+                                      const Teuchos::ArrayView<const int> &owningPIDs,
+                                      Teuchos::Array<int> &remotePIDs,
+                                      Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
   /// \brief Generates an list of owning PIDs based on two transfer (aka import/export objects)
   /// Let:
@@ -755,7 +768,7 @@ lowCommunicationMakeColMapAndReindexSerial (const Teuchos::ArrayView<const size_
   typedef GlobalOrdinal GO;
   typedef Tpetra::global_size_t GST;
   typedef Tpetra::Map<LO, GO, Node> map_type;
-  const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
+  const char prefix[] = "lowCommunicationMakeColMapAndReindexSerial: ";
 
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
@@ -976,10 +989,9 @@ lowCommunicationMakeColMapAndReindexSerial (const Teuchos::ArrayView<const size_
 }
 
 
-// Kokkos version of lowCommunicationMakeColMapAndReindex
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindexKokkos (
+lowCommunicationMakeColMapAndReindex (
                                       const Teuchos::ArrayView<const size_t> &rowptr,
                                       const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
@@ -993,7 +1005,7 @@ lowCommunicationMakeColMapAndReindexKokkos (
   typedef GlobalOrdinal GO;
   typedef Tpetra::global_size_t GST;
   typedef Tpetra::Map<LO, GO, Node> map_type;
-  const char prefix[] = "lowCommunicationMakeColMapAndReindexKokkos: ";
+  const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
 
   typedef typename Node::device_type DT;
   using execution_space = typename DT::execution_space;
@@ -1239,10 +1251,9 @@ lowCommunicationMakeColMapAndReindexKokkos (
   Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);        
 }
 
-// Kokkos version #2 of lowCommunicationMakeColMapAndReindex
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindexKokkos (
+lowCommunicationMakeColMapAndReindex (
                                       const Kokkos::View<size_t*,typename Node::device_type>        rowptr_view,
                                       const Kokkos::View<LocalOrdinal*,typename Node::device_type>  colind_LID_view,
                                       const Kokkos::View<GlobalOrdinal*,typename Node::device_type> colind_GID_view,
@@ -1256,7 +1267,7 @@ lowCommunicationMakeColMapAndReindexKokkos (
   typedef GlobalOrdinal GO;
   typedef Tpetra::global_size_t GST;
   typedef Tpetra::Map<LO, GO, Node> map_type;
-  const char prefix[] = "lowCommunicationMakeColMapAndReindexKokkos: ";
+  const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
 
   typedef typename Node::device_type DT;
   using execution_space = typename DT::execution_space;
@@ -1266,16 +1277,7 @@ lowCommunicationMakeColMapAndReindexKokkos (
 
   // Create device mirror and host mirror views from function parameters
   // When we pass in views instead of Teuchos::ArrayViews, we can avoid copying views
-  //auto colind_LID_view = Details::create_mirror_view_from_raw_host_array(DT(), colind_LID.getRawPtr(), colind_LID.size(), true, "colind_LID");
-  //auto rowptr_view = Details::create_mirror_view_from_raw_host_array(DT(), rowptr.getRawPtr(), rowptr.size(), true, "rowptr");
-  //auto colind_GID_view = Details::create_mirror_view_from_raw_host_array(DT(), colind_GID.getRawPtr(), colind_GID.size(), true, "colind_GID");
   auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(DT(), owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
-
-  //typename decltype(colind_LID_view)::HostMirror colind_LID_host(colind_LID.getRawPtr(), colind_LID.size());
-  //typename decltype(colind_GID_view)::HostMirror colind_GID_host(colind_GID.getRawPtr(), colind_GID.size());
-
-  //Kokkos::deep_copy(colind_LID_view, colind_LID_host);
-  //Kokkos::deep_copy(colind_GID_view, colind_GID_host);
 
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
@@ -1507,7 +1509,8 @@ lowCommunicationMakeColMapAndReindexKokkos (
   //Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);        
 }
 
-
+#if 0
+// JHU TODO
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowptr,
                                       const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
@@ -1518,17 +1521,17 @@ void lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap)
 {
   // Running lowCommMakeColMap with Kokkos is slower on host, but faster on device
-  // If Kokkos runs on host, select the serial, non-Kokkos version of lowCommMakeColMap, 
+  // If Kokkos runs on host, select the serial, non-Kokkos version of lowCommMakeColMap,
   // but if Kokkos runs on device (CUDA / HIP), select the Kokkos version of lowCommMakeColMap
   typedef typename Node::device_type DT;
-  static constexpr bool runOnHost = !std::is_same_v<typename DT::execution_space, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace, 
+  static constexpr bool runOnHost = !std::is_same_v<typename DT::execution_space, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace,
     Kokkos::DefaultHostExecutionSpace>;
   if(runOnHost) {
     lowCommunicationMakeColMapAndReindexSerial<LocalOrdinal, GlobalOrdinal, Node> (rowptr, colind_LID, colind_GID, domainMapRCP, owningPIDs, remotePIDs, colMap);
   }
   else lowCommunicationMakeColMapAndReindexKokkos<LocalOrdinal, GlobalOrdinal, Node> (rowptr, colind_LID, colind_GID, domainMapRCP, owningPIDs, remotePIDs, colMap);
 }
-
+#endif
 
 // Generates an list of owning PIDs based on two transfer (aka import/export objects)
 // Let:
