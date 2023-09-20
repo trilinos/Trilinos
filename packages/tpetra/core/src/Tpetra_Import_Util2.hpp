@@ -1054,7 +1054,6 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
         const int PID = owningPIDs_view[j];
         auto outcome = RemoteGIDs_view_map.insert(GID, PID);
         if(outcome.success() && PID == -1) {
-          printf("Cannot figure out if ID is owned.\n");
           Kokkos::abort("Cannot figure out if ID is owned.\n");
         }
       }
