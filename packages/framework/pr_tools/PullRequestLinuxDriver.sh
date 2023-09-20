@@ -198,7 +198,7 @@ test_cmd_options=(
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
 )
 
-if [[ ${GENCONFIG_BUILD_NAME} == *"gcc"* ]]
+if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
 then
     test_cmd_options+=( "--use-explicit-cachefile ")
 fi 
