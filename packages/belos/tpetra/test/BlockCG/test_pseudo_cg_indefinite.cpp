@@ -112,10 +112,7 @@ int run(int argc, char *argv[]) {
     // Create diagonal matrix with n-m positive and m negative eigenvalues.
     RCP<const MAP> map = rcp(new MAP(numGlobalElements, 0, comm));
 
-    RCP<MAT> A = rcp( new MAT(map, 1) ); // DATA_Access::copy, , 1
-
-    if (proc_verbose)
-        std::cout << "TD: Start Loop" << std::endl;
+    RCP<MAT> A = rcp( new MAT(map, 1) );
 
     for ( size_t k = 0; k < map->getLocalNumElements(); k++ )
     {
@@ -124,14 +121,8 @@ int run(int argc, char *argv[]) {
       A->insertGlobalValues(gid, tuple<GO> (gid), tuple<ST> (val));
     }
 
-    if (proc_verbose)
-        std::cout << "TD: End Loop" << std::endl;
-
     A->fillComplete();
     TEUCHOS_ASSERT(A->isStorageOptimized());
-
-    if (proc_verbose)
-        std::cout << "TD: Storage is optimized" << std::endl;
 
     // create initial guess and right-hand side
     RCP<MV> vecX = rcp( new MV( map, numrhs ) );
