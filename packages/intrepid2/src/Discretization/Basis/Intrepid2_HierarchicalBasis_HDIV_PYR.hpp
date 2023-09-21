@@ -540,7 +540,6 @@ namespace Intrepid2
       {
         case OPERATOR_VALUE:
         {
-          // starting the H(div) rewrite here
           ordinal_type fieldOrdinalOffset = 0;
           // quadrilateral face
           {
@@ -1312,8 +1311,8 @@ namespace Intrepid2
       this->functionSpace_     = FUNCTION_SPACE_HDIV;
       
       const int degreeLength = 1;
-      this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) pyramid polynomial degree lookup", this->basisCardinality_, degreeLength);
-      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) pyramid polynomial H^1 degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(div) pyramid polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(div) pyramid polynomial H^1 degree lookup", this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
       
