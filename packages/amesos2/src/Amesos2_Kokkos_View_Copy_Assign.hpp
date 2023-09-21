@@ -56,7 +56,7 @@ namespace Amesos2 {
 
 // allocate dst size if necessary - 2 methods handle 1d and 2d
 template<class dst_t, class src_t> // version for 1d view
-typename std::enable_if<static_cast<int>(dst_t::Rank) == 1>::type
+typename std::enable_if<static_cast<int>(dst_t::rank) == 1>::type
 update_dst_size(dst_t & dst, const src_t & src) {
   if(dst.extent(0) != src.extent(0)) { // templated just for 1D
     dst = dst_t(Kokkos::ViewAllocateWithoutInitializing("dst"),
@@ -65,7 +65,7 @@ update_dst_size(dst_t & dst, const src_t & src) {
 }
 
 template<class dst_t, class src_t> // version for 2d view
-typename std::enable_if<static_cast<int>(dst_t::Rank) == 2>::type
+typename std::enable_if<static_cast<int>(dst_t::rank) == 2>::type
 update_dst_size(dst_t & dst, const src_t & src) {  // templated just for 2d
   if(dst.extent(0) != src.extent(0) || dst.extent(1) != src.extent(1)) {
     dst = dst_t(Kokkos::ViewAllocateWithoutInitializing("dst"),

@@ -67,7 +67,9 @@ namespace Details {
                                  uint64_t size) {      
       // In verbose mode, we add the src/dst names as well
       std::string extra_label;
-      if(Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose()) {
+      if(Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose1()) {
+        extra_label = std::string(" {") + src_name + "=>" + dst_name + "}";
+      } else if(Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose2()) {
         extra_label = std::string(" {") + src_name + "=>" + dst_name + "," + std::to_string(size)+"}";
       }    
 
@@ -122,7 +124,8 @@ namespace Details {
 
   void AddKokkosDeepCopyToTimeMonitor(bool force) {
     if (!DeepCopyTimerInjection::initialized_) {
-      if (force || Tpetra::Details::Behavior::timeKokkosDeepCopy() || Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose()) {
+      if (force || Tpetra::Details::Behavior::timeKokkosDeepCopy() || Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose1()
+                                                                   || Tpetra::Details::Behavior::timeKokkosDeepCopyVerbose2()) {
         Kokkos::Tools::Experimental::set_begin_deep_copy_callback(DeepCopyTimerInjection::kokkosp_begin_deep_copy);
         Kokkos::Tools::Experimental::set_end_deep_copy_callback(DeepCopyTimerInjection::kokkosp_end_deep_copy);
         DeepCopyTimerInjection::initialized_=true;
