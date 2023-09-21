@@ -8,6 +8,7 @@ source ${SCRIPTPATH:?}/common.bash
 on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
 on_kokkos_develop=$(echo "$@" | grep '\-\-kokkos\-develop' &> /dev/null && echo "1")
+on_rhel8=$(echo "$@" | grep '\-\-on_rhel8' &> /dev/null && echo "1")
 
 bootstrap=$(echo "$@" | grep '\-\-\no\-bootstrap' &> /dev/null && echo "0" || echo "1")
 
@@ -46,6 +47,14 @@ function bootstrap_modules() {
         module load git/2.10.1
         module load python/3.7.3
         get_python_packages pip3
+
+        module list
+    elif [[ ${on_rhel8} == "1" ]]; then
+        source /projects/sems/modulefiles/utils/sems-modules-init.sh
+        module unload sems-git
+        module unload sems-python
+        module load sems-git/2.37.0
+        module load sems-python/3.9.0
 
         module list
     else
