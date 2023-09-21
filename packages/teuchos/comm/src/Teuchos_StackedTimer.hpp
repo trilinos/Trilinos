@@ -69,7 +69,7 @@ extern void popRegion ();
 namespace Teuchos {
 
 //! Error reporting function for stacked timer.
-void error_out(const std::string& msg, const bool fail_all = false);
+TEUCHOSCOMM_LIB_DLL_EXPORT void error_out(const std::string& msg, const bool fail_all = false);
 
 /**
  * \brief the basic timer used elsewhere, uses MPI_Wtime for time
