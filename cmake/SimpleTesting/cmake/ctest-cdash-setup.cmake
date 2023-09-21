@@ -26,12 +26,12 @@ set(CTEST_CONFIGURE_COMMAND_ARGS
 
 if(USE_EXPLICIT_TRILINOS_CACHEFILE)
     list(APPEND CTEST_CONFIGURE_COMMAND_ARGS
-        "-D Trilinos_CONFIGURE_OPTIONS_FILE=\"${configure_file}\""
+        "-D Trilinos_CONFIGURE_OPTIONS_FILE=${configure_file}"
     )
 else()
     list(APPEND CTEST_CONFIGURE_COMMAND_ARGS
         "-C \"${configure_file}\""
-        )
+    )
 endif()
 list(APPEND CTEST_CONFIGURE_COMMAND_ARGS
     "-C \"${package_enables_file}\""
