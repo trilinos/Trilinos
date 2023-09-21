@@ -47,8 +47,13 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
   using Teuchos::RCP;
 
   typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::InArgs<Scalar>  appInArgs (wrapperInArgs_);
-  MEB::OutArgs<Scalar> appOutArgs(wrapperOutArgs_);
+  // MEB::InArgs<Scalar>  appInArgs (wrapperInArgs_);
+  // MEB::OutArgs<Scalar> appOutArgs(wrapperOutArgs_);
+  MEB::InArgs<Scalar>  appInArgs (inArgs);
+  MEB::OutArgs<Scalar> appOutArgs(outArgs);
+  appInArgs.set_t(wrapperInArgs_.get_t());
+  appInArgs.set_alpha(wrapperInArgs_.get_alpha());
+  appInArgs.set_beta(wrapperInArgs_.get_beta());
 
   // Setup input and output arguments for application ME
   switch (evaluationType_)
