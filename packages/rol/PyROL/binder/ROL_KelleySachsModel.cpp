@@ -65,6 +65,8 @@
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
+PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Constraint_SimOpt<double>, Teuchos::RCP<ROL::Constraint_SimOpt<double>>)
+
 // ROL::KelleySachsModel file:ROL_KelleySachsModel.hpp line:61
 struct PyCallBack_ROL_KelleySachsModel_double_t : public ROL::KelleySachsModel<double> {
 	using ROL::KelleySachsModel<double>::KelleySachsModel;
@@ -1994,7 +1996,7 @@ void bind_ROL_KelleySachsModel(std::function< pybind11::module &(std::string con
 	M("ROL").def("TrustRegionFactory", (class Teuchos::RCP<class ROL::TrustRegion<double> > (*)(class Teuchos::ParameterList &)) &ROL::TrustRegionFactory<double>, "C++: ROL::TrustRegionFactory(class Teuchos::ParameterList &) --> class Teuchos::RCP<class ROL::TrustRegion<double> >", pybind11::arg("parlist"));
 
 	{ // ROL::Constraint_SimOpt file:ROL_Constraint_SimOpt.hpp line:108
-		pybind11::classh<ROL::Constraint_SimOpt<double>, Teuchos::RCP<ROL::Constraint_SimOpt<double>>, PyCallBack_ROL_Constraint_SimOpt_double_t, ROL::Constraint<double>> cl(M("ROL"), "Constraint_SimOpt_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Constraint_SimOpt<double>, Teuchos::RCP<ROL::Constraint_SimOpt<double>>, PyCallBack_ROL_Constraint_SimOpt_double_t, ROL::Constraint<double>> cl(M("ROL"), "Constraint_SimOpt_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Constraint_SimOpt_double_t(); } ) );
 		cl.def(pybind11::init<PyCallBack_ROL_Constraint_SimOpt_double_t const &>());
 		cl.def("applyAdjointJacobian", [](ROL::Constraint_SimOpt<double> &o, class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, double & a4) -> void { return o.applyAdjointJacobian(a0, a1, a2, a3, a4); }, "", pybind11::arg("ajv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualv"), pybind11::arg("tol"));
