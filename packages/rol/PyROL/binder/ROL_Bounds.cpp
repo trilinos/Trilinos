@@ -2,8 +2,11 @@
 #include <ROL_Bounds.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
-#include <ROL_PartitionedVector.hpp>
 #include <ROL_Vector.hpp>
+#include <Teuchos_ENull.hpp>
+#include <Teuchos_RCPDecl.hpp>
+#include <Teuchos_RCPNode.hpp>
+#include <Teuchos_any.hpp>
 #include <cwchar>
 #include <ios>
 #include <iterator>
@@ -19,13 +22,14 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
+	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
 // ROL::Bounds file:ROL_Bounds.hpp line:59
@@ -149,29 +153,29 @@ struct PyCallBack_ROL_Bounds_double_t : public ROL::Bounds<double> {
 		}
 		return Bounds::applyScalingFunctionJacobian(a0, a1, a2, a3);
 	}
-	const class std::shared_ptr<const class ROL::Vector<double> > getLowerBound() const override {
+	const class Teuchos::RCP<const class ROL::Vector<double> > getLowerBound() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::Bounds<double> *>(this), "getLowerBound");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<const class ROL::Vector<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class std::shared_ptr<const class ROL::Vector<double> >> caster;
-				return pybind11::detail::cast_ref<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<const class ROL::Vector<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class Teuchos::RCP<const class ROL::Vector<double> >> caster;
+				return pybind11::detail::cast_ref<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o));
 		}
 		return BoundConstraint::getLowerBound();
 	}
-	const class std::shared_ptr<const class ROL::Vector<double> > getUpperBound() const override {
+	const class Teuchos::RCP<const class ROL::Vector<double> > getUpperBound() const override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::Bounds<double> *>(this), "getUpperBound");
 		if (overload) {
 			auto o = overload.operator()<pybind11::return_value_policy::reference>();
-			if (pybind11::detail::cast_is_temporary_value_reference<const class std::shared_ptr<const class ROL::Vector<double> >>::value) {
-				static pybind11::detail::override_caster_t<const class std::shared_ptr<const class ROL::Vector<double> >> caster;
-				return pybind11::detail::cast_ref<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o), caster);
+			if (pybind11::detail::cast_is_temporary_value_reference<const class Teuchos::RCP<const class ROL::Vector<double> >>::value) {
+				static pybind11::detail::override_caster_t<const class Teuchos::RCP<const class ROL::Vector<double> >> caster;
+				return pybind11::detail::cast_ref<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o), caster);
 			}
-			else return pybind11::detail::cast_safe<const class std::shared_ptr<const class ROL::Vector<double> >>(std::move(o));
+			else return pybind11::detail::cast_safe<const class Teuchos::RCP<const class ROL::Vector<double> >>(std::move(o));
 		}
 		return BoundConstraint::getUpperBound();
 	}
@@ -180,15 +184,15 @@ struct PyCallBack_ROL_Bounds_double_t : public ROL::Bounds<double> {
 void bind_ROL_Bounds(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Bounds file:ROL_Bounds.hpp line:59
-		pybind11::class_<ROL::Bounds<double>, std::shared_ptr<ROL::Bounds<double>>, PyCallBack_ROL_Bounds_double_t, ROL::BoundConstraint<double>> cl(M("ROL"), "Bounds_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Bounds<double>, Teuchos::RCP<ROL::Bounds<double>>, PyCallBack_ROL_Bounds_double_t, ROL::BoundConstraint<double>> cl(M("ROL"), "Bounds_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](const class ROL::Vector<double> & a0){ return new ROL::Bounds<double>(a0); }, [](const class ROL::Vector<double> & a0){ return new PyCallBack_ROL_Bounds_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](const class ROL::Vector<double> & a0, bool const & a1){ return new ROL::Bounds<double>(a0, a1); }, [](const class ROL::Vector<double> & a0, bool const & a1){ return new PyCallBack_ROL_Bounds_double_t(a0, a1); } ), "doc");
 		cl.def( pybind11::init( [](const class ROL::Vector<double> & a0, bool const & a1, double const & a2){ return new ROL::Bounds<double>(a0, a1, a2); }, [](const class ROL::Vector<double> & a0, bool const & a1, double const & a2){ return new PyCallBack_ROL_Bounds_double_t(a0, a1, a2); } ), "doc");
 		cl.def( pybind11::init<const class ROL::Vector<double> &, bool, double, double>(), pybind11::arg("x"), pybind11::arg("isLower"), pybind11::arg("scale"), pybind11::arg("feasTol") );
 
-		cl.def( pybind11::init( [](const class std::shared_ptr<class ROL::Vector<double> > & a0, const class std::shared_ptr<class ROL::Vector<double> > & a1){ return new ROL::Bounds<double>(a0, a1); }, [](const class std::shared_ptr<class ROL::Vector<double> > & a0, const class std::shared_ptr<class ROL::Vector<double> > & a1){ return new PyCallBack_ROL_Bounds_double_t(a0, a1); } ), "doc");
-		cl.def( pybind11::init( [](const class std::shared_ptr<class ROL::Vector<double> > & a0, const class std::shared_ptr<class ROL::Vector<double> > & a1, const double & a2){ return new ROL::Bounds<double>(a0, a1, a2); }, [](const class std::shared_ptr<class ROL::Vector<double> > & a0, const class std::shared_ptr<class ROL::Vector<double> > & a1, const double & a2){ return new PyCallBack_ROL_Bounds_double_t(a0, a1, a2); } ), "doc");
-		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Vector<double> > &, const class std::shared_ptr<class ROL::Vector<double> > &, const double, const double>(), pybind11::arg("x_lo"), pybind11::arg("x_up"), pybind11::arg("scale"), pybind11::arg("feasTol") );
+		cl.def( pybind11::init( [](const class Teuchos::RCP<class ROL::Vector<double> > & a0, const class Teuchos::RCP<class ROL::Vector<double> > & a1){ return new ROL::Bounds<double>(a0, a1); }, [](const class Teuchos::RCP<class ROL::Vector<double> > & a0, const class Teuchos::RCP<class ROL::Vector<double> > & a1){ return new PyCallBack_ROL_Bounds_double_t(a0, a1); } ), "doc");
+		cl.def( pybind11::init( [](const class Teuchos::RCP<class ROL::Vector<double> > & a0, const class Teuchos::RCP<class ROL::Vector<double> > & a1, const double & a2){ return new ROL::Bounds<double>(a0, a1, a2); }, [](const class Teuchos::RCP<class ROL::Vector<double> > & a0, const class Teuchos::RCP<class ROL::Vector<double> > & a1, const double & a2){ return new PyCallBack_ROL_Bounds_double_t(a0, a1, a2); } ), "doc");
+		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Vector<double> > &, const class Teuchos::RCP<class ROL::Vector<double> > &, const double, const double>(), pybind11::arg("x_lo"), pybind11::arg("x_up"), pybind11::arg("scale"), pybind11::arg("feasTol") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_Bounds_double_t const &o){ return new PyCallBack_ROL_Bounds_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Bounds<double> const &o){ return new ROL::Bounds<double>(o); } ) );
@@ -219,8 +223,8 @@ void bind_ROL_Bounds(std::function< pybind11::module &(std::string const &namesp
 		cl.def("pruneLowerActive", [](ROL::BoundConstraint<double> &o, class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2) -> void { return o.pruneLowerActive(a0, a1, a2); }, "", pybind11::arg("v"), pybind11::arg("g"), pybind11::arg("x"));
 		cl.def("pruneLowerActive", [](ROL::BoundConstraint<double> &o, class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, double const & a3) -> void { return o.pruneLowerActive(a0, a1, a2, a3); }, "", pybind11::arg("v"), pybind11::arg("g"), pybind11::arg("x"), pybind11::arg("xeps"));
 		cl.def("pruneLowerActive", (void (ROL::BoundConstraint<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double, double)) &ROL::BoundConstraint<double>::pruneLowerActive, "C++: ROL::BoundConstraint<double>::pruneLowerActive(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double, double) --> void", pybind11::arg("v"), pybind11::arg("g"), pybind11::arg("x"), pybind11::arg("xeps"), pybind11::arg("geps"));
-		cl.def("getLowerBound", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::BoundConstraint<double>::*)() const) &ROL::BoundConstraint<double>::getLowerBound, "C++: ROL::BoundConstraint<double>::getLowerBound() const --> const class std::shared_ptr<const class ROL::Vector<double> >");
-		cl.def("getUpperBound", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::BoundConstraint<double>::*)() const) &ROL::BoundConstraint<double>::getUpperBound, "C++: ROL::BoundConstraint<double>::getUpperBound() const --> const class std::shared_ptr<const class ROL::Vector<double> >");
+		cl.def("getLowerBound", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::BoundConstraint<double>::*)() const) &ROL::BoundConstraint<double>::getLowerBound, "C++: ROL::BoundConstraint<double>::getLowerBound() const --> const class Teuchos::RCP<const class ROL::Vector<double> >");
+		cl.def("getUpperBound", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::BoundConstraint<double>::*)() const) &ROL::BoundConstraint<double>::getUpperBound, "C++: ROL::BoundConstraint<double>::getUpperBound() const --> const class Teuchos::RCP<const class ROL::Vector<double> >");
 		cl.def("isFeasible", (bool (ROL::BoundConstraint<double>::*)(const class ROL::Vector<double> &)) &ROL::BoundConstraint<double>::isFeasible, "C++: ROL::BoundConstraint<double>::isFeasible(const class ROL::Vector<double> &) --> bool", pybind11::arg("v"));
 		cl.def("applyInverseScalingFunction", (void (ROL::BoundConstraint<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &) const) &ROL::BoundConstraint<double>::applyInverseScalingFunction, "C++: ROL::BoundConstraint<double>::applyInverseScalingFunction(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &) const --> void", pybind11::arg("dv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("g"));
 		cl.def("applyScalingFunctionJacobian", (void (ROL::BoundConstraint<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &) const) &ROL::BoundConstraint<double>::applyScalingFunctionJacobian, "C++: ROL::BoundConstraint<double>::applyScalingFunctionJacobian(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &) const --> void", pybind11::arg("dv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("g"));

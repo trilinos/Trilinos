@@ -6,13 +6,14 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
+	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
 // ROL::Elementwise::ReductionOp file:ROL_Elementwise_Reduce.hpp line:68
@@ -261,7 +262,7 @@ void bind_ROL_Elementwise_Reduce(std::function< pybind11::module &(std::string c
 ;
 
 	{ // ROL::Elementwise::ReductionOp file:ROL_Elementwise_Reduce.hpp line:68
-		pybind11::class_<ROL::Elementwise::ReductionOp<double>, std::shared_ptr<ROL::Elementwise::ReductionOp<double>>, PyCallBack_ROL_Elementwise_ReductionOp_double_t> cl(M("ROL::Elementwise"), "ReductionOp_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::ReductionOp<double>, Teuchos::RCP<ROL::Elementwise::ReductionOp<double>>, PyCallBack_ROL_Elementwise_ReductionOp_double_t> cl(M("ROL::Elementwise"), "ReductionOp_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_Elementwise_ReductionOp_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Elementwise_ReductionOp_double_t(); } ) );
 		cl.def("reduce", (void (ROL::Elementwise::ReductionOp<double>::*)(const double &, double &) const) &ROL::Elementwise::ReductionOp<double>::reduce, "C++: ROL::Elementwise::ReductionOp<double>::reduce(const double &, double &) const --> void", pybind11::arg("input"), pybind11::arg("output"));
@@ -273,7 +274,7 @@ void bind_ROL_Elementwise_Reduce(std::function< pybind11::module &(std::string c
 		cl.def("assign", (class ROL::Elementwise::ReductionOp<double> & (ROL::Elementwise::ReductionOp<double>::*)(const class ROL::Elementwise::ReductionOp<double> &)) &ROL::Elementwise::ReductionOp<double>::operator=, "C++: ROL::Elementwise::ReductionOp<double>::operator=(const class ROL::Elementwise::ReductionOp<double> &) --> class ROL::Elementwise::ReductionOp<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::ReductionSum file:ROL_Elementwise_Reduce.hpp line:80
-		pybind11::class_<ROL::Elementwise::ReductionSum<double>, std::shared_ptr<ROL::Elementwise::ReductionSum<double>>, PyCallBack_ROL_Elementwise_ReductionSum_double_t, ROL::Elementwise::ReductionOp<double>> cl(M("ROL::Elementwise"), "ReductionSum_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::ReductionSum<double>, Teuchos::RCP<ROL::Elementwise::ReductionSum<double>>, PyCallBack_ROL_Elementwise_ReductionSum_double_t, ROL::Elementwise::ReductionOp<double>> cl(M("ROL::Elementwise"), "ReductionSum_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_ReductionSum_double_t const &o){ return new PyCallBack_ROL_Elementwise_ReductionSum_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::ReductionSum<double> const &o){ return new ROL::Elementwise::ReductionSum<double>(o); } ) );
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::ReductionSum<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_ReductionSum_double_t(); } ) );
@@ -291,7 +292,7 @@ void bind_ROL_Elementwise_Reduce(std::function< pybind11::module &(std::string c
 		cl.def("assign", (class ROL::Elementwise::ReductionOp<double> & (ROL::Elementwise::ReductionOp<double>::*)(const class ROL::Elementwise::ReductionOp<double> &)) &ROL::Elementwise::ReductionOp<double>::operator=, "C++: ROL::Elementwise::ReductionOp<double>::operator=(const class ROL::Elementwise::ReductionOp<double> &) --> class ROL::Elementwise::ReductionOp<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::ReductionMin file:ROL_Elementwise_Reduce.hpp line:121
-		pybind11::class_<ROL::Elementwise::ReductionMin<double>, std::shared_ptr<ROL::Elementwise::ReductionMin<double>>, PyCallBack_ROL_Elementwise_ReductionMin_double_t, ROL::Elementwise::ReductionOp<double>> cl(M("ROL::Elementwise"), "ReductionMin_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::ReductionMin<double>, Teuchos::RCP<ROL::Elementwise::ReductionMin<double>>, PyCallBack_ROL_Elementwise_ReductionMin_double_t, ROL::Elementwise::ReductionOp<double>> cl(M("ROL::Elementwise"), "ReductionMin_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::ReductionMin<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_ReductionMin_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_ReductionMin_double_t const &o){ return new PyCallBack_ROL_Elementwise_ReductionMin_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::ReductionMin<double> const &o){ return new ROL::Elementwise::ReductionMin<double>(o); } ) );
@@ -309,7 +310,7 @@ void bind_ROL_Elementwise_Reduce(std::function< pybind11::module &(std::string c
 		cl.def("assign", (class ROL::Elementwise::ReductionOp<double> & (ROL::Elementwise::ReductionOp<double>::*)(const class ROL::Elementwise::ReductionOp<double> &)) &ROL::Elementwise::ReductionOp<double>::operator=, "C++: ROL::Elementwise::ReductionOp<double>::operator=(const class ROL::Elementwise::ReductionOp<double> &) --> class ROL::Elementwise::ReductionOp<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Elementwise::ReductionMax file:ROL_Elementwise_Reduce.hpp line:148
-		pybind11::class_<ROL::Elementwise::ReductionMax<double>, std::shared_ptr<ROL::Elementwise::ReductionMax<double>>, PyCallBack_ROL_Elementwise_ReductionMax_double_t, ROL::Elementwise::ReductionOp<double>> cl(M("ROL::Elementwise"), "ReductionMax_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Elementwise::ReductionMax<double>, Teuchos::RCP<ROL::Elementwise::ReductionMax<double>>, PyCallBack_ROL_Elementwise_ReductionMax_double_t, ROL::Elementwise::ReductionOp<double>> cl(M("ROL::Elementwise"), "ReductionMax_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Elementwise::ReductionMax<double>(); }, [](){ return new PyCallBack_ROL_Elementwise_ReductionMax_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Elementwise_ReductionMax_double_t const &o){ return new PyCallBack_ROL_Elementwise_ReductionMax_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::Elementwise::ReductionMax<double> const &o){ return new ROL::Elementwise::ReductionMax<double>(o); } ) );

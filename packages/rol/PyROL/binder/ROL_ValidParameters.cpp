@@ -4,17 +4,19 @@
 #include <ROL_LineSearch_U.hpp>
 #include <ROL_LineSearch_U_Types.hpp>
 #include <ROL_Objective.hpp>
-#include <ROL_PartitionedVector.hpp>
 #include <ROL_ScalarFunction.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_ValidParameters.hpp>
 #include <ROL_Vector.hpp>
+#include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterListModifier.hpp>
 #include <Teuchos_RCPDecl.hpp>
+#include <Teuchos_RCPNode.hpp>
 #include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
+#include <Teuchos_any.hpp>
 #include <cwchar>
 #include <deque>
 #include <ios>
@@ -31,13 +33,14 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
+	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
 // ROL::Bundle_U file:ROL_Bundle_U.hpp line:59
@@ -165,13 +168,13 @@ struct PyCallBack_ROL_LineSearch_U_double_t : public ROL::LineSearch_U<double> {
 void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	// ROL::getValidROLParameters() file:ROL_ValidParameters.hpp line:55
-	M("ROL").def("getValidROLParameters", (class std::shared_ptr<const class Teuchos::ParameterList> (*)()) &ROL::getValidROLParameters, "C++: ROL::getValidROLParameters() --> class std::shared_ptr<const class Teuchos::ParameterList>");
+	M("ROL").def("getValidROLParameters", (class Teuchos::RCP<const class Teuchos::ParameterList> (*)()) &ROL::getValidROLParameters, "C++: ROL::getValidROLParameters() --> class Teuchos::RCP<const class Teuchos::ParameterList>");
 
 	// ROL::getValidSOLParameters() file:ROL_ValidParameters.hpp line:290
-	M("ROL").def("getValidSOLParameters", (class std::shared_ptr<const class Teuchos::ParameterList> (*)()) &ROL::getValidSOLParameters, "C++: ROL::getValidSOLParameters() --> class std::shared_ptr<const class Teuchos::ParameterList>");
+	M("ROL").def("getValidSOLParameters", (class Teuchos::RCP<const class Teuchos::ParameterList> (*)()) &ROL::getValidSOLParameters, "C++: ROL::getValidSOLParameters() --> class Teuchos::RCP<const class Teuchos::ParameterList>");
 
 	{ // ROL::Bundle_U file:ROL_Bundle_U.hpp line:59
-		pybind11::class_<ROL::Bundle_U<double>, std::shared_ptr<ROL::Bundle_U<double>>, PyCallBack_ROL_Bundle_U_double_t> cl(M("ROL"), "Bundle_U_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::Bundle_U<double>, Teuchos::RCP<ROL::Bundle_U<double>>, PyCallBack_ROL_Bundle_U_double_t> cl(M("ROL"), "Bundle_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Bundle_U_double_t(); } ), "doc");
 		cl.def( pybind11::init( [](const unsigned int & a0){ return new PyCallBack_ROL_Bundle_U_double_t(a0); } ), "doc");
 		cl.def( pybind11::init( [](const unsigned int & a0, const double & a1){ return new PyCallBack_ROL_Bundle_U_double_t(a0, a1); } ), "doc");
@@ -198,7 +201,7 @@ void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string cons
 		cl.def("assign", (class ROL::Bundle_U<double> & (ROL::Bundle_U<double>::*)(const class ROL::Bundle_U<double> &)) &ROL::Bundle_U<double>::operator=, "C++: ROL::Bundle_U<double>::operator=(const class ROL::Bundle_U<double> &) --> class ROL::Bundle_U<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::ScalarFunction file:ROL_ScalarFunction.hpp line:56
-		pybind11::class_<ROL::ScalarFunction<double>, std::shared_ptr<ROL::ScalarFunction<double>>, PyCallBack_ROL_ScalarFunction_double_t> cl(M("ROL"), "ScalarFunction_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::ScalarFunction<double>, Teuchos::RCP<ROL::ScalarFunction<double>>, PyCallBack_ROL_ScalarFunction_double_t> cl(M("ROL"), "ScalarFunction_double_t", "", pybind11::module_local());
 		cl.def(pybind11::init<PyCallBack_ROL_ScalarFunction_double_t const &>());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_ScalarFunction_double_t(); } ) );
 		cl.def("value", (double (ROL::ScalarFunction<double>::*)(const double)) &ROL::ScalarFunction<double>::value, "C++: ROL::ScalarFunction<double>::value(const double) --> double", pybind11::arg("alpha"));
@@ -274,7 +277,7 @@ void bind_ROL_ValidParameters(std::function< pybind11::module &(std::string cons
 	M("ROL").def("StringToECurvatureConditionU", (enum ROL::ECurvatureConditionU (*)(std::string)) &ROL::StringToECurvatureConditionU, "C++: ROL::StringToECurvatureConditionU(std::string) --> enum ROL::ECurvatureConditionU", pybind11::arg("s"));
 
 	{ // ROL::LineSearch_U file:ROL_LineSearch_U.hpp line:61
-		pybind11::class_<ROL::LineSearch_U<double>, std::shared_ptr<ROL::LineSearch_U<double>>, PyCallBack_ROL_LineSearch_U_double_t> cl(M("ROL"), "LineSearch_U_double_t", "", pybind11::module_local());
+		pybind11::class_<ROL::LineSearch_U<double>, Teuchos::RCP<ROL::LineSearch_U<double>>, PyCallBack_ROL_LineSearch_U_double_t> cl(M("ROL"), "LineSearch_U_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("parlist") );
 
 		cl.def(pybind11::init<PyCallBack_ROL_LineSearch_U_double_t const &>());

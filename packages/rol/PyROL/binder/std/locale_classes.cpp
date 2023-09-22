@@ -9,24 +9,25 @@
 #include <string>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include "PyROL_Smart_Holder.hpp"
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
+	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
 // std::logic_error file:stdexcept line:113
 struct PyCallBack_std_logic_error : public std::logic_error {
 	using std::logic_error::logic_error;
 
-	const char * what() const throw() override {
+	const char * what() const noexcept override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const std::logic_error *>(this), "what");
 		if (overload) {
@@ -45,7 +46,7 @@ struct PyCallBack_std_logic_error : public std::logic_error {
 struct PyCallBack_std_invalid_argument : public std::invalid_argument {
 	using std::invalid_argument::invalid_argument;
 
-	const char * what() const throw() override {
+	const char * what() const noexcept override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const std::invalid_argument *>(this), "what");
 		if (overload) {
@@ -64,7 +65,7 @@ struct PyCallBack_std_invalid_argument : public std::invalid_argument {
 struct PyCallBack_std_runtime_error : public std::runtime_error {
 	using std::runtime_error::runtime_error;
 
-	const char * what() const throw() override {
+	const char * what() const noexcept override {
 		pybind11::gil_scoped_acquire gil;
 		pybind11::function overload = pybind11::get_overload(static_cast<const std::runtime_error *>(this), "what");
 		if (overload) {
@@ -244,7 +245,7 @@ struct PyCallBack_std_streambuf : public std::streambuf {
 void bind_std_locale_classes(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // std::locale file:bits/locale_classes.h line:62
-		pybind11::class_<std::locale, std::shared_ptr<std::locale>> cl(M("std"), "locale", "", pybind11::module_local());
+		pybind11::class_<std::locale, Teuchos::RCP<std::locale>> cl(M("std"), "locale", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new std::locale(); } ) );
 		cl.def( pybind11::init( [](std::locale const &o){ return new std::locale(o); } ) );
 		cl.def( pybind11::init<const char *>(), pybind11::arg("__s") );
@@ -266,7 +267,7 @@ void bind_std_locale_classes(std::function< pybind11::module &(std::string const
 
 		{ // std::locale::id file:bits/locale_classes.h line:485
 			auto & enclosing_class = cl;
-			pybind11::class_<std::locale::id, std::shared_ptr<std::locale::id>> cl(enclosing_class, "id", "", pybind11::module_local());
+			pybind11::class_<std::locale::id, Teuchos::RCP<std::locale::id>> cl(enclosing_class, "id", "", pybind11::module_local());
 			cl.def( pybind11::init( [](){ return new std::locale::id(); } ) );
 			cl.def("_M_id", (unsigned long (std::locale::id::*)() const) &std::locale::id::_M_id, "C++: std::locale::id::_M_id() const --> unsigned long");
 		}
@@ -278,7 +279,7 @@ void bind_std_locale_classes(std::function< pybind11::module &(std::string const
 
 	}
 	{ // std::logic_error file:stdexcept line:113
-		pybind11::class_<std::logic_error, std::shared_ptr<std::logic_error>, PyCallBack_std_logic_error, std::exception> cl(M("std"), "logic_error", "", pybind11::module_local());
+		pybind11::class_<std::logic_error, Teuchos::RCP<std::logic_error>, PyCallBack_std_logic_error, std::exception> cl(M("std"), "logic_error", "", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("__arg") );
 
 		cl.def( pybind11::init<const char *>(), pybind11::arg("") );
@@ -289,7 +290,7 @@ void bind_std_locale_classes(std::function< pybind11::module &(std::string const
 		cl.def("what", (const char * (std::logic_error::*)() const) &std::logic_error::what, "C++: std::logic_error::what() const --> const char *", pybind11::return_value_policy::automatic);
 	}
 	{ // std::invalid_argument file:stdexcept line:168
-		pybind11::class_<std::invalid_argument, std::shared_ptr<std::invalid_argument>, PyCallBack_std_invalid_argument, std::logic_error> cl(M("std"), "invalid_argument", "", pybind11::module_local());
+		pybind11::class_<std::invalid_argument, Teuchos::RCP<std::invalid_argument>, PyCallBack_std_invalid_argument, std::logic_error> cl(M("std"), "invalid_argument", "", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("__arg") );
 
 		cl.def( pybind11::init<const char *>(), pybind11::arg("") );
@@ -299,7 +300,7 @@ void bind_std_locale_classes(std::function< pybind11::module &(std::string const
 		cl.def("assign", (class std::invalid_argument & (std::invalid_argument::*)(const class std::invalid_argument &)) &std::invalid_argument::operator=, "C++: std::invalid_argument::operator=(const class std::invalid_argument &) --> class std::invalid_argument &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // std::runtime_error file:stdexcept line:219
-		pybind11::class_<std::runtime_error, std::shared_ptr<std::runtime_error>, PyCallBack_std_runtime_error, std::exception> cl(M("std"), "runtime_error", "", pybind11::module_local());
+		pybind11::class_<std::runtime_error, Teuchos::RCP<std::runtime_error>, PyCallBack_std_runtime_error, std::exception> cl(M("std"), "runtime_error", "", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("__arg") );
 
 		cl.def( pybind11::init<const char *>(), pybind11::arg("") );
@@ -335,7 +336,7 @@ void bind_std_locale_classes(std::function< pybind11::module &(std::string const
 ;
 
 	{ // std::basic_streambuf file:bits/streambuf.tcc line:149
-		pybind11::class_<std::streambuf, std::shared_ptr<std::streambuf>, PyCallBack_std_streambuf> cl(M("std"), "streambuf", "", pybind11::module_local());
+		pybind11::class_<std::streambuf, Teuchos::RCP<std::streambuf>, PyCallBack_std_streambuf> cl(M("std"), "streambuf", "", pybind11::module_local());
 		cl.def("pubimbue", (class std::locale (std::streambuf::*)(const class std::locale &)) &std::basic_streambuf<char, std::char_traits<char> >::pubimbue, "C++: std::basic_streambuf<char, std::char_traits<char> >::pubimbue(const class std::locale &) --> class std::locale", pybind11::arg("__loc"));
 		cl.def("getloc", (class std::locale (std::streambuf::*)() const) &std::basic_streambuf<char, std::char_traits<char> >::getloc, "C++: std::basic_streambuf<char, std::char_traits<char> >::getloc() const --> class std::locale");
 		cl.def("pubsetbuf", (class std::basic_streambuf<char> * (std::streambuf::*)(char *, long)) &std::basic_streambuf<char, std::char_traits<char> >::pubsetbuf, "C++: std::basic_streambuf<char, std::char_traits<char> >::pubsetbuf(char *, long) --> class std::basic_streambuf<char> *", pybind11::return_value_policy::automatic, pybind11::arg("__s"), pybind11::arg("__n"));

@@ -1,19 +1,17 @@
 #include <ROL_BoundConstraint.hpp>
-#include <ROL_BoundConstraint_Partitioned.hpp>
-#include <ROL_Bounds.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_InteriorPointObjective.hpp>
 #include <ROL_Objective.hpp>
-#include <ROL_PartitionedVector.hpp>
-#include <ROL_SlacklessObjective.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
+#include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterListModifier.hpp>
 #include <Teuchos_RCPDecl.hpp>
+#include <Teuchos_RCPNode.hpp>
 #include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
 #include <cwchar>
 #include <deque>
@@ -31,13 +29,14 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
+	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
 // ROL::InteriorPointObjective file:ROL_InteriorPointObjective.hpp line:64
@@ -153,15 +152,15 @@ struct PyCallBack_ROL_InteriorPointObjective_double_t : public ROL::InteriorPoin
 void bind_ROL_InteriorPointObjective(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::InteriorPointObjective file:ROL_InteriorPointObjective.hpp line:64
-		pybind11::class_<ROL::InteriorPointObjective<double>, std::shared_ptr<ROL::InteriorPointObjective<double>>, PyCallBack_ROL_InteriorPointObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "InteriorPointObjective_double_t", "", pybind11::module_local());
-		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Objective<double> > &, const class std::shared_ptr<class ROL::BoundConstraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, const double, const double>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("useLinearDamping"), pybind11::arg("kappaD"), pybind11::arg("mu") );
+		pybind11::class_<ROL::InteriorPointObjective<double>, Teuchos::RCP<ROL::InteriorPointObjective<double>>, PyCallBack_ROL_InteriorPointObjective_double_t, ROL::Objective<double>> cl(M("ROL"), "InteriorPointObjective_double_t", "", pybind11::module_local());
+		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, const double, const double>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("useLinearDamping"), pybind11::arg("kappaD"), pybind11::arg("mu") );
 
-		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Objective<double> > &, const class std::shared_ptr<class ROL::BoundConstraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("parlist") );
+		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Objective<double> > &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, class Teuchos::ParameterList &>(), pybind11::arg("obj"), pybind11::arg("bnd"), pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("parlist") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_InteriorPointObjective_double_t const &o){ return new PyCallBack_ROL_InteriorPointObjective_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::InteriorPointObjective<double> const &o){ return new ROL::InteriorPointObjective<double>(o); } ) );
 		cl.def("getObjectiveValue", (double (ROL::InteriorPointObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::InteriorPointObjective<double>::getObjectiveValue, "C++: ROL::InteriorPointObjective<double>::getObjectiveValue(const class ROL::Vector<double> &, double &) --> double", pybind11::arg("x"), pybind11::arg("tol"));
-		cl.def("getObjectiveGradient", (const class std::shared_ptr<const class ROL::Vector<double> > (ROL::InteriorPointObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::InteriorPointObjective<double>::getObjectiveGradient, "C++: ROL::InteriorPointObjective<double>::getObjectiveGradient(const class ROL::Vector<double> &, double &) --> const class std::shared_ptr<const class ROL::Vector<double> >", pybind11::arg("x"), pybind11::arg("tol"));
+		cl.def("getObjectiveGradient", (const class Teuchos::RCP<const class ROL::Vector<double> > (ROL::InteriorPointObjective<double>::*)(const class ROL::Vector<double> &, double &)) &ROL::InteriorPointObjective<double>::getObjectiveGradient, "C++: ROL::InteriorPointObjective<double>::getObjectiveGradient(const class ROL::Vector<double> &, double &) --> const class Teuchos::RCP<const class ROL::Vector<double> >", pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("getNumberFunctionEvaluations", (int (ROL::InteriorPointObjective<double>::*)() const) &ROL::InteriorPointObjective<double>::getNumberFunctionEvaluations, "C++: ROL::InteriorPointObjective<double>::getNumberFunctionEvaluations() const --> int");
 		cl.def("getNumberGradientEvaluations", (int (ROL::InteriorPointObjective<double>::*)() const) &ROL::InteriorPointObjective<double>::getNumberGradientEvaluations, "C++: ROL::InteriorPointObjective<double>::getNumberGradientEvaluations() const --> int");
 		cl.def("updatePenalty", (void (ROL::InteriorPointObjective<double>::*)(const double)) &ROL::InteriorPointObjective<double>::updatePenalty, "C++: ROL::InteriorPointObjective<double>::updatePenalty(const double) --> void", pybind11::arg("mu"));

@@ -1,17 +1,17 @@
 #include <ROL_BoundConstraint.hpp>
-#include <ROL_BoundConstraint_Partitioned.hpp>
-#include <ROL_Bounds.hpp>
 #include <ROL_Constraint.hpp>
-#include <ROL_Constraint_Partitioned.hpp>
 #include <ROL_Elementwise_Function.hpp>
 #include <ROL_Elementwise_Reduce.hpp>
-#include <ROL_PartitionedVector.hpp>
 #include <ROL_ReducedLinearConstraint.hpp>
 #include <ROL_UpdateType.hpp>
 #include <ROL_Vector.hpp>
+#include <Teuchos_ENull.hpp>
+#include <Teuchos_RCPDecl.hpp>
+#include <Teuchos_RCPNode.hpp>
 #include <cwchar>
 #include <ios>
 #include <iterator>
+#include <locale>
 #include <memory>
 #include <ostream>
 #include <sstream> // __str__
@@ -24,13 +24,14 @@
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <Teuchos_RCP.hpp>
 
 
 #ifndef BINDER_PYBIND11_TYPE_CASTER
 	#define BINDER_PYBIND11_TYPE_CASTER
-	PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
+	PYBIND11_DECLARE_HOLDER_TYPE(T, Teuchos::RCP<T>)
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
-	PYBIND11_MAKE_OPAQUE(std::shared_ptr<void>)
+	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
 // ROL::ReducedLinearConstraint file:ROL_ReducedLinearConstraint.hpp line:67
@@ -141,17 +142,43 @@ struct PyCallBack_ROL_ReducedLinearConstraint_double_t : public ROL::ReducedLine
 		}
 		return Constraint::applyPreconditioner(a0, a1, a2, a3, a4);
 	}
+	double checkAdjointConsistencyJacobian(const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const bool a3, std::ostream & a4) override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::ReducedLinearConstraint<double> *>(this), "checkAdjointConsistencyJacobian");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3, a4);
+			if (pybind11::detail::cast_is_temporary_value_reference<double>::value) {
+				static pybind11::detail::override_caster_t<double> caster;
+				return pybind11::detail::cast_ref<double>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<double>(std::move(o));
+		}
+		return Constraint::checkAdjointConsistencyJacobian(a0, a1, a2, a3, a4);
+	}
+	double checkAdjointConsistencyJacobian(const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class ROL::Vector<double> & a4, const bool a5, std::ostream & a6) override {
+		pybind11::gil_scoped_acquire gil;
+		pybind11::function overload = pybind11::get_overload(static_cast<const ROL::ReducedLinearConstraint<double> *>(this), "checkAdjointConsistencyJacobian");
+		if (overload) {
+			auto o = overload.operator()<pybind11::return_value_policy::reference>(a0, a1, a2, a3, a4, a5, a6);
+			if (pybind11::detail::cast_is_temporary_value_reference<double>::value) {
+				static pybind11::detail::override_caster_t<double> caster;
+				return pybind11::detail::cast_ref<double>(std::move(o), caster);
+			}
+			else return pybind11::detail::cast_safe<double>(std::move(o));
+		}
+		return Constraint::checkAdjointConsistencyJacobian(a0, a1, a2, a3, a4, a5, a6);
+	}
 };
 
 void bind_ROL_ReducedLinearConstraint(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::ReducedLinearConstraint file:ROL_ReducedLinearConstraint.hpp line:67
-		pybind11::class_<ROL::ReducedLinearConstraint<double>, std::shared_ptr<ROL::ReducedLinearConstraint<double>>, PyCallBack_ROL_ReducedLinearConstraint_double_t, ROL::Constraint<double>> cl(M("ROL"), "ReducedLinearConstraint_double_t", "", pybind11::module_local());
-		cl.def( pybind11::init<const class std::shared_ptr<class ROL::Constraint<double> > &, const class std::shared_ptr<class ROL::BoundConstraint<double> > &, const class std::shared_ptr<const class ROL::Vector<double> > &>(), pybind11::arg("con"), pybind11::arg("bnd"), pybind11::arg("x") );
+		pybind11::class_<ROL::ReducedLinearConstraint<double>, Teuchos::RCP<ROL::ReducedLinearConstraint<double>>, PyCallBack_ROL_ReducedLinearConstraint_double_t, ROL::Constraint<double>> cl(M("ROL"), "ReducedLinearConstraint_double_t", "", pybind11::module_local());
+		cl.def( pybind11::init<const class Teuchos::RCP<class ROL::Constraint<double> > &, const class Teuchos::RCP<class ROL::BoundConstraint<double> > &, const class Teuchos::RCP<const class ROL::Vector<double> > &>(), pybind11::arg("con"), pybind11::arg("bnd"), pybind11::arg("x") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_ReducedLinearConstraint_double_t const &o){ return new PyCallBack_ROL_ReducedLinearConstraint_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::ReducedLinearConstraint<double> const &o){ return new ROL::ReducedLinearConstraint<double>(o); } ) );
-		cl.def("setX", (void (ROL::ReducedLinearConstraint<double>::*)(const class std::shared_ptr<const class ROL::Vector<double> > &)) &ROL::ReducedLinearConstraint<double>::setX, "C++: ROL::ReducedLinearConstraint<double>::setX(const class std::shared_ptr<const class ROL::Vector<double> > &) --> void", pybind11::arg("x"));
+		cl.def("setX", (void (ROL::ReducedLinearConstraint<double>::*)(const class Teuchos::RCP<const class ROL::Vector<double> > &)) &ROL::ReducedLinearConstraint<double>::setX, "C++: ROL::ReducedLinearConstraint<double>::setX(const class Teuchos::RCP<const class ROL::Vector<double> > &) --> void", pybind11::arg("x"));
 		cl.def("value", (void (ROL::ReducedLinearConstraint<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::ReducedLinearConstraint<double>::value, "C++: ROL::ReducedLinearConstraint<double>::value(class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("c"), pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("applyJacobian", (void (ROL::ReducedLinearConstraint<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::ReducedLinearConstraint<double>::applyJacobian, "C++: ROL::ReducedLinearConstraint<double>::applyJacobian(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("jv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("tol"));
 		cl.def("applyAdjointJacobian", (void (ROL::ReducedLinearConstraint<double>::*)(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &)) &ROL::ReducedLinearConstraint<double>::applyAdjointJacobian, "C++: ROL::ReducedLinearConstraint<double>::applyAdjointJacobian(class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, double &) --> void", pybind11::arg("jv"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("tol"));
@@ -170,6 +197,12 @@ void bind_ROL_ReducedLinearConstraint(std::function< pybind11::module &(std::str
 		cl.def("activate", (void (ROL::Constraint<double>::*)()) &ROL::Constraint<double>::activate, "Turn on constraints \n\nC++: ROL::Constraint<double>::activate() --> void");
 		cl.def("deactivate", (void (ROL::Constraint<double>::*)()) &ROL::Constraint<double>::deactivate, "Turn off constraints\n\nC++: ROL::Constraint<double>::deactivate() --> void");
 		cl.def("isActivated", (bool (ROL::Constraint<double>::*)()) &ROL::Constraint<double>::isActivated, "Check if constraints are on\n\nC++: ROL::Constraint<double>::isActivated() --> bool");
+		cl.def("checkAdjointConsistencyJacobian", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2) -> double { return o.checkAdjointConsistencyJacobian(a0, a1, a2); }, "", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"));
+		cl.def("checkAdjointConsistencyJacobian", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const bool & a3) -> double { return o.checkAdjointConsistencyJacobian(a0, a1, a2, a3); }, "", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("printToStream"));
+		cl.def("checkAdjointConsistencyJacobian", (double (ROL::Constraint<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, std::ostream &)) &ROL::Constraint<double>::checkAdjointConsistencyJacobian, "C++: ROL::Constraint<double>::checkAdjointConsistencyJacobian(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, std::ostream &) --> double", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("printToStream"), pybind11::arg("outStream"));
+		cl.def("checkAdjointConsistencyJacobian", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class ROL::Vector<double> & a4) -> double { return o.checkAdjointConsistencyJacobian(a0, a1, a2, a3, a4); }, "", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualw"), pybind11::arg("dualv"));
+		cl.def("checkAdjointConsistencyJacobian", [](ROL::Constraint<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, const class ROL::Vector<double> & a2, const class ROL::Vector<double> & a3, const class ROL::Vector<double> & a4, const bool & a5) -> double { return o.checkAdjointConsistencyJacobian(a0, a1, a2, a3, a4, a5); }, "", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualw"), pybind11::arg("dualv"), pybind11::arg("printToStream"));
+		cl.def("checkAdjointConsistencyJacobian", (double (ROL::Constraint<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, std::ostream &)) &ROL::Constraint<double>::checkAdjointConsistencyJacobian, "C++: ROL::Constraint<double>::checkAdjointConsistencyJacobian(const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const class ROL::Vector<double> &, const bool, std::ostream &) --> double", pybind11::arg("w"), pybind11::arg("v"), pybind11::arg("x"), pybind11::arg("dualw"), pybind11::arg("dualv"), pybind11::arg("printToStream"), pybind11::arg("outStream"));
 		cl.def("assign", (class ROL::Constraint<double> & (ROL::Constraint<double>::*)(const class ROL::Constraint<double> &)) &ROL::Constraint<double>::operator=, "C++: ROL::Constraint<double>::operator=(const class ROL::Constraint<double> &) --> class ROL::Constraint<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 }
