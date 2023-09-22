@@ -267,8 +267,8 @@ IterativeInverseOperator<OP, ST, MP, MV>::IterativeInverseOperator(int n_in, int
 {
   int nGlobal;
 
-  MPI_Allreduce(&n_in, &nGlobal, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
   pComm = Tpetra::getDefaultComm();
+  Teuchos::reduceAll<int, int>(*pComm, Teuchos::REDUCE_SUM, 1, &n_in, &nGlobal);
 
   pMap = Teuchos::rcp( new MP(nGlobal, n_in, 0, pComm) );
   pPE = Teuchos::rcp( new TrilinosInterface<OP, ST, MP, MV>(pA, pComm, pMap ) );
