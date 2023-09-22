@@ -79,15 +79,15 @@ int run(int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
 
-  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
-  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-  int MyPID = rank(*comm);
-
   bool success = false;
   bool verbose = false;
 
   try
   {
+    Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    int MyPID = rank(*comm);
+
     const ST one = SCT::one();
     
     // Get test parameters from command-line processor

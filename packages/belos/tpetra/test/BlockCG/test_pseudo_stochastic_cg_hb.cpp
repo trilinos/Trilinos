@@ -67,7 +67,6 @@ int run (int argc, char *argv[])
   using OP = typename Tpetra::Operator<ST>;
   using MV = typename Tpetra::MultiVector<ST>;
   
-  using CLP = typename Teuchos::CommandLineProcessor;
   using STS = typename Teuchos::ScalarTraits<ST>;
   using MT = typename STS::magnitudeType;
   
@@ -100,7 +99,7 @@ int run (int argc, char *argv[])
     std::string filename ("bcsstk14.hb");
     MT tol = 1.0e-5;
 
-    CLP cmdp (false, true);
+    Teuchos::CommandLineProcessor cmdp (false, true);
     cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and "
                     "results.");
     cmdp.setOption ("debug", "nodebug", &debug, "Run debugging checks.");
@@ -116,7 +115,7 @@ int run (int argc, char *argv[])
                     "linear system (-1 := adapted to problem/block size).");
     cmdp.setOption ("block-size", &blocksize, "Block size to be used by the "
                     "solver.");
-    if (cmdp.parse (argc, argv) != CLP::PARSE_SUCCESSFUL) {
+    if (cmdp.parse (argc, argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
     if (debug) {

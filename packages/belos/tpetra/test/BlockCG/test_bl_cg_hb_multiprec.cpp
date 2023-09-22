@@ -104,7 +104,7 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
   RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(*vmap,rnnzmax));
   if (mptestmypid == 0) {
     // HB format is compressed column. CrsMatrix is compressed row.
-    const float *fptr = fvals;
+    const MT *fptr = fvals;
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
@@ -123,7 +123,7 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
   // Set LHS to actX
   {
     typename MultiVector<Scalar,int>::double_pointer Xvals = X->extractView2D();
-    typename MultiVector<float,int>::const_double_pointer actXvals = actX->extractConstView2D();
+    typename MultiVector<Scalar,int>::const_double_pointer actXvals = actX->extractConstView2D();
     for (Teuchos_Ordinal j=0; j<numrhs; ++j) {
       std::copy(actXvals[j], actXvals[j]+actX->myLength(), Xvals[j]);
     }
