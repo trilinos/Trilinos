@@ -8537,7 +8537,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC makeColMap")));
 #endif
-      Import_Util::lowCommunicationMakeColMapAndReindex(CSR_rowptr (),
+      Import_Util::lowCommunicationMakeColMapAndReindexSerial(CSR_rowptr (),
                                                         CSR_colind_LID (),
                                                         CSR_colind_GID (),
                                                         BaseDomainMap,
