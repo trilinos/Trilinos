@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -364,6 +363,7 @@ namespace
     
     // so far, only HGRAD, HVOL implemented for hierarchical pyramid.  Once we have full exact sequence, we can
     // switch to calling runSubBasisTests(tetTopo, out, success).
+    // NOTE: due to the way that lower-degree polynomials get added in the higher-degree bases as p increases (combined with the way that the bases are ordered), the strategy within runSubBasisTests for mapping basis ordinals from the "sub-basis" to the full basis WILL NOT WORK for H(curl) and H(div) pyramids.  We could specify the mapping in some fairly manual way (with awareness of implementation details).  Better still would be to provide a mapping within Basis that would specify how one basis is included in the other.  For now, we simply omit these tests.
     std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD, FUNCTION_SPACE_HVOL};
     auto cellTopo = pyrTopo;
     
