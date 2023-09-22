@@ -278,6 +278,7 @@ namespace Intrepid2
     }
     
     //! See Fuentes et al. (p. 455), definition of V_{ij}^{\trianglelefteq}
+    KOKKOS_INLINE_FUNCTION
     void V_LEFT_TRI(Kokkos::Array<OutputScalar,3> &VLEFTTRI,
                     const OutputScalar &phi_i, const Kokkos::Array<OutputScalar,3> &phi_i_grad,
                     const OutputScalar &phi_j, const Kokkos::Array<OutputScalar,3> &phi_j_grad,
@@ -305,6 +306,7 @@ namespace Intrepid2
     
     
     //! See Fuentes et al. (p. 455), definition of V_{ij}^{\trianglerighteq}
+    KOKKOS_INLINE_FUNCTION
     void V_RIGHT_TRI(Kokkos::Array<OutputScalar,3> &VRIGHTTRI,
                      const OutputScalar &mu1,    const Kokkos::Array<OutputScalar,3> &mu1_grad,
                      const OutputScalar &phi_i,  const Kokkos::Array<OutputScalar,3> &phi_i_grad,
