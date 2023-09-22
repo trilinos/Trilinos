@@ -44,6 +44,8 @@
 // from the problem, if it exists, will be used instead of multiple
 // random right-hand sides.  The initial guesses are all set to zero.
 //
+// Adapted from belos/epetra/example/LSQR/LSQREpetraExFile.cpp
+// 
 // NOTE: No preconditioner is used in this example.
 //
 
