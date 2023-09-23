@@ -37,40 +37,19 @@
 # ************************************************************************
 # @HEADER
 
-include(PrintVar)
-include(AppendSet)
 
+include("${CMAKE_CURRENT_LIST_DIR}/../utils/MessageWrapper.cmake")
+
+
+# Set the TriBITS package name var if it has not already been set
 #
-# Function that does an in-place sort of a list of items according to the
-# ordering in a master list
-#
-# NOTE: This function has wost-case N^2 complexity as the number of packages N
-# or TPLs increases.  It actually has N * n complexity where N is the total
-# number of packages/TPLs and n is the number of passed-in packages/TPLs.
-# However, since N is not likely to ever be more than a few hundred, this is
-# likely not going to be a big performance problem.  If this does become a
-# performance problem, list(SORT ...) could be used but would require some
-# work to build up the datastructures to make this very efficient.
-#
-
-function(tribits_sort_list_according_to_master_list  MASTER_LIST  LIST_VAR_INOUT)
-
-  #message("TRIBITS_SORT_LIST_ACCORDING_TO_MASTER_LIST:")
-  #print_var(MASTER_LIST)
-  #print_var(LIST_VAR_INOUT)
-  #print_var(${LIST_VAR_INOUT})
-
-  set(SORTED_LIST)
-
-  foreach(ITEM ${MASTER_LIST})
-    list(FIND ${LIST_VAR_INOUT} ${ITEM} ITEM_IDX)
-     if (NOT ITEM_IDX EQUAL -1)
-      list(APPEND SORTED_LIST ${ITEM})
+macro(tribits_set_tribits_package_name)
+  if ("${PACKAGE_NAME}" STREQUAL "")
+    if (NOT "${PROJECT_NAME}" STREQUAL "")
+      set(PACKAGE_NAME ${PROJECT_NAME})
+    else()
+       message_wrapper(FATAL_ERROR "Error! Can't set default PACKAGE_NAME because"
+	 " PROJECT_NAME is not set!")
     endif()
-  endforeach()
-
-  #print_var(SORTED_LIST)
-
-  set(${LIST_VAR_INOUT} ${SORTED_LIST} PARENT_SCOPE)
-
-endfunction()
+  endif()
+endmacro()

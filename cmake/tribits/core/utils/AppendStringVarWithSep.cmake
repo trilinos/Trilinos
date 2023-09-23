@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-include(ConcatStrings)
+include("${CMAKE_CURRENT_LIST_DIR}/ConcatStrings.cmake")
 
 
 # @FUNCTION: append_string_var_with_sep()

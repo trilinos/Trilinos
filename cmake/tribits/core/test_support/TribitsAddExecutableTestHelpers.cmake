@@ -37,22 +37,23 @@
 # ************************************************************************
 # @HEADER
 
-include(TribitsCMakePolicies  NO_POLICY_SCOPE)
+include_guard()
 
-include(AdvancedSet)
-include(MessageWrapper)
+include("${CMAKE_CURRENT_LIST_DIR}/../common/TribitsCMakePolicies.cmake"  NO_POLICY_SCOPE)
+
+include("${CMAKE_CURRENT_LIST_DIR}/../utils/AdvancedSet.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../utils/MessageWrapper.cmake")
 
 advanced_set( ${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX ".exe"
   CACHE STRING
   "Default exec suffix on all platforms (can be overridden by each executable added)." )
 
-#
+
 # Process the COMM arguments
 #
 # NOTE: The COMM array arguments is passed as ${ARGN}
 #
-
-function( tribits_process_comm_args  ADD_SERIAL_FEATURE_OUT  ADD_MPI_FEATURE_OUT )
+function(tribits_process_comm_args  ADD_SERIAL_FEATURE_OUT  ADD_MPI_FEATURE_OUT )
 
   set(COMM_ARRAY ${ARGN})
 
