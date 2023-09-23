@@ -495,7 +495,7 @@ namespace Stokhos {
     typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals = vec.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    typename FlatVector::wrapped_dual_view_type flat_vals = vec.getWrappedDualView();
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
