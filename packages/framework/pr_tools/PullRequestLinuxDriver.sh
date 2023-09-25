@@ -62,6 +62,7 @@ function bootstrap_modules() {
         execute_command_checked "module unload sems-archive-git"
         execute_command_checked "module unload sems-archive-python"
         execute_command_checked "module load sems-archive-git/2.10.1"
+        execute_command_checked "module load sems-archive-python"
         execute_command_checked "module load sems-ccache"
         configure_ccache
 
