@@ -1,11 +1,11 @@
 // @HEADER
-// ***********************************************************************
+// ************************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,27 +34,18 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
+//                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
 
-#include "Tpetra_Details_fill.hpp"
-#include <cstring> // std::memset
+/** \file   Intrepid2_HierarchicalBasis_HDIV_PYR_ETI.cpp
+    \brief  \brief ETI instantiation for Intrepid2 HierarchicalBasis_HDIV_PYR class.
+    \author Created by N.V. Roberts.
+ */
 
-namespace Tpetra {
-namespace Details {
-namespace Blas {
-namespace Impl {
+#include "Intrepid2_HierarchicalBasis_HDIV_PYR.hpp"
 
-void*
-memsetWrapper (void* dest, int ch, std::size_t count)
-{
-  return std::memset (dest, ch, count);
-}
-
-} // namespace Impl
-} // namespace Blas
-} // namespace Details
-} // namespace Tpetra
-
+using DefaultDeviceType = Kokkos::DefaultExecutionSpace::device_type;
+template class Intrepid2::HierarchicalBasis_HDIV_PYR<Kokkos::DefaultExecutionSpace::device_type,double,double>;
