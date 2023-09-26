@@ -176,13 +176,12 @@ value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
   typedef Thyra::ModelEvaluatorBase MEB;
 
   if((int) timeStamp.k != Nt_-1) {
-    *out_ << "Piro::ThyraProductME_TempusFinalObjective::value final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is not the final time." << std::endl;
+    if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
+      *out_ << "Piro::ThyraProductME_TempusFinalObjective::value final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is not the final time." << std::endl;
     return 0;
   }
-  *out_ << "Piro::ThyraProductME_TempusFinalObjective::value final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is the final time." << std::endl;
-
-  if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
-    *out_ << "Piro::ThyraProductME_TempusFinalObjective::value" << std::endl;
+  if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
+    *out_ << "Piro::ThyraProductME_TempusFinalObjective::value final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is the final time." << std::endl;
 
   // Run tempus and compute response for specified parameter values
   MEB::InArgs<Real> inArgs = thyra_model_->getNominalValues();
@@ -211,7 +210,8 @@ ThyraProductME_TempusFinalObjective<Real>::
 gradient_uo( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new, 
               const ROL::Vector<Real> &p, const ROL::TimeStamp<Real> &timeStamp ) const
 {
-  *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_uo " << timeStamp.t[0] << " " << timeStamp.t[timeStamp.t.size()-1] << " " << timeStamp.k << " " << Nt_ << std::endl;
+  if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
+    *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_uo " << timeStamp.t[0] << " " << timeStamp.t[timeStamp.t.size()-1] << " " << timeStamp.k << " " << Nt_ << std::endl;
   Thyra::assign(Teuchos::dyn_cast<ROL::ThyraVector<Real> >(grad).getVector().ptr(), Teuchos::ScalarTraits<Real>::zero());
 }
 
@@ -221,17 +221,17 @@ ThyraProductME_TempusFinalObjective<Real>::
 gradient_un( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new, 
               const ROL::Vector<Real> &p, const ROL::TimeStamp<Real> &timeStamp ) const
 {
-  *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_un" << std::endl;
+  using Teuchos::RCP;
+  typedef Thyra::ModelEvaluatorBase MEB;
 
   if((int) timeStamp.k != Nt_-1) {
-    *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_un final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is not the final time." << std::endl;
+    if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
+      *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_un final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is not the final time." << std::endl;
     Thyra::assign(Teuchos::dyn_cast<ROL::ThyraVector<Real> >(grad).getVector().ptr(), Teuchos::ScalarTraits<Real>::zero());
     return;
   }
-  *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_un final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is the final time." << std::endl;
-
-  using Teuchos::RCP;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
+    *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_un final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is the final time." << std::endl;
 
   // Run tempus and compute response gradient for specified parameter values
   MEB::InArgs<Real> inArgs = thyra_model_->getNominalValues();
@@ -275,17 +275,17 @@ ThyraProductME_TempusFinalObjective<Real>::
 gradient_z( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new, 
               const ROL::Vector<Real> &p, const ROL::TimeStamp<Real> &timeStamp ) const
 {
-  *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_z" << std::endl;
+  using Teuchos::RCP;
+  typedef Thyra::ModelEvaluatorBase MEB;
 
   if((int) timeStamp.k != Nt_-1) {
-    *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_z final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is not the final time." << std::endl;
+    if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
+      *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_z final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is not the final time." << std::endl;
     Thyra::assign(Teuchos::dyn_cast<ROL::ThyraVector<Real> >(grad).getVector().ptr(), Teuchos::ScalarTraits<Real>::zero());
     return;
   }
-  *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_z final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is the final time." << std::endl;
-
-  using Teuchos::RCP;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
+    *out_ << "Piro::ThyraProductME_TempusFinalObjective::gradient_z final time of the time stamp " << timeStamp.t[timeStamp.t.size()-1] << " is the final time." << std::endl;
 
   // Run tempus and compute response gradient for specified parameter values
   MEB::InArgs<Real> inArgs = thyra_model_->getNominalValues();

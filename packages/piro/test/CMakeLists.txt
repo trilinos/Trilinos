@@ -36,7 +36,7 @@ IF (Piro_ENABLE_NOX)
     MatrixBased_LOWS.hpp
     MassSpringDamperModel.cpp
     MassSpringDamperModel.hpp
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADDED_TESTS_NAMES_OUT AnalysisDriverTpetra_NAME 

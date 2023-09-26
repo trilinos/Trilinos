@@ -175,7 +175,7 @@
     </ParameterList>
     <ParameterList name="Analysis">
       <Parameter name="Transient" type="bool" value="true" />
-      <Parameter name="Output Level" type="int" value="4" />
+      <Parameter name="Output Level" type="int" value="3" />
       <Parameter name="Analysis Package" type="string" value="ROL" />
       <ParameterList name="ROL">
         <Parameter name="Response Vector Index" type="int" value="0" />
