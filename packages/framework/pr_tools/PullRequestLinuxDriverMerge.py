@@ -33,8 +33,7 @@ from textwrap import dedent
 def print_wrapper(text: str, prefix="PRLinuxDriverMerge> ", end="\n"):
     """
     """
-    rval = f"{prefix}{text}{end}"
-    print(rval, end="")
+    rval = print(f"{prefix}{text}", end=end)
     #sys.stdout.flush()
     return rval
 

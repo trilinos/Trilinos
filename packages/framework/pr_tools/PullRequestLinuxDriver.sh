@@ -58,11 +58,11 @@ function bootstrap_modules() {
 
         module list
     else
-        source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
-        execute_command_checked "module unload sems-archive-git"
-        execute_command_checked "module unload sems-archive-python"
-        execute_command_checked "module load sems-archive-git/2.10.1"
-        execute_command_checked "module load sems-archive-python"
+        source /projects/sems/modulefiles/utils/sems-modules-init.sh
+        execute_command_checked "module unload sems-git"
+        execute_command_checked "module unload sems-python"
+        execute_command_checked "module load sems-git/2.37.0"
+        execute_command_checked "module load sems-python/3.9.0"
         execute_command_checked "module load sems-ccache"
         configure_ccache
 
