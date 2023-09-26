@@ -51,7 +51,7 @@
 #include <vector>
 
 #include <functional>
-#include "PyROL_Smart_Holder.hpp"
+#include <pybind11/smart_holder.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -64,8 +64,6 @@
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
-
-PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Constraint_SimOpt<double>, Teuchos::RCP<ROL::Constraint_SimOpt<double>>)
 
 // ROL::KelleySachsModel file:ROL_KelleySachsModel.hpp line:61
 struct PyCallBack_ROL_KelleySachsModel_double_t : public ROL::KelleySachsModel<double> {
@@ -1996,6 +1994,7 @@ void bind_ROL_KelleySachsModel(std::function< pybind11::module &(std::string con
 	M("ROL").def("TrustRegionFactory", (class Teuchos::RCP<class ROL::TrustRegion<double> > (*)(class Teuchos::ParameterList &)) &ROL::TrustRegionFactory<double>, "C++: ROL::TrustRegionFactory(class Teuchos::ParameterList &) --> class Teuchos::RCP<class ROL::TrustRegion<double> >", pybind11::arg("parlist"));
 
 	{ // ROL::Constraint_SimOpt file:ROL_Constraint_SimOpt.hpp line:108
+		PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Constraint_SimOpt<double> , Teuchos::RCP<ROL::Constraint_SimOpt<double>>)
 		pybind11::class_<ROL::Constraint_SimOpt<double>, Teuchos::RCP<ROL::Constraint_SimOpt<double>>, PyCallBack_ROL_Constraint_SimOpt_double_t, ROL::Constraint<double>> cl(M("ROL"), "Constraint_SimOpt_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Constraint_SimOpt_double_t(); } ) );
 		cl.def(pybind11::init<PyCallBack_ROL_Constraint_SimOpt_double_t const &>());

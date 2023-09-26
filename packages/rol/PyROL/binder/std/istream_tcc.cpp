@@ -10,7 +10,7 @@
 #include <string>
 
 #include <functional>
-#include "PyROL_Smart_Holder.hpp"
+#include <pybind11/smart_holder.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -239,7 +239,7 @@ void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &n
 	}
 	{ // std::basic_stringbuf file:bits/sstream.tcc line:291
 		pybind11::class_<std::stringbuf, Teuchos::RCP<std::stringbuf>, PyCallBack_std_stringbuf, std::streambuf> cl(M("std"), "stringbuf", "", pybind11::module_local());
-		cl.def( pybind11::init( [](){ return new std::stringbuf(); }, [](){ return new PyCallBack_std_stringbuf(); } ) );
+		cl.def( pybind11::init( [](){ return new std::stringbuf(); }, [](){ return new PyCallBack_std_stringbuf(); } ), "doc");
 		cl.def( pybind11::init<enum std::_Ios_Openmode>(), pybind11::arg("__mode") );
 
 		cl.def( pybind11::init( [](const std::string & a0){ return new std::stringbuf(a0); }, [](const std::string & a0){ return new PyCallBack_std_stringbuf(a0); } ), "doc");
@@ -271,7 +271,7 @@ void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &n
 	}
 	{ // std::basic_istringstream file:bits/sstream.tcc line:292
 		pybind11::class_<std::istringstream, Teuchos::RCP<std::istringstream>, std::istream> cl(M("std"), "istringstream", "", pybind11::module_local());
-		cl.def( pybind11::init( [](){ return new std::istringstream(); } ) );
+		cl.def( pybind11::init( [](){ return new std::istringstream(); } ), "doc" );
 		cl.def( pybind11::init<enum std::_Ios_Openmode>(), pybind11::arg("__mode") );
 
 		cl.def( pybind11::init( [](const std::string & a0){ return new std::istringstream(a0); } ), "doc" , pybind11::arg("__str"));
@@ -319,7 +319,7 @@ void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &n
 	}
 	{ // std::basic_ostringstream file:bits/sstream.tcc line:293
 		pybind11::class_<std::ostringstream, Teuchos::RCP<std::ostringstream>, std::ostream> cl(M("std"), "ostringstream", "", pybind11::module_local());
-		cl.def( pybind11::init( [](){ return new std::ostringstream(); } ) );
+		cl.def( pybind11::init( [](){ return new std::ostringstream(); } ), "doc" );
 		cl.def( pybind11::init<enum std::_Ios_Openmode>(), pybind11::arg("__mode") );
 
 		cl.def( pybind11::init( [](const std::string & a0){ return new std::ostringstream(a0); } ), "doc" , pybind11::arg("__str"));

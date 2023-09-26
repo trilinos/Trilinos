@@ -4,7 +4,7 @@
 #include <sstream> // __str__
 
 #include <functional>
-#include "PyROL_Smart_Holder.hpp"
+#include <pybind11/smart_holder.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -45,7 +45,6 @@ void bind_std_postypes(std::function< pybind11::module &(std::string const &name
 		cl.def( pybind11::init<long>(), pybind11::arg("__off") );
 
 		cl.def( pybind11::init( [](std::fpos<__mbstate_t> const &o){ return new std::fpos<__mbstate_t>(o); } ) );
-		cl.def("assign", (class std::fpos<__mbstate_t> & (std::fpos<__mbstate_t>::*)(const class std::fpos<__mbstate_t> &)) &std::fpos<__mbstate_t>::operator=, "C++: std::fpos<__mbstate_t>::operator=(const class std::fpos<__mbstate_t> &) --> class std::fpos<__mbstate_t> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 		cl.def("__iadd__", (class std::fpos<__mbstate_t> & (std::fpos<__mbstate_t>::*)(long)) &std::fpos<__mbstate_t>::operator+=, "C++: std::fpos<__mbstate_t>::operator+=(long) --> class std::fpos<__mbstate_t> &", pybind11::return_value_policy::automatic, pybind11::arg("__off"));
 		cl.def("__isub__", (class std::fpos<__mbstate_t> & (std::fpos<__mbstate_t>::*)(long)) &std::fpos<__mbstate_t>::operator-=, "C++: std::fpos<__mbstate_t>::operator-=(long) --> class std::fpos<__mbstate_t> &", pybind11::return_value_policy::automatic, pybind11::arg("__off"));
 		cl.def("__add__", (class std::fpos<__mbstate_t> (std::fpos<__mbstate_t>::*)(long) const) &std::fpos<__mbstate_t>::operator+, "C++: std::fpos<__mbstate_t>::operator+(long) const --> class std::fpos<__mbstate_t>", pybind11::arg("__off"));
@@ -57,7 +56,7 @@ void bind_std_postypes(std::function< pybind11::module &(std::string const &name
 		cl.def( pybind11::init( [](){ return new std::exception(); }, [](){ return new PyCallBack_std_exception(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_std_exception const &o){ return new PyCallBack_std_exception(o); } ) );
 		cl.def( pybind11::init( [](std::exception const &o){ return new std::exception(o); } ) );
-		cl.def("assign", (class std::exception & (std::exception::*)(const class std::exception &)) &std::exception::operator=, "C++: std::exception::operator=(const class std::exception &) --> class std::exception &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 		cl.def("what", (const char * (std::exception::*)() const) &std::exception::what, "C++: std::exception::what() const --> const char *", pybind11::return_value_policy::automatic);
+		cl.def("assign", (class std::exception & (std::exception::*)(const class std::exception &)) &std::exception::operator=, "C++: std::exception::operator=(const class std::exception &) --> class std::exception &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 }

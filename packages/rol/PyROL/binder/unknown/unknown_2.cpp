@@ -51,7 +51,7 @@
 #include <vector>
 
 #include <functional>
-#include "PyROL_Smart_Holder.hpp"
+#include <pybind11/smart_holder.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -64,10 +64,6 @@
 	PYBIND11_DECLARE_HOLDER_TYPE(T, T*)
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
-
-PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Objective_SimOpt<double>, Teuchos::RCP<ROL::Objective_SimOpt<double>>)
-PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Reduced_Objective_SimOpt<double>, Teuchos::RCP<ROL::Reduced_Objective_SimOpt<double>>)
-PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Constraint<double>, Teuchos::RCP<ROL::Constraint<double>>)
 
 // ROL::Objective_SimOpt file: line:35
 struct PyCallBack_ROL_Objective_SimOpt_double_t : public ROL::Objective_SimOpt<double> {
@@ -1778,6 +1774,7 @@ struct PyCallBack_ROL_GMRES_double_t : public ROL::GMRES<double> {
 void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
 	{ // ROL::Objective_SimOpt file: line:35
+		PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Objective_SimOpt<double> , Teuchos::RCP<ROL::Objective_SimOpt<double>>)
 		pybind11::class_<ROL::Objective_SimOpt<double>, Teuchos::RCP<ROL::Objective_SimOpt<double>>, PyCallBack_ROL_Objective_SimOpt_double_t, ROL::Objective<double>> cl(M("ROL"), "Objective_SimOpt_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new ROL::Objective_SimOpt<double>(); }, [](){ return new PyCallBack_ROL_Objective_SimOpt_double_t(); } ) );
 		cl.def( pybind11::init( [](PyCallBack_ROL_Objective_SimOpt_double_t const &o){ return new PyCallBack_ROL_Objective_SimOpt_double_t(o); } ) );
@@ -1818,6 +1815,7 @@ void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::Objective<double> & (ROL::Objective<double>::*)(const class ROL::Objective<double> &)) &ROL::Objective<double>::operator=, "C++: ROL::Objective<double>::operator=(const class ROL::Objective<double> &) --> class ROL::Objective<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Reduced_Objective_SimOpt file: line:36
+		PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Reduced_Objective_SimOpt<double> , Teuchos::RCP<ROL::Reduced_Objective_SimOpt<double>>)
 		pybind11::class_<ROL::Reduced_Objective_SimOpt<double>, Teuchos::RCP<ROL::Reduced_Objective_SimOpt<double>>, PyCallBack_ROL_Reduced_Objective_SimOpt_double_t, ROL::Objective<double>> cl(M("ROL"), "Reduced_Objective_SimOpt_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](const class Teuchos::RCP<class ROL::Objective_SimOpt<double> > & a0, const class Teuchos::RCP<class ROL::Constraint_SimOpt<double> > & a1, const class Teuchos::RCP<class ROL::Vector<double> > & a2, const class Teuchos::RCP<class ROL::Vector<double> > & a3, const class Teuchos::RCP<class ROL::Vector<double> > & a4){ return new ROL::Reduced_Objective_SimOpt<double>(a0, a1, a2, a3, a4); }, [](const class Teuchos::RCP<class ROL::Objective_SimOpt<double> > & a0, const class Teuchos::RCP<class ROL::Constraint_SimOpt<double> > & a1, const class Teuchos::RCP<class ROL::Vector<double> > & a2, const class Teuchos::RCP<class ROL::Vector<double> > & a3, const class Teuchos::RCP<class ROL::Vector<double> > & a4){ return new PyCallBack_ROL_Reduced_Objective_SimOpt_double_t(a0, a1, a2, a3, a4); } ), "doc");
 		cl.def( pybind11::init( [](const class Teuchos::RCP<class ROL::Objective_SimOpt<double> > & a0, const class Teuchos::RCP<class ROL::Constraint_SimOpt<double> > & a1, const class Teuchos::RCP<class ROL::Vector<double> > & a2, const class Teuchos::RCP<class ROL::Vector<double> > & a3, const class Teuchos::RCP<class ROL::Vector<double> > & a4, const bool & a5){ return new ROL::Reduced_Objective_SimOpt<double>(a0, a1, a2, a3, a4, a5); }, [](const class Teuchos::RCP<class ROL::Objective_SimOpt<double> > & a0, const class Teuchos::RCP<class ROL::Constraint_SimOpt<double> > & a1, const class Teuchos::RCP<class ROL::Vector<double> > & a2, const class Teuchos::RCP<class ROL::Vector<double> > & a3, const class Teuchos::RCP<class ROL::Vector<double> > & a4, const bool & a5){ return new PyCallBack_ROL_Reduced_Objective_SimOpt_double_t(a0, a1, a2, a3, a4, a5); } ), "doc");
@@ -1855,6 +1853,7 @@ void bind_unknown_unknown_2(std::function< pybind11::module &(std::string const 
 		cl.def("assign", (class ROL::Objective<double> & (ROL::Objective<double>::*)(const class ROL::Objective<double> &)) &ROL::Objective<double>::operator=, "C++: ROL::Objective<double>::operator=(const class ROL::Objective<double> &) --> class ROL::Objective<double> &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // ROL::Constraint file: line:39
+		PYBIND11_TYPE_CASTER_BASE_HOLDER(ROL::Constraint<double> , Teuchos::RCP<ROL::Constraint<double>>)
 		pybind11::class_<ROL::Constraint<double>, Teuchos::RCP<ROL::Constraint<double>>, PyCallBack_ROL_Constraint_double_t> cl(M("ROL"), "Constraint_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new PyCallBack_ROL_Constraint_double_t(); } ) );
 		cl.def(pybind11::init<PyCallBack_ROL_Constraint_double_t const &>());

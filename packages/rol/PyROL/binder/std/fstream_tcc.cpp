@@ -9,7 +9,7 @@
 #include <string>
 
 #include <functional>
-#include "PyROL_Smart_Holder.hpp"
+#include <pybind11/smart_holder.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -23,7 +23,7 @@
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
-// std::basic_filebuf file:bits/fstream.tcc line:1086
+// std::basic_filebuf file:bits/fstream.tcc line:1053
 struct PyCallBack_std_filebuf : public std::filebuf {
 	using std::filebuf::basic_filebuf;
 
@@ -187,7 +187,7 @@ struct PyCallBack_std_filebuf : public std::filebuf {
 
 void bind_std_fstream_tcc(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	{ // std::basic_filebuf file:bits/fstream.tcc line:1086
+	{ // std::basic_filebuf file:bits/fstream.tcc line:1053
 		pybind11::class_<std::filebuf, Teuchos::RCP<std::filebuf>, PyCallBack_std_filebuf, std::streambuf> cl(M("std"), "filebuf", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new std::filebuf(); }, [](){ return new PyCallBack_std_filebuf(); } ) );
 		cl.def("swap", (void (std::filebuf::*)(class std::basic_filebuf<char> &)) &std::basic_filebuf<char, std::char_traits<char> >::swap, "C++: std::basic_filebuf<char, std::char_traits<char> >::swap(class std::basic_filebuf<char> &) --> void", pybind11::arg(""));
@@ -216,7 +216,7 @@ void bind_std_fstream_tcc(std::function< pybind11::module &(std::string const &n
 		cl.def("__safe_gbump", (void (std::streambuf::*)(long)) &std::basic_streambuf<char, std::char_traits<char> >::__safe_gbump, "C++: std::basic_streambuf<char, std::char_traits<char> >::__safe_gbump(long) --> void", pybind11::arg("__n"));
 		cl.def("__safe_pbump", (void (std::streambuf::*)(long)) &std::basic_streambuf<char, std::char_traits<char> >::__safe_pbump, "C++: std::basic_streambuf<char, std::char_traits<char> >::__safe_pbump(long) --> void", pybind11::arg("__n"));
 	}
-	{ // std::basic_ofstream file:bits/fstream.tcc line:1088
+	{ // std::basic_ofstream file:bits/fstream.tcc line:1055
 		pybind11::class_<std::ofstream, Teuchos::RCP<std::ofstream>, std::ostream> cl(M("std"), "ofstream", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new std::ofstream(); } ) );
 		cl.def( pybind11::init( [](const char * a0){ return new std::ofstream(a0); } ), "doc" , pybind11::arg("__s"));
