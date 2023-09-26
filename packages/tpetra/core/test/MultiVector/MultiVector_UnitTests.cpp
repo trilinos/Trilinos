@@ -5268,11 +5268,6 @@ namespace {
 
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, FenceCounterCheck, LO , GO , Scalar , Node ) {
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
-    using device_view = typename MV::dual_view_type::t_dev;
-    using host_view   = typename MV::dual_view_type::t_host;
-
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     auto exec_space = typename Node::execution_space();
     const std::string space = exec_space.name();
