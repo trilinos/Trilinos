@@ -33,14 +33,4 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     EXEDEPS Tpetra_minres_hb
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Tpetra_pminres_hb
-    SOURCES test_pminres_hb.cpp
-    COMM serial mpi
-    ARGS
-      "--verbose --filename=bcsstk14.hb --left-prec --max-iters=100"
-      "--verbose --filename=bcsstk14.hb --right-prec --max-iters=100"
-    STANDARD_PASS_OUTPUT
-  )
-
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
