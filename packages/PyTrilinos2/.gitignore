@@ -8,3 +8,4 @@ build
 dist
 *.err
 examples/*.png
+python/getTpetraTypeName.py
