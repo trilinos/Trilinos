@@ -41,12 +41,6 @@
 
 /* Originally convert test here: belos/epetra/test/MINRES/test_minres_hb.cpp */
 
-// Belos
-#include "BelosConfigDefs.hpp"
-#include "BelosLinearProblem.hpp"
-#include "BelosTpetraAdapter.hpp"
-#include "BelosSolverFactory.hpp"
-
 // Tpetra
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -59,6 +53,12 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+
+// Belos
+#include "BelosConfigDefs.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "BelosSolverFactory.hpp"
 
 template<class ScalarType>
 int run(int argc, char *argv[]) {
