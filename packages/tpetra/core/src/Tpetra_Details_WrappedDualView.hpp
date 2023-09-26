@@ -166,12 +166,14 @@ public:
       dualView(originalDualView)
   { }
 
+  //! Conversion copy constructor.
   template <class SrcDualViewType>
   WrappedDualView(const WrappedDualView<SrcDualViewType>& src)
     : originalDualView(src.originalDualView),
       dualView(src.dualView)
   { }
   
+  //! Conversion assignment operator.
   template <class SrcDualViewType>
   WrappedDualView& operator=(const WrappedDualView<SrcDualViewType>& src) {
     originalDualView = src.originalDualView;

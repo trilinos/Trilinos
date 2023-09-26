@@ -281,7 +281,7 @@ namespace Stokhos {
     const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& flat_map
   ) {
     return create_flat_vector_view(
-      dynamic_cast<const Tpetra::MultiVector<Sacado::MP::Vector<Storage>, LocalOrdinal, GlobalOrdinal, Node>&>(vec),
+      static_cast<const Tpetra::MultiVector<Sacado::MP::Vector<Storage>, LocalOrdinal, GlobalOrdinal, Node>&>(vec),
       flat_map
     )->getVectorNonConst(0);
   }

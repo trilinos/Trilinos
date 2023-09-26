@@ -4017,7 +4017,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getWrappedDualView() const {
     return view_;
-  };
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >
