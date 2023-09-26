@@ -5274,26 +5274,17 @@ namespace {
     using host_view   = typename MV::dual_view_type::t_host;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-    RCP<const map_type> map = rcp (new map_type (100, 0, comm));
-    MV x(map, 1);
-    x.putScalar(Teuchos::ScalarTraits<Scalar>::one());
-
-    const device_view x_d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
-
-    host_view y_h = create_mirror_view(x_d);  
-
     auto exec_space = typename Node::execution_space();
     const std::string space = exec_space.name();
 
     /***********************************************************************/
     // Global fences
-    // NOTE: This test relies on 2-arg Kokkos::deep_copy() generating *two* global fences
-    size_t global_correct_count=2;
+    size_t global_correct_count=1;
 
     // Stop / Start  (reset first to clear counts from previous unit test calls)   
     Tpetra::Details::FenceCounter::reset();   
     Tpetra::Details::FenceCounter::start();
-    Kokkos::deep_copy(y_h,x_d);
+    Kokkos::fence();
     Tpetra::Details::FenceCounter::stop();   
     size_t global_count = Tpetra::Details::FenceCounter::get_count_global(space);   
     size_t instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
@@ -5309,7 +5300,7 @@ namespace {
 
     // Second  Stop / Start (should have the original count)
     Tpetra::Details::FenceCounter::start();
-    Kokkos::deep_copy(y_h,x_d);
+    Kokkos::fence();
     Tpetra::Details::FenceCounter::stop();   
     global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
     instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
@@ -5317,7 +5308,7 @@ namespace {
     TEST_EQUALITY(instance_count,0);
 
     // This guy should not get counted, since the counter is stopped
-    Kokkos::deep_copy(y_h,x_d);
+    Kokkos::fence();
     global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
     instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
     TEST_EQUALITY(global_count,global_correct_count);
@@ -5325,7 +5316,7 @@ namespace {
 
     // Third Second  Stop / Start (should have double the original count)
     Tpetra::Details::FenceCounter::start();
-    Kokkos::deep_copy(y_h,x_d);
+    Kokkos::fence();
     Tpetra::Details::FenceCounter::stop();   
     global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
     instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
