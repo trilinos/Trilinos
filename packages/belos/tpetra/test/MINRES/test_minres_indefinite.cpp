@@ -80,7 +80,8 @@ int run(int argc, char *argv[])
   using Teuchos::rcp;
   using Teuchos::tuple;
 
-  MPI_Init(&argc,&argv);
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
+
   const auto comm = Tpetra::getDefaultComm();
   const int MyPID = 0;
 
@@ -281,8 +282,6 @@ int run(int argc, char *argv[])
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
-  MPI_Finalize();
 
   return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }
