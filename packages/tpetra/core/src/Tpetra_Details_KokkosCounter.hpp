@@ -45,7 +45,7 @@
 /// \brief Declaration of various tools for counting Kokkos calls of various
 /// types using the Kokkos Profiling Library
 
-#include <cstddef>
+#include <string>
 
 namespace Tpetra {
 namespace Details {
@@ -67,7 +67,7 @@ namespace DeepCopyCounter {
   /// \brief Query the deep_copy counter for copies between different spaces
   size_t get_count_different_space();
 
-};
+}
 
 /// \brief Counter for Kokkos::fence calls
 namespace FenceCounter {
@@ -85,7 +85,7 @@ namespace FenceCounter {
 
   /// \brief Query the fence counter for given device, for an Kokkos::fence()
   size_t get_count_global(const std::string & device);
-};
+}
 
 
 } // namespace Details
