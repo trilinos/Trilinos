@@ -38,7 +38,7 @@
 # @HEADER
 
 
-include(TribitsAddTestHelpers)
+include("${CMAKE_CURRENT_LIST_DIR}/TribitsAddTestHelpers.cmake")
 
 
 # Set default ax number of TEST_<idx> blocks in tribits_add_advanced_test()

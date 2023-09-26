@@ -37,24 +37,53 @@
 # ************************************************************************
 # @HEADER
 
-include("${CMAKE_CURRENT_LIST_DIR}/GlobalSet.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/AssertDefined.cmake")
+include_guard()
 
 
-# @FUNCTION: append_global_set()
+# @MACRO: tribits_advanced_set_cache_var_and_default()
 #
-# Utility macro that appends arguments to a global variable (reduces
-# boiler-plate code and mistakes).
+# Set an advanced cache variable with a default value (passing in a default
+# default value).
 #
 # Usage::
 #
-#   append_global_set(<varName> <arg0> <arg1> ...)
+#   tribits_advanced_set_cache_var_and_default(<cacheVarName>  <cacheVarType>
+#     <defaultDefaultVal>  <docString>)
 #
-# NOTE: The variable ``<varName>`` must exist before calling this function.
-# To set it empty initially use `global_null_set()`_.
+# If the variable ``<cacheVarName>_DEFAULT`` already exists with a value, that
+# is used as the default cache variable.  Otherwise,
+# ``<cacheVarName>_DEFAULT`` is set set to ``<defaultDefaultVal>`` first.
 #
-function(append_global_set  VARNAME)
-  assert_defined(${VARNAME})
-  list(APPEND ${VARNAME} ${ARGN})
-  global_set(${VARNAME} ${${VARNAME}})
-endfunction()
+macro(tribits_advanced_set_cache_var_and_default  cacheVarName  cacheVarType
+    defaultDefaultVal  docString
+  )
+  tribits_set_cache_var_and_default("${cacheVarName}" "${cacheVarType}"
+    "${defaultDefaultVal}" "${docString}")
+  mark_as_advanced(${cacheVarName})
+endmacro()
+
+
+# @MACRO: tribits_set_cache_var_and_default()
+#
+# Set a cache variable with a default value (passing in a default default
+# value).
+#
+# Usage::
+#
+#   tribits_set_cache_var_and_default(<cacheVarName>  <cacheVarType>
+#     <defaultDefaultVal>  <docString>)
+#
+# If the variable ``<cacheVarName>_DEFAULT`` already exists with a value, that
+# is used as the default cache variable.  Otherwise,
+# ``<cacheVarName>_DEFAULT`` is set set to ``<defaultDefaultVal>`` first.
+#
+macro(tribits_set_cache_var_and_default  cacheVarName  cacheVarType
+    defaultDefaultVal  docString
+  )
+  if ("${${cacheVarName}_DEFAULT}" STREQUAL "")
+    set(${cacheVarName}_DEFAULT "${defaultDefaultVal}")
+  endif()
+  set(${cacheVarName} "${${cacheVarName}_DEFAULT}"
+    CACHE ${cacheVarType}
+    "${docString}" )
+endmacro()

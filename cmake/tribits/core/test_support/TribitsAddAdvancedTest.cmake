@@ -37,14 +37,16 @@
 # ************************************************************************
 # @HEADER
 
-include(TribitsCMakePolicies  NO_POLICY_SCOPE)
+include("${CMAKE_CURRENT_LIST_DIR}/../common/TribitsCMakePolicies.cmake"  NO_POLICY_SCOPE)
+include("${CMAKE_CURRENT_LIST_DIR}/../common/TribitsConstants.cmake")
 
-include(TribitsAddAdvancedTestHelpers)
-include(TribitsConstants)
+set(tribitsAddAdvancedTestModuleDir "${CMAKE_CURRENT_LIST_DIR}")
 
-include(TribitsPrintList)
-include(AppendStringVar)
-include(PrintVar)
+include("${CMAKE_CURRENT_LIST_DIR}/TribitsAddAdvancedTestHelpers.cmake")
+
+include("${CMAKE_CURRENT_LIST_DIR}/../utils/TribitsPrintList.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../utils/AppendStringVar.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../utils/PrintVar.cmake")
 
 
 # @FUNCTION: tribits_add_advanced_test()
@@ -853,10 +855,9 @@ include(PrintVar)
 #
 # The function ``tribits_add_advanced_test()`` can be used to add tests in
 # non-TriBITS projects.  To do so, one just needs to set the variables
-# ``PROJECT_NAME``, ``PACKAGE_NAME`` (which could be the same as
-# ``PROJECT_NAME``), ``${PACKAGE_NAME}_ENABLE_TESTS=TRUE``, and
-# ``${PROJECT_NAME}_TRIBITS_DIR`` (pointing to the TriBITS location).  For example,
-# a valid project can be a simple as::
+# ``${PROJECT_NAME}_ENABLE_TESTS=TRUE`` and ``${PROJECT_NAME}_TRIBITS_DIR``
+# (pointing to the TriBITS location).  For example, a valid project can be a
+# simple as::
 #
 #   cmake_minimum_required(VERSION 3.23.0)
 #   set(PROJECT_NAME TAATDriver)
@@ -866,19 +867,26 @@ include(PrintVar)
 #     "Location of TriBITS to use." ) 
 #   set(PACKAGE_NAME ${PROJECT_NAME})
 #   set(${PACKAGE_NAME}_ENABLE_TESTS TRUE)
-#   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-#     ${TRIBITS_DIR}/core/utils
-#     ${TRIBITS_DIR}/core/package_arch )
-#   include(TribitsAddAdvancedTest)
+#   include("${${PROJECT_NAME}_TRIBITS_DIR}/core/test_support/TribitsAddAdvancedTest.cmake")
 #   include(CTest)
 #   enable_testing()
 #   
-#   tribits_add_advanced_test(
-#     TAAT_COPY_FILES_TO_TEST_DIR_bad_file_name
+#   tribits_add_advanced_test( HelloWorld
 #     OVERALL_WORKING_DIRECTORY TEST_NAME
 #     TEST_0 CMND echo ARGS "Hello World!"
 #       PASS_REGULAR_EXPRESIOIN "Hello World"
 #     )
+#
+# Above, one can replace::
+#
+#   include("${${PROJECT_NAME}_TRIBITS_DIR}/core/test_support/TribitsAddAdvancedTest.cmake")
+#
+# with::
+#
+#   list(PREPEND CMAKE_MODULE_PATH "${${PROJECT_NAME}_TRIBITS_DIR}/core/test_support")
+#   include(TribitsAddAdvancedTest)
+#
+# and it will have the same effect.
 #
 function(tribits_add_advanced_test TEST_NAME_IN)
 
@@ -886,16 +894,13 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     message("\nPACKAGE_ADD_ADVANCED_TEST: ${TEST_NAME_IN}\n")
   endif()
 
+  tribits_set_tribits_package_name()
+
   global_set(TRIBITS_SET_TEST_PROPERTIES_INPUT)
   global_set(MESSAGE_WRAPPER_INPUT)
 
   # Set the full TEST_NAME
-  if (PACKAGE_NAME)
-    set(TEST_NAME ${PACKAGE_NAME}_${TEST_NAME_IN})
-  else()
-    set(TEST_NAME ${TEST_NAME_IN})
-  endif()
-
+  set(TEST_NAME ${PACKAGE_NAME}_${TEST_NAME_IN})
 
   #
   # A) Parse the overall arguments and figure out how many tests
@@ -1518,6 +1523,8 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     # F.2) Write the cmake -P script
     #
   
+    set(coreUtilsDir "${tribitsAddAdvancedTestModuleDir}/../utils")
+    cmake_path(NORMAL_PATH coreUtilsDir) 
     string(APPEND  TEST_SCRIPT_STR
       "\n"
       "set(PROJECT_NAME ${PROJECT_NAME})\n"
@@ -1548,9 +1555,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
       "# Test invocation\n"
       "#\n"
       "\n"
-      "set(CMAKE_MODULE_PATH ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_UTILS_DIR})\n"
-      "\n"
-      "include(DriveAdvancedTest)\n"
+      "include(\"${coreUtilsDir}/DriveAdvancedTest.cmake\")\n"
       "\n"
       "drive_advanced_test()\n"
       )

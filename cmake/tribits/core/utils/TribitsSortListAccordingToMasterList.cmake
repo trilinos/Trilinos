@@ -37,24 +37,28 @@
 # ************************************************************************
 # @HEADER
 
-include("${CMAKE_CURRENT_LIST_DIR}/GlobalSet.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/AssertDefined.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../utils/PrintVar.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../utils/AppendSet.cmake")
 
 
-# @FUNCTION: append_global_set()
+# Do an in-place sort of a list of items according to the ordering in a master
+# list.
 #
-# Utility macro that appends arguments to a global variable (reduces
-# boiler-plate code and mistakes).
+# NOTE: This function has worst-case complexity N*n where N is the number of
+# elements in the ``<masterList>`` and n is the number of elements in the
+# ``<listVarInout>`` list.
 #
-# Usage::
-#
-#   append_global_set(<varName> <arg0> <arg1> ...)
-#
-# NOTE: The variable ``<varName>`` must exist before calling this function.
-# To set it empty initially use `global_null_set()`_.
-#
-function(append_global_set  VARNAME)
-  assert_defined(${VARNAME})
-  list(APPEND ${VARNAME} ${ARGN})
-  global_set(${VARNAME} ${${VARNAME}})
+function(tribits_sort_list_according_to_master_list  masterList  listVarInOut)
+
+  set(sortedList)
+
+  foreach(item ${masterList})
+    list(FIND ${listVarInOut} ${item} itemIdx)
+     if (NOT itemIdx EQUAL -1)
+      list(APPEND sortedList ${item})
+    endif()
+  endforeach()
+
+  set(${listVarInOut} ${sortedList} PARENT_SCOPE)
+
 endfunction()
