@@ -109,7 +109,7 @@ namespace MueLu {
         arrayOfParamLists_[i] = Teuchos::rcpFromRef(list.sublist(listName));
       }
       else
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must provide sublist " + listName);    
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must provide sublist " + listName);
 
       arrayOfParamLists_[i]->set("verbosity",arrayOfParamLists_[i]->get("verbosity",verbosity));
       arrayOfParamLists_[i]->set("smoother: pre or post","none");
@@ -120,15 +120,15 @@ namespace MueLu {
     useKokkos_ = !Node::is_serial;
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
 
-    paramListMultiphysics_ = Teuchos::rcpFromRef(list); 
+    paramListMultiphysics_ = Teuchos::rcpFromRef(list);
   }
 
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiPhys<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute(bool reuse) {
-    /* 
+    /*
 
-       Create a set of AMG hierarchies whose interpolation matrices are used to build on combined 
+       Create a set of AMG hierarchies whose interpolation matrices are used to build on combined
        AMG hierarchy for a multiphysics problem
 
      */
@@ -149,7 +149,7 @@ namespace MueLu {
 
     for (int iii = 0; iii < nBlks_; iii++) {
       arrayOfParamLists_[iii]->sublist("user data").set("Coordinates",arrayOfCoords_[iii]);
-    
+
       bool wantToRepartition = false;
       if (paramListMultiphysics_->isParameter("repartition: enable"))
         wantToRepartition = paramListMultiphysics_->get<bool>("repartition: enable");
@@ -163,11 +163,11 @@ namespace MueLu {
       else
         arrayOfParamLists_[iii]->set("repartition: use subcommunicators", true);
     }
-    // repartitioning should only happen when createing the individual P's , not 
-    // when combiing them 
-    
+    // repartitioning should only happen when createing the individual P's , not
+    // when combiing them
+
     paramListMultiphysics_->set<bool>("repartition: enable", false);
-        
+
 
     LO maxLevels = 9999;
     for (int i = 0; i < nBlks_; i++) {
@@ -178,6 +178,7 @@ namespace MueLu {
     }
 
     hierarchyMultiphysics_ = rcp(new Hierarchy("Combo"));
+    hierarchyMultiphysics_->SetProcRankVerbose(AmatMultiphysics_->getDomainMap()->getComm()->getRank());
     for (LO i = 0; i < maxLevels; i++) {
       hierarchyMultiphysics_->AddNewLevel();
     }
@@ -196,7 +197,7 @@ namespace MueLu {
       MueLu::ExtractNonSerializableData(*paramListMultiphysics_,processedListMultiphysics, nonSerialListMultiphysics);
 
       // Rip off the subblock List stuff as we  don't need it any more and I think it messes up validator
-      
+
       Teuchos::ParameterList stripped;
       for (ParameterList::ConstIterator inListEntry = processedListMultiphysics.begin(); inListEntry != processedListMultiphysics.end(); inListEntry++) {
         const std::string& levelName = inListEntry->first;
@@ -205,7 +206,7 @@ namespace MueLu {
 
       RCP<HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(stripped,AmatMultiphysics_->getDomainMap()->getComm()));
       hierarchyMultiphysics_->setlib(AmatMultiphysics_->getDomainMap()->lib());
-      hierarchyMultiphysics_->SetProcRankVerbose(AmatMultiphysics_->getDomainMap()->getComm()->getRank());
+
 
       // We don't need nullspace or coordinates, since we don't use them when just combining prolongators that have been already created
       hierarchyMultiphysics_->GetLevel(0)->Set("A", AmatMultiphysics_);
@@ -245,7 +246,7 @@ namespace MueLu {
   void MultiPhys<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse(const MultiVector& RHS, MultiVector& X) const {
     hierarchyMultiphysics_->Iterate(RHS,X,1,true);
   }
- 
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiPhys<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVector& RHS, MultiVector& X,
                                                                 Teuchos::ETransp /* mode */,
@@ -256,7 +257,7 @@ namespace MueLu {
   }
 
 
- 
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool MultiPhys<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
     return false;
@@ -281,7 +282,7 @@ namespace MueLu {
     enable_reuse_=false;
     syncTimers_=false;
 
-    
+
     // set parameters
     setParameters(List);
 

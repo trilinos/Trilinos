@@ -1769,8 +1769,10 @@ namespace MueLuTests {
     RCP<Hierarchy> Hrcp = mueluManager.CreateHierarchy();
     Hierarchy&     H    = *Hrcp;
     H.SetDefaultVerbLevel(MueLu::Low | MueLu::Debug);
+    H.SetProcRankVerbose(comm->getRank());
 
     RCP<Level> l0 = H.GetLevel(0);
+    l0->SetProcRankVerbose(comm->getRank());
     l0->Set("A",           A);
     H.AddNewLevel();
     RCP<Level> l1     = H   .GetLevel(1);
@@ -1847,7 +1849,7 @@ namespace MueLuTests {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Write, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs_Mixed, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, CheckNullspaceDimension, Scalar, LO, GO, Node) \
-    
+
 
 # include <MueLu_ETI_4arg.hpp>
 

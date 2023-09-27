@@ -101,7 +101,7 @@ namespace MueLu {
         if (BCrowsKokkos(i))
 	  ++sum;
 	}, BCedgesLocal );
-         
+
       auto BCdomainKokkos = BCdomainKokkos_;
       Kokkos::parallel_reduce(BCdomainKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
         if (BCdomainKokkos(i))
@@ -305,8 +305,12 @@ namespace MueLu {
     fineLevel.setlib(A->getDomainMap()->lib());
     coarseLevel.setObjectLabel(label);
     fineLevel.setObjectLabel(label);
+    const auto verbRank = A->getDomainMap()->getComm()->getRank();
+    coarseLevel.SetProcRankVerbose(verbRank);
+    fineLevel.SetProcRankVerbose(verbRank);
 
     RCP<RAPFactory> rapFact = rcp(new RAPFactory());
+    rapFact->SetProcRankVerbose(verbRank);
     ParameterList rapList = *(rapFact->GetValidParameterList());
     rapList.set("transpose: use implicit", true);
     rapList.set("rap: fix zero diagonals", params.get<bool>("rap: fix zero diagonals", true));
@@ -315,7 +319,7 @@ namespace MueLu {
     rapFact->SetParameterList(rapList);
 
     coarseLevel.Request("A", rapFact.get());
-    
+
     return coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
   }
 

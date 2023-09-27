@@ -1051,7 +1051,7 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::build22Matrix (const bool reuse, const bool doRebalancing, const int rebalanceStriding, const int numProcsA22) {
-        
+
     if (!reuse) { // build fine grid operator for (2,2)-block, Dk_1^T SM Dk_1  (aka TMT)
       RCP<Teuchos::TimeMonitor> tm = getTimer("Build A22");
 
@@ -1248,7 +1248,9 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setFineLevelSmoother11() {
 
     Level level;
+    level.SetProcRankVerbose(GetProcRankVerbose());
     RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+    level.SetComm(SM_Matrix_->getDomainMap()->getComm());
     level.SetFactoryManager(factoryHandler);
     level.SetLevelID(0);
     level.setObjectLabel(solverName_+" (1,1)");
@@ -2451,7 +2453,7 @@ namespace MueLu {
 
   }
 
-    
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
     return false;

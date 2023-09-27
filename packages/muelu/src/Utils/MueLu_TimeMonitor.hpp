@@ -112,6 +112,7 @@ namespace MueLu {
           timer_ = rcp(new MutuallyExclusiveTime<TagName>     ("MueLu: " + msg /*+ " (MutuallyExclusive)" */));
         }
 
+        timer_->SetProcRankVerbose(object.GetProcRankVerbose());
         timer_->start();
         timer_->incrementNumCalls();
       }

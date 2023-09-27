@@ -100,6 +100,7 @@
 #include "MueLu_ToggleCoordinatesTransferFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_VerboseObject.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_NodePartitionInterface.hpp"
@@ -132,10 +133,16 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, Teuchos::RCP<FactoryFactory> factFact, Teuchos::RCP<FacadeClassFactory> facadeFact) : factFact_(factFact) {
     RCP<Teuchos::TimeMonitor> tM = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("MueLu: ParameterListInterpreter (ParameterList)"))));
+
     if(facadeFact == Teuchos::null)
       facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
     else
       facadeFact_ = facadeFact;
+
+    if(!comm.is_null()) {
+      VerboseObject::SetProcRankVerbose(comm->getRank());
+      facadeFact_->SetProcRankVerbose(comm->getRank());
+    }
 
     if (paramList.isParameter("xml parameter file")) {
       std::string filename = paramList.get("xml parameter file", "");
@@ -1000,7 +1007,7 @@ namespace MueLu {
 
      RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
      rFactory->SetParameterList(rParams);
-     
+
      // These are all going to be user provided, so NoFactory
      rFactory->SetFactory("Pnodal", NoFactory::getRCP());
      rFactory->SetFactory("NodeAggMatrix", NoFactory::getRCP());
@@ -1726,7 +1733,7 @@ namespace MueLu {
         newA->SetFactory("A",         manager.GetFactory("A"));
         newA->SetFactory("Importer",  manager.GetFactory("Importer"));
         manager.SetFactory("A", newA);
-        
+
         // Rebalanced P
         auto newP = rcp(new RebalanceTransferFactory());
         ParameterList newPparams;
@@ -1752,7 +1759,7 @@ namespace MueLu {
           newP->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
           manager.SetFactory("BlockNumber", newP);
         }
-        
+
         // Rebalanced R
         auto newR = rcp(new RebalanceTransferFactory());
         ParameterList newRparams;

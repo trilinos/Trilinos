@@ -276,6 +276,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
 
         H->GetLevel(0)->template Set<RCP<Matrix> >("A", A);
+        H->GetLevel(0)->SetProcRankVerbose(myRank);
 
         if (!coordsSet)
           H->GetLevel(0)->Set("Coordinates", coordinates);

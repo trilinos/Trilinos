@@ -362,6 +362,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       ParameterListInterpreter mueLuFactory(mueluList);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+      H->SetProcRankVerbose(comm->getRank());
       Teuchos::RCP<FactoryManagerBase> LevelFactory = mueLuFactory.GetFactoryManager(1);
       H->setlib(lib);
       H->AddNewLevel();
@@ -369,6 +370,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       H->GetLevel(1)->Keep("Coordinates", LevelFactory->GetFactory("Coordinates").get());
       H->GetLevel(0)->Set("A", A);
       H->GetLevel(0)->Set("Coordinates", coordinates0);
+      H->GetLevel(0)->SetProcRankVerbose(comm->getRank());
       mueLuFactory.SetupHierarchy(*H);
 
       // Extract R, P & Ac for LevelWrap Usage

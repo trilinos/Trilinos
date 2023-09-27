@@ -134,6 +134,7 @@ namespace MueLu {
 
     level->SetPreviousLevel( (levelID == 0) ? Teuchos::null : Levels_[LastLevelID() - 1] );
     level->setObjectLabel(this->getObjectLabel());
+    level->SetProcRankVerbose(GetProcRankVerbose());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

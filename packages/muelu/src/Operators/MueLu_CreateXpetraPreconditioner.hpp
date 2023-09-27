@@ -128,6 +128,7 @@ namespace MueLu {
 
     // Set fine level operator
     H->GetLevel(0)->Set("A", op);
+    H->GetLevel(0)->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
     H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
 
     // Stick the non-serializible data on the hierarchy.

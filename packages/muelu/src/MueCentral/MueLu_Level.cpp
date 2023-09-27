@@ -91,6 +91,8 @@ namespace MueLu {
 
   void Level::SetFactoryManager(const RCP<const FactoryManagerBase> & factoryManager) {
     factoryManager_ = factoryManager;
+    if(factoryManager_ != Teuchos::null)
+      factoryManager_->SetProcRankVerbose(GetProcRankVerbose());
   }
 
   const RCP<const FactoryManagerBase> Level::GetFactoryManager() {

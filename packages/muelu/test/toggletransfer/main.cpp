@@ -171,6 +171,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
 
     H->GetLevel(0)->template Set< Teuchos::RCP<Matrix> >("A", A);
+    H->GetLevel(0)->SetProcRankVerbose(comm->getRank());
 
     Teuchos::RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getRowMap(), 1);
     nullspace->putScalar(1.0);
