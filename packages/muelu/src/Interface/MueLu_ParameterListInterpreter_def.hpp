@@ -615,8 +615,6 @@ namespace MueLu {
       have_userP  = true;
 
     // === Coarse solver ===
-    std::cout<<"***CMS: About to Call UpdateFactoryManager_CoarseSolvers ***\n"<<paramList<<std::endl;
-
     UpdateFactoryManager_CoarseSolvers(paramList, defaultList, manager, levelID, keeps);
 
     // == Smoothers ==
