@@ -101,9 +101,6 @@ namespace MueLu {
 
       // interpret ML list
       newList.sublist("maxwell1: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list,"Maxwell"));
-
-
-
      
       // Hardwiring options to ensure ML compatibility
       newList.sublist("maxwell1: 22list").set("use kokkos refactor", false);

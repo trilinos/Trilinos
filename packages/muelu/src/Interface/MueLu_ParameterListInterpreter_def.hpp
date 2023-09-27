@@ -615,6 +615,8 @@ namespace MueLu {
       have_userP  = true;
 
     // === Coarse solver ===
+    std::cout<<"***CMS: About to Call UpdateFactoryManager_CoarseSolvers ***\n"<<paramList<<std::endl;
+
     UpdateFactoryManager_CoarseSolvers(paramList, defaultList, manager, levelID, keeps);
 
     // == Smoothers ==
@@ -952,6 +954,7 @@ namespace MueLu {
    UpdateFactoryManager_CoarseSolvers(ParameterList& paramList, const ParameterList& defaultList,
                                       FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const
    {
+
      // FIXME: should custom coarse solver check default list too?
      bool isCustomCoarseSolver =
          paramList.isParameter("coarse: type")   ||
@@ -987,7 +990,7 @@ namespace MueLu {
          "LINESMOOTHING_BANDEDRELAXATION", "LINESMOOTHING_BANDED_RELAXATION", "LINESMOOTHING_BANDED RELAXATION",
          "LINESMOOTHING_TRIDIRELAXATION", "LINESMOOTHING_TRIDI_RELAXATION", "LINESMOOTHING_TRIDI RELAXATION",
          "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",
-         "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL"}).count(coarseType)) {
+               "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL","HIPTMAIR"}).count(coarseType)) {
          coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
        } else {
  #ifdef HAVE_MUELU_MATLAB

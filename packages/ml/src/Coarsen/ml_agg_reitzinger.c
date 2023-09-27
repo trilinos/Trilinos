@@ -357,6 +357,20 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          Nneg_dirichlet++;
        }
 
+     
+     FILE * fdebug;
+     int *global_row_ordering,*global_col_ordering;
+     {
+       // CMS: DEBUG
+       char str[80];
+       sprintf(str,"d0_potential_edges_%d_%d.m",grid_level,Kn_coarse->comm->ML_mypid);
+       fdebug=fopen(str,"w");
+       ML_build_global_numbering(Kn_coarse, &global_row_ordering,"rows");
+       ML_build_global_numbering(Kn_coarse, &global_col_ordering,"cols");
+       //global_col_ordering = global_row_ordering;
+     }  
+
+
      Tcoarse_bindx =(int *)
                     ML_allocate((2*Kn_coarse->N_nonzeros + Nneg_dirichlet +
 				 Npos_dirichlet + 1)*sizeof(int) );
@@ -380,9 +394,27 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         /* Step through unknowns bindx[j] connected to unknown i. */
         for (j = 0; j < row_length; j++)
         {
+
+          int own_both_nodes = (pid_coarse_node[i] == pid_coarse_node[temp_bindx[j]]) ? 1 : 0;
+          int col_is_larger = (temp_bindx[j] > i) ? 1 : 0;
+
+          /*
+          fprintf(fdebug,"%d %d %d %d %d %d\n",
+                  global_row_ordering[i],pid_coarse_node[i],
+                  global_col_ordering[temp_bindx[j]],pid_coarse_node[temp_bindx[j]],
+                  own_both_nodes,
+                  col_is_larger);
+          */
+          fprintf(fdebug,"%d %d %d %d\n",
+                  i, global_row_ordering[i],
+                  temp_bindx[j],global_col_ordering[temp_bindx[j]]);
+          
+
+                    
            /* If nodes i and bindx[j] are owned by same processor ... */
            if (pid_coarse_node[i] == pid_coarse_node[temp_bindx[j]])
            {
+
               if (temp_bindx[j] > i)
               {
                  Tcoarse_bindx[nz_ptr]  =  temp_bindx[j];
@@ -440,6 +472,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 #endif
        } /*for (j = 0; j < row_length; j++)*/
      } /*for (i = 0; i < Kn_coarse->outvec_leng; i++)*/
+
+
+     // CMSCMS
+     {
+       fclose(fdebug);
+       free(global_row_ordering);
+       free(global_col_ordering);
+     }
 
      if (nzctr > Kn_coarse->N_nonzeros && Kn_coarse->comm->ML_mypid == 0)
         pr_error("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to build T.\n\n");

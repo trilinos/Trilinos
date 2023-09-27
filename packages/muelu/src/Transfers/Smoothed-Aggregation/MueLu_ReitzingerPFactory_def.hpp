@@ -232,6 +232,16 @@ namespace MueLu {
     LO current = 0;
     LO Nnc = PnT_D0T->getRowMap()->getLocalNumElements();
     
+
+    FILE * fdebug;
+    {
+      // CMS: DEBUG
+      char str[80];
+      sprintf(str,"d0_potential_edges_%d_%d.m",coarseLevel.GetLevelID(),NodeMatrix->getRowMap()->getComm()->getRank());
+      fdebug=fopen(str,"w");
+
+    }
+
     for(LO i=0; i<(LO)Nnc; i++) {
       //      GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
 
@@ -279,12 +289,20 @@ namespace MueLu {
           if(!sum_is_odd && !i_am_smaller) keep_shared_edge=true;
         }
         //        printf("[%d] - matches %d/%d keep_shared = %d own_both = %d\n",MyPID,(int)zero_matches,(int)one_matches,(int)keep_shared_edge,(int)own_both_nodes);
+
+        fprintf(fdebug,"%lld %d %lld %d %d %d\n",
+                D0_Pn->getColMap()->getGlobalElement(colind_N[0]),pid0,
+                D0_Pn->getColMap()->getGlobalElement(colind_N[1]),pid1,
+                (int)keep_shared_edge,(int)own_both_nodes);
+
         if(!keep_shared_edge && !own_both_nodes) continue;
+
+
 
 
         // We're doing this in GID space, but only because it allows us to explain
         // the edge orientation as "always goes from lower GID to higher GID".  This could
-        // be done entirely in local GIDs, but then the ordering is a little more confusing.
+        // be done entirely in LIDs, but then the ordering is a little more confusing.
         // This could be done in local indices later if we need the extra performance.
         for(LO k=0; k<(LO)colind_N.size(); k++) {
           LO my_colind = colind_N[k];
@@ -319,6 +337,12 @@ namespace MueLu {
     D0_rowptr.resize(num_coarse_edges+1);
     D0_colind.resize(current);
     D0_values.resize(current);
+
+
+    {
+      // CMS DEBUG
+      fclose(fdebug);
+    }
 
     // We're assuming that if the coarse NodeMatrix has no nodes on a rank, the coarse edge guy won't either.
     // We check that here.
