@@ -1474,6 +1474,12 @@ namespace Tpetra {
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
 
+    /// \brief Return the wrapped dual view holding this MultiVector's local data.
+    ///
+    /// \warning This method is ONLY for use by experts. We highly recommend accessing the local data
+    /// by using the member functions getLocalViewHost and getLocalViewDevice.
+    wrapped_dual_view_type getWrappedDualView() const;
+
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
     bool need_sync () const {

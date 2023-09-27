@@ -154,6 +154,10 @@ private:
   static constexpr bool deviceMemoryIsHostAccessible =
     Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename t_dev::memory_space>::accessible;
 
+private:
+  template <typename>
+  friend class WrappedDualView;
+
 public:
   WrappedDualView() {}
 
@@ -161,6 +165,21 @@ public:
     : originalDualView(dualV),
       dualView(originalDualView)
   { }
+
+  //! Conversion copy constructor.
+  template <class SrcDualViewType>
+  WrappedDualView(const WrappedDualView<SrcDualViewType>& src)
+    : originalDualView(src.originalDualView),
+      dualView(src.dualView)
+  { }
+  
+  //! Conversion assignment operator.
+  template <class SrcDualViewType>
+  WrappedDualView& operator=(const WrappedDualView<SrcDualViewType>& src) {
+    originalDualView = src.originalDualView;
+    dualView = src.dualView;
+    return *this;
+  }
 
   // This is an expert-only constructor
   // For WrappedDualView to manage synchronizations correctly,
