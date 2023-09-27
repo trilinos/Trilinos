@@ -914,7 +914,7 @@ void spmv_block_impl_rocsparse(
   */
   // KokkosSparse Bsr matrix blocks are layoutright (row-major)
   static_assert(
-      std::is_same_v<typename AMatrix::block_layout, Kokkos::LayoutRight>,
+      std::is_same_v<typename AMatrix::block_layout_type, Kokkos::LayoutRight>,
       "A blocks must be stored layout-right");
   rocsparse_direction dir = rocsparse_direction_row;
 

@@ -297,10 +297,11 @@ class FastILUPrec
         using STS = Kokkos::ArithTraits<Scalar>;
         using RTS = Kokkos::ArithTraits<Real>;
 
+  template <typename T>
   struct IdentityFunctor
   {
     KOKKOS_INLINE_FUNCTION
-    Scalar operator()(const Scalar val) const {return val;}
+    T operator()(const T val) const {return val;}
   };
 
   struct ShiftFunctor
@@ -328,13 +329,13 @@ class FastILUPrec
 
   struct InvSqrtFunctor
   {
-    Scalar one;
+    Real one;
 
     KOKKOS_INLINE_FUNCTION
-    InvSqrtFunctor() : one(STS::one()) {}
+    InvSqrtFunctor() : one(RTS::one()) {}
 
     KOKKOS_INLINE_FUNCTION
-    Scalar operator()(const Scalar val) const { return one/(RTS::sqrt(STS::abs(val))); };
+    Real operator()(const Scalar val) const { return one/(RTS::sqrt(STS::abs(val))); };
   };
 
   struct NotDiagFunctor
@@ -374,10 +375,10 @@ class FastILUPrec
     { return val1*val2*val3; }
   };
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
-  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     for (Ordinal itr = 0; itr < blockItems; ++itr) {
@@ -385,10 +386,10 @@ class FastILUPrec
     }
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<!Block, void>::type
-  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     assert(blockCrsSize == 1);
     vals_dest[dest] = lam(vals_src[src]);
@@ -414,10 +415,10 @@ class FastILUPrec
     vals_dest[dest] = value;
   }
 
-  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
-  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = F())
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     const Ordinal dest_offset = blockItems*dest;
@@ -432,10 +433,10 @@ class FastILUPrec
     }
   }
 
-  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<!Block, void>::type
-  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = F())
   {
     vals_dest(dest) = lam(vals_src(src));
   }
@@ -546,10 +547,10 @@ class FastILUPrec
     vals_dest(dest) = vals_src(src);
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
-  assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     for (Ordinal i = 0, j = blockItems*src; i < blockCrsSize; ++i, j+=(blockCrsSize+1)) {
@@ -557,10 +558,10 @@ class FastILUPrec
     }
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<!Block, void>::type
-  assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     diag_dest(dest) = lam(vals_src(src));
   }
@@ -584,20 +585,20 @@ class FastILUPrec
     vals_dest[dest] = value;
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
-  assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     for (Ordinal i = 0; i < blockCrsSize; ++i) {
       diag_dest(dest*blockCrsSize + i) = lam(diag_src(src*blockCrsSize + i));
     }
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<!Block, void>::type
-  assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     diag_dest(dest) = lam(diag_src(src));
   }

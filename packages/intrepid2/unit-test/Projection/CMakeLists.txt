@@ -16,6 +16,7 @@ SET(Intrepid2_TEST_ETI_FILE "")
 LIST(APPEND Intrepid2_TEST_ETI_FILE 
   "test_project_fields"
   "test_convergence_HEX"
+  "test_convergence_PYR"
   "test_convergence_QUAD"
   "test_convergence_TET"
   "test_convergence_TRI"

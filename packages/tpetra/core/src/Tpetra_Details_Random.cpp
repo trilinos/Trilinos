@@ -83,7 +83,7 @@ void finalize_hip_pool() {
 #endif // KOKKOS_ENABLE_HIP
 
 #ifdef KOKKOS_ENABLE_SYCL
-Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> * sycl_pool_=nullptr;
+Kokkos::Random_XorShift64_Pool<typename Kokkos::Experimental::SYCLDeviceUSMSpace::execution_space> * sycl_pool_=nullptr;
 
 void finalize_sycl_pool() {
   if(sycl_pool_ != nullptr) {
@@ -183,9 +183,9 @@ getPool() {
 /********************************************************************************/
 #ifdef KOKKOS_ENABLE_SYCL
 void 
-Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>::
+Static_Random_XorShift64_Pool<typename Kokkos::Experimental::SYCLDeviceUSMSpace::execution_space>::
 resetPool(int mpi_rank) {
-  using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>;
+  using pool_type = Kokkos::Random_XorShift64_Pool<typename Kokkos::Experimental::SYCLDeviceUSMSpace::execution_space>;
 
   if(isSet())
     delete sycl_pool_;
@@ -196,13 +196,13 @@ resetPool(int mpi_rank) {
 } 
 
 bool 
-Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>::
+Static_Random_XorShift64_Pool<typename Kokkos::Experimental::SYCLDeviceUSMSpace::execution_space>::
 isSet() {
   return sycl_pool_!=nullptr;
 }
 
-Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> &
-Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space>::
+Kokkos::Random_XorShift64_Pool<typename Kokkos::Experimental::SYCLDeviceUSMSpace::execution_space> &
+Static_Random_XorShift64_Pool<typename Kokkos::Experimental::SYCLDeviceUSMSpace::execution_space>::
 getPool() {
   TEUCHOS_TEST_FOR_EXCEPTION(!isSet(),std::runtime_error,"Tpetra::Details::Static_Random_XorShift64_Pool: resetPool() must be called before getPool");
   return *sycl_pool_;

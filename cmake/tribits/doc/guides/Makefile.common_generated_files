@@ -27,6 +27,7 @@ COMMON_DEPENDENT_FILES = \
   ../get-tribits-packages-from-files-list.txt \
   ../install_devtools-help.txt \
   ../TriBITS.README.DIRECTORY_CONTENTS.rst \
+  $(wildcard ../*.cmake) \
   TribitsMacroFunctionDoc.rst \
   UtilsMacroFunctionDoc.rst
 

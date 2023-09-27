@@ -6496,8 +6496,6 @@ namespace Tpetra {
       return;
     }
     haveLocalOffRankOffsets_ = false;
-    k_offRankOffsets_ = offset_device_view_type(Kokkos::ViewAllocateWithoutInitializing("offRankOffset"), lclNumRows+1);
-    offsets = k_offRankOffsets_;
 
     const map_type& colMap = * (this->getColMap ());
     const map_type& domMap = * (this->getDomainMap ());
@@ -6513,11 +6511,16 @@ namespace Tpetra {
 
     TEUCHOS_ASSERT(this->isSorted ());
     if (isFillComplete ()) {
+      k_offRankOffsets_ = offset_device_view_type(Kokkos::ViewAllocateWithoutInitializing("offRankOffset"), lclNumRows+1);
       auto lclGraph = this->getLocalGraphDevice ();
       ::Tpetra::Details::getGraphOffRankOffsets (k_offRankOffsets_,
                                                  lclColMap, lclDomMap,
                                                  lclGraph);
+      offsets = k_offRankOffsets_;
       haveLocalOffRankOffsets_ = true;
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (true, std::logic_error, "Can't get off-rank offsets for non-fill-complete graph");
     }
   }
 

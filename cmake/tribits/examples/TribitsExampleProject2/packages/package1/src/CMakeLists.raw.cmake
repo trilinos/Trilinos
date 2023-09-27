@@ -7,8 +7,7 @@ target_link_libraries(Package1_package1
 set_target_properties(Package1_package1 PROPERTIES
   EXPORT_NAME package1)
 add_library(Package1::package1 ALIAS Package1_package1)
-install(
-  TARGETS Package1_package1
+install(TARGETS Package1_package1
   EXPORT ${PROJECT_NAME}
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} )
 install(
