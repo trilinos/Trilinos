@@ -37,7 +37,7 @@ class MiddleGridConstraintGeneratorTester : public ::testing::Test
           mMesh2, PointClassifierNormalWrapperTolerances(eps));
       mRelationalData = std::make_shared<nonconformal4::impl::MeshRelationalData>(mMesh1, mMesh2, mMeshIn);
       mProjector      = std::make_shared<nonconformal4::impl::MeshProjectionCalculator>(
-          mMesh1, mMesh2, mMeshIn, mRelationalData, mClassifier, middle_mesh::impl::EdgeTracerTolerances(eps));
+          mMesh1, mMesh2, mRelationalData, mClassifier, middle_mesh::impl::EdgeTracerTolerances(eps));
       mConstraintGenerator = std::make_shared<nonconformal4::impl::MiddleGridConstraintGenerator>(
           mMesh1, mMesh2, mMeshIn, mRelationalData, mClassifier);
       mProjector->project();

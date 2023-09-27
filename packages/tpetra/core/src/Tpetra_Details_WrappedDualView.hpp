@@ -100,6 +100,7 @@ using enableIfNonConstData = std::enable_if_t<!hasConstData<DualViewType>::value
 template <typename DualViewType>
 enableIfNonConstData<DualViewType>
 sync_host(DualViewType dualView) {
+  // This will sync, but only if needed
   dualView.sync_host();
 }
 
@@ -110,14 +111,15 @@ sync_host(DualViewType dualView) { }
 template <typename DualViewType>
 enableIfNonConstData<DualViewType>
 sync_device(DualViewType dualView) {
-  dualView.sync_device();
+  // This will sync, but only if needed
+    dualView.sync_device();
 }
 
 template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_device(DualViewType dualView) { }
 
-}
+}// end namespace Impl
 
 /// \brief Whether WrappedDualView reference count checking is enabled. Initially true.
 /// Since the DualView sync functions are not thread-safe, tracking should be disabled
@@ -152,6 +154,10 @@ private:
   static constexpr bool deviceMemoryIsHostAccessible =
     Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename t_dev::memory_space>::accessible;
 
+private:
+  template <typename>
+  friend class WrappedDualView;
+
 public:
   WrappedDualView() {}
 
@@ -159,6 +165,21 @@ public:
     : originalDualView(dualV),
       dualView(originalDualView)
   { }
+
+  //! Conversion copy constructor.
+  template <class SrcDualViewType>
+  WrappedDualView(const WrappedDualView<SrcDualViewType>& src)
+    : originalDualView(src.originalDualView),
+      dualView(src.dualView)
+  { }
+  
+  //! Conversion assignment operator.
+  template <class SrcDualViewType>
+  WrappedDualView& operator=(const WrappedDualView<SrcDualViewType>& src) {
+    originalDualView = src.originalDualView;
+    dualView = src.dualView;
+    return *this;
+  }
 
   // This is an expert-only constructor
   // For WrappedDualView to manage synchronizations correctly,
@@ -241,6 +262,7 @@ public:
   ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
+    
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
@@ -278,7 +300,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();
+      if (deviceMemoryIsHostAccessible) Kokkos::fence("WrappedDualView::getHostView");
       dualView.clear_sync_state();
       dualView.modify_host();
     }
@@ -327,7 +349,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfHostViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();
+      if (deviceMemoryIsHostAccessible) Kokkos::fence("WrappedDualView::getDeviceView");
       dualView.clear_sync_state();
       dualView.modify_device();
     }
@@ -607,6 +629,7 @@ private:
     return deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data();
   }
 
+
   /// \brief needsSyncPath tells us whether we need the "sync path" where we (potentially) fence,
   ///        check use counts and take care of sync/modify for the underlying DualView.
   ///
@@ -614,9 +637,9 @@ private:
   /// 1. If WrappedDualView tracking is disabled, then never take the sync path.
   /// 2. For non-GPU architectures where the host/device pointers are aliased
   ///    we don't need the "sync path."
-  /// 3. For GPUs, we always need the "sync path" in two cases: first, if we're using a memory space
-  ///    shared between host and device (e.g. CudaUVMSpace), where we need to make sure
-  ///    to fence before reading memory on host. And second, if the host/device pointers are aliased.
+  /// 3. For GPUs, we always need the "sync path."  For shared host/device memory (e.g. CudaUVM)
+  ///    the Kokkos::deep_copy in the sync is a no-op, but the fence associated with it matters.
+  ///
   ///
   /// Avoiding the "sync path" speeds up calculations on architectures where we can
   /// avoid it (e.g. SerialNode) by not not touching the modify flags.
@@ -625,17 +648,23 @@ private:
   /// that don't otherwise have an intrinsic fencing mechanism will need to trigger the
   /// "sync path"
   bool needsSyncPath() const {
-
     if(!wdvTrackingEnabled)
       return false;
 
-#ifdef KOKKOS_ENABLE_CUDA
-    return std::is_same<typename t_dev::memory_space,Kokkos::CudaUVMSpace>::value || !memoryIsAliased();
-#elif defined(KOKKOS_ENABLE_SYCL)
-    return std::is_same<typename t_dev::memory_space,Kokkos::Experimental::SYCLSharedUSMSpace>::value || !memoryIsAliased();
-#else
-    return !memoryIsAliased();
+    // We check to see if the memory is not aliased *or* if it is a supported accelerator (for shared host/device memory).
+    bool useSync = !memoryIsAliased();
+#if defined(KOKKOS_ENABLE_CUDA)
+    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::Cuda> || useSync;
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::HIP> || useSync;
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::Experimental::SYCL> || useSync;
+#endif
+    return useSync;
+      
+
   }
 
 

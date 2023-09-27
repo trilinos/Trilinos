@@ -1173,12 +1173,13 @@ namespace Tpetra {
     }
 
     // Allocate matrix values.
-    const size_t lclNumRows = this->staticGraph_->getLocalNumRows ();
-    typename Graph::local_graph_device_type::row_map_type k_ptrs =
-                                      this->staticGraph_->rowPtrsUnpacked_dev_;
-
-    const size_t lclTotalNumEntries = 
-                 this->staticGraph_->rowPtrsUnpacked_host_(lclNumRows);
+    const size_t lclTotalNumEntries = this->staticGraph_->getLocalAllocationSize();
+    if (debug) {
+      const size_t lclNumRows = this->staticGraph_->getLocalNumRows ();
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->staticGraph_->getRowPtrsUnpackedHost()(lclNumRows) != lclTotalNumEntries, std::logic_error,
+         "length of staticGraph's lclIndsUnpacked does not match final entry of rowPtrsUnapcked_host." << suffix);
+    }
 
     // Allocate array of (packed???) matrix values.
     using values_type = typename local_matrix_device_type::values_type;
@@ -1267,7 +1268,7 @@ namespace Tpetra {
          << curRowOffsets.extent (0) << " != lclNumRows + 1 = "
          << (lclNumRows + 1) << ".");
       const size_t numOffsets = curRowOffsets.extent (0);
-      const auto valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets - 1);
+      const auto valToCheck = myGraph_->getRowPtrsUnpackedHost()(numOffsets - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numOffsets != 0 &&
          myGraph_->lclIndsUnpacked_wdv.extent (0) != valToCheck,
@@ -1304,7 +1305,7 @@ namespace Tpetra {
       if (debug && curRowOffsets.extent (0) != 0) {
         const size_t numOffsets =
           static_cast<size_t> (curRowOffsets.extent (0));
-        const auto valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets - 1);
+        const auto valToCheck = myGraph_->getRowPtrsUnpackedHost()(numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) !=
            static_cast<size_t> (valuesUnpacked_wdv.extent (0)),
@@ -1457,13 +1458,14 @@ namespace Tpetra {
       // FIXME? This is already done in the graph fill call - need to avoid the memcpy to host
       myGraph_->rowPtrsPacked_dev_ = myGraph_->rowPtrsUnpacked_dev_;
       myGraph_->rowPtrsPacked_host_ = myGraph_->rowPtrsUnpacked_host_;
+      myGraph_->packedUnpackedRowPtrsMatch_ = true;
       myGraph_->lclIndsPacked_wdv = myGraph_->lclIndsUnpacked_wdv;
       valuesPacked_wdv = valuesUnpacked_wdv;
 
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Storage already packed: rowPtrsUnpacked_: "
-           << myGraph_->rowPtrsUnpacked_host_.extent(0) << ", lclIndsUnpacked_wdv: "
+           << myGraph_->getRowPtrsUnpackedHost().extent(0) << ", lclIndsUnpacked_wdv: "
            << myGraph_->lclIndsUnpacked_wdv.extent(0) << ", valuesUnpacked_wdv: "
            << valuesUnpacked_wdv.extent(0) << endl;
         std::cerr << os.str();
@@ -1472,13 +1474,14 @@ namespace Tpetra {
       if (debug) {
         const char myPrefix[] =
           "(\"Optimize Storage\"=false branch) ";
+        auto rowPtrsUnpackedHost = myGraph_->getRowPtrsUnpackedHost();
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (myGraph_->rowPtrsUnpacked_dev_.extent (0) == 0, std::logic_error, myPrefix
            << "myGraph->rowPtrsUnpacked_dev_.extent(0) = 0.  This probably means "
            "that rowPtrsUnpacked_ was never allocated.");
         if (myGraph_->rowPtrsUnpacked_dev_.extent (0) != 0) {
-          const size_t numOffsets (myGraph_->rowPtrsUnpacked_host_.extent (0));
-          const auto valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets - 1);
+          const size_t numOffsets = rowPtrsUnpackedHost.extent (0);
+          const auto valToCheck = rowPtrsUnpackedHost(numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (size_t (valToCheck) != valuesPacked_wdv.extent (0),
              std::logic_error, myPrefix <<
@@ -1497,14 +1500,15 @@ namespace Tpetra {
 
     if (debug) {
       const char myPrefix[] = "After packing, ";
+      auto rowPtrsPackedHost = myGraph_->getRowPtrsPackedHost();
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (size_t (myGraph_->rowPtrsPacked_host_.extent (0)) != size_t (lclNumRows + 1),
+        (size_t (rowPtrsPackedHost.extent (0)) != size_t (lclNumRows + 1),
          std::logic_error, myPrefix << "myGraph_->rowPtrsPacked_host_.extent(0) = "
-         << myGraph_->rowPtrsPacked_host_.extent (0) << " != lclNumRows+1 = " <<
+         << rowPtrsPackedHost.extent (0) << " != lclNumRows+1 = " <<
          (lclNumRows+1) << ".");
-      if (myGraph_->rowPtrsPacked_host_.extent (0) != 0) {
-        const size_t numOffsets (myGraph_->rowPtrsPacked_host_.extent (0));
-        const size_t valToCheck = myGraph_->rowPtrsPacked_host_(numOffsets-1);
+      if (rowPtrsPackedHost.extent (0) != 0) {
+        const size_t numOffsets (rowPtrsPackedHost.extent (0));
+        const size_t valToCheck = rowPtrsPackedHost(numOffsets-1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (valToCheck != size_t (valuesPacked_wdv.extent (0)),
            std::logic_error, myPrefix << "k_ptrs_const(" <<
@@ -1552,6 +1556,7 @@ namespace Tpetra {
       // We directly set the memory spaces to avoid a memcpy from device to host
       myGraph_->rowPtrsUnpacked_dev_ = myGraph_->rowPtrsPacked_dev_;
       myGraph_->rowPtrsUnpacked_host_ = myGraph_->rowPtrsPacked_host_;
+      myGraph_->packedUnpackedRowPtrsMatch_ = true;
       myGraph_->lclIndsUnpacked_wdv = myGraph_->lclIndsPacked_wdv;
       valuesUnpacked_wdv = valuesPacked_wdv;
 
@@ -3430,7 +3435,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
       // CAG: This fence was found to be required on Cuda with UVM=on.
-      Kokkos::fence();
+      Kokkos::fence("CrsMatrix::setAllToScalar");
     }
   }
 
@@ -3719,7 +3724,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const LO myNumRows = static_cast<LO> (this->getLocalNumRows ());
     const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
 
-    auto rowPtrsPackedHost = staticGraph_->rowPtrsPacked_host_;
+    auto rowPtrsPackedHost = staticGraph_->getRowPtrsPackedHost();
     auto valuesPackedHost = valuesPacked_wdv.getHostView(Access::ReadOnly);
     Kokkos::parallel_for
       ("Tpetra::CrsMatrix::getLocalDiagCopy",
@@ -4529,7 +4534,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       );
       this->checkInternalState ();
     }
-  }
+  } //fillComplete(domainMap, rangeMap, params)
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4661,7 +4666,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       size_t totalNumDups = 0;
       {
         //Accessing host unpacked (4-array CRS) local matrix.
-        auto rowBegins_ = graph.rowPtrsUnpacked_host_;
+        auto rowBegins_ = graph.getRowPtrsUnpackedHost();
         auto rowLengths_ = graph.k_numRowEntries_;
         auto vals_ = this->valuesUnpacked_wdv.getHostView(Access::ReadWrite);
         auto cols_ = graph.lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
@@ -4904,7 +4909,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<const MV> X;
 
     // some parameters for below
-    const bool Y_is_replicated = ! Y_in.isDistributed ();
+    const bool Y_is_replicated = (! Y_in.isDistributed () && this->getComm ()->getSize () != 1);
     const bool Y_is_overwritten = (beta == ZERO);
     if (Y_is_replicated && this->getComm ()->getRank () > 0) {
       beta = ZERO;
@@ -5522,7 +5527,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate row_ptrs_beg: "
-         << myGraph_->rowPtrsUnpacked_host_.extent(0) << endl;
+         << myGraph_->getRowPtrsUnpackedHost().extent(0) << endl;
       std::cerr << os.str();
     }
     using Kokkos::view_alloc;
@@ -5609,7 +5614,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          << "old size: " << myGraph_->rowPtrsUnpacked_host_.extent(0)
          << ", new size: " << row_ptr_beg.extent(0) << endl;
       std::cerr << os.str();
-      TEUCHOS_ASSERT( myGraph_->rowPtrsUnpacked_host_.extent(0) ==
+      TEUCHOS_ASSERT( myGraph_->getRowPtrsUnpackedHost().extent(0) ==
                       row_ptr_beg.extent(0) );
     }
     myGraph_->setRowPtrsUnpacked(row_ptr_beg);
@@ -7914,12 +7919,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const size_t NumSameIDs = rowTransfer.getNumSameIDs();
     ArrayView<const LO> ExportLIDs = reverseMode ?
       rowTransfer.getRemoteLIDs () : rowTransfer.getExportLIDs ();
-    ArrayView<const LO> RemoteLIDs = reverseMode ?
-      rowTransfer.getExportLIDs () : rowTransfer.getRemoteLIDs ();
-    ArrayView<const LO> PermuteToLIDs = reverseMode ?
-      rowTransfer.getPermuteFromLIDs () : rowTransfer.getPermuteToLIDs ();
-    ArrayView<const LO> PermuteFromLIDs = reverseMode ?
-      rowTransfer.getPermuteToLIDs () : rowTransfer.getPermuteFromLIDs ();
+    auto RemoteLIDs = reverseMode ?
+      rowTransfer.getExportLIDs_dv() : rowTransfer.getRemoteLIDs_dv();
+    auto PermuteToLIDs = reverseMode ?
+      rowTransfer.getPermuteFromLIDs_dv() : rowTransfer.getPermuteToLIDs_dv();
+    auto PermuteFromLIDs = reverseMode ?
+      rowTransfer.getPermuteToLIDs_dv() : rowTransfer.getPermuteFromLIDs_dv();
     Distributor& Distor = rowTransfer.getDistributor ();
 
     // Owning PIDs
@@ -8114,14 +8119,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
     if (constantNumPackets == 0) {
       destMat->reallocArraysForNumPacketsPerLid (ExportLIDs.size (),
-                                                 RemoteLIDs.size ());
+                                                 RemoteLIDs.view_host().size ());
     }
     else {
       // There are a constant number of packets per element.  We
       // already know (from the number of "remote" (incoming)
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
-      const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
+      const size_t rbufLen = RemoteLIDs.view_host().size() * constantNumPackets;
       destMat->reallocImportsIfNeeded (rbufLen, false, nullptr);
     }
     }
@@ -8445,52 +8450,48 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     }
 
-    /*********************************************************************/
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
     // Backwards compatibility measure.  We'll use this again below.
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize"))));
-#endif
-    destMat->numImportPacketsPerLID_.sync_host ();
-    Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
-      getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
-    destMat->imports_.sync_host ();
-    Teuchos::ArrayView<const char> hostImports =
-      getArrayViewFromDualView (destMat->imports_);
 
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "Calling unpackAndCombineWithOwningPIDsCount"
-         << std::endl;
-      std::cerr << os.str ();
-    }
-    size_t mynnz =
-      unpackAndCombineWithOwningPIDsCount (*this,
-                                           RemoteLIDs,
-                                           hostImports,
-                                           numImportPacketsPerLID,
-                                           constantNumPackets,
-                                           INSERT,
-                                           NumSameIDs,
-                                           PermuteToLIDs,
-                                           PermuteFromLIDs);
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "unpackAndCombineWithOwningPIDsCount returned "
-         << mynnz << std::endl;
-      std::cerr << os.str ();
-    }
-    size_t N = BaseRowMap->getLocalNumElements ();
+    // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
+    // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
+    // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
+    destMat->numImportPacketsPerLID_.modify_host(); //FIXME
 
-    // Allocations
-    ArrayRCP<size_t> CSR_rowptr(N+1);
+#  ifdef HAVE_TPETRA_MMM_TIMINGS
+    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
+#  endif
+    ArrayRCP<size_t> CSR_rowptr;
     ArrayRCP<GO> CSR_colind_GID;
     ArrayRCP<LO> CSR_colind_LID;
     ArrayRCP<Scalar> CSR_vals;
-    CSR_colind_GID.resize (mynnz);
-    CSR_vals.resize (mynnz);
+
+    destMat->imports_.sync_device ();
+    destMat->numImportPacketsPerLID_.sync_device ();
+
+    size_t N = BaseRowMap->getLocalNumElements ();
+
+    auto RemoteLIDs_d = RemoteLIDs.view_device();
+    auto PermuteToLIDs_d = PermuteToLIDs.view_device();
+    auto PermuteFromLIDs_d = PermuteFromLIDs.view_device();
+
+    Details::unpackAndCombineIntoCrsArrays(
+                                   *this, 
+                                   RemoteLIDs_d,
+                                   destMat->imports_.view_device(),                //hostImports
+                                   destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
+                                   NumSameIDs,
+                                   PermuteToLIDs_d,
+                                   PermuteFromLIDs_d,
+                                   N,
+                                   MyPID,
+                                   CSR_rowptr,
+                                   CSR_colind_GID,
+                                   CSR_vals,
+                                   SourcePids(),
+                                   TargetPids);
 
     // If LO and GO are the same, we can reuse memory when
     // converting the column indices from global to local indices.
@@ -8498,44 +8499,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO> (CSR_colind_GID);
     }
     else {
-      CSR_colind_LID.resize (mynnz);
+      CSR_colind_LID.resize (CSR_colind_GID.size());
     }
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    tmCopySPRdata = Teuchos::null;
-    tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC copy same-perm-remote data"))));
-#endif
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "Calling unpackAndCombineIntoCrsArrays"
-         << std::endl;
-      std::cerr << os.str ();
-    }
-    // FIXME (mfh 15 May 2014) Why can't we abstract this out as an
-    // unpackAndCombine method on a "CrsArrays" object?  This passing
-    // in a huge list of arrays is icky.  Can't we have a bit of an
-    // abstraction?  Implementing a concrete DistObject subclass only
-    // takes five methods.
-    unpackAndCombineIntoCrsArrays (*this, 
-                                   RemoteLIDs,
-                                   hostImports,
-                                   numImportPacketsPerLID,
-                                   constantNumPackets,
-                                   INSERT,
-                                   NumSameIDs,
-                                   PermuteToLIDs,
-                                   PermuteFromLIDs,
-                                   N,
-                                   mynnz,
-                                   MyPID,
-                                   CSR_rowptr (),
-                                   CSR_colind_GID (),
-                                   Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
-                                   SourcePids (),
-                                   TargetPids);
+    CSR_colind_LID.resize (CSR_colind_GID.size());
 
     // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
     // owned entries.  Convert them to the actual PID.
+    // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays with a parallel_for.
     for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
     {
       if(TargetPids[i] == -1) TargetPids[i] = MyPID;
@@ -8617,6 +8587,24 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     /***************************************************/
     /**** 5) Sort                                   ****/
     /***************************************************/
+
+    // First we create Kokkos::Views and transfer data from
+    // the ArrayRCPs with the intent to later call setAllValues
+    // using said views as input. This should reduce the
+    // amount of data transfers required between host and
+    // device and thus improve performance.
+    typename row_ptrs_host_view_type::non_const_type            CSR_rowptr_host(CSR_rowptr.getRawPtr(), CSR_rowptr.size());
+    typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
+    typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
+
+    typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_dev(Kokkos::ViewAllocateWithoutInitializing("rowmap"), CSR_rowptr.size());
+    typename local_inds_device_view_type::non_const_type CSR_colind_LID_dev(Kokkos::ViewAllocateWithoutInitializing("colind"), CSR_colind_LID.size());
+    typename values_device_view_type::non_const_type     CSR_vals_dev(Kokkos::ViewAllocateWithoutInitializing("values"), CSR_vals.size());
+
+    Kokkos::deep_copy(CSR_rowptr_dev, CSR_rowptr_host);
+    Kokkos::deep_copy(CSR_colind_LID_dev, CSR_colind_LID_host);
+    Kokkos::deep_copy(CSR_vals_dev, CSR_vals_host);
+
     if ((! reverseMode && xferAsImport != nullptr) ||
         (reverseMode && xferAsExport != nullptr)) {
       if (verbose) {
@@ -8627,9 +8615,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
 #endif
-      Import_Util::sortCrsEntries (CSR_rowptr (),
-                                   CSR_colind_LID (),
-                                   CSR_vals ());
+      // Just to be safe we always static cast the Scalar pointer
+      // to the underlying impl_scalar type.
+
+      Import_Util::sortCrsEntries (CSR_rowptr_dev,
+                                   CSR_colind_LID_dev,
+                                   CSR_vals_dev);
     }
     else if ((! reverseMode && xferAsExport != nullptr) ||
              (reverseMode && xferAsImport != nullptr)) {
@@ -8642,13 +8633,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
 #endif
-      Import_Util::sortAndMergeCrsEntries (CSR_rowptr (),
-                                           CSR_colind_LID (),
-                                           CSR_vals ());
-      if (CSR_rowptr[N] != mynnz) {
-        CSR_colind_LID.resize (CSR_rowptr[N]);
-        CSR_vals.resize (CSR_rowptr[N]);
-      }
+      Import_Util::sortAndMergeCrsEntries (CSR_rowptr_dev,
+                                           CSR_colind_LID_dev,
+                                           CSR_vals_dev);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -8673,9 +8660,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // make a deep copy of the arrays.
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
 #endif
-    destMat->setAllValues (CSR_rowptr, CSR_colind_LID, CSR_vals);
+      destMat->setAllValues (CSR_rowptr_dev, CSR_colind_LID_dev, CSR_vals_dev);
     }
 
     /***************************************************/

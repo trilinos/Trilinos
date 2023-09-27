@@ -1,4 +1,10 @@
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_BlockGMRES_diag_test
+  SOURCES test_bl_gmres_diag.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+)
 
 ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
@@ -9,7 +15,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
      Tpetra_BlockGMRES_hb_DoubleFloat_test
-     SOURCES test_bl_gmres_hb_df.cpp 
+     SOURCES test_bl_gmres_hb_df.cpp
      ARGS "--verbose"
      COMM serial mpi
      )

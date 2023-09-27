@@ -91,9 +91,7 @@ namespace MueLu {
       GO out_data[2];
       Teuchos::reduceAll(*graph.GetComm(), Teuchos::REDUCE_SUM, 2, in_data, out_data);
       GO phase_one_aggregated = out_data[1] - out_data[0];
-      factor = as<double>(phase_one_aggregated) / (out_data[1]+1);
-
-      
+      factor = as<double>(phase_one_aggregated) / (out_data[1]+1);      
       LO agg_stat_unaggregated=0;
       LO agg_stat_aggregated=0;
       LO agg_stat_bdry=0;
@@ -105,20 +103,19 @@ namespace MueLu {
         else
           agg_stat_unaggregated++;
       }
-      
 
-      printf("[%d] CMS: MueLu: Phase2a aggFactor = %6.4e total = %d/%d unaggregated = %d/%d nbdry = %d pre_factor = %6.4e\n",myRank,aggFactor,
-             aggStat.size(),out_data[1],numNonAggregatedNodes,out_data[0],agg_stat_bdry,factor);
+      /*      printf("[%d] CMS: MueLu: Phase2a aggFactor = %6.4e total = %d/%d unaggregated = %d/%d nbdry = %d pre_factor = %6.4e\n",myRank,aggFactor,
+              aggStat.size(),out_data[1],numNonAggregatedNodes,out_data[0],agg_stat_bdry,factor);*/
+      // NOTE: ML always uses 3 as minNodesPerAggregate
+      minNodesPerAggregate=3;
     }
     else {
       // MueLu defaults to using local counts to set the factor
       factor = as<double>(numLocalAggregated)/(numLocalNodes+1);  
     }
+    // Now apply aggFactor
     factor = pow(factor, aggFactor);
-    printf("[%d] CMS: MueLu: Phase2a post_factor = %6.4e\n",myRank,factor);
-
-
-
+    //    printf("[%d] CMS: MueLu: Phase2a post_factor = %6.4e\n",myRank,factor);
 
     int              aggIndex = -1;
     size_t           aggSize  =  0;
@@ -145,6 +142,7 @@ namespace MueLu {
             num_local_neighbors++;
         fprintf(fagg,"%d %d %d %d %6.4e %d\n",rootCandidate,num_local_neighbors,-1,-1,0.0,-1);//CMS
         continue;
+      }
 
       }
 
@@ -157,7 +155,7 @@ namespace MueLu {
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(rootCandidate);
 
-      LO num_nonaggd_neighbors=0,num_local_neighbors=0;
+      LO num_nonaggd_neighbors=0, num_local_neighbors=0;
       for (int j = 0; j < neighOfINode.size(); j++) {
         LO neigh = neighOfINode[j];
         if (graph.isLocalNeighborVertex(neigh))
@@ -180,28 +178,23 @@ namespace MueLu {
         }
       }
 
-      // NOTE: ML uses a hardcoded value 3 instead of MinNodesPerAggregate
       
       bool accept_aggregate;
       if (matchMLbehavior) {
+        // ML does this calculation slightly differently than MueLu does by default, specifically it
+        // uses the *local* number of neigbors, regardless of what they are.
         // NOTE: ML does zero compression here.  Not sure if it matters
-
-        // ML includs the 
+        // NOTE: ML uses a hardcoded value 3 instead of minNodesPerAggregate.  This has been set above
         LO rowi_N = num_local_neighbors;
-        LO uncompressed_row = rowi_N;
         num_nonaggd_neighbors++; // ML counts the node itself as a nonaggd_neighbor
-
-        accept_aggregate = (rowi_N > as<size_t>(minNodesPerAggregate)) && (num_nonaggd_neighbors > (factor*rowi_N));
+        accept_aggregate = (rowi_N > as<LO>(minNodesPerAggregate)) && (num_nonaggd_neighbors > (factor*rowi_N));
         fprintf(fagg,"%d %d %d %d %6.4e %d\n",rootCandidate,uncompressed_row,rowi_N,num_nonaggd_neighbors,factor,(bool)accept_aggregate);
       }
       else {
-
         accept_aggregate = (aggSize > as<size_t>(minNodesPerAggregate)) &&  (aggSize > factor*numNeighbors);
       }
 
-
-
-
+      
       if (accept_aggregate) {
         // Accept new aggregate
         // rootCandidate becomes the root of the newly formed aggregate

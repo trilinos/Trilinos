@@ -53,6 +53,7 @@
 
 namespace Adelus {
 
+inline
 double get_seconds(double start)
 {
   double time;		/* total seconds */
@@ -63,7 +64,7 @@ double get_seconds(double start)
 }
 
 // Exchange and calculate max, min, and average timing information
-
+inline
 void showtime(int comm_id, MPI_Comm comm, int me, int nprocs_cube, const char *label, double *value)
 {
   double avgtime;

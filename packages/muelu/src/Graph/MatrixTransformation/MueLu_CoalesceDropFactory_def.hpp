@@ -166,7 +166,7 @@ namespace MueLu {
         Input(currentLevel, "Coordinates");
       }
       if(algo == "signed classical sa")
-	;
+        ;
       else if (algo.find("block diagonal") != std::string::npos || algo.find("signed classical") != std::string::npos)  {
         Input(currentLevel, "BlockNumber");
       }
@@ -330,11 +330,11 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian" && algo != "signed classical", Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian|signed classical)");
 
       SC threshold;
-    // If we're doing the ML-style halving of the drop tol at each level, we do that here.
-    if (pL.get<bool>("aggregation: use ml scaling of drop tol"))
-      threshold = pL.get<double>("aggregation: drop tol") / pow(2.0,currentLevel.GetLevelID());
-    else
-      threshold =  as<SC>(pL.get<double>("aggregation: drop tol"));
+      // If we're doing the ML-style halving of the drop tol at each level, we do that here.
+      if (pL.get<bool>("aggregation: use ml scaling of drop tol"))
+        threshold = pL.get<double>("aggregation: drop tol") / pow(2.0,currentLevel.GetLevelID());
+      else
+        threshold =  as<SC>(pL.get<double>("aggregation: drop tol"));
 
 
       std::string distanceLaplacianAlgoStr = pL.get<std::string>("aggregation: distance laplacian algo");

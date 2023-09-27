@@ -116,8 +116,6 @@ namespace MueLu {
       newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2a",true);
       newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2b",true);
 
-
-
       if(list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
         newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
       else

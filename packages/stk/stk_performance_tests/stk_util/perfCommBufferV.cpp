@@ -51,10 +51,14 @@ TEST(PerfCommBufferV, pack_unpack)
   for(unsigned r=0; r<NUM_RUNS; ++r) {
     batchTimer.start_batch_timer();
 
+#ifndef NDEBUG
     const int n = 10000;
+#else
+    const int n = 1000000;
+#endif
     std::vector<stk::CommBufferV> buffers(n);
   
-    const int npacks = 20;
+    const int npacks = 100;
     int int1 = 9;
     double double1 = 99.9;
   

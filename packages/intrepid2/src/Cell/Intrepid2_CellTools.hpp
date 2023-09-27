@@ -1084,8 +1084,8 @@ public:
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
-    using nonConstRefPointValueType = std::remove_const_t<refPointValueType>;
-    auto basis = createHGradBasis<nonConstRefPointValueType,nonConstRefPointValueType>(cellTopo);
+      using nonConstRefPointValueType = std::remove_const_t<refPointValueType>;
+      auto basis = createHGradBasis<nonConstRefPointValueType,nonConstRefPointValueType>(cellTopo);
       mapToPhysicalFrame(physPoints, 
                          refPoints, 
                          worksetCell, 
@@ -1143,14 +1143,40 @@ public:
         \param  subcellOrd        [in]  - subcell ordinal
         \param  parentCell        [in]  - cell topology of the parent cell.
     */
-    template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
-             typename paramPointValueType, class ...paramPointProperties>
+    template<typename refSubcellViewType,
+             typename paramPointViewType>
     static void
-    mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
-                           const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
+    mapToReferenceSubcell(       refSubcellViewType refSubcellPoints,
+                           const paramPointViewType paramPoints,
                            const ordinal_type subcellDim,
                            const ordinal_type subcellOrd,
                            const shards::CellTopology parentCell );
+
+
+    /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
+
+        Overload of the previous function (see explanation above) where the subcell parametrization is used instead of 
+        passing the parent cell topology.
+    */
+
+    template<typename refSubcellViewType, typename paramPointViewType>
+    static void
+    mapToReferenceSubcell(     refSubcellViewType                                             refSubcellPoints,
+                         const paramPointViewType                                             paramPoints,
+                         const typename RefSubcellParametrization<DeviceType>::ConstViewType  subcellParametrization,
+                         const ordinal_type subcellOrd);
+
+    /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
+
+        Overload of the previous function (see explanation above) where the subcellOrd is a rank-1 array (P).
+    */
+
+    template<typename refSubcellViewType, typename paramPointViewType, typename ordViewType>
+    static void
+    mapToReferenceSubcell(     refSubcellViewType                                             refSubcellPoints,
+                         const paramPointViewType                                             paramPoints,
+                         const typename RefSubcellParametrization<DeviceType>::ConstViewType  subcellParametrization,
+                         const ordViewType                                                    subcellOrd);
 
 
     //============================================================================================//

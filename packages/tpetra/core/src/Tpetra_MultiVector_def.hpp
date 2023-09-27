@@ -63,6 +63,7 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_Random.hpp"
 #ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
 #  include "Teuchos_SerialDenseMatrix.hpp"
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
@@ -2681,23 +2682,14 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   randomize (const Scalar& minVal, const Scalar& maxVal)
   {
     typedef impl_scalar_type IST;
+    typedef Tpetra::Details::Static_Random_XorShift64_Pool<typename device_type::execution_space> tpetra_pool_type;
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
 
-    // Seed the pseudorandom number generator using the calling
-    // process' rank.  This helps decorrelate different process'
-    // pseudorandom streams.  It's not perfect but it's effective and
-    // doesn't require MPI communication.  The seed also includes bits
-    // from the standard library's rand().
-    //
-    // FIXME (mfh 07 Jan 2015) Should we save the seed for later use?
-    // The code below just makes a new seed each time.
+    // Seed the pool based on the system RNG and the MPI rank, if needed
+    if(!tpetra_pool_type::isSet())
+      tpetra_pool_type::resetPool(this->getMap()->getComm()->getRank());
 
-    const uint64_t myRank =
-      static_cast<uint64_t> (this->getMap ()->getComm ()->getRank ());
-    uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + myRank + 17311uLL;
-    unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
-
-    pool_type rand_pool (seed);
+    pool_type & rand_pool = tpetra_pool_type::getPool();
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
@@ -4021,6 +4013,13 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::wrapped_dual_view_type 
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getWrappedDualView() const {
+    return view_;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dView () const
@@ -4364,7 +4363,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       // NOTE (mfh 17 Mar 2019) If we ever get rid of UVM, then device
       // and host will be separate allocations.  In that case, it may
       // pay to do the all-reduce from device to host.
-      Kokkos::fence(); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
+      Kokkos::fence("MultiVector::reduce"); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
       auto X_lcl = this->getLocalViewDevice(Access::ReadWrite);
       allReduceView (X_lcl, X_lcl, *comm);
     }

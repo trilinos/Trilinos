@@ -1,6 +1,0 @@
-Thyra::SingleResidSSDAEModelEvaluator            Rythmos::SingleResidualModelEvaluator
-Thyra_SingleResidSSDAEModelEvaluator             Rythmos_SingleResidualModelEvaluator
-SingleResidSSDAEModelEvaluator                   SingleResidualModelEvaluator
-Thyra::TimeStepNewtonNonlinearSolver             Rythmos::TimeStepNonlinearSolver
-Thyra_TimeStepNewtonNonlinearSolver              Rythmos_TimeStepNonlinearSolver
-TimeStepNewtonNonlinearSolver                    TimeStepNonlinearSolver

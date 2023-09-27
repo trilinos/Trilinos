@@ -102,9 +102,9 @@ namespace MueLu {
     const LO defaultConnectWeight = 100;
     const LO penaltyConnectWeight = 10;
 
-    Kokkos::View<LO*, device_type> aggWeight    ("aggWeight",     numLocalAggregates);
-    Kokkos::View<LO*, device_type> connectWeight("connectWeight", numRows);
-    Kokkos::View<LO*, device_type> aggPenalties ("aggPenalties",  numLocalAggregates);
+    Kokkos::View<LO*, device_type> aggWeight    (Kokkos::ViewAllocateWithoutInitializing("aggWeight"),     numLocalAggregates); // This gets re-initialized at the start of each "color" loop
+    Kokkos::View<LO*, device_type> connectWeight(Kokkos::ViewAllocateWithoutInitializing("connectWeight"), numRows);
+    Kokkos::View<LO*, device_type> aggPenalties ("aggPenalties",  numLocalAggregates);// This gets initialized to zero here
 
     Kokkos::deep_copy(connectWeight, defaultConnectWeight);
 
@@ -206,8 +206,8 @@ namespace MueLu {
     const int defaultConnectWeight = 100;
     const int penaltyConnectWeight = 10;
 
-    Kokkos::View<int*, device_type> connectWeight    ("connectWeight",     numRows);
-    Kokkos::View<int*, device_type> aggWeight        ("aggWeight",         numLocalAggregates);
+    Kokkos::View<int*, device_type> connectWeight    (Kokkos::ViewAllocateWithoutInitializing("connectWeight"),     numRows);
+    Kokkos::View<int*, device_type> aggWeight        (Kokkos::ViewAllocateWithoutInitializing("aggWeight"),         numLocalAggregates);// This gets re-initialized at the start of each "color" loop
     Kokkos::View<int*, device_type> aggPenaltyUpdates("aggPenaltyUpdates", numLocalAggregates);
     Kokkos::View<int*, device_type> aggPenalties     ("aggPenalties",      numLocalAggregates);
 

@@ -71,7 +71,7 @@ namespace Intrepid2
 {
   template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
-  ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries);
+  ordinal_type getDkEnumeration(const Kokkos::Array<int,spaceDim> &entries);
 
   template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
@@ -147,7 +147,7 @@ namespace Intrepid2
 
         // ensure that we don't try to allocate an empty array…
         constexpr ordinal_type sizeForSubArray = (spaceDim > 2) ? spaceDim - 1 : 1;
-        Kokkos::Array<int,sizeForSubArray> subEntries;
+        Kokkos::Array<int,sizeForSubArray> subEntries = {};
         
         // the -1 in sub-entry enumeration value accounts for the fact that the entry is the one *after* (k0,0,…,0)
         getDkEnumerationInverse<spaceDim-1>(subEntries, dkEnum - dkEnumFor_k0 - 1, operatorOrder - entries[0]);
@@ -164,14 +164,14 @@ namespace Intrepid2
   
   template<>
   KOKKOS_INLINE_FUNCTION
-  ordinal_type getDkEnumeration<1>(Kokkos::Array<int,1> &entries)
+  ordinal_type getDkEnumeration<1>(const Kokkos::Array<int,1> &entries)
   {
     return getDkEnumeration<1>(entries[0]);
   }
   
   template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
-  ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries)
+  ordinal_type getDkEnumeration(const Kokkos::Array<int,spaceDim> &entries)
   {
     ordinal_type k_minus_k0 = 0; // sum of all the entries but the first
     
@@ -203,10 +203,10 @@ namespace Intrepid2
   ordinal_type getDkTensorIndex(const ordinal_type dkEnum1, const ordinal_type operatorOrder1,
                                 const ordinal_type dkEnum2, const ordinal_type operatorOrder2)
   {
-    Kokkos::Array<int,spaceDim1> entries1;
+    Kokkos::Array<int,spaceDim1> entries1 = {};
     getDkEnumerationInverse<spaceDim1>(entries1, dkEnum1, operatorOrder1);
     
-    Kokkos::Array<int,spaceDim2> entries2;
+    Kokkos::Array<int,spaceDim2> entries2 = {};
     getDkEnumerationInverse<spaceDim2>(entries2, dkEnum2, operatorOrder2);
     
     const int spaceDim = spaceDim1 + spaceDim2;
@@ -902,8 +902,7 @@ struct OperatorTensorDecomposition
         
         for (ordinal_type d=0; d<=tensorSpaceDim; d++) // d: tensorial dimension
         {
-          ordinal_type d2_max = std::min(spaceDim2,d);
-          int subcellOffset = 0; // for this dimension of tensor subcells, how many subcells have we already counted with other d2/d1 combos?
+          ordinal_type d2_max = std::min(spaceDim2, d);
           for (ordinal_type d2=0; d2<=d2_max; d2++)
           {
             ordinal_type d1 = d-d2;
@@ -935,8 +934,7 @@ struct OperatorTensorDecomposition
                   } // localDofID1
                 } // localDofID2
               } // subcellOrdinal1
-            } // subcellOrdinal2
-            subcellOffset += subcellCount1 * subcellCount2;
+            }   // subcellOrdinal2
           }
         }
         

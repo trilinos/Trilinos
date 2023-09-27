@@ -1491,7 +1491,7 @@ namespace Tpetra {
            numImportPacketsPerLID_av);
       }
       else { // pack on device
-        Kokkos::fence(); // for UVM
+        Kokkos::fence("DistObject::doPosts-1"); // for UVM
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
@@ -1536,7 +1536,7 @@ namespace Tpetra {
            this->imports_.view_host ());
       }
       else { // pack on device
-        Kokkos::fence(); // for UVM
+        Kokkos::fence("DistObject::doPosts-2"); // for UVM
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,

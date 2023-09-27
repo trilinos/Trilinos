@@ -268,7 +268,7 @@ namespace Amesos2 {
   template < class Matrix,
              class Vector >
   Solver<Matrix,Vector>*
-  create(const std::string solverName, const Matrix* A, Vector* X, const Vector* B);
+  create(const std::string& solverName, const Matrix* A, Vector* X, const Vector* B);
 
 
   /**
@@ -290,7 +290,7 @@ namespace Amesos2 {
   template < class Matrix,
              class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
-  create(const std::string solverName,
+  create(const std::string& solverName,
          const Teuchos::RCP<const Matrix> A,
          const Teuchos::RCP<Vector>       X,
          const Teuchos::RCP<const Vector> B);
@@ -317,7 +317,7 @@ namespace Amesos2 {
   template < class Matrix,
              class Vector >
   Solver<Matrix,Vector>*
-  create(const std::string solverName, const Matrix* A);
+  create(const std::string& solverName, const Matrix* A);
 
 
   /**
@@ -341,7 +341,7 @@ namespace Amesos2 {
   template < class Matrix,
              class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
-  create(const std::string solverName,
+  create(const std::string& solverName,
          const Teuchos::RCP<const Matrix> A);
 
 
@@ -481,7 +481,7 @@ struct throw_no_matrix_support_exception {
    *
    * \relatesalso Amesos2::Solver
    */
-  bool query(const std::string solverName);
+  bool query(const std::string& solverName);
 
 
   /////////////////
@@ -538,7 +538,7 @@ struct throw_no_matrix_support_exception {
   template <class Matrix,
             class Vector >
   Solver<Matrix,Vector>*
-  create(const std::string solverName, const Matrix* A){
+  create(const std::string& solverName, const Matrix* A){
     return( create(solverName, rcp(A,false),
                    Teuchos::RCP<Vector>(),
                    Teuchos::RCP<const Vector>()).getRawPtr() );
@@ -548,7 +548,7 @@ struct throw_no_matrix_support_exception {
   template <class Matrix,
             class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
-  create(const std::string solverName, const Teuchos::RCP<const Matrix> A){
+  create(const std::string& solverName, const Teuchos::RCP<const Matrix> A){
     return( create(solverName, A, Teuchos::RCP<Vector>(), Teuchos::RCP<const Vector>()) );
   }
 
@@ -556,7 +556,7 @@ struct throw_no_matrix_support_exception {
   template <class Matrix,
             class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
-  create(const std::string solverName, const Matrix* A, Vector* X, const Vector* B)
+  create(const std::string& solverName, const Matrix* A, Vector* X, const Vector* B)
   {
     // Pass non-owning Teuchos::RCP objects to other factory method
     return( create(solverName, rcp(A,false), rcp(X,false), rcp(B,false)) );
@@ -566,7 +566,7 @@ struct throw_no_matrix_support_exception {
   template <class Matrix,
             class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
-  create(const std::string solver_name,
+  create(const std::string& solver_name,
          const Teuchos::RCP<const Matrix> A,
          const Teuchos::RCP<Vector>       X,
          const Teuchos::RCP<const Vector> B)

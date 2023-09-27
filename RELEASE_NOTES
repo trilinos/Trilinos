@@ -1,6 +1,54 @@
 
 ###############################################################################
 #                                                                             #
+# Trilinos Release 15.0 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+CMake
+
+  - Change the default for `Trilinos_MUST_FIND_ALL_TPL_LIBS` from `OFF` to
+    `ON`. It was turned off by default because it breaks backward
+    compatibility but it also causes problems for new users and new
+    configurations.
+
+    Users that do not want this new behavior can set
+    `-D Trilinos_MUST_FIND_ALL_TPL_LIBS=OFF`, which is backward compatible.
+
+  - Change the default for `Trilinos_USE_GNUINSTALLDIRS` from `OFF` to `ON`,
+    in the goal to move Trilinos and TriBITS to modern CMake.
+
+    TriBITS has had the ability to use that paths selected by the standard
+    CMake module `GNUInstallDirs.cmake` for a long time. But it is turned off
+    in TriBITS by default and was never turned on in Trilinos, both for the
+    sake of backward compatibility.
+
+    This may break people's existing configurations because it will install
+    libs in `<prefix>/libs64/` instead of in `<prefix>/libs/` on many systems
+    (e.g. Linux systems).  For example, this will break downstream CMake
+    projects that call `find_package(Trilinos ...)` before defining the
+    compilers (e.g. so they can get the compilers from Trilinos).  If the
+    compilers are not defined, `find_package()` will not search
+    `<prefix>/lib64`.  To revert back to using `<prefix>/lib` but still use
+    `GNUInstallDirs.cmake` for Trilinos, set `-D
+    CMAKE_INSTALL_LIBDIR:STRING=lib` when configuring Trilinos.  To avoid the
+    `find_package(Trilinos ...)` problem not searching `<prefix>/lib64`,
+    consider explicitly specifying the compiler to and having the downstream
+    CMake project define the compilers first with `project(<ProjectName>
+    COMPILERS C CXX ...)` before calling `find_package(Trilinos ...)`.  (That
+    is, don't try to get the compilers from the installed Trilinos, see
+    https://github.com/trilinos/Trilinos/issues/12306.)
+
+    NOTE: The setting `-D Trilinos_USE_GNUINSTALLDIRS=OFF` is deprecated and
+    may be removed in the future. (I.e. the usage of `GNUInstallDirs.cmake`
+    may be hard-coded in the future so please try adjusting to the usage of
+    `GNUInstallDirs.cmake` by Trilinos.)  See
+    https://github.com/trilinos/Trilinos/issues/12104#issuecomment-1691945033
+    for additional details and instructions.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 14.2 Release Notes                                         #
 #                                                                             #
 ###############################################################################

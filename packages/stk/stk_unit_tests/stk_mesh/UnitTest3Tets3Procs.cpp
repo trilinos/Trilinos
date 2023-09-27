@@ -164,6 +164,7 @@ TEST(ThreeTet4sOn3Procs, deleteMiddleTetOnP1AndRecreateOnP2_works)
     const stk::mesh::Entity node7 = bulk.get_entity(stk::topology::NODE_RANK, 7);
 
     bulk.modification_begin();
+    stk::mesh::EntityVector elem2Vec;
     if(proc == 0)
     {
         bulk.add_node_sharing(node1, 2);
@@ -171,8 +172,7 @@ TEST(ThreeTet4sOn3Procs, deleteMiddleTetOnP1AndRecreateOnP2_works)
     }
     else if(proc == 1)
     {
-        stk::mesh::EntityVector elem2Vec = {bulk.get_entity(stk::topology::ELEM_RANK, 2)};
-        stk::mesh::destroy_elements_no_mod_cycle(bulk, elem2Vec, bulk.mesh_meta_data().universal_part());
+        elem2Vec = {bulk.get_entity(stk::topology::ELEM_RANK, 2)};
     }
     else if(proc == 2)
     {
@@ -180,6 +180,9 @@ TEST(ThreeTet4sOn3Procs, deleteMiddleTetOnP1AndRecreateOnP2_works)
         bulk.add_node_sharing(node1, 0);
         bulk.add_node_sharing(node7, 0);
     }
+
+    stk::mesh::destroy_elements_no_mod_cycle(bulk, elem2Vec, bulk.mesh_meta_data().universal_part());
+
     EXPECT_NO_THROW(bulk.modification_end());
 }
 
@@ -234,6 +237,7 @@ TEST(ThreeTet10sOn3Procs, deleteMiddleTetOnP1AndRecreateOnP2_works)
     stk::mesh::Entity node13 = bulk.get_entity(stk::topology::NODE_RANK, 13);
 
     bulk.modification_begin();
+    stk::mesh::EntityVector elem2Vec;
     if(proc == 0)
     {
         bulk.add_node_sharing(node1, 2);
@@ -242,8 +246,7 @@ TEST(ThreeTet10sOn3Procs, deleteMiddleTetOnP1AndRecreateOnP2_works)
     }
     else if(proc == 1)
     {
-        stk::mesh::EntityVector elem2Vec = {bulk.get_entity(stk::topology::ELEM_RANK, 2)};
-        stk::mesh::destroy_elements_no_mod_cycle(bulk, elem2Vec, bulk.mesh_meta_data().universal_part());
+        elem2Vec = {bulk.get_entity(stk::topology::ELEM_RANK, 2)};
     }
     else if(proc == 2)
     {
@@ -252,6 +255,9 @@ TEST(ThreeTet10sOn3Procs, deleteMiddleTetOnP1AndRecreateOnP2_works)
         bulk.add_node_sharing(node7, 0);
         bulk.add_node_sharing(node13, 0);
     }
+
+    stk::mesh::destroy_elements_no_mod_cycle(bulk, elem2Vec, bulk.mesh_meta_data().universal_part());
+
     EXPECT_NO_THROW(bulk.modification_end());
 
     node13 = bulk.get_entity(stk::topology::NODE_RANK, 13);

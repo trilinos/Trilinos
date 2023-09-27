@@ -58,15 +58,15 @@ private:
   ROL::Ptr<Comm> comm_sample_;
 
 public:
-  SplitComm(const int m) {
+  SplitComm(const int m, Mpi_Comm global_comm = MPI_COMM_WORLD) {
     Ordinal rank, Ngroups, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(global_comm, &rank);
+    MPI_Comm_size(global_comm, &size);
     Ordinal M = (m > size ? 1 : m);
     Ngroups = size/M;
     // Instantiate Design Communicator.
     MPI_Comm design_comm;
-    MPI_Comm_split(MPI_COMM_WORLD, rank/M, rank, &design_comm);
+    MPI_Comm_split(global_comm, rank/M, rank, &design_comm);
     Ordinal comRank; // Process rank in linear algebra communicator.
     Ordinal comSize; // Number of processes in linear algebra communicator.
     MPI_Comm_rank(design_comm,&comRank); // Get process rank.
@@ -78,14 +78,14 @@ public:
     for (Ordinal i=0;i<Ngroups;i++) granks[i] = comRank + i*M;
 
     // Build MPI groups for sampling.
-    MPI_Group world_comm; // Grab MPI_COMM_WORLD and place in world_comm.
-    MPI_Comm_group(MPI_COMM_WORLD,&world_comm);
+    MPI_Group world_comm; // Grab global_comm and place in world_comm.
+    MPI_Comm_group(global_comm,&world_comm);
     MPI_Group group;
     MPI_Group_incl(world_comm,Ngroups,&granks[0],&group);
 
     // Instantiate Sample Communicator based on group.
     MPI_Comm sample_comm;
-    MPI_Comm_create(MPI_COMM_WORLD, group, &sample_comm);
+    MPI_Comm_create(global_comm, group, &sample_comm);
     Ordinal comRank1; // Process rank in sample communicator.
     Ordinal comSize1; // Number of processes in sample communicator.
     MPI_Comm_rank(sample_comm,&comRank1); // Get process rank.

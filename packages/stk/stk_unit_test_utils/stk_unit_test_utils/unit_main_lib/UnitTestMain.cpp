@@ -48,6 +48,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/CouplingVersions.hpp>
 #include <stk_util/parallel/CouplingVersions_impl.hpp>
+#include <stk_util/environment/EnvData.hpp>
 
 int main(int argc, char **argv)
 {
@@ -69,6 +70,7 @@ int main(int argc, char **argv)
 
 #ifdef STK_HAS_MPI
     int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
+    stk::EnvData::instance().initialize(MPI_COMM_WORLD);
     stk::unit_test_util::create_parallel_output(procId);
     if (stk::unit_test_util::has_option("-stk_coupling_version")) {
       int version = stk::unit_test_util::get_command_line_option("-stk_coupling_version", -1);

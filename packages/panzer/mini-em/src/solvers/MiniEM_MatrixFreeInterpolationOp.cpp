@@ -187,10 +187,13 @@ namespace mini_em {
     using Teuchos::rcp_dynamic_cast;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
 
-    typedef Intrepid2::OrientationTools<DeviceSpace> ots;
-    typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
-    typedef Kokkos::DynRankView<Scalar,DeviceSpace> DynRankDeviceView;
-
+    using ots = Intrepid2::OrientationTools<DeviceSpace>;
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+    using li = Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace>;
+#else
+    using li = Intrepid2::LagrangianInterpolation<DeviceSpace>;
+#endif
+    using DynRankDeviceView = Kokkos::DynRankView<Scalar,DeviceSpace>;
     using view_t = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev;
     using const_view_t = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev::const_type;
 
@@ -246,14 +249,13 @@ namespace mini_em {
       numCells = std::min(maxNumElementsPerBlock, worksetSize);
     else
       numCells = worksetSize;
-    DynRankDeviceView ho_dofCoords_d("ho_dofCoords_d", numCells, hoCardinality, dim);
+    DynRankDeviceView ho_dofCoords_d("ho_dofCoords_d", hoCardinality, dim);
     DynRankDeviceView basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
 
     typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts_d ("elemOrts_d",  numCells);
     typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>         elemNodes_d("elemNodes_d", numCells, numElemVertices);
 
     // the ranks of these depend on dimension
-    DynRankDeviceView ho_dofCoeffs_d;
     DynRankDeviceView valuesAtDofCoordsNonOriented_d;
     DynRankDeviceView valuesAtDofCoordsOriented_d;
     DynRankDeviceView reducedValuesAtDofCoordsOriented_d;
@@ -266,11 +268,11 @@ namespace mini_em {
       //  numCells, numFields=loCardinality, numPoints=hoCardinality, (spatialDim)
       //
       if (temp.rank() == 3) {
-        valuesAtDofCoordsNonOriented_d     = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
+        valuesAtDofCoordsNonOriented_d     = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", temp.extent(0), temp.extent(1), temp.extent(2));
         valuesAtDofCoordsOriented_d        = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
         reducedValuesAtDofCoordsOriented_d = DynRankDeviceView("reducedValuesAtDofCoordsOriented_d", numCells, temp.extent(1), temp.extent(2), numVectors);
       } else {
-        valuesAtDofCoordsNonOriented_d     = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1));
+        valuesAtDofCoordsNonOriented_d     = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", temp.extent(0), temp.extent(1));
         valuesAtDofCoordsOriented_d        = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1));
         reducedValuesAtDofCoordsOriented_d = DynRankDeviceView("reducedValuesAtDofCoordsOriented_d", numCells, temp.extent(1), 1, numVectors);
       }
@@ -278,13 +280,6 @@ namespace mini_em {
 
     int fieldRank = Intrepid2::getFieldRank(ho_basis->getFunctionSpace());
     TEUCHOS_ASSERT((fieldRank == 0) || (fieldRank == 1));
-
-    const bool isVectorBasis = (fieldRank == 1);
-    if (isVectorBasis) {
-      ho_dofCoeffs_d = DynRankDeviceView("ho_dofCoeffs_d", numCells, hoCardinality, dim);
-    } else {
-      ho_dofCoeffs_d = DynRankDeviceView("ho_dofCoeffs_d", numCells, hoCardinality);
-    }
 
     auto hoLIDs_d = ho_ugi->getLIDs();
     auto loLIDs_d = lo_ugi->getLIDs();
@@ -323,15 +318,11 @@ namespace mini_em {
                              });
         ots::getOrientation(elemOrts_d, elemNodes_d, topology);
 
-        // HO dof coordinates and coefficients
-        li::getDofCoordsAndCoeffs(ho_dofCoords_d, ho_dofCoeffs_d, ho_basis.get(), elemOrts_d);
+        // HO dof coordinates
+        ho_basis->getDofCoords(ho_dofCoords_d);
 
         // compute values of op * (LO basis) at HO dof coords on reference element
-        // TODO: Once this is supported by Intrepid2, make this a parallel_for.
-        for (int cellNo = 0; cellNo < numCells; cellNo++)
-          lo_basis->getValues(Kokkos::subview(valuesAtDofCoordsNonOriented_d, cellNo, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()),
-                              Kokkos::subview(ho_dofCoords_d, cellNo, Kokkos::ALL(), Kokkos::ALL()),
-                              op);
+        lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
 
         // apply orientations for LO basis
         // shuffles things in the second dimension, i.e. wrt LO basis
@@ -362,7 +353,9 @@ namespace mini_em {
         for (size_t j = 0; j<numVectors; ++j)
           li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::ALL(), Kokkos::ALL(), j),
                              Kokkos::subview(reducedValuesAtDofCoordsOriented_d, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), j),
-                             ho_dofCoeffs_d);
+                             ho_basis.get(),
+                             elemOrts_d
+                             );
 
         auto owner_d = owner_d_;
 
@@ -406,9 +399,12 @@ namespace mini_em {
     using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
 
     typedef Intrepid2::OrientationTools<DeviceSpace> ots;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
     typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
+  #else
+    typedef Intrepid2::LagrangianInterpolation<DeviceSpace> li;
+  #endif
     typedef Kokkos::DynRankView<Scalar,DeviceSpace> DynRankDeviceView;
-
     using TST = Teuchos::ScalarTraits<Scalar>;
     const Scalar ZERO = TST::zero();
     using view_t = typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev;
@@ -459,14 +455,13 @@ namespace mini_em {
       numCells = std::min(maxNumElementsPerBlock, worksetSize);
     else
       numCells = worksetSize;
-    DynRankDeviceView ho_dofCoords_d("ho_dofCoords_d", numCells, hoCardinality, dim);
+    DynRankDeviceView ho_dofCoords_d("ho_dofCoords_d", hoCardinality, dim);
     DynRankDeviceView basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
 
     typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts_d ("elemOrts_d",  numCells);
     typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>         elemNodes_d("elemNodes_d", numCells, numElemVertices);
 
     // the ranks of these depend on dimension
-    DynRankDeviceView ho_dofCoeffs_d;
     DynRankDeviceView valuesAtDofCoordsNonOriented_d;
     DynRankDeviceView valuesAtDofCoordsOriented_d;
 
@@ -478,23 +473,16 @@ namespace mini_em {
       //  numCells, numFields=loCardinality, numPoints=hoCardinality, (spatialDim)
       //
       if (temp.rank() == 3) {
-        valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
-        valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
+        valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", temp.extent(0), temp.extent(1), temp.extent(2));
+        valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
       } else {
-        valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1));
-        valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", numCells, temp.extent(0), temp.extent(1));
+        valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", temp.extent(0), temp.extent(1));
+        valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1));
       }
     }
 
     int fieldRank = Intrepid2::getFieldRank(ho_basis->getFunctionSpace());
     TEUCHOS_ASSERT((fieldRank == 0) || (fieldRank == 1));
-
-    const bool isVectorBasis = (fieldRank == 1);
-    if (isVectorBasis) {
-      ho_dofCoeffs_d = DynRankDeviceView("ho_dofCoeffs_d", numCells, hoCardinality, dim);
-    } else {
-      ho_dofCoeffs_d = DynRankDeviceView("ho_dofCoeffs_d", numCells, hoCardinality);
-    }
 
     auto hoLIDs_d = ho_ugi->getLIDs();
     auto loLIDs_d = lo_ugi->getLIDs();
@@ -539,15 +527,11 @@ namespace mini_em {
         Kokkos::fence();
 
         // HO dof coordinates and coefficients
-        li::getDofCoordsAndCoeffs(ho_dofCoords_d, ho_dofCoeffs_d, ho_basis.get(), elemOrts_d);
+        ho_basis->getDofCoords(ho_dofCoords_d);
         Kokkos::fence();
 
         // compute values of op * (LO basis) at HO dof coords on reference element
-        // TODO: Once this is supported by Intrepid2, make this a parallel_for.
-        for (int cellNo = 0; cellNo < numCells; cellNo++)
-          lo_basis->getValues(Kokkos::subview(valuesAtDofCoordsNonOriented_d, cellNo, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()),
-                              Kokkos::subview(ho_dofCoords_d, cellNo, Kokkos::ALL(), Kokkos::ALL()),
-                              op);
+        lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
         Kokkos::fence();
 
         // apply orientations for LO basis
@@ -564,7 +548,7 @@ namespace mini_em {
           // basisCoeffsLI has dimensions (numCells, numFields=hoCardinality, loCardinality)
           li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::ALL(), Kokkos::ALL(), loIter),
                              Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::ALL(), loIter, Kokkos::ALL(), Kokkos::ALL()),
-                             ho_dofCoeffs_d);
+                             ho_basis.get(), elemOrts_d);
         Kokkos::fence();
 
         auto owner_d = owner_d_;

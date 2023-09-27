@@ -249,7 +249,13 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     size_t numBlocks = plan.getNumSends() + plan.hasSelfMessage();
     for (size_t p = 0; p < numBlocks; ++p) {
       sdispls[plan.getProcsTo()[p]]    = plan.getStartsTo()[p]  * numPackets;
-      sendcounts[plan.getProcsTo()[p]] = plan.getLengthsTo()[p] * numPackets;
+      size_t sendcount = plan.getLengthsTo()[p] * numPackets;
+      // sendcount is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(sendcount > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Send count for block " << p << " (" << sendcount << ") is too large "
+                                 "to be represented as int.");
+      sendcounts[plan.getProcsTo()[p]] = static_cast<int>(sendcount);
     }
 
     const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
@@ -265,14 +271,19 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
                                  "curBufferOffset(" << curBufferOffset << ") + curBufLen(" <<
                                  curBufLen << ").");
       rdispls   [plan.getProcsFrom()[i]] = curBufferOffset;
-      recvcounts[plan.getProcsFrom()[i]] = curBufLen;
+      // curBufLen is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(curBufLen > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Recv count for receive " << i << " (" << curBufLen << ") is too large "
+                                 "to be represented as int.");
+      recvcounts[plan.getProcsFrom()[i]] = static_cast<int>(curBufLen);
       curBufferOffset += curBufLen;
     }
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
     using T = typename exports_view_type::non_const_value_type;
-    T t;
+    T t{};
     MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
     const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
                                   imports.data(), recvcounts.data(), rdispls.data(), rawType,
@@ -580,7 +591,12 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       for (size_t j=plan.getStartsTo()[pp]; j<plan.getStartsTo()[pp]+plan.getLengthsTo()[pp]; ++j) {
         numPackets += numExportPacketsPerLID[j];
       }
-      sendcounts[plan.getProcsTo()[pp]] = numPackets;
+      // numPackets is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                                 "Send count for send " << pp << " (" << numPackets << ") is too large "
+                                 "to be represented as int.");
+      sendcounts[plan.getProcsTo()[pp]] = static_cast<int>(numPackets);
       curPKToffset += numPackets;
     }
 
@@ -597,14 +613,19 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       curLIDoffset += plan.getLengthsFrom()[i];
 
       rdispls   [plan.getProcsFrom()[i]] = curBufferOffset;
-      recvcounts[plan.getProcsFrom()[i]] = totalPacketsFrom_i;
+      // totalPacketsFrom_i is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
+                                 "to be represented as int.");
+      recvcounts[plan.getProcsFrom()[i]] = static_cast<int>(totalPacketsFrom_i);
       curBufferOffset += totalPacketsFrom_i;
     }
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
     using T = typename exports_view_type::non_const_value_type;
-    T t;
+    T t{};
     MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (t);
     const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
                                   imports.data(), recvcounts.data(), rdispls.data(), rawType,
@@ -696,6 +717,11 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       for (size_t j = 0; j < plan.getLengthsFrom()[i]; ++j) {
         totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
       }
+      // totalPacketsFrom_i is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
+                                 "to be represented as int.");
       curLIDoffset += plan.getLengthsFrom()[i];
       if (plan.getProcsFrom()[i] != myProcID && totalPacketsFrom_i) {
         // If my process is receiving these packet(s) from another
@@ -734,6 +760,11 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       numPackets += numExportPacketsPerLID[j];
     }
     if (numPackets > maxNumPackets) maxNumPackets = numPackets;
+    // numPackets will be used as a message length, so make sure it can be represented as int
+    TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX),
+                               std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                               "packetsPerSend[" << pp << "] = " << numPackets << " is too large "
+                               "to be represented as int.");
     packetsPerSend[pp] = numPackets;
     curPKToffset += numPackets;
   }

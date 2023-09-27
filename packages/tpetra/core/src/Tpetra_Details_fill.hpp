@@ -50,9 +50,6 @@
 ///   of Tpetra::MultiVector.  Either may disappear or change at any
 ///   time.
 ///
-/// Search for "SKIP TO HERE FOR THE ACTUAL INTERFACE" (sans quotes)
-/// to find the actual interface that Tpetra developers are supposed
-/// to use.
 
 #include "Tpetra_Details_Blas.hpp"
 #include <type_traits>
@@ -60,221 +57,6 @@
 namespace Tpetra {
 namespace Details {
 namespace Blas {
-namespace Impl {
-
-//! Wrap std::memset, to avoid exposing unnecessary includes.
-void*
-memsetWrapper (void* dest, int ch, std::size_t count);
-
-/// \brief Implementation of ::Tpetra::Details::Blas::fill.
-template<class ViewType,
-         class ValueType,
-         class ExecutionSpace,
-         class IndexType,
-         const int rank = ViewType::rank>
-class Fill {
-public:
-  static void
-  fill  (const ExecutionSpace& execSpace,
-         const ViewType& X,
-         const ValueType& alpha,
-         const IndexType /* numRows */,
-         const IndexType /* numCols */ )
-  {
-    static_assert (std::is_integral<IndexType>::value,
-                   "IndexType must be a built-in integer type.");
-    // DEEP_COPY REVIEW - NOT TESTED
-    Kokkos::deep_copy (execSpace, X, alpha);
-  }
-};
-
-//! Specialization for rank-1 Views.
-template<class ViewType,
-         class ValueType,
-         class ExecutionSpace,
-         class IndexType>
-class Fill<ViewType, ValueType, ExecutionSpace, IndexType, 1> {
-public:
-  Fill (const ViewType& X, const ValueType& alpha) :
-    X_ (X), alpha_ (alpha)
-  {
-    static_assert (ViewType::rank == 1,
-                   "ViewType must be a rank-1 Kokkos::View.");
-    static_assert (std::is_integral<IndexType>::value,
-                   "IndexType must be a built-in integer type.");
-  }
-
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const IndexType& i) const
-  {
-    X_[i] = alpha_;
-  }
-
-  static void
-  fill (const ExecutionSpace& execSpace,
-        const ViewType& X,
-        const ValueType& alpha,
-        const IndexType numRows,
-        const IndexType /* numCols */)
-  {
-    typedef Kokkos::RangePolicy<ExecutionSpace, IndexType> range_type;
-    Kokkos::parallel_for ("fill", range_type (0, numRows),
-                          Fill (X, alpha));
-  }
-
-private:
-  ViewType X_;
-  ValueType alpha_;
-};
-
-//! Specialization for rank-2 Views.
-template<class ViewType,
-         class ValueType,
-         class ExecutionSpace,
-         class IndexType>
-class Fill<ViewType, ValueType, ExecutionSpace, IndexType, 2> {
-public:
-  Fill (const ViewType& X,
-        const ValueType& alpha,
-        const IndexType numCols) :
-    X_ (X), alpha_ (alpha), numCols_ (numCols)
-  {
-    static_assert (ViewType::rank == 2,
-                   "ViewType must be a rank-2 Kokkos::View.");
-    static_assert (std::is_integral<IndexType>::value,
-                   "IndexType must be a built-in integer type.");
-  }
-
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const IndexType& i) const
-  {
-    for (IndexType j = 0; j < numCols_; ++j) {
-      X_(i,j) = alpha_;
-    }
-  }
-
-  static void
-  fill (const ExecutionSpace& execSpace,
-        const ViewType& X,
-        const ValueType& alpha,
-        const IndexType numRows,
-        const IndexType numCols)
-  {
-    typedef Kokkos::RangePolicy<ExecutionSpace, IndexType> range_type;
-    Kokkos::parallel_for ("fill", range_type (0, numRows),
-                          Fill (X, alpha, numCols));
-  }
-
-private:
-  ViewType X_;
-  ValueType alpha_;
-  IndexType numCols_;
-};
-
-#if defined(KOKKOS_ENABLE_SERIAL)
-/// \brief Specialization for ExecutionSpace = Kokkos::Serial
-///   and rank = 1.
-template<class ViewType,
-         class ValueType,
-         class IndexType>
-struct Fill<ViewType,
-            ValueType,
-            Kokkos::Serial,
-            IndexType,
-            1>
-{
-  static void
-  fill (const Kokkos::Serial& /* execSpace */,
-        const ViewType& X,
-        const ValueType& alpha,
-        const IndexType numRows,
-        const IndexType /* numCols */ )
-  {
-    static_assert (ViewType::rank == 1,
-                   "ViewType must be a rank-1 Kokkos::View.");
-    static_assert (std::is_integral<IndexType>::value,
-                   "IndexType must be a built-in integer type.");
-    using ::Tpetra::Details::Blas::BlasSupportsScalar;
-    typedef typename ViewType::non_const_value_type view_value_type;
-
-    // Do sizeof(view_value_type) and taking the address of a
-    // value_type instance work correctly with memset?
-    constexpr bool podType = BlasSupportsScalar<view_value_type>::value;
-
-    if (podType && X.span_is_contiguous () && alpha == ValueType (0.0)) {
-      memsetWrapper (X.data (), 0, X.span () * sizeof (view_value_type));
-    }
-    else {
-      for (IndexType k = 0; k < numRows; ++k) {
-        X[k] = alpha;
-      }
-    }
-  }
-};
-#endif // defined(KOKKOS_ENABLE_SERIAL)
-
-#if defined(KOKKOS_ENABLE_SERIAL)
-/// \brief Specialization for ExecutionSpace = Kokkos::Serial
-///   and rank = 2.
-template<class ViewType,
-         class ValueType,
-         class IndexType>
-struct Fill<ViewType,
-            ValueType,
-            Kokkos::Serial,
-            IndexType,
-            2>
-{
-  static void
-  fill (const Kokkos::Serial& /* execSpace */,
-        const ViewType& X,
-        const ValueType& alpha,
-        const IndexType /* numRows */,
-        const IndexType numCols)
-  {
-    static_assert (ViewType::rank == 2,
-                   "ViewType must be a rank-2 Kokkos::View.");
-    static_assert (std::is_integral<IndexType>::value,
-                   "IndexType must be a built-in integer type.");
-    using ::Tpetra::Details::Blas::BlasSupportsScalar;
-    typedef typename ViewType::non_const_value_type view_value_type;
-    typedef typename ViewType::array_layout array_layout;
-
-    // Do sizeof(view_value_type) and taking the address of a
-    // value_type instance work correctly with memset?
-    constexpr bool podType = BlasSupportsScalar<view_value_type>::value;
-
-    if (podType && alpha == ValueType (0.0)) {
-      if (X.span_is_contiguous ()) {
-        memsetWrapper (X.data (), 0, X.span () * sizeof (view_value_type));
-      }
-      else if (std::is_same<array_layout, Kokkos::LayoutLeft>::value) {
-        // Tpetra::MultiVector needs to optimize for LayoutLeft.
-        for (IndexType j = 0; j < numCols; ++j) {
-          auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
-          memsetWrapper (X_j.data (), 0,
-                         X_j.extent (0) * sizeof (view_value_type));
-        }
-      }
-      else {
-        // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (X, view_value_type (0.0));
-      }
-    }
-    else {
-      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
-      using execution_space = typename ViewType::execution_space;
-      Kokkos::deep_copy (execution_space(), X, alpha);
-    }
-  }
-};
-#endif // defined(KOKKOS_ENABLE_SERIAL)
-
-} // namespace Impl
-
-//
-// SKIP TO HERE FOR THE ACTUAL INTERFACE
-//
 
 /// \brief Fill the entries of the given 1-D or 2-D Kokkos::View with
 ///   the given scalar value alpha.
@@ -296,9 +78,8 @@ fill (const ExecutionSpace& execSpace,
 {
   static_assert (std::is_integral<IndexType>::value,
                  "IndexType must be a built-in integer type.");
-  typedef Impl::Fill<ViewType, ValueType, ExecutionSpace,
-    IndexType, ViewType::rank> impl_type;
-  impl_type::fill (execSpace, X, alpha, numRows, numCols);
+    auto X_j = Kokkos::subview (X, Kokkos::make_pair(IndexType(0), numRows), Kokkos::make_pair(IndexType(0), numCols));
+    Kokkos::deep_copy(execSpace, X_j, alpha);
 }
 
 template<class ViewType,
@@ -320,11 +101,8 @@ fill (const ExecutionSpace& execSpace,
                  "IndexType must be a built-in integer type.");
   for (IndexType k = 0; k < numCols; ++k) {
     const IndexType j = whichVectors[k];
-    auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
-    typedef decltype (X_j) one_d_view_type;
-    typedef Impl::Fill<one_d_view_type, ValueType, ExecutionSpace,
-      IndexType, 1> impl_type;
-    impl_type::fill (execSpace, X_j, alpha, numRows, IndexType (1));
+    auto X_j = Kokkos::subview (X, Kokkos::make_pair(IndexType(0), numRows), j);
+    Kokkos::deep_copy(execSpace, X_j, alpha);
   }
 }
 

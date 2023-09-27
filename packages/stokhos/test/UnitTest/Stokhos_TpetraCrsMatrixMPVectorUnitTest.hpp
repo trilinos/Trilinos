@@ -356,7 +356,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       }
     }
   }
-    
+
   // Add
   Scalar alpha = 2.1;
   Scalar beta = 3.7;
@@ -1572,7 +1572,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
           b_view(i,0).fastAccessCoeff(j) = BaseScalar(row+1);
     }
   }
-  
+
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
 #ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
@@ -2344,171 +2344,189 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 //
 // Test Amesos2 solve for a 1-D Laplacian matrix
 //
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, Amesos2, Storage, LocalOrdinal, GlobalOrdinal, Node )
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ArrayView;
-  using Teuchos::Array;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ParameterList;
-
-  typedef typename Storage::value_type BaseScalar;
-  typedef Sacado::MP::Vector<Storage> Scalar;
-
-  typedef Teuchos::Comm<int> Tpetra_Comm;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
-  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
-
-  // Ensure device is initialized
-  if ( !Kokkos::is_initialized() )
-    Kokkos::initialize();
-
-  // 1-D Laplacian matrix
-  GlobalOrdinal nrow = 50;
-  BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
-  RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
-      nrow, comm);
-  RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(3));
-  Array<GlobalOrdinal> columnIndices(3);
-  ArrayView<const GlobalOrdinal> myGIDs = map->getLocalElementList();
-  const size_t num_my_row = myGIDs.size();
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    if (row == 0 || row == nrow-1) { // Boundary nodes
-      columnIndices[0] = row;
-      graph->insertGlobalIndices(row, columnIndices(0,1));
-    }
-    else { // Interior nodes
-      columnIndices[0] = row-1;
-      columnIndices[1] = row;
-      columnIndices[2] = row+1;
-      graph->insertGlobalIndices(row, columnIndices(0,3));
-    }
-  }
-  graph->fillComplete();
-  RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph));
-
-  // Set values in matrix
-  Array<Scalar> vals(3);
-  Scalar a_val(VectorSize, BaseScalar(0.0));
-  for (LocalOrdinal j=0; j<VectorSize; ++j) {
-    a_val.fastAccessCoeff(j) =
-      BaseScalar(1.0) + BaseScalar(j) / BaseScalar(VectorSize);
-  }
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    if (row == 0 || row == nrow-1) { // Boundary nodes
-      columnIndices[0] = row;
-      vals[0] = Scalar(1.0);
-      matrix->replaceGlobalValues(row, columnIndices(0,1), vals(0,1));
-    }
-    else {
-      columnIndices[0] = row-1;
-      columnIndices[1] = row;
-      columnIndices[2] = row+1;
-      vals[0] = Scalar(-1.0) * a_val;
-      vals[1] = Scalar(2.0) * a_val;
-      vals[2] = Scalar(-1.0) * a_val;
-      matrix->replaceGlobalValues(row, columnIndices(0,3), vals(0,3));
-    }
-  }
-  matrix->fillComplete();
-
-  // Fill RHS vector
-  RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
-  Scalar b_val;
-  {
-    auto b_view = b->getLocalViewHost(Tpetra::Access::OverwriteAll);
-    b_val = Scalar(VectorSize, BaseScalar(0.0));
-    for (LocalOrdinal j=0; j<VectorSize; ++j) {
-      b_val.fastAccessCoeff(j) =
-        BaseScalar(-1.0) + BaseScalar(j) / BaseScalar(VectorSize);
-    }
-    for (size_t i=0; i<num_my_row; ++i) {
-      const GlobalOrdinal row = myGIDs[i];
-      if (row == 0 || row == nrow-1)
-        b_view(i,0) = Scalar(0.0);
-      else
-        b_view(i,0) = -Scalar(b_val * h * h);
-    }
-  }
-
-  // Solve
-  typedef Amesos2::Solver<Tpetra_CrsMatrix,Tpetra_MultiVector> Solver;
-  RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-  std::string solver_name;
-#if defined(HAVE_AMESOS2_BASKER)
-  solver_name = "basker";
-#elif defined(HAVE_AMESOS2_KLU2)
-  solver_name = "klu2";
-#elif defined(HAVE_AMESOS2_SUPERLUDIST)
-  solver_name = "superlu_dist";
-#elif defined(HAVE_AMESOS2_SUPERLUMT)
-  solver_name = "superlu_mt";
-#elif defined(HAVE_AMESOS2_SUPERLU)
-  solver_name = "superlu";
-#elif defined(HAVE_AMESOS2_PARDISO_MKL)
-  solver_name = "pardisomkl";
-#elif defined(HAVE_AMESOS2_LAPACK)
-  solver_name = "lapack";
-#elif defined(HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
-  solver_name = "lapack";
-#else
-  // if there are no solvers, we just return as a successful test
-  success = true;
-  return;
-#endif
-  out << "Solving linear system with " << solver_name << std::endl;
-  RCP<Solver> solver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(
-    solver_name, matrix, x, b);
-  solver->solve();
-
-  // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-  //             Teuchos::VERB_EXTREME);
-
-  // Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1)
-  solver = Teuchos::null; // Delete solver to eliminate live device views of x
-  typedef Teuchos::ScalarTraits<BaseScalar> ST;
-  typename ST::magnitudeType tol = 1e-9;
-  auto x_view = x->getLocalViewHost(Tpetra::Access::ReadOnly);
-  Scalar val(VectorSize, BaseScalar(0.0));
-  for (size_t i=0; i<num_my_row; ++i) {
-    const GlobalOrdinal row = myGIDs[i];
-    BaseScalar xx = row * h;
-    for (LocalOrdinal j=0; j<VectorSize; ++j) {
-      val.fastAccessCoeff(j) =
-        BaseScalar(0.5) * (b_val.coeff(j)/a_val.coeff(j)) * xx * (xx - BaseScalar(1.0));
-    }
-    TEST_EQUALITY( x_view(i,0).size(), VectorSize );
-
-    // Set small values to zero
-    Scalar v = x_view(i,0);
-    for (LocalOrdinal j=0; j<VectorSize; ++j) {
-      if (ST::magnitude(v.coeff(j)) < tol)
-        v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(val.coeff(j)) < tol)
-        val.fastAccessCoeff(j) = BaseScalar(0.0);
-    }
-
-    for (LocalOrdinal j=0; j<VectorSize; ++j)
-      TEST_FLOATING_EQUALITY(v.coeff(j), val.coeff(j), tol);
-  }
+#define TEST_AMESOS2_SOLVER(SolverName) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_##SolverName, Storage, LocalOrdinal, GlobalOrdinal, Node) \
+{ \
+  using Teuchos::RCP; \
+  using Teuchos::rcp; \
+  using Teuchos::ArrayView; \
+  using Teuchos::Array; \
+  using Teuchos::ArrayRCP; \
+  using Teuchos::ParameterList; \
+  \
+  typedef typename Storage::value_type BaseScalar; \
+  typedef Sacado::MP::Vector<Storage> Scalar; \
+  \
+  typedef Teuchos::Comm<int> Tpetra_Comm; \
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map; \
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector; \
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector; \
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix; \
+  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph; \
+  \
+  /* Ensure device is initialized */ \
+  if ( !Kokkos::is_initialized() ) \
+    Kokkos::initialize(); \
+  \
+  /* 1-D Laplacian matrix */ \
+  GlobalOrdinal nrow = 50; \
+  BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1); \
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm(); \
+  RCP<const Tpetra_Map> map = \
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>( \
+      nrow, comm); \
+  RCP<Tpetra_CrsGraph> graph = Tpetra::createCrsGraph(map, size_t(3)); \
+  Array<GlobalOrdinal> columnIndices(3); \
+  ArrayView<const GlobalOrdinal> myGIDs = map->getLocalElementList(); \
+  const size_t num_my_row = myGIDs.size(); \
+  for (size_t i=0; i<num_my_row; ++i) { \
+    const GlobalOrdinal row = myGIDs[i]; \
+    if (row == 0 || row == nrow-1) { /* Boundary nodes */ \
+      columnIndices[0] = row; \
+      graph->insertGlobalIndices(row, columnIndices(0,1)); \
+    } \
+    else { /* Interior nodes */ \
+      columnIndices[0] = row-1; \
+      columnIndices[1] = row; \
+      columnIndices[2] = row+1; \
+      graph->insertGlobalIndices(row, columnIndices(0,3)); \
+    } \
+  } \
+  graph->fillComplete(); \
+  RCP<Tpetra_CrsMatrix> matrix = rcp(new Tpetra_CrsMatrix(graph)); \
+  \
+  /* Set values in matrix */ \
+  Array<Scalar> vals(3); \
+  Scalar a_val(VectorSize, BaseScalar(0.0)); \
+  for (LocalOrdinal j=0; j<VectorSize; ++j) { \
+    a_val.fastAccessCoeff(j) = \
+      BaseScalar(1.0) + BaseScalar(j) / BaseScalar(VectorSize); \
+  } \
+  for (size_t i=0; i<num_my_row; ++i) { \
+    const GlobalOrdinal row = myGIDs[i]; \
+    if (row == 0 || row == nrow-1) { /* Boundary nodes */ \
+      columnIndices[0] = row; \
+      vals[0] = Scalar(1.0); \
+      matrix->replaceGlobalValues(row, columnIndices(0,1), vals(0,1)); \
+    } \
+    else { \
+      columnIndices[0] = row-1; \
+      columnIndices[1] = row; \
+      columnIndices[2] = row+1; \
+      vals[0] = Scalar(-1.0) * a_val; \
+      vals[1] = Scalar(2.0) * a_val; \
+      vals[2] = Scalar(-1.0) * a_val; \
+      matrix->replaceGlobalValues(row, columnIndices(0,3), vals(0,3)); \
+    } \
+  } \
+  matrix->fillComplete();\
+  \
+  /* Fill RHS vector */ \
+  RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map); \
+  Scalar b_val; \
+  { \
+    auto b_view = b->getLocalViewHost(Tpetra::Access::OverwriteAll); \
+    b_val = Scalar(VectorSize, BaseScalar(0.0)); \
+    for (LocalOrdinal j=0; j<VectorSize; ++j) { \
+      b_val.fastAccessCoeff(j) = \
+        BaseScalar(-1.0) + BaseScalar(j) / BaseScalar(VectorSize); \
+    } \
+    for (size_t i=0; i<num_my_row; ++i) { \
+      const GlobalOrdinal row = myGIDs[i]; \
+      if (row == 0 || row == nrow-1) \
+        b_view(i,0) = Scalar(0.0); \
+      else \
+        b_view(i,0) = -Scalar(b_val * h * h); \
+    } \
+  } \
+  \
+  /* Solve */ \
+  typedef Amesos2::Solver<Tpetra_CrsMatrix,Tpetra_MultiVector> Solver; \
+  RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map); \
+  std::string solver_name(#SolverName); \
+  out << "Solving linear system with " << solver_name << std::endl; \
+  RCP<Solver> solver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>( \
+    solver_name, matrix, x, b); \
+  solver->solve(); \
+  \
+  /* Check -- For a*y'' = b, correct answer is y = 0.5 *(b/a) * x * (x-1) */ \
+  solver = Teuchos::null; /* Delete solver to eliminate live device views of x */ \
+  typedef Teuchos::ScalarTraits<BaseScalar> ST; \
+  typename ST::magnitudeType tol = 1e-9; \
+  auto x_view = x->getLocalViewHost(Tpetra::Access::ReadOnly); \
+  Scalar val(VectorSize, BaseScalar(0.0)); \
+  for (size_t i=0; i<num_my_row; ++i) { \
+    const GlobalOrdinal row = myGIDs[i]; \
+    BaseScalar xx = row * h; \
+    for (LocalOrdinal j=0; j<VectorSize; ++j) { \
+      val.fastAccessCoeff(j) = \
+        BaseScalar(0.5) * (b_val.coeff(j)/a_val.coeff(j)) * xx * (xx - BaseScalar(1.0)); \
+    } \
+    TEST_EQUALITY( x_view(i,0).size(), VectorSize ); \
+  \
+    /* Set small values to zero */ \
+    Scalar v = x_view(i,0); \
+    for (LocalOrdinal j=0; j<VectorSize; ++j) { \
+      if (ST::magnitude(v.coeff(j)) < tol) \
+        v.fastAccessCoeff(j) = BaseScalar(0.0); \
+      if (ST::magnitude(val.coeff(j)) < tol) \
+        val.fastAccessCoeff(j) = BaseScalar(0.0); \
+    } \
+  \
+    for (LocalOrdinal j=0; j<VectorSize; ++j) \
+      TEST_FLOATING_EQUALITY(v.coeff(j), val.coeff(j), tol); \
+  } \
 }
 
+#if defined(HAVE_AMESOS2_BASKER)
+  TEST_AMESOS2_SOLVER(basker)
 #else
-
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
-  Tpetra_CrsMatrix_MP, Amesos2, Storage, LocalOrdinal, GlobalOrdinal, Node )
-{}
-
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_basker, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
+
+#if defined(HAVE_AMESOS2_KLU2)
+  TEST_AMESOS2_SOLVER(klu2)
+#else
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_klu2, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
+#endif
+
+#if defined(HAVE_AMESOS2_SUPERLUDIST)
+  TEST_AMESOS2_SOLVER(superlu_dist)
+#else
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_superlu_dist, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
+#endif
+
+#if defined(HAVE_AMESOS2_SUPERLUMT)
+  TEST_AMESOS2_SOLVER(superlu_mt)
+#else
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_superlu_mt, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
+#endif
+
+#if defined(HAVE_AMESOS2_SUPERLU)
+  TEST_AMESOS2_SOLVER(superlu)
+#else
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_superlu, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
+#endif
+
+#if defined(HAVE_AMESOS2_PARDISO_MKL)
+  TEST_AMESOS2_SOLVER(pardisomkl)
+#else
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_pardisomkl, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
+#endif
+
+#if defined(HAVE_AMESOS2_LAPACK)
+  TEST_AMESOS2_SOLVER(lapack)
+#else
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_lapack, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
+#endif
+
+#if defined(HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
+  TEST_AMESOS2_SOLVER(cholmod)
+#else
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_cholmod, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
+#endif
+
+#endif // defined(HAVE_STOKHOS_AMESOS2)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_SLGN(S, LO, GO, N)                    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, VectorAdd, S, LO, GO, N ) \
@@ -2528,7 +2546,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES_IMGS, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, BelosCG_Muelu, S, LO, GO, N ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2, S, LO, GO, N )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2_basker, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2_klu2, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2_superlu_dist, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2_superlu_mt, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2_superlu, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2_pardisomkl, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2_lapack, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, Amesos2_cholmod, S, LO, GO, N )
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                              \
   typedef Stokhos::DeviceForNode<N>::type Device;              \

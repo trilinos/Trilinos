@@ -98,6 +98,7 @@ namespace Intrepid2
       , FOUR_TRIANGLES      /// square --> four triangles, with a new vertex at center
       , FIVE_TETRAHEDRA     /// cube   --> five tetrahedra
       , SIX_TETRAHEDRA      /// cube   --> six tetrahedra
+      , SIX_PYRAMIDS        /// cube   --> six pyramids
     };
     
     /*! Distinguish between "classic" (counterclockwise in 2D, counterclockwise bottom followed by counterclockwise top in 3D) Shards ordering and a more natural tensor ordering.  The tensor ordering is such that the lowest-order bit in the composite vertex number corresponds to the x dimension, the second-lowest-order bit corresponds to the y dimension, etc.  (There is not yet a non-"classic" Shards ordering, but we hope to add one.) */
@@ -221,6 +222,10 @@ namespace Intrepid2
     
     //! The shards CellTopology for each cell within the CellGeometry object.  Note that this is always a lowest-order CellTopology, even for higher-order curvilinear geometry.  Higher-order geometry for CellGeometry is expressed in terms of the basis returned by basisForNodes().
     const shards::CellTopology & cellTopology() const;
+    
+    //! Returns a global node number corresponding to the specified (cell, node) combination.  If uniform grid (possibly subdivided), this number is computed dynamically; for more general meshes, this simply returns the result of a lookup in the cellToNodes container provided at construction.
+    KOKKOS_INLINE_FUNCTION
+    ordinal_type cellToNode(ordinal_type cellIndex, ordinal_type cellNodeNumber) const;
     
     //! Indicates the type of geometric variation from one cell to the next.  If all cells are known to have the same geometry, returns CONSTANT.
     //! Returns CONSTANT for uniform grids with no subdivisions, MODULAR for uniform grids with subdivisions, GENERAL for all others.

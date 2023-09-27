@@ -2015,8 +2015,7 @@ public:
   };
 }
 
-// we do ETI for doubles and default ExecutionSpace/DeviceType
-//extern template class Intrepid2::Data<double,Kokkos::DefaultExecutionSpace>;
+// we do ETI for doubles and default ExecutionSpace's device_type
 extern template class Intrepid2::Data<double,Kokkos::DefaultExecutionSpace::device_type>;
 
 #include "Intrepid2_DataDef.hpp"

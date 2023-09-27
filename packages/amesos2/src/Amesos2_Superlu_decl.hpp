@@ -125,7 +125,7 @@ public:
   //@}
 
   /// Returns a short description of this Solver
-  std::string description() const;
+  std::string description() const override;
 
 private:
 

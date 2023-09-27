@@ -36,6 +36,8 @@
 
 #include "util/parallel_search_test_util.hpp"
 #include "stk_middle_mesh/mesh_scatter_spec.hpp"
+#include "stk_middle_mesh/bounding_box_search.hpp"
+
 
 namespace {
 
@@ -97,8 +99,8 @@ TEST(SearchBoundingBox, CreateBoundingBox)
   auto elements = mesh->get_elements();
   EXPECT_EQ(1u, elements.size());
 
-  std::vector<stk::middle_mesh::mesh::impl::SearchMesh::BoundingBox> boundingBoxVec;
-  stk::middle_mesh::mesh::impl::SearchMesh meshA(mesh);
+  std::vector<stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox::BoundingBox> boundingBoxVec;
+  stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox meshA(mesh, MPI_COMM_WORLD);
   meshA.fill_bounding_boxes(boundingBoxVec);
 
   EXPECT_EQ(1u, boundingBoxVec.size());
@@ -112,6 +114,7 @@ TEST(SearchBoundingBox, CreateBoundingBox)
 
 class ParallelSearch : public ::testing::Test {
 protected:
+  using BoundingBoxSearch = stk::middle_mesh::search::ElementToElementBoundingBoxSearch;
   ParallelSearch() {}
 
   void setup_comm()
@@ -141,22 +144,22 @@ protected:
 
     auto func = [&](const stk::middle_mesh::utils::Point& pt) { return stk::middle_mesh::utils::Point(pt.x, pt.y, 0); };
 
-    if (m_color == stk::middle_mesh::mesh::impl::SplitCommColor::SEND) {
+    if (m_color == stk::middle_mesh::search::SplitCommColor::SEND) {
       m_mesh = stk::middle_mesh::mesh::impl::create_mesh(m_sendMeshSpec, func, m_splitComm, false);
-    } else if (m_color == stk::middle_mesh::mesh::impl::SplitCommColor::RECV) {
+    } else if (m_color == stk::middle_mesh::search::SplitCommColor::RECV) {
       m_mesh = stk::middle_mesh::mesh::impl::create_mesh(m_recvMeshSpec, func, m_splitComm, false);
     }
   }
 
   void setup_search()
   {
-    if (m_color == stk::middle_mesh::mesh::impl::SplitCommColor::SEND) {
-      m_searchSendMesh = std::make_shared<stk::middle_mesh::mesh::impl::SearchMesh>(m_mesh);
-      m_search = std::make_shared<stk::middle_mesh::mesh::impl::BoundingBoxSearch>(
+    if (m_color == stk::middle_mesh::search::SplitCommColor::SEND) {
+      m_searchSendMesh = std::make_shared<stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox>(m_mesh, MPI_COMM_WORLD);
+      m_search = std::make_shared<stk::middle_mesh::search::ElementToElementBoundingBoxSearch>(
           m_searchSendMesh, m_searchRecvMesh, "BoundingBoxSearch", MPI_COMM_WORLD);
-    } else if (m_color == stk::middle_mesh::mesh::impl::SplitCommColor::RECV) {
-      m_searchRecvMesh = std::make_shared<stk::middle_mesh::mesh::impl::SearchMesh>(m_mesh);
-      m_search = std::make_shared<stk::middle_mesh::mesh::impl::BoundingBoxSearch>(
+    } else if (m_color == stk::middle_mesh::search::SplitCommColor::RECV) {
+      m_searchRecvMesh = std::make_shared<stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox>(m_mesh, MPI_COMM_WORLD);
+      m_search = std::make_shared<stk::middle_mesh::search::ElementToElementBoundingBoxSearch>(
           m_searchSendMesh, m_searchRecvMesh, "BoundingBoxSearch", MPI_COMM_WORLD);
     } else {
       STK_ThrowRequireMsg(false, "Invalid SplitComm color");
@@ -182,10 +185,10 @@ protected:
     int myRankWorld;
     MPI_Comm_rank(MPI_COMM_WORLD, &myRankWorld);
 
-    const stk::middle_mesh::mesh::impl::SearchRelationVec& pairedEntities = m_search->get_range_to_domain();
-    const stk::middle_mesh::mesh::impl::UnpairedRelationVec& unpairedEntities = m_search->get_unpaired_recv_entities();
+    const BoundingBoxSearch::EntityProcRelationVec& pairedEntities = m_search->get_range_to_domain();
+    const std::vector<BoundingBoxSearch::BoundingBoxB>& unpairedEntities = m_search->get_unpaired_recv_entities();
 
-    if(m_color == stk::middle_mesh::mesh::impl::SplitCommColor::SEND) {
+    if(m_color == stk::middle_mesh::search::SplitCommColor::SEND) {
       EXPECT_EQ(expectedNumSearchPairs, pairedEntities.size());
       EXPECT_EQ(0u, unpairedEntities.size());
     }
@@ -193,10 +196,10 @@ protected:
     unsigned expectedGlobalRank = 0;
 
     for(const auto &pairedEntity : pairedEntities) {
-      const stk::middle_mesh::mesh::impl::SearchMesh::EntityProc& recvEntityProc = pairedEntity.first;
-      const stk::middle_mesh::mesh::impl::SearchMesh::EntityProc& sendEntityProc = pairedEntity.second;
+      const stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox::EntityProc& recvEntityProc = pairedEntity.first;
+      const stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox::EntityProc& sendEntityProc = pairedEntity.second;
 
-      if(m_color == stk::middle_mesh::mesh::impl::SplitCommColor::RECV) {
+      if(m_color == stk::middle_mesh::search::SplitCommColor::RECV) {
         bool isGhost = myRankWorld != (int)recvEntityProc.proc();
 
         if(!isGhost) {
@@ -212,16 +215,16 @@ protected:
 
   void fill_mesh_scatter(stk::middle_mesh::mesh::impl::MeshScatterSpec& scatter)
   {
-    const stk::middle_mesh::mesh::impl::SearchRelationVec& pairedEntities = m_search->get_range_to_domain();
-    const stk::middle_mesh::mesh::impl::UnpairedRelationVec& unpairedEntities = m_search->get_unpaired_recv_entities();
+    const BoundingBoxSearch::EntityProcRelationVec& pairedEntities = m_search->get_range_to_domain();
+    const std::vector<BoundingBoxSearch::BoundingBoxB>& unpairedEntities = m_search->get_unpaired_recv_entities();
     EXPECT_EQ(0u, unpairedEntities.size());
 
-    if(m_color == stk::middle_mesh::mesh::impl::SplitCommColor::SEND) {
+    if(m_color == stk::middle_mesh::search::SplitCommColor::SEND) {
       auto elements = m_search->send_mesh()->get_mesh()->get_elements();
 
       for(const auto &pairedEntity : pairedEntities) {
-        const stk::middle_mesh::mesh::impl::SearchMesh::EntityProc& recvEntityProc = pairedEntity.first;
-        const stk::middle_mesh::mesh::impl::SearchMesh::EntityProc& sendEntityProc = pairedEntity.second;
+        const stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox::EntityProc& recvEntityProc = pairedEntity.first;
+        const stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox::EntityProc& sendEntityProc = pairedEntity.second;
 
         int globalRank = recvEntityProc.proc();
         int splitRank = m_splitCommUtil->get_local_comm_rank(globalRank);
@@ -237,19 +240,19 @@ protected:
 
   int m_numProcsSendMesh{0};
   int m_numProcsRecvMesh{0};
-  stk::middle_mesh::mesh::impl::SplitCommColor m_color{stk::middle_mesh::mesh::impl::SplitCommColor::INVALID};
+  stk::middle_mesh::search::SplitCommColor m_color{stk::middle_mesh::search::SplitCommColor::INVALID};
 
   MPI_Comm m_splitComm{MPI_COMM_NULL};
 
   stk::middle_mesh::mesh::impl::MeshSpec m_sendMeshSpec;
   stk::middle_mesh::mesh::impl::MeshSpec m_recvMeshSpec;
 
-  std::shared_ptr<stk::middle_mesh::mesh::impl::BoundingBoxSearch> m_search;
+  std::shared_ptr<stk::middle_mesh::search::ElementToElementBoundingBoxSearch> m_search;
 
   std::shared_ptr<stk::middle_mesh::mesh::Mesh> m_mesh;
 
-  std::shared_ptr<stk::middle_mesh::mesh::impl::SearchMesh> m_searchSendMesh;
-  std::shared_ptr<stk::middle_mesh::mesh::impl::SearchMesh> m_searchRecvMesh;
+  std::shared_ptr<stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox> m_searchSendMesh;
+  std::shared_ptr<stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox> m_searchRecvMesh;
 
   std::shared_ptr<SplitCommTestUtil> m_splitCommUtil;
 };

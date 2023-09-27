@@ -37,6 +37,23 @@ struct BsrMatrixSpMVTensorCoreFunctorParams {
   int leagueDim_y;
 };
 
+template <typename T>
+struct is_scalar {
+  const static bool value =
+      std::is_same_v<std::remove_cv_t<T>, double> ||
+      std::is_same_v<std::remove_cv_t<T>, float> ||
+      std::is_same_v<std::remove_cv_t<T>, Kokkos::Experimental::half_t>;
+};
+
+/* True if types are all scalar. This excludes complex types and Sacado Vectors
+
+*/
+template <typename T1, typename T2, typename T3>
+struct all_scalar {
+  const static bool value =
+      is_scalar<T1>::value && is_scalar<T2>::value && is_scalar<T3>::value;
+};
+
 /// \brief Functor for the BsrMatrix SpMV multivector implementation utilizing
 /// tensor cores.
 ///
@@ -466,18 +483,20 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   // to be used to avoid instantiating on unsupported types
   static void tag_dispatch(std::false_type, YScalar, AMatrix, XMatrix, YScalar,
                            YMatrix) {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "Tensor core SpMV is only supported for non-complex types in GPU "
-        "execution spaces");
-  }
+    const std::type_info &tia = typeid(AScalar);
+    const std::type_info &tix = typeid(XScalar);
+    const std::type_info &tiy = typeid(YScalar);
 
-  /*true if none of T1, T2, or T3 are complex*/
-  template <typename T1, typename T2, typename T3>
-  struct none_complex {
-    const static bool value = !Kokkos::ArithTraits<T1>::is_complex &&
-                              !Kokkos::ArithTraits<T2>::is_complex &&
-                              !Kokkos::ArithTraits<T3>::is_complex;
-  };
+    std::stringstream ss;
+
+    ss << "Tensor core SpMV is only supported for scalar types in GPU "
+          "execution spaces.";
+    ss << " AScalar was " << tia.name() << ".";
+    ss << " XScalar was " << tix.name() << ".";
+    ss << " YScalar was " << tiy.name() << ".";
+
+    KokkosKernels::Impl::throw_runtime_exception(ss.str());
+  }
 
   /*true if T1::execution_space, T2, or T3 are all GPU exec space*/
   template <typename T1, typename T2, typename T3>
@@ -491,7 +510,7 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
                        YMatrix y) {
     // tag will be false unless all conditions are met
     using tag = std::integral_constant<
-        bool, none_complex<AScalar, XScalar, YScalar>::value &&
+        bool, all_scalar<AScalar, XScalar, YScalar>::value &&
                   all_gpu<typename AMatrix::execution_space,
                           typename XMatrix::execution_space,
                           typename YMatrix::execution_space>::value>;

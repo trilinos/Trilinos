@@ -66,7 +66,7 @@ if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
 endif()
 
 # Overrides that we have for CMake functions
-include(TribitsCMakePolicies  NO_POLICY_SCOPE)
+include("${CMAKE_CURRENT_LIST_DIR}/../common/TribitsCMakePolicies.cmake"  NO_POLICY_SCOPE)
 include(TribitsProjectImpl)
 
 
