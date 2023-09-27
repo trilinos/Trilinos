@@ -143,8 +143,7 @@ namespace MueLu {
         fprintf(fagg,"%d %d %d %d %6.4e %d\n",rootCandidate,num_local_neighbors,-1,-1,0.0,-1);//CMS
         continue;
       }
-
-      }
+      
 
       LO numNeighbors = 0;
       aggSize = 0;
@@ -188,7 +187,7 @@ namespace MueLu {
         LO rowi_N = num_local_neighbors;
         num_nonaggd_neighbors++; // ML counts the node itself as a nonaggd_neighbor
         accept_aggregate = (rowi_N > as<LO>(minNodesPerAggregate)) && (num_nonaggd_neighbors > (factor*rowi_N));
-        fprintf(fagg,"%d %d %d %d %6.4e %d\n",rootCandidate,uncompressed_row,rowi_N,num_nonaggd_neighbors,factor,(bool)accept_aggregate);
+        fprintf(fagg,"%d %d %d %d %6.4e %d\n",rootCandidate,rowi_N,rowi_N,num_nonaggd_neighbors,factor,(bool)accept_aggregate);
       }
       else {
         accept_aggregate = (aggSize > as<size_t>(minNodesPerAggregate)) &&  (aggSize > factor*numNeighbors);
