@@ -96,7 +96,7 @@
 #include "Amesos2_Basker.hpp"
 #endif
 
-#ifdef HAVE_AMESOS2_SHYLUBASKER
+#ifdef HAVE_AMESOS2_SHYLU_NODEBASKER
 #include "Amesos2_ShyLUBasker.hpp"
 #endif
 
@@ -116,7 +116,7 @@
 #include "Amesos2_Umfpack.hpp"
 #endif
 
-#ifdef HAVE_AMESOS2_TACHO       // Tacho
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO       // Tacho
 #include "Amesos2_Tacho.hpp"
 #endif
 
@@ -576,7 +576,7 @@ struct throw_no_matrix_support_exception {
     // Check for our native solver first.  Treat KLU and KLU2 as equals.
     //
     // We use compiler guards in case a user does want to disable KLU2
-#ifdef HAVE_AMESOS2_SHYLUBASKER
+#ifdef HAVE_AMESOS2_SHYLU_NODEBASKER
     if((solverName == "ShyLUBasker") || (solverName == "shylubasker") || (solverName == "amesos2_shylubasker"))
     {
       return handle_solver_matrix_and_type_support<ShyLUBasker, Matrix,Vector>::apply(A,X,B);
@@ -623,7 +623,7 @@ struct throw_no_matrix_support_exception {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_TACHO
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
     if((solverName == "amesos2_tacho") ||
        (solverName == "tacho")){
       return handle_solver_matrix_and_type_support<TachoSolver,Matrix,Vector>::apply(A, X, B);

@@ -68,7 +68,7 @@ namespace Amesos2 {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_SHYLUBASKER
+#ifdef HAVE_AMESOS2_SHYLU_NODEBASKER
     if (solverName == "amesos2_shylubasker" ||
         //solverName == "ShyLUBasker" || // unnecessary - tolower called on solver name prior
         solverName == "shylubasker") {
@@ -109,7 +109,7 @@ namespace Amesos2 {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_TACHO
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
     if (solverName == "amesos2_tacho" || solverName == "tacho") {
       return true;
     }
