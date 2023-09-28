@@ -84,7 +84,8 @@ class Test_parse_args(unittest.TestCase):
                                          max_cores_allowed=12,
                                          num_concurrent_tests=-1,
                                          ccache_enable=False,
-                                         dry_run=False)
+                                         dry_run=False,
+                                         use_explicit_cachefile=False)
 
         self.default_stdout = dedent('''\
                 | - [R] source-repo-url             : /dev/null/source_repo
@@ -120,8 +121,7 @@ class Test_parse_args(unittest.TestCase):
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--use-explicit-cachefile]
-                                   [--ctest-driver CTEST_DRIVER]
+                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
@@ -223,8 +223,7 @@ class Test_parse_args(unittest.TestCase):
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--use-explicit-cachefile]
-                                   [--ctest-driver CTEST_DRIVER]
+                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
