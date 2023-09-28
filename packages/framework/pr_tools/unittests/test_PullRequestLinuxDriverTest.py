@@ -120,6 +120,7 @@ class Test_parse_args(unittest.TestCase):
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
+                                   [--use-explicit-cachefile]
                                    [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
@@ -160,6 +161,8 @@ class Test_parse_args(unittest.TestCase):
                                         Directory containing the source code to compile/test.
                   --build-dir BUILD_DIR
                                         Path to the build directory.
+                  --use-explicit-cachefile
+                                        Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.
                   --ctest-driver CTEST_DRIVER
                                         Location of the CTest driver script to load via `-S`.
                   --ctest-drop-site CTEST_DROP_SITE
@@ -220,6 +223,7 @@ class Test_parse_args(unittest.TestCase):
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
+                                   [--use-explicit-cachefile]
                                    [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
