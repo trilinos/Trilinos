@@ -109,6 +109,8 @@ include(SetupTribitsInstall)
 
 SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
 
+SET(LINK_LIBRARIES_ONLY_TARGETS TRUE)
+
 IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
 ENDIF()
