@@ -1,10 +1,11 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tpetra_pseudo_gmres_multidiag
+  Tpetra_pseudo_gmres_multidiag
   SOURCES test_pseudo_gmres_multidiag.cpp BelosLinearMultiShiftProblem.hpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
 )
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
@@ -22,4 +23,4 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     EXEDEPS Tpetra_pseudo_gmres_multi_hb
   )
 
-ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
+ENDIF()
