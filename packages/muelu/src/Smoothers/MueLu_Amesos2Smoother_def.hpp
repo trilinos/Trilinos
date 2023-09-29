@@ -120,13 +120,13 @@ namespace MueLu {
     bool doProject = true;
     for (size_t i = 0; i<X.getNumVectors(); i++) {
       for (size_t j = 0; j<Nullspace_->getNumVectors(); j++) {
-        doProject = doProject || (Teuchos::ScalarTraits<Scalar>::magnitude(dots(i, j)) > 100*Teuchos::ScalarTraits<Scalar>::eps());
+        doProject = doProject || (Teuchos::ScalarTraits<Scalar>::magnitude(dots(j, i)) > 100*Teuchos::ScalarTraits<Scalar>::eps());
       }
     }
     if (doProject) {
       for (size_t i = 0; i<X.getNumVectors(); i++) {
         for (size_t j = 0; j<Nullspace_->getNumVectors(); j++) {
-          X.getVectorNonConst(i)->update(-dots(i, j), *Nullspace_->getVector(j), ONE);
+          X.getVectorNonConst(i)->update(-dots(j, i), *Nullspace_->getVector(j), ONE);
         }
       }
     }
@@ -321,6 +321,7 @@ namespace MueLu {
                                         importer, A->getCrsGraph()->getExporter());
 
       factorA = newA;
+      rowMap = factorA->getRowMap();
     } else {
       factorA = A;
     }
@@ -331,7 +332,8 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
     RCP<Teuchos::ParameterList> amesos2_params = Teuchos::rcpFromRef(pL.sublist("Amesos2"));
     amesos2_params->setName("Amesos2");
-    if (rowMap->getGlobalNumElements() != as<size_t>((rowMap->getMaxAllGlobalIndex() - rowMap->getMinAllGlobalIndex())+1)) {
+    if ((rowMap->getGlobalNumElements() != as<size_t>((rowMap->getMaxAllGlobalIndex() - rowMap->getMinAllGlobalIndex())+1)) ||
+        (!rowMap->isContiguous())) {
       if (!(amesos2_params->sublist(prec_->name()).template isType<bool>("IsContiguous")))
         amesos2_params->sublist(prec_->name()).set("IsContiguous", false, "Are GIDs Contiguous");
     }
