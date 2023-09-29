@@ -790,16 +790,16 @@ class FastILUPrec
                 {
                     int oldlst = next;
                     int nxtlst = lnklst[next];
-                    int row = next;
+                    int inner_row = next;
                     int ii;
 
                     /* scan row */
-                    for (ii=uRowMap[row]+1; ii<uRowMap[row+1]; /*nop*/)
+                    for (ii=uRowMap[inner_row]+1; ii<uRowMap[inner_row+1]; /*nop*/)
                     {
                         if (uColIdx[ii] < nxtlst)
                         {
                             /* new fill-in */
-                            int newlev = curlev[row] + uLevel[ii] + 1;
+                            int newlev = curlev[inner_row] + uLevel[ii] + 1;
                             if (newlev <= levfill)
                             {
                                 lnklst[oldlst]  = uColIdx[ii];
@@ -814,7 +814,7 @@ class FastILUPrec
                             int newlev;
                             oldlst = nxtlst;
                             nxtlst = lnklst[oldlst];
-                            newlev = curlev[row] + uLevel[ii] + 1;
+                            newlev = curlev[inner_row] + uLevel[ii] + 1;
                             //curlev[uColIdx[ii]] = MIN(curlev[uColIdx[ii]], newlev);
                             if (curlev[uColIdx[ii]] > newlev)
                             {
@@ -2613,7 +2613,6 @@ class FastILUFunctor
                     // Place the value into L or U
                     const Ordinal l_offset = blockItems*(lptr-1);
                     const Ordinal u_offset = blockItems*(uptr-1);
-                    const Ordinal blockOffset = _blockCrsSize*bi + bj;
                     const Ordinal blockOffsetT = _blockCrsSize*bj + bi;
                     if ( (i == j && bi > bj) || i > j) {
                       val = (val-acc_val) / lastU;
