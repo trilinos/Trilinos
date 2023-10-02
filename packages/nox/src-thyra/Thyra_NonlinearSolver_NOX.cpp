@@ -61,7 +61,8 @@ Thyra::NOXNonlinearSolver::NOXNonlinearSolver():
   do_row_sum_scaling_(false),
   when_to_update_(NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve),
   rebuild_solver_(true),
-  updatePreconditioner_(true)
+  updatePreconditioner_(true),
+  use_base_point_(false)
 {
   param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
   valid_param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
@@ -142,6 +143,7 @@ void
 Thyra::NOXNonlinearSolver::setBasePoint(
     const Thyra::ModelEvaluatorBase::InArgs<double> &modelInArgs)
 {
+  use_base_point_ = true;
   basePoint_ = modelInArgs;
 }
 
@@ -227,13 +229,15 @@ solve(VectorBase<double> *x,
     else
       nox_group_ = user_defined_nox_group_;
 
-    nox_group_->getNonconstInArgs() = this->basePoint_;
+    if (use_base_point_)
+      nox_group_->setBasePoint(this->basePoint_);
 
     status_test_ = this->buildStatusTests(*param_list_);
     solver_ = NOX::Solver::buildSolver(nox_group_, status_test_, param_list_);
   }
   else {
-    nox_group_->getNonconstInArgs() = this->basePoint_;
+    if (use_base_point_)
+      nox_group_->setBasePoint(this->basePoint_);
 
     solver_->reset(initial_guess);
   }
