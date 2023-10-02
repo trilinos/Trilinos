@@ -331,7 +331,7 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
   if (nonnull(source.right_weight_vec_)) {
     right_weight_vec_ = source.right_weight_vec_;
     inv_right_weight_vec_ = source.inv_right_weight_vec_;
-    *scaled_x_vec_ = *source.scaled_x_vec_;
+    *scaled_x_vec_ = *source.scaled_x_vec_;    
   }
 
   // If valid, this takes ownership of the shared Jacobian
@@ -486,18 +486,16 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeF()
   if (this->isF())
     return NOX::Abstract::Group::Ok;
 
-  auto in_args = model_->createInArgs();
-  auto out_args = model_->createOutArgs();
-  in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-  out_args.set_f(f_vec_->getThyraRCPVector().assert_not_null());
+  in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+  out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
   //model_->setVerbLevel(Teuchos::VERB_EXTREME);
-  model_->evalModel(in_args, out_args);
-  in_args.set_x(Teuchos::null);
-  out_args.set_f(Teuchos::null);
+  model_->evalModel(in_args_, out_args_);
+  in_args_.set_x(Teuchos::null);
+  out_args_.set_f(Teuchos::null);
 
   is_valid_f_ = true;
 
-  if (out_args.isFailed())
+  if (out_args_.isFailed())
     return NOX::Abstract::Group::Failed;
 
   return NOX::Abstract::Group::Ok;
@@ -513,15 +511,15 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeJacobian()
 
   shared_jacobian_->getObject(this);
 
-  auto in_args = model_->createInArgs();
-  auto out_args = model_->createOutArgs();
-  in_args.set_x(x_vec_->getThyraRCPVector());
-  out_args.set_W_op(lop_);
-  model_->evalModel(in_args, out_args);
+  in_args_.set_x(x_vec_->getThyraRCPVector());
+  out_args_.set_W_op(lop_);
+  model_->evalModel(in_args_, out_args_);
+  in_args_.set_x(Teuchos::null);
+  out_args_.set_W_op(Teuchos::null);
 
   is_valid_jacobian_ = true;
 
-  if (out_args.isFailed())
+  if (out_args_.isFailed())
     return NOX::Abstract::Group::Failed;
 
   return NOX::Abstract::Group::Ok;
@@ -722,7 +720,7 @@ const NOX::Abstract::Vector& NOX::Thyra::Group::getX() const
 }
 
 const NOX::Abstract::Vector& NOX::Thyra::Group::getScaledX() const
-{
+{ 
   if(nonnull(inv_right_weight_vec_))
     return *scaled_x_vec_;
   else
@@ -838,7 +836,7 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
   this->unscaleResidualAndJacobian();
 
   if (nonnull(right_weight_vec_)){
-
+  
     const Teuchos::RCP< ::Thyra::ScaledLinearOpBase<double> > result_scaled =
       Teuchos::rcp_dynamic_cast< ::Thyra::ScaledLinearOpBase<double> >(Teuchos::rcpFromRef(result), true);
     result_scaled->scaleLeft(*right_weight_vec_);
@@ -960,11 +958,11 @@ void NOX::Thyra::Group::updateLOWS() const
     }
     else if ( nonnull(prec_) && (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
       // Automatically update using the ModelEvaluator
-      auto in_args = model_->createInArgs();
-      auto out_args = model_->createOutArgs();
-      in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-      out_args.set_W_prec(prec_);
-      model_->evalModel(in_args, out_args);
+      in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+      out_args_.set_W_prec(prec_);
+      model_->evalModel(in_args_, out_args_);
+      in_args_.set_x(Teuchos::null);
+      out_args_.set_W_prec(Teuchos::null);
 
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
                           lop_,
@@ -1034,7 +1032,7 @@ void NOX::Thyra::Group::computeScaledSolution()
 {
   *scaled_x_vec_ = *x_vec_;
   NOX::Thyra::Vector scaling(inv_right_weight_vec_);
-  scaled_x_vec_->scale(scaling);
+  scaled_x_vec_->scale(scaling);  
 }
 
 Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >
