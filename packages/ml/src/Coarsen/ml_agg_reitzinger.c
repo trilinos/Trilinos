@@ -238,6 +238,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Kn_coarse = &(ml_nodes->Amat[grid_level]);
      ML_Operator_ChangeToSinglePrecision(Kn_coarse);
 
+   
+
+
      Rn_coarse = &(ml_nodes->Rmat[grid_level+1]);
      if (Kn_coarse->getrow->pre_comm != NULL)
         Nghost = Kn_coarse->getrow->pre_comm->total_rcv_length;
@@ -357,9 +360,40 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          Nneg_dirichlet++;
        }
 
+
+  //CMSCMSCMS
      
      FILE * fdebug;
      int *global_row_ordering,*global_col_ordering;
+     {
+
+       // CMS: DEBUG
+       FILE * fdebug2;
+       char str[80];
+       csr_data = (struct ML_CSR_MSRdata *) Kn_coarse->data;
+
+       sprintf(str,"kn_coarse_%d_%d.m",grid_level,Kn_coarse->comm->ML_mypid);
+       fdebug2=fopen(str,"w");
+       ML_build_global_numbering(Kn_coarse, &global_row_ordering,"rows");
+       ML_build_global_numbering(Kn_coarse, &global_col_ordering,"cols");
+       for(i=0; i< Kn_coarse->outvec_leng; i++) {
+         ML_get_matrix_row(Kn_coarse,1, &i,&allocated,
+                           &temp_bindx,&temp_val,&row_length, 0);          
+         for(j=0;j<row_length;j++){
+           fprintf(fdebug2,"%d %d %d %d\n",i,global_row_ordering[i], 
+                   temp_bindx[j],global_col_ordering[ temp_bindx[j] ]);
+         }
+       }
+       
+       fclose(fdebug2);
+       free(global_row_ordering);
+       free(global_col_ordering);
+     }
+
+
+
+
+
      {
        // CMS: DEBUG
        char str[80];
@@ -395,8 +429,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         for (j = 0; j < row_length; j++)
         {
 
-          int own_both_nodes = (pid_coarse_node[i] == pid_coarse_node[temp_bindx[j]]) ? 1 : 0;
-          int col_is_larger = (temp_bindx[j] > i) ? 1 : 0;
+          //int own_both_nodes = (pid_coarse_node[i] == pid_coarse_node[temp_bindx[j]]) ? 1 : 0;
+          //int col_is_larger = (temp_bindx[j] > i) ? 1 : 0;
 
           /*
           fprintf(fdebug,"%d %d %d %d %d %d\n",
@@ -405,11 +439,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                   own_both_nodes,
                   col_is_larger);
           */
-          fprintf(fdebug,"%d %d %d %d\n",
-                  i, global_row_ordering[i],
-                  temp_bindx[j],global_col_ordering[temp_bindx[j]]);
-          
-
+          int CMS_this_was_kept = 0;
                     
            /* If nodes i and bindx[j] are owned by same processor ... */
            if (pid_coarse_node[i] == pid_coarse_node[temp_bindx[j]])
@@ -422,6 +452,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                  Tcoarse_bindx[nz_ptr]  =  i;
                  Tcoarse_val[nz_ptr++]  = -1.;
                  Tcoarse_rowptr[counter+1] = nz_ptr;
+                 CMS_this_was_kept=1;
                  counter++;
               }
            }
@@ -439,6 +470,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
               Tcoarse_bindx[nz_ptr]  =  i;
               Tcoarse_val[nz_ptr++]  = -1.;
               Tcoarse_rowptr[counter+1] = nz_ptr;
+              CMS_this_was_kept=1;
               counter++;
            }
 #else
@@ -456,6 +488,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                  Tcoarse_bindx[nz_ptr]  =  i;
                  Tcoarse_val[nz_ptr++]  = -1.;
                  Tcoarse_rowptr[counter+1] = nz_ptr;
+                 CMS_this_was_kept=1;
                  counter++;
                }
              } else {
@@ -465,11 +498,21 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                  Tcoarse_bindx[nz_ptr]  =  i;
                  Tcoarse_val[nz_ptr++]  = -1.;
                  Tcoarse_rowptr[counter+1] = nz_ptr;
+                 CMS_this_was_kept=1;
                  counter++;
                }
              }
            }
 #endif
+
+          fprintf(fdebug,"%d %d %d %d %d\n",
+                  i, global_row_ordering[i],
+                  temp_bindx[j],global_col_ordering[temp_bindx[j]],
+                  CMS_this_was_kept);
+          
+
+
+
        } /*for (j = 0; j < row_length; j++)*/
      } /*for (i = 0; i < Kn_coarse->outvec_leng; i++)*/
 
@@ -570,6 +613,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         exit(1);
      }
      ML_random_vec(vec, Tcoarse->invec_leng, ml_edges->comm);
+     for (j = 0; j < Tcoarse->invec_leng; j++) vec[j] += sqrt(sqrt((double) Kn_coarse->comm->ML_mypid));
      ML_Operator_Apply(Tcoarse, Tcoarse->invec_leng, vec,
 		       Tcoarse->outvec_leng,Tcoarse_vec);
 
@@ -923,6 +967,26 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      sprintf(str,"(level %d) Time to realloc T operator",grid_level);
      ReportTimer(delta1, str, ml_edges->comm);
 
+
+     //CMSCMSCMS
+     {
+       // CMS: DEBUG
+       char str[80];
+       sprintf(str,"d0_actual_edges_%d_%d.m",grid_level,Tcoarse->comm->ML_mypid);
+       fdebug=fopen(str,"w");
+       ML_build_global_numbering(Tcoarse, &global_row_ordering,"rows");
+       ML_build_global_numbering(Tcoarse, &global_col_ordering,"cols");
+       for(i=0; i<counter; i++)
+         for(j=csr_data->rowptr[i];j<csr_data->rowptr[i+1];j++){
+           fprintf(fdebug,"%d %d %d %d\n",i,global_row_ordering[i], 
+                   csr_data->columns[j],global_col_ordering[ csr_data->columns[j] ]);
+         }
+       fclose(fdebug);
+       free(global_row_ordering);
+       free(global_col_ordering);
+     }
+       
+     
      ML_memory_check("L%d Tcoarse realloc",grid_level);
      /********************************************************************/
      /* Fix P and R so that they are not normalized. This is so that we  */
