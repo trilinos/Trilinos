@@ -1061,7 +1061,7 @@ namespace Ifpack2 {
           for (local_ordinal_type ipack=0;ipack<npacks;++ipack) {
             if (ipack != 0) {
               local_ordinal_type ip_min = ipack*vector_length;
-              local_ordinal_type ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
+              ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
               for (local_ordinal_type ip=ip_min;ip<ip_max;++ip) {
                 part2packrowidx0_sub(ip, 0) = part2packrowidx0_sub(ip-vector_length, part2packrowidx0_sub.extent(1)-1);
               }
@@ -1069,7 +1069,7 @@ namespace Ifpack2 {
 
             for (size_type local_sub_ip=0; local_sub_ip<part2packrowidx0_sub.extent(1)-1;++local_sub_ip) {
               local_ordinal_type ip_min = ipack*vector_length;
-              local_ordinal_type ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
+              ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
 
               //const auto* part = &partitions[p[ip_min]];
               //const local_ordinal_type ipnrows = part->size();
@@ -1204,7 +1204,7 @@ namespace Ifpack2 {
           for (local_ordinal_type ipack=0;ipack<npacks;++ipack) {
             if (ipack != 0) {
               local_ordinal_type ip_min = ipack*vector_length;
-              local_ordinal_type ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
+              ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
               for (local_ordinal_type ip=ip_min;ip<ip_max;++ip) {
                 part2packrowidx0_sub(ip, 0) = part2packrowidx0_sub(ip-vector_length, part2packrowidx0_sub.extent(1)-1);
               }
@@ -1212,7 +1212,7 @@ namespace Ifpack2 {
 
             for (size_type local_sub_ip=0; local_sub_ip<part2packrowidx0_sub.extent(1)-1;++local_sub_ip) {
               local_ordinal_type ip_min = ipack*vector_length;
-              local_ordinal_type ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
+              ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
 
               //const auto* part = &partitions[p[ip_min]];
               //const local_ordinal_type ipnrows = part->size();
@@ -2941,7 +2941,6 @@ namespace Ifpack2 {
         const local_ordinal_type i0 = pack_td_ptr(partidx,local_subpartidx);
         const local_ordinal_type r0 = part2packrowidx0_sub(partidx,local_subpartidx);
         const local_ordinal_type nrows = partptr_sub(subpartidx,1) - partptr_sub(subpartidx,0);
-        const local_ordinal_type blocksize = e_internal_vector_values.extent(2);
         const local_ordinal_type num_vectors = blocksize;
 
         (void) npacks;
@@ -4182,8 +4181,6 @@ namespace Ifpack2 {
         const local_ordinal_type partidx = subpartidx%n_parts;
         const local_ordinal_type blocksize = e_internal_vector_values.extent(2);
 
-        //const local_ordinal_type npacks = packptr_sub(packidx+1) - subpartidx;
-        const local_ordinal_type i0 = pack_td_ptr(partidx,local_subpartidx);
         const local_ordinal_type r0 = part2packrowidx0_sub(partidx,local_subpartidx);
         const local_ordinal_type nrows = partptr_sub(subpartidx,1) - partptr_sub(subpartidx,0);
 
@@ -4191,13 +4188,6 @@ namespace Ifpack2 {
           WW(member.team_scratch(0), blocksize, blocksize, vector_loop_size);
 
         // Compute v_2 = v_2 - C v_1
-
-        //const local_ordinal_type local_subpartidx_schur = (local_subpartidx-1)/2;
-        //const local_ordinal_type i0_schur = local_subpartidx_schur == 0 ? pack_td_ptr_schur(partidx,local_subpartidx_schur) : pack_td_ptr_schur(partidx,local_subpartidx_schur) + 1;
-        //const local_ordinal_type i0_offset = local_subpartidx_schur == 0 ? i0+2 : i0+2;
-
-        //(void) i0_schur;
-        //(void) i0_offset;
 
         const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 
