@@ -114,7 +114,7 @@ namespace {
   // Command-line argument values (initially set to defaults).
   bool testMpi = true;
   double errorTolSlack = 1e+1;
-  std::string distributorSendType ("MpiAdvanceAlltoall");
+  std::string distributorSendType ("Send");
   bool verbose = false;
 
   TEUCHOS_STATIC_SETUP()
