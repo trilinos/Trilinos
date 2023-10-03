@@ -255,8 +255,8 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
     MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (T());
 
 
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
-  if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == sendType) {
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == plan.getSendType()) {
     MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
     
     const int err = MPIX_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
@@ -265,18 +265,18 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
                                     
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
                               "MPIX_Alltoallv failed with error \""
-                              << Teuchos::mpiErrorCodeToString (err) << "\".");v
+                              << Teuchos::mpiErrorCodeToString (err) << "\".");
 
     return;
-  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV == sendType) {
+  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV == plan.getSendType()) {
     MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
     
-    const int err = MPIX_Neighbor_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
+    const int err = MPIX_Neighbor_alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
                                     imports.data(), recvcounts.data(), rdispls.data(), rawType,
                                     mpixComm);
     
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                              "MPIX_Neighbor_Alltoallv failed with error \""
+                              "MPIX_Neighbor_alltoallv failed with error \""
                               << Teuchos::mpiErrorCodeToString (err) << "\".");
     
     return;
@@ -354,7 +354,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     doPostsAllToAll(plan, exports,numPackets, imports);
     return;
   }
-#ifdef HAVE_TPETRA_CORE_MPI_ADVANCE
+#ifdef HAVE_TPETRACORE_MPI_ADVANCE
   else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
     doPostsAllToAll(plan, exports,numPackets, imports);
     return;
@@ -658,8 +658,8 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
   using T = typename ExpView::non_const_value_type;
   MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (T());
   
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
-  if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == sendType) {
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == plan.getSendType()) {
     MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
     
     const int err = MPIX_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
@@ -671,15 +671,15 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
                               << Teuchos::mpiErrorCodeToString (err) << "\".");
     
     return;
-  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV == sendType) {
+  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV == plan.getSendType()) {
     MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
     
-    const int err = MPIX_Neighbor_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
+    const int err = MPIX_Neighbor_alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
                                     imports.data(), recvcounts.data(), rdispls.data(), rawType,
                                     mpixComm);
     
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                              "MPIX_Neighbor_Alltoallv failed with error \""
+                              "MPIX_Neighbor_alltoallv failed with error \""
                               << Teuchos::mpiErrorCodeToString (err) << "\".");
     
     return;
@@ -749,14 +749,14 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     doPostsAllToAll(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
     return;
   }
-#ifdef HAVE_TPETRA_CORE_MPI_ADVANCE
+#ifdef HAVE_TPETRACORE_MPI_ADVANCE
   else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL)
   {
     doPostsAllToAll(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
     return;
   } else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
     doPostsAllToAll(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
-    return
+    return;
   }
 #endif
 
