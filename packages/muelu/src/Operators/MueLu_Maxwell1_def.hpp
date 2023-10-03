@@ -101,9 +101,6 @@ namespace MueLu {
 
       // interpret ML list
       newList.sublist("maxwell1: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list,"Maxwell"));
-
-
-
      
       // Hardwiring options to ensure ML compatibility
       newList.sublist("maxwell1: 22list").set("use kokkos refactor", false);
@@ -217,8 +214,8 @@ namespace MueLu {
       }
       if (mode_ == MODE_STANDARD)  {
         precList11_.set("smoother: type", "HIPTMAIR");
-        precList11_.sublist("hiptmair: smoother type 1","CHEBYSHEV");
-        precList11_.sublist("hiptmair: smoother type 2","CHEBYSHEV");
+        precList11_.set("hiptmair: smoother type 1","CHEBYSHEV");
+        precList11_.set("hiptmair: smoother type 2","CHEBYSHEV");
         precList11_.sublist("hiptmair: smoother list 1") = defaultSmootherList;
         precList11_.sublist("hiptmair: smoother list 2") = defaultSmootherList;
       }
