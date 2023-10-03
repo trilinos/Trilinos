@@ -58,7 +58,7 @@
 #include "Teuchos_RCP.hpp"
 #include "TpetraCore_config.h"
 
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
 #include <mpi_advance.h>
 #endif
 
@@ -73,7 +73,7 @@ enum EDistributorSendType {
   DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
   DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
   DISTRIBUTOR_ALLTOALL // Use MPI_Alltoall
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   ,
   DISTRIBUTOR_MPIADVANCE_ALLTOALL,
   DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV
@@ -124,7 +124,7 @@ public:
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
   DistributorPlan(const DistributorPlan& otherPlan);
 
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)  
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)  
   ~DistributorPlan();
 #endif
 
@@ -138,7 +138,7 @@ public:
   Teuchos::RCP<DistributorPlan> getReversePlan() const;
 
   Teuchos::RCP<const Teuchos::Comm<int>> getComm() const { return comm_; }
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   Teuchos::RCP<MPIX_Comm*> getMPIXComm() const { return mpixComm_; }
 #endif
   EDistributorSendType getSendType() const { return sendType_; }
@@ -158,7 +158,7 @@ public:
 private:
 
   // after the plan has been created we have the info we need to initialize the MPI advance communicator
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   void initializeMpiAdvance();
 #endif
 
@@ -179,7 +179,7 @@ private:
   void computeReceives();
 
   Teuchos::RCP<const Teuchos::Comm<int>> comm_;
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   Teuchos::RCP<MPIX_Comm*> mpixComm_;
 #endif
 
