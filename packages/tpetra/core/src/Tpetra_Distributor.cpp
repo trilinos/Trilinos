@@ -62,6 +62,10 @@ namespace Tpetra {
     sendTypes.push_back ("Isend");
     sendTypes.push_back ("Send");
     sendTypes.push_back ("Alltoall");
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+    sendTypes.push_back ("MpiAdvanceAlltoall");
+    sendTypes.push_back ("MpiAdvanceNbralltoallv");
+#endif
     return sendTypes;
   }
 
@@ -196,9 +200,9 @@ namespace Tpetra {
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
-#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
-    sendTypeEnunms.push_back(Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
-    sendTypeEnunms.push_back(Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+    sendTypeEnums.push_back(Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
+    sendTypeEnums.push_back(Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
 #endif
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
