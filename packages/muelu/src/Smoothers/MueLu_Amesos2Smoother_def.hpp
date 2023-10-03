@@ -333,7 +333,7 @@ namespace MueLu {
     RCP<Teuchos::ParameterList> amesos2_params = Teuchos::rcpFromRef(pL.sublist("Amesos2"));
     amesos2_params->setName("Amesos2");
     if ((rowMap->getGlobalNumElements() != as<size_t>((rowMap->getMaxAllGlobalIndex() - rowMap->getMinAllGlobalIndex())+1)) ||
-        (!rowMap->isContiguous())) {
+        (!rowMap->isContiguous() && (rowMap->getComm()->getSize() == 1))) {
       if (!(amesos2_params->sublist(prec_->name()).template isType<bool>("IsContiguous")))
         amesos2_params->sublist(prec_->name()).set("IsContiguous", false, "Are GIDs Contiguous");
     }
