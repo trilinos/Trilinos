@@ -84,8 +84,11 @@ Vector(const Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >& 
   }
 }
 
+namespace Sacado::Fad
+{
+
 template <typename OrdinalType, typename ValueType>
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
+Vector< OrdinalType, DVFad<ValueType> >::
 ~Vector()
 {
   // Here we must destroy the value and derivative arrays
@@ -98,6 +101,8 @@ Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
     }
   }
 }
+
+} // namespace Sacado::Fad
 
 template <typename OrdinalType, typename ValueType>
 Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >&
