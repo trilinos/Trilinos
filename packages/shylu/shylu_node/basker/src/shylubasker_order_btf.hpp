@@ -681,7 +681,9 @@ namespace BaskerNS
       double total_work_estimate = 0;
       for(Int b = 0; b < nblks; b++) //nblks is input; determined during btf ordering - total BTF_A blocks AND BTF_C blocks
       {
-        total_work_estimate += btf_blk_work(b); //determined prior, during btf ordering
+        Int blk_size = _btf_tabs(b+1) - _btf_tabs(b);
+        Int wrk_size = btf_blk_work(b); //determined prior, during btf ordering
+        total_work_estimate += (blk_size > wrk_size ? blk_size : wrk_size);
       }
       //Set a class variable to use later
       btf_total_work = total_work_estimate;
@@ -698,7 +700,7 @@ namespace BaskerNS
       // A block if it is larger than work esitimate assigned to one thread
       double break_fact = 0.7;
       double break_work_size = ceil(total_work_estimate*(break_fact * ((double)1.0/num_threads) + ((double)BASKER_BTF_IMBALANCE)));
-      double break_block_size = 0; //1000;
+      double break_block_size = 20 * num_threads; //0;
       #endif
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker: Break size for workspace and size: %d and %d with %d threads (total work estimate = %f)\n",
