@@ -206,10 +206,12 @@ test_cmd_options=(
     --build-dir=${TRILINOS_BUILD_DIR:?}
     --ctest-driver=${WORKSPACE:?}/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
-    #--dry-run
 )
 
-
+if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
+then
+    test_cmd_options+=( "--use-explicit-cachefile ")
+fi 
 
 # Execute the TEST operation
 test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"

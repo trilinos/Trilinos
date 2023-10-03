@@ -22,7 +22,18 @@ set(CTEST_CMAKE_GENERATOR "Ninja")
 
 set(CTEST_CONFIGURE_COMMAND_ARGS
     "${CMAKE_COMMAND}"
-    "-C \"${configure_file}\""
+)
+
+if(USE_EXPLICIT_TRILINOS_CACHEFILE)
+    list(APPEND CTEST_CONFIGURE_COMMAND_ARGS
+        "-D Trilinos_CONFIGURE_OPTIONS_FILE=${configure_file}"
+    )
+else()
+    list(APPEND CTEST_CONFIGURE_COMMAND_ARGS
+        "-C \"${configure_file}\""
+    )
+endif()
+list(APPEND CTEST_CONFIGURE_COMMAND_ARGS
     "-C \"${package_enables_file}\""
     "-G \"${CTEST_CMAKE_GENERATOR}\""
     "${CTEST_SOURCE_DIRECTORY}"

@@ -84,7 +84,8 @@ class Test_parse_args(unittest.TestCase):
                                          max_cores_allowed=12,
                                          num_concurrent_tests=-1,
                                          ccache_enable=False,
-                                         dry_run=False)
+                                         dry_run=False,
+                                         use_explicit_cachefile=False)
 
         self.default_stdout = dedent('''\
                 | - [R] source-repo-url             : /dev/null/source_repo
@@ -120,7 +121,7 @@ class Test_parse_args(unittest.TestCase):
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--ctest-driver CTEST_DRIVER]
+                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
@@ -160,6 +161,8 @@ class Test_parse_args(unittest.TestCase):
                                         Directory containing the source code to compile/test.
                   --build-dir BUILD_DIR
                                         Path to the build directory.
+                  --use-explicit-cachefile
+                                        Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.
                   --ctest-driver CTEST_DRIVER
                                         Location of the CTest driver script to load via `-S`.
                   --ctest-drop-site CTEST_DROP_SITE
@@ -220,7 +223,7 @@ class Test_parse_args(unittest.TestCase):
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--ctest-driver CTEST_DRIVER]
+                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
