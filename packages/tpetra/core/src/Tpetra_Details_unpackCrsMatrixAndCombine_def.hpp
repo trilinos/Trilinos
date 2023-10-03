@@ -1369,7 +1369,6 @@ unpackAndCombineWithOwningPIDsCount (
   using Kokkos::MemoryUnmanaged;
   using Kokkos::View;
   typedef typename Node::device_type DT;
-  typedef typename DT::execution_space execution_space;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -1474,13 +1473,10 @@ unpackAndCombineIntoCrsArrays (
   using Teuchos::REDUCE_MAX;
   using Teuchos::reduceAll;
 
-  typedef LocalOrdinal LO;
-
   typedef typename Node::device_type DT;
 
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
-  typedef typename ArrayView<const LO>::size_type size_type;
 
   const char prefix[] = "Tpetra::Details::unpackAndCombineIntoCrsArrays_new: ";
 #  ifdef HAVE_TPETRA_MMM_TIMINGS

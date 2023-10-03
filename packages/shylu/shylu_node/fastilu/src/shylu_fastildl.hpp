@@ -118,10 +118,6 @@ class FastILDLPrec
         ScalarArray ltVal;
         OrdinalArray ltColIdx;
         OrdinalArray ltRowMap;
-        // mirrors
-        ScalarArrayMirror ltVal_;
-        OrdinalArrayMirror ltColIdx_;
-        OrdinalArrayMirror ltRowMap_;
 
         //Pointer to the original host copy of A.
         ScalarArrayMirror aValHost;
