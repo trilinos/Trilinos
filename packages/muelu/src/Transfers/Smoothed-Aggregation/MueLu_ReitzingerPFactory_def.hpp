@@ -231,7 +231,11 @@ namespace MueLu {
 
     LO current = 0;
     LO Nnc = PnT_D0T->getRowMap()->getLocalNumElements();
-    
+
+
+    // We will need these soon enough
+    RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
+    RCP<const Map> ownedPlusSharedCoarseNodeMap  = D0_Pn->getCrsGraph()->getColMap();    
 
     FILE * fdebug;
     {
@@ -243,9 +247,8 @@ namespace MueLu {
     }
 
     for(LO i=0; i<(LO)Nnc; i++) {
-      //      GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
-
       // FIXME: We don't really want an std::map here.  This is just a first cut implementation
+      LO local_column_i = ownedPlusSharedCoarseNodeMap->getLocalElement(PnT_D0T->getRowMap()->getGlobalElement(i));
       using value_type = bool;
       std::map<LO, value_type> ce_map;
       
@@ -283,21 +286,19 @@ namespace MueLu {
         bool keep_shared_edge = false, own_both_nodes = false;
         if(zero_matches && one_matches) {own_both_nodes=true;}
         else {
-          int sum_is_odd =  (pid0 + pid1) % 2;
-          int i_am_smaller = MyPID == std::min(pid0,pid1);
-          if(sum_is_odd  && i_am_smaller)  keep_shared_edge=true;
-          if(!sum_is_odd && !i_am_smaller) keep_shared_edge=true;
+          bool sum_is_even  = (pid0 + pid1) % 2 == 0;
+          bool i_am_smaller = MyPID == std::min(pid0,pid1);
+          if(sum_is_even  && i_am_smaller)  keep_shared_edge=true;
+          if(!sum_is_even && !i_am_smaller) keep_shared_edge=true;
         }
         //        printf("[%d] - matches %d/%d keep_shared = %d own_both = %d\n",MyPID,(int)zero_matches,(int)one_matches,(int)keep_shared_edge,(int)own_both_nodes);
 
-        fprintf(fdebug,"%lld %d %lld %d %d %d\n",
-                D0_Pn->getColMap()->getGlobalElement(colind_N[0]),pid0,
-                D0_Pn->getColMap()->getGlobalElement(colind_N[1]),pid1,
+        fprintf(fdebug,"%d %lld %d %d %lld %d %d %d\n",
+                colind_N[0],D0_Pn->getColMap()->getGlobalElement(colind_N[0]),pid0,
+                colind_N[1],D0_Pn->getColMap()->getGlobalElement(colind_N[1]),pid1,
                 (int)keep_shared_edge,(int)own_both_nodes);
 
         if(!keep_shared_edge && !own_both_nodes) continue;
-
-
 
 
         // We're doing this in GID space, but only because it allows us to explain
@@ -306,7 +307,7 @@ namespace MueLu {
         // This could be done in local indices later if we need the extra performance.
         for(LO k=0; k<(LO)colind_N.size(); k++) {
           LO my_colind = colind_N[k];
-          if(my_colind!=LO_INVALID && ((keep_shared_edge && my_colind != i) || (own_both_nodes && my_colind > i)) ) {
+          if(my_colind!=LO_INVALID && ((keep_shared_edge && my_colind != local_column_i ) || (own_both_nodes && my_colind > local_column_i)) ) {
             ce_map.emplace(std::make_pair(my_colind,true));
           }
         }//end for k < colind_N.size()
@@ -317,12 +318,12 @@ namespace MueLu {
       for(auto iter=ce_map.begin(); iter != ce_map.end(); iter++) {
         LO col = iter->first;
         // This shouldn't happen.  But in case it did...
-        if(col == i) {
+        if(col == local_column_i) {
           continue;
         }
 
-        // ASSUMPTION: "i" is a valid local column id
-        D0_colind[current]  = i;
+        // NOTE: "i" here might not be a valid local column id, so we read it from the map
+        D0_colind[current]  = local_column_i;
         D0_values[current] = -1;
         current++;
         D0_colind[current]  = col;
@@ -355,10 +356,9 @@ namespace MueLu {
     // NOTE: Since we solve the ownership issue above, this should do what we want
     RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO,GO,NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges,EdgeMatrix->getRowMap()->getIndexBase(),EdgeMatrix->getRowMap()->getComm());
 
+    printf("[%d] D0 local num_coarse_edges = %d\n",MyPID,num_coarse_edges);
 
-    // NOTE:  This only works because of the assumptions above
-    RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
-    RCP<const Map> ownedPlusSharedCoarseNodeMap  = D0_Pn->getCrsGraph()->getColMap();
+
 
     // Create the coarse D0
     RCP<CrsMatrix> D0_coarse;
@@ -409,6 +409,18 @@ namespace MueLu {
       }
 #endif
       D0_coarse->expertStaticFillComplete(ownedCoarseNodeMap,ownedCoarseEdgeMap);
+      printf("[%d] D0 global (r,r,c,d) = %d, %d, %d, %d local (r,r,c,d) = %d, %d, %d, %d\n",
+             MyPID,
+             D0_coarse->getRangeMap()->getGlobalNumElements(),
+             D0_coarse->getRowMap()->getGlobalNumElements(),
+             D0_coarse->getColMap()->getGlobalNumElements(),
+             D0_coarse->getDomainMap()->getGlobalNumElements(),
+             D0_coarse->getRangeMap()->getLocalNumElements(),
+             D0_coarse->getRowMap()->getLocalNumElements(),
+             D0_coarse->getColMap()->getLocalNumElements(),
+             D0_coarse->getDomainMap()->getLocalNumElements());
+
+
     }
     RCP<Matrix> D0_coarse_m = rcp(new CrsMatrixWrap(D0_coarse));
     RCP<Teuchos::FancyOStream> fout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
