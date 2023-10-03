@@ -942,6 +942,10 @@ Teuchos::Array<std::string> distributorSendTypes()
   sendTypes.push_back ("Isend");
   sendTypes.push_back ("Send");
   sendTypes.push_back ("Alltoall");
+#if defined(HAVE_TPETRA_CORE_MPI_ADVANCE)
+  sendTypes.push_back ("MpiAdvanceAlltoall");
+  sendTypes.push_back ("MpiAdvanceNbralltoallv");
+#endif
   return sendTypes;
 }
 
