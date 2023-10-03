@@ -36,6 +36,7 @@
 //
 // ************************************************************************
 // @HEADER
+// clang-format off
 
 #ifndef TPETRA_DETAILS_DISTRIBUTOR_ACTOR_HPP
 #define TPETRA_DETAILS_DISTRIBUTOR_ACTOR_HPP
@@ -254,34 +255,43 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
     using T = typename ExpView::non_const_value_type;
     MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (T());
 
-
+// clang-format on
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == plan.getSendType()) {
-    MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
-    
-    const int err = MPIX_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
-                                    imports.data(), recvcounts.data(), rdispls.data(), rawType,
-                                    mpixComm);
-                                    
+    MPIX_Comm *mpixComm = *plan.getMPIXComm();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        !mpixComm, std::runtime_error,
+        "plan's MPIX_Comm null in doPostsAllToAll, but "
+        "DISTRIBUTOR_MPIADVANCE_ALLTOALL set: plan.howInitialized()="
+            << DistributorHowInitializedEnumToString(plan.howInitialized()));
+
+    const int err = MPIX_Alltoallv(
+        exports.data(), sendcounts.data(), sdispls.data(), rawType,
+        imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                              "MPIX_Alltoallv failed with error \""
-                              << Teuchos::mpiErrorCodeToString (err) << "\".");
+                               "MPIX_Alltoallv failed with error \""
+                                   << Teuchos::mpiErrorCodeToString(err)
+                                   << "\".");
 
     return;
-  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV == plan.getSendType()) {
-    MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
-    
-    const int err = MPIX_Neighbor_alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
-                                    imports.data(), recvcounts.data(), rdispls.data(), rawType,
-                                    mpixComm);
-    
+  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV ==
+             plan.getSendType()) {
+    MPIX_Comm *mpixComm = *plan.getMPIXComm();
+
+    const int err = MPIX_Neighbor_alltoallv(
+        exports.data(), sendcounts.data(), sdispls.data(), rawType,
+        imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                              "MPIX_Neighbor_alltoallv failed with error \""
-                              << Teuchos::mpiErrorCodeToString (err) << "\".");
-    
+                               "MPIX_Neighbor_alltoallv failed with error \""
+                                   << Teuchos::mpiErrorCodeToString(err)
+                                   << "\".");
+
     return;
   }
 #endif
+  // clang-format off
 
     const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
                                   imports.data(), recvcounts.data(), rdispls.data(), rawType,
@@ -657,34 +667,42 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
   using T = typename ExpView::non_const_value_type;
   MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType (T());
-  
+
+  // clang-format on
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == plan.getSendType()) {
     MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
-    
-    const int err = MPIX_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
-                                    imports.data(), recvcounts.data(), rdispls.data(), rawType,
-                                    mpixComm);
-    
+    TEUCHOS_TEST_FOR_EXCEPTION(!mpixComm, std::runtime_error,
+                               "MPIX_Comm is null in doPostsAllToAll \""
+                                   << __FILE__ << ":" << __LINE__);
+
+    const int err = MPIX_Alltoallv(
+        exports.data(), sendcounts.data(), sdispls.data(), rawType,
+        imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                              "MPIX_Alltoallv failed with error \""
-                              << Teuchos::mpiErrorCodeToString (err) << "\".");
-    
+                               "MPIX_Alltoallv failed with error \""
+                                   << Teuchos::mpiErrorCodeToString(err)
+                                   << "\".");
+
     return;
-  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV == plan.getSendType()) {
+  } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV ==
+             plan.getSendType()) {
     MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
-    
-    const int err = MPIX_Neighbor_alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
-                                    imports.data(), recvcounts.data(), rdispls.data(), rawType,
-                                    mpixComm);
-    
+
+    const int err = MPIX_Neighbor_alltoallv(
+        exports.data(), sendcounts.data(), sdispls.data(), rawType,
+        imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                              "MPIX_Neighbor_alltoallv failed with error \""
-                              << Teuchos::mpiErrorCodeToString (err) << "\".");
-    
+                               "MPIX_Neighbor_alltoallv failed with error \""
+                                   << Teuchos::mpiErrorCodeToString(err)
+                                   << "\".");
+
     return;
   }
 #endif
+  // clang-format off
   
   const int err = MPI_Alltoallv(exports.data(), sendcounts.data(), sdispls.data(), rawType,
                                 imports.data(), recvcounts.data(), rdispls.data(), rawType,
