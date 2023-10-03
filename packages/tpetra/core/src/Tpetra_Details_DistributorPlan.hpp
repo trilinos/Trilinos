@@ -124,10 +124,6 @@ public:
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
   DistributorPlan(const DistributorPlan& otherPlan);
 
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)  
-  ~DistributorPlan();
-#endif
-
   size_t createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs);
   void createFromRecvs(const Teuchos::ArrayView<const int>& remoteProcIDs);
   void createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
