@@ -787,7 +787,7 @@ ENDIF()
 
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_mpi_advance)
   IF (DEFINED TpetraCore_ENABLE_mpi_advance)
-    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TpetraCore_ENABLE_mpi_advannce}")
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TpetraCore_ENABLE_mpi_advance}")
   ELSEIF (DEFINED TPL_ENABLE_mpi_advance)
     SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TPL_ENABLE_mpi_advance}")
   ELSE ()
