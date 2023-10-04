@@ -168,16 +168,19 @@ int main(int argc, char *argv[]) {
 
       for (auto mockModel : mockModels) {
 
-        if (mockModel=="MockModelEval_B_Tpetra_2_parameters" && iTest != 1) {
+        if (mockModel=="MockModelEval_B_Tpetra_2_parameters" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient_2_parameters.xml") {
           continue;
         }
-        if (mockModel=="MockModelEval_A_Tpetra" && iTest > 0) {
+        if (mockModel=="MockModelEval_A_Tpetra" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient.xml") {
           continue;
         }
-        if (mockModel=="MockModelEval_B_Tpetra" && iTest > 0) {
+        if (mockModel=="MockModelEval_B_Tpetra" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient.xml") {
           continue;
         }
-        if (mockModel=="MassSpringDamperModel" && iTest != 2) {
+        if (mockModel=="MassSpringDamperModel" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient_MSD.xml") {
+          continue;
+        }
+        if (mockModel=="MassSpringDamperModel" && appComm->getSize() > 1) {
           continue;
         }
 
