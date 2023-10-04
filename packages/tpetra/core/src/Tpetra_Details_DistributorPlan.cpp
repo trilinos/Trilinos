@@ -997,7 +997,12 @@ void DistributorPlan::initializeMpiAdvance() {
     // int *destWeights = static_cast<int*>(lengthsTo_.data()); // lengthsTo_ may not be int
     const int *destWeights = MPI_UNWEIGHTED; // lengthsTo_ may not be int
 
-    err = MPIX_Dist_graph_create_adjacent((*rawComm)(), numRecvs, sourceRanks, sourceWeights, numSends, destRanks, destWeights, MPI_INFO_NULL, false, mpixComm_.get());
+    MPIX_Comm **mpixComm = new(MPIX_Comm*);
+    err = MPIX_Dist_graph_create_adjacent((*rawComm)(), numRecvs, sourceRanks, sourceWeights, numSends, destRanks, destWeights, MPI_INFO_NULL, false, mpixComm);
+    mpixComm_ = Teuchos::RCP(mpixComm,
+      MpixCommDeallocator(),
+      true /*take ownership*/
+    );
   }
 
   TEUCHOS_ASSERT(err == 0);
