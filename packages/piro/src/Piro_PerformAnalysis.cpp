@@ -50,7 +50,6 @@
 #include "Thyra_DetachedVectorView.hpp"
 
 #include "Piro_SteadyStateSolver.hpp"
-#include "Piro_TransientSolver.hpp"
 
 #ifdef HAVE_PIRO_NOX
 #include "Piro_NOXSolver.hpp"
@@ -76,6 +75,7 @@
 #endif
 
 #ifdef HAVE_PIRO_TEMPUS
+#include "Piro_TransientSolver.hpp"
 #include "Piro_TempusSolver.hpp"
 #ifdef HAVE_PIRO_ROL
 #include "Piro_ThyraProductME_TempusFinalObjective.hpp"
