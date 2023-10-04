@@ -8625,6 +8625,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         Import_Util::sortAndMergeCrsEntries (CSR_rowptr(),
                                              CSR_colind_LID(),
                                              CSR_vals());
+        if (CSR_rowptr[N] != CSR_vals.size()) {
+          CSR_colind_LID.resize (CSR_rowptr[N]);
+          CSR_vals.resize (CSR_rowptr[N]);
+        }
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(
