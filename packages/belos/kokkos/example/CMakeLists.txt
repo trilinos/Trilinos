@@ -16,8 +16,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Kokkos_GCRODREx
+  SOURCES GCRODRKokkosExFile.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Kokkos_GCRODRComplexEx
+  SOURCES GCRODRComplexKokkosExFile.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleMtxFiles
   SOURCE_DIR ${Belos_SOURCE_DIR}/kokkos/example
-  SOURCE_FILES bcsstk12.mtx
-  EXEDEPS Kokkos_BlockCGEx Kokkos_BlockGmresEx
+  SOURCE_FILES bcsstk12.mtx mhd1280b.mtx
+  EXEDEPS Kokkos_BlockCGEx Kokkos_BlockGmresEx Kokkos_GCRODREx Kokkos_GCRODRComplexEx
   )
