@@ -44,7 +44,6 @@
 #define PIRO_TRANSIENTSOLVER_H
 
 #include "Piro_ConfigDefs.hpp"
-#include "Piro_ObserverBase.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 #include "Piro_TempusIntegrator.hpp" 
 #include "Piro_Helpers.hpp" 

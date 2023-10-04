@@ -202,10 +202,6 @@ public:
   /// Return adjoint sensitivity stored in gradient format
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
 
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > getAdjointModel() const {
-    return adjoint_model_;
-  };
-
   /// \name Overridden from Teuchos::Describable
   //@{
     std::string description() const override;
