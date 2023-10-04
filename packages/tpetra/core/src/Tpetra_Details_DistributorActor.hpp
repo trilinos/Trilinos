@@ -279,6 +279,41 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
              plan.getSendType()) {
     MPIX_Comm *mpixComm = *plan.getMPIXComm();
 
+    size_t numBlocks = plan.getNumSends() + plan.hasSelfMessage();
+    for (size_t p = 0; p < numBlocks; ++p) {
+      sdispls[p]    = plan.getStartsTo()[p]  * numPackets;
+      size_t sendcount = plan.getLengthsTo()[p] * numPackets;
+      // sendcount is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(sendcount > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Send count for block " << p << " (" << sendcount << ") is too large "
+                                 "to be represented as int.");
+      sendcounts[p] = static_cast<int>(sendcount);
+    }
+
+    const size_type actualNumReceives = Teuchos::as<size_type> (plan.getNumReceives()) +
+    Teuchos::as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+    size_t curBufferOffset = 0;
+    for (size_type i = 0; i < actualNumReceives; ++i) {
+      const size_t curBufLen = plan.getLengthsFrom()[i] * numPackets;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+                                 curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Exceeded size of 'imports' array in packing loop on Process " <<
+                                 myRank << ".  imports.size() = " << imports.size () << " < "
+                                 "curBufferOffset(" << curBufferOffset << ") + curBufLen(" <<
+                                 curBufLen << ").");
+      rdispls   [i] = curBufferOffset;
+      // curBufLen is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(curBufLen > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Recv count for receive " << i << " (" << curBufLen << ") is too large "
+                                 "to be represented as int.");
+      recvcounts[i] = static_cast<int>(curBufLen);
+      curBufferOffset += curBufLen;
+    }
+
+
     const int err = MPIX_Neighbor_alltoallv(
         exports.data(), sendcounts.data(), sdispls.data(), rawType,
         imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
@@ -625,6 +660,7 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
   std::vector<int> recvcounts (comm->getSize(), 0);
   std::vector<int> rdispls    (comm->getSize(), 0);
 
+  // TODO: this is all-to-all specific
   size_t curPKToffset = 0;
   for (size_t pp=0; pp<plan.getNumSends(); ++pp) {
     sdispls[plan.getProcsTo()[pp]]    = curPKToffset;
@@ -644,6 +680,7 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
   const size_type actualNumReceives = Teuchos::as<size_type> (plan.getNumReceives()) +
   Teuchos::as<size_type> (plan.hasSelfMessage() ? 1 : 0);
 
+  // TODO: this is all-to-all specific
   size_t curBufferOffset = 0;
   size_t curLIDoffset = 0;
   for (size_type i = 0; i < actualNumReceives; ++i) {
@@ -671,7 +708,7 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
   // clang-format on
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == plan.getSendType()) {
-    MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
+    MPIX_Comm *mpixComm = *plan.getMPIXComm();
     TEUCHOS_TEST_FOR_EXCEPTION(!mpixComm, std::runtime_error,
                                "MPIX_Comm is null in doPostsAllToAll \""
                                    << __FILE__ << ":" << __LINE__);
@@ -688,7 +725,55 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan& plan,
     return;
   } else if (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV ==
              plan.getSendType()) {
-    MPIX_Comm *mpixComm = *(plan.getMPIXComm().get());
+    MPIX_Comm *mpixComm = *plan.getMPIXComm();
+
+    // TODO: not all procs may participate in the neighbor alltoallv,
+    // so sendcounds and recvcounts is not comm->size()
+
+  const size_type actualNumSends = Teuchos::as<size_type> (plan.getNumSends()) +
+  Teuchos::as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+
+    if (plan.getProcsTo().size() != actualNumSends) {
+      throw std::runtime_error("plan.getProcsTo().size() != actualNumSends");
+    }
+
+    // unlike standard alltoall, entry `i` in sdispls and sendcounts
+    // refer to the ith participating rank, rather than rank i
+    size_t curPKToffset = 0;
+    for (Teuchos_Ordinal pp=0; pp<plan.getProcsTo().size(); ++pp) {
+      sdispls[pp]    = curPKToffset;
+      size_t numPackets = 0;
+      for (size_t j=plan.getStartsTo()[pp]; j<plan.getStartsTo()[pp]+plan.getLengthsTo()[pp]; ++j) {
+        numPackets += numExportPacketsPerLID[j];
+      }
+      // numPackets is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX),
+                                  std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                                  "Send count for send " << pp << " (" << numPackets << ") is too large "
+                                  "to be represented as int.");
+      sendcounts[pp] = static_cast<int>(numPackets);
+      curPKToffset += numPackets;
+    }
+    size_t curBufferOffset = 0;
+    size_t curLIDoffset = 0;
+    for (Teuchos_Ordinal i = 0; i < plan.getProcsFrom().size(); ++i) {
+      size_t totalPacketsFrom_i = 0;
+      for (size_t j = 0; j < plan.getLengthsFrom()[i]; ++j) {
+        totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
+      }
+      curLIDoffset += plan.getLengthsFrom()[i];
+
+      rdispls   [i] = curBufferOffset;
+      // totalPacketsFrom_i is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
+                                  std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                  "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
+                                  "to be represented as int.");
+      recvcounts[i] = static_cast<int>(totalPacketsFrom_i);
+      curBufferOffset += totalPacketsFrom_i;
+    }
+
+
 
     const int err = MPIX_Neighbor_alltoallv(
         exports.data(), sendcounts.data(), sdispls.data(), rawType,
