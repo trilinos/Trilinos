@@ -706,7 +706,6 @@ void DistributorActor::doPostsAllToAll(
   std::vector<int> recvcounts(comm->getSize(), 0);
   std::vector<int> rdispls(comm->getSize(), 0);
 
-  // TODO: this is all-to-all specific
   size_t curPKToffset = 0;
   for (size_t pp = 0; pp < plan.getNumSends(); ++pp) {
     sdispls[plan.getProcsTo()[pp]] = curPKToffset;
@@ -730,7 +729,6 @@ void DistributorActor::doPostsAllToAll(
       Teuchos::as<size_type>(plan.getNumReceives()) +
       Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
 
-  // TODO: this is all-to-all specific
   size_t curBufferOffset = 0;
   size_t curLIDoffset = 0;
   for (size_type i = 0; i < actualNumReceives; ++i) {
