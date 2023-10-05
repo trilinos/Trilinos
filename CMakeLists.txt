@@ -97,9 +97,6 @@ SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
 
 SET(CMAKE_LINK_LIBRARIES_ONLY_TARGETS ON)
 
-add_library(toolchain::m INTERFACE IMPORTED)
-set_property(TARGET toolchain::m PROPERTY IMPORTED_LIBNAME "m")
-
 # Set up C++ language standard selection
 include(SetTrilinosCxxStandard)
 
