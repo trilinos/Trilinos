@@ -2,7 +2,33 @@ from PyROL.PyROL import ROL
 import inspect
 import sys
 
-ROL_members = {cls_name: (cls_obj, inspect.isclass(cls_obj)) for cls_name, cls_obj in inspect.getmembers(sys.modules['PyROL.PyROL.ROL'])}
+trackedTypes = []
+
+def withTrackingConstructor(cls):
+    class newCls(cls):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._tracked_constructor_args = []
+            for arg in args:
+                if isinstance(arg, tuple(trackedTypes)):
+                    self._tracked_constructor_args.append(arg)
+            for key in kwargs:
+                val = kwargs[key]
+                if isinstance(val, tuple(trackedTypes)):
+                    self._tracked_constructor_args.append(val)
+
+    return newCls
+
+
+ROL_members = {}
+for cls_name, cls_obj in inspect.getmembers(sys.modules['PyROL.PyROL.ROL']):
+    if inspect.isclass(cls_obj):
+        cls_obj = withTrackingConstructor(cls_obj)
+        if cls_name.find('Vector') >= 0:
+            trackedTypes.append(cls_obj)
+        setattr(sys.modules['PyROL.PyROL.ROL'], cls_name, cls_obj)
+    ROL_members[cls_name] = (cls_obj, inspect.isclass(cls_obj))
+
 
 ROL_classes = [(cls_name , cls_obj) for cls_name, cls_obj in inspect.getmembers(sys.modules['PyROL.PyROL.ROL']) if inspect.isclass(cls_obj)]
 
