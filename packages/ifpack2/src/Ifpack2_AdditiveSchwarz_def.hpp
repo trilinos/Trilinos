@@ -1336,8 +1336,9 @@ describe (Teuchos::FancyOStream& out,
           auto ifpack2_inverse = rcp_dynamic_cast< Ifpack2::Details::LinearSolver<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (Inverse_);
           if(ifpack2_inverse.is_null()) 
             out << "Subdomain solver: not null" << endl;
-          else 
-            ifpack2_inverse->describe (out, Teuchos::VERB_LOW);
+          else {
+            out << "Subdomain solver: "; ifpack2_inverse->describe (out, Teuchos::VERB_LOW);
+          }
         }
       }
       else { // vl >= Teuchos::VERB_EXTREME
