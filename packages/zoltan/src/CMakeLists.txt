@@ -670,7 +670,7 @@ ENDIF()
 
 IF(NOT MSVC)
   # Add libm linking for ceil, floor and such.
-  LIST(APPEND IMPORTEDLIBS m)
+  LIST(APPEND IMPORTEDLIBS toolchain::m)
 ENDIF()
 
 TRIBITS_ADD_LIBRARY(
