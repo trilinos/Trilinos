@@ -240,7 +240,9 @@ solve(VectorBase<double> *x,
     if (use_base_point_)
       this->getThyraGroupNonConst(nox_group_)->setBasePoint(this->basePoint_);
 
-    // ::Thyra::assign(Teuchos::rcp_const_cast< ::Thyra::VectorBase<double>>(this->basePoint_.get_x()).ptr(), *x);
+    const auto thyra_group = this->getThyraGroupConst(solver_->getSolutionGroupPtr());
+    auto nonconst_thyra_group = Teuchos::rcp_const_cast<NOX::Thyra::Group>(thyra_group);
+    nonconst_thyra_group->setX(initial_guess);
 
     solver_->reset();
   }
