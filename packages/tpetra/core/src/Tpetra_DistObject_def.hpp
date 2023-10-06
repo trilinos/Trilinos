@@ -801,7 +801,8 @@ namespace Tpetra {
     using std::endl;
     using Details::getDualViewCopyFromArrayView;
     using Details::ProfilingRegion;
-    const char funcName[] = "Tpetra::DistObject::doTransfer";
+    const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
+    const char funcName[] = commOnHost ? "Tpetra::DistObject::doTransfer[Host]" : "Tpetra::DistObject::doTransfer[Device]";
 
     ProfilingRegion region_doTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");
@@ -906,7 +907,6 @@ namespace Tpetra {
        "cannot have permutes in restricted mode.");
 
     // Do we need all communication buffers to live on host?
-    const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "doTransfer: Use new interface; "
