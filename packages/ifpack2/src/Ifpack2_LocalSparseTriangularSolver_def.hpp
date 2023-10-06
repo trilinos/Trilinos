@@ -1103,6 +1103,9 @@ description () const
   os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
 
+  if(isKokkosKernelsSptrsv_) os << "KK-SPTRSV, ";
+  if(isKokkosKernelsStream_) os << "KK-SolveStream, ";
+	
   if (A_.is_null ()) {
     os << "Matrix: null";
   }
