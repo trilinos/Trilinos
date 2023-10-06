@@ -93,10 +93,6 @@ SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE
 
 SET(Trilinos_USE_GNUINSTALLDIRS_DEFAULT ON)
 
-SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
-
-SET(CMAKE_LINK_LIBRARIES_ONLY_TARGETS ON)
-
 # Set up C++ language standard selection
 include(SetTrilinosCxxStandard)
 
@@ -110,6 +106,8 @@ INSTALL_BUILD_STATS_SCRIPTS()
 
 # Install TriBITS so that other projects can use it
 include(SetupTribitsInstall)
+
+SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
 
 IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
