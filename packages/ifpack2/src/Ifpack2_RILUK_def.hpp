@@ -1356,6 +1356,9 @@ std::string RILUK<MatrixType>::description () const
 
   os << "Level-of-fill: " << getLevelOfFill() << ", ";
 
+ if(isKokkosKernelsSpiluk_) os<<"KK-SPILUK, ";
+ if(isKokkosKernelsStream_) os<<"KK-Stream, ";	
+    
   if (A_.is_null ()) {
     os << "Matrix: null";
   }
