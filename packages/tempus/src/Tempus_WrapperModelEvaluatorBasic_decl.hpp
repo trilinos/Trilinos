@@ -99,6 +99,9 @@ public:
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int p) const
       { return appModel_->get_p_names(p); }
 
+    Teuchos::ArrayView<const std::string> get_g_names(int g) const
+    { return appModel_->get_g_names(g); }
+
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const
       { return appModel_->get_x_space(); }
 
@@ -107,6 +110,15 @@ public:
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
       { return appModel_->getNominalValues(); }
+
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar>> create_DfDp_op(int l) const
+      { return appModel_->create_DfDp_op(l); }
+
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar>> create_DgDx_op(int j) const
+      { return appModel_->create_DgDx_op(j); }
+
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar>> create_DgDp_op(int j, int l) const
+      { return appModel_->create_DgDp_op(j,l); }
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
