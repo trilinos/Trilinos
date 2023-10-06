@@ -858,6 +858,17 @@ bool StepperIMEX_RK_Partition<Scalar>::isValidSetup(Teuchos::FancyOStream & out)
 
 
 template<class Scalar>
+Teuchos::RCP<Tempus::TimeDerivative<Scalar>> StepperIMEX_RK_Partition<Scalar>::getTimeDerivative(
+  Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error,
+          "Not yet implemented.");
+  return Teuchos::null;
+}
+
+
+template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperIMEX_RK_Partition<Scalar>::getValidParameters() const
 {

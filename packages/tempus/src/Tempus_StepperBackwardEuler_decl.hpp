@@ -155,6 +155,8 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
 
+  virtual Teuchos::RCP<Tempus::TimeDerivative<Scalar>> getTimeDerivative(Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const override;
+
   /// \name Implementation of StepperOptimizationInterface
   //@{
     virtual int stencilLength() const override;
@@ -234,6 +236,16 @@ public:
     xDotDot = Teuchos::null;
     // Calculate the Backward Euler x dot vector
     Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xOld_);
+  }
+
+  virtual Scalar get_DxDot_Dx_old()
+  {
+    return -s_;
+  }
+
+  virtual Scalar get_DxDot_Dx_new()
+  {
+    return s_;
   }
 
   virtual void initialize(Scalar s,

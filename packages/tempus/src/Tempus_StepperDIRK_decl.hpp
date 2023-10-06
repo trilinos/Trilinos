@@ -240,6 +240,8 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
 
+  virtual Teuchos::RCP<Tempus::TimeDerivative<Scalar>> getTimeDerivative(Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const override;
+
   /// Set StepperDIRK member data from the ParameterList.
   virtual void setStepperDIRKValues(Teuchos::RCP<Teuchos::ParameterList> pl)
   {
@@ -319,6 +321,16 @@ public:
   {
     xDotDot = Teuchos::null;
     Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xTilde_);
+  }
+
+  virtual Scalar get_DxDot_Dx_old()
+  {
+    return s_;
+  }
+
+  virtual Scalar get_DxDot_Dx_new()
+  {
+    return -s_;
   }
 
   virtual void initialize(Scalar s,

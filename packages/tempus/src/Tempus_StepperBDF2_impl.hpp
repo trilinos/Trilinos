@@ -320,6 +320,15 @@ bool StepperBDF2<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
   return isValidSetup;
 }
 
+template<class Scalar>
+Teuchos::RCP<Tempus::TimeDerivative<Scalar>> StepperBDF2<Scalar>::getTimeDerivative(
+  Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error,
+          "Not yet implemented.");
+  return Teuchos::null;
+}
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>

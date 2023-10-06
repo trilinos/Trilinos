@@ -157,6 +157,17 @@ void StepperBackwardEuler<Scalar>::setInitialConditions(
 
 
 template<class Scalar>
+Teuchos::RCP<Tempus::TimeDerivative<Scalar>> StepperBackwardEuler<Scalar>::getTimeDerivative(
+  Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const
+{
+  Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
+    Teuchos::rcp(new StepperBackwardEulerTimeDerivative<Scalar>(
+      Scalar(1.0)/dt, x_old));
+
+  return timeDer;
+}
+
+template<class Scalar>
 void StepperBackwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {

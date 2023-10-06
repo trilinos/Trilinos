@@ -562,12 +562,6 @@ void MassSpringDamperModel::evalModelImpl(
   // Modify for time dependent (implicit time integration or eigensolves)
   if (Teuchos::nonnull(x_dot_in)) {
     // Velocity provided: Time dependent problem
-    double alpha = inArgs.get_alpha();
-    double beta = inArgs.get_beta();
-    if (alpha==0.0 && beta==0.0) {
-      std::cerr << "MockModelEval Warning: alpha=beta=0 -- setting beta=1\n";
-      beta = 1.0;
-    }
 
     if (f_out != Teuchos::null) {
       // f(x, x_dot) = f(x) - x_dot
@@ -577,6 +571,13 @@ void MassSpringDamperModel::evalModelImpl(
       }
     }
     if (W_out != Teuchos::null) {
+      double alpha = inArgs.get_alpha();
+      double beta = inArgs.get_beta();
+      if (alpha==0.0 && beta==0.0) {
+        std::cerr << "MockModelEval Warning: alpha=beta=0 -- setting beta=1\n";
+        beta = 1.0;
+      }
+
       // W(x, x_dot) = beta * W(x) - alpha * Id
       const Teuchos::RCP<Tpetra_CrsMatrix> W_out_crs =
         Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(W_out, true);

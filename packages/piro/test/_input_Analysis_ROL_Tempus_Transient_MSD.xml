@@ -195,8 +195,7 @@
         <Parameter name="Bound Constrained" type="bool" value="true" />
 
         <Parameter name="Full Space" type="bool" value="false" />
-        <Parameter name="Tempus Driver" type="bool" value="false" />
-        <Parameter name="Final time step response" type="bool" value="true" />
+        <Parameter name="Tempus Driver" type="bool" value="true" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
         <ParameterList name="ROL Options">

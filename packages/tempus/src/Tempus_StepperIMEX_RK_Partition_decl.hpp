@@ -436,6 +436,8 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
+  virtual Teuchos::RCP<Tempus::TimeDerivative<Scalar>> getTimeDerivative(Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const override;
+
   void evalImplicitModelExplicitly(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Y,
@@ -504,6 +506,16 @@ public:
     // xTilde = xOld + dt*(Sum_{j=1}^{i-1} a_ij x_dot_j)
     // xDotTilde = - (s*x_i - s*xTilde)
     Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xTilde_);
+  }
+
+  virtual Scalar get_DxDot_Dx_old()
+  {
+    return s_;
+  }
+
+  virtual Scalar get_DxDot_Dx_new()
+  {
+    return -s_;
   }
 
   virtual void initialize(Scalar s,

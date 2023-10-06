@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         if (mockModel=="MockModelEval_B_Tpetra" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient.xml") {
           continue;
         }
-        if (mockModel=="MassSpringDamperModel" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient_MSD.xml") {
+        if (mockModel=="MassSpringDamperModel" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient_MSD.xml" && inputFile != "input_Analysis_ROL_Tempus_Transient_MSD.xml" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient_Integrated_Response_MSD.xml") {
           continue;
         }
         if (mockModel=="MassSpringDamperModel" && appComm->getSize() > 1) {
