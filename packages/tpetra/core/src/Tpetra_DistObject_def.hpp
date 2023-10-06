@@ -802,7 +802,9 @@ namespace Tpetra {
     using Details::getDualViewCopyFromArrayView;
     using Details::ProfilingRegion;
     const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
-    const char funcName[] = commOnHost ? "Tpetra::DistObject::doTransfer[Host]" : "Tpetra::DistObject::doTransfer[Device]";
+    const char funcNameHost = "Tpetra::DistObject::doTransfer[Host]" 
+    const char funcNameDevice = "Tpetra::DistObject::doTransfer[Device]";
+    const char *funcName = commOnHost ? funcNameHost : funcNameDevice;
 
     ProfilingRegion region_doTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");
