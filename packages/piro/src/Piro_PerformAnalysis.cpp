@@ -50,7 +50,6 @@
 #include "Thyra_DetachedVectorView.hpp"
 
 #include "Piro_SteadyStateSolver.hpp"
-#include "Piro_TransientSolver.hpp"
 
 #ifdef HAVE_PIRO_NOX
 #include "Piro_NOXSolver.hpp"
@@ -76,6 +75,7 @@
 #endif
 
 #ifdef HAVE_PIRO_TEMPUS
+#include "Piro_TransientSolver.hpp"
 #include "Piro_TempusSolver.hpp"
 #ifdef HAVE_PIRO_ROL
 #include "Piro_ThyraProductME_TempusFinalObjective.hpp"
@@ -770,16 +770,14 @@ Piro::PerformROLTransientAnalysis(
     out = Teuchos::rcp(new Teuchos::oblackholestream());
 
 
-#ifdef HAVE_PIRO_ROL
+#if defined(HAVE_PIRO_ROL) && defined(HAVE_PIRO_TEMPUS)
 
   using std::string;
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double>> model, adjointModel;
   Teuchos::RCP<Piro::TransientSolver<double>> piroTSolver;
-
   auto rolParams = analysisParams.sublist("ROL");  
   int num_parameters = rolParams.get<int>("Number Of Parameters", 1);
 
-#ifdef HAVE_PIRO_TEMPUS
   auto piroTempusSolver = Teuchos::rcp_dynamic_cast<Piro::TempusSolver<double>>(Teuchos::rcpFromRef(piroModel));
   if(Teuchos::nonnull(piroTempusSolver)) {
     piroTSolver = Teuchos::rcp_dynamic_cast<Piro::TransientSolver<double>>(piroTempusSolver);
@@ -810,9 +808,7 @@ Piro::PerformROLTransientAnalysis(
       model = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroTempusSolver->getSubModel());
       adjointModel = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double>>(piroTempusSolver->getAdjointSubModel());
     }
-  } else
-#endif
-  {
+  } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
         std::endl << "Piro::PerformROLTransientAnalysis, ERROR: " <<
         "only Piro::TempusSolver is currently supported for piroModel"<<std::endl);
@@ -1048,7 +1044,7 @@ Piro::PerformROLTransientAnalysis(
   (void)p;
   out = Teuchos::VerboseObjectBase::getDefaultOStream();
   *out << "ERROR: Trilinos/Piro was not configured to include ROL analysis."
-       << "\nYou must enable ROL." << endl;
+       << "\nYou must enable ROL and Tempus." << endl;
   return 0;  // should not fail tests
 #endif
 }

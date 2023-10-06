@@ -18,29 +18,56 @@ IF (Piro_ENABLE_NOX)
     ADDED_TESTS_NAMES_OUT ThyraSolverTpetra_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    AnalysisDriverTempus
-    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
-    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
-    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
-    EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
-    SOURCES
-    Main_AnalysisDriver_Tempus.cpp
-    MockModelEval_A_Tpetra.cpp
-    MockModelEval_A_Tpetra.hpp
-    MockModelEval_B_Tpetra.cpp
-    MockModelEval_B_Tpetra.hpp
-    MockModelEval_B_Tpetra_2_parameters.cpp
-    MockModelEval_B_Tpetra_2_parameters.hpp
-    MatrixBased_LOWS.cpp
-    MatrixBased_LOWS.hpp
-    MassSpringDamperModel.cpp
-    MassSpringDamperModel.hpp
-    NUM_MPI_PROCS 1-4
-    ARGS -v
-    PASS_REGULAR_EXPRESSION "TEST PASSED"
-    ADDED_TESTS_NAMES_OUT AnalysisDriverTpetra_NAME 
-  )
+  IF (Piro_ENABLE_Tempus)
+    #IF (TPL_ENABLE_MPI)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        AnalysisDriverTempus_MSD
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        SOURCES
+        Main_AnalysisDriver_Tempus.cpp
+        MockModelEval_A_Tpetra.cpp
+        MockModelEval_A_Tpetra.hpp
+        MockModelEval_B_Tpetra.cpp
+        MockModelEval_B_Tpetra.hpp
+        MockModelEval_B_Tpetra_2_parameters.cpp
+        MockModelEval_B_Tpetra_2_parameters.hpp
+        MatrixBased_LOWS.cpp
+        MatrixBased_LOWS.hpp
+        MassSpringDamperModel.cpp
+        MassSpringDamperModel.hpp
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_ReducedSpace_Transient_MSD.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+        ADDED_TESTS_NAMES_OUT AnalysisDriverTempus_MSD_NAME 
+      )
+    #ENDIF()
+    #TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    #  AnalysisDriverTempus
+    #  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    #  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+    #  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+    #  EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+    #  SOURCES
+    #  Main_AnalysisDriver_Tempus.cpp
+    #  MockModelEval_A_Tpetra.cpp
+    #  MockModelEval_A_Tpetra.hpp
+    #  MockModelEval_B_Tpetra.cpp
+    #  MockModelEval_B_Tpetra.hpp
+    #  MockModelEval_B_Tpetra_2_parameters.cpp
+    #  MockModelEval_B_Tpetra_2_parameters.hpp
+    #  MatrixBased_LOWS.cpp
+    #  MatrixBased_LOWS.hpp
+    #  MassSpringDamperModel.cpp
+    #  MassSpringDamperModel.hpp
+    #  NUM_MPI_PROCS 1-4
+    #  ARGS -v
+    #  PASS_REGULAR_EXPRESSION "TEST PASSED"
+    #  ADDED_TESTS_NAMES_OUT AnalysisDriverTempus_NAME 
+    #)
+  ENDIF()
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     AnalysisDriverTpetra
