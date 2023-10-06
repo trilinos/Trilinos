@@ -670,7 +670,9 @@ ENDIF()
 
 IF(NOT MSVC)
   # Add libm linking for ceil, floor and such.
-  LIST(APPEND IMPORTEDLIBS m)
+  add_library(Zoltan::m INTERFACE IMPORTED)
+  set_property(TARGET Zoltan::m PROPERTY IMPORTED_LIBNAME "m")
+  LIST(APPEND IMPORTEDLIBS Zoltan::m)
 ENDIF()
 
 TRIBITS_ADD_LIBRARY(
