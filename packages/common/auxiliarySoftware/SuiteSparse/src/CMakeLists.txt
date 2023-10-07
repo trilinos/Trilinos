@@ -77,9 +77,7 @@ ENDIF()
 # LibM not available under MSVC.
 IF(NOT MSVC)
   # Add libm linking for ceil, floor and such.
-  add_library(SuiteSparse::m INTERFACE IMPORTED)
-  set_property(TARGET SuiteSparse::m PROPERTY IMPORTED_LIBNAME "m")
-  LIST(APPEND IMPORTEDLIBS SuiteSparse::m)
+  LIST(APPEND IMPORTEDLIBS m)
 ENDIF()
 
 TRIBITS_ADD_LIBRARY(
