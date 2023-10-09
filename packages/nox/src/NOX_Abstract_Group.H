@@ -176,7 +176,7 @@ namespace Abstract {
 
    */
    virtual void computeX(const NOX::Abstract::Group& grp,
-             const NOX::Abstract::Vector& d, double step) = 0;
+                         const NOX::Abstract::Vector& d, double step) = 0;
 
    //! Compute and store F(x).
    /*!
@@ -294,7 +294,7 @@ namespace Abstract {
    */
    virtual NOX::Abstract::Group::ReturnType
    applyJacobian(const NOX::Abstract::Vector& input,
-         NOX::Abstract::Vector& result) const;
+                 NOX::Abstract::Vector& result) const;
 
    //! Applies Jacobian-Transpose to the given input vector and puts the answer in the result.
 
@@ -313,7 +313,7 @@ namespace Abstract {
    */
    virtual NOX::Abstract::Group::ReturnType
    applyJacobianTranspose(const NOX::Abstract::Vector& input,
-              NOX::Abstract::Vector& result) const;
+                          NOX::Abstract::Vector& result) const;
 
    /*!
      \brief Applies the inverse of the Jacobian matrix to the given
@@ -345,8 +345,8 @@ namespace Abstract {
    */
    virtual NOX::Abstract::Group::ReturnType
    applyJacobianInverse(Teuchos::ParameterList& params,
-            const NOX::Abstract::Vector& input,
-            NOX::Abstract::Vector& result) const;
+                        const NOX::Abstract::Vector& input,
+                        NOX::Abstract::Vector& result) const;
 
    //! Apply right preconditiong to the given input vector
    /*!
@@ -384,9 +384,9 @@ namespace Abstract {
    */
    virtual NOX::Abstract::Group::ReturnType
    applyRightPreconditioning(bool useTranspose,
-                 Teuchos::ParameterList& params,
-                 const NOX::Abstract::Vector& input,
-                 NOX::Abstract::Vector& result) const;
+                             Teuchos::ParameterList& params,
+                             const NOX::Abstract::Vector& input,
+                             NOX::Abstract::Vector& result) const;
   //@}
 
    /** @name Block Jacobian operations.
@@ -404,7 +404,7 @@ namespace Abstract {
     */
    virtual NOX::Abstract::Group::ReturnType
    applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
-                NOX::Abstract::MultiVector& result) const;
+                            NOX::Abstract::MultiVector& result) const;
 
    //! applyJacobianTranspose for multiple right-hand sides
    /*!
@@ -414,7 +414,7 @@ namespace Abstract {
     */
    virtual NOX::Abstract::Group::ReturnType
    applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
-                     NOX::Abstract::MultiVector& result) const;
+                                     NOX::Abstract::MultiVector& result) const;
 
    //! applyJacobianInverse for multiple right-hand sides
    /*!
@@ -424,8 +424,8 @@ namespace Abstract {
     */
    virtual NOX::Abstract::Group::ReturnType
    applyJacobianInverseMultiVector(Teuchos::ParameterList& params,
-                   const NOX::Abstract::MultiVector& input,
-                   NOX::Abstract::MultiVector& result) const;
+                                   const NOX::Abstract::MultiVector& input,
+                                   NOX::Abstract::MultiVector& result) const;
 
    //! applyRightPreconditioning for multiple right-hand sides
    /*!
@@ -434,11 +434,10 @@ namespace Abstract {
     * block method is available.
     */
    virtual NOX::Abstract::Group::ReturnType
-   applyRightPreconditioningMultiVector(
-                    bool useTranspose,
-                    Teuchos::ParameterList& params,
-                    const NOX::Abstract::MultiVector& input,
-                    NOX::Abstract::MultiVector& result) const;
+   applyRightPreconditioningMultiVector(bool useTranspose,
+                                        Teuchos::ParameterList& params,
+                                        const NOX::Abstract::MultiVector& input,
+                                        NOX::Abstract::MultiVector& result) const;
 
    //@}
 
@@ -560,7 +559,21 @@ namespace Abstract {
 
   //@}
 
-private:
+   /** \brief Return an internally stored group from this group.
+
+       This is typically used to access sub-block Groups from a
+       bordered/blocked system Group. The returned sub-block group is
+       chosen by outer Group.
+    */
+   virtual Teuchos::RCP<NOX::Abstract::Group> getNestedGroup();
+
+   /** \brief Return an internally stored group from this group.
+
+       This is typically used to access sub-block Groups from a
+       bordered/blocked system Group. The returned sub-block group is
+       chosen by outer Group.
+    */
+   virtual Teuchos::RCP<const NOX::Abstract::Group> getNestedGroup() const;
 
 };
 } // namespace Abstract
