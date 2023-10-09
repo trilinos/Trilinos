@@ -56,7 +56,7 @@
 #  include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 #include <algorithm>
-#include <functional> // std::binary_function
+#include <functional> // std::__binary_function
 
 namespace Belos {
 
@@ -128,7 +128,7 @@ namespace Belos {
   /// yourself.
   template<class Scalar>
   class ReorthogonalizationCallback :
-    public std::binary_function<Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>,
+    public std::__binary_function<Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>,
                                 Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>,
                                 void>
   {
