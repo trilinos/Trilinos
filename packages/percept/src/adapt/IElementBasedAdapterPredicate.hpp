@@ -23,16 +23,13 @@
      * The Selector pattern as shown below is useful for selecting only entities that belong to particular
      *   mesh Parts, for example, or any other definition of Selector.
      *
-     * We follow the unary_function pattern to enable the structs to be used in STL algorithms that know about
-     *   unary_functions.
-     *
      * The following are a couple of examples of what refine and unrefine predicates might look like.
      *
      * Following these examples we show the prototype for the operations that are performed on these predicates.
      */
 
     // Example
-    struct IElementBasedAdapterPredicate : public std::__unary_function<const stk::mesh::Entity , int> {
+    struct IElementBasedAdapterPredicate {
       PerceptMesh& m_eMesh;
       stk::mesh::Selector * m_eb_selector;
       stk::mesh::FieldBase *m_field;
