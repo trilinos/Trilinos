@@ -62,31 +62,42 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getAppModel() const;
 
-    /// Set InArgs the wrapper ModelEvalutor.
-    virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
-    { wrapperImplicitInArgs_.setArgs(inArgs); }
-
     /// Get InArgs the wrapper ModelEvalutor.
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
     { return wrapperImplicitInArgs_; }
-
-    /// Set OutArgs the wrapper ModelEvalutor.
-    virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
-    { wrapperImplicitOutArgs_.setArgs(outArgs); }
 
     /// Get OutArgs the wrapper ModelEvalutor.
     virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
     { return wrapperImplicitOutArgs_; }
 
     /// Set parameters for application implicit ModelEvaluator solve.
-    virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
-      Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs,
-      EVALUATION_TYPE /* evaluationType */ = SOLVE_FOR_X)
+    void setForSolve(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
+      const Scalar time,
+      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y = Teuchos::null,
+      const int index = -1    /* index and y are for IMEX_RK_Partition */ )
     {
-      timeDer_ = timeDer;
+      timeDer_ = p->timeDer_;
+
+      typedef Thyra::ModelEvaluatorBase MEB;
+      MEB::InArgs<Scalar>  inArgs  = this->createInArgs();
+      MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
+      inArgs.set_x(x);
+      if ( y != Teuchos::null ) inArgs.set_p(index, y);
+      if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
+      if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
+      if (inArgs.supports(MEB::IN_ARG_step_size))
+        inArgs.set_step_size(p->timeStepSize_);
+      if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (p->alpha_);
+      if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (p->beta_);
+      if (inArgs.supports(MEB::IN_ARG_stage_number))
+        inArgs.set_stage_number(p->stageNumber_);
+
       wrapperImplicitInArgs_.setArgs(inArgs);
       wrapperImplicitOutArgs_.setArgs(outArgs);
+
       useImplicitModel_ = true;
     }
 

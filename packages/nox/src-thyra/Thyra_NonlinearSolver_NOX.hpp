@@ -200,6 +200,8 @@ private:
   bool updatePreconditioner_;
 
   RCP<NOX::Thyra::Group> user_defined_nox_group_;
+
+  bool use_base_point_;
 };
 
 

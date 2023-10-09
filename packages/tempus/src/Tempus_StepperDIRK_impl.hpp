@@ -47,7 +47,7 @@ void StepperDIRK<Scalar>::setup(
   this->setZeroInitialGuess(   zeroInitialGuess);
 
   this->setStageNumber(-1);
-  this->setErrorNorm(); 
+  this->setErrorNorm();
   this->setAppAction(stepperRKAppAction);
   this->setSolver(solver);
 
@@ -219,8 +219,8 @@ void StepperDIRK<Scalar>::takeStep(
         } else {
           // Calculate explicit stage
           typedef Thyra::ModelEvaluatorBase MEB;
-          MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
-          MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+          MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->createInArgs();
+          MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->createOutArgs();
           inArgs.set_x(xTilde_);
           if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
           if (inArgs.supports(MEB::IN_ARG_x_dot))
