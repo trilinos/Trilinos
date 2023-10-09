@@ -219,7 +219,6 @@
 
     template<class T, std::size_t N>
     struct my_fast_equal_to
-                                                           SubDimCell<T,N>, bool>
     {
       typedef SubDimCell<T,N> _Tp ;
       inline bool
