@@ -42,19 +42,16 @@
 //
 #ifndef BELOS_TEUCHOS_DENSE_MAT_TRAITS_HPP
 #define BELOS_TEUCHOS_DENSE_MAT_TRAITS_HPP
-//TODO This isn't really unique to epetra since we use arbitrary scalar type.
-// Should not be deprecated with epetra. Needed for backward compat.
-// Where should this file live? 
 
 /*! \file BelosTeuchosDenseAdapter.hpp
   \brief Full specialization of Belos::DenseMatTraits for Teuchos::SerialDenseMatrix
   with ordinal type int and arbitrary scalar type.
 */
 
-//#include "BelosConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-//#include "BelosDenseMatTraits.hpp" //Don't do this right now; circular inclusion with workaround.
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "BelosDenseMatTraits.hpp" 
 
 namespace Belos {
 
