@@ -25,14 +25,16 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" //TODO
-#include "Teuchos_SerialDenseVector.hpp" //TODO
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+
+#include <vector>
 
 /*!
   \class Belos::BlockGmresIter
@@ -271,8 +273,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   int numBlocks_;
 
   // Storage for QR factorization of the least squares system.
-  Teuchos::SerialDenseVector<int,ScalarType> beta, sn; //TODO: What about these??
-  Teuchos::SerialDenseVector<int,MagnitudeType> cs;
+  std::vector<ScalarType> beta, sn;
+  std::vector<MagnitudeType> cs;
 
   //
   // Current solver state
@@ -518,12 +520,14 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       std::cout << "Trying BLAS call." << std::endl;
       std::cout << " m is curDim_ is: " << curDim_ << std::endl;
       std::cout << " n is blockSize_ is: " << blockSize_ << std::endl;
+      std::cout << " stride for R is : " << DMT::GetStride(*R_) << std::endl;
+      std::cout << " stride for y is : " << DMT::GetStride(*y) << std::endl;
       //TODO: Need any syncing here for KK verison?
       blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
                  DMT::GetRawHostPtr(*R_), DMT::GetStride(*R_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
       std::cout << "Finished BLAS call." << std::endl;
-      DMT::SyncHostToDevice(*R_);
+      DMT::SyncHostToDevice(*R_);  // Why sync this when the result is in y? Shouldn't y be sync'ed before update is computed? 
       //Not needed. y dies after this function. DMT::SyncHostToDevice(*y);
 
       //
@@ -558,7 +562,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       for (int j=0; j<blockSize_; j++) {
         (*norms)[j] = blas.NRM2( blockSize_, &DMT::Value(*z_,curDim_, j), 1);
       }
-      DMT::SyncHostToDevice(*z_);
+      DMT::SyncHostToDevice(*z_);  // Why?  Nothing in z changed?
     }
     return Teuchos::null;
   }

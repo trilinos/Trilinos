@@ -102,7 +102,6 @@ private:
   typedef Teuchos::ScalarTraits<MagnitudeType> SMT;
   typedef OrthoManagerFactory<ScalarType, MV, OP> ortho_factory_type;
   typedef Teuchos::SerialDenseMatrix<int,ScalarType> SDM;
-  typedef Teuchos::SerialDenseVector<int,ScalarType> SDV;
 
 public:
   //! @name Constructors/Destructor
