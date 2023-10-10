@@ -18,6 +18,8 @@
 
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
+#include "BelosDenseMatTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "BelosLSQRIteration.hpp"
 #include "BelosLSQRIter.hpp"
