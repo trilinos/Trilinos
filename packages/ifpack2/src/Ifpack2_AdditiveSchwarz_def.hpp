@@ -1333,7 +1333,7 @@ describe (Teuchos::FancyOStream& out,
     else {
       if (vl < Teuchos::VERB_EXTREME) {
         if (myRank == 0) {
-          auto ifpack2_inverse = rcp_dynamic_cast< Ifpack2::Details::LinearSolver<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (Inverse_);
+          auto ifpack2_inverse = Teuchos::rcp_dynamic_cast< Ifpack2::Details::LinearSolver<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (Inverse_);
           if(ifpack2_inverse.is_null()) 
             out << "Subdomain solver: not null" << endl;
           else {
