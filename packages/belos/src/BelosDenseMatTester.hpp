@@ -54,7 +54,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SetScientific.hpp"//TODO is this needed?
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Belos {
 
@@ -74,7 +73,7 @@ namespace Belos {
   ///   multivector to clone.)
   ///
   /// \return Test result: true if all tests passed, else false.
-  template< class ScalarType, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template< class ScalarType, class DM > 
   bool
   TestDenseMatTraits (const Teuchos::RCP<OutputManager<ScalarType> > &om)
   {
@@ -83,7 +82,6 @@ namespace Belos {
     using std::endl;
     typedef DenseMatTraits<ScalarType, DM>    DMT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
-    typedef typename STS::magnitudeType       MagType;
 
     // Make sure that all floating-point numbers are printed with the
     // right precision.
@@ -92,7 +90,6 @@ namespace Belos {
     // Arbitrary tolerance in case
     // norms are not computed deterministically (which is possible
     // even with MPI only, and more likely with threads).
-    //TODO used?? const MagType tol = Teuchos::as<MagType> (100) * STS::eps ();
 
     /* Dense Traits Contract:
         
@@ -108,7 +105,6 @@ namespace Belos {
 
     //TODO const ScalarType one      = STS::one();
     const ScalarType zero     = STS::zero();
-    //TODO const MagType    zero_mag = Teuchos::ScalarTraits<MagType>::zero();
 
     /*********** Basic Functions: *****************************************
        Verify:
@@ -168,8 +164,7 @@ namespace Belos {
       DMT::SyncDeviceToHost(*dm2);
       if( DMT::ValueConst(*dm2,0,0) != (ScalarType)47.2){
         om->stream(Warnings)
-          << "*** ERROR *** DenseMatTraits::" << endl
-          << "PutScalar failed at line 171" << endl
+          << "*** ERROR *** DenseMatTraits::PutScalar " << endl
           << "Value at dm2 0,0 is: " << DMT::ValueConst(*dm2,0,0) << endl;
         return false;
       }
@@ -182,12 +177,14 @@ namespace Belos {
         return false;
       }
       
-      //Try calling const version? TODO need to check const-ness??
-      const ScalarType constval = DMT::ValueConst(*dm1,1,1);
-      
       //get stride
       int stride = DMT::GetStride(*dm2);
-      std::cout << "Stride is: " << stride << std::endl;
+      if (stride != numrows) {
+        om->stream(Warnings)
+          << "*** ERROR *** DenseMatTraits::" << endl
+          << "Stride failed" << endl;
+        return false;
+      }
 
       //randomize and add
       DMT::Randomize(*dm2);
@@ -306,9 +303,9 @@ namespace Belos {
         return false;
       }
 
-      ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
+      //ScalarType * testPtr = DMT::GetRawHostPtr(*dm2);
       //DMT::RawPtrDataModified(*dm2);
-      ScalarType const * testPtr2 = DMT::GetConstRawHostPtr(*dm2);
+      //ScalarType const * testPtr2 = DMT::GetConstRawHostPtr(*dm2);
       //TODO: Test handing this to lapack function? 
       //TODO: Should something err if view is modified on device and 
       //try to access on host without sync? 
