@@ -27,7 +27,9 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR

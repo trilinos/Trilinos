@@ -29,6 +29,7 @@
 #include "BelosDenseMatTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 

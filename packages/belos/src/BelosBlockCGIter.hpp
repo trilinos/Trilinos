@@ -27,7 +27,6 @@
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialSymDenseMatrix.hpp"
 #include "Teuchos_SerialSpdDenseSolver.hpp"
 #include "Teuchos_ScalarTraits.hpp"

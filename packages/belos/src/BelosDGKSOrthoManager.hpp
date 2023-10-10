@@ -27,6 +27,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
 
 #include "Teuchos_as.hpp"

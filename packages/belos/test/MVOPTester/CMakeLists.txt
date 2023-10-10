@@ -24,3 +24,11 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   ENDIF(Teuchos_ENABLE_COMPLEX)
 
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TeuchosSDMTester
+  SOURCES cxx_main_dense.cpp
+  ARGS "-v"
+  COMM serial 
+  STANDARD_PASS_OUTPUT
+)

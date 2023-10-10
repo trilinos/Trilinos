@@ -37,6 +37,7 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_SerialDenseMatrix.hpp" 
 #include "Teuchos_ScalarTraits.hpp"
@@ -398,18 +399,18 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
     beta1_ = DMT::Create(1,1);
     MVT::MvTransMv( one, *newstate.Y, *Y_, *beta1_ );
 
-    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(DMT::Value(*beta1_,0,0)) < m_zero,
+    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(DMT::ValueConst(*beta1_,0,0)) < m_zero,
                         std::invalid_argument,
                         "The preconditioner is not positive definite." );
 
-    if( SCT::magnitude(DMT::Value(*beta1_,0,0)) == m_zero )
+    if( SCT::magnitude(DMT::ValueConst(*beta1_,0,0)) == m_zero )
     {
         // X = 0
         Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
         MVT::MvInit( *cur_soln_vec );
     }
 
-    DMT::Value(*beta1_,0,0) = SCT::squareroot( DMT::Value(*beta1_,0,0) );
+    DMT::Value(*beta1_,0,0) = SCT::squareroot( DMT::ValueConst(*beta1_,0,0) );
 
     // The solver is initialized
     initialized_ = true;
@@ -438,7 +439,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
     Teuchos::RCP<DM> beta = DMT::Create(1,1); 
     DMT::Assign(*beta,*beta1_); //TODO Should we make a DMT copy constructor as with old version below?
     //Teuchos::SerialDenseMatrix<int,ScalarType> beta( beta1_ );
-    phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( DMT::Value(*beta1_,0,0) );
+    phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( DMT::ValueConst(*beta1_,0,0) );
 
     // Initialize a few variables.
     ScalarType oldBeta = zero;
@@ -476,19 +477,19 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
 
       // Normalize previous vector.
       //   v = y / beta(0,0);
-      MVT::MvAddMv (one / DMT::Value(*beta,0,0), *Y_, zero, *Y_, *V);
+      MVT::MvAddMv (one / DMT::ValueConst(*beta,0,0), *Y_, zero, *Y_, *V);
 
       // Apply operator.
       lp_->applyOp (*V, *Y_);
 
       if (iter_ > 1)
-        MVT::MvAddMv (one, *Y_, -DMT::Value(*beta,0,0)/oldBeta, *R1_, *Y_);
+        MVT::MvAddMv (one, *Y_, -DMT::ValueConst(*beta,0,0)/oldBeta, *R1_, *Y_);
 
       // alpha := dot(V, Y_)
       MVT::MvTransMv (one, *V, *Y_, *alpha);
 
       // y := y - alpha/beta r2
-      MVT::MvAddMv (one, *Y_, -DMT::Value(*alpha,0,0)/DMT::Value(*beta,0,0), *R2_, *Y_);
+      MVT::MvAddMv (one, *Y_, -DMT::ValueConst(*alpha,0,0)/DMT::ValueConst(*beta,0,0), *R2_, *Y_);
 
       // r1 = r2;
       // r2 = y;
@@ -513,7 +514,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
       }
 
       // Get new beta.
-      oldBeta = DMT::Value(*beta,0,0);
+      oldBeta = DMT::ValueConst(*beta,0,0);
       MVT::MvTransMv( one, *R2_, *Y_, *beta );
 
       // Intercept beta <= 0.
@@ -526,12 +527,12 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
       // algebra library to compute a posteriori rounding error bounds
       // for the inner product, and then changing
       // Belos::MultiVecTraits to make this information available).
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(DMT::Value(*beta,0,0)) < m_zero,
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(DMT::ValueConst(*beta,0,0)) < m_zero,
                           MinresIterateFailure,
                           "Belos::MinresIter::iterate(): Encountered negative "
-			  "value " << DMT::Value(*beta,0,0) << " for r2^H*M*r2 at itera"
+			  "value " << DMT::ValueConst(*beta,0,0) << " for r2^H*M*r2 at itera"
 			  "tion " << iter_ << ": MINRES cannot continue." );
-      DMT::Value(*beta,0,0) = SCT::squareroot( DMT::Value(*beta,0,0) );
+      DMT::Value(*beta,0,0) = SCT::squareroot( DMT::ValueConst(*beta,0,0) );
 
       // Apply previous rotation Q_{k-1} to get
       //
@@ -539,13 +540,13 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
       //    [gbar_k  dbar_{k+1} ]   [-sn cs][alpha_k beta_{k+1}].
       //
       oldeps = epsln;
-      delta  = cs*dbar + sn*DMT::Value(*alpha,0,0);
-      gbar   = sn*dbar - cs*DMT::Value(*alpha,0,0);
-      epsln  =           sn*DMT::Value(*beta,0,0);
-      dbar   =         - cs*DMT::Value(*beta,0,0);
+      delta  = cs*dbar + sn*DMT::ValueConst(*alpha,0,0);
+      gbar   = sn*dbar - cs*DMT::ValueConst(*alpha,0,0);
+      epsln  =           sn*DMT::ValueConst(*beta,0,0);
+      dbar   =         - cs*DMT::ValueConst(*beta,0,0);
 
       // Compute the next plane rotation Q_k.
-      this->symOrtho(gbar, DMT::Value(*beta,0,0), &cs, &sn, &gamma);
+      this->symOrtho(gbar, DMT::ValueConst(*beta,0,0), &cs, &sn, &gamma);
 
       phi    = cs * phibar_; // phi_k
       phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( sn * phibar_ ); // phibar_{k+1}
