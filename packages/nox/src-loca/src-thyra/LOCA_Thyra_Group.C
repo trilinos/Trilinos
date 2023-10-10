@@ -66,7 +66,8 @@ LOCA::Thyra::Group::Group(
         const LOCA::ParameterVector& p,
         int p_index,
         bool impl_dfdp,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector) :
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
+        const bool set_transient_in_args) :
   NOX::Thyra::Group(initial_guess, model, weight_vector),
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
@@ -75,7 +76,8 @@ LOCA::Thyra::Group::Group(
   saveDataStrategy(),
   implement_dfdp(impl_dfdp),
   weight_vec_(weight_vector),
-  paramsInSeparatePVecs(false)
+  paramsInSeparatePVecs(false),
+  set_transient_in_args_(set_transient_in_args)
 {
   updateThyraParamView();
   updateThyraXDot();
@@ -87,7 +89,8 @@ LOCA::Thyra::Group::Group(
         const LOCA::ParameterVector& p,
         const std::vector<int>& p_index,
         bool impl_dfdp,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector) :
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
+        const bool set_transient_in_args) :
   NOX::Thyra::Group(nox_group, NOX::DeepCopy),
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
@@ -96,7 +99,8 @@ LOCA::Thyra::Group::Group(
   saveDataStrategy(),
   implement_dfdp(impl_dfdp),
   weight_vec_(weight_vector),
-  paramsInSeparatePVecs(true)
+  paramsInSeparatePVecs(true),
+  set_transient_in_args_(set_transient_in_args)
 {
   updateThyraParamView();
   updateThyraXDot();
@@ -111,7 +115,8 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   param_index(source.param_index),
   saveDataStrategy(source.saveDataStrategy),
   implement_dfdp(source.implement_dfdp),
-  paramsInSeparatePVecs(source.paramsInSeparatePVecs)
+  paramsInSeparatePVecs(source.paramsInSeparatePVecs),
+  set_transient_in_args_(source.set_transient_in_args_)
 {
   updateThyraParamView();
   updateThyraXDot();
@@ -132,6 +137,7 @@ LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
     saveDataStrategy = source.saveDataStrategy;
     implement_dfdp = source.implement_dfdp;
     paramsInSeparatePVecs = source.paramsInSeparatePVecs;
+    set_transient_in_args_ = source.set_transient_in_args_;
     updateThyraParamView();
   }
   return *this;
@@ -170,7 +176,7 @@ LOCA::Thyra::Group::computeF()
     in_args = this->base_point_;
 
   in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot) && set_transient_in_args_)
     in_args.set_x_dot(x_dot_vec);
   for (size_t i=0; i < param_index.size(); ++i)
     in_args.set_p(param_index[i], param_thyra_vec[i]);
@@ -201,12 +207,14 @@ LOCA::Thyra::Group::computeJacobian()
     in_args = this->base_point_;
 
   in_args.set_x(x_vec_->getThyraRCPVector());
-  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
-    in_args.set_x_dot(x_dot_vec);
-  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
-    in_args.set_alpha(0.0);
-  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
-    in_args.set_beta(1.0);
+  if (set_transient_in_args_) {
+    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+      in_args.set_x_dot(x_dot_vec);
+    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
+      in_args.set_alpha(0.0);
+    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
+      in_args.set_beta(1.0);
+  }
   for (size_t i=0; i < param_index.size(); ++i)
     in_args.set_p(param_index[i], param_thyra_vec[i]);
   out_args.set_W_op(lop_);
@@ -316,7 +324,7 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
   ::Thyra::ModelEvaluatorBase::Derivative<double> deriv(dmv);
 
   in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot) && set_transient_in_args_)
     in_args.set_x_dot(x_dot_vec);
   for (size_t i=0; i < param_index.size(); ++i)
     in_args.set_p(param_index[i], param_thyra_vec[i]);
@@ -366,7 +374,7 @@ LOCA::Thyra::Group::postProcessContinuationStep(
       in_args = this->base_point_;
 
     in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot) && set_transient_in_args_)
       in_args.set_x_dot(x_dot_vec);
     for (size_t i=0; i < param_index.size(); ++i)
       in_args.set_p(param_index[i], param_thyra_vec[i]);
@@ -440,6 +448,8 @@ LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
     in_args = this->base_point_;
 
   in_args.set_x(x_vec_->getThyraRCPVector());
+  // Don't use the set_transient_in_args_ flag here. Shifted Matrix
+  // need special flags.
   if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
     in_args.set_x_dot(x_dot_vec);
   for (size_t i=0; i < param_index.size(); ++i)
