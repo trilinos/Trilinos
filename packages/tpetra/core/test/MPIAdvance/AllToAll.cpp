@@ -75,7 +75,7 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
   int recvcount = 0;
 
   char stackByte0, stackByte1;
-  void *sbuf, *rbuf;
+void *sbuf, *rbuf;
   if (nullBufs) {
     sbuf = nullptr;
     rbuf = nullptr;

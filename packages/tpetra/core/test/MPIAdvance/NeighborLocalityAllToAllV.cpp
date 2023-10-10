@@ -257,7 +257,7 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   auto exp_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), exp);
   auto act_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), act);
   TEST_ASSERT(exp_h.size() == act_h.size());
-  for (int i = 0; i < exp_h.size(); ++i) {
+  for (size_t i = 0; i < exp_h.size(); ++i) {
     TEST_ASSERT(exp_h(i) == act_h(i));
   }
 }
