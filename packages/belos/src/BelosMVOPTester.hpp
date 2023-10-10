@@ -62,7 +62,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SetScientific.hpp"
-//#include "Teuchos_SerialDenseHelpers.hpp"//TODO Remove? 
 
 // Used in RandomSyncedMpiMatrix
 #include "Teuchos_CommHelpers.hpp"
@@ -126,7 +125,7 @@ namespace Belos {
   ///   multivector to clone.)
   ///
   /// \return Test result: true if all tests passed, else false.
-  template< class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  template< class ScalarType, class MV, class DM >
   bool
   TestMultiVecTraits (const Teuchos::RCP<OutputManager<ScalarType> > &om,
                       const Teuchos::RCP<const MV> &A)
@@ -903,12 +902,12 @@ namespace Belos {
       // with equality only when a and b are colinear
       for (int i=0; i<p; i++) {
         for (int j=0; j<q; j++) {
-          if (   STS::magnitude(DMT::Value(*SDM,i,j))
+          if (   STS::magnitude(DMT::ValueConst(*SDM,i,j))
                > STS::magnitude(normsB[i]*normsC[j]) ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
               << "Triangle inequality did not hold: "
-              << STS::magnitude(DMT::Value(*SDM,i,j))
+              << STS::magnitude(DMT::ValueConst(*SDM,i,j))
               << " > "
               << STS::magnitude(normsB[i]*normsC[j])
               << endl;
@@ -922,7 +921,7 @@ namespace Belos {
       DMT::SyncDeviceToHost(*SDM);
       for (int i=0; i<p; i++) {
         for (int j=0; j<q; j++) {
-          if ( DMT::Value(*SDM,i,j) != zero ) {
+          if ( DMT::ValueConst(*SDM,i,j) != zero ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
               << "Inner products not zero for C==0." << endl;
@@ -936,7 +935,7 @@ namespace Belos {
       DMT::SyncDeviceToHost(*SDM);
       for (int i=0; i<p; i++) {
         for (int j=0; j<q; j++) {
-          if ( DMT::Value(*SDM,i,j) != zero ) {
+          if ( DMT::ValueConst(*SDM,i,j) != zero ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
               << "Inner products not zero for B==0." << endl;
@@ -1026,8 +1025,8 @@ namespace Belos {
       Teuchos::RCP<DM> Beta = DMT::Create(1,1);
       RandomSyncedMpiMatrix<ScalarType,DM>(*Alpha);
       RandomSyncedMpiMatrix<ScalarType,DM>(*Beta);
-      ScalarType alpha = DMT::Value(*Alpha,0,0),
-                 beta = DMT::Value(*Beta,0,0);
+      ScalarType alpha = DMT::ValueConst(*Alpha,0,0),
+                 beta = DMT::ValueConst(*Beta,0,0);
 
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,p);
