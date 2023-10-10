@@ -27,10 +27,11 @@
 
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+
+#include <vector>
 
 /*!
   \class Belos::BlockFGmresIter
@@ -259,8 +260,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   int numBlocks_;
 
   // Storage for QR factorization of the least squares system.
-  Teuchos::SerialDenseVector<int,ScalarType> beta, sn;
-  Teuchos::SerialDenseVector<int,MagnitudeType> cs;
+  std::vector<ScalarType> beta, sn;
+  std::vector<MagnitudeType> cs;
 
   //
   // Current solver state

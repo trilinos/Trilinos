@@ -51,7 +51,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Belos {
 
@@ -181,7 +180,7 @@ View(const pointer_type &ptr, const IntType&... indices)
      *        the matrix will be maintained. For new entries that did not exist in the previous matrix, values will
      *        contain noise from memory. 
     */
-    static void Reshape( DM& dm, const int numrows, const int numcols, bool initZero = false)
+    static void Reshape( DM& dm, const int numrows, const int numcols, bool initZero = true)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }     
 
     //@}
@@ -196,21 +195,12 @@ View(const pointer_type &ptr, const IntType&... indices)
     static const ScalarType & ValueConst( const DM& dm, const int i, const int j ) 
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
     
-    //TODO: Check formatting of ALL doxygen comments!
-    //
-    //! \brief If an accelorator is in use, sync it to device on this call.
-    //  
-    //  \note The only Belos function that results in a need to sync to 
-    //  host is MvTransMv. You MUST call SyncDeviceToHost before calling
-    //  any other DenseMatTraits functions after a call to MvTransMv. 
-    //  All DenseMatTraits functions assume the necessary data is on host
-    //  and perform computations only on the host. 
-    //
     static void SyncDeviceToHost(DM & dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
     static void SyncHostToDevice(DM & dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
     //@}
     //@{ \name Operator methods
     
@@ -246,13 +236,5 @@ View(const pointer_type &ptr, const IntType&... indices)
   };
 
 } // namespace Belos
-// This is included for backwards compatibility
-// for all codes using the default template parameter
-// DM = Teuchos::SerialDenseMatrix<int,ScalarType>
-// TODO: This is a workaround. Needs to be included after
-// defintiion of BelosDenseMatTraits to avoid compile issues.
-// Fix this later.
-#include "BelosTeuchosDenseAdapter.hpp"
-
 
 #endif // end file BELOS_DENSE_MAT_TRAITS_HPP
