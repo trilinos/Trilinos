@@ -45,7 +45,7 @@
       SDC_DATA_SPACING
     };
 
-    typedef stk::mesh::Entity SDCEntityType;
+    using SDCEntityType = stk::mesh::Entity;
 
     class MyEntityLess {
     public:
@@ -105,7 +105,8 @@
     {
     public:
 
-      typedef  percept::NoMallocArray<T, N> sdc_type;
+      template<class T, std::size_t N=4>
+      using sdc_type = percept::NoMallocArray<T, N>;
 
       percept::PerceptMesh* m_eMesh;
       MySDCHashCode(percept::PerceptMesh* eMesh=0) : m_eMesh(eMesh) {}
@@ -138,7 +139,8 @@
     class MySubDimCell : public SubDimCell<T, N, CompareClass, HC>
     {
     public:
-      typedef SubDimCell<T, N, CompareClass, HC> base_type;
+      template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T>, class HC = MySDCHashCode<T, N> >
+      using base_type = SubDimCell<T, N, CompareClass, HC>; 
 
       percept::PerceptMesh* m_eMesh;
       MySubDimCell(percept::PerceptMesh* eMesh) : base_type(), m_eMesh(eMesh) {
@@ -162,7 +164,7 @@
     template<>
     struct my_fast_hash<SDCEntityType, 2>
     {
-      typedef MySubDimCell<SDCEntityType, 2, CompareSDCEntityType> _Tp ;
+      using _Tp = MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -176,7 +178,7 @@
     template<>
     struct my_fast_hash<SDCEntityType, 4>
     {
-      typedef MySubDimCell<SDCEntityType, 4, CompareSDCEntityType> _Tp ;
+      using _Tp =  MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -190,7 +192,7 @@
     template<>
     struct my_fast_equal_to<SDCEntityType, 2>     
     {
-      typedef MySubDimCell<SDCEntityType, 2, CompareSDCEntityType> _Tp ;
+      using _Tp = MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>;
       inline bool
       operator()(const _Tp& x, const _Tp& y) const
       {
@@ -210,7 +212,7 @@
     template<>
     struct my_fast_equal_to<SDCEntityType, 4> 
     {
-      typedef MySubDimCell<SDCEntityType, 4, CompareSDCEntityType> _Tp ;
+      using _Tp =  MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>;
       inline bool
       operator()(const _Tp& x, const _Tp& y) const
       {

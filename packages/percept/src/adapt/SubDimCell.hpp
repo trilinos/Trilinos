@@ -30,7 +30,9 @@
     class SDCHashCode
     {
     public:
-      typedef percept::NoMallocArray<T,N> base_type;
+      template<class T, std::size_t N=4>
+      using base_type = percept::NoMallocArray<T,N>;
+
       int operator()(base_type& sdc);
     };
 
@@ -43,10 +45,14 @@
     public:
       HC m_HashCode;
       CompareClass m_CompareClass;
-      typedef percept::NoMallocArray<T,N> base_type;
-      typedef std::size_t    size_type;
 
-      typedef SubDimCell<T,N,CompareClass,HC> VAL;
+      template<class T, std::size_t N=4>
+      using based_type = percept::NoMallocArray<T,N>;
+
+      using size_type = std::size_t; 
+
+      template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T>, class HC = SDCHashCode<T,N>  >
+      using VAL = SubDimCell<T,N,CompareClass,HC>;
 
       //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
       SubDimCell() : base_type(), m_hash(0u), m_HashCode(), m_CompareClass() {}
@@ -159,7 +165,8 @@
     template<class T, std::size_t N>
     struct my_hash
     {
-      typedef SubDimCell<T,N> _Tp ;
+      template<class T, std::size_t N>
+      using _Tp = SubDimCell<T,N>;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -186,7 +193,8 @@
     template<class T, std::size_t N>
     struct my_fast_hash
     {
-      typedef SubDimCell<T,N> _Tp ;
+      template<class T, std::size_t N>
+      using _TP = SubDimCell<T,N>;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -199,7 +207,9 @@
     template<class T, std::size_t N>
     struct my_equal_to
     {
-      typedef SubDimCell<T,N> _Tp ;
+      template<class T, std::size_t N>
+      using _Tp = SubDimCell<T,N>;
+
       bool
       operator()(const _Tp& x, const _Tp& y) const
       {
@@ -220,7 +230,9 @@
     template<class T, std::size_t N>
     struct my_fast_equal_to
     {
-      typedef SubDimCell<T,N> _Tp ;
+      template<class T, std::size_t N>
+      using _Tp = SubDimCell<T,N>;
+
       inline bool
       operator()(const _Tp& x, const _Tp& y) const
       {
