@@ -52,6 +52,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 
 #include "Kokkos_Random.hpp"
 #include "Kokkos_ArithTraits.hpp"
@@ -189,7 +190,7 @@ namespace Belos {
       // (This is the distance between two elts in same col, different rows.)
       // Lapack wants stride_1, the distance from one col to the next col if we stay
       // in the same row. 
-      int strides[2];
+      int strides[8]; // There are 8 possible strides and all will be returned
       dm.stride(strides);
       return strides[1]; 
       //return dm.stride_1();  //This shortcut doesn't work for dualView.
