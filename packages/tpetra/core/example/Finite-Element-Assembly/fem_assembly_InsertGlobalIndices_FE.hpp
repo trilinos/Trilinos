@@ -487,7 +487,6 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   auto localColMap  = fe_matrix->getColMap()->getLocalMap();
  
   // no worksetting in this example
-  pair_type alln = pair_type(0,nodesPerElem);
   scalar_2d_array_type all_element_matrix("all_element_matrix",nodesPerElem*numOwnedElements);
   scalar_1d_array_type all_element_rhs("all_element_rhs",nodesPerElem*numOwnedElements);
   local_ordinal_single_view_type  all_lcids("all_lids",nodesPerElem*numOwnedElements);
@@ -512,9 +511,9 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         const pair_type location_pair (nodesPerElem*element_idx, nodesPerElem*(element_idx+1));
 
         // Get the contributions for the current element
-        auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
+        auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged, location_pair, Kokkos::ALL);
         ReferenceQuad4(element_matrix);
-        auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged,location_pair);
+        auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged, location_pair);
         ReferenceQuad4RHS(element_rhs);
 
         // Get the local column ids array for this element
