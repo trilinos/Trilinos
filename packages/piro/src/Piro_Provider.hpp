@@ -82,7 +82,7 @@ ProviderImpl<T, Functor>::getInstance(const Teuchos::RCP<Teuchos::ParameterList>
 }
 
 template <typename T>
-struct ProviderFunctorBase :
+struct ProviderFunctorBase:
   public std::__unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {};
 
 

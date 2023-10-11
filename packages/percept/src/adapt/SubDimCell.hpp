@@ -207,7 +207,6 @@
     template<class T, std::size_t N>
     struct my_equal_to
     {
-      template<class T, std::size_t N>
       using _Tp = SubDimCell<T,N>;
 
       bool
