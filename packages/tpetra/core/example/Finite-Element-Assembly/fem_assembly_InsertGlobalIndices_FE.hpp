@@ -472,7 +472,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
 
   // Because we're processing elements in parallel, we need storage for all of them
   int numOwnedElements = mesh.getNumOwnedElements();
-  int nperel = mesh.getOwnedElementToNode().extent(1);
+  const int nodesPerElem = mesh.getOwnedElementToNode().extent(1);
 
   RCP<fe_matrix_type> fe_matrix = rcp(new fe_matrix_type(fe_graph));
   RCP<fe_multivector_type> rhs =
@@ -484,10 +484,10 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   auto localColMap  = fe_matrix->getColMap()->getLocalMap();
  
   // no worksetting in this example
-  pair_type alln = pair_type(0,nperel);
-  scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*numOwnedElements);
-  scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*numOwnedElements);
-  local_ordinal_single_view_type  all_lcids("all_lids",nperel*numOwnedElements);
+  pair_type alln = pair_type(0,nodesPerElem);
+  scalar_2d_array_type all_element_matrix("all_element_matrix",nodesPerElem*numOwnedElements);
+  scalar_1d_array_type all_element_rhs("all_element_rhs",nodesPerElem*numOwnedElements);
+  local_ordinal_single_view_type  all_lcids("all_lids",nodesPerElem*numOwnedElements);
 
   timerElementLoopMemory=Teuchos::null;
   {
@@ -506,7 +506,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       ("Assemble FE matrix and right-hand side",
        Kokkos::RangePolicy<execution_space, int> (0, numOwnedElements),
        KOKKOS_LAMBDA (const size_t element_idx) {
-        const pair_type location_pair (nperel*element_idx, nperel*(element_idx+1));
+        const pair_type location_pair (nodesPerElem*element_idx, nodesPerElem*(element_idx+1));
 
         // Get the contributions for the current element
         auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
@@ -516,7 +516,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
 
         // Get the local column ids array for this element
         auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
-        for (int element_node_idx = 0; element_node_idx < nperel;
+        for (int element_node_idx = 0; element_node_idx < nodesPerElem;
              ++element_node_idx) {
           element_lcids(element_node_idx) =
             localColMap.getLocalElement (owned_element_to_node_ids (element_idx, element_node_idx));
@@ -525,12 +525,13 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         // For each node (row) on the current element:
         // - populate the values array
         // - add the values to the fe_matrix.
-        for (int element_node_idx = 0; element_node_idx < nperel; ++element_node_idx) {
+        for (int element_node_idx = 0; element_node_idx < nodesPerElem; ++element_node_idx) {
           const local_ordinal_type local_row_id =
             localMap.getLocalElement (owned_element_to_node_ids (element_idx, element_node_idx));
 
-          // Force atomics on sums
-          for (int col_idx = 0; col_idx < nperel; ++col_idx) {
+          // Atomically contribute for sums: parallel elements may be contributing
+          // to the same node at the same time
+          for (int col_idx = 0; col_idx < nodesPerElem; ++col_idx) {
             localMatrix.sumIntoValues (local_row_id, &element_lcids(col_idx), 1,
                                        &(element_matrix(element_node_idx,col_idx)),
                                        true, true);
