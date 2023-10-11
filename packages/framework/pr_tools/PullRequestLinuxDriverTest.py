@@ -123,6 +123,13 @@ def parse_args():
                           help="Path to the build directory.",
                           required=False)
 
+    optional.add_argument('--use-explicit-cachefile',
+                          dest='use_explicit_cachefile',
+                          action='store_true',
+                          default=False,
+                          help="Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.",
+                          required=False)
+
     optional.add_argument('--ctest-driver',
                           dest="ctest_driver",
                           action='store',

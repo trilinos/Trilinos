@@ -1137,8 +1137,14 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // We've already called checkSizes(), so this cast must succeed.
+    MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
+    const bool copyOnHost = runKernelOnHost(sourceMV);
+    const char longFuncNameHost[] = "Tpetra::MultiVector::copyAndPermute[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::copyAndPermute[Device]";
     const char tfecfFuncName[] = "copyAndPermute: ";
-    ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
+    ProfilingRegion regionCAP (copyOnHost ? longFuncNameHost : longFuncNameDevice);
 
     const bool verbose = Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
@@ -1158,9 +1164,6 @@ namespace Tpetra {
        std::logic_error, "permuteToLIDs.extent(0) = "
        << permuteToLIDs.extent (0) << " != permuteFromLIDs.extent(0) = "
        << permuteFromLIDs.extent (0) << ".");
-
-    // We've already called checkSizes(), so this cast must succeed.
-    MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
     const size_t numCols = this->getNumVectors ();
 
     // sourceMV doesn't belong to us, so we can't sync it.  Do the
@@ -1169,7 +1172,6 @@ namespace Tpetra {
       (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
-    const bool copyOnHost = runKernelOnHost(sourceMV);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "copyOnHost=" << (copyOnHost ? "true" : "false") << endl;
@@ -1518,8 +1520,15 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // We've already called checkSizes(), so this cast must succeed.
+    MV& sourceMV = const_cast<MV&>(dynamic_cast<const MV&> (sourceObj));
+
+    const bool packOnHost = runKernelOnHost(sourceMV);
+    const char longFuncNameHost[] = "Tpetra::MultiVector::packAndPrepare[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::packAndPrepare[Device]";
     const char tfecfFuncName[] = "packAndPrepare: ";
-    ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepare");
+    ProfilingRegion regionPAP (packOnHost ? longFuncNameHost : longFuncNameDevice);
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1546,8 +1555,6 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       std::cerr << os.str ();
     }
 
-    // We've already called checkSizes(), so this cast must succeed.
-    MV& sourceMV = const_cast<MV&>(dynamic_cast<const MV&> (sourceObj));
 
     const size_t numCols = sourceMV.getNumVectors ();
 
@@ -1600,7 +1607,6 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
-    const bool packOnHost = runKernelOnHost(sourceMV);
     if (printDebugOutput) {
       std::ostringstream os;
       os << *prefix << "packOnHost=" << (packOnHost ? "true" : "false") << endl;
@@ -1910,7 +1916,12 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
-    const char longFuncName[] = "Tpetra::MultiVector::unpackAndCombine";
+
+    const bool unpackOnHost = runKernelOnHost(imports);
+
+    const char longFuncNameHost[] = "Tpetra::MultiVector::unpackAndCombine[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::unpackAndCombine[Device]";
+    const char * longFuncName = unpackOnHost ? longFuncNameHost : longFuncNameDevice;
     const char tfecfFuncName[] = "unpackAndCombine: ";
     ProfilingRegion regionUAC (longFuncName);
 
@@ -1982,7 +1993,6 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // the size of the imports buffer.
     // DistObject::doTransferNew decides where it was last modified (based on
     // whether communication buffers used were on host or device).
-    const bool unpackOnHost = runKernelOnHost(imports);
     if (unpackOnHost) {
       if (this->imports_.need_sync_host()) this->imports_.sync_host();
     }

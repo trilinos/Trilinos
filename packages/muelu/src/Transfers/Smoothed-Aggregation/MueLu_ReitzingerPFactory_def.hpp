@@ -232,21 +232,14 @@ namespace MueLu {
     LO current = 0;
     LO Nnc = PnT_D0T->getRowMap()->getLocalNumElements();
 
-
-    // We will need these soon enough
+    // Get the node maps for D0_coarse
     RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
     RCP<const Map> ownedPlusSharedCoarseNodeMap  = D0_Pn->getCrsGraph()->getColMap();    
 
-    FILE * fdebug;
-    {
-      // CMS: DEBUG
-      char str[80];
-      sprintf(str,"d0_potential_edges_%d_%d.m",coarseLevel.GetLevelID(),NodeMatrix->getRowMap()->getComm()->getRank());
-      fdebug=fopen(str,"w");
-
-    }
-
+    
     for(LO i=0; i<(LO)Nnc; i++) {
+       LO local_column_i = ownedPlusSharedCoarseNodeMap->getLocalElement(PnT_D0T->getRowMap()->getGlobalElement(i));
+ 
       // FIXME: We don't really want an std::map here.  This is just a first cut implementation
       LO local_column_i = ownedPlusSharedCoarseNodeMap->getLocalElement(PnT_D0T->getRowMap()->getGlobalElement(i));
       using value_type = bool;
@@ -317,7 +310,6 @@ namespace MueLu {
       // std::map is sorted, so we'll just iterate through this
       for(auto iter=ce_map.begin(); iter != ce_map.end(); iter++) {
         LO col = iter->first;
-        // This shouldn't happen.  But in case it did...
         if(col == local_column_i) {
           continue;
         }
@@ -355,10 +347,6 @@ namespace MueLu {
     // Count the total number of edges
     // NOTE: Since we solve the ownership issue above, this should do what we want
     RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO,GO,NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges,EdgeMatrix->getRowMap()->getIndexBase(),EdgeMatrix->getRowMap()->getComm());
-
-    printf("[%d] D0 local num_coarse_edges = %d\n",MyPID,num_coarse_edges);
-
-
 
     // Create the coarse D0
     RCP<CrsMatrix> D0_coarse;

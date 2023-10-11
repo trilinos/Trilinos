@@ -2478,55 +2478,55 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   } \
 }
 
-#if defined(HAVE_AMESOS2_BASKER)
+#endif // defined(HAVE_STOKHOS_AMESOS2)
+
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_BASKER)
   TEST_AMESOS2_SOLVER(basker)
 #else
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_basker, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
 
-#if defined(HAVE_AMESOS2_KLU2)
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_KLU2)
   TEST_AMESOS2_SOLVER(klu2)
 #else
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_klu2, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
 
-#if defined(HAVE_AMESOS2_SUPERLUDIST)
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLUDIST)
   TEST_AMESOS2_SOLVER(superlu_dist)
 #else
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_superlu_dist, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
 
-#if defined(HAVE_AMESOS2_SUPERLUMT)
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLUMT)
   TEST_AMESOS2_SOLVER(superlu_mt)
 #else
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_superlu_mt, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
 
-#if defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
   TEST_AMESOS2_SOLVER(superlu)
 #else
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_superlu, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
 
-#if defined(HAVE_AMESOS2_PARDISO_MKL)
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_PARDISO_MKL)
   TEST_AMESOS2_SOLVER(pardisomkl)
 #else
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_pardisomkl, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
 
-#if defined(HAVE_AMESOS2_LAPACK)
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_LAPACK)
   TEST_AMESOS2_SOLVER(lapack)
 #else
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_lapack, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
 
-#if defined(HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
+#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
   TEST_AMESOS2_SOLVER(cholmod)
 #else
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_CrsMatrix_MP, Amesos2_cholmod, Storage, LocalOrdinal, GlobalOrdinal, Node) {}
 #endif
-
-#endif // defined(HAVE_STOKHOS_AMESOS2)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_SLGN(S, LO, GO, N)                    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_MP, VectorAdd, S, LO, GO, N ) \

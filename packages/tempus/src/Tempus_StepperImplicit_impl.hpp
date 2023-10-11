@@ -247,21 +247,7 @@ StepperImplicit<Scalar>::solveImplicitODE(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y,
   const int index                                         )
 {
-  typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
-  MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
-  inArgs.set_x(x);
-  if ( y != Teuchos::null ) inArgs.set_p(index, y);
-  if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
-  if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
-  if (inArgs.supports(MEB::IN_ARG_step_size))
-    inArgs.set_step_size(p->timeStepSize_);
-  if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (p->alpha_);
-  if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (p->beta_);
-  if (inArgs.supports(MEB::IN_ARG_stage_number))
-    inArgs.set_stage_number(p->stageNumber_);
-
-  wrapperModel_->setForSolve(p->timeDer_, inArgs, outArgs, p->evaluationType_);
+  wrapperModel_->setForSolve(x, xDot, time, p, y, index);
 
   Thyra::SolveStatus<Scalar> sStatus;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -296,7 +282,7 @@ StepperImplicit<Scalar>::evaluateImplicitODE(
   const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p )
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
+  MEB::InArgs<Scalar>  inArgs  = wrapperModel_->createInArgs();
   inArgs.set_x(x);
   if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
   if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
@@ -304,10 +290,10 @@ StepperImplicit<Scalar>::evaluateImplicitODE(
   if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (Scalar(0.0));
   if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (Scalar(0.0));
 
-  MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
+  MEB::OutArgs<Scalar> outArgs = wrapperModel_->createOutArgs();
   outArgs.set_f(f);
 
-  wrapperModel_->setForSolve(Teuchos::null,inArgs,outArgs,p->evaluationType_);
+  wrapperModel_->setForSolve(x, xDot, time, p);
 
   wrapperModel_->evalModel(inArgs, outArgs);
 }

@@ -1,6 +1,15 @@
 ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_pseudo_cg_indefinite
+  SOURCES test_pseudo_cg_indefinite.cpp   
+  COMM serial mpi
+  ARGS
+    "--debug --verbose --tol=1e-5"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockCG_hb_test
   SOURCES test_bl_cg_hb.cpp
   ARGS "--verbose"
