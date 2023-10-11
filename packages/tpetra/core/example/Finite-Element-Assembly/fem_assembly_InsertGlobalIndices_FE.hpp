@@ -260,6 +260,8 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
          element_gidx < mesh.getNumOwnedElements ();
          ++element_gidx) {
       // Get the contributions for the current element
+      // shape info injected here in real life
+      // "GetElementMatrix"
       ReferenceQuad4(element_matrix);
       ReferenceQuad4RHS(element_rhs);
 
@@ -481,6 +483,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   auto localMap     = owned_plus_shared_map->getLocalMap();
   auto localColMap  = fe_matrix->getColMap()->getLocalMap();
  
+  // no worksetting in this example
   pair_type alln = pair_type(0,nperel);
   scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*numOwnedElements);
   scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*numOwnedElements);
@@ -528,7 +531,6 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         for (int element_node_idx = 0; element_node_idx < nperel; ++element_node_idx) {
           const local_ordinal_type local_row_id =
             localMap.getLocalElement (owned_element_to_node_ids (element_gidx, element_node_idx));
-          auto row_values = Kokkos::subview(element_matrix, element_node_idx, alln);
 
           // Force atomics on sums
           for (int col_idx = 0; col_idx < nperel; ++col_idx) {
