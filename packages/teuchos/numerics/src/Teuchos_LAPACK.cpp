@@ -2093,7 +2093,7 @@ namespace Teuchos
   Kokkos::complex<double> LAPACK<int, Kokkos::complex<double> >::LARND( const int& idist, int* seed ) const
   {
     double _Complex z = ZLARND_F77(&idist, seed);
-    return static_cast<Kokkos::complex<double>>(z);
+    return reinterpret_cast<Kokkos::complex<double>&>(z);
   }
 #endif
 
