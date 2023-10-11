@@ -507,17 +507,16 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       ("Assemble FE matrix and right-hand side",
        Kokkos::RangePolicy<execution_space, int> (0, numOwnedElements),
        KOKKOS_LAMBDA (const size_t element_gidx) {
-        // Get subviews
-        pair_type location_pair (nperel*element_gidx, nperel*(element_gidx+1));
-        auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged,location_pair);
-        auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
-        auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
+        const pair_type location_pair (nperel*element_gidx, nperel*(element_gidx+1));
 
         // Get the contributions for the current element
+        auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
         ReferenceQuad4(element_matrix);
+        auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged,location_pair);
         ReferenceQuad4RHS(element_rhs);
 
         // Get the local column ids array for this element
+        auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
         for (int element_node_idx = 0; element_node_idx < nperel;
              ++element_node_idx) {
           element_lcids(element_node_idx) =
