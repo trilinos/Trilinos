@@ -241,7 +241,6 @@ namespace MueLu {
        LO local_column_i = ownedPlusSharedCoarseNodeMap->getLocalElement(PnT_D0T->getRowMap()->getGlobalElement(i));
  
       // FIXME: We don't really want an std::map here.  This is just a first cut implementation
-      LO local_column_i = ownedPlusSharedCoarseNodeMap->getLocalElement(PnT_D0T->getRowMap()->getGlobalElement(i));
       using value_type = bool;
       std::map<LO, value_type> ce_map;
       
@@ -285,12 +284,6 @@ namespace MueLu {
           if(!sum_is_even && !i_am_smaller) keep_shared_edge=true;
         }
         //        printf("[%d] - matches %d/%d keep_shared = %d own_both = %d\n",MyPID,(int)zero_matches,(int)one_matches,(int)keep_shared_edge,(int)own_both_nodes);
-
-        fprintf(fdebug,"%d %lld %d %d %lld %d %d %d\n",
-                colind_N[0],D0_Pn->getColMap()->getGlobalElement(colind_N[0]),pid0,
-                colind_N[1],D0_Pn->getColMap()->getGlobalElement(colind_N[1]),pid1,
-                (int)keep_shared_edge,(int)own_both_nodes);
-
         if(!keep_shared_edge && !own_both_nodes) continue;
 
 
@@ -330,12 +323,6 @@ namespace MueLu {
     D0_rowptr.resize(num_coarse_edges+1);
     D0_colind.resize(current);
     D0_values.resize(current);
-
-
-    {
-      // CMS DEBUG
-      fclose(fdebug);
-    }
 
     // We're assuming that if the coarse NodeMatrix has no nodes on a rank, the coarse edge guy won't either.
     // We check that here.
@@ -397,18 +384,6 @@ namespace MueLu {
       }
 #endif
       D0_coarse->expertStaticFillComplete(ownedCoarseNodeMap,ownedCoarseEdgeMap);
-      printf("[%d] D0 global (r,r,c,d) = %d, %d, %d, %d local (r,r,c,d) = %d, %d, %d, %d\n",
-             MyPID,
-             D0_coarse->getRangeMap()->getGlobalNumElements(),
-             D0_coarse->getRowMap()->getGlobalNumElements(),
-             D0_coarse->getColMap()->getGlobalNumElements(),
-             D0_coarse->getDomainMap()->getGlobalNumElements(),
-             D0_coarse->getRangeMap()->getLocalNumElements(),
-             D0_coarse->getRowMap()->getLocalNumElements(),
-             D0_coarse->getColMap()->getLocalNumElements(),
-             D0_coarse->getDomainMap()->getLocalNumElements());
-
-
     }
     RCP<Matrix> D0_coarse_m = rcp(new CrsMatrixWrap(D0_coarse));
     RCP<Teuchos::FancyOStream> fout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
