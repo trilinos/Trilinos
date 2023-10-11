@@ -506,8 +506,8 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     Kokkos::parallel_for
       ("Assemble FE matrix and right-hand side",
        Kokkos::RangePolicy<execution_space, int> (0, numOwnedElements),
-       KOKKOS_LAMBDA (const size_t element_gidx) {
-        const pair_type location_pair (nperel*element_gidx, nperel*(element_gidx+1));
+       KOKKOS_LAMBDA (const size_t element_idx) {
+        const pair_type location_pair (nperel*element_idx, nperel*(element_idx+1));
 
         // Get the contributions for the current element
         auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
@@ -520,16 +520,15 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         for (int element_node_idx = 0; element_node_idx < nperel;
              ++element_node_idx) {
           element_lcids(element_node_idx) =
-            localColMap.getLocalElement (owned_element_to_node_ids (element_gidx, element_node_idx));
+            localColMap.getLocalElement (owned_element_to_node_ids (element_idx, element_node_idx));
         }
         
         // For each node (row) on the current element:
         // - populate the values array
         // - add the values to the fe_matrix.
-
         for (int element_node_idx = 0; element_node_idx < nperel; ++element_node_idx) {
           const local_ordinal_type local_row_id =
-            localMap.getLocalElement (owned_element_to_node_ids (element_gidx, element_node_idx));
+            localMap.getLocalElement (owned_element_to_node_ids (element_idx, element_node_idx));
 
           // Force atomics on sums
           for (int col_idx = 0; col_idx < nperel; ++col_idx) {
@@ -539,7 +538,6 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
           }
           Kokkos::atomic_add (&(localRHS(local_row_id,0)), element_rhs[element_node_idx]);
         }
-
       });
   }
 
