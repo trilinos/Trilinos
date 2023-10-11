@@ -214,8 +214,8 @@ computeInitialGuessForCG (const V& diagonal, V& x) {
   auto d_view = diagonal.template getLocalView<device_type>(Tpetra::Access::ReadOnly);
   auto x_view = x.template getLocalView<device_type>(Tpetra::Access::ReadWrite);
 
-  auto ONE  = Teuchos::ScalarTraits<typename V::scalar_type>::one();
-  auto ZERO = Teuchos::ScalarTraits<typename V::scalar_type>::zero();
+  auto ONE  = Teuchos::ScalarTraits<typename V::impl_scalar_type>::one();
+  auto ZERO = Teuchos::ScalarTraits<typename V::impl_scalar_type>::zero();
 
   Kokkos::parallel_for("computeInitialGuessforCG::zero_bcs", range_policy(0,N), KOKKOS_LAMBDA(const size_t & i) {
       if(d_view(i,0) == ONE)
