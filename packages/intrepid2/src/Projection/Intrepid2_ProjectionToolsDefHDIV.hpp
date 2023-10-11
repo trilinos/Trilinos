@@ -431,6 +431,9 @@ ProjectionTools<DeviceType>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     hcurlBasis = new Basis_HCURL_TET_In_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Wedge<6> >()->key)
     hcurlBasis = new typename DerivedNodalBasisFamily<DeviceType,scalarType,scalarType>::HCURL_WEDGE(cellBasis->getDegree());
+// TODO: uncomment the next two lines once H(curl) pyramid implemented
+//  else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Pyramid<5> >()->key)
+//    hcurlBasis = new typename DerivedNodalBasisFamily<DeviceType,scalarType,scalarType>::HCURL_PYR(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
     hcurlBasis = new Basis_HGRAD_QUAD_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)

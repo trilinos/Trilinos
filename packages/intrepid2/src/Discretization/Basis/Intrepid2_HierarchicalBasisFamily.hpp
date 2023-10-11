@@ -54,6 +54,7 @@
 #include "Intrepid2_HierarchicalBasis_HCURL_TET.hpp"
 #include "Intrepid2_HierarchicalBasis_HDIV_TRI.hpp"
 #include "Intrepid2_HierarchicalBasis_HDIV_TET.hpp"
+#include "Intrepid2_HierarchicalBasis_HDIV_PYR.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TRI.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TET.hpp"
@@ -115,7 +116,7 @@ namespace Intrepid2 {
     // we will fill these in as we implement them
     using HGRAD = IntegratedLegendreBasis_HGRAD_PYR<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
     using HCURL = void;
-    using HDIV  = void;
+    using HDIV  = HierarchicalBasis_HDIV_PYR<DeviceType,OutputScalar,PointScalar>;
     using HVOL  = LegendreBasis_HVOL_PYR<DeviceType,OutputScalar,PointScalar>;
   };
   

@@ -591,6 +591,24 @@ namespace
     }
   }
 
+  TEUCHOS_UNIT_TEST( BasisCardinality, Pyramid_HDIV )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HDIV_PYR;
+    
+    for (ordinal_type p=1; p<10; p++)
+    {
+      // expected cardinality is p^2 + 2p(p+1) + 3p^2(p-1):
+      // - quadrilateral face: p^2
+      // - triangular faces:   2p(p+1)
+      // - interior bubbles:   3p^2(p-1)
+      const ordinal_type expectedCardinality = p * p + 2 * p * (p+1) + 3 * p * p * (p-1);
+      
+      HierarchicalBasis hierarchicalBasis(p);
+      const ordinal_type actualCardinality = hierarchicalBasis.getCardinality();
+      TEST_EQUALITY(expectedCardinality, actualCardinality);
+    }
+  }
+
   TEUCHOS_UNIT_TEST( BasisCardinality, Pyramid_HVOL )
   {
     using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_PYR;

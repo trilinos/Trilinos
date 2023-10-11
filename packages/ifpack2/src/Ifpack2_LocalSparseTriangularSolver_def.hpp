@@ -310,6 +310,8 @@ void LocalSparseTriangularSolver<MatrixType>::initializeState ()
   computeTime_ = 0.0;
   applyTime_ = 0.0;
   isKokkosKernelsSptrsv_ = false;
+  isKokkosKernelsStream_ = false;
+  num_streams_ = 0;
   uplo_ = "N";
   diag_ = "N";
 }
@@ -318,9 +320,17 @@ template<class MatrixType>
 LocalSparseTriangularSolver<MatrixType>::
 ~LocalSparseTriangularSolver ()
 {
-  if (Teuchos::nonnull (kh_))
-  {
-    kh_->destroy_sptrsv_handle();
+  if (!isKokkosKernelsStream_) {
+    if (Teuchos::nonnull (kh_)) {
+      kh_->destroy_sptrsv_handle();
+    }
+  }
+  else {
+    for (int i = 0; i < num_streams_; i++) {
+      if (Teuchos::nonnull (kh_v_[i])) {
+        kh_v_[i]->destroy_sptrsv_handle();
+      }
+    }
   }
 }
 
@@ -355,7 +365,10 @@ setParameters (const Teuchos::ParameterList& pl)
   }
 
   if (trisolverType == Details::TrisolverType::KSPTRSV) {
-    kh_ = Teuchos::rcp (new k_handle());
+    this->isKokkosKernelsSptrsv_ = true;
+  }
+  else {
+    this->isKokkosKernelsSptrsv_ = false;
   }
 
   if (pl.isParameter("trisolver: reverse U"))
@@ -383,125 +396,169 @@ initialize ()
     *out_ << ">>> DEBUG " << prefix << std::endl;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (A_.is_null (), std::runtime_error, prefix << "You must call "
-     "setMatrix() with a nonnull input matrix before you may call "
-     "initialize() or compute().");
-  if (A_crs_.is_null ()) {
-    auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+  if (!isKokkosKernelsStream_) {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (A_crs.get () == nullptr, std::invalid_argument,
-       prefix << "The input matrix A is not a Tpetra::CrsMatrix.");
-    A_crs_ = A_crs;
-  }
-  auto G = A_crs_->getGraph ();
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
-     "but A_crs_'s RowGraph G is null.  "
-     "Please report this bug to the Ifpack2 developers.");
-  // At this point, the graph MUST be fillComplete.  The "initialize"
-  // (symbolic) part of setup only depends on the graph structure, so
-  // the matrix itself need not be fill complete.
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (! G->isFillComplete (), std::runtime_error, "If you call this method, "
-     "the matrix's graph must be fill complete.  It is not.");
+      (A_.is_null (), std::runtime_error, prefix << "You must call "
+       "setMatrix() with a nonnull input matrix before you may call "
+       "initialize() or compute().");
+    if (A_crs_.is_null ()) {
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (A_crs.get () == nullptr, std::invalid_argument,
+         prefix << "The input matrix A is not a Tpetra::CrsMatrix.");
+      A_crs_ = A_crs;
+    }
+    auto G = A_crs_->getGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
+       "but A_crs_'s RowGraph G is null.  "
+       "Please report this bug to the Ifpack2 developers.");
+    // At this point, the graph MUST be fillComplete.  The "initialize"
+    // (symbolic) part of setup only depends on the graph structure, so
+    // the matrix itself need not be fill complete.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! G->isFillComplete (), std::runtime_error, "If you call this method, "
+       "the matrix's graph must be fill complete.  It is not.");
 
-  // mfh 30 Apr 2018: See GitHub Issue #2658.
-  constexpr bool ignoreMapsForTriStructure = true;
-  auto lclTriStructure = [&] {
-    auto lclMatrix = A_crs_->getLocalMatrixDevice ();
-    auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
-    auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
-    auto lclTriStruct =
-      determineLocalTriangularStructure (lclMatrix.graph,
-                                         lclRowMap,
-                                         lclColMap,
-                                         ignoreMapsForTriStructure);
-    const LO lclNumRows = lclRowMap.getLocalNumElements ();
-    this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
-    this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
-      (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
-    return lclTriStruct;
-  } ();
-
-  if (reverseStorage_ && lclTriStructure.couldBeUpperTriangular &&
-      htsImpl_.is_null ()) {
-    // Reverse the storage for an upper triangular matrix
-    auto Alocal = A_crs_->getLocalMatrixDevice();
-    auto ptr    = Alocal.graph.row_map;
-    auto ind    = Alocal.graph.entries;
-    auto val    = Alocal.values;
-
-    auto numRows = Alocal.numRows();
-    auto numCols = Alocal.numCols();
-    auto numNnz = Alocal.nnz();
-
-    typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.extent (0));
-    typename decltype(ind)::non_const_type  newind ("ind", ind.extent (0));
-    decltype(val)                           newval ("val", val.extent (0));
-
-    // FIXME: The code below assumes UVM
-    typename crs_matrix_type::execution_space().fence();
-    newptr(0) = 0;
-    for (local_ordinal_type row = 0, rowStart = 0; row < numRows; ++row) {
-      auto A_r = Alocal.row(numRows-1 - row);
-
-      auto numEnt = A_r.length;
-      for (local_ordinal_type k = 0; k < numEnt; ++k) {
-        newind(rowStart + k) = numCols-1 - A_r.colidx(numEnt-1 - k);
-        newval(rowStart + k) = A_r.value (numEnt-1 - k);
+    // mfh 30 Apr 2018: See GitHub Issue #2658.
+    constexpr bool ignoreMapsForTriStructure = true;
+    auto lclTriStructure = [&] {
+      auto lclMatrix = A_crs_->getLocalMatrixDevice ();
+      auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
+      auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
+      auto lclTriStruct =
+        determineLocalTriangularStructure (lclMatrix.graph,
+                                           lclRowMap,
+                                           lclColMap,
+                                           ignoreMapsForTriStructure);
+      const LO lclNumRows = lclRowMap.getLocalNumElements ();
+      this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
+      this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
+        (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
+      return lclTriStruct;
+    } ();
+    
+    if (reverseStorage_ && lclTriStructure.couldBeUpperTriangular &&
+        htsImpl_.is_null ()) {
+      // Reverse the storage for an upper triangular matrix
+      auto Alocal = A_crs_->getLocalMatrixDevice();
+      auto ptr    = Alocal.graph.row_map;
+      auto ind    = Alocal.graph.entries;
+      auto val    = Alocal.values;
+    
+      auto numRows = Alocal.numRows();
+      auto numCols = Alocal.numCols();
+      auto numNnz = Alocal.nnz();
+    
+      typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.extent (0));
+      typename decltype(ind)::non_const_type  newind ("ind", ind.extent (0));
+      decltype(val)                           newval ("val", val.extent (0));
+    
+      // FIXME: The code below assumes UVM
+      typename crs_matrix_type::execution_space().fence();
+      newptr(0) = 0;
+      for (local_ordinal_type row = 0, rowStart = 0; row < numRows; ++row) {
+        auto A_r = Alocal.row(numRows-1 - row);
+    
+        auto numEnt = A_r.length;
+        for (local_ordinal_type k = 0; k < numEnt; ++k) {
+          newind(rowStart + k) = numCols-1 - A_r.colidx(numEnt-1 - k);
+          newval(rowStart + k) = A_r.value (numEnt-1 - k);
+        }
+        rowStart += numEnt;
+        newptr(row+1) = rowStart;
       }
-      rowStart += numEnt;
-      newptr(row+1) = rowStart;
+      typename crs_matrix_type::execution_space().fence();
+    
+      // Reverse maps
+      Teuchos::RCP<map_type> newRowMap, newColMap;
+      {
+        // Reverse row map
+        auto rowMap = A_->getRowMap();
+        auto numElems = rowMap->getLocalNumElements();
+        auto rowElems = rowMap->getLocalElementList();
+    
+        Teuchos::Array<global_ordinal_type> newRowElems(rowElems.size());
+        for (size_t i = 0; i < numElems; i++)
+          newRowElems[i] = rowElems[numElems-1 - i];
+    
+        newRowMap = Teuchos::rcp(new map_type(rowMap->getGlobalNumElements(), newRowElems, rowMap->getIndexBase(), rowMap->getComm()));
+      }
+      {
+        // Reverse column map
+        auto colMap = A_->getColMap();
+        auto numElems = colMap->getLocalNumElements();
+        auto colElems = colMap->getLocalElementList();
+    
+        Teuchos::Array<global_ordinal_type> newColElems(colElems.size());
+        for (size_t i = 0; i < numElems; i++)
+          newColElems[i] = colElems[numElems-1 - i];
+    
+        newColMap = Teuchos::rcp(new map_type(colMap->getGlobalNumElements(), newColElems, colMap->getIndexBase(), colMap->getComm()));
+      }
+    
+      // Construct new matrix
+      local_matrix_type newLocalMatrix("Upermuted", numRows, numCols, numNnz, newval, newptr, newind);
+    
+      A_crs_ = Teuchos::rcp(new crs_matrix_type(newLocalMatrix, newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap()));
+    
+      isInternallyChanged_ = true;
+    
+      // FIXME (mfh 18 Apr 2019) Recomputing this is unnecessary, but I
+      // didn't want to break any invariants, especially considering
+      // that this branch is likely poorly tested.
+      auto newLclTriStructure =
+        determineLocalTriangularStructure (newLocalMatrix.graph,
+                                           newRowMap->getLocalMap (),
+                                           newColMap->getLocalMap (),
+                                           ignoreMapsForTriStructure);
+      const LO newLclNumRows = newRowMap->getLocalNumElements ();
+      this->diag_ = (newLclTriStructure.diagCount < newLclNumRows) ? "U" : "N";
+      this->uplo_ = newLclTriStructure.couldBeLowerTriangular ? "L" :
+        (newLclTriStructure.couldBeUpperTriangular ? "U" : "N");
     }
-    typename crs_matrix_type::execution_space().fence();
-
-    // Reverse maps
-    Teuchos::RCP<map_type> newRowMap, newColMap;
-    {
-      // Reverse row map
-      auto rowMap = A_->getRowMap();
-      auto numElems = rowMap->getLocalNumElements();
-      auto rowElems = rowMap->getLocalElementList();
-
-      Teuchos::Array<global_ordinal_type> newRowElems(rowElems.size());
-      for (size_t i = 0; i < numElems; i++)
-        newRowElems[i] = rowElems[numElems-1 - i];
-
-      newRowMap = Teuchos::rcp(new map_type(rowMap->getGlobalNumElements(), newRowElems, rowMap->getIndexBase(), rowMap->getComm()));
+  }
+  else {
+    for (int i = 0; i < num_streams_; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (A_crs_v_[i].is_null (), std::runtime_error, prefix << "You must call "
+         "setMatrix() with a nonnull input matrix before you may call "
+         "initialize() or compute().");
+      auto G = A_crs_v_[i]->getGraph ();
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (G.is_null (), std::logic_error, prefix << "A_crs_ are nonnull, "
+         "but A_crs_'s RowGraph G is null.  "
+         "Please report this bug to the Ifpack2 developers.");
+      // At this point, the graph MUST be fillComplete.  The "initialize"
+      // (symbolic) part of setup only depends on the graph structure, so
+      // the matrix itself need not be fill complete.
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! G->isFillComplete (), std::runtime_error, "If you call this method, "
+         "the matrix's graph must be fill complete.  It is not.");
+	  
+      // mfh 30 Apr 2018: See GitHub Issue #2658.
+      constexpr bool ignoreMapsForTriStructure = true;
+      std::string prev_uplo_ = this->uplo_;
+      std::string prev_diag_ = this->diag_;
+      auto lclMatrix = A_crs_v_[i]->getLocalMatrixDevice ();
+      auto lclRowMap = A_crs_v_[i]->getRowMap ()->getLocalMap ();
+      auto lclColMap = A_crs_v_[i]->getColMap ()->getLocalMap ();
+      auto lclTriStruct =
+        determineLocalTriangularStructure (lclMatrix.graph,
+                                           lclRowMap,
+                                           lclColMap,
+                                           ignoreMapsForTriStructure);
+      const LO lclNumRows = lclRowMap.getLocalNumElements ();
+      this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
+      this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
+        (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
+      if (i > 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          ((this->diag_ != prev_diag_) || (this->uplo_ != prev_uplo_),
+           std::logic_error, prefix << "A_crs_'s structures in streams "
+           "are different. Please report this bug to the Ifpack2 developers.");
+      }
     }
-    {
-      // Reverse column map
-      auto colMap = A_->getColMap();
-      auto numElems = colMap->getLocalNumElements();
-      auto colElems = colMap->getLocalElementList();
-
-      Teuchos::Array<global_ordinal_type> newColElems(colElems.size());
-      for (size_t i = 0; i < numElems; i++)
-        newColElems[i] = colElems[numElems-1 - i];
-
-      newColMap = Teuchos::rcp(new map_type(colMap->getGlobalNumElements(), newColElems, colMap->getIndexBase(), colMap->getComm()));
-    }
-
-    // Construct new matrix
-    local_matrix_type newLocalMatrix("Upermuted", numRows, numCols, numNnz, newval, newptr, newind);
-
-    A_crs_ = Teuchos::rcp(new crs_matrix_type(newLocalMatrix, newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap()));
-
-    isInternallyChanged_ = true;
-
-    // FIXME (mfh 18 Apr 2019) Recomputing this is unnecessary, but I
-    // didn't want to break any invariants, especially considering
-    // that this branch is likely poorly tested.
-    auto newLclTriStructure =
-      determineLocalTriangularStructure (newLocalMatrix.graph,
-                                         newRowMap->getLocalMap (),
-                                         newColMap->getLocalMap (),
-                                         ignoreMapsForTriStructure);
-    const LO newLclNumRows = newRowMap->getLocalNumElements ();
-    this->diag_ = (newLclTriStructure.diagCount < newLclNumRows) ? "U" : "N";
-    this->uplo_ = newLclTriStructure.couldBeLowerTriangular ? "L" :
-      (newLclTriStructure.couldBeUpperTriangular ? "U" : "N");
   }
 
   if (Teuchos::nonnull (htsImpl_))
@@ -511,13 +568,19 @@ initialize ()
   }
 
   const bool ksptrsv_valid_uplo = (this->uplo_ != "N");
-  if (Teuchos::nonnull(kh_) && ksptrsv_valid_uplo && this->diag_ != "U")
+  kh_v_nonnull_ = false;
+  if (this->isKokkosKernelsSptrsv_ && ksptrsv_valid_uplo && this->diag_ != "U")
   {
-    this->isKokkosKernelsSptrsv_ = true;
-  }
-  else
-  {
-    this->isKokkosKernelsSptrsv_ = false;
+    if (!isKokkosKernelsStream_) {
+      kh_ = Teuchos::rcp (new k_handle());
+    }
+	else {
+      kh_v_ = std::vector< Teuchos::RCP<k_handle> >(num_streams_);
+      for (int i = 0; i < num_streams_; i++) {
+        kh_v_[i] = Teuchos::rcp (new k_handle ());
+      }
+      kh_v_nonnull_ = true;
+    }
   }
 
   isInitialized_ = true;
@@ -534,17 +597,31 @@ compute ()
     *out_ << ">>> DEBUG " << prefix << std::endl;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (A_.is_null (), std::runtime_error, prefix << "You must call "
-     "setMatrix() with a nonnull input matrix before you may call "
-     "initialize() or compute().");
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (A_crs_.is_null (), std::logic_error, prefix << "A_ is nonnull, but "
-     "A_crs_ is null.  Please report this bug to the Ifpack2 developers.");
-  // At this point, the matrix MUST be fillComplete.
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (! A_crs_->isFillComplete (), std::runtime_error, "If you call this "
-     "method, the matrix must be fill complete.  It is not.");
+  if (!isKokkosKernelsStream_) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_.is_null (), std::runtime_error, prefix << "You must call "
+       "setMatrix() with a nonnull input matrix before you may call "
+       "initialize() or compute().");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_crs_.is_null (), std::logic_error, prefix << "A_ is nonnull, but "
+       "A_crs_ is null.  Please report this bug to the Ifpack2 developers.");
+    // At this point, the matrix MUST be fillComplete.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! A_crs_->isFillComplete (), std::runtime_error, "If you call this "
+       "method, the matrix must be fill complete.  It is not.");
+  }
+  else {
+    for(int i = 0; i < num_streams_; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (A_crs_v_[i].is_null (), std::runtime_error, prefix << "You must call "
+         "setMatrices() with a nonnull input matrix before you may call "
+         "initialize() or compute().");
+      // At this point, the matrix MUST be fillComplete.
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! A_crs_v_[i]->isFillComplete (), std::runtime_error, "If you call this "
+         "method, the matrix must be fill complete.  It is not.");
+    }
+  }
 
   if (! isInitialized_) {
     initialize ();
@@ -558,16 +635,16 @@ compute ()
   if (Teuchos::nonnull (htsImpl_))
     htsImpl_->compute (*A_crs_, out_);
 
-  if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_)
-  {
+  if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_) {
+    const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
+  
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
     auto Alocal = A_crs->getLocalMatrixDevice();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
     auto val    = Alocal.values;
 
-    auto numRows = Alocal.numRows();
-    const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
+    auto numRows = Alocal.numRows();    
 
     // Destroy existing handle and recreate in case new matrix provided - requires rerunning symbolic analysis
     kh_->destroy_sptrsv_handle();
@@ -589,6 +666,40 @@ compute ()
       kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows, is_lower_tri);
     }
     KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
+  }
+  else if (kh_v_nonnull_ && this->isKokkosKernelsSptrsv_) {
+    const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
+
+    for (int i = 0; i < num_streams_; i++) {
+      auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i]);
+      auto Alocal_i = A_crs_i->getLocalMatrixDevice();
+      auto ptr_i    = Alocal_i.graph.row_map;
+      auto ind_i    = Alocal_i.graph.entries;
+      auto val_i    = Alocal_i.values;
+   
+      auto numRows_i = Alocal_i.numRows();
+
+      // Destroy existing handle and recreate in case new matrix provided - requires rerunning symbolic analysis
+      kh_v_[i]->destroy_sptrsv_handle();
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+      // CuSparse only supports int type ordinals 
+      // and scalar types of float, double, float complex and double complex
+      if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
+          std::is_same<int, local_ordinal_type>::value &&
+         (std::is_same<scalar_type, float>::value ||
+          std::is_same<scalar_type, double>::value ||
+          std::is_same<scalar_type, Kokkos::complex<float>>::value ||
+          std::is_same<scalar_type, Kokkos::complex<double>>::value))
+      {
+        kh_v_[i]->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows_i, is_lower_tri);
+      }
+      else
+#endif
+      {
+        kh_v_[i]->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows_i, is_lower_tri);
+      }
+      KokkosSparse::Experimental::sptrsv_symbolic(kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
+    }
   }
 
   isComputed_ = true;
@@ -612,21 +723,41 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
   typedef scalar_type ST;
   typedef Teuchos::ScalarTraits<ST> STS;
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::apply: ";
+
   if (! out_.is_null ()) {
     *out_ << ">>> DEBUG " << prefix;
-    if (A_crs_.is_null ()) {
-      *out_ << "A_crs_ is null!" << std::endl;
+    if (!isKokkosKernelsStream_) {
+      if (A_crs_.is_null ()) {
+        *out_ << "A_crs_ is null!" << std::endl;
+      }
+      else {
+        Teuchos::RCP<const crs_matrix_type> A_crs =
+            Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+        const std::string uplo = this->uplo_;
+        const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+          (mode == Teuchos::TRANS ? "T" : "N");
+        const std::string diag = this->diag_;
+        *out_ << "uplo=\"" << uplo
+              << "\", trans=\"" << trans
+              << "\", diag=\"" << diag << "\"" << std::endl;
+      }
     }
     else {
-      Teuchos::RCP<const crs_matrix_type> A_crs =
-          Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-      const std::string uplo = this->uplo_;
-      const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
-        (mode == Teuchos::TRANS ? "T" : "N");
-      const std::string diag = this->diag_;
-      *out_ << "uplo=\"" << uplo
-            << "\", trans=\"" << trans
-            << "\", diag=\"" << diag << "\"" << std::endl;
+      for (int i = 0; i < num_streams_; i++) {
+        if (A_crs_v_[i].is_null ()) {
+          *out_ << "A_crs_v_[" << i << "]" << " is null!" << std::endl;
+        }
+        else {
+          const std::string uplo = this->uplo_;
+          const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+            (mode == Teuchos::TRANS ? "T" : "N");
+          const std::string diag = this->diag_;
+          *out_ << "A_crs_v_[" << i << "]: "
+                << "uplo=\"" << uplo
+                << "\", trans=\"" << trans
+                << "\", diag=\"" << diag << "\"" << std::endl;
+        }
+      }
     }
   }
 
@@ -636,66 +767,101 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
      "call compute() before you may call this method.");
   // If isComputed() is true, it's impossible for the matrix to be
   // null, or for it not to be a Tpetra::CrsMatrix.
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (A_.is_null (), std::logic_error, prefix << "A_ is null.  "
-     "Please report this bug to the Ifpack2 developers.");
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (A_crs_.is_null (), std::logic_error, prefix << "A_crs_ is null.  "
-     "Please report this bug to the Ifpack2 developers.");
-  // However, it _is_ possible that the user called resumeFill() on
-  // the matrix, after calling compute().  This is NOT allowed.
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (! A_crs_->isFillComplete (), std::runtime_error, "If you call this "
-     "method, the matrix must be fill complete.  It is not.  This means that "
-     " you must have called resumeFill() on the matrix before calling apply(). "
-     "This is NOT allowed.  Note that this class may use the matrix's data in "
-     "place without copying it.  Thus, you cannot change the matrix and expect "
-     "the solver to stay the same.  If you have changed the matrix, first call "
-     "fillComplete() on it, then call compute() on this object, before you call"
-     " apply().  You do NOT need to call setMatrix, as long as the matrix "
-     "itself (that is, its address in memory) is the same.");
-
-  auto G = A_crs_->getGraph ();
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
-     "but A_crs_'s RowGraph G is null.  "
-     "Please report this bug to the Ifpack2 developers.");
-  auto importer = G->getImporter ();
-  auto exporter = G->getExporter ();
-
-  if (! importer.is_null ()) {
-    if (X_colMap_.is_null () || X_colMap_->getNumVectors () != X.getNumVectors ()) {
-      X_colMap_ = rcp (new MV (importer->getTargetMap (), X.getNumVectors ()));
-    }
-    else {
-      X_colMap_->putScalar (STS::zero ());
-    }
-    // See discussion of Github Issue #672 for why the Import needs to
-    // use the ZERO CombineMode.  The case where the Export is
-    // nontrivial is likely never exercised.
-    X_colMap_->doImport (X, *importer, Tpetra::ZERO);
+  if (!isKokkosKernelsStream_) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_.is_null (), std::logic_error, prefix << "A_ is null.  "
+       "Please report this bug to the Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_crs_.is_null (), std::logic_error, prefix << "A_crs_ is null.  "
+       "Please report this bug to the Ifpack2 developers.");
+    // However, it _is_ possible that the user called resumeFill() on
+    // the matrix, after calling compute().  This is NOT allowed.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! A_crs_->isFillComplete (), std::runtime_error, "If you call this "
+       "method, the matrix must be fill complete.  It is not.  This means that "
+       " you must have called resumeFill() on the matrix before calling apply(). "
+       "This is NOT allowed.  Note that this class may use the matrix's data in "
+       "place without copying it.  Thus, you cannot change the matrix and expect "
+       "the solver to stay the same.  If you have changed the matrix, first call "
+       "fillComplete() on it, then call compute() on this object, before you call"
+       " apply().  You do NOT need to call setMatrix, as long as the matrix "
+       "itself (that is, its address in memory) is the same.");
   }
-  RCP<const MV> X_cur = importer.is_null () ? rcpFromRef (X) :
-    Teuchos::rcp_const_cast<const MV> (X_colMap_);
-
-  if (! exporter.is_null ()) {
-    if (Y_rowMap_.is_null () || Y_rowMap_->getNumVectors () != Y.getNumVectors ()) {
-      Y_rowMap_ = rcp (new MV (exporter->getSourceMap (), Y.getNumVectors ()));
+  else {
+    for (int i = 0; i < num_streams_; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (A_crs_v_[i].is_null (), std::logic_error, prefix << "A_crs_ is null.  "
+         "Please report this bug to the Ifpack2 developers.");
+      // However, it _is_ possible that the user called resumeFill() on
+      // the matrix, after calling compute().  This is NOT allowed.
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! A_crs_v_[i]->isFillComplete (), std::runtime_error, "If you call this "
+         "method, the matrix must be fill complete.  It is not.  This means that "
+         " you must have called resumeFill() on the matrix before calling apply(). "
+         "This is NOT allowed.  Note that this class may use the matrix's data in "
+         "place without copying it.  Thus, you cannot change the matrix and expect "
+         "the solver to stay the same.  If you have changed the matrix, first call "
+         "fillComplete() on it, then call compute() on this object, before you call"
+         " apply().  You do NOT need to call setMatrix, as long as the matrix "
+         "itself (that is, its address in memory) is the same.");
     }
-    else {
-      Y_rowMap_->putScalar (STS::zero ());
-    }
-    Y_rowMap_->doExport (Y, *importer, Tpetra::ADD);
   }
-  RCP<MV> Y_cur = exporter.is_null () ? rcpFromRef (Y) : Y_rowMap_;
+
+  RCP<const MV> X_cur;
+  RCP<MV> Y_cur;
+
+  if (!isKokkosKernelsStream_) {
+    auto G = A_crs_->getGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
+       "but A_crs_'s RowGraph G is null.  "
+       "Please report this bug to the Ifpack2 developers.");
+    auto importer = G->getImporter ();
+    auto exporter = G->getExporter ();
+    
+    if (! importer.is_null ()) {
+      if (X_colMap_.is_null () || X_colMap_->getNumVectors () != X.getNumVectors ()) {
+        X_colMap_ = rcp (new MV (importer->getTargetMap (), X.getNumVectors ()));
+      }
+      else {
+        X_colMap_->putScalar (STS::zero ());
+      }
+      // See discussion of Github Issue #672 for why the Import needs to
+      // use the ZERO CombineMode.  The case where the Export is
+      // nontrivial is likely never exercised.
+      X_colMap_->doImport (X, *importer, Tpetra::ZERO);
+    }
+    X_cur = importer.is_null () ? rcpFromRef (X) :
+      Teuchos::rcp_const_cast<const MV> (X_colMap_);
+    
+    if (! exporter.is_null ()) {
+      if (Y_rowMap_.is_null () || Y_rowMap_->getNumVectors () != Y.getNumVectors ()) {
+        Y_rowMap_ = rcp (new MV (exporter->getSourceMap (), Y.getNumVectors ()));
+      }
+      else {
+        Y_rowMap_->putScalar (STS::zero ());
+      }
+      Y_rowMap_->doExport (Y, *importer, Tpetra::ADD);
+    }
+    Y_cur = exporter.is_null () ? rcpFromRef (Y) : Y_rowMap_;
+  }
+  else {
+    // Currently assume X and Y are local vectors (same sizes as A_crs_).
+    // Should do a better job here!!!
+    X_cur = rcpFromRef (X);
+    Y_cur = rcpFromRef (Y);
+  }
 
   localApply (*X_cur, *Y_cur, mode, alpha, beta);
 
-  if (! exporter.is_null ()) {
-    Y.putScalar (STS::zero ());
-    Y.doExport (*Y_cur, *exporter, Tpetra::ADD);
+  if (!isKokkosKernelsStream_) {
+    auto G = A_crs_->getGraph ();
+    auto exporter = G->getExporter ();
+    if (! exporter.is_null ()) {
+      Y.putScalar (STS::zero ());
+      Y.doExport (*Y_cur, *exporter, Tpetra::ADD);
+    }
   }
-
   ++numApply_;
 }
 
@@ -711,18 +877,35 @@ localTriangularSolve (const MV& Y,
   using Teuchos::TRANS;
   const char tfecfFuncName[] = "localTriangularSolve: ";
 
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-    (! A_crs_->isFillComplete (), std::runtime_error,
-     "The matrix is not fill complete.");
+  if (!isKokkosKernelsStream_)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! A_crs_->isFillComplete (), std::runtime_error,
+       "The matrix is not fill complete.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      ( A_crs_->getLocalNumRows() > 0 && this->uplo_ == "N", std::runtime_error,
+        "The matrix is neither upper triangular or lower triangular.  "
+        "You may only call this method if the matrix is triangular.  "
+        "Remember that this is a local (per MPI process) property, and that "
+        "Tpetra only knows how to do a local (per process) triangular solve.");
+  }
+  else
+  {
+    for (int i = 0; i < num_streams_; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! A_crs_v_[i]->isFillComplete (), std::runtime_error,
+         "The matrix is not fill complete.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        ( A_crs_v_[i]->getLocalNumRows() > 0 && this->uplo_ == "N", std::runtime_error,
+          "The matrix is neither upper triangular or lower triangular.  "
+          "You may only call this method if the matrix is triangular.  "
+          "Remember that this is a local (per MPI process) property, and that "
+          "Tpetra only knows how to do a local (per process) triangular solve.");
+    }
+  }
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
      "X and Y must be constant stride.");
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-    ( A_crs_->getLocalNumRows() > 0 && this->uplo_ == "N", std::runtime_error,
-      "The matrix is neither upper triangular or lower triangular.  "
-      "You may only call this method if the matrix is triangular.  "
-      "Remember that this is a local (per MPI process) property, and that "
-      "Tpetra only knows how to do a local (per process) triangular solve.");
   using STS = Teuchos::ScalarTraits<scalar_type>;
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (STS::isComplex && mode == TRANS, std::logic_error, "This method does "
@@ -732,6 +915,7 @@ localTriangularSolve (const MV& Y,
   const std::string uplo = this->uplo_;
   const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
     (mode == Teuchos::TRANS ? "T" : "N");
+  const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
 
   if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_ && trans == "N")
   {
@@ -740,9 +924,7 @@ localTriangularSolve (const MV& Y,
     auto ptr    = A_lclk.graph.row_map;
     auto ind    = A_lclk.graph.entries;
     auto val    = A_lclk.values;
-
-    const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
-
+	
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVectorNonConst (j);
       auto Y_j = Y.getVector (j);
@@ -754,7 +936,43 @@ localTriangularSolve (const MV& Y,
       // TODO is this fence needed...
       typename k_handle::HandleExecSpace().fence();
     }
-  }
+  } // End using regular interface of Kokkos Kernels Sptrsv
+  else if (kh_v_nonnull_ && this->isKokkosKernelsSptrsv_ && trans == "N")
+  {
+    std::vector<lno_row_view_t>        ptr_v(num_streams_);
+    std::vector<lno_nonzero_view_t>    ind_v(num_streams_);
+    std::vector<scalar_nonzero_view_t> val_v(num_streams_);
+    std::vector<k_handle *>            KernelHandle_rawptr_v_(num_streams_);
+    for (size_t j = 0; j < numVecs; ++j) {
+      auto X_j = X.getVectorNonConst (j);
+      auto Y_j = Y.getVector (j);
+      auto X_lcl = X_j->getLocalViewDevice (Tpetra::Access::ReadWrite);
+      auto Y_lcl = Y_j->getLocalViewDevice (Tpetra::Access::ReadOnly);
+      auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::ALL (), 0);
+      auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::ALL (), 0);
+      std::vector<decltype(X_lcl_1d)> x_v(num_streams_);
+      std::vector<decltype(Y_lcl_1d)> y_v(num_streams_);
+      local_ordinal_type stream_begin = 0;
+      local_ordinal_type stream_end;
+      for (int i = 0; i < num_streams_; i++) {
+        auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i]);
+        auto Alocal_i = A_crs_i->getLocalMatrixDevice();
+        ptr_v[i] = Alocal_i.graph.row_map;
+        ind_v[i] = Alocal_i.graph.entries;
+        val_v[i] = Alocal_i.values;
+        stream_end = stream_begin + Alocal_i.numRows();
+        x_v[i] = Kokkos::subview (X_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+        y_v[i] = Kokkos::subview (Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);;
+        KernelHandle_rawptr_v_[i] = kh_v_[i].getRawPtr();
+        stream_begin = stream_end;
+      }
+      KokkosSparse::Experimental::sptrsv_solve_streams( exec_space_instances_, KernelHandle_rawptr_v_,
+                                                        ptr_v, ind_v, val_v, y_v, x_v );
+      for (int i = 0; i < num_streams_; i++) {
+        exec_space_instances_[i].fence();
+      }
+    }
+  } // End using stream interface of Kokkos Kernels Sptrsv
   else
   {
     const std::string diag = this->diag_;
@@ -771,8 +989,6 @@ localTriangularSolve (const MV& Y,
           A_lcl, Y_lcl, X_lcl);
     }
     else {
-      const size_t numVecs =
-        std::min (X.getNumVectors (), Y.getNumVectors ());
       for (size_t j = 0; j < numVecs; ++j) {
         auto X_j = X.getVectorNonConst (j);
         auto Y_j = Y.getVector (j);
@@ -1009,6 +1225,68 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     if (Teuchos::nonnull (htsImpl_))
       htsImpl_->reset ();
   } // pointers are not the same
+
+  //NOTE (Nov-09-2022): 
+  //For Cuda >= 11.3 (using cusparseSpSV), always call compute before apply,
+  //even when matrix values are changed with the same sparsity pattern.
+  //So, force isComputed_ to FALSE here
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+  isComputed_ = false;
+#endif
+}
+
+template<class MatrixType>
+void
+LocalSparseTriangularSolver<MatrixType>::
+setStreamInfo (const bool& isKokkosKernelsStream, const int& num_streams,
+               const std::vector<HandleExecSpace>& exec_space_instances)
+{
+  isKokkosKernelsStream_ = isKokkosKernelsStream;
+  num_streams_ = num_streams;
+  exec_space_instances_ = exec_space_instances;
+  A_crs_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_);
+}
+
+template<class MatrixType>
+void LocalSparseTriangularSolver<MatrixType>::
+setMatrices (const std::vector< Teuchos::RCP<crs_matrix_type> >& A_crs_v)
+{
+  const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::setMatrixWithStreams: ";
+
+  for(int i = 0; i < num_streams_; i++) {
+    // If the pointer didn't change, do nothing.  This is reasonable
+    // because users are supposed to call this method with the same
+    // object over all participating processes, and pointer identity
+    // implies object identity.
+    if (A_crs_v[i].getRawPtr () != A_crs_v_[i].getRawPtr () || isInternallyChanged_) {
+      // Check in serial or one-process mode if the matrix is square.
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! A_crs_v[i].is_null () && A_crs_v[i]->getComm ()->getSize () == 1 &&
+         A_crs_v[i]->getLocalNumRows () != A_crs_v[i]->getLocalNumCols (),
+         std::runtime_error, prefix << "If A's communicator only contains one "
+         "process, then A must be square.  Instead, you provided a matrix A with "
+         << A_crs_v[i]->getLocalNumRows () << " rows and " << A_crs_v[i]->getLocalNumCols ()
+         << " columns.");
+    
+      // It's legal for A to be null; in that case, you may not call
+      // initialize() until calling setMatrix() with a nonnull input.
+      // Regardless, setting the matrix invalidates the preconditioner.
+      isInitialized_ = false;
+      isComputed_ = false;
+    
+      if (A_crs_v[i].is_null ()) {
+        A_crs_v_[i] = Teuchos::null;
+      }
+      else { // A is not null
+        Teuchos::RCP<crs_matrix_type> A_crs =
+          Teuchos::rcp_dynamic_cast<crs_matrix_type> (A_crs_v[i]);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (A_crs.is_null (), std::invalid_argument, prefix <<
+           "The input matrix A is not a Tpetra::CrsMatrix.");
+        A_crs_v_[i] = A_crs;
+      }
+    } // pointers are not the same
+  }
 
   //NOTE (Nov-09-2022): 
   //For Cuda >= 11.3 (using cusparseSpSV), always call compute before apply,

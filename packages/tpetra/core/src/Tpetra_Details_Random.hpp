@@ -86,11 +86,11 @@ public:
 
 #ifdef KOKKOS_ENABLE_SYCL
 template<>
-class Static_Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> {
+class Static_Random_XorShift64_Pool<typename Kokkos::Experimental::SYCLDeviceUSMSpace::execution_space> {
 public:
   static void resetPool(int mpi_rank);
   static bool isSet();
-  static Kokkos::Random_XorShift64_Pool<typename Kokkos::SYCLDeviceUSMSpace::execution_space> & getPool();
+  static Kokkos::Random_XorShift64_Pool<typename Kokkos::Experimental::SYCLDeviceUSMSpace::execution_space> & getPool();
 };
 #endif // KOKKOS_ENABLE_SYCL
 

@@ -83,7 +83,6 @@ namespace Belos {
     /// the \c setOperator(), \c setLHS(), and \c setRHS() methods
     /// respectively.
     LinearMultiShiftProblem (void);
-
     /// \brief Unpreconditioned linear system constructor.
     ///
     /// Creates an unpreconditioned LinearMultiShiftProblem instance with the
@@ -255,7 +254,6 @@ namespace Belos {
     // setting the problem now, so of course we haven't updated the
     // solution yet.)
     solutionUpdated_ = false;
-
     // Compute the initial residuals.
     if(Teuchos::is_null(R0_user_)) {
       if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *B_ )) {
@@ -315,7 +313,6 @@ namespace Belos {
 
     // The problem has been set and is ready for use.
     isSet_ = true;
-
     // Return isSet.
     return isSet_;
   }

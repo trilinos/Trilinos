@@ -478,6 +478,30 @@ The following parameters are used in the ILU($k$) method:
      (not including contribution specified by {\tt "fact: absolute
      threshold"}). Can be combined with {\tt "fact: absolute threshold"}.
      The matrix remains unchanged.}
+\ccc{fact: type}
+    {string}
+    {"Serial"}
+    {The RILUK factorization implementation type. Currently supports two types:
+     "Serial" (serial execution on the host) and "KSPILUK" (a Kokkos Kernels's
+     SpILUK on multi-core or GPU).}
+\ccc{trisolver: type}
+    {string}
+    {"Internal"}
+    {The triangular solver type. Currently supports three solver types:
+     "Internal" (serial execution on the host), "HTS" (a ShyLU's sparse
+     triangular solver that uses OpenMP on the host), and "KSPTRSV" (a Kokkos
+     Kernels's SpTRSV on multi-core or GPU).}
+\ccc{fact: kspiluk number-of-streams}
+    {int|global\_ordinal}
+    {0}
+    {Number of streams used by Kokkos Kernels's SpILUK and SpTRSV. When using
+     streams, the sub-domain on each MPI process is divided to diagonal blocks,
+     each of which is handled by SpILUK and SpTRSV on a stream. Because
+     information in off-diagonals of the sub-domain is ignored, it is expected
+     that iterative solvers take more interations to converge. However, since
+     these streams can run concurrently, the total time can be faster. When
+     this option is not set (i.e. not using stream), the entire sub-domain is
+     used instead.}
 % All overlap-related code was removed by M. Hoemmen in
 %
 % commit 162f64572fbf93e2cac73e3034d76a3db918a494

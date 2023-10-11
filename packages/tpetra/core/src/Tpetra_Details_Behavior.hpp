@@ -283,11 +283,21 @@ public:
   static bool timeKokkosDeepCopy();
   
   /// \brief Adds verbose output to Kokkos deep_copy timers
+  /// by appending source and destination.
   /// This is especially useful for identifying host/device data transfers
   ///
   /// This is disabled by default.  You may control this at run time via the
-  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE</tt> environment variable.
-  static bool timeKokkosDeepCopyVerbose();
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE1</tt> environment variable.
+  static bool timeKokkosDeepCopyVerbose1();
+
+  
+  /// \brief Adds verbose output to Kokkos deep_copy timers
+  /// by appending source, destination, and size.
+  /// This is especially useful for identifying host/device data transfers
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE2</tt> environment variable.
+  static bool timeKokkosDeepCopyVerbose2();
 
   /// \brief Add Teuchos timers for all host calls to Kokkos::fence().
   ///

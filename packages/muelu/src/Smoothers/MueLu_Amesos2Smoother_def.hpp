@@ -51,6 +51,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_AMESOS2)
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_IO.hpp>
 
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
@@ -61,6 +62,76 @@
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Projection(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Nullspace) {
+
+    localMap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Nullspace->getMap()->lib(),
+                                                                           Nullspace->getNumVectors(),
+                                                                           Nullspace->getMap()->getIndexBase (),
+                                                                           Nullspace->getMap()->getComm (),
+                                                                           Xpetra::LocallyReplicated);
+
+    Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tempMV = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(localMap_, Nullspace->getNumVectors());
+    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+    tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace, *Nullspace, ZERO);
+
+    Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::HostSpace> Q("Q", Nullspace->getNumVectors(), Nullspace->getNumVectors());
+    int LDQ;
+    {
+      auto dots = tempMV->getHostLocalView(Xpetra::Access::ReadOnly);
+      Kokkos::deep_copy(Q, dots);
+      int strides[2];
+      Q.stride(strides);
+      LDQ = strides[1];
+    }
+
+    Teuchos::LAPACK<LocalOrdinal,Scalar> lapack;
+    int info = 0;
+    lapack.POTRF('L', Nullspace->getNumVectors(), Q.data(), LDQ, &info);
+    TEUCHOS_ASSERT(info == 0);
+    lapack.TRTRI('L', 'N', Nullspace->getNumVectors(), Q.data(), LDQ, &info);
+    TEUCHOS_ASSERT(info == 0);
+
+    Nullspace_ = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Nullspace->getMap(), Nullspace->getNumVectors());
+
+    for (size_t i = 0; i<Nullspace->getNumVectors(); i++) {
+      for (size_t j = 0; j <= i; j++) {
+        Nullspace_->getVectorNonConst(i)->update(Q(i, j), *Nullspace->getVector(j), ONE);
+      }
+    }
+  }
+
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  projectOut(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X) {
+    const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+    // Project X onto orthonormal nullspace
+    // Nullspace_ ^T * X
+    Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tempMV = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(localMap_, X.getNumVectors());
+    tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace_, X, ZERO);
+    auto dots = tempMV->getHostLocalView(Xpetra::Access::ReadOnly);
+    bool doProject = true;
+    for (size_t i = 0; i<X.getNumVectors(); i++) {
+      for (size_t j = 0; j<Nullspace_->getNumVectors(); j++) {
+        doProject = doProject || (Teuchos::ScalarTraits<Scalar>::magnitude(dots(j, i)) > 100*Teuchos::ScalarTraits<Scalar>::eps());
+      }
+    }
+    if (doProject) {
+      for (size_t i = 0; i<X.getNumVectors(); i++) {
+        for (size_t j = 0; j<Nullspace_->getNumVectors(); j++) {
+          X.getVectorNonConst(i)->update(-dots(j, i), *Nullspace_->getVector(j), ONE);
+        }
+      }
+    }
+  }
+
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Amesos2Smoother(const std::string& type, const Teuchos::ParameterList& paramList)
@@ -142,97 +213,115 @@ namespace MueLu {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<Matrix> factorA;
     Teuchos::ParameterList pL = this->GetParameterList();
+
     if (pL.get<bool>("fix nullspace")) {
       this->GetOStream(Runtime1) << "MueLu::Amesos2Smoother::Setup(): fixing nullspace" << std::endl;
 
       rowMap = A->getRowMap();
-      size_t M = rowMap->getGlobalNumElements();
+      size_t gblNumCols = rowMap->getGlobalNumElements();
 
-      RCP<MultiVector> Nullspace = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
+      RCP<MultiVector> NullspaceOrig = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Nullspace->getNumVectors() > 1, Exceptions::RuntimeError,
-        "MueLu::Amesos2Smoother::Setup Fixing nullspace for coarse matrix for Amesos2 for nullspace of dim > 1 has not been implemented yet.");
+      projection_ = rcp(new Projection<Scalar,LocalOrdinal,GlobalOrdinal,Node>(NullspaceOrig));
+      RCP<MultiVector> Nullspace = projection_->Nullspace_;
 
-      RCP<MultiVector> NullspaceImp;
+      RCP<MultiVector> ghostedNullspace;
       RCP<const Map> colMap;
       RCP<const Import> importer;
       if (rowMap->getComm()->getSize() > 1) {
         this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother::Setup(): Applying nullspace fix on distributed matrix. Try rebalancing to single rank!" << std::endl;
         ArrayRCP<GO> elements_RCP;
-        elements_RCP.resize(M);
+        elements_RCP.resize(gblNumCols);
         ArrayView<GO> elements = elements_RCP();
-        for (size_t k = 0; k<M; k++)
+        for (size_t k = 0; k<gblNumCols; k++)
           elements[k] = Teuchos::as<GO>(k);
-        colMap = MapFactory::Build(rowMap->lib(),M*rowMap->getComm()->getSize(),elements,Teuchos::ScalarTraits<GO>::zero(),rowMap->getComm());
+        colMap = MapFactory::Build(rowMap->lib(),gblNumCols*rowMap->getComm()->getSize(),elements,Teuchos::ScalarTraits<GO>::zero(),rowMap->getComm());
         importer = ImportFactory::Build(rowMap,colMap);
-        NullspaceImp = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors());
-        NullspaceImp->doImport(*Nullspace,*importer,Xpetra::INSERT);
+        ghostedNullspace = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors());
+        ghostedNullspace->doImport(*Nullspace,*importer,Xpetra::INSERT);
       } else {
-        NullspaceImp = Nullspace;
+        ghostedNullspace = Nullspace;
         colMap = rowMap;
       }
 
-      ArrayRCP<const SC> nullspaceRCP, nullspaceImpRCP;
-      RCP<CrsMatrixWrap> Acrs = rcp_dynamic_cast<CrsMatrixWrap>(A);
+      using ATS        = Kokkos::ArithTraits<SC>;
+      using impl_Scalar = typename ATS::val_type;
+      using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
+      using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Acrs.is_null(), Exceptions::RuntimeError,
-        "MueLu::Amesos2Smoother::Setup Fixing nullspace for coarse matrix for Amesos2 when matrix is not a Crs matrix has not been implemented yet.");
+      typedef typename Matrix::local_matrix_type KCRS;
+      typedef typename KCRS::StaticCrsGraphType graph_t;
+      typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+      typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+      typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
-      ArrayRCP<const size_t> rowPointers;
-      ArrayRCP<const LO>     colIndices;
-      ArrayRCP<const SC>     values;
-      Acrs->getCrsMatrix()->getAllValues(rowPointers, colIndices, values);
+      const impl_Scalar impl_SC_ZERO = impl_ATS::zero();
 
-      ArrayRCP<size_t> newRowPointers_RCP;
-      ArrayRCP<LO>     newColIndices_RCP;
-      ArrayRCP<SC>     newValues_RCP;
+      size_t         lclNumRows = rowMap->getLocalNumElements();
+      LocalOrdinal   lclNumCols = Teuchos::as<LocalOrdinal>(gblNumCols);
+      lno_view_t     newRowPointers("newRowPointers", lclNumRows+1);
+      lno_nnz_view_t newColIndices("newColIndices", lclNumRows*gblNumCols);
+      scalar_view_t  newValues("newValues", lclNumRows*gblNumCols);
 
-      size_t N = rowMap->getLocalNumElements();
-      newRowPointers_RCP.resize(N+1);
-      newColIndices_RCP.resize(N*M);
-      newValues_RCP.resize(N*M);
-
-      ArrayView<size_t> newRowPointers = newRowPointers_RCP();
-      ArrayView<LO>     newColIndices  = newColIndices_RCP();
-      ArrayView<SC>     newValues      = newValues_RCP();
-
-      SC normalization = Nullspace->getVector(0)->norm2();
-      normalization = Teuchos::ScalarTraits<Scalar>::one()/(normalization*normalization);
-
-      ArrayView<const SC> nullspace, nullspaceImp;
-      nullspaceRCP = Nullspace->getData(0);
-      nullspace = nullspaceRCP();
-      nullspaceImpRCP = NullspaceImp->getData(0);
-      nullspaceImp = nullspaceImpRCP();
-
-      // form nullspace * nullspace^T
-      for (size_t i = 0; i < N; i++) {
-        newRowPointers[i] = i*M;
-        for (size_t j = 0; j < M; j++) {
-          newColIndices[i*M+j] = Teuchos::as<LO>(j);
-          newValues[i*M+j] = normalization * nullspace[i]*Teuchos::ScalarTraits<Scalar>::conjugate(nullspaceImp[j]);
-        }
+      impl_Scalar shift;
+      {
+        RCP<Vector> diag = VectorFactory::Build(A->getRowMap());
+        A->getLocalDiagCopy(*diag);
+        shift = diag->normInf();
       }
-      newRowPointers[N] = N*M;
+
+      // form normalization * nullspace * nullspace^T
+      {
+        auto lclNullspace = Nullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
+        auto lclGhostedNullspace = ghostedNullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
+        Kokkos::parallel_for("MueLu:Amesos2Smoother::fixNullspace_1", range_type(0, lclNumRows+1),
+                             KOKKOS_LAMBDA(const size_t i) {
+                               if (i<lclNumRows) {
+                                 newRowPointers(i) = i*gblNumCols;
+                                 for (LocalOrdinal j = 0; j < lclNumCols; j++) {
+                                   newColIndices(i*gblNumCols+j) = j;
+                                   newValues(i*gblNumCols+j) = impl_SC_ZERO;
+                                   for (size_t I = 0; I < lclNullspace.extent(1); I++)
+                                     for (size_t J = 0; J < lclGhostedNullspace.extent(1); J++)
+                                       newValues(i*gblNumCols+j) += shift * lclNullspace(i, I)*impl_ATS::conjugate(lclGhostedNullspace(j, J));
+                                 }
+                               } else
+                                 newRowPointers(lclNumRows) = lclNumRows*gblNumCols;
+                             });
+      }
 
       // add A
-      for (size_t i = 0; i < N; i++) {
-        for (size_t jj = rowPointers[i]; jj < rowPointers[i+1]; jj++) {
-          LO j = colMap->getLocalElement(A->getColMap()->getGlobalElement(colIndices[jj]));
-          SC v = values[jj];
-          newValues[i*M+j] += v;
+      if (colMap->lib() == Xpetra::UseTpetra) {
+        auto lclA = A->getLocalMatrixDevice();
+        auto lclColMapA = A->getColMap()->getLocalMap();
+        auto lclColMapANew = colMap->getLocalMap();
+        Kokkos::parallel_for("MueLu:Amesos2Smoother::fixNullspace_2", range_type(0, lclNumRows),
+                             KOKKOS_LAMBDA(const size_t i) {
+                               for (size_t jj = lclA.graph.row_map(i); jj < lclA.graph.row_map(i+1); jj++) {
+                                 LO j = lclColMapANew.getLocalElement(lclColMapA.getGlobalElement(lclA.graph.entries(jj)));
+                                 impl_Scalar v = lclA.values(jj);
+                                 newValues(i*gblNumCols+j) += v;
+                               }
+                             });
+      } else {
+        auto lclA = A->getLocalMatrixHost();
+        for (size_t i = 0; i<lclNumRows; i++) {
+          for (size_t jj = lclA.graph.row_map(i); jj < lclA.graph.row_map(i+1); jj++) {
+            LO j = colMap->getLocalElement(A->getColMap()->getGlobalElement(lclA.graph.entries(jj)));
+            SC v = lclA.values(jj);
+            newValues(i*gblNumCols+j) += v;
+          }
         }
       }
 
       RCP<Matrix>    newA    = rcp(new CrsMatrixWrap(rowMap, colMap, 0));
       RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
-
-      using Teuchos::arcp_const_cast;
-      newAcrs->setAllValues(arcp_const_cast<size_t>(newRowPointers_RCP), arcp_const_cast<LO>(newColIndices_RCP), arcp_const_cast<SC>(newValues_RCP));
+      newAcrs->setAllValues(newRowPointers, newColIndices, newValues);
       newAcrs->expertStaticFillComplete(A->getDomainMap(), A->getRangeMap(),
                                         importer, A->getCrsGraph()->getExporter());
 
       factorA = newA;
+      rowMap = factorA->getRowMap();
     } else {
       factorA = A;
     }
@@ -243,7 +332,8 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
     RCP<Teuchos::ParameterList> amesos2_params = Teuchos::rcpFromRef(pL.sublist("Amesos2"));
     amesos2_params->setName("Amesos2");
-    if (rowMap->getGlobalNumElements() != as<size_t>((rowMap->getMaxAllGlobalIndex() - rowMap->getMinAllGlobalIndex())+1)) {
+    if ((rowMap->getGlobalNumElements() != as<size_t>((rowMap->getMaxAllGlobalIndex() - rowMap->getMinAllGlobalIndex())+1)) ||
+        (!rowMap->isContiguous())) {
       if (!(amesos2_params->sublist(prec_->name()).template isType<bool>("IsContiguous")))
         amesos2_params->sublist(prec_->name()).set("IsContiguous", false, "Are GIDs Contiguous");
     }
@@ -296,6 +386,13 @@ namespace MueLu {
 
       for (size_t i = 0; i < length; i++)
         Xdata[i] = X_data[i];
+    }
+
+    {
+      Teuchos::ParameterList pL = this->GetParameterList();
+      if (pL.get<bool>("fix nullspace")) {
+        projection_->projectOut(X);
+      }
     }
   }
 

@@ -60,7 +60,7 @@ class QuadraticToLinearMeshFactory : public STK_MeshFactory {
 public:
 
   QuadraticToLinearMeshFactory(const std::string& quadMeshFileName,
-                          stk::ParallelMachine mpi_comm = MPI_COMM_WORLD,
+                          stk::ParallelMachine mpi_comm = MPI_COMM_WORLD, // CHECK: ALLOW MPI_COMM_WORLD
                           const bool print_debug = false);
 
   QuadraticToLinearMeshFactory(const Teuchos::RCP<panzer_stk::STK_Interface>& quadMesh,
