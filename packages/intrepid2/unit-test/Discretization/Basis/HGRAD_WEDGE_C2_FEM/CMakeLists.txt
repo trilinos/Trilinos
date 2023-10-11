@@ -77,6 +77,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(HGRAD_WEDGE_C2TestDataCopy
     WEDGE_C2_D3Vals.dat
     WEDGE_C2_D4Vals.dat
     WEDGE_C2_GradVals.dat
+    WEDGE_I2_D2Vals.dat
+    WEDGE_I2_D3Vals.dat
+    WEDGE_I2_GradVals.dat
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/testdata"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/testdata"
 )

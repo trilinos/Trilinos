@@ -159,20 +159,10 @@ namespace Intrepid2 {
         output.access(4, 5) =  0.0;                    // {0, 0, 2}
         break;
       }
-      case OPERATOR_MAX: {
-        const ordinal_type jend = output.extent(1);
-        const ordinal_type iend = output.extent(0);
-
-        for (ordinal_type j=0;j<jend;++j)
-          for (ordinal_type i=0;i<iend;++i)
-            output.access(i, j) = 0.0;
-        break;
-      }
       default: {
         INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                   opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_D2 &&
-                                  opType != OPERATOR_MAX,
+                                  opType != OPERATOR_D2,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::Serial::getValues) operator is not supported");
       }
       }
@@ -230,8 +220,8 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10: {
-        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): Operator not implemented yet");
         break;
       }
       default: {
@@ -274,8 +264,6 @@ namespace Intrepid2 {
       OrdinalTypeArray1DHost tagView(&tags[0], 20);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-      //OrdinalTypeArray2DHost ordinalToTag;
-      //OrdinalTypeArray3DHost tagToOrdinal;
       this->setOrdinalTagData(this->tagToOrdinal_,
                               this->ordinalToTag_,
                               tagView,
@@ -284,12 +272,6 @@ namespace Intrepid2 {
                               posScDim,
                               posScOrd,
                               posDfOrd);
-
-      //this->tagToOrdinal_ = Kokkos::create_mirror_view(typename DT::memory_space(), tagToOrdinal);
-      //Kokkos::deep_copy(this->tagToOrdinal_, tagToOrdinal);
-
-      //this->ordinalToTag_ = Kokkos::create_mirror_view(typename DT::memory_space(), ordinalToTag);
-      //Kokkos::deep_copy(this->ordinalToTag_, ordinalToTag);
     }
 
     // dofCoords on host and create its mirror view to device

@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::G_TRIPRISM_C1_FEM class.
+    \brief  Unit tests for the Intrepid2::HGRAD_PYR_I2_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson, M. Perego and Kyungjoo Kim.
 */
 
@@ -51,7 +51,7 @@
 #define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #endif
 
-#include "Intrepid2_HGRAD_PYR_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_PYR_I2_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -72,11 +72,11 @@ namespace Intrepid2 {
     }
 
     template<typename ValueType, typename DeviceType>
-    int HGRAD_PYR_C1_FEM_Test01(const bool verbose) {
+    int HGRAD_PYR_I2_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
-
+      
       if (verbose)
         outStream = Teuchos::rcp(&std::cout, false);
       else
@@ -95,10 +95,10 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|                 Unit Test (Basis_HGRAD_PYR_C1_FEM)                          |\n"
+        << "|              Unit Test (Basis_HGRAD_PYR_I2_FEM)                 |\n"
         << "|                                                                             |\n"
         << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
-        << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n"
+        << "|     2) Basis values for VALUE, GRAD, and Dk operators                       |\n"
         << "|                                                                             |\n"
         << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
         << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
@@ -120,7 +120,7 @@ namespace Intrepid2 {
       // for virtual function, value and point types are declared in the class
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      Basis_HGRAD_PYR_C1_FEM<DeviceType,outputValueType,pointValueType> pyrBasis;
+      Basis_HGRAD_PYR_I2_FEM<DeviceType,outputValueType,pointValueType> pyrBasis;
 
      *outStream
        << "\n"
@@ -219,7 +219,7 @@ namespace Intrepid2 {
          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
        }
-     } catch (std::logic_error &err) {
+     } catch (std::exception &err) {
        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
        *outStream << err.what() << '\n';
        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -291,66 +291,80 @@ namespace Intrepid2 {
        << "===============================================================================\n";
 
      outStream -> precision(20);
+      // Basis values are stored in (F,P) format in a data file. Read file and do the test     
+      std::vector<ValueType> basisValues;           // Flat array for the gradient values.
+      { 
+        std::ifstream dataFile;
+        dataFile.open("./testdata/PYR_I2_Vals.dat");
+        INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
+                                      ">>> ERROR (HGRAD_PYR_I2_Serendipity/test01): could not open values data file, test aborted.");
+        while (!dataFile.eof() ){
+          ValueType temp;
+          std::string line;                            // string for one line of input file
+          std::getline(dataFile, line);           // get next line from file
+          std::stringstream data_line(line);           // convert to stringstream
+          while (data_line >> temp)               // extract value from line
+            basisValues.push_back(temp);           // push into vector
+        }
+      }
 
-     // VALUE: Each row gives the 4 correct basis set values at an evaluation point
-     const ValueType basisValues[] = {
-       1.0, 0.0, 0.0, 0.0, 0.0,
-       0.0, 1.0, 0.0, 0.0, 0.0,
-       0.0, 0.0, 1.0, 0.0, 0.0,
-       0.0, 0.0, 0.0, 1.0, 0.0,
-       0.0, 0.0, 0.0, 0.0, 1.0,
-       //
-       0.0515625,   0.0984375,  0.4265625,  0.2234375,  0.2,
-       0.2,         0,          0.,         0.5,        0.3,
-       0.025,       0.025,      0.,         0,          0.95,
-       0.18,        0.045,      0.005,      0.02,       0.75,
-       0.035,       0.015,      0.285,      0.665,      0.,
-     };
+      // GRAD and D1 values are stored in (F,P,D) format in a data file. Read file and do the test     
+      std::vector<ValueType> basisGrads;           // Flat array for the gradient values.
+      { 
+        std::ifstream dataFile;
+        dataFile.open("./testdata/PYR_I2_GradVals.dat");
+        INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
+                                      ">>> ERROR (HGRAD_PYR_I2_Serendipity/test01): could not open GRAD values data file, test aborted.");
+        while (!dataFile.eof() ){
+          ValueType temp;
+          std::string line;                            // string for one line of input file
+          std::getline(dataFile, line);           // get next line from file
+          std::stringstream data_line(line);           // convert to stringstream
+          while (data_line >> temp)               // extract value from line
+            basisGrads.push_back(temp);           // push into vector
+        }
+      }
+  
+      //D2: flat array with the values of D2 applied to basis functions. Multi-index is (F,P,D2cardinality)
+      std::vector<ValueType> basisD2;
+      { 
+        std::ifstream dataFile;
 
-     // GRAD and D1: each row gives the 3 x 5 correct values of the gradients of the 5 basis functions
-     const ValueType basisGrads[] = {
-       -0.5, -0.5,  0.0,  0.5,  0.0, -0.5,  0.0,  0.0,  0.0,  0.0,  0.5, -0.5,  0.0,  0.0,  1.0, \
-       -0.5,  0.0, -0.5,  0.5, -0.5,  0.0,  0.0,  0.5, -0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0, \
-       0.0,  0.0,  0.0,  0.0, -0.5, -0.5,  0.5,  0.5,  0.0, -0.5,  0.0, -0.5,  0.0,  0.0,  1.0, \
-       0.0, -0.5, -0.5,  0.0,  0.0,  0.0,  0.5,  0.0, -0.5, -0.5,  0.5,  0.0,  0.0,  0.0,  1.0, \
-       -0.25,-0.25,-0.25, 0.25,-0.25,-0.25, 0.25, 0.25,-0.25,-0.25, 0.25,-0.25, 0.0,  0.0,  1.0, \
-       -0.09375, -0.171875, -0.201171875,  0.09375, -0.328125, -0.298828125, 0.40625,  0.328125, -0.201171875, -0.40625,  0.171875, -0.298828125,  0.0,  0.0,  1.0, \
-       -0.1428571428571429, -0.5, -0.3571428571428571,  0.1428571428571429,  0.0, -0.1428571428571429,  0.3571428571428571, 0.0, -0.3571428571428571, -0.3571428571428571,  0.5, -0.1428571428571429,  0.0,  0.0,  1.0, \
-       -0.5, -0.25, -0.25,  0.5, -0.25, -0.25,  0.0,  0.25, -0.25,  0.,  0.25, -0.25, 0.0,  0.0,  1.0, \
-       -0.45, -0.4, -0.13,  0.45, -0.1, -0.37,  0.05,  0.1, -0.13, -0.05,  0.4, -0.37,  0.0,  0.0,  1.0, \
-       -0.025, -0.35, -0.34,  0.025, -0.15, -0.16,  0.475,  0.15, -0.34, -0.475,  0.35, -0.16,  0.0,  0.0,  1.0
-     };
-
-
-     //D2: flat array with the values of D2 applied to basis functions. Multi-index is (P,F,K)
-     const auto eps = epsilon();
-     const ValueType basisD2[] = {
-       0, 0.25,-0.25, 0,-0.25, 0.5, 0,-0.25, 0.25, 0, 0.25,-0.5, 0, 0.25,-0.25, 0,-0.25, 0.5, 0,-0.25, 0.25, 0, 0.25,-0.5, 0, 0, 0, 0, 0, 0, \
-       0, 0.25,-0.25, 0, 0.25,-0.5, 0,-0.25, 0.25, 0,-0.25, 0.5, 0, 0.25,-0.25, 0, 0.25,-0.5, 0,-0.25, 0.25, 0,-0.25, 0.5, 0, 0, 0, 0, 0, 0, \
-       0, 0.25, 0.25, 0, 0.25, 0.5, 0,-0.25,-0.25, 0,-0.25,-0.5, 0, 0.25, 0.25, 0, 0.25, 0.5, 0,-0.25,-0.25, 0,-0.25,-0.5, 0, 0, 0, 0, 0, 0, \
-       0, 0.25, 0.25, 0,-0.25,-0.5, 0,-0.25,-0.25, 0, 0.25, 0.5, 0, 0.25, 0.25, 0,-0.25,-0.5, 0,-0.25,-0.25, 0, 0.25, 0.5, 0, 0, 0, 0, 0, 0, \
-       0, 0.25/eps, 0, 0, 0, 0, 0,-0.25/eps, 0, 0, 0, 0, 0, 0.25/eps, 0, 0, 0, 0, 0,-0.25/eps, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, \
-       0, 0.3125, 0.1953125, 0, 0.09765625, 0.1220703125, 0,-0.3125,-0.1953125, 0,-0.09765625,-0.1220703125, 0, 0.3125, 0.1953125, 0, 0.09765625, 0.1220703125, 0,-0.3125,-0.1953125, 0,-0.09765625,-0.1220703125, 0, 0, 0, 0, 0, 0, \
-       0, 0.3571428571428571, 0.1530612244897959, 0,-0.3571428571428571,-0.306122448979592, 0,-0.3571428571428572,-0.1530612244897959, 0, 0.3571428571428571, 0.306122448979592, 0, 0.3571428571428571, 0.1530612244897959, 0,-0.3571428571428571,-0.306122448979592, 0,-0.3571428571428571,-0.1530612244897959, 0, 0.3571428571428571, 0.306122448979592, 0, 0, 0, 0, 0, 0, \
-       0, 5,-5, 0, 0, 0, 0,-5, 5, 0, 0, 0, 0, 5,-5, 0, 0, 0, 0, -5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-       0, 1,-0.8, 0,-0.6, 0.96, 0, -1, 0.8, 0, 0.6,-0.96, 0,1,-0.8, 0, -0.6, 0.96, 0, -1, 0.8, 0, 0.6, -0.96, 0, 0, 0, 0, 0, 0, \
-       0, 0.25, 0.225, 0,-0.1,-0.18, 0,-0.25,-0.225, 0, 0.1, 0.18, 0, 0.25, 0.225, 0,-0.1,-0.18, 0,-0.25,-0.225,0,0.1,0.18, 0, 0, 0, 0, 0, 0
-     };
+        dataFile.open("./testdata/PYR_I2_D2Vals.dat");        
+        INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
+                                      ">>> ERROR (HGRAD_PYR_I2_Serendipity/test01): could not open D2 values data file, test aborted.");
+        while (!dataFile.eof() ){
+          ValueType temp;
+          std::string line;                            // string for one line of input file
+          std::getline(dataFile, line);           // get next line from file
+          std::stringstream data_line(line);           // convert to stringstream
+          while (data_line >> temp)               // extract value from line
+            basisD2.push_back(temp);           // push into vector
+        }
+      }
 
      try {
-       DynRankViewHost ConstructWithLabel(pyrNodesHost, 10, 3);
+      DynRankViewHost ConstructWithLabel(pyrNodesHost, 18, 3);
+      pyrNodesHost(0,0)  = -1.0;  pyrNodesHost(0,1)  = -1.0;  pyrNodesHost(0,2)  =  0;
+      pyrNodesHost(1,0)  =  1.0;  pyrNodesHost(1,1)  = -1.0;  pyrNodesHost(1,2)  =  0;
+      pyrNodesHost(2,0)  =  1.0;  pyrNodesHost(2,1)  =  1.0;  pyrNodesHost(2,2)  =  0;
+      pyrNodesHost(3,0)  = -1.0;  pyrNodesHost(3,1)  =  1.0;  pyrNodesHost(3,2)  =  0;
+      pyrNodesHost(4,0)  =  0.0;  pyrNodesHost(4,1)  =  0.0;  pyrNodesHost(4,2)  =  1.0;
+      pyrNodesHost(5,0)  =  0.0;  pyrNodesHost(5,1)  = -1.0;  pyrNodesHost(5,2)  =  0.0;
+      pyrNodesHost(6,0)  =  1.0;  pyrNodesHost(6,1)  =  0.0;  pyrNodesHost(6,2)  =  0.0;
+      pyrNodesHost(7,0)  =  0.0;  pyrNodesHost(7,1)  =  1.0;  pyrNodesHost(7,2)  =  0.0;
+      pyrNodesHost(8,0)  = -1.0;  pyrNodesHost(8,1)  =  0.0;  pyrNodesHost(8,2)  =  0.0;
+      pyrNodesHost(9,0)  = -0.5;  pyrNodesHost(9,1)  = -0.5;  pyrNodesHost(9,2)  =  0.5;
+      pyrNodesHost(10,0) =  0.5;  pyrNodesHost(10,1) = -0.5;  pyrNodesHost(10,2) =  0.5;
+      pyrNodesHost(11,0) =  0.5;  pyrNodesHost(11,1) =  0.5;  pyrNodesHost(11,2) =  0.5;
+      pyrNodesHost(12,0) = -0.5;  pyrNodesHost(12,1) =  0.5;  pyrNodesHost(12,2) =  0.5;
 
-       pyrNodesHost(0,0) = -1.0;  pyrNodesHost(0,1) = -1.0;  pyrNodesHost(0,2) =  0;
-       pyrNodesHost(1,0) =  1.0;  pyrNodesHost(1,1) = -1.0;  pyrNodesHost(1,2) =  0;
-       pyrNodesHost(2,0) =  1.0;  pyrNodesHost(2,1) =  1.0;  pyrNodesHost(2,2) =  0;
-       pyrNodesHost(3,0) = -1.0;  pyrNodesHost(3,1) =  1.0;  pyrNodesHost(3,2) =  0;
-       pyrNodesHost(4,0) =  0.0;  pyrNodesHost(4,1) =  0.0;  pyrNodesHost(4,2) =  1.0;
+      pyrNodesHost(13,0) =  0.25; pyrNodesHost(13,1) =  0.5;  pyrNodesHost(13,2) = 0.2;
+      pyrNodesHost(14,0) = -0.7 ; pyrNodesHost(14,1) =  0.3;  pyrNodesHost(14,2) = 0.3;
+      pyrNodesHost(15,0) =  0.;   pyrNodesHost(15,1) = -0.05; pyrNodesHost(15,2) = 0.95;
+      pyrNodesHost(16,0) = -0.15; pyrNodesHost(16,1) = -0.2;  pyrNodesHost(16,2) = 0.75;
+      pyrNodesHost(17,0) = -0.4;  pyrNodesHost(17,1) =  0.9;  pyrNodesHost(17,2) = 0.0;
 
-       pyrNodesHost(5,0) =  0.25; pyrNodesHost(5,1) =  0.5;  pyrNodesHost(5,2) = 0.2;
-       pyrNodesHost(6,0) = -0.7 ; pyrNodesHost(6,1) =  0.3;  pyrNodesHost(6,2) = 0.3;
-       pyrNodesHost(7,0) =  0.;   pyrNodesHost(7,1) = -0.05; pyrNodesHost(7,2) = 0.95;
-       pyrNodesHost(8,0) = -0.15; pyrNodesHost(8,1) = -0.2;  pyrNodesHost(8,2) = 0.75;
-       pyrNodesHost(9,0) = -0.4;  pyrNodesHost(9,1) =  0.9;  pyrNodesHost(9,2) = 0.0;
 
        auto pyrNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), pyrNodesHost);
        Kokkos::deep_copy(pyrNodes, pyrNodesHost);
@@ -369,7 +383,7 @@ namespace Intrepid2 {
          Kokkos::deep_copy(vals_host, vals);
          for (ordinal_type i=0;i<numFields;++i) {
            for (ordinal_type j=0;j<numPoints;++j) {
-             const ordinal_type l =  i + j * numFields;
+             const ordinal_type l =  i*numPoints + j;
              if (std::abs(vals_host(i,j) - basisValues[l]) > tol) {
                errorFlag++;
                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -393,7 +407,7 @@ namespace Intrepid2 {
          for (ordinal_type i=0;i<numFields;++i) {
            for (ordinal_type j=0;j<numPoints;++j) {
              for (ordinal_type k=0;k<spaceDim;++k) {
-               const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
+               const ordinal_type l = i + j * numFields + k * numFields * numPoints;
                if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                  errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -418,7 +432,7 @@ namespace Intrepid2 {
          for (ordinal_type i=0;i<numFields;++i) {
            for (ordinal_type j=0;j<numPoints;++j) {
              for (ordinal_type k=0;k<spaceDim;++k) {
-               const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
+               const ordinal_type l = i + j * numFields + k * numFields * numPoints;
                if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                  errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -445,7 +459,7 @@ namespace Intrepid2 {
              // derivatives are singular when z = 1; using the same eps, it can be comparable
              //if (j == 4) continue; 
              for (ordinal_type k=0;k<D2Cardin;++k) {
-               const ordinal_type l = k + i * D2Cardin + j * D2Cardin * numFields;
+               const ordinal_type l = i + j * numFields + k * numFields * numPoints;
                if (std::abs(vals_host(i,j,k) - basisD2[l]) > tol) {
                  errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
