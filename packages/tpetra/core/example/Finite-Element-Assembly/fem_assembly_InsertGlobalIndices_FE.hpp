@@ -470,7 +470,10 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
   RCP<TimeMonitor> timerElementLoopMemory = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.1) ElementLoop  (Memory)")));
 
-  // Because we're processing elements in parallel, we need storage for all of them
+  // the number of finite elements this process will handle, and the number of
+  // nodes associated with each element.
+  // This information will be used to pre-allocate storage to process elements
+  // in parallel.
   const int numOwnedElements = mesh.getNumOwnedElements();
   const int nodesPerElem = mesh.getOwnedElementToNode().extent(1);
 
