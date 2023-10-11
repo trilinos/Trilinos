@@ -502,7 +502,6 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     auto all_element_rhs_unmanaged = makeUnmanaged(all_element_rhs);
     auto all_element_matrix_unmanaged = makeUnmanaged(all_element_matrix);
     auto all_lcids_unmanaged = makeUnmanaged(all_lcids);
-    //  Tpetra::beginAssembly(*fe_matrix,*rhs);
     Kokkos::parallel_for
       ("Assemble FE matrix and right-hand side",
        Kokkos::RangePolicy<execution_space, int> (0, numOwnedElements),
