@@ -1207,11 +1207,11 @@ namespace Intrepid2 {
           for (ordinal_type i=0;i<iend;++i)
             output.access(i, j) = 0.0;
 
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
-
         if constexpr (!serendipity) {
+          const auto x = input(0);
+          const auto y = input(1);
+          const auto z = input(2);
+          
           output.access(0,  3) = ((-1.+ z)*z)/2.;
           output.access(0,  4) = ((-1.+ 2.*y)*(-1.+ 2.*z))/4.;
           output.access(0,  5) = ((-1.+ y)*y)/2.;

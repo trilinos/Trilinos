@@ -498,11 +498,10 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_D3: {
-        const auto x = input(0);
-        const auto y = input(1);
-        const auto z = input(2);
-
         if constexpr (!serendipity) {
+          const auto x = input(0);
+          const auto y = input(1);
+          const auto z = input(2);
 
           output.access(0, 0) =  0.;
           output.access(0, 1) =  0.;
