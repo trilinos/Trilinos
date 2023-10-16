@@ -218,7 +218,7 @@ protected:
  * timer.report(std::cout); // dump to screen
  *
  */
-class StackedTimer
+class TEUCHOSCOMM_LIB_DLL_EXPORT StackedTimer
 {
 protected:
 
