@@ -1131,6 +1131,16 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 /*            (min_nodes_per_aggregate) to form its own aggregate            */
 /* ------------------------------------------------------------------------- */
 
+const char * aggNameType(int i) {//CMS
+  if(i==ML_AGGR_READY)       return "R";
+  else if(i==ML_AGGR_NOTSEL) return "N";
+  else if(i==ML_AGGR_SELECTED) return "A";
+  else if(i==ML_AGGR_SELECTED2) return "A2";
+  else if(i==ML_AGGR_BDRY) return "B";
+  else return "UNK";
+}
+
+
 int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                       ML_Operator *Amat, int *mat_indx, int *bdry_array,
                       int *aggr_count_in, int **aggr_index_in, char *true_bdry)
@@ -1151,6 +1161,10 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
 #ifndef newstuff
    int *int_buf = NULL, maxcount, mincount, search_flag;
 #endif
+
+   static int CMS_call_count=-1;
+    CMS_call_count++;
+
 
    /* ============================================================= */
    /* get the machine information and matrix references             */
@@ -1323,6 +1337,14 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          if (select_flag != 1 ||
              supernode->length < min_nodes_per_aggregate)
          {
+           printf("[%d,%d] CMS: Rejecting root %d with %d neighbors, nodes:",CMS_call_count,mypid,inode,count);//CMS
+           for ( j = 0; j < supernode->length; j++ ) {
+             jnode = supernode->list[j];
+             printf("%d(%s) ",jnode,aggNameType(aggr_stat[jnode]));//CMS
+           }
+           printf("\n");
+
+           
             aggr_stat[inode] = ML_AGGR_NOTSEL;
             ML_free( supernode->list );
             ML_free( supernode );
@@ -1351,11 +1373,12 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          else
          {
 
-           //           printf("CMS: Accepting root %d with %d neighbors, nodes:",inode2-1,count);
+           printf("[%d,%d] CMS: Accepting root %d with %d neighbors, nodes:",CMS_call_count,mypid,inode,count);//CMS
             for ( j = 0; j < supernode->length; j++ )
             {
                jnode = supernode->list[j];
-               //               printf("%d ",jnode);//CMS
+               printf("%d(%s) ",jnode,aggNameType(aggr_stat[jnode]));//CMS
+
                aggr_stat[jnode] = ML_AGGR_SELECTED;
                aggr_index[jnode] = aggr_count;
                if ( ordering == 2 ) /* if graph ordering */
@@ -1379,7 +1402,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                   }
                }
             }
-            //            printf("\n");//CMS
+                        printf("\n");//CMS
             supernode->next = NULL;
             supernode->index = aggr_count;
             if ( aggr_count == 0 )
@@ -1404,6 +1427,9 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                ML_memory_free((void**) &itmp_array);
             }
          }
+      }
+      else {// CMS not ready
+        printf("[%d,%d] CMS: Rejecting root %d not ready (status = %s)\n",CMS_call_count,mypid,inode,aggNameType(aggr_stat[inode]));//CMS
       }
    }
 

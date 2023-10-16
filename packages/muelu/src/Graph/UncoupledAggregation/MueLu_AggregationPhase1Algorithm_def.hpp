@@ -76,6 +76,20 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
       "MueLu::UncoupledAggregationAlgorithm::BuildAggregates: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");
 
+    static int CMS_call_count=-1;
+    CMS_call_count++;
+    auto aggNameType = [](int i){
+      if(i==READY) return "R";
+      else if(i==NOTSEL) return "N";
+      else if(i==AGGREGATED) return "A"; 
+      else if(i==ONEPT) return "O";
+      else if(i==IGNORED) return "IG";
+      else if(i==BOUNDARY) return "B";
+      else if(i==INTERFACE) return "INT";
+      else return "UNK";
+    };
+
+
     enum {
       O_NATURAL,
       O_RANDOM,
@@ -86,7 +100,7 @@ namespace MueLu {
     if (orderingStr == "random" ) ordering = O_RANDOM;
     if (orderingStr == "graph"  ) ordering = O_GRAPH;
 
-    //    printf("CMS: Aggregation ordering =  %d  min/max_nodes_per_aggregate = %d/%d max_neigh_selected = %d\n",ordering, minNodesPerAggregate, maxNodesPerAggregate, maxNeighAlreadySelected);
+    printf("CMS: Aggregation ordering =  %d  min/max_nodes_per_aggregate = %d/%d max_neigh_selected = %d\n",ordering, minNodesPerAggregate, maxNodesPerAggregate, maxNeighAlreadySelected);
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -134,8 +148,10 @@ namespace MueLu {
         graphOrderQueue.pop();                     // delete this node in list
       }
 
-      if (aggStat[rootCandidate] != READY)
+      if (aggStat[rootCandidate] != READY) {
+        printf("[%d,%d] CMS: Rejecting root %d not ready (status = %s)\n",CMS_call_count,myRank,rootCandidate,aggNameType(aggStat[rootCandidate]));//CMS
         continue;
+      }
 
       // Step 2: build tentative aggregate
       aggSize = 0;
@@ -170,8 +186,7 @@ namespace MueLu {
             // would not be accepted at all.
             if (aggSize < as<size_t>(maxNodesPerAggregate))
               aggList[aggSize++] = neigh;
-
-          } else {
+          } else if (aggStat[neigh] != IGNORED) {//CMS - ML does boundaries here, but MueLU has IGNORED instead
             numAggregatedNeighbours++;
           }
         }
@@ -185,19 +200,24 @@ namespace MueLu {
         aggregates.SetIsRoot(rootCandidate);
         aggIndex = numLocalAggregates++;
         
-        //        printf("CMS: Accepting root %d with %d neighbors, nodes:",rootCandidate,numAggregatedNeighbours);
+        printf("[%d,%d] CMS: Accepting root %d with %d neighbors, nodes:",CMS_call_count,myRank,rootCandidate,numAggregatedNeighbours);//CMS
 
         for (size_t k = 0; k < aggSize; k++) {
-          //          printf("%d ",aggList[k]);//CMS
+          printf("%d(%s) ",aggList[k],aggNameType(aggStat[aggList[k]]));//CMS
           aggStat     [aggList[k]] = AGGREGATED;
           vertex2AggId[aggList[k]] = aggIndex;
           procWinner  [aggList[k]] = myRank;
         }
-        //        printf("\n");//CMS
+        printf("\n");//CMS
 
         numNonAggregatedNodes -= aggSize;        
 
       } else {
+        printf("[%d,%d] CMS: Rejecting root %d with %d neighbors, nodes:",CMS_call_count,myRank,rootCandidate,numAggregatedNeighbours);//CMS
+        for (size_t k = 0; k < aggSize; k++)
+          printf("%d(%s) ",aggList[k],aggNameType(aggStat[aggList[k]]));//CMS
+        printf("\n");//CMS 
+
         // Aggregate is not accepted
         aggStat[rootCandidate] = NOTSEL;
 
