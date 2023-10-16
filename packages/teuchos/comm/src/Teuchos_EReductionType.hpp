@@ -46,6 +46,7 @@
 /// \brief Declaration of Teuchos::EReductionType enum, and related functions
 
 #include "Teuchos_config.h"
+#include "Teuchos_DLLExportMacro.h"
 #ifdef HAVE_TEUCHOS_MPI
 #  include <mpi.h> // need this for MPI_Op (see below)
 #endif // HAVE_TEUCHOS_MPI
@@ -88,7 +89,7 @@ namespace Details {
 ///
 /// \warning This is an implementation detail and not for public use.
 ///   It only exists when Trilinos was built with MPI.
-MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType);
+TEUCHOSCOMM_LIB_DLL_EXPORT MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType);
 
 } // namespace Details
 #endif // HAVE_TEUCHOS_MPI
