@@ -1235,8 +1235,12 @@ namespace MueLu {
         UncoupledAggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(minAggSize));
         int maxAggSize = parameterList_.get("aggregation: max agg size",-1);
         UncoupledAggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(maxAggSize));
-        bool matchMLbehavior = parameterList_.get("aggregation: match ML phase2a",MasterList::getDefault<bool>("aggregation: match ML phase2a"));
-        UncoupledAggFact->SetParameter("aggregation: match ML phase2a",Teuchos::ParameterEntry(matchMLbehavior));
+        bool matchMLbehavior1 = parameterList_.get("aggregation: match ML phase1",MasterList::getDefault<bool>("aggregation: match ML phase1"));
+        UncoupledAggFact->SetParameter("aggregation: match ML phase1",Teuchos::ParameterEntry(matchMLbehavior1));
+        bool matchMLbehavior2a = parameterList_.get("aggregation: match ML phase2a",MasterList::getDefault<bool>("aggregation: match ML phase2a"));
+        UncoupledAggFact->SetParameter("aggregation: match ML phase2a",Teuchos::ParameterEntry(matchMLbehavior2a));
+        bool matchMLbehavior2b = parameterList_.get("aggregation: match ML phase2b",MasterList::getDefault<bool>("aggregation: match ML phase2b"));
+        UncoupledAggFact->SetParameter("aggregation: match ML phase2b",Teuchos::ParameterEntry(matchMLbehavior2b));
         bool avoidSingletons = parameterList_.get("aggregation: phase3 avoid singletons",true);
         UncoupledAggFact->SetParameter("aggregation: phase3 avoid singletons",Teuchos::ParameterEntry(avoidSingletons));
 
