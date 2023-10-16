@@ -72,7 +72,7 @@ namespace MueLu {
     int maxNeighAlreadySelected = params.get<int>        ("aggregation: max selected neighbors");
     int minNodesPerAggregate    = params.get<int>        ("aggregation: min agg size");
     int maxNodesPerAggregate    = params.get<int>        ("aggregation: max agg size");
-    bool matchMLbehavior        = params.get<bool>("aggregation: match ML phase1");
+    bool matchMLBehavior        = params.get<bool>("aggregation: match ML phase1");
 
     TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
       "MueLu::UncoupledAggregationAlgorithm::BuildAggregates: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");
