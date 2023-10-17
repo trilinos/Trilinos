@@ -214,6 +214,13 @@ STKConnManager::addSubcellConnectivities(stk::mesh::Entity element,
    LocalOrdinal numIds = 0;
    stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
    const stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(subcellRank);
+
+#ifdef PANZER_DEBUG
+   TEUCHOS_TEST_FOR_EXCEPTION(maxIds > bulkData.num_connectivity(element, rank),
+                              std::runtime_error,
+                              "ERROR: The maxIds (num vertices from basis cell topology) is greater than the num vertices in the stk mesh topology!");
+#endif
+
    const size_t num_rels = (maxIds > 0) ? maxIds : bulkData.num_connectivity(element, rank);
    stk::mesh::Entity const* relations = bulkData.begin(element, rank);
    for(std::size_t sc=0; sc<num_rels; ++sc) {
