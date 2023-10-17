@@ -531,6 +531,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, initializerList, T )
+{
+  const Array<T> a2{as<T>(1),as<T>(2),as<T>(3),as<T>(4)};
+  TEST_EQUALITY( a2.size(), 4);
+  for (size_t i=0; i < a2.size(); ++i) {
+    TEST_EQUALITY( a2[i], as<T>(i+1) );
+  }
+}
+
+
 //
 // Instantiations
 //
@@ -578,6 +588,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, erase_empty, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, initializerList, T )
   DEBUG_UNIT_TEST_GROUP( T )
 
 UNIT_TEST_GROUP(int)
