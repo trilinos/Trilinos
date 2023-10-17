@@ -24,9 +24,7 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
-#include "BelosTeuchosDenseAdapter.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -40,7 +38,7 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template<class ScalarType, class MV, class OP, class DM>
 class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
 
   public:
@@ -48,9 +46,9 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
   //
   // Convenience typedefs
   //
-  typedef Belos::MultiVecTraits<ScalarType,MV> MVT;
-  typedef Belos::DenseMatTraits<ScalarType,DM> DMT;
-  typedef Belos::OperatorTraits<ScalarType,MV,OP> OPT;
+  typedef MultiVecTraits<ScalarType,MV,DM> MVT;
+  typedef DenseMatTraits<ScalarType,DM> DMT;
+  typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
 
@@ -546,12 +544,14 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
           // 2. confirm that U is a unit vector
           RCP<DM> uotuo = DMT::Create(1,1);
           MVT::MvTransMv( one, *U_, *U_, *uotuo );
+          DMT::SyncDeviceToHost( *uotuo ); 
           std::cout << "<U, U> = " << DMT::ValueConst(*uotuo,0,0) << std::endl;
           // 3. print alpha =  <V, A'U>
           std::cout << "alpha = "  << alpha[0] << std::endl;
           // 4. compute < AV, U> which ought to be alpha
           RCP<DM> utav = DMT::Create(1,1);
           MVT::MvTransMv( one, *AV, *U_, *utav );
+          DMT::SyncDeviceToHost( *utav ); 
           std::cout << "<AV, U> = alpha = " << DMT::ValueConst(*utav,0,0) << std::endl;
         }
 
