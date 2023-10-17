@@ -44,6 +44,7 @@
 #define IFPACK2_BLOCKTRIDICONTAINER_IMPL_HPP
 
 //#define IFPACK2_BLOCKTRIDICONTAINER_WRITE_MM
+//#define IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
 
 #include <Teuchos_Details_MpiTypeTraits.hpp>
 
@@ -908,8 +909,8 @@ namespace Ifpack2 {
 
         interf.max_partsz = partsz[0].first;
 
-        const local_ordinal_type connection_length = 2;
-        const local_ordinal_type sub_line_length = floor(float(interf.max_partsz - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part);
+        constexpr local_ordinal_type connection_length = 2;
+        const local_ordinal_type sub_line_length = (interf.max_partsz - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part;
         const local_ordinal_type last_sub_line_length = interf.max_partsz - (n_subparts_per_part - 1) * (connection_length + sub_line_length);
 
         interf.max_subpartsz = (sub_line_length > last_sub_line_length) ? sub_line_length : last_sub_line_length;
@@ -951,20 +952,16 @@ namespace Ifpack2 {
       local_ordinal_type pack_nrows = 0;
       local_ordinal_type pack_nrows_sub = 0;
       if (jacobi) {
-        IFPACK2_BLOCKHELPER_TIMER("determine part Jacobi");
+        IFPACK2_BLOCKHELPER_TIMER("compute part indices (Jacobi)");
         for (local_ordinal_type ip=0;ip<nparts;++ip) {
-          const local_ordinal_type ipnrows = 1;
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(ipnrows == 0,
-                    BlockHelperDetails::get_msg_prefix(comm)
-                    << "partition " << p[ip]
-                    << " is empty, which is not allowed.");
+          constexpr local_ordinal_type ipnrows = 1;
           //assume No overlap.
           part2rowidx0(ip+1) = part2rowidx0(ip) + ipnrows;
-          // Since parts are ordered in nonincreasing size, the size of the first
+          // Since parts are ordered in decreasing size, the size of the first
           // part in a pack is the size for all parts in the pack.
           if (ip % vector_length == 0) pack_nrows = ipnrows;
           part2packrowidx0(ip+1) = part2packrowidx0(ip) + ((ip+1) % vector_length == 0 || ip+1 == nparts ? pack_nrows : 0);
-          const local_ordinal_type os = partptr(ip);
+          const local_ordinal_type offset = partptr(ip);
           for (local_ordinal_type i=0;i<ipnrows;++i) {
             const auto lcl_row = ip;
             TEUCHOS_TEST_FOR_EXCEPT_MSG(lcl_row < 0 || lcl_row >= A_n_lclrows,
@@ -973,33 +970,32 @@ namespace Ifpack2 {
                 << i << "] = " << lcl_row
                 << " but input matrix implies limits of [0, " << A_n_lclrows-1
                 << "].");
-            lclrow(os+i) = lcl_row;
-            rowidx2part(os+i) = ip;
-            if (interf.row_contiguous && os+i > 0 && lclrow((os+i)-1) + 1 != lcl_row)
+            lclrow(offset+i) = lcl_row;
+            rowidx2part(offset+i) = ip;
+            if (interf.row_contiguous && offset+i > 0 && lclrow((offset+i)-1) + 1 != lcl_row)
               interf.row_contiguous = false;
           }
-          partptr(ip+1) = os + ipnrows;
+          partptr(ip+1) = offset + ipnrows;
         }
         part2rowidx0_sub(0) = 0;
         partptr_sub(0, 0) = 0;
 
         for (local_ordinal_type ip=0;ip<nparts;++ip) {
-          const local_ordinal_type ipnrows = 1;
-          //const local_ordinal_type first_sub_part_index = ip * (2*n_subparts_per_part - 1);
+          constexpr local_ordinal_type ipnrows = 1;
           const local_ordinal_type full_line_length = partptr(ip+1) - partptr(ip);
 
           TEUCHOS_TEST_FOR_EXCEPTION
             (full_line_length != ipnrows, std::logic_error, 
             "In the part " << ip );  
 
-          const local_ordinal_type connection_length = 2;
+          constexpr local_ordinal_type connection_length = 2;
 
           if (full_line_length < n_subparts_per_part + (n_subparts_per_part - 1) * connection_length )
               TEUCHOS_TEST_FOR_EXCEPTION
                 (true, std::logic_error, 
                 "The part " << ip << " is too short to use " << n_subparts_per_part << " sub parts.");            
 
-          const local_ordinal_type sub_line_length = floor(float(full_line_length - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part);
+          const local_ordinal_type sub_line_length = (full_line_length - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part;
           const local_ordinal_type last_sub_line_length = full_line_length - (n_subparts_per_part - 1) * (connection_length + sub_line_length);
 
           if (ip % vector_length == 0) pack_nrows_sub = ipnrows;
@@ -1021,8 +1017,10 @@ namespace Ifpack2 {
               part2rowidx0_sub(sub_ip + 1) = part2rowidx0_sub(sub_ip) + sub_line_length;
               part2rowidx0_sub(sub_ip + 2) = part2rowidx0_sub(sub_ip + 1) + connection_length;
 
-              //printf("Sub Part index = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip, partptr_sub(ip, 2 * local_sub_ip), sub_line_length);
-              //printf("Sub Part index Schur = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip + 1, partptr_sub(ip, 2 * local_sub_ip + 1), connection_length);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+              printf("Sub Part index = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip, partptr_sub(ip, 2 * local_sub_ip), sub_line_length);
+              printf("Sub Part index Schur = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip + 1, partptr_sub(ip, 2 * local_sub_ip + 1), connection_length);
+#endif
             }
             else {
               if (local_sub_ip != 0) {
@@ -1035,7 +1033,9 @@ namespace Ifpack2 {
 
               part2rowidx0_sub(sub_ip + 1) = part2rowidx0_sub(sub_ip) + last_sub_line_length;
 
-              //printf("Sub Part index = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip, partptr_sub(ip, 2 * local_sub_ip), last_sub_line_length);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+              printf("Sub Part index = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip, partptr_sub(ip, 2 * local_sub_ip), last_sub_line_length);
+#endif
             }
           }
         }
@@ -1071,14 +1071,11 @@ namespace Ifpack2 {
               local_ordinal_type ip_min = ipack*vector_length;
               ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
 
-              //const auto* part = &partitions[p[ip_min]];
-              //const local_ordinal_type ipnrows = part->size();
-              //const local_ordinal_type first_sub_part_index = ip_min * (2*n_subparts_per_part - 1);
               const local_ordinal_type full_line_length = partptr(ip_min+1) - partptr(ip_min);
 
-              const local_ordinal_type connection_length = 2;      
+              constexpr local_ordinal_type connection_length = 2;      
 
-              const local_ordinal_type sub_line_length = floor(float(full_line_length - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part);
+              const local_ordinal_type sub_line_length = (full_line_length - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part;
               const local_ordinal_type last_sub_line_length = full_line_length - (n_subparts_per_part - 1) * (connection_length + sub_line_length);
 
               if (local_sub_ip % 2 == 0) pack_nrows_sub = sub_line_length;
@@ -1097,7 +1094,7 @@ namespace Ifpack2 {
         }        
         IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
       } else {
-        IFPACK2_BLOCKHELPER_TIMER("determine part");
+        IFPACK2_BLOCKHELPER_TIMER("compute part indices");
         for (local_ordinal_type ip=0;ip<nparts;++ip) {
           const auto* part = &partitions[p[ip]];
           const local_ordinal_type ipnrows = part->size();
@@ -1108,11 +1105,11 @@ namespace Ifpack2 {
                     << " is empty, which is not allowed.");
           //assume No overlap.
           part2rowidx0(ip+1) = part2rowidx0(ip) + ipnrows;
-          // Since parts are ordered in nonincreasing size, the size of the first
+          // Since parts are ordered in decreasing size, the size of the first
           // part in a pack is the size for all parts in the pack.
           if (ip % vector_length == 0) pack_nrows = ipnrows;
           part2packrowidx0(ip+1) = part2packrowidx0(ip) + ((ip+1) % vector_length == 0 || ip+1 == nparts ? pack_nrows : 0);
-          const local_ordinal_type os = partptr(ip);
+          const local_ordinal_type offset = partptr(ip);
           for (local_ordinal_type i=0;i<ipnrows;++i) {
             const auto lcl_row = (*part)[i];
             TEUCHOS_TEST_FOR_EXCEPT_MSG(lcl_row < 0 || lcl_row >= A_n_lclrows,
@@ -1121,15 +1118,17 @@ namespace Ifpack2 {
                 << i << "] = " << lcl_row
                 << " but input matrix implies limits of [0, " << A_n_lclrows-1
                 << "].");
-            lclrow(os+i) = lcl_row;
-            rowidx2part(os+i) = ip;
-            if (interf.row_contiguous && os+i > 0 && lclrow((os+i)-1) + 1 != lcl_row)
+            lclrow(offset+i) = lcl_row;
+            rowidx2part(offset+i) = ip;
+            if (interf.row_contiguous && offset+i > 0 && lclrow((offset+i)-1) + 1 != lcl_row)
               interf.row_contiguous = false;
           }
-          partptr(ip+1) = os + ipnrows;
+          partptr(ip+1) = offset + ipnrows;
 
-          //printf("Part index = ip = %d, first LID associated to the part = partptr(ip) = os = %d, part->size() = ipnrows = %d;\n", ip, os, ipnrows);
-          //printf("partptr(%d+1) = %d\n", ip, partptr(ip+1));
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+          printf("Part index = ip = %d, first LID associated to the part = partptr(ip) = os = %d, part->size() = ipnrows = %d;\n", ip, os, ipnrows);
+          printf("partptr(%d+1) = %d\n", ip, partptr(ip+1));
+#endif
         }
 
         part2rowidx0_sub(0) = 0;
@@ -1139,21 +1138,20 @@ namespace Ifpack2 {
         for (local_ordinal_type ip=0;ip<nparts;++ip) {
           const auto* part = &partitions[p[ip]];
           const local_ordinal_type ipnrows = part->size();
-          //const local_ordinal_type first_sub_part_index = ip * (2*n_subparts_per_part - 1);
           const local_ordinal_type full_line_length = partptr(ip+1) - partptr(ip);
 
           TEUCHOS_TEST_FOR_EXCEPTION
             (full_line_length != ipnrows, std::logic_error, 
             "In the part " << ip );  
 
-          const local_ordinal_type connection_length = 2;
+          constexpr local_ordinal_type connection_length = 2;
 
           if (full_line_length < n_subparts_per_part + (n_subparts_per_part - 1) * connection_length )
               TEUCHOS_TEST_FOR_EXCEPTION
                 (true, std::logic_error, 
                 "The part " << ip << " is too short to use " << n_subparts_per_part << " sub parts.");            
 
-          const local_ordinal_type sub_line_length = floor(float(full_line_length - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part);
+          const local_ordinal_type sub_line_length = (full_line_length - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part;
           const local_ordinal_type last_sub_line_length = full_line_length - (n_subparts_per_part - 1) * (connection_length + sub_line_length);
 
           if (ip % vector_length == 0) pack_nrows_sub = ipnrows;
@@ -1175,8 +1173,10 @@ namespace Ifpack2 {
               part2rowidx0_sub(sub_ip + 1) = part2rowidx0_sub(sub_ip) + sub_line_length;
               part2rowidx0_sub(sub_ip + 2) = part2rowidx0_sub(sub_ip + 1) + connection_length;
 
-              //printf("Sub Part index = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip, partptr_sub(ip, 2 * local_sub_ip), sub_line_length);
-              //printf("Sub Part index Schur = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip + 1, partptr_sub(ip, 2 * local_sub_ip + 1), connection_length);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+              printf("Sub Part index = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip, partptr_sub(ip, 2 * local_sub_ip), sub_line_length);
+              printf("Sub Part index Schur = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip + 1, partptr_sub(ip, 2 * local_sub_ip + 1), connection_length);
+#endif
             }
             else {
               if (local_sub_ip != 0) {
@@ -1189,7 +1189,9 @@ namespace Ifpack2 {
 
               part2rowidx0_sub(sub_ip + 1) = part2rowidx0_sub(sub_ip) + last_sub_line_length;
 
-              //printf("Sub Part index = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip, partptr_sub(ip, 2 * local_sub_ip), last_sub_line_length);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+              printf("Sub Part index = %d, first LID associated to the sub part = %d, sub part size = %d;\n", sub_ip, partptr_sub(ip, 2 * local_sub_ip), last_sub_line_length);
+#endif
             }
           }
         }
@@ -1214,14 +1216,11 @@ namespace Ifpack2 {
               local_ordinal_type ip_min = ipack*vector_length;
               ip_max = nparts > (ipack+1)*vector_length ? (ipack+1)*vector_length : nparts;
 
-              //const auto* part = &partitions[p[ip_min]];
-              //const local_ordinal_type ipnrows = part->size();
-              //const local_ordinal_type first_sub_part_index = ip_min * (2*n_subparts_per_part - 1);
               const local_ordinal_type full_line_length = partptr(ip_min+1) - partptr(ip_min);
 
-              const local_ordinal_type connection_length = 2;      
+              constexpr local_ordinal_type connection_length = 2;      
 
-              const local_ordinal_type sub_line_length = floor(float(full_line_length - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part);
+              const local_ordinal_type sub_line_length = (full_line_length - (n_subparts_per_part - 1) * connection_length) / n_subparts_per_part;
               const local_ordinal_type last_sub_line_length = full_line_length - (n_subparts_per_part - 1) * (connection_length + sub_line_length);
 
               if (local_sub_ip % 2 == 0) pack_nrows_sub = sub_line_length;
@@ -1285,13 +1284,14 @@ namespace Ifpack2 {
 
 
         // Fill packindices_sub and packindices_schur
-        for (local_ordinal_type local_sub_ip=0; local_sub_ip<n_subparts_per_part;++local_sub_ip)
-          for (local_ordinal_type local_pack_ip=0; local_pack_ip<npacks_per_subpart;++local_pack_ip)
+        for (local_ordinal_type local_sub_ip=0; local_sub_ip<n_subparts_per_part;++local_sub_ip) {
+          for (local_ordinal_type local_pack_ip=0; local_pack_ip<npacks_per_subpart;++local_pack_ip) {
             packindices_sub(local_sub_ip * npacks_per_subpart + local_pack_ip) = 2 * local_sub_ip * npacks_per_subpart + local_pack_ip;
-
-        for (local_ordinal_type local_sub_ip=0; local_sub_ip<n_subparts_per_part-1;++local_sub_ip)
-          for (local_ordinal_type local_pack_ip=0; local_pack_ip<npacks_per_subpart;++local_pack_ip)
-            packindices_schur(local_sub_ip * npacks_per_subpart + local_pack_ip) = 2 * local_sub_ip * npacks_per_subpart + local_pack_ip + npacks_per_subpart;
+            if (local_sub_ip != n_subparts_per_part-1) {
+              packindices_schur(local_sub_ip * npacks_per_subpart + local_pack_ip) = 2 * local_sub_ip * npacks_per_subpart + local_pack_ip + npacks_per_subpart;
+            }
+          }
+        }
 
         Kokkos::deep_copy(interf.packindices_sub, packindices_sub);
         Kokkos::deep_copy(interf.packindices_schur, packindices_schur);
@@ -1300,7 +1300,7 @@ namespace Ifpack2 {
         const auto packptr_sub = Kokkos::create_mirror_view(interf.packptr_sub);
         packptr_sub(0) = 0;
         for (local_ordinal_type k=0;k<npacks + 1;++k)
-          packptr_sub(k) = packptr(k%npacks_per_subpart) + floor(float(k) / npacks_per_subpart) * packptr(npacks_per_subpart);
+          packptr_sub(k) = packptr(k%npacks_per_subpart) + (k / npacks_per_subpart) * packptr(npacks_per_subpart);
 
         Kokkos::deep_copy(interf.packptr_sub, packptr_sub);
         IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -1333,8 +1333,10 @@ namespace Ifpack2 {
       // Tridiag block values. pack_td_ptr(i) points to the start of the i'th
       // tridiag's pack, and i % vector_length gives the position in the pack.
       vector_type_3d_view values;
+      // Schur block values. pack_td_ptr_schur(i) points to the start of the i'th
+      // Schur's pack, and i % vector_length gives the position in the pack.
       vector_type_3d_view values_schur;
-
+      // inv(A_00)*A_01 block values.
       vector_type_4d_view e_values;
 
       bool is_diagonal_only;
@@ -1387,7 +1389,7 @@ namespace Ifpack2 {
         Kokkos::parallel_scan
           ("createBlockTridiags::RangePolicy::flat_td_ptr",
            policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
-            const local_ordinal_type partidx = floor(float(i)/(2 * interf.n_subparts_per_part));
+            const local_ordinal_type partidx = i/(2 * interf.n_subparts_per_part);
             const local_ordinal_type local_subpartidx = i % (2 * interf.n_subparts_per_part);
 
             if (final) {
@@ -1441,7 +1443,7 @@ namespace Ifpack2 {
       btdm.pack_td_ptr_schur = size_type_2d_view(do_not_initialize_tag("btdm.pack_td_ptr_schur"), interf.nparts, interf.n_subparts_per_part);
 
       const auto host_pack_td_ptr_schur = Kokkos::create_mirror_view(btdm.pack_td_ptr_schur);
-      const local_ordinal_type connection_length = 2;
+      constexpr local_ordinal_type connection_length = 2;
 
       host_pack_td_ptr_schur(0,0) = 0;
       for (local_ordinal_type i = 0; i < interf.nparts; ++i) {
@@ -1911,12 +1913,6 @@ namespace Ifpack2 {
         
         //btdm.e_values = vector_type_4d_view("btdm.e_values", 2, (interf.n_subparts_per_part-1)*interf.max_subpartsz*interf.nparts, blocksize, blocksize);
         btdm.e_values = vector_type_4d_view("btdm.e_values", 2, interf.part2packrowidx0_back, blocksize, blocksize);
-
-        using btdm_magnitude_type = typename impl_type::btdm_magnitude_type;
-
-        const auto zero = Kokkos::ArithTraits<btdm_magnitude_type>::zero();
-
-        Kokkos::deep_copy(btdm.e_values, zero);
       }
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
@@ -2206,10 +2202,6 @@ namespace Ifpack2 {
       const local_ordinal_type as1 = D_internal_vector_values.stride_2(); //vector_length;
       const local_ordinal_type xstep = X_internal_vector_values.stride_0();
       const local_ordinal_type xs0 = X_internal_vector_values.stride_1(); //vector_length;
-
-      // for multiple rhs
-      //const local_ordinal_type xs0 = num_vectors*vector_length; //X_scalar_values.stride_1();
-      //const local_ordinal_type xs1 = vector_length; //X_scalar_values.stride_2();
 
       // move to starting point
       A += i0*astep + v;
@@ -2625,7 +2617,9 @@ namespace Ifpack2 {
       extract(local_ordinal_type partidx,
               local_ordinal_type local_subpartidx,
               local_ordinal_type npacks) const {
-        //printf("extract partidx = %d, local_subpartidx = %d, npacks = %d;\n", partidx, local_subpartidx, npacks);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+        printf("extract partidx = %d, local_subpartidx = %d, npacks = %d;\n", partidx, local_subpartidx, npacks);
+#endif
         using tlb = BlockHelperDetails::TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>;
         const size_type kps = pack_td_ptr(partidx, local_subpartidx);
         local_ordinal_type kfs[vector_length] = {};
@@ -2639,9 +2633,11 @@ namespace Ifpack2 {
           kfs[vi] = flat_td_ptr(partidx,local_subpartidx);
           ri0[vi] = partptr_sub(pack_td_ptr.extent(0)*local_subpartidx + partidx,0);
           nrows[vi] = partptr_sub(pack_td_ptr.extent(0)*local_subpartidx + partidx,1) - ri0[vi];
-          //printf("kfs[%d] = %d;\n", vi, kfs[vi]);
-          //printf("ri0[%d] = %d;\n", vi, ri0[vi]);
-          //printf("nrows[%d] = %d;\n", vi, nrows[vi]);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+          printf("kfs[%d] = %d;\n", vi, kfs[vi]);
+          printf("ri0[%d] = %d;\n", vi, ri0[vi]);
+          printf("nrows[%d] = %d;\n", vi, nrows[vi]);
+#endif
         }
         if (local_subpartidx % 2 == 0) {
           for (local_ordinal_type tr=0,j=0;tr<nrows[0];++tr) {
@@ -2675,8 +2671,9 @@ namespace Ifpack2 {
           }
         }
         else {
-          //printf("This is a Schur related extract for local_subpartidx = %d!\n", local_subpartidx);
-
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+          printf("This is a Schur related extract for local_subpartidx = %d!\n", local_subpartidx);
+#endif
           for (local_ordinal_type tr=-1,j=0;tr<nrows[0]+1;++tr) {
             for (local_ordinal_type e=0;e<3;++e) {
               const impl_scalar_type* block[vector_length] = {};
@@ -2685,11 +2682,12 @@ namespace Ifpack2 {
                 block[vi] = &A_values(Aj*blocksize_square);
               }
               const size_type pi = kps + j;
-              //printf("extract pi = %ld;\n", pi);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+              printf("extract pi = %ld;\n", pi);
+#endif
               ++j;
               for (local_ordinal_type ii=0;ii<blocksize;++ii) {
                 for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                  //const auto idx = ii*blocksize + jj;
                   const auto idx = tlb::getFlatIndex(ii, jj, blocksize);
                   auto& v = internal_vector_values(pi, ii, jj, 0);
                   for (local_ordinal_type vi=0;vi<npacks;++vi)
@@ -2775,8 +2773,10 @@ namespace Ifpack2 {
         // constant
         const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 
-        //printf("i0 = %d, nrows = %d, v = %d;\n", i0, nrows, v);
-        //printf("AA.extent(0) = %ld\n", AA.extent(0));
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+        printf("i0 = %d, nrows = %d, v = %d;\n", i0, nrows, v);
+        printf("AA.extent(0) = %ld\n", AA.extent(0));
+#endif
 
         // subview pattern
         auto A = Kokkos::subview(AA, i0, Kokkos::ALL(), Kokkos::ALL(), v);
@@ -2789,7 +2789,9 @@ namespace Ifpack2 {
           auto C = A;
           local_ordinal_type i = i0;
           for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
-            //printf("tr = %d, i = %d;\n", tr, i);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+            printf("tr = %d, i = %d;\n", tr, i);
+#endif
             B.assign_data( &AA(i+1,0,0,v) );
             KB::Trsm<member_type,
                      KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,
@@ -2846,7 +2848,7 @@ namespace Ifpack2 {
 
         const local_ordinal_type subpartidx = packptr_sub(packidx);
         const local_ordinal_type n_parts = part2packrowidx0_sub.extent(0);
-        const local_ordinal_type local_subpartidx = floor(float(subpartidx)/n_parts);
+        const local_ordinal_type local_subpartidx = subpartidx/n_parts;
         const local_ordinal_type partidx = subpartidx%n_parts;
 
         const local_ordinal_type npacks = packptr_sub(packidx+1) - subpartidx;
@@ -2855,9 +2857,11 @@ namespace Ifpack2 {
 
         internal_vector_scratch_type_3d_view
           WW(member.team_scratch(0), blocksize, blocksize, vector_loop_size);
-        
-        //printf("rank = %d, i0 = %d, npacks = %d, nrows = %d, packidx = %d, subpartidx = %d, partidx = %d, local_subpartidx = %d;\n", member.league_rank(), i0, npacks, nrows, packidx, subpartidx, partidx, local_subpartidx);
-        //printf("vector_loop_size = %d\n", vector_loop_size);
+
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+        printf("rank = %d, i0 = %d, npacks = %d, nrows = %d, packidx = %d, subpartidx = %d, partidx = %d, local_subpartidx = %d;\n", member.league_rank(), i0, npacks, nrows, packidx, subpartidx, partidx, local_subpartidx);
+        printf("vector_loop_size = %d\n", vector_loop_size);
+#endif
 
         if (vector_loop_size == 1) {
           extract(partidx, local_subpartidx, npacks);
@@ -2867,7 +2871,9 @@ namespace Ifpack2 {
             (Kokkos::ThreadVectorRange(member, vector_loop_size),
 	     [&](const local_ordinal_type &v) {
               const local_ordinal_type vbeg = v*internal_vector_length;
-              //printf("i0 = %d, npacks = %d, vbeg = %d;\n", i0, npacks, vbeg);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+              printf("i0 = %d, npacks = %d, vbeg = %d;\n", i0, npacks, vbeg);
+#endif
               if (vbeg < npacks)
                 extract(member, partidx+vbeg, npacks, vbeg);
               // this is not safe if vector loop size is different from vector size of 
@@ -2886,7 +2892,7 @@ namespace Ifpack2 {
 
         const local_ordinal_type subpartidx = packptr_sub(packidx);
         const local_ordinal_type n_parts = part2packrowidx0_sub.extent(0);
-        const local_ordinal_type local_subpartidx = floor(float(subpartidx)/n_parts);
+        const local_ordinal_type local_subpartidx = subpartidx/n_parts;
         const local_ordinal_type partidx = subpartidx%n_parts;
 
         const local_ordinal_type npacks = packptr_sub(packidx+1) - subpartidx;
@@ -2901,7 +2907,9 @@ namespace Ifpack2 {
             (Kokkos::ThreadVectorRange(member, vector_loop_size),
 	     [&](const local_ordinal_type &v) {
               const local_ordinal_type vbeg = v*internal_vector_length;
-              //printf("i0 = %d, npacks = %d, vbeg = %d;\n", i0, npacks, vbeg);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+              printf("i0 = %d, npacks = %d, vbeg = %d;\n", i0, npacks, vbeg);
+#endif
               if (vbeg < npacks)
                 extract(member, partidx+vbeg, npacks, vbeg);
             });
@@ -2915,7 +2923,9 @@ namespace Ifpack2 {
         const local_ordinal_type r1 = part2packrowidx0_sub(partidx,local_subpartidx)-1;
         const local_ordinal_type r2 = part2packrowidx0_sub(partidx,local_subpartidx)+2;
 
-        //printf("Copy for Schur complement part id = %d from kps1 = %d to r1 = %d and from kps2 = %d to r2 = %d partidx = %d local_subpartidx = %d;\n", packidx, kps1, r1, kps2, r2, partidx, local_subpartidx);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+        printf("Copy for Schur complement part id = %d from kps1 = %d to r1 = %d and from kps2 = %d to r2 = %d partidx = %d local_subpartidx = %d;\n", packidx, kps1, r1, kps2, r2, partidx, local_subpartidx);
+#endif
 
         // Need to copy D to e_internal_vector_values.
         copy3DView<local_ordinal_type>(member, Kokkos::subview(e_internal_vector_values, 0, r1, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), 
@@ -2934,7 +2944,7 @@ namespace Ifpack2 {
 
         const local_ordinal_type subpartidx = packptr_sub(packidx);
         const local_ordinal_type n_parts = part2packrowidx0_sub.extent(0);
-        const local_ordinal_type local_subpartidx = floor(float(subpartidx)/n_parts);
+        const local_ordinal_type local_subpartidx = subpartidx/n_parts;
         const local_ordinal_type partidx = subpartidx%n_parts;
 
         const local_ordinal_type npacks = packptr_sub(packidx+1) - subpartidx;
@@ -2976,7 +2986,7 @@ namespace Ifpack2 {
 
         const local_ordinal_type subpartidx = packptr_sub(packidx);
         const local_ordinal_type n_parts = part2packrowidx0_sub.extent(0);
-        const local_ordinal_type local_subpartidx = floor(float(subpartidx)/n_parts);
+        const local_ordinal_type local_subpartidx = subpartidx/n_parts;
         const local_ordinal_type partidx = subpartidx%n_parts;
 
         //const local_ordinal_type npacks = packptr_sub(packidx+1) - subpartidx;
@@ -3089,8 +3099,10 @@ namespace Ifpack2 {
         internal_vector_scratch_type_3d_view
           WW(member.team_scratch(0), blocksize, blocksize, vector_loop_size);
         
-        //printf("FactorizeSchurTag rank = %d, i0 = %d, nrows = %d;\n", member.league_rank(), i0, nrows);
-        //printf("vector_loop_size = %d\n", vector_loop_size);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+        printf("FactorizeSchurTag rank = %d, i0 = %d, nrows = %d;\n", member.league_rank(), i0, nrows);
+        printf("vector_loop_size = %d\n", vector_loop_size);
+#endif
 
         if (vector_loop_size == 1) {
           factorize_subline(member, i0, nrows, 0, internal_vector_values_schur, WW);
@@ -3734,10 +3746,6 @@ namespace Ifpack2 {
         const local_ordinal_type xstep = X_internal_vector_values.stride_0();
         const local_ordinal_type xs0 = X_internal_vector_values.stride_1(); //vector_length;
 
-        // for multiple rhs
-        //const local_ordinal_type xs0 = num_vectors*vector_length; //X_scalar_values.stride_1();
-        //const local_ordinal_type xs1 = vector_length; //X_scalar_values.stride_2();
-
         // move to starting point
         A += i0*astep + v;
         X += r0*xstep + v;
@@ -3989,7 +3997,7 @@ namespace Ifpack2 {
 
         const local_ordinal_type subpartidx = packptr_sub(packidx);
         const local_ordinal_type n_parts = part2packrowidx0_sub.extent(0);
-        const local_ordinal_type local_subpartidx = floor(float(subpartidx)/n_parts);
+        const local_ordinal_type local_subpartidx = subpartidx/n_parts;
         const local_ordinal_type partidx = subpartidx%n_parts;
 
         const local_ordinal_type npacks = packptr_sub(packidx+1) - subpartidx;
@@ -4022,7 +4030,7 @@ namespace Ifpack2 {
 
         const local_ordinal_type subpartidx = packptr_sub(packidx);
         const local_ordinal_type n_parts = part2packrowidx0_sub.extent(0);
-        const local_ordinal_type local_subpartidx = floor(float(subpartidx)/n_parts);
+        const local_ordinal_type local_subpartidx = subpartidx/n_parts;
         const local_ordinal_type partidx = subpartidx%n_parts;
         const local_ordinal_type blocksize = e_internal_vector_values.extent(2);
 
@@ -4177,7 +4185,7 @@ namespace Ifpack2 {
 
         const local_ordinal_type subpartidx = packptr_sub(packidx);
         const local_ordinal_type n_parts = part2packrowidx0_sub.extent(0);
-        const local_ordinal_type local_subpartidx = floor(float(subpartidx)/n_parts);
+        const local_ordinal_type local_subpartidx = subpartidx/n_parts;
         const local_ordinal_type partidx = subpartidx%n_parts;
         const local_ordinal_type blocksize = e_internal_vector_values.extent(2);
 
