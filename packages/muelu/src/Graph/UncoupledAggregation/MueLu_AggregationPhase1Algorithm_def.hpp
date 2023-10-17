@@ -170,7 +170,7 @@ namespace MueLu {
             if (aggSize < as<size_t>(maxNodesPerAggregate))
               aggList[aggSize++] = neigh;
 
-          } else if(matchMLBehavior && aggStat[neigh] != IGNORED) {
+          } else if(!matchMLBehavior || aggStat[neigh] != IGNORED) {
             // NOTE: ML checks against BOUNDARY here, but boundary nodes are flagged as IGNORED by
             // the time we get to Phase 1, so we check IGNORED instead
             numAggregatedNeighbours++;
