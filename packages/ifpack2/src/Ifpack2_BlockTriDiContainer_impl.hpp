@@ -194,7 +194,7 @@ namespace Ifpack2 {
     ///
     template<typename T> struct is_hip                  { enum : bool { value = false }; };
 #if defined(KOKKOS_ENABLE_HIP)
-    template<> struct is_hip<Kokkos::Experimental::HIP> { enum : bool { value = true  }; };
+    template<> struct is_hip<Kokkos::HIP> { enum : bool { value = true  }; };
 #endif
 
     ///
@@ -237,9 +237,9 @@ namespace Ifpack2 {
 
 #if defined(KOKKOS_ENABLE_HIP)
     template<>
-    struct ExecutionSpaceFactory<Kokkos::Experimental::HIP> {
-      static void createInstance(Kokkos::Experimental::HIP &exec_instance) {
-	exec_instance = Kokkos::Experimental::HIP();
+    struct ExecutionSpaceFactory<Kokkos::HIP> {
+      static void createInstance(Kokkos::HIP &exec_instance) {
+	exec_instance = Kokkos::HIP();
       }
     };
 #endif
@@ -1927,7 +1927,7 @@ namespace Ifpack2 {
       return 2*total_team_size/vector_size;
     }
     template<>
-    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPSpace> {
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HIPSpace> {
       typedef KB::Mode::Team mode_type;
       typedef KB::Algo::Level3::Unblocked algo_type;
       static int recommended_team_size(const int blksize,
@@ -1937,7 +1937,7 @@ namespace Ifpack2 {
       }
     };
     template<>
-    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPHostPinnedSpace> {
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HIPHostPinnedSpace> {
       typedef KB::Mode::Team mode_type;
       typedef KB::Algo::Level3::Unblocked algo_type;
       static int recommended_team_size(const int blksize,
@@ -2524,7 +2524,7 @@ namespace Ifpack2 {
     }
 
     template<>
-    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPSpace> {
+    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::HIPSpace> {
       typedef KB::Mode::Team mode_type;
       typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
       typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
@@ -2535,7 +2535,7 @@ namespace Ifpack2 {
       }
     };
     template<>
-    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPHostPinnedSpace> {
+    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::HIPHostPinnedSpace> {
       typedef KB::Mode::Team mode_type;
       typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
       typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
