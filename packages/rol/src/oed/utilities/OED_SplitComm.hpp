@@ -58,7 +58,7 @@ private:
   ROL::Ptr<Comm> comm_sample_;
 
 public:
-  SplitComm(const int m, Mpi_Comm global_comm = MPI_COMM_WORLD) {
+  SplitComm(const int m, Mpi_Comm global_comm = MPI_COMM_WORLD) { // CHECK: ALLOW MPI_COMM_WORLD
     Ordinal rank, Ngroups, size;
     MPI_Comm_rank(global_comm, &rank);
     MPI_Comm_size(global_comm, &size);
