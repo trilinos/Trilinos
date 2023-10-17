@@ -585,6 +585,21 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   }
 
   {
+    out << "\nTest constructing Array<T> from initializer_list ...\n";
+    const Array<T> a2{as<T>(1),as<T>(2),as<T>(3),as<T>(4)};
+    TEST_EQUALITY( a2.size(), 4);
+    out << "Test that a2[i] == i+1 ... ";
+    bool local_success = true;
+    for (size_t i=0; i < a2.size(); ++i) {
+      TEST_ARRAY_ELE_EQUALITY( a2, i, as<T>(i+1) );
+    }
+    if (local_success)
+      out << "passed\n";
+    else
+      success = false;
+  }
+
+  {
     out << "\nTest comparison operators ...\n";
     Array<T> a2(a);
     TEST_EQUALITY_CONST( (a2==a), true );
