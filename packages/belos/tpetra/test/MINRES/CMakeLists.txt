@@ -15,8 +15,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Tpetra_minres_hb
-  SOURCES test_minres_hb.cpp 
+  Tpetra_KokkosDense_Minres_hb_test
+  SOURCES test_kokkos_minres_hb.cpp
   COMM serial mpi
   ARGS
     "--verbose --filename=bcsstk14.hb --tol=1e-5"
@@ -24,8 +24,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT 
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_Minres_hb_test
+  SOURCES test_minres_hb.cpp
+  COMM serial mpi
+  ARGS
+    "--verbose --filename=bcsstk14.hb --tol=1e-5"
+    "--verbose --filename=bcsstk14.hb --num-rhs=2 --tol=1e-5"
+  STANDARD_PASS_OUTPUT
+)
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestMinresFiles
   SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb
-  EXEDEPS Tpetra_minres_hb
-)
+  EXEDEPS Tpetra_Minres_hb_test Tpetra_KokkosDense_Minres_hb_test
+  )
