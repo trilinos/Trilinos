@@ -8509,7 +8509,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         CSR_colind_LID.resize (CSR_colind_GID.size());
       }
       CSR_colind_LID.resize (CSR_colind_GID.size());
-      size_t mynnz = CSR_vals.size();
   
       // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
       // owned entries.  Convert them to the actual PID.
@@ -8625,7 +8624,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         Import_Util::sortAndMergeCrsEntries (CSR_rowptr(),
                                              CSR_colind_LID(),
                                              CSR_vals());
-        if (CSR_rowptr[N] != CSR_vals.size()) {
+        if (CSR_rowptr[N] != static_cast<size_t>(CSR_vals.size())) {
           CSR_colind_LID.resize (CSR_rowptr[N]);
           CSR_vals.resize (CSR_rowptr[N]);
         }
@@ -8708,7 +8707,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                      TargetPids);
   
       Kokkos::resize (CSR_colind_LID_d, CSR_colind_GID_d.size());
-      size_t mynnz = CSR_vals.size();
   
       // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
       // owned entries.  Convert them to the actual PID.
@@ -8857,7 +8855,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
 #endif
-        destMat->setAllValues (CSR_rowptr_d, CSR_colind_LID_d, CSR_vals_d);
+        Kokkos::View<impl_scalar_type*, device_type> CSR_vals_d_reinterp(reinterpret_cast<impl_scalar_type*>(CSR_vals_d.data()), CSR_vals_d.extent(0));
+        destMat->setAllValues (CSR_rowptr_d, CSR_colind_LID_d, CSR_vals_d_reinterp);
       }
   
     } //if (runOnHost) .. else ..

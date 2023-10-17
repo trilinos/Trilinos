@@ -1459,7 +1459,7 @@ unpackAndCombineIntoCrsArrays (
     const int MyTargetPID,
     Kokkos::View<size_t*,typename Node::device_type> &crs_rowptr_d,
     Kokkos::View<GlobalOrdinal*,typename Node::device_type>     &crs_colind_d,
-    Kokkos::View<Scalar*,typename Node::device_type> &crs_vals_d,
+    Kokkos::View<Scalar*,typename Node::device_type> &crs_vals_d_in,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids)
 {
@@ -1524,7 +1524,8 @@ unpackAndCombineIntoCrsArrays (
 # endif
   Kokkos::resize(crs_rowptr_d,TargetNumRows+1);
   Kokkos::resize(crs_colind_d,TargetNumNonzeros);
-  Kokkos::resize(crs_vals_d,TargetNumNonzeros);
+  Kokkos::resize(crs_vals_d_in,TargetNumNonzeros);
+  Kokkos::View<ST*, DT> crs_vals_d(reinterpret_cast<ST*>(crs_vals_d_in.data()), crs_vals_d_in.extent(0));
 # ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
 # endif
