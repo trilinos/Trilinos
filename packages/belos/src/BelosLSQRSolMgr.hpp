@@ -50,13 +50,12 @@
 
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
-#include "BelosDenseMatTraits.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
 
 #include "BelosLSQRIteration.hpp"
 #include "BelosLSQRIter.hpp"
-#include "BelosStatusTestMaxIters.hpp"
 #include "BelosLSQRStatusTest.hpp"
+#include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
@@ -249,7 +248,7 @@ template<class ScalarType, class MV, class OP, class DM>
 class LSQRSolMgr<ScalarType, MV, OP, DM, false> :
     public Details::RealSolverManager<ScalarType, MV, OP, DM, false> {
 private:
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV,DM> MVT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -925,7 +924,7 @@ LSQRSolMgr<ScalarType,MV,OP,DM,false>::solve ()
   // setParameters() has been called.
   plist.set ("Lambda", lambda_);
 
-  typedef LSQRIter<ScalarType,MV,OP> iter_type;
+  typedef LSQRIter<ScalarType,MV,OP,DM> iter_type;
   RCP<iter_type> lsqr_iter =
     rcp (new iter_type (problem_, printer_, outputTest_, plist));
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
