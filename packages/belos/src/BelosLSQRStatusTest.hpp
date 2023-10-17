@@ -29,7 +29,7 @@
 namespace Belos {
 
 
-template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template <class ScalarType, class MV, class OP, class DM>
 class LSQRStatusTest: public Belos::StatusTest<ScalarType,MV,OP,DM> {
 
 public:
@@ -37,7 +37,7 @@ public:
   // Convenience typedefs
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
-  typedef Belos::MultiVecTraits<ScalarType,MV>  MVT;
+  typedef Belos::MultiVecTraits<ScalarType,MV,DM>  MVT;
 
   //! @name Constructor/Destructor.
   //@{
