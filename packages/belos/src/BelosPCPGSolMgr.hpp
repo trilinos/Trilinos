@@ -20,6 +20,7 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosPCPGIter.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "BelosOrthoManagerFactory.hpp"
 #include "BelosStatusTestMaxIters.hpp"
@@ -578,7 +579,7 @@ void PCPGSolMgr<ScalarType,MV,OP,DM,true>::setParameters( const Teuchos::RCP<Teu
     params_->set("Orthogonalization Constant",orthoKappa_);
     if (orthoType_=="DGKS") {
       if (orthoKappa_ > 0 && ortho_ != Teuchos::null && !changedOrthoType) {
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP,DM> >(ortho_)->setDepTol( orthoKappa_ );
       }
     }
   }
@@ -732,8 +733,8 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // PCPG solver
 
-  Teuchos::RCP<PCPGIter<ScalarType,MV,OP> > pcpg_iter;
-  pcpg_iter = Teuchos::rcp( new PCPGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+  Teuchos::RCP<PCPGIter<ScalarType,MV,OP,DM> > pcpg_iter;
+  pcpg_iter = Teuchos::rcp( new PCPGIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist) );
   // Number of iterations required to generate initial recycle space (if needed)
 
   // Enter solve() iterations
@@ -807,7 +808,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
 
       // Set the new state and initialize the solver.
-      PCPGIterState<ScalarType,MV> pcpgState; // fails if R == null.
+      PCPGIterState<ScalarType,MV,DM> pcpgState; // fails if R == null.
 
       pcpgState.R = R_;
       if( U_ != Teuchos::null ) pcpgState.U = U_;
@@ -889,7 +890,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       problem_->setCurrLS();
 
       // Get the state.   How did pcpgState die?
-      PCPGIterState<ScalarType,MV> oldState = pcpg_iter->getState();
+      PCPGIterState<ScalarType,MV,DM> oldState = pcpg_iter->getState();
 
       dimU_ = oldState.curDim;
       int q = oldState.prevUdim;
@@ -1040,7 +1041,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   // Save the convergence test value ("achieved tolerance") for this solve.
   {
     using Teuchos::rcp_dynamic_cast;
-    typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
+    typedef StatusTestGenResNorm<ScalarType,MV,OP,DM> conv_test_type;
     // testValues is nonnull and not persistent.
     const std::vector<MagnitudeType>* pTestValues =
       rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();
