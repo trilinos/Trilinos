@@ -238,6 +238,9 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
 
+  const int numOwnedElements = mesh.getNumOwnedElements();
+  const int nodesPerElem = mesh.getOwnedElementToNode().extent(1);
+
   RCP<fe_matrix_type> fe_matrix;
   RCP<fe_multivector_type> rhs;
 
@@ -256,8 +259,8 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
 
     // Loop over elements
     Tpetra::beginAssembly(*fe_matrix,*rhs);
-    for (size_t element_gidx = 0;
-         element_gidx < mesh.getNumOwnedElements ();
+    for (int element_gidx = 0;
+         element_gidx < numOwnedElements;
          ++element_gidx) {
       // Get the contributions for the current element
       // shape info injected here in real life
@@ -266,10 +269,10 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
       ReferenceQuad4RHS(element_rhs);
 
       for (size_t element_node_idx=0;
-	   element_node_idx < owned_element_to_node_gids.extent(1);
-	   ++element_node_idx) {
-	column_global_ids[element_node_idx] =
-	  owned_element_to_node_gids(element_gidx, element_node_idx);
+	         element_node_idx < nodesPerElem;
+	         ++element_node_idx) {
+	      column_global_ids[element_node_idx] =
+	        owned_element_to_node_gids(element_gidx, element_node_idx);
       }
 
       // For each node (row) on the current element:
@@ -277,16 +280,16 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
       // - add the values to the fe_matrix.
       // Note: hardcoded 4 here because we're using quads.
       for (size_t element_node_idx = 0; element_node_idx < 4;
-	   ++element_node_idx) {
-	global_ordinal_type global_row_id =
-	  owned_element_to_node_gids(element_gidx, element_node_idx);
+	         ++element_node_idx) {
+	      global_ordinal_type global_row_id =
+	        owned_element_to_node_gids(element_gidx, element_node_idx);
 	
-	for(size_t col_idx=0; col_idx<4; col_idx++) {
-	  column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
-	}
+        for(size_t col_idx=0; col_idx<4; col_idx++) {
+          column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
+        }
 
-	fe_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-	rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+        fe_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+        rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
       }
     }
   } // timerElementLoopMatrix
@@ -482,7 +485,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     rcp (new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
 
-  auto localMatrix  = fe_matrix->getLocalMatrixDevice();
+  
   auto localMap     = owned_plus_shared_map->getLocalMap();
   auto localColMap  = fe_matrix->getColMap()->getLocalMap();
  
@@ -496,10 +499,14 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     TimeMonitor timerElementLoopMatrix(*TimeMonitor::getNewTimer ("3.2) ElementLoop  (Matrix)"));
     Tpetra::beginAssembly(*fe_matrix,*rhs);
 
-    auto owned_element_to_node_gids = mesh.getOwnedElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
+    auto owned_element_to_node_gids = 
+      mesh.getOwnedElementToNode().getDeviceView(
+        Tpetra::Access::ReadOnly);
 
     // Loop over elements
-    auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    auto localRHS = 
+      rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    auto localMatrix = fe_matrix->getLocalMatrixDevice();
     // Work around subview of managed views being slower than unmanaged
     auto all_element_rhs_unmanaged = makeUnmanaged(all_element_rhs);
     auto all_element_matrix_unmanaged = makeUnmanaged(all_element_matrix);
@@ -508,28 +515,35 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       ("Assemble FE matrix and right-hand side",
        Kokkos::RangePolicy<execution_space, int> (0, numOwnedElements),
        KOKKOS_LAMBDA (const size_t element_idx) {
-        const pair_type location_pair (nodesPerElem*element_idx, nodesPerElem*(element_idx+1));
+        const pair_type location_pair(
+          nodesPerElem*element_idx, nodesPerElem*(element_idx+1));
 
         // Get the contributions for the current element
-        auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged, location_pair, Kokkos::ALL);
+        auto element_matrix = Kokkos::subview(
+          all_element_matrix_unmanaged, location_pair, Kokkos::ALL);
         ReferenceQuad4(element_matrix);
-        auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged, location_pair);
+        auto element_rhs = 
+          Kokkos::subview(all_element_rhs_unmanaged, location_pair);
         ReferenceQuad4RHS(element_rhs);
 
         // Get the local column ids array for this element
-        auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
+        auto element_lcids = 
+          Kokkos::subview(all_lcids_unmanaged,location_pair);
         for (int element_node_idx = 0; element_node_idx < nodesPerElem;
              ++element_node_idx) {
           element_lcids(element_node_idx) =
-            localColMap.getLocalElement (owned_element_to_node_gids (element_idx, element_node_idx));
+            localColMap.getLocalElement(
+              owned_element_to_node_gids(element_idx, element_node_idx));
         }
         
         // For each node (row) on the current element:
         // - populate the values array
         // - add the values to the fe_matrix.
-        for (int element_node_idx = 0; element_node_idx < nodesPerElem; ++element_node_idx) {
+        for (int element_node_idx = 0; element_node_idx < nodesPerElem; 
+             ++element_node_idx) {
           const local_ordinal_type local_row_id =
-            localMap.getLocalElement (owned_element_to_node_gids (element_idx, element_node_idx));
+            localMap.getLocalElement(owned_element_to_node_gids(
+              element_idx, element_node_idx));
 
           // Atomically contribute for sums: parallel elements may be contributing
           // to the same node at the same time
@@ -538,7 +552,8 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
                                        &(element_matrix(element_node_idx,col_idx)),
                                        true, true);
           }
-          Kokkos::atomic_add (&(localRHS(local_row_id,0)), element_rhs[element_node_idx]);
+          Kokkos::atomic_add(
+            &(localRHS(local_row_id,0)), element_rhs[element_node_idx]);
         }
       });
   }
