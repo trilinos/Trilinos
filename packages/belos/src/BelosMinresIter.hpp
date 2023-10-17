@@ -37,9 +37,7 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
-#include "BelosTeuchosDenseAdapter.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp" 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -59,7 +57,7 @@ namespace Belos {
 ///
 /// \ingroup belos_solver_framework
 ///
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+template<class ScalarType, class MV, class OP, class DM>
 class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
 
   public:
@@ -437,8 +435,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
     // Allocate memory for scalars.
     Teuchos::RCP<DM> alpha = DMT::Create(1,1); 
     Teuchos::RCP<DM> beta = DMT::Create(1,1); 
-    DMT::Assign(*beta,*beta1_); //TODO Should we make a DMT copy constructor as with old version below?
-    //Teuchos::SerialDenseMatrix<int,ScalarType> beta( beta1_ );
+    DMT::Assign(*beta,*beta1_); 
     phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( DMT::ValueConst(*beta1_,0,0) );
 
     // Initialize a few variables.
