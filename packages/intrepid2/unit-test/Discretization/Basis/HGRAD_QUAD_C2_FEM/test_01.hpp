@@ -56,62 +56,34 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
+
 namespace Intrepid2 {
-  
+
   namespace Test {
-    
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-    
+
+    using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+
     template<bool serendipity, typename ValueType, typename DeviceType>
     int HGRAD_QUAD_DEG2_FEM_Test01(const bool verbose) {
-      
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
 
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs, false);
-      
+      //! Create an execution space instance.
+      const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
+
+      //! Setup test output stream.
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, serendipity ? "Basis_HGRAD_QUAD_I2_Serendipity_FEM" : "Basis_HGRAD_QUAD_C2_FEM", {
+          "1) Conversion of Dof tags into Dof ordinals and back",
+          "2) Basis values for VALUE, GRAD, CURL, and Dk operators"
+      });
+
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-      
-      using DeviceSpaceType = typename DeviceType::execution_space;
-      typedef typename
-        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
-      
-      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
 
-      *outStream 
-        << "===============================================================================\n" 
-        << "|                                                                             |\n";
-      if constexpr (serendipity) 
-        *outStream
-        << "|           Unit Test (Basis_HGRAD_QUAD_I2_Serendipity FEM)                   |\n";
-      else 
-        *outStream
-        << "|                 Unit Test (Basis_HGRAD_QUAD_C2_FEM)                         |\n";
-      *outStream   
-        << "|                                                                             |\n" 
-        << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" 
-        << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n" 
-        << "|                                                                             |\n"         << "|                                                                             |\n" 
-        << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
       int errorFlag = 0;
@@ -130,7 +102,7 @@ namespace Intrepid2 {
         << "===============================================================================\n"
         << "| TEST 1: Basis creation, exception testing                                   |\n"
         << "===============================================================================\n";
-  
+
       try{
         ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
@@ -225,22 +197,22 @@ namespace Intrepid2 {
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       };
-  
+
       *outStream
         << "\n"
         << "===============================================================================\n"
         << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"
         << "===============================================================================\n";
-  
+
       try{
         const ordinal_type numFields = quadBasis->getCardinality();
         const auto allTags   = quadBasis->getAllDofTags();
-    
+
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
         const ordinal_type dofTagSize = allTags.extent(0);
         for (ordinal_type i = 0; i < dofTagSize; ++i) {
           const auto bfOrd  = quadBasis->getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
-      
+
           const auto myTag = quadBasis->getDofTag(bfOrd);
           if( !( (myTag(0) == allTags(i,0)) &&
                  (myTag(1) == allTags(i,1)) &&
@@ -260,7 +232,7 @@ namespace Intrepid2 {
                        << myTag(3) << "}\n";        
           }
         }
-    
+
         // Now do the same but loop over basis functions
         for( ordinal_type bfOrd = 0; bfOrd < numFields; bfOrd++) {
           const auto myTag  = quadBasis->getDofTag(bfOrd);
@@ -283,15 +255,15 @@ namespace Intrepid2 {
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       };
-  
+
       *outStream
         << "\n"
         << "===============================================================================\n"
         << "| TEST 3: correctness of basis function values                                |\n"
         << "===============================================================================\n";
-  
+
       outStream -> precision(20);
-  
+
       // VALUE: Correct basis values in (F,P) format:
       std::vector<ValueType> basisValues, basisGrads, basisD2, basisD3, basisD4;
       if constexpr(serendipity) {
@@ -318,7 +290,7 @@ namespace Intrepid2 {
           0, 0, 0, 0, 0, 0, 0, 0, 1, 0.5688888888888890};
         basisValues.assign(data, data + quadBasis->getCardinality()*10);
       }
-  
+
       // GRAD and D1: Correct gradients and D1 in (F,P,D) format: each row contains 6x2 values of
       if constexpr(serendipity) {
         const ValueType data[] = {
@@ -503,7 +475,7 @@ namespace Intrepid2 {
         -1.777777777777778};
         basisD2.assign(data, data + quadBasis->getCardinality()*10*3);
       }
-  
+
       //D3: Correct multiset of second order partials in (F,P,Dk) format. D3 cardinality = 4 for 2D
       if constexpr(serendipity) {
         const ValueType data[] = {
@@ -765,7 +737,7 @@ namespace Intrepid2 {
           }
         }
       };
-  
+
       try{
         DynRankViewHost ConstructWithLabel(quadNodesHost, 10, 2); 
 
@@ -796,18 +768,18 @@ namespace Intrepid2 {
         { 
           // Check VALUE of basis functions: resize vals to rank-2 container:
           DynRankView ConstructWithLabel(vals, numFields, numPoints);
-          quadBasis->getValues(vals, quadNodes, OPERATOR_VALUE);
+          quadBasis->getValues(space, vals, quadNodes, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
             for (ordinal_type j = 0; j < numPoints; ++j) {
-          
+
               // Compute offset for (F,P) container
               ordinal_type l =  j + i * numPoints;
               if (std::abs(vals_host(i,j) - basisValues[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            
+
                 // Output the multi-index of the value where the error is:
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";
@@ -825,7 +797,7 @@ namespace Intrepid2 {
           if (std::abs(funcValue - computedFuncValue) > tol) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        
+
             // Output the multi-index of the value where the error is:
             *outStream << " Computed function value: " << computedFuncValue
                         << " but exact value: " << funcValue << "\n";
@@ -834,19 +806,19 @@ namespace Intrepid2 {
         {
           // Check GRAD of basis function: resize vals to rank-3 container
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          quadBasis->getValues(vals, quadNodes, OPERATOR_GRAD);
+          quadBasis->getValues(space, vals, quadNodes, OPERATOR_GRAD);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
             for (ordinal_type j = 0; j < numPoints; ++j) {
               for (ordinal_type k = 0; k < spaceDim; ++k) {
-            
+
                 // basisGrads is (F,P,D), compute offset:
                 ordinal_type const l = k + j * spaceDim + i * spaceDim * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              
+
                   // Output the multi-index of the value where the error is:
                   *outStream << " At multi-index { ";
                   *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
@@ -868,7 +840,7 @@ namespace Intrepid2 {
           if (std::abs(funcGradValue[0] - computedFuncGradValue[0]) + std::abs(funcGradValue[1] - computedFuncGradValue[1]) > tol) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        
+
             // Output the multi-index of the value where the error is:
             *outStream << " Computed function gradient: [" << computedFuncGradValue[0] << " " << computedFuncGradValue[1] 
                         << "] but exact gradient: [" << funcGradValue[0] << " " << funcGradValue[1] << "]\n";
@@ -877,19 +849,19 @@ namespace Intrepid2 {
         { 
           // Check D1 of basis function (do not resize vals because it has the correct size: D1 = GRAD)
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          quadBasis->getValues(vals, quadNodes, OPERATOR_D1);
+          quadBasis->getValues(space, vals, quadNodes, OPERATOR_D1);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
             for (ordinal_type j = 0; j < numPoints; ++j) {
               for (ordinal_type k = 0; k < spaceDim; ++k) {
-            
+
                 // basisGrads is (F,P,D), compute offset:
                 const ordinal_type l = k + j * spaceDim + i * spaceDim * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              
+
                   // Output the multi-index of the value where the error is:
                   *outStream << " At multi-index { ";
                   *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
@@ -903,7 +875,7 @@ namespace Intrepid2 {
         {
           // Check CURL of basis function: resize vals just for illustration! 
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          quadBasis->getValues(vals, quadNodes, OPERATOR_CURL);
+          quadBasis->getValues(space, vals, quadNodes, OPERATOR_CURL);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
@@ -911,7 +883,7 @@ namespace Intrepid2 {
               // We will use "rotated" basisGrads to check CURL: get offsets to extract (u_y, -u_x)
               const ordinal_type curl_0 = 1 + j * spaceDim + i * spaceDim * numPoints;               // position of y-derivative
               const ordinal_type curl_1 = 0 + j * spaceDim + i * spaceDim * numPoints;               // position of x-derivative
-        
+
               const auto curl_value_0 = basisGrads[curl_0];
               const auto curl_value_1 =-basisGrads[curl_1];
               if (std::abs(vals_host(i,j,0) - curl_value_0) > tol) {
@@ -938,13 +910,13 @@ namespace Intrepid2 {
         {
           // Check D2 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D2Cardin);
-          quadBasis->getValues(vals, quadNodes, OPERATOR_D2);
+          quadBasis->getValues(space, vals, quadNodes, OPERATOR_D2);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
           for (ordinal_type i = 0; i < numFields; ++i) {
             for (ordinal_type j = 0; j < numPoints; ++j) {
               for (ordinal_type k = 0; k < D2Cardin; ++k) {
-          
+
                 // basisD2 is (F,P,Dk), compute offset:
                 const ordinal_type l = k + j * D2Cardin + i * D2Cardin * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisD2[l]) > tol) {
@@ -975,7 +947,7 @@ namespace Intrepid2 {
           if (std::abs(funcD2Value[0] - computedFuncD2Value[0]) + std::abs(funcD2Value[1] - computedFuncD2Value[1]) + std::abs(funcD2Value[2] - computedFuncD2Value[2]) > tol) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        
+
             // Output the multi-index of the value where the error is:
             *outStream << " Computed function second derivatives: [" << computedFuncD2Value[0] << " " << computedFuncD2Value[1] << " " << computedFuncD2Value[2]
                         << "] but exact derivatives: [" << funcD2Value[0] << " " << funcD2Value[1] << " " << funcD2Value[2] << "]\n";
@@ -984,20 +956,20 @@ namespace Intrepid2 {
         { 
           // Check D3 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D3Cardin);
-          quadBasis->getValues(vals, quadNodes, OPERATOR_D3);
+          quadBasis->getValues(space, vals, quadNodes, OPERATOR_D3);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
 
           for (ordinal_type i = 0; i < numFields; ++i) {
             for (ordinal_type j = 0; j < numPoints; ++j) {
               for (ordinal_type k = 0; k < D3Cardin; ++k) {
-          
+
                 // basisD3 is (F,P,Dk), compute offset:
                 const ordinal_type l = k + j * D3Cardin + i * D3Cardin * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisD3[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            
+
                   // Output the multi-index of the value where the error is:
                   *outStream << " At multi-index { ";
                   *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
@@ -1024,7 +996,7 @@ namespace Intrepid2 {
           if (err > tol) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        
+
             // Output the multi-index of the value where the error is:
             *outStream << " Computed function third derivatives: [" << computedFuncD3Value[0] << " " << computedFuncD3Value[1] << " " << computedFuncD3Value[2] << " " << computedFuncD3Value[3]
                         << "] but exact derivatives: [" << funcD3Value[0] << " " << funcD3Value[1] << " " << funcD3Value[2] << " " << funcD3Value[3] << "]\n";
@@ -1033,20 +1005,20 @@ namespace Intrepid2 {
         { 
           // Check D4 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D4Cardin);
-          quadBasis->getValues(vals, quadNodes, OPERATOR_D4);
+          quadBasis->getValues(space, vals, quadNodes, OPERATOR_D4);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals); 
 
           for (ordinal_type i = 0; i < numFields; ++i) {
             for (ordinal_type j = 0; j < numPoints; ++j) {
               for (ordinal_type k = 0; k < D4Cardin; ++k) {
-          
+
                 // basisD4 is (F,P,Dk), compute offset:
                 int l = k + j * D4Cardin + i * D4Cardin * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisD4[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            
+
                   // Output the multi-index of the value where the error is:
                   *outStream << " At multi-index { ";
                   *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
@@ -1072,7 +1044,7 @@ namespace Intrepid2 {
             // The last dimension is the number of kth derivatives and needs to be resized for every Dk
             const ordinal_type DkCardin  = getDkCardinality(op, spaceDim);
             DynRankView ConstructWithLabel(vals, numFields, numPoints, DkCardin);
-            quadBasis->getValues(vals, quadNodes, op);
+            quadBasis->getValues(space, vals, quadNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals); 
 
@@ -1082,7 +1054,7 @@ namespace Intrepid2 {
                   if (std::abs(vals_host(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          
+
                     // Get the multi-index of the value where the error is and the operator order
                     const auto ord = Intrepid2::getOperatorOrder(op);
                     *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
@@ -1139,7 +1111,7 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(cvals_dev, numFields, spaceDim);
 
         quadBasis->getDofCoords(cvals_dev);
-        quadBasis->getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
+        quadBasis->getValues(space, bvals_dev, cvals_dev, OPERATOR_VALUE);
 
         auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
         Kokkos::deep_copy(bvals, bvals_dev);
@@ -1174,14 +1146,14 @@ namespace Intrepid2 {
       << "===============================================================================\n"
       << "| TEST 5: Function Space is Correct                                           |\n"
       << "===============================================================================\n";
-      
+
       try {
         const EFunctionSpace fs = quadBasis->getFunctionSpace();
-        
+
         if (fs != FUNCTION_SPACE_HGRAD)
         {
           *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
-          
+
           // Output the multi-index of the value where the error is:
           *outStream << " Expected a function space of FUNCTION_SPACE_HGRAD (enum value " << FUNCTION_SPACE_HGRAD << "),";
           *outStream << " but got " << fs << "\n";
@@ -1197,12 +1169,12 @@ namespace Intrepid2 {
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       }
-      
+
       if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";
       else
         std::cout << "End Result: TEST PASSED\n";
-  
+
       // reset format state of std::cout
       std::cout.copyfmt(oldFormatState);
       return errorFlag;
