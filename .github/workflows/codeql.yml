@@ -75,11 +75,11 @@ jobs:
 
     # From Sam's prototype
     # https://github.com/sebrowne/Trilinos/blob/f6119bf7906aba7ecde4027733ef93af872f96a0/.github/workflows/codeql.yml
-    - run: |
-        mkdir mybuild
-        cd mybuild
-        cmake -DTrilinos_ENABLE_ALL_PACKAGES=OFF -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_Muelu=ON -DTrilinos_ENABLE_Epetra=OFF -DTPL_ENABLE_Boost=OFF -DTrilinos_ENABLE_SEACAS=OFF ..
-        make -j4
+    # - run: |
+    #     mkdir mybuild
+    #     cd mybuild
+    #     cmake -DTrilinos_ENABLE_ALL_PACKAGES=OFF -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_Muelu=ON -DTrilinos_ENABLE_Epetra=OFF -DTPL_ENABLE_Boost=OFF -DTrilinos_ENABLE_SEACAS=OFF ..
+    #     make -j4
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
