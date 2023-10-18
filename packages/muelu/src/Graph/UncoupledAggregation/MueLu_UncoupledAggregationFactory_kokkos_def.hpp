@@ -101,7 +101,9 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: match ML phase1");
     SET_VALID_ENTRY("aggregation: match ML phase2a");
+    SET_VALID_ENTRY("aggregation: match ML phase2b");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
@@ -166,6 +168,10 @@ namespace MueLu {
     if (pL.get<bool>("aggregation: enable phase 2a")                 == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm_kokkos           (graphFact)));
     if (pL.get<bool>("aggregation: enable phase 2b")                 == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm_kokkos           (graphFact)));
     if (pL.get<bool>("aggregation: enable phase 3" )                 == true)   algos_.push_back(rcp(new AggregationPhase3Algorithm_kokkos            (graphFact)));
+
+    // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 or Phase 2b, but is in 2a
+    TEUCHOS_TEST_FOR_EXCEPTION( pL.get<bool>("aggregation: match ML phase1"),std::invalid_argument,"Option: 'aggregation: match ML phase1' is not supported in the Kokkos version of uncoupled aggregation");
+    TEUCHOS_TEST_FOR_EXCEPTION( pL.get<bool>("aggregation: match ML phase2b"),std::invalid_argument,"Option: 'aggregation: match ML phase2b' is not supported in the Kokkos version of uncoupled aggregation");
 
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
     RCP<Map> OnePtMap = Teuchos::null;
