@@ -55,19 +55,47 @@
 
 namespace MueLu {
 
-/*!
-  @class SegregatedAFactory class.
-  @brief Factory for building a new "segregated" A operator. Here, "segregated" means that the user
-         provides a map (containing a subset of the row gids of the input matrix A) and the factory
-         drops the off-diagonal entries (a,b) and (b,a) in A where "a" denotes a GID entry in the provided map
-         and "b" denotes a GID that is not contained in the provided map.
+  /*!
+      @class  SegregatedAFactory class.
+      @brief  Factory for building a new "segregated" A operator. Here, "segregated" means that the user
+              provides some map(s) (containing a subset of GIDs of the input matrix A) and the factory
+              drops entries depending on the dropping scheme.
 
-         The idea is to use the output matrix A as input for the aggregation factory to have control over
-         the aggregates and make sure that aggregates do not cross certain areas.
+              ## Idea ##
 
-         Note: we have to drop the entries (i.e. not just set them to zero) as the CoalesceDropFactory
-               does not distinguish between matrix entries which are zero and nonzero.
-*/
+              The idea is to use the output matrix A as input for the aggregation factory to have control over
+              the aggregates and make sure that aggregates do not cross certain areas.
+
+              ## Remarks ##
+
+              This factory supports multiple dropping Schemes based on different inputs. They are:
+
+              - blockmap: Based on the user provided "blockmap", the off-diagonal entries (a,b) and (b,a) in A are dropped.
+              "a" denotes a GID entry in the provided map and "b" denotes a GID that is not contained in the provided map.
+              In this use case the Factory expects a dropMap1 (==blockmap).
+              The blockmap scheme also doesn't support the "Call ReduceAll on dropMap1/2" options.
+
+              - map-pair: Based on a "map-pair", the user provides two maps "dropMap1" and "dropMap2",
+              which specify global row/column pairs in the operator A to be dropped.
+              The Factory drops any possible combination of the dropMaps 1 and 2. To ensure that entry A(a,b) is
+              dropped, as well as entry A(b,a), there is an option to create redundant dropMaps on all Procs.
+              This ensures that entries aren't overlooked due to the local rowmaps of the operator A.
+
+              Note: we have to drop the entries (i.e. not just set them to zero) as the CoalesceDropFactory
+                   does not distinguish between matrix entries which are zero and nonzero.
+
+      ## Input/output of this factory ##
+
+      ### User parameters of SegregatedAFactory ###
+      Parameter | type | default | master.xml | validated | requested | description
+      ----------|------|---------|:----------:|:---------:|:---------:|------------
+      A             | Factory | null  |   | * | * | Generating factory of the matrix A
+      droppingScheme| string  | vague |   | * | * | Strategy to drop entries from matrix A based on the input of some map(s) [blockmap, map-pair]
+      dropMap1      | Factory | null  |   | * | * | Generating factory for dropMap1
+      dropMap2      | Factory | null  |   | * | * | Generating factory for dropMap2
+      Call ReduceAll on dropMap1 | bool |   | * | * | Boolean for calling reduceAll on dropMap1
+      Call ReduceAll on dropMap2 | bool |   | * | * | Boolean for calling reduceAll on dropMap2
+  */
 
 template <class Scalar        = DefaultScalar,
           class LocalOrdinal  = DefaultLocalOrdinal,
@@ -108,8 +136,7 @@ class SegregatedAFactory : public SingleLevelFactoryBase {
 
     void BuildBasedOnMapPair(Level& currentLevel) const;
 
-    RCP<const Map> CreateRedundantMaps(
-            Teuchos::RCP<const Teuchos::Comm<int>> comm, Teuchos::RCP<const Map> localDropMap) const;
+    RCP<const Map> CreateRedundantMaps(Teuchos::RCP<const Map> localDropMap) const;
 
 };  // class SegregatedAFactory
 

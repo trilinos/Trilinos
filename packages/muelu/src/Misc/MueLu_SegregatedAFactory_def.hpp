@@ -64,15 +64,14 @@ RCP<const ParameterList> SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal,
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
 #undef SET_VALID_ENTRY
 
-  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A used for filtering");
-  validParamList->set<RCP<const FactoryBase>> ("A", Teuchos::null, "Generating factory of the matrix A used for filtering");
-  validParamList->set<std::string>            ("mapType", "vague", "Type of rowmap that decides the strategy to drop entries from matrix A [blockmap, map-pair]");
+  validParamList->set<RCP<const FactoryBase>> ("A", Teuchos::null, "Generating factory of the matrix A to be filtered");
+  validParamList->set<std::string>            ("droppingScheme", "vague", "Strategy to drop entries from matrix A based on the input of some map(s) [blockmap, map-pair]");
 
   validParamList->set<RCP<const FactoryBase>> ("dropMap1", Teuchos::null, "Generating factory for dropMap1");
-  validParamList->set<std::string> ("Call ReduceAll on dropMap1", "false", "Boolean for calling reduceAll on dropMap1");
+  validParamList->set<bool> ("Call ReduceAll on dropMap1", false, "Boolean for calling reduceAll on dropMap1");
 
   validParamList->set<RCP<const FactoryBase>> ("dropMap2", Teuchos::null, "Generating factory for dropMap2'");
-  validParamList->set<std::string> ("Call ReduceAll on dropMap2", "false", "Boolean for calling reduceAll on dropMap2");
+  validParamList->set<bool> ("Call ReduceAll on dropMap2", false, "Boolean for calling reduceAll on dropMap2");
 
   return validParamList;
 }
@@ -83,19 +82,13 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput
   const ParameterList& pL = GetParameterList();
 
   TEUCHOS_TEST_FOR_EXCEPTION(pL.get<RCP<const FactoryBase>>("A")==Teuchos::null, Exceptions::InvalidArgument,
-                             "Please specify a generating factory for the matrix \"A\" used for filtering.")
-  TEUCHOS_TEST_FOR_EXCEPTION(pL.get<std::string>("mapType")=="vague", Exceptions::InvalidArgument,
+                             "Please specify a generating factory for the matrix \"A\" to be filtered.")
+  TEUCHOS_TEST_FOR_EXCEPTION(pL.get<std::string>("droppingScheme")=="vague", Exceptions::InvalidArgument,
                              "Input map type not selected. Please select one of the available strategies.")
   TEUCHOS_TEST_FOR_EXCEPTION(
-          (pL.get<std::string>("mapType") != "blockmap" && pL.get<std::string>("mapType") != "map-pair"),
+          (pL.get<std::string>("droppingScheme") != "blockmap" && pL.get<std::string>("droppingScheme") != "map-pair"),
           Exceptions::InvalidArgument,
-          "Unknown User Input: map type (=" << pL.get<std::string>("mapType") << ")")
-  TEUCHOS_TEST_FOR_EXCEPTION(pL.get<std::string>("Call ReduceAll on dropMap1") != "true" &&
-                             pL.get<std::string>("Call ReduceAll on dropMap1") != "false", Exceptions::InvalidArgument,
-                             "Call ReduceAll on dropMap1 must be \"true\" or \"false\"");
-  TEUCHOS_TEST_FOR_EXCEPTION(pL.get<std::string>("Call ReduceAll on dropMap2") != "true" &&
-                             pL.get<std::string>("Call ReduceAll on dropMap2") != "false", Exceptions::InvalidArgument,
-                             "Call ReduceAll on dropMap2 must be \"true\" or \"false\"");
+          "Unknown User Input: map type (=" << pL.get<std::string>("droppingScheme") << ")")
 
   Input(currentLevel, "A");
 
@@ -117,7 +110,7 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
 {
   // Call a specialized build routine based on the format of user-given input
   const ParameterList &pL = GetParameterList();
-  const std::string parameterName = "mapType";
+  const std::string parameterName = "droppingScheme";
   if (pL.get<std::string>(parameterName) == "blockmap"){
     BuildBasedOnBlockmap(currentLevel);
   }
@@ -153,9 +146,9 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
   Teuchos::RCP<Matrix> Aout = MatrixFactory::Build(Ain->getRowMap(), Ain->getGlobalMaxNumRowEntries());
 
   size_t numLocalRows = Ain->getLocalNumRows();
-  for(size_t row=0; row < numLocalRows; row++) { // how can i replace this by a parallel for?
-    GlobalOrdinal grid  = Ain->getRowMap()->getGlobalElement(row); // global row id
-    bool isInMap        = dropMap1->isNodeGlobalElement(grid);
+  for(size_t row=0; row<numLocalRows; row++) {
+    GlobalOrdinal grid = Ain->getRowMap()->getGlobalElement(row); // global row id
+    bool isInMap = dropMap1->isNodeGlobalElement(grid);
 
     // extract row information from input matrix
     Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -167,7 +160,7 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
     Teuchos::ArrayRCP<Scalar> valout(indices.size(), Teuchos::ScalarTraits<Scalar>::zero());
 
     size_t nNonzeros = 0;
-    for(size_t i = 0; i < (size_t)indices.size(); i++) {
+    for(size_t i=0; i<(size_t)indices.size(); i++) {
       GlobalOrdinal gcid = Ain->getColMap()->getGlobalElement(indices[i]); // global column id
       bool isInMap2 = dropMap1->isNodeGlobalElement(gcid);
 
@@ -227,23 +220,23 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
   // create new empty Operator
   Teuchos::RCP<Matrix> Aout = MatrixFactory::Build(Ain->getRowMap(), Ain->getGlobalMaxNumRowEntries());
 
-  Teuchos::RCP<const Map> redundantDropMap1 = Teuchos::null;
-  Teuchos::RCP<const Map> redundantDropMap2 = Teuchos::null;
+  Teuchos::RCP<const Map> finalDropMap1 = Teuchos::null;
+  Teuchos::RCP<const Map> finalDropMap2 = Teuchos::null;
 
-  if (pL.get<std::string>("Call ReduceAll on dropMap1") == "true"){
-    redundantDropMap1 = CreateRedundantMaps(comm, dropMap1);
+  if (pL.get<bool>("Call ReduceAll on dropMap1")){
+    finalDropMap1 = CreateRedundantMaps(dropMap1);
   }
   else{
     // if reduceAll is not called, we simply work with the local dropMap
-    redundantDropMap1 = dropMap1;
+    finalDropMap1 = dropMap1;
   }
 
-  if (pL.get<std::string>("Call ReduceAll on dropMap2") == "true"){
-    redundantDropMap2 = CreateRedundantMaps(comm, dropMap2);
+  if (pL.get<bool>("Call ReduceAll on dropMap2")){
+    finalDropMap2 = CreateRedundantMaps(dropMap2);
   }
   else{
     // if reduceAll is not called, we simply work with the local dropMap
-    redundantDropMap2 = dropMap2;
+    finalDropMap2 = dropMap2;
   }
 
   // Start copying the matrix row by row and dropping any entries that are contained as a combination of entries of
@@ -252,8 +245,8 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
 
   for(size_t row=0; row<numLocalMatrixRows; row++) {
     GlobalOrdinal grid = Ain->getRowMap()->getGlobalElement(row); // global row id
-    bool rowIsInMap1 = redundantDropMap1->isNodeGlobalElement(grid);
-    bool rowIsInMap2 = redundantDropMap2->isNodeGlobalElement(grid);
+    bool rowIsInMap1 = finalDropMap1->isNodeGlobalElement(grid);
+    bool rowIsInMap2 = finalDropMap2->isNodeGlobalElement(grid);
 
     // extract row information from input matrix
     Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -268,8 +261,8 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
     for(size_t i=0; i<(size_t)indices.size(); i++)
     {
       GlobalOrdinal gcid = Ain->getColMap()->getGlobalElement(indices[i]); // global column id
-      bool colIsInMap1 = redundantDropMap1->isNodeGlobalElement(gcid);
-      bool colIsInMap2 = redundantDropMap2->isNodeGlobalElement(gcid);
+      bool colIsInMap1 = finalDropMap1->isNodeGlobalElement(gcid);
+      bool colIsInMap2 = finalDropMap2->isNodeGlobalElement(gcid);
 
       if ((rowIsInMap1 && colIsInMap2) || (rowIsInMap2 && colIsInMap1)){
         // do nothing == drop this entry
@@ -299,8 +292,11 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRedundantMaps(
-        Teuchos::RCP<const Teuchos::Comm<int>> comm, Teuchos::RCP<const Map> localDropMap) const {
+Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
+        SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRedundantMaps(
+                Teuchos::RCP<const Map> localDropMap) const {
+
+  Teuchos::RCP<const Teuchos::Comm<int>> comm = localDropMap->getComm();
 
   Array<GO> localDropMapGIDList = localDropMap->getLocalElementList();
   const int GIDListSize = localDropMap->getMaxAllGlobalIndex()+1;

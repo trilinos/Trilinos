@@ -60,10 +60,11 @@
 
 namespace MueLuTests {
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SegregatedAFactory, Basic, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SegregatedAFactory, Blockmap, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+{
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
   out << "version: " << MueLu::Version() << std::endl;
 
   using TST            = Teuchos::ScalarTraits<SC>;
@@ -116,8 +117,98 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SegregatedAFactory, Basic, Scalar, LocalOrdina
 
     RCP<SegregatedAFactory> segregateFact = rcp( new SegregatedAFactory() );
     segregateFact->SetFactory("A", MueLu::NoFactory::getRCP());
-    segregateFact->SetParameter("mapType", Teuchos::ParameterEntry(std::string("blockmap")));
+    segregateFact->SetParameter("droppingScheme", Teuchos::ParameterEntry(std::string("blockmap")));
     segregateFact->SetFactory("dropMap1", MueLu::NoFactory::getRCP());
+
+    // request segregated operator
+    level.Request("A", segregateFact.get());
+    segregateFact->Build(level);
+
+    RCP<Matrix> Aout = level.Get<RCP<Matrix> >("A", segregateFact.get());
+
+    // Output (segregated Operator)
+    // Node ID   Global Row  Num Entries(Index,Value)
+    // 0         0           4 (0, 1)  (1, 1)  (2, 1)  (3, 1)
+    // 0         1           4 (0, 1)  (1, 1)  (2, 1)  (3, 1)
+    // 0         2           4 (0, 1)  (1, 1)  (2, 1)  (3, 1)
+    // 0         3           4 (0, 1)  (1, 1)  (2, 1)  (3, 1)
+    // 0         4           3 (4, 1)  (5, 1)  (6, 1)
+    // 0         5           3 (4, 1)  (5, 1)  (6, 1)
+    // 0         6           3 (4, 1)  (5, 1)  (6, 1)
+
+    TEST_EQUALITY(Aout.is_null(), false);
+    TEST_EQUALITY(Aout->getGlobalNumEntries(), 25);
+    TEST_FLOATING_EQUALITY(Aout->getFrobeniusNorm(), 5.0, 2e1*TMT::eps());
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SegregatedAFactory, MapPair, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  using TST = Teuchos::ScalarTraits<SC>;
+  using magnitude_type = typename TST::magnitudeType;
+  using TMT = Teuchos::ScalarTraits<magnitude_type>;
+
+  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+  // test with simple example matrix and segregate first 4 rows from rest
+  //     x x x x                x x x x
+  //     x x x x                x x x x
+  //     x x x x x x            x x x x
+  //     x x x x x x      ==>   x x x x
+  //         x x x x x                 x x x
+  //         x x x x x                 x x x
+  //             x x x                 x x x
+
+  {
+    RCP<Map> rowMap = MapFactory::Build(lib, 7, 0, comm);
+    RCP<CrsGraph> graph = CrsGraphFactory::Build(rowMap, 6);
+
+    graph->insertGlobalIndices(0, Teuchos::tuple<GlobalOrdinal>(0, 1, 2, 3));
+    graph->insertGlobalIndices(1, Teuchos::tuple<GlobalOrdinal>(0, 1, 2, 3));
+    graph->insertGlobalIndices(2, Teuchos::tuple<GlobalOrdinal>(0, 1, 2, 3, 4, 5));
+    graph->insertGlobalIndices(3, Teuchos::tuple<GlobalOrdinal>(0, 1, 2, 3, 4, 5));
+    graph->insertGlobalIndices(4, Teuchos::tuple<GlobalOrdinal>(2, 3, 4, 5, 6));
+    graph->insertGlobalIndices(5, Teuchos::tuple<GlobalOrdinal>(2, 3, 4, 5, 6));
+    graph->insertGlobalIndices(6, Teuchos::tuple<GlobalOrdinal>(4, 5, 6));
+    graph->fillComplete();
+
+    RCP<Matrix> A = MatrixFactory::Build(graph.getConst());
+    A->setAllToScalar(TST::one());
+    A->fillComplete();
+
+    TEST_EQUALITY(A.is_null(), false);
+    TEST_EQUALITY(A->getGlobalNumEntries(), 33);
+    TEST_FLOATING_EQUALITY(A->getFrobeniusNorm(), 5.744562646538029, 2e1*TMT::eps());
+
+    std::vector<GO> dropMap1Entries {2,3};
+    RCP<const Map> dropMap1 = Xpetra::MapFactory<LO,GO,NO>::Build(lib, dropMap1Entries.size(), dropMap1Entries, 0, comm);
+    std::vector<GO> dropMap2Entries {4,5};
+    RCP<const Map> dropMap2 = Xpetra::MapFactory<LO,GO,NO>::Build(lib, dropMap2Entries.size(), dropMap2Entries, 0, comm);
+
+    Level level;
+    TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    std::string map1Name = "dropMap1";
+    std::string map2Name = "dropMap2";
+
+    level.Set(map1Name, dropMap1);
+    level.Set(map2Name, dropMap2);
+
+    TEST_ASSERT(level.IsAvailable("A", MueLu::NoFactory::get()));
+    TEST_ASSERT(level.IsAvailable(map1Name, MueLu::NoFactory::get()));
+    TEST_ASSERT(level.IsAvailable(map2Name, MueLu::NoFactory::get()));
+
+    RCP<SegregatedAFactory> segregateFact = rcp( new SegregatedAFactory() );
+    segregateFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    segregateFact->SetParameter("droppingScheme", Teuchos::ParameterEntry(std::string("map-pair")));
+    segregateFact->SetFactory("dropMap1", MueLu::NoFactory::getRCP());
+    segregateFact->SetFactory("dropMap2", MueLu::NoFactory::getRCP());
 
     // request segregated operator
     level.Request("A", segregateFact.get());
@@ -142,7 +233,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SegregatedAFactory, Basic, Scalar, LocalOrdina
 }
 
 #define MUELU_ETI_GROUP(SC, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SegregatedAFactory, Basic, SC, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SegregatedAFactory, Blockmap, SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SegregatedAFactory, MapPair, SC, LO, GO, Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 }  // namespace MueLuTests

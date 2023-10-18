@@ -324,7 +324,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
       const GlobalOrdinal gPrimalNodeId = AmalgamationFactory::DOFGid2NodeId(gPrimalRowId, primalBlockDim, primalDofOffset, primalInterfaceDofRowMap->getIndexBase());
       const LocalOrdinal lPrimalNodeId  = lPrimalRowId / numDofsPerPrimalNode;
       const LocalOrdinal primalAggId    = primalVertex2AggId[lPrimalNodeId];
-      const GlobalOrdinal gDualDofId    = A01->getDomainMap()->getGlobalElement(r); // change to Domain Map as ColMap is not guaranteed to be complete
+      const GlobalOrdinal gDualDofId    = A01->getDomainMap()->getGlobalElement(r);
       const GlobalOrdinal gDualNodeId   = AmalgamationFactory::DOFGid2NodeId(gDualDofId, dualBlockDim, dualDofOffset, 0);
 
       if (local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId] == -GO_ONE) {
