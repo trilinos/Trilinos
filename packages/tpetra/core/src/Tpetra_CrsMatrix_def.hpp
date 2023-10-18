@@ -8456,7 +8456,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
-    bool runOnHost = std::is_same_v<typename device_type::execution_space, Kokkos::Serial> && !useKokkosPath;
+    bool runOnHost = std::is_same_v<typename device_type::memory_space, Kokkos::HostSpace> && !useKokkosPath;
 
     Teuchos::Array<int> RemotePids;
     if (runOnHost) {
@@ -8603,9 +8603,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
 #endif
-        // Just to be safe we always static cast the Scalar pointer
-        // to the underlying impl_scalar type.
-  
         Import_Util::sortCrsEntries (CSR_rowptr(),
                                      CSR_colind_LID(),
                                      CSR_vals());
@@ -8791,13 +8788,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       /***************************************************/
       /**** 5) Sort                                   ****/
       /***************************************************/
-  
-      // First we create Kokkos::Views and transfer data from
-      // the ArrayRCPs with the intent to later call setAllValues
-      // using said views as input. This should reduce the
-      // amount of data transfers required between host and
-      // device and thus improve performance.
-  
+
       if ((! reverseMode && xferAsImport != nullptr) ||
           (reverseMode && xferAsExport != nullptr)) {
         if (verbose) {
@@ -8808,9 +8799,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
 #endif
-        // Just to be safe we always static cast the Scalar pointer
-        // to the underlying impl_scalar type.
-  
         Import_Util::sortCrsEntries (CSR_rowptr_d,
                                      CSR_colind_LID_d,
                                      CSR_vals_d);
@@ -8836,6 +8824,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           "transferAndFillComplete: Should never get here!  "
           "Please report this bug to a Tpetra developer.");
       }
+
       /***************************************************/
       /**** 6) Reset the colmap and the arrays        ****/
       /***************************************************/
@@ -8846,11 +8835,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         std::cerr << os.str ();
       }
   
-      // Call constructor for the new matrix (restricted as needed)
-      //
-      // NOTE (mfh 15 May 2014) This should work fine for the Kokkos
-      // refactor version of CrsMatrix, though it reserves the right to
-      // make a deep copy of the arrays.
       {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
