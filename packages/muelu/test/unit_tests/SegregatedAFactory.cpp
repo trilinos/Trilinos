@@ -52,11 +52,7 @@
 #include "MueLu_Version.hpp"
 
 #include <Xpetra_CrsGraphFactory.hpp>
-#include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_MapExtractor_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_IO.hpp>
 
@@ -106,21 +102,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SegregatedAFactory, Basic, Scalar, LocalOrdina
     TEST_EQUALITY(A->getGlobalNumEntries(), 33);
     TEST_FLOATING_EQUALITY(A->getFrobeniusNorm(), 5.744562646538029, 2e1 * TMT::eps());
 
-    RCP<Map> map = MapFactory::Build(lib, 4, 0, comm);
+    RCP<const Map> map = MapFactory::Build(lib, 4, 0, comm);
 
     Level level;
     TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
-    const std::string mapName = "Segregate Map";
+    std::string mapName = "dropMap1";
     level.Set(mapName, map);
 
     TEST_ASSERT(level.IsAvailable("A", MueLu::NoFactory::get()));
     TEST_ASSERT(level.IsAvailable(mapName, MueLu::NoFactory::get()));
 
-    RCP<SegregatedAFactory> segregateFact = rcp(new SegregatedAFactory());
+    RCP<SegregatedAFactory> segregateFact = rcp( new SegregatedAFactory() );
     segregateFact->SetFactory("A", MueLu::NoFactory::getRCP());
-    segregateFact->SetParameter("map: name", Teuchos::ParameterEntry(mapName));
+    segregateFact->SetParameter("mapType", Teuchos::ParameterEntry(std::string("blockmap")));
+    segregateFact->SetFactory("dropMap1", MueLu::NoFactory::getRCP());
 
     // request segregated operator
     level.Request("A", segregateFact.get());
