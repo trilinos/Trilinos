@@ -440,13 +440,19 @@ macro(tribits_disable_optional_dependency  upstreamPackageName  reasonStr)
       "  Instead, please call this from the package's base CMakeLists.txt file"
       " '${${PACKAGE_NAME}_SOURCE_DIR}/CMakeLists.txt'" )
   endif()
-  # Get the variable names that are going to be set assert they exist already
+  # Get the variable names that are going to be set
   set(packageEnableVarName ${PACKAGE_NAME}_ENABLE_${upstreamPackageName})
-  assert_defined(${packageEnableVarName})
   string(TOUPPER  ${upstreamPackageName}  upstreamPackageName_UC)
   set(havePackageUpstreamPackageMacroVarName
     HAVE_${PACKAGE_NAME_UC}_${upstreamPackageName_UC})
-  assert_defined(${havePackageUpstreamPackageMacroVarName})
+  # Assert that the vars already exist (to make sure the package and dependency exist)
+  if (${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  IN_LIST
+      ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_ERROR_VALUES_LIST
+    )
+    # We only assert if all packages have to exist, which is not true in a reduced source tree
+    assert_defined(${packageEnableVarName})
+    assert_defined(${havePackageUpstreamPackageMacroVarName})
+  endif()
   # Set the variables to OFF in local and project-level scopes
   if (NOT "${reasonStr}" STREQUAL "")
     message("-- ${reasonStr}")

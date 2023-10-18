@@ -535,7 +535,6 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    typedef Teuchos::ScalarTraits<DomainScalar> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms (reorderedX.getNumVectors ());
     reorderedX.norm2 (norms ());
@@ -569,7 +568,6 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    typedef Teuchos::ScalarTraits<RangeScalar> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms (originalY.getNumVectors ());
     originalY.norm2 (norms ());

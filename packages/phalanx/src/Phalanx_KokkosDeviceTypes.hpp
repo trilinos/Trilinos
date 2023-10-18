@@ -18,7 +18,7 @@ namespace PHX {
 #if defined(PHX_KOKKOS_DEVICE_TYPE_CUDA)
   using Device = Kokkos::Cuda;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_HIP)
-  using Device = Kokkos::Experimental::HIP;
+  using Device = Kokkos::HIP;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
   using Device = Kokkos::OpenMP;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_THREAD)

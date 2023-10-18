@@ -1,12 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
+// ************************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//                           Intrepid2 Package
+//                 Copyright (2007) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,57 +34,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
+// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
+//                    Mauro Perego  (mperego@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
+
+/** \file test_01.cpp
+    \brief  Unit tests for the Intrepid2::Basis_HGRAD_PYR_I2_FEM class.
+    \author Created by Kyungjoo Kim
 */
-#include "Tpetra_Details_DeepCopyCounter.hpp"
-#include "TpetraCore_config.h"
+
 #include "Kokkos_Core.hpp"
-#include <cstring>
 
-namespace Tpetra {
-namespace Details {
+#include "test_01.hpp"
 
-  namespace DeepCopyCounterDetails {
-    void kokkosp_begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle, const char* dst_name, const void* dst_ptr,                                 
-                                 Kokkos::Tools::SpaceHandle src_handle, const char* src_name, const void* src_ptr,
-                                 uint64_t size) {
+int main(int argc, char *argv[]) {
 
-      if(DeepCopyCounter::count_active) {
-        if(strcmp(dst_handle.name,src_handle.name)) {
-          DeepCopyCounter::count++;
-        }
-      }
-    }
+  const bool verbose = (argc-1) > 0;
+  Kokkos::initialize();
 
+  const int r_val = Intrepid2::Test::HGRAD_PYR_I2_FEM_Test01<@ETI_VALUETYPE@, @ETI_DEVICE@>(verbose);
 
-  }// end DeepCopyCounterDetails
-
-
-  // Initialize
-  bool DeepCopyCounter::count_active=false;
-  size_t DeepCopyCounter::count=0;
-
-
-  void DeepCopyCounter::start() {
-    count_active=true;
-    Kokkos::Tools::Experimental::set_begin_deep_copy_callback(DeepCopyCounterDetails::kokkosp_begin_deep_copy);
-  }
-
-  void DeepCopyCounter::reset() {
-    count=0;
-  }
-
-  size_t DeepCopyCounter::stop() {
-    count_active=false;
-    return count;
-  }
-
-  size_t DeepCopyCounter::get_count() {
-    return count;
-  }
-
-
-} // namespace Details
-} // namespace Tpetra
+  Kokkos::finalize();
+  return r_val;
+}
 

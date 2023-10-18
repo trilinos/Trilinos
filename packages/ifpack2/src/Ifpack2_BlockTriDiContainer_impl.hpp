@@ -176,6 +176,7 @@ namespace Ifpack2 {
     //template<> struct SmallScalarType<Kokkos::complex<double> > { typedef Kokkos::complex<float> type; };
 #endif
 
+
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN \
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
@@ -1993,7 +1994,7 @@ namespace Ifpack2 {
       return 2*total_team_size/vector_size;
     }
     template<>
-    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPSpace> {
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HIPSpace> {
       typedef KB::Mode::Team mode_type;
       typedef KB::Algo::Level3::Unblocked algo_type;
       static int recommended_team_size(const int blksize,
@@ -2003,7 +2004,7 @@ namespace Ifpack2 {
       }
     };
     template<>
-    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPHostPinnedSpace> {
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HIPHostPinnedSpace> {
       typedef KB::Mode::Team mode_type;
       typedef KB::Algo::Level3::Unblocked algo_type;
       static int recommended_team_size(const int blksize,
@@ -3432,7 +3433,7 @@ namespace Ifpack2 {
     }
 
     template<>
-    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPSpace> {
+    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::HIPSpace> {
       typedef KB::Mode::Team mode_type;
       typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
       typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
@@ -3443,7 +3444,7 @@ namespace Ifpack2 {
       }
     };
     template<>
-    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPHostPinnedSpace> {
+    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::HIPHostPinnedSpace> {
       typedef KB::Mode::Team mode_type;
       typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
       typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;

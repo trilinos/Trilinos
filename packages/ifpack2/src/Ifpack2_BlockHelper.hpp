@@ -129,7 +129,7 @@ namespace Ifpack2 {
     ///
     template<typename T> struct is_hip                  { enum : bool { value = false }; };
 #if defined(KOKKOS_ENABLE_HIP)
-    template<> struct is_hip<Kokkos::Experimental::HIP> { enum : bool { value = true  }; };
+    template<> struct is_hip<Kokkos::HIP> { enum : bool { value = true  }; };
 #endif
 
     ///
@@ -172,9 +172,9 @@ namespace Ifpack2 {
 
 #if defined(KOKKOS_ENABLE_HIP)
     template<>
-    struct ExecutionSpaceFactory<Kokkos::Experimental::HIP> {
-      static void createInstance(Kokkos::Experimental::HIP &exec_instance) {
-	exec_instance = Kokkos::Experimental::HIP();
+    struct ExecutionSpaceFactory<Kokkos::HIP> {
+      static void createInstance(Kokkos::HIP &exec_instance) {
+	exec_instance = Kokkos::HIP();
       }
     };
 #endif

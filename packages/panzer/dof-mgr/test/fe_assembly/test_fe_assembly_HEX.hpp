@@ -187,9 +187,9 @@ int feAssemblyHex(int argc, char *argv[]) {
           std::is_same<mem_space, Kokkos::CudaHostPinnedSpace>::value
 #elif defined(KOKKOS_ENABLE_HIP)
           || std::is_same<mem_space,
-                          Kokkos::Experimental::HIPHostPinnedSpace>::value ||
+                          Kokkos::HIPHostPinnedSpace>::value ||
           std::is_same<mem_space,
-                       Kokkos::Experimental::HIPManagedSpace>::value
+                       Kokkos::HIPManagedSpace>::value
 #elif defined(KOKKOS_ENABLE_SYCL)
           || std::is_same<mem_space,
                           Kokkos::Experimental::SYCLSharedUSMSpace>::value ||
@@ -203,7 +203,7 @@ int feAssemblyHex(int argc, char *argv[]) {
 #if defined(KOKKOS_ENABLE_CUDA)
       std::is_same<exec_space, Kokkos::Cuda>::value ||
 #elif defined(KOKKOS_ENABLE_HIP)
-      std::is_same<exec_space, Kokkos::Experimental::HIP>::value ||
+      std::is_same<exec_space, Kokkos::HIP>::value ||
 #elif defined(KOKKOS_ENABLE_SYCL)
       std::is_same<exec_space, Kokkos::Experimental::SYCL>::value ||
 #elif defined(KOKKOS_ENABLE_OPENMPTARGET)

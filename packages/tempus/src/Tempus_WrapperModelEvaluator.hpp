@@ -23,6 +23,35 @@ enum EVALUATION_TYPE {
 };
 
 
+template<class Scalar>
+class ImplicitODEParameters
+{
+  public:
+    /// Constructor
+    ImplicitODEParameters()
+      : timeDer_(Teuchos::null), timeStepSize_(Scalar(0.0)),
+        alpha_(Scalar(0.0)), beta_(Scalar(0.0)), evaluationType_(SOLVE_FOR_X),
+        stageNumber_(0)
+    {}
+    /// Constructor
+    ImplicitODEParameters(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
+                          Scalar timeStepSize, Scalar alpha, Scalar beta,
+                          EVALUATION_TYPE evaluationType = SOLVE_FOR_X,
+                          int stageNumber = 0)
+      : timeDer_(timeDer), timeStepSize_(timeStepSize),
+        alpha_(alpha), beta_(beta), evaluationType_(evaluationType),
+        stageNumber_(stageNumber)
+    {}
+
+    Teuchos::RCP<TimeDerivative<Scalar> > timeDer_;
+    Scalar                                timeStepSize_;
+    Scalar                                alpha_;
+    Scalar                                beta_;
+    EVALUATION_TYPE                       evaluationType_;
+    int                                   stageNumber_;
+};
+
+
 /** \brief A ModelEvaluator which wraps the application ModelEvaluator.
  *
  *  The WrapperModelEvaluator takes a state, \f$x\f$, computes time
@@ -59,23 +88,15 @@ public:
   virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getAppModel() const = 0;
 
-  /// Set InArgs the wrapper ModelEvalutor.
-  virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs) = 0;
-
-  /// Get InArgs the wrapper ModelEvalutor.
-  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs() = 0;
-
-  /// Set OutArgs the wrapper ModelEvalutor.
-  virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)=0;
-
-  /// Get OutArgs the wrapper ModelEvalutor.
-  virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs() = 0;
-
   /// Set parameters for application implicit ModelEvaluator solve.
-  virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > td,
-    Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs,
-    EVALUATION_TYPE evaluationType = SOLVE_FOR_X) = 0;
+  virtual void setForSolve(
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
+    const Scalar time,
+    const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y = Teuchos::null,
+    const int index = -1    /* index and y are for IMEX_RK_Partition */ ) = 0;
+
 };
 
 } // namespace Tempus

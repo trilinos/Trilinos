@@ -78,7 +78,7 @@ fill (const ExecutionSpace& execSpace,
 {
   static_assert (std::is_integral<IndexType>::value,
                  "IndexType must be a built-in integer type.");
-    auto X_j = Kokkos::subview (X, Kokkos::pair{IndexType(0), numRows}, Kokkos::pair{IndexType(0), numCols});
+    auto X_j = Kokkos::subview (X, Kokkos::make_pair(IndexType(0), numRows), Kokkos::make_pair(IndexType(0), numCols));
     Kokkos::deep_copy(execSpace, X_j, alpha);
 }
 
@@ -101,7 +101,7 @@ fill (const ExecutionSpace& execSpace,
                  "IndexType must be a built-in integer type.");
   for (IndexType k = 0; k < numCols; ++k) {
     const IndexType j = whichVectors[k];
-    auto X_j = Kokkos::subview (X, Kokkos::pair{IndexType(0), numRows}, j);
+    auto X_j = Kokkos::subview (X, Kokkos::make_pair(IndexType(0), numRows), j);
     Kokkos::deep_copy(execSpace, X_j, alpha);
   }
 }
