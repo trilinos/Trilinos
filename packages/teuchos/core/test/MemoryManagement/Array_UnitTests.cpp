@@ -535,7 +535,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, initializerList, T )
 {
   const Array<T> a2{as<T>(1),as<T>(2),as<T>(3),as<T>(4)};
   TEST_EQUALITY( a2.size(), 4);
-  for (size_t i=0; i < a2.size(); ++i) {
+  for (typename Array<T>::size_type i=0; i < a2.size(); ++i) {
     TEST_EQUALITY( a2[i], as<T>(i+1) );
   }
 }
