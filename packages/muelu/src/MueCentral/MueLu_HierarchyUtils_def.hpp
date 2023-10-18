@@ -132,6 +132,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                                        name != "Pnodal" && name != "NodeMatrix" && name != "NodeAggMatrix" &&
                                        name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                        name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
+                                       name != "dropMap1" && name != "dropMap2" &&
                                        !IsParamMuemexVariable(name),
                                    Exceptions::InvalidArgument,
                                    std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type(") + name + ")");
@@ -261,6 +262,16 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(levelListEntry->second), NoFactory::get());
         }
+        else if(name == "dropMap1")
+        {
+          level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<const Map>>(levelListEntry->second), NoFactory::get());
+        }
+        else if(name == "dropMap2")
+        {
+          level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<const Map>>(levelListEntry->second), NoFactory::get());
+        }
 #ifdef HAVE_MUELU_INTREPID2
         else if (name == "pcoarsen: element to node map") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
@@ -321,6 +332,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                                        name != "NodeMatrix" &&
                                        name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                        name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
+                                       name != "dropMap1" && name != "dropMap2" &&
                                        name != "output stream" &&
                                        !IsParamValidVariable(name),
                                    Exceptions::InvalidArgument,
@@ -352,6 +364,12 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
           level->Set(name, Teuchos::getValue<RCP<std::map<LO, LO>>>(userListEntry->second), NoFactory::get());
         } else if (name == "Primal interface DOF map") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<const Map>>(userListEntry->second), NoFactory::get());
+        } else if(name == "dropMap1"){
+          level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<const Map>>(userListEntry->second), NoFactory::get());
+        } else if(name == "dropMap2"){
+          level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(userListEntry->second), NoFactory::get());
         }
 #ifdef HAVE_MUELU_INTREPID2

@@ -102,9 +102,14 @@ class SegregatedAFactory : public SingleLevelFactoryBase {
 
   //@}
 
- private:
-  //! Generating factory of input variable
-  mutable RCP<const FactoryBase> mapFact_;
+  private:
+
+    void BuildBasedOnBlockmap(Level& currentLevel) const;
+
+    void BuildBasedOnMapPair(Level& currentLevel) const;
+
+    RCP<const Map> CreateRedundantMaps(
+            Teuchos::RCP<const Teuchos::Comm<int>> comm, Teuchos::RCP<const Map> localDropMap) const;
 
 };  // class SegregatedAFactory
 
