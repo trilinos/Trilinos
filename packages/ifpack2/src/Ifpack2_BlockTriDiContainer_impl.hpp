@@ -1284,13 +1284,15 @@ namespace Ifpack2 {
 
 
         // Fill packindices_sub and packindices_schur
-        for (local_ordinal_type local_sub_ip=0; local_sub_ip<n_subparts_per_part;++local_sub_ip) {
+        for (local_ordinal_type local_sub_ip=0; local_sub_ip<n_subparts_per_part-1;++local_sub_ip) {
           for (local_ordinal_type local_pack_ip=0; local_pack_ip<npacks_per_subpart;++local_pack_ip) {
             packindices_sub(local_sub_ip * npacks_per_subpart + local_pack_ip) = 2 * local_sub_ip * npacks_per_subpart + local_pack_ip;
-            if (local_sub_ip != n_subparts_per_part-1) {
-              packindices_schur(local_sub_ip * npacks_per_subpart + local_pack_ip) = 2 * local_sub_ip * npacks_per_subpart + local_pack_ip + npacks_per_subpart;
-            }
+            packindices_schur(local_sub_ip * npacks_per_subpart + local_pack_ip) = 2 * local_sub_ip * npacks_per_subpart + local_pack_ip + npacks_per_subpart;
           }
+        }
+
+        for (local_ordinal_type local_pack_ip=0; local_pack_ip<npacks_per_subpart;++local_pack_ip) {
+          packindices_sub((n_subparts_per_part-1) * npacks_per_subpart + local_pack_ip) = 2 * (n_subparts_per_part-1) * npacks_per_subpart + local_pack_ip;
         }
 
         Kokkos::deep_copy(interf.packindices_sub, packindices_sub);
