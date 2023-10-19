@@ -2248,7 +2248,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   using GST = Tpetra::global_size_t;
-  using IST = typename CrsMatrixType::impl_scalar_type;
   using buffer_device_type = typename CrsMatrixType::buffer_device_type;
 
   RCP<const Comm<int> > Comm = getDefaultComm();
@@ -2417,7 +2416,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
     Kokkos::View<size_t*,Node::device_type> rowptr_d;
     Kokkos::View<GO*,Node::device_type>     colind_d;
-    Kokkos::View<IST*,Node::device_type> vals_d;
+    Kokkos::View<typename CrsMatrixType::impl_scalar_type*,Node::device_type> vals_d;
 
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
       *A,
