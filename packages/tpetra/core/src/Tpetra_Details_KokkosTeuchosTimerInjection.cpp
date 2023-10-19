@@ -152,10 +152,10 @@ namespace Details {
           Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
         }
 #endif
-      }
-      
+      }      
       timer_ = Teuchos::null;
     }
+
   }// end DeepCopyTimerInjection
 
   void AddKokkosDeepCopyToTimeMonitor(bool force) {
@@ -165,10 +165,10 @@ namespace Details {
         Kokkos::Tools::Experimental::set_begin_deep_copy_callback(DeepCopyTimerInjection::kokkosp_begin_deep_copy);
         Kokkos::Tools::Experimental::set_end_deep_copy_callback(DeepCopyTimerInjection::kokkosp_end_deep_copy);
         DeepCopyTimerInjection::initialized_=true;
-
       }
     }
   }
+
   
   namespace FenceTimerInjection {
     Teuchos::RCP<Teuchos::Time> timer_;
@@ -213,10 +213,8 @@ namespace Details {
             Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
           }
 #endif
-        }
-        
-        timer_ = Teuchos::null;
-        
+        }        
+        timer_ = Teuchos::null;        
       }
       // Else: We've nested our fences, and we need to ignore the inner fences
     }
@@ -233,7 +231,6 @@ namespace Details {
       }
     }
   }
-
 
 
   namespace KernelsTimerInjection {
@@ -258,7 +255,6 @@ namespace Details {
       
     }
 
-
     void kokkosp_begin_for(const char* kernelPrefix, const uint32_t devID, uint64_t* kernelID) {
       kokkosp_begin_kernel("parallel_for",kernelPrefix,devID,kernelID);
     }
@@ -270,9 +266,7 @@ namespace Details {
     void kokkosp_begin_reduce(const char* kernelPrefix, const uint32_t devID, uint64_t* kernelID) {
       kokkosp_begin_kernel("parallel_reduce",kernelPrefix,devID,kernelID);
     }
-    
-                           
-
+                              
     void kokkosp_end_kernel(const uint64_t handle) {
       if (timer_ != Teuchos::null) {
         timer_->stop();
