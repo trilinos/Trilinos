@@ -864,7 +864,11 @@ Array<T>::Array(const Tuple<T,N>& t)
 
 template<typename T> inline
 Array<T>::Array(std::initializer_list<T> a)
-  : vec_(rcp(new std::vector<T>{a}))
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  : vec_(rcp(new std::vector<T>(a)))
+#else
+  : vec_(a)
+#endif
 {}
 
 template<typename T> inline
