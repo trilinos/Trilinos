@@ -181,7 +181,8 @@ TEUCHOS_UNIT_TEST( Array, stringToArray_string_hyphens )
 
   {
     std::string arrayString="{,}";
-    TEST_THROW(Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString),
+    TEST_THROW(
+      [[maybe_unused]] Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString),
       Teuchos::InvalidArrayStringRepresentation);
   }
 
@@ -336,6 +337,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP_dangling, T )
   }
 #ifdef TEUCHOS_DEBUG
   TEST_THROW(a_arcp[0], DanglingReferenceError);
+#else
+  (void)out; (void)success;
 #endif
 }
 
@@ -349,6 +352,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constArray_to_ArrayRCP_dangling, T )
   }
 #ifdef TEUCHOS_DEBUG
   TEST_THROW(a_arcp[0], DanglingReferenceError);
+#else
+  (void)out; (void)success;
 #endif
 }
 
@@ -415,6 +420,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_implicit, T )
   { Array<T> a(n); av = a; }
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( av[0] = 0, DanglingReferenceError );
+#else
+  (void)out; (void)success;
 #endif
 }
 
@@ -425,6 +432,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_implicit_const, T )
   { Array<T> a(n); av = getConst(a); }
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( av[0], DanglingReferenceError );
+#else
+  (void)out; (void)success;
 #endif
 }
 
@@ -435,6 +444,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_explicit, T )
   { Array<T> a(n); av = a(); }
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( av[0] = 0, DanglingReferenceError );
+#else
+  (void)out; (void)success;
 #endif
 }
 
@@ -445,6 +456,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_explicit_const, T )
   { Array<T> a(n); av = getConst(a)(); }
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( av[0], DanglingReferenceError );
+#else
+  (void)out; (void)success;
 #endif
 }
 
@@ -455,6 +468,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_subview, T )
   { Array<T> a(n); av = a(0,1); }
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( av[0] = 0, DanglingReferenceError );
+#else
+  (void)out; (void)success;
 #endif
 }
 
@@ -465,6 +480,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_subview_const, T )
   { Array<T> a(n); av = getConst(a)(0,1); }
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( av[0], DanglingReferenceError );
+#else
+  (void)out; (void)success;
 #endif
 }
 
@@ -479,7 +496,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter, T )
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( *iter = 0, DanglingReferenceError );
 #else
-  (void)iter;
+  (void)iter; (void)out; (void)success;
 #endif
 }
 
@@ -495,7 +512,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter_const, T )
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( *iter, DanglingReferenceError );
 #else
-  (void)iter;
+  (void)iter; (void)out; (void)success;
 #endif
 }
 
@@ -516,6 +533,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView, T )
   a.push_back(a[0]);
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( av[0] = 0, DanglingReferenceError );
+#else
+  (void)av; (void)out; (void)success;
 #endif
 }
 
@@ -527,6 +546,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
   a.push_back(a[0]);
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW( av[0], DanglingReferenceError );
+#else
+  (void)av; (void)out; (void)success;
 #endif
 }
 
