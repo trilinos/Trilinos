@@ -588,7 +588,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, initializerList, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, erase_empty, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView_const, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, initializerList, T )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, initializerList, T ) \
   DEBUG_UNIT_TEST_GROUP( T )
 
 UNIT_TEST_GROUP(int)
