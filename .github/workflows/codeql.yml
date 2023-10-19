@@ -79,10 +79,11 @@ jobs:
         mkdir trilinos_build
         cd trilinos_build
         cmake -DTrilinos_ENABLE_ALL_PACKAGES=OFF -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_Muelu=ON -DTrilinos_ENABLE_Epetra=OFF -DTPL_ENABLE_Boost=OFF -DTrilinos_ENABLE_SEACAS=OFF ..
-        make -j4
+        make -j 12
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
         category: "/language:${{matrix.language}}"
+        cleanup-level: none
 
