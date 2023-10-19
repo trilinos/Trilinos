@@ -59,6 +59,11 @@ namespace Details {
   // This is used for unit testing the capability
   void AddKokkosFenceToTimeMonitor(bool force = false);
 
+  // The force option overrides the environment variable control via TPETRA_TIME_KOKKOS_KERNELS
+  // This is used for unit testing the capability
+  void AddKokkosKernelsToTimeMonitor(bool force = false);
+
+
 } // namespace Details
 } // namespace Tpetra
 
