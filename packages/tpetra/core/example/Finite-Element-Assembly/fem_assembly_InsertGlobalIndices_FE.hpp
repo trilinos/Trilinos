@@ -268,7 +268,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
       ReferenceQuad4(element_matrix);
       ReferenceQuad4RHS(element_rhs);
 
-      for (size_t element_node_idx=0;
+      for (int element_node_idx=0;
 	         element_node_idx < nodesPerElem;
 	         ++element_node_idx) {
 	      column_global_ids[element_node_idx] =
@@ -279,12 +279,12 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
       // - populate the values array
       // - add the values to the fe_matrix.
       // Note: hardcoded 4 here because we're using quads.
-      for (size_t element_node_idx = 0; element_node_idx < 4;
+      for (int element_node_idx = 0; element_node_idx < 4;
 	         ++element_node_idx) {
 	      global_ordinal_type global_row_id =
 	        owned_element_to_node_gids(element_gidx, element_node_idx);
 	
-        for(size_t col_idx = 0; col_idx < 4; col_idx++) {
+        for(int col_idx = 0; col_idx < 4; col_idx++) {
           column_scalar_values[col_idx] = 
             element_matrix(element_node_idx, col_idx);
         }
