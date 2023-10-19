@@ -247,21 +247,6 @@ gradient_uo( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
     Thyra::createMember<Real>(thyra_model_->get_g_space(g_index_));
 
   ROL::ThyraVector<Real>  & thyra_dgdx = dynamic_cast<ROL::ThyraVector<Real>&>(grad);
-
-  //const Thyra::ModelEvaluatorBase::DerivativeSupport dgdx_support =
-  //    outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, g_index_);
-  //Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdx_orient;
-  //if (dgdx_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM))
-  //  dgdx_orient = Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM;
-  //else if(dgdx_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM))
-  //  dgdx_orient = Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
-  //else {
-  //  ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
-  //      "Piro::ThyraProductME_ROL_DynamicObjective::gradient_un: DgDx does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
-  //}
-  //
-  //outArgs.set_DgDx(g_index_, Thyra::ModelEvaluatorBase::DerivativeMultiVector<Real>(thyra_dgdx.getVector(), dgdx_orient));
-  
   bool use_dgdx_dot = true;
 
   const Thyra::ModelEvaluatorBase::DerivativeSupport dgdx_dot_support =
