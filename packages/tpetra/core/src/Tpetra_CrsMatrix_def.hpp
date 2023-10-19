@@ -8685,7 +8685,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::View<size_t*,device_type> CSR_rowptr_d;
       Kokkos::View<GO*,device_type>     CSR_colind_GID_d;
       Kokkos::View<LO*,device_type>     CSR_colind_LID_d;
-      Kokkos::View<Scalar*,device_type> CSR_vals_d;
+      Kokkos::View<impl_scalar_type*,device_type> CSR_vals_d;
   
       Details::unpackAndCombineIntoCrsArrays(
                                      *this, 
@@ -8839,8 +8839,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
 #endif
-        Kokkos::View<impl_scalar_type*, device_type> CSR_vals_d_reinterp(reinterpret_cast<impl_scalar_type*>(CSR_vals_d.data()), CSR_vals_d.extent(0));
-        destMat->setAllValues (CSR_rowptr_d, CSR_colind_LID_d, CSR_vals_d_reinterp);
+        destMat->setAllValues (CSR_rowptr_d, CSR_colind_LID_d, CSR_vals_d);
       }
   
     } //if (runOnHost) .. else ..

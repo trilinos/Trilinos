@@ -1459,7 +1459,7 @@ unpackAndCombineIntoCrsArrays (
     const int MyTargetPID,
     Kokkos::View<size_t*,typename Node::device_type> &crs_rowptr_d,
     Kokkos::View<GlobalOrdinal*,typename Node::device_type>     &crs_colind_d,
-    Kokkos::View<Scalar*,typename Node::device_type> &crs_vals_d_in,
+    Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,typename Node::device_type>& crs_vals_d,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids)
 {
@@ -1524,8 +1524,7 @@ unpackAndCombineIntoCrsArrays (
 # endif
   Kokkos::resize(crs_rowptr_d,TargetNumRows+1);
   Kokkos::resize(crs_colind_d,TargetNumNonzeros);
-  Kokkos::resize(crs_vals_d_in,TargetNumNonzeros);
-  Kokkos::View<ST*, DT> crs_vals_d(reinterpret_cast<ST*>(crs_vals_d_in.data()), crs_vals_d_in.extent(0));
+  Kokkos::resize(crs_vals_d,TargetNumNonzeros);
 # ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
 # endif
@@ -1549,14 +1548,6 @@ unpackAndCombineIntoCrsArrays (
 # endif
   // Convert input arrays to Kokkos::Views
   DT outputDevice;
-
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  static_assert (! std::is_same<
-      typename decltype (crs_vals_d)::non_const_value_type,
-      std::complex<double> >::value,
-    "crs_vals_d::non_const_value_type is std::complex<double>; this should "
-    "never happen, since std::complex does not work in Kokkos::View objects.");
-#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
 
   auto src_pids_d =
     create_mirror_view_from_raw_host_array(outputDevice, SourcePids.getRawPtr(),
@@ -1597,14 +1588,6 @@ unpackAndCombineIntoCrsArrays (
                                     bytes_per_value_l,
                                     outArg(bytes_per_value));
   }
-
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  static_assert (! std::is_same<
-      typename decltype (crs_vals_d)::non_const_value_type,
-      std::complex<double> >::value,
-    "crs_vals_d::non_const_value_type is std::complex<double>; this should "
-    "never happen, since std::complex does not work in Kokkos::View objects.");
-#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
 
 # ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("unpackAndCombineIntoCrsArrays"))));
@@ -1929,7 +1912,7 @@ unpackAndCombineIntoCrsArrays (
     const int, \
     Kokkos::View<size_t*,typename NT::device_type>&, \
     Kokkos::View<GO*,typename NT::device_type>&, \
-    Kokkos::View<ST*,typename NT::device_type>&, \
+    Kokkos::View<typename CrsMatrix<ST, LO, GO, NT>::impl_scalar_type*,typename NT::device_type>&, \
     const Teuchos::ArrayView<const int>&, \
     Teuchos::Array<int>&); \
   template void \

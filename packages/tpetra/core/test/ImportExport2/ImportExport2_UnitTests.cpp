@@ -2417,7 +2417,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
     Kokkos::View<size_t*,Node::device_type> rowptr_d;
     Kokkos::View<GO*,Node::device_type>     colind_d;
-    Kokkos::View<Scalar*,Node::device_type> vals_d;
+    Kokkos::View<IST*,Node::device_type> vals_d;
 
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
       *A,
@@ -2437,7 +2437,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 
     auto rowptr_h = create_mirror_view_and_copy(Kokkos::HostSpace(), rowptr_d);
     auto colind_h = create_mirror_view_and_copy(Kokkos::HostSpace(), colind_d);
-    auto vals_h = create_mirror_view_and_copy(Kokkos::HostSpace(), vals_d);
+    Kokkos::View<Scalar*, Node::device_type> vals_d_cast(reinterpret_cast<Scalar*>(vals_d.data()), vals_d.extent(0));
+    auto vals_h = create_mirror_view_and_copy(Kokkos::HostSpace(), vals_d_cast);
 
     rowptr = Teuchos::arcp(rowptr_h.data(),0,rowptr_h.size(),false);
     colind = Teuchos::arcp(colind_h.data(),0,colind_h.size(),false);

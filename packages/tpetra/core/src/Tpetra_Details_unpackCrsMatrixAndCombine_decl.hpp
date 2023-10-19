@@ -289,7 +289,7 @@ unpackAndCombineIntoCrsArrays (
     const int MyTargetPID,
     Kokkos::View<size_t*,typename Node::device_type>& /*crs_rowptr_d*/,
     Kokkos::View<GlobalOrdinal*,typename Node::device_type>&     /*crs_colind_d*/,
-    Kokkos::View<Scalar*,typename Node::device_type>& /*crs_vals_d*/,
+    Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,typename Node::device_type>& /*crs_vals_d*/,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);
 

@@ -1015,10 +1015,10 @@ lowCommunicationMakeColMapAndReindex (
 
   // Create device mirror and host mirror views from function parameters
   // When we pass in views instead of Teuchos::ArrayViews, we can avoid copying views
-  auto colind_LID_view = Details::create_mirror_view_from_raw_host_array(DT(), colind_LID.getRawPtr(), colind_LID.size(), true, "colind_LID");
-  auto rowptr_view = Details::create_mirror_view_from_raw_host_array(DT(), rowptr.getRawPtr(), rowptr.size(), true, "rowptr");
-  auto colind_GID_view = Details::create_mirror_view_from_raw_host_array(DT(), colind_GID.getRawPtr(), colind_GID.size(), true, "colind_GID");
-  auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(DT(), owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
+  auto colind_LID_view = Details::create_mirror_view_from_raw_host_array(exec, colind_LID.getRawPtr(), colind_LID.size(), true, "colind_LID");
+  auto rowptr_view = Details::create_mirror_view_from_raw_host_array(exec, rowptr.getRawPtr(), rowptr.size(), true, "rowptr");
+  auto colind_GID_view = Details::create_mirror_view_from_raw_host_array(exec, colind_GID.getRawPtr(), colind_GID.size(), true, "colind_GID");
+  auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(exec, owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
 
   typename decltype(colind_LID_view)::HostMirror colind_LID_host(colind_LID.getRawPtr(), colind_LID.size());
   typename decltype(colind_GID_view)::HostMirror colind_GID_host(colind_GID.getRawPtr(), colind_GID.size());
@@ -1205,7 +1205,7 @@ lowCommunicationMakeColMapAndReindex (
   //     maintain a consistent ordering of GIDs between the columns
   //     and the domain.
   Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getLocalElementList();
-  auto domainGlobalElements_view = Details::create_mirror_view_from_raw_host_array(DT(), domainGlobalElements.getRawPtr(), domainGlobalElements.size(), true, "domainGlobalElements");
+  auto domainGlobalElements_view = Details::create_mirror_view_from_raw_host_array(exec, domainGlobalElements.getRawPtr(), domainGlobalElements.size(), true, "domainGlobalElements");
   
   if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
     if (NumLocalColGIDs > 0) {
@@ -1247,7 +1247,7 @@ lowCommunicationMakeColMapAndReindex (
 
   // For now, we copy back into colind_LID_host (which also overwrites the colind_LID Tuechos array)
   // When colind_LID becomes a Kokkos View we can delete this
-  Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);        
+  Kokkos::deep_copy(exec, colind_LID_host, colind_LID_view);        
 }
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -1276,7 +1276,7 @@ lowCommunicationMakeColMapAndReindex (
 
   // Create device mirror and host mirror views from function parameters
   // When we pass in views instead of Teuchos::ArrayViews, we can avoid copying views
-  auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(DT(), owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
+  auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(exec, owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
 
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
@@ -1451,7 +1451,7 @@ lowCommunicationMakeColMapAndReindex (
   //     maintain a consistent ordering of GIDs between the columns
   //     and the domain.
   Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getLocalElementList();
-  auto domainGlobalElements_view = Details::create_mirror_view_from_raw_host_array(DT(), domainGlobalElements.getRawPtr(), domainGlobalElements.size(), true, "domainGlobalElements");
+  auto domainGlobalElements_view = Details::create_mirror_view_from_raw_host_array(exec, domainGlobalElements.getRawPtr(), domainGlobalElements.size(), true, "domainGlobalElements");
   
   if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
     if (NumLocalColGIDs > 0) {
