@@ -7720,9 +7720,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Behavior::TAFC_OptimizationCoreCount();
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
     bool overrideAllreduce = false;
+    bool useKokkosPath = false;
     if (! params.is_null ()) {
       matrixparams = sublist (params, "CrsMatrix");
       reverseMode = params->get ("Reverse Mode", reverseMode);
+      useKokkosPath = params->get ("TAFC: use kokkos path", useKokkosPath);
       restrictComm = params->get ("Restrict Communicator", restrictComm);
       auto & slist = params->sublist("matrixmatrix: kernel params",false);
       isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
@@ -8450,220 +8452,397 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     }
 
+    /*********************************************************************/
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
-    // Backwards compatibility measure.  We'll use this again below.
+    bool runOnHost = std::is_same_v<typename device_type::memory_space, Kokkos::HostSpace> && !useKokkosPath;
 
-    // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
-    // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
-    // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
-    destMat->numImportPacketsPerLID_.modify_host(); //FIXME
-
-#  ifdef HAVE_TPETRA_MMM_TIMINGS
-    RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
-#  endif
-    ArrayRCP<size_t> CSR_rowptr;
-    ArrayRCP<GO> CSR_colind_GID;
-    ArrayRCP<LO> CSR_colind_LID;
-    ArrayRCP<Scalar> CSR_vals;
-
-    destMat->imports_.sync_device ();
-    destMat->numImportPacketsPerLID_.sync_device ();
-
-    size_t N = BaseRowMap->getLocalNumElements ();
-
-    auto RemoteLIDs_d = RemoteLIDs.view_device();
-    auto PermuteToLIDs_d = PermuteToLIDs.view_device();
-    auto PermuteFromLIDs_d = PermuteFromLIDs.view_device();
-
-    Details::unpackAndCombineIntoCrsArrays(
-                                   *this, 
-                                   RemoteLIDs_d,
-                                   destMat->imports_.view_device(),                //hostImports
-                                   destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
-                                   NumSameIDs,
-                                   PermuteToLIDs_d,
-                                   PermuteFromLIDs_d,
-                                   N,
-                                   MyPID,
-                                   CSR_rowptr,
-                                   CSR_colind_GID,
-                                   CSR_vals,
-                                   SourcePids(),
-                                   TargetPids);
-
-    // If LO and GO are the same, we can reuse memory when
-    // converting the column indices from global to local indices.
-    if (typeid (LO) == typeid (GO)) {
-      CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO> (CSR_colind_GID);
-    }
-    else {
-      CSR_colind_LID.resize (CSR_colind_GID.size());
-    }
-    CSR_colind_LID.resize (CSR_colind_GID.size());
-
-    // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
-    // owned entries.  Convert them to the actual PID.
-    // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays with a parallel_for.
-    for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
-    {
-      if(TargetPids[i] == -1) TargetPids[i] = MyPID;
-    }
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    tmCopySPRdata = Teuchos::null;
-#endif
-    /**************************************************************/
-    /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
-    /**************************************************************/
-    // Call an optimized version of makeColMap that avoids the
-    // Directory lookups (since the Import object knows who owns all
-    // the GIDs).
     Teuchos::Array<int> RemotePids;
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "Calling lowCommunicationMakeColMapAndReindex"
-         << std::endl;
-      std::cerr << os.str ();
-    }
-    {
+    if (runOnHost) {
+      // Backwards compatibility measure.  We'll use this again below.
+  
+      // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
+      // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
+      // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
+      destMat->numImportPacketsPerLID_.modify_host(); //FIXME
+  
+#  ifdef HAVE_TPETRA_MMM_TIMINGS
+      RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
+#  endif
+      ArrayRCP<size_t> CSR_rowptr;
+      ArrayRCP<GO> CSR_colind_GID;
+      ArrayRCP<LO> CSR_colind_LID;
+      ArrayRCP<Scalar> CSR_vals;
+  
+      destMat->imports_.sync_device ();
+      destMat->numImportPacketsPerLID_.sync_device ();
+  
+      size_t N = BaseRowMap->getLocalNumElements ();
+
+      auto RemoteLIDs_d = RemoteLIDs.view_device();
+      auto PermuteToLIDs_d = PermuteToLIDs.view_device();
+      auto PermuteFromLIDs_d = PermuteFromLIDs.view_device();
+
+      Details::unpackAndCombineIntoCrsArrays(
+                                     *this, 
+                                     RemoteLIDs_d,
+                                     destMat->imports_.view_device(),                //hostImports
+                                     destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
+                                     NumSameIDs,
+                                     PermuteToLIDs_d,
+                                     PermuteFromLIDs_d,
+                                     N,
+                                     MyPID,
+                                     CSR_rowptr,
+                                     CSR_colind_GID,
+                                     CSR_vals,
+                                     SourcePids(),
+                                     TargetPids);
+  
+      // If LO and GO are the same, we can reuse memory when
+      // converting the column indices from global to local indices.
+      if (typeid (LO) == typeid (GO)) {
+        CSR_colind_LID = Teuchos::arcp_reinterpret_cast<LO> (CSR_colind_GID);
+      }
+      else {
+        CSR_colind_LID.resize (CSR_colind_GID.size());
+      }
+      CSR_colind_LID.resize (CSR_colind_GID.size());
+  
+      // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
+      // owned entries.  Convert them to the actual PID.
+      // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays with a parallel_for.
+      for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
+      {
+        if(TargetPids[i] == -1) TargetPids[i] = MyPID;
+      }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC makeColMap")));
+      tmCopySPRdata = Teuchos::null;
 #endif
-    Import_Util::lowCommunicationMakeColMapAndReindex (CSR_rowptr (),
-                                                       CSR_colind_LID (),
-                                                       CSR_colind_GID (),
-                                                       BaseDomainMap,
-                                                       TargetPids,
-                                                       RemotePids,
-                                                       MyColMap);
-    }
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "restrictComm="
-         << (restrictComm ? "true" : "false") << std::endl;
-      std::cerr << os.str ();
-    }
-
-    /*******************************************************/
-    /**** 4) Second communicator restriction phase      ****/
-    /*******************************************************/
-    {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC restrict colmap")));
-#endif
-    if (restrictComm) {
-      ReducedColMap = (MyRowMap.getRawPtr () == MyColMap.getRawPtr ()) ?
-        ReducedRowMap :
-        MyColMap->replaceCommWithSubset (ReducedComm);
-      MyColMap = ReducedColMap; // Reset the "my" maps
-    }
-
-    // Replace the col map
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "Calling replaceColMap" << std::endl;
-      std::cerr << os.str ();
-    }
-    destMat->replaceColMap (MyColMap);
-
-    // Short circuit if the processor is no longer in the communicator
-    //
-    // NOTE: Epetra replaces modifies all "removed" processes so they
-    // have a dummy (serial) Map that doesn't touch the original
-    // communicator.  Duplicating that here might be a good idea.
-    if (ReducedComm.is_null ()) {
+      /**************************************************************/
+      /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
+      /**************************************************************/
+      // Call an optimized version of makeColMap that avoids the
+      // Directory lookups (since the Import object knows who owns all
+      // the GIDs).
       if (verbose) {
         std::ostringstream os;
-        os << *verbosePrefix << "I am no longer in the communicator; "
-          "returning" << std::endl;
+        os << *verbosePrefix << "Calling lowCommunicationMakeColMapAndReindex"
+           << std::endl;
         std::cerr << os.str ();
       }
-      return;
-    }
-    }
+      {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC makeColMap")));
+#endif
+      Import_Util::lowCommunicationMakeColMapAndReindexSerial(CSR_rowptr (),
+                                                        CSR_colind_LID (),
+                                                        CSR_colind_GID (),
+                                                        BaseDomainMap,
+                                                        TargetPids,
+                                                        RemotePids,
+                                                        MyColMap);
+      }
 
-    /***************************************************/
-    /**** 5) Sort                                   ****/
-    /***************************************************/
-
-    // First we create Kokkos::Views and transfer data from
-    // the ArrayRCPs with the intent to later call setAllValues
-    // using said views as input. This should reduce the
-    // amount of data transfers required between host and
-    // device and thus improve performance.
-    typename row_ptrs_host_view_type::non_const_type            CSR_rowptr_host(CSR_rowptr.getRawPtr(), CSR_rowptr.size());
-    typename nonconst_local_inds_host_view_type::non_const_type CSR_colind_LID_host(CSR_colind_LID.getRawPtr(), CSR_colind_LID.size());
-    typename nonconst_values_host_view_type::non_const_type     CSR_vals_host(reinterpret_cast<impl_scalar_type*>(CSR_vals.getRawPtr()), CSR_vals.size());
-
-    typename row_ptrs_device_view_type::non_const_type   CSR_rowptr_dev(Kokkos::ViewAllocateWithoutInitializing("rowmap"), CSR_rowptr.size());
-    typename local_inds_device_view_type::non_const_type CSR_colind_LID_dev(Kokkos::ViewAllocateWithoutInitializing("colind"), CSR_colind_LID.size());
-    typename values_device_view_type::non_const_type     CSR_vals_dev(Kokkos::ViewAllocateWithoutInitializing("values"), CSR_vals.size());
-
-    Kokkos::deep_copy(CSR_rowptr_dev, CSR_rowptr_host);
-    Kokkos::deep_copy(CSR_colind_LID_dev, CSR_colind_LID_host);
-    Kokkos::deep_copy(CSR_vals_dev, CSR_vals_host);
-
-    if ((! reverseMode && xferAsImport != nullptr) ||
-        (reverseMode && xferAsExport != nullptr)) {
       if (verbose) {
         std::ostringstream os;
-        os << *verbosePrefix << "Calling sortCrsEntries" << endl;
+        os << *verbosePrefix << "restrictComm="
+           << (restrictComm ? "true" : "false") << std::endl;
         std::cerr << os.str ();
       }
+  
+      /*******************************************************/
+      /**** 4) Second communicator restriction phase      ****/
+      /*******************************************************/
+      {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC restrict colmap")));
 #endif
-      // Just to be safe we always static cast the Scalar pointer
-      // to the underlying impl_scalar type.
-
-      Import_Util::sortCrsEntries (CSR_rowptr_dev,
-                                   CSR_colind_LID_dev,
-                                   CSR_vals_dev);
-    }
-    else if ((! reverseMode && xferAsExport != nullptr) ||
-             (reverseMode && xferAsImport != nullptr)) {
+      if (restrictComm) {
+        ReducedColMap = (MyRowMap.getRawPtr () == MyColMap.getRawPtr ()) ?
+          ReducedRowMap :
+          MyColMap->replaceCommWithSubset (ReducedComm);
+        MyColMap = ReducedColMap; // Reset the "my" maps
+      }
+  
+      // Replace the col map
       if (verbose) {
         std::ostringstream os;
-        os << *verbosePrefix << "Calling sortAndMergeCrsEntries"
-           << endl;
-        std::cerr << os.str();
+        os << *verbosePrefix << "Calling replaceColMap" << std::endl;
+        std::cerr << os.str ();
+      }
+      destMat->replaceColMap (MyColMap);
+  
+      // Short circuit if the processor is no longer in the communicator
+      //
+      // NOTE: Epetra replaces modifies all "removed" processes so they
+      // have a dummy (serial) Map that doesn't touch the original
+      // communicator.  Duplicating that here might be a good idea.
+      if (ReducedComm.is_null ()) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "I am no longer in the communicator; "
+            "returning" << std::endl;
+          std::cerr << os.str ();
+        }
+        return;
+      }
+      }
+  
+      /***************************************************/
+      /**** 5) Sort                                   ****/
+      /***************************************************/
+      if ((! reverseMode && xferAsImport != nullptr) ||
+          (reverseMode && xferAsExport != nullptr)) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Calling sortCrsEntries" << endl;
+          std::cerr << os.str ();
+        }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+        Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
+#endif
+        Import_Util::sortCrsEntries (CSR_rowptr(),
+                                     CSR_colind_LID(),
+                                     CSR_vals());
+      }
+      else if ((! reverseMode && xferAsExport != nullptr) ||
+               (reverseMode && xferAsImport != nullptr)) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Calling sortAndMergeCrsEntries"
+             << endl;
+          std::cerr << os.str();
+        }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+        Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
+#endif
+        Import_Util::sortAndMergeCrsEntries (CSR_rowptr(),
+                                             CSR_colind_LID(),
+                                             CSR_vals());
+        if (CSR_rowptr[N] != static_cast<size_t>(CSR_vals.size())) {
+          CSR_colind_LID.resize (CSR_rowptr[N]);
+          CSR_vals.resize (CSR_rowptr[N]);
+        }
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error, "Tpetra::CrsMatrix::"
+          "transferAndFillComplete: Should never get here!  "
+          "Please report this bug to a Tpetra developer.");
+      }
+      /***************************************************/
+      /**** 6) Reset the colmap and the arrays        ****/
+      /***************************************************/
+  
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling destMat->setAllValues" << endl;
+        std::cerr << os.str ();
+      }
+  
+      // Call constructor for the new matrix (restricted as needed)
+      //
+      // NOTE (mfh 15 May 2014) This should work fine for the Kokkos
+      // refactor version of CrsMatrix, though it reserves the right to
+      // make a deep copy of the arrays.
+      {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+        Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
+#endif
+        destMat->setAllValues (CSR_rowptr, CSR_colind_LID, CSR_vals);
+      }
+
+    } else {
+      // run on device
+  
+  
+      // Backwards compatibility measure.  We'll use this again below.
+  
+      // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
+      // TODO JHU somewhere above, e.g., call to Distor.doPostsAndWaits().
+      // TODO JHU This only becomes apparent as we begin to convert TAFC to run on device.
+      destMat->numImportPacketsPerLID_.modify_host(); //FIXME
+  
+#  ifdef HAVE_TPETRA_MMM_TIMINGS
+      RCP<TimeMonitor> tmCopySPRdata = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC unpack-count-resize + copy same-perm-remote data"))));
+#  endif
+      ArrayRCP<size_t> CSR_rowptr;
+      ArrayRCP<GO> CSR_colind_GID;
+      ArrayRCP<LO> CSR_colind_LID;
+      ArrayRCP<Scalar> CSR_vals;
+  
+      destMat->imports_.sync_device ();
+      destMat->numImportPacketsPerLID_.sync_device ();
+  
+      size_t N = BaseRowMap->getLocalNumElements ();
+  
+      auto RemoteLIDs_d = RemoteLIDs.view_device();
+      auto PermuteToLIDs_d = PermuteToLIDs.view_device();
+      auto PermuteFromLIDs_d = PermuteFromLIDs.view_device();
+  
+      Kokkos::View<size_t*,device_type> CSR_rowptr_d;
+      Kokkos::View<GO*,device_type>     CSR_colind_GID_d;
+      Kokkos::View<LO*,device_type>     CSR_colind_LID_d;
+      Kokkos::View<impl_scalar_type*,device_type> CSR_vals_d;
+  
+      Details::unpackAndCombineIntoCrsArrays(
+                                     *this, 
+                                     RemoteLIDs_d,
+                                     destMat->imports_.view_device(),                //hostImports
+                                     destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
+                                     NumSameIDs,
+                                     PermuteToLIDs_d,
+                                     PermuteFromLIDs_d,
+                                     N,
+                                     MyPID,
+                                     CSR_rowptr_d,
+                                     CSR_colind_GID_d,
+                                     CSR_vals_d,
+                                     SourcePids(),
+                                     TargetPids);
+  
+      Kokkos::resize (CSR_colind_LID_d, CSR_colind_GID_d.size());
+  
+      // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
+      // owned entries.  Convert them to the actual PID.
+      // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays with a parallel_for.
+      for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
+      {
+        if(TargetPids[i] == -1) TargetPids[i] = MyPID;
       }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
+      tmCopySPRdata = Teuchos::null;
 #endif
-      Import_Util::sortAndMergeCrsEntries (CSR_rowptr_dev,
-                                           CSR_colind_LID_dev,
-                                           CSR_vals_dev);
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error, "Tpetra::CrsMatrix::"
-        "transferAndFillComplete: Should never get here!  "
-        "Please report this bug to a Tpetra developer.");
-    }
-    /***************************************************/
-    /**** 6) Reset the colmap and the arrays        ****/
-    /***************************************************/
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "Calling destMat->setAllValues" << endl;
-      std::cerr << os.str ();
-    }
-
-    // Call constructor for the new matrix (restricted as needed)
-    //
-    // NOTE (mfh 15 May 2014) This should work fine for the Kokkos
-    // refactor version of CrsMatrix, though it reserves the right to
-    // make a deep copy of the arrays.
-    {
+      /**************************************************************/
+      /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
+      /**************************************************************/
+      // Call an optimized version of makeColMap that avoids the
+      // Directory lookups (since the Import object knows who owns all
+      // the GIDs).
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling lowCommunicationMakeColMapAndReindex"
+           << std::endl;
+        std::cerr << os.str ();
+      }
+      {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC makeColMap")));
 #endif
-      destMat->setAllValues (CSR_rowptr_dev, CSR_colind_LID_dev, CSR_vals_dev);
-    }
+      Import_Util::lowCommunicationMakeColMapAndReindex(CSR_rowptr_d,
+                                                        CSR_colind_LID_d,
+                                                        CSR_colind_GID_d,
+                                                        BaseDomainMap,
+                                                        TargetPids,
+                                                        RemotePids,
+                                                        MyColMap);
+      }
+  
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "restrictComm="
+           << (restrictComm ? "true" : "false") << std::endl;
+        std::cerr << os.str ();
+      }
+  
+      /*******************************************************/
+      /**** 4) Second communicator restriction phase      ****/
+      /*******************************************************/
+      {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC restrict colmap")));
+#endif
+      if (restrictComm) {
+        ReducedColMap = (MyRowMap.getRawPtr () == MyColMap.getRawPtr ()) ?
+          ReducedRowMap :
+          MyColMap->replaceCommWithSubset (ReducedComm);
+        MyColMap = ReducedColMap; // Reset the "my" maps
+      }
+  
+      // Replace the col map
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling replaceColMap" << std::endl;
+        std::cerr << os.str ();
+      }
+      destMat->replaceColMap (MyColMap);
+  
+      // Short circuit if the processor is no longer in the communicator
+      //
+      // NOTE: Epetra replaces modifies all "removed" processes so they
+      // have a dummy (serial) Map that doesn't touch the original
+      // communicator.  Duplicating that here might be a good idea.
+      if (ReducedComm.is_null ()) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "I am no longer in the communicator; "
+            "returning" << std::endl;
+          std::cerr << os.str ();
+        }
+        return;
+      }
+      }
+  
+      /***************************************************/
+      /**** 5) Sort                                   ****/
+      /***************************************************/
+
+      if ((! reverseMode && xferAsImport != nullptr) ||
+          (reverseMode && xferAsExport != nullptr)) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Calling sortCrsEntries" << endl;
+          std::cerr << os.str ();
+        }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+        Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortCrsEntries")));
+#endif
+        Import_Util::sortCrsEntries (CSR_rowptr_d,
+                                     CSR_colind_LID_d,
+                                     CSR_vals_d);
+      }
+      else if ((! reverseMode && xferAsExport != nullptr) ||
+               (reverseMode && xferAsImport != nullptr)) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Calling sortAndMergeCrsEntries"
+             << endl;
+          std::cerr << os.str();
+        }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+        Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
+#endif
+        Import_Util::sortAndMergeCrsEntries (CSR_rowptr_d,
+                                             CSR_colind_LID_d,
+                                             CSR_vals_d);
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error, "Tpetra::CrsMatrix::"
+          "transferAndFillComplete: Should never get here!  "
+          "Please report this bug to a Tpetra developer.");
+      }
+
+      /***************************************************/
+      /**** 6) Reset the colmap and the arrays        ****/
+      /***************************************************/
+  
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling destMat->setAllValues" << endl;
+        std::cerr << os.str ();
+      }
+  
+      {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+        Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC setAllValues")));
+#endif
+        destMat->setAllValues (CSR_rowptr_d, CSR_colind_LID_d, CSR_vals_d);
+      }
+  
+    } //if (runOnHost) .. else ..
 
     /***************************************************/
     /**** 7) Build Importer & Call ESFC             ****/
