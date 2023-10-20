@@ -80,7 +80,7 @@ class MassSpringDamperModel
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MassSpringDamperModel(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint = false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
+  MassSpringDamperModel(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint = false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false, bool use_x_dot_in_g = false);
 
   //@}
 
@@ -179,7 +179,7 @@ class MassSpringDamperModel
   Thyra::ModelEvaluatorBase::InArgs<double> upperBounds;
 
   //whether hessian is supported 
-  bool hessSupport, adjoint_;
+  bool hessSupport, adjoint_, use_x_dot_in_g_;
 
   //Problem parameter list
   Teuchos::RCP<Teuchos::ParameterList> probList_;

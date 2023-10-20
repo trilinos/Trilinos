@@ -1,4 +1,7 @@
 <ParameterList>
+  <ParameterList name="Problem">
+    <Parameter name="Use x_dot in g" type="bool" value="false" />
+  </ParameterList>
   <ParameterList name="Piro">
     <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
     <Parameter name="Explicit Adjoint Model Evaluator" type="bool" value="true" />

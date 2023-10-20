@@ -51,11 +51,12 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MassSpringDamperModel::MassSpringDamperModel(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint, const Teuchos::RCP<Teuchos::ParameterList>& problemList, bool hessianSupport)
+MassSpringDamperModel::MassSpringDamperModel(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint, const Teuchos::RCP<Teuchos::ParameterList>& problemList, bool hessianSupport, bool use_x_dot_in_g)
  {
     comm = appComm;
     hessSupport = hessianSupport;
     adjoint_ = adjoint;
+    use_x_dot_in_g_ = use_x_dot_in_g;
 
     target_x_ = 1;
     target_x_dot_ = 0;
@@ -287,10 +288,11 @@ MassSpringDamperModel::createOutArgsImpl() const
       Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, 0, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
   result.setSupports(
       Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, 0, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+  if (use_x_dot_in_g_) {
+    result.setSupports(
+        Thyra::ModelEvaluatorBase::OUT_ARG_DgDx_dot, 0, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+  }
   result.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
-
-  result.setSupports(
-        Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, 0, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
 
   result.setHessianSupports(hessSupport);
 
@@ -368,6 +370,15 @@ void MassSpringDamperModel::evalModelImpl(
           ConverterT::getTpetraMultiVector(dgdx_base) :
           Teuchos::null;
 
+  const Teuchos::RCP<Thyra::MultiVectorBase<double>> dgdx_dot_base =
+      use_x_dot_in_g_ ? 
+          outArgs.get_DgDx_dot(0).getMultiVector() :
+          Teuchos::null;
+  const Teuchos::RCP<Tpetra_MultiVector> dgdx_dot_out =
+      Teuchos::nonnull(dgdx_dot_base) ?
+          ConverterT::getTpetraMultiVector(dgdx_dot_base) :
+          Teuchos::null;
+
   const Teuchos::RCP<const Tpetra_MultiVector> p_direction =
       Teuchos::nonnull(inArgs.get_p_direction(0)) ?
         ConverterT::getConstTpetraMultiVector(inArgs.get_p_direction(0)):
@@ -439,6 +450,7 @@ void MassSpringDamperModel::evalModelImpl(
         Teuchos::null;
 
   auto x = x_in->getData();
+  auto x_dot = x_dot_in->getData();
   auto p = p_vec->getData();
 
   auto k = p[0];
@@ -484,7 +496,12 @@ void MassSpringDamperModel::evalModelImpl(
   // Response:  g = ( x - target_x )^2 + scaling ( x_dot - target_x_dot )^2
 
   double diff_x = (x[0] - target_x_);
-  double diff_x_dot = (x[1] - target_x_dot_);
+  double diff_x_dot;
+  if (use_x_dot_in_g_)
+    diff_x_dot = (x_dot[0] - target_x_dot_);
+  else
+    diff_x_dot = (x[1] - target_x_dot_);
+
   double diff_k = (p[0] - target_k_);
   double diff_m = (p[1] - target_m_);
 
@@ -519,8 +536,20 @@ void MassSpringDamperModel::evalModelImpl(
 
   if (dgdx_out != Teuchos::null) {
     dgdx_out->getVectorNonConst(0)->getDataNonConst()[0] = scaling_g_x_*2*diff_x;
-    dgdx_out->getVectorNonConst(0)->getDataNonConst()[1] = scaling_g_x_*scaling_*2*diff_x_dot;
+    if (use_x_dot_in_g_)
+      dgdx_out->getVectorNonConst(0)->getDataNonConst()[1] = 0.0;
+    else
+      dgdx_out->getVectorNonConst(0)->getDataNonConst()[1] = scaling_g_x_*scaling_*2*diff_x_dot;
   }
+
+  if (dgdx_dot_out != Teuchos::null) {
+    if (use_x_dot_in_g_)
+      dgdx_dot_out->getVectorNonConst(0)->getDataNonConst()[0] = scaling_g_x_*scaling_*2*diff_x_dot;
+    else
+      dgdx_dot_out->getVectorNonConst(0)->getDataNonConst()[0] = 0.0;
+    dgdx_dot_out->getVectorNonConst(0)->getDataNonConst()[1] = 0.0;
+  }
+
   if (dgdp_out != Teuchos::null) {
     dgdp_out->putScalar(0.0);
     dgdp_out->getVectorNonConst(0)->getDataNonConst()[0] = scaling_g_p_*2*diff_k;

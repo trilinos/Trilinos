@@ -1,4 +1,7 @@
 <ParameterList>
+  <ParameterList name="Problem">
+    <Parameter name="Use x_dot in g" type="bool" value="true" />
+  </ParameterList>
   <ParameterList name="Piro">
     <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
     <Parameter name="Explicit Adjoint Model Evaluator" type="bool" value="true" />
@@ -188,6 +191,7 @@
         <!--Parameter name="Min And Max Of Random Parameter Guess" type="Array(double)" value="{1.0, 3.0}"/ -->
 
         <Parameter name="Check Derivatives" type="bool" value="false" />
+        <Parameter name="Perform Optimization" type="bool" value="true" />
 
         <Parameter name="Test Vector" type="bool" value="false" />
         <Parameter name="Number Of Vector Tests" type="int" value="1" />

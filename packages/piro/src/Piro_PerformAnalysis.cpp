@@ -1041,7 +1041,7 @@ Piro::PerformROLTransientAnalysis(
     return return_status;
   }
   else {
-    Piro::ThyraProductME_ROL_DynamicObjective<double> obj(model, forward_integrator, adjoint_integrator, adjointModel, g_index, piroParams, nt, useFinalTimeStepResponse, analysisVerbosityLevel, observer);
+    Piro::ThyraProductME_ROL_DynamicObjective<double> obj(model, forward_integrator, adjoint_integrator, adjointModel, g_index, piroParams, nt, useFinalTimeStepResponse, true, analysisVerbosityLevel, observer);
     Piro::ThyraProductME_ROL_DynamicConstraint<double> constr(forward_integrator, adjoint_integrator, adjointModel, piroParams, analysisVerbosityLevel, observer);
 
     constr.setSolveParameters(rolParams.sublist("ROL Options"));
