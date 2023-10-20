@@ -16,7 +16,6 @@ jobs:
     runs-on: [self-hosted, triloamd01]
     container:
       image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers/gcc8.3.0
-      options: --shm-size=16g
     steps:
       - name: env
         env:
