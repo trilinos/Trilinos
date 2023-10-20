@@ -961,82 +961,82 @@ Piro::PerformROLTransientAnalysis(
       if (return_status == ROL::EExitStatus::EXITSTATUS_STEPTOL) return_status = 0;
     }
 
-      //! check correctness of Gradient prvided by Model Evaluator
-      if(rolParams.get<bool>("Check Derivatives", false)) {
-        Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec1 = p->clone_v();
-        Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec1 = x->clone_v();
-        Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec2 = p->clone_v();
-        Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec2 = x->clone_v();
+    //! check correctness of Gradient prvided by Model Evaluator
+    if(rolParams.get<bool>("Check Derivatives", false)) {
+      Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec1 = p->clone_v();
+      Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec1 = x->clone_v();
+      Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec2 = p->clone_v();
+      Teuchos::RCP<Thyra::VectorBase<double> > x_rand_vec2 = x->clone_v();
 
-        ::Thyra::seed_randomize<double>( seed );
+      ::Thyra::seed_randomize<double>( seed );
 
-        auto rol_x_zero = rol_x.clone(); rol_x_zero->zero();
-        auto rol_p_zero = rol_p.clone(); rol_p_zero->zero();
+      auto rol_x_zero = rol_x.clone(); rol_x_zero->zero();
+      auto rol_p_zero = rol_p.clone(); rol_p_zero->zero();
 
-        int num_checks = rolParams.sublist("Derivative Checks").get<int>("Number Of Derivative Checks", 1);
-        double norm_p = rol_p.norm();
-        double norm_x = rol_x.norm();
+      int num_checks = rolParams.sublist("Derivative Checks").get<int>("Number Of Derivative Checks", 1);
+      double norm_p = rol_p.norm();
+      double norm_x = rol_x.norm();
 
-        ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
+      ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
 
-        for(int i=0; i< num_checks; i++) {
+      for(int i=0; i< num_checks; i++) {
 
-          *out << "\nPiro::PerformROLTransientAnalysis: Performing gradient check " << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
+        *out << "\nPiro::PerformROLTransientAnalysis: Performing gradient check " << i+1 << " of " << num_checks << ", at parameter initial guess" << std::endl;
 
-          // compute direction 1
-          ::Thyra::randomize<double>( -1.0, 1.0, p_rand_vec1.ptr());
-          ::Thyra::randomize<double>( -1.0, 1.0, x_rand_vec1.ptr());
+        // compute direction 1
+        ::Thyra::randomize<double>( -1.0, 1.0, p_rand_vec1.ptr());
+        ::Thyra::randomize<double>( -1.0, 1.0, x_rand_vec1.ptr());
 
-          ROL::ThyraVector<double> rol_p_direction1(p_rand_vec1);
-          ROL::ThyraVector<double> rol_x_direction1(x_rand_vec1);
+        ROL::ThyraVector<double> rol_p_direction1(p_rand_vec1);
+        ROL::ThyraVector<double> rol_x_direction1(x_rand_vec1);
 
-          double norm_d = rol_p_direction1.norm();
-          if(norm_d*norm_p > 0.0)
-            rol_p_direction1.scale(norm_p/norm_d);
-          norm_d = rol_x_direction1.norm();
-          if(norm_d*norm_x > 0.0)
-            rol_x_direction1.scale(norm_x/norm_d);
+        double norm_d = rol_p_direction1.norm();
+        if(norm_d*norm_p > 0.0)
+          rol_p_direction1.scale(norm_p/norm_d);
+        norm_d = rol_x_direction1.norm();
+        if(norm_d*norm_x > 0.0)
+          rol_x_direction1.scale(norm_x/norm_d);
 
-          ROL::Vector_SimOpt<double> sopt_vec_direction1(ROL::makePtrFromRef(rol_x_direction1),ROL::makePtrFromRef(rol_p_direction1));
-          ROL::Vector_SimOpt<double> sopt_vec_direction1_x(ROL::makePtrFromRef(rol_x_direction1),rol_p_zero);
-          ROL::Vector_SimOpt<double> sopt_vec_direction1_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction1));
+        ROL::Vector_SimOpt<double> sopt_vec_direction1(ROL::makePtrFromRef(rol_x_direction1),ROL::makePtrFromRef(rol_p_direction1));
+        ROL::Vector_SimOpt<double> sopt_vec_direction1_x(ROL::makePtrFromRef(rol_x_direction1),rol_p_zero);
+        ROL::Vector_SimOpt<double> sopt_vec_direction1_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction1));
 
-          // compute direction 2
-          ::Thyra::randomize<double>( -1.0, 1.0, p_rand_vec2.ptr());
-          ::Thyra::randomize<double>( -1.0, 1.0, x_rand_vec2.ptr());
+        // compute direction 2
+        ::Thyra::randomize<double>( -1.0, 1.0, p_rand_vec2.ptr());
+        ::Thyra::randomize<double>( -1.0, 1.0, x_rand_vec2.ptr());
 
-          ROL::ThyraVector<double> rol_p_direction2(p_rand_vec2);
-          ROL::ThyraVector<double> rol_x_direction2(x_rand_vec2);
+        ROL::ThyraVector<double> rol_p_direction2(p_rand_vec2);
+        ROL::ThyraVector<double> rol_x_direction2(x_rand_vec2);
 
-          norm_d = rol_p_direction2.norm();
-          if(norm_d*norm_p > 0.0)
-            rol_p_direction2.scale(norm_p/norm_d);
-          norm_d = rol_x_direction2.norm();
-          if(norm_d*norm_x > 0.0)
-            rol_x_direction2.scale(norm_x/norm_d);
+        norm_d = rol_p_direction2.norm();
+        if(norm_d*norm_p > 0.0)
+          rol_p_direction2.scale(norm_p/norm_d);
+        norm_d = rol_x_direction2.norm();
+        if(norm_d*norm_x > 0.0)
+          rol_x_direction2.scale(norm_x/norm_d);
 
-          ROL::Vector_SimOpt<double> sopt_vec_direction2(ROL::makePtrFromRef(rol_x_direction2),ROL::makePtrFromRef(rol_p_direction2));
-          ROL::Vector_SimOpt<double> sopt_vec_direction2_x(ROL::makePtrFromRef(rol_x_direction2),rol_p_zero);
-          ROL::Vector_SimOpt<double> sopt_vec_direction2_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction2));
+        ROL::Vector_SimOpt<double> sopt_vec_direction2(ROL::makePtrFromRef(rol_x_direction2),ROL::makePtrFromRef(rol_p_direction2));
+        ROL::Vector_SimOpt<double> sopt_vec_direction2_x(ROL::makePtrFromRef(rol_x_direction2),rol_p_zero);
+        ROL::Vector_SimOpt<double> sopt_vec_direction2_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction2));
 
-          *out << "Piro::PerformROLTransientAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
-          ROL::Ptr<ROL::PartitionedVector<double>>  rol_p_direction1_transient = ROL::PartitionedVector<double>::create(rol_p_direction1, nt);
+        *out << "Piro::PerformROLTransientAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
+        ROL::Ptr<ROL::PartitionedVector<double>>  rol_p_direction1_transient = ROL::PartitionedVector<double>::create(rol_p_direction1, nt);
 
-          Thyra::DetachedVectorView<double> rol_p_primal_view(rol_p_primal.getVector());
-          Thyra::DetachedVectorView<double> rol_p_direction1_view(rol_p_direction1.getVector());
+        Thyra::DetachedVectorView<double> rol_p_primal_view(rol_p_primal.getVector());
+        Thyra::DetachedVectorView<double> rol_p_direction1_view(rol_p_direction1.getVector());
 
-          *out << "rol_p_primal = [ " << rol_p_primal_view(0) << " " << rol_p_primal_view(1) << " ] " << std::endl;
-          *out << "rol_p_direction1 = [ " << rol_p_direction1_view(0) << " " << rol_p_direction1_view(1) << " ] " << std::endl;
-          *out << "Piro::PerformROLAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
+        *out << "rol_p_primal = [ " << rol_p_primal_view(0) << " " << rol_p_primal_view(1) << " ] " << std::endl;
+        *out << "rol_p_direction1 = [ " << rol_p_direction1_view(0) << " " << rol_p_direction1_view(1) << " ] " << std::endl;
+        *out << "Piro::PerformROLAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
 
-          const double ten(10);
-          std::vector<double> steps(ROL_NUM_CHECKDERIV_STEPS);
-          for(int i=0;i<ROL_NUM_CHECKDERIV_STEPS;++i) {
-            steps[i] = pow(ten,static_cast<double>(-i-1));
-          }
-          obj_ptr->checkGradient(rol_p_primal, rol_p_primal.dual(), rol_p_direction1, steps, true, *out, 1);
+        const double ten(10);
+        std::vector<double> steps(ROL_NUM_CHECKDERIV_STEPS);
+        for(int i=0;i<ROL_NUM_CHECKDERIV_STEPS;++i) {
+          steps[i] = pow(ten,static_cast<double>(-i-1));
         }
+        obj_ptr->checkGradient(rol_p_primal, rol_p_primal.dual(), rol_p_direction1, steps, true, *out, 1);
       }
+    }
 
     return return_status;
   }
