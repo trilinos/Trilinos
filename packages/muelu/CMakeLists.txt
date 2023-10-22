@@ -124,41 +124,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable Region Splitting."
   NO)
 
-# mfh 12 Sep 2017: See #1726.  If Tpetra is enabled, then MueLu's
-# Tutorial should not build unless GO=int and Node=OpenMP or Serial
-# are all enabled.
-
-SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT YES)
-IF (NOT DEFINED Tpetra_INST_INT_INT OR NOT Tpetra_INST_INT_INT)
-  SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-ENDIF ()
-IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
-  IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
-    SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-  ENDIF ()
-ENDIF ()
-IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
-  IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
-    MESSAGE (STATUS "MueLu's tutorial requires that either the Serial or OpenMP Nodes in Tpetra be enabled.  Thus, I am disabling MueLu's tutorial by default.")
-    SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-  ENDIF ()
-ENDIF ()
-
-IF (NOT ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT)
-  MESSAGE (STATUS "MueLu's tutorial requires for a correct build that if Tpetra is enabled, then GlobalOrdinal=int must be enabled, and either the Serial or OpenMP Nodes in Tpetra be enabled.  Since this is not the case, I am disabling MueLu's tutorial by default.  See Trilinos GitHub Issue #1726 for details: https://github.com/trilinos/Trilinos/issues/1726")
-ENDIF ()
-
-# cmake option to enable building of MueLu Tutorial
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Tutorial
-  ""
-  "Enable MueLu tutorial."
-  ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT)
-
-IF (NOT ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT AND ${PACKAGE_NAME}_ENABLE_Tutorial)
-  MESSAGE (STATUS "You chose to enable MueLu's tutorial, even though I told you that it may not build correctly.  You are responsible for whatever build or link errors may occur as a result.")
-ENDIF ()
-
 # Split ETI cpp files
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES
