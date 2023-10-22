@@ -19,11 +19,11 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = "MueLu Tutorial"
-copyright = "2022, The MueLu Team"
+copyright = "2023, The MueLu Team"
 author = "The MueLu Team"
 
 # The full version, including alpha/beta/rc tags
-release = "2022"
+release = "2023"
 
 
 # -- General configuration ---------------------------------------------------
