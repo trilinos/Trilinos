@@ -1984,7 +1984,7 @@ int main(int argc, char *argv[])
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  Epetra_MpiComm Comm( NOX::get_global_comm() );
 #else
   Epetra_SerialComm Comm;
 #endif

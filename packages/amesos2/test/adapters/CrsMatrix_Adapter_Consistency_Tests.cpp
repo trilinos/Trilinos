@@ -104,8 +104,6 @@ namespace {
 
   using Amesos2::MatrixAdapter;
 
-  using Amesos2::Meta::is_same;
-
   using Amesos2::Util::to_teuchos_comm;
 
   using Amesos2::ROOTED;

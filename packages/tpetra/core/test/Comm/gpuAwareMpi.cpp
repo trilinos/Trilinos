@@ -78,7 +78,7 @@ namespace { // (anonymous)
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> test_device_type;
   typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode test_node_type;
 #elif defined(KOKKOS_ENABLE_HIP)
-  typedef Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace> test_device_type;
+  typedef Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace> test_device_type;
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode test_node_type;
 #elif defined(KOKKOS_ENABLE_SYCL)
   typedef Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSpace> test_device_type;

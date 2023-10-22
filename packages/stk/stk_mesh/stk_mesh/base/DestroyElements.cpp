@@ -9,62 +9,24 @@
 namespace stk {
 namespace mesh {
 
-void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh::Entity connectedEntity, stk::mesh::EntityRank conRank,
-                                            EntityVector& scratchSpace)
-{
-  impl::StoreEntity storeEntity(bulk);
-  impl::VisitUpwardClosure(bulk, connectedEntity, storeEntity);
-
-  storeEntity.store_visited_entities_in_vec(scratchSpace);
-  stk::util::sort_and_unique(scratchSpace, EntityLess(bulk));
-
-  for(unsigned i=0; i<scratchSpace.size(); ++i) {
-    int reverseIdx = scratchSpace.size() - 1 - i;
-    Entity upwardEntity = scratchSpace[reverseIdx];
-
-    if (bulk.is_valid(upwardEntity) && bulk.bucket(upwardEntity).in_aura()) {
-      bulk.destroy_entity(upwardEntity);
-    }
-  }
-}
-
 void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh::Entity connectedEntity, stk::mesh::EntityRank conRank)
 {
   EntityVector scratchSpace;
-  destroy_upward_connected_aura_entities(bulk, connectedEntity, conRank, scratchSpace);
+  impl::destroy_upward_connected_aura_entities(bulk, connectedEntity, scratchSpace);
 }
 
-void remove_ghosts_on_remote_procs(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy,
-                   std::vector<stk::mesh::EntityVector>& downwardConnectivity,
-                   const Selector& orphansToDelete)
+void pack_ghosts(BulkData &bulk, EntityVector &elemsAndRelatedEntities, stk::CommSparse& commSparse)
 {
-  stk::CommSparse commSparse(bulk.parallel());
-
   std::vector<int> commProcs;
   for(int phase = 0; phase < 2; ++phase) {
-    for(Entity elem : elementsToDestroy) {
-      if (!bulk.is_valid(elem) || !bulk.bucket(elem).owned()) {
+    for(Entity ent : elemsAndRelatedEntities) {
+      if (!bulk.is_valid(ent)) {
         continue;
       }
 
-      bulk.comm_procs(elem, commProcs);
+      bulk.comm_procs(ent, commProcs);
       for(int p : commProcs) {
-        if (!bulk.in_shared(elem, p)) {
-          commSparse.send_buffer(p).pack<EntityKey>(bulk.entity_key(elem));
-        }
-      }
-    }
-
-    for(EntityVector& downward : downwardConnectivity) {
-      for(Entity entity : downward) {
-        if (bulk.is_valid(entity) && bulk.bucket(entity).owned() && orphansToDelete(bulk.bucket(entity))) {
-          bulk.comm_procs(entity, commProcs);
-          for(int p : commProcs) {
-            if (!bulk.in_shared(entity, p)) {
-              commSparse.send_buffer(p).pack<EntityKey>(bulk.entity_key(entity));
-            }
-          }
-        }
+        commSparse.send_buffer(p).pack<EntityKey>(bulk.entity_key(ent));
       }
     }
 
@@ -72,28 +34,54 @@ void remove_ghosts_on_remote_procs(stk::mesh::BulkData &bulk, stk::mesh::EntityV
       commSparse.allocate_buffers();
     }
   }
+}
 
-  commSparse.communicate();
-
-  EntityVector recvGhostsToRemove;
+void unpack_recv_ghosts(stk::mesh::BulkData& bulk, stk::CommSparse& commSparse, EntityVector& recvGhostsToRemove)
+{
   for(int p=0; p<commSparse.parallel_size(); ++p) {
     stk::CommBuffer& buf = commSparse.recv_buffer(p);
     while(buf.remaining()) {
       EntityKey key;
       buf.unpack<EntityKey>(key);
       Entity entity = bulk.get_entity(key);
-      if (bulk.in_receive_ghost(entity)) {
+      if (bulk.is_valid(entity) && bulk.in_receive_ghost(entity)) {
         recvGhostsToRemove.push_back(entity);
       }
     }
   }
+}
 
+void remove_ghosts_from_remote_procs(stk::mesh::BulkData &bulk, EntityVector& recvGhostsToRemove)
+{
   if (!recvGhostsToRemove.empty()) {
     stk::util::sort_and_unique(recvGhostsToRemove, EntityLess(bulk));
+
+    impl::StoreEntity storeEntity(bulk);
+    impl::VisitUpwardClosure(bulk, recvGhostsToRemove.begin(), recvGhostsToRemove.end(), storeEntity);
+    storeEntity.store_visited_entities_in_vec(recvGhostsToRemove);
+
+    stk::util::sort_and_unique(recvGhostsToRemove, EntityLess(bulk));
+  }
+
+  std::vector<EntityProc> emptyAdd;
+  EntityVector removesForThisGhosting;
+  removesForThisGhosting.reserve(recvGhostsToRemove.size());
+  const bool notAddingSendGhosts = true;
+
+  const std::vector<Ghosting*>& ghostings = bulk.ghostings();
+
+  for(unsigned ig=0; ig<ghostings.size()-1; ++ig) {
+    const unsigned reverseIdx = ghostings.size() - 1 - ig;
+    Ghosting* ghosting = ghostings[reverseIdx];
+    removesForThisGhosting.clear();
     for(unsigned i=0; i<recvGhostsToRemove.size(); ++i) {
-      const unsigned reverseIdx = recvGhostsToRemove.size() - 1 - i;
-      bulk.destroy_entity(recvGhostsToRemove[reverseIdx]);
+      Entity ent = recvGhostsToRemove[i];
+      if (bulk.is_valid(ent) && bulk.in_receive_ghost(*ghosting, ent)) {
+        removesForThisGhosting.push_back(ent);
+      }
     }
+
+    bulk.internal_change_ghosting(*ghosting, emptyAdd, removesForThisGhosting, notAddingSendGhosts);
   }
 }
 
@@ -110,51 +98,68 @@ void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elemen
     bulk.modification_end();
 }
 
+void get_all_related_entities(BulkData& bulk, EntityVector& elements, const Selector& orphansToDelete, EntityVector& relatedEntities)
+{
+  impl::StoreEntity storeEntity(bulk);
+
+  auto ifSelected = [&](Entity ent) { return bulk.is_valid(ent) && orphansToDelete(bulk.bucket(ent)); };
+
+  impl::VisitClosureGeneral(bulk, elements.begin(), elements.end(), storeEntity, ifSelected);
+  storeEntity.store_visited_entities_in_vec(relatedEntities);
+
+  auto ifSharedOrRecvGhost = [&](Entity ent) { return bulk.is_valid(ent) && (bulk.in_shared(ent) || bulk.in_receive_ghost(ent)); };
+
+  impl::VisitUpwardClosureGeneral(bulk, relatedEntities.begin(), relatedEntities.end(), storeEntity, ifSharedOrRecvGhost);
+  storeEntity.store_visited_entities_in_vec(relatedEntities);
+  relatedEntities.insert(relatedEntities.end(), elements.begin(), elements.end());
+
+  stk::util::sort_and_unique(relatedEntities, stk::mesh::EntityLess(bulk));
+}
+
 void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete)
 {
-    std::vector<stk::mesh::EntityVector> downwardConnectivity(bulk.mesh_meta_data().entity_rank_count());
+  for(stk::mesh::Entity element : elementsToDestroy) {
+    if(!bulk.is_valid(element))
+        continue;
 
-    for(stk::mesh::Entity element : elementsToDestroy) {
-        if(!bulk.is_valid(element))
-            continue;
+    STK_ThrowRequireMsg(!impl::has_upward_connectivity(bulk, element), "Element to be destroyed cannot have upward connectivity");
+    STK_ThrowRequireMsg(bulk.entity_rank(element) == stk::topology::ELEM_RANK, "Entity to be destroyed must be an element");
+  }
 
-        STK_ThrowRequireMsg(!impl::has_upward_connectivity(bulk, element), "Element to be destroyed cannot have upward connectivity");
-        STK_ThrowRequireMsg(bulk.entity_rank(element) == stk::topology::ELEM_RANK, "Entity to be destroyed must be an element");
+  stk::mesh::EntityVector elemsAndRelatedEntities;
+  elemsAndRelatedEntities.reserve(2*elementsToDestroy.size());
+  get_all_related_entities(bulk, elementsToDestroy, orphansToDelete, elemsAndRelatedEntities);
 
-        for(stk::mesh::EntityRank conRank = stk::topology::NODE_RANK; conRank < stk::topology::ELEM_RANK; ++conRank) {
-            unsigned numConnected = bulk.num_connectivity(element, conRank);
-            const stk::mesh::Entity* connectedEntities = bulk.begin(element, conRank);
-            for(unsigned i = 0; i < numConnected; i++)
-                downwardConnectivity[conRank].push_back(connectedEntities[i]);
-        }
+  stk::CommSparse commSparse(bulk.parallel());
 
+  pack_ghosts(bulk, elemsAndRelatedEntities, commSparse);
+
+  commSparse.communicate();
+
+  EntityVector localEntitiesToRemove;
+  EntityVector recvGhostsToRemove;
+  for(Entity ent : elemsAndRelatedEntities) {
+    if (bulk.is_valid(ent)) {
+      if (bulk.in_receive_ghost(ent)) {
+        recvGhostsToRemove.push_back(ent);
+      }
+      else {
+        localEntitiesToRemove.push_back(ent);
+      }
     }
+  }
 
-    remove_ghosts_on_remote_procs(bulk, elementsToDestroy, downwardConnectivity, orphansToDelete);
+  unpack_recv_ghosts(bulk, commSparse, recvGhostsToRemove);
 
-    for(stk::mesh::Entity element : elementsToDestroy) {
-        bulk.destroy_entity(element);
+  remove_ghosts_from_remote_procs(bulk, recvGhostsToRemove);
+
+  for(unsigned i=0; i<localEntitiesToRemove.size(); ++i) {
+    const unsigned reverseIdx = localEntitiesToRemove.size() - 1 - i;
+    Entity ent = localEntitiesToRemove[reverseIdx];
+    if (bulk.is_valid(ent)) {
+      bulk.destroy_entity(ent);
     }
-
-    EntityVector scratchSpace;
-    for(stk::mesh::EntityRank conRank : {stk::topology::FACE_RANK, stk::topology::EDGE_RANK, stk::topology::NODE_RANK})
-    {
-        stk::util::sort_and_unique(downwardConnectivity[conRank], stk::mesh::EntityLess(bulk));
-
-        int numConnections = downwardConnectivity[conRank].size();
-        for(int i = numConnections-1; i >= 0; --i)
-        {
-            stk::mesh::Entity connectedEntity =  downwardConnectivity[conRank][i];
-            if(bulk.is_valid(connectedEntity) && orphansToDelete(bulk.bucket(connectedEntity)))
-            {
-                if (bulk.in_shared(connectedEntity)) {
-                  destroy_upward_connected_aura_entities(bulk, connectedEntity, conRank, scratchSpace);
-                }
-                if(!impl::has_upward_connectivity(bulk, connectedEntity))
-                    bulk.destroy_entity(connectedEntity);
-            }
-        }
-    }
+  }
 }
 
 }}

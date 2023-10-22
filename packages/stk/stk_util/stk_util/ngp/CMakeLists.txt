@@ -32,25 +32,21 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-
-#
-# A) Package-specific configuration options
-#
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
 FILE(GLOB HEADERS *.hpp *.h)
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
+IF(HAVE_STK_Trilinos)
+  TRIBITS_INCLUDE_DIRECTORIES(${STK_TOPLEVEL_SOURCE_DIR}/stk_util)
+ELSE()
+  add_library(stk_util_ngp INTERFACE ${HEADERS})
+
+  target_include_directories(stk_util_ngp INTERFACE
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_util>
+    $<INSTALL_INTERFACE:include>
+  )
+ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/ngp/)

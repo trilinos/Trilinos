@@ -267,7 +267,6 @@ TEST(Interface, EllipsoidFromCADNew)
 
   for (int i = 1; i < nmeshes; ++i)
   {
-    //ssssssdouble tStart = MPI_Wtime();
     std::cout << "mesh " << i << " / " << nmeshes << std::endl;
     stk_interface::StkMeshCreator creator1(meshPath + fnames[0]);
     std::shared_ptr<mesh::Mesh> mesh1 = creator1.create_mesh_from_part("block_1").mesh;

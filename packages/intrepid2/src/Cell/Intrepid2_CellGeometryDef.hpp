@@ -173,6 +173,7 @@ namespace Intrepid2
         return 4;
       case FIVE_TETRAHEDRA:
         return 5;
+      case SIX_PYRAMIDS:
       case SIX_TETRAHEDRA:
         return 6;
     }
@@ -747,6 +748,69 @@ namespace Intrepid2
   
   template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
+  ordinal_type CellGeometry<PointScalar,spaceDim,DeviceType>::cellToNode(ordinal_type cell, ordinal_type node) const
+  {
+    if (cellToNodes_.is_allocated())
+    {
+      return cellToNodes_(cell,node);
+    }
+    else if (cellGeometryType_ == UNIFORM_GRID)
+    {
+      const ordinal_type numSubdivisions    = numCellsPerGridCell(subdivisionStrategy_);
+      const ordinal_type gridCell           = cell / numSubdivisions;
+      const ordinal_type subdivisionOrdinal = cell % numSubdivisions;
+      
+      Kokkos::Array<ordinal_type,spaceDim> gridCellCoords;
+      ordinal_type gridCellDivided = gridCell;
+      ordinal_type numGridNodes    = 1;
+      ordinal_type numGridCells    = 1;
+      for (int d=0; d<spaceDim; d++)
+      {
+        gridCellCoords[d] = gridCellDivided % gridCellCounts_[d];
+        gridCellDivided   = gridCellDivided / gridCellCounts_[d];
+        numGridCells *= gridCellCounts_[d];
+        numGridNodes *= (gridCellCounts_[d] + 1);
+      }
+      
+      const ordinal_type gridCellNode = gridCellNodeForSubdivisionNode(gridCell, subdivisionOrdinal, node);
+      
+      // most subdivision strategies don't add internal node(s), but a couple do.  If so, the gridCellNode
+      // will be equal to the number of vertices in the grid cell.
+      const ordinal_type numInteriorNodes = ((subdivisionStrategy_ == FOUR_TRIANGLES) || (subdivisionStrategy_ == SIX_PYRAMIDS)) ? 1 : 0;
+      
+      // the global nodes list the grid-cell-interior nodes first.
+      const ordinal_type gridNodeNumberingOffset = numInteriorNodes * numGridCells;
+      
+      const ordinal_type numNodesPerGridCell = 1 << spaceDim;
+      if (gridCellNode >= numNodesPerGridCell)
+      {
+        const ordinal_type interiorGridNodeOffset = gridCellNode - numNodesPerGridCell;
+        return numNodesPerGridCell * gridCell + interiorGridNodeOffset;
+      }
+      else
+      {
+        // use gridCellCoords, plus hypercubeComponentNodeNumber(gridCellNode, d), to set up a Cartesian vertex numbering of the grid as a whole.  Then, add gridNodeNumberingOffset to account for interior nodes.
+        // let x be the fastest-moving index
+        ordinal_type d_index_stride = 1; // number of node indices we move by moving 1 node in dimension d
+        ordinal_type cartesianNodeNumber = 0;
+        for (int d=0; d<spaceDim; d++)
+        {
+          const ordinal_type d_index = gridCellCoords[d] + hypercubeComponentNodeNumber(gridCellNode,d);
+          cartesianNodeNumber += d_index * d_index_stride;
+          d_index_stride *= (gridCellCounts_[d] + 1);
+        }
+        return cartesianNodeNumber + gridNodeNumberingOffset;
+      }
+    }
+    else
+    {
+      // cellToNode() not supported
+      return -1;
+    }
+  }
+
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  KOKKOS_INLINE_FUNCTION
   DataVariationType CellGeometry<PointScalar,spaceDim,DeviceType>::cellVariationType() const
   {
     if (cellGeometryType_ == UNIFORM_GRID)
@@ -1266,6 +1330,65 @@ namespace Intrepid2
         const int gridCellNodeNumber = nodeLookup[subdivisionNodeNumber];
         return gridCellNodeNumber;
       }
+      case SIX_PYRAMIDS:
+      {
+        Kokkos::Array<int,5> nodeLookup; // nodeLookup[4] = 8; // center
+        // we order the subcell divisions as bottom, top, left, right, front, back
+         if (nodeOrdering_ == HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS)
+         {
+          switch (subdivisionOrdinal)
+          {
+            case 0: // bottom (min z)
+              nodeLookup = {0,1,2,3,8};
+              break;
+            case 1: // top (max z)
+              nodeLookup = {4,5,6,7,8};
+              break;
+            case 2: // left (min y)
+              nodeLookup = {0,1,5,4,8};
+              break;
+            case 3: // right (max y)
+              nodeLookup = {3,2,6,7,8};
+              break;
+            case 4: // front (max x)
+              nodeLookup = {1,2,6,5,8};
+              break;
+            case 5: // back (min x)
+              nodeLookup = {0,3,7,4,8};
+              break;
+            default:
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "Invalid subdivisionOrdinal!");
+          }
+        }
+        else // tensor ordering
+        {
+          switch (subdivisionOrdinal)
+          {
+            case 0: // bottom (min z)
+              nodeLookup = {0,1,3,2,8};
+              break;
+            case 1: // top (max z)
+              nodeLookup = {4,5,7,6,8};
+              break;
+            case 2: // left (min y)
+              nodeLookup = {0,1,5,4,8};
+              break;
+            case 3: // right (max y)
+              nodeLookup = {2,3,7,6,8};
+              break;
+            case 4: // front (max x)
+              nodeLookup = {1,3,7,5,8};
+              break;
+            case 5: // back (min x)
+              nodeLookup = {0,2,6,4,8};
+              break;
+            default:
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "Invalid subdivisionOrdinal!");
+        }
+        }
+        const int gridCellNodeNumber = nodeLookup[subdivisionNodeNumber];
+        return gridCellNodeNumber;
+      }
       default:
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "Subdivision strategy not yet implemented!");
         // some compilers complain about missing return
@@ -1282,13 +1405,25 @@ namespace Intrepid2
     
     if (subdivisionStrategy_ == FOUR_TRIANGLES)
     {
-      // this is the one case in which the gridCellNode may not actually be a node in the grid cell
+      // this is a case in which the gridCellNode may not actually be a node in the grid cell
       if (gridCellNode == 4) // center vertex
       {
         // d == 0 means quad vertices 0 and 1 suffice;
         // d == 1 means quad vertices 0 and 3 suffice
         const int gridVertex0 = 0;
         const int gridVertex1 = (d == 0) ? 1 : 3;
+        return 0.5 * (gridCellCoordinate(gridCellOrdinal, gridVertex0, d) + gridCellCoordinate(gridCellOrdinal, gridVertex1, d));
+      }
+    }
+    else if (subdivisionStrategy_ == SIX_PYRAMIDS)
+    {
+      // this is a case in which the gridCellNode may not actually be a node in the grid cell
+      if (gridCellNode == 8) // center vertex
+      {
+        // can compute the center vertex coord in dim d by averaging diagonally opposite vertices'
+        // coords in dimension d.
+        const int gridVertex0 = 0; // 0 is diagonally opposite to 6 or 7, depending on nodeOrdering_
+        const int gridVertex1 = (nodeOrdering_ == HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS) ? 6 : 7;
         return 0.5 * (gridCellCoordinate(gridCellOrdinal, gridVertex0, d) + gridCellCoordinate(gridCellOrdinal, gridVertex1, d));
       }
     }
@@ -1343,7 +1478,7 @@ namespace Intrepid2
     const int numCellsWorkset = (endCell == -1) ? (numCells_ - startCell) : (endCell - startCell);
     
     using ExecutionSpace = typename DeviceType::execution_space;
-    auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,numCellsWorkset);
+    auto policy = Kokkos::RangePolicy<ExecutionSpace>(ExecutionSpace(),0,numCellsWorkset);
     Kokkos::parallel_for("copy orientations", policy, KOKKOS_LAMBDA(const int cellOrdinal)
     {
       orientationsView(cellOrdinal) = orientationsData(cellOrdinal);

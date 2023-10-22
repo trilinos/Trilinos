@@ -32,48 +32,37 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-
-#
-# A) Package-specific configuration options
-#
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
-
 
 FILE(GLOB HEADERS *.hpp *.tcc)
 FILE(GLOB SOURCES *.cpp)
 FILE(GLOB SOURCES_DETAIL topology_detail/*.cpp)
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
-
-#
-# Core headers
-#
-
 FILE(GLOB DETAIL_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/topology_detail/*.hpp)
 
-#
-# C) Define the targets for package's library(s)
-#
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_topology
+    NOINSTALLHEADERS ${HEADERS}
+    DEPLIBS
+    SOURCES ${SOURCES} ${SOURCES_DETAIL}
+    )
+else()
+  add_library(stk_topology ${SOURCES} ${SOURCES_DETAIL})
+  target_link_libraries(stk_topology PUBLIC stk_util_util)
+endif()
 
-TRIBITS_ADD_LIBRARY(
-  stk_topology
-  NOINSTALLHEADERS ${HEADERS}
-  DEPLIBS
-  SOURCES ${SOURCES} ${SOURCES_DETAIL}
-  )
+target_include_directories(stk_topology PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_topology>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_topology/)
 
 INSTALL(FILES ${DETAIL_HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_topology/topology_detail)
+
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_topology DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

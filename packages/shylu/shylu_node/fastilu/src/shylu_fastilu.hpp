@@ -297,10 +297,11 @@ class FastILUPrec
         using STS = Kokkos::ArithTraits<Scalar>;
         using RTS = Kokkos::ArithTraits<Real>;
 
+  template <typename T>
   struct IdentityFunctor
   {
     KOKKOS_INLINE_FUNCTION
-    Scalar operator()(const Scalar val) const {return val;}
+    T operator()(const T val) const {return val;}
   };
 
   struct ShiftFunctor
@@ -328,13 +329,13 @@ class FastILUPrec
 
   struct InvSqrtFunctor
   {
-    Scalar one;
+    Real one;
 
     KOKKOS_INLINE_FUNCTION
-    InvSqrtFunctor() : one(STS::one()) {}
+    InvSqrtFunctor() : one(RTS::one()) {}
 
     KOKKOS_INLINE_FUNCTION
-    Scalar operator()(const Scalar val) const { return one/(RTS::sqrt(STS::abs(val))); };
+    Real operator()(const Scalar val) const { return one/(RTS::sqrt(STS::abs(val))); };
   };
 
   struct NotDiagFunctor
@@ -374,10 +375,10 @@ class FastILUPrec
     { return val1*val2*val3; }
   };
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
-  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     for (Ordinal itr = 0; itr < blockItems; ++itr) {
@@ -385,10 +386,10 @@ class FastILUPrec
     }
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<!Block, void>::type
-  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_block(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     assert(blockCrsSize == 1);
     vals_dest[dest] = lam(vals_src[src]);
@@ -414,10 +415,10 @@ class FastILUPrec
     vals_dest[dest] = value;
   }
 
-  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
-  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = F())
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     const Ordinal dest_offset = blockItems*dest;
@@ -432,10 +433,10 @@ class FastILUPrec
     }
   }
 
-  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename LO, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<!Block, void>::type
-  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_block_cond(View1& vals_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const LO& ordinal_lam, const Ordinal blockCrsSize, const F& lam = F())
   {
     vals_dest(dest) = lam(vals_src(src));
   }
@@ -546,10 +547,10 @@ class FastILUPrec
     vals_dest(dest) = vals_src(src);
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
-  assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     const Ordinal blockItems = blockCrsSize*blockCrsSize;
     for (Ordinal i = 0, j = blockItems*src; i < blockCrsSize; ++i, j+=(blockCrsSize+1)) {
@@ -557,10 +558,10 @@ class FastILUPrec
     }
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<!Block, void>::type
-  assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_diag_from_block(View1& diag_dest, const View2& vals_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     diag_dest(dest) = lam(vals_src(src));
   }
@@ -584,20 +585,20 @@ class FastILUPrec
     vals_dest[dest] = value;
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<Block, void>::type
-  assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     for (Ordinal i = 0; i < blockCrsSize; ++i) {
       diag_dest(dest*blockCrsSize + i) = lam(diag_src(src*blockCrsSize + i));
     }
   }
 
-  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor>
+  template <bool Block, typename View1, typename View2, typename F = IdentityFunctor<typename View1::non_const_value_type> >
   KOKKOS_INLINE_FUNCTION
   static typename std::enable_if<!Block, void>::type
-  assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = IdentityFunctor())
+  assign_diag_from_diag(View1& diag_dest, const View2& diag_src, const Ordinal dest, const Ordinal src, const Ordinal blockCrsSize, const F& lam = F())
   {
     diag_dest(dest) = lam(diag_src(src));
   }
@@ -628,111 +629,111 @@ class FastILUPrec
   }
 
   // private: Set back to private once verification work is done
-        double computeTime;
-        double applyTime;
-        double initTime;
+        double m_computeTime;
+        double m_applyTime;
+        double m_initTime;
 
-        Ordinal nRows;
-        Ordinal guessFlag;
-        Ordinal nFact;
-        Ordinal nTrisol;
-        Ordinal level;
-        Ordinal blkSzILU;
-        Ordinal blkSz;
-        Ordinal blockCrsSize;
-        Scalar omega; //Underrelaxation parameter
-        Scalar shift; //Manteuffel Shift
+        Ordinal m_nRows;
+        Ordinal m_guessFlag;
+        Ordinal m_nFact;
+        Ordinal m_nTrisol;
+        Ordinal m_level;
+        Ordinal m_blkSzILU;
+        Ordinal m_blkSz;
+        Ordinal m_blockCrsSize;
+        Scalar m_omega; //Underrelaxation parameter
+        Scalar m_shift; //Manteuffel Shift
 
         // Metis
-        bool useMetis;
-        OrdinalArray  permMetis;
-        OrdinalArray ipermMetis;
-        OrdinalArrayMirror  permMetisHost;
-        OrdinalArrayMirror ipermMetisHost;
+        bool m_useMetis;
+        OrdinalArray  m_permMetis;
+        OrdinalArray m_ipermMetis;
+        OrdinalArrayMirror  m_permMetisHost;
+        OrdinalArrayMirror m_ipermMetisHost;
 
         //Lower triangular factor (CSR)
-        bool sptrsv_KKSpMV; // use Kokkos-Kernels SpMV for Fast SpTRSV
-        ScalarArray lVal;
-        OrdinalArray lColIdx;
-        OrdinalArray lRowMap;
+        bool m_sptrsv_KKSpMV; // use Kokkos-Kernels SpMV for Fast SpTRSV
+        ScalarArray m_lVal;
+        OrdinalArray m_lColIdx;
+        OrdinalArray m_lRowMap;
         // mirrors
-        ScalarArrayMirror lVal_;
-        OrdinalArrayMirror lColIdx_;
-        OrdinalArrayMirror lRowMap_;
+        ScalarArrayMirror m_lValHost;
+        OrdinalArrayMirror m_lColIdxHost;
+        OrdinalArrayMirror m_lRowMapHost;
 
         //Lower triangular factor, without (unit) diagonals,
         // for TRSV (not SpTRSV)
-        ScalarArrayHost lVal_trsv_;
-        OrdinalArrayHost lColIdx_trsv_;
-        OrdinalArrayHost lRowMap_trsv_;
+        ScalarArrayHost m_lVal_trsvHost;
+        OrdinalArrayHost m_lColIdx_trsvHost;
+        OrdinalArrayHost m_lRowMap_trsvHost;
 
         //Upper triangular factor (CSC)
-        ScalarArray uVal;
-        OrdinalArray uColIdx;
-        OrdinalArray uRowMap;
-        OrdinalArray a2uMap;
+        ScalarArray m_uVal;
+        OrdinalArray m_uColIdx;
+        OrdinalArray m_uRowMap;
+        OrdinalArray m_a2uMap;
         // mirrors
-        ScalarArrayMirror uVal_;
-        OrdinalArrayMirror uColIdx_;
-        OrdinalArrayMirror uRowMap_;
+        ScalarArrayMirror m_uValHost;
+        OrdinalArrayMirror m_uColIdxHost;
+        OrdinalArrayMirror m_uRowMapHost;
 
         //Upper triangular factor (CSR)
-        ScalarArray utVal;
-        OrdinalArray utColIdx;
-        OrdinalArray utRowMap;
+        ScalarArray m_utVal;
+        OrdinalArray m_utColIdx;
+        OrdinalArray m_utRowMap;
         // mirrors
-        ScalarArrayMirror utVal_;
-        OrdinalArrayMirror utColIdx_;
-        OrdinalArrayMirror utRowMap_;
+        ScalarArrayMirror m_utValHost;
+        OrdinalArrayMirror m_utColIdxHost;
+        OrdinalArrayMirror m_utRowMapHost;
 
         //Upper triangular factor (CSR), with diagonal extracted out
         // for TRSV (not SpTRSV)
-        bool doUnitDiag_TRSV; // perform TRSV with unit diagonals
-        ScalarArrayHost   dVal_trsv_;
-        ScalarArrayHost  utVal_trsv_;
-        OrdinalArrayHost utColIdx_trsv_;
-        OrdinalArrayHost utRowMap_trsv_;
+        bool m_doUnitDiag_TRSV; // perform TRSV with unit diagonals
+        ScalarArrayHost   m_dVal_trsvHost;
+        ScalarArrayHost  m_utVal_trsvHost;
+        OrdinalArrayHost m_utColIdx_trsvHost;
+        OrdinalArrayHost m_utRowMap_trsvHost;
 
         //Pointer to the copy of input A.
-        bool skipSortMatrix;
+        bool m_skipSortMatrix;
         // device
-        ScalarArray        aValIn;
-        OrdinalArray       aRowMapIn;
-        OrdinalArray       aColIdxIn;
+        ScalarArray        m_aValIn;
+        OrdinalArray       m_aRowMapIn;
+        OrdinalArray       m_aColIdxIn;
         // host
-        ScalarArrayMirror  aValHost;
-        OrdinalArrayMirror aRowMapHost;
-        OrdinalArrayMirror aColIdxHost;
+        ScalarArrayMirror  m_aValInHost;
+        OrdinalArrayMirror m_aRowMapInHost;
+        OrdinalArrayMirror m_aColIdxInHost;
 
         //A matrix in COO format
-        ScalarArray aVal;
-        OrdinalArray aRowMap;
-        OrdinalArray aRowIdx;
-        OrdinalArray aColIdx;
+        ScalarArray m_aVal;
+        OrdinalArray m_aRowMap;
+        OrdinalArray m_aRowIdx;
+        OrdinalArray m_aColIdx;
         // mirrors
-        ScalarArrayMirror aVal_;
-        OrdinalArrayMirror aRowMap_;
-        OrdinalArrayMirror aRowIdx_;
-        OrdinalArrayMirror aColIdx_;
-        OrdinalArrayHost   aLvlIdx_;
+        ScalarArrayMirror m_aValHost;
+        OrdinalArrayMirror m_aRowMapHost;
+        OrdinalArrayMirror m_aRowIdxHost;
+        OrdinalArrayMirror m_aColIdxHost;
+        OrdinalArrayHost   m_aLvlIdxHost;
 
         //Diagonal scaling factors
-        RealArray diagFact;
-        ScalarArray diagElems;
+        RealArray m_diagFact;
+        ScalarArray m_diagElems;
 
         //Temporary vectors for triangular solves
-        ScalarArray xOld;
-        ScalarArray xTemp;
-        ScalarArray onesVector;
+        ScalarArray m_xOld;
+        ScalarArray m_xTemp;
+        ScalarArray m_onesVector;
 
         //This will have the continuation initial
         //guess if guessFlag=1
-        Teuchos::RCP<FastPrec> initGuessPrec;
+        Teuchos::RCP<FastPrec> m_initGuessPrec;
 
         // forward/backwar substitution for standard SpTrsv
         using MemSpace = typename ExecSpace::memory_space;
         using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle <Ordinal, Ordinal, Scalar, ExecSpace, MemSpace, MemSpace >;
-        FastILU::SpTRSV sptrsv_algo;
+        FastILU::SpTRSV m_sptrsv_algo;
 
         KernelHandle khL;
         KernelHandle khU;
@@ -759,13 +760,13 @@ class FastILUPrec
             for (i=0; i<n; i++)
             {
                 int first, next, j;
-                row = (useMetis ? permMetisHost(i) : i);
+                row = (m_useMetis ? m_permMetisHost(i) : i);
 
                 /* copy column indices of row into workspace and sort them */
                 int len = aRowMap[row+1] - aRowMap[row];
                 next = 0;
                 for (j=aRowMap[row]; j<aRowMap[row+1]; j++) {
-                    iwork[next++] = (useMetis ? ipermMetisHost(aColIdx[j]) : aColIdx[j]);
+                    iwork[next++] = (m_useMetis ? m_ipermMetisHost(aColIdx[j]) : aColIdx[j]);
                 }
                 // sort column indices in non-descending (ascending) order
                 sort(iwork.begin(), iwork.begin() + len);
@@ -789,16 +790,16 @@ class FastILUPrec
                 {
                     int oldlst = next;
                     int nxtlst = lnklst[next];
-                    int row = next;
+                    int inner_row = next;
                     int ii;
 
                     /* scan row */
-                    for (ii=uRowMap[row]+1; ii<uRowMap[row+1]; /*nop*/)
+                    for (ii=uRowMap[inner_row]+1; ii<uRowMap[inner_row+1]; /*nop*/)
                     {
                         if (uColIdx[ii] < nxtlst)
                         {
                             /* new fill-in */
-                            int newlev = curlev[row] + uLevel[ii] + 1;
+                            int newlev = curlev[inner_row] + uLevel[ii] + 1;
                             if (newlev <= levfill)
                             {
                                 lnklst[oldlst]  = uColIdx[ii];
@@ -813,7 +814,7 @@ class FastILUPrec
                             int newlev;
                             oldlst = nxtlst;
                             nxtlst = lnklst[oldlst];
-                            newlev = curlev[row] + uLevel[ii] + 1;
+                            newlev = curlev[inner_row] + uLevel[ii] + 1;
                             //curlev[uColIdx[ii]] = MIN(curlev[uColIdx[ii]], newlev);
                             if (curlev[uColIdx[ii]] > newlev)
                             {
@@ -885,8 +886,8 @@ class FastILUPrec
             Ordinal i;
 
             //Compute sparsity structure of ILU
-            nzl *= (level + 2);
-            nzu *= (level + 2);
+            nzl *= (m_level + 2);
+            nzu *= (m_level + 2);
             vector<int> ial(nRowsUnblocked+1);
             vector<int> jal(nzl);
             vector<int> levell(nzl);
@@ -895,7 +896,7 @@ class FastILUPrec
             vector<int> levelu(nzu);
 
             // TODO: if (initGuess & level > 0), call this with (aRowMap_, aColIdx_) and level = 1
-            findFills(level, ia, ja, // input
+            findFills(m_level, ia, ja, // input
                       nzl, ial, jal, levell, // output L in CSR
                       nzu, iau, jau, levelu  // output U in CSR
                      );
@@ -908,39 +909,39 @@ class FastILUPrec
                 "Actual nnz for ILU: " << nzl + nzu);
 
             // Initialize the A host mirror matrix that is to be used in the computation
-            aRowMap_ = OrdinalArrayMirror(WithoutInit("aRowMap"), nRowsUnblocked + 1);
-            aColIdx_ = OrdinalArrayMirror(WithoutInit("aColIdx"), nzl + nzu);
-            aRowIdx_ = OrdinalArrayMirror(WithoutInit("aRowIdx"), nzl + nzu);
-            aLvlIdx_ = OrdinalArrayHost(WithoutInit("aLvlIdx"), nzl + nzu);
+            m_aRowMapHost = OrdinalArrayMirror(WithoutInit("aRowMap"), nRowsUnblocked + 1);
+            m_aColIdxHost = OrdinalArrayMirror(WithoutInit("aColIdx"), nzl + nzu);
+            m_aRowIdxHost = OrdinalArrayMirror(WithoutInit("aRowIdx"), nzl + nzu);
+            m_aLvlIdxHost = OrdinalArrayHost(WithoutInit("aLvlIdx"), nzl + nzu);
 
             Ordinal aRowPtr = 0;
-            aRowMap_[0] = aRowPtr;
+            m_aRowMapHost[0] = aRowPtr;
             for (i = 0; i < nRowsUnblocked; i++)
             {
                 FASTILU_DBG_COUT("***row:" << i);
                 for(Ordinal k = ial[i]; k < ial[i+1]; k++)
                 {
                     FASTILU_DBG_COUT("jal[k]=" << jal[k]);
-                    aColIdx_[aRowPtr] = jal[k];
-                    aRowIdx_[aRowPtr] = i;
-                    aLvlIdx_[aRowPtr] = levell[k];
+                    m_aColIdxHost[aRowPtr] = jal[k];
+                    m_aRowIdxHost[aRowPtr] = i;
+                    m_aLvlIdxHost[aRowPtr] = levell[k];
                     aRowPtr++;
                 }
                 for(Ordinal k = iau[i]; k < iau[i+1]; k++)
                 {
-                    aColIdx_[aRowPtr] = jau[k];
-                    aRowIdx_[aRowPtr] = i;
-                    aLvlIdx_[aRowPtr] = levelu[k];
+                    m_aColIdxHost[aRowPtr] = jau[k];
+                    m_aRowIdxHost[aRowPtr] = i;
+                    m_aLvlIdxHost[aRowPtr] = levelu[k];
                     aRowPtr++;
                 }
-                aRowMap_[i+1] = aRowPtr;
+                m_aRowMapHost[i+1] = aRowPtr;
             }
             FASTILU_REPORT_TIMER(timer, " Copy time");
 
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             using host_space = typename HostSpace::execution_space;
             KokkosSparse::sort_crs_graph<host_space, OrdinalArrayMirror, OrdinalArrayMirror>
-              (aRowMap_, aColIdx_);
+              (m_aRowMapHost, m_aColIdxHost);
             FASTILU_FENCE_REPORT_TIMER(timer, host_space(), " Sort time");
         }
 
@@ -950,29 +951,29 @@ class FastILUPrec
             const Ordinal nRowsUnblocked = pRowMap_.extent(0) - 1;
             Ordinal nnzA = 0;
             for (Ordinal k = 0; k < pRowMap_(nRowsUnblocked); k++)  {
-                if(pLvlIdx_(k) <= level) {
+                if(pLvlIdx_(k) <= m_level) {
                    nnzA++;
                 }
             }
             //Initialize the A matrix that is to be used in the computation
-            aRowMap_ = OrdinalArrayMirror(WithoutInit("aRowMap"), nRowsUnblocked + 1);
-            aColIdx_ = OrdinalArrayMirror(WithoutInit("aColIdx"), nnzA);
-            aRowIdx_ = OrdinalArrayMirror(WithoutInit("aRowIds"), nnzA);
-            aVal_    = ScalarArrayMirror(WithoutInit("aVal"), nnzA);
+            m_aRowMapHost = OrdinalArrayMirror(WithoutInit("aRowMap"), nRowsUnblocked + 1);
+            m_aColIdxHost = OrdinalArrayMirror(WithoutInit("aColIdx"), nnzA);
+            m_aRowIdxHost = OrdinalArrayMirror(WithoutInit("aRowIds"), nnzA);
+            m_aValHost    = ScalarArrayMirror(WithoutInit("aVal"), nnzA);
 
             Ordinal aRowPtr = 0;
-            aRowMap_[0] = aRowPtr;
+            m_aRowMapHost[0] = aRowPtr;
             for (Ordinal i = 0; i < nRowsUnblocked; i++)
             {
                 for(Ordinal k = pRowMap_(i); k < pRowMap_(i+1); k++)
                 {
-                    if (pLvlIdx_(k) <= level) {
-                        aColIdx_[aRowPtr] = pColIdx_[k];
-                        aRowIdx_[aRowPtr] = i;
+                    if (pLvlIdx_(k) <= m_level) {
+                        m_aColIdxHost[aRowPtr] = pColIdx_[k];
+                        m_aRowIdxHost[aRowPtr] = i;
                         aRowPtr++;
                     }
                 }
-                aRowMap_[i+1] = aRowPtr;
+                m_aRowMapHost[i+1] = aRowPtr;
             }
         }
 
@@ -984,121 +985,121 @@ class FastILUPrec
 #ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
             aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0));
 #else
-            aVal_ = ScalarArrayMirror("aVal", aColIdx_.extent(0) * blockCrsSize * blockCrsSize);
+            m_aValHost = ScalarArrayMirror("aVal", m_aColIdxHost.extent(0) * m_blockCrsSize * m_blockCrsSize);
 #endif
-            Kokkos::deep_copy(aVal_, std::numeric_limits<Scalar>::min());
+            Kokkos::deep_copy(m_aValHost, std::numeric_limits<Scalar>::min());
 
             // Re-block A_. At this point, aHost and A_ are unblocked. The host stuff isn't
             // used anymore after this, so just reblock A_
 #ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
-            if (blockCrsSize > 1) {
-              reblock(aRowMap_, aRowIdx_, aColIdx_, aVal_, blockCrsSize);
+            if (m_blockCrsSize > 1) {
+              reblock(aRowMap_, aRowIdx_, aColIdx_, aVal_, m_blockCrsSize);
             }
 #endif
 
             // Initialize A
-            aRowMap = OrdinalArray(WithoutInit("aRowMap"), aRowMap_.extent(0));
-            aColIdx = OrdinalArray(WithoutInit("aColIdx"), aColIdx_.extent(0));
-            aRowIdx = OrdinalArray(WithoutInit("aRowIdx"), aRowIdx_.extent(0));
-            aVal    = ScalarArray (WithoutInit("aVal"),    aVal_.extent(0));
+            m_aRowMap = OrdinalArray(WithoutInit("aRowMap"), m_aRowMapHost.extent(0));
+            m_aColIdx = OrdinalArray(WithoutInit("aColIdx"), m_aColIdxHost.extent(0));
+            m_aRowIdx = OrdinalArray(WithoutInit("aRowIdx"), m_aRowIdxHost.extent(0));
+            m_aVal    = ScalarArray (WithoutInit("aVal"),    m_aValHost.extent(0));
 
             // Copy A_ to A
-            Kokkos::deep_copy(aRowMap, aRowMap_);
-            Kokkos::deep_copy(aColIdx, aColIdx_);
-            Kokkos::deep_copy(aRowIdx, aRowIdx_);
-            Kokkos::deep_copy(aVal, aVal_);
+            Kokkos::deep_copy(m_aRowMap, m_aRowMapHost);
+            Kokkos::deep_copy(m_aColIdx, m_aColIdxHost);
+            Kokkos::deep_copy(m_aRowIdx, m_aRowIdxHost);
+            Kokkos::deep_copy(m_aVal, m_aValHost);
             FASTILU_DBG_COUT("**Finished initializing A");
 
             //Compute RowMap for L and U.
             // > form RowMap for L
-            lRowMap = OrdinalArray(WithoutInit("lRowMap"), nRows + 1);
-            lRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lRowMap);
+            m_lRowMap = OrdinalArray(WithoutInit("lRowMap"), m_nRows + 1);
+            m_lRowMapHost = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_lRowMap);
             const Ordinal nnzL = countL();
             FASTILU_DBG_COUT("**Finished counting L");
 
             // > form RowMap for U and Ut
-            uRowMap  = OrdinalArray(WithoutInit("uRowMap"), nRows + 1);
-            utRowMap = OrdinalArray(WithoutInit("utRowMap"), nRows + 1);
-            utRowMap_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utRowMap);
-            uRowMap_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uRowMap);
+            m_uRowMap  = OrdinalArray(WithoutInit("uRowMap"), m_nRows + 1);
+            m_utRowMap = OrdinalArray(WithoutInit("utRowMap"), m_nRows + 1);
+            m_utRowMapHost = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_utRowMap);
+            m_uRowMapHost  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_uRowMap);
             const Ordinal nnzU = countU();
             FASTILU_DBG_COUT("**Finished counting U");
 
             //Allocate memory and initialize pattern for L, U (transpose).
-            lColIdx = OrdinalArray(WithoutInit("lColIdx"), nnzL);
-            uColIdx = OrdinalArray(WithoutInit("uColIdx"), nnzU);
-            utColIdx = OrdinalArray(WithoutInit("utColIdx"), nnzU);
+            m_lColIdx = OrdinalArray(WithoutInit("lColIdx"), nnzL);
+            m_uColIdx = OrdinalArray(WithoutInit("uColIdx"), nnzU);
+            m_utColIdx = OrdinalArray(WithoutInit("utColIdx"), nnzU);
 
-            lVal = ScalarArray("lVal", nnzL * blockCrsSize * blockCrsSize);
-            uVal = ScalarArray("uVal", nnzU * blockCrsSize * blockCrsSize);
-            utVal = ScalarArray(WithoutInit("utVal"), nnzU * blockCrsSize * blockCrsSize);
+            m_lVal = ScalarArray("lVal", nnzL * m_blockCrsSize * m_blockCrsSize);
+            m_uVal = ScalarArray("uVal", nnzU * m_blockCrsSize * m_blockCrsSize);
+            m_utVal = ScalarArray(WithoutInit("utVal"), nnzU * m_blockCrsSize * m_blockCrsSize);
 
             //Create mirror
-            lColIdx_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lColIdx);
-            uColIdx_  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uColIdx);
-            utColIdx_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utColIdx);
+            m_lColIdxHost  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_lColIdx);
+            m_uColIdxHost  = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_uColIdx);
+            m_utColIdxHost = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_utColIdx);
 
-            lVal_    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, lVal);
-            uVal_    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, uVal);
-            utVal_   = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, utVal);
+            m_lValHost    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_lVal);
+            m_uValHost    = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_uVal);
+            m_utValHost   = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_utVal);
         }
 
         void numericILU()
         {
             const Scalar zero = STS::zero();
             FASTILU_CREATE_TIMER(Timer);
-            if (useMetis && (guessFlag == 0 || level == 0)) { // applied only at the first call (level 0)
+            if (m_useMetis && (m_guessFlag == 0 || m_level == 0)) { // applied only at the first call (level 0)
               // apply column permutation before sorting it
-              FastILUPrec_Functor perm_functor(aColIdxIn, ipermMetis);
-              Kokkos::RangePolicy<ColPermTag, ExecSpace> perm_policy (0, aColIdxIn.size());
+              FastILUPrec_Functor perm_functor(m_aColIdxIn, m_ipermMetis);
+              Kokkos::RangePolicy<ColPermTag, ExecSpace> perm_policy (0, m_aColIdxIn.size());
               Kokkos::parallel_for(
                 "numericILU::colPerm", perm_policy, perm_functor);
             }
 
             //Sort each row of AIn by ColIdx
-            if (!skipSortMatrix || useMetis) {
-              if (blockCrsSize > 1) {
-                KokkosSparse::sort_bsr_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(blockCrsSize, aRowMapIn, aColIdxIn, aValIn);
+            if (!m_skipSortMatrix || m_useMetis) {
+              if (m_blockCrsSize > 1) {
+                KokkosSparse::sort_bsr_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(m_blockCrsSize, m_aRowMapIn, m_aColIdxIn, m_aValIn);
               }
               else {
-                KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(aRowMapIn, aColIdxIn, aValIn);
+                KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(m_aRowMapIn, m_aColIdxIn, m_aValIn);
               }
             }
 
             //Copy the host matrix into the initialized a;
             //a contains the structure of ILU(k), values of original Ain is copied at level-0
-            FastILUPrec_Functor functor(aValIn, aRowMapIn, aColIdxIn, aVal, diagFact, aRowMap, aColIdx, aRowIdx, blockCrsSize);
-            if (useMetis) {
-              assert(blockCrsSize == 1); // Not yet supported for block crs
-              FastILUPrec_Functor functor_perm(aValIn, aRowMapIn, aColIdxIn, permMetis, aVal, diagFact, aRowMap, aColIdx, aRowIdx, blockCrsSize);
-              Kokkos::RangePolicy<CopySortedValsPermTag, ExecSpace> copy_perm_policy (0, nRows);
+            FastILUPrec_Functor functor(m_aValIn, m_aRowMapIn, m_aColIdxIn, m_aVal, m_diagFact, m_aRowMap, m_aColIdx, m_aRowIdx, m_blockCrsSize);
+            if (m_useMetis) {
+              assert(m_blockCrsSize == 1); // Not yet supported for block crs
+              FastILUPrec_Functor functor_perm(m_aValIn, m_aRowMapIn, m_aColIdxIn, m_permMetis, m_aVal, m_diagFact, m_aRowMap, m_aColIdx, m_aRowIdx, m_blockCrsSize);
+              Kokkos::RangePolicy<CopySortedValsPermTag, ExecSpace> copy_perm_policy (0, m_nRows);
               Kokkos::parallel_for(
                 "numericILU::copyVals", copy_perm_policy, functor_perm);
             } else {
-              Kokkos::RangePolicy<CopySortedValsKeepSentinelsTag, ExecSpace> copy_policy (0, nRows);
+              Kokkos::RangePolicy<CopySortedValsKeepSentinelsTag, ExecSpace> copy_policy (0, m_nRows);
               Kokkos::parallel_for(
                 "numericILU::copyVals", copy_policy, functor);
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + sort/copy/permute values");
 
             // obtain diagonal scaling factor
-            Kokkos::RangePolicy<GetDiagsTag, ExecSpace> get_policy (0, nRows);
+            Kokkos::RangePolicy<GetDiagsTag, ExecSpace> get_policy (0, m_nRows);
             Kokkos::parallel_for(
               "numericILU::getDiags", get_policy, functor);
 
             // apply diagonal scaling
-            Kokkos::RangePolicy<DiagScalTag, ExecSpace> scale_policy (0, nRows);
+            Kokkos::RangePolicy<DiagScalTag, ExecSpace> scale_policy (0, m_nRows);
             Kokkos::parallel_for(
               "numericILU::diagScal", scale_policy, functor);
 
             // applyShift
-            if (shift != zero) {
-                Kokkos::deep_copy(aVal_, aVal);
+            if (m_shift != zero) {
+                Kokkos::deep_copy(m_aValHost, m_aVal);
                 applyManteuffelShift();
-                Kokkos::deep_copy(aVal, aVal_);
+                Kokkos::deep_copy(m_aVal, m_aValHost);
             }
             else {
-              Kokkos::deep_copy(aVal_, aVal); // keep in-sync
+              Kokkos::deep_copy(m_aValHost, m_aVal); // keep in-sync
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + apply shift/scale");
             FASTILU_DBG_COUT("**Finished diagonal scaling");
@@ -1111,56 +1112,56 @@ class FastILUPrec
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + fill U");
             FASTILU_DBG_COUT(
               "**Finished copying U\n" <<
-              "nnz L = " << lRowMap_[nRows] << "\n" <<
-              "nnz U = " << uRowMap_[nRows]);
+              "nnz L = " << m_lRowMapHost[m_nRows] << "\n" <<
+              "nnz U = " << m_uRowMapHost[m_nRows]);
         }
 
         //Initialize the rowMap (rowPtr) for L
         int countL()
         {
-            lRowMap_[0] = 0;
-            for (Ordinal i = 0; i < nRows; i++)
+            m_lRowMapHost[0] = 0;
+            for (Ordinal i = 0; i < m_nRows; i++)
             {
                 Ordinal row_count = 0;
-                for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
+                for (Ordinal k = m_aRowMapHost[i]; k < m_aRowMapHost[i+1]; k++)
                 {
                     Ordinal row = i;
-                    Ordinal col = aColIdx_[k];
+                    Ordinal col = m_aColIdxHost[k];
 
                     if (row >= col)
                     {
                        row_count++;
                     }
                 }
-                lRowMap_[i+1] = lRowMap_[i] + row_count;
+                m_lRowMapHost[i+1] = m_lRowMapHost[i] + row_count;
             }
-            Kokkos::deep_copy(lRowMap, lRowMap_);
-            return lRowMap_[nRows];
+            Kokkos::deep_copy(m_lRowMap, m_lRowMapHost);
+            return m_lRowMapHost[m_nRows];
         }
 
         //Put the initial guess into L.
         void fillL()
         {
             // extract L out of A, where A contains the structure of ILU(k), and original nonzero values at level-0
-            FastILUPrec_Functor functor(aVal, aRowMap, aColIdx, lVal, lRowMap, lColIdx, diagElems, blockCrsSize);
-            Kokkos::RangePolicy<GetLowerTag, ExecSpace> getL_policy (0, nRows);
+            FastILUPrec_Functor functor(m_aVal, m_aRowMap, m_aColIdx, m_lVal, m_lRowMap, m_lColIdx, m_diagElems, m_blockCrsSize);
+            Kokkos::RangePolicy<GetLowerTag, ExecSpace> getL_policy (0, m_nRows);
             Kokkos::parallel_for(
               "numericILU::getLower", getL_policy, functor);
 
-            if ((level > 0) && (guessFlag !=0))
+            if ((m_level > 0) && (m_guessFlag !=0))
             {
                 // overwrite initial values from warmup runs
                 OrdinalArray lGRowMap;
                 OrdinalArray lGColIdx;
                 ScalarArray lGVal;
                 ScalarArray gD;
-                initGuessPrec->getL(lGRowMap, lGColIdx, lGVal);
-                initGuessPrec->getD(gD);
-                Kokkos::deep_copy(diagElems, gD);
+                m_initGuessPrec->getL(lGRowMap, lGColIdx, lGVal);
+                m_initGuessPrec->getD(gD);
+                Kokkos::deep_copy(m_diagElems, gD);
 
                 // copy LG into L
-                FastILUPrec_Functor functorG(lGVal, lGRowMap, lGColIdx, lVal, lRowMap, lColIdx, blockCrsSize);
-                Kokkos::RangePolicy<CopySortedValsTag, ExecSpace> copy_policy (0, nRows);
+                FastILUPrec_Functor functorG(lGVal, lGRowMap, lGColIdx, m_lVal, m_lRowMap, m_lColIdx, m_blockCrsSize);
+                Kokkos::RangePolicy<CopySortedValsTag, ExecSpace> copy_policy (0, m_nRows);
                 Kokkos::parallel_for(
                   "numericILU::copyVals(G)", copy_policy, functorG);
             }
@@ -1170,53 +1171,53 @@ class FastILUPrec
         int countU()
         {
             // extract U out of A, where A contains the structure of ILU(k), and original nonzero values at level-0
-            for (Ordinal i = 0; i <= nRows; i++)
+            for (Ordinal i = 0; i <= m_nRows; i++)
             {
-                uRowMap_[i] = 0;
+                m_uRowMapHost[i] = 0;
             }
-            for(Ordinal i = 0; i < nRows; i++)
+            for(Ordinal i = 0; i < m_nRows; i++)
             {
-                for(Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
+                for(Ordinal k = m_aRowMapHost[i]; k < m_aRowMapHost[i+1]; k++)
                 {
                     Ordinal row = i;
-                    Ordinal col = aColIdx_[k];
+                    Ordinal col = m_aColIdxHost[k];
                     if (row <= col)
                     {
-                        uRowMap_[col+1]++;
+                        m_uRowMapHost[col+1]++;
                     }
                 }
             }
-            for (Ordinal i = 0; i < nRows; i++)
+            for (Ordinal i = 0; i < m_nRows; i++)
             {
-                uRowMap_[i+1] += uRowMap_[i];
+                m_uRowMapHost[i+1] += m_uRowMapHost[i];
             }
-            Kokkos::deep_copy(uRowMap, uRowMap_);
+            Kokkos::deep_copy(m_uRowMap, m_uRowMapHost);
 
             // create a map from A to U (sorted)
-            auto nnzU = uRowMap_[nRows];
-            a2uMap = OrdinalArray("a2uMap", nnzU);
-            auto a2uMap_ = Kokkos::create_mirror_view(a2uMap);
-            for (Ordinal i = 0; i < nRows; i++)
+            auto nnzU = m_uRowMapHost[m_nRows];
+            m_a2uMap = OrdinalArray("a2uMap", nnzU);
+            auto a2uMap = Kokkos::create_mirror_view(m_a2uMap);
+            for (Ordinal i = 0; i < m_nRows; i++)
             {
-                for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
+                for (Ordinal k = m_aRowMapHost[i]; k < m_aRowMapHost[i+1]; k++)
                 {
-                    Ordinal row = aRowIdx_[k];
-                    Ordinal col = aColIdx_[k];
+                    Ordinal row = m_aRowIdxHost[k];
+                    Ordinal col = m_aColIdxHost[k];
                     if (row <= col)
                     {
-                        Ordinal pos = uRowMap_[col];
-                        a2uMap_(pos) = k;
-                        uRowMap_[col]++;
+                        Ordinal pos = m_uRowMapHost[col];
+                        a2uMap(pos) = k;
+                        m_uRowMapHost[col]++;
                     }
                 }
             }
-            Kokkos::deep_copy(a2uMap, a2uMap_);
+            Kokkos::deep_copy(m_a2uMap, a2uMap);
             // shift back pointer
-            for (Ordinal i = nRows; i > 0; i--)
+            for (Ordinal i = m_nRows; i > 0; i--)
             {
-                uRowMap_[i] = uRowMap_[i-1];
+                m_uRowMapHost[i] = m_uRowMapHost[i-1];
             }
-            uRowMap_[0] = 0;
+            m_uRowMapHost[0] = 0;
 
             return nnzU;
         }
@@ -1225,25 +1226,25 @@ class FastILUPrec
         void fillU()
         {
             FASTILU_CREATE_TIMER(Timer);
-            int nnzU = a2uMap.extent(0);
-            ParPermCopyFunctor<Ordinal, Scalar, ExecSpace, BlockCrsEnabled> permCopy(a2uMap, aVal, aRowIdx, aColIdx, uVal, uColIdx, blockCrsSize);
+            int nnzU = m_a2uMap.extent(0);
+            ParPermCopyFunctor<Ordinal, Scalar, ExecSpace, BlockCrsEnabled> permCopy(m_a2uMap, m_aVal, m_aRowIdx, m_aColIdx, m_uVal, m_uColIdx, m_blockCrsSize);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), permCopy);
 
-            if ((level > 0) && (guessFlag !=0))
+            if ((m_level > 0) && (m_guessFlag !=0))
             {
                 // overwrite initial values from warmup runs
                 ScalarArray gD;
-                initGuessPrec->getD(gD);
-                Kokkos::deep_copy(diagElems, gD);
+                m_initGuessPrec->getD(gD);
+                Kokkos::deep_copy(m_diagElems, gD);
 
                 // copy UG into U
                 OrdinalArray uGRowMap;
                 OrdinalArray uGColIdx;
                 ScalarArray uGVal;
-                initGuessPrec->getU(uGRowMap, uGColIdx, uGVal);
+                m_initGuessPrec->getU(uGRowMap, uGColIdx, uGVal);
 
-                Kokkos::RangePolicy<CopySortedValsTag, ExecSpace> copy_policy (0, nRows);
-                FastILUPrec_Functor functorG(uGVal, uGRowMap, uGColIdx, uVal, uRowMap, uColIdx, blockCrsSize);
+                Kokkos::RangePolicy<CopySortedValsTag, ExecSpace> copy_policy (0, m_nRows);
+                FastILUPrec_Functor functorG(uGVal, uGRowMap, uGColIdx, m_uVal, m_uRowMap, m_uColIdx, m_blockCrsSize);
                 Kokkos::parallel_for(
                   "numericILU::copyVals(G)", copy_policy, functorG);
                 FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "   + merge_sorted");
@@ -1252,46 +1253,46 @@ class FastILUPrec
 
         void getL(OrdinalArray &lRowMapOut, OrdinalArray &lColIdxOut, ScalarArray &lValOut)
         {
-            lRowMapOut = lRowMap;
-            lColIdxOut = lColIdx;
-            lValOut = lVal;
+            lRowMapOut = m_lRowMap;
+            lColIdxOut = m_lColIdx;
+            lValOut = m_lVal;
         }
 
         void getU(OrdinalArray &uRowMapOut, OrdinalArray &uColIdxOut, ScalarArray &uValOut)
         {
-            uRowMapOut = uRowMap;
-            uColIdxOut = uColIdx;
-            uValOut = uVal;
+            uRowMapOut = m_uRowMap;
+            uColIdxOut = m_uColIdx;
+            uValOut = m_uVal;
         }
 
         void getUt(OrdinalArray &utRowMapOut, OrdinalArray &utColIdxOut, ScalarArray &utValOut)
         {
-            utRowMapOut = utRowMap;
-            utColIdxOut = utColIdx;
-            utValOut = utVal;
+            utRowMapOut = m_utRowMap;
+            utColIdxOut = m_utColIdx;
+            utValOut = m_utVal;
         }
 
         void getD(ScalarArray &diagElemsOut)
         {
-            diagElemsOut = diagElems;
+            diagElemsOut = m_diagElems;
         }
 
         void applyManteuffelShift()
         {
-            ShiftFunctor shift_lambda(shift);
+            ShiftFunctor shift_lambda(m_shift);
             NotDiagFunctor not_diag_lamb;
-            for (Ordinal i = 0; i < nRows; i++)
+            for (Ordinal i = 0; i < m_nRows; i++)
             {
-                for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
+                for (Ordinal k = m_aRowMapHost[i]; k < m_aRowMapHost[i+1]; k++)
                 {
                     Ordinal row = i;
-                    Ordinal col = aColIdx_[k];
+                    Ordinal col = m_aColIdxHost[k];
                     if (row != col)
                     {
-                      assign_block<BlockCrsEnabled>(aVal_, aVal_, k, k, blockCrsSize, shift_lambda);
+                      assign_block<BlockCrsEnabled>(m_aValHost, m_aValHost, k, k, m_blockCrsSize, shift_lambda);
                     }
                     else {
-                      assign_block_cond<BlockCrsEnabled>(aVal_, aVal_, k, k, not_diag_lamb, blockCrsSize, shift_lambda);
+                      assign_block_cond<BlockCrsEnabled>(m_aValHost, m_aValHost, k, k, not_diag_lamb, m_blockCrsSize, shift_lambda);
                     }
                 }
             }
@@ -1300,7 +1301,7 @@ class FastILUPrec
         void applyD_Perm(ScalarArray &x, ScalarArray &y)
         {
             Kokkos::RangePolicy<NonTranPermScalTag, ExecSpace> scale_policy (0, x.extent(0));
-            PermScalFunctor<Ordinal, Scalar, Real, ExecSpace> functor(x, y, diagFact, permMetis);
+            PermScalFunctor<Ordinal, Scalar, Real, ExecSpace> functor(x, y, m_diagFact, m_permMetis);
             Kokkos::parallel_for(
               "numericILU::applyD_iPerm", scale_policy, functor);
         }
@@ -1308,53 +1309,53 @@ class FastILUPrec
         void applyD_iPerm(ScalarArray &x, ScalarArray &y)
         {
             Kokkos::RangePolicy<TranPermScalTag, ExecSpace> scale_policy (0, x.extent(0));
-            PermScalFunctor<Ordinal, Scalar, Real, ExecSpace> functor(x, y, diagFact, ipermMetis);
+            PermScalFunctor<Ordinal, Scalar, Real, ExecSpace> functor(x, y, m_diagFact, m_ipermMetis);
             Kokkos::parallel_for(
               "numericILU::applyD_iPerm", scale_policy, functor);
         }
 
         void applyD(ScalarArray &x, ScalarArray &y)
         {
-            ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(x, y, diagFact);
+            ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(x, y, m_diagFact);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, x.extent(0)), parScal);
         }
 
         void applyL(ScalarArray &x, ScalarArray &y)
         {
-            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), parInitZero);
-            BlockJacobiIterFunctorL<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, lRowMap, lColIdx, lVal, x, y, xOld, onesVector);
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
-            Ordinal extent = nRows/blkSz;
-            if (nRows%blkSz != 0)
+            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(m_xOld);
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, m_nRows), parInitZero);
+            BlockJacobiIterFunctorL<Ordinal, Scalar, ExecSpace> jacIter(m_nRows, m_blkSz, m_lRowMap, m_lColIdx, m_lVal, x, y, m_xOld, m_onesVector);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(m_xOld, y);
+            Ordinal extent = m_nRows/m_blkSz;
+            if (m_nRows%m_blkSz != 0)
             {
                 extent++;
             }
-            for (Ordinal i = 0; i < nTrisol; i++)
+            for (Ordinal i = 0; i < m_nTrisol; i++)
             {
                 //Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), jacIter);
                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), jacIter);
-                Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), parCopy);
+                Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, m_nRows), parCopy);
             }
         }
 
         void applyU(ScalarArray &x, ScalarArray &y)
         {
-            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), parInitZero);
+            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(m_xOld);
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, m_nRows), parInitZero);
             ExecSpace().fence();
-            BlockJacobiIterFunctorU<Ordinal, Scalar, ExecSpace> jacIter(nRows, blkSz, utRowMap, utColIdx, utVal, x, y, xOld, diagElems);
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(xOld, y);
-            Ordinal extent = nRows/blkSz;
-            if (nRows%blkSz != 0)
+            BlockJacobiIterFunctorU<Ordinal, Scalar, ExecSpace> jacIter(m_nRows, m_blkSz, m_utRowMap, m_utColIdx, m_utVal, x, y, m_xOld, m_diagElems);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopy(m_xOld, y);
+            Ordinal extent = m_nRows/m_blkSz;
+            if (m_nRows%m_blkSz != 0)
             {
                 extent++;
             }
-            for (Ordinal i = 0; i < nTrisol; i++)
+            for (Ordinal i = 0; i < m_nTrisol; i++)
             {
                 //Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), jacIter);
                 Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), jacIter);
-                Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), parCopy);
+                Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, m_nRows), parCopy);
             }
         }
 
@@ -1362,67 +1363,66 @@ class FastILUPrec
     public:
         //Constructor
         //TODO: Use a Teuchos::ParameterList object
-        FastILUPrec(bool skipSortMatrix_, OrdinalArray &aRowMapIn_, OrdinalArray &aColIdxIn_, ScalarArray &aValIn_, Ordinal nRow_,
-                    FastILU::SpTRSV sptrsv_algo_, Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_,
-                    Ordinal guessFlag_, Ordinal blkSzILU_, Ordinal blkSz_, Ordinal blockCrsSize_ = 1)
+        FastILUPrec(bool skipSortMatrix, OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRows,
+                    FastILU::SpTRSV sptrsv_algo, Ordinal nFact, Ordinal nTrisol, Ordinal level, Scalar omega, Scalar shift,
+                    Ordinal guessFlag, Ordinal blkSzILU, Ordinal blkSz, Ordinal blockCrsSize = 1)
         {
-            nRows = nRow_;
-            sptrsv_algo = sptrsv_algo_;
-            nFact = nFact_;
-            nTrisol = nTrisol_;
+            m_nRows = nRows;
+            m_sptrsv_algo = sptrsv_algo;
+            m_nFact = nFact;
+            m_nTrisol = nTrisol;
 
-            useMetis = false;
+            m_useMetis = false;
 
-            computeTime = 0.0;
-            applyTime = 0.0;
-            initTime = 0.0;
-            //icFlag = icFlag_;
-            level = level_;
+            m_computeTime = 0.0;
+            m_applyTime = 0.0;
+            m_initTime = 0.0;
+            m_level = level;
 
             // mirror & deep-copy the input matrix
-            skipSortMatrix = skipSortMatrix_;
-            aRowMapIn = aRowMapIn_;
-            aColIdxIn = aColIdxIn_;
-            aValIn    = aValIn_;
+            m_skipSortMatrix = skipSortMatrix;
+            m_aRowMapIn = aRowMapIn;
+            m_aColIdxIn = aColIdxIn;
+            m_aValIn    = aValIn;
 
-            omega = omega_;
-            guessFlag = guessFlag_;
-            shift = shift_;
-            blkSzILU = blkSzILU_;
-            blkSz = blkSz_;
-            blockCrsSize = blockCrsSize_;
-            doUnitDiag_TRSV = true; // perform TRSV with unit diagonals
-            sptrsv_KKSpMV = true;   // use Kokkos-Kernels SpMV for Fast SpTRSV
+            m_omega = omega;
+            m_guessFlag = guessFlag;
+            m_shift = shift;
+            m_blkSzILU = blkSzILU;
+            m_blkSz = blkSz;
+            m_blockCrsSize = blockCrsSize;
+            m_doUnitDiag_TRSV = true; // perform TRSV with unit diagonals
+            m_sptrsv_KKSpMV = true;   // use Kokkos-Kernels SpMV for Fast SpTRSV
 
             if (!BlockCrsEnabled) {
-              assert(blockCrsSize_ == 1);
+              assert(blockCrsSize == 1);
             }
 
             const Scalar one = STS::one();
-            onesVector = ScalarArray("onesVector", nRow_);
-            Kokkos::deep_copy(onesVector, one);
+            m_onesVector = ScalarArray("onesVector", nRows);
+            Kokkos::deep_copy(m_onesVector, one);
 
-            diagFact = RealArray("diagFact", nRow_ * blockCrsSize_);
-            diagElems = ScalarArray("diagElems", nRow_ * blockCrsSize_);
-            xOld = ScalarArray("xOld", nRow_ * blockCrsSize_);
-            xTemp = ScalarArray("xTemp", nRow_ * blockCrsSize_);
+            m_diagFact = RealArray("diagFact", nRows * blockCrsSize);
+            m_diagElems = ScalarArray("diagElems", nRows * blockCrsSize);
+            m_xOld = ScalarArray("xOld", nRows * blockCrsSize);
+            m_xTemp = ScalarArray("xTemp", nRows * blockCrsSize);
 
-            aRowMapHost = OrdinalArrayMirror("aRowMapHost", aRowMapIn.size());
-            aColIdxHost = OrdinalArrayMirror("aColIdxHost", aColIdxIn.size());
-            aValHost    = ScalarArrayMirror("aValHost",     aValIn.size());
-            Kokkos::deep_copy(aRowMapHost, aRowMapIn_);
-            Kokkos::deep_copy(aColIdxHost, aColIdxIn_);
-            Kokkos::deep_copy(aValHost,    aValIn_);
-            if (blockCrsSize > 1) {
+            m_aRowMapInHost = OrdinalArrayMirror("aRowMapHost", m_aRowMapIn.size());
+            m_aColIdxInHost = OrdinalArrayMirror("aColIdxHost", m_aColIdxIn.size());
+            m_aValInHost    = ScalarArrayMirror("aValHost",     m_aValIn.size());
+            Kokkos::deep_copy(m_aRowMapInHost, aRowMapIn);
+            Kokkos::deep_copy(m_aColIdxInHost, aColIdxIn);
+            Kokkos::deep_copy(m_aValInHost,    aValIn);
 #ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
-              unblock(aRowMapHost, aColIdxHost, aValHost, blockCrsSize);
-#endif
+            if (m_blockCrsSize > 1) {
+              unblock(m_aRowMapHost, m_aColIdxHost, m_aValHost, m_blockCrsSize);
             }
+#endif
 
-            if ((level > 0) && (guessFlag != 0))
+            if ((m_level > 0) && (m_guessFlag != 0))
             {
-                initGuessPrec = Teuchos::rcp(new FastPrec(skipSortMatrix_, aRowMapIn_, aColIdxIn_, aValIn_, nRow_, sptrsv_algo_,
-                                                          3, 5, level_-1, omega_, shift_, guessFlag_, blkSzILU_, blkSz_, blockCrsSize_));
+              m_initGuessPrec = Teuchos::rcp(new FastPrec(skipSortMatrix, aRowMapIn, aColIdxIn, aValIn, nRows, sptrsv_algo,
+                                                          3, 5, level-1, omega, shift, guessFlag, blkSzILU, blkSz, blockCrsSize));
             }
         }
 
@@ -1694,27 +1694,27 @@ class FastILUPrec
 
         // set Metis pre-ordering
         template<class MetisArrayHost>
-        void setMetisPerm(MetisArrayHost permMetis_, MetisArrayHost ipermMetis_)
+        void setMetisPerm(MetisArrayHost permMetis, MetisArrayHost ipermMetis)
         {
-          Ordinal nRows_ = permMetis_.size();
-          if (nRows > 0) {
-            permMetis = OrdinalArray("permMetis", nRows_);
-            ipermMetis = OrdinalArray("ipermMetis", nRows_);
+          Ordinal nRows_ = permMetis.size();
+          if (m_nRows > 0) {
+            m_permMetis = OrdinalArray("permMetis", nRows_);
+            m_ipermMetis = OrdinalArray("ipermMetis", nRows_);
 
-            permMetisHost = Kokkos::create_mirror_view(permMetis);
-            ipermMetisHost = Kokkos::create_mirror_view(ipermMetis);
+            m_permMetisHost = Kokkos::create_mirror_view(m_permMetis);
+            m_ipermMetisHost = Kokkos::create_mirror_view(m_ipermMetis);
             for (Ordinal i = 0; i < nRows_; i++) {
-              permMetisHost(i) = permMetis_(i);
-              ipermMetisHost(i) = ipermMetis_(i);
+              m_permMetisHost(i) = permMetis(i);
+              m_ipermMetisHost(i) = ipermMetis(i);
             }
-            Kokkos::deep_copy(permMetis, permMetisHost);
-            Kokkos::deep_copy(ipermMetis, ipermMetisHost);
+            Kokkos::deep_copy(m_permMetis, m_permMetisHost);
+            Kokkos::deep_copy(m_ipermMetis, m_ipermMetisHost);
           }
-          if ((level > 0) && (guessFlag != 0))
+          if ((m_level > 0) && (m_guessFlag != 0))
           {
-            initGuessPrec->setMetisPerm(permMetis_, ipermMetis_);
+            m_initGuessPrec->setMetisPerm(permMetis, ipermMetis);
           }
-          useMetis = true;
+          m_useMetis = true;
         }
 
         //Symbolic Factorization Phase
@@ -1724,12 +1724,12 @@ class FastILUPrec
             FASTILU_CREATE_TIMER(timer2);
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
-            symbolicILU(aRowMapHost, aColIdxHost);
-            FASTILU_REPORT_TIMER(timer2, " + initial SymbolicILU (" << level << ") time");
-            if ((level > 0) && (guessFlag != 0))
+            symbolicILU(m_aRowMapInHost, m_aColIdxInHost);
+            FASTILU_REPORT_TIMER(timer2, " + initial SymbolicILU (" << m_level << ") time");
+            if ((m_level > 0) && (m_guessFlag != 0))
             {
-                initGuessPrec->initialize(aRowMap_, aColIdx_, aLvlIdx_);
-                FASTILU_REPORT_TIMER(timer2, "  > SymbolicILU (" << level << ") time");
+                m_initGuessPrec->initialize(m_aRowMapHost, m_aColIdxHost, m_aLvlIdxHost);
+                FASTILU_REPORT_TIMER(timer2, "  > SymbolicILU (" << m_level << ") time");
             }
 
             initialize_common(timer);
@@ -1744,11 +1744,11 @@ class FastILUPrec
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
             symbolicILU(pRowMap_, pColIdx_, pLvlIdx_);
-            FASTILU_REPORT_TIMER(timer2, " - initial SymbolicILU (" << level << ") time");
-            if ((level > 0) && (guessFlag != 0))
+            FASTILU_REPORT_TIMER(timer2, " - initial SymbolicILU (" << m_level << ") time");
+            if ((m_level > 0) && (m_guessFlag != 0))
             {
-                initGuessPrec->initialize(pRowMap_, pColIdx_, pLvlIdx_);
-                FASTILU_REPORT_TIMER(timer2, "  = SymbolicILU (" << level << ") time");
+                m_initGuessPrec->initialize(pRowMap_, pColIdx_, pLvlIdx_);
+                FASTILU_REPORT_TIMER(timer2, "  = SymbolicILU (" << m_level << ") time");
             }
 
             initialize_common(timer);
@@ -1761,37 +1761,18 @@ class FastILUPrec
             //initialize L, U, A patterns
             symbolicILU_common();
 
-            #ifdef SHYLU_DEBUG
-            Ordinal nnzU = uRowMap[nRows];
-            MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace> copyFunc1(aRowMap, lRowMap, uRowMap, diagElems);
-            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc4(uColIdx, uVal);
-
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copyFunc1);
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzU), copyFunc4);
-
-            //Note that the following is a temporary measure
-            //to ensure that memory resides on the device.
-            Ordinal nnzL = lRowMap[nRows];
-            Ordinal nnzA = aRowMap[nRows];
-            MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace> copyFunc2(aColIdx, aRowIdx, aVal);
-            MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc3(lColIdx, lVal);
-
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nRows), copyFunc1);
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzA), copyFunc2);
-            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nnzL), copyFunc3);
-            #endif
             ExecSpace().fence();  //Fence so that init time is accurate
-            initTime = timer.seconds();
+            m_initTime = timer.seconds();
         }
 
         void setValues(ScalarArray& aValIn_)
         {
-          this->aValIn = aValIn_;
-          this->aValHost = Kokkos::create_mirror_view(aValIn_);
-          Kokkos::deep_copy(this->aValHost, aValIn_);
-          if(!initGuessPrec.is_null())
+          this->m_aValIn = aValIn_;
+          this->m_aValInHost = Kokkos::create_mirror_view(aValIn_);
+          Kokkos::deep_copy(this->m_aValInHost, aValIn_);
+          if(!m_initGuessPrec.is_null())
           {
-            initGuessPrec->setValues(aValIn_);
+            m_initGuessPrec->setValues(aValIn_);
           }
         }
 
@@ -1803,25 +1784,25 @@ class FastILUPrec
         {
             Kokkos::Timer timer;
             FASTILU_CREATE_TIMER(Timer);
-            if ((level > 0) && (guessFlag !=0))
+            if ((m_level > 0) && (m_guessFlag !=0))
             {
-                initGuessPrec->compute();
+                m_initGuessPrec->compute();
                 FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > initGuess");
             }
 
             numericILU();
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > numericILU ");
 
-            FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
-                    aRowMap, aRowIdx, aColIdx, aVal,
-                    lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega, blockCrsSize, level);
-            Ordinal extent = aRowMap_[nRows]/blkSzILU;
-            if (aRowMap_[nRows]%blkSzILU != 0)
+            FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(m_aRowMapHost[m_nRows], m_blkSzILU,
+                    m_aRowMap, m_aRowIdx, m_aColIdx, m_aVal,
+                    m_lRowMap, m_lColIdx, m_lVal, m_uRowMap, m_uColIdx, m_uVal, m_diagElems, m_omega, m_blockCrsSize, m_level);
+            Ordinal extent = m_aRowMapHost[m_nRows]/m_blkSzILU;
+            if (m_aRowMapHost[m_nRows]%m_blkSzILU != 0)
             {
                 extent++;
             }
 
-            for (int i = 0; i < nFact; i++)
+            for (int i = 0; i < m_nFact; i++)
             {
 #ifdef FASTILU_ONE_TO_ONE_UNBLOCKED
               // Force serialization to avoid races but still perform operation on device
@@ -1834,120 +1815,120 @@ class FastILUPrec
               Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, extent), iluFunctor);
 #endif
             }
-            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > iluFunctor (" << nFact << ")");
+            FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > iluFunctor (" << m_nFact << ")");
 
             // transpose u
-            Kokkos::deep_copy(utRowMap, 0);
-            if (blockCrsSize == 1) {
+            Kokkos::deep_copy(m_utRowMap, 0);
+            if (m_blockCrsSize == 1) {
               KokkosSparse::Impl::transpose_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, ExecSpace>
-                (nRows, nRows, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
+                (m_nRows, m_nRows, m_uRowMap, m_uColIdx, m_uVal, m_utRowMap, m_utColIdx, m_utVal);
             }
             else {
               KokkosSparse::Impl::transpose_bsr_matrix<OrdinalArray, OrdinalArray, ScalarArray, OrdinalArray, OrdinalArray, ScalarArray, ExecSpace>
-                (nRows, nRows, blockCrsSize, uRowMap, uColIdx, uVal, utRowMap, utColIdx, utVal);
+                (m_nRows, m_nRows, m_blockCrsSize, m_uRowMap, m_uColIdx, m_uVal, m_utRowMap, m_utColIdx, m_utVal);
             }
 
             // sort, if the triangular solve algorithm requires a sorted matrix.
-            bool sortRequired = sptrsv_algo != FastILU::SpTRSV::Fast && sptrsv_algo != FastILU::SpTRSV::StandardHost;
+            bool sortRequired = m_sptrsv_algo != FastILU::SpTRSV::Fast && m_sptrsv_algo != FastILU::SpTRSV::StandardHost;
             if (sortRequired) {
-              if (blockCrsSize == 1) {
+              if (m_blockCrsSize == 1) {
                 KokkosSparse::sort_crs_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>
-                  (utRowMap, utColIdx, utVal);
+                  (m_utRowMap, m_utColIdx, m_utVal);
               }
               else {
                 KokkosSparse::sort_bsr_matrix<ExecSpace, OrdinalArray, OrdinalArray, ScalarArray>(
-                  blockCrsSize, utRowMap, utColIdx, utVal);
+                  m_blockCrsSize, m_utRowMap, m_utColIdx, m_utVal);
               }
             }
 
-            if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
+            if (m_sptrsv_algo == FastILU::SpTRSV::StandardHost) {
                 // deep-copy to host
-                Kokkos::deep_copy(lColIdx_, lColIdx);
-                Kokkos::deep_copy(lVal_, lVal);
+                Kokkos::deep_copy(m_lColIdxHost, m_lColIdx);
+                Kokkos::deep_copy(m_lValHost, m_lVal);
 
-                Kokkos::deep_copy(utRowMap_, utRowMap);
-                Kokkos::deep_copy(utColIdx_, utColIdx);
-                Kokkos::deep_copy(utVal_, utVal);
+                Kokkos::deep_copy(m_utRowMapHost, m_utRowMap);
+                Kokkos::deep_copy(m_utColIdxHost, m_utColIdx);
+                Kokkos::deep_copy(m_utValHost, m_utVal);
             }
             FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(), "  > transposeU");
 
-            if (sptrsv_algo == FastILU::SpTRSV::Standard) {
-                assert(blockCrsSize == 1); // Not yet supported for block crs
+            if (m_sptrsv_algo == FastILU::SpTRSV::Standard) {
+                assert(m_blockCrsSize == 1); // Not yet supported for block crs
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
                 KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
                 #else
                 KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
                 #endif
                 // setup L solve
-                khL.create_sptrsv_handle(algo, nRows, true);
+                khL.create_sptrsv_handle(algo, m_nRows, true);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
+                KokkosSparse::Experimental::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx, m_lVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx);
+                KokkosSparse::Experimental::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx);
                 #endif
                 // setup U solve
-                khU.create_sptrsv_handle(algo, nRows, false);
+                khU.create_sptrsv_handle(algo, m_nRows, false);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khU, utRowMap, utColIdx, utVal);
+                KokkosSparse::Experimental::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx, m_utVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khU, utRowMap, utColIdx);
+                KokkosSparse::Experimental::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx);
                 #endif
                 FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(),
-                  "  > sptrsv_symbolic : nnz(L)=" << lColIdx.extent(0) << " nnz(U)=" << utColIdx.extent(0));
-            } else if (sptrsv_algo == FastILU::SpTRSV::StandardHost && doUnitDiag_TRSV) {
+                  "  > sptrsv_symbolic : nnz(L)=" << m_lColIdx.extent(0) << " nnz(U)=" << m_utColIdx.extent(0));
+            } else if (m_sptrsv_algo == FastILU::SpTRSV::StandardHost && m_doUnitDiag_TRSV) {
                 // Prepare L for TRSV by removing unit-diagonals
-                assert(blockCrsSize == 1); // Not yet supported for block crs
-                lVal_trsv_   = ScalarArrayHost ("lVal_trsv",    lRowMap_[nRows]-nRows);
-                lColIdx_trsv_ = OrdinalArrayHost("lColIdx_trsv", lRowMap_[nRows]-nRows);
-                lRowMap_trsv_ = OrdinalArrayHost("lRowMap_trsv", nRows+1);
+                assert(m_blockCrsSize == 1); // Not yet supported for block crs
+                m_lVal_trsvHost   = ScalarArrayHost ("lVal_trsv",    m_lRowMapHost[m_nRows]-m_nRows);
+                m_lColIdx_trsvHost = OrdinalArrayHost("lColIdx_trsv", m_lRowMapHost[m_nRows]-m_nRows);
+                m_lRowMap_trsvHost = OrdinalArrayHost("lRowMap_trsv", m_nRows+1);
 
                 size_t nnzL = 0;
-                lRowMap_trsv_(0) = 0;
-                for (Ordinal i = 0; i < nRows; i++) {
-                    for (Ordinal k = lRowMap_(i); k < lRowMap_[i+1]; k++) {
-                        if (lColIdx_(k) != i) {
-                            lVal_trsv_(nnzL) = lVal_(k);
-                            lColIdx_trsv_(nnzL) = lColIdx_(k);
+                m_lRowMap_trsvHost(0) = 0;
+                for (Ordinal i = 0; i < m_nRows; i++) {
+                    for (Ordinal k = m_lRowMapHost(i); k < m_lRowMapHost[i+1]; k++) {
+                        if (m_lColIdxHost(k) != i) {
+                            m_lVal_trsvHost(nnzL) = m_lValHost(k);
+                            m_lColIdx_trsvHost(nnzL) = m_lColIdxHost(k);
                             nnzL++;
                         }
                     }
-                    lRowMap_trsv_(i+1)=nnzL;
+                    m_lRowMap_trsvHost(i+1)=nnzL;
                 }
 
                 // Prepare U by extracting and scaling D
-                dVal_trsv_     = ScalarArrayHost ("dVal_trsv",     nRows);
-                utVal_trsv_    = ScalarArrayHost ("utVal_trsv",    utRowMap_[nRows]-nRows);
-                utColIdx_trsv_ = OrdinalArrayHost("utColIdx_trsv", utRowMap_[nRows]-nRows);
-                utRowMap_trsv_ = OrdinalArrayHost("utRowMap_trsv", nRows+1);
+                m_dVal_trsvHost     = ScalarArrayHost ("dVal_trsv",     m_nRows);
+                m_utVal_trsvHost    = ScalarArrayHost ("utVal_trsv",    m_utRowMapHost[m_nRows]-m_nRows);
+                m_utColIdx_trsvHost = OrdinalArrayHost("utColIdx_trsv", m_utRowMapHost[m_nRows]-m_nRows);
+                m_utRowMap_trsvHost = OrdinalArrayHost("utRowMap_trsv", m_nRows+1);
 
                 size_t nnzU = 0;
-                utRowMap_trsv_(0) = 0;
-                for (Ordinal i = 0; i < nRows; i++) {
-                    for (Ordinal k = utRowMap_(i); k < utRowMap_[i+1]; k++) {
-                        if (utColIdx_(k) == i) {
-                            dVal_trsv_(i) = utVal_(k);
+                m_utRowMap_trsvHost(0) = 0;
+                for (Ordinal i = 0; i < m_nRows; i++) {
+                    for (Ordinal k = m_utRowMapHost(i); k < m_utRowMapHost[i+1]; k++) {
+                        if (m_utColIdxHost(k) == i) {
+                            m_dVal_trsvHost(i) = m_utValHost(k);
                         } else {
-                            utVal_trsv_(nnzU) = utVal_(k);
-                            utColIdx_trsv_(nnzU) = utColIdx_(k);
+                            m_utVal_trsvHost(nnzU) = m_utValHost(k);
+                            m_utColIdx_trsvHost(nnzU) = m_utColIdxHost(k);
                             nnzU++;
                         }
                     }
-                    utRowMap_trsv_(i+1)=nnzU;
+                    m_utRowMap_trsvHost(i+1)=nnzU;
                 }
-                for (Ordinal i = 0; i < nRows; i++) {
-                    for (Ordinal k = utRowMap_trsv_(i); k < utRowMap_trsv_[i+1]; k++) {
-                        utVal_trsv_(k) = utVal_trsv_(k) / dVal_trsv_(i);
+                for (Ordinal i = 0; i < m_nRows; i++) {
+                    for (Ordinal k = m_utRowMap_trsvHost(i); k < m_utRowMap_trsvHost[i+1]; k++) {
+                        m_utVal_trsvHost(k) = m_utVal_trsvHost(k) / m_dVal_trsvHost(i);
                     }
-                    dVal_trsv_(i) = STS::one() / dVal_trsv_(i);
+                    m_dVal_trsvHost(i) = STS::one() / m_dVal_trsvHost(i);
                 }
-            } else if (sptrsv_KKSpMV) {
-                FastILUPrec_Functor functor(SwapDiagTag(), lVal, lRowMap, lColIdx, utVal, utRowMap, utColIdx, diagElems, blockCrsSize);
-                Kokkos::RangePolicy<SwapDiagTag, ExecSpace> swap_policy (0, nRows);
+            } else if (m_sptrsv_KKSpMV) {
+                FastILUPrec_Functor functor(SwapDiagTag(), m_lVal, m_lRowMap, m_lColIdx, m_utVal, m_utRowMap, m_utColIdx, m_diagElems, m_blockCrsSize);
+                Kokkos::RangePolicy<SwapDiagTag, ExecSpace> swap_policy (0, m_nRows);
                 Kokkos::parallel_for(
                   "numericILU::swapDiag", swap_policy, functor);
             }
             ExecSpace().fence(); // Fence so computeTime is accurate
-            computeTime = timer.seconds();
+            m_computeTime = timer.seconds();
             FASTILU_REPORT_TIMER(timer, "  >> compute done\n");
         }
 
@@ -1957,26 +1938,26 @@ class FastILUPrec
             const Scalar one(1.0);
             const Scalar minus_one(-1.0);
 
-            const auto nrows_unblocked = xOld.extent(0);
-            Scalar2dArray x2d_old (const_cast<Scalar*>(xOld.data()), nrows_unblocked, 1);
+            const auto nrows_unblocked = m_xOld.extent(0);
+            Scalar2dArray x2d_old (const_cast<Scalar*>(m_xOld.data()), nrows_unblocked, 1);
 
-            Scalar2dArray x2d (const_cast<Scalar*>(xTemp.data()), nrows_unblocked, 1);
+            Scalar2dArray x2d (const_cast<Scalar*>(m_xTemp.data()), nrows_unblocked, 1);
             Scalar2dArray y2d (const_cast<Scalar*>(y.data()), nrows_unblocked, 1);
 
             // 1) approximately solve, y = L^{-1}*x
             // functor to copy RHS x into y (for even iteration)
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_x2y(y, xTemp);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_x2y(y, m_xTemp);
             // functor to copy RHS x into xold (for odd iteration)
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_x2xold(xOld, xTemp);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_x2xold(m_xOld, m_xTemp);
 
             // functor to copy x_old to y (final iteration)
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_xold2y(y, xOld);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_xold2y(y, m_xOld);
 
             // xold = zeros
-            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> initZeroX(xOld);
+            ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> initZeroX(m_xOld);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nrows_unblocked), initZeroX);
             //Kokkos::deep_copy(x2d_old, zero);
-            for (Ordinal i = 0; i < nTrisol; i++)
+            for (Ordinal i = 0; i < m_nTrisol; i++)
             {
                 if (i%2 == 0) {
                     // y = y - L*x_old
@@ -1991,7 +1972,7 @@ class FastILUPrec
                     // > x_old = x_old - L*y
                     KokkosSparse::spmv("N", minus_one, crsmatL, y2d, one, x2d_old);
 
-                    if (i == nTrisol-1) {
+                    if (i == m_nTrisol-1) {
                         // y = x_old
                         Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nrows_unblocked), copy_xold2y);
                     }
@@ -2000,21 +1981,21 @@ class FastILUPrec
 
             // 2) approximately solve, x = U^{-1}*y
             // functor to copy y into x
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_y2x(xTemp, y);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_y2x(m_xTemp, y);
             // functor to copy y into xold
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_y2xold(xOld, y);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_y2xold(m_xOld, y);
 
             // functor to scale x
-            ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> scal_x(xTemp, xTemp, diagElems);
-            ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> scal_xold(xOld, xOld, diagElems);
+            ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> scal_x(m_xTemp, m_xTemp, m_diagElems);
+            ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> scal_xold(m_xOld, m_xOld, m_diagElems);
 
             // functor to copy x_old to x (final iteration)
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_xold2x(xTemp, xOld);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> copy_xold2x(m_xTemp, m_xOld);
 
             // xold = zeros
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nrows_unblocked), initZeroX);
             //Kokkos::deep_copy(x2d_old, zero);
-            for (Ordinal i = 0; i < nTrisol; i++)
+            for (Ordinal i = 0; i < m_nTrisol; i++)
             {
                 if (i%2 == 0) {
                     // x = y - U*x_old
@@ -2033,7 +2014,7 @@ class FastILUPrec
                     // > scale x = inv(diag(U))*x
                     Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nrows_unblocked), scal_xold);
 
-                    if (i == nTrisol-1) {
+                    if (i == m_nTrisol-1) {
                         // x = x_old
                         Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, nrows_unblocked), copy_xold2x);
                     }
@@ -2048,29 +2029,29 @@ class FastILUPrec
             Kokkos::Timer timer;
 
             //required to prevent contamination of the input.
-            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(xTemp, x);
+            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(m_xTemp, x);
             Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, x.extent(0)), parCopyFunctor);
 
             //apply D
-            if (useMetis) {
-                applyD_Perm(x, xTemp);
+            if (m_useMetis) {
+                applyD_Perm(x, m_xTemp);
             } else {
-                applyD(x, xTemp);
+                applyD(x, m_xTemp);
             }
 
-            if (sptrsv_algo == FastILU::SpTRSV::Standard) {
-                assert(blockCrsSize == 1); // Not yet supported for block crs
+            if (m_sptrsv_algo == FastILU::SpTRSV::Standard) {
+                assert(m_blockCrsSize == 1); // Not yet supported for block crs
                 // solve with L
-                KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
+                KokkosSparse::Experimental::sptrsv_solve(&khL, m_lRowMap, m_lColIdx, m_lVal, m_xTemp, y);
                 // solve with U
-                KokkosSparse::Experimental::sptrsv_solve(&khU, utRowMap, utColIdx, utVal, y, xTemp);
+                KokkosSparse::Experimental::sptrsv_solve(&khU, m_utRowMap, m_utColIdx, m_utVal, y, m_xTemp);
             } else {
                 // wrap x and y into 2D views
-                Scalar2dArray x2d (const_cast<Scalar*>(xTemp.data()), nRows, 1);
-                Scalar2dArray y2d (const_cast<Scalar*>(y.data()), nRows, 1);
+                Scalar2dArray x2d (const_cast<Scalar*>(m_xTemp.data()), m_nRows, 1);
+                Scalar2dArray y2d (const_cast<Scalar*>(y.data()), m_nRows, 1);
 
-                if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
-                    assert(blockCrsSize == 1); // Not yet supported for block crs
+                if (m_sptrsv_algo == FastILU::SpTRSV::StandardHost) {
+                    assert(m_blockCrsSize == 1); // Not yet supported for block crs
 
                     // copy x to host
                     auto x_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, x2d);
@@ -2079,23 +2060,23 @@ class FastILUPrec
                     auto y_ = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, y2d);
                     Kokkos::deep_copy(x_, x2d);
 
-                    if (doUnitDiag_TRSV) {
+                    if (m_doUnitDiag_TRSV) {
                         using crsmat_host_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, HostSpace, void, Ordinal>;
                         using graph_host_t  = typename crsmat_host_t::StaticCrsGraphType;
 
                         // wrap L into crsmat on host
-                        graph_host_t static_graphL(lColIdx_trsv_, lRowMap_trsv_);
-                        crsmat_host_t crsmatL("CrsMatrix", nRows, lVal_trsv_, static_graphL);
+                        graph_host_t static_graphL(m_lColIdx_trsvHost, m_lRowMap_trsvHost);
+                        crsmat_host_t crsmatL("CrsMatrix", m_nRows, m_lVal_trsvHost, static_graphL);
 
                         // wrap U into crsmat on host
-                        graph_host_t static_graphU(utColIdx_trsv_, utRowMap_trsv_);
-                        crsmat_host_t crsmatU("CrsMatrix", nRows, utVal_trsv_, static_graphU);
+                        graph_host_t static_graphU(m_utColIdx_trsvHost, m_utRowMap_trsvHost);
+                        crsmat_host_t crsmatU("CrsMatrix", m_nRows, m_utVal_trsvHost, static_graphU);
 
                         // solve with L, unit-diag
                         KokkosSparse::trsv ("L", "N", "U", crsmatL, x_, y_);
                         // solve with D
-                        for (Ordinal i = 0; i < nRows; i++) {
-                            y_(i, 0) = dVal_trsv_(i) * y_(i, 0);
+                        for (Ordinal i = 0; i < m_nRows; i++) {
+                            y_(i, 0) = m_dVal_trsvHost(i) * y_(i, 0);
                         }
                         // solve with U, unit-diag
                         KokkosSparse::trsv ("U", "N", "U", crsmatU, y_, x_);
@@ -2104,12 +2085,12 @@ class FastILUPrec
                         using graph_mirror_t  = typename crsmat_mirror_t::StaticCrsGraphType;
 
                         // wrap L into crsmat on host
-                        graph_mirror_t static_graphL(lColIdx_, lRowMap_);
-                        crsmat_mirror_t crsmatL("CrsMatrix", nRows, lVal_, static_graphL);
+                        graph_mirror_t static_graphL(m_lColIdxHost, m_lRowMapHost);
+                        crsmat_mirror_t crsmatL("CrsMatrix", m_nRows, m_lValHost, static_graphL);
 
                         // wrap U into crsmat on host
-                        graph_mirror_t static_graphU(utColIdx_, utRowMap_);
-                        crsmat_mirror_t crsmatU("CrsMatrix", nRows, utVal_, static_graphU);
+                        graph_mirror_t static_graphU(m_utColIdxHost, m_utRowMapHost);
+                        crsmat_mirror_t crsmatU("CrsMatrix", m_nRows, m_utValHost, static_graphU);
 
                         // solve with L
                         KokkosSparse::trsv ("L", "N", "N", crsmatL, x_, y_);
@@ -2119,16 +2100,16 @@ class FastILUPrec
                     // copy x to device
                     Kokkos::deep_copy(x2d, x_);
                 } else {
-                    if (sptrsv_KKSpMV) {
-                        if (blockCrsSize == 1) {
+                    if (m_sptrsv_KKSpMV) {
+                        if (m_blockCrsSize == 1) {
                           using crsmat_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, ExecSpace, void, Ordinal>;
                           using graph_t  = typename crsmat_t::StaticCrsGraphType;
 
-                          graph_t static_graphL(lColIdx, lRowMap);
-                          crsmat_t crsmatL("CrsMatrix", nRows, lVal, static_graphL);
+                          graph_t static_graphL(m_lColIdx, m_lRowMap);
+                          crsmat_t crsmatL("CrsMatrix", m_nRows, m_lVal, static_graphL);
 
-                          graph_t static_graphU(utColIdx, utRowMap);
-                          crsmat_t crsmatU("CrsMatrix", nRows, utVal, static_graphU);
+                          graph_t static_graphU(m_utColIdx, m_utRowMap);
+                          crsmat_t crsmatU("CrsMatrix", m_nRows, m_utVal, static_graphU);
 
                           sptrsv_impl(x, y, crsmatL, crsmatU);
                         }
@@ -2136,49 +2117,48 @@ class FastILUPrec
                           using crsmat_t = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, ExecSpace, void, Ordinal>;
                           using graph_t  = typename crsmat_t::StaticCrsGraphType;
 
-                          graph_t static_graphL(lColIdx, lRowMap);
-                          crsmat_t crsmatL("BsrMatrix", nRows, lVal, static_graphL, blockCrsSize);
+                          graph_t static_graphL(m_lColIdx, m_lRowMap);
+                          crsmat_t crsmatL("BsrMatrix", m_nRows, m_lVal, static_graphL, m_blockCrsSize);
 
-                          graph_t static_graphU(utColIdx, utRowMap);
-                          crsmat_t crsmatU("BsrMatrix", nRows, utVal, static_graphU, blockCrsSize);
+                          graph_t static_graphU(m_utColIdx, m_utRowMap);
+                          crsmat_t crsmatU("BsrMatrix", m_nRows, m_utVal, static_graphU, m_blockCrsSize);
 
                           sptrsv_impl(x, y, crsmatL, crsmatU);
                         }
                     } else {
-                        assert(blockCrsSize == 1); // Not yet supported for block crs
+                        assert(m_blockCrsSize == 1); // Not yet supported for block crs
 
                         //apply L^{-1} to xTemp
-                        applyL(xTemp, y);
+                        applyL(m_xTemp, y);
                         //apply U^{-1} to y
-                        applyU(y, xTemp);
+                        applyU(y, m_xTemp);
                     }
                 }
             }
             //apply D again (we assume that the scaling is
             //symmetric for now).
-            if (useMetis) {
-                applyD_iPerm(xTemp, y);
+            if (m_useMetis) {
+                applyD_iPerm(m_xTemp, y);
             } else {
-                applyD(xTemp, y);
+                applyD(m_xTemp, y);
             }
             //Only fencing here so that apply time is accurate
             ExecSpace().fence();
-            double t = timer.seconds();
-            applyTime = t;
+            m_applyTime = timer.seconds();
         }
 
         Ordinal getNFact() const
         {
-            return nFact;
+            return m_nFact;
         }
 
         std::string getSpTrsvType() const
         {
-            if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
+            if (m_sptrsv_algo == FastILU::SpTRSV::StandardHost) {
                 return "Standard Host";
-            } else if (sptrsv_algo == FastILU::SpTRSV::Standard) {
+            } else if (m_sptrsv_algo == FastILU::SpTRSV::Standard) {
                 return "Standard";
-            } else if (sptrsv_algo == FastILU::SpTRSV::Fast) {
+            } else if (m_sptrsv_algo == FastILU::SpTRSV::Fast) {
                 return "Fast";
             }
             return "Invalid";
@@ -2186,52 +2166,52 @@ class FastILUPrec
 
         Ordinal getNTrisol() const
         {
-            return nTrisol;
+            return m_nTrisol;
         }
 
         Ordinal getNRows() const
         {
-            return nRows;
+            return m_nRows;
         }
 
         double getComputeTime() const
         {
-            return computeTime;
+            return m_computeTime;
         }
 
         double getInitializeTime() const
         {
-            return initTime;
+            return m_initTime;
         }
 
         double getApplyTime() const
         {
-            return applyTime;
+            return m_applyTime;
         }
 
         //Compute the L2 norm of the nonlinear residual (A - LU) on sparsity pattern
         void checkILU() const
         {
-            assert(blockCrsSize == 1); // Not yet supported for block crs
+            assert(m_blockCrsSize == 1); // Not yet supported for block crs
             Scalar sum = 0.0;
             Scalar sum_diag = 0.0;
-            for (int i = 0 ; i < nRows; i++)
+            for (int i = 0 ; i < m_nRows; i++)
             {
                 // Each row in A matrix (result)
-                for (int k = aRowMap[i]; k < aRowMap[i+1]; k++)
+                for (int k = m_aRowMap[i]; k < m_aRowMap[i+1]; k++)
                 {
-                    Scalar acc_val = aVal[k];
+                    Scalar acc_val = m_aVal[k];
                     Ordinal lptr, uptr;
-                    for ( lptr = lRowMap[i], uptr = uRowMap[aColIdx[k]] ;
-                            lptr < lRowMap[i+1] && uptr < uRowMap[aColIdx[k]+1] ; )
+                    for ( lptr = m_lRowMap[i], uptr = m_uRowMap[m_aColIdx[k]] ;
+                            lptr < m_lRowMap[i+1] && uptr < m_uRowMap[m_aColIdx[k]+1] ; )
                     {
-                        if (lColIdx[lptr] == uColIdx[uptr])
+                        if (m_lColIdx[lptr] == m_uColIdx[uptr])
                         {
-                            acc_val -= lVal[lptr] * uVal[uptr];
+                            acc_val -= m_lVal[lptr] * m_uVal[uptr];
                             lptr++;
                             uptr++;
                         }
-                        else if (lColIdx[lptr] < uColIdx[uptr])
+                        else if (m_lColIdx[lptr] < m_uColIdx[uptr])
                             lptr++;
                         else
                             uptr++;
@@ -2240,9 +2220,9 @@ class FastILUPrec
                 }
             }
 
-            for (int i = 0; i < nRows; i++)
+            for (int i = 0; i < m_nRows; i++)
             {
-                sum_diag += diagElems[i]*diagElems[i];
+                sum_diag += m_diagElems[i]*m_diagElems[i];
             }
 
             FASTILU_DBG_COUT("l2 norm of nonlinear residual = " << RTS::sqrt(STS::abs(sum)));
@@ -2253,30 +2233,30 @@ class FastILUPrec
         {
             //Compute the L2 norm of the nonlinear residual (A - LLt) on sparsity pattern
             //
-            assert(blockCrsSize == 1); // Not yet supported for block crs
+            assert(m_blockCrsSize == 1); // Not yet supported for block crs
             Scalar sum = 0.0;
-            for (int i = 0 ; i < nRows; i++)
+            for (int i = 0 ; i < m_nRows; i++)
             {
                 int row = i;
                 // Each row in A matrix (result)
-                for (int k = aRowMap[i]; k < aRowMap[i+1]; k++)
+                for (int k = m_aRowMap[i]; k < m_aRowMap[i+1]; k++)
                 {
 
-                    int col = aColIdx[k];
+                    int col = m_aColIdx[k];
 
                     if (row >= col) {
-                        Scalar acc_val = aVal[k];
+                        Scalar acc_val = m_aVal[k];
                         Ordinal lptr, uptr;
-                        for ( lptr = lRowMap[i], uptr = lRowMap[aColIdx[k]] ;
-                                lptr < lRowMap[i+1] && uptr < lRowMap[aColIdx[k]+1] ; )
+                        for ( lptr = m_lRowMap[i], uptr = m_lRowMap[m_aColIdx[k]] ;
+                                lptr < m_lRowMap[i+1] && uptr < m_lRowMap[m_aColIdx[k]+1] ; )
                         {
-                            if (lColIdx[lptr] == lColIdx[uptr])
+                            if (m_lColIdx[lptr] == m_lColIdx[uptr])
                             {
-                                acc_val -= lVal[lptr] * lVal[uptr];
+                                acc_val -= m_lVal[lptr] * m_lVal[uptr];
                                 lptr++;
                                 uptr++;
                             }
-                            else if (lColIdx[lptr] < lColIdx[uptr])
+                            else if (m_lColIdx[lptr] < m_lColIdx[uptr])
                                 lptr++;
                             else
                                 uptr++;
@@ -2633,7 +2613,6 @@ class FastILUFunctor
                     // Place the value into L or U
                     const Ordinal l_offset = blockItems*(lptr-1);
                     const Ordinal u_offset = blockItems*(uptr-1);
-                    const Ordinal blockOffset = _blockCrsSize*bi + bj;
                     const Ordinal blockOffsetT = _blockCrsSize*bj + bi;
                     if ( (i == j && bi > bj) || i > j) {
                       val = (val-acc_val) / lastU;

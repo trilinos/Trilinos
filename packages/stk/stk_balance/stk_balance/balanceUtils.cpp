@@ -284,9 +284,9 @@ bool BalanceSettings::shouldFixSpiders() const
   return false;
 }
 
-std::string BalanceSettings::getSpiderBeamConnectivityCountFieldName() const
+std::string BalanceSettings::getSpiderPartName() const
 {
-  return "stk_balance_beam_connectivity_count";
+  return "stk_balance_spider_elements";
 }
 
 std::string BalanceSettings::getSpiderVolumeConnectivityCountFieldName() const
@@ -309,7 +309,7 @@ std::string BalanceSettings::getVertexConnectivityWeightFieldName() const
   return "stk_balance_vertex_connectivity_weight";
 }
 
-const stk::mesh::Field<int> * BalanceSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+stk::mesh::Part * BalanceSettings::getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const
 {
   return nullptr;
 }
@@ -413,7 +413,7 @@ GraphCreationSettings::GraphCreationSettings()
     m_UseConstantToleranceForFaceSearch(false),
     m_shouldFixSpiders(DefaultSettings::fixSpiders),
     m_shouldFixMechanisms(DefaultSettings::fixMechanisms),
-    m_spiderBeamConnectivityCountField(nullptr),
+    m_spiderPart(nullptr),
     m_spiderVolumeConnectivityCountField(nullptr),
     m_outputSubdomainField(nullptr),
     m_includeSearchResultInGraph(DefaultSettings::useContactSearch),
@@ -785,16 +785,14 @@ bool GraphCreationSettings::shouldFixSpiders() const
   return m_shouldFixSpiders;
 }
 
-const stk::mesh::Field<int> * GraphCreationSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+stk::mesh::Part * GraphCreationSettings::getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const
 {
-  if (m_spiderBeamConnectivityCountField == nullptr) {
-    m_spiderBeamConnectivityCountField =
-        stkMeshBulkData.mesh_meta_data().get_field<int>(stk::topology::NODE_RANK,
-                                                        getSpiderBeamConnectivityCountFieldName());
-    STK_ThrowRequireMsg(m_spiderBeamConnectivityCountField != nullptr,
-                    "Must create nodal spider beam connectivity count field when fixing spider elements.");
+  if (m_spiderPart == nullptr) {
+    m_spiderPart = stkMeshBulkData.mesh_meta_data().get_part(getSpiderPartName());
+    STK_ThrowRequireMsg(m_spiderPart != nullptr,
+                    "Must create spider part when fixing spider elements.");
   }
-  return m_spiderBeamConnectivityCountField;
+  return m_spiderPart;
 }
 
 const stk::mesh::Field<int> * GraphCreationSettings::getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const

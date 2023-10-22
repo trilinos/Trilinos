@@ -86,7 +86,6 @@ bool MeshModification::modification_end(modification_optimization opt)
 
       CommEntityMods commEntityMods(m_bulkData, m_bulkData.internal_comm_db(), m_bulkData.internal_comm_list());
       commEntityMods.communicate(CommEntityMods::PACK_ALL);
-
       stk::mesh::EntityVector entitiesNoLongerShared;
       internal_resolve_shared_modify_delete(commEntityMods.get_shared_mods(), entitiesToRemoveFromSharing, entitiesNoLongerShared);
 
@@ -252,7 +251,6 @@ void MeshModification::internal_resolve_shared_modify_delete(
             // When a shared entity is remotely modified or destroyed
             // then the local copy is also modified.  This modification
             // status is applied to all related higher ranking entities.
-
             if(!locally_destroyed)
             {
                 m_bulkData.mark_entity_and_upward_related_entities_as_modified(entity);
@@ -269,6 +267,10 @@ void MeshModification::internal_resolve_shared_modify_delete(
             const bool not_shared_remotely = !(i->remote_owned_closure);
             if(remotely_destroyed || not_shared_remotely)
             {
+                if (remotely_destroyed && remote_proc == owner) {
+                  m_bulkData.entity_comm_map_clear_ghosting(key);
+                }
+
                 m_bulkData.entity_comm_map_erase(key, EntityCommInfo(stk::mesh::BulkData::SHARED, remote_proc));
                 if (!locally_destroyed && not_shared_remotely) {
                     entitiesToRemoveFromSharing.push_back(EntityProc(entity, remote_proc));
@@ -631,11 +633,17 @@ void MeshModification::internal_resolve_ghosted_modify_delete(const std::vector<
 
 void MeshModification::add_entity_to_same_ghosting(Entity entity, Entity connectedGhost)
 {
+  std::vector<EntityCommInfo> to_insert;
   for(PairIterEntityComm ec(m_bulkData.internal_entity_comm_map(connectedGhost)); ! ec.empty(); ++ec) {
     if (ec->ghost_id > BulkData::AURA) {
-      m_bulkData.entity_comm_map_insert(entity, EntityCommInfo(ec->ghost_id, ec->proc));
-      m_bulkData.entity_comm_list_insert(entity);
+      to_insert.emplace_back(ec->ghost_id, ec->proc);
     }    
+  }
+  if(!to_insert.empty()) {
+    m_bulkData.entity_comm_list_insert(entity);
+    for(const auto & entry : to_insert) {
+      m_bulkData.entity_comm_map_insert(entity, EntityCommInfo(entry.ghost_id, entry.proc));
+    }
   }
 }
 

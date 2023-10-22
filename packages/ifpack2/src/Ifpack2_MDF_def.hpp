@@ -472,9 +472,6 @@ void MDF<MatrixType>::initialize ()
   using Teuchos::rcp_implicit_cast;
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  typedef Tpetra::CrsGraph<local_ordinal_type,
-                           global_ordinal_type,
-                           node_type> crs_graph_type;
   const char prefix[] = "Ifpack2::MDF::initialize: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION

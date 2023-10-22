@@ -23,7 +23,6 @@
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "NOX_Thyra.H"
 
-
 #include <fstream>
 #include <limits>
 #include <sstream>
