@@ -1027,7 +1027,7 @@ init (const keys_type& keys,
     functor_type functor (val, counts, ptr, theKeys, newStartingValue,
                           initMinKey, initMaxKey);
     typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
-    Kokkos::parallel_reduce ("Tpetra::Details::FixedHadhTable::FillPairs",range_type (0, theNumKeys), functor, result);
+    Kokkos::parallel_reduce ("Tpetra::Details::FixedHashTable::FillPairs", range_type (0, theNumKeys), functor, result);
   }
   else {
     Kokkos::HostSpace hostMemSpace;
