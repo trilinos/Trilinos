@@ -132,7 +132,8 @@ namespace Belos {
           << "Returned incorrect value." << endl;
         return false;
       }
-      
+     
+      DMT::SyncDeviceToHost(*dm1); 
       //Check init to zero on create.
       for(int i = 0; i<numrows; i++){
         for(int j = 0; j<numcols; j++){
@@ -156,7 +157,7 @@ namespace Belos {
       }
 
       //Try to sync to host and vice-versa
-      DMT::SyncDeviceToHost(*dm1);
+      DMT::SyncHostToDevice(*dm1);
       
       //Call create with non-default third arg.
       RCP<DM> dm2 = DMT::Create(numrows, numcols, false);
@@ -188,9 +189,11 @@ namespace Belos {
 
       //randomize and add
       DMT::Randomize(*dm2);
+      DMT::SyncDeviceToHost(*dm2);
       ScalarType tmpVal = DMT::ValueConst(*dm1,numrows-1,numcols-1) + DMT::ValueConst(*dm2,numrows-1,numcols-1);
       ScalarType tmpVal2 = DMT::ValueConst(*dm1,0,0) + DMT::ValueConst(*dm2,0,0);
       DMT::Add(*dm1,*dm2);
+      DMT::SyncDeviceToHost(*dm1);
       if(DMT::ValueConst(*dm1,numrows-1,numcols-1) != tmpVal ||
       DMT::ValueConst(*dm1,0,0) != tmpVal2){
         om->stream(Warnings)
@@ -202,6 +205,7 @@ namespace Belos {
       //Test assign and scale: 
       DMT::Assign(*dm1,*dm2);
       DMT::Scale(*dm1,2.0);
+      DMT::SyncDeviceToHost(*dm1);
       if(DMT::ValueConst(*dm1,1,1) != (ScalarType)DMT::ValueConst(*dm2,1,1)*(ScalarType)2.0){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
@@ -209,13 +213,8 @@ namespace Belos {
         return false;
       }
 
-      //Test syncs again here? 
-      //Really should throw an error because syncing now
-      //would overwrite the changes we just made on host.
-      //DMT::SyncDeviceToHost(*dm1);
-      //
-      
       RCP<DM> dm3 = DMT::Subview(*dm1, numrows-1, numcols-1, 1, 1);
+      DMT::SyncDeviceToHost(*dm3);
       if(DMT::ValueConst(*dm3,0,0) != DMT::ValueConst(*dm1,1,1)){
         om->stream(Warnings)
           << "*** ERROR *** DenseMatTraits::" << endl
