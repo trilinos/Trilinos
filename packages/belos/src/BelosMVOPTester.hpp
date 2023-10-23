@@ -96,17 +96,14 @@ namespace Belos {
 
         // Construct a separate serial dense matrix and synchronize it to get around
         // input matrices that are subviews of a larger matrix.
-        Teuchos::RCP<DM> newMatrix  = DMT::Create( DMT::GetNumRows(A), DMT::GetNumCols(A) );
         if (procRank == 0)
           DMT::Randomize(A);
         else
           DMT::PutScalar(A);
 
+        DMT::SyncDeviceToHost(A);
         broadcast(*comm, 0, DMT::GetNumRows(A)*DMT::GetNumCols(A), DMT::GetRawHostPtr(A));
-
-        // Assign the synchronized matrix to the input.
-        DMT::Assign( A, *newMatrix );
-        //TODO: Do we need to sync host to device here??
+        DMT::SyncHostToDevice(A);
       }
 
   /// \brief Test correctness of a MultiVecTraits specialization and
@@ -945,7 +942,6 @@ namespace Belos {
       }
     }
 
-
     /*********** MvDot() *************************************************
         Verify:
         1) Results std::vector not resized
@@ -1005,7 +1001,6 @@ namespace Belos {
         }
       }
     }
-
 
     /*********** MvAddMv() ***********************************************
        D = alpha*B + beta*C
@@ -1284,9 +1279,11 @@ namespace Belos {
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
       DMT::Scale(*SDM,zero);
+      DMT::SyncDeviceToHost(*SDM);
       for (int i=0; i<q; i++) {
         DMT::Value(*SDM,i,i) = one;
       }
+      DMT::SyncHostToDevice(*SDM);
       MVT::MvTimesMatAddMv(one,*B,*SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1419,9 +1416,11 @@ namespace Belos {
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
       DMT::Scale(*SDM,zero);
+      DMT::SyncDeviceToHost(*SDM);
       for (int i=0; i<p; i++) {
         DMT::Value(*SDM,i,i) = one;
       }
+      DMT::SyncHostToDevice(*SDM);  
       MVT::MvTimesMatAddMv(one,*B,*SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
