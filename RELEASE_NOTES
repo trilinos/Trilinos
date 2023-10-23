@@ -47,6 +47,70 @@ CMake
     for additional details and instructions.
 
 
+Amesos2
+
+  - Updates to STRUMPACK, SuperLU_DIST, MUMPS and LAPACK adapters
+
+
+Anasazi
+
+  - Randomized eigensolver
+  - Improved testing with Tpetra
+
+
+Belos
+
+  - Extend GCRO-DR linear solver to use Kokkos linear algebra for GEMMA
+  - Improved testing with Tpetra
+
+
+Ifpack2
+
+  - 4th kind Chebyshev smoother
+  - Algorithmic and performance improvements for BlockTriDiag and BlockJacobi.
+  - Stream based RILU(k) and triangular solves
+  - Optimize Kokkos Kernels MDF ILU(0) solver and expose it in Ifpack2
+  - Patch solver with data compression
+
+
+MueLu
+
+  - Better ML/MueLu compatibility (parameter translation, aggregation
+    algorithms, ..)
+  - Reitzinger-Schoberl type multigrid for Maxwell problems
+  - BlockCRS support
+  - Improved setup performance on device (TAFC Tpetra changes)
+  - Matrix-free multigrid with user-specified operators
+  - AMG for hierarchical matrices
+
+
+NOX
+
+  - Refactored internal use of model evaluators
+  - LOCA Householder constraint solver can now be nested within a
+    Tempus transient problem (Tpetra version)
+
+
+ShyLU
+
+  - FastILU algorithmic improvements and testing, new block version
+  - Transpose solve with Basker
+  - Tacho: runs with HIP.
+  - FROSch: fully recursive multi-level implementation
+  - FROSch: monolithic coarse spaces via partition-of-unity approach
+  - FROSch: GPU capabilities
+
+
+Stratimikos
+
+  - Use of half precision preconditioners (Ifpack2, MueLu, ShyLU/FROSch)
+
+
+Teko
+
+  - Epetra dependency is now optional
+
+
 ###############################################################################
 #                                                                             #
 # Trilinos Release 14.2 Release Notes                                         #
