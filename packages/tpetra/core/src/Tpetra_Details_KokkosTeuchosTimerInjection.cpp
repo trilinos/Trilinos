@@ -287,7 +287,7 @@ namespace Details {
     }
   }//end KernelsInjection
 
-  void AddKokkosKernelToTimeMonitor(bool force) {
+  void AddKokkosKernelsToTimeMonitor(bool force) {
     if (!KernelsTimerInjection::initialized_) {
       if (force || Tpetra::Details::Behavior::timeKokkosKernels()) {
         Kokkos::Tools::Experimental::set_begin_parallel_for_callback(KernelsTimerInjection::kokkosp_begin_for);
