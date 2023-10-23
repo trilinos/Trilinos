@@ -64,18 +64,32 @@ function tril_genconfig_clone_or_update_repo() {
 
 # Clone or update the repos
 
-tril_genconfig_clone_or_update_repo \
-  git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git \
-  GenConfig  has-submodules ${genconfig_sha1}
-
 if [[ "$ini_file_option" == "--srn" ]] ; then
+  #Clone GenConfig from cee-gitlab
+  tril_genconfig_clone_or_update_repo \
+    git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git \
+    GenConfig  has-submodules ${genconfig_sha1}
+
+  #Clone srn-ini-files from cee-gitlab
   tril_genconfig_clone_or_update_repo \
     git@cee-gitlab.sandia.gov:trilinos-project/srn-ini-files.git \
     srn-ini-files
+  
 elif [[ "$ini_file_option" == "--son" ]] ; then
+  #Clone GenConfig from cee-gitlab
+  tril_genconfig_clone_or_update_repo \
+    git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git \
+    GenConfig  has-submodules ${genconfig_sha1}
+
+  #Clone son-ini-files from gitlab-ex
   tril_genconfig_clone_or_update_repo \
     git@gitlab-ex.sandia.gov:trilinos-project/son-ini-files.git \
     son-ini-files
+  
+elif [[ "$ini_file_option" == "--container" ]] ; then
+  #Copy Genconfig into place from /GenConfig
+  cp -R /GenConfig ${script_dir}
+    
 elif [[ "$ini_file_option" != "" ]] ; then
   echo "ERROR: Option '${ini_file_option}' not allowed! Must select '--son', '--srn' or ''."
   exit 1
