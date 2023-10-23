@@ -18,6 +18,7 @@
 #include "BelosMVOPTester.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosKokkosDenseAdapter.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 #include "BelosOutputManager.hpp"
 
 namespace {
@@ -91,7 +92,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestDist, O1, O2, Scalar )
   {
     typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
-    typedef typename MV::impl_scalar_type IST;
+    typedef Teuchos::SerialDenseMatrix<int,Scalar> DM;
     const O2 dim = 500;
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
@@ -101,7 +102,7 @@ namespace {
     // create a uniform contiguous map
     RCP<Map<O1,O2,Node> > map = rcp( new Map<O1,O2,Node>(dim,0,comm) );
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
-    bool res = Belos::TestMultiVecTraits<Scalar,MV,Kokkos::DualView<IST**,Kokkos::LayoutLeft>>(MyOM,mvec);
+    bool res = Belos::TestMultiVecTraits<Scalar,MV,DM>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -113,7 +114,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestLocal, O1, O2, Scalar )
   {
     typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
-    typedef typename MV::impl_scalar_type IST;
+    typedef Teuchos::SerialDenseMatrix<int,Scalar> DM;
     const O2 dim = 500;
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
@@ -123,7 +124,7 @@ namespace {
     // create a uniform contiguous map
     RCP<Map<O1,O2,Node> > map = rcp(new Map<O1,O2,Node>(dim,0,comm,Tpetra::LocallyReplicated) );
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
-    bool res = Belos::TestMultiVecTraits<Scalar,MV,Kokkos::DualView<IST**,Kokkos::LayoutLeft>>(MyOM,mvec);
+    bool res = Belos::TestMultiVecTraits<Scalar,MV,DM>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
