@@ -95,7 +95,7 @@ namespace {
       "assigned to a new timer. To disable this warning, either fix the\n"
             "ordering of timer creation and destuction or disable the StackedTimer\n";
     std::cout << warning.str() << std::endl;
-  };
+  }
     
 }// anonymous space
 
