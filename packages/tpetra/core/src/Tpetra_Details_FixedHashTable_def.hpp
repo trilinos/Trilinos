@@ -1234,7 +1234,7 @@ checkForDuplicateKeys () const
     functor_type functor (val_, ptr_);
     int hasDupKeys = 0;
     typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
-    Kokkos::parallel_reduce ("Tpetra::Details::FixedHadhTable::CheckForDuplicateKeys",range_type (0, size), functor, hasDupKeys);
+    Kokkos::parallel_reduce ("Tpetra::Details::FixedHashTable::CheckForDuplicateKeys", range_type (0, size), functor, hasDupKeys);
     return hasDupKeys > 0;
   }
 }
