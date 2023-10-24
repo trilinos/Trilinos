@@ -74,6 +74,8 @@
 
 /packages/tpetra/            @trilinos/tpetra
 
+/packages/trilinoscouplings/ @trilinos/trilinoscouplings
+
 /packages/triutils/          @trilinos/triutils
 
 /packages/xpetra/            @trilinos/xpetra
