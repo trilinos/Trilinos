@@ -630,9 +630,9 @@ bool Behavior::timeKokkosFence()
 
 }  
 
-bool Behavior::timeKokkosKernels() 
+bool Behavior::timeKokkosFunctions() 
 {
-  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_KERNELS";
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_FUNCTIONS";
   constexpr bool defaultValue(false);
 
   static bool value_ = defaultValue;

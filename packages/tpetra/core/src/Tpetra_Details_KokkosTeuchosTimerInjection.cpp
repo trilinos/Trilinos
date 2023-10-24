@@ -233,7 +233,7 @@ namespace Details {
   }
 
 
-  namespace KernelsTimerInjection {
+  namespace FunctionsTimerInjection {
     Teuchos::RCP<Teuchos::Time> timer_;
     bool initialized_ = false;
 
@@ -285,20 +285,20 @@ namespace Details {
       
       timer_ = Teuchos::null;      
     }
-  }//end KernelsInjection
+  }//end FunctionsInjection
 
-  void AddKokkosKernelsToTimeMonitor(bool force) {
-    if (!KernelsTimerInjection::initialized_) {
-      if (force || Tpetra::Details::Behavior::timeKokkosKernels()) {
-        Kokkos::Tools::Experimental::set_begin_parallel_for_callback(KernelsTimerInjection::kokkosp_begin_for);
-        Kokkos::Tools::Experimental::set_begin_parallel_reduce_callback(KernelsTimerInjection::kokkosp_begin_reduce);
-        Kokkos::Tools::Experimental::set_begin_parallel_scan_callback(KernelsTimerInjection::kokkosp_begin_scan);
+  void AddKokkosFunctionsToTimeMonitor(bool force) {
+    if (!FunctionsTimerInjection::initialized_) {
+      if (force || Tpetra::Details::Behavior::timeKokkosFunctions()) {
+        Kokkos::Tools::Experimental::set_begin_parallel_for_callback(FunctionsTimerInjection::kokkosp_begin_for);
+        Kokkos::Tools::Experimental::set_begin_parallel_reduce_callback(FunctionsTimerInjection::kokkosp_begin_reduce);
+        Kokkos::Tools::Experimental::set_begin_parallel_scan_callback(FunctionsTimerInjection::kokkosp_begin_scan);
 
         // The end-call is generic, even though the start-call is not.
-        Kokkos::Tools::Experimental::set_end_parallel_for_callback(KernelsTimerInjection::kokkosp_end_kernel);
-        Kokkos::Tools::Experimental::set_end_parallel_reduce_callback(KernelsTimerInjection::kokkosp_end_kernel);
-        Kokkos::Tools::Experimental::set_end_parallel_scan_callback(KernelsTimerInjection::kokkosp_end_kernel);
-        KernelsTimerInjection::initialized_=true;
+        Kokkos::Tools::Experimental::set_end_parallel_for_callback(FunctionsTimerInjection::kokkosp_end_kernel);
+        Kokkos::Tools::Experimental::set_end_parallel_reduce_callback(FunctionsTimerInjection::kokkosp_end_kernel);
+        Kokkos::Tools::Experimental::set_end_parallel_scan_callback(FunctionsTimerInjection::kokkosp_end_kernel);
+        FunctionsTimerInjection::initialized_=true;
       }
     }
   }

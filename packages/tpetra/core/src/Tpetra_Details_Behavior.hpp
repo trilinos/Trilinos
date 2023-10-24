@@ -309,8 +309,8 @@ public:
   /// Kokkos::parallel_reduce() and Kokkos::parallel_scan().
   ///
   /// This is disabled by default.  You may control this at run time via the
-  /// <tt>TPETRA_TIME_KOKKOS_KERNELS</tt> environment variable.
-  static bool timeKokkosKernels();  
+  /// <tt>TPETRA_TIME_KOKKOS_FUNCTIONS</tt> environment variable.
+  static bool timeKokkosFunctions();  
 
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///

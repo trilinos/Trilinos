@@ -245,7 +245,7 @@ namespace Tpetra {
       // Add Kokkos calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
-      Tpetra::Details::AddKokkosKernelsToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
   }
@@ -268,7 +268,7 @@ namespace Tpetra {
       // Add Kokkos::deep calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
-      Tpetra::Details::AddKokkosKernelsToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
 
@@ -315,7 +315,7 @@ namespace Tpetra {
       // Add Kokkos calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
-      Tpetra::Details::AddKokkosKernelsToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
     wrappedDefaultComm_ = comm;
