@@ -305,6 +305,13 @@ public:
   /// <tt>TPETRA_TIME_KOKKOS_FENCE</tt> environment variable.
   static bool timeKokkosFence();  
 
+  /// \brief Add Teuchos timers for all host calls to Kokkos::parallel_for(), 
+  /// Kokkos::parallel_reduce() and Kokkos::parallel_scan().
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_FUNCTIONS</tt> environment variable.
+  static bool timeKokkosFunctions();  
+
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///
   /// This is disabled by default.  You may control this at run time via the

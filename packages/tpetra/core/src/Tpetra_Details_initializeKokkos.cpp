@@ -80,10 +80,10 @@ initializeKokkos ()
     std::atexit (finalizeKokkosIfNeeded);
 
   }
-  // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
+  // Add Kokkos calls to the TimeMonitor if the environment says so
   Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-  // Add Kokkos::fence() to the TimeMonitor if the environment says so
   Tpetra::Details::AddKokkosFenceToTimeMonitor();
+  Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
 }
 
 } // namespace Details
