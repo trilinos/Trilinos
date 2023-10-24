@@ -62,6 +62,17 @@
 
 namespace Belos {
 
+  //! Helper function for copying Kokkos::DualView into conjugate Kokkos::DualView
+  template<typename V>
+  void kokkos_transpose(V& dst, const V& src)
+  {
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<typename V::execution_space, Kokkos::Rank<2>>({0, 0}, {dst.extent(0), dst.extent(1)}),
+    KOKKOS_LAMBDA(int i, int j)
+    {
+      dst(i, j) = Kokkos::ArithTraits<typename V::non_const_value_type>::conj( src(j, i) );
+    });
+  }
+
   //! Full specialization of Belos::DenseMatTraits for Kokkos::DualView.
   //
   //TODO: It seems like all of Tpetra Details returning views 
@@ -80,7 +91,7 @@ namespace Belos {
     \return Reference-counted pointer to a new dense matrix of type \c Kokkos::DualView<IST**,Kokkos::LayoutLeft>.
     */
     static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> Create() { 
-      return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseView",0,0));
+      return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseCreate",0,0));
     }     
 
     /*! \brief Creates a new empty \c Kokkos::DualView<IST**,Kokkos::LayoutLeft> containing 
@@ -92,13 +103,46 @@ namespace Belos {
     static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> 
            Create( const int numRows, const int numCols, bool initZero = true) { 
       if(initZero){
-        return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseView",numRows,numCols));
+        return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>("BelosDenseCreate2",numRows,numCols));
       }
       else {
-        return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>(Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseView"),numRows,numCols));
+        return Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>(Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseCreate2"),numRows,numCols));
       }
     }     
-    
+   
+    /*! \brief Create a new copy \c DM, possibly transposed.
+   
+       \return Reference-counted pointer to a new dense matrix of type \c DM.
+    */
+    static Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> 
+           CreateCopy(const Kokkos::DualView<IST**,Kokkos::LayoutLeft> & dm, bool transpose=false)
+    {
+      Teuchos::RCP<Kokkos::DualView<IST**,Kokkos::LayoutLeft>> tmpCopyRCP = Teuchos::null;
+
+      if (transpose) {
+        // want tmpCopyRCP to end up as dm^H in the end. Prefer doing transpose on device
+        tmpCopyRCP = Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>
+                                 (Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseCreateCopy"),dm.extent_int(1),dm.extent_int(0)));
+        if(tmpCopyRCP->need_sync_device()) {
+          // tmpCopyRCP is only up to date on the host
+          kokkos_transpose(tmpCopyRCP->h_view, dm.h_view);
+          tmpCopyRCP->clear_sync_state();
+          tmpCopyRCP->modify_host();
+        }
+        else {
+          kokkos_transpose(tmpCopyRCP->d_view, dm.d_view);
+          tmpCopyRCP->clear_sync_state();
+          tmpCopyRCP->modify_device();
+        }
+      }
+      else {
+        tmpCopyRCP = Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>
+                                 (Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseCreateCopy"),dm.extent_int(0),dm.extent_int(1)));
+        Kokkos::deep_copy(*tmpCopyRCP, dm);
+      }
+      return tmpCopyRCP;
+    }
+ 
     //TODO make const and non-const function for raw pointer. 
     //! \brief Returns a raw pointer to the (non-const) data on the host.
     /// \note We assume that return data in in a column-major format
@@ -160,7 +204,7 @@ namespace Belos {
       //Maybe it should return a dual view with only host data copied in. Require sync to work on device. 
       //This is related to the functionality of the Assign function. 
       auto tmpViewRCP = Teuchos::rcp(new Kokkos::DualView<IST**,Kokkos::LayoutLeft>
-                                  (Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseView"),numRows,numCols));
+                                  (Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseSubViewCopy"),numRows,numCols));
       // I am keeping this where it copies the whole view on host and device because:
       // a) I feel like we might be inviting some weird bugs later if we don't.
       // But TODO Clarify to developer that this function needs to work on both host and device.
@@ -362,7 +406,7 @@ namespace Belos {
     }
     //@}
   };
-  
+
 } // namespace Belos
 
 #endif // end file BELOS_KOKKOS_DENSE_MAT_TRAITS_HPP
