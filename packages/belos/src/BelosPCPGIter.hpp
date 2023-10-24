@@ -18,7 +18,6 @@
 #include "BelosTypes.hpp"
 
 #include "BelosLinearProblem.hpp"
-#include "BelosMatOrthoManager.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
@@ -29,6 +28,8 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+
+#include <vector>
 
 /*!	
   \class Belos::PCPGIter
@@ -79,11 +80,11 @@ namespace Belos {
     /*! \brief C = AU, U spans recycled subspace */
     Teuchos::RCP<MV> C;
 
-    /*! \brief The current Hessenberg matrix.
+    /*! \brief The current diagonal matrix.
      *
      * The \c curDim by \c curDim D = diag(P'*AP) = U' * C
      */
-    Teuchos::RCP<const DM> D;
+    std::vector<ScalarType> D;
 
     PCPGIterState() : curDim(0), 
                       prevUdim(0), 
@@ -123,7 +124,6 @@ namespace Belos {
     PCPGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 		const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 		const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
-		const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
 		Teuchos::ParameterList &params );
     
     //! Destructor.
@@ -286,7 +286,6 @@ namespace Belos {
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >    stest_;
-    const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >     ortho_;
 
     //
     // Algorithmic parameters
@@ -344,7 +343,7 @@ namespace Belos {
     //
     // Projected matrices
     // D_ : Diagonal matrix of pivots D = P'AP 
-    Teuchos::RCP<DM> D_;
+    std::vector<ScalarType> D_;
   };
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -353,12 +352,10 @@ namespace Belos {
   PCPGIter<ScalarType,MV,OP,DM>::PCPGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 					   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 					   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
-					   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
 					   Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
-    ortho_(ortho),
     savedBlocks_(0),
     initialized_(false),
     stateStorageInitialized_(false),
@@ -482,16 +479,8 @@ namespace Belos {
 	  }
 	}
         if (keepDiagonal_) {
-          if (D_ == Teuchos::null) {
-            D_ = DMT::Create();
-          }
-          if (initDiagonal_) {
-            DMT::Reshape( *D_, newsd, newsd, true );
-          }
-          else {
-            if (D_->numRows() < newsd || D_->numCols() < newsd) {
-              DMT::Reshape( *D_, newsd, newsd, false );
-            }
+          if (initDiagonal_ || ((int)(D_.size()) < newsd)) {
+            D_.resize( newsd );
           }
         }
 	// State storage has now been initialized.
@@ -691,7 +680,7 @@ namespace Belos {
       DMT::SyncDeviceToHost( *pAp );
 
       if( keepDiagonal_  && prevUdim_ + iter_ <= savedBlocks_ )
-        DMT::Value( *D_, iter_-1 ,iter_-1 ) = DMT::ValueConst(*pAp,0,0);
+        D_[iter_-1] = DMT::ValueConst(*pAp,0,0);
 
       // positive pAp required 
       TEUCHOS_TEST_FOR_EXCEPTION( DMT::ValueConst(*pAp,0,0) <= zero, CGPositiveDefiniteFailure,
@@ -710,7 +699,6 @@ namespace Belos {
       }else{
          MVT::MvAddMv( one, *cur_soln_vec, alpha, *P_, *cur_soln_vec );
       }
-      //lp_->updateSolution(); ... does nothing.
       //
       // The denominator of beta is saved before residual is updated [ old <R_, Z_> ].
       //
