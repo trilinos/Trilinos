@@ -714,37 +714,31 @@ namespace Belos {
 
       // Normalize the new block X
       if ( B == Teuchos::null ) {
-        std::cout << "Creating B within function." << std::endl;
         B = DMT::Create(xc,xc);
       }
-      else {
-        std::cout << "B already existed before this line." << std::endl;
-      }
 
-      std::vector<ScalarType> diag(xc);
+      std::vector<ScalarType> dot(xc);
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor normTimer( *timerNorm_ );
 #endif
-        MVT::MvDot( X, *MX, diag );
+        MVT::MvDot( X, *MX, dot );
       }
-      std::cout << "Attempt D to H sync line 756." << std::endl;
-      DMT::SyncDeviceToHost(*B);
-      //TODO: Do we even need to sync here? We only use one value of B
-      // in the next few lines, and that is the one we are about to write.
-      // Ooooh.... yes, because if B is bigger and the rest of host has junk,
-      // we don't want the junk to sync back to device later.
-      std::cout << "Got past D to H sync line 756." << std::endl;
-      DMT::Value(*B,0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
 
-      if (SCT::magnitude(DMT::Value(*B,0,0)) > ZERO) {
+      ScalarType diag = SCT::squareroot(SCT::magnitude(dot[0]));
+
+      if (SCT::magnitude(diag) > ZERO) {
         rank = 1;
-        MVT::MvScale( X, ONE/DMT::Value(*B,0,0) );
+        MVT::MvScale( X, ONE/diag );
         if (this->_hasOp) {
           // Update MXj.
-          MVT::MvScale( *MX, ONE/DMT::Value(*B,0,0) );
+          MVT::MvScale( *MX, ONE/diag );
         }
       }
+
+      std::cout << "Attempt D to H sync line 772." << std::endl;
+      DMT::SyncDeviceToHost(*B);
+      DMT::Value(*B,0,0) = diag;
       DMT::SyncHostToDevice(*B);
     }
     else {

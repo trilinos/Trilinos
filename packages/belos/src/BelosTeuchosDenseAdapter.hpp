@@ -79,6 +79,17 @@ namespace Belos {
       return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(numrows,numcols,initZero));
     }     
 
+    /*! \brief Create a new copy \c Teuchos::SerialDenseMatrix<int,ScalarType>, possibly transposed.
+   
+       \return Reference-counted pointer to a new dense matrix of type \c Teuchos::SerialDenseMatrix<int,ScalarType>.
+    */
+    static Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType>> CreateCopy(const Teuchos::SerialDenseMatrix<int,ScalarType> & dm, bool transpose=false) {
+      if (transpose)    
+        return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(dm, Teuchos::CONJ_TRANS));
+      else 
+        return Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(dm, Teuchos::NO_TRANS));
+    }
+
     //! \brief Returns a raw pointer to the (non-const) data on the host.
     static ScalarType* GetRawHostPtr(const Teuchos::SerialDenseMatrix<int,ScalarType> & dm )
     { return dm.values(); }     
