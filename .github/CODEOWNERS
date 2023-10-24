@@ -12,6 +12,8 @@
 
 /packages/epetraext/         @trilinos/epetraext
 
+/packages/framework/         @trilinos/framework
+
 /packages/ifpack/            @trilinos/ifpack
 
 /packages/ifpack2/           @trilinos/ifpack2
