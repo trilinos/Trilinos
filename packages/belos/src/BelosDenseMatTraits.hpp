@@ -102,6 +102,12 @@ namespace Belos {
     static Teuchos::RCP<DM> Create( const int numrows, const int numcols, bool initZero = true)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
+    /*! \brief Create a new copy \c DM, possibly transposed.
+  
+    \return Reference-counted pointer to a new dense matrix of type \c DM.
+    */
+    static Teuchos::RCP<DM> CreateCopy(const DM & dm, bool transpose=false)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }
 
 /* Kokkos Ex View-from-ptr constructor: 
 View(const pointer_type &ptr, const IntType&... indices)
