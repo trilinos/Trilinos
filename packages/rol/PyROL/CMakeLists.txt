@@ -352,16 +352,6 @@ ELSE()
   FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/binder DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 ENDIF()
 
-IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  SET(PyROL_DEFAULT_INSTALL_PREFIX ${PYTHON_PREFIX})
-ELSE()
-  SET(PyROL_DEFAULT_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-ENDIF()
-
-# Set the PyROL install prefix
-SET(PyROL_INSTALL_PREFIX ${PyROL_DEFAULT_INSTALL_PREFIX}
-  CACHE PATH "The path prefix for where PyROL will be installed, e.g. /usr/local")
-
 # Get the python version
 EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
                         "import sys; print(sys.version_info.major)"
@@ -380,10 +370,19 @@ SET(PYBIND11_PYTHON_VERSION ${PYTHON_VERSION})
 
 # Determine the install directory
 SET(PyROL_INSTALL_DIR
-  ${PyROL_INSTALL_PREFIX}/lib/python${PYTHON_VERSION}/site-packages/PyROL
-  CACHE PATH "The path where PyROL will be installed"
+  lib/python${PYTHON_VERSION}/site-packages/PyROL
+  CACHE STRING "The path where PyROL will be installed"
   )
-MESSAGE(STATUS "PyROL installation path: ${PyROL_INSTALL_DIR}")
+
+cmake_path(IS_RELATIVE PyROL_INSTALL_DIR is_pyrol_install_relative)
+
+IF(NOT is_pyrol_install_relative)
+  MESSAGE(FATAL_ERROR "PyROL install dir is not relative.")
+ENDIF()
+
+cmake_path(GET PyROL_INSTALL_DIR RELATIVE_PART PyROL_INSTALL_DIR_RELATIVE)
+
+MESSAGE(STATUS "PyROL installation path: ${PyROL_INSTALL_DIR_RELATIVE}")
 
 INSTALL(FILES
   ${PyROLPyFiles}
