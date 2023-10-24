@@ -30,8 +30,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -544,9 +542,11 @@ namespace Belos {
     int rank = MVT::GetNumberVecs(X);
     Teuchos::RCP<DM> xTx = DMT::Create(rank,rank);
     MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(X,X,MX,*xTx);
+    DMT::SyncDeviceToHost(*xTx);
     for (int i=0; i<rank; i++) {
       DMT::Value(*xTx,i,i) -= ONE;
     }
+    DMT::SyncHostToDevice( *xTx );
     return DMT::NormFrobenius(*xTx);
   }
 
@@ -676,23 +676,27 @@ namespace Belos {
       if ( B == Teuchos::null ) {
         B = DMT::Create(xc,xc);
       }
-      std::vector<ScalarType> diag(xc);
+      std::vector<ScalarType> dot(xc);
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor normTimer( *timerNorm_ );
 #endif
-        MVT::MvDot( X, *MX, diag );
+        MVT::MvDot( X, *MX, dot );
       }
-      DMT::Value(*B,0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
 
-      if (SCT::magnitude(DMT::Value(*B,0,0)) > ZERO) {
+      ScalarType diag = SCT::squareroot(SCT::magnitude(dot[0]));
+      if (SCT::magnitude(diag) > ZERO) {
         rank = 1;
-        MVT::MvScale( X, ONE/DMT::Value(*B,0,0) );
+        MVT::MvScale( X, ONE/diag );
         if (this->_hasOp) {
           // Update MXj.
-          MVT::MvScale( *MX, ONE/DMT::Value(*B,0,0) );
+          MVT::MvScale( *MX, ONE/diag );
         }
       }
+
+      DMT::SyncDeviceToHost( *B );
+      DMT::Value(*B,0,0) = diag;
+      DMT::SyncHostToDevice( *B );
     }
     else {
 
@@ -944,8 +948,7 @@ namespace Belos {
       }
  
       // Make storage for these Gram-Schmidt iterations.
-      // TODO What about these?
-      Teuchos::SerialDenseVector<int,ScalarType> product(numX);
+      Teuchos::RCP<DM> product = DMT::Create(numX,1);
       Teuchos::RCP<DM> P2 = DMT::Create(1,1);
       Teuchos::RCP<const MV> prevX, prevMX;
 
@@ -1002,11 +1005,13 @@ namespace Belos {
             MVT::MvTimesMatAddMv( -ONE, *prevMX, *P2, ONE, *MXj );
           }
 
+          DMT::SyncDeviceToHost( *P2 );
+
           // Set coefficients
           if ( i==0 )
-            product[ii] = DMT::Value(*P2,0,0);
+            DMT::Value(*product,ii,0) = DMT::ValueConst(*P2,0,0);
           else
-            product[ii] += DMT::Value(*P2,0,0);
+            DMT::Value(*product,ii,0) += DMT::ValueConst(*P2,0,0);
 
         } // for (int i=0; i<max_ortho_steps_; ++i)
 
@@ -1082,11 +1087,13 @@ namespace Belos {
                 MVT::MvTimesMatAddMv( -ONE, *prevMX, *P2, ONE, *tempMXj );
               }
 
+              DMT::SyncDeviceToHost( *P2 );
+
               // Set coefficients
               if ( num_orth==0 )
-                product[ii] = DMT::Value(*P2,0,0);
+                DMT::Value(*product,ii,0) = DMT::ValueConst(*P2,0,0);
               else
-                product[ii] += DMT::Value(*P2,0,0);
+                DMT::Value(*product,ii,0) += DMT::ValueConst(*P2,0,0);
             }
           }
 
@@ -1139,12 +1146,16 @@ namespace Belos {
       else {
         DMT::Value(*B,j,j) = diag;
       }
+      DMT::SyncHostToDevice( *B );
 
       // Save the coefficients, if we are working on the original vector and not a randomly generated one
       if (!addVec) {
-        for (int i=0; i<numX; i++) {
-          DMT::Value(*B,i,j) = product(i);
-        }
+        DMT::SyncHostToDevice( *product );
+        Teuchos::RCP<DM> Bcolj = DMT::Subview(*B,numX,1,0,j);
+        DMT::Assign(*Bcolj,*product);
+        //for (int i=0; i<numX; i++) {
+        //  DMT::Value(*B,i,j) = product(i);
+        //}
       }
 
     } // for (j = 0; j < xc; ++j)
@@ -1553,7 +1564,6 @@ namespace Belos {
       // Normalize the new vector if it's not dependent
       if (!dep_flg) {
         ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
-
         MVT::MvScale( *Xj, ONE/diag );
         if (this->_hasOp) {
           // Update MXj.
@@ -1561,7 +1571,9 @@ namespace Belos {
         }
 
         // Enter value on diagonal of B.
+        DMT::SyncDeviceToHost( *B );
         DMT::Value(*B,j,j) = diag;
+        DMT::SyncHostToDevice( *B );
       }
       else {
         // Create a random vector and orthogonalize it against all previous columns of Q.
@@ -1627,7 +1639,9 @@ namespace Belos {
           ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 
           // Enter value on diagonal of B.
+          DMT::SyncDeviceToHost( *B );
           DMT::Value(*B,j,j) = ZERO;
+          DMT::SyncHostToDevice( *B );
 
           // Copy vector into current column of _basisvecs
           MVT::MvAddMv( ONE/diag, *tempXj, ZERO, *tempXj, *Xj );
