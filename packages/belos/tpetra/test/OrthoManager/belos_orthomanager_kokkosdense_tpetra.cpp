@@ -47,8 +47,9 @@
 /// and Tpetra::Operator as the operator implementation.
 ///
 #include "belos_orthomanager_tpetra_util.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
+
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Tpetra_Core.hpp"
 
 using std::endl;
@@ -98,8 +99,8 @@ getCmdLineArgs (const Teuchos::Comm<int>& comm, int argc, char* argv[])
   // orthogonalization manager types.  We won't use this factory to
   // create them, so we should be able to pick the Scalar, MV, and
   // OP template parameters as we wish.
-  typedef Belos::OrthoManagerFactory<double, Tpetra::MultiVector<ST>,
-    Tpetra::Operator<ST>, Teuchos::SerialDenseMatrix<int,ST> > factory_type;
+  typedef Belos::OrthoManagerFactory<double,
+    Tpetra::MultiVector<ST>, Tpetra::Operator<ST> > factory_type;
   factory_type factory;
 
   ////////////////////////////////////////////////////////////////////
@@ -272,7 +273,9 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   typedef GlobalOrdinalType global_ordinal_type;
   typedef NodeType node_type;
 
-  typedef Teuchos::SerialDenseMatrix<local_ordinal_type, scalar_type> DM;
+  typedef Tpetra::MultiVector<>::impl_scalar_type IST;
+  typedef Kokkos::DualView<IST**,Kokkos::LayoutLeft> DM;
+
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
