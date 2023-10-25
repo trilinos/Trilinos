@@ -1005,13 +1005,12 @@ namespace Belos {
             MVT::MvTimesMatAddMv( -ONE, *prevMX, *P2, ONE, *MXj );
           }
 
-          DMT::SyncDeviceToHost( *P2 );
-
           // Set coefficients
+          Teuchos::RCP<DM> product_ii = DMT::Subview(*product,1,1,ii,0);
           if ( i==0 )
-            DMT::Value(*product,ii,0) = DMT::ValueConst(*P2,0,0);
+            DMT::Assign(*product_ii, *P2);
           else
-            DMT::Value(*product,ii,0) += DMT::ValueConst(*P2,0,0);
+            DMT::Add(*product_ii, *P2);
 
         } // for (int i=0; i<max_ortho_steps_; ++i)
 
@@ -1087,15 +1086,15 @@ namespace Belos {
                 MVT::MvTimesMatAddMv( -ONE, *prevMX, *P2, ONE, *tempMXj );
               }
 
-              DMT::SyncDeviceToHost( *P2 );
-
               // Set coefficients
+              Teuchos::RCP<DM> product_ii = DMT::Subview(*product,1,1,ii,0);
               if ( num_orth==0 )
-                DMT::Value(*product,ii,0) = DMT::ValueConst(*P2,0,0);
+                DMT::Assign(*product_ii, *P2);
               else
-                DMT::Value(*product,ii,0) += DMT::ValueConst(*P2,0,0);
+                DMT::Add(*product_ii, *P2);
             }
           }
+          DMT::SyncHostToDevice( *product );
 
           // Compute new Op-norm
           {
@@ -1140,17 +1139,16 @@ namespace Belos {
       }
 
       // If we've added a random vector, enter a zero in the j'th diagonal element.
+      Teuchos::RCP<DM> Bjj = DMT::Subview(*B,1,1,j,j);  
       if (addVec) {
-        DMT::Value(*B,j,j) = ZERO;
+        DMT::PutScalar(*Bjj, ZERO);
       }
       else {
-        DMT::Value(*B,j,j) = diag;
+        DMT::PutScalar(*Bjj, diag);
       }
-      DMT::SyncHostToDevice( *B );
 
       // Save the coefficients, if we are working on the original vector and not a randomly generated one
       if (!addVec) {
-        DMT::SyncHostToDevice( *product );
         Teuchos::RCP<DM> Bcolj = DMT::Subview(*B,numX,1,0,j);
         DMT::Assign(*Bcolj,*product);
         //for (int i=0; i<numX; i++) {
