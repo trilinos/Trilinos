@@ -121,8 +121,8 @@ namespace Details {
       if(timer_ != Teuchos::null)
         std::cout << "WARNING: Kokkos::deep_copy() started within another Kokkos::deep_copy().  Timers will be in error"<<std::endl;
 
-      // If the src_name is "Scalar" then we're doing a "Fill" style copy from host to devices, which we want to record separately.  
-      if(!strcmp(src_name,"Scalar")) 
+      // If the src_name is "Scalar" or "(none)" then we're doing a "Fill" style copy from host to devices, which we want to record separately.  
+      if(!strcmp(src_name,"Scalar") || !strcmp(src_name,"(none)")) 
         timer_ = Teuchos::TimeMonitor::getNewTimer(std::string("Kokkos::deep_copy_scalar [")+src_handle.name+"=>"+dst_handle.name+"]" + extra_label);
       // If the size is under 65 bytes, we're going to flag this as "small" to make it easier to watch the big stuff
       else if(size <= 64)
