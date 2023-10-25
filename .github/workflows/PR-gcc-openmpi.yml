@@ -1,0 +1,64 @@
+name: PR-gcc-openmpi
+
+on:
+  pull_request:
+    types:
+      - labeled
+      - opened
+      - synchronize
+    branches:
+    - master
+    - develop
+  workflow_dispatch:
+
+jobs:
+  triloamd01-gcc:
+    runs-on: [self-hosted, triloamd01]
+    container:
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/rhel8/trilinos-pr-env:gcc-8.5.0
+    steps:
+      - name: env
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          env
+      - name: module list
+        shell: bash
+        run: |
+          bash -l -c "module list"
+          printenv PATH
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+      - name: make dirs
+        working-directory: /
+        run: |
+          mkdir -p /home/Trilinos/src/Trilinos
+      - name: clone trilinos
+        uses: actions/checkout@v3
+        with:
+          path: /__w/Trilinos/Trilinos/src/Trilinos
+      - name: move trilinos
+        working-directory: /__w/Trilinos/Trilinos/src/Trilinos
+        run: |
+          mv -f * /home/Trilinos/src/Trilinos
+      - name: get dependencies
+        working-directory: /home/Trilinos/srs/Trilinos/packages/framework
+        run: |
+          bash -l -c "./get_dependencies.sh --container"
+      - name: configure trilinos
+        working-directory: /home/Trilinos/build/
+        run: |
+          bash -l -c "source /home/Trilinos/src/Trilinos/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all /home/Trilinos/src/Trilinos"
+      - name: CMakeCache.txt
+        if: always()
+        working-directory: /home/Trilinos/build/
+        run: |
+          bash -l -c "cat CMakeCache.txt"
+      - name: build trilinos
+        working-directory: /home/Trilinos/build/
+        run: bash -l -c "make -j8"
+      - name: ctest
+        working-directory: /home/Trilinos/build/
+        run: bash -l -c "ctest -j2"
