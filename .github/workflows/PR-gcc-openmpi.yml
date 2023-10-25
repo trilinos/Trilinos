@@ -39,10 +39,8 @@ jobs:
           mkdir -p /home/Trilinos/build
       - name: clone trilinos
         uses: actions/checkout@v4
-        with:
-          path: /home/Trilinos/src/Trilinos
       - name: Repo status
-        working-directory: /home/Trilinos/src/Trilinos
+        working-directory: ${GITHUB_WORKSPACE}/Trilinos
         run: |
           ls -lhat
           git status
