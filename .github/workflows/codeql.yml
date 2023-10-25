@@ -79,6 +79,7 @@ jobs:
     - run: |
         bash -l -c "hostname"
         bash -l -c "export HOSTNAME=trilinos-container-gcc-8"
+        bash -l -c "hostname"
         bash -l -c "mkdir -p trilinos_build && cd trilinos_build" 
         bash -l -c "../Trilinos/packages/framework/get_dependencies.sh --container"
         bash -l -c "source ../Trilinos/packages/framework/GenConfig/gen-config.sh --list-configs"
