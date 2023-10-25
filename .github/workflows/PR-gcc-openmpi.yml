@@ -46,7 +46,7 @@ jobs:
         run: |
           mv -f * /home/Trilinos/src/Trilinos
       - name: Repo status
-        working-directory: /Trilinos/Trilinos/src/Trilinos
+        working-directory: /home/Trilinos/src/Trilinos
         run: |
           git status
           git branch -vv
