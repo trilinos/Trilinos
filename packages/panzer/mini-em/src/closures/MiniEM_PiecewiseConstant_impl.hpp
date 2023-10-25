@@ -73,9 +73,9 @@ void PiecewiseConstant<EvalT,Traits>::evaluateFields(typename Traits::EvalData w
     Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,values.extent_int(1)});
     Kokkos::parallel_for("panzer:PiecewiseConstant 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
 
-        const ScalarT& x = tmp_coords(cell,point,0);
-        const ScalarT& y = tmp_coords(cell,point,1);
-        const ScalarT& z = tmp_coords(cell,point,2);
+        auto x = tmp_coords(cell,point,0);
+        auto y = tmp_coords(cell,point,1);
+        auto z = tmp_coords(cell,point,2);
 
         if ((xl<=x) && (x<=xr) &&
             (yl<=y) && (y<=yr) &&
@@ -88,8 +88,8 @@ void PiecewiseConstant<EvalT,Traits>::evaluateFields(typename Traits::EvalData w
     Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,values.extent_int(1)});
     Kokkos::parallel_for("panzer:PiecewiseConstant 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
 
-        const ScalarT& x = tmp_coords(cell,point,0);
-        const ScalarT& y = tmp_coords(cell,point,1);
+        auto x = tmp_coords(cell,point,0);
+        auto y = tmp_coords(cell,point,1);
 
         if ((xl<=x) && (x<=xr) &&
             (yl<=y) && (y<=yr))
