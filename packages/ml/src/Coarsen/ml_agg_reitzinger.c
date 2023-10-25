@@ -1262,6 +1262,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      sprintf(str,"(level %d) Time to set entries in Pe",grid_level);
      ReportTimer(delta1, str, ml_edges->comm);
 
+     {
+       //CMSCMS           
+       char fname[80];
+       sprintf(fname,"Pe_unsmoothed_%d_%d.mat",ml_edges->comm->ML_nprocs,ml_edges->comm->ML_mypid);   
+       ML_Operator_Print_UsingGlobalOrdering(Pe, fname, NULL,NULL);
+     }
+
+
      /***************************
      * Smooth edge prolongator. *
      ***************************/

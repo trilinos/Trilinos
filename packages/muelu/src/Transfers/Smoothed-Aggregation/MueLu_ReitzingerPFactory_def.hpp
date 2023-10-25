@@ -481,15 +481,15 @@ namespace MueLu {
     coarseLevel.AddKeepFlag("D0",NoFactory::get(), MueLu::Final);
     coarseLevel.RemoveKeepFlag("D0",NoFactory::get(), MueLu::UserData);
    
-#if 0
+#if 1
   {
     int numProcs = Pe->getRowMap()->getComm()->getSize();
     char fname[80];
 
-    sprintf(fname,"Pe_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*Pe);
-    sprintf(fname,"Pn_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*Pn);
-    sprintf(fname,"D0c_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*D0_coarse_m);
-    sprintf(fname,"D0f_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*D0);
+    sprintf(fname,"Pe_unsmoothed_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*Pe);
+    //sprintf(fname,"Pn_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*Pn);
+    //sprintf(fname,"D0c_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*D0_coarse_m);
+    //sprintf(fname,"D0f_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*D0);
   }
 #endif
 
