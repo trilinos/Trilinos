@@ -35,7 +35,7 @@ jobs:
         working-directory: /
         run: |
           mkdir -p /home/Trilinos/src/Trilinos
-	  mkdir -p /home/Trilinos/build
+          mkdir -p /home/Trilinos/build
       - name: clone trilinos
         uses: actions/checkout@v3
         with:
