@@ -48,6 +48,7 @@ jobs:
       - name: Repo status
         working-directory: /home/Trilinos/src/Trilinos
         run: |
+          ls -lhat
           git status
           git branch -vv
       - name: get dependencies
