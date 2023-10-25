@@ -40,8 +40,8 @@ jobs:
       - name: clone trilinos
         uses: actions/checkout@v4
       - name: Repo status
-        working-directory: ${GITHUB_WORKSPACE}/Trilinos
         run: |
+          pwd
           ls -lhat
           git status
           git branch -vv
