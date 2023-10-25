@@ -30,7 +30,9 @@ jobs:
     # Consider using larger runners for possible analysis time improvements.
     # runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     runs-on: self-hosted
-    container: registry-ex.sandia.gov/trilinos-project/trilinos-containers/rhel8/trilinos-pr-env:gcc-8.5.0
+    container:
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/rhel8/trilinos-pr-env:gcc-8.5.0
+      options: --hostname trilinos-container-gcc-8
     # timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
     permissions:
       actions: read
@@ -77,9 +79,6 @@ jobs:
     # From Sam's prototype
     # https://github.com/sebrowne/Trilinos/blob/f6119bf7906aba7ecde4027733ef93af872f96a0/.github/workflows/codeql.yml
     - run: |
-        bash -l -c "hostname"
-        bash -l -c "echo trilinos-container-gcc-8 > /etc/hostname"
-        bash -l -c "hostname"
         bash -l -c "mkdir -p trilinos_build && cd trilinos_build" 
         bash -l -c "../Trilinos/packages/framework/get_dependencies.sh --container"
         bash -l -c "source ../Trilinos/packages/framework/GenConfig/gen-config.sh --list-configs"
