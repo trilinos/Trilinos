@@ -79,7 +79,7 @@ jobs:
     - run: |
         bash -l -c "module list"
         find /__w/_tool/CodeQL/2.15.1/x64/codeql/tools/linux64
-        bash -l -c "source /etc/profile.d/modules-init.sh ; mkdir trilinos_build && cd trilinos_build && cmake -G Ninja -DTrilinos_ENABLE_ALL_PACKAGES=OFF -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_Muelu=ON -DTrilinos_ENABLE_Epetra=OFF -DTPL_ENABLE_Boost=OFF -DTrilinos_ENABLE_SEACAS=OFF .."
+        bash -l -c "source /etc/profile.d/modules-init.sh ; mkdir trilinos_build && cd trilinos_build && cmake -G Ninja -DTrilinos_ENABLE_ALL_PACKAGES=OFF -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_MueLu=ON -DTrilinos_ENABLE_Epetra=OFF -DTPL_ENABLE_Boost=OFF -DTrilinos_ENABLE_SEACAS=OFF .."
         bash -l -c "source /etc/profile.d/modules-init.sh ; cd trilinos_build && ninja"
 
     - name: Perform CodeQL Analysis
