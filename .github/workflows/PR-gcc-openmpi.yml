@@ -56,8 +56,7 @@ jobs:
       - name: Generate enable packages cmake fragment
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "TRILINOS_DIR=${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh HEAD develop package-enables.cmake ctest-labels.cmake"
-          bash -l -c "cat TribitsDumpDepsXmlScript.log"
+          bash -l -c "TRILINOS_DIR=${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh HEAD develop package-enables.cmake ctest-labels.cmake" || bash -l -c "cat TribitsDumpDepsXmlScript.log"
       - name: configure trilinos
         working-directory: /home/Trilinos/build
         run: |
