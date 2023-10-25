@@ -13,7 +13,7 @@ on:
 
 jobs:
   triloamd01-gcc:
-    runs-on: [self-hosted, triloamd01]
+    runs-on: [self-hosted, trilogpu01]
     container:
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/rhel8/trilinos-pr-env:gcc-8.5.0
     steps:
@@ -47,10 +47,18 @@ jobs:
         working-directory: /home/Trilinos/srs/Trilinos/packages/framework
         run: |
           bash -l -c "./get_dependencies.sh --container"
+      - name: Generate PR cmake fragment
+        working-directory: /home/Trilinos/build/
+        run: |
+          bash -l -c "source /home/Trilinos/src/Trilinos/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake /home/Trilinos/src/Trilinos"
+      - name: Generate enable packages cmake fragment
+        working-directory: /home/Trilinos/build/
+        run: |
+          bash -l -c "TRILINOS_DIR=/home/Trilinos/srs/Trilinos /home/Trilinos/srs/Trilinos/commonTools/framework/get-changed-trilinos-packages.sh HEAD develop package-enables.cmake ctest-labels.cmake"
       - name: configure trilinos
         working-directory: /home/Trilinos/build/
         run: |
-          bash -l -c "source /home/Trilinos/src/Trilinos/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all /home/Trilinos/src/Trilinos"
+          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake /home/Trilinos/srs/Trilinos"
       - name: CMakeCache.txt
         if: always()
         working-directory: /home/Trilinos/build/
