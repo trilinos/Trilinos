@@ -36,9 +36,8 @@
 #include "BelosTypes.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_Array.hpp"
-
+#include "BelosTeuchosDenseAdapter.hpp"
 
 namespace Belos {
 
