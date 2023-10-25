@@ -46,21 +46,21 @@ jobs:
           git status
           git branch -vv
       - name: get dependencies
-        working-directory: /home/Trilinos/src/Trilinos/packages/framework
+        working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh --container"
       - name: Generate PR cmake fragment
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source /home/Trilinos/src/Trilinos/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake /home/Trilinos/src/Trilinos"
+          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
       - name: Generate enable packages cmake fragment
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "TRILINOS_DIR=/home/Trilinos/src/Trilinos /home/Trilinos/src/Trilinos/commonTools/framework/get-changed-trilinos-packages.sh HEAD develop package-enables.cmake ctest-labels.cmake"
+          bash -l -c "TRILINOS_DIR=${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh HEAD develop package-enables.cmake ctest-labels.cmake"
       - name: configure trilinos
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake /home/Trilinos/src/Trilinos"
+          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
       - name: CMakeCache.txt
         if: always()
         working-directory: /home/Trilinos/build
@@ -68,7 +68,7 @@ jobs:
           bash -l -c "cat CMakeCache.txt"
       - name: build trilinos
         working-directory: /home/Trilinos/build
-        run: bash -l -c "make -j8"
+        run: bash -l -c "ninja"
       - name: ctest
         working-directory: /home/Trilinos/build
         run: bash -l -c "ctest -j2"
