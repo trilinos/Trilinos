@@ -78,7 +78,7 @@ jobs:
     # https://github.com/sebrowne/Trilinos/blob/f6119bf7906aba7ecde4027733ef93af872f96a0/.github/workflows/codeql.yml
     - run: |
         bash -l -c "hostname"
-        bash -l -c "export HOSTNAME=trilinos-container-gcc-8"
+        bash -l -c "echo trilinos-container-gcc-8 > /etc/hostname"
         bash -l -c "hostname"
         bash -l -c "mkdir -p trilinos_build && cd trilinos_build" 
         bash -l -c "../Trilinos/packages/framework/get_dependencies.sh --container"
