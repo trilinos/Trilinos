@@ -40,11 +40,7 @@ jobs:
       - name: clone trilinos
         uses: actions/checkout@v4
         with:
-          path: /__w/Trilinos/Trilinos/src/Trilinos
-      - name: move trilinos
-        working-directory: /__w/Trilinos/Trilinos/src/Trilinos
-        run: |
-          mv -f * /home/Trilinos/src/Trilinos
+          path: /home/Trilinos/src/Trilinos
       - name: Repo status
         working-directory: /home/Trilinos/src/Trilinos
         run: |
