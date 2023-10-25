@@ -528,6 +528,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
                  DMT::GetRawHostPtr(*R_), DMT::GetStride(*R_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
       std::cout << "Finished BLAS call." << std::endl;
       DMT::SyncHostToDevice(*R_);  // Why sync this when the result is in y? Shouldn't y be sync'ed before update is computed? 
+      DMT::SyncHostToDevice(*y);  
       //Not needed. y dies after this function. DMT::SyncHostToDevice(*y);
 
       //
@@ -560,9 +561,9 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       Teuchos::BLAS<int,ScalarType> blas;
       DMT::SyncDeviceToHost(*z_);
       for (int j=0; j<blockSize_; j++) {
-        (*norms)[j] = blas.NRM2( blockSize_, &DMT::Value(*z_,curDim_, j), 1);
+        Teuchos::RCP<DM> z_j = DMT::Subview(*z_, blockSize_, 1, curDim_, j);
+        (*norms)[j] = blas.NRM2( blockSize_, DMT::GetRawHostPtr(*z_j), 1);
       }
-      DMT::SyncHostToDevice(*z_);  // Why?  Nothing in z changed?
     }
     return Teuchos::null;
   }

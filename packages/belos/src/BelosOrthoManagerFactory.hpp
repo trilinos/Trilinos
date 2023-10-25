@@ -173,7 +173,7 @@ namespace Belos {
 	return Belos::getIMGSDefaultParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "Simple") {
-	SimpleOrthoManager<Scalar, MV> orthoMan;
+	SimpleOrthoManager<Scalar, MV, DM> orthoMan;
 	return orthoMan.getValidParameters ();
       }
       else {
@@ -221,7 +221,7 @@ namespace Belos {
 	return Belos::getIMGSFastParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "Simple") {
-	SimpleOrthoManager<Scalar, MV> orthoMan;
+	SimpleOrthoManager<Scalar, MV, DM> orthoMan;
 	return orthoMan.getFastParameters ();
       }
       else {
@@ -337,7 +337,7 @@ namespace Belos {
 				   "SimpleOrthoManager is not yet supported "
 				   "when the operator M is nontrivial (i.e., "
 				   "M != null).");
-	return rcp (new SimpleOrthoManager<Scalar, MV> (outMan, label, params));
+	return rcp (new SimpleOrthoManager<Scalar, MV, DM> (outMan, label, params));
       }
 #ifdef HAVE_BELOS_TSQR
       // TsqrMatOrthoManager has to store more things and do more work

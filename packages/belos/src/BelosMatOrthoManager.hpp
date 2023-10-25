@@ -39,6 +39,7 @@
 #include "BelosOrthoManager.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 namespace Belos {
 
