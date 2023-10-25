@@ -44,7 +44,7 @@ jobs:
         run: |
           mv -f * /home/Trilinos/src/Trilinos
       - name: get dependencies
-        working-directory: /home/Trilinos/srs/Trilinos/packages/framework
+        working-directory: /home/Trilinos/src/Trilinos/packages/framework
         run: |
           bash -l -c "./get_dependencies.sh --container"
       - name: Generate PR cmake fragment
@@ -54,11 +54,11 @@ jobs:
       - name: Generate enable packages cmake fragment
         working-directory: /home/Trilinos/build/
         run: |
-          bash -l -c "TRILINOS_DIR=/home/Trilinos/srs/Trilinos /home/Trilinos/srs/Trilinos/commonTools/framework/get-changed-trilinos-packages.sh HEAD develop package-enables.cmake ctest-labels.cmake"
+          bash -l -c "TRILINOS_DIR=/home/Trilinos/src/Trilinos /home/Trilinos/src/Trilinos/commonTools/framework/get-changed-trilinos-packages.sh HEAD develop package-enables.cmake ctest-labels.cmake"
       - name: configure trilinos
         working-directory: /home/Trilinos/build/
         run: |
-          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake /home/Trilinos/srs/Trilinos"
+          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake /home/Trilinos/src/Trilinos"
       - name: CMakeCache.txt
         if: always()
         working-directory: /home/Trilinos/build/
