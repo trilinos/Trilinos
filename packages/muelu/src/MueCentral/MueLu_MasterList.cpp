@@ -243,6 +243,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2a\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"aggregation: match ML phase1\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: match ML phase2a\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: match ML phase2b\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase2a agg factor\" type=\"double\" value=\"0.5\"/>"
@@ -706,6 +707,8 @@ namespace MueLu {
          ("aggregation: enable phase 2b","aggregation: enable phase 2b")
       
          ("aggregation: enable phase 3","aggregation: enable phase 3")
+      
+         ("aggregation: match ML phase1","aggregation: match ML phase1")
       
          ("aggregation: match ML phase2a","aggregation: match ML phase2a")
       

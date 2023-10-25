@@ -416,6 +416,9 @@ namespace MueLu {
         adaptingParamList.remove(pname,false);
       }
 
+      // make sure that MueLu's phase1 matches ML's
+      mueluss << "<Parameter name=\"aggregation: match ML phase1\"       type=\"bool\"     value=\"true\"/>" << std::endl;
+
       // make sure that MueLu's phase2a matches ML's
       mueluss << "<Parameter name=\"aggregation: match ML phase2a\"      type=\"bool\"     value=\"true\"/>" << std::endl;
 

@@ -72,6 +72,7 @@ namespace MueLu {
     int maxNeighAlreadySelected = params.get<int>        ("aggregation: max selected neighbors");
     int minNodesPerAggregate    = params.get<int>        ("aggregation: min agg size");
     int maxNodesPerAggregate    = params.get<int>        ("aggregation: max agg size");
+    bool matchMLBehavior        = params.get<bool>("aggregation: match ML phase1");
 
     TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
       "MueLu::UncoupledAggregationAlgorithm::BuildAggregates: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");
@@ -186,7 +187,9 @@ namespace MueLu {
             // would not be accepted at all.
             if (aggSize < as<size_t>(maxNodesPerAggregate))
               aggList[aggSize++] = neigh;
-          } else if (aggStat[neigh] != IGNORED) {//CMS - ML does boundaries here, but MueLU has IGNORED instead
+          } else if(!matchMLBehavior || aggStat[neigh] != IGNORED) {
+            // NOTE: ML checks against BOUNDARY here, but boundary nodes are flagged as IGNORED by
+            // the time we get to Phase 1, so we check IGNORED instead
             numAggregatedNeighbours++;
           }
         }

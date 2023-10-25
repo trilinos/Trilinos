@@ -259,6 +259,40 @@ unpackAndCombineIntoCrsArrays (
     Teuchos::ArrayRCP<Scalar>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+unpackAndCombineIntoCrsArrays (
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
+    const Kokkos::View<const char*, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+          ,void, void >,
+    const Kokkos::View<const size_t*, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+          ,void, void >,
+    const size_t numSameIDs,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
+    const Kokkos::View<LocalOrdinal const *, 
+          Kokkos::Device<typename Node::device_type::execution_space,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
+          void, void>,
+    size_t TargetNumRows,
+    const int MyTargetPID,
+    Kokkos::View<size_t*,typename Node::device_type>& /*crs_rowptr_d*/,
+    Kokkos::View<GlobalOrdinal*,typename Node::device_type>&     /*crs_colind_d*/,
+    Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,typename Node::device_type>& /*crs_vals_d*/,
+    const Teuchos::ArrayView<const int>& SourcePids,
+    Teuchos::Array<int>& TargetPids);
+
 } // namespace Details
 } // namespace Tpetra
 

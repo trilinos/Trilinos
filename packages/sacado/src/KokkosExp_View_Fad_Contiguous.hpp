@@ -382,7 +382,7 @@ struct SacadoViewFill<
   OutputView,
   typename std::enable_if<
     ( Kokkos::is_view_fad_contiguous<OutputView>::value &&
-      std::is_same<typename OutputView::execution_space, Kokkos::Experimental::HIP>::value &&
+      std::is_same<typename OutputView::execution_space, Kokkos::HIP>::value &&
       !Kokkos::ViewScalarStride<OutputView>::is_unit_stride )
     >::type
   >
@@ -611,7 +611,7 @@ public:
   typedef typename std::conditional< std::is_same<typename Traits::execution_space, Kokkos::Cuda>::value, strided_scalar_type, fad_type >::type thread_local_scalar_type;
 #elif defined(KOKKOS_ENABLE_HIP)
   typedef typename Sacado::LocalScalarType< fad_type, unsigned(PartitionedFadStride) >::type strided_scalar_type;
-  typedef typename std::conditional< std::is_same<typename Traits::execution_space, Kokkos::Experimental::HIP>::value, strided_scalar_type, fad_type >::type thread_local_scalar_type;
+  typedef typename std::conditional< std::is_same<typename Traits::execution_space, Kokkos::HIP>::value, strided_scalar_type, fad_type >::type thread_local_scalar_type;
 #else
   typedef fad_type thread_local_scalar_type;
 #endif

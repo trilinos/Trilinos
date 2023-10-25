@@ -96,6 +96,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: match ML phase1");
     SET_VALID_ENTRY("aggregation: match ML phase2a");
     SET_VALID_ENTRY("aggregation: match ML phase2b");
     SET_VALID_ENTRY("aggregation: phase2a agg factor");

@@ -66,7 +66,7 @@ namespace Intrepid2 {
 
       When the serendipity template argument is true, the basis has
       cardinality 15 and spans an ICOMPLETE bi-quadratic polynomial space. 
-      Note, Basis_HGRAD_WEDGE_I2_Serendipity_FEM = Basis_HGRAD_WEDGE_DEG2_FEM<true>
+      Note, Basis_HGRAD_WEDGE_I2_FEM = Basis_HGRAD_WEDGE_DEG2_FEM<true>
       
       Basis functions are dual to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
 
@@ -283,7 +283,7 @@ namespace Intrepid2 {
     const char*
     getName() const override {
       if constexpr (serendipity)
-        return "Intrepid2_HGRAD_WEDGE_I2_Serendipity_FEM";
+        return "Intrepid2_HGRAD_WEDGE_I2_FEM";
       else
         return "Intrepid2_HGRAD_WEDGE_C2_FEM";
     }
@@ -320,7 +320,7 @@ namespace Intrepid2 {
   using Basis_HGRAD_WEDGE_C2_FEM = Basis_HGRAD_WEDGE_DEG2_FEM<false, DeviceType, outputValueType, pointValueType>;
 
   template<typename DeviceType = void, typename outputValueType = double, typename pointValueType = double>
-  using Basis_HGRAD_WEDGE_I2_Serendipity_FEM = Basis_HGRAD_WEDGE_DEG2_FEM<true, DeviceType, outputValueType, pointValueType>;
+  using Basis_HGRAD_WEDGE_I2_FEM = Basis_HGRAD_WEDGE_DEG2_FEM<true, DeviceType, outputValueType, pointValueType>;
 
 }// namespace Intrepid2
 

@@ -103,7 +103,6 @@ int ConvergencePyr(const bool verbose) {
   using ExecSpaceType = typename DeviceType::execution_space;
 
   typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
-  typedef Kokkos::DynRankView<ordinal_type,DeviceType> DynRankViewInt;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   Teuchos::RCP<std::ostream> outStream;

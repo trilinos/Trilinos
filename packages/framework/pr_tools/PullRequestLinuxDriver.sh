@@ -33,6 +33,7 @@ function bootstrap_modules() {
     message_std "PRDriver> " "Job is $JOB_BASE_NAME"
 
     vortex_regex=".*(vortex).*"
+    container_regex=".*(container).*"
     if [[ ${NODE_NAME:?} =~ ${vortex_regex} || ${on_ats2} == "1" ]]; then
         execute_command_checked "module load git/2.20.0"
         execute_command_checked "module load python/3.7.2"
@@ -41,6 +42,9 @@ function bootstrap_modules() {
         mkdir -p /tmp/trilinos
 
         module list
+    elif [[ ${NODE_NAME:?} =~ ${container_regex} ]]; then
+	echo "Nothing done for bootstrap in a container"
+	module list
     elif [[ ${on_weaver} == "1" ]]; then
         module unload git
         module unload python

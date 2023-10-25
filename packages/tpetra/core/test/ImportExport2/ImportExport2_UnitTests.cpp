@@ -2414,6 +2414,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     auto PermuteFromLIDs_d = Importer->getPermuteFromLIDs_dv().view_device();
 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
+    Kokkos::View<size_t*,Node::device_type> rowptr_d;
+    Kokkos::View<GO*,Node::device_type>     colind_d;
+    Kokkos::View<typename CrsMatrixType::impl_scalar_type*,Node::device_type> vals_d;
+
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
       *A,
       RemoteLIDs_d,
@@ -2424,11 +2428,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       PermuteFromLIDs_d,
       MapTarget->getLocalNumElements (),
       MyPID,
-      rowptr,
-      colind,
-      vals,
+      rowptr_d,
+      colind_d,
+      vals_d,
       SourcePids (),
       TargetPids);
+
+    auto rowptr_h = create_mirror_view_and_copy(Kokkos::HostSpace(), rowptr_d);
+    auto colind_h = create_mirror_view_and_copy(Kokkos::HostSpace(), colind_d);
+    Kokkos::View<Scalar*, Node::device_type> vals_d_cast(reinterpret_cast<Scalar*>(vals_d.data()), vals_d.extent(0));
+    auto vals_h = create_mirror_view_and_copy(Kokkos::HostSpace(), vals_d_cast);
+
+    rowptr = Teuchos::arcp(rowptr_h.data(),0,rowptr_h.size(),false);
+    colind = Teuchos::arcp(colind_h.data(),0,colind_h.size(),false);
+    vals = Teuchos::arcp(vals_h.data(),0,vals_h.size(),false);
 
     size_t nnz2 = vals.size();
     if(nnz1!=nnz2) test_err++;
