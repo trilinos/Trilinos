@@ -35,6 +35,7 @@ jobs:
         working-directory: /
         run: |
           mkdir -p /home/Trilinos/src/Trilinos
+	  mkdir -p /home/Trilinos/build
       - name: clone trilinos
         uses: actions/checkout@v3
         with:
@@ -48,25 +49,25 @@ jobs:
         run: |
           bash -l -c "./get_dependencies.sh --container"
       - name: Generate PR cmake fragment
-        working-directory: /home/Trilinos/build/
+        working-directory: /home/Trilinos/build
         run: |
           bash -l -c "source /home/Trilinos/src/Trilinos/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake /home/Trilinos/src/Trilinos"
       - name: Generate enable packages cmake fragment
-        working-directory: /home/Trilinos/build/
+        working-directory: /home/Trilinos/build
         run: |
           bash -l -c "TRILINOS_DIR=/home/Trilinos/src/Trilinos /home/Trilinos/src/Trilinos/commonTools/framework/get-changed-trilinos-packages.sh HEAD develop package-enables.cmake ctest-labels.cmake"
       - name: configure trilinos
-        working-directory: /home/Trilinos/build/
+        working-directory: /home/Trilinos/build
         run: |
           bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake /home/Trilinos/src/Trilinos"
       - name: CMakeCache.txt
         if: always()
-        working-directory: /home/Trilinos/build/
+        working-directory: /home/Trilinos/build
         run: |
           bash -l -c "cat CMakeCache.txt"
       - name: build trilinos
-        working-directory: /home/Trilinos/build/
+        working-directory: /home/Trilinos/build
         run: bash -l -c "make -j8"
       - name: ctest
-        working-directory: /home/Trilinos/build/
+        working-directory: /home/Trilinos/build
         run: bash -l -c "ctest -j2"
