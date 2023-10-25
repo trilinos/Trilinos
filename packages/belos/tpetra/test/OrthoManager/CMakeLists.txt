@@ -25,6 +25,16 @@ IF (${PACKAGE_NAME}_ENABLE_TSQR)
     ARGS "--ortho=TSQR --verbose"
     COMM serial mpi
     )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_KokkosDense_OrthoManager_test
+    SOURCES belos_orthomanager_kokkosdense_tpetra.cpp
+    ARGS "--ortho=ICGS --verbose"
+    ARGS "--ortho=IMGS --verbose"
+    ARGS "--ortho=DGKS --verbose"
+    COMM serial mpi
+    )
+
   # This "test" passes trivially with the given arguments.  That is
   # because it is a benchmark that is meant to be run manually, with
   # carefully chosen arguments.
