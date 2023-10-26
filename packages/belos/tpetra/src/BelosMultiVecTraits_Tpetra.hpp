@@ -815,11 +815,12 @@ namespace Belos {
       MVGen::MvPrint(mv,os);
     }
 
-//TODO: Does TSQR make sense here? Does it also need to be in the Kokkos version?
+// This will not work until the TsqrAdaptor has been changed to include a dense matrix template argument
 #ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
     /// \brief TsqrAdaptor specialization for Tpetra::MultiVector
-    typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar, LO, GO, Node> > tsqr_adaptor_type;
+    typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar, LO, GO, Node>,
+                                   Teuchos::SerialDenseMatrix<int,Scalar> > tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
 
   };//end Teuchos serial dense specialized. 
@@ -1072,12 +1073,13 @@ namespace Belos {
       MVGen::MvPrint(mv,os);
     }
 
-//TODO: Does TSQR make sense here? Does it also need to be in the Kokkos version?
-//#ifdef HAVE_BELOS_TSQR
+// This will not work until the TsqrAdaptor has been changed to include a dense matrix template argument
+#ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
     /// \brief TsqrAdaptor specialization for Tpetra::MultiVector
- //   typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar, LO, GO, Node> > tsqr_adaptor_type;
-//#endif // HAVE_BELOS_TSQR
+   typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar, LO, GO, Node>, 
+                                  Kokkos::DualView<IST**,Kokkos::LayoutLeft> > tsqr_adaptor_type;
+#endif // HAVE_BELOS_TSQR
 
   };//end Kokkos dense specialized. 
 
