@@ -197,26 +197,7 @@ namespace MueLu {
         !precList22_.isParameter("reuse: type"))
       precList22_.set("reuse: type", "full");
 
-# ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-      useKokkos_ = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-      useKokkos_ = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-      useKokkos_ = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-      useKokkos_ = true;
-# endif
-# ifdef HAVE_MUELU_SYCL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-      useKokkos_ = true;
-# endif    
+    useKokkos_ = !Node::is_serial;
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
   }
 

@@ -56,6 +56,7 @@
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_DefaultTypes.hpp"
+#include "Tpetra_Details_ExecutionSpaces.hpp"
 
 /// \file Tpetra_Details_unpackCrsMatrixAndCombine_def.hpp
 /// \brief Definition of functions for unpacking the entries of a
@@ -721,12 +722,7 @@ unpackAndCombineIntoCrsMatrix(
 
   using policy = Kokkos::TeamPolicy<XS, Kokkos::IndexType<LO>>;
   const size_t team_size = Tpetra::Details::Behavior::hierarchicalUnpackTeamSize();
-#if defined(KOKKOS_ENABLE_CUDA)
-  constexpr bool is_cuda = std::is_same<XS, Kokkos::Cuda>::value;
-#else
-  constexpr bool is_cuda = false;
-#endif
-  if (!is_cuda || team_size == Teuchos::OrdinalTraits<size_t>::invalid())
+  if (!Spaces::is_gpu_exec_space<XS>() || team_size == Teuchos::OrdinalTraits<size_t>::invalid())
   {
     Kokkos::parallel_for(policy(static_cast<LO>(num_batches), Kokkos::AUTO), f);
   }
