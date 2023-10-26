@@ -2,7 +2,7 @@
 #include <typeinfo>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -75,7 +75,7 @@ void bind_std_typeinfo(std::function< pybind11::module &(std::string const &name
 		cl.def("before", (bool (std::type_info::*)(const class std::type_info &) const) &std::type_info::before, "C++: std::type_info::before(const class std::type_info &) const --> bool", pybind11::arg("__arg"));
 		cl.def("__eq__", (bool (std::type_info::*)(const class std::type_info &) const) &std::type_info::operator==, "C++: std::type_info::operator==(const class std::type_info &) const --> bool", pybind11::arg("__arg"));
 		cl.def("__ne__", (bool (std::type_info::*)(const class std::type_info &) const) &std::type_info::operator!=, "C++: std::type_info::operator!=(const class std::type_info &) const --> bool", pybind11::arg("__arg"));
-		cl.def("hash_code", (unsigned long (std::type_info::*)() const) &std::type_info::hash_code, "C++: std::type_info::hash_code() const --> unsigned long");
+		cl.def("hash_code", (std::size_t (std::type_info::*)() const) &std::type_info::hash_code, "C++: std::type_info::hash_code() const --> std::size_t");
 		cl.def("__is_pointer_p", (bool (std::type_info::*)() const) &std::type_info::__is_pointer_p, "C++: std::type_info::__is_pointer_p() const --> bool");
 		cl.def("__is_function_p", (bool (std::type_info::*)() const) &std::type_info::__is_function_p, "C++: std::type_info::__is_function_p() const --> bool");
 	}

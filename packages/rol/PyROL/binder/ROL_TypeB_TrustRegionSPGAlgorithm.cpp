@@ -6,7 +6,6 @@
 #include <ROL_PolyhedralProjection.hpp>
 #include <ROL_Problem.hpp>
 #include <ROL_Secant.hpp>
-#include <ROL_StatusTest.hpp>
 #include <ROL_TypeB_Algorithm.hpp>
 #include <ROL_TypeB_AlgorithmFactory.hpp>
 #include <ROL_TypeB_ColemanLiAlgorithm.hpp>
@@ -17,14 +16,11 @@
 #include <Teuchos_ENull.hpp>
 #include <Teuchos_FilteredIterator.hpp>
 #include <Teuchos_ParameterEntry.hpp>
-#include <Teuchos_ParameterEntryValidator.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterListModifier.hpp>
-#include <Teuchos_PtrDecl.hpp>
 #include <Teuchos_RCPDecl.hpp>
 #include <Teuchos_RCPNode.hpp>
 #include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
-#include <Teuchos_any.hpp>
 #include <cwchar>
 #include <deque>
 #include <ios>
@@ -38,7 +34,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -539,8 +535,5 @@ void bind_ROL_TypeB_TrustRegionSPGAlgorithm(std::function< pybind11::module &(st
 
 	// ROL::TypeB::StringToEAlgorithmB(std::string) file:ROL_TypeB_AlgorithmFactory.hpp line:135
 	M("ROL::TypeB").def("StringToEAlgorithmB", (enum ROL::TypeB::EAlgorithmB (*)(std::string)) &ROL::TypeB::StringToEAlgorithmB, "C++: ROL::TypeB::StringToEAlgorithmB(std::string) --> enum ROL::TypeB::EAlgorithmB", pybind11::arg("s"));
-
-	// ROL::TypeB::AlgorithmFactory(class Teuchos::ParameterList &) file:ROL_TypeB_AlgorithmFactory.hpp line:146
-	M("ROL::TypeB").def("AlgorithmFactory", (class Teuchos::RCP<class ROL::TypeB::Algorithm<double> > (*)(class Teuchos::ParameterList &)) &ROL::TypeB::AlgorithmFactory<double>, "C++: ROL::TypeB::AlgorithmFactory(class Teuchos::ParameterList &) --> class Teuchos::RCP<class ROL::TypeB::Algorithm<double> >", pybind11::arg("parlist"));
 
 }

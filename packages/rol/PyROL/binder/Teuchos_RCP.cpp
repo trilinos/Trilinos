@@ -148,7 +148,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -365,6 +365,21 @@ void bind_Teuchos_RCP(std::function< pybind11::module &(std::string const &names
 	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::Problem<double> *, bool) file:Teuchos_RCP.hpp line:91
 	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::Problem<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::Problem<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::Problem<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
 
+	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::LinMoreAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
+	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::LinMoreAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::LinMoreAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::LinMoreAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
+
+	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::PartitionedVector<double> *, bool) file:Teuchos_RCP.hpp line:91
+	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::PartitionedVector<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::PartitionedVector<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::PartitionedVector<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
+
+	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
+	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::PrimalDualActiveSetAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
+
+	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
+	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::MoreauYosidaAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
+
+	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
+	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::InteriorPointAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
+
 	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::QuasiNewtonAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
 	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::QuasiNewtonAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::QuasiNewtonAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::QuasiNewtonAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
 
@@ -379,21 +394,6 @@ void bind_Teuchos_RCP(std::function< pybind11::module &(std::string const &names
 
 	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::ColemanLiAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
 	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::ColemanLiAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::ColemanLiAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::ColemanLiAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
-
-	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::LinMoreAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
-	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::LinMoreAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::LinMoreAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::LinMoreAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
-
-	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
-	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::MoreauYosidaAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
-
-	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::PartitionedVector<double> *, bool) file:Teuchos_RCP.hpp line:91
-	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::PartitionedVector<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::PartitionedVector<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::PartitionedVector<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
-
-	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
-	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::PrimalDualActiveSetAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
-
-	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
-	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::InteriorPointAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));
 
 	// Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::SpectralGradientAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:91
 	M("Teuchos").def("RCP_createNewRCPNodeRawPtr", (class Teuchos::RCPNode * (*)(class ROL::TypeB::SpectralGradientAlgorithm<double> *, bool)) &Teuchos::RCP_createNewRCPNodeRawPtr<ROL::TypeB::SpectralGradientAlgorithm<double>>, "C++: Teuchos::RCP_createNewRCPNodeRawPtr(class ROL::TypeB::SpectralGradientAlgorithm<double> *, bool) --> class Teuchos::RCPNode *", pybind11::return_value_policy::automatic, pybind11::arg("p"), pybind11::arg("has_ownership_in"));

@@ -7,6 +7,7 @@
 #include <ROL_Objective.hpp>
 #include <ROL_PolyhedralProjection.hpp>
 #include <ROL_Problem.hpp>
+#include <ROL_Secant.hpp>
 #include <ROL_TypeU_Algorithm.hpp>
 #include <ROL_TypeU_LineSearchAlgorithm.hpp>
 #include <ROL_Types.hpp>
@@ -33,7 +34,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -47,7 +48,7 @@
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
-// ROL::TypeU::LineSearchAlgorithm file:ROL_TypeU_LineSearchAlgorithm.hpp line:100
+// ROL::TypeU::LineSearchAlgorithm file:ROL_TypeU_LineSearchAlgorithm.hpp line:101
 struct PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t : public ROL::TypeU::LineSearchAlgorithm<double> {
 	using ROL::TypeU::LineSearchAlgorithm<double>::LineSearchAlgorithm;
 
@@ -172,14 +173,23 @@ struct PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t : public ROL::TypeU::Li
 
 void bind_ROL_TypeU_LineSearchAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	{ // ROL::TypeU::LineSearchAlgorithm file:ROL_TypeU_LineSearchAlgorithm.hpp line:100
+	{ // ROL::TypeU::LineSearchAlgorithm file:ROL_TypeU_LineSearchAlgorithm.hpp line:101
 		pybind11::class_<ROL::TypeU::LineSearchAlgorithm<double>, Teuchos::RCP<ROL::TypeU::LineSearchAlgorithm<double>>, PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t, ROL::TypeU::Algorithm<double>> cl(M("ROL::TypeU"), "LineSearchAlgorithm_double_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeU::LineSearchAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t(a0); } ), "doc");
-		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > & a1){ return new ROL::TypeU::LineSearchAlgorithm<double>(a0, a1); }, [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > & a1){ return new PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t(a0, a1); } ), "doc");
-		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > &, const class Teuchos::RCP<class ROL::LineSearch_U<double> > &>(), pybind11::arg("parlist"), pybind11::arg("descent"), pybind11::arg("lineSearch") );
+		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::Secant<double> > & a1){ return new ROL::TypeU::LineSearchAlgorithm<double>(a0, a1); }, [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::Secant<double> > & a1){ return new PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t(a0, a1); } ), "doc");
+		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::Secant<double> > & a1, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > & a2){ return new ROL::TypeU::LineSearchAlgorithm<double>(a0, a1, a2); }, [](class Teuchos::ParameterList & a0, const class Teuchos::RCP<class ROL::Secant<double> > & a1, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > & a2){ return new PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t(a0, a1, a2); } ), "doc");
+		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &, const class Teuchos::RCP<class ROL::DescentDirection_U<double> > &, const class Teuchos::RCP<class ROL::LineSearch_U<double> > &>(), pybind11::arg("parlist"), pybind11::arg("secant"), pybind11::arg("descent"), pybind11::arg("lineSearch") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeU_LineSearchAlgorithm_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::TypeU::LineSearchAlgorithm<double> const &o){ return new ROL::TypeU::LineSearchAlgorithm<double>(o); } ) );
+		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, class ROL::Objective<double> & a2, class ROL::Constraint<double> & a3, class ROL::Vector<double> & a4, const class ROL::Vector<double> & a5) -> void { return o.run(a0, a1, a2, a3, a4, a5); }, "", pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("obj"), pybind11::arg("linear_con"), pybind11::arg("linear_mul"), pybind11::arg("linear_c"));
+		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, class ROL::Objective<double> & a2, class ROL::Constraint<double> & a3, class ROL::Vector<double> & a4, const class ROL::Vector<double> & a5, std::ostream & a6) -> void { return o.run(a0, a1, a2, a3, a4, a5, a6); }, "", pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("obj"), pybind11::arg("linear_con"), pybind11::arg("linear_mul"), pybind11::arg("linear_c"), pybind11::arg("outStream"));
+		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Vector<double> & a0, class ROL::Objective<double> & a1, class ROL::Constraint<double> & a2, class ROL::Vector<double> & a3) -> void { return o.run(a0, a1, a2, a3); }, "", pybind11::arg("x"), pybind11::arg("obj"), pybind11::arg("linear_con"), pybind11::arg("linear_mul"));
+		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Vector<double> & a0, class ROL::Objective<double> & a1, class ROL::Constraint<double> & a2, class ROL::Vector<double> & a3, std::ostream & a4) -> void { return o.run(a0, a1, a2, a3, a4); }, "", pybind11::arg("x"), pybind11::arg("obj"), pybind11::arg("linear_con"), pybind11::arg("linear_mul"), pybind11::arg("outStream"));
+		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Vector<double> & a0, class ROL::Objective<double> & a1) -> void { return o.run(a0, a1); }, "", pybind11::arg("x"), pybind11::arg("obj"));
+		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Vector<double> & a0, class ROL::Objective<double> & a1, std::ostream & a2) -> void { return o.run(a0, a1, a2); }, "", pybind11::arg("x"), pybind11::arg("obj"), pybind11::arg("outStream"));
+		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Problem<double> & a0) -> void { return o.run(a0); }, "", pybind11::arg("problem"));
+		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Problem<double> & a0, std::ostream & a1) -> void { return o.run(a0, a1); }, "", pybind11::arg("problem"), pybind11::arg("outStream"));
 		cl.def("initialize", [](ROL::TypeU::LineSearchAlgorithm<double> &o, const class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, class ROL::Objective<double> & a2) -> void { return o.initialize(a0, a1, a2); }, "", pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("obj"));
 		cl.def("initialize", (void (ROL::TypeU::LineSearchAlgorithm<double>::*)(const class ROL::Vector<double> &, const class ROL::Vector<double> &, class ROL::Objective<double> &, std::ostream &)) &ROL::TypeU::LineSearchAlgorithm<double>::initialize, "C++: ROL::TypeU::LineSearchAlgorithm<double>::initialize(const class ROL::Vector<double> &, const class ROL::Vector<double> &, class ROL::Objective<double> &, std::ostream &) --> void", pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("obj"), pybind11::arg("outStream"));
 		cl.def("run", [](ROL::TypeU::LineSearchAlgorithm<double> &o, class ROL::Vector<double> & a0, const class ROL::Vector<double> & a1, class ROL::Objective<double> & a2) -> void { return o.run(a0, a1, a2); }, "", pybind11::arg("x"), pybind11::arg("g"), pybind11::arg("obj"));

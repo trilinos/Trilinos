@@ -30,7 +30,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -222,16 +222,16 @@ void bind_Teuchos_ConstTypeTraits(std::function< pybind11::module &(std::string 
 	// Teuchos::TestForException_getThrowNumber() file:Teuchos_TestForException.hpp line:64
 	M("Teuchos").def("TestForException_getThrowNumber", (int (*)()) &Teuchos::TestForException_getThrowNumber, "Increment the throw number.  \n\nC++: Teuchos::TestForException_getThrowNumber() --> int");
 
-	// Teuchos::TestForException_break(const std::string &) file:Teuchos_TestForException.hpp line:68
-	M("Teuchos").def("TestForException_break", (void (*)(const std::string &)) &Teuchos::TestForException_break, "The only purpose for this function is to set a breakpoint.\n    \n\n\nC++: Teuchos::TestForException_break(const std::string &) --> void", pybind11::arg("msg"));
+	// Teuchos::TestForException_break(const std::string &, int) file:Teuchos_TestForException.hpp line:68
+	M("Teuchos").def("TestForException_break", (void (*)(const std::string &, int)) &Teuchos::TestForException_break, "The only purpose for this function is to set a breakpoint.\n    \n\n\nC++: Teuchos::TestForException_break(const std::string &, int) --> void", pybind11::arg("msg"), pybind11::arg("throwNumber"));
 
-	// Teuchos::TestForException_setEnableStacktrace(bool) file:Teuchos_TestForException.hpp line:72
+	// Teuchos::TestForException_setEnableStacktrace(bool) file:Teuchos_TestForException.hpp line:73
 	M("Teuchos").def("TestForException_setEnableStacktrace", (void (*)(bool)) &Teuchos::TestForException_setEnableStacktrace, "Set at runtime if stacktracing functionality is enabled when *\n    exceptions are thrown.  \n\n\nC++: Teuchos::TestForException_setEnableStacktrace(bool) --> void", pybind11::arg("enableStrackTrace"));
 
-	// Teuchos::TestForException_getEnableStacktrace() file:Teuchos_TestForException.hpp line:76
+	// Teuchos::TestForException_getEnableStacktrace() file:Teuchos_TestForException.hpp line:77
 	M("Teuchos").def("TestForException_getEnableStacktrace", (bool (*)()) &Teuchos::TestForException_getEnableStacktrace, "Get at runtime if stacktracing functionality is enabled when\n exceptions are thrown. \n\nC++: Teuchos::TestForException_getEnableStacktrace() --> bool");
 
-	// Teuchos::TestForTermination_terminate(const std::string &) file:Teuchos_TestForException.hpp line:79
+	// Teuchos::TestForTermination_terminate(const std::string &) file:Teuchos_TestForException.hpp line:80
 	M("Teuchos").def("TestForTermination_terminate", (void (*)(const std::string &)) &Teuchos::TestForTermination_terminate, "Prints the message to std::cerr and calls std::terminate. \n\nC++: Teuchos::TestForTermination_terminate(const std::string &) --> void", pybind11::arg("msg"));
 
 }

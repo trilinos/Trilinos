@@ -21,7 +21,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -35,33 +35,8 @@
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
-void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string const &namespace_) > &M)
+void bind_Teuchos_ArrayViewDecl(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	// Teuchos::enumIstreamExtractor(std::istream &, enum Teuchos::EVerbosityLevel &) file:Teuchos_iostream_helpers.hpp line:58
-	M("Teuchos").def("enumIstreamExtractor", (std::istream & (*)(std::istream &, enum Teuchos::EVerbosityLevel &)) &Teuchos::enumIstreamExtractor<Teuchos::EVerbosityLevel>, "C++: Teuchos::enumIstreamExtractor(std::istream &, enum Teuchos::EVerbosityLevel &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("std_is"), pybind11::arg("enum_value"));
-
-	// Teuchos::EVerbosityLevel file:Teuchos_VerbosityLevel.hpp line:62
-	pybind11::enum_<Teuchos::EVerbosityLevel>(M("Teuchos"), "EVerbosityLevel", pybind11::arithmetic(), "Verbosity level.\n\n \n\n ", pybind11::module_local())
-		.value("VERB_DEFAULT", Teuchos::VERB_DEFAULT)
-		.value("VERB_NONE", Teuchos::VERB_NONE)
-		.value("VERB_LOW", Teuchos::VERB_LOW)
-		.value("VERB_MEDIUM", Teuchos::VERB_MEDIUM)
-		.value("VERB_HIGH", Teuchos::VERB_HIGH)
-		.value("VERB_EXTREME", Teuchos::VERB_EXTREME)
-		.export_values();
-
-;
-
-	// Teuchos::toString(const enum Teuchos::EVerbosityLevel) file:Teuchos_VerbosityLevel.hpp line:80
-	M("Teuchos").def("toString", (std::string (*)(const enum Teuchos::EVerbosityLevel)) &Teuchos::toString, "Return a std::string representation of the verbosity level.\n\n \n\n \n\nC++: Teuchos::toString(const enum Teuchos::EVerbosityLevel) --> std::string", pybind11::arg("verbLevel"));
-
-	// Teuchos::includesVerbLevel(const enum Teuchos::EVerbosityLevel, const enum Teuchos::EVerbosityLevel, const bool) file:Teuchos_VerbosityLevel.hpp line:96
-	M("Teuchos").def("includesVerbLevel", [](const enum Teuchos::EVerbosityLevel & a0, const enum Teuchos::EVerbosityLevel & a1) -> bool { return Teuchos::includesVerbLevel(a0, a1); }, "", pybind11::arg("verbLevel"), pybind11::arg("requestedVerbLevel"));
-	M("Teuchos").def("includesVerbLevel", (bool (*)(const enum Teuchos::EVerbosityLevel, const enum Teuchos::EVerbosityLevel, const bool)) &Teuchos::includesVerbLevel, "Return true if the verbosity level includes the given level.\n\n \n\n           [in] The verbosity level that is in effect.\n \n\n\n           [in] The verbosity level the client is asking if\n           is included in verbLevel.\n \n\n\n           [in] Set to true if the level in\n           requestedVerbLevel is the default verbosity level.  In\n           this case, if verbLevel==VERB_DEFAULT, then this function\n           will return true.  The default value is false.\n\nC++: Teuchos::includesVerbLevel(const enum Teuchos::EVerbosityLevel, const enum Teuchos::EVerbosityLevel, const bool) --> bool", pybind11::arg("verbLevel"), pybind11::arg("requestedVerbLevel"), pybind11::arg("isDefaultLevel"));
-
-	// Teuchos::incrVerbLevel(const enum Teuchos::EVerbosityLevel, const int) file:Teuchos_VerbosityLevel.hpp line:112
-	M("Teuchos").def("incrVerbLevel", (enum Teuchos::EVerbosityLevel (*)(const enum Teuchos::EVerbosityLevel, const int)) &Teuchos::incrVerbLevel, "Return an increased or decreased verbosity level.\n\n \n\n           [in] The base verbosity level.\n \n\n\n           [in] The number of levels to increase (>0) or decrease (<0).\n\n See the function implementation for details on what it does!\n\nC++: Teuchos::incrVerbLevel(const enum Teuchos::EVerbosityLevel, const int) --> enum Teuchos::EVerbosityLevel", pybind11::arg("inputVerbLevel"), pybind11::arg("numLevels"));
-
 	{ // Teuchos::ArrayView file:Teuchos_ArrayViewDecl.hpp line:123
 		pybind11::class_<Teuchos::ArrayView<float>, Teuchos::RCP<Teuchos::ArrayView<float>>> cl(M("Teuchos"), "ArrayView_float_t", "", pybind11::module_local());
 		cl.def( pybind11::init( [](){ return new Teuchos::ArrayView<float>(); } ), "doc" );
@@ -91,7 +66,7 @@ void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string
 		cl.def("assert_in_range", (const class Teuchos::ArrayView<float> & (Teuchos::ArrayView<float>::*)(long, long) const) &Teuchos::ArrayView<float>::assert_in_range, "C++: Teuchos::ArrayView<float>::assert_in_range(long, long) const --> const class Teuchos::ArrayView<float> &", pybind11::return_value_policy::automatic, pybind11::arg("offset"), pybind11::arg("size"));
 		cl.def("access_private_ptr", (float * (Teuchos::ArrayView<float>::*)() const) &Teuchos::ArrayView<float>::access_private_ptr, "C++: Teuchos::ArrayView<float>::access_private_ptr() const --> float *", pybind11::return_value_policy::automatic);
 
-		cl.def("__str__", [](Teuchos::ArrayView<float> const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::ArrayView<float> const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	{ // Teuchos::ArrayView file:Teuchos_ArrayViewDecl.hpp line:433
 		pybind11::class_<Teuchos::ArrayView<const float>, Teuchos::RCP<Teuchos::ArrayView<const float>>> cl(M("Teuchos"), "ArrayView_const_float_t", "", pybind11::module_local());
@@ -121,7 +96,7 @@ void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string
 		cl.def("assert_in_range", (const class Teuchos::ArrayView<const float> & (Teuchos::ArrayView<const float>::*)(long, long) const) &Teuchos::ArrayView<const float>::assert_in_range, "C++: Teuchos::ArrayView<const float>::assert_in_range(long, long) const --> const class Teuchos::ArrayView<const float> &", pybind11::return_value_policy::automatic, pybind11::arg("offset"), pybind11::arg("size"));
 		cl.def("access_private_ptr", (const float * (Teuchos::ArrayView<const float>::*)() const) &Teuchos::ArrayView<const float>::access_private_ptr, "C++: Teuchos::ArrayView<const float>::access_private_ptr() const --> const float *", pybind11::return_value_policy::automatic);
 
-		cl.def("__str__", [](Teuchos::ArrayView<const float> const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::ArrayView<const float> const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	{ // Teuchos::ArrayView file:Teuchos_ArrayViewDecl.hpp line:123
 		pybind11::class_<Teuchos::ArrayView<double>, Teuchos::RCP<Teuchos::ArrayView<double>>> cl(M("Teuchos"), "ArrayView_double_t", "", pybind11::module_local());
@@ -152,7 +127,7 @@ void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string
 		cl.def("assert_in_range", (const class Teuchos::ArrayView<double> & (Teuchos::ArrayView<double>::*)(long, long) const) &Teuchos::ArrayView<double>::assert_in_range, "C++: Teuchos::ArrayView<double>::assert_in_range(long, long) const --> const class Teuchos::ArrayView<double> &", pybind11::return_value_policy::automatic, pybind11::arg("offset"), pybind11::arg("size"));
 		cl.def("access_private_ptr", (double * (Teuchos::ArrayView<double>::*)() const) &Teuchos::ArrayView<double>::access_private_ptr, "C++: Teuchos::ArrayView<double>::access_private_ptr() const --> double *", pybind11::return_value_policy::automatic);
 
-		cl.def("__str__", [](Teuchos::ArrayView<double> const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::ArrayView<double> const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	{ // Teuchos::ArrayView file:Teuchos_ArrayViewDecl.hpp line:433
 		pybind11::class_<Teuchos::ArrayView<const double>, Teuchos::RCP<Teuchos::ArrayView<const double>>> cl(M("Teuchos"), "ArrayView_const_double_t", "", pybind11::module_local());
@@ -182,7 +157,7 @@ void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string
 		cl.def("assert_in_range", (const class Teuchos::ArrayView<const double> & (Teuchos::ArrayView<const double>::*)(long, long) const) &Teuchos::ArrayView<const double>::assert_in_range, "C++: Teuchos::ArrayView<const double>::assert_in_range(long, long) const --> const class Teuchos::ArrayView<const double> &", pybind11::return_value_policy::automatic, pybind11::arg("offset"), pybind11::arg("size"));
 		cl.def("access_private_ptr", (const double * (Teuchos::ArrayView<const double>::*)() const) &Teuchos::ArrayView<const double>::access_private_ptr, "C++: Teuchos::ArrayView<const double>::access_private_ptr() const --> const double *", pybind11::return_value_policy::automatic);
 
-		cl.def("__str__", [](Teuchos::ArrayView<const double> const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::ArrayView<const double> const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	// Teuchos::as(const long &) file:Teuchos_as.hpp line:287
 	M("Teuchos").def("as", (int (*)(const long &)) &Teuchos::as<int,long>, "C++: Teuchos::as(const long &) --> int", pybind11::arg("t"));
@@ -529,6 +504,31 @@ void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string
 		cl.def_static("convert", (float (*)(const unsigned long long)) &Teuchos::ValueTypeConversionTraits<float, unsigned long long>::convert, "Convert the given unsigned long long to a \n\n \n unsigned long long integer values may overflow\n     You should use safeConvert() if you aren't sure\n   that the given value fits in a \n\nC++: Teuchos::ValueTypeConversionTraits<float, unsigned long long>::convert(const unsigned long long) --> float", pybind11::arg("t"));
 		cl.def_static("safeConvert", (float (*)(const unsigned long long)) &Teuchos::ValueTypeConversionTraits<float, unsigned long long>::safeConvert, "Convert from unsigned long long to  checking for overflow first.\n\nC++: Teuchos::ValueTypeConversionTraits<float, unsigned long long>::safeConvert(const unsigned long long) --> float", pybind11::arg("t"));
 	}
+	// Teuchos::enumIstreamExtractor(std::istream &, enum Teuchos::EVerbosityLevel &) file:Teuchos_iostream_helpers.hpp line:58
+	M("Teuchos").def("enumIstreamExtractor", (std::istream & (*)(std::istream &, enum Teuchos::EVerbosityLevel &)) &Teuchos::enumIstreamExtractor<Teuchos::EVerbosityLevel>, "C++: Teuchos::enumIstreamExtractor(std::istream &, enum Teuchos::EVerbosityLevel &) --> std::istream &", pybind11::return_value_policy::automatic, pybind11::arg("std_is"), pybind11::arg("enum_value"));
+
+	// Teuchos::EVerbosityLevel file:Teuchos_VerbosityLevel.hpp line:63
+	pybind11::enum_<Teuchos::EVerbosityLevel>(M("Teuchos"), "EVerbosityLevel", pybind11::arithmetic(), "Verbosity level.\n\n \n\n ", pybind11::module_local())
+		.value("VERB_DEFAULT", Teuchos::VERB_DEFAULT)
+		.value("VERB_NONE", Teuchos::VERB_NONE)
+		.value("VERB_LOW", Teuchos::VERB_LOW)
+		.value("VERB_MEDIUM", Teuchos::VERB_MEDIUM)
+		.value("VERB_HIGH", Teuchos::VERB_HIGH)
+		.value("VERB_EXTREME", Teuchos::VERB_EXTREME)
+		.export_values();
+
+;
+
+	// Teuchos::toString(const enum Teuchos::EVerbosityLevel) file:Teuchos_VerbosityLevel.hpp line:111
+	M("Teuchos").def("toString", (std::string (*)(const enum Teuchos::EVerbosityLevel)) &Teuchos::toString, "Return a std::string representation of the verbosity level.\n\n \n\n \n\nC++: Teuchos::toString(const enum Teuchos::EVerbosityLevel) --> std::string", pybind11::arg("verbLevel"));
+
+	// Teuchos::includesVerbLevel(const enum Teuchos::EVerbosityLevel, const enum Teuchos::EVerbosityLevel, const bool) file:Teuchos_VerbosityLevel.hpp line:127
+	M("Teuchos").def("includesVerbLevel", [](const enum Teuchos::EVerbosityLevel & a0, const enum Teuchos::EVerbosityLevel & a1) -> bool { return Teuchos::includesVerbLevel(a0, a1); }, "", pybind11::arg("verbLevel"), pybind11::arg("requestedVerbLevel"));
+	M("Teuchos").def("includesVerbLevel", (bool (*)(const enum Teuchos::EVerbosityLevel, const enum Teuchos::EVerbosityLevel, const bool)) &Teuchos::includesVerbLevel, "Return true if the verbosity level includes the given level.\n\n \n\n           [in] The verbosity level that is in effect.\n \n\n\n           [in] The verbosity level the client is asking if\n           is included in verbLevel.\n \n\n\n           [in] Set to true if the level in\n           requestedVerbLevel is the default verbosity level.  In\n           this case, if verbLevel==VERB_DEFAULT, then this function\n           will return true.  The default value is false.\n\nC++: Teuchos::includesVerbLevel(const enum Teuchos::EVerbosityLevel, const enum Teuchos::EVerbosityLevel, const bool) --> bool", pybind11::arg("verbLevel"), pybind11::arg("requestedVerbLevel"), pybind11::arg("isDefaultLevel"));
+
+	// Teuchos::incrVerbLevel(const enum Teuchos::EVerbosityLevel, const int) file:Teuchos_VerbosityLevel.hpp line:143
+	M("Teuchos").def("incrVerbLevel", (enum Teuchos::EVerbosityLevel (*)(const enum Teuchos::EVerbosityLevel, const int)) &Teuchos::incrVerbLevel, "Return an increased or decreased verbosity level.\n\n \n\n           [in] The base verbosity level.\n \n\n\n           [in] The number of levels to increase (>0) or decrease (<0).\n\n See the function implementation for details on what it does!\n\nC++: Teuchos::incrVerbLevel(const enum Teuchos::EVerbosityLevel, const int) --> enum Teuchos::EVerbosityLevel", pybind11::arg("inputVerbLevel"), pybind11::arg("numLevels"));
+
 	{ // Teuchos::GlobalMPISession file:Teuchos_GlobalMPISession.hpp line:113
 		pybind11::class_<Teuchos::GlobalMPISession, Teuchos::RCP<Teuchos::GlobalMPISession>> cl(M("Teuchos"), "GlobalMPISession", "you would write:\n \n\n\n\n\n\n\n\n\n\n\n This saves you from needing to remember to call MPI_Init() or\n MPI_Finalize().  Also, having the GlobalMPISession object's constructor\n call MPI_Finalize() allows destructors from other objects to call MPI\n functions.  That wold never be possible if you were to directly call\n MPI_Finalize() at the end of main().\n\n This class even works if you have not built Teuchos with MPI support.  In\n that case, it behaves as if MPI_COMM_WORLD had one process, which is\n always the calling process.  Thus, you can use this class to insulate your\n code from needing to know about MPI.  You don't even have to include\n mpi.h, as long as your code doesn't directly use MPI routines or types.\n Teuchos implements wrappers for MPI communicators (see the Teuchos::Comm\n class and its subclasses in the TeuchosComm subpackage) which allow you to\n use a very very small subset of MPI functionality without needing to\n include mpi.h or depend on MPI in any way.\n\n This class also contains the most minimal of other static member functions\n that are needed for only the most simplistic of tasks needed by other\n TeuchosCore software.  For example, you can do a barrier or sum an int\n across processes.  These are needed by the most basic operations involving\n output or determining success or failure across processes for unit tests.\n\n GlobalMPISession's static functions cleverly checks whether MPI has been\n initialized already before calling any MPI functions.  Therefore, you can\n use it in your libraries without requiring that a GlobalMPISession object\n was created in main().", pybind11::module_local());
 		cl.def_static("abort", (void (*)()) &Teuchos::GlobalMPISession::abort, "abort the program\n\n Calls MPI_Abort for HAVE_MPI\n Otherwise calls std::abort\n\nC++: Teuchos::GlobalMPISession::abort() --> void");

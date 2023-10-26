@@ -6,7 +6,7 @@
 #include <string>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -137,6 +137,8 @@ void bind_Teuchos_ParameterListExceptions(std::function< pybind11::module &(std:
 		pybind11::class_<Teuchos::Exceptions::InvalidParameterName, Teuchos::RCP<Teuchos::Exceptions::InvalidParameterName>, PyCallBack_Teuchos_Exceptions_InvalidParameterName, Teuchos::Exceptions::InvalidParameter> cl(M("Teuchos::Exceptions"), "InvalidParameterName", ".\n \n\n\n ", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
+		cl.def( pybind11::init( [](PyCallBack_Teuchos_Exceptions_InvalidParameterName const &o){ return new PyCallBack_Teuchos_Exceptions_InvalidParameterName(o); } ) );
+		cl.def( pybind11::init( [](Teuchos::Exceptions::InvalidParameterName const &o){ return new Teuchos::Exceptions::InvalidParameterName(o); } ) );
 		cl.def("assign", (class Teuchos::Exceptions::InvalidParameterName & (Teuchos::Exceptions::InvalidParameterName::*)(const class Teuchos::Exceptions::InvalidParameterName &)) &Teuchos::Exceptions::InvalidParameterName::operator=, "C++: Teuchos::Exceptions::InvalidParameterName::operator=(const class Teuchos::Exceptions::InvalidParameterName &) --> class Teuchos::Exceptions::InvalidParameterName &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::Exceptions::InvalidParameterType file:Teuchos_ParameterListExceptions.hpp line:73

@@ -1,28 +1,10 @@
-#include <ROL_StatusTest.hpp>
-#include <ROL_TypeU_Algorithm.hpp>
 #include <ROL_TypeU_AlgorithmFactory.hpp>
-#include <Teuchos_ENull.hpp>
-#include <Teuchos_FilteredIterator.hpp>
-#include <Teuchos_ParameterEntry.hpp>
-#include <Teuchos_ParameterEntryValidator.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_ParameterListModifier.hpp>
-#include <Teuchos_PtrDecl.hpp>
-#include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_RCPNode.hpp>
-#include <Teuchos_StringIndexedOrderedValueObjectContainer.hpp>
-#include <Teuchos_any.hpp>
-#include <cwchar>
-#include <deque>
-#include <ios>
 #include <iterator>
 #include <memory>
-#include <ostream>
-#include <streambuf>
 #include <string>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -56,8 +38,5 @@ void bind_ROL_TypeU_AlgorithmFactory(std::function< pybind11::module &(std::stri
 
 	// ROL::TypeU::StringToEAlgorithmU(std::string) file:ROL_TypeU_AlgorithmFactory.hpp line:114
 	M("ROL::TypeU").def("StringToEAlgorithmU", (enum ROL::TypeU::EAlgorithmU (*)(std::string)) &ROL::TypeU::StringToEAlgorithmU, "C++: ROL::TypeU::StringToEAlgorithmU(std::string) --> enum ROL::TypeU::EAlgorithmU", pybind11::arg("s"));
-
-	// ROL::TypeU::AlgorithmFactory(class Teuchos::ParameterList &) file:ROL_TypeU_AlgorithmFactory.hpp line:125
-	M("ROL::TypeU").def("AlgorithmFactory", (class Teuchos::RCP<class ROL::TypeU::Algorithm<double> > (*)(class Teuchos::ParameterList &)) &ROL::TypeU::AlgorithmFactory<double>, "C++: ROL::TypeU::AlgorithmFactory(class Teuchos::ParameterList &) --> class Teuchos::RCP<class ROL::TypeU::Algorithm<double> >", pybind11::arg("parlist"));
 
 }

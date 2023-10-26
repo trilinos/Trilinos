@@ -5,6 +5,7 @@
 #include <ROL_Objective.hpp>
 #include <ROL_PolyhedralProjection.hpp>
 #include <ROL_Problem.hpp>
+#include <ROL_Secant.hpp>
 #include <ROL_TypeE_Algorithm.hpp>
 #include <ROL_TypeE_StabilizedLCLAlgorithm.hpp>
 #include <ROL_Types.hpp>
@@ -31,7 +32,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -45,7 +46,7 @@
 	PYBIND11_MAKE_OPAQUE(Teuchos::RCP<void>)
 #endif
 
-// ROL::TypeE::StabilizedLCLAlgorithm file:ROL_TypeE_StabilizedLCLAlgorithm.hpp line:62
+// ROL::TypeE::StabilizedLCLAlgorithm file:ROL_TypeE_StabilizedLCLAlgorithm.hpp line:63
 struct PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t : public ROL::TypeE::StabilizedLCLAlgorithm<double> {
 	using ROL::TypeE::StabilizedLCLAlgorithm<double>::StabilizedLCLAlgorithm;
 
@@ -170,9 +171,10 @@ struct PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t : public ROL::TypeE:
 
 void bind_ROL_TypeE_StabilizedLCLAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M)
 {
-	{ // ROL::TypeE::StabilizedLCLAlgorithm file:ROL_TypeE_StabilizedLCLAlgorithm.hpp line:62
+	{ // ROL::TypeE::StabilizedLCLAlgorithm file:ROL_TypeE_StabilizedLCLAlgorithm.hpp line:63
 		pybind11::class_<ROL::TypeE::StabilizedLCLAlgorithm<double>, Teuchos::RCP<ROL::TypeE::StabilizedLCLAlgorithm<double>>, PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t, ROL::TypeE::Algorithm<double>> cl(M("ROL::TypeE"), "StabilizedLCLAlgorithm_double_t", "", pybind11::module_local());
-		cl.def( pybind11::init<class Teuchos::ParameterList &>(), pybind11::arg("list") );
+		cl.def( pybind11::init( [](class Teuchos::ParameterList & a0){ return new ROL::TypeE::StabilizedLCLAlgorithm<double>(a0); }, [](class Teuchos::ParameterList & a0){ return new PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t(a0); } ), "doc");
+		cl.def( pybind11::init<class Teuchos::ParameterList &, const class Teuchos::RCP<class ROL::Secant<double> > &>(), pybind11::arg("list"), pybind11::arg("secant") );
 
 		cl.def( pybind11::init( [](PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t const &o){ return new PyCallBack_ROL_TypeE_StabilizedLCLAlgorithm_double_t(o); } ) );
 		cl.def( pybind11::init( [](ROL::TypeE::StabilizedLCLAlgorithm<double> const &o){ return new ROL::TypeE::StabilizedLCLAlgorithm<double>(o); } ) );

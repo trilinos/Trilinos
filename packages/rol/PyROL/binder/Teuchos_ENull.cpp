@@ -162,7 +162,7 @@
 #include <vector>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -483,6 +483,8 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 		pybind11::class_<Teuchos::DuplicateOwningRCPError, Teuchos::RCP<Teuchos::DuplicateOwningRCPError>, PyCallBack_Teuchos_DuplicateOwningRCPError, Teuchos::ExceptionBase> cl(M("Teuchos"), "DuplicateOwningRCPError", "Thrown if a duplicate owning RCP is creatd the the same object.\n\n \n\n ", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
+		cl.def( pybind11::init( [](PyCallBack_Teuchos_DuplicateOwningRCPError const &o){ return new PyCallBack_Teuchos_DuplicateOwningRCPError(o); } ) );
+		cl.def( pybind11::init( [](Teuchos::DuplicateOwningRCPError const &o){ return new Teuchos::DuplicateOwningRCPError(o); } ) );
 		cl.def("assign", (class Teuchos::DuplicateOwningRCPError & (Teuchos::DuplicateOwningRCPError::*)(const class Teuchos::DuplicateOwningRCPError &)) &Teuchos::DuplicateOwningRCPError::operator=, "C++: Teuchos::DuplicateOwningRCPError::operator=(const class Teuchos::DuplicateOwningRCPError &) --> class Teuchos::DuplicateOwningRCPError &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::NullReferenceError file:Teuchos_Exceptions.hpp line:77
@@ -497,6 +499,8 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 		pybind11::class_<Teuchos::NonconstAccessError, Teuchos::RCP<Teuchos::NonconstAccessError>, PyCallBack_Teuchos_NonconstAccessError, Teuchos::ExceptionBase> cl(M("Teuchos"), "NonconstAccessError", "Null reference error exception class.\n\n \n\n ", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
+		cl.def( pybind11::init( [](PyCallBack_Teuchos_NonconstAccessError const &o){ return new PyCallBack_Teuchos_NonconstAccessError(o); } ) );
+		cl.def( pybind11::init( [](Teuchos::NonconstAccessError const &o){ return new Teuchos::NonconstAccessError(o); } ) );
 		cl.def("assign", (class Teuchos::NonconstAccessError & (Teuchos::NonconstAccessError::*)(const class Teuchos::NonconstAccessError &)) &Teuchos::NonconstAccessError::operator=, "C++: Teuchos::NonconstAccessError::operator=(const class Teuchos::NonconstAccessError &) --> class Teuchos::NonconstAccessError &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::RangeError file:Teuchos_Exceptions.hpp line:93
@@ -519,30 +523,40 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 		pybind11::class_<Teuchos::IncompatibleIteratorsError, Teuchos::RCP<Teuchos::IncompatibleIteratorsError>, PyCallBack_Teuchos_IncompatibleIteratorsError, Teuchos::ExceptionBase> cl(M("Teuchos"), "IncompatibleIteratorsError", "Incompatiable iterators error exception class.\n\n \n\n ", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
+		cl.def( pybind11::init( [](PyCallBack_Teuchos_IncompatibleIteratorsError const &o){ return new PyCallBack_Teuchos_IncompatibleIteratorsError(o); } ) );
+		cl.def( pybind11::init( [](Teuchos::IncompatibleIteratorsError const &o){ return new Teuchos::IncompatibleIteratorsError(o); } ) );
 		cl.def("assign", (class Teuchos::IncompatibleIteratorsError & (Teuchos::IncompatibleIteratorsError::*)(const class Teuchos::IncompatibleIteratorsError &)) &Teuchos::IncompatibleIteratorsError::operator=, "C++: Teuchos::IncompatibleIteratorsError::operator=(const class Teuchos::IncompatibleIteratorsError &) --> class Teuchos::IncompatibleIteratorsError &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::DuplicateParameterSublist file:Teuchos_Exceptions.hpp line:118
 		pybind11::class_<Teuchos::DuplicateParameterSublist, Teuchos::RCP<Teuchos::DuplicateParameterSublist>, PyCallBack_Teuchos_DuplicateParameterSublist, Teuchos::ExceptionBase> cl(M("Teuchos"), "DuplicateParameterSublist", "Optionally thrown when a sublist is set twice by either\n updateParametersFromXmlFile(), updateParametersFromXmlFileAndUpdate() or\n updateParametersFromXmlString()\n\n \n\n ", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
+		cl.def( pybind11::init( [](PyCallBack_Teuchos_DuplicateParameterSublist const &o){ return new PyCallBack_Teuchos_DuplicateParameterSublist(o); } ) );
+		cl.def( pybind11::init( [](Teuchos::DuplicateParameterSublist const &o){ return new Teuchos::DuplicateParameterSublist(o); } ) );
 		cl.def("assign", (class Teuchos::DuplicateParameterSublist & (Teuchos::DuplicateParameterSublist::*)(const class Teuchos::DuplicateParameterSublist &)) &Teuchos::DuplicateParameterSublist::operator=, "C++: Teuchos::DuplicateParameterSublist::operator=(const class Teuchos::DuplicateParameterSublist &) --> class Teuchos::DuplicateParameterSublist &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::DuplicateParameterEntryException file:Teuchos_Exceptions.hpp line:132
 		pybind11::class_<Teuchos::DuplicateParameterEntryException, Teuchos::RCP<Teuchos::DuplicateParameterEntryException>, PyCallBack_Teuchos_DuplicateParameterEntryException, Teuchos::ExceptionBase> cl(M("Teuchos"), "DuplicateParameterEntryException", "Thrown when a Parameter Entry that is already being tracked\n is attempted to be inserted again into the masterParameterEntryMap\n and masterIDMap\n\n \n\n ", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
+		cl.def( pybind11::init( [](PyCallBack_Teuchos_DuplicateParameterEntryException const &o){ return new PyCallBack_Teuchos_DuplicateParameterEntryException(o); } ) );
+		cl.def( pybind11::init( [](Teuchos::DuplicateParameterEntryException const &o){ return new Teuchos::DuplicateParameterEntryException(o); } ) );
 		cl.def("assign", (class Teuchos::DuplicateParameterEntryException & (Teuchos::DuplicateParameterEntryException::*)(const class Teuchos::DuplicateParameterEntryException &)) &Teuchos::DuplicateParameterEntryException::operator=, "C++: Teuchos::DuplicateParameterEntryException::operator=(const class Teuchos::DuplicateParameterEntryException &) --> class Teuchos::DuplicateParameterEntryException &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::DuplicateParameterEntryIDException file:Teuchos_Exceptions.hpp line:145
 		pybind11::class_<Teuchos::DuplicateParameterEntryIDException, Teuchos::RCP<Teuchos::DuplicateParameterEntryIDException>, PyCallBack_Teuchos_DuplicateParameterEntryIDException, Teuchos::ExceptionBase> cl(M("Teuchos"), "DuplicateParameterEntryIDException", "Thrown when a Parameter Entry ID that is already being used\n is attempted to be reused again.\n\n \n\n ", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
+		cl.def( pybind11::init( [](PyCallBack_Teuchos_DuplicateParameterEntryIDException const &o){ return new PyCallBack_Teuchos_DuplicateParameterEntryIDException(o); } ) );
+		cl.def( pybind11::init( [](Teuchos::DuplicateParameterEntryIDException const &o){ return new Teuchos::DuplicateParameterEntryIDException(o); } ) );
 		cl.def("assign", (class Teuchos::DuplicateParameterEntryIDException & (Teuchos::DuplicateParameterEntryIDException::*)(const class Teuchos::DuplicateParameterEntryIDException &)) &Teuchos::DuplicateParameterEntryIDException::operator=, "C++: Teuchos::DuplicateParameterEntryIDException::operator=(const class Teuchos::DuplicateParameterEntryIDException &) --> class Teuchos::DuplicateParameterEntryIDException &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::DuplicateValidatorIDException file:Teuchos_Exceptions.hpp line:158
 		pybind11::class_<Teuchos::DuplicateValidatorIDException, Teuchos::RCP<Teuchos::DuplicateValidatorIDException>, PyCallBack_Teuchos_DuplicateValidatorIDException, Teuchos::ExceptionBase> cl(M("Teuchos"), "DuplicateValidatorIDException", "Thrown when a ParameterEntryValidatorID that\n is already being used is attempted to be reused again.\n\n \n\n ", pybind11::module_local());
 		cl.def( pybind11::init<const std::string &>(), pybind11::arg("what_arg") );
 
+		cl.def( pybind11::init( [](PyCallBack_Teuchos_DuplicateValidatorIDException const &o){ return new PyCallBack_Teuchos_DuplicateValidatorIDException(o); } ) );
+		cl.def( pybind11::init( [](Teuchos::DuplicateValidatorIDException const &o){ return new Teuchos::DuplicateValidatorIDException(o); } ) );
 		cl.def("assign", (class Teuchos::DuplicateValidatorIDException & (Teuchos::DuplicateValidatorIDException::*)(const class Teuchos::DuplicateValidatorIDException &)) &Teuchos::DuplicateValidatorIDException::operator=, "C++: Teuchos::DuplicateValidatorIDException::operator=(const class Teuchos::DuplicateValidatorIDException &) --> class Teuchos::DuplicateValidatorIDException &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	{ // Teuchos::ToStringTraits file:Teuchos_toString.hpp line:60
@@ -701,7 +715,7 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 		cl.def("get_optional_extra_data", (class Teuchos::any * (Teuchos::RCPNodeHandle::*)(const std::string &, const std::string &)) &Teuchos::RCPNodeHandle::get_optional_extra_data, ". \n\nC++: Teuchos::RCPNodeHandle::get_optional_extra_data(const std::string &, const std::string &) --> class Teuchos::any *", pybind11::return_value_policy::automatic, pybind11::arg("type_name"), pybind11::arg("name"));
 		cl.def("debug_assert_not_null", (void (Teuchos::RCPNodeHandle::*)() const) &Teuchos::RCPNodeHandle::debug_assert_not_null, ". \n\nC++: Teuchos::RCPNodeHandle::debug_assert_not_null() const --> void");
 
-		cl.def("__str__", [](Teuchos::RCPNodeHandle const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::RCPNodeHandle const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	{ // Teuchos::RCPNodeThrowDeleter file:Teuchos_RCPNode.hpp line:1110
 		pybind11::class_<Teuchos::RCPNodeThrowDeleter, Teuchos::RCP<Teuchos::RCPNodeThrowDeleter>> cl(M("Teuchos"), "RCPNodeThrowDeleter", "Deletes a (non-owning) RCPNode but not it's underlying object in\n case of a throw.\n\n This class is used in contexts where RCPNodeTracer::addNewRCPNode(...)\n might thrown an exception for a duplicate node being added.  The assumption\n is that there must already be an owning (or non-owning) RCP object that\n will delete the underlying object and therefore this class should *not*\n call delete_obj()!", pybind11::module_local());
@@ -728,7 +742,7 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 		cl.def("ptr", (const class Teuchos::Ptr<const class Teuchos::ParameterEntry> (Teuchos::Ptr<const Teuchos::ParameterEntry>::*)() const) &Teuchos::Ptr<const Teuchos::ParameterEntry>::ptr, "C++: Teuchos::Ptr<const Teuchos::ParameterEntry>::ptr() const --> const class Teuchos::Ptr<const class Teuchos::ParameterEntry>");
 		cl.def("getConst", (class Teuchos::Ptr<const class Teuchos::ParameterEntry> (Teuchos::Ptr<const Teuchos::ParameterEntry>::*)() const) &Teuchos::Ptr<const Teuchos::ParameterEntry>::getConst, "C++: Teuchos::Ptr<const Teuchos::ParameterEntry>::getConst() const --> class Teuchos::Ptr<const class Teuchos::ParameterEntry>");
 
-		cl.def("__str__", [](Teuchos::Ptr<const Teuchos::ParameterEntry> const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::Ptr<const Teuchos::ParameterEntry> const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	{ // Teuchos::Ptr file:Teuchos_PtrDecl.hpp line:104
 		pybind11::class_<Teuchos::Ptr<Teuchos::ParameterEntry>, Teuchos::RCP<Teuchos::Ptr<Teuchos::ParameterEntry>>> cl(M("Teuchos"), "Ptr_Teuchos_ParameterEntry_t", "", pybind11::module_local());
@@ -748,7 +762,7 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 		cl.def("ptr", (const class Teuchos::Ptr<class Teuchos::ParameterEntry> (Teuchos::Ptr<Teuchos::ParameterEntry>::*)() const) &Teuchos::Ptr<Teuchos::ParameterEntry>::ptr, "C++: Teuchos::Ptr<Teuchos::ParameterEntry>::ptr() const --> const class Teuchos::Ptr<class Teuchos::ParameterEntry>");
 		cl.def("getConst", (class Teuchos::Ptr<const class Teuchos::ParameterEntry> (Teuchos::Ptr<Teuchos::ParameterEntry>::*)() const) &Teuchos::Ptr<Teuchos::ParameterEntry>::getConst, "C++: Teuchos::Ptr<Teuchos::ParameterEntry>::getConst() const --> class Teuchos::Ptr<const class Teuchos::ParameterEntry>");
 
-		cl.def("__str__", [](Teuchos::Ptr<Teuchos::ParameterEntry> const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::Ptr<Teuchos::ParameterEntry> const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	{ // Teuchos::Ptr file:Teuchos_PtrDecl.hpp line:104
 		pybind11::class_<Teuchos::Ptr<Teuchos::ParameterList>, Teuchos::RCP<Teuchos::Ptr<Teuchos::ParameterList>>> cl(M("Teuchos"), "Ptr_Teuchos_ParameterList_t", "", pybind11::module_local());
@@ -767,7 +781,7 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 		cl.def("assert_not_null", (const class Teuchos::Ptr<class Teuchos::ParameterList> & (Teuchos::Ptr<Teuchos::ParameterList>::*)() const) &Teuchos::Ptr<Teuchos::ParameterList>::assert_not_null, "C++: Teuchos::Ptr<Teuchos::ParameterList>::assert_not_null() const --> const class Teuchos::Ptr<class Teuchos::ParameterList> &", pybind11::return_value_policy::automatic);
 		cl.def("ptr", (const class Teuchos::Ptr<class Teuchos::ParameterList> (Teuchos::Ptr<Teuchos::ParameterList>::*)() const) &Teuchos::Ptr<Teuchos::ParameterList>::ptr, "C++: Teuchos::Ptr<Teuchos::ParameterList>::ptr() const --> const class Teuchos::Ptr<class Teuchos::ParameterList>");
 
-		cl.def("__str__", [](Teuchos::Ptr<Teuchos::ParameterList> const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::Ptr<Teuchos::ParameterList> const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	// Teuchos::ERCPWeakNoDealloc file:Teuchos_RCPDecl.hpp line:75
 	pybind11::enum_<Teuchos::ERCPWeakNoDealloc>(M("Teuchos"), "ERCPWeakNoDealloc", pybind11::arithmetic(), "", pybind11::module_local())
@@ -1101,6 +1115,26 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 	M("Teuchos").def("rcp", [](class ROL::Problem<double> * a0) -> Teuchos::RCP<class ROL::Problem<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
 	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::Problem<double> > (*)(class ROL::Problem<double> *, bool)) &Teuchos::rcp<ROL::Problem<double>>, "C++: Teuchos::rcp(class ROL::Problem<double> *, bool) --> class Teuchos::RCP<class ROL::Problem<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
 
+	// Teuchos::rcp(class ROL::TypeB::LinMoreAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::TypeB::LinMoreAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::LinMoreAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::LinMoreAlgorithm<double> > (*)(class ROL::TypeB::LinMoreAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::LinMoreAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::LinMoreAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::LinMoreAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> > (*)(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::PrimalDualActiveSetAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::PartitionedVector<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::PartitionedVector<double> * a0) -> Teuchos::RCP<class ROL::PartitionedVector<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::PartitionedVector<double> > (*)(class ROL::PartitionedVector<double> *, bool)) &Teuchos::rcp<ROL::PartitionedVector<double>>, "C++: Teuchos::rcp(class ROL::PartitionedVector<double> *, bool) --> class Teuchos::RCP<class ROL::PartitionedVector<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::TypeB::MoreauYosidaAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::MoreauYosidaAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::MoreauYosidaAlgorithm<double> > (*)(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::MoreauYosidaAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::MoreauYosidaAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
+	// Teuchos::rcp(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
+	M("Teuchos").def("rcp", [](class ROL::TypeB::InteriorPointAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
+	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > (*)(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::InteriorPointAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
+
 	// Teuchos::rcp(class ROL::TypeB::GradientAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
 	M("Teuchos").def("rcp", [](class ROL::TypeB::GradientAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::GradientAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
 	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::GradientAlgorithm<double> > (*)(class ROL::TypeB::GradientAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::GradientAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::GradientAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::GradientAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
@@ -1116,26 +1150,6 @@ void bind_Teuchos_ENull(std::function< pybind11::module &(std::string const &nam
 	// Teuchos::rcp(class ROL::TypeB::ColemanLiAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
 	M("Teuchos").def("rcp", [](class ROL::TypeB::ColemanLiAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::ColemanLiAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
 	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::ColemanLiAlgorithm<double> > (*)(class ROL::TypeB::ColemanLiAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::ColemanLiAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::ColemanLiAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::ColemanLiAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(class ROL::TypeB::LinMoreAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::TypeB::LinMoreAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::LinMoreAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::LinMoreAlgorithm<double> > (*)(class ROL::TypeB::LinMoreAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::LinMoreAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::LinMoreAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::LinMoreAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::TypeB::MoreauYosidaAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::MoreauYosidaAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::MoreauYosidaAlgorithm<double> > (*)(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::MoreauYosidaAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::MoreauYosidaAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::MoreauYosidaAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> > (*)(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::PrimalDualActiveSetAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::PrimalDualActiveSetAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(class ROL::PartitionedVector<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::PartitionedVector<double> * a0) -> Teuchos::RCP<class ROL::PartitionedVector<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::PartitionedVector<double> > (*)(class ROL::PartitionedVector<double> *, bool)) &Teuchos::rcp<ROL::PartitionedVector<double>>, "C++: Teuchos::rcp(class ROL::PartitionedVector<double> *, bool) --> class Teuchos::RCP<class ROL::PartitionedVector<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
-
-	// Teuchos::rcp(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
-	M("Teuchos").def("rcp", [](class ROL::TypeB::InteriorPointAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));
-	M("Teuchos").def("rcp", (class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> > (*)(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool)) &Teuchos::rcp<ROL::TypeB::InteriorPointAlgorithm<double>>, "C++: Teuchos::rcp(class ROL::TypeB::InteriorPointAlgorithm<double> *, bool) --> class Teuchos::RCP<class ROL::TypeB::InteriorPointAlgorithm<double> >", pybind11::arg("p"), pybind11::arg("owns_mem"));
 
 	// Teuchos::rcp(class ROL::TypeB::SpectralGradientAlgorithm<double> *, bool) file:Teuchos_RCP.hpp line:622
 	M("Teuchos").def("rcp", [](class ROL::TypeB::SpectralGradientAlgorithm<double> * a0) -> Teuchos::RCP<class ROL::TypeB::SpectralGradientAlgorithm<double> > { return Teuchos::rcp(a0); }, "", pybind11::arg("p"));

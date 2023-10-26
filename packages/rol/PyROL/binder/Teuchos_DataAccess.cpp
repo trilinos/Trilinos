@@ -19,7 +19,7 @@
 #include <string>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -160,7 +160,7 @@ void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const
 		cl.def("reportError", (int (Teuchos::Object::*)(const std::string, int) const) &Teuchos::Object::reportError, "Report an error with this Object.\n\nC++: Teuchos::Object::reportError(const std::string, int) const --> int", pybind11::arg("message"), pybind11::arg("errorCode"));
 		cl.def("assign", (class Teuchos::Object & (Teuchos::Object::*)(const class Teuchos::Object &)) &Teuchos::Object::operator=, "C++: Teuchos::Object::operator=(const class Teuchos::Object &) --> class Teuchos::Object &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 
-		cl.def("__str__", [](Teuchos::Object const &o) -> std::string { std::ostringstream s; Teuchos::operator<<(s, o); return s.str(); } );
+		cl.def("__str__", [](Teuchos::Object const &o) -> std::string { std::ostringstream s; using namespace Teuchos; s << o; return s.str(); } );
 	}
 	{ // Teuchos::Flops file:Teuchos_Flops.hpp line:66
 		pybind11::class_<Teuchos::Flops, Teuchos::RCP<Teuchos::Flops>> cl(M("Teuchos"), "Flops", "", pybind11::module_local());

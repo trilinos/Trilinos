@@ -5,13 +5,13 @@
 #include <stdexcept>
 #include <string>
 
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 
 typedef std::function< pybind11::module & (std::string const &) > ModuleGetter;
 
 void bind_std_postypes(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_std_typeinfo(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_std_locale_classes(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_std_stdexcept(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_std_ostream_tcc(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_Elementwise_Function(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_std_istream_tcc(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -28,7 +28,7 @@ void bind_ROL_UnaryFunctions(std::function< pybind11::module &(std::string const
 void bind_ROL_UpdateType(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_DataAccess(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_ParameterListExceptions(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_Teuchos_iostream_helpers(std::function< pybind11::module &(std::string const &namespace_) > &M);
+void bind_Teuchos_ArrayViewDecl(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_FancyOStream(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_Teuchos_Dependency(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_ParameterList(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -53,7 +53,6 @@ void bind_ROL_SingletonVector(std::function< pybind11::module &(std::string cons
 void bind_ROL_TypeB_MoreauYosidaAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_InteriorPointObjective(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_InteriorPointAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
-void bind_ROL_TypeB_QuasiNewtonAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_PQNObjective(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeB_TrustRegionSPGAlgorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
 void bind_ROL_TypeE_Algorithm(std::function< pybind11::module &(std::string const &namespace_) > &M);
@@ -119,7 +118,7 @@ PYBIND11_MODULE(PyROL, root_module) {
 
 	bind_std_postypes(M);
 	bind_std_typeinfo(M);
-	bind_std_locale_classes(M);
+	bind_std_stdexcept(M);
 	bind_std_ostream_tcc(M);
 	bind_ROL_Elementwise_Function(M);
 	bind_std_istream_tcc(M);
@@ -136,7 +135,7 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_UpdateType(M);
 	bind_Teuchos_DataAccess(M);
 	bind_Teuchos_ParameterListExceptions(M);
-	bind_Teuchos_iostream_helpers(M);
+	bind_Teuchos_ArrayViewDecl(M);
 	bind_Teuchos_FancyOStream(M);
 	bind_Teuchos_Dependency(M);
 	bind_ROL_ParameterList(M);
@@ -161,7 +160,6 @@ PYBIND11_MODULE(PyROL, root_module) {
 	bind_ROL_TypeB_MoreauYosidaAlgorithm(M);
 	bind_ROL_InteriorPointObjective(M);
 	bind_ROL_TypeB_InteriorPointAlgorithm(M);
-	bind_ROL_TypeB_QuasiNewtonAlgorithm(M);
 	bind_ROL_PQNObjective(M);
 	bind_ROL_TypeB_TrustRegionSPGAlgorithm(M);
 	bind_ROL_TypeE_Algorithm(M);

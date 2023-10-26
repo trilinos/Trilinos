@@ -1,7 +1,7 @@
 PyROL.cpp
 std/postypes.cpp
 std/typeinfo.cpp
-std/locale_classes.cpp
+std/stdexcept.cpp
 std/ostream_tcc.cpp
 ROL_Elementwise_Function.cpp
 std/istream_tcc.cpp
@@ -18,7 +18,7 @@ ROL_UnaryFunctions.cpp
 ROL_UpdateType.cpp
 Teuchos_DataAccess.cpp
 Teuchos_ParameterListExceptions.cpp
-Teuchos_iostream_helpers.cpp
+Teuchos_ArrayViewDecl.cpp
 Teuchos_FancyOStream.cpp
 Teuchos_Dependency.cpp
 ROL_ParameterList.cpp
@@ -43,7 +43,6 @@ ROL_SingletonVector.cpp
 ROL_TypeB_MoreauYosidaAlgorithm.cpp
 ROL_InteriorPointObjective.cpp
 ROL_TypeB_InteriorPointAlgorithm.cpp
-ROL_TypeB_QuasiNewtonAlgorithm.cpp
 ROL_PQNObjective.cpp
 ROL_TypeB_TrustRegionSPGAlgorithm.cpp
 ROL_TypeE_Algorithm.cpp

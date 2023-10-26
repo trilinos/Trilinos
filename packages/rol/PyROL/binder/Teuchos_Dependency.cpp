@@ -32,7 +32,7 @@
 #include <utility>
 
 #include <functional>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <string>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
@@ -186,6 +186,7 @@ void bind_Teuchos_Dependency(std::function< pybind11::module &(std::string const
 		cl.def("size", (unsigned long (Teuchos::DependencySheet::*)()) &Teuchos::DependencySheet::size, "Returns the number of Dependencies in this\n DependencySheet.\n\n \n The number of Depenedencies in this\n DependencySheet.\n\nC++: Teuchos::DependencySheet::size() --> unsigned long");
 		cl.def("printDeps", (void (Teuchos::DependencySheet::*)(std::ostream &) const) &Teuchos::DependencySheet::printDeps, "Prints out a list of the dependencies in the DependencySheet\n\nC++: Teuchos::DependencySheet::printDeps(std::ostream &) const --> void", pybind11::arg("out"));
 		cl.def_static("getNameAttributeName", (const std::string & (*)()) &Teuchos::DependencySheet::getNameAttributeName, "When serializing to XML, this string should be used as the name\n of the name attribute \n\nC++: Teuchos::DependencySheet::getNameAttributeName() --> const std::string &", pybind11::return_value_policy::automatic);
+		cl.def("assign", (class Teuchos::DependencySheet & (Teuchos::DependencySheet::*)(const class Teuchos::DependencySheet &)) &Teuchos::DependencySheet::operator=, "C++: Teuchos::DependencySheet::operator=(const class Teuchos::DependencySheet &) --> class Teuchos::DependencySheet &", pybind11::return_value_policy::automatic, pybind11::arg(""));
 	}
 	// Teuchos::updateParametersFromXmlFile(const std::string &, const class Teuchos::Ptr<class Teuchos::ParameterList> &) file:Teuchos_XMLParameterListCoreHelpers.hpp line:71
 	M("Teuchos").def("updateParametersFromXmlFile", (void (*)(const std::string &, const class Teuchos::Ptr<class Teuchos::ParameterList> &)) &Teuchos::updateParametersFromXmlFile, "Reads XML parameters from a file and updates those already in the\n given parameter list.\n\n \n [in] The file name containing XML parameter list\n specification.\n\n \n [in/out] On input, *paramList may be empty or\n contain some parameters and sublists. On output, parameters and sublist\n from the file xmlFileName will be set or overide those in\n *paramList.\n\n \n\n \n\nC++: Teuchos::updateParametersFromXmlFile(const std::string &, const class Teuchos::Ptr<class Teuchos::ParameterList> &) --> void", pybind11::arg("xmlFileName"), pybind11::arg("paramList"));
