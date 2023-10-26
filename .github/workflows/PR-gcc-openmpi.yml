@@ -74,4 +74,4 @@ jobs:
         run: bash -l -c "ninja"
       - name: ctest
         working-directory: /home/Trilinos/build
-        run: bash -l -c "ctest -j2"
+        run: bash -l -c "ctest -j36"
