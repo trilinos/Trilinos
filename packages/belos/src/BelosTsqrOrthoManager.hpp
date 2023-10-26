@@ -75,7 +75,7 @@ namespace Belos {
 /// However, if you handle Tsqr(Mat)OrthoManager through this mixin,
 /// you can exploit TSQR's unique interface to avoid copying back and
 /// forth between scratch space.
-template<class Scalar, class MV>
+template<class Scalar, class MV, class DM>
 class OutOfPlaceNormalizerMixin {
 public:
   typedef Scalar scalar_type;
@@ -84,8 +84,8 @@ public:
   /// \brief Multivector type with which this class was specialized.
   typedef MV multivector_type;
 
-  typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
-  typedef Teuchos::RCP<mat_type>                  mat_ptr;
+  typedef DM                        mat_type;
+  typedef Teuchos::RCP<mat_type>    mat_ptr;
 
   /// \brief Normalize X into Q*B.
   ///
@@ -133,10 +133,10 @@ public:
 ///
 /// Subclass of OrthoManager, implemented using TsqrOrthoManagerImpl
 /// (TSQR + Block Gram-Schmidt).
-template<class Scalar, class MV>
+template<class Scalar, class MV, class DM>
 class TsqrOrthoManager :
-    public OrthoManager<Scalar, MV>,
-    public OutOfPlaceNormalizerMixin<Scalar, MV>
+    public OrthoManager<Scalar, MV, DM>,
+    public OutOfPlaceNormalizerMixin<Scalar, MV, DM>
 {
 public:
   typedef Scalar scalar_type;
@@ -144,8 +144,8 @@ public:
   //! \typedef Multivector type with which this class was specialized
   typedef MV multivector_type;
 
-  typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
-  typedef Teuchos::RCP<mat_type>                  mat_ptr;
+  typedef DM                          mat_type;
+  typedef Teuchos::RCP<mat_type>      mat_ptr;
 
   void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params) {
     impl_.setParameterList (params);
@@ -353,7 +353,7 @@ private:
   /// The object is delcared "mutable" because it has internal
   /// scratch space state, and because the OrthoManager interface
   /// requires most of its methods to be declared const.
-  mutable TsqrOrthoManagerImpl<Scalar, MV> impl_;
+  mutable TsqrOrthoManagerImpl<Scalar, MV, DM> impl_;
 
   //! Label for timers (if timers are enabled at compile time).
   std::string label_;
@@ -373,10 +373,10 @@ private:
 /// TSQR uses multivector scratch space.  However, scratch space
 /// initialization is "lazy," so scratch space will not be allocated
 /// if TSQR is not used.
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 class TsqrMatOrthoManager :
-    public MatOrthoManager<Scalar, MV, OP>,
-    public OutOfPlaceNormalizerMixin<Scalar, MV>
+    public MatOrthoManager<Scalar, MV, OP, DM>,
+    public OutOfPlaceNormalizerMixin<Scalar, MV, DM>
 {
 public:
   typedef Scalar scalar_type;
@@ -398,19 +398,19 @@ private:
   /// point, we might not have specialized the specific base class
   /// yet; it's just a template at the moment and not a "real
   /// class.")
-  typedef MatOrthoManager<Scalar, MV, OP> base_type;
+  typedef MatOrthoManager<Scalar, MV, OP, DM> base_type;
 
   /// \typedef tsqr_type
   /// \brief Implementation of TSQR-based orthogonalization
-  typedef TsqrOrthoManagerImpl<Scalar, MV> tsqr_type;
+  typedef TsqrOrthoManagerImpl<Scalar, MV, DM> tsqr_type;
 
   /// \typedef dgks_type
   /// \brief Implementation of DGKS-based orthogonalization
-  typedef DGKSOrthoManager<Scalar, MV, OP> dgks_type;
+  typedef DGKSOrthoManager<Scalar, MV, OP, DM> dgks_type;
 
   /// \typedef MVT
   /// \brief Traits class for the multivector type
-  typedef MultiVecTraits<Scalar, MV> MVT;
+  typedef MultiVecTraits<Scalar, MV, DM> MVT;
 
 public:
   /// \brief Constructor (that sets user-specified parameters).
@@ -436,7 +436,7 @@ public:
   TsqrMatOrthoManager (const Teuchos::RCP<Teuchos::ParameterList>& params,
                        const std::string& label = "Belos",
                        Teuchos::RCP<const OP> Op = Teuchos::null) :
-    MatOrthoManager<Scalar, MV, OP> (Op),
+    MatOrthoManager<Scalar, MV, OP, DM> (Op),
     tsqr_ (params, label),
     pDgks_ (Teuchos::null) // Initialized lazily
   {}
@@ -451,7 +451,7 @@ public:
   ///   compile-time option for enabling timers is set.
   TsqrMatOrthoManager (const std::string& label = "Belos",
                        Teuchos::RCP<const OP> Op = Teuchos::null) :
-    MatOrthoManager<Scalar, MV, OP> (Op),
+    MatOrthoManager<Scalar, MV, OP, DM> (Op),
     tsqr_ (label),
     pDgks_ (Teuchos::null) // Initialized lazily
   {}
