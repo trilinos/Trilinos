@@ -438,16 +438,13 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         // Generate R_ only if it doesn't exist, otherwise resize it.
         if (R_ == Teuchos::null) {
           R_ = DMT::Create();
-          std::cout << "Creating R unititialized, no size declared." << std::endl;
         }
         if (initHessenberg_) {
           DMT::Reshape(*R_, newsd, newsd-blockSize_, true);
-          std::cout << "Creating R initialized to zero with dim " << newsd << " by " << newsd-blockSize_ << std::endl;
         }
         else {
           if (DMT::GetNumRows(*R_) < newsd || DMT::GetNumCols(*R_) < newsd-blockSize_) {
             DMT::Reshape(*R_, newsd, newsd-blockSize_, false);
-            std::cout << "Creating R uninitialized with dim " << newsd << " by " << newsd-blockSize_ << std::endl;
           }
         }
 
@@ -508,29 +505,11 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       //
       //  Solve the least squares problem.
       //
-      std::cout << std::endl << std::endl;
-      std::cout << "Calling sync d2h R." << std::endl;
-      DMT::SyncDeviceToHost(*R_);
-      std::cout << "Calling sync d2h y." << std::endl;
-      DMT::SyncDeviceToHost(*y);
-      std::cout << "Trying to get pointer for R." << std::endl;
-      DMT::GetRawHostPtr(*R_);
-      std::cout << "Trying to get pointer for y." << std::endl;
-      DMT::GetRawHostPtr(*y);
-      std::cout << "Trying BLAS call." << std::endl;
-      std::cout << " m is curDim_ is: " << curDim_ << std::endl;
-      std::cout << " n is blockSize_ is: " << blockSize_ << std::endl;
-      std::cout << " stride for R is : " << DMT::GetStride(*R_) << std::endl;
-      std::cout << " stride for y is : " << DMT::GetStride(*y) << std::endl;
-      //TODO: Need any syncing here for KK verison?
       blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                  Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
                  DMT::GetRawHostPtr(*R_), DMT::GetStride(*R_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
-      std::cout << "Finished BLAS call." << std::endl;
       DMT::SyncHostToDevice(*R_);  // Why sync this when the result is in y? Shouldn't y be sync'ed before update is computed? 
       DMT::SyncHostToDevice(*y);  
-      //Not needed. y dies after this function. DMT::SyncHostToDevice(*y);
-
       //
       //  Compute the current update.
       //
