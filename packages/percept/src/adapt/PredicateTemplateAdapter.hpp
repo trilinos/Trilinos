@@ -38,7 +38,6 @@
      *
      *  Note: the steps above are now embedded in Stage_2_Mark_TE_Parents, so we only have 2 stages now.
      */
-    using AdapterPredicateFunctor = std::__unary_function<stk::mesh::Entity , bool>;
     enum PTA_Stage {
       Stage_None,
       Stage_1_Mark_NTE,
