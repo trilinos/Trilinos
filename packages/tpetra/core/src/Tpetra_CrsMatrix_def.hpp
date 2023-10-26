@@ -1255,8 +1255,8 @@ namespace Tpetra {
 
     // NOTE: This does not work correctly w/ GCC 12.3 + CUDA due to a compiler bug.
     // See: https://github.com/trilinos/Trilinos/issues/12237
-    //using row_entries_type = decltype (myGraph_->k_numRowEntries_);
-    typedef typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror row_entries_type;
+    //using row_entries_type = decltype (myGraph_->k_numRowEntries_); 
+    using row_entries_type = typename crs_graph_type::num_row_entries_type;
 
     typename Graph::local_graph_device_type::row_map_type curRowOffsets = 
                                                    myGraph_->rowPtrsUnpacked_dev_;
@@ -1649,7 +1649,7 @@ namespace Tpetra {
     // NOTE: This does not work correctly w/ GCC 12.3 + CUDA due to a compiler bug.
     // See: https://github.com/trilinos/Trilinos/issues/12237
     //using row_entries_type = decltype (staticGraph_->k_numRowEntries_);
-    typedef typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror row_entries_type;
+    using row_entries_type = typename crs_graph_type::num_row_entries_type;
 
     // The matrix's values are currently
     // stored in a 1-D format.  However, this format is "unpacked";
