@@ -96,9 +96,6 @@ SET(Trilinos_USE_GNUINSTALLDIRS_DEFAULT ON)
 
 SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
 
-# Set up C++ language standard selection
-include(SetTrilinosCxxStandard)
-
 # Some CMake and TriBiTS tweaks just for Trilinos
 include(TrilinosTweaks)
 
