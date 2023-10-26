@@ -1,0 +1,111 @@
+[build-system]
+requires = ["scikit-build-core>=0.3.3"]
+build-backend = "scikit_build_core.build"
+
+
+[project]
+name = "pyrol"
+version = "0.0.1"
+description="A Python interface to the Rapid Optimization Library (ROL)"
+readme = "README.md"
+authors = [
+  { name = "My Name", email = "me@email.com" },
+]
+requires-python = ">=3.7"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+cmake.verbose = true
+logging.level = "DEBUG"
+#wheel.packages = ["packages/rol/PyROL/python"]
+cmake.minimum-version = "3.23.0"
+wheel.install-dir = "pyrol"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = [
+  "error",
+  "ignore:(ast.Str|Attribute s|ast.NameConstant|ast.Num) is deprecated:DeprecationWarning:_pytest",  # Python 3.12
+]
+testpaths = ["tests"]
+
+
+[tool.cibuildwheel]
+test-command = "pytest {project}/tests"
+test-extras = ["test"]
+test-skip = ["*universal2:arm64"]
+build-verbosity = 1
+
+
+[tool.ruff]
+select = [
+  "E", "F", "W", # flake8
+  "B",           # flake8-bugbear
+  "I",           # isort
+  "ARG",         # flake8-unused-arguments
+  "C4",          # flake8-comprehensions
+  "EM",          # flake8-errmsg
+  "ICN",         # flake8-import-conventions
+  "ISC",         # flake8-implicit-str-concat
+  "G",           # flake8-logging-format
+  "PGH",         # pygrep-hooks
+  "PIE",         # flake8-pie
+  "PL",          # pylint
+  "PT",          # flake8-pytest-style
+  "PTH",         # flake8-use-pathlib
+  "RET",         # flake8-return
+  "RUF",         # Ruff-specific
+  "SIM",         # flake8-simplify
+  "T20",         # flake8-print
+  "UP",          # pyupgrade
+  "YTT",         # flake8-2020
+  "EXE",         # flake8-executable
+  "NPY",         # NumPy specific rules
+  "PD",          # pandas-vet
+]
+extend-ignore = [
+  "PLR",    # Design related pylint codes
+  "E501",   # Line too long
+]
+src = ["src"]
+unfixable = [
+  "T20",  # Removes print statements
+  "F841", # Removes unused variables
+]
+flake8-unused-arguments.ignore-variadic-names = true
+isort.required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.per-file-ignores]
+"tests/**" = ["T20"]
+
+[tool.scikit-build.cmake.define]
+BUILD_SHARED_LIBS = "ON"
+Trilinos_ENABLE_TESTS = "OFF"
+Trilinos_ENABLE_EXAMPLES = "OFF"
+Trilinos_ENABLE_Fortran = "OFF"
+Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES = "OFF"
+Trilinos_ENABLE_ROL = "ON"
+ROL_ENABLE_PyROL = "ON"
+PyROL_ENABLE_Binder = "OFF"
+# CMAKE_PREFIX_PATH = "/home/asjavee/.conda/envs/ml;/home/asjavee/.conda/envs/ml/lib/python3.12/site-packages/pybind11"
+ROL_Ptr = "Teuchos::RCP"
+#CMAKE_INSTALL_PREFIX = "home/asjavee/.conda/envs/ml"
+# CMAKE_INSTALL_NAME_DIR = "/home/asjavee/.conda/envs/ml"
+CMAKE_INSTALL_RPATH="$ORIGIN/lib"
+PYROL_PIP_INSTALL = "ON"

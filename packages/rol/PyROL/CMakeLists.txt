@@ -50,6 +50,11 @@ ENDIF()
 # Set the package version number
 SET(PyROL_VERSION ${Trilinos_VERSION})
 
+TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_PIP_INSTALL
+  PYROL_SCIKIT
+  "Logic specific to the scikit-build-core backend."
+  OFF )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(PyROL_ENABLE_Binder
   PYROL_GENERATE_SRC
   "Enable regeneration of source files with Binder."
@@ -369,10 +374,17 @@ SET(PYTHON_VERSION ${PYTHON_MAJOR_VERSION}.${PYTHON_MINOR_VERSION})
 SET(PYBIND11_PYTHON_VERSION ${PYTHON_VERSION})
 
 # Determine the install directory
-SET(PyROL_INSTALL_DIR
-  lib/python${PYTHON_VERSION}/site-packages/PyROL
-  CACHE STRING "The path where PyROL will be installed"
+IF(PYROL_SCIKIT)
+  SET(PyROL_INSTALL_DIR
+    "."
+    CACHE STRING "The path where PyROL will be installed."
   )
+ELSE()
+  SET(PyROL_INSTALL_DIR
+    lib/python${PYTHON_VERSION}/site-packages/PyROL
+    CACHE STRING "The path where PyROL will be installed"
+    )
+ENDIF()
 
 cmake_path(IS_RELATIVE PyROL_INSTALL_DIR is_pyrol_install_relative)
 
