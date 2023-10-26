@@ -15,7 +15,7 @@ if atdm_match_buildname_keyword xl ; then
   # Don't do the cuda-aware build for the XL builds if you are not building
   # internal tests and examples.
   if [[ "${Trilinos_INNER_ENABLE_TESTS}" == "OFF" ]]; then
-    export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=0
+    export Trilinos_CTEST_RUN_GPU_AWARE_MPI=0
   fi
   # Only enable the SPARC packages by default
   export ATDM_CONFIG_CONFIGURE_OPTIONS_FILES=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake
@@ -44,7 +44,7 @@ set +x
 
 export ATDM_CONFIG_CTEST_REGEX="$atdm_config_ctest_regex_old"
 
-if [[ "${Trilinos_CTEST_RUN_CUDA_AWARE_MPI}" == "1" ]]; then
+if [[ "${Trilinos_CTEST_RUN_GPU_AWARE_MPI}" == "1" ]]; then
   echo
   echo "======================================================================="
   echo "***"
