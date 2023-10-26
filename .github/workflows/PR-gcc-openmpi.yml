@@ -45,6 +45,7 @@ jobs:
           ls -lhat
           git status
           git branch -vv
+	  git branch -a
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
