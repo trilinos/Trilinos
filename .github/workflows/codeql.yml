@@ -82,8 +82,8 @@ jobs:
         bash -l -c "./packages/framework/get_dependencies.sh --container"
         bash -l -c "source ./packages/framework/GenConfig/gen-config.sh --list-configs"
         bash -l -c "pwd ; mkdir -p trilinos_build && cd trilinos_build; source ../packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all .."
-        bash -l -c "ls -la ; pwd ; cd trilinos_build ; cmake -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Krino=OFF .."
-        bash -l -c "cd trilinos_build ; make -j4"
+        bash -l -c "ls -la ; pwd ; cd trilinos_build ; cmake _G Ninja -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Krino=OFF .."
+        bash -l -c "cd trilinos_build ; ninja"
 
       # bash -l -c "module list"
       # find /__w/_tool/CodeQL/2.15.1/x64/codeql/tools/linux64
