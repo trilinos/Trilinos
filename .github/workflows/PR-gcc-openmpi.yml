@@ -39,7 +39,7 @@ jobs:
           mkdir -p /home/Trilinos/build
       - name: clone trilinos
         uses: actions/checkout@v4
-	- with:
+	with:
 	  fetch-depth: 0
       - name: Repo status
         run: |
