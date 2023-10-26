@@ -47,6 +47,8 @@
 #define MUELU_MEMORY_HPP
 
 #include <string>
+#include "Teuchos_Time.hpp"
+#include "Teuchos_Comm.hpp"
 
 namespace Teuchos { class Time; }
 namespace Teuchos { template <typename Ordinal> class Comm; }

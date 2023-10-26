@@ -69,11 +69,11 @@ namespace {
   const char *gl_prompt;                    /* to save the prompt string */
   int         gl_search_mode = 0;           /* search mode flag */
 
-  void gl_init(void);         /* prepare to edit a line */
-  void gl_cleanup(void);      /* to undo gl_init */
-  void gl_char_init(void);    /* get ready for no echo input */
-  void gl_char_cleanup(void); /* undo gl_char_init */
-                              /* returns printable prompt width */
+  void gl_init();         /* prepare to edit a line */
+  void gl_cleanup();      /* to undo gl_init */
+  void gl_char_init();    /* get ready for no echo input */
+  void gl_char_cleanup(); /* undo gl_char_init */
+                          /* returns printable prompt width */
 
   void gl_addchar(int c);    /* install specified char */
   void gl_del(int loc, int); /* del, either left (-1) or cur (0) */
@@ -81,25 +81,25 @@ namespace {
   [[noreturn]] void gl_error(const char *const buf); /* write error msg and die */
 
   void gl_fixup(const char *prompt, int change, int cursor); /* fixup state variables and screen */
-  int  gl_getc(void);                                        /* read one char from terminal */
+  int  gl_getc();                                            /* read one char from terminal */
   void gl_kill(int pos);                                     /* delete to EOL */
-  void gl_newline(void);                                     /* handle \n or \r */
+  void gl_newline();                                         /* handle \n or \r */
   void gl_putc(int c);                                       /* write one char to terminal */
   void gl_puts(const char *const buf);                       /* write a line to terminal */
-  void gl_redraw(void);                                      /* issue \n and redraw all */
-  void gl_transpose(void);                                   /* transpose two chars */
-  void gl_yank(void);                                        /* yank killed text */
+  void gl_redraw();                                          /* issue \n and redraw all */
+  void gl_transpose();                                       /* transpose two chars */
+  void gl_yank();                                            /* yank killed text */
 
-  void  hist_init(void);          /* initializes hist pointers */
-  char *hist_next(void);          /* return ptr to next item */
-  char *hist_prev(void);          /* return ptr to prev item */
+  void  hist_init();              /* initializes hist pointers */
+  char *hist_next();              /* return ptr to next item */
+  char *hist_prev();              /* return ptr to prev item */
   char *hist_save(const char *p); /* makes copy of a string, without NL */
 
   void search_addchar(int c);       /* increment search string */
-  void search_term(void);           /* reset with current contents */
+  void search_term();               /* reset with current contents */
   void search_back(int new_search); /* look back for current string */
   void search_forw(int new_search); /* look forw for current string */
-  void gl_beep(void);               /* try to play a system beep sound */
+  void gl_beep();                   /* try to play a system beep sound */
 
   char *copy_string(char *dest, char const *source, long int elements)
   {
@@ -124,7 +124,7 @@ namespace {
   struct termios io_old_termios;
 #endif
 
-  void gl_char_init(void) /* turn off input echo */
+  void gl_char_init() /* turn off input echo */
   {
 #ifdef __unix__
     tcgetattr(0, &io_old_termios);
@@ -138,7 +138,7 @@ namespace {
 #endif /* __unix__ */
   }
 
-  void gl_char_cleanup(void) /* undo effects of gl_char_init */
+  void gl_char_cleanup() /* undo effects of gl_char_init */
   {
 #ifdef __unix__
     tcsetattr(0, TCSANOW, &io_old_termios);
@@ -194,7 +194,7 @@ int pc_keymap(int c)
 #endif /* defined(MSDOS) || defined(__windows__) */
 
 namespace {
-  int gl_getc(void)
+  int gl_getc()
   /* get a character without echoing it to screen */
   {
 #ifdef __unix__
@@ -263,25 +263,27 @@ namespace {
     exit(1);
   }
 
-  void gl_init(void)
+  void gl_init()
   /* set up variables and terminal */
   {
     if (gl_init_done < 0) { /* -1 only on startup */
       const char *cp = (const char *)getenv("COLUMNS");
       if (cp != nullptr) {
         int w = strtol(cp, nullptr, 10);
-        if (w > 20)
+        if (w > 20) {
           Ioss::gl_setwidth(w);
+        }
       }
       hist_init();
     }
-    if (isatty(0) == 0 || isatty(1) == 0)
+    if (isatty(0) == 0 || isatty(1) == 0) {
       gl_error("\n*** Error: getline(): not interactive, use stdio.\n");
+    }
     gl_char_init();
     gl_init_done = 1;
   }
 
-  void gl_cleanup(void)
+  void gl_cleanup()
   /* undo effects of gl_init, as necessary */
   {
     if (gl_init_done > 0) {
@@ -413,8 +415,9 @@ namespace Ioss {
           gl_yank(); /* ^Y */
           break;
         default:
-          if (c > 0)
+          if (c > 0) {
             gl_beep();
+          }
           break;
         }
       }
@@ -450,7 +453,7 @@ namespace {
     }
   }
 
-  void gl_yank(void)
+  void gl_yank()
   /* adds the kill buffer to the input buffer at current location */
   {
     int len = strlen(gl_killbuf);
@@ -481,11 +484,12 @@ namespace {
         gl_fixup(gl_prompt, gl_pos, gl_pos + len);
       }
     }
-    else
+    else {
       gl_beep();
+    }
   }
 
-  void gl_transpose(void)
+  void gl_transpose()
   /* switch character under cursor and to left of cursor */
   {
     if (gl_pos > 0 && gl_cnt > gl_pos && gl_pos < GL_BUF_SIZE) {
@@ -500,7 +504,7 @@ namespace {
     }
   }
 
-  void gl_newline(void)
+  void gl_newline()
   /*
    * Cleans up entire line before returning to caller. A \n is appended.
    * If line longer than screen, we redraw starting at beginning
@@ -566,7 +570,7 @@ namespace {
     }
   }
 
-  void gl_redraw(void)
+  void gl_redraw()
   /* emit a newline, reset and redraw prompt and current input line */
   {
     if (gl_init_done > 0) {
@@ -721,7 +725,7 @@ namespace {
   char *hist_buf[HIST_SIZE];
   char  hist_empty_elem[2] = "";
 
-  void hist_init(void)
+  void hist_init()
   {
     hist_buf[0] = hist_empty_elem;
     for (int i = 1; i < HIST_SIZE; i++) {
@@ -763,7 +767,7 @@ namespace Ioss {
   }
 } // namespace Ioss
 namespace {
-  char *hist_prev(void)
+  char *hist_prev()
   /* loads previous hist entry into input buffer, sticks on first */
   {
     char *p    = nullptr;
@@ -780,7 +784,7 @@ namespace {
     return p;
   }
 
-  char *hist_next(void)
+  char *hist_next()
   /* loads next hist entry into input buffer, clears on last */
   {
     char *p = nullptr;
@@ -891,7 +895,7 @@ namespace {
     }
   }
 
-  void search_term(void)
+  void search_term()
   {
     gl_search_mode = 0;
     if (gl_buf[0] == 0) { /* not found, reset hist list */
@@ -923,8 +927,9 @@ namespace {
         else if ((loc = strstr(p, search_string)) != nullptr) {
           copy_string(gl_buf, p, GL_BUF_SIZE);
           gl_fixup(search_prompt, 0, loc - p);
-          if (new_search)
+          if (new_search) {
             search_last = hist_pos;
+          }
           found = true;
         }
       }
@@ -958,8 +963,9 @@ namespace {
         else if ((loc = strstr(p, search_string)) != nullptr) {
           copy_string(gl_buf, p, GL_BUF_SIZE);
           gl_fixup(search_prompt, 0, loc - p);
-          if (new_search)
+          if (new_search) {
             search_last = hist_pos;
+          }
           found = true;
         }
       }
@@ -969,7 +975,7 @@ namespace {
     }
   }
 
-  void gl_beep(void)
+  void gl_beep()
   {
 #ifdef __windows__
     MessageBeep(MB_OK);

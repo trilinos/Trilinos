@@ -82,6 +82,7 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_ReplicatePFactory.hpp"
+#include "MueLu_CombinePFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RAPShiftFactory.hpp"
@@ -450,8 +451,11 @@ namespace MueLu {
 
     // Detect if we do implicit P and R rebalance
     changedPRrebalance_ = false;
-    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable", bool, true))
+    changedPRViaCopyrebalance_ = false;
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable", bool, true)) {
       changedPRrebalance_ = MUELU_TEST_AND_SET_VAR(paramList, "repartition: rebalance P and R", bool, this->doPRrebalance_);
+      changedPRViaCopyrebalance_ =  MUELU_TEST_AND_SET_VAR(paramList,"repartition: explicit via new copy rebalance P and R", bool, this->doPRViaCopyrebalance_);
+    }
 
     // Detect if we use implicit transpose
     changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(paramList, "transpose: use implicit", bool, this->implicitTranspose_);
@@ -577,7 +581,7 @@ namespace MueLu {
         Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen","classical","smoothed reitzinger","unsmoothed reitzinger","replicate"}).count(multigridAlgo) == 0,
+    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen","classical","smoothed reitzinger","unsmoothed reitzinger","replicate","combine"}).count(multigridAlgo) == 0,
         Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
@@ -657,6 +661,9 @@ namespace MueLu {
 
     } else if (multigridAlgo == "replicate") {
       UpdateFactoryManager_Replicate(paramList, defaultList, manager, levelID, keeps);
+
+    } else if (multigridAlgo == "combine") {
+      UpdateFactoryManager_Combine(paramList, defaultList, manager, levelID, keeps);
 
     } else if (multigridAlgo == "pg") {
       // Petrov-Galerkin
@@ -980,7 +987,7 @@ namespace MueLu {
          "LINESMOOTHING_BANDEDRELAXATION", "LINESMOOTHING_BANDED_RELAXATION", "LINESMOOTHING_BANDED RELAXATION",
          "LINESMOOTHING_TRIDIRELAXATION", "LINESMOOTHING_TRIDI_RELAXATION", "LINESMOOTHING_TRIDI RELAXATION",
          "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",
-         "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL"}).count(coarseType)) {
+         "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL","HIPTMAIR"}).count(coarseType)) {
          coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
        } else {
  #ifdef HAVE_MUELU_MATLAB
@@ -1083,6 +1090,8 @@ namespace MueLu {
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: row sum drop tol",        double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", int, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
+       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: use ml scaling of drop tol",   bool, dropParams);
+
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: greedy Dirichlet",          bool, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
@@ -1140,7 +1149,9 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: match ML phase1",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: match ML phase2a",          bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: match ML phase2b",          bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase2a agg factor",      double, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);
@@ -1741,6 +1752,8 @@ namespace MueLu {
         newPparams.set("type", "Interpolation");
         if (changedPRrebalance_)
           newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+        if (changedPRViaCopyrebalance_)
+          newPparams.set("repartition: explicit via new copy rebalance P and R",true);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
         newP->  SetParameterList(newPparams);
         newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
@@ -1766,6 +1779,8 @@ namespace MueLu {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
         if (changedPRrebalance_)
           newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+        if (changedPRViaCopyrebalance_)
+          newPparams.set("repartition: explicit via new copy rebalance P and R",true);
         if (changedImplicitTranspose_)
           newRparams.set("transpose: use implicit",        this->implicitTranspose_);
         newR->  SetParameterList(newRparams);
@@ -1997,6 +2012,7 @@ namespace MueLu {
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs diagonal replacement value", double, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs use automatic diagonal tolerance", bool, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: enforce constraints", bool, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: eigen-analysis type", std::string, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, Pparams);
 
     P->SetParameterList(Pparams);
@@ -2148,6 +2164,23 @@ namespace MueLu {
 
     ParameterList Pparams;
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "replicate: npdes", int, Pparams);
+
+    P->SetParameterList(Pparams);
+    manager.SetFactory("P", P);
+
+  }
+
+  // =====================================================================================================
+  // ====================================== Algorithm: Combine ============================================
+  // =====================================================================================================
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  UpdateFactoryManager_Combine(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const
+  {
+    auto P = rcp(new MueLu::CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
+
+    ParameterList Pparams;
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "combine: numBlks", int, Pparams);
 
     P->SetParameterList(Pparams);
     manager.SetFactory("P", P);

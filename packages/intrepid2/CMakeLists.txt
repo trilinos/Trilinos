@@ -30,6 +30,13 @@ ELSE()
     OFF)
 ENDIF()   
 
+# temporary flag
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KEEP_EXPERIMENTAL_NAMESPACE
+  HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  "Whether Intrepid2 keeps experimentatl namespace for projections."
+  ON
+)
+
 #
 # C) Add the libraries, tests, and examples
 #
@@ -39,15 +46,6 @@ TRIBITS_ADD_TEST_DIRECTORIES(unit-test)
 
 # performance tests 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(perf-test)
-
-# we do not have examples yet
-#TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-
-#
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 #
 # D) Do standard postprocessing

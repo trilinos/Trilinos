@@ -38,18 +38,38 @@ void test_areas_positive(std::shared_ptr<mesh::Mesh> mesh)
     }
 }
 
+
+
+
+double compute_mesh_area(std::shared_ptr<mesh::Mesh> mesh, MPI_Comm unionComm)
+{
+  double area = 0;
+  double areaLocal = 0;
+
+  if (mesh)
+  {
+    mesh::impl::ElementOperations2D elemOps;
+    areaLocal = elemOps.compute_area(mesh);
+  }
+
+  MPI_Allreduce(&areaLocal, &area, 1, MPI_DOUBLE, MPI_SUM, unionComm);
+
+  return area;
+}
+
 double compute_mesh_area(std::shared_ptr<mesh::Mesh> mesh)
 {
-  mesh::impl::ElementOperations2D elemOps;
-  return elemOps.compute_area(mesh);
+  return compute_mesh_area(mesh, mesh->get_comm());
 }
 
 void test_total_areas_same(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,
-                           std::shared_ptr<mesh::Mesh> meshIn)
+                           std::shared_ptr<mesh::Mesh> meshIn, MPI_Comm unionComm)
 {
-  double area1  = compute_mesh_area(mesh1);
-  double area2  = compute_mesh_area(mesh2);
-  double areaIn = compute_mesh_area(meshIn);
+  double area1 = 0, area2 = 2, areaIn = 0;
+  area1  = compute_mesh_area(mesh1, unionComm);
+  area2  = compute_mesh_area(mesh2, unionComm);
+  areaIn = compute_mesh_area(meshIn, unionComm);
+
 
   EXPECT_NEAR(area1, area2, 1e-13);
   EXPECT_NEAR(areaIn, area1, 1e-13);

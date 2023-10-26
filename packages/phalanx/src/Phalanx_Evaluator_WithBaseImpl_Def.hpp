@@ -134,7 +134,7 @@ namespace PHX {
     typename std::enable_if<Kokkos::is_view<T>::value,void>::type
     operator()(std::ostream& os)
     {
-      PHX::PrintViewValues<FieldType,FieldType::Rank> p;
+      PHX::PrintViewValues<FieldType,FieldType::rank> p;
       p.print(*field_,os);
     }
   };

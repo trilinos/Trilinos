@@ -85,7 +85,7 @@ public:
       {
         double * dist = field_data<double>(dField, node);
         double * x = field_data<double>(xField, node);
-        Vector3d coords(x, 2);
+        stk::math::Vector3d coords(x, 2);
 
         *dist = mult * coords[0]; // function of x only
       }
@@ -109,7 +109,7 @@ public:
       {
         double * dist = field_data<double>(dField, node);
         double * x = field_data<double>(xField, node);
-        Vector3d coords(x, 2);
+        stk::math::Vector3d coords(x, 2);
         const double r = std::sqrt((coords[0]-x_c) * (coords[0]-x_c) + (coords[1]-y_c) * (coords[1]-y_c));
 
         *dist = mult*(r - circle_radius);
@@ -134,7 +134,7 @@ public:
       {
         double * dist = field_data<double>(dField, node);
         double * x = field_data<double>(xField, node);
-        Vector3d coords(x, 2);
+        stk::math::Vector3d coords(x, 2);
         const double r = std::sqrt((coords[0]-x_c) * (coords[0]-x_c) + (coords[1]-y_c) * (coords[1]-y_c));
 
         const auto theta = std::atan2(coords[1],coords[0]);

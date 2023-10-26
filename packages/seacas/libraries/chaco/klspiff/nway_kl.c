@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -112,11 +112,6 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
   int             balance_trouble;      /* even balance_hard isn't working */
   int             size;                 /* array spacing */
   int             i, j, k, l;           /* loop counters */
-
-  double drandom(), seconds(void);
-  int    make_kl_list();
-  void   bucketsorts(), bucketsorts_bi(), bucketsort1();
-  void   pbuckets(), removebilist(), movebilist(), make_bndy_list();
 
   nbadtries = KL_NTRIES_BAD;
 

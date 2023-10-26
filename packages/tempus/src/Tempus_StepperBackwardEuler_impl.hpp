@@ -341,7 +341,7 @@ StepperBackwardEuler<Scalar>::computeStepResidual(
   const int param_index) const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->createOutArgs();
   outArgs.set_f(Teuchos::rcpFromRef(residual));
   computeStepResidDerivImpl(outArgs, x, t, p, param_index);
 }
@@ -357,7 +357,7 @@ StepperBackwardEuler<Scalar>::computeStepJacobian(
   const int deriv_index) const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->createOutArgs();
   TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_W_op));
   outArgs.set_W_op(Teuchos::rcpFromRef(jacobian));
   computeStepResidDerivImpl(outArgs, x, t, p, param_index, deriv_index);
@@ -373,7 +373,7 @@ StepperBackwardEuler<Scalar>::computeStepParamDeriv(
   const int param_index) const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->createOutArgs();
   TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_DfDp, param_index).supports(MEB::DERIV_LINEAR_OP));
   outArgs.set_DfDp(param_index,
                    MEB::Derivative<Scalar>(Teuchos::rcpFromRef(deriv)));
@@ -390,7 +390,7 @@ StepperBackwardEuler<Scalar>::computeStepSolver(
   const int param_index) const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
+  MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->createOutArgs();
   TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_W));
   outArgs.set_W(Teuchos::rcpFromRef(jacobian_solver));
   computeStepResidDerivImpl(outArgs, x, t, p, param_index, 0);
@@ -424,7 +424,7 @@ StepperBackwardEuler<Scalar>::computeStepResidDerivImpl(
   timeDer->compute(xn, x_dot);
 
   // evaluate model
-  MEB::InArgs<Scalar> inArgs = this->wrapperModel_->getInArgs();
+  MEB::InArgs<Scalar> inArgs = this->wrapperModel_->createInArgs();
   inArgs.set_x(xn);
   if (inArgs.supports(MEB::IN_ARG_x_dot         )) inArgs.set_x_dot    (x_dot);
   if (inArgs.supports(MEB::IN_ARG_t             )) inArgs.set_t        (tn);

@@ -2,7 +2,33 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
-## 2023-5-03:
+## 2023-06-22:
+
+* **Added:** Packages are now determined to be missing if their dependencies
+  file `<packageDir>/cmake/Dependencies.cmake` is missing.  If the package
+  directory `<packageDir>` exists but the dependencies file is missing, the
+  package is determined to be missing but a warning is printed.  (This expands
+  behavior to gracefully deal with a situation where a package source
+  directory is only partially removed, such as with `git rm -r <packageDir>`,
+  but the base directory still exists.  Therefore, this allows the project to
+  gracefully configure with the package being considered missing and avoids a
+  fatal error in this case.)
+
+## 2023-06-02:
+
+* **Added/Deprecated:** External packages/TPLs can now be (and should be)
+  listed in the `[TEST|LIB]_[REQUIRED|OPTIONAL]_PACKAGES` arguments/lists in
+  the macro `tribits_package_define_dependencies()` and the
+  `[TEST|LIB]_[REQUIRED|OPTIONAL]_TPLS` arguments/lists are deprecated (but
+  with no deprecation warning yet).  This makes it easier to write
+  `<packageDir>/cmake/Dependencies.cmake` files for packages where the set of
+  internal and external upstream dependent packages is dynamic and changes
+  depending on the TriBITS project where these package are configured under.
+  (And conceptually, a downstream package should not care if an upstream
+  dependent package is pulled in as an external package or built as an
+  internal package.)
+
+## 2023-05-03:
 
 * **Added:** Added support for non-fully TriBITS-compatible external packages.
   Now, a `<Package>Config.cmake` file need not define

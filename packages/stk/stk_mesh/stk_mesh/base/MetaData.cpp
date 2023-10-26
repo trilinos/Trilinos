@@ -1473,14 +1473,6 @@ FieldBase* get_field_by_name( const std::string& name, const MetaData & metaData
   return field;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use stk::mesh::impl::dump_all_meta_info() from DumpMeshInfo.hpp instead")
-void MetaData::dump_all_meta_info(std::ostream& out) const
-{
-  impl::dump_all_meta_info(*this, out);
-}
-#endif
-
 void sync_to_host_and_mark_modified(const MetaData& meta)
 {
   const std::vector<FieldBase*>& fields = meta.get_fields();

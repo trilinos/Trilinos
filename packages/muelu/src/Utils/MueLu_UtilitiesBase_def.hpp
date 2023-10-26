@@ -342,12 +342,13 @@ namespace MueLu {
       diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
 
       if(rowMap->lib() == Xpetra::UnderlyingLib::UseTpetra) {
+        Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase::GetLumpedMatrixDiagonal (Kokkos implementation)");
         // Implement using Kokkos
         using local_vector_type = typename Vector::dual_view_type::t_dev_um;
         using local_matrix_type = typename Matrix::local_matrix_type;
         using execution_space   = typename local_vector_type::execution_space;
-        using rowmap_type       = typename local_matrix_type::row_map_type;
-        using entries_type      = typename local_matrix_type::index_type;
+        // using rowmap_type       = typename local_matrix_type::row_map_type;
+        // using entries_type      = typename local_matrix_type::index_type;
         using values_type       = typename local_matrix_type::values_type;
         using scalar_type       = typename values_type::non_const_value_type;
         using mag_type          = typename Kokkos::ArithTraits<scalar_type>::mag_type;
@@ -366,6 +367,8 @@ namespace MueLu {
           Kokkos::View<mag_type, execution_space> avgAbsDiagVal_dev("avgAbsDiagVal");
           Kokkos::View<int, execution_space> numDiagsEqualToOne_dev("numDiagsEqualToOne");
 
+          {
+          Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: parallel_for (doReciprocal)");
           Kokkos::parallel_for("GetLumpedMatrixDiagonal", my_policy,
                                KOKKOS_LAMBDA(const int rowIdx) {
                                  diag_dev(rowIdx, 0) = KAT_S::zero();
@@ -387,15 +390,19 @@ namespace MueLu {
                                  }
                                });
 
-          typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
-          Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
-          int numDiagsEqualToOne;
-          Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
-
+          }
           if (useAverageAbsDiagVal) {
+            Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
+            typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
+            Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
+            int numDiagsEqualToOne;
+            Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
+
             tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal()-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
           }
 
+          {
+          Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("ComputeLumpedDiagonalInverse: parallel_for (doReciprocal)");
           Kokkos::parallel_for("ComputeLumpedDiagonalInverse", my_policy,
                                KOKKOS_LAMBDA(const int rowIdx) {
                                  if (replaceSingleEntryRowWithZero && nnzPerRow(rowIdx) <= 1) {
@@ -410,8 +417,10 @@ namespace MueLu {
                                    }
                                  }
                                });
+          }
 
         } else {
+          Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: parallel_for");
           Kokkos::parallel_for("GetLumpedMatrixDiagonal", my_policy,
                                KOKKOS_LAMBDA(const int rowIdx) {
                                  diag_dev(rowIdx, 0) = KAT_S::zero();
@@ -424,6 +433,7 @@ namespace MueLu {
         }
       } else {
         // Implement using Teuchos
+        Teuchos::TimeMonitor MMM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase: GetLumpedMatrixDiagonal: (Teuchos implementation)");
         ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
         Teuchos::Array<Scalar> regSum(diag->getLocalLength());
         Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -1796,6 +1806,40 @@ namespace MueLu {
       isDirichletCol->doImport(*isDirichletRow,*importer,Xpetra::CombineMode::ADD);
 
   }
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+ReplaceNonZerosWithOnes(const RCP<Matrix> & original) {
+  using ISC = typename Kokkos::ArithTraits<Scalar>::val_type;
+  using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+  using local_matrix_type = typename CrsMatrix::local_matrix_type;
+  using values_type = typename local_matrix_type::values_type;
+
+  const ISC ONE  = Kokkos::ArithTraits<ISC>::one();
+  const ISC ZERO = Kokkos::ArithTraits<ISC>::zero();
+
+  // Copy the values array of the old matrix to a new array, replacing all the non-zeros with one
+  auto localMatrix = original->getLocalMatrixDevice();
+  TEUCHOS_TEST_FOR_EXCEPTION(!original->hasCrsGraph(),Exceptions::RuntimeError, "ReplaceNonZerosWithOnes: Cannot get CrsGraph");
+  values_type new_values("values",localMatrix.nnz());
+ 
+  Kokkos::parallel_for("ReplaceNonZerosWithOnes",range_type(0,localMatrix.nnz()),KOKKOS_LAMBDA(const size_t i) {
+      if (localMatrix.values(i) != ZERO)
+        new_values(i) = ONE;
+      else
+        new_values(i) = ZERO;
+    });
+
+  // Build the new matrix
+  RCP<Matrix> NewMatrix =  Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(original->getCrsGraph(),new_values);
+  TEUCHOS_TEST_FOR_EXCEPTION(NewMatrix.is_null(),Exceptions::RuntimeError, "ReplaceNonZerosWithOnes: MatrixFactory::Build() did not return matrix");
+  NewMatrix->fillComplete(original->getDomainMap(),original->getRangeMap());
+  return NewMatrix;
+}
+
+
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

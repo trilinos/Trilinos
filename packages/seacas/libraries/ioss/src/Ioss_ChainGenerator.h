@@ -14,9 +14,9 @@
 namespace Ioss {
   template <typename INT> struct chain_entry_t
   {
-    bool    operator==(const chain_entry_t<INT> &other) { return (element == other.element); }
+    bool    operator==(const chain_entry_t<INT> &other) const { return (other.element == element); }
     int64_t element{}; // Element at root of chain
-    int     link{};    // How far is this element in the chain (1-based)
+    int     link{-1};    // How far is this element in the chain (1-based)
   };
 
   template <typename INT> using chain_t = std::vector<chain_entry_t<INT>>;

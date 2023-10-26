@@ -4,6 +4,7 @@
 #include "element_mesh_extractor.hpp"
 #include "element_mesh_triangulator.hpp"
 #include "mesh_io.hpp"
+#include "adjacency_search.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -15,7 +16,10 @@ void MiddleGridTriangulator::triangulate()
   ElementMeshExtractor extractor(m_meshIn, m_relationalData);
   ElementMeshTriangulator triangulator(m_relationalData);
   ElementMeshClassifier elementClassifier(m_relationalData, m_classifier);
-  for (auto& el1 : m_mesh1->get_elements())
+  mesh::impl::AdjacencySearch adjSearch(m_mesh1, m_mesh2);
+  mesh::MeshEntityPtr el1;
+  std::vector<mesh::MeshEntityPtr> mesh2Els;
+  while ( (el1 = adjSearch.get_next(mesh2Els)) )
   {
     if (el1)
     {
@@ -38,7 +42,7 @@ void MiddleGridTriangulator::triangulate()
 
       extractor.write_elements_back_to_middle_grid(elementMeshData, el1);
 
-      elementClassifier.classify(elementMeshData, numConstraintEdges);
+      elementClassifier.classify(elementMeshData, numConstraintEdges, mesh2Els);
     }
   }
 }

@@ -265,7 +265,7 @@ integer(Zoltan_INT) :: lid
   endif
 ! Make sure all procs have the same value.
   call MPI_Allreduce(flag, Use_Edge_Wgts, 1, MPI_LOGICAL, MPI_LOR, &
-                     MPI_COMM_WORLD, mpierr)
+                     zoltan_get_global_comm(), mpierr)
 
 
 !  
@@ -276,7 +276,7 @@ integer(Zoltan_INT) :: lid
   
   if (Mesh%num_elems == 0) return ! No elements to update 
 
-  call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
+  call MPI_Comm_rank(zoltan_get_global_comm(), proc, mpierr)
 
 !  
 !   *  Build New_Elem_Index array and list of processor assignments.
@@ -515,8 +515,8 @@ integer(Zoltan_INT) :: i, j, k, last, mpierr
 integer(Zoltan_INT) :: adj_elem
 
 
-  call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
-  call MPI_Comm_size(MPI_COMM_WORLD, num_proc, mpierr)
+  call MPI_Comm_rank(zoltan_get_global_comm(), proc, mpierr)
+  call MPI_Comm_size(zoltan_get_global_comm(), num_proc, mpierr)
 
 !  compact elements array, as the application expects the array to be dense 
   do i = 0, New_Elem_Index_Size-1
@@ -713,7 +713,7 @@ integer(Zoltan_INT), intent(out) :: ierr
   gid = num_gid_entries;
   lid = num_lid_entries;
 
-  call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
+  call MPI_Comm_rank(zoltan_get_global_comm(), proc, mpierr)
 
 
   if (num_lid_entries.gt.0) then
@@ -862,7 +862,7 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   gid = num_gid_entries;
 
-  call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
+  call MPI_Comm_rank(zoltan_get_global_comm(), proc, mpierr)
 
 
   idx = in_list(elem_gid(gid), New_Elem_Index_Size, New_Elem_Index)
@@ -1014,7 +1014,7 @@ integer, allocatable :: status(:,:), req(:)
   do i = 0, Mesh%necmap-1
 ! RISKY old style assumption the address of recv_vec(offset) is passed
     call MPI_Irecv(recv_vec(offset), Mesh%ecmap_cnt(i), MPI_INTEGER, &
-                     Mesh%ecmap_id(i), msg_type, MPI_COMM_WORLD, req(i), ierr)
+                     Mesh%ecmap_id(i), msg_type, zoltan_get_global_comm(), req(i), ierr)
     offset = offset + Mesh%ecmap_cnt(i)
   end do
 
@@ -1023,7 +1023,7 @@ integer, allocatable :: status(:,:), req(:)
   do i = 0, Mesh%necmap-1
 ! RISKY old style assumption the address of send_vec(offset) is passed
     call MPI_Send(send_vec(offset), Mesh%ecmap_cnt(i), MPI_INTEGER, &
-                    Mesh%ecmap_id(i), msg_type, MPI_COMM_WORLD, ierr)
+                    Mesh%ecmap_id(i), msg_type, zoltan_get_global_comm(), ierr)
     offset = offset + Mesh%ecmap_cnt(i)
   end do
 

@@ -212,4 +212,4 @@ TEUCHOS_UNIT_TEST(SDIRK_21Pair, Modifier)
   TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

@@ -16,7 +16,7 @@
 #include <Akri_Facet.hpp>
 #include <Akri_InterfaceID.hpp>
 #include <Akri_MasterElement.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
@@ -102,8 +102,8 @@ public:
   static void set_coords_fields(const int spatialDim, FieldRef coordsField, FieldRef snapDisplacementsField);
   ProlongationPointData() {}
 
-  Vector3d get_previous_coordinates() const;
-  Vector3d get_post_snap_coordinates() const;
+  stk::math::Vector3d get_previous_coordinates() const;
+  stk::math::Vector3d get_post_snap_coordinates() const;
 
 protected:
   static int theSpatialDim;
@@ -125,11 +125,11 @@ public:
   virtual ~ProlongationElementData() {}
   ProlongationElementData (const ProlongationElementData&) = delete;
   ProlongationElementData& operator= (const ProlongationElementData&) = delete;
-  void evaluate_prolongation_field(const CDFEM_Support & cdfemSupport, const FieldRef field, const unsigned field_length, const Vector3d & p_coords, double * result) const;
-  Vector3d compute_parametric_coords_at_point(const Vector3d & pointCoords) const;
+  void evaluate_prolongation_field(const CDFEM_Support & cdfemSupport, const FieldRef field, const unsigned field_length, const stk::math::Vector3d & p_coords, double * result) const;
+  stk::math::Vector3d compute_parametric_coords_at_point(const stk::math::Vector3d & pointCoords) const;
   bool have_prolongation_data_stored_for_all_nodes() const;
   void fill_integration_weights(std::vector<double> & childIntgWeights) const;
-  virtual void find_subelement_and_parametric_coordinates_at_point(const Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, Vector3d & interpElemParamCoords) const = 0;
+  virtual void find_subelement_and_parametric_coordinates_at_point(const stk::math::Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, stk::math::Vector3d & interpElemParamCoords) const = 0;
   virtual bool have_subelements() const = 0;
 private:
   const MasterElement& myMasterElem;
@@ -140,7 +140,7 @@ class ProlongationLeafElementData : public ProlongationElementData {
 public:
   ProlongationLeafElementData(const CDMesh & cdmesh, const PartAndFieldCollections & partAndFieldCollections, const stk::mesh::Entity element);
   virtual ~ProlongationLeafElementData() {}
-  virtual void find_subelement_and_parametric_coordinates_at_point(const Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, Vector3d & interpElemParamCoords) const override;
+  virtual void find_subelement_and_parametric_coordinates_at_point(const stk::math::Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, stk::math::Vector3d & interpElemParamCoords) const override;
   virtual bool have_subelements() const override { return false; }
 private:
   std::string debug_output(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element) const;
@@ -150,7 +150,7 @@ class ProlongationParentElementData : public ProlongationElementData {
 public:
   ProlongationParentElementData(const CDMesh & cdmesh, const stk::mesh::Entity element, const std::vector<const ProlongationElementData *> & subelementsData, const bool doStoreElementFields);
   virtual ~ProlongationParentElementData() {}
-  virtual void find_subelement_and_parametric_coordinates_at_point(const Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, Vector3d & interpElemParamCoords) const override;
+  virtual void find_subelement_and_parametric_coordinates_at_point(const stk::math::Vector3d & pointCoordinates, const ProlongationElementData *& interpElem, stk::math::Vector3d & interpElemParamCoords) const override;
   virtual bool have_subelements() const override { return true; }
 private:
   std::string debug_output(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element) const;
@@ -201,13 +201,15 @@ public:
   void pack_into_buffer(stk::CommBuffer & b) const;
   static ProlongationFacet * unpack_from_buffer( const CDMesh & mesh, stk::CommBuffer & b );
 
-  static const BoundingBox & get_bounding_box(const ProlongationFacet * prolong_facet) { return prolong_facet->get_facet()->bounding_box(); }
-
   Facet * get_facet() const { return my_facet.get(); }
-  std::vector<unsigned> compute_common_fields(const PartAndFieldCollections & partAndFieldCollections) const;
+  std::vector<unsigned> compute_common_fields() const;
   std::unique_ptr<ProlongationFacetPointData> get_prolongation_point_data(const FacetDistanceQuery & dist_query) const;
   const std::vector<const ProlongationNodeData *> & get_prolongation_nodes() const { return my_prolong_nodes; }
   bool communicate_me(const BoundingBox & proc_target_bbox) const;
+  static void insert_into_bounding_box(const ProlongationFacet * prolongFacet, BoundingBox & bbox) { return prolongFacet->get_facet()->insert_into(bbox); }
+  static stk::math::Vector3d get_centroid(const ProlongationFacet * prolongFacet) { return prolongFacet->get_facet()->centroid(); }
+
+  void build_and_append_edge_facets(ProlongFacetVec & facetVec) const;
 
 protected:
   const CDMesh & my_mesh;

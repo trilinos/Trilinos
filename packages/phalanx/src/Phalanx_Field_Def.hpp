@@ -194,7 +194,7 @@ KOKKOS_INLINE_FUNCTION
 typename PHX::Field<DataT,Rank,Layout>::size_type
 PHX::Field<DataT,Rank,Layout>::rank() const
 {
-  return m_field_data.Rank;
+  return m_field_data.rank;
 }
 
 // **********************************************************************

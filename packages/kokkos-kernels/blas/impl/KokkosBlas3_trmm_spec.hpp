@@ -26,7 +26,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AVIT, class BVIT>
+template <class execution_space, class AVIT, class BVIT>
 struct trmm_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -40,6 +40,7 @@ struct trmm_eti_spec_avail {
                                                EXEC_SPACE, MEM_SPACE)        \
   template <>                                                                \
   struct trmm_eti_spec_avail<                                                \
+      EXEC_SPACE,                                                            \
       Kokkos::View<const SCALAR**, LAYOUTA,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
@@ -67,21 +68,26 @@ namespace Impl {
 //
 
 // Unification layer
-template <class AVIT, class BVIT,
-          bool tpl_spec_avail = trmm_tpl_spec_avail<AVIT, BVIT>::value,
-          bool eti_spec_avail = trmm_eti_spec_avail<AVIT, BVIT>::value>
+template <class execution_space, class AVIT, class BVIT,
+          bool tpl_spec_avail =
+              trmm_tpl_spec_avail<execution_space, AVIT, BVIT>::value,
+          bool eti_spec_avail =
+              trmm_eti_spec_avail<execution_space, AVIT, BVIT>::value>
 struct TRMM {
-  static void trmm(const char side[], const char uplo[], const char trans[],
-                   const char diag[], typename BVIT::const_value_type& alpha,
-                   const AVIT& A, const BVIT& B);
+  static void trmm(const execution_space& space, const char side[],
+                   const char uplo[], const char trans[], const char diag[],
+                   typename BVIT::const_value_type& alpha, const AVIT& A,
+                   const BVIT& B);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-template <class AVIT, class BVIT>
-struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void trmm(const char side[], const char uplo[], const char trans[],
-                   const char diag[], typename BVIT::const_value_type& alpha,
-                   const AVIT& A, const BVIT& B) {
+template <class execution_space, class AVIT, class BVIT>
+struct TRMM<execution_space, AVIT, BVIT, false,
+            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void trmm(const execution_space& /*space*/, const char side[],
+                   const char uplo[], const char trans[], const char diag[],
+                   typename BVIT::const_value_type& alpha, const AVIT& A,
+                   const BVIT& B) {
     static_assert(Kokkos::is_view<AVIT>::value, "AVIT must be a Kokkos::View.");
     static_assert(Kokkos::is_view<BVIT>::value, "BVIT must be a Kokkos::View.");
     static_assert(static_cast<int>(AVIT::rank) == 2, "AVIT must have rank 2.");
@@ -121,6 +127,7 @@ struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS3_TRMM_ETI_SPEC_DECL_LAYOUTS(SCALAR, LAYOUTA, LAYOUTB,     \
                                                EXEC_SPACE, MEM_SPACE)        \
   extern template struct TRMM<                                               \
+      EXEC_SPACE,                                                            \
       Kokkos::View<const SCALAR**, LAYOUTA,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
@@ -131,6 +138,7 @@ struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS3_TRMM_ETI_SPEC_INST_LAYOUTS(SCALAR, LAYOUTA, LAYOUTB,     \
                                                EXEC_SPACE, MEM_SPACE)        \
   template struct TRMM<                                                      \
+      EXEC_SPACE,                                                            \
       Kokkos::View<const SCALAR**, LAYOUTA,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
@@ -154,6 +162,5 @@ struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                                          MEM_SPACE)
 
 #include <KokkosBlas3_trmm_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS3_TRMM_SPEC_HPP_

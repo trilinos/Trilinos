@@ -50,14 +50,6 @@ int BalanceSettings::getGraphVertexWeight(stk::topology type) const
   return 1;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
-double BalanceSettings::getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
-{
-  return 1.0;
-}
-#endif
-
 double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const
 {
     const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
@@ -180,14 +172,6 @@ bool BalanceSettings::isMultiCriteriaRebalance() const
   return false;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use setVertexWeightFieldName() and setVertexWeightMethod(VertexWeightMethod::FIELD) instead")
-bool BalanceSettings::areVertexWeightsProvidedViaFields() const
-{
-  return false;
-}
-#endif
-
 void BalanceSettings::setVertexWeightFieldName(std::string field_name, unsigned criteria_index)
 {
   STK_ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
@@ -300,9 +284,9 @@ bool BalanceSettings::shouldFixSpiders() const
   return false;
 }
 
-std::string BalanceSettings::getSpiderBeamConnectivityCountFieldName() const
+std::string BalanceSettings::getSpiderPartName() const
 {
-  return "stk_balance_beam_connectivity_count";
+  return "stk_balance_spider_elements";
 }
 
 std::string BalanceSettings::getSpiderVolumeConnectivityCountFieldName() const
@@ -325,7 +309,7 @@ std::string BalanceSettings::getVertexConnectivityWeightFieldName() const
   return "stk_balance_vertex_connectivity_weight";
 }
 
-const stk::mesh::Field<int> * BalanceSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+stk::mesh::Part * BalanceSettings::getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const
 {
   return nullptr;
 }
@@ -429,7 +413,7 @@ GraphCreationSettings::GraphCreationSettings()
     m_UseConstantToleranceForFaceSearch(false),
     m_shouldFixSpiders(DefaultSettings::fixSpiders),
     m_shouldFixMechanisms(DefaultSettings::fixMechanisms),
-    m_spiderBeamConnectivityCountField(nullptr),
+    m_spiderPart(nullptr),
     m_spiderVolumeConnectivityCountField(nullptr),
     m_outputSubdomainField(nullptr),
     m_includeSearchResultInGraph(DefaultSettings::useContactSearch),
@@ -513,14 +497,6 @@ double GraphCreationSettings::getGraphEdgeWeight(stk::topology element1Topology,
 
   return weightTable[element1Index][element2Index];
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
-double GraphCreationSettings::getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
-{
-  return 1.0;
-}
-#endif
 
 int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
 {
@@ -809,16 +785,14 @@ bool GraphCreationSettings::shouldFixSpiders() const
   return m_shouldFixSpiders;
 }
 
-const stk::mesh::Field<int> * GraphCreationSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+stk::mesh::Part * GraphCreationSettings::getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const
 {
-  if (m_spiderBeamConnectivityCountField == nullptr) {
-    m_spiderBeamConnectivityCountField =
-        stkMeshBulkData.mesh_meta_data().get_field<int>(stk::topology::NODE_RANK,
-                                                        getSpiderBeamConnectivityCountFieldName());
-    STK_ThrowRequireMsg(m_spiderBeamConnectivityCountField != nullptr,
-                    "Must create nodal spider beam connectivity count field when fixing spider elements.");
+  if (m_spiderPart == nullptr) {
+    m_spiderPart = stkMeshBulkData.mesh_meta_data().get_part(getSpiderPartName());
+    STK_ThrowRequireMsg(m_spiderPart != nullptr,
+                    "Must create spider part when fixing spider elements.");
   }
-  return m_spiderBeamConnectivityCountField;
+  return m_spiderPart;
 }
 
 const stk::mesh::Field<int> * GraphCreationSettings::getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const

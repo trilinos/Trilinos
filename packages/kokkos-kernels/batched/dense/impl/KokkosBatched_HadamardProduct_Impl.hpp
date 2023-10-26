@@ -101,11 +101,11 @@ KOKKOS_INLINE_FUNCTION int SerialHadamardProduct::invoke(const XViewType& X,
   static_assert(
       Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: YViewType must have rank 2.");
-  static_assert(VViewType::Rank == 2,
+  static_assert(VViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: VViewType must have rank 2.");
 
   // Check compatibility of dimensions at run time.
@@ -152,11 +152,11 @@ KOKKOS_INLINE_FUNCTION int TeamHadamardProduct<MemberType>::invoke(
   static_assert(
       Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: YViewType must have rank 2.");
-  static_assert(VViewType::Rank == 2,
+  static_assert(VViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: VViewType must have rank 2.");
 
   // Check compatibility of dimensions at run time.
@@ -205,11 +205,11 @@ KOKKOS_INLINE_FUNCTION int TeamVectorHadamardProduct<MemberType>::invoke(
   static_assert(
       Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: YViewType must have rank 2.");
-  static_assert(VViewType::Rank == 2,
+  static_assert(VViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: VViewType must have rank 2.");
 
   // Check compatibility of dimensions at run time.

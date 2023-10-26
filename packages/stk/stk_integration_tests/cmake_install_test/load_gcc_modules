@@ -2,12 +2,15 @@
 
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
-module load sems-cmake/3.24.3
+#module load sems-cmake/3.24.3
+module load cde/v3/cmake/3.23.1
 module load sems-gcc/8.3.0
 module load sems-metis/5.1.0
 
 export BLAS_LIBRARIES=${BLAS_LIBRARIES:-/usr/lib64/libblas.so}
 export LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-/usr/lib64/liblapack.so}
+export TPL_BLAS_LIBRARIES=${BLAS_LIBRARIES:-/usr/lib64/libblas.so}
+export TPL_LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-/usr/lib64/liblapack.so}
 
 module load sems-openmpi/1.10.7
 module load sems-hdf5/1.10.7
@@ -16,9 +19,7 @@ module load sems-parmetis/4.0.3
 module load sems-parallel-netcdf/1.12.1
 
 
-
 ### Corresponding CDE v3 modules -- as of 2/6/23 these gave link errors
-#module load cde/v3/cmake/3.23.1
 #module load cde/v3/gcc/10.3.0
 #module load cde/v3/openmpi/4.1.2-gcc-10.3.0
 #module load cde/v3/netlib-lapack/3.10.1-gcc-10.3.0

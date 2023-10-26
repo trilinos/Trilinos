@@ -43,9 +43,8 @@ namespace Impl {
 template <class XMV, class YMV, class ZMV, int scalar_x, int scalar_y,
           int scalar_z, class SizeType = typename ZMV::size_type>
 struct MV_Update_Functor {
-  typedef typename ZMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename ZMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename ZMV::non_const_value_type> ATS;
 
   const size_type numCols;
   const typename XMV::non_const_value_type alpha_;
@@ -213,9 +212,8 @@ struct MV_Update_Functor {
 template <class XV, class YV, class ZV, int scalar_x, int scalar_y,
           int scalar_z, class SizeType = typename ZV::size_type>
 struct V_Update_Functor {
-  typedef typename ZV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename ZV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename ZV::non_const_value_type> ATS;
 
   const size_type numCols;
   const typename XV::non_const_value_type alpha_;
@@ -316,8 +314,10 @@ struct V_Update_Functor {
 //
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding multivector entry.
-template <class XMV, class YMV, class ZMV, class SizeType>
-void MV_Update_Generic(const typename XMV::non_const_value_type& alpha,
+template <class execution_space, class XMV, class YMV, class ZMV,
+          class SizeType>
+void MV_Update_Generic(const execution_space& space,
+                       const typename XMV::non_const_value_type& alpha,
                        const XMV& X,
                        const typename YMV::non_const_value_type& beta,
                        const YMV& Y,
@@ -347,9 +347,8 @@ void MV_Update_Generic(const typename XMV::non_const_value_type& alpha,
                 "KokkosBlas::Impl::MV_Update_Generic: "
                 "XMV, YMV, and ZMV must have rank 2.");
 
-  typedef typename XMV::execution_space execution_space;
   const SizeType numRows = X.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   if (a == 0) {
     if (b == 0) {
@@ -417,8 +416,9 @@ void MV_Update_Generic(const typename XMV::non_const_value_type& alpha,
 //
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding vector entry.
-template <class XV, class YV, class ZV, class SizeType>
-void V_Update_Generic(const typename XV::non_const_value_type& alpha,
+template <class execution_space, class XV, class YV, class ZV, class SizeType>
+void V_Update_Generic(const execution_space& space,
+                      const typename XV::non_const_value_type& alpha,
                       const XV& X,
                       const typename YV::non_const_value_type& beta,
                       const YV& Y,
@@ -448,9 +448,8 @@ void V_Update_Generic(const typename XV::non_const_value_type& alpha,
                 "KokkosBlas::Impl::V_Update_Generic: "
                 "XV, YV, and ZV must have rank 1.");
 
-  typedef typename XV::execution_space execution_space;
   const SizeType numRows = X.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   if (a == 0) {
     if (b == 0) {

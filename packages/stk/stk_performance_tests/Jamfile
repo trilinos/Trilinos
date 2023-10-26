@@ -122,10 +122,12 @@ local xml-files =
 
 exe stk_performance_tests
   :
+    [ glob $(stk_performance_tests-root)/stk_balance/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_mesh/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_mesh/entity_sorting/*.cpp ]
     [ glob $(stk_performance_tests-root)/general/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_middle_mesh/*.cpp ]
+    [ glob $(stk_performance_tests-root)/stk_util/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_balance//stk_balance_lib
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util

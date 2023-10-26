@@ -54,9 +54,6 @@
 /* Define if compiler supports c99 tr1 cmath functions */
 #cmakedefine HAS_C99_TR1_CMATH
 
-/* Define to enable C++11 support*/
-#cmakedefine HAVE_SACADO_CXX11
-
 /* Define to enable hierarchical parallelism support */
 #if !defined(SACADO_VIEW_CUDA_HIERARCHICAL) && !defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 #cmakedefine SACADO_VIEW_CUDA_HIERARCHICAL

@@ -264,6 +264,9 @@ namespace Xpetra {
     /** \brief Returns internal BlockReorderManager object */
     Teuchos::RCP<const Xpetra::BlockReorderManager > getBlockReorderManager() { return brm_; }
 
+    /** \brief Returns internal unmodified BlockedCrsMatrix object */
+    Teuchos::RCP<const Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getBlockedCrsMatrix() { return fullOp_; }
+
     // @}
 
     //! @name Overridden from Teuchos::Describable

@@ -1933,7 +1933,7 @@ namespace Sacado {
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
     typename mpl::disable_if<
-      mpl::is_same< typename T::value_type,
+      std::is_same< typename T::value_type,
                     typename T::scalar_type >,
       IfThenElseOp< CondT, typename T::scalar_type,
                     typename Expr<T>::derived_type,
@@ -1952,7 +1952,7 @@ namespace Sacado {
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
     typename mpl::disable_if<
-      mpl::is_same< typename T::value_type,
+      std::is_same< typename T::value_type,
                     typename T::scalar_type >,
       IfThenElseOp< CondT, typename Expr<T>::derived_type,
                     typename T::scalar_type,

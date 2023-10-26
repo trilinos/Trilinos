@@ -143,11 +143,12 @@ void decompose_mesh()
     const double minIntPtWeightForEstimatingCutQuality = cdfem_support().get_snapper().get_edge_tolerance();
     nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(cdmesh->stk_bulk(),
         cdmesh->get_active_part(),
-        cdfem_support().get_interpolation_fields(),
+        cdfem_support().get_snap_fields(),
         *interfaceGeometry,
         cdfem_support().get_global_ids_are_parallel_consistent(),
         cdfem_support().get_snapping_sharp_feature_angle_in_degrees(),
-        minIntPtWeightForEstimatingCutQuality);
+        minIntPtWeightForEstimatingCutQuality,
+        cdfem_support().get_max_edge_snap());
   }
   interfaceGeometry->prepare_to_process_elements(mMesh, nodesToSnappedDomains);
 
@@ -207,7 +208,7 @@ void setup_cdfem_support()
 {
   FieldRef coordsField = mMesh.mesh_meta_data().coordinate_field();
   cdfem_support().set_coords_field(coordsField);
-  cdfem_support().add_interpolation_field(coordsField);
+  cdfem_support().add_edge_interpolation_field(coordsField);
   cdfem_support().register_parent_node_ids_field();
 
   cdfem_support().set_prolongation_model(INTERPOLATION);

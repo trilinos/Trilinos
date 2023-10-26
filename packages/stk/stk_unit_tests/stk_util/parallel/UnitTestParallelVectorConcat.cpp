@@ -50,7 +50,8 @@ public:
 };
 
 
-TEST(UnitTestParallel, testParallelVectorConcat) {
+TEST(UnitTestParallel, testParallelVectorConcat)
+{
   int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
   int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
   //
@@ -183,6 +184,35 @@ TEST(UnitTestParallel, testParallelVectorConcat) {
 
     for(unsigned int i=0; i<expectedStringList.size(); ++i) {
       EXPECT_EQ(globalStringList[i], expectedStringList[i]);
+    }
+  }
+}
+
+TEST(UnitTestParallel, test_bool_ParallelVectorConcat)
+{
+  int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  //
+  //  concat bool lists, each process P creates P-1 bools
+  //
+  {
+    std::vector<bool> localVec;
+    for(int i=0; i<mpi_rank-1; ++i) {
+      const bool val = i%2==0 ? true : false;
+      localVec.push_back(val);
+    }
+    std::vector<bool> globalVec;
+    int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localVec, globalVec);
+    EXPECT_EQ(status, MPI_SUCCESS);
+    std::vector<bool> expectedVec;
+    for(int iproc=0; iproc<mpi_size; ++iproc) {
+      for(int i=0; i<iproc-1; ++i) {
+        const bool val = i%2==0 ? true : false;
+        expectedVec.push_back(val);
+      }
+    }
+    for(unsigned int i=0; i<expectedVec.size(); ++i) {
+      EXPECT_EQ(globalVec[i], expectedVec[i]);
     }
   }
 }

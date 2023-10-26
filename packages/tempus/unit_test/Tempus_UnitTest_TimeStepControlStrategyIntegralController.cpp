@@ -277,4 +277,4 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyIntegralController, getValidParameters)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

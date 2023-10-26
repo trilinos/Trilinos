@@ -239,7 +239,7 @@ static bool captures_interface(const std::vector<int> * sortedDomains, const Int
 }
 
 static bool interface_has_uncaptured_edge_intersection(const LevelSetElementCutter & cutter,
-    const std::vector<Vector3d> & elemNodesCoords,
+    const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     const InterfaceID & interface)
 {
@@ -254,8 +254,8 @@ static bool interface_has_uncaptured_edge_intersection(const LevelSetElementCutt
     const int n1 = edgeNodeOrdinals[1];
     if (!captures_interface(elemNodesSnappedDomains[n0], interface) && !captures_interface(elemNodesSnappedDomains[n1], interface))
     {
-      const Segment3d edge(elemNodesCoords[n0], elemNodesCoords[n1]);
-      if (cutter.have_crossing(interface, edge))
+      const std::array<stk::math::Vector3d,2> edgeNodeCoords{elemNodesCoords[n0], elemNodesCoords[n1]};
+      if (cutter.have_crossing(interface, edgeNodeCoords))
         return true;
     }
   }
@@ -264,7 +264,7 @@ static bool interface_has_uncaptured_edge_intersection(const LevelSetElementCutt
 
 static std::vector<InterfaceID>
 get_sorted_cutting_interfaces_with_uncaptured_intersections(const LevelSetElementCutter & cutter,
-    const std::vector<Vector3d> & elemNodesCoords,
+    const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains)
 {
   std::set<InterfaceID> interfacesWithUncapturedCrossings;
@@ -284,9 +284,9 @@ static int get_interface_index(const std::vector<InterfaceID> & sortedInterfaces
   return std::distance(sortedInterfaces.begin(), iter);
 }
 
-static Vector3d get_centroid(const std::vector<Vector3d> & elemNodesCoords)
+static stk::math::Vector3d get_centroid(const std::vector<stk::math::Vector3d> & elemNodesCoords)
 {
-  Vector3d centroid = Vector3d::ZERO;
+  stk::math::Vector3d centroid = stk::math::Vector3d::ZERO;
   for(auto && nodeCoords : elemNodesCoords)
   {
     centroid += nodeCoords;
@@ -296,14 +296,14 @@ static Vector3d get_centroid(const std::vector<Vector3d> & elemNodesCoords)
 }
 
 std::vector<int>
-LevelSetElementCutter::get_interface_signs_based_on_crossings(const std::vector<Vector3d> & elemNodesCoords,
+LevelSetElementCutter::get_interface_signs_based_on_crossings(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const
 {
   const auto allInterfaces = get_sorted_cutting_interfaces();
   std::vector<int> interfaceSigns(allInterfaces.size(), 0);
 
   const auto intersectingInterfaces = get_sorted_cutting_interfaces_with_uncaptured_intersections(*this, elemNodesCoords, elemNodesSnappedDomains);
-  const Vector3d centroid = get_centroid(elemNodesCoords);
+  const stk::math::Vector3d centroid = get_centroid(elemNodesCoords);
 
   const bool oneLSPerPhase = myElementInterfaceCutter->is_one_ls_per_phase();
   if (oneLSPerPhase)
@@ -539,8 +539,8 @@ static double compute_edge_length(const stk::mesh::BulkData & mesh, const std::a
 {
   const int dim = mesh.mesh_meta_data().spatial_dimension();
   const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
-  const Vector3d x0(field_data<double>(coordsField, edgeNodes[0]), dim);
-  const Vector3d x1(field_data<double>(coordsField, edgeNodes[1]), dim);
+  const stk::math::Vector3d x0(field_data<double>(coordsField, edgeNodes[0]), dim);
+  const stk::math::Vector3d x1(field_data<double>(coordsField, edgeNodes[1]), dim);
   return (x1-x0).length();
 }
 
@@ -604,9 +604,7 @@ static bool element_intersects_interval(const stk::mesh::BulkData & mesh, const 
   for(auto && LSField : LSFields)
   {
     fill_node_distances(mesh, LSField, elem, elemNodeDistWorkspace);
-    if (elemNodeDistWorkspace.size() != mesh.num_nodes(elem))
-      return false;
-    if (InterfaceGeometry::element_with_nodal_distance_intersects_interval(elemNodeDistWorkspace, loAndHi))
+    if (elemNodeDistWorkspace.size() == mesh.num_nodes(elem) && InterfaceGeometry::element_with_nodal_distance_intersects_interval(elemNodeDistWorkspace, loAndHi))
       return true;
   }
   return false;
@@ -725,10 +723,10 @@ static NodeToCapturedDomainsMap store_and_communicate_new_snap_node_domains(cons
   return newSnapnodesToCapturedDomains;
 }
 
-static std::vector<Vector3d> get_node_parametric_coords_after_snapping(const stk::mesh::BulkData & mesh,
+static std::vector<stk::math::Vector3d> get_node_parametric_coords_after_snapping(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,
     stk::mesh::Entity snapNode,
-    const Vector3d snapNodeLocation)
+    const stk::math::Vector3d snapNodeLocation)
 {
   stk::topology elementTopology = mesh.bucket(element).topology();
   const MasterElement & masterElement = MasterElementDeterminer::getMasterElement(elementTopology);
@@ -740,17 +738,17 @@ static std::vector<Vector3d> get_node_parametric_coords_after_snapping(const stk
   std::vector<stk::math::Vector3d> nodeLocations;
   fill_element_node_coordinates(mesh, element, coordsField, nodeLocations);
 
-  std::vector<Vector3d> nodesCoords;
+  std::vector<stk::math::Vector3d> nodesCoords;
   for (unsigned n=0; n<elementNodes.size(); ++n)
   {
     if (elementNodes[n] == snapNode)
     {
-      const Vector3d snapNodeParamCoords = get_parametric_coordinates_of_point(nodeLocations, snapNodeLocation);
+      const stk::math::Vector3d snapNodeParamCoords = get_parametric_coordinates_of_point(nodeLocations, snapNodeLocation);
       nodesCoords.push_back(snapNodeParamCoords);
     }
     else
     {
-      const Vector3d nodeCoords(&elemNodeParamCoords[n*dim],dim);
+      const stk::math::Vector3d nodeCoords(&elemNodeParamCoords[n*dim],dim);
       nodesCoords.push_back(nodeCoords);
     }
   }
@@ -765,7 +763,7 @@ static double truncate_to_maintain_positive_shape_function(const double shapeFcn
   return baseShapeFcn/(baseShapeFcn-shapeFcn);
 }
 
-static Vector3d find_point_within_deformed_and_undeformed_tet(const std::vector<Vector3d> & deformedElementParamCoords,
+static stk::math::Vector3d find_point_within_deformed_and_undeformed_tet(const std::vector<stk::math::Vector3d> & deformedElementParamCoords,
     const int lnn)
 {
   stk::topology topology = stk::topology::TETRAHEDRON_4;
@@ -773,8 +771,8 @@ static Vector3d find_point_within_deformed_and_undeformed_tet(const std::vector<
   std::array<int,4> permuteNodes;
   topology.permutation_node_ordinals(permutations[lnn], permuteNodes.data());
   STK_ThrowAssert(permuteNodes[0] == lnn);
-  const Vector3d & pt = deformedElementParamCoords[lnn];
-  const Vector3d oppositePt = 1./3.*(deformedElementParamCoords[permuteNodes[1]] + deformedElementParamCoords[permuteNodes[2]] + deformedElementParamCoords[permuteNodes[3]]);
+  const stk::math::Vector3d & pt = deformedElementParamCoords[lnn];
+  const stk::math::Vector3d oppositePt = 1./3.*(deformedElementParamCoords[permuteNodes[1]] + deformedElementParamCoords[permuteNodes[2]] + deformedElementParamCoords[permuteNodes[3]]);
   double fraction = 1.0;
   fraction = std::min(fraction, truncate_to_maintain_positive_shape_function(pt[0], oppositePt[0]));
   fraction = std::min(fraction, truncate_to_maintain_positive_shape_function(pt[1], oppositePt[1]));
@@ -784,7 +782,7 @@ static Vector3d find_point_within_deformed_and_undeformed_tet(const std::vector<
   return centroidWt*pt + (1.-centroidWt)*oppositePt;
 }
 
-static Vector3d find_point_within_deformed_and_undeformed_tri(const std::vector<Vector3d> & deformedElementParamCoords,
+static stk::math::Vector3d find_point_within_deformed_and_undeformed_tri(const std::vector<stk::math::Vector3d> & deformedElementParamCoords,
     const int lnn)
 {
   stk::topology topology = stk::topology::TRIANGLE_3_2D;
@@ -792,8 +790,8 @@ static Vector3d find_point_within_deformed_and_undeformed_tri(const std::vector<
   std::array<int,3> permuteNodes;
   topology.permutation_node_ordinals(permutations[lnn], permuteNodes.data());
   STK_ThrowAssert(permuteNodes[0] == lnn);
-  const Vector3d & pt = deformedElementParamCoords[lnn];
-  const Vector3d oppositePt = 0.5*(deformedElementParamCoords[permuteNodes[1]] + deformedElementParamCoords[permuteNodes[2]]);
+  const stk::math::Vector3d & pt = deformedElementParamCoords[lnn];
+  const stk::math::Vector3d oppositePt = 0.5*(deformedElementParamCoords[permuteNodes[1]] + deformedElementParamCoords[permuteNodes[2]]);
   double fraction = 1.0;
   fraction = std::min(fraction, truncate_to_maintain_positive_shape_function(pt[0], oppositePt[0]));
   fraction = std::min(fraction, truncate_to_maintain_positive_shape_function(pt[1], oppositePt[1]));
@@ -814,10 +812,10 @@ static int get_node_of_element(const stk::mesh::BulkData & mesh,
   return -1;
 }
 
-static Vector3d find_point_within_deformed_and_undeformed_element(const stk::mesh::BulkData & mesh,
+static stk::math::Vector3d find_point_within_deformed_and_undeformed_element(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,
     stk::mesh::Entity snapNode,
-    const std::vector<Vector3d> & deformedElementParamCoords)
+    const std::vector<stk::math::Vector3d> & deformedElementParamCoords)
 {
   const int lnn = get_node_of_element(mesh, element, snapNode);
 
@@ -882,7 +880,7 @@ static std::set<int> get_common_domains(std::vector<const std::vector<int>*> ent
   return commonDomains;
 }
 
-static bool will_have_uncaptured_edge_intersection_after_snapping(const Element_Cutter & cutter, stk::topology elementTopology, const std::vector<Vector3d> nodeCoords,
+static bool will_have_uncaptured_edge_intersection_after_snapping(const Element_Cutter & cutter, stk::topology elementTopology, const std::vector<stk::math::Vector3d> nodeCoords,
     const std::vector<const std::vector<int>*> & nodeDomains)
 {
   std::vector<InterfaceID> interfacesWithCuttingSurface;
@@ -899,8 +897,8 @@ static bool will_have_uncaptured_edge_intersection_after_snapping(const Element_
     {
       if (!captures_interface(node0Domains, interface) && !captures_interface(node1Domains, interface))
       {
-        const Segment3d edge(nodeCoords[edgeNodeOrdinals[0]], nodeCoords[edgeNodeOrdinals[1]]);
-        if (cutter.have_crossing(interface, edge))
+        const std::array<stk::math::Vector3d,2> edgeNodeCoords{nodeCoords[edgeNodeOrdinals[0]], nodeCoords[edgeNodeOrdinals[1]]};
+        if (cutter.have_crossing(interface, edgeNodeCoords))
           return true;
       }
     }
@@ -915,7 +913,7 @@ static int get_domain_of_element_if_it_will_be_uncut_after_snapping(const stk::m
     const std::vector<LS_Field> & LSFields,
     stk::mesh::Entity element,
     stk::mesh::Entity snapNode,
-    const Vector3d & snapNodeLocation,
+    const stk::math::Vector3d & snapNodeLocation,
     const std::vector<const std::vector<int>*> & elementNodeDomains)
 {
   const auto diagonalPicker = temporary_build_always_true_diagonal_picker();
@@ -938,10 +936,10 @@ static int get_domain_of_element_if_it_will_be_uncut_after_snapping(const stk::m
   const MasterElement & masterElement = MasterElementDeterminer::getMasterElement(elementTopology);
   std::unique_ptr<Element_Cutter> elementCutter = create_element_cutter(oneLSPerPhase, masterElement, elementParentEdges, areParentEdgesOrientedSameAsElementEdges, diagonalPicker);
 
-  const std::vector<Vector3d> nodeParamCoordsAfterSnapping = get_node_parametric_coords_after_snapping(mesh, element, snapNode, snapNodeLocation);
+  const std::vector<stk::math::Vector3d> nodeParamCoordsAfterSnapping = get_node_parametric_coords_after_snapping(mesh, element, snapNode, snapNodeLocation);
   if (!will_have_uncaptured_edge_intersection_after_snapping(*elementCutter, elementTopology, nodeParamCoordsAfterSnapping, elementNodeDomains))
   {
-    const Vector3d evaluationPt = find_point_within_deformed_and_undeformed_element(mesh, element, snapNode, nodeParamCoordsAfterSnapping);
+    const stk::math::Vector3d evaluationPt = find_point_within_deformed_and_undeformed_element(mesh, element, snapNode, nodeParamCoordsAfterSnapping);
     return elementCutter->get_ls_per_interface_phase_at_location(evaluationPt);
   }
 
@@ -975,7 +973,7 @@ static int get_sign_of_element_if_it_will_be_uncut_after_snapping(const stk::mes
     const std::vector<LS_Field> & LSFields,
     stk::mesh::Entity element,
     stk::mesh::Entity snapNode,
-    const Vector3d & snapNodeLocation,
+    const stk::math::Vector3d & snapNodeLocation,
     const InterfaceID & interface)
 {
   const auto diagonalPicker = temporary_build_always_true_diagonal_picker();
@@ -998,8 +996,8 @@ static int get_sign_of_element_if_it_will_be_uncut_after_snapping(const stk::mes
   const MasterElement & masterElement = MasterElementDeterminer::getMasterElement(elementTopology);
   std::unique_ptr<Element_Cutter> elementCutter = create_element_cutter(oneLSPerPhase, masterElement, elementParentEdges, areParentEdgesOrientedSameAsElementEdges, diagonalPicker);
 
-  const std::vector<Vector3d> nodeParamCoordsAfterSnapping = get_node_parametric_coords_after_snapping(mesh, element, snapNode, snapNodeLocation);
-  const Vector3d evaluationPt = find_point_within_deformed_and_undeformed_element(mesh, element, snapNode, nodeParamCoordsAfterSnapping);
+  const std::vector<stk::math::Vector3d> nodeParamCoordsAfterSnapping = get_node_parametric_coords_after_snapping(mesh, element, snapNode, snapNodeLocation);
+  const stk::math::Vector3d evaluationPt = find_point_within_deformed_and_undeformed_element(mesh, element, snapNode, nodeParamCoordsAfterSnapping);
   return elementCutter->sign_at_position(interface, evaluationPt);
 }
 
@@ -1011,7 +1009,7 @@ static void set_domains_for_element_if_it_will_be_uncut_after_snapping(const stk
     stk::mesh::Entity element,
     stk::mesh::Entity snapNode,
     const std::vector<int> & snapNodeDomains,
-    const Vector3d & snapNodeLocation,
+    const stk::math::Vector3d & snapNodeLocation,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains,
     ElementToDomainMap & elementsToDomain )
 {
@@ -1045,7 +1043,7 @@ static void set_sign_for_element_if_it_will_be_uncut_after_snapping(const stk::m
     stk::mesh::Entity element,
     stk::mesh::Entity snapNode,
     const std::vector<int> & snapNodeDomains,
-    const Vector3d & snapNodeLocation,
+    const stk::math::Vector3d & snapNodeLocation,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains,
     ElementToDomainMap & elementsToDomain )
 {

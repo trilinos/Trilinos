@@ -16,7 +16,7 @@
 
 #ifndef KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
 #define KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
-/// \file Kokkos_Sparse_impl_sptrsv_symbolic.hpp
+/// \file KokkosSparse_impl_sptrsv_symbolic.hpp
 /// \brief Implementation(s) of sparse triangular solve.
 
 #include <KokkosKernels_config.h>

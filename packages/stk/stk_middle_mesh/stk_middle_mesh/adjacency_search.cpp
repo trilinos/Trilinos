@@ -91,6 +91,11 @@ void AdjacencySearch::get_next(mesh::MeshEntityPtr el1, mesh::MeshEntityPtr el2,
   // get element that contains the centroid of el1
   el2 = get_mesh2_element(el1, el2);
 
+  if (m_output)
+  {
+    std::cout << "new el2 = " << el2 << std::endl;
+  }
+
   mesh::MeshEntityPtr v, edge2;
   if ((v = m_preds.any_vertices_contained(el1, el2)))
   {

@@ -136,17 +136,17 @@ namespace panzer_stk {
     
       std::vector<stk::mesh::Entity> elementEntities;
       elementEntities.push_back(*parentElement); // notice this is size 1!
-      PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> vertices 
-          = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getVertexCount(), mesh->getDimension());
-      auto vert_view = vertices.get_view();
-      mesh->getElementVerticesNoResize(elementEntities,elementBlockName,vert_view);
+      PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> nodes 
+          = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getNodeCount(), mesh->getDimension());
+      auto node_view = nodes.get_view();
+      mesh->getElementNodesNoResize(elementEntities,elementBlockName,node_view);
       
       panzer::CellData sideCellData(1,*sideID,parentTopology); // this is size 1 because elementEntties is size 1!
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));
 
       panzer::IntegrationValues2<double> iv("",true);
       iv.setupArrays(ir);
-      iv.evaluateValues(vertices);
+      iv.evaluateValues(nodes);
       
       // KK: use serial interface; jac_at_point (D,D) from (C,P,D,D)
       {

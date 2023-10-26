@@ -27,11 +27,8 @@ void impl_test_dot(int N) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef Kokkos::ArithTraits<ScalarA> ats;
 
-  ViewTypeA a("a", N);
-  ViewTypeB b("b", N);
-
-  typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
-  typename ViewTypeB::HostMirror h_b = Kokkos::create_mirror_view(b);
+  view_stride_adapter<ViewTypeA> a("a", N);
+  view_stride_adapter<ViewTypeB> b("b", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
@@ -39,34 +36,33 @@ void impl_test_dot(int N) {
   {
     ScalarA randStart, randEnd;
     Test::getRandomBounds(10.0, randStart, randEnd);
-    Kokkos::fill_random(a, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
     Test::getRandomBounds(10.0, randStart, randEnd);
-    Kokkos::fill_random(b, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
 
-  Kokkos::deep_copy(h_a, a);
-  Kokkos::deep_copy(h_b, b);
+  Kokkos::deep_copy(a.h_base, a.d_base);
+  Kokkos::deep_copy(b.h_base, b.d_base);
 
   ScalarA expected_result = 0;
-  for (int i = 0; i < N; i++) expected_result += ats::conj(h_a(i)) * h_b(i);
+  for (int i = 0; i < N; i++)
+    expected_result += ats::conj(a.h_view(i)) * b.h_view(i);
 
-  ScalarA nonconst_nonconst_result = KokkosBlas::dot(a, b);
+  ScalarA nonconst_nonconst_result = KokkosBlas::dot(a.d_view, b.d_view);
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
   EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result,
                  eps * expected_result);
-  typename ViewTypeA::const_type c_a = a;
-  typename ViewTypeB::const_type c_b = b;
 
-  ScalarA const_const_result = KokkosBlas::dot(c_a, c_b);
+  ScalarA const_const_result = KokkosBlas::dot(a.d_view_const, b.d_view_const);
   EXPECT_NEAR_KK(const_const_result, expected_result, eps * expected_result);
 
-  ScalarA nonconst_const_result = KokkosBlas::dot(a, c_b);
+  ScalarA nonconst_const_result = KokkosBlas::dot(a.d_view, b.d_view_const);
   EXPECT_NEAR_KK(nonconst_const_result, expected_result, eps * expected_result);
 
-  ScalarA const_nonconst_result = KokkosBlas::dot(c_a, b);
+  ScalarA const_nonconst_result = KokkosBlas::dot(a.d_view_const, b.d_view);
   EXPECT_NEAR_KK(const_nonconst_result, expected_result, eps * expected_result);
 }
 
@@ -76,23 +72,8 @@ void impl_test_dot_mv(int N, int K) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef Kokkos::ArithTraits<ScalarA> ats;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
-  typedef multivector_layout_adapter<ViewTypeB> vfB_type;
-
-  typename vfA_type::BaseType b_a("A", N, K);
-  typename vfB_type::BaseType b_b("B", N, K);
-
-  ViewTypeA a = vfA_type::view(b_a);
-  ViewTypeB b = vfB_type::view(b_b);
-
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-  typedef multivector_layout_adapter<typename ViewTypeB::HostMirror> h_vfB_type;
-
-  typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
-  typename h_vfB_type::BaseType h_b_b = Kokkos::create_mirror_view(b_b);
-
-  typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
-  typename ViewTypeB::HostMirror h_b = h_vfB_type::view(h_b_b);
+  view_stride_adapter<ViewTypeA> a("A", N, K);
+  view_stride_adapter<ViewTypeB> b("B", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
@@ -100,32 +81,29 @@ void impl_test_dot_mv(int N, int K) {
   {
     ScalarA randStart, randEnd;
     Test::getRandomBounds(10.0, randStart, randEnd);
-    Kokkos::fill_random(b_a, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
     Test::getRandomBounds(10.0, randStart, randEnd);
-    Kokkos::fill_random(b_b, rand_pool, randStart, randEnd);
+    Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
 
-  Kokkos::deep_copy(h_b_a, b_a);
-  Kokkos::deep_copy(h_b_b, b_b);
-
-  typename ViewTypeA::const_type c_a = a;
-  typename ViewTypeB::const_type c_b = b;
+  Kokkos::deep_copy(a.h_base, a.d_base);
+  Kokkos::deep_copy(b.h_base, b.d_base);
 
   ScalarA* expected_result = new ScalarA[K];
   for (int j = 0; j < K; j++) {
     expected_result[j] = ScalarA();
     for (int i = 0; i < N; i++)
-      expected_result[j] += ats::conj(h_a(i, j)) * h_b(i, j);
+      expected_result[j] += ats::conj(a.h_view(i, j)) * b.h_view(i, j);
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   Kokkos::View<ScalarB*, Kokkos::HostSpace> r("Dot::Result", K);
 
-  KokkosBlas::dot(r, a, b);
+  KokkosBlas::dot(r, a.d_view, b.d_view);
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     ScalarA nonconst_nonconst_result = r(k);
@@ -133,7 +111,7 @@ void impl_test_dot_mv(int N, int K) {
                    eps * expected_result[k]);
   }
 
-  KokkosBlas::dot(r, c_a, c_b);
+  KokkosBlas::dot(r, a.d_view_const, b.d_view_const);
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     ScalarA const_const_result = r(k);
@@ -141,7 +119,7 @@ void impl_test_dot_mv(int N, int K) {
                    eps * expected_result[k]);
   }
 
-  KokkosBlas::dot(r, a, c_b);
+  KokkosBlas::dot(r, a.d_view, b.d_view_const);
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     ScalarA non_const_const_result = r(k);
@@ -149,7 +127,7 @@ void impl_test_dot_mv(int N, int K) {
                    eps * expected_result[k]);
   }
 
-  KokkosBlas::dot(r, c_a, b);
+  KokkosBlas::dot(r, a.d_view_const, b.d_view);
   Kokkos::fence();
   for (int k = 0; k < K; k++) {
     ScalarA const_non_const_result = r(k);
@@ -185,26 +163,21 @@ int test_dot() {
   // Test::impl_test_dot<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-  // Removing the layout stride test as ViewTypeA a("a", N);
-  // is invalid since the view constructor needs a stride object!
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
-    typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
-    Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(0);
-    Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(13);
-    Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(1024);
-    // Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(132231);
-  #endif
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+  typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(0);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(13);
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(1024);
+  // Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(132231);
+#endif
 
-  #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-    Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(1024);
-    Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(1024);
-  #endif
-  */
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+  Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(1024);
+  Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(1024);
+#endif
 
   return 1;
 }
@@ -235,28 +208,24 @@ int test_dot_mv() {
   // Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
 #endif
 
-  // Removing the layout stride test as ViewTypeA a("a", N);
-  // is invalid since the view constructor needs a stride object!
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
-  view_type_a_ls; typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device>
-  view_type_b_ls; Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls,
-  Device>(0, 5); Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls,
-  Device>(13, 5); Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls,
-  Device>(1024, 5); Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls,
-  Device>(789, 1);
-    // Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
-  #endif
+// Removing the layout stride test as ViewTypeA a("a", N);
+// is invalid since the view constructor needs a stride object!
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
+  typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(13, 5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(789, 1);
+  // Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
+#endif
 
-  #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-    Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
-    Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
-  #endif
-  */
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
+#endif
 
   return 1;
 }

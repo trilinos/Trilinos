@@ -57,9 +57,9 @@
 #include "Intrepid2_BasisValues.hpp"
 #include "Intrepid2_CellTopologyTags.hpp"
 #include "Intrepid2_TensorPoints.hpp"
-#include "Kokkos_Vector.hpp"
 #include "Shards_CellTopology.hpp"
 #include <Teuchos_RCPDecl.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <vector>
 
@@ -417,6 +417,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
         points in the <strong>reference cell</strong> for which the basis is defined.
 
+        \param  space             [in]  - execution space instance
         \param  outputValues      [out] - variable rank array with the basis values
         \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
         \param  operatorType      [in]  - the operator acting on the basis functions
@@ -432,11 +433,21 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     */
     virtual
     void
-    getValues(       OutputViewType /* outputValues */,
+    getValues( const ExecutionSpace& /* space */,
+                     OutputViewType /* outputValues */,
                const PointViewType  /* inputPoints */,
                const EOperator /* operatorType */ = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be overridden accordingly by derived classes.");
+    }
+
+    //! @overload For backward compatibility.
+    virtual void getValues(
+            OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator      operatorType  = OPERATOR_VALUE
+    ) const {
+      this->getValues(ExecutionSpace{}, outputValues, inputPoints, operatorType);
     }
 
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>, using point and output value containers that allow preservation of tensor-product structure.

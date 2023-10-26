@@ -308,6 +308,25 @@ public:
       const ordinal_type offset = 0 ,
       const EPointType pointType = POINTTYPE_EQUISPACED );
 
+  /** \brief Computes a lattice of points of a given order on a reference pyramid.
+        The output array is (P,D), where
+        \code
+        P - number of points per cell
+        D - is the spatial dimension
+        \endcode
+
+        \param  points      [out] - Output array of point coords
+        \param  order       [in]  - number of points per edge, minus 1
+        \param  offset      [in]  - Number of points on boundary to skip
+        \param  pointType   [in]  - flag for point distribution.  Currently equispaced points are supported.
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  getLatticePyramid(     Kokkos::DynRankView<pointValueType,pointProperties...> points,
+      const ordinal_type order,
+      const ordinal_type offset = 0 ,
+      const EPointType pointType = POINTTYPE_EQUISPACED );
+
   /** Retrieves the Gauss-Legendre points from PolyLib, but lets us
 	do it in an arbitrary ArrayType.
 	\param  points      [out] - Output array of point coords (P,)
@@ -477,8 +496,7 @@ private:
        \endcode
 
        \param  points      [out] - Output Kokkos::DynRankView of point coords
-       \param  order       [in]  - The lattice has order + 1 points,
-       minus any skipped by offset
+       \param  order       [in]  - The lattice has (order + 1) * (order + 2) / 2 points, minus any skipped by offset
        \param  offset      [in]  - Number of points on boundary to skip coming
        in from boundary
    */
@@ -487,6 +505,25 @@ private:
   getEquispacedLatticeTetrahedron( Kokkos::DynRankView<pointValueType,pointProperties...> points,
                                    const ordinal_type order ,
                                    const ordinal_type offset = 0 );
+
+
+  /** \brief Computes an equispaced lattice of a given
+      order on the reference pyramid.  The output array is
+      (P,3), where
+      \code
+      P - number of points
+      \endcode
+
+      \param  points      [out] - Output Kokkos::DynRankView of point coords
+      \param  order       [in]  - The lattice has (order + 1) * (order + 2) * (2*order + 3) / 6 points, minus any skipped by offset
+      \param  offset      [in]  - Number of points on boundary to skip coming in from boundary
+
+  */
+ template<typename pointValueType, class ...pointProperties>
+ static void
+ getEquispacedLatticePyramid(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
+     const ordinal_type order,
+     const ordinal_type offset = 0 );
 
 
    /** \brief interpolates Warburton's warp function on the line

@@ -4,10 +4,11 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 20
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
 smoother -> 
- [empty list]
+ timer for apply = 0   [unused]
 
 Level 1
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
@@ -38,10 +39,11 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 20
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
 smoother -> 
- [empty list]
+ timer for apply = 0   [unused]
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory_kokkos)

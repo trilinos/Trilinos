@@ -174,6 +174,7 @@
                   <Parameter name="chebyshev: degree" type="int" value="2"/>
                   <Parameter name="chebyshev: ratio eigenvalue" type="double" value="20.0"/>
                   <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
+                  <Parameter name="chebyshev: algorithm" type="string" value="opt_fourth"/>
                 </ParameterList>
 
                 <!-- <Parameter name="smoother: pre type" type="string" value="RELAXATION"/> -->
@@ -217,6 +218,7 @@
                     <Parameter name="chebyshev: degree" type="int" value="2"/>
                     <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
                     <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
+                    <Parameter name="chebyshev: algorithm" type="string" value="opt_fourth"/>
                   </ParameterList>
 
                   <!-- <Parameter name="smoother: pre type" type="string" value="RELAXATION"/> -->
@@ -273,6 +275,7 @@
                     <Parameter name="chebyshev: degree" type="int" value="2"/>
                     <Parameter name="chebyshev: ratio eigenvalue" type="double" value="7.0"/>
                     <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
+                    <Parameter name="chebyshev: algorithm" type="string" value="opt_fourth"/>
                   </ParameterList>
 
                   <!-- <Parameter name="smoother: pre type" type="string" value="RELAXATION"/> -->

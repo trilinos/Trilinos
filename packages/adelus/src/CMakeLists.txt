@@ -66,6 +66,7 @@ IF (TPL_ENABLE_MPI)
     Adelus_xlu_solve.hpp
     Adelus_x_factor.hpp
     Adelus_x_solve.hpp
+    Adelus_global_comm.hpp
     Adelus.hpp
     BlasWrapper_copy_spec.hpp
     BlasWrapper_copy.hpp

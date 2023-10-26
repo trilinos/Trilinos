@@ -153,6 +153,7 @@ namespace MueLu {
 
     void                         SetMaxCoarseSize(Xpetra::global_size_t maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
     void                         SetPRrebalance(bool doPRrebalance)                    { doPRrebalance_ = doPRrebalance; }
+    void                         SetPRViaCopyrebalance(bool doPRViaCopyrebalance)      { doPRViaCopyrebalance_ = doPRViaCopyrebalance; }
     void                         SetImplicitTranspose(const bool& implicit)            { implicitTranspose_ = implicit; }
     void                         SetFuseProlongationAndUpdate(const bool& fuse)        { fuseProlongationAndUpdate_ = fuse; }
 
@@ -397,6 +398,7 @@ namespace MueLu {
     //! Potential speed up of the setup by skipping rebalancing of P and R, and
     //! doing extra import during solve
     bool doPRrebalance_;
+    bool doPRViaCopyrebalance_;   // fully explicit, needed for CombinePFactory
 
     //! Hierarchy may be used in a standalone mode, or as a preconditioner
     bool isPreconditioner_;

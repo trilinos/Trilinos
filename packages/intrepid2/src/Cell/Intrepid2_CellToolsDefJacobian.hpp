@@ -55,6 +55,7 @@
 #endif
 
 #include "Intrepid2_Kernels.hpp"
+#include "Intrepid2_DataTools.hpp"
 
 namespace Intrepid2 {
 
@@ -912,6 +913,16 @@ namespace Intrepid2 {
     RealSpaceTools<DeviceType>::det(jacobianDet, jacobian);
   }
 
+  template<typename DeviceType>
+  template<typename Scalar>
+  void
+  CellTools<DeviceType>::
+  setJacobianDividedByDet( Data<Scalar,DeviceType> & jacobianDividedByDet,
+                          const Data<Scalar,DeviceType> & jacobian,
+                          const Data<Scalar,DeviceType> & jacobianDetInv)
+  {
+    DataTools::multiplyByCPWeights(jacobianDividedByDet,jacobian,jacobianDetInv);
+  }
 }
 
 #endif

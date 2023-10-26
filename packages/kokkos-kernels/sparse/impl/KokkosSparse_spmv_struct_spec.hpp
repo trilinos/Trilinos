@@ -201,9 +201,9 @@ struct SPMV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
                          Kokkos::HostSpace>& structure,
       const coefficient_type& alpha, const AMatrix& A, const XVector& x,
       const coefficient_type& beta, const YVector& y) {
-    typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
+    typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
-    typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
+    typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero()) {
       if (beta != KAT::one()) {
@@ -242,7 +242,7 @@ struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
   static void spmv_mv_struct(const char mode[], const coefficient_type& alpha,
                              const AMatrix& A, const XVector& x,
                              const coefficient_type& beta, const YVector& y) {
-    typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
+    typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero()) {
       spmv_alpha_mv_struct<AMatrix, XVector, YVector, 0>(mode, alpha, A, x,
@@ -357,7 +357,5 @@ struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true,
       true>;
 
 #include <KokkosSparse_spmv_struct_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spmv_struct_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spmv_mv_struct_eti_spec_decl.hpp>
 
 #endif  // KOKKOSSPARSE_IMPL_SPMV_STRUCT_SPEC_HPP_

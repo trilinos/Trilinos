@@ -34,25 +34,17 @@
 
 #include "gtest/gtest.h"
 #include "stk_util/environment/CPUTime.hpp"  // for cpu_time
-#include <iostream>                          // for endl, ostringstream, basic_ostream, basic_os...
-
-
 
 TEST(UnitTestCPUTime, testUnit)
 {
-  std::ostringstream oss;
-  
   double cpu_now = stk::cpu_time();
-  
-  double x = 0.0;
-  for (int i = 0; i < 10000; ++i)
-    x += 1.0;
 
-  // This makes sure that the loop isn't optimized away (hopefully)
-  if (x > 100000.0)
-    oss << x << std::endl;
+  double x = 0.0;
+  while (x++ < 10000000);
+  EXPECT_EQ(x, 10000001);
   
   double cpu_delta = stk::cpu_time() - cpu_now;
   
-  ASSERT_TRUE(cpu_delta >= 0.0 && cpu_delta <= 1.0);
+  ASSERT_TRUE(cpu_delta > 0.0);
+  ASSERT_TRUE(cpu_delta <= 1.0);
 }

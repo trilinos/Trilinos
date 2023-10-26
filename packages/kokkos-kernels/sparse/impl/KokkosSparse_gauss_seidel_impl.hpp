@@ -260,21 +260,20 @@ class PointGaussSeidel {
                               // long rows.
     nnz_lno_t _long_row_par;
 
-    Team_PSGS(
-        row_lno_persistent_work_view_t xadj_,
-        nnz_lno_persistent_work_view_t adj_,
-        scalar_persistent_work_view_t adj_vals_,
-        scalar_persistent_work_view2d_t Xvector_,
-        scalar_persistent_work_view2d_t Yvector_, nnz_lno_t color_set_begin,
-        nnz_lno_t color_set_end,
-        scalar_persistent_work_view_t permuted_inverse_diagonal_,
-        pool_memory_space pms, nnz_lno_t _num_max_vals_in_l1 = 0,
-        nnz_lno_t _num_max_vals_in_l2 = 0,
-        nnz_scalar_t omega_ = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
+    Team_PSGS(row_lno_persistent_work_view_t xadj_,
+              nnz_lno_persistent_work_view_t adj_,
+              scalar_persistent_work_view_t adj_vals_,
+              scalar_persistent_work_view2d_t Xvector_,
+              scalar_persistent_work_view2d_t Yvector_,
+              nnz_lno_t color_set_begin, nnz_lno_t color_set_end,
+              scalar_persistent_work_view_t permuted_inverse_diagonal_,
+              pool_memory_space pms, nnz_lno_t _num_max_vals_in_l1 = 0,
+              nnz_lno_t _num_max_vals_in_l2 = 0,
+              nnz_scalar_t omega_ = Kokkos::ArithTraits<nnz_scalar_t>::one(),
 
-        nnz_lno_t block_size_ = 1, nnz_lno_t team_work_size_ = 1,
-        size_t shared_memory_size_ = 16, int suggested_team_size_ = 1,
-        int vector_size_ = 1)
+              nnz_lno_t block_size_ = 1, nnz_lno_t team_work_size_ = 1,
+              size_t shared_memory_size_ = 16, int suggested_team_size_ = 1,
+              int vector_size_ = 1)
         : _xadj(xadj_),
           _adj(adj_),
           _adj_vals(adj_vals_),
@@ -1283,7 +1282,7 @@ class PointGaussSeidel {
           rows_per_team(rows_per_team_),
           block_size(block_size_),
           block_matrix_size(block_matrix_size_),
-          one(Kokkos::Details::ArithTraits<nnz_scalar_t>::one()) {}
+          one(Kokkos::ArithTraits<nnz_scalar_t>::one()) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t& row_id) const {
@@ -1489,7 +1488,7 @@ class PointGaussSeidel {
   void block_apply(
       x_value_array_type x_lhs_output_vec, y_value_array_type y_rhs_input_vec,
       bool init_zero_x_vector = false, int numIter = 1,
-      nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
+      nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(),
       bool apply_forward = true, bool apply_backward = true,
       bool update_y_vector = true) {
     auto gsHandle = this->get_gs_handle();
@@ -1613,7 +1612,7 @@ class PointGaussSeidel {
   void point_apply(
       x_value_array_type x_lhs_output_vec, y_value_array_type y_rhs_input_vec,
       bool init_zero_x_vector = false, int numIter = 1,
-      nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
+      nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(),
       bool apply_forward = true, bool apply_backward = true,
       bool update_y_vector = true) {
     auto gsHandle = get_gs_handle();
@@ -1690,12 +1689,12 @@ class PointGaussSeidel {
   }
 
   template <typename x_value_array_type, typename y_value_array_type>
-  void apply(
-      x_value_array_type x_lhs_output_vec, y_value_array_type y_rhs_input_vec,
-      bool init_zero_x_vector = false, int numIter = 1,
-      nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
-      bool apply_forward = true, bool apply_backward = true,
-      bool update_y_vector = true) {
+  void apply(x_value_array_type x_lhs_output_vec,
+             y_value_array_type y_rhs_input_vec,
+             bool init_zero_x_vector = false, int numIter = 1,
+             nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(),
+             bool apply_forward = true, bool apply_backward = true,
+             bool update_y_vector = true) {
     auto gsHandle = get_gs_handle();
     if (gsHandle->is_numeric_called() == false) {
       this->initialize_numeric();

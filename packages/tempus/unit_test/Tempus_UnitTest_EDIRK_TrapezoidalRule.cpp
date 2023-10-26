@@ -213,4 +213,4 @@ TEUCHOS_UNIT_TEST(DIRK, EDIRK_Trapezoida_Modifier)
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

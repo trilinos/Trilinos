@@ -69,8 +69,8 @@ namespace panzer
     // These are the cell indexes in the LocalMeshInfo class
     PHX::View<panzer::LocalOrdinal*> local_cells;
 
-    // Vertices
-    PHX::View<double***> cell_vertices;
+    // Nodes
+    PHX::View<double***> cell_nodes;
 
     // Face to neighbors
     bool has_connectivity;

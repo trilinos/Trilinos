@@ -62,22 +62,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
 
 namespace Intrepid2 {
 
 namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
 
 template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HCURL_HEX_In_FEM_Test01(const bool verbose) {
@@ -118,8 +107,6 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
-
   const scalar_type tol = tolerence();
   int errorFlag = 0;
 
@@ -143,7 +130,7 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order);
 
     // Array of reference hex nodes - used for evaluation of basis
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 8, 3);
+    DynRankViewHostScalarValueType ConstructWithLabel(hexNodesHost, 8, 3);
 
     hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
     hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
@@ -270,10 +257,10 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order);
 
     const ordinal_type numFields = hexBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, numFields, dim);
     hexBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, numFields, dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoeffs, numFields, dim);
     hexBasis.getDofCoeffs(dofCoeffs);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , dim);
@@ -328,7 +315,7 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
 
     shards::CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >());
     const ordinal_type numFields = hexBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, numFields, dim);
     hexBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , dim);
@@ -441,7 +428,7 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order);
 
     // Array of reference hex nodes - used for evaluation of basis
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 8, 3);
+    DynRankViewHostScalarValueType ConstructWithLabel(hexNodesHost, 8, 3);
     DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 8, 3);
 
     hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;

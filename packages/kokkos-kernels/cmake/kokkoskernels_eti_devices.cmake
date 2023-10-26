@@ -46,24 +46,15 @@ IF(KOKKOS_ENABLE_CUDA)
    "Whether to pre instantiate kernels for the execution space Kokkos::Cuda. Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
 
- # By default, instantiate only for Cuda's default memory space (either CudaSpace, or CudaUVMSpace).
- IF(KOKKOS_ENABLE_CUDA_UVM)
-   SET(CUDA_CUDAUVMSPACE_DEFAULT ON)
-   SET(CUDA_CUDASPACE_DEFAULT OFF)
- ELSE()
-   SET(CUDA_CUDAUVMSPACE_DEFAULT OFF)
-   SET(CUDA_CUDASPACE_DEFAULT ON)
- ENDIF()
-
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDAUVMSPACE
-   ${CUDA_CUDAUVMSPACE_DEFAULT}
+   OFF
    BOOL
-   "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
+   "Whether to pre instantiate kernels for the memory space Kokkos::CudaUVMSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: OFF."
    )
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_CUDASPACE
-   ${CUDA_CUDASPACE_DEFAULT}
+   ON
    BOOL
    "Whether to pre instantiate kernels for the memory space Kokkos::CudaSpace.  Disabling this when Kokkos_ENABLE_CUDA is enabled may increase build times. Default: ON if Kokkos is CUDA-enabled, OFF otherwise."
    )
@@ -136,7 +127,7 @@ IF(KOKKOS_ENABLE_OPENMPTARGET)
    INST_EXECSPACE_OPENMPTARGET
    ${KOKKOSKERNELS_INST_EXECSPACE_OPENMPTARGET_DEFAULT}
    BOOL
-   "Whether to pre instantiate kernels for the execution space Kokkos::Experimental::OpenMPTarget. Disabling this when Kokkos_ENABLE_OpenMPTarget is enabled may increase build times. Default: ON if Kokkos is OpenMPTarget-enabled, OFF otherwise."
+   "Whether to pre instantiate kernels for the execution space Kokkos::Experimental::OpenMPTarget. Disabling this when Kokkos_ENABLE_OPENMPTARGET is enabled may increase build times. Default: ON if Kokkos is OpenMPTarget-enabled, OFF otherwise."
    )
  KOKKOSKERNELS_ADD_OPTION(
    INST_MEMSPACE_OPENMPTARGETSPACE
@@ -172,7 +163,7 @@ KOKKOSKERNELS_ADD_OPTION(
   INST_EXECSPACE_OPENMP
   ${KOKKOSKERNELS_INST_EXECSPACE_OPENMP_DEFAULT}
   BOOL
-  "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  Disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times. Default: ON if Kokkos is OpenMP-enabled, OFF otherwise."
+  "Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  Disabling this when Kokkos_ENABLE_OPENMP is enabled may increase build times. Default: ON if Kokkos is OpenMP-enabled, OFF otherwise."
 )
 IF(KOKKOSKERNELS_INST_EXECSPACE_OPENMP AND KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
   LIST(APPEND DEVICE_LIST "<OpenMP,HostSpace>")

@@ -17,6 +17,10 @@
 #ifndef KOKKOSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_HPP_
 #define KOKKOSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_HPP_
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#include <mkl.h>
+#endif
+
 namespace KokkosSparse {
 namespace Experimental {
 namespace Impl {
@@ -124,8 +128,9 @@ KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE)      \
   template <>                                                                  \
   struct spmv_bsrmatrix_tpl_spec_avail<                                        \
-      const SCALAR, const int, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,   \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int, const SCALAR*,       \
+      const SCALAR, const MKL_INT,                                             \
+      Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                            \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT, const SCALAR*,   \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
@@ -247,6 +252,68 @@ KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
 #endif
 
 #endif
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+
+#include "KokkosSparse_Utils_rocsparse.hpp"
+
+#define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(                  \
+    SCALAR, ORDINAL, OFFSET, LAYOUT, MEMSPACE)                                 \
+  template <>                                                                  \
+  struct spmv_bsrmatrix_tpl_spec_avail<                                        \
+      const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::HIP, MEMSPACE>,      \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, const SCALAR*,    \
+      LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                           \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
+      LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                           \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > {                              \
+    enum : bool { value = true };                                              \
+  };
+
+#if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50200
+
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(double, rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutRight,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(double, rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutRight,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>,
+                                                     rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>,
+                                                     rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>,
+                                                     rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutRight,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>,
+                                                     rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutRight,
+                                                     Kokkos::HIPSpace)
+
+#endif  // KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50200
+
+#undef KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE
+
+#endif  // defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
 
 }  // namespace Impl
 }  // namespace Experimental

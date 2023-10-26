@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -75,12 +75,6 @@ void coarsen(
   int               nsets;                  /* number of sets being created */
   int               i, j;                   /* loop counters */
   double            time;                   /* time marker */
-
-  double dot(double *vec1, int beg, int end, double *vec2), ch_normalize(), find_maxdeg(),
-      seconds(void);
-  struct orthlink *makeorthlnk();
-  void             makevwsqrt(), eigensolve(), coarsen1(), orthogvec(), rqi_ext();
-  void             ch_interpolate(), orthog1(), rqi(), scadd(), free_graph();
 
   if (DEBUG_COARSEN > 0) {
     printf("<Entering coarsen, step=%d, nvtxs=%d, nedges=%d, vmax=%d>\n", step, nvtxs, nedges,

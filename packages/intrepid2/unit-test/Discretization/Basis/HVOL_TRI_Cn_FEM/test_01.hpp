@@ -61,23 +61,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
 
 namespace Intrepid2 {
 
   namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-
 
     template<typename OutValueType, typename PointValueType, typename DeviceType>
     int HVOL_TRI_Cn_FEM_Test01(const bool verbose) {
@@ -117,8 +105,6 @@ namespace Intrepid2 {
       typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
       typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
 
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
-
       const scalar_type tol = tolerence();
       int errorFlag = 0;
 
@@ -141,7 +127,7 @@ namespace Intrepid2 {
 
         const ordinal_type polydim = triBasis.getCardinality();
         const ordinal_type numPoints = triBasis.getCardinality();
-        DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, numPoints, spaceDim);
+        DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, numPoints, spaceDim);
         DynRankViewPointValueType ConstructWithLabelPointView(lattice, numPoints , spaceDim);
 
         triBasis.getDofCoords(lattice_scalar);
@@ -188,7 +174,7 @@ namespace Intrepid2 {
         const ordinal_type order = std::min(3, maxOrder);
         TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
         auto dofData = triBasis.getAllDofOrdinal();
-        
+
       for (unsigned d=0;d<dofData.extent(0);d++) {
       std::cout << "Dimension " << d << "\n";
       for (unsigned f=0;f<dofData.extent(1);f++) {
@@ -218,17 +204,17 @@ namespace Intrepid2 {
       << "===============================================================================\n"
       << "| TEST 3: Function Space is Correct                                           |\n"
       << "===============================================================================\n";
-      
+
       try {
         for (auto order=0;order<std::min(3, maxOrder);++order) {
           TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
-          
+
           const EFunctionSpace fs = triBasis.getFunctionSpace();
-          
+
           if (fs != FUNCTION_SPACE_HVOL)
           {
             *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
-            
+
             // Output the multi-index of the value where the error is:
             *outStream << " Expected a function space of FUNCTION_SPACE_HVOL (enum value " << FUNCTION_SPACE_HVOL << "),";
             *outStream << " but got " << fs << "\n";
@@ -245,7 +231,7 @@ namespace Intrepid2 {
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       }
-      
+
       if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";
       else

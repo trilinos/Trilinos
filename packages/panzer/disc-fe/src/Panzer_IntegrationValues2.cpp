@@ -749,15 +749,15 @@ template <typename Scalar>
 void
 IntegrationValues2<Scalar>::
 setup(const Teuchos::RCP<const panzer::IntegrationRule>& ir,
-      const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+      const PHX::MDField<Scalar,Cell,NODE,Dim> & cell_node_coordinates,
       const int num_cells)
 {
 
   // Clear arrays just in case we are rebuilding this object
   resetArrays();
 
-  num_cells_ = vertex_coordinates.extent(0);
-  num_evaluate_cells_ = num_cells < 0 ? vertex_coordinates.extent(0) : num_cells;
+  num_cells_ = cell_node_coordinates.extent(0);
+  num_evaluate_cells_ = num_cells < 0 ? cell_node_coordinates.extent(0) : num_cells;
   int_rule = ir;
 
   TEUCHOS_ASSERT(ir->getType() != IntegrationDescriptor::NONE);
@@ -768,13 +768,13 @@ setup(const Teuchos::RCP<const panzer::IntegrationRule>& ir,
     MDFieldArrayFactory af(prefix_,true);
 
     const int num_space_dim = int_rule->topology->getDimension();
-    const int num_vertexes = int_rule->topology->getNodeCount();
-    TEUCHOS_ASSERT(static_cast<int>(vertex_coordinates.extent(1)) == num_vertexes);
+    const int num_nodes = int_rule->topology->getNodeCount();
+    TEUCHOS_ASSERT(static_cast<int>(cell_node_coordinates.extent(1)) == num_nodes);
 
-    auto aux = af.template buildStaticArray<Scalar,Cell,NODE,Dim>("node_coordinates",num_cells_,num_vertexes, num_space_dim);
-    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_vertexes,num_space_dim});
+    auto aux = af.template buildStaticArray<Scalar,Cell,NODE,Dim>("node_coordinates",num_cells_,num_nodes, num_space_dim);
+    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_nodes,num_space_dim});
     Kokkos::parallel_for(policy,KOKKOS_LAMBDA(const int & cell, const int & point, const int & dim){
-      aux(cell,point,dim) = vertex_coordinates(cell,point,dim);
+      aux(cell,point,dim) = cell_node_coordinates(cell,point,dim);
     });
     PHX::Device::execution_space().fence();
     node_coordinates = aux;
@@ -849,7 +849,6 @@ getUniformSideCubaturePointsRef(const bool cache,
   if(side_cub_points_evaluated_ and not force)
     return side_cub_points;
 
-  Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
   MDFieldArrayFactory af(prefix_,true);
 
   int num_space_dim = int_rule->topology->getDimension();
@@ -900,7 +899,6 @@ getUniformCubatureWeightsRef(const bool cache,
   if(cub_weights_evaluated_ and not force)
     return cub_weights;
 
-  Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
   MDFieldArrayFactory af(prefix_,true);
 
   int num_space_dim = int_rule->topology->getDimension();
@@ -1066,7 +1064,6 @@ getWeightedMeasure(const bool cache,
   if(weighted_measure_evaluated_ and not force)
     return weighted_measure;
 
-  Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
   MDFieldArrayFactory af(prefix_,true);
 
   const int num_space_dim = int_rule->topology->getDimension();
@@ -1234,7 +1231,6 @@ getWeightedNormals(const bool cache,
   if(weighted_normals_evaluated_ and not force)
     return weighted_normals;
 
-  Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
   MDFieldArrayFactory af(prefix_,true);
 
   const int num_space_dim = int_rule->topology->getDimension();

@@ -152,32 +152,23 @@ public:
       return appModel_->getNominalValues();
     }
 
-    /// Set InArgs the wrapper ModelEvalutor.
-    virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
-    { wrapperInArgs_.setArgs(inArgs); }
-
     /// Get InArgs the wrapper ModelEvalutor.
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
     { return wrapperInArgs_; }
-
-    /// Set OutArgs the wrapper ModelEvalutor.
-    virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
-    { wrapperOutArgs_.setArgs(outArgs); }
 
     /// Get OutArgs the wrapper ModelEvalutor.
     virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
     { return wrapperOutArgs_; }
 
     /// Set parameters for application implicit ModelEvaluator solve.
-    virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
-      Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs,
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs,
-      EVALUATION_TYPE /* evaluationType */ = SOLVE_FOR_X)
-    {
-      timeDer_ = timeDer;
-      wrapperInArgs_.setArgs(inArgs);
-      wrapperOutArgs_.setArgs(outArgs);
-    }
+    virtual void setForSolve(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
+      const Scalar time,
+      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y = Teuchos::null,
+      const int index = -1    /* index and y are for IMEX_RK_Partition */ )
+    {}
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;

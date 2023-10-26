@@ -139,7 +139,7 @@ write_facets( const int dim, const Faceted_Surface & facetedSurface, const std::
 
     for ( auto&& facet : facets ) {
       for ( int j = 0; j < nodes_per_elem; ++j ) {
-        const Vector3d & vert = facet->facet_vertex(j);
+        const stk::math::Vector3d & vert = facet->facet_vertex(j);
         xyz.push_back(vert[0]);
         xyz.push_back(vert[1]);
         if (3 == dim) xyz.push_back(vert[2]);

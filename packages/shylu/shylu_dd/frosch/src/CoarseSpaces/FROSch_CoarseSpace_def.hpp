@@ -264,8 +264,13 @@ namespace FROSch {
             Kokkos::fence();
 
             // make it into offsets
+#if KOKKOSKERNELS_VERSION >= 40199
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+              (1+numLocalRows, Rowptr);
+#else
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
               (1+numLocalRows, Rowptr);
+#endif
 
             // fill into the local matrix
             indices_type Indices ("Indices", nnz);

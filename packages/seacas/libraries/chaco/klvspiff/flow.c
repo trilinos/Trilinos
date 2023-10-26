@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,31 +46,66 @@ n_left+n_right nodes, where node 'i' is adjacent to nodes
 
 */
 
-static void bpflow(), reachability(), touch();
-static int  augment(), touch2();
+static void bpflow(int  n_left,   /* number of vertices on left side */
+                   int  n_right,  /* number of vertices on right side */
+                   int *pointers, /* start/stop of adjacency lists */
+                   int *indices,  /* adjacency list for each vertex */
+                   int *vweight,  /* vertex weights */
+                   int *resid,    /* residual weight at each vertex */
+                   int *flow,     /* flow on right->left edges */
+                   int *touched   /* flags for each vertex */
+);
+static void touch(int node, int *pointers, /* start/stop of adjacency lists */
+                  int *indices,            /* adjacency list for each vertex */
+                  int *resid,              /* residual weight at each vertex */
+                  int *flow,               /* flow on right->left edges */
+                  int *touched,            /* flags for each vertex */
+                  int *flow1,              /* max flow we are looking for */
+                  int *seen,               /* list of vertices encountered */
+                  int *nseen               /* number of vertices encountered */
+);
+static void reachability(int  n_left,   /* number of vertices on left side */
+                         int  n_right,  /* number of vertices on right side */
+                         int *pointers, /* start/stop of adjacency lists */
+                         int *indices,  /* adjacency list for each vertex */
+                         int *resid,    /* residual weight at each vertex */
+                         int *flow,     /* flow on right->left edges */
+                         int *touched   /* flags for each vertex */
+);
+static int  touch2(int node, int *pointers, /* start/stop of adjacency lists */
+                   int *indices,            /* adjacency list for each vertex */
+                   int *flow,               /* flow on right->left edges */
+                   int *touched             /* flags for each vertex */
+ );
+static int  augment(int  node,     /* start node in augmenting path */
+                    int *pointers, /* start/stop of adjacency lists */
+                    int *indices,  /* adjacency list for each vertex */
+                    int *resid,    /* residual weight at each vertex */
+                    int *flow,     /* flow on right->left edges */
+                    int *touched,  /* flags for each vertex */
+                    int *seen      /* keeps list of vertices encountered */
+ );
 
 void wbpcover(int   n_left,      /* number of vertices on left side */
               int   n_right,     /* number of vertices on right side */
-              int * pointers,    /* start/stop of adjacency lists */
-              int * indices,     /* adjacency list for each vertex */
-              int * vweight,     /* vertex weights */
-              int * psep_size,   /* returned size of separator */
-              int * psep_weight, /* returned weight of separator */
+              int  *pointers,    /* start/stop of adjacency lists */
+              int  *indices,     /* adjacency list for each vertex */
+              int  *vweight,     /* vertex weights */
+              int  *psep_size,   /* returned size of separator */
+              int  *psep_weight, /* returned weight of separator */
               int **psep_nodes   /* list of separator nodes */
 )
 {
   extern int DEBUG_COVER; /* debug flag for this routine */
-  int *      touched;     /* flags for each vertex */
-  int *      resid;       /* remaining, unmatched vertex weight */
-  int *      flow;        /* flow on each right->left edge */
-  int *      sep_nodes;   /* list of separator nodes */
+  int       *touched;     /* flags for each vertex */
+  int       *resid;       /* remaining, unmatched vertex weight */
+  int       *flow;        /* flow on each right->left edge */
+  int       *sep_nodes;   /* list of separator nodes */
   int        sep_size;    /* returned size of separator */
   int        sep_weight;  /* returned weight of separator */
   int        nedges;      /* number of edges in bipartite graph */
   int        i, j;        /* loop counter */
   int        wleft, wright, wedges;
-
-  void confirm_cover();
 
   if (DEBUG_COVER) {
     printf("-> Entering wbpcover, nleft = %d, nright = %d, 2*nedges = %d\n", n_left, n_right,
@@ -364,8 +399,6 @@ void confirm_cover(int n_left, int n_right, int *pointers, int *indices, int *fl
   int *marked;
   int  sep_weight;
   int  i, j, neighbor;
-  int  count_flow();
-  void count_resid(), check_resid();
 
   marked = smalloc((n_left + n_right) * sizeof(int));
 

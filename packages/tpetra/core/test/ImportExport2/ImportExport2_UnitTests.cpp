@@ -39,6 +39,8 @@
 // ************************************************************************
 // @HEADER
 
+#include <unistd.h>
+
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
@@ -459,6 +461,20 @@ namespace {
       }
       src_mat->fillComplete ();
 
+      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      fos->setOutputToRootOnly(-1);
+
+#if 0
+      fflush(stdout);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "========\nsrc_mat\n========" << std::endl;
+      sleep(1); comm->barrier();
+      src_mat->describe(*fos,Teuchos::VERB_EXTREME);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "========\nend of src_mat\n========\n\n" << std::endl;
+      sleep(1); comm->barrier();
+#endif
+
       // Create the importer
       Import<LO, GO> importer (src_map, tgt_map, getImportParameterList ());
       // Do the import, and fill-complete the target matrix.
@@ -496,6 +512,9 @@ namespace {
                                                           Teuchos::null,
                                                           Teuchos::null,
                                                           rcp(&dummy,false));
+      //comm->barrier();
+      //TEST_EQUALITY(1,1);
+      //return;
 
       // Make sure that A_tgt2's row Map is the same as tgt_map, and
       // is also the same as the Import's targetMap.  They should have
@@ -521,6 +540,25 @@ namespace {
           as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
       typedef typename CrsMatrix<Scalar, LO, GO>::nonconst_local_inds_host_view_type lids_type;
       typedef typename CrsMatrix<Scalar,LO,GO>::nonconst_values_host_view_type vals_type;
+
+#if 0
+      fflush(stdout);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "tgt_mat\n========" << std::endl;
+      sleep(1); comm->barrier();
+      A_tgt2->describe(*fos,Teuchos::VERB_EXTREME);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "=======\nend of tgt_mat\n========\n\n" << std::endl;
+      sleep(1); comm->barrier();
+
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "A_tgt2\n========" << std::endl;
+      sleep(1); comm->barrier();
+      A_tgt2->describe(*fos,Teuchos::VERB_EXTREME);
+      sleep(1); comm->barrier();
+      if (comm->getRank() == 0) std::cout << "=======\nend of A_tgt2\n========" << std::endl;
+      sleep(1); comm->barrier();
+ #endif
  
       lids_type tgtRowInds;
       vals_type tgtRowVals;
@@ -2210,7 +2248,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   using GST = Tpetra::global_size_t;
-  using IST = typename CrsMatrixType::impl_scalar_type;
   using buffer_device_type = typename CrsMatrixType::buffer_device_type;
 
   RCP<const Comm<int> > Comm = getDefaultComm();
@@ -2345,6 +2382,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
     Kokkos::View<char*, Kokkos::HostSpace> importsView(imports.data(), imports.size());
     distor.doPostsAndWaits(exports.view_host(),numExportPackets(),importsView,numImportPackets());
+    auto importsView_d = Kokkos::create_mirror_view(Node::device_type::memory_space(), importsView);
+    deep_copy(importsView_d,importsView);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with 4-arg doPostsAndWaits" << std::endl;
@@ -2353,33 +2392,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 
     ::Tpetra::Details::Behavior::enable_verbose_behavior ();
 
-    // Run the count... which should get the same NNZ as the traditional import
-    using Tpetra::Details::unpackAndCombineWithOwningPIDsCount;
-    size_t nnz2 =
-      unpackAndCombineWithOwningPIDsCount<Scalar, LO, GO, Node> (*A, Importer->getRemoteLIDs (),
-                                                                 imports (), numImportPackets (),
-                                                                 constantNumPackets,
-                                                                 Tpetra::INSERT,
-                                                                 Importer->getNumSameIDs (),
-                                                                 Importer->getPermuteToLIDs (),
-                                                                 Importer->getPermuteFromLIDs ());
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Done with unpackAndCombineWithOwningPIDsCount; "
-        "nnz1=" << nnz1 << ", nnz2=" << nnz2 << std::endl;
-      std::cerr << os.str ();
-    }
-
-    if(nnz1!=nnz2) test_err++;
-    total_err+=test_err;
-
     /////////////////////////////////////////////////////////
     // Test #2: Actual combine test
     /////////////////////////////////////////////////////////
-    Teuchos::Array<size_t>  rowptr (MapTarget->getLocalNumElements () + 1);
-    Teuchos::Array<GO>      colind (nnz2);
-    Teuchos::Array<Scalar>  vals (nnz2);
-    Teuchos::Array<int>     TargetPids;
+    Teuchos::ArrayRCP<size_t>  rowptr;
+    Teuchos::ArrayRCP<GO>      colind;
+    Teuchos::ArrayRCP<Scalar>  vals;
+    Teuchos::Array<int>        TargetPids;
 
     if (verbose) {
       std::ostringstream os;
@@ -2387,29 +2406,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       std::cerr << os.str ();
     }
 
+    auto numImportPacketsView_d = Kokkos::create_mirror_view(Node::device_type::memory_space(),numImportPacketsView);
+    deep_copy(numImportPacketsView_d,numImportPacketsView);
+
+    auto RemoteLIDs_d = Importer->getRemoteLIDs_dv().view_device();
+    auto PermuteToLIDs_d = Importer->getPermuteToLIDs_dv().view_device();
+    auto PermuteFromLIDs_d = Importer->getPermuteFromLIDs_dv().view_device();
+
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
+    Kokkos::View<size_t*,Node::device_type> rowptr_d;
+    Kokkos::View<GO*,Node::device_type>     colind_d;
+    Kokkos::View<typename CrsMatrixType::impl_scalar_type*,Node::device_type> vals_d;
+
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
       *A,
-      Importer->getRemoteLIDs (),
-      imports (),
-      numImportPackets (),
-      constantNumPackets,
-      Tpetra::INSERT,
+      RemoteLIDs_d,
+      importsView_d,
+      numImportPacketsView_d,
       Importer->getNumSameIDs (),
-      Importer->getPermuteToLIDs (),
-      Importer->getPermuteFromLIDs (),
+      PermuteToLIDs_d,
+      PermuteFromLIDs_d,
       MapTarget->getLocalNumElements (),
-      nnz2,
       MyPID,
-      rowptr (),
-      colind (),
-      Teuchos::av_reinterpret_cast<IST> (vals ()),
+      rowptr_d,
+      colind_d,
+      vals_d,
       SourcePids (),
       TargetPids);
 
+    auto rowptr_h = create_mirror_view_and_copy(Kokkos::HostSpace(), rowptr_d);
+    auto colind_h = create_mirror_view_and_copy(Kokkos::HostSpace(), colind_d);
+    Kokkos::View<Scalar*, Node::device_type> vals_d_cast(reinterpret_cast<Scalar*>(vals_d.data()), vals_d.extent(0));
+    auto vals_h = create_mirror_view_and_copy(Kokkos::HostSpace(), vals_d_cast);
+
+    rowptr = Teuchos::arcp(rowptr_h.data(),0,rowptr_h.size(),false);
+    colind = Teuchos::arcp(colind_h.data(),0,colind_h.size(),false);
+    vals = Teuchos::arcp(vals_h.data(),0,vals_h.size(),false);
+
+    size_t nnz2 = vals.size();
+    if(nnz1!=nnz2) test_err++;
+    total_err+=test_err;
+
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Done with unpackAndCombineIntoCrsArrays" << std::endl;
+      os << *prefix << "Done with unpackAndCombineIntoCrsArrays; "
+        "nnz1=" << nnz1 << ", nnz2=" << nnz2 << std::endl;
       std::cerr << os.str ();
     }
 

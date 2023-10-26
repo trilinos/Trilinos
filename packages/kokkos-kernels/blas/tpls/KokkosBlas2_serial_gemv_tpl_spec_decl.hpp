@@ -19,7 +19,7 @@
 #include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Vector.hpp"
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && !defined(KOKKOS_ENABLE_SYCL)
 #include "mkl_version.h"
 #if __INTEL_MKL__ >= 2018
 #define __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__ 1

@@ -13,13 +13,14 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-// Note: Luc Berger-Vergiat 04/15/21
-//       This test should only be included
-//       in the CUDA backend if TPL MAGMA
-//       has been enabled.
 
-#if !defined(TEST_CUDA_BLAS_CPP) || \
-    (defined(TEST_CUDA_BLAS_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA))
+// only enable this test where KokkosBlas supports gesv:
+// CUDA+MAGMA and HOST+BLAS
+#if (defined(TEST_CUDA_BLAS_CPP) &&                                           \
+     defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)) ||                              \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) &&                                \
+     (defined(TEST_OPENMP_BLAS_CPP) || defined(TEST_OPENMPTARGET_BLAS_CPP) || \
+      defined(TEST_SERIAL_BLAS_CPP) || defined(TEST_THREADS_BLAS_CPP)))
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -36,7 +37,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_gesv(const char* mode, const char* padding, int N) {
   typedef typename Device::execution_space execution_space;
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> ats;
+  typedef Kokkos::ArithTraits<ScalarA> ats;
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
@@ -128,9 +129,9 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     if (ats::abs(h_B(i) - h_X0(i)) > eps) {
       test_flag = false;
       // printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) !=
-      // solution( %.15lf ) at (%ld)\n", N, mode[0], padding[0],
-      // ats::abs(h_B(i)), ats::abs(h_X0(i)), i );
-      break;
+      // solution( %.15lf ) at (%d)\n", N, mode[0], padding[0],
+      // ats::abs(h_B(i)), ats::abs(h_X0(i)), int(i) );
+      // break;
     }
   }
   ASSERT_EQ(test_flag, true);
@@ -141,7 +142,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
                          int nrhs) {
   typedef typename Device::execution_space execution_space;
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> ats;
+  typedef Kokkos::ArithTraits<ScalarA> ats;
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
@@ -337,9 +338,6 @@ int test_gesv_mrhs(const char* mode) {
   return 1;
 }
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
-
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -414,6 +412,4 @@ TEST_F(TestCategory, gesv_mrhs_complex_float) {
 }
 #endif
 
-#endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA || KOKKOSKERNELS_ENABLE_TPL_BLAS
-
-#endif  // Check for TPL MAGMA when compiling the CUDA tests
+#endif  // CUDA+MAGMA or BLAS+HOST

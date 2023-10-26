@@ -394,7 +394,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, 
 {
   typedef Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::HostSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_block_type;
   typedef Kokkos::View<Scalar*,Kokkos::LayoutRight,Kokkos::HostSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_vec_type;
-  typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
+  typedef typename Kokkos::ArithTraits<Scalar>::val_type impl_scalar_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   const int blockSize = 5;

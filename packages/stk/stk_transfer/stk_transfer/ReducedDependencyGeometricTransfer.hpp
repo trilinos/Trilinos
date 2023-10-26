@@ -66,7 +66,6 @@ public :
   typedef typename InterpolateClass::MeshB                MeshB;
   typedef typename InterpolateClass::EntityKeyA           EntityKeyA;
   typedef typename InterpolateClass::EntityKeyB           EntityKeyB;
-  typedef typename InterpolateClass::EntityKeyMap         EntityKeyMap;
 
   typedef typename InterpolateClass::EntityProcA          EntityProcA;
   typedef typename InterpolateClass::EntityProcB          EntityProcB;
@@ -500,10 +499,12 @@ ReducedDependencyGeometricTransfer<INTERPOLATE>::buildExchangeLists(typename Mes
     MPI_Isend(&sendSizesBuffers[ii], 1, MPI_INT, destination, sendTag, m_comm_data.m_shared_comm, &sendRequests[ii]);
   }
 
-  std::vector<MPI_Status> receiveStati(receiveRequests.size());
+  std::vector<MPI_Status> receiveStati;
+  receiveStati.resize(receiveRequests.size());
   MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0]);
 
-  std::vector<MPI_Status> sendStati(sendRequests.size());
+  std::vector<MPI_Status> sendStati;
+  sendStati.resize(sendRequests.size());
   MPI_Waitall(sendRequests.size(), &sendRequests[0], &sendStati[0]);
 
   //communicate coordinates
