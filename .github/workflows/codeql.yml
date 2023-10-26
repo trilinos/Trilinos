@@ -79,12 +79,12 @@ jobs:
     # From Sam's prototype
     # https://github.com/sebrowne/Trilinos/blob/f6119bf7906aba7ecde4027733ef93af872f96a0/.github/workflows/codeql.yml
     - run: |
-        bash -l -c "ls -la; pwd"
-        bash -l -c "cd .. ; mkdir -p trilinos_build ; cd trilinos_build ; ls -la ; pwd" 
-        bash -l -c "../Trilinos/packages/framework/get_dependencies.sh --container"
-        bash -l -c "source ../Trilinos/packages/framework/GenConfig/gen-config.sh --list-configs"
-        bash -l -c "source ../Trilinos/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all ../Trilinos"
-        bash -l -c "ls -la ; pwd ; cmake -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Krino=OFF ../Trilinos"
+        bash -l -c "./packages/framework/get_dependencies.sh --container"
+        bash -l -c "source ./packages/framework/GenConfig/gen-config.sh --list-configs"
+        bash -l -c "rm -r CMakeCache.txt CMakeFiles/"
+        bash -l -c "mkdir -p trilinos_build && cd trilinos_build"
+        bash -l -c "source ../packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all .."
+        bash -l -c "ls -la ; pwd ; cmake -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Krino=OFF ..
         bash -l -c "make -j4"
 
       # bash -l -c "module list"
