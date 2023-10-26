@@ -81,9 +81,8 @@ jobs:
     - run: |
         bash -l -c "./packages/framework/get_dependencies.sh --container"
         bash -l -c "source ./packages/framework/GenConfig/gen-config.sh --list-configs"
-        bash -l -c "rm -r CMakeCache.txt CMakeFiles/"
         bash -l -c "mkdir -p trilinos_build && cd trilinos_build"
-        bash -l -c "source ../packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all .."
+        bash -l -c "pwd ; source ../packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all .."
         bash -l -c "ls -la ; pwd ; cmake -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Krino=OFF ..
         bash -l -c "make -j4"
 
