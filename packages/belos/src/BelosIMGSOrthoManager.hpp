@@ -726,9 +726,8 @@ namespace Belos {
         }
       }
 
-      DMT::SyncDeviceToHost( *B );
-      DMT::Value(*B,0,0) = diag;
-      DMT::SyncHostToDevice( *B );
+      Teuchos::RCP<DM> B00 = DMT::Subview(*B,1,1);
+      DMT::PutScalar(*B00, diag);
     }
     else {
 
@@ -1126,7 +1125,6 @@ namespace Belos {
                 DMT::Add(*product_ii, *P2);
             }
           }
-          DMT::SyncHostToDevice( *product );
 
           // Compute new Op-norm
           {
@@ -1183,9 +1181,6 @@ namespace Belos {
       if (!addVec) {
         Teuchos::RCP<DM> Bcolj = DMT::Subview(*B,numX,1,0,j);
         DMT::Assign(*Bcolj,*product);
-        //for (int i=0; i<numX; i++) {
-        //  DMT::Value(*B,i,j) = product(i);
-        //}
       }
 
     } // for (j = 0; j < xc; ++j)
@@ -1601,9 +1596,8 @@ namespace Belos {
         }
 
         // Enter value on diagonal of B.
-        DMT::SyncDeviceToHost( *B );
-        DMT::Value(*B,j,j) = diag;
-        DMT::SyncHostToDevice( *B );
+        Teuchos::RCP<DM> Bjj = DMT::Subview(*B,1,1,j,j);
+        DMT::PutScalar(*Bjj, diag);
       }
       else {
         // Create a random vector and orthogonalize it against all previous columns of Q.
@@ -1669,9 +1663,8 @@ namespace Belos {
           ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 
           // Enter value on diagonal of B.
-          DMT::SyncDeviceToHost( *B );
-          DMT::Value(*B,j,j) = ZERO;
-          DMT::SyncHostToDevice( *B );
+          Teuchos::RCP<DM> Bjj = DMT::Subview(*B,1,1,j,j);
+          DMT::PutScalar(*Bjj, ZERO);
 
           // Copy vector into current column of _basisvecs
           MVT::MvAddMv( ONE/diag, *tempXj, ZERO, *tempXj, *Xj );
