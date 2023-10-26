@@ -48,14 +48,13 @@ namespace details {
   /// TsqrOrthoManagerImpl to compile successfully for unsupported MV
   /// types.  This in turn allows OrthoManagerFactory to be templated
   /// on the MV type.
-  template<class MultiVectorType, class DenseMatType = Teuchos::SerialDenseMatrix<int,double>>
+  template<class MultiVectorType, class DM = Teuchos::SerialDenseMatrix<int,double>>
   class StubTsqrAdapter : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     typedef MultiVectorType MV;
     typedef double scalar_type; // This doesn't really matter
     typedef int ordinal_type; // This doesn't matter either
     typedef int node_type; // Nor does this
-    //typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
     /// \brief Constructor (that accepts a parameter list).
@@ -110,7 +109,7 @@ namespace details {
     void
     factorExplicit (MV& A,
 		    MV& Q,
-		    DenseMatType& R,
+		    DM& R,
 		    const bool forceNonnegativeDiagonal=false)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TSQR adapter for "
@@ -121,7 +120,7 @@ namespace details {
     //! Rank-revealing decomposition (stub; does nothing).
     int
     revealRank (MV& Q,
-		DenseMatType& R,
+		DM& R,
 		const magnitude_type& tol)
     {
       // mfh 07 Sep 2012: In order to prevent compiler warnings on

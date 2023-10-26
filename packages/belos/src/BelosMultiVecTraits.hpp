@@ -340,7 +340,7 @@ namespace Belos {
     /// adapter.  Please refer to Epetra::TsqrAdapter (for
     /// Epetra_MultiVector) or Tpetra::TsqrAdaptor (for
     /// Tpetra::MultiVector) for examples.
-    typedef Belos::details::StubTsqrAdapter<MV> tsqr_adaptor_type;
+    typedef Belos::details::StubTsqrAdapter<MV, DM> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   };
 
