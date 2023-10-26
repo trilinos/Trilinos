@@ -162,7 +162,7 @@ namespace Belos {
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
-	TsqrMatOrthoManager<Scalar, MV, OP> orthoMan;
+	TsqrMatOrthoManager<Scalar, MV, OP, DM> orthoMan;
 	return orthoMan.getValidParameters ();
       }
 #endif // HAVE_BELOS_TSQR
@@ -210,7 +210,7 @@ namespace Belos {
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
-	TsqrMatOrthoManager<Scalar, MV, OP> orthoMan; 
+	TsqrMatOrthoManager<Scalar, MV, OP, DM> orthoMan; 
 	return orthoMan.getFastParameters ();
       }
 #endif // HAVE_BELOS_TSQR
@@ -278,7 +278,7 @@ namespace Belos {
       }
 #ifdef HAVE_BELOS_TSQR
       else if (ortho == "TSQR") {
-	typedef TsqrMatOrthoManager<Scalar, MV, OP> ortho_type;
+	typedef TsqrMatOrthoManager<Scalar, MV, OP, DM> ortho_type;
 	return rcp (new ortho_type (params, label, M));
       }
 #endif // HAVE_BELOS_TSQR
@@ -349,7 +349,7 @@ namespace Belos {
       // TsqrMatOrthoManager would still be correct; this is just an
       // optimization.
       else if (ortho == "TSQR" && M.is_null()) {
-	return rcp (new TsqrOrthoManager<Scalar, MV> (params, label));
+	return rcp (new TsqrOrthoManager<Scalar, MV, DM> (params, label));
       }
 #endif // HAVE_BELOS_TSQR
       else {
