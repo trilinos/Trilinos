@@ -24,9 +24,10 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -470,6 +471,9 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       currentUpdate = MVT::Clone (*Z_, blockSize_);
 
       // Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
+      DMT::SyncDeviceToHost( *z_ );
+      DMT::SyncDeviceToHost( *H_ );
+
       Teuchos::RCP<DM> y = DMT::SubviewCopy(*z_, curDim_, blockSize_);
 
       // Solve the least squares problem.
@@ -478,6 +482,9 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
                  DMT::GetRawHostPtr(*H_), DMT::GetStride(*H_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y));
                  //TODO: Should one of H_ or y have a const ptr?
                  //TODO: Add data mod specifiers?
+
+      // Make sure the result goes back to the device
+      DMT::SyncHostToDevice( *y );
 
       // Compute the current update.
       std::vector<int> index (curDim_);
@@ -503,6 +510,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
     if (norms != NULL) {
       Teuchos::BLAS<int, ScalarType> blas;
+      DMT::SyncDeviceToHost( *z_ );
       for (int j = 0; j < blockSize_; ++j) {
         (*norms)[j] = blas.NRM2 (blockSize_, &DMT::Value(*z_, curDim_, j), 1);
       }
@@ -717,7 +725,11 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     // The type of transformation we use depends the block size.  We
     // use Givens rotations for a block size of 1, and Householder
     // reflectors otherwise.
+    DMT::SyncDeviceToHost( *H_ );
+    DMT::SyncDeviceToHost( *z_ );
+
     if (blockSize_ == 1) {
+
       // QR factorization of upper Hessenberg matrix using Givens rotations
       for (int i = 0; i < curDim; ++i) {
         // Apply previous Givens rotations to new column of Hessenberg matrix
@@ -781,6 +793,9 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         }
       }
     } // end if (blockSize_ == 1)
+
+    DMT::SyncHostToDevice( *H_ );
+    DMT::SyncHostToDevice( *z_ );
 
     // If the least-squares problem is updated wrt "dim" then update curDim_.
     if (dim >= curDim_ && dim < getMaxSubspaceDim ()) {
