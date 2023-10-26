@@ -83,8 +83,8 @@ jobs:
         bash -l -c "source /etc/profile.d/modules-init.sh ; ../Trilinos/packages/framework/get_dependencies.sh --container"
         bash -l -c "source /etc/profile.d/modules-init.sh ; source ../Trilinos/packages/framework/GenConfig/gen-config.sh --list-configs"
         bash -l -c "source /etc/profile.d/modules-init.sh ; cd trilinos_build && source ../Trilinos/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all .."
-        bash -l -c "source /etc/profile.d/modules-init.sh ; cd trilinos_build && cmake -G Ninja -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Krino=OFF .."
-        bash -l -c "source /etc/profile.d/modules-init.sh ; cd trilinos_build && ninja"
+        bash -l -c "source /etc/profile.d/modules-init.sh ; cd trilinos_build && cmake -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Krino=OFF .."
+        bash -l -c "source /etc/profile.d/modules-init.sh ; cd trilinos_build && make"
 
       # bash -l -c "module list"
       # find /__w/_tool/CodeQL/2.15.1/x64/codeql/tools/linux64
