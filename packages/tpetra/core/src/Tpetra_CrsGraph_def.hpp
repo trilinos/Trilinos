@@ -243,7 +243,7 @@ namespace Tpetra {
       operator () (const LO lclRow, LO& maxNumEnt) const
       {
         const LO numEnt = static_cast<LO> (ptr_(lclRow+1) - ptr_(lclRow));
-        maxNumEnt = (numEnt > maxNumEnt) ? numEnt : maxNumEnt;
+        maxNumEnt = (numEnt > maxNumEnt) ? numEnt : maxNumEnt;.
       }
     private:
       typename ViewType::const_type ptr_;
@@ -385,7 +385,7 @@ namespace Tpetra {
     resumeFill (params);
     checkInternalState ();
   }
-
+.
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -661,7 +661,7 @@ namespace Tpetra {
     //   k_local_graph_.numRows () != getLocalNumRows (), std::runtime_error,
     //   ": The input row Map and the input local graph need to have the same "
     //   "number of rows.  The row Map claims " << getLocalNumRows () << " row(s), "
-    //   "but the local graph claims " << k_local_graph_.numRows () << " row(s).");
+    //   "but the local graph claims " << k_local_g.raph_.numRows () << " row(s).");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       lclIndsUnpacked_wdv.extent (0) != 0 || gblInds_wdv.extent (0) != 0, std::logic_error,
       ": cannot have 1D data structures allocated.");
@@ -706,7 +706,7 @@ namespace Tpetra {
             const Teuchos::RCP<const export_type>& exporter,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap),
-    rowMap_ (rowMap),
+    rowMap_ (rowMap),.
     colMap_ (colMap),
     rangeMap_ (rangeMap.is_null () ? rowMap : rangeMap),
     domainMap_ (domainMap.is_null () ? rowMap : domainMap),
@@ -733,7 +733,7 @@ namespace Tpetra {
 
     if (! params.is_null() && params->isParameter("sorted") &&
         ! params->get<bool>("sorted")) {
-      indicesAreSorted_ = false;
+      indicesAreSorted_ = false;.
     }
     else {
       indicesAreSorted_ = true;
@@ -2787,7 +2787,7 @@ namespace Tpetra {
     // It makes sense to clear them out here, because at the end of
     // this method, the graph is allocated on the calling process.
     numAllocForAllRows_ = 0;
-    k_numAllocPerRow_ =  (k_numAllocPerRow_) ();
+    k_numAllocPerRow_ =  decltype (k_numAllocPerRow_) ();
 
     checkInternalState ();
   }
