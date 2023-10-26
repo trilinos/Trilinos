@@ -46,10 +46,10 @@
 #include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 // Instantiate tests for threads node
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> ThreadsWrapperNode;
+typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Threads> ThreadsWrapperNode;
 CRSMATRIX_MP_VECTOR_TESTS_N( ThreadsWrapperNode )
 
 int main( int argc, char* argv[] ) {

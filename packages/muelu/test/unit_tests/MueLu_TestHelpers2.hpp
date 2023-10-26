@@ -74,9 +74,8 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_LocalAggregationAlgorithm_decl.hpp" //AggOptions
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -108,11 +107,10 @@ namespace MueLuTests {
             H_ = rcp(new Hierarchy(A_));
             RCP<Level> Finest = H_->GetLevel();
 
-            RCP<CoupledAggregationFactory> aggFact = rcp(new CoupledAggregationFactory());
+            RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
             aggFact->SetMinNodesPerAggregate(3);
             aggFact->SetMaxNeighAlreadySelected(0);
             aggFact->SetOrdering("natural");
-            aggFact->SetPhase3AggCreation(0.5);
 
             Teuchos::ParameterList smootherParamList;
             smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");

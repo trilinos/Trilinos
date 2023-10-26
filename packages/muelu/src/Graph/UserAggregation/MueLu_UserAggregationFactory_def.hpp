@@ -55,10 +55,8 @@
 #include "MueLu_UserAggregationFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 

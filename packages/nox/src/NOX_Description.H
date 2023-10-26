@@ -1230,7 +1230,7 @@ the function name to <code>NOX::Utils::err</code> or <code>NOX::Utils::perr</cod
   if (/* Error Condition */)
   {
     utils.err() << "ERROR: NOX::Epetra::Group::getNewton() - invalid Newton vector" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 </pre>
 
@@ -1984,7 +1984,7 @@ int main(int argc, char *argv[])
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  Epetra_MpiComm Comm( NOX::get_global_comm() );
 #else
   Epetra_SerialComm Comm;
 #endif
@@ -2018,7 +2018,7 @@ int main(int argc, char *argv[])
     cout << "numGlobalBlocks = " << NumGlobalElements
      << " cannot be < number of processors = " << NumProc << std::endl;
     cout << "Test failed!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 \endcode
 

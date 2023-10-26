@@ -44,7 +44,6 @@
 #include <sstream>                      // for operator<<, basic_ostream
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Relation.hpp>   // for Relation
 #include <string>                       // for operator<<
@@ -107,7 +106,7 @@ void pack_entity_info(const BulkData& mesh,
   Bucket& bucket = mesh.bucket(entity);
   unsigned ebo   = mesh.bucket_ordinal(entity);
 
-  ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
+  STK_ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
   const EntityRank end_rank = onlyPackDownwardRelations ? mesh.entity_rank(entity) : static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
@@ -119,14 +118,12 @@ void pack_entity_info(const BulkData& mesh,
       Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
       for ( unsigned i = 0 ; i < nrel ; ++i ) {
         if (mesh.is_valid(rel_entities[i])) {
-          ThrowAssert(rel_ordinals);
+          STK_ThrowAssert(rel_ordinals);
           buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
           buf.pack<unsigned>( rel_ordinals[i] );
-          if (bucket.has_permutation(irank)) {
-            ThrowAssert(rel_permutations);
+          if (should_store_permutations(bucket.entity_rank(),irank)) {
+            STK_ThrowAssert(rel_permutations);
             buf.pack<unsigned>( rel_permutations[i] );
-          } else {
-            buf.pack<unsigned>(0u);
           }
         }
       }
@@ -168,7 +165,9 @@ void unpack_entity_info(
     unsigned rel_attr = 0 ;
     buf.unpack<EntityKey>( rel_key );
     buf.unpack<unsigned>( rel_id );
-    buf.unpack<unsigned>( rel_attr );
+    if (should_store_permutations(key.rank(), rel_key.rank())) {
+      buf.unpack<unsigned>( rel_attr );
+    }
     Entity const entity =
       mesh.get_entity( rel_key.rank(), rel_key.id() );
     if ( mesh.is_valid(entity) ) {

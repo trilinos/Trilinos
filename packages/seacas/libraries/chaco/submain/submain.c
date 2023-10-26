@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -112,14 +112,6 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
   int               flag;                      /* return code from check_input */
   int               old_perturb = 0;           /* saves original perturbation flag */
   int               i, j, k;                   /* loop counters */
-  double            seconds(void);
-  void              setrandom(long int seed);
-  int               check_input(), refine_part();
-  void              connect_enforce();
-  void              makevwsqrt(), balance(), countup();
-  void              force_internal(), sequence(), reflect_input();
-  void              machine_params(), assign_out(), refine_map();
-  void              time_out(), time_kernels(), strout(char *msg);
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering submain>\n");
@@ -277,9 +269,9 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
     for (i = 0; i < nsets; i++) {
       hop_mtx[i][i] = 0;
       for (j = 0; j < i; j++) {
+        hop_mtx[i][j] = 0;
         if (KL_METRIC == 2) { /* Count hypercube hops */
-          hop_mtx[i][j] = 0;
-          bits          = i ^ j;
+          bits = i ^ j;
           while (bits) {
             if (bits & 1) {
               ++hop_mtx[i][j];

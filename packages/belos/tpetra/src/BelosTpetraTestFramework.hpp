@@ -679,7 +679,6 @@ namespace Belos {
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
         typedef node_type NT;
-        typedef ::Tpetra::Map<LO, GO, NT> map_type;
 
         // For a square matrix, we only need a Map for the range of the matrix.
         RCP<const map_type> pRangeMap =
@@ -730,7 +729,6 @@ namespace Belos {
         typedef typename SparseMatrixType::local_ordinal_type LO;
         typedef typename SparseMatrixType::global_ordinal_type GO;
         typedef typename SparseMatrixType::node_type NT;
-        typedef ::Tpetra::Map<LO, GO, NT> map_type;
 
         // For a square matrix, we only need a Map for the range of the matrix.
         RCP<const map_type> pRangeMap =

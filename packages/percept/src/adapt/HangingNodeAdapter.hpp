@@ -203,7 +203,7 @@
           {
             throw std::logic_error("must have refine_level field for hanging-node refinement");
           }
-        RefineFieldType *refine_field = m_pMesh.get_fem_meta_data()-> template get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+        RefineFieldType *refine_field = m_pMesh.get_fem_meta_data()-> template get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
         if (!refine_field)
           {
             throw std::logic_error("must have refine_field field for hanging-node refinement");
@@ -429,7 +429,7 @@
           {
             throw std::logic_error("must have refine_level field for hanging-node refinement");
           }
-        RefineFieldType *refine_field = m_pMesh.get_fem_meta_data()-> template get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+        RefineFieldType *refine_field = m_pMesh.get_fem_meta_data()-> template get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
         if (!refine_level)
           {
             throw std::logic_error("must have refine_field field for hanging-node refinement");

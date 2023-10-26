@@ -53,7 +53,6 @@
 
 #include "Xpetra_IO.hpp"
 
-#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_LocalOrdinalTransferFactory_decl.hpp"
 
@@ -220,7 +219,7 @@ namespace MueLu {
     
     // Get some info about aggregates
     int                         myPID        = uniqueMap->getComm()->getRank();
-    ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
+    ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizesArrayRCP();
     const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
     const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
     

@@ -13,11 +13,6 @@ class TrilinosJenkinsEnv(JenkinsEnv):
 
 
     @property
-    def trilinos_source_branch(self):
-        return self.get_envvar_str("TRILINOS_SOURCE_BRANCH", error_if_missing=True)
-
-
-    @property
     def trilinos_source_repo(self):
         return self.get_envvar_str("TRILINOS_SOURCE_REPO", error_if_missing=True)
 

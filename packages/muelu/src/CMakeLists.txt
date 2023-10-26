@@ -20,62 +20,59 @@ SET(DIR  ${CMAKE_CURRENT_SOURCE_DIR})
 SET(BDIR ${CMAKE_CURRENT_BINARY_DIR})
 
 
-INCLUDE_DIRECTORIES(${DIR})
-INCLUDE_DIRECTORIES(${DIR}/Graph)
-INCLUDE_DIRECTORIES(${DIR}/Graph/BrickAggregation)
-INCLUDE_DIRECTORIES(${DIR}/Graph/Containers)
-INCLUDE_DIRECTORIES(${DIR}/Graph/CoupledAggregation)
-INCLUDE_DIRECTORIES(${DIR}/Graph/HybridAggregation)
-INCLUDE_DIRECTORIES(${DIR}/Graph/MatrixTransformation)
-INCLUDE_DIRECTORIES(${DIR}/Graph/PairwiseAggregation)
-INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation)
-INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/coupled)
-INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/uncoupled)
-INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
-INCLUDE_DIRECTORIES(${DIR}/Graph/UserAggregation)
-INCLUDE_DIRECTORIES(${DIR}/Headers)
-INCLUDE_DIRECTORIES(${DIR}/Interface)
-INCLUDE_DIRECTORIES(${DIR}/Interface/FacadeClasses)
-INCLUDE_DIRECTORIES(${DIR}/Misc)
-INCLUDE_DIRECTORIES(${DIR}/MueCentral)
-INCLUDE_DIRECTORIES(${DIR}/Operators)
-INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
-INCLUDE_DIRECTORIES(${DIR}/Smoothers)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/BlackBox)
-INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Classical)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/GeneralGeometric)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Geometric-Interpolation)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Matrix-Free)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/SemiCoarsen)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
-INCLUDE_DIRECTORIES(${DIR}/Utils)
-INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
-INCLUDE_DIRECTORIES(${DIR}/../adapters/xpetra)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/BrickAggregation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/Containers)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/HybridAggregation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/MatrixTransformation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/PairwiseAggregation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/coupled)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/uncoupled)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Graph/UserAggregation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Headers)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Interface)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Interface/FacadeClasses)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Misc)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/MueCentral)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Operators)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Smoothers)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/BlackBox)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/Classical)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/GeneralGeometric)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/Geometric-Interpolation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/Matrix-Free)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/SemiCoarsen)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Utils)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/xpetra)
+TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/tpetra)
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  INCLUDE_DIRECTORIES(${DIR}/../adapters/epetra)
-ENDIF()
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-  INCLUDE_DIRECTORIES(${DIR}/../adapters/tpetra)
+  TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/epetra)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_AmgX)
-  INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
+  TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
-  INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
+  TRIBITS_INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  INCLUDE_DIRECTORIES(${DIR}/../research/regionMG/src)
+  TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../research/regionMG/src)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
-   INCLUDE_DIRECTORIES(${DIR}/../adapters/stratimikos)
+   TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/stratimikos)
 ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
@@ -128,7 +125,7 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
   # check whether both Epetra and Tpetra are enabled
   SET(MueLu_ETI_EpetraGuards "")
   SET(MueLu_ETI_EpetraGuards_END "")
-  IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+  IF (${PACKAGE_NAME}_ENABLE_Epetra)
   # both Epetra and Tpetra are enabled. The Epetra instantiation needs to be guarded
   SET(MueLu_ETI_EpetraGuards "#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))")
     SET(MueLu_ETI_EpetraGuards_END "#endif")
@@ -176,9 +173,8 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
       ENDIF()
     ENDIF()
 
-    # If Tpetra is enabled create the cpp file for all combinations of template parameters
-    IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-      FOREACH(NT ${MueLu_ETI_NODES})
+    # Create the cpp file for all combinations of template parameters
+    FOREACH(NT ${MueLu_ETI_NODES})
       TPETRA_MANGLE_TEMPLATE_PARAMETER(NT_MANGLED "${NT}")
       TPETRA_NODE_MACRO_NAME(NT_MACRO_NAME "${NT}")
       FOREACH(GO ${MueLu_ETI_GORDS})
@@ -204,8 +200,6 @@ FUNCTION(MUELU_PROCESS_ETI_TEMPLATE TEMPLATE_FILE_DIR ETI_CLASSES PROCESSED_FILE
         ENDFOREACH() # LO
       ENDFOREACH() # GO
     ENDFOREACH() # NT
-
-    ENDIF()
   ENDFOREACH()
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
@@ -374,7 +368,6 @@ APPEND_GLOB(SOURCES ${DIR}/Graph/Containers/MueLu_LinkedList.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/BrickAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/Containers NOSIERRABJAM)
-TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/CoupledAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/HybridAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/MatrixTransformation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/PairwiseAggregation NOSIERRABJAM)
@@ -407,9 +400,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/User NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/SemiCoarsen NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/xpetra NOSIERRABJAM)
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
-ENDIF()
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
 IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/PCoarsen NOSIERRABJAM)
 ENDIF()
@@ -420,7 +411,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
 ENDIF()
 
-INCLUDE_DIRECTORIES(${BDIR}/)
+TRIBITS_INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # # Remove everything in the interface directory and add it to a list for muelu-interface instead
@@ -453,11 +444,6 @@ if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
     ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp)
 ENDIF()
 
-if (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-  LIST(REMOVE_ITEM SOURCES
-    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator.cpp)
-ENDIF()
-
 
 #
 # Define the targets for package's library(s)
@@ -468,21 +454,4 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

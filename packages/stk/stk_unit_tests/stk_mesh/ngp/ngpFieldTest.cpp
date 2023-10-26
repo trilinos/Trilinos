@@ -42,7 +42,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -83,7 +82,7 @@ public:
   void setup_one_field_one_element_mesh()
   {
     const unsigned bucketCapacity = 1;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
     stk::mesh::Field<int>& stkField = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "field1");
     stk::mesh::Part& block = get_meta().declare_part_with_topology("block_1", stk::topology::SHELL_QUAD_4);
@@ -98,7 +97,7 @@ public:
   void setup_two_field_two_element_mesh()
   {
     const unsigned bucketCapacity = 1;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
     stk::mesh::Field<int>& stkField1 = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "variableLengthField");
     stk::mesh::Field<int>& stkField2 = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "potentiallyOverwrittenField");
@@ -121,7 +120,7 @@ public:
   void setup_two_fields_five_hex_three_block_mesh(const int numComponent1, const int numComponent2)
   {
     const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
     stk::mesh::Field<int>& stkField1 = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "variableLengthField1", 1);
     stk::mesh::Field<int>& stkField2 = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "variableLengthField2", 1);
@@ -230,7 +229,7 @@ public:
 
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
 
-    Kokkos::parallel_for(numElems,
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, numElems),
                          KOKKOS_LAMBDA(const int& elemIdx) {
                            stk::mesh::Entity elem = ngpElements.device_get(elemIdx);
                            auto meshIndex = ngpMesh.fast_mesh_index(elem);
@@ -258,14 +257,14 @@ public:
   }
 
   template<typename T, typename Func>
-  void check_field_data_equality_on_device(stk::mesh::EntityVector& elements, stk::mesh::EntityRank rank,
+  void check_field_data_equality_on_device(stk::mesh::EntityVector& elements,
                                            stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField,
                                            Func&& checkFunc)
   {
     using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::ngp::MemSpace>;
 
     unsigned numElems = elements.size();
-    unsigned numPerEntity = stkField.max_size(rank);
+    unsigned numPerEntity = stkField.max_size();
     FieldData deviceData = FieldData("deviceData", numElems, numPerEntity);
     typename FieldData::HostMirror hostData = Kokkos::create_mirror_view(deviceData);
 
@@ -285,7 +284,7 @@ public:
     {
       EXPECT_NE(hostData, stkData);
     };
-    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
+    check_field_data_equality_on_device<T>(elements, ngpField, stkField, checkFunc);
   }
 
   template<typename T>
@@ -300,7 +299,7 @@ public:
     {
       EXPECT_EQ(hostData, stkData);
     };
-    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
+    check_field_data_equality_on_device<T>(elements, ngpField, stkField, checkFunc);
   }
 
   template<typename T>
@@ -313,7 +312,7 @@ public:
     {
       EXPECT_EQ(hostData, stkData);
     };
-    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
+    check_field_data_equality_on_device<T>(elements, ngpField, stkField, checkFunc);
   }
 
   void set_element_field_data(stk::mesh::FieldBase* field)
@@ -387,7 +386,7 @@ public:
   void run_add_and_delete_bucket3(unsigned numComponents)
   {
     const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_2hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -403,7 +402,7 @@ public:
   void run_add_and_delete_bucket2(unsigned numComponents)
   {
     const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_2hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -419,7 +418,7 @@ public:
   void run_add_and_delete_bucket(unsigned numComponents)
   {
     const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_2hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -436,7 +435,7 @@ public:
   void run_delete_bucket_in_middle(unsigned numComponents)
   {
     const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -451,7 +450,7 @@ public:
 
   void run_add_new_element(unsigned numComponents, unsigned bucketCapacity)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -463,7 +462,7 @@ public:
   void run_add_new_element_and_modify_from_device(unsigned numComponents)
   {
     const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -499,7 +498,7 @@ public:
   void run_add_bucket_in_middle_copy(unsigned numComponents)
   {
     const unsigned bucketCapacity = 1;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -511,7 +510,7 @@ public:
   void run_add_bucket_in_middle_external(unsigned numComponents)
   {
     const unsigned bucketCapacity = 1;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -523,7 +522,7 @@ public:
   void run_add_bucket_in_middle_internal(unsigned numComponents)
   {
     const unsigned bucketCapacity = 1;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
@@ -555,7 +554,7 @@ public:
   void run_change_bucket_content_by_mesh_modification(unsigned numComponents)
   {
     const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_2block_mesh_with_field(bucketCapacity, stkIntField);
@@ -574,7 +573,7 @@ public:
   void run_change_bucket_content_by_user(unsigned numComponents)
   {
     const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_2block_mesh_with_field(bucketCapacity, stkIntField);
@@ -795,7 +794,7 @@ struct CheckFieldValues {
   void operator()(const stk::mesh::FastMeshIndex& entity) const
   {
     for (unsigned component = 0; component < numScalarsPerEntity; component++) {
-      NGP_ThrowRequire(ngpField(entity, component) == expectedFieldValue);
+      STK_NGP_ThrowRequire(ngpField(entity, component) == expectedFieldValue);
     }
   }
 
@@ -991,7 +990,8 @@ TEST_F(NgpFieldFixture, noFieldDataTest)
   if (get_parallel_size() != 1) GTEST_SKIP();
 
   unsigned numBlocks = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 1);
+  const unsigned bucketCapacity = 1;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(numBlocks);
   std::vector<double> coordinates = stk::unit_test_util::simple_fields::get_many_block_coordinates(numBlocks);
@@ -1539,7 +1539,7 @@ TEST_F(NgpFieldFixture, ClearDeviceSyncState_doesntClearHostMod)
 TEST_F(NgpFieldFixture, updateBucketPtrView)
 {
   const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
   stk::mesh::Field<int>& field = create_field<int>(stk::topology::ELEM_RANK, "field");
   get_meta().declare_part_with_topology("block_3", stk::topology::HEX_8);
   ngp_unit_test_utils::setup_mesh_2hex_2block(get_bulk(), bucketCapacity);
@@ -1584,7 +1584,7 @@ TEST_F(OptimizedNgpFieldFixture, CreateConsecutiveNgpFields)
   if (get_parallel_size() != 1) return;
 
   const unsigned bucketCapacity = 2;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
   unsigned numComponents = 1;
 
@@ -1731,7 +1731,7 @@ public:
 
   stk::mesh::Field<int>& setup_field_on_mesh_two_buckets_two_components()
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, m_bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, m_bucketCapacity, m_bucketCapacity);
     stk::mesh::Field<int>& stkField = create_field<int>(stk::topology::ELEM_RANK, "intField", m_numComponents);
     ngp_unit_test_utils::setup_mesh_2hex_2block(get_bulk(), m_bucketCapacity);
     return stkField;
@@ -1739,7 +1739,7 @@ public:
 
   stk::mesh::Field<int>& setup_partial_field_on_mesh_three_buckets_two_components(const std::vector<std::string>& partNames)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, m_bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, m_bucketCapacity, m_bucketCapacity);
     unsigned numStates = 1;
     const std::vector<int> init(m_numComponents, 1);
     stk::mesh::Field<int>& stkField = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "intField", numStates);
@@ -1793,6 +1793,13 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
   ngpFieldByRef.sync_to_device();
 
   check_field_data_on_device<int>(ngpFieldByRef, stkField);
+}
+
+TEST(NgpField, checkSizeof)
+{
+  size_t expectedNumBytes = 400;
+  std::cout << "sizeof(stk::mesh::NgpField<double>): " << sizeof(stk::mesh::NgpField<double>) << std::endl;
+  EXPECT_TRUE(expectedNumBytes >= sizeof(stk::mesh::NgpField<double>));
 }
 
 }

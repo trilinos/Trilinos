@@ -1,6 +1,11 @@
-tribits_add_test(package1-prg  NOEXEPREFIX  NOEXESUFFIX
-  NAME Prg
-  DIRECTORY ${PACKAGE_BINARY_DIR}/src
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "Package1 Deps: tpl1"
-  )
+if ((NOT COMMAND tribits_project)  OR  Package1_USE_RAW_CMAKE)
+  if (Package1_USE_TRIBITS_TEST_FUNCTIONS  AND  (COMMAND tribits_add_test))
+    message("-- Using TriBITS Test Functions in raw CMake Package1 build!")
+    include("${CMAKE_CURRENT_LIST_DIR}/CMakeLists.tribits.cmake")
+  else()
+    message("-- Using Raw CMake add_test() in raw CMake Package1 build!")
+    include("${CMAKE_CURRENT_LIST_DIR}/CMakeLists.raw.cmake")
+  endif()
+else()
+  include("${CMAKE_CURRENT_LIST_DIR}/CMakeLists.tribits.cmake")
+endif()

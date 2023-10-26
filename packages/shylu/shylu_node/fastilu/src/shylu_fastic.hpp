@@ -242,16 +242,16 @@ class FastICPrec
             initTime = t;
         }
 
-        void getL(OrdinalArray &lRowMap_, OrdinalArray &lColIdx_, ScalarArray &lVal_)
+        void getL(OrdinalArray &lRowMapArg, OrdinalArray &lColIdxArg, ScalarArray &lValArg)
         {
-            lRowMap_ = lRowMap;
-            lColIdx_ = lColIdx;
-            lVal_ = lVal;
+            lRowMapArg = lRowMap;
+            lColIdxArg = lColIdx;
+            lValArg = lVal;
         }
 
-        void getD(ScalarArray &diagElems_)
+        void getD(ScalarArray &diagElemsArg)
         {
-            diagElems_ = diagElems;
+            diagElemsArg = diagElems;
         }
 
         void transposeL()

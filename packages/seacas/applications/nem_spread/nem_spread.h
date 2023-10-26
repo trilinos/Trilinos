@@ -1,21 +1,21 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef NEM_SPREAD_H
-#define NEM_SPREAD_H
+#pragma once
+
+#include <array>
 
 #include "globals.h"
-#include "nem_spread.h"        // for NemSpread, etc
 #include "pe_str_util_const.h" // for strip_string, token_compare, etc
 #include "rf_allo.h"
 #include "rf_io_const.h"
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR   "7.01 (2021/03/19)"
+#define VER_STR   "7.02 (2023/02/06)"
 
 extern void   check_exodus_error(int, const char *);
 extern double second();
@@ -29,19 +29,21 @@ public:
   void   read_elem_blk_ids(int mesh_exoid, int max_name_length);
   void   read_elem_blk(int exoid);
   void   extract_elem_blk();
-  void   extract_global_element_ids(INT global_ids[], size_t Num_Elem, int iproc);
-  void   extract_global_node_ids(INT global_ids[], size_t Num_Node, int iproc);
+  void   extract_global_element_ids(const std::vector<INT> &global_ids, size_t Num_Elem, int iproc);
+  void   extract_global_node_ids(const std::vector<INT> &global_ids, size_t Num_Node, int iproc);
   size_t extract_elem_connect(INT elem_blk[], int icurrent_elem_blk, size_t istart_elem,
                               size_t iend_elem, int *local_ielem_blk, int iproc);
   void extract_elem_attr(T *elem_attr, int icurrent_elem_blk, size_t istart_elem, size_t iend_elem,
                          int natt_p_elem, int iproc);
-  void find_elem_block(INT *proc_elem_blk, int iproc, int proc_for);
-  void read_node_set_ids(int mesh_exoid, INT /*num_nodes_in_node_set*/[], INT /*num_df_in_nsets*/[],
-                         int max_name_length);
-  void read_side_set_ids(int mesh_exoid, INT /*num_elem_in_ssets*/[], INT /*num_df_in_ssets*/[],
-                         int max_name_length);
-  void read_node_sets(int exoid, INT * /*num_nodes_in_node_set*/, INT * /*num_df_in_nsets*/);
-  void read_side_sets(int exoid, INT * /*num_elem_in_ssets*/, INT * /*num_df_in_ssets*/);
+  void find_elem_block(std::vector<INT> &proc_elem_blk, int iproc, int proc_for);
+  void read_node_set_ids(int mesh_exoid, std::vector<INT> &num_nodes_in_node_set,
+                         std::vector<INT> &num_df_in_nsets, int max_name_length);
+  void read_side_set_ids(int mesh_exoid, std::vector<INT> &num_elem_in_ssets,
+                         std::vector<INT> &num_df_in_ssets, int max_name_length);
+  void read_node_sets(int exoid, std::vector<INT> &num_nodes_in_node_set,
+                      std::vector<INT> &num_df_in_nsets);
+  void read_side_sets(int exoid, std::vector<INT> &num_elem_in_ssets,
+                      std::vector<INT> &num_df_in_ssets);
 
   void read_nodal_vars(int mesh_exoid);
 
@@ -52,21 +54,22 @@ public:
                       int num_nset, char **ns_names, int *local_nstt, int num_sset, char **ss_names,
                       int *local_sstt);
 
-  void write_parExo_data(int mesh_exoid, int max_name_length, int iproc, INT *Num_Nodes_In_NS,
-                         INT *Num_Elems_In_SS, INT *Num_Elems_In_EB);
+  void write_parExo_data(int mesh_exoid, int max_name_length, int iproc,
+                         std::vector<INT> &Num_Nodes_In_NS, std::vector<INT> &Num_Elems_In_SS,
+                         std::vector<INT> &Num_Elems_In_EB);
 
   void write_var_timestep(int exoid, int proc, int time_step, INT *eb_ids_global,
                           INT *ss_ids_global, INT *ns_ids_global);
 
   void process_lb_data(INT *Integer_Vector, int indx);
-  void read_proc_init(int lb_exoid, int proc_info[], int **proc_ids_ptr);
-  void read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node_Num, INT *Bor_Node_Num,
-                    INT *Ext_Node_Num, INT *Int_Elem_Num, INT *Bor_Elem_Num, INT *Node_Comm_Num,
-                    INT *Elem_Comm_Num, char *Title);
+  void read_proc_init(int lb_exoid, std::array<int, 6> &proc_info, std::vector<int> &proc_ids);
+  void read_lb_init(int lb_exoid, std::vector<INT> &Int_Space, std::vector<INT> &Int_Node_Num,
+                    std::vector<INT> &Bor_Node_Num, std::vector<INT> &Ext_Node_Num,
+                    std::vector<INT> &Int_Elem_Num, std::vector<INT> &Bor_Elem_Num,
+                    std::vector<INT> &Node_Comm_Num, std::vector<INT> &Elem_Comm_Num, char *Title);
 
-  void read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *Elem_Comm_Num, INT *Num_N_Comm_Maps,
-                        INT *Num_E_Comm_Maps, ELEM_COMM_MAP<INT> **E_Comm_Map,
-                        NODE_COMM_MAP<INT> **N_Comm_Map, INT *cmap_max_size, INT **comm_vec);
+  void read_cmap_params(int lb_exoid, std::vector<ELEM_COMM_MAP<INT>> &E_Comm_Map,
+                        std::vector<NODE_COMM_MAP<INT>> &N_Comm_Map, INT *cmap_max_size);
 
   void create_elem_types();
   void read_mesh_param();
@@ -105,22 +108,22 @@ public:
    *
    *----------------------------------------------------------------------------*/
 
-  INT *Node_Set_Ids{nullptr};           /* Vector of node set ids             *
+  std::vector<INT> Node_Set_Ids;        /* Vector of node set ids             *
                                          * (ptr to vector of length,          *
                                          *  Num_Node_Set)                     */
-  INT *Side_Set_Ids{nullptr};           /* Side set ids                       *
+  std::vector<INT> Side_Set_Ids;        /* Side set ids                       *
                                          * (ptr to vector of length,          *
                                          *  Num_Side_Set)                     */
-  INT *Num_Elem_In_Blk{nullptr};        /* Number of elements in each element *
+  std::vector<INT> Num_Elem_In_Blk;     /* Number of elements in each element *
                                          * block (ptr to vector of length,    *
                                          *        Num_Elem_Blk)               */
-  INT *Num_Nodes_Per_Elem{nullptr};     /* Number of nodes per element in each*
+  std::vector<INT> Num_Nodes_Per_Elem;  /* Number of nodes per element in each*
                                          * elem block (ptr to vector of       *
                                          * length, Num_Elem_Blk)              */
-  INT *Num_Attr_Per_Elem{nullptr};      /* Number of attributes per element in*
+  std::vector<INT> Num_Attr_Per_Elem;   /* Number of attributes per element in*
                                          * each block (ptr to vector of       *
                                          * length, Num_Elem_Blk)              */
-  INT *Elem_Blk_Ids{nullptr};           /* Element block id's of each element *
+  std::vector<INT> Elem_Blk_Ids;        /* Element block id's of each element *
                                          * block (ptr to vector of length,    *
                                          *        Num_Elem_Blk)               */
   char **Elem_Blk_Types{nullptr};       /* Element block types for each       *
@@ -152,16 +155,10 @@ public:
 
   char *Coord_Name[3]{}; /* The name(s) of the coordinate axes.   */
 
-  int  Proc_Info[6]{};
-  int *Proc_Ids{nullptr};
+  std::array<int, 6> Proc_Info{};
+  std::vector<int>   Proc_Ids{};
 
-  NemSpread()
-  {
-    Coord_Name[0] = Coord_Name[1] = Coord_Name[2] = nullptr;
-    Proc_Info[0] = Proc_Info[1] = Proc_Info[2] = Proc_Info[3] = Proc_Info[4] = Proc_Info[5] = 0;
-  }
+  NemSpread() { Coord_Name[0] = Coord_Name[1] = Coord_Name[2] = nullptr; }
 
   ~NemSpread() { safe_free((void **)&GM_Elem_Types); }
 };
-
-#endif

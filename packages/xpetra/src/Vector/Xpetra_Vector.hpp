@@ -56,7 +56,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class Vector
     : public virtual MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {
@@ -79,13 +79,11 @@ namespace Xpetra {
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceLocalValue;  // overloading, not hiding
     using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue;  // overloading, not hiding
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
 
     typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
     template<class TargetDeviceType, class AccessType>
-     typename Kokkos::Impl::if_c<
+     typename std::conditional<
        std::is_same<
          typename dual_view_type::t_dev_um::execution_space::memory_space,
          typename TargetDeviceType::memory_space>::value,
@@ -94,8 +92,6 @@ namespace Xpetra {
      getLocalView (AccessType access_type) const {
        return this->MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>(access_type);
      }
-
-#endif
 
     //! @name Constructor/Destructor Methods
     //@{

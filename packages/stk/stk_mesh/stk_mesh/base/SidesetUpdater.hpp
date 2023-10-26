@@ -49,6 +49,7 @@
 #include "stk_mesh/base/SideSetEntry.hpp"
 #include "stk_mesh/base/SideSetHelper.hpp"
 #include "stk_mesh/base/SideSetUtil.hpp"
+#include <stk_mesh/baseImpl/elementGraph/GraphTypes.hpp>
 
 namespace stk { namespace mesh {
 
@@ -61,12 +62,14 @@ struct part_compare_by_ordinal {
   }
 };
 
+
 class SidesetUpdater : public ModificationObserver
 {
 public:
 
   SidesetUpdater(BulkData &bulk, Selector& active_selector)
-    : m_bulkData(bulk)
+    : ModificationObserver(ModificationObserverPriority::STK_INTERNAL_LOW_PRIORITY)
+    , m_bulkData(bulk)
     , m_metaData(bulk.mesh_meta_data())
     , m_activeSelector(active_selector)
     , m_isActive(true)
@@ -101,7 +104,7 @@ public:
       std::ostringstream oss;
       oss << fileNamePrefix << "." << m_bulkData.parallel_rank();
       m_debugOutputFileStream = std::ofstream(oss.str(), std::ofstream::out);
-      ThrowRequireMsg(m_debugOutputFileStream.fail() == false, "Failed to open debug file: " << oss.str());
+      STK_ThrowRequireMsg(m_debugOutputFileStream.fail() == false, "Failed to open debug file: " << oss.str());
       set_output_stream(m_debugOutputFileStream);
     }
 
@@ -110,6 +113,8 @@ public:
       m_warnAboutInternalSideset = flag;
       m_helper.set_warn_about_internal_sideset(flag);
     }
+
+    const impl::ParallelPartInfo& get_parallel_part_info() const { return m_helper.get_parallel_part_info(); }
 
 protected:
     BulkData &m_bulkData;
@@ -124,8 +129,6 @@ protected:
 
     std::ofstream m_debugOutputFileStream;
 };
-
-enum OPERATION {ADDED, DELETED};
 
 class ReconstructionSidesetUpdater : public SidesetUpdater
 {
@@ -163,9 +166,9 @@ private:
     bool m_internalSidesetWarningHasBeenIssued;
     std::set<const Part*> m_sidesetPartsWithDeletedEntries;
 
-    void tag_sideset(Entity entity, const Part& part, OPERATION op);
-    void insert_parts(Entity entity, const ConstPartVector& parts, OPERATION op);
-    void insert_parts(Entity entity, const OrdinalVector& parts, OPERATION op);
+    void tag_sideset(Entity entity, const Part& part);
+    void insert_parts(Entity entity, const ConstPartVector& parts);
+    void insert_parts(Entity entity, const OrdinalVector& parts);
     void fill_sidesets_element_belongs_to(Entity elem);
     void reconstruct_noninternal_sidesets(const std::vector<size_t> &reducedValues);
     void reconstruct_sidesets();
@@ -255,15 +258,9 @@ public:
     : SidesetUpdater(bulk, activeSelector)
     , m_relationUpdatesAreSorted(true)
     , m_relationUpdatesRemoved(false)
-    , m_elemChangedRankedParts(false)
+    , m_elemOrSideChangedRankedParts(false)
     {
     }
-
-    void entity_deleted(Entity entity) override;
-
-    void relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal) override;
-
-    void relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal) override;
 
     void modification_begin_notification() override;
 
@@ -271,9 +268,15 @@ public:
 
     void finished_modification_end_notification() override;
 
+    void entity_deleted(Entity entity) override;
+
     void entity_parts_added(Entity entity, const OrdinalVector& parts) override;
 
     void entity_parts_removed(Entity entity, const OrdinalVector& parts) override;
+
+    void relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal) override;
+
+    void relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal) override;
 
 private:
     std::vector<SideSet*> m_sidesets;
@@ -283,7 +286,7 @@ private:
     bool m_relationUpdatesRemoved;
     ConstPartVector m_surfacesTouchingBlocks;
     std::vector<BlockToSurfaceMapping> m_cachedBlockToSurfaceMapping;
-    bool m_elemChangedRankedParts;
+    bool m_elemOrSideChangedRankedParts;
 
     PartChangeAccumulatorVector m_accumulatedElementPartChanges;
 

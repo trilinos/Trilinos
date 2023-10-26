@@ -35,16 +35,16 @@ public:
   void setOutputCopyOfInputDatabase(bool status);
 
   bool outputCatalystMeshOneFileON();
-  bool setOutputCatalystMeshOneFile(bool status);
+  void setOutputCatalystMeshOneFile(bool status);
 
   bool outputCatalystMeshFilePerProcON();
-  bool setOutputCatalystMeshFilePerProc(bool status);
+  void setOutputCatalystMeshFilePerProc(bool status);
 
   bool forceCGNSOutputON();
-  bool setForceCGNSOutput(bool status);
+  void setForceCGNSOutput(bool status);
 
   bool forceExodusOutputON();
-  bool setForceExodusOutput(bool status);
+  void setForceExodusOutput(bool status);
 
   bool        useIOSSInputDBTypeON();
   std::string getIOSSInputDBType();
@@ -54,9 +54,11 @@ public:
   std::string getPhactoriInputScript();
   void        setPhactoriInputScript(const std::string &scriptFilePath);
 
-  bool        usePhactoriInputJSONON();
-  std::string getPhactoriInputJSON();
-  void        setPhactoriInputJSON(const std::string &jsonFilePath);
+  bool usePhactoriInputJSONON();
+
+  int         getNumberOfPhactoriInputJSONs();
+  std::string getPhactoriInputJSON(int ndx);
+  void        addPhactoriInputJSON(const std::string &jsonFilePath);
 
   bool        useParaViewExportedScriptON();
   std::string getParaViewExportedScript();
@@ -69,6 +71,9 @@ public:
   bool useCatalystStopTimeStepON();
   int  getCatalystStopTimeStep();
   void setCatalystStopTimeStep(int timeStep);
+
+  bool sendMultipleGridsToTheSamePipelineON();
+  void setSendMultipleGridsToTheSamePipeline(bool onOffFlag);
 
   std::string &getFileName(int ndx);
   int          getNumberOfFileNames();
@@ -98,7 +103,7 @@ private:
   void        addAdditionalProperties(Ioss::PropertyManager *outputProperties);
   void        callCatalystIOSSDatabaseOnRank();
   void        callCatalystIOSSDatabaseOnRankOneGrid();
-  void        callCatalystIOSSDatabaseOnRankMultiGrid();
+  void        callCatalystIOSSDatabaseOnRankMultiGrid(bool sendAllGridsToOnePipeline);
   void        openInputIOSSDatabase(int ndx);
   void        openInputIOSSDatabases();
   void        processCommandLine(int argc, char **argv);
@@ -133,11 +138,13 @@ private:
   bool        useIOSSInputDBType;
   bool        hasCommandLineArguments;
   int         applicationExitCode;
+  bool        sendMultipleGridsToTheSamePipeline;
   std::string iossInputDBType;
   std::string phactoriInputScriptFilePath;
   std::string phactoriInputJSONFilePath;
   std::string paraViewExportedScriptFilePath;
   std::vector<std::string>    fileName;
+  std::vector<std::string>    phctriInptJSONFilePathList;
   std::string                 copyOutputDatabaseName     = "iossDatabaseCopy";
   std::string                 outputCatalystMeshFileName = "iossDatabaseCatalystMesh";
   std::string                 iossReportFileName         = "IossRegionReport";

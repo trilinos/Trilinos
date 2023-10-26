@@ -1,4 +1,5 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
 smoother -> 
@@ -6,11 +7,13 @@ smoother ->
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
+ timer for apply = 0   [unused]
  subdomain solver parameters -> 
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
   fact: relative threshold = 1   [unused]
   fact: relax value = 0   [unused]
+
 Level 1
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -40,11 +43,13 @@ smoother ->
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
+ timer for apply = 0   [unused]
  subdomain solver parameters -> 
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
   fact: relative threshold = 1   [unused]
   fact: relax value = 0   [unused]
+
 Level 2
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -71,6 +76,8 @@ matrixmatrix: kernel params ->
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

@@ -55,7 +55,6 @@
 #include "MueLu_ParameterListAcceptor.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_SingleLevelFactoryBase_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 

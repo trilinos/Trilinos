@@ -9,12 +9,13 @@
 #include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_Field.h>
 #include <cstddef> // for size_t
 #include <cstdint> // for int64_t
 #include <string>  // for string
 #include <vector>  // for vector
 
-#define MAP_USE_HOPSCOTCH
+#define MAP_USE_STD
 #if defined MAP_USE_STD
 #include <unordered_map>
 #elif defined MAP_USE_HOPSCOTCH
@@ -24,13 +25,12 @@
 #endif
 
 namespace Ioss {
-  class Field;
-} // namespace Ioss
-
-namespace Ioss {
 
   using MapContainer = std::vector<int64_t>;
-#if defined MAP_USE_STD
+#if defined MAP_USE_SORTED_VECTOR
+  using IdPair              = std::pair<int64_t, int64_t>;
+  using ReverseMapContainer = std::vector<IdPair>;
+#elif defined MAP_USE_STD
   using ReverseMapContainer = std::unordered_map<int64_t, int64_t>;
 #elif defined MAP_USE_HOPSCOTCH
   // The `b` variant requires less-than-comparable key, but is faster
@@ -55,7 +55,7 @@ namespace Ioss {
     Map &operator=(const Map &from) = delete;
     ~Map()                          = default;
 
-    void   set_rank(int processor) {m_myProcessor = processor;}
+    void set_rank(int processor) { m_myProcessor = processor; }
 
     void   set_size(size_t entity_count);
     size_t size() const { return m_map.empty() ? 0 : m_map.size() - 1; }
@@ -80,6 +80,7 @@ namespace Ioss {
 
     void reverse_map_data(void *data, const Ioss::Field &field, size_t count) const;
     void map_data(void *data, const Ioss::Field &field, size_t count) const;
+    void map_data(void *data, const Ioss::Field::BasicType type, size_t count) const;
     void map_implicit_data(void *data, const Ioss::Field &field, size_t count, size_t offset) const;
 
     template <typename T>
@@ -103,7 +104,9 @@ namespace Ioss {
     int64_t global_to_local__(int64_t global, bool must_exist = true) const;
     void    build_reorder_map__(int64_t start, int64_t count);
     void    build_reverse_map__(int64_t num_to_get, int64_t offset);
-
+#if defined MAP_USE_SORTED_VECTOR
+    void verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map);
+#endif
 #if defined(IOSS_THREADSAFE)
     mutable std::mutex m_;
 #endif
@@ -112,7 +115,7 @@ namespace Ioss {
     ReverseMapContainer m_reverse{};
     std::string         m_entityType{"unknown"}; // node, element, edge, face
     std::string         m_filename{"undefined"}; // For error messages only.
-    int64_t             m_offset{-1};            // local to global offset if m_map is sequential.
+    mutable int64_t     m_offset{-1};            // local to global offset if m_map is sequential.
     int                 m_myProcessor{0};        // For error messages...
     bool m_defined{false}; // For use by some clients; not all, so don't read too much into value...
   };

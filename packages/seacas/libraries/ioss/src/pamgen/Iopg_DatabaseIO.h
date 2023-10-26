@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -65,7 +65,7 @@ namespace Iopg {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
-    const std::string get_format() const override { return "PamGen"; }
+    std::string get_format() const override { return "PamGen"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -118,33 +118,33 @@ namespace Iopg {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
-    NOOP_GFI(Ioss::Region)
-    NOOP_GFI(Ioss::EdgeBlock)
-    NOOP_GFI(Ioss::FaceBlock)
-    NOOP_GFI(Ioss::StructuredBlock)
-    NOOP_GFI(Ioss::EdgeSet)
-    NOOP_GFI(Ioss::FaceSet)
-    NOOP_GFI(Ioss::ElementSet)
-    NOOP_GFI(Ioss::SideSet)
-    NOOP_GFI(Ioss::Blob)
-    NOOP_GFI(Ioss::Assembly)
+    IOSS_NOOP_GFI(Ioss::Region)
+    IOSS_NOOP_GFI(Ioss::EdgeBlock)
+    IOSS_NOOP_GFI(Ioss::FaceBlock)
+    IOSS_NOOP_GFI(Ioss::StructuredBlock)
+    IOSS_NOOP_GFI(Ioss::EdgeSet)
+    IOSS_NOOP_GFI(Ioss::FaceSet)
+    IOSS_NOOP_GFI(Ioss::ElementSet)
+    IOSS_NOOP_GFI(Ioss::SideSet)
+    IOSS_NOOP_GFI(Ioss::Blob)
+    IOSS_NOOP_GFI(Ioss::Assembly)
 
     // Input only database -- these will never be called...
-    NOOP_PFI(Ioss::Region)
-    NOOP_PFI(Ioss::NodeBlock)
-    NOOP_PFI(Ioss::EdgeBlock)
-    NOOP_PFI(Ioss::FaceBlock)
-    NOOP_PFI(Ioss::ElementBlock)
-    NOOP_PFI(Ioss::StructuredBlock)
-    NOOP_PFI(Ioss::SideBlock)
-    NOOP_PFI(Ioss::NodeSet)
-    NOOP_PFI(Ioss::EdgeSet)
-    NOOP_PFI(Ioss::FaceSet)
-    NOOP_PFI(Ioss::ElementSet)
-    NOOP_PFI(Ioss::SideSet)
-    NOOP_PFI(Ioss::CommSet)
-    NOOP_PFI(Ioss::Assembly)
-    NOOP_PFI(Ioss::Blob)
+    IOSS_NOOP_PFI(Ioss::Region)
+    IOSS_NOOP_PFI(Ioss::NodeBlock)
+    IOSS_NOOP_PFI(Ioss::EdgeBlock)
+    IOSS_NOOP_PFI(Ioss::FaceBlock)
+    IOSS_NOOP_PFI(Ioss::ElementBlock)
+    IOSS_NOOP_PFI(Ioss::StructuredBlock)
+    IOSS_NOOP_PFI(Ioss::SideBlock)
+    IOSS_NOOP_PFI(Ioss::NodeSet)
+    IOSS_NOOP_PFI(Ioss::EdgeSet)
+    IOSS_NOOP_PFI(Ioss::FaceSet)
+    IOSS_NOOP_PFI(Ioss::ElementSet)
+    IOSS_NOOP_PFI(Ioss::SideSet)
+    IOSS_NOOP_PFI(Ioss::CommSet)
+    IOSS_NOOP_PFI(Ioss::Assembly)
+    IOSS_NOOP_PFI(Ioss::Blob)
 
     std::string databaseTitle;
 

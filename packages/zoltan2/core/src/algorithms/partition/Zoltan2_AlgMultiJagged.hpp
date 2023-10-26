@@ -3800,7 +3800,11 @@ struct ReduceWeightsFunctor {
 
     Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(teamMember, begin, end),
+#if (__cplusplus > 201703L)
+      [=, this] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
+#else
       [=] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
+#endif
 #endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
       int i = permutations(ii);
@@ -3967,7 +3971,11 @@ struct ReduceWeightsFunctor {
     teamMember.team_barrier();
 
     // collect all the team's results
+#if (__cplusplus > 201703L)
+    Kokkos::single(Kokkos::PerTeam(teamMember), [=, this] () {
+#else
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
+#endif
       for(int n = 0; n < value_count_weights; ++n) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&current_part_weights(n),
@@ -4559,7 +4567,11 @@ struct ReduceArrayFunctor {
 
     Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(teamMember, begin, end),
+#if (__cplusplus > 201703L)
+      [=, this] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
+#else
       [=] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
+#endif
 #endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
       index_t coordinate_index = permutations(ii);
@@ -4590,7 +4602,11 @@ struct ReduceArrayFunctor {
     teamMember.team_barrier();
 
     // collect all the team's results
+#if (__cplusplus > 201703L)
+    Kokkos::single(Kokkos::PerTeam(teamMember), [=, this] () {
+#else
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
+#endif
       for(int n = 0; n < value_count; ++n) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&local_point_counts(n), shared_ptr[n]);

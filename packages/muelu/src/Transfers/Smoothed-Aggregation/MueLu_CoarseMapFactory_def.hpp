@@ -121,12 +121,15 @@ namespace MueLu {
   void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCoarseMap(
     Level& currentLevel, const GlobalOrdinal domainGIDOffset) const
   {
+
     RCP<Aggregates> aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
+    GlobalOrdinal numAggs = aggregates->GetNumAggregates();
+    RCP<const Map> aggMap = aggregates->GetMap();
+
     RCP<MultiVector> nullspace = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
 
-    GlobalOrdinal numAggs = aggregates->GetNumAggregates();
     const size_t NSDim = nullspace->getNumVectors();
-    RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
+    RCP<const Teuchos::Comm<int> > comm = aggMap->getComm();
     const ParameterList & pL = GetParameterList();
 
     LocalOrdinal stridedBlockId = pL.get<LocalOrdinal>("Strided block id");
@@ -147,9 +150,9 @@ namespace MueLu {
 
     // number of coarse level dofs (fixed by number of aggregates and blocksize data)
     GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
-    GlobalOrdinal indexBase = aggregates->GetMap()->getIndexBase();
+    GlobalOrdinal indexBase = aggMap->getIndexBase();
 
-    RCP<const Map> coarseMap = StridedMapFactory::Build(aggregates->GetMap()->lib(),
+    RCP<const Map> coarseMap = StridedMapFactory::Build(aggMap->lib(),
         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
         nCoarseDofs,
         indexBase,

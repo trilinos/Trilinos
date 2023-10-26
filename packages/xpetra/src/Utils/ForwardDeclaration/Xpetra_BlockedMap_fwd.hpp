@@ -52,7 +52,7 @@ namespace Xpetra {
 }
 
 #ifndef XPETRA_BLOCKEDMAP_SHORT
-#define XPETRA_BLOCKEDAMP_SHORT
+#define XPETRA_BLOCKEDMAP_SHORT
 #endif
 
 #endif // XPETRA_BLOCKEDMAP_FWD_HPP

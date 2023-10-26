@@ -115,7 +115,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class SubdomainSolver : public Operator<SC,LO,GO,NO> {
 
     protected:

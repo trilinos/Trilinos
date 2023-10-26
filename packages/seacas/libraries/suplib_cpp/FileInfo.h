@@ -1,11 +1,9 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef FileInfo_h
-#define FileInfo_h
+#pragma once
 
 #include <ctime>       // for time_t
 #include <string>      // for string, operator!=, etc
@@ -84,4 +82,3 @@ private:
   bool        exists_{false};   ///< this is used frequently, check on creation
   bool        readable_{false}; ///< this is used frequently, check on creation
 };
-#endif

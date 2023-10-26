@@ -108,7 +108,7 @@ paraklete_symbolic *amesos_paraklete_reanalyze
     for (c = ncomponents - 1 ; c >= 0 ; c--)
     {
 	parent = Cparent [c] ;
-	nparent = (parent == EMPTY) ? 0 : Cn [parent] ;
+	nparent = (parent == TRILINOS_CHOLMOD_EMPTY) ? 0 : Cn [parent] ;
 	Cn [c] = (Cstart [c+1] - Cstart [c]) + nparent ;
 	PR1 ((Common->file, "node "ID" new Cn: "ID"\n", c, Cn [c])) ;
     }

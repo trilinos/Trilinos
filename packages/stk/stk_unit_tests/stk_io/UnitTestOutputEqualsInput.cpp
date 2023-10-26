@@ -112,8 +112,8 @@ TEST(StkMeshIoBroker, outputEqualsInput_legacy)
         //But exodiff won't say two mesh files are different if the difference is only
         //a block-ordering difference. So let's instead verify that the two ioss-regions
         //have the same element-block grouping-entities.
-        const Ioss::ElementBlockContainer& input_broker_elem_blocks = ioBroker.get_output_io_region(output_file_index)->get_element_blocks();
-        const Ioss::ElementBlockContainer& new_iobroker_elem_blocks = new_iobroker.get_output_io_region(new_iobroker_output_file_index)->get_element_blocks();
+        const Ioss::ElementBlockContainer& input_broker_elem_blocks = ioBroker.get_output_ioss_region(output_file_index)->get_element_blocks();
+        const Ioss::ElementBlockContainer& new_iobroker_elem_blocks = new_iobroker.get_output_ioss_region(new_iobroker_output_file_index)->get_element_blocks();
 
         EXPECT_EQ(input_broker_elem_blocks.size(), new_iobroker_elem_blocks.size());
         for(size_t i=0; i<input_broker_elem_blocks.size(); ++i)
@@ -124,8 +124,8 @@ TEST(StkMeshIoBroker, outputEqualsInput_legacy)
         }
 
         //now also compare names/ids of nodesets
-        const Ioss::NodeSetContainer input_broker_node_sets = ioBroker.get_output_io_region(output_file_index)->get_nodesets();
-        const Ioss::NodeSetContainer new_iobroker_node_sets = new_iobroker.get_output_io_region(output_file_index)->get_nodesets();
+        const Ioss::NodeSetContainer input_broker_node_sets = ioBroker.get_output_ioss_region(output_file_index)->get_nodesets();
+        const Ioss::NodeSetContainer new_iobroker_node_sets = new_iobroker.get_output_ioss_region(output_file_index)->get_nodesets();
         EXPECT_EQ(input_broker_node_sets.size(), new_iobroker_node_sets.size());
         for(size_t i=0; i<input_broker_node_sets.size(); ++i)
         {
@@ -245,8 +245,8 @@ TEST(StkMeshIoBroker, outputEqualsInput)
         //But exodiff won't say two mesh files are different if the difference is only
         //a block-ordering difference. So let's instead verify that the two ioss-regions
         //have the same element-block grouping-entities.
-        const Ioss::ElementBlockContainer& input_broker_elem_blocks = ioBroker.get_output_io_region(output_file_index)->get_element_blocks();
-        const Ioss::ElementBlockContainer& new_iobroker_elem_blocks = new_iobroker.get_output_io_region(new_iobroker_output_file_index)->get_element_blocks();
+        const Ioss::ElementBlockContainer& input_broker_elem_blocks = ioBroker.get_output_ioss_region(output_file_index)->get_element_blocks();
+        const Ioss::ElementBlockContainer& new_iobroker_elem_blocks = new_iobroker.get_output_ioss_region(new_iobroker_output_file_index)->get_element_blocks();
 
         EXPECT_EQ(input_broker_elem_blocks.size(), new_iobroker_elem_blocks.size());
         for(size_t i=0; i<input_broker_elem_blocks.size(); ++i)
@@ -257,8 +257,8 @@ TEST(StkMeshIoBroker, outputEqualsInput)
         }
 
         //now also compare names/ids of nodesets
-        const Ioss::NodeSetContainer input_broker_node_sets = ioBroker.get_output_io_region(output_file_index)->get_nodesets();
-        const Ioss::NodeSetContainer new_iobroker_node_sets = new_iobroker.get_output_io_region(output_file_index)->get_nodesets();
+        const Ioss::NodeSetContainer input_broker_node_sets = ioBroker.get_output_ioss_region(output_file_index)->get_nodesets();
+        const Ioss::NodeSetContainer new_iobroker_node_sets = new_iobroker.get_output_ioss_region(output_file_index)->get_nodesets();
         EXPECT_EQ(input_broker_node_sets.size(), new_iobroker_node_sets.size());
         for(size_t i=0; i<input_broker_node_sets.size(); ++i)
         {

@@ -1,4 +1,4 @@
- /*@HEADER
+/*@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
@@ -42,10 +42,13 @@
 
 /// @file Ifpack2_Details_FastILU_Base_def.hpp
 
-#ifndef __IFPACK2_FASTILU_BASE_DEF_HPP__ 
-#define __IFPACK2_FASTILU_BASE_DEF_HPP__ 
+#ifndef __IFPACK2_FASTILU_BASE_DEF_HPP__
+#define __IFPACK2_FASTILU_BASE_DEF_HPP__
 
 #include <Ifpack2_Details_CrsArrays.hpp>
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include <KokkosKernels_Utils.hpp>
 #include <Kokkos_Timer.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -154,6 +157,13 @@ setParameters (const Teuchos::ParameterList& List)
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+isBlockCrs() const
+{
+  return params_.blockCrs && params_.blockCrsSize > 1;
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initialize()
 {
@@ -168,12 +178,31 @@ initialize()
   {
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
   }
+
+  if (isBlockCrs()) {
+    auto crs_matrix = Ifpack2::Details::getCrsMatrix(this->mat_);
+
+    if (params_.fillBlocks) {
+      // Create new TCrsMatrix with the new filled data and conver to Bcrs
+      auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*crs_matrix, params_.blockCrsSize);
+      auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, params_.blockCrsSize);
+      mat_ = bcrs_matrix;
+    }
+    else {
+      // Assume input is already filled, just convert to Bcrs
+      auto bcrs_matrix = Tpetra::convertToBlockCrsMatrix(*crs_matrix, params_.blockCrsSize);
+      mat_ = bcrs_matrix;
+    }
+  }
+
   Kokkos::Timer copyTimer;
   CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
   crsCopyTime_ = copyTimer.seconds();
 
   if (params_.use_metis)
   {
+    assert(!params_.blockCrs);
     const std::string timerNameMetis ("Ifpack2::FastILU::Metis");
     Teuchos::RCP<Teuchos::Time> timerMetis = Teuchos::TimeMonitor::lookupCounter (timerNameMetis);
     if (timerMetis.is_null ()) {
@@ -252,7 +281,7 @@ initialize()
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-isInitialized() const 
+isInitialized() const
 {
   return initFlag_;
 }
@@ -320,7 +349,7 @@ getNumApply() const
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 double FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-getInitializeTime() const 
+getInitializeTime() const
 {
   return initTime_;
 }
@@ -420,6 +449,9 @@ Params::getDefaults()
   p.guessFlag = true;
   p.blockSizeILU = 1;   // # of nonzeros / thread, for fastILU
   p.blockSize = 1;      // # of rows / thread, for SpTRSV
+  p.blockCrs = false;   // whether to use block CRS for fastILU
+  p.blockCrsSize = 1;   // block size for block CRS
+  p.fillBlocks = false; // whether input matrix needs to be filled
   return p;
 }
 
@@ -428,9 +460,8 @@ FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Params::Params(const Teuchos::ParameterList& pL, std::string precType)
 {
   *this = getDefaults();
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
   //For each parameter, check that if the parameter exists, it has the right type
-  //Then get the value and sanity check it 
+  //Then get the value and sanity check it
   //If the parameter doesn't exist, leave it as default (from Params::getDefaults())
   //"sweeps" aka nFact
   #define TYPE_ERROR(name, correctTypeName) {throw std::invalid_argument(precType + "::setParameters(): parameter \"" + name + "\" has the wrong type (must be " + correctTypeName + ")");}
@@ -452,7 +483,7 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
       nFact = pL.get<int>("sweeps");
       CHECK_VALUE("sweeps", nFact, nFact < 1, "must have a value of at least 1");
     }
-    else 
+    else
       TYPE_ERROR("sweeps", "int");
   }
   std::string sptrsv_type = "Fast";
@@ -499,27 +530,19 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     }
     CHECK_VALUE("level", level, level < 0, "must be nonnegative");
   }
-  //"damping factor" aka omega -- try both double and magnitude as type
   if(pL.isParameter("damping factor"))
   {
     if(pL.isType<double>("damping factor"))
       omega = pL.get<double>("damping factor");
-    else if(pL.isType<magnitude>("damping factor"))
-      omega = pL.get<magnitude>("damping factor");
     else
-      TYPE_ERROR("damping factor", "double or magnitude_type");
-    CHECK_VALUE("damping factor", omega, omega <= 0 || omega > 1, "must be in the range (0, 1]");
+      TYPE_ERROR("damping factor", "double");
   }
-  //"shift" -- also try both double and magnitude
   if(pL.isParameter("shift"))
   {
     if(pL.isType<double>("shift"))
       shift = pL.get<double>("shift");
-    else if(pL.isType<magnitude>("shift"))
-      shift = pL.get<magnitude>("shift");
     else
-      TYPE_ERROR("shift", "double or magnitude_type");
-    //no hard requirements for shift value so don't
+      TYPE_ERROR("shift", "double");
   }
   //"guess" aka guessFlag
   if(pL.isParameter("guess"))
@@ -537,7 +560,7 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
       blockSizeILU = pL.get<int>("block size for ILU");
       CHECK_VALUE("block size for ILU", blockSizeILU, blockSizeILU < 1, "must have a value of at least 1");
     }
-    else 
+    else
       TYPE_ERROR("block size for ILU", "int");
   }
   //"block size" aka blkSz
@@ -548,9 +571,34 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     else
       TYPE_ERROR("block size for SpTRSV", "int");
   }
+  //"block crs" aka blockCrs
+  if(pL.isParameter("block crs"))
+  {
+    if(pL.isType<bool>("block crs"))
+      blockCrs = pL.get<bool>("block crs");
+    else
+      TYPE_ERROR("block crs", "bool");
+  }
+  //"block crs block size" aka blockCrsSize
+  if(pL.isParameter("block crs block size"))
+  {
+    if(pL.isType<int>("block crs block size"))
+      blockCrsSize = pL.get<int>("block crs block size");
+    else
+      TYPE_ERROR("block crs block size", "int");
+  }
+  //"fill blocks for input" aka fillBlocks
+  if(pL.isParameter("fill blocks for input"))
+  {
+    if(pL.isType<bool>("fill blocks for input"))
+      blockCrsSize = pL.get<bool>("fill blocks for input");
+    else
+      TYPE_ERROR("fill blocks for input", "bool");
+  }
+
   #undef CHECK_VALUE
   #undef TYPE_ERROR
-} 
+}
 
 #define IFPACK2_DETAILS_FASTILU_BASE_INSTANT(S, L, G, N) \
 template class Ifpack2::Details::FastILU_Base<S, L, G, N>;
@@ -559,4 +607,3 @@ template class Ifpack2::Details::FastILU_Base<S, L, G, N>;
 } //namespace Ifpack2
 
 #endif
-

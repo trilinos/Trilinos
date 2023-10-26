@@ -133,7 +133,7 @@ enum BASKER_INCOMPLETE_CODE
 #define BASKER_SYMBOLIC_TREE basker_symbolic_tree<BASKER_INT, BASKER_ENTRY, BASKER_EXE_SPACE>
 #define BASKER_THREAD        basker_thread<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
 //Macro Arrays
-#define KOKKOS_NOINIT             Kokkos::ViewAllocateWithoutInitializing
+#define BASKER_KOKKOS_NOINIT             Kokkos::ViewAllocateWithoutInitializing
 #define INT_1DARRAY               Kokkos::View<BASKER_INT*,          BASKER_EXE_SPACE>
 #define INT_2DARRAY               Kokkos::View<INT_1DARRAY*,         BASKER_EXE_SPACE> 
 #define ENTRY_1DARRAY             Kokkos::View<BASKER_ENTRY*,        BASKER_EXE_SPACE>
@@ -154,7 +154,7 @@ enum BASKER_INCOMPLETE_CODE
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC malloc_pairs_1d: size to alloc >= 0 fails"); \
     if (s > 0) {                                          \
-      a = INT_1DARRAY_PAIRS(KOKKOS_NOINIT("pairs_1d"),s); \
+      a = INT_1DARRAY_PAIRS(BASKER_KOKKOS_NOINIT("pairs_1d"),s); \
       if(a.data() == NULL)                                \
         throw std::bad_alloc();                           \
     }                                                     \
@@ -163,7 +163,7 @@ enum BASKER_INCOMPLETE_CODE
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC int_1d: size to alloc >= 0 fails"); \
     if (s > 0) {                                  \
-      a = INT_1DARRAY(KOKKOS_NOINIT("int_1d"),s); \
+      a = INT_1DARRAY(BASKER_KOKKOS_NOINIT("int_1d"),s); \
       if(a.data() == NULL)                        \
         throw std::bad_alloc();                   \
     }                                             \
@@ -181,7 +181,7 @@ enum BASKER_INCOMPLETE_CODE
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC entry_1d: size to alloc >= 0 fails"); \
     if (s > 0) {                                      \
-      a = ENTRY_1DARRAY(KOKKOS_NOINIT("entry_1d"),s); \
+      a = ENTRY_1DARRAY(BASKER_KOKKOS_NOINIT("entry_1d"),s); \
       if(a.data() == NULL)                            \
         throw std::bad_alloc();                       \
     }                                                 \
@@ -199,7 +199,7 @@ enum BASKER_INCOMPLETE_CODE
   { \
     BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC bool_1d: size to alloc >= 0 fails"); \
     if (s > 0) {                                     \
-      a = BOOL_1DARRAY(KOKKOS_NOINIT("bool_1d"), s); \
+      a = BOOL_1DARRAY(BASKER_KOKKOS_NOINIT("bool_1d"), s); \
       if(a.data() == NULL)                           \
         throw std::bad_alloc();                      \
     }                                                \

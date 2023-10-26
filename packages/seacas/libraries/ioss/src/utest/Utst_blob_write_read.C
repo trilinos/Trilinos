@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -58,7 +58,7 @@ namespace {
   }
 } // namespace
 
-int main(int argc, char *argv[])
+int main(IOSS_MAYBE_UNUSED int argc, IOSS_MAYBE_UNUSED char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
@@ -87,7 +87,7 @@ void write_blob()
   Ioss::DatabaseIO *dbo =
       Ioss::IOFactory::create("exodus", "ioss_blob_example.e", Ioss::WRITE_RESTART,
                               Ioss::ParallelUtils::comm_world(), properties);
-  if (dbo == NULL || !dbo->ok(true)) {
+  if (dbo == nullptr || !dbo->ok(true)) {
     std::exit(EXIT_FAILURE);
   }
 
@@ -104,21 +104,21 @@ void write_blob()
   size_t my_rank  = dbo->util().parallel_rank();
 
   // Define a blob -- give name and size
-  auto        count_offset = get_blob_size(b1_size, par_size, my_rank);
-  Ioss::Blob *blob1        = new Ioss::Blob(dbo, "Tempus", count_offset.first);
+  auto  count_offset = get_blob_size(b1_size, par_size, my_rank);
+  auto *blob1        = new Ioss::Blob(dbo, "Tempus", count_offset.first);
   region.add(blob1);
 
   // NOTE: These properties are not needed for serial case, but don't cause problems
   blob1->property_add(Ioss::Property("global_size", (int64_t)b1_size));
 
-  count_offset      = get_blob_size(b2_size, par_size, my_rank);
-  Ioss::Blob *blob2 = new Ioss::Blob(dbo, "Solver", count_offset.first);
+  count_offset = get_blob_size(b2_size, par_size, my_rank);
+  auto *blob2  = new Ioss::Blob(dbo, "Solver", count_offset.first);
   region.add(blob2);
 
   blob2->property_add(Ioss::Property("global_size", (int64_t)b2_size));
 
-  count_offset      = get_blob_size(b3_size, par_size, my_rank);
-  Ioss::Blob *blob3 = new Ioss::Blob(dbo, "ABlob", count_offset.first);
+  count_offset = get_blob_size(b3_size, par_size, my_rank);
+  auto *blob3  = new Ioss::Blob(dbo, "ABlob", count_offset.first);
   region.add(blob3);
 
   blob3->property_add(Ioss::Property("global_size", (int64_t)b3_size));
@@ -170,7 +170,7 @@ void write_blob()
   region.begin_mode(Ioss::STATE_TRANSIENT);
   const size_t num_ts = 10;
   for (size_t ts = 0; ts < num_ts; ts++) {
-    double time = ts / 10.0;
+    double time = ts;
     auto   step = region.add_state(time);
     region.begin_state(step);
 
@@ -214,7 +214,7 @@ bool read_blob()
   Ioss::DatabaseIO *dbi =
       Ioss::IOFactory::create("exodus", "ioss_blob_example.e", Ioss::READ_RESTART,
                               Ioss::ParallelUtils::comm_world(), properties);
-  if (dbi == NULL || !dbi->ok(true)) {
+  if (dbi == nullptr || !dbi->ok(true)) {
     std::exit(EXIT_FAILURE);
   }
 
@@ -277,6 +277,12 @@ bool read_blob()
         if (data != gold) {
           std::cout << "Difference for field " << field << " on blob " << blob->name()
                     << " at step " << step << "\n";
+          for (size_t i = 0; i < data.size(); i++) {
+            if (data[i] != gold[i]) {
+              std::cout << "Difference at index " << i << ", Data[i] = " << data[i]
+                        << ", Gold[i] = " << gold[i] << "\n";
+            }
+          }
           diff = true;
         }
       }

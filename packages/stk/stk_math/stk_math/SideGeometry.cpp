@@ -37,7 +37,7 @@ PointGeometry::PointGeometry(const stk::math::Vector3d & n)
 const stk::math::Vector3d &
 PointGeometry::node(int index) const
 {
-  ThrowAssert(index==0);
+  STK_ThrowAssert(index==0);
   return m_nodeData;
 }
 
@@ -70,7 +70,7 @@ LineGeometry::LineGeometry(const stk::math::Vector3d & n0,
 const stk::math::Vector3d &
 LineGeometry::node(int index) const
 {
-  ThrowAssert(index>=0 && index < 2);
+  STK_ThrowAssert(index>=0 && index < 2);
   return m_nodeData[index];
 }
  
@@ -128,7 +128,7 @@ TriGeometry::TriGeometry(const stk::math::Vector3d & n0,
 const stk::math::Vector3d &
 TriGeometry::node(int index) const
 {
-  ThrowAssert(index>=0 && index < 3);
+  STK_ThrowAssert(index>=0 && index < 3);
   return m_nodeData[index];
 }
 
@@ -212,7 +212,7 @@ QuadGeometry::QuadGeometry(const stk::math::Vector3d & n0,
 const stk::math::Vector3d &
 QuadGeometry::node(int index) const
 {
-  ThrowAssert(index>=0 && index < 4);
+  STK_ThrowAssert(index>=0 && index < 4);
   return m_nodeData[index];
 }
 

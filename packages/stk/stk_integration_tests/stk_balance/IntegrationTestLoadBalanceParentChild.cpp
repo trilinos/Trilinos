@@ -123,7 +123,7 @@ public:
   stk::mesh::Entity get_parent_element(stk::mesh::Entity childElement) const
   {
     stk::mesh::Entity familyTree = get_family_tree(childElement);
-    ThrowRequire(familyTree != stk::mesh::Entity::InvalidEntity);
+    STK_ThrowRequire(familyTree != stk::mesh::Entity::InvalidEntity);
     return get_parent_from_family_tree(familyTree);
   }
 
@@ -183,7 +183,7 @@ private:
   stk::mesh::Entity get_parent_from_family_tree(stk::mesh::Entity familyTree) const {
     const stk::mesh::Entity* entityStart = m_stkMeshBulkData.begin(familyTree, stk::topology::ELEMENT_RANK);
     const stk::mesh::Entity* entityEnd   = m_stkMeshBulkData.end  (familyTree, stk::topology::ELEMENT_RANK);
-    ThrowRequire(entityStart != entityEnd);
+    STK_ThrowRequire(entityStart != entityEnd);
     return (*entityStart);
   }
 
@@ -362,13 +362,13 @@ public:
 
   stk::mesh::MetaData& get_meta()
   {
-    ThrowRequireMsg(m_metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
+    STK_ThrowRequireMsg(m_metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
     return *m_metaData;
   }
 
   stk::mesh::BulkData& get_bulk()
   {
-    ThrowRequireMsg(m_bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
+    STK_ThrowRequireMsg(m_bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
     return *m_bulkData;
   }
 
@@ -397,11 +397,11 @@ protected:
 
   void register_fields()
   {
-    m_elementWeightField = & get_meta().declare_field<double>(stk::topology::ELEM_RANK, "Element Weights", 1);
+    m_elementWeightField = & get_meta().declare_field<double>(stk::topology::ELEM_RANK, "Element Weights");
     stk::mesh::put_field_on_mesh(*m_elementWeightField, get_meta().universal_part(), nullptr);
 
-    stk::mesh::FieldBase & coordinateField = get_meta().declare_field<double>(stk::topology::NODE_RANK, "model_coordinates", 2);
-    stk::mesh::put_field_on_mesh(coordinateField, get_meta().universal_part(), nullptr);
+    stk::mesh::FieldBase & coordinateField = get_meta().declare_field<double>(stk::topology::NODE_RANK, "model_coordinates");
+    stk::mesh::put_field_on_mesh(coordinateField, get_meta().universal_part(), get_meta().spatial_dimension(), nullptr);
   }
 
   void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)

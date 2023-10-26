@@ -45,7 +45,7 @@
 
 // Panzer
 #include "PanzerDiscFE_config.hpp"
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_KokkosUtils_VectorToView.hpp"
 #endif
 
@@ -89,7 +89,7 @@ public:
   //! Get the ghosted vector
   virtual Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const = 0;
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
   /**
    *  \brief Element access.
    *

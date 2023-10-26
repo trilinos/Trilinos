@@ -61,7 +61,6 @@
 
 #include "MueLu_BelosSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -77,10 +76,8 @@ namespace MueLu {
   : type_(type)
   {
     bool solverSupported = false;
-#ifdef HAVE_MUELU_TPETRA
     Belos::SolverFactory<Scalar,tMV,tOP> tFactory;
     solverSupported = solverSupported || tFactory.isSupported(type);
-#endif
     // if (!solverSupported) {
     //   Teuchos::Array<std::string> supportedSolverNames = factory.supportedSolverNames();
 
@@ -130,7 +127,6 @@ namespace MueLu {
     bool useTpetra = A_->getRowMap()->lib() == Xpetra::UseTpetra;
 
     if (useTpetra) {
-#ifdef HAVE_MUELU_TPETRA
       tBelosProblem_ = rcp(new Belos::LinearProblem<Scalar, tMV, tOP>());
       RCP<tOP> tA = Utilities::Op2NonConstTpetraCrs(A_);
       tBelosProblem_->setOperator(tA);
@@ -138,7 +134,6 @@ namespace MueLu {
       Belos::SolverFactory<SC, tMV, tOP> solverFactory;
       tSolver_ = solverFactory.create(type_, rcpFromRef(const_cast<ParameterList&>(this->GetParameterList())));
       tSolver_->setProblem(tBelosProblem_);
-#endif
     } else {
       TEUCHOS_ASSERT(false);
     }
@@ -149,7 +144,6 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::BelosSmoother::Apply(): Setup() has not been called");
 
     if (A_->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
       if (InitialGuessIsZero) {
         X.putScalar(0.0);
 
@@ -174,7 +168,6 @@ namespace MueLu {
 
         X.update(TST::one(), *Correction, TST::one());
       }
-#endif
     } else {
       TEUCHOS_ASSERT(false);
     }
@@ -193,9 +186,7 @@ namespace MueLu {
     std::ostringstream out;
     if (SmootherPrototype::IsSetup()) {
       if (A_->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef MUELU_HAVE_TPETRA
         out << tSolver_->description();
-#endif
       }
     } else {
       out << "BELOS {type = " << type_ << "}";
@@ -214,21 +205,17 @@ namespace MueLu {
     }
 
     if (verbLevel & External) {
-#ifdef MUELU_HAVE_TPETRA
       if (tSolver_ != Teuchos::null) {
         Teuchos::OSTab tab2(out);
         out << *tSolver_ << std::endl;
       }
-#endif
     }
 
     if (verbLevel & Debug) {
       if (A_->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef MUELU_HAVE_TPETRA
         out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
              << "-" << std::endl
              << "RCP<solver_>: " << tSolver_ << std::endl;
-#endif
       }
     }
   }

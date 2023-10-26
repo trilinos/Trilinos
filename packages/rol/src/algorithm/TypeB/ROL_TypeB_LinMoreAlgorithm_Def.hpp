@@ -371,7 +371,6 @@ Real LinMoreAlgorithm<Real>::dcauchy(Vector<Real> &s,
                                      Vector<Real> &dwa, Vector<Real> &dwa1,
                                      std::ostream &outStream) {
   const Real half(0.5);
-  // const Real zero(0); // Unused
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   bool interp = false;
   Real gs(0), snorm(0);
@@ -383,7 +382,6 @@ Real LinMoreAlgorithm<Real>::dcauchy(Vector<Real> &s,
   else {
     model.hessVec(dwa,s,x,tol); nhess_++;
     gs = s.dot(g);
-    //q  = half * s.dot(dwa.dual()) + gs;
     q  = half * s.apply(dwa) + gs;
     interp = (q > mu0_*gs);
   }
@@ -391,17 +389,20 @@ Real LinMoreAlgorithm<Real>::dcauchy(Vector<Real> &s,
   int cnt = 0;
   if (interp) {
     bool search = true;
-    while (search) {
+    while (search && cnt < redlim_) {
       alpha *= interpf_;
-      snorm = dgpstep(s,g,x,-alpha,outStream);
+      snorm  = dgpstep(s,g,x,-alpha,outStream);
       if (snorm <= del) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
-        //q  = half * s.dot(dwa.dual()) + gs;
         q  = half * s.apply(dwa) + gs;
-        search = (q > mu0_*gs) && (cnt < redlim_);
+        search = (q > mu0_*gs);
       }
       cnt++;
+    }
+    if (cnt >= redlim_ && q > mu0_*gs) {
+      outStream << "Cauchy point: The interpolation limit was met without producing sufficient decrease." << std::endl;
+      outStream << "              Lin-More trust-region algorithm may not converge!" << std::endl;
     }
   }
   else {
@@ -411,11 +412,10 @@ Real LinMoreAlgorithm<Real>::dcauchy(Vector<Real> &s,
     dwa1.set(dwa);
     while (search) {
       alpha *= extrapf_;
-      snorm = dgpstep(s,g,x,-alpha,outStream);
+      snorm  = dgpstep(s,g,x,-alpha,outStream);
       if (snorm <= del && cnt < explim_) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
-        //q  = half * s.dot(dwa.dual()) + gs;
         q  = half * s.apply(dwa) + gs;
         if (q <= mu0_*gs && std::abs(q-qs) > qtol_*std::abs(qs)) {
           dwa1.set(dwa);
@@ -456,7 +456,7 @@ Real LinMoreAlgorithm<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
                                      BoundConstraint<Real> &bnd,
                                      Vector<Real> &pwa, Vector<Real> &dwa,
                                      std::ostream &outStream) {
-  const Real half(0.5);
+  const Real zero(0.0), half(0.5);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   Real beta(1), snorm(0), gs(0);
   int nsteps = 0;
@@ -469,7 +469,7 @@ Real LinMoreAlgorithm<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     gs = pwa.dot(g);
     //q  = half * pwa.dot(dwa.dual()) + gs;
     q  = half * pwa.apply(dwa) + gs;
-    if (q <= mu0_*gs || nsteps > pslim_) {
+    if (q <= mu0_*std::min(gs,zero) || nsteps > pslim_) {
       search = false;
     }
     else {
@@ -644,105 +644,105 @@ void LinMoreAlgorithm<Real>::applyFreePrecond(Vector<Real> &hv,
 
 template<typename Real>
 void LinMoreAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
+  std::ios_base::fmtflags osFlags(os.flags());
   if (verbosity_ > 1) {
-    hist << std::string(114,'-') << std::endl;
-    hist << " Lin-More trust-region method status output definitions" << std::endl << std::endl;
-    hist << "  iter    - Number of iterates (steps taken)" << std::endl;
-    hist << "  value   - Objective function value" << std::endl; 
-    hist << "  gnorm   - Norm of the gradient" << std::endl;
-    hist << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  delta   - Trust-Region radius" << std::endl;
-    hist << "  #fval   - Number of times the objective function was evaluated" << std::endl;
-    hist << "  #grad   - Number of times the gradient was computed" << std::endl;
-    hist << "  #hess   - Number of times the Hessian was applied" << std::endl;
-    hist << "  #proj   - Number of times the projection was applied" << std::endl;
-    hist << std::endl;
-    hist << "  tr_flag - Trust-Region flag" << std::endl;
+    os << std::string(114,'-') << std::endl;
+    os << " Lin-More trust-region method status output definitions" << std::endl << std::endl;
+    os << "  iter    - Number of iterates (steps taken)" << std::endl;
+    os << "  value   - Objective function value" << std::endl; 
+    os << "  gnorm   - Norm of the gradient" << std::endl;
+    os << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
+    os << "  delta   - Trust-Region radius" << std::endl;
+    os << "  #fval   - Number of times the objective function was evaluated" << std::endl;
+    os << "  #grad   - Number of times the gradient was computed" << std::endl;
+    os << "  #hess   - Number of times the Hessian was applied" << std::endl;
+    os << "  #proj   - Number of times the projection was applied" << std::endl;
+    os << std::endl;
+    os << "  tr_flag - Trust-Region flag" << std::endl;
     for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
-      hist << "    " << NumberToString(flag) << " - "
+      os << "    " << NumberToString(flag) << " - "
            << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
     }
-    hist << std::endl;
+    os << std::endl;
     if (minit_ > 0) {
-      hist << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
-      hist << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
+      os << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
+      os << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
       for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
-        hist << "    " << NumberToString(flag) << " - "
+        os << "    " << NumberToString(flag) << " - "
              << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
       }
     }
-    hist << std::string(114,'-') << std::endl;
+    os << std::string(114,'-') << std::endl;
   }
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(15) << std::left << "delta";
-  hist << std::setw(10) << std::left << "#fval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(10) << std::left << "#hess";
-  hist << std::setw(10) << std::left << "#proj";
-  hist << std::setw(10) << std::left << "tr_flag";
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(15) << std::left << "delta";
+  os << std::setw(10) << std::left << "#fval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(10) << std::left << "#hess";
+  os << std::setw(10) << std::left << "#proj";
+  os << std::setw(10) << std::left << "tr_flag";
   if (minit_ > 0) {
-    hist << std::setw(10) << std::left << "iterCG";
-    hist << std::setw(10) << std::left << "flagCG";
+    os << std::setw(10) << std::left << "iterCG";
+    os << std::setw(10) << std::left << "flagCG";
   }
-  hist << std::endl;
-  os << hist.str();
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void LinMoreAlgorithm<Real>::writeName( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << std::endl << "Lin-More Trust-Region Method (Type B, Bound Constraints)" << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::endl << "Lin-More Trust-Region Method (Type B, Bound Constraints)" << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void LinMoreAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << nhess_;
-    hist << std::setw(10) << std::left << state_->nproj;
-    hist << std::setw(10) << std::left << "---";
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << nhess_;
+    os << std::setw(10) << std::left << state_->nproj;
+    os << std::setw(10) << std::left << "---";
     if (minit_ > 0) {
-      hist << std::setw(10) << std::left << "---";
-      hist << std::setw(10) << std::left << "---";
+      os << std::setw(10) << std::left << "---";
+      os << std::setw(10) << std::left << "---";
     }
-    hist << std::endl;
+    os << std::endl;
   }
   else {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << state_->snorm;
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << nhess_;
-    hist << std::setw(10) << std::left << state_->nproj;
-    hist << std::setw(10) << std::left << TRflag_;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << nhess_;
+    os << std::setw(10) << std::left << state_->nproj;
+    os << std::setw(10) << std::left << TRflag_;
     if (minit_ > 0) {
-      hist << std::setw(10) << std::left << SPiter_;
-      hist << std::setw(10) << std::left << SPflag_;
+      os << std::setw(10) << std::left << SPiter_;
+      os << std::setw(10) << std::left << SPflag_;
     }
-    hist << std::endl;
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 
 } // namespace TypeB

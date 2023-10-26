@@ -48,7 +48,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2)
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -75,7 +75,6 @@
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -135,6 +134,9 @@ namespace MueLu {
     paramList.setParameters(list);
 
     RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
+
+    // Do we want an Ifpack2 apply timer?
+    precList->set("timer for apply", this->IsPrint(Timings));
 
     if(!precList.is_null() && precList->isParameter("partitioner: type") && precList->get<std::string>("partitioner: type") == "linear" &&
        !precList->isParameter("partitioner: local parts")) {
@@ -1090,5 +1092,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_IFPACK2
+#endif // HAVE_MUELU_IFPACK2
 #endif // MUELU_IFPACK2SMOOTHER_DEF_HPP

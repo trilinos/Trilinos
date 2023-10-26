@@ -87,8 +87,6 @@ namespace {
   using Amesos2::MatrixAdapter;
   using Amesos2::MatrixTraits;
 
-  using Amesos2::Meta::is_same;
-
   using Amesos2::ROOTED;
   using Amesos2::GLOBALLY_REPLICATED;
 
@@ -159,7 +157,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos2::is_same<> )
+     * - Correct typedefs
      */
     typedef Epetra_CrsMatrix MAT;
     typedef MatrixAdapter<MAT> ADAPT;
@@ -206,12 +204,12 @@ namespace {
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(eye);
 
     // The following should all pass at compile time
-    TEST_ASSERT( (is_same<double,ADAPT::scalar_t>::value) );
-    TEST_ASSERT( (is_same<int,ADAPT::local_ordinal_t>::value) );
+    TEST_ASSERT( (std::is_same_v<double,ADAPT::scalar_t>) );
+    TEST_ASSERT( (std::is_same_v<int,ADAPT::local_ordinal_t>) );
     // mfh 23 Apr 2019: I have removed the requirement that
     // ADAPT::global_ordinal_t == int.
-    TEST_ASSERT( (is_same<size_t,ADAPT::global_size_t>::value) );
-    TEST_ASSERT( (is_same<MAT,ADAPT::matrix_t>::value) );
+    TEST_ASSERT( (std::is_same_v<size_t,ADAPT::global_size_t>) );
+    TEST_ASSERT( (std::is_same_v<MAT,ADAPT::matrix_t>) );
 
   }
 

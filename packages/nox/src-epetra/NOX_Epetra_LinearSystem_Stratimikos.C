@@ -50,7 +50,7 @@
 
 #include "NOX_Epetra_LinearSystem_Stratimikos.H"    // class definition
 
-#ifdef HAVE_NOX_STRATIMIKOS
+#ifdef NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
 
 // NOX includes
 #include "NOX_Epetra_Interface_Jacobian.H"
@@ -403,7 +403,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
        << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
        << "Please set the \"Write Linear System\" parameter to false."
        << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
     EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix,
                        "test matrix", "Jacobian XXX");
@@ -632,7 +632,7 @@ throwError(const std::string& functionName, const std::string& errorMsg) const
     utils.out() << "NOX::Epetra::LinearSystemStratimikos::" << functionName
      << " - " << errorMsg << std::endl;
   }
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 //***********************************************************************
@@ -859,4 +859,4 @@ double NOX::Epetra::LinearSystemStratimikos::
 getAchievedTol() {return linearSolveAchievedTol;}
 //***********************************************************************
 
-#endif //HAVE_NOX_STRATIMIKOS
+#endif // NOX_ENABLE_STRATIMIKOS_EPETRA_STACK

@@ -146,7 +146,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
       utilsPtr->err() << "NOX::Direction::Tensor::reset() - The choice of "
        << "\"Method\" parameter \"" << choice
        << "\" is invalid." << std::endl;
-    throw "NOX error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Make a reference to the sublist holding the global strategy parameters
@@ -194,7 +194,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
       utilsPtr->err() << "NOX::Direction::Tensor::reset() - The choice of "
        << "\"Line Search\" parameter " << choice
        << " is invalid." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
   //  Copy Method into "Submethod" (temporary hack for data scripts)
   lsParams.set("Submethod", choice);
@@ -212,7 +212,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   {
     utilsPtr->err() << "NOX::Solver::TensorBased::reset() - "
      << "Invalid \"Recovery Step Type\"" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Initialize linesearch parameters for this object
@@ -233,7 +233,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
       utilsPtr->err() << "NOX::Solver::TensorBased::reset() - The choice of "
        << "\"Lambda Selection\" parameter " << choice
        << " is invalid." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   choice = gsParams.get("Sufficient Decrease Condition",
@@ -250,7 +250,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
       utilsPtr->err() << "NOX::Solver::TensorBased::reset() - The choice of "
        << "\"Sufficient Decrease Condition\" parameter " << choice
        << " is invalid." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   init();
@@ -312,7 +312,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
     if (rtype != NOX::Abstract::Group::Ok) {
       utilsPtr->err() << "NOX::Solver::TensorBased::init - "
               << "Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Test the initial guess
@@ -1165,6 +1165,6 @@ void NOX::Solver::TensorBased::throwError(const std::string& functionName,
   if (utilsPtr->isPrintType(NOX::Utils::Error))
     utilsPtr->err() << "NOX::Solver::TensorBased::" << functionName
      << " - " << errorMsg << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 

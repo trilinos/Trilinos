@@ -50,9 +50,7 @@
 
 #include "MueLu_StructuredLineDetectionFactory_decl.hpp"
 
-#include "MueLu_FactoryManager.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_MasterList.hpp"
 
 namespace MueLu {
 

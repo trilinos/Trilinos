@@ -598,8 +598,8 @@ void TextMeshFixture::CoordinateVerifier::verify_num_nodes()
 
 const double* TextMeshFixture::CoordinateVerifier::get_nodal_coordinates(const stk::mesh::EntityId& nodeId)
 {
-  const stk::mesh::CoordinatesField& coordsField =
-      static_cast<const stk::mesh::CoordinatesField&>(*meta.coordinate_field());
+  const stk::mesh::Field<double>& coordsField =
+      static_cast<const stk::mesh::Field<double>&>(*meta.coordinate_field());
   return stk::mesh::field_data(coordsField, get_node(nodeId));
 }
 

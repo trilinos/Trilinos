@@ -25,7 +25,7 @@
 
       bool isParent = m_eMesh.hasFamilyTree(entity) && m_eMesh.isParentElement(entity, false);
 
-      RefineFieldType_type *fdata = 0;
+      RefineFieldType::value_type *fdata = 0;
       if (m_field && m_field->entity_rank() == m_eMesh.entity_rank(entity))
         {
           //fdata = m_eMesh.field_data( *static_cast<const TransitionElementType *>(m_field) , entity );

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -325,20 +325,12 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
 
   if (problem.read_coords == ELB_TRUE) {
     size_t mem_req = (size_t)(mesh.num_dims) * (mesh.num_nodes) * sizeof(float);
-    mesh.coords    = reinterpret_cast<float *>(malloc(mem_req));
-    if (!(mesh.coords)) {
-      Gen_Error(0, "fatal: insufficient memory for coordinates");
-      error_report();
-      exit(1);
-    }
-  }
-  else {
-    mesh.coords = nullptr;
+    mesh.coords.resize(mem_req);
   }
 
-  mesh.elem_type = static_cast<E_Type *>(array_alloc(1, mesh.num_elems, sizeof(E_Type)));
+  mesh.elem_type.resize(mesh.num_elems);
   mesh.connect = static_cast<INT **>(array_alloc(2, mesh.num_elems, mesh.max_np_elem, sizeof(INT)));
-  if (!(mesh.elem_type) || !(mesh.connect)) {
+  if (!(mesh.connect)) {
     Gen_Error(0, "fatal: insufficient memory");
     error_report();
     exit(1);
@@ -386,9 +378,9 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   }
 
   /* free up memory */
-  if (sphere.adjust) {
-    free(sphere.adjust);
-  }
+  sphere.adjust.clear();
+  sphere.begin.clear();
+  sphere.end.clear();
 
 #ifdef PRINT_VERT
   for (size_t cnt = 0; cnt < problem.num_vertices; cnt++)
@@ -436,10 +428,10 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
 
   /* Free up memory no longer needed */
   if (problem.read_coords == ELB_TRUE) {
-    free(mesh.coords);
+    mesh.coords.clear();
   }
 
-  free(mesh.elem_type);
+  mesh.elem_type.clear();
   free(mesh.connect);
 
   if (!graph.sur_elem.empty()) {

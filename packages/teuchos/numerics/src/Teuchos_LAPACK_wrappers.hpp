@@ -215,6 +215,9 @@
 #define ZLARND_F77  F77_BLAS_MANGLE(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_BLAS_MANGLE(zlarnv,ZLARNV)
 #define ZGEQP3_F77  F77_BLAS_MANGLE(zgeqp3,ZGEQP3)
+#define TEUCHOS_LAPACK_CONVERT_COMPLEX_FORTRAN_TO_CXX(TYPE, Z) \
+   reinterpret_cast<std::complex<TYPE>&>(Z);
+// NOTE: The above is guaranteed to be okay given the C99 and C++11 standards
 
 #endif /* HAVE_TEUCHOS_COMPLEX */
 

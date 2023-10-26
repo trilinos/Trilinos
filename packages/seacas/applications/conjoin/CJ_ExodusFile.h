@@ -1,10 +1,9 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef SEACAS_ExodusFile_H
-#define SEACAS_ExodusFile_H
+#pragma once
 
 #include "CJ_CodeTypes.h"
 #include <string>
@@ -18,6 +17,7 @@ namespace Excn {
   public:
     explicit ExodusFile(size_t which);
     ~ExodusFile();
+
     ExodusFile(const ExodusFile &)           = delete;
     ExodusFile operator=(const ExodusFile &) = delete;
 
@@ -43,4 +43,3 @@ namespace Excn {
     static int                      exodusMode_;
   };
 } // namespace Excn
-#endif /* SEACAS_ExodusFil_H */

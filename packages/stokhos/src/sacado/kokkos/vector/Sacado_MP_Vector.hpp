@@ -113,6 +113,12 @@ namespace Sacado {
         return static_cast<const volatile derived_type&>(*this);
       }
 
+      // Allow explicit casting to integral types, since we don't have an
+      // integral ensemble type.
+      template <typename U, typename Enabled = typename std::enable_if<std::is_integral<U>::value>::type>
+      KOKKOS_INLINE_FUNCTION
+      explicit operator U() const { return static_cast<U>(derived().val()); }
+
     };
 
     //! Vectorized evaluation class

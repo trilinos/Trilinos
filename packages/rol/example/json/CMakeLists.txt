@@ -12,7 +12,7 @@
 
 IF(TPL_ENABLE_JSONCPP)
 
-    include_directories(${JSONCPP_INCLUDE_DIRS})
+    tribits_include_directories(${JSONCPP_INCLUDE_DIRS})
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
         example_01

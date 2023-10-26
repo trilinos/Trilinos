@@ -446,15 +446,12 @@ namespace Anasazi {
                         "Anasazi::BasicOrthoManager::projectMat(): Size of X not consistent with MX,Q" );
 
     // tally up size of all Q and check/allocate C
-    int baslen = 0;
     for (int i=0; i<nq; i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument, 
                           "Anasazi::BasicOrthoManager::projectMat(): Q lengths not mutually consistent" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
       TEUCHOS_TEST_FOR_EXCEPTION( qr < static_cast<ptrdiff_t>(qcs[i]), std::invalid_argument, 
                           "Anasazi::BasicOrthoManager::projectMat(): Q has less rows than columns" );
-      baslen += qcs[i];
-
       // check size of C[i]
       if ( C[i] == Teuchos::null ) {
         C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );

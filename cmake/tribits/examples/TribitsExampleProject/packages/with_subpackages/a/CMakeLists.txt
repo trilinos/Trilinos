@@ -16,9 +16,9 @@ tribits_pkg_export_cache_var(${PACKAGE_NAME}_SPECIAL_VALUE)
 
 tribits_configure_file(${PACKAGE_NAME}_config.h)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+tribits_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+tribits_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 tribits_add_library(pws_a
   SOURCES A.cpp
   HEADERS A.hpp ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h

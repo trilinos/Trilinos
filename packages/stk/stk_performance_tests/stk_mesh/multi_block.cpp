@@ -58,6 +58,23 @@ void setup_multiple_blocks(stk::mesh::MetaData& meta, unsigned numBlocks)
   }
 }
 
+void setup_elem_fields_on_blocks(stk::mesh::MetaData& meta, unsigned numFields)
+{
+  std::vector<stk::mesh::FieldBase*> fields(numFields);
+  for(unsigned f=0; f<numFields; ++f) {
+    fields[f] = &meta.declare_field<double>(stk::topology::ELEM_RANK, std::string("elemField"+std::to_string(f)));
+  }
+
+  const unsigned scalarsPerEntity = 3;
+  stk::mesh::PartVector elemBlocks;
+  stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
+  for(stk::mesh::Part* elemBlock : elemBlocks) {
+    for(stk::mesh::FieldBase* field : fields) {
+      stk::mesh::put_field_on_mesh(*field, *elemBlock, scalarsPerEntity, nullptr);
+    }
+  }
+}
+
 std::string sideset_name_between_blocks(unsigned leftBlock, unsigned rightBlock)
 {
   return "surfaceBetween_" + std::to_string(leftBlock) + "_and_" + std::to_string(rightBlock);
@@ -117,7 +134,7 @@ void move_elements_to_other_blocks(stk::mesh::BulkData& bulk, unsigned numElemsI
   stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
   const unsigned numBlocks = elemBlocks.size();
 
-  ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
+  STK_ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
                   "Number of blocks (" << numBlocks << ") must divide evenly into numElemsInDimX (" << numElemsInDimX << ")");
 
   stk::mesh::EntityVector elems;
@@ -155,7 +172,7 @@ void move_elements_to_other_contiguous_blocks(stk::mesh::BulkData& bulk, unsigne
   stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
   const unsigned numBlocks = elemBlocks.size();
 
-  ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
+  STK_ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
                   "Number of blocks (" << numBlocks << ") must divide evenly into numElemsInDimX (" << numElemsInDimX << ")");
 
   stk::mesh::EntityVector elems;
@@ -171,7 +188,7 @@ void move_elements_to_other_contiguous_blocks(stk::mesh::BulkData& bulk, unsigne
     stk::mesh::EntityId id = bulk.identifier(elem);
     unsigned blockIdx = ((id - 1)%numElemsInDimX)/numElemsInDimXPerBlock;
 
-    ThrowRequire(blockIdx < numBlocks);
+    STK_ThrowRequire(blockIdx < numBlocks);
     elemsToMove[blockIdx].push_back(elem);
   }
 

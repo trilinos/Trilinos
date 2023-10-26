@@ -202,7 +202,7 @@ Int amesos_paraklete_lsolve_node
      * the contribution to the parent and ancestors */
 
     parent = Cparent [c] ;
-    if (parent != EMPTY && Sched [parent] != myid)
+    if (parent != TRILINOS_CHOLMOD_EMPTY && Sched [parent] != myid)
     {
 	MPI (MPI_Isend (X, cn, MPI_DOUBLE, Sched [parent], TAG0, MPI_COMM_WORLD,
 	    &req)) ;

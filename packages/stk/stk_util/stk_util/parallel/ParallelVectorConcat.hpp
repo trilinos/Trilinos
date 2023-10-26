@@ -84,7 +84,7 @@ namespace stk {
 
     globalVec.clear();
 
-    ThrowRequireMsg(localVec.size() <= std::numeric_limits<int>::max(), "input vector length must fit in an int");
+    STK_ThrowRequireMsg(localVec.size() <= std::numeric_limits<int>::max(), "input vector length must fit in an int");
     int localSize = localVec.size();
 
     //
@@ -104,7 +104,7 @@ namespace stk {
       totalSize += size;
     }
 
-    ThrowRequireMsg(totalSize <= size_t(std::numeric_limits<int>::max()), "input vector length must fit in an int");
+    STK_ThrowRequireMsg(totalSize <= size_t(std::numeric_limits<int>::max()), "input vector length must fit in an int");
     globalVec.resize(totalSize);
 
     //
@@ -201,6 +201,34 @@ namespace stk {
       globalList.push_back(globalListStd[i].c_str());
     }
     return MPI_SUCCESS;
+  }
+
+  //------------------------------------------------------------------------
+  //
+  //  bool specialization for parallel_vector_concat.
+  //
+  template<>
+  inline int parallel_vector_concat(ParallelMachine comm, const std::vector<bool>& localVec, std::vector<bool>& globalVec ) {
+    //it turns out that std::vector<bool> is a weird beast, it doesn't have a .data() method.
+    //In general, its contents can't be treated like a 'bool*'.
+    //Thus the best approach here is to copy to a vector of chars and
+    //call the general implementation of parallel_vector_concat.
+
+    std::vector<unsigned char> localChars(localVec.size());
+    for(unsigned i=0; i<localVec.size(); ++i) {
+      localChars[i] = localVec[i] ? 1 : 0;
+    }
+
+    std::vector<unsigned char> globalChars;
+
+    int returnValue = parallel_vector_concat(comm, localChars, globalChars);
+
+    globalVec.resize(globalChars.size());
+    for(unsigned i=0; i<globalVec.size(); ++i) {
+      globalVec[i] = globalChars[i] == 1 ? true : false;
+    }
+
+    return returnValue;
   }
 
 #else

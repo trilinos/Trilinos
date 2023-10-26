@@ -106,13 +106,13 @@ template <> struct LU<Algo::OnDevice> {
       if (W.span() == 0) {
         int lwork;
         r_val = cusolver_buffer_size(member, A, &lwork);
-        r_val = (lwork + sizeof(value_type_w)) / sizeof(value_type_w) + 1;
+        r_val = lwork + 1;
       } else
         r_val = cusolver_invoke(member, A, P, W);
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+    if (std::is_same<memory_space, Kokkos::HIPSpace>::value) {
       if (W.span() == 0) {
         r_val = 2;
       } else
@@ -179,7 +179,7 @@ template <> struct LU<Algo::OnDevice> {
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+    if (std::is_same<memory_space, Kokkos::HIPSpace>::value) {
       r_val = device_modify(member, m, P);
     }
 #endif

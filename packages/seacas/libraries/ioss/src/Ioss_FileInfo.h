@@ -95,7 +95,8 @@ namespace Ioss {
     //! This function is used to create the path to an output directory (or history, restart, etc.)
     //!  if it does not exist.  Called by all processors. Will throw exception if path does not
     //!  specify a valid directory or if the path cannot be created.
-    static void create_path(const std::string &filename, Ioss_MPI_Comm communicator);
+    static void create_path(const std::string              &filename,
+                            IOSS_MAYBE_UNUSED Ioss_MPI_Comm communicator);
     static void create_path(const std::string &filename);
 
   private:

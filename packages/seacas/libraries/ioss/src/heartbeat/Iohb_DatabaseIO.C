@@ -1,18 +1,16 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_Utils.h>
+#include <heartbeat/Iohb_DatabaseIO.h>
+
 #include <cassert>
 #include <cstddef>
 #include <ctime>
 #include <fstream>
-#include <heartbeat/Iohb_DatabaseIO.h>
-#include <heartbeat/Iohb_Layout.h>
-#include <iostream>
 #include <string>
 
 #include <vector>
@@ -21,7 +19,6 @@
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_Field.h"
-#include "Ioss_FileInfo.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
@@ -29,6 +26,7 @@
 #include "Ioss_State.h"
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
+#include <heartbeat/Iohb_Layout.h>
 
 namespace Ioss {
   class CommSet;
@@ -47,7 +45,7 @@ namespace Ioss {
 namespace {
   std::string time_stamp(const std::string &format)
   {
-    if (format == "") {
+    if (format.empty()) {
       return std::string("");
     }
     const int   length = 256;
@@ -231,16 +229,15 @@ namespace Iohb {
         new_this->tsFormat = properties.get("TIME_STAMP_FORMAT").get_string();
       }
 
-      if (properties.exists("SHOW_TIME_STAMP")) {
-        bool show_time_stamp = properties.get("SHOW_TIME_STAMP").get_int() == 1;
-        if (show_time_stamp) {
-          if (tsFormat.empty()) {
-            new_this->tsFormat = defaultTsFormat;
-          }
+      bool show_time_stamp = false;
+      Ioss::Utils::check_set_bool_property(properties, "SHOW_TIME_STAMP", show_time_stamp);
+      if (show_time_stamp) {
+        if (tsFormat.empty()) {
+          new_this->tsFormat = defaultTsFormat;
         }
-        else {
-          new_this->tsFormat = "";
-        }
+      }
+      else {
+        new_this->tsFormat = "";
       }
 
       if (properties.exists("PRECISION")) {
@@ -255,18 +252,13 @@ namespace Iohb {
         new_this->fieldWidth_ = precision_ + 7;
       }
 
-      if (properties.exists("SHOW_LABELS")) {
-        new_this->showLabels = (properties.get("SHOW_LABELS").get_int() == 1);
+      Ioss::Utils::check_set_bool_property(properties, "SHOW_LABELS", new_this->showLabels);
+
+      if (!new_this->appendOutput) {
+        Ioss::Utils::check_set_bool_property(properties, "SHOW_LEGEND", new_this->showLegend);
       }
 
-      if (properties.exists("SHOW_LEGEND")) {
-        new_this->showLegend =
-            (properties.get("SHOW_LEGEND").get_int() == 1 && !new_this->appendOutput);
-      }
-
-      if (properties.exists("SHOW_TIME_FIELD")) {
-        new_this->addTimeField = (properties.get("SHOW_TIME_FIELD").get_int() == 1);
-      }
+      Ioss::Utils::check_set_bool_property(properties, "SHOW_TIME_FIELD", new_this->addTimeField);
 
       // SpyHis format is specific format, so don't override these settings:
       if (fileFormat == Iohb::Format::SPYHIS) {
@@ -308,7 +300,7 @@ namespace Iohb {
     initialize();
 
     layout_ = std::make_unique<Layout>(showLabels, precision_, separator_, fieldWidth_);
-    if (tsFormat != "") {
+    if (!tsFormat.empty()) {
       layout_->add_literal("+");
       layout_->add_literal(time_stamp(tsFormat));
       layout_->add_literal(" ");
@@ -333,6 +325,7 @@ namespace Iohb {
     if (legend_ != nullptr) {
       if (fileFormat == Iohb::Format::SPYHIS) {
         time_t calendar_time = time(nullptr);
+        // ctime include \n; the legend is output twice for SPYHIS.
         *logStream << "% Sierra SPYHIS Output " << ctime(&calendar_time);
         *logStream << *legend_ << '\n'; // Legend output twice for SPYHIS
       }

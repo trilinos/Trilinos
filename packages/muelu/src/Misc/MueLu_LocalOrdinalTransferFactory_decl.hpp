@@ -49,12 +49,9 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "Xpetra_MultiVector_fwd.hpp"
-#include "Xpetra_MultiVectorFactory_fwd.hpp"
 #include "Xpetra_CrsGraph_fwd.hpp"
 
-#include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_LocalOrdinalTransferFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

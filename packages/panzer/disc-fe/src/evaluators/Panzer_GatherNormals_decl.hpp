@@ -85,21 +85,24 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  std::string dof_name;
+  std::string dof_name_;
 
-  PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldNormals;
+  PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldNormals_;
 
   GatherNormals();
 
-  Teuchos::RCP<const PureBasis> basis;
-  Teuchos::RCP<const PointRule> pointRule;
-  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> faceNormal; // face normals
-  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refFaceNormal; // reference face normals
-  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType sideParam;
-  PointValues2<double> pointValues;
+  Teuchos::RCP<const PureBasis> basis_;
+  Teuchos::RCP<const PointRule> pointRule_;
+  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType sideParam_;
+  PointValues2<double> pointValues_;
   PHX::MDField<const double,Cell,IP,Dim,Dim> constJac_;
 
-  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
+  Kokkos::View<Intrepid2::Orientation*> orientations_;
+  Kokkos::View<unsigned int*> keys_;
+  
+  // Temporaries
+  Kokkos::DynRankView<ScalarT,PHX::Device> refEdges_;
+  Kokkos::DynRankView<ScalarT,PHX::Device> phyEdges_;
 };
 
 }

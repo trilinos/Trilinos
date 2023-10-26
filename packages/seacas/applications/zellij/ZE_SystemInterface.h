@@ -1,10 +1,9 @@
-// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef ZE_SystemInterface_h
-#define ZE_SystemInterface_h
+#pragma once
 
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <array>
@@ -19,7 +18,7 @@ enum class Minimize { NONE = 0, UNIT = 1, OUTPUT = 2, ALL = 3 };
 class SystemInterface
 {
 public:
-  SystemInterface(int my_rank = 0);
+  explicit SystemInterface(int my_rank = 0);
   ~SystemInterface();
 
   bool parse_options(int argc, char **argv);
@@ -88,4 +87,3 @@ private:
   bool          ignoreInternalSidesets_{false};
   enum Minimize minimizeOpenFiles_ { Minimize::NONE };
 };
-#endif

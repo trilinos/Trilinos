@@ -379,7 +379,7 @@ void EpetraExt::HDF5::Open(const std::string FileName, int AccessType)
   const Epetra_MpiComm* MpiComm ( dynamic_cast<const Epetra_MpiComm*> (&Comm_) );
 
   if (MpiComm == 0)
-    H5Pset_fapl_mpio(plist_id_, MPI_COMM_WORLD, MPI_INFO_NULL);
+    H5Pset_fapl_mpio(plist_id_, MPI_COMM_WORLD, MPI_INFO_NULL); // CHECK: ALLOW MPI_COMM_WORLD
   else
     H5Pset_fapl_mpio(plist_id_, MpiComm->Comm(), MPI_INFO_NULL);
 #endif

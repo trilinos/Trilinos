@@ -114,13 +114,17 @@ public: // Public members (but only for unit testing purposes!)
     /** \brief . */
     KeyObjectPair() : first(key), second(ObjType()), key(""), isActive_(true) {}
     /** \brief . */
-    KeyObjectPair(const std::string &key_in, const ObjType &obj_in, bool isActive_in = true)
-      : first(key), second(obj_in), key(key_in), isActive_(isActive_in) {}
-    /** \brief . */
-    KeyObjectPair(const KeyObjectPair<ObjType> &kop)
+    template <typename U, typename = std::enable_if_t<std::is_convertible_v<U, ObjType>>>
+    KeyObjectPair(const std::string &key_in, U&& obj_in, bool isActive_in = true)
+      : first(key), second(std::forward<U>(obj_in)), key(key_in), isActive_(isActive_in) {}
+    /** \brief Copy-constructor. */
+    KeyObjectPair(const KeyObjectPair &kop)
       : first(key), second(kop.second), key(kop.key), isActive_(kop.isActive_) {}
-    /** \brief . */
-    KeyObjectPair<ObjType>& operator=(const KeyObjectPair<ObjType> &kop)
+    /** \brief Move-constructor. */
+    KeyObjectPair(KeyObjectPair&& kop)
+      : first(key), second(std::move(kop.second)), key(std::move(kop.key)), isActive_(kop.isActive_) {}
+    /** \brief Copy-assignment operator. */
+    KeyObjectPair& operator=(const KeyObjectPair &kop)
       {
         second = kop.second;
         key = kop.key;
@@ -232,7 +236,8 @@ public:
    * \return Returns the ordinal index by which the object can be looked up
    * with.
    */
-  Ordinal setObj(const std::string &key, const ObjType &obj);
+  template <typename U, typename = std::enable_if_t<std::is_convertible_v<U, ObjType>>>
+  Ordinal setObj(const std::string &key, U&& obj);
 
   /** \brief Get the ordinal index given the string key.
    *
@@ -471,20 +476,21 @@ StringIndexedOrderedValueObjectContainer<ObjType>::getObjOrdinalIndex(const std:
 }
 
 
-template<class ObjType>
+template <typename ObjType>
+template <typename U, typename>
 typename StringIndexedOrderedValueObjectContainer<ObjType>::Ordinal
 StringIndexedOrderedValueObjectContainer<ObjType>::setObj(const std::string &key,
-  const ObjType &obj)
+  U&& obj)
 {
   typename key_to_idx_map_t::iterator obj_idx_itr = key_to_idx_map_.find(key);
   if (obj_idx_itr != key_to_idx_map_.end()) {
     // Object with the given key already exists
     const Ordinal obj_idx = obj_idx_itr->second.idx;
-    key_and_obj_array_[obj_idx].second = obj;
+    key_and_obj_array_[obj_idx].second = std::forward<U>(obj);
     return obj_idx;
   }
   // Object with the given key does not already exist so create a new one.
-  key_and_obj_array_.push_back(key_and_obj_t(key, obj));
+  key_and_obj_array_.emplace_back(key, std::forward<U>(obj));
   const Ordinal new_idx = key_and_obj_array_.size()-1;
   key_to_idx_map_[key] = new_idx;
   return new_idx;

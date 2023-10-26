@@ -36,7 +36,6 @@
 #if defined ( STK_HAS_MPI )
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian
 #include "stk_mesh/base/CreateEdges.hpp"  // for create_edges
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
@@ -77,7 +76,7 @@ T do_operation(Operation Op, T lhs, T rhs)
   case Operation::MAX:
     return std::max(lhs, rhs);
   default:
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
     return 0;
   }
 }
@@ -98,7 +97,7 @@ void do_assemble(Operation Op, BulkData & bulk, FieldVector const& field_vector)
     parallel_max(bulk, field_vector);
     break;
   default:
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
   }
 }
 
@@ -337,7 +336,7 @@ void do_assemble_including_ghosts(Operation Op, BulkData & bulk, FieldVector con
     parallel_max_including_ghosts(bulk, field_vector);
     break;
   default:
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
   }
 }
 

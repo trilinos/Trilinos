@@ -50,7 +50,7 @@
 #       -P <tribitsDir>/ci_support/TribitsDumpDepsXmlScript.cmake
 #
 
-cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
 # A) Echo input options (must be specified with -D arguments to CMake command)
 
@@ -100,15 +100,15 @@ endif()
 get_filename_component( ${PROJECT_NAME}_TRIBITS_DIR  "${CMAKE_CURRENT_LIST_DIR}/.."  ABSOLUTE )
 message("-- Setting ${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}")
 
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsConstants.cmake")
+tribits_asesrt_minimum_cmake_version()
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsCMakePolicies.cmake"  NO_POLICY_SCOPE)
+
 set( CMAKE_MODULE_PATH
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
   "${${PROJECT_NAME}_TRIBITS_DIR}/ci_support"
   )
-
-include(TribitsConstants)
-tribits_asesrt_minimum_cmake_version()
-include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(TribitsGlobalMacros)
 include(TribitsPrintDependencyInfo)
@@ -116,8 +116,8 @@ include(TribitsWriteXmlDependenciesFiles)
 
 # Generate the dependencies file
 
-set(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
-set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
+set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  OFF)
+set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES  FALSE)
 if (NOT ${PROJECT_NAME}_PRE_REPOSITORIES) # Make sure is defined!
   set(${PROJECT_NAME}_PRE_REPOSITORIES "")
 endif()

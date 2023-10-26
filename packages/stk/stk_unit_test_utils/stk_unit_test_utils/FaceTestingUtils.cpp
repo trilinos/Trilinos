@@ -431,11 +431,11 @@ stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, 
     {
         const stk::mesh::Entity* sideNodes = mesh.begin_nodes(side);
         unsigned numNodes = mesh.num_nodes(side);
-        ThrowRequireMsg(sub_topology_nodes.size() == numNodes,
+        STK_ThrowRequireMsg(sub_topology_nodes.size() == numNodes,
                         "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different number of nodes");
         for(unsigned i = 0; i < numNodes; ++i)
         {
-            ThrowRequireMsg(sub_topology_nodes[i] == sideNodes[i],
+            STK_ThrowRequireMsg(sub_topology_nodes[i] == sideNodes[i],
                             "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different node connectivity");
         }
     }

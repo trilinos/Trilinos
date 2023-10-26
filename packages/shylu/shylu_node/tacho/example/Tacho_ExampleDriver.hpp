@@ -34,6 +34,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   std::string graph_file = "";
   std::string weight_file = "";
   int nrhs = 1;
+  bool randomRHS = true;
   std::string method_name = "chol";
   int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
   int small_problem_thres = 1024;
@@ -61,6 +62,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
   opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
+  opts.set_option<int>("nfacts", "# of factorizations to perform", &nfacts);
   opts.set_option<int>("nsolves", "# of solves to perform", &nsolves);
 
   const bool r_parse = opts.parse(argc, argv);
@@ -201,8 +203,14 @@ template <typename value_type> int driver(int argc, char *argv[]) {
         t("t", A.NumRows(), nrhs);                  // temp workspace (store permuted rhs)
 
     {
-      Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
-      Kokkos::fill_random(b, random, value_type(1));
+      if (randomRHS) {
+        Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
+        Kokkos::fill_random(b, random, value_type(1));
+      } else {
+        const value_type one(1.0);
+        Kokkos::deep_copy (x, one);
+        solver.computeSpMV(values_on_device, x, b);
+      }
     }
 
     std::cout << std::endl;

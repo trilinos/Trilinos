@@ -49,6 +49,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <Teuchos_ArrayView.hpp>
+#include <Xpetra_Map.hpp>
 
 #include "MueLu_LocalLWGraph_kokkos_decl.hpp"
 
@@ -85,7 +86,7 @@ namespace MueLu {
   }
 
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  LocalLWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  LocalLWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
   LocalLWGraph_kokkos(const local_graph_type& graph,
                       const RCP<const map_type>& domainMap)
     : graph_(graph)

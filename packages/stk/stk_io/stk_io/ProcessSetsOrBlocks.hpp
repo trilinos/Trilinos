@@ -91,7 +91,7 @@ void process_node_sharing(Ioss::Region &region, stk::mesh::BulkData &bulk)
     size_t global_node_count = region.get_property("global_node_count").get_int();
     size_t local_node_count = stk::mesh::count_entities(bulk, stk::topology::NODE_RANK, bulk.mesh_meta_data().locally_owned_part());
 
-    ThrowErrorMsgIf (num_sharings == 0 && global_node_count < local_node_count,
+    STK_ThrowErrorMsgIf(num_sharings == 0 && global_node_count < local_node_count,
                     "ERROR: Invalid communication/node sharing information found in file '"
                      << region.get_database()->get_filename() << "'\n"
                      << "       There is no node sharing information and the "
@@ -222,7 +222,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
           }
 
           stk::topology topo = part->topology();
-          ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
+          STK_ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
 
           bulk.declare_entities(stk::topology::ELEM_RANK, elem_ids, elemParts, elems);
 

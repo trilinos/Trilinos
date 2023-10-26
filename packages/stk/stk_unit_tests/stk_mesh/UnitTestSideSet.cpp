@@ -30,7 +30,7 @@ void move_elems_from_block_to_block(stk::mesh::BulkData& bulk,
   stk::mesh::EntityVector elems;
   for(stk::mesh::EntityId elemID : elemIDs) {
     stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemID);
-    ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
+    STK_ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
     elems.push_back(elem);
   }
 
@@ -47,7 +47,7 @@ void copy_elems_from_block_to_block(stk::mesh::BulkData& bulk,
   stk::mesh::EntityVector elems;
   for(stk::mesh::EntityId elemID : elemIDs) {
     stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemID);
-    ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
+    STK_ThrowRequireMsg(bulk.is_valid(elem), "Failed to find element with ID="<<elemID);
     elems.push_back(elem);
   }
 
@@ -128,7 +128,7 @@ void write_mesh_with_specified_splitting(stk::mesh::BulkData &bulk, const std::s
   stkIo.set_bulk_data(bulk);
 
   size_t outputIdx = stkIo.create_output_mesh(filename, stk::io::WRITE_RESULTS);
-  Ioss::Region* ioRegion = stkIo.get_output_io_region(outputIdx).get();
+  Ioss::Region* ioRegion = stkIo.get_output_ioss_region(outputIdx).get();
 
   Ioss::DatabaseIO *db = ioRegion->get_database();
   assert(db != nullptr);
@@ -361,8 +361,7 @@ void create_sideset_observer(stk::mesh::BulkData& bulk, stk::mesh::Selector acti
     if (activeSelector == stk::mesh::Selector()) {
       activeSelector = bulk.mesh_meta_data().universal_part();
     }
-    bulk.register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk, activeSelector),
-                           stk::mesh::ModificationObserverPriority::STK_INTERNAL);
+    bulk.register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk, activeSelector));
   }
 }
 }
@@ -1257,8 +1256,9 @@ protected:
 #ifndef NDEBUG
     std::ostringstream oss;
     oss << "output." << get_bulk().parallel_rank();
-    std::ofstream ofs = std::ofstream(oss.str(), std::ofstream::out);
-    ThrowRequireMsg(ofs.fail() == false, "Failed to open debug file: " << oss.str());
+    std::string fileName = oss.str();
+    std::ofstream ofs(fileName, std::ofstream::out);
+    STK_ThrowRequireMsg(ofs.fail() == false, "Failed to open debug file: " << oss.str());
     outputStream = &ofs;
 #endif
 
@@ -1272,6 +1272,9 @@ protected:
         EXPECT_EQ(entry.expectedCoincidence, isParallelCoincident);
       }
     }
+#ifndef NDEBUG
+    unlink(fileName.c_str());
+#endif
   }
 };
 

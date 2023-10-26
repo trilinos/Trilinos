@@ -133,7 +133,7 @@ namespace FROSch {
         subdomainMatrix->doImport(*globalMatrix, *scatter, ADD);
 
 // "fillComplete" is quite expensive, and it seem to be cheaper to replace values each row at a time
-#if 0 //defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+#if 0 //defined(HAVE_XPETRA_TPETRA)
         if (globalMatrix->getRowMap()->lib() == UseTpetra) 
         {
             // NOTE: this fillComplete is expensive on GPUs
@@ -299,7 +299,7 @@ namespace FROSch {
         RCP<Map<LO,GO,NO> > mapJ = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indJ(),0,k->getRowMap()->getComm());
         RCP<Map<LO,GO,NO> > mapJLocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indJ.size(),0,k->getRowMap()->getComm());
         RCP<const Map<LO,GO,NO> > colMap = k->getColMap();
-#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+#if defined(HAVE_XPETRA_TPETRA)
         if (k->getRowMap()->lib() == UseTpetra) 
         {
             using crsmat_type  = typename Matrix<SC,LO,GO,NO>::local_matrix_type;
@@ -378,6 +378,16 @@ namespace FROSch {
                 nnzJJ);
 
             // make it into offsets
+#if KOKKOSKERNELS_VERSION >= 40199
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+                (1+numRowsI, RowptrII);
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+                (1+numRowsI, RowptrIJ);
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+                (1+numRowsJ, RowptrJI);
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+                (1+numRowsJ, RowptrJJ);
+#else
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
                 (1+numRowsI, RowptrII);
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
@@ -386,6 +396,7 @@ namespace FROSch {
                 (1+numRowsJ, RowptrJI);
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
                 (1+numRowsJ, RowptrJJ);
+#endif
 
             // allocate kII block
             indices_type IndicesII ("IndicesII", nnzII);

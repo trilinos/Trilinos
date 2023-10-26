@@ -39,7 +39,6 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
@@ -81,13 +80,13 @@ struct EntityConnectivity
     }
   }
 
-  void sort_relations_by_identifier(stk::mesh::Entity entity, const stk::mesh::BulkData& bulk)
+  void sort_relations_by_identifier(stk::mesh::Entity entityArg, const stk::mesh::BulkData& bulk)
   {
     std::sort(connected.begin(), connected.end(), stk::mesh::EntityLess(bulk));
 
-    const stk::mesh::Entity* unsortedEntities = bulk.begin(entity, relationRank);
-    const stk::mesh::ConnectivityOrdinal* unsortedOrds = bulk.begin_ordinals(entity, relationRank);
-    const stk::mesh::Permutation* unsortedPerms = bulk.begin_permutations(entity, relationRank);
+    const stk::mesh::Entity* unsortedEntities = bulk.begin(entityArg, relationRank);
+    const stk::mesh::ConnectivityOrdinal* unsortedOrds = bulk.begin_ordinals(entityArg, relationRank);
+    const stk::mesh::Permutation* unsortedPerms = bulk.begin_permutations(entityArg, relationRank);
 
     for(size_t i=0; i<connected.size(); ++i)
     {

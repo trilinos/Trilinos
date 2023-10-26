@@ -187,7 +187,6 @@ TEST(GeneratedIds, findUniqueIdAcrossProcs)
     }
 
     checkUniqueIds(myIds, idsObtained, mpiInfo);
-    writeIdsToFile("ids_", mpiInfo.getProcId(), myIds, idsObtained);
 
     for (size_t i=0;i<idsObtained.size();i++)
     {
@@ -482,7 +481,7 @@ void checkUniqueIds(const std::vector<uint64_t> &myIds, const std::vector<uint64
         {
             for (size_t j=0;j<uniqueIds.size();j++)
             {
-                ThrowRequireMsg(uniqueIds[j]>0, "Id generation error. Please contact sierra-help for support.");
+                STK_ThrowRequireMsg(uniqueIds[j]>0, "Id generation error. Please contact sierra-help for support.");
                 EXPECT_FALSE(std::binary_search(myIds.begin(), myIds.end(), uniqueIds[j]));
                 EXPECT_EQ(true, sendIdToCheck(i, uniqueIds[j], mpiInfo.getMpiComm()));
             }
@@ -526,7 +525,7 @@ uint64_t getNumIdsPerProc(const uint64_t maxId, const INTMPI numProcs)
 
 INTMPI whichProcOwnsId(const uint64_t maxId, const uint64_t id, INTMPI numProcs)
 {
-    ThrowRequireMsg(id>0, "Invalid Id. Contact sierra-help for support.");
+    STK_ThrowRequireMsg(id>0, "Invalid Id. Contact sierra-help for support.");
     uint64_t numIdsPerProc = getNumIdsPerProc(maxId, numProcs);
     INTMPI procOwner = (id-1)/numIdsPerProc;
     return procOwner;
@@ -879,7 +878,7 @@ void generate_ids(const uint64_t maxId, const std::vector<uint64_t> &idsInUse, s
     for (size_t i=0;i<idsInUse.size();i++)
     {
         INTMPI procOwner = whichProcOwnsId(maxId, idsInUse[i], mpiInfo.getNumProcs());
-        ThrowRequireMsg(static_cast<int>(procOwner)<mpiInfo.getNumProcs(), "Id generation error. Please contact sierra-help. procOwner = " << procOwner << ", maxId = " << maxId << ", and id = " << idsInUse[i] << std::endl);
+        STK_ThrowRequireMsg(static_cast<int>(procOwner)<mpiInfo.getNumProcs(), "Id generation error. Please contact sierra-help. procOwner = " << procOwner << ", maxId = " << maxId << ", and id = " << idsInUse[i] << std::endl);
         idsToComm[procOwner].push_back(idsInUse[i]);
     }
 
@@ -893,11 +892,12 @@ void generate_ids(const uint64_t maxId, const std::vector<uint64_t> &idsInUse, s
 
     size_t numIdsNeeded = uniqueIds.size();
     size_t numIdsAvailableThisProc =  getNumIdsPerProc(maxId, mpiInfo.getNumProcs()) - idsInUseAcrossAllProcsInMyRange.size();
-    ThrowRequireMsg(numIdsNeeded <= numIdsAvailableThisProc, "Not enough unique ids available (Id generation error). Plrease contact sierra-help for support. Number of ids needed: "
+    STK_ThrowRequireMsg(numIdsNeeded <= numIdsAvailableThisProc, "Not enough unique ids available (Id generation error). Plrease contact sierra-help for support. Number of ids needed: "
             << numIdsNeeded << " and num available ids: " << numIdsAvailableThisProc);
 
     if ( !uniqueIds.empty() )
     {
+        uniqueIdsFound.reserve(numIdsNeeded);
         for (uint64_t i=myIndexStart;i<myIndexEnd;i++)
         {
             if ( !std::binary_search(idsInUseAcrossAllProcsInMyRange.begin(), idsInUseAcrossAllProcsInMyRange.end(), i) )
@@ -911,7 +911,7 @@ void generate_ids(const uint64_t maxId, const std::vector<uint64_t> &idsInUse, s
         }
     }
 
-    ThrowRequireMsg(uniqueIdsFound.size() == uniqueIds.size(), "Id generation error. Could not obtain needed ids. Please contact sierra-help for support.");
+    STK_ThrowRequireMsg(uniqueIdsFound.size() == uniqueIds.size(), "Id generation error. Could not obtain needed ids. Please contact sierra-help for support.");
     std::copy(uniqueIdsFound.begin(), uniqueIdsFound.end(), uniqueIds.begin());
 }
 
@@ -972,7 +972,7 @@ void getAvailableIds(const std::vector<uint64_t> &myIds, uint64_t numIdsNeeded, 
             if ( procIndex == mpiInfo.getProcId() )
             {
                 getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(procIndex, startingIdToSearchForNewIds, idsObtained, numIdsNeeded, scaleFactorForNumIds, sortedIds, maxId, mpiInfo);
-                ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
+                STK_ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
                 terminateIdRequestForThisProc(procIndex, mpiInfo.getMpiComm());
             }
             else
@@ -1030,7 +1030,7 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
                 if ( procIndex == mpiInfo.getProcId() )
                 {
                     getBatchesOfIdsFromOtherProcessorsUntilRequestOnThisProcIsFulfilled(procIndex, startingIdToSearchForNewIds, idsObtained, numIdsNeeded, scaleFactorForNumIds, sortedIds, maxId, mpiInfo);
-                    ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
+                    STK_ThrowRequireMsg(idsObtained.size()==numIdsNeeded, "Id generation error. Ran out of ids. Please contact sierra-help for support.");
                     terminateIdRequestForThisProc(procIndex, mpiInfo.getMpiComm());
                 }
                 else

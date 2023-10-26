@@ -51,9 +51,9 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_AmalgamationFactory_kokkos.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
@@ -130,7 +130,7 @@ namespace MueLuTests {
     currentLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());
@@ -217,7 +217,7 @@ namespace MueLuTests {
     currentLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());
@@ -310,7 +310,7 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
 
-    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory_kokkos> StructuredAggFact = rcp(new StructuredAggregationFactory_kokkos());
@@ -321,7 +321,7 @@ namespace MueLuTests {
     StructuredAggFact->SetParameter("aggregation: coarsening rate",
                                     Teuchos::ParameterEntry(std::string("{3}")));
 
-    RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
     coarseMapFact->SetFactory("Aggregates", StructuredAggFact);
     RCP<TentativePFactory_kokkos> TentativePFact = rcp(new TentativePFactory_kokkos());
     TentativePFact->SetFactory("Aggregates", StructuredAggFact);

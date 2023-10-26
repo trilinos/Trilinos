@@ -28,8 +28,9 @@ void ModificationSummary::track_induced_parts(stk::mesh::Entity e_from, stk::mes
         addEntityKeyAndStringToTracker(getEntityKey(e_to), os.str());
     }
 }
-// void track_create_ghosting();
-void ModificationSummary::track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::EntityKey> & remove_receive )
+
+void ModificationSummary::track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send,
+                                                const std::vector<stk::mesh::Entity> & remove_receive)
 {
     std::ostringstream os;
 
@@ -43,7 +44,7 @@ void ModificationSummary::track_change_ghosting(const stk::mesh::Ghosting & ghos
     for (size_t i=0;i<remove_receive.size();++i)
     {
         os << "Deleting receive ghost " << remove_receive[i] << " for ghosting " << ghosts.name() << std::endl;
-        addEntityKeyAndStringToTracker(remove_receive[i], os.str());
+        addEntityKeyAndStringToTracker(getEntityKey(remove_receive[i]), os.str());
         os.str("");
     }
 }
@@ -71,12 +72,14 @@ void ModificationSummary::track_destroy_relation(stk::mesh::Entity e_from, stk::
     }
 }
 
-void ModificationSummary::track_declare_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel, stk::mesh::Permutation permut)
+void ModificationSummary::track_declare_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to,
+                                                 stk::mesh::RelationIdentifier rel, stk::mesh::Permutation permut)
 {
     if(isValid(e_from) && isValid(e_to))
     {
         std::ostringstream os;
-        os << "Declaring a relation from " << getEntityKey(e_from) << " to " << getEntityKey(e_to) << " with relation identifier: " << rel << " and permutation: " << permut << std::endl;
+        os << "Declaring a relation from " << getEntityKey(e_from) << " to " << getEntityKey(e_to)
+           << " with relation identifier: " << rel << " and permutation: " << static_cast<unsigned>(permut) << std::endl;
         addEntityKeyAndStringToTracker(getEntityKey(e_from), os.str());
         addEntityKeyAndStringToTracker(getEntityKey(e_to), os.str());
     }

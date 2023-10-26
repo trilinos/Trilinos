@@ -121,7 +121,7 @@ void M2NParser::set_filename(M2NBalanceSettings& settings) const
 void M2NParser::set_num_procs(M2NBalanceSettings& settings) const
 {
   const unsigned numOutputProcs = m_commandLineParser.get_option_value<unsigned>(m_optionNames.nprocs);
-  ThrowRequireMsg(numOutputProcs > 0, "Please specify a valid target processor count.");
+  STK_ThrowRequireMsg(numOutputProcs > 0, "Please specify a valid target processor count.");
   settings.set_num_output_processors(numOutputProcs);
 }
 
@@ -131,7 +131,7 @@ void M2NParser::set_logfile(M2NBalanceSettings& settings) const
     settings.set_log_filename(m_commandLineParser.get_option_value<std::string>(m_optionNames.logfile));
   }
   else {
-    const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int initialNumProcs = stk::parallel_machine_size(m_comm);
     const int finalNumProcs = settings.get_num_output_processors();
     settings.set_log_filename(stk::basename(stk::tailname(settings.get_input_filename())) + "." + std::to_string(initialNumProcs) + "_to_" 
                                                                                                 + std::to_string(finalNumProcs) + ".log");
@@ -144,10 +144,10 @@ void M2NParser::set_use_nested_decomp(M2NBalanceSettings& settings) const
   const bool useNestedDecomp = m_commandLineParser.is_option_provided(m_optionNames.useNestedDecomp);
   settings.set_use_nested_decomp(useNestedDecomp);
   if (useNestedDecomp) {
-    const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int initialNumProcs = stk::parallel_machine_size(m_comm);
     const int finalNumProcs = settings.get_num_output_processors();
     const bool isValidProcCount = (finalNumProcs % initialNumProcs) == 0;
-    ThrowRequireMsg(isValidProcCount, "Final number of processors (" << finalNumProcs << ") must be an integer "
+    STK_ThrowRequireMsg(isValidProcCount, "Final number of processors (" << finalNumProcs << ") must be an integer "
                     << "multiple of initial processors (" << initialNumProcs << ") to use a nested decomposition.");
   }
 }

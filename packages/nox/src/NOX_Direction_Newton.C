@@ -329,5 +329,5 @@ void NOX::Direction::Newton::throwError(const std::string& functionName, const s
 {
     if (utils->isPrintType(Utils::Error))
       utils->err() << "NOX::Direction::Newton::" << functionName << " - " << errorMsg << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
 }

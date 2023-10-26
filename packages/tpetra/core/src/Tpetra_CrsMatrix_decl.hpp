@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_CRSMATRIX_DECL_HPP
 #define TPETRA_CRSMATRIX_DECL_HPP
 
@@ -51,6 +52,8 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
+#include "Tpetra_Details_ExecutionSpacesUser.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
 
@@ -422,8 +425,17 @@ namespace Tpetra {
             class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
+    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
+    public Details::Spaces::User
   {
+  // clang-format on
+private:
+  using dist_object_type =
+      DistObject<char, LocalOrdinal, GlobalOrdinal,
+                 Node>; ///< Type of the DistObject specialization from which
+                        ///< this class inherits.
+  // clang-format off
+
   public:
     //! @name Typedefs
     //@{
@@ -1842,6 +1854,29 @@ namespace Tpetra {
                   const typename local_graph_device_type::entries_type::non_const_type& ind,
                   const typename local_matrix_device_type::values_type& val);
 
+    /// \brief Set the local matrix using an existing local matrix.
+    ///
+    /// \pre column indices are sorted within each row
+    /// \pre <tt>hasColMap() == true</tt>
+    /// \pre <tt>getGraph() != Teuchos::null</tt>
+    /// \pre No insert/sum routines have been called
+    ///
+    /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES of
+    ///   backwards compatibility.
+    ///
+    /// This method simply calls the method setAllValues that accepts three
+    /// compressed sparse row arrays.
+    ///
+    /// The input argument might be used directly (shallow copy), or
+    /// it might be (deep) copied.
+    ///
+    /// \param ptr [in/out] Kokkos sparse local matrix
+    ///   This is in/out because the matrix reserves the right to take this argument by
+    ///   shallow copy.  Any method that changes the matrix's values
+    ///   may then change this.
+    void
+    setAllValues (const local_matrix_device_type& localMatrix);
+
     /// \brief Set the local matrix using three (compressed sparse row) arrays.
     ///
     /// \pre ind is sorted within each row
@@ -2378,6 +2413,9 @@ namespace Tpetra {
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
     size_t getLocalMaxNumRowEntries () const override;
+
+    //! The number of degrees of freedom per mesh point.
+    virtual LocalOrdinal getBlockSize () const override { return 1; }
 
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const override;
@@ -2949,6 +2987,13 @@ public:
       const size_t numPermutes);
 
   protected:
+
+  // clang-format on
+  using dist_object_type::
+      copyAndPermute; /// DistObject copyAndPermute has multiple overloads --
+                      /// use copyAndPermutes for anything we don't override
+  // clang-format off
+
     virtual void
     copyAndPermute
     (const SrcDistObject& source,
@@ -2970,6 +3015,13 @@ public:
      Kokkos::DualView<char*, buffer_device_type>& exports,
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
      size_t& constantNumPackets) override;
+
+  // clang-format on
+  using dist_object_type::packAndPrepare; ///< DistObject overloads
+                                          ///< packAndPrepare. Explicitly use
+                                          ///< DistObject's packAndPrepare for
+                                          ///< anything we don't override
+                                          // clang-format off
 
   private:
     /// \brief Unpack the imported column indices and values, and
@@ -3012,6 +3064,13 @@ public:
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
      const size_t constantNumPackets,
      const CombineMode CM) override;
+
+  // clang-format on
+  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
+                                            ///< unpackAndCombine, use the
+                                            ///< DistObject's implementation for
+                                            ///< anything we don't override.
+                                            // clang-format off
 
     /// \brief Pack this object's data for an Import or Export.
     ///
@@ -3682,14 +3741,11 @@ public:
                             const ELocalGlobal lg,
                             const ELocalGlobal I);
 
-    //! Type of the DistObject specialization from which this class inherits.
-    typedef DistObject<char, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
-
   protected:
     // useful typedefs
     typedef Teuchos::OrdinalTraits<LocalOrdinal> OTL;
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
-    typedef Kokkos::Details::ArithTraits<mag_type> STM;
+    typedef Kokkos::ArithTraits<impl_scalar_type> STS;
+    typedef Kokkos::ArithTraits<mag_type> STM;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>      V;
     typedef crs_graph_type Graph;
@@ -4102,6 +4158,33 @@ protected:
     Teuchos::RCP<CrsMatrixType> destMatrix;
     sourceMatrix->exportAndFillComplete (destMatrix, rowExporter, domainExporter, domainMap, rangeMap, params);
     return destMatrix;
+  }
+
+  /// \brief Remove zero entries from a matrix.
+  ///
+  /// \param matrix    [in/out] CrsMatrix
+  /// \param threshold [in]     magnitude threshold below which an entry is deemed to be zero
+  ///
+  /// \relatesalso CrsMatrix
+  template<class CrsMatrixType>
+  void
+  removeCrsMatrixZeros(CrsMatrixType& matrix,
+                       typename Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::magnitudeType const & threshold =
+                       Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::magnitude( Teuchos::ScalarTraits<typename CrsMatrixType::scalar_type>::zero() ))
+  {
+    auto localMatrix = matrix.getLocalMatrixDevice();
+    size_t nnzBefore = localMatrix.nnz();
+    localMatrix = KokkosSparse::removeCrsMatrixZeros(localMatrix,threshold);
+    size_t localNNZRemoved = nnzBefore - localMatrix.nnz();
+    //Skip the expertStaticFillComplete if no entries were removed on any process.
+    //The fill complete can perform MPI collectives, so it can only be skipped on all processes or none.
+    size_t globalNNZRemoved = 0;
+    Teuchos::reduceAll<int, size_t> (*(matrix.getComm()), Teuchos::REDUCE_SUM, 1, &localNNZRemoved, &globalNNZRemoved);
+    if(globalNNZRemoved != size_t(0)) {
+      matrix.resumeFill();
+      matrix.setAllValues(localMatrix);
+      matrix.expertStaticFillComplete(matrix.getDomainMap(),matrix.getRangeMap());
+    }
   }
 
 } // namespace Tpetra

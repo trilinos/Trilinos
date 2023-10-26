@@ -63,7 +63,7 @@ Int amesos_paraklete_usolve_node
 
     PR1 ((Common->file, "Usolve node "ID" cn "ID" nfound "ID"\n", c, cn, nfound)) ;
 
-    if (parent != EMPTY && Sched [parent] != myid)
+    if (parent != TRILINOS_CHOLMOD_EMPTY && Sched [parent] != myid)
     {
 	PR1 ((Common->file, "Recving usolve from "ID", size "ID"\n", Sched [parent],
 		cn - nfound)) ;

@@ -62,11 +62,6 @@
 
 #include "Piro_InvertMassMatrixDecorator.hpp"
 
-#ifdef HAVE_PIRO_IFPACK2
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#endif
-
 #ifdef HAVE_PIRO_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
@@ -152,12 +147,10 @@ void Piro::TempusSolver<Scalar>::initialize(
     //based on that sublist, rather than hard-coding it here.
     solnVerbLevel_ = Teuchos::VERB_DEFAULT;
 
-    RCP<Teuchos::ParameterList> timeStepControlPL = Teuchos::null; 
-    RCP<Teuchos::ParameterList> albTimeStepControlPL = Teuchos::null; 
     if (tempusPL->isSublist("Albany Time Step Control Options")) {
       *out_ << "\n    Using 'Albany Time Step Control Options'.\n";
       abort_on_fail_at_min_dt_ = true; 
-      albTimeStepControlPL = sublist(tempusPL, "Albany Time Step Control Options"); 
+      RCP<Teuchos::ParameterList> albTimeStepControlPL = sublist(tempusPL, "Albany Time Step Control Options"); 
       if (integratorPL->isSublist("Time Step Control")) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 
             "\n Error!  You are attempting to specify 'Albany Time Step Control Options' and 'Time Step Control Strategy' \n "
@@ -177,7 +170,7 @@ void Piro::TempusSolver<Scalar>::initialize(
       Scalar dt_max = albTimeStepControlPL->get<Scalar>("Maximum Time Step", dt_initial);
       Scalar reduc_factor = albTimeStepControlPL->get<Scalar>("Reduction Factor", 1.0);
       Scalar ampl_factor = albTimeStepControlPL->get<Scalar>("Amplification Factor", 1.0);
-      timeStepControlPL = sublist(integratorPL, "Time Step Control", false);
+      RCP<Teuchos::ParameterList> timeStepControlPL = sublist(integratorPL, "Time Step Control", false);
       timeStepControlPL->set<Scalar>("Initial Time", t_initial_); 
       timeStepControlPL->set<Scalar>("Final Time", t_final_); 
       timeStepControlPL->set<Scalar>("Initial Time Step", dt_initial); 
@@ -215,11 +208,6 @@ void Piro::TempusSolver<Scalar>::initialize(
     //
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
-#ifdef HAVE_PIRO_IFPACK2
-    typedef Thyra::PreconditionerFactoryBase<double> Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
-    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
 #ifdef HAVE_PIRO_MUELU
     Stratimikos::enableMueLu(linearSolverBuilder);
 #endif
@@ -328,11 +316,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
     //Create Tempus integrator with observer using tempusPL, model_ and sensitivity method
-    bool sens_param_index = 0; 
-    if (tempusPL->isSublist("Sensitivities")){
-      Teuchos::ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities", true);
-      sens_param_index = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
-    }
+    bool sens_param_index = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
     typedef Thyra::ModelEvaluatorBase MEB;
     if (sens_method_ != NONE) {
       const bool is_scalar_param = model_->createOutArgs().supports(MEB::OUT_ARG_DfDp, sens_param_index).supports(MEB::DERIV_MV_JACOBIAN_FORM);
@@ -564,7 +548,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     modelInArgs.set_p(l, p_in);
   }
   //Set time to be final time at which the solve occurs (< t_final_ in the case we don't make it to t_final_).
-  //IKT: get final time from solutionHistory workingSpace, which is different than how it is done in Piro::RythmosSolver class.
+  //IKT: get final time from solutionHistory workingSpace.
   //IKT, 11/1/16, FIXME? workingState pointer is null right now, so the following
   //code is commented out for now.  Use t_final_ and soln_dt in set_t instead for now.
   /*RCP<Tempus::SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();

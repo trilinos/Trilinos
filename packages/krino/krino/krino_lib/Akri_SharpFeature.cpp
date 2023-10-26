@@ -12,6 +12,7 @@
 #include "Akri_CDMesh_Utils.hpp"
 #include "Akri_Edge.hpp"
 #include "Akri_Phase_Support.hpp"
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -215,16 +216,16 @@ bool SharpFeatureInfo::angle_is_sharp_between_any_two_sides_2D(const stk::mesh::
 {
   if (sidesOfEdge.size() > 1)
   {
-    const Vector3d nodeCoords(field_data<double>(coordsField, node),2);
+    const stk::math::Vector3d nodeCoords(field_data<double>(coordsField, node),2);
 
-    std::vector<Vector3d> sideVec;
+    std::vector<stk::math::Vector3d> sideVec;
     sideVec.reserve(sidesOfEdge.size());
     for (auto && side : sidesOfEdge)
     {
       StkMeshEntities sideNodes{mesh.begin_nodes(side), mesh.end_nodes(side)};
-      ThrowAssertMsg(sideNodes[0] == node || sideNodes[1] == node, "Did not find side node for segment.");
+      STK_ThrowAssertMsg(sideNodes[0] == node || sideNodes[1] == node, "Did not find side node for segment.");
       const stk::mesh::Entity sideNode = (sideNodes[1] == node) ? sideNodes[0] : sideNodes[1];
-      const Vector3d coordsOfSideNode(field_data<double>(coordsField, sideNode),2);
+      const stk::math::Vector3d coordsOfSideNode(field_data<double>(coordsField, sideNode),2);
       sideVec.push_back((coordsOfSideNode - nodeCoords).unit_vector());
     }
 
@@ -236,11 +237,11 @@ bool SharpFeatureInfo::angle_is_sharp_between_any_two_sides_2D(const stk::mesh::
   return false;
 }
 
-double cosine_of_dihedral_angle_3D(const Vector3d & edgeVec, const Vector3d & faceTangent0, const Vector3d & faceTangent1)
+double cosine_of_dihedral_angle_3D(const stk::math::Vector3d & edgeVec, const stk::math::Vector3d & faceTangent0, const stk::math::Vector3d & faceTangent1)
 {
   // https://en.wikipedia.org/wiki/Dihedral_angle
-  const Vector3d crossEdgeFace0 = Cross(edgeVec, faceTangent0);
-  const Vector3d crossEdgeFace1 = Cross(edgeVec, faceTangent1);
+  const stk::math::Vector3d crossEdgeFace0 = Cross(edgeVec, faceTangent0);
+  const stk::math::Vector3d crossEdgeFace1 = Cross(edgeVec, faceTangent1);
 
   return Dot(crossEdgeFace0,crossEdgeFace1) / (crossEdgeFace0.length()*crossEdgeFace1.length());
 }
@@ -258,15 +259,15 @@ bool SharpFeatureInfo::angle_is_sharp_between_any_two_sides_3D(const stk::mesh::
 {
   if (sidesOfEdge.size() > 1)
   {
-    const Vector3d edgeNodeCoords0(field_data<double>(coordsField, edgeNodes[0]));
-    const Vector3d edgeNodeCoords1(field_data<double>(coordsField, edgeNodes[1]));
-    const Vector3d edgeVec = edgeNodeCoords1 - edgeNodeCoords0;
+    const stk::math::Vector3d edgeNodeCoords0(field_data<double>(coordsField, edgeNodes[0]));
+    const stk::math::Vector3d edgeNodeCoords1(field_data<double>(coordsField, edgeNodes[1]));
+    const stk::math::Vector3d edgeVec = edgeNodeCoords1 - edgeNodeCoords0;
 
-    std::vector<Vector3d> faceTangent;
+    std::vector<stk::math::Vector3d> faceTangent;
     faceTangent.reserve(sidesOfEdge.size());
     for (auto && side : sidesOfEdge)
     {
-      const Vector3d coordsOfNonEdgeNodeOfSide(field_data<double>(coordsField, get_face_node_not_on_edge(mesh, edgeNodes, side)));
+      const stk::math::Vector3d coordsOfNonEdgeNodeOfSide(field_data<double>(coordsField, get_face_node_not_on_edge(mesh, edgeNodes, side)));
       faceTangent.push_back(coordsOfNonEdgeNodeOfSide - edgeNodeCoords0);
     }
 

@@ -100,7 +100,7 @@ Int TRILINOS_KLU_scale		/* return TRUE if successful, FALSE otherwise */
     {
 	for (row = 0 ; row < n ; row++)
 	{
-	    W [row] = EMPTY ;
+	    W [row] = TRILINOS_KLU_EMPTY ;
 	}
     }
 

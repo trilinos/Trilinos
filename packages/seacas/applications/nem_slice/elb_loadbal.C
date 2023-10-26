@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -135,10 +135,13 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   int glob_method = 0;
   int start_proc  = 0;
 
-  INT             *tmp_start = nullptr, *tmp_adj = nullptr;
+  INT             *tmp_start = nullptr;
+  INT             *tmp_adj   = nullptr;
   int             *tmp_vwgts = nullptr;
   size_t           tmp_nv;
-  std::vector<int> nprocg, nelemg, nadjg;
+  std::vector<int> nprocg;
+  std::vector<int> nelemg;
+  std::vector<int> nadjg;
   size_t           max_vtx;
   size_t           max_adj;
   int              group;
@@ -149,10 +152,15 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   int              tmp_lev;
   int             *tmp_v2p = nullptr;
 
-  float             *x_ptr = nullptr, *y_ptr = nullptr, *z_ptr = nullptr;
-  float             *x_node_ptr = nullptr, *y_node_ptr = nullptr, *z_node_ptr = nullptr;
-  std::vector<float> x_elem_ptr, y_elem_ptr, z_elem_ptr;
-  float             *tmp_x = nullptr, *tmp_y = nullptr, *tmp_z = nullptr;
+  float             *x_node_ptr = nullptr;
+  float             *y_node_ptr = nullptr;
+  float             *z_node_ptr = nullptr;
+  std::vector<float> x_elem_ptr;
+  std::vector<float> y_elem_ptr;
+  std::vector<float> z_elem_ptr;
+  float             *tmp_x     = nullptr;
+  float             *tmp_y     = nullptr;
+  float             *tmp_z     = nullptr;
   float             *tmp_ewgts = nullptr;
 
   long    seed = 1;
@@ -200,32 +208,31 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 
     switch (mesh->num_dims) {
     case 3:
-      x_node_ptr = (mesh->coords);
-      y_node_ptr = (mesh->coords) + (mesh->num_nodes);
-      z_node_ptr = (mesh->coords) + 2 * (mesh->num_nodes);
+      x_node_ptr = mesh->coords.data();
+      y_node_ptr = mesh->coords.data() + (mesh->num_nodes);
+      z_node_ptr = mesh->coords.data() + 2 * (mesh->num_nodes);
       break;
 
     case 2:
-      x_node_ptr = (mesh->coords);
-      y_node_ptr = (mesh->coords) + (mesh->num_nodes);
+      x_node_ptr = mesh->coords.data();
+      y_node_ptr = mesh->coords.data() + (mesh->num_nodes);
       z_node_ptr = (float *)calloc(mesh->num_nodes, sizeof(float));
       break;
 
     case 1:
-      x_node_ptr = (mesh->coords);
+      x_node_ptr = mesh->coords.data();
       y_node_ptr = (float *)calloc(mesh->num_nodes, sizeof(float));
       z_node_ptr = (float *)calloc(mesh->num_nodes, sizeof(float));
       break;
+
+    default: Gen_Error(0, "FATAL: Invalid mesh dimension.  Must be 1, 2, or 3."); return 0;
     }
-  }
-  else {
-    x_node_ptr = y_node_ptr = z_node_ptr = nullptr;
   }
 
   /* now set the pointers that are being sent to Chaco */
-  x_ptr = x_node_ptr;
-  y_ptr = y_node_ptr;
-  z_ptr = z_node_ptr;
+  float *x_ptr = x_node_ptr;
+  float *y_ptr = y_node_ptr;
+  float *z_ptr = z_node_ptr;
 
   /*
    * For an elemental decomposition using inertial, ZPINCH, BRICK
@@ -565,7 +572,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
               for (int cnt = graph->start[ecnt]; cnt < graph->start[ecnt + 1]; cnt++) {
                 if (elem_map[graph->adj[cnt] - 1] > 0) {
                   tmp_adj[adjp] = elem_map[graph->adj[cnt] - 1];
-                  if (!weight->edges.empty()) {
+                  if (!weight->edges.empty() && tmp_ewgts != nullptr) {
                     tmp_ewgts[adjp] = weight->edges[cnt];
                   }
                   adjp++;
@@ -573,7 +580,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
               }
               tmp_start[elemp + 1] = adjp;
             }
-            if (!weight->vertices.empty()) {
+            if (!weight->vertices.empty() && tmp_vwgts != nullptr) {
               tmp_vwgts[elemp] = weight->vertices[ecnt];
             }
 
@@ -634,7 +641,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         tmp_z   = z_ptr;
         tmp_v2p = lb->vertex2proc;
 
-        for (int cnt = 0; cnt < machine->num_dims; cnt++) {
+        int upper = machine->num_dims > 3 ? 3 : machine->num_dims;
+        for (int cnt = 0; cnt < upper; cnt++) {
           tmpdim[cnt] = machine->dim[cnt];
         }
         if (machine->type == MESH) {
@@ -677,6 +685,11 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         flag = ZOLTAN_assign("HSFC", totalproc, tmp_nv, tmp_vwgts, tmp_x, tmp_y, tmp_z,
                              lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
+      }
+#else
+      else if (lb->type == ZOLTAN_RCB || lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC) {
+        Gen_Error(0, "fatal: Invalid load balance types -- Zoltan is not supported in this build");
+        goto cleanup;
       }
 #endif
       else if (lb->type == LINEAR) {
@@ -791,7 +804,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     if (tmp_z) {
       free(tmp_z);
     }
-    free(problem->group_no);
+    problem->group_no.clear();
     vec_free(mesh->eb_cnts);
     /* since Chaco didn't free the graph, need to do it here */
     vec_free(graph->start);
@@ -974,7 +987,7 @@ cleanup:
     if (tmp_z) {
       free(tmp_z);
     }
-    free(problem->group_no);
+    problem->group_no.clear();
     vec_free(mesh->eb_cnts);
     /* since Chaco didn't free the graph, need to do it here */
     vec_free(graph->start);

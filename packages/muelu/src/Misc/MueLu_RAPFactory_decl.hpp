@@ -48,12 +48,9 @@
 
 #include <string>
 
-#include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MatrixUtils_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 

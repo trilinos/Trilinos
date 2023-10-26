@@ -48,7 +48,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "PanzerDiscFE_config.hpp"
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
@@ -72,7 +72,7 @@ public:
 
    virtual ~ResponseMESupportBase() {}
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    // This is the epetra view of the world
    ///////////////////////////////////////////////////////////
 
@@ -113,7 +113,7 @@ public:
    //! Does this response support derivative evaluation?
    virtual bool supportsDerivative() const = 0;
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    // This is the epetra view of the world
    ///////////////////////////////////////////////////////////
 
@@ -150,7 +150,7 @@ public:
 
    virtual ~ResponseMESupportBase() {}
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
    // This is the epetra view of the world
    ///////////////////////////////////////////////////////////
 

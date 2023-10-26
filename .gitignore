@@ -32,6 +32,7 @@ doxygen_objdb_*.tmp
 /packages/moocho/
 /packages/optika/
 /packages/xSDKTrilinos/
+/packages/trilinos_linear_solvers/
 
 # Ignore local gitdist config file (.gitdis.default is in git repo)
 /.gitdist
@@ -96,7 +97,9 @@ MPI_DEBUG/
 SERIAL_DEBUG/
 SERIAL_RELEASE/
 
-/build
+# People usually build Trilinos in a 'build' directory. Ignore it.
+build*/
+
 packages/tpetra/test/MatrixMatrix/matrices/*.m
 
 packages/Sundance/Playa/doc/Doxygen/html/

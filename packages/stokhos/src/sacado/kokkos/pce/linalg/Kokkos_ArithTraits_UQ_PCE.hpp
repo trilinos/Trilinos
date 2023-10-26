@@ -51,7 +51,6 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Details {
 
 template <typename S>
 class ArithTraits< Sacado::UQ::PCE<S> > {
@@ -203,15 +202,14 @@ public:
   }
 };
 
-}
-}
+} // namespace Kokkos
 
 namespace KokkosBatched {
 
   template <typename S>
   struct MagnitudeScalarType< Sacado::UQ::PCE<S> > {
     typedef Sacado::UQ::PCE<S> val_type;
-    typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type type;
+    typedef typename Kokkos::ArithTraits<val_type>::mag_type type;
   };
 
 }

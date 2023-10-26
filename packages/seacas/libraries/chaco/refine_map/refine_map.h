@@ -1,13 +1,12 @@
-#ifndef CHACO_REFINE_MAP_REFINE_MAP_H
-#define CHACO_REFINE_MAP_REFINE_MAP_H
-
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
+#pragma once
+
 struct refine_vdata
 {
   float above; /* sum of edge weights pulling me higher */
@@ -23,5 +22,3 @@ struct refine_edata
   struct refine_edata *prev;         /* pointer to previous guy in list */
   struct refine_edata *next;         /* pointer to next guy in list */
 };
-
-#endif

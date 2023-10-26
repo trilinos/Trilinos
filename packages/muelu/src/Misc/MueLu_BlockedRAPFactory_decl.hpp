@@ -48,7 +48,6 @@
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 
@@ -59,7 +58,6 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
   /*!

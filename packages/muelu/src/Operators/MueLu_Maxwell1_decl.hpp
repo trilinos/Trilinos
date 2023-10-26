@@ -50,20 +50,13 @@
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_ReitzingerPFactory_fwd.hpp"
-#include "MueLu_SaPFactory_fwd.hpp"
 
-#include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_SmootherBase.hpp"
-
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-#include "MueLu_Utilities_kokkos_fwd.hpp"
-#endif
+#include "MueLu_SmootherBase_fwd.hpp"
 
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
@@ -98,14 +91,18 @@ namespace MueLu {
     //! Constructor
     Maxwell1() :
       Hierarchy11_(Teuchos::null),
-      Hierarchy22_(Teuchos::null)
+      Hierarchy22_(Teuchos::null),
+      HierarchyGmhd_(Teuchos::null),
+      mode_(MODE_STANDARD)
     {
     }
 
     //! Constructor with Hierarchies
     Maxwell1(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) :
       Hierarchy11_(H11),
-      Hierarchy22_(H22)
+      Hierarchy22_(H22),
+      HierarchyGmhd_(Teuchos::null),
+      mode_(MODE_STANDARD)
     {
     }
 
@@ -123,7 +120,8 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector> & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+               bool ComputePrec = true):
+               mode_(MODE_STANDARD)
     {
       RCP<Matrix> Kn_Matrix;
       initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
@@ -145,12 +143,38 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector> & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+               bool ComputePrec = true):
+               mode_(MODE_STANDARD)
     {
       initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
       resetMatrix(SM_Matrix,ComputePrec);
     }
 
+    /** Gmhd GMHD Constructor with Jacobian and nodal matrix AND Gmhd matrix
+     *
+     * \param[in] SM_Matrix Jacobian
+     * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] Kn_Matrix Nodal Laplacian
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
+     * \param[in] GmhdA_Matrix Gmhd matrix including generalized Ohms law equations
+     * \param[in] ComputePrec If true, compute the preconditioner immediately
+     */
+    Maxwell1(const Teuchos::RCP<Matrix> & SM_Matrix,
+               const Teuchos::RCP<Matrix> & D0_Matrix,
+               const Teuchos::RCP<Matrix> & Kn_Matrix,
+               const Teuchos::RCP<MultiVector> & Nullspace,
+               const Teuchos::RCP<RealValuedMultiVector> & Coords,
+               Teuchos::ParameterList& List, const Teuchos::RCP<Matrix> & GmhdA_Matrix,
+             bool ComputePrec = true):
+            mode_(MODE_GMHD_STANDARD)
+    {
+      initialize(D0_Matrix,Kn_Matrix,Nullspace,Coords,List);
+      resetMatrix(SM_Matrix,ComputePrec);
+      GmhdA_Matrix_ = GmhdA_Matrix;
+      HierarchyGmhd_ = rcp(new Hierarchy("HierarchyGmhd"));
+      GMHDSetupHierarchy(List);
+    }
    
     /** Constructor with parameter list
      *
@@ -159,8 +183,9 @@ namespace MueLu {
      * \param[in] ComputePrec If true, compute the preconditioner immediately
      */
     Maxwell1(const Teuchos::RCP<Matrix> & SM_Matrix,
-               Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+             Teuchos::ParameterList& List,
+             bool ComputePrec = true):
+             mode_(MODE_STANDARD)
     {
 
       RCP<MultiVector> Nullspace = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
@@ -227,6 +252,9 @@ namespace MueLu {
     Teuchos::RCP<Matrix> generate_kn() const;
 
 
+    //! Sets up hiearchy for GMHD matrices that include generalized Ohms law equations
+    void GMHDSetupHierarchy(Teuchos::ParameterList& List) const;
+               
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
      *
      * \param[in] D0_Matrix Discrete Gradient
@@ -263,10 +291,8 @@ namespace MueLu {
     //! dump out boolean ArrayView
     void dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const;
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     //! dump out boolean Kokkos::View
     void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
-#endif
 
     //! get a (synced) timer
     Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm=Teuchos::null) const;
@@ -275,15 +301,13 @@ namespace MueLu {
     mutable Teuchos::ParameterList parameterList_, precList11_, precList22_;
 
     //! Two hierarchies: one for the (1,1)-block, another for the (2,2)-block
-    Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_;
+    Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_, HierarchyGmhd_;
 
     //! Various matrices
-    Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, Kn_Matrix_;
+    Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, Kn_Matrix_, GmhdA_Matrix_;
 
     //! Vectors for BCs
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
-#endif
     int BCedges_, BCnodes_;
     Teuchos::ArrayRCP<bool> BCrows_, BCcols_, BCdomain_;
     //! Nullspace
@@ -295,7 +319,7 @@ namespace MueLu {
     bool applyBCsTo22_;
     
     //! Execution modes
-    typedef enum {MODE_STANDARD=0, MODE_REFMAXWELL, MODE_EDGE_ONLY} mode_type;
+    typedef enum {MODE_STANDARD=0, MODE_REFMAXWELL, MODE_EDGE_ONLY, MODE_GMHD_STANDARD} mode_type;
     mode_type mode_;
 
     //! Temporary memory (cached vectors for RefMaxwell-style)

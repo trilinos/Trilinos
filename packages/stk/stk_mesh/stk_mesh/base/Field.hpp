@@ -41,6 +41,7 @@
 #include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
+#include <iomanip>
 
 //----------------------------------------------------------------------
 
@@ -191,13 +192,16 @@ public:
   {
     const unsigned num_scalar_values = size_per_entity / sizeof(Scalar);
     Scalar* casted_data = reinterpret_cast<Scalar*>(data);
+    auto previousPrecision = out.precision();
+    constexpr auto thisPrecision = std::numeric_limits<Scalar>::digits10;
 
     out << "{";
     for (unsigned i = 0; i < num_scalar_values; ++i) {
-      out << casted_data[i] << " ";
+      out << std::setprecision(thisPrecision) << casted_data[i] << " ";
     }
     out << "}";
 
+    out << std::setprecision(previousPrecision);
     return out;
   }
 
@@ -220,7 +224,7 @@ public:
       const int offset     = len_name - len_suffix ;
       if ( 0 <= offset ) {
         const char * const name_suffix = name().c_str() + offset;
-        ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
+        STK_ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
                         "For name = \"" << name_suffix << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
                         reserved_state_suffix[i] << "\"");
       }

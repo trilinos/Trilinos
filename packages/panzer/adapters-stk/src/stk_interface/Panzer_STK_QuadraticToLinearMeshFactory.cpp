@@ -47,6 +47,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp" // for plist validation
 #include <stk_mesh/base/FieldBase.hpp>
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -247,7 +248,7 @@ void QuadraticToLinearMeshFactory::buildMetaData(stk::ParallelMachine /* paralle
 {
   if (print_debug_) {
     std::cout << "\n\n**** DEBUG: begin printing source quad mesh exodus file metadata ****\n";
-    quadMesh_->getMetaData()->dump_all_meta_info(std::cout);
+    stk::mesh::impl::dump_all_meta_info(*(quadMesh_->getMetaData()), std::cout);
     std::cout << "\n\n**** DEBUG: end printing source quad mesh exodus file metadata ****\n";
   }
 
@@ -324,7 +325,7 @@ void QuadraticToLinearMeshFactory::buildMetaData(stk::ParallelMachine /* paralle
 
   if (print_debug_) {
     std::cout << "\n\n**** DEBUG: begin printing source linear mesh exodus file metadata ****\n";
-    mesh.getMetaData()->dump_all_meta_info(std::cout);
+    stk::mesh::impl::dump_all_meta_info(*(mesh.getMetaData()), std::cout);
     std::cout << "\n\n**** DEBUG: end printing source linear mesh exodus file metadata ****\n";
   }
 }

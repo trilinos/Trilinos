@@ -91,7 +91,7 @@ namespace MueLu {
           const std::string& name = levelListEntry->first;
           if (name == "A" || name == "P" || name == "R"  || name== "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Coordinates"
               || name == "D0" || name == "M1" || name == "Ms" || name == "M0inv"
-              || name == "Pnodal" || name == "NodeMatrix"
+              || name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix"
               || name == "Node Comm" || name == "DualNodeID2PrimalNodeID"
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
               || name == "pcoarsen: element to node map"

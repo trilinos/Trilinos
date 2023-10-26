@@ -3,6 +3,7 @@
 
 #include "GlobalReporter.hpp"
 #include "Reporter.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 
 namespace ngp_testing {
 namespace global {
@@ -21,14 +22,32 @@ ReporterBase*& getDeviceReporterOnHost()
   return deviceReporterOnHost;
 }
 
+#ifdef KOKKOS_ENABLE_SYCL
+namespace{
+sycl::ext::oneapi::experimental::device_global<
+    ReporterBase*,
+    decltype(sycl::ext::oneapi::experimental::properties(
+        sycl::ext::oneapi::experimental::device_image_scope))>
+  deviceReporterOnDevice;
+}
+#endif
+
 NGP_TEST_INLINE ReporterBase*& getDeviceReporterOnDevice()
 {
-  #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU
+#ifndef KOKKOS_ENABLE_SYCL
+  KOKKOS_IF_ON_DEVICE((
     __device__ static ReporterBase* deviceReporterOnDevice = nullptr;
-  #else
+    return deviceReporterOnDevice;
+  ))
+#else
+  KOKKOS_IF_ON_DEVICE((
+    return deviceReporterOnDevice;
+  ))
+#endif
+  KOKKOS_IF_ON_HOST((
     static ReporterBase* deviceReporterOnDevice = nullptr;
-  #endif
-  return deviceReporterOnDevice;
+    return deviceReporterOnDevice;
+  ))
 }
 
 inline
@@ -45,7 +64,7 @@ using HostReporter = Reporter<Kokkos::DefaultHostExecutionSpace::device_type>;
 inline
 void copy_to_device(const DeviceReporter& reporter,
                     ReporterBase* const addr) {
-  Kokkos::parallel_for(Kokkos::RangePolicy<>(0,1), KOKKOS_LAMBDA(const int){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int){
     global::getDeviceReporterOnDevice() = addr;
     new (global::getDeviceReporterOnDevice()) DeviceReporter(reporter);
   });
@@ -70,11 +89,12 @@ void finalize_reporters() {
 }
 
 NGP_TEST_INLINE ReporterBase* get_reporter() {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
-  return global::getDeviceReporterOnDevice();
-#else
-  return global::getHostReporter();
-#endif
+  KOKKOS_IF_ON_DEVICE((
+    return global::getDeviceReporterOnDevice();
+  ))
+  KOKKOS_IF_ON_HOST((
+    return global::getHostReporter();
+  ))
 }
 
 inline

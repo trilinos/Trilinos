@@ -403,7 +403,6 @@ getY() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
   RCP<const DMVPV> mvpv =
     rcp_dynamic_cast<const DMVPV>(sens_integrator_->getX());
   return mvpv->getMultiVector();
@@ -416,7 +415,6 @@ getYDot() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
   RCP<const DMVPV> mvpv =
     rcp_dynamic_cast<const DMVPV>(sens_integrator_->getXDot());
   return mvpv->getMultiVector();
@@ -429,7 +427,6 @@ getYDotDot() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
   RCP<const DMVPV> mvpv =
     rcp_dynamic_cast<const DMVPV>(sens_integrator_->getXDotDot());
   return mvpv->getMultiVector();

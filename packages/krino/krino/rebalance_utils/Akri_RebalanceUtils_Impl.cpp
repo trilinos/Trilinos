@@ -48,7 +48,7 @@ void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp
     {
       if (bulk_data.bucket(elem).owned())
       {
-        ThrowRequire(!decomp_changes.has_entity(fts[i]) ||
+        STK_ThrowRequire(!decomp_changes.has_entity(fts[i]) ||
             decomp_changes.get_entity_destination(fts[i]) == dest_proc);
         decomp_changes.set_entity_destination(fts[i], dest_proc);
       }
@@ -78,7 +78,7 @@ void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp
 
       for (auto && child_side : child_sides)
       {
-        ThrowRequire(bulk_data.bucket(child_side).owned());
+        STK_ThrowRequire(bulk_data.bucket(child_side).owned());
         const auto * fts = bulk_data.begin(child_side, stk::topology::CONSTRAINT_RANK);
         const int num_fts = bulk_data.num_connectivity(child_side, stk::topology::CONSTRAINT_RANK);
         for (int j = 0; j < num_fts; ++j)
@@ -102,13 +102,12 @@ update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp_c
 {
   auto all_changes = decomp_changes.get_all_partition_changes();
 
-  // First pass remove all refinement children from the list of changes.
-  // Second pass will set their destinations all to the destination of their root parent
-  // if it is moving.
+  // First pass remove all constrained entities from the list of changes.
+  // Second pass will set their destinations according to their dependence
   for(auto && change : all_changes)
   {
     stk::mesh::Entity entity = change.first;
-    if(refinement.is_child(entity))
+    if(refinement.has_rebalance_constraint(entity))
     {
       decomp_changes.delete_entity(entity);
     }
@@ -121,7 +120,7 @@ update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp_c
     stk::mesh::Entity entity = change.first;
     const auto dest = change.second;
 
-    fill_all_children(refinement, entity, adapt_children);
+    refinement.fill_dependents(entity, adapt_children);
     for(auto && child : adapt_children)
     {
       decomp_changes.set_entity_destination(child, dest);
@@ -143,13 +142,13 @@ update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp_c
       const int num_sides = bulk_data.num_connectivity(entity, side_rank);
       for (int i = 0; i < num_sides; ++i)
       {
-        ThrowRequire(!decomp_changes.has_entity(conn_sides[i]));
+        STK_ThrowRequire(!decomp_changes.has_entity(conn_sides[i]));
         const auto * conn_fts = bulk_data.begin(conn_sides[i], stk::topology::CONSTRAINT_RANK);
         const int num_fts =
             bulk_data.num_connectivity(conn_sides[i], stk::topology::CONSTRAINT_RANK);
         for (int j = 0; j < num_fts; ++j)
         {
-          ThrowErrorMsgIf(decomp_changes.get_entity_destination(conn_fts[j]) != dest,
+          STK_ThrowErrorMsgIf(decomp_changes.get_entity_destination(conn_fts[j]) != dest,
               "Family Tree:\n" << debug_entity(bulk_data, conn_fts[j])
               << "\nHas destination proc = "
               << decomp_changes.get_entity_destination(conn_fts[j])
@@ -179,7 +178,7 @@ update_rebalance_for_cdfem(stk::balance::DecompositionChangeList & decomp_change
     if(bulk_data.bucket(entity).member(cdfem_parent_part))
     {
       const auto * mesh_elem = cdmesh.find_mesh_element(bulk_data.identifier(entity));
-      ThrowRequire(mesh_elem);
+      STK_ThrowRequire(mesh_elem);
 
       subelements.clear();
       mesh_elem->get_subelements(subelements);
@@ -187,7 +186,7 @@ update_rebalance_for_cdfem(stk::balance::DecompositionChangeList & decomp_change
       for(auto && subelem : subelements)
       {
         auto subelem_entity = subelem->entity();
-        ThrowRequire(bulk_data.is_valid(subelem_entity));
+        STK_ThrowRequire(bulk_data.is_valid(subelem_entity));
 
         decomp_changes.set_entity_destination(subelem_entity, dest);
       }
@@ -218,7 +217,7 @@ accumulate_cdfem_child_weights_to_parents(const stk::mesh::BulkData & bulk_data,
       const auto child_elem = (*b_ptr)[i];
       const auto parent = cdmesh.get_parent_element(child_elem);
       double * parent_weight_data = stk::mesh::field_data(element_weights_field, parent);
-      ThrowRequire(parent_weight_data);
+      STK_ThrowRequire(parent_weight_data);
       *parent_weight_data += weight_data[i];
       weight_data[i] = 0.;
     }
@@ -230,21 +229,21 @@ void accumulate_adaptivity_child_weights_to_parents(
 {
   auto selector = stk::mesh::selectField(element_weights_field) &
       bulk_data.mesh_meta_data().locally_owned_part();
-  std::vector<stk::mesh::Entity> all_children;
+  std::vector<stk::mesh::Entity> all_dependents;
   const auto & buckets = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, selector);
   for (auto && b_ptr : buckets)
   {
     for (auto && elem : *b_ptr)
     {
-      if (refinement.is_child(elem)) continue;
+      if (!refinement.is_parent(elem)) continue;
 
-      all_children.clear();
-      fill_all_children(refinement, elem, all_children);
+      all_dependents.clear();
+      refinement.fill_dependents(elem, all_dependents);
 
       double child_weights_sum = 0.;
-      for (auto && child : all_children)
+      for (auto && dep : all_dependents)
       {
-        double & child_weight = *stk::mesh::field_data(element_weights_field, child);
+        double & child_weight = *stk::mesh::field_data(element_weights_field, dep);
         child_weights_sum += child_weight;
         child_weight = 0.;
       }
@@ -260,7 +259,7 @@ bool is_owned(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity)
 {
   const bool owned_part = mesh.bucket(entity).member(mesh.mesh_meta_data().locally_owned_part());
   const bool owner_rank = mesh.parallel_rank() == mesh.parallel_owner_rank(entity);
-  ThrowErrorMsgIf(owned_part != owner_rank,
+  STK_ThrowErrorMsgIf(owned_part != owner_rank,
       "Mismatch between parallel_owner_rank and locally_owned_part membership for:\n"
       << debug_entity(mesh, entity) << "\n");
   return owner_rank;

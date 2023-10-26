@@ -46,18 +46,13 @@
 #ifndef MUELU_REPARTITIONBLOCKDIAGONALFACTORY_DECL_HPP_
 #define MUELU_REPARTITIONBLOCKDIAGONALFACTORY_DECL_HPP_
 
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_Import.hpp>
-#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_Import_fwd.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_RepartitionBlockDiagonalFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

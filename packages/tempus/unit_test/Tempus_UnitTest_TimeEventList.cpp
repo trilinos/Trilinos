@@ -350,4 +350,4 @@ TEUCHOS_UNIT_TEST(TimeEventList, createTimeEventList)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

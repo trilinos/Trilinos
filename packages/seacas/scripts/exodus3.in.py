@@ -1,5 +1,5 @@
 """
-exodus.py v 1.20.15 (seacas-py3) is a python wrapper of some of the exodus library
+exodus.py v 1.21.1 (seacas-py3) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -51,7 +51,7 @@ of global variables. Although these examples correspond to typical FE
 applications, the data format is flexible enough to accommodate a
 spectrum of uses.
 
-Copyright(C) 1999-2022 National Technology & Engineering Solutions
+Copyright(C) 1999-2023 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -70,12 +70,12 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.20.17 (seacas-py3)"
+EXODUS_PY_VERSION = "1.21.1 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.20.17 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.21.1 (seacas-py3), a python wrapper of some of the exodus library.
 
-Copyright (c) 2013-2022 National Technology &
+Copyright (c) 2013-2023 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
 Contract DE-NA0003525 with NTESS, the U.S. Government retains certain
 rights in this software.
@@ -114,19 +114,16 @@ def getExodusVersion():
     Parse the exodusII.h header file and return the version number or 0 if not
     found.
     """
-    version_major = -1
-    version_minor = -1
-    with open(f"{ACCESS}/@SEACAS_INCLUDEDIR@/exodusII.h") as header_file:
-        for line in header_file:
-            fields = line.split()
-            if len(fields) == 3 and fields[0] == '#define':
-                if fields[1] == 'EXODUS_VERSION_MAJOR':
-                    version_major = int(fields[2])
-                if fields[1] == 'EXODUS_VERSION_MINOR':
-                    version_minor = int(fields[2])
-            if (version_major > 0 and version_minor >= 0):
-                return 100 * version_major + version_minor
-    return 0
+
+    return _parse_exodus_version('@EXODUS_VERSION@')
+
+
+def _parse_exodus_version(version_string):
+    if version_string:
+        assert version_string.startswith("#define EXODUS_VERSION "), "Received a incorrectly formated verstion string. Please check the CMakeLists.txt"
+        return int(version_string.strip().split()[-1].strip('"').replace('.', ''))
+    else:
+        return 0
 
 
 try:
@@ -164,7 +161,12 @@ if os.uname()[0] == 'Darwin':
     EXODUS_SO = f"{ACCESS}/@SEACAS_LIBDIR@/libexodus.dylib"
 else:
     EXODUS_SO = f"{ACCESS}/@SEACAS_LIBDIR@/libexodus.so"
-EXODUS_LIB = ctypes.cdll.LoadLibrary(EXODUS_SO)
+pip_path = os.path.dirname(__file__)
+pip_so_path = os.path.join(pip_path, "libexodus.so")
+try:
+    EXODUS_LIB = ctypes.cdll.LoadLibrary(pip_so_path)
+except Exception:
+    EXODUS_LIB = ctypes.cdll.LoadLibrary(EXODUS_SO)
 
 MAX_STR_LENGTH = 32      # match exodus default
 MAX_NAME_LENGTH = 256     # match exodus default
@@ -1576,6 +1578,114 @@ class exodus:
 
     # --------------------------------------------------------------------
 
+    def get_num_map(self, mapType, idx):
+        """
+        get user-defined map of exodus element/node/edge/face index to user- or
+        application- defined element/node/edge/face values. Map values are arbitary integers
+
+        >>> elem_num_map = exo.get_num_map('EX_ELEM_MAP', 1)
+
+        Parameters
+        ----------
+            mapType   : ex_entity_type
+                        type of map being queried ('EX_ELEM_MAP', 'EX_NODE_MAP', 'EX_FACE_MAP', 'EX_EDGE_MAP')
+            idx       : int
+                        which map to return (1-based).  Use `inquire(mapType)` to get number of maps stored on database.
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<int>>  num_map
+
+            if array_type == 'numpy':
+              <np_array<int>>  num_map
+
+
+        Usage
+        -----
+        >>> em_cnt = exo.inquire('EX_INQ_ELEM_MAP')
+        >>> em     = exo.get_names('EX_ELEM_MAP')
+        >>> map    = exo.get_num_map('EX_ELEM_MAP', 2)
+
+        """
+        return self.__ex_get_num_map(mapType, idx)
+
+    # --------------------------------------------------------------------
+
+    def put_num_map(self, mapType, idx, num_map):
+        """
+        put user-defined map of exodus element/node/edge/face index to user- or
+        application- defined element/node/edge/face values. Map values are arbitary integers
+
+
+        Parameters
+        ----------
+            mapType   : ex_entity_type
+                        type of map being written ('EX_ELEM_MAP', 'EX_NODE_MAP', 'EX_FACE_MAP', 'EX_EDGE_MAP')
+            idx       : int
+                        which map to write (1-based).  Use `put_map_param(node_map_cnt, elem_map_cnt)` prior to this
+                        function to define number of maps on the database.
+            <list<int>>  elem_id_map
+
+
+        Usage
+        -----
+
+        >>> exo.put_map_param(nm_cnt, em_cnt)
+        >>> nm[0] = "My_Node_Map"
+        >>> exo.put_names('EX_NODE_MAP', nm);
+        >>> exo.put_num_map('EX_NODE_MAP', 1, scale_map)
+
+        """
+        return self.__ex_put_num_map(mapType, idx, num_map)
+
+    def put_map_param(self, node_map_cnt, elem_map_cnt):
+        """
+        Define number of node and element maps that will be written to the database
+
+        Parameters
+        ----------
+        node_map_cnt  : int
+                        number of node maps
+        elem_map_cnt  : int
+                        number of element maps
+
+        """
+        return self.__ex_put_map_param(node_map_cnt, elem_map_cnt)
+
+    # --------------------------------------------------------------------
+
+    def get_id_map(self, mapType):
+        """
+        get mapping of exodus element/node/edge/face index to user- or
+        application- defined element/node/edge/face id; id_map is ordered by the
+        *INDEX* ordering, a 1-based system going from 1 to
+        exo.num_???s(), used by exodus for storage and input/output
+        of array data stored on the elements/nodes/edges/faces; a user or application
+        can optionally use a separate *ID* numbering system,
+        so the id_map points to the element/node/edge/face *ID* for each
+        *INDEX*
+
+        >>> elem_id_map = exo.get_id_map('EX_ELEM_MAP')
+
+        Parameters
+        ----------
+            mapType   : ex_entity_type
+                        type of map being queried ('EX_ELEM_MAP', 'EX_NODE_MAP', 'EX_FACE_MAP', 'EX_EDGE_MAP')
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<int>>  id_map
+
+            if array_type == 'numpy':
+              <np_array<int>>  id_map
+
+        """
+        return self.__ex_get_id_map(mapType)
+
+    # --------------------------------------------------------------------
+
     def get_elem_id_map(self):
         """
         get mapping of exodus element index to user- or application-
@@ -1625,6 +1735,34 @@ class exodus:
             True = successful execution
         """
         return self.__ex_put_id_map('EX_ELEM_MAP', id_map)
+
+    # --------------------------------------------------------------------
+
+    def put_id_map(self, map_type, id_map):
+        """
+        store mapping of exodus entity index to user- or application-
+        defined entity id; id_map is ordered by the entity
+        *INDEX* ordering, a 1-based system going from 1 to
+        exo.num_XXX(), used by exodus for storage and input/output
+        of array data stored on the entities; a user or application
+        can optionally use a separate entity *ID* numbering system,
+        so the elem_id_map points to the entity *ID* for each
+        entity *INDEX*
+
+        >>> status = exo.put_id_map('EX_ELEM_MAP', elem_id_map)
+
+        Parameters
+        ----------
+            ex_entity_type   map_type
+                        type of map being queried ('EX_ELEM_MAP', 'EX_NODE_MAP', 'EX_FACE_MAP', 'EX_EDGE_MAP')
+            <list<int>>  elem_id_map
+
+        Returns
+        -------
+        status : bool
+            True = successful execution
+        """
+        return self.__ex_put_id_map(map_type, id_map)
 
     # --------------------------------------------------------------------
 
@@ -1708,54 +1846,6 @@ class exodus:
 
     # Generic (objType) get/put/query...
     # --------------------------------------------------------------------
-
-    def put_id_map(self, objType, id_map):
-        """
-        store mapping of exodus node index to user- or application-
-        defined node id; node_id_map is ordered the same as the nodal
-        coordinate arrays returned by exo.get_coords() -- this ordering
-        follows the exodus node *INDEX* order, a 1-based system going
-        from 1 to exo.num_nodes(); a user or application can optionally
-        use a separate node *ID* numbering system, so the node_id_map
-        points to the node *ID* for each node *INDEX*
-
-        >>> status = exo.put_node_id_map(node_id_map)
-
-        Parameters
-        ----------
-            <list<int>>  node_id_map
-
-        Returns
-        -------
-        status : bool
-            True = successful execution
-        """
-        return self.__ex_put_id_map(objType, id_map)
-
-    # --------------------------------------------------------------------
-
-    def get_id_map(self, objType):
-        """
-        get mapping of exodus node index to user- or application-
-        defined node id; node_id_map is ordered the same as the nodal
-        coordinate arrays returned by exo.get_coords() -- this ordering
-        follows the exodus node *INDEX* order, a 1-based system going
-        from 1 to exo.num_nodes(); a user or application can optionally
-        use a separate node *ID* numbering system, so the node_id_map
-        points to the node *ID* for each node *INDEX*
-
-        >>> node_id_map = exo.get_node_id_map()
-
-        Returns
-        -------
-
-            if array_type == 'ctype':
-              <list<int>>  node_id_map
-
-            if array_type == 'numpy':
-              <np_array<int>>  node_id_map
-        """
-        return self.__ex_get_id_map(objType)
 
     # --------------------------------------------------------------------
 
@@ -2202,7 +2292,28 @@ class exodus:
         self.__ex_put_reduction_variable_name(objType, index, name)
         return True
 
-    # --------------------------------------------------------------------
+    def get_entity_count(self, objType, entityId):
+        """
+        get number of nodes/elements in the specified set/block. Typically used internally
+        by other user-callable functions.
+
+        Parameters
+        ----------
+        objType   : ex_entity_type
+            type of object being queried
+        entityId : int
+            id of the entity (block, set) *ID* (not *INDEX*)
+        """
+
+        numVals = 0
+        if objType == "EX_NODAL":
+            numVals = self.num_nodes()
+        elif objType in ['EX_ELEM_BLOCK', 'EX_FACE_BLOCK', 'EX_EDGE_BLOCK']:
+            (_elemType, numVals, _nodesPerElem, _numAttr) = self.__ex_get_block(objType, entityId)
+        elif objType in ['EX_NODE_SET', 'EX_EDGE_SET', 'EX_FACE_SET', 'EX_SIDE_SET']:
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+
+        return numVals
 
     def get_variable_values(self, objType, entityId, name, step):
         """
@@ -2234,19 +2345,7 @@ class exodus:
         """
         names = self.get_variable_names(objType)
         var_id = names.index(name) + 1
-        numVals = 0
-        if objType == 'EX_NODAL':
-            numVals = self.num_nodes()
-        elif objType == 'EX_ELEM_BLOCK':
-            numVals = self.num_elems_in_blk(entityId)
-        elif objType == 'EX_NODE_SET':
-            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
-        elif objType == 'EX_EDGE_SET':
-            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
-        elif objType == 'EX_FACE_SET':
-            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
-        elif objType == 'EX_SIDE_SET':
-            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+        numVals = self.get_entity_count(objType, entityId)
 
         values = self.__ex_get_var(step, objType, var_id, entityId, numVals)
         if self.use_numpy:
@@ -2275,19 +2374,7 @@ class exodus:
         """
         names = self.get_variable_names(objType)
         var_id = names.index(name) + 1
-        numVals = 0
-        if objType == 'EX_NODAL':
-            numVals = self.num_nodes()
-        elif objType == 'EX_ELEM_BLOCK':
-            numVals = self.num_elems_in_blk(entityId)
-        elif objType == 'EX_NODE_SET':
-            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
-        elif objType == 'EX_EDGE_SET':
-            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
-        elif objType == 'EX_FACE_SET':
-            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
-        elif objType == 'EX_SIDE_SET':
-            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+        numVals = self.get_entity_count(objType, entityId)
 
         self.__ex_put_var(step, objType, var_id, entityId, numVals, values)
         return True
@@ -2403,9 +2490,9 @@ class exodus:
         """
         reads the blob parameters and blob data for one blob
         """
-        assem = ex_blob(id=object_id)
-        self.__ex_get_blob(assem)
-        return assem
+        blob = ex_blob(id=object_id)
+        self.__ex_get_blob(blob)
+        return blob
 
     def num_blks(self):
         """
@@ -2522,7 +2609,7 @@ class exodus:
             <int>     num_elem_attrs  number of attributes per element
         """
         (elemType, numElem, nodesPerElem, numAttr) = self.__ex_get_block('EX_ELEM_BLOCK', object_id)
-        return elemType.value, numElem.value, nodesPerElem.value, numAttr.value
+        return elemType, numElem, nodesPerElem, numAttr
 
     def put_elem_blk_info(self, elem_blk_id, elem_type, num_blk_elems,
                           num_elem_nodes, num_elem_attrs):
@@ -2618,7 +2705,7 @@ class exodus:
         if self.use_numpy:
             elem_block_connectivity = ctype_to_numpy(
                 self, elem_block_connectivity)
-        return elem_block_connectivity, num_elem_this_blk.value, num_nodes_per_elem.value
+        return elem_block_connectivity, num_elem_this_blk, num_nodes_per_elem
 
     def put_elem_connectivity(self, object_id, connectivity):
         """
@@ -2665,7 +2752,7 @@ class exodus:
                 element, then all attributes of the
                 second element, etc. Attributes are
                 ordered by the ordering of the names
-                returned by exo.get_element_attribute_names()
+                returned by exo.get_attribute_names()
         """
         elem_attrs = self.__ex_get_elem_attr(elem_blk_id)
         if self.use_numpy:
@@ -2693,10 +2780,39 @@ class exodus:
                 number of elements on the element block.
         """
         # Determine index of requested attribute in attribute list
-        elem_attr_names = self.get_element_attribute_names(elem_blk_id)
+        elem_attr_names = self.get_attribute_names('EX_ELEM_BLOCK', elem_blk_id)
         a_ndx = elem_attr_names.index(elem_attr_name)
 
-        values = self.__ex_get_one_attr('EX_ELEM_BLOCK', elem_blk_id, a_ndx)
+        values = self.__ex_get_one_attr('EX_ELEM_BLOCK', elem_blk_id, a_ndx + 1)
+        if self.use_numpy:
+            values = ctype_to_numpy(self, values)
+        return values
+
+    def get_attr_values(self, objType, elem_blk_id, elem_attr_name):
+        """
+        get an attribute for each element in a block
+
+        >>> elem_attrs = exo.get_elem_attr(elem_blk_id)
+
+        Parameters
+        ----------
+            <int>    elem_blk_id     element block *ID* (not *INDEX*)
+            <string> elem_attr_name  element attribute name
+
+        Returns
+        -------
+            if array_type == 'ctype': <list<float>>  values
+            if array_type == 'numpy': <np_array<float>>  values
+                array of values for the requested
+                attribute.  Array has dimensions of
+                1 x num_elem, where num_elem is the
+                number of elements on the element block.
+        """
+        # Determine index of requested attribute in attribute list
+        elem_attr_names = self.get_attribute_names('EX_ELEM_BLOCK', elem_blk_id)
+        a_ndx = elem_attr_names.index(elem_attr_name)
+
+        values = self.__ex_get_one_attr('EX_ELEM_BLOCK', elem_blk_id, a_ndx + 1)
         if self.use_numpy:
             values = ctype_to_numpy(self, values)
         return values
@@ -2711,14 +2827,14 @@ class exodus:
         ----------
         elem_blk_id : int
             element block *ID* (not *INDEX*)
-            <list<float>>  elem_attrs     list of all attribute values for all
-              elements in the block; the list
-              cycles through all attributes of
-              the first element, then all attributes
-              of the second element, etc. Attributes
-              are ordered by the ordering of the
-              names returned by
-              exo.get_element_attribute_names()
+        <list<float>>  elem_attrs     list of all attribute values for all
+            elements in the block; the list
+            cycles through all attributes of
+            the first element, then all attributes
+            of the second element, etc. Attributes
+            are ordered by the ordering of the
+            names returned by
+            exo.get_attribute_names()
         """
         self.__ex_put_elem_attr(elem_blk_id, elem_attrs)
 
@@ -2732,17 +2848,17 @@ class exodus:
         ----------
         elem_blk_id : int
             element block *ID* (not *INDEX*)
-            <string>       elem_attr_name element attribute name
-            <list<float>>  values         list of values for a single attribute
-                                          on a element block.  List dimensions
-                                          should be 1 x N_elem, where N_elem is
-                                          the number of elements on the element
-                                          block.
+        <string>       elem_attr_name element attribute name
+        <list<float>>  values         list of values for a single attribute
+                                        on a element block.  List dimensions
+                                        should be 1 x N_elem, where N_elem is
+                                        the number of elements on the element
+                                        block.
         """
         # Determine index of requested attribute in attribute list
-        elem_attr_names = self.get_element_attribute_names(elem_blk_id)
+        elem_attr_names = self.get_attribute_names('EX_ELEM_BLOCK', elem_blk_id)
         a_ndx = elem_attr_names.index(elem_attr_name)
-        self.__ex_put_one_attr('EX_ELEM_BLOCK', elem_blk_id, a_ndx, values)
+        self.__ex_put_one_attr('EX_ELEM_BLOCK', elem_blk_id, a_ndx + 1, values)
 
     def elem_type(self, object_id):
         """
@@ -2760,7 +2876,7 @@ class exodus:
             <string>  elem_type
         """
         (elemType, _numElem, _nodesPerElem, _numAttr) = self.__ex_get_block('EX_ELEM_BLOCK', object_id)
-        return elemType.value
+        return elemType
 
     def num_attr(self, object_id):
         """
@@ -2778,7 +2894,7 @@ class exodus:
             <int>  num_elem_attrs
         """
         (_elemType, _numElem, _nodesPerElem, numAttr) = self.__ex_get_block('EX_ELEM_BLOCK', object_id)
-        return numAttr.value
+        return numAttr
 
     def num_elems_in_blk(self, object_id):
         """
@@ -2795,8 +2911,8 @@ class exodus:
         -------
             <int>  num_blk_elems
         """
-        (_elemType, numElem, _nodesPerElem, _numAttr) = self.__ex_get_block('EX_ELEM_BLOCK', object_id)
-        return numElem.value
+        vals = self.get_entity_count('EX_ELEM_BLOCK', object_id)
+        return vals
 
     def num_nodes_per_elem(self, object_id):
         """
@@ -2814,7 +2930,7 @@ class exodus:
             <int>  num_elem_nodes
         """
         (_elemType, _numElem, nodesPerElem, _numAttr) = self.__ex_get_block('EX_ELEM_BLOCK', object_id)
-        return nodesPerElem.value
+        return nodesPerElem
 
     def get_element_variable_truth_table(self, entId=None):
         """
@@ -3010,6 +3126,28 @@ class exodus:
 
     # --------------------------------------------------------------------
 
+    def get_attribute_names(self, objType, blkId):
+        """
+        get the list of attribute names for the specified block/set
+
+        >>> attr_names = exo.get_attribute_names('EX_ELEM_BLOCK', elem_blk_id)
+
+        Parameters
+        ----------
+        objType:
+            entity type
+        blkId : int
+            block/set *ID* (not *INDEX*)
+
+        Returns
+        -------
+            <list<string>>  attr_names
+        """
+        names = self.__ex_get_attr_names(objType, blkId)
+        return list(names)
+
+    # --------------------------------------------------------------------
+
     def get_element_attribute_names(self, blkId):
         """
         get the list of element attribute names for a block
@@ -3018,15 +3156,38 @@ class exodus:
 
         Parameters
         ----------
-        elem_blk_id : int
-            element block *ID* (not *INDEX*)
+        blkId : int
+            block/set *ID* (not *INDEX*)
 
         Returns
         -------
             <list<string>>  attr_names
         """
-        names = self.__ex_get_elem_attr_names(blkId)
+        names = self.__ex_get_attr_names('EX_ELEM_BLOCK', blkId)
         return list(names)
+
+    # --------------------------------------------------------------------
+
+    def put_attribute_names(self, objType, blkId, names):
+        """
+        store the list of element attribute names for a block
+
+        >>> status = exo.put_attribute_names('EX_ELEM_BLOCK', elem_blk_id, attr_names)
+
+        Parameters
+        ----------
+        objType:
+            entity type
+        blkId : int
+            block/set  *ID* (not *INDEX*)
+        <list<string>>  attr_names
+
+        Returns
+        -------
+        status : bool
+            True = successful execution
+        """
+        return self.__ex_put_attr_names(objType, blkId, names)
 
     # --------------------------------------------------------------------
 
@@ -3034,20 +3195,20 @@ class exodus:
         """
         store the list of element attribute names for a block
 
-        >>> status = exo.put_element_attribute_names(elem_blk_id, attr_names)
+        >>> status = exo.put_attribute_names(elem_blk_id, attr_names)
 
         Parameters
         ----------
-        elem_blk_id : int
-            element block *ID* (not *INDEX*)
-            <list<string>>  attr_names
+        blkId : int
+            block/set *ID* (not *INDEX*)
+        <list<string>>  attr_names
 
         Returns
         -------
         status : bool
             True = successful execution
         """
-        return self.__ex_put_elem_attr_names(blkId, names)
+        return self.__ex_put_attr_names('EX_ELEM_BLOCK', blkId, names)
 
     # --------------------------------------------------------------------
 
@@ -5334,18 +5495,68 @@ class exodus:
             idMap = self.np.array(idMap)
         return idMap
 
+    def __ex_get_num_map(self, objType, idx):
+        inqType = ex_obj_to_inq(objType)
+        map_id = ctypes.c_longlong(idx)
+        obj_type = ctypes.c_int(get_entity_type(objType))
+        inq_type = ctypes.c_int(ex_inquiry_map(inqType))
+        num_objs = ctypes.c_int(self.__ex_inquire_int(inq_type))
+        numObjs = num_objs.value
+        if EXODUS_LIB.ex_int64_status(self.fileId) & EX_IDS_INT64_API:
+            id_map = (ctypes.c_longlong * numObjs)()
+        else:
+            id_map = (ctypes.c_int * numObjs)()
+        EXODUS_LIB.ex_get_num_map(self.fileId, obj_type, map_id, ctypes.byref(id_map))
+        idMap = [id_map[i] for i in range(numObjs)]
+        if self.use_numpy:
+            idMap = self.np.array(idMap)
+        return idMap
+
+    def __ex_put_map_param(self, nodeMapCnt, elemMapCnt):
+        node_map_cnt = ctypes.c_int(nodeMapCnt)
+        elem_map_cnt = ctypes.c_int(elemMapCnt)
+        errorInt = EXODUS_LIB.ex_put_map_param(
+            self.fileId, node_map_cnt, elem_map_cnt)
+        if errorInt != 0:
+            print(("ERROR code =", errorInt))
+            raise Exception(
+                "ERROR: ex_put_map_param had problems.")
+        return True
+
+    def __ex_put_num_map(self, objType, idx, numMap):
+        inqType = ex_obj_to_inq(objType)
+        map_id = ctypes.c_longlong(idx)
+        obj_type = ctypes.c_int(get_entity_type(objType))
+        inq_type = ctypes.c_int(ex_inquiry_map(inqType))
+        num_objs = ctypes.c_int(self.__ex_inquire_int(inq_type))
+        numObjs = num_objs.value
+        assert numObjs == len(numMap)
+        if EXODUS_LIB.ex_int64_status(self.fileId) & EX_IDS_INT64_API:
+            num_map = (ctypes.c_longlong * numObjs)()
+            for i in range(numObjs):
+                num_map[i] = ctypes.c_longlong(numMap[i])
+        else:
+            num_map = (ctypes.c_int * numObjs)()
+            for i in range(numObjs):
+                num_map[i] = ctypes.c_int(numMap[i])
+        EXODUS_LIB.ex_put_num_map(self.fileId, obj_type, map_id, ctypes.byref(num_map))
+        return True
+
     def __ex_get_block_id_map(self, obj_type, id):
         obj_type = ctypes.c_int(get_entity_type(obj_type))
         entity_id = ctypes.c_longlong(id)
         _, numObjs, _, _ = self.__ex_get_block('EX_ELEM_BLOCK', id)
         if EXODUS_LIB.ex_int64_status(self.fileId) & EX_IDS_INT64_API:
-            id_map = (ctypes.c_longlong * numObjs.value)()
+            id_map = (ctypes.c_longlong * numObjs)()
         else:
-            id_map = (ctypes.c_int * numObjs.value)()
+            id_map = (ctypes.c_int * numObjs)()
         EXODUS_LIB.ex_get_block_id_map(self.fileId, obj_type, entity_id, id_map)
         if self.use_numpy:
             id_map = ctype_to_numpy(self, id_map)
-        return id_map
+            return id_map
+        else:
+            idMap = [id_map[i] for i in range(numObjs)]
+            return idMap
 
     def __ex_put_id_map(self, objType, idMap):
         inqType = ex_obj_to_inq(objType)
@@ -5415,7 +5626,7 @@ class exodus:
             ctypes.byref(num_edges_per_elem),
             ctypes.byref(num_faces_per_elem),
             ctypes.byref(num_attr))
-        return blk_type, num_elem_this_blk, num_nodes_per_elem, num_attr
+        return blk_type.value, int(num_elem_this_blk.value), int(num_nodes_per_elem.value), int(num_attr.value)
 
     def __ex_put_block(
             self,
@@ -5445,10 +5656,10 @@ class exodus:
         elem_block_id = ctypes.c_longlong(object_id)
         if EXODUS_LIB.ex_int64_status(self.fileId) & EX_BULK_INT64_API:
             elem_block_connectivity = (
-                ctypes.c_longlong * (num_elem_this_blk.value * num_nodes_per_elem.value))()
+                ctypes.c_longlong * (num_elem_this_blk * num_nodes_per_elem))()
         else:
             elem_block_connectivity = (
-                ctypes.c_int * (num_elem_this_blk.value * num_nodes_per_elem.value))()
+                ctypes.c_int * (num_elem_this_blk * num_nodes_per_elem))()
         EXODUS_LIB.ex_get_conn(
             self.fileId,
             ctypes.c_int(get_entity_type('EX_ELEM_BLOCK')),
@@ -5462,13 +5673,13 @@ class exodus:
         elem_block_id = ctypes.c_longlong(object_id)
         if EXODUS_LIB.ex_int64_status(self.fileId) & EX_BULK_INT64_API:
             elem_block_connectivity = (
-                ctypes.c_longlong * (num_elem_this_blk.value * num_nodes_per_elem.value))()
-            for i in range(num_elem_this_blk.value * num_nodes_per_elem.value):
+                ctypes.c_longlong * (num_elem_this_blk * num_nodes_per_elem))()
+            for i in range(num_elem_this_blk * num_nodes_per_elem):
                 elem_block_connectivity[i] = ctypes.c_longlong(connectivity[i])
         else:
             elem_block_connectivity = (
-                ctypes.c_int * (num_elem_this_blk.value * num_nodes_per_elem.value))()
-            for i in range(num_elem_this_blk.value * num_nodes_per_elem.value):
+                ctypes.c_int * (num_elem_this_blk * num_nodes_per_elem))()
+            for i in range(num_elem_this_blk * num_nodes_per_elem):
                 elem_block_connectivity[i] = ctypes.c_int(connectivity[i])
         EXODUS_LIB.ex_put_conn(
             self.fileId,
@@ -5478,7 +5689,7 @@ class exodus:
 
     def __ex_put_one_attr(self, objType, elemBlkID, attrIndx, Attr):
         elem_blk_id = ctypes.c_longlong(elemBlkID)
-        obj_type = ctypes.c_int(objType)
+        obj_type = ctypes.c_int(get_entity_type(objType))
         attr_index = ctypes.c_longlong(attrIndx)
         attrib = (ctypes.c_double * len(Attr))()
         for i, attr in enumerate(Attr):
@@ -5490,17 +5701,18 @@ class exodus:
             attr_index,
             attrib)
 
-    def __ex_get_one_attr(self, objType, elemBlkID, attrIndx):
-        elem_blk_id = ctypes.c_longlong(elemBlkID)
-        obj_type = ctypes.c_int(objType)
+    def __ex_get_one_attr(self, objType, entityId, attrIndx):
+        entity_id = ctypes.c_longlong(entityId)
+        obj_type = ctypes.c_int(get_entity_type(objType))
         attr_index = ctypes.c_longlong(attrIndx)
-        inqType = ex_inquiry_map(ex_obj_to_inq(objType))
-        num_objs = ctypes.c_int(self.__ex_inquire_int(inqType)).value
-        attrib = (ctypes.c_double * num_objs)()
+
+        numVals = self.get_entity_count(objType, entityId)
+        attrib = (ctypes.c_double * numVals)()
+
         EXODUS_LIB.ex_get_one_attr(
             self.fileId,
             obj_type,
-            elem_blk_id,
+            entity_id,
             attr_index,
             ctypes.byref(attrib))
         return attrib
@@ -5519,7 +5731,7 @@ class exodus:
     def __ex_get_elem_attr(self, elemBlkID):
         elem_blk_id = ctypes.c_longlong(elemBlkID)
         numAttrThisBlk = self.num_attr(elemBlkID)
-        numElemsThisBlk = self.num_elems_in_blk(elemBlkID)
+        numElemsThisBlk = self.get_entity_count('EX_ELEM_BLOCK', elemBlkID)
         totalAttr = numAttrThisBlk * numElemsThisBlk
         attrib = (ctypes.c_double * totalAttr)()
         EXODUS_LIB.ex_get_attr(
@@ -5841,18 +6053,20 @@ class exodus:
         EXODUS_LIB.ex_put_variable_name(self.fileId, var_type, var_id, name)
         return True
 
-    def __ex_get_elem_attr_names(self, blkId):
+    def __ex_get_attr_names(self, objType, blkId):
+        obj_type = ctypes.c_int(get_entity_type(objType))
         object_id = ctypes.c_longlong(blkId)
         num_attr = ctypes.c_int(self.num_attr(blkId))
         len_name = self.__ex_inquire_int(ex_inquiry_map('EX_INQ_MAX_READ_NAME_LENGTH'))
         attr_name_ptrs = (ctypes.POINTER(ctypes.c_char * (len_name + 1)) * num_attr.value)()
         for i in range(num_attr.value):
             attr_name_ptrs[i] = ctypes.pointer(ctypes.create_string_buffer(len_name + 1))
-        EXODUS_LIB.ex_get_elem_attr_names(
-            self.fileId, object_id, ctypes.byref(attr_name_ptrs))
+        EXODUS_LIB.ex_get_attr_names(
+            self.fileId, obj_type, object_id, ctypes.byref(attr_name_ptrs))
         return [cnp.contents.value.decode('utf8') for cnp in attr_name_ptrs]
 
-    def __ex_put_elem_attr_names(self, blkId, varNames):
+    def __ex_put_attr_names(self, objType, blkId, varNames):
+        obj_type = ctypes.c_int(get_entity_type(objType))
         object_id = ctypes.c_int(blkId)
         num_attr = ctypes.c_int(self.num_attr(blkId))
         len_name = self.__ex_inquire_int(ex_inquiry_map('EX_INQ_MAX_READ_NAME_LENGTH'))
@@ -5862,8 +6076,8 @@ class exodus:
             attr_name_ptrs[i] = ctypes.pointer(
                 ctypes.create_string_buffer(
                     varNames[i].encode('ascii'), len_name + 1))
-        EXODUS_LIB.ex_put_elem_attr_names(
-            self.fileId, object_id, ctypes.byref(attr_name_ptrs))
+        EXODUS_LIB.ex_put_attr_names(
+            self.fileId, obj_type, object_id, ctypes.byref(attr_name_ptrs))
         return True
 
     def __ex_get_prop_names(self, varType, inqType):
@@ -6134,7 +6348,7 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None, additionalElementAttrib
         e_attr_vals[blk_id] = []
         if numAttr > 0:
             e_attr_names[blk_id].extend(
-                exoFrom.get_element_attribute_names(blk_id))
+                exoFrom.get_attribute_names('EX_ELEM_BLOCK', blk_id))
             e_attr_vals[blk_id].extend(exoFrom.get_elem_attr(blk_id))
         blk_num_elem[blk_id] = numElem
     # Collect the new element attribute names
@@ -6169,7 +6383,7 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None, additionalElementAttrib
         (connectivity, numElem, nodesPerElem) = exoFrom.get_elem_connectivity(blkId)
         exo_to.put_elem_connectivity(blkId, connectivity)
         if numAttr > 0:
-            exo_to.put_element_attribute_names(blkId, e_attr_names[blkId])
+            exo_to.put_attribute_names('EX_ELEM_BLOCK', blkId, e_attr_names[blkId])
             exo_to.put_elem_attr(blkId, e_attr_vals[blkId])
         elemProps = exoFrom.get_element_property_names()
         for elemProp in elemProps:

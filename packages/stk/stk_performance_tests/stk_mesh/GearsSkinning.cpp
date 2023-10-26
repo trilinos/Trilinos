@@ -125,7 +125,7 @@ void separate_wedge(
     // Replace wedge's nodes with new nodes because any nodes shared with other
     // entities cannot be taken along with the separated wedge. As a
     // simplification, we simply leave all the old nodes behind.
-    ThrowAssert(static_cast<size_t>(fixture.bulk_data.num_nodes(wedge)) == num_nodes_per_wedge);
+    STK_ThrowAssert(static_cast<size_t>(fixture.bulk_data.num_nodes(wedge)) == num_nodes_per_wedge);
     stk::mesh::Entity const *rel_nodes = fixture.bulk_data.begin_nodes(wedge);
 
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
@@ -250,9 +250,9 @@ void move_detached_wedges(
   {
     stk::mesh::Bucket & b = **b_itr;
 
-    const stk::mesh::FieldTraits<CartesianField>::data_type*  velocity_data = stk::mesh::field_data(velocity_field, b);
-    stk::mesh::FieldTraits<CartesianField>::data_type*  old_displacement_data = stk::mesh::field_data(fixture.displacement_field->field_of_state(stk::mesh::StateOld), b);
-    stk::mesh::FieldTraits<CartesianField>::data_type*  new_displacement_data = stk::mesh::field_data(fixture.displacement_field->field_of_state(stk::mesh::StateNew), b);
+    const CartesianField::value_type*  velocity_data = stk::mesh::field_data(velocity_field, b);
+    CartesianField::value_type*  old_displacement_data = stk::mesh::field_data(fixture.displacement_field->field_of_state(stk::mesh::StateOld), b);
+    CartesianField::value_type*  new_displacement_data = stk::mesh::field_data(fixture.displacement_field->field_of_state(stk::mesh::StateNew), b);
     int ndim = fixture.meta_data.spatial_dimension();
 
     for (size_t i = 0; i < b.size(); ++i) {

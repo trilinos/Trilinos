@@ -44,16 +44,17 @@
 #ifndef AMESOS2_VERSION_CPP
 #define AMESOS2_VERSION_CPP
 
-#include "Amesos2_config.h"
-
 #include <string>
+
+#include "Amesos2_config.h"
+#include "Trilinos_version.h"
 
 namespace Amesos2 {
 
-std::string version(){
-  return( "Amesos2 version " AMESOS2_VERSION " - " AMESOS2_RELEASE_DATE );
+std::string version() {
+  return("Amesos2 version " AMESOS2_VERSION " in Trilinos " TRILINOS_VERSION_STRING);
 }
 
-} // end namespace Amesos2
+} // namespace Amesos2
 
 #endif

@@ -21,13 +21,13 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 #
 # Core files
@@ -66,6 +66,7 @@ IF (TPL_ENABLE_MPI)
     Adelus_xlu_solve.hpp
     Adelus_x_factor.hpp
     Adelus_x_solve.hpp
+    Adelus_global_comm.hpp
     Adelus.hpp
     BlasWrapper_copy_spec.hpp
     BlasWrapper_copy.hpp

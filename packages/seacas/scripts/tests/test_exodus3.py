@@ -20,20 +20,24 @@ sys.path.append(os.path.join(ACCESS, "lib"))
 import exodus as exo
 
 
-class TestAssemblies(unittest.TestCase):
+class TestExodus(unittest.TestCase):
     def setUp(self):
         input_dir = os.path.dirname(__file__)
         self.tempdir = tempfile.TemporaryDirectory()
         self.temp_exo_path = os.path.join(self.tempdir.name, "temp-test-assembly.exo")
-        with exo.exodus(
-            os.path.join(input_dir, "test-assembly.exo"), mode="r"
-        ) as exofile:
+        with exo.exodus(os.path.join(input_dir, "test-assembly.exo"), mode="r") as exofile:
             self.exofile = exofile
             with self.exofile.copy(self.temp_exo_path, True) as temp_exofile:
                 self.temp_exofile = temp_exofile
 
     def tearDown(self):
         self.tempdir.cleanup()
+
+    def test_getExodusVersion(self):
+        self.assertNotEqual(0, exo.getExodusVersion())
+
+    def test_parse_exodus_version(self):
+        self.assertEqual(124, exo._parse_exodus_version('#define EXODUS_VERSION       "1.24"'))
 
     def test_ex_obj_to_inq(self):
         self.assertEqual("EX_INQ_ASSEMBLY", exo.ex_obj_to_inq("EX_ASSEMBLY"))
@@ -60,25 +64,21 @@ class TestAssemblies(unittest.TestCase):
             name="Unit_test", type=exo.ex_entity_type.EX_ASSEMBLY, id=444
         )
         new.entity_list = [100, 222]
-        temp_exo_path2 = self.temp_exo_path + "2"
+        temp_exo_path2 = f"{self.temp_exo_path}2"
         with exo.exodus(self.temp_exo_path, mode="r") as temp_exofile:
-            expected = [assem for assem in temp_exofile.get_ids("EX_ASSEMBLY")]
+            expected = list(temp_exofile.get_ids("EX_ASSEMBLY"))
             with temp_exofile.copy(temp_exo_path2, True, mode="a") as temp_exofile2:
                 temp_exofile2.put_assembly(new)
-                copied_output = [
-                    assem for assem in temp_exofile2.get_ids("EX_ASSEMBLY")
-                ]
+                copied_output = list(temp_exofile2.get_ids("EX_ASSEMBLY"))
                 self.assertNotEqual(temp_exofile.modeChar, temp_exofile2.modeChar)
         self.assertNotEqual(expected, copied_output)
 
     def test_copy_opened_in_read_mode(self):
-        temp_exo_path2 = self.temp_exo_path + "2"
+        temp_exo_path2 = f"{self.temp_exo_path}2"
         with exo.exodus(self.temp_exo_path, mode="r") as temp_exofile:
             with temp_exofile.copy(temp_exo_path2, True, mode="r") as temp_exofile2:
-                expected = [assem for assem in temp_exofile.get_ids("EX_ASSEMBLY")]
-                copied_output = [
-                    assem for assem in temp_exofile2.get_ids("EX_ASSEMBLY")
-                ]
+                expected = list(temp_exofile.get_ids("EX_ASSEMBLY"))
+                copied_output = list(temp_exofile2.get_ids("EX_ASSEMBLY"))
                 self.assertEqual(temp_exofile.modeChar, temp_exofile2.modeChar)
         self.assertEqual(expected, copied_output)
 
@@ -119,12 +119,27 @@ class TestAssemblies(unittest.TestCase):
     def test_get_assembly(self):
         with exo.exodus(self.temp_exo_path) as temp_exofile:
             assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
-            assemblies = [
-                temp_exofile.get_assembly(assembly) for assembly in assembly_ids
-            ]
+            assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
         root = exo.assembly(name="Root", type="EX_ASSEMBLY", id=100)
         root.entity_list = [200, 300, 400]
         self.assertEqual(str(root), str(assemblies[0]))
+
+    def test_get_entity_count(self):
+        with exo.exodus(self.temp_exo_path) as temp_exofile:
+            elem_ids = temp_exofile.get_ids("EX_ELEM_BLOCK")
+            elems = [temp_exofile.get_entity_count("EX_ELEM_BLOCK", elem) for elem in elem_ids]
+        self.assertListEqual([1, 1, 1, 1, 1, 1, 1], elems)
+
+    def test_get_elem_attr_values(self):
+        names = ["Scale", "Units"]
+        temp_copy = os.path.join(self.tempdir.name, "temp_copy.exo")
+        with exo.copy_mesh(self.temp_exo_path, temp_copy, additionalElementAttributes=names) as temp_exofile:
+            for elem_id in temp_exofile.get_ids("EX_ELEM_BLOCK"):
+                attrs = [[3.14159], [1]]
+                for name, values in zip(names, attrs):
+                    temp_exofile.put_elem_attr_values(elem_id, name, values)
+                self.assertEqual(3.14159, temp_exofile.get_elem_attr_values(elem_id, "Scale")[0])
+                self.assertEqual(1.0, temp_exofile.get_elem_attr_values(elem_id, "Units")[0])
 
     def test_get_assemblies(self):
         with exo.exodus(self.temp_exo_path) as temp_exofile:
@@ -138,15 +153,15 @@ class TestAssemblies(unittest.TestCase):
             exo.assembly(name="NewAssembly", type="EX_ASSEMBLY", id=222),
             exo.assembly(name="FromPython", type="EX_ASSEMBLY", id=333),
         ]
+        entity_lists = [
+            [200, 300, 400],
+            [10, 11, 12, 13],
+            [14, 15, 16],
+            [10, 16],
+            [100, 200, 300, 400],
+            [100, 222],
+        ]
         for i, x in enumerate(expected):
-            entity_lists = [
-                [200, 300, 400],
-                [10, 11, 12, 13],
-                [14, 15, 16],
-                [10, 16],
-                [100, 200, 300, 400],
-                [100, 222],
-            ]
             x.entity_list = entity_lists[i]
         self.maxDiff = None
         self.assertEqual(str(expected), str(assemblies))
@@ -334,24 +349,6 @@ class TestExodusUtilities(unittest.TestCase):
     def test_basename(self):
         self.assertEqual("test", exo.basename("test.e"))
         self.assertEqual("fake/path/to/test", exo.basename("fake/path/to/test.e"))
-
-    def test_getExodusVersion(self):
-        include_path = os.path.join(self.tempdir.name, "include")
-        os.makedirs(include_path)
-        with open(os.path.join(include_path, "exodusII.h"), "w") as fptr:
-            fptr.write("#define EXODUS_VERSION_MAJOR 1\n")
-            fptr.write("#define EXODUS_VERSION_MINOR 22\n")
-        with swap_ACCESS_value(self.tempdir.name):
-            self.assertEqual(122, exo.getExodusVersion())
-
-    def test_getExodusVersion_not_found(self):
-        include_path = os.path.join(self.tempdir.name, "include")
-        os.makedirs(include_path)
-        with open(os.path.join(include_path, "exodusII.h"), "w") as fptr:
-            fptr.write("#define NOT_EXODUS_VERSION 1\n")
-            fptr.write("#define ALSO_NOT_EXODUS_VERSION 22\n")
-        with swap_ACCESS_value(self.tempdir.name):
-            self.assertEqual(0, exo.getExodusVersion())
 
 
 @contextmanager

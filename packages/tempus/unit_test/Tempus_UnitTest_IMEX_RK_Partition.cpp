@@ -191,4 +191,4 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partition, AppAction)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

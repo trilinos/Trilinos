@@ -39,11 +39,12 @@
 
 
 # Standard TriBITS system includes
-include(TribitsConstants)
+include("${CMAKE_CURRENT_LIST_DIR}/../common/TribitsConstants.cmake")
 include(TribitsProcessExtraRepositoriesList)
 include(TribitsProcessPackagesAndDirsLists)
 include(TribitsProcessTplsLists)
 include(TribitsReadDepsFilesCreateDepsGraph)
+include(TribitsConfigureTiming)
 
 # Standard TriBITS utilities includes
 include(TimingUtils)
@@ -64,7 +65,6 @@ include(TimingUtils)
 #
 # * `Lists of external and internal packages`_
 # * `Variables defining the package dependencies graph`_
-#   (`Legacy list variables defining the package dependencies graph`_)
 # * `TriBITS Package Top-Level Local Variables`_
 # * `TriBITS Subpackage Top-Level Local Variables`_
 # * `TriBITS Package Cache Variables`_
@@ -237,14 +237,6 @@ macro(tribits_read_defined_external_and_internal_toplevel_packages_lists)
 
   # ${PROJECT_NAME}_NUM_DEFINED_TPLS
   list(LENGTH ${PROJECT_NAME}_DEFINED_TPLS ${PROJECT_NAME}_NUM_DEFINED_TPLS)
-
-  # ${PROJECT_NAME}_REVERSE_DEFINED_TPLS (ToDo: Remove the need for this #63)
-  if (${PROJECT_NAME}_DEFINED_TPLS)
-    set(${PROJECT_NAME}_REVERSE_DEFINED_TPLS ${${PROJECT_NAME}_DEFINED_TPLS})
-    list(REVERSE ${PROJECT_NAME}_REVERSE_DEFINED_TPLS)
-  else()
-    set(${PROJECT_NAME}_REVERSE_DEFINED_TPLS)
-  endif()
 
   # ${PROJECT_NAME}_DEFINED_TOPLEVEL_PACKAGES
   set(${PROJECT_NAME}_DEFINED_TOPLEVEL_PACKAGES

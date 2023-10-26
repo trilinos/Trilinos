@@ -59,7 +59,7 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
   stkIo.create_input_mesh();
   stkIo.add_all_mesh_fields_as_input_fields();
 
-  internal::register_internal_fields(bulkData, balanceSettings);
+  internal::register_internal_fields_and_parts(bulkData, balanceSettings);
 
   stkIo.populate_bulk_data();
 
@@ -113,6 +113,7 @@ void BalanceIO::write(BalanceMesh& mesh)
   outputBroker.use_simple_fields();
   outputBroker.set_bulk_data(mesh.get_bulk());
   outputBroker.set_attribute_field_ordering_stored_by_part_ordinal(m_inputBroker.get_attribute_field_ordering_stored_by_part_ordinal());
+  m_inputBroker.cache_entity_list_for_transient_steps(true);
 
   stk::transfer_utils::TransientFieldTransferById transfer(m_inputBroker, outputBroker);
   transfer.transfer_and_write_transient_fields(m_settings.get_output_filename());

@@ -7,14 +7,13 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
@@ -26,17 +25,18 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
@@ -58,14 +58,13 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory_kokkos)
+Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
@@ -77,17 +76,18 @@ BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory_kokkos)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory_kokkos)
-[empty list]
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory_kokkos
-Build (MueLu::CoordinatesTransferFactory_kokkos)
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
@@ -107,6 +107,8 @@ Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 keep smoother data = 1
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -137,6 +139,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 

@@ -46,7 +46,6 @@
 #ifndef MUELU_PREDROPFUNCTIONBASECLASS_DECL_HPP
 #define MUELU_PREDROPFUNCTIONBASECLASS_DECL_HPP
 
-#include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"

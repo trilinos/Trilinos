@@ -50,4 +50,4 @@ TEUCHOS_UNIT_TEST(EDIRK_2Stage3rdOrder, AppAction)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

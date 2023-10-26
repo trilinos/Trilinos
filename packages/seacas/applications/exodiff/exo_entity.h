@@ -3,9 +3,7 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-
-#ifndef EXO_ENTITY_H
-#define EXO_ENTITY_H
+#pragma once
 
 #include <exodusII.h>
 #include <iostream>
@@ -95,4 +93,3 @@ private:
 
   template <typename INT> friend class ExoII_Read;
 };
-#endif

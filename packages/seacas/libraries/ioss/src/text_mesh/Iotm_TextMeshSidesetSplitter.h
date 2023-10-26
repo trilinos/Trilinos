@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 
@@ -66,7 +66,7 @@ namespace Iotm {
     template <typename EntityId, typename Topology> class SidesetSplitter
     {
     public:
-      SidesetSplitter(SplitType splitType) : m_splitType(splitType)
+      explicit SidesetSplitter(SplitType splitType) : m_splitType(splitType)
       {
         ErrorHandler errorHandler = [](const std::ostringstream &errmsg) {
           default_error_handler(errmsg);
@@ -289,8 +289,8 @@ namespace Iotm {
         split_by_criterion(sideset, elementData, criterion);
       }
 
-      void split_by_no_split(const SidesetData<EntityId, Topology>              &sideset,
-                             const std::vector<ElementData<EntityId, Topology>> &elementData)
+      void split_by_no_split(const SidesetData<EntityId, Topology> &sideset,
+                             const std::vector<ElementData<EntityId, Topology>> & /* elementData */)
       {
         std::vector<size_t> splitIndex(sideset.data.size());
         std::iota(std::begin(splitIndex), std::end(splitIndex), 0);

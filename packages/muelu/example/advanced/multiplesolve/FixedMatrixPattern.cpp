@@ -55,7 +55,6 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_Factory.hpp>
 
-#include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
 #include <MueLu_NoFactory.hpp>
@@ -139,9 +138,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       // AGGREGATES:
       // Note: aggregates are only used to build Ptent, so it is not useful to keep them. Keeping Ptent is enough.
-      // RCP<Factory> AggFact   = rcp(new CoupledAggregationFactory());
-      // M.SetFactory("Aggregates", AggFact);
-      // H.Keep("Aggregates", AggFact.get());
 
       // PTENT:
       RCP<Factory> PtentFact = rcp(new TentativePFactory());

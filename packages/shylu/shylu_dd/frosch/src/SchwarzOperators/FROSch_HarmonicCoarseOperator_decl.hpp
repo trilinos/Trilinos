@@ -53,7 +53,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class HarmonicCoarseOperator : public CoarseOperator<SC,LO,GO,NO> {
 
     protected:
@@ -131,7 +131,7 @@ namespace FROSch {
 
         ConstXMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
 
-        #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+        #if defined(HAVE_XPETRA_TPETRA)
         template<class GOIndView, class ConstSCView, class SCView>
         struct CopyPhiViewFunctor
         {

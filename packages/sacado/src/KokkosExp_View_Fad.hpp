@@ -31,7 +31,7 @@
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
@@ -248,7 +248,7 @@ struct PODViewDeepCopyType< ViewType, typename std::enable_if< is_view_fad<ViewT
 
   typedef ViewType view_type;
   typedef typename ArrayScalar< typename view_type::value_type >::type fad_converted_type;
-  typedef typename AppendRankToConvertedFad< fad_converted_type, view_type::Rank >::type new_data_type;
+  typedef typename AppendRankToConvertedFad< fad_converted_type, view_type::rank >::type new_data_type;
 
   typedef typename ViewArrayLayoutSelector<typename view_type::array_layout>::type layout;
   //typedef typename view_type::array_layout layout;
@@ -1521,10 +1521,11 @@ public:
       m_impl_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
 
       if ( ctor_prop::initialize ) {
+        auto space = ((ViewCtorProp<void,execution_space> const &) prop).value;
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
 				if (execution_space_specified)
-					record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
+					record->m_destroy = functor_type( space
 							, (fad_value_type *) m_impl_handle
 							, m_array_offset.span()
 							, record->get_label()
@@ -1537,6 +1538,7 @@ public:
 
         // Construct values
         record->m_destroy.construct_shared_allocation();
+        space.fence();
       }
     }
 
@@ -1955,7 +1957,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && \
+#if defined(HAVE_SACADO_KOKKOS) && \
     defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && \
     defined(HAVE_SACADO_VIEW_SPEC) && \
     ! defined(SACADO_DISABLE_FAD_VIEW_SPEC)
@@ -2117,7 +2119,7 @@ broadcast
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCORE)
+#endif // defined(HAVE_SACADO_KOKKOS)
 
 #include "KokkosExp_View_Fad_Contiguous.hpp"
 

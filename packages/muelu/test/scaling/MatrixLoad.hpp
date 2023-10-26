@@ -92,6 +92,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
   typedef typename STS::magnitudeType real_type;
@@ -118,7 +119,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     // Create map and coordinates
     // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-    if (matrixType == "Laplace1D") {
+    if (matrixType == "Laplace1D" || matrixType == "Identity") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
@@ -187,6 +188,8 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
       map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(rowMapFile, lib, comm);
     comm->barrier();
 
+    {
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1a - Matrix read")));
     if (!binaryFormat && !map.is_null()) {
       RCP<const Map> colMap    = (!colMapFile.empty()    ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(colMapFile,    lib, comm) : Teuchos::null);
       RCP<const Map> domainMap = (!domainMapFile.empty() ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(domainMapFile, lib, comm) : Teuchos::null);
@@ -195,27 +198,39 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
 
     } else {
       A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, lib, comm, binaryFormat);
-
-      if (!map.is_null()) {
-        RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
-        RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
-        newMatrix->doImport(*A, *importer, Xpetra::INSERT);
-        newMatrix->fillComplete();
-
-        A.swap(newMatrix);
-      }
     }
-    map = A->getMap();
+    comm->barrier();
+    } //timer scope
+
+    //If no rowmap file has been provided and the driver is being run in parallel,
+    //create a uniformly distributed map and use it as A's row map.
+    if (map.is_null() && comm->getSize() > 1) {
+      RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1b - Matrix redistribute")));
+      if (comm->getRank()==0)
+        std::cout << "No rowmap file specified, redistributing matrix using a uniformly distributed rowmap." << std::endl;
+      map = Xpetra::MapFactory<LO,GO,Node>::Build(lib, A->getRowMap()->getGlobalNumElements(), (int) 0, comm);
+
+      RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
+      RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
+      newMatrix->doImport(*A, *importer, Xpetra::INSERT);
+      newMatrix->fillComplete();
+
+      A.swap(newMatrix);
+    } else {
+      map = A->getRowMap();
+    }
 
     comm->barrier();
 
     if (!coordFile.empty()) {
+      RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1c - Read coordinates")));
       RCP<const Map> coordMap;
       if (!coordMapFile.empty())
         coordMap = Xpetra::IO<SC,LO,GO,Node>::ReadMap(coordMapFile, lib, comm);
       else
         coordMap = map;
       coordinates = Xpetra::IO<real_type,LO,GO,Node>::ReadMultiVector(coordFile, coordMap);
+      comm->barrier();
     }
 
     if (!nullFile.empty())
@@ -240,7 +255,9 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
 
   } else {
     // read in B
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1d - Read RHS")));
     B = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(rhsFile, map);
+    comm->barrier();
   }
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 }
@@ -279,6 +296,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
           if (mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").get<std::string>("partitioner: type") == "user") {
 
             FILE   *fp;
+            int    retVal;
             int    nBlks, nRows, nnzs, ch, row, col;
             int    procId = comm->getRank();
             double val;
@@ -288,18 +306,21 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
             /* the Teuchos::Array for "partitioner: global ID parts"        */
 
             fp = fopen( &userBlkFileName[0],"r");
-            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + 	" file not found");
+            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + " file not found");
 
             while ( (ch= getc(fp) != '\n'))  ;  //read first line
 
-            fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
+            retVal = fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
+            TEUCHOS_TEST_FOR_EXCEPTION(retVal != 3,
+                std::runtime_error,"unable to parse nBlks, nRows, nnzs in user file " + userBlkFileName);
+
             TEUCHOS_TEST_FOR_EXCEPTION(nRows != (int) A->getRowMap()->getGlobalNumElements(),
-                 std::runtime_error,"number of global rows in " + userBlkFileName + " does not match those in A");
+                std::runtime_error,"number of global rows in " + userBlkFileName + " does not match those in A");
 
             Teuchos::ArrayRCP<int> myOwnedRowsPerBlock(nBlks, 0);
 
             for (int i = 0; i < nnzs; i++) {
-              fscanf(fp,"%d %d %lf", &row, &col, &val); row--; col--;
+              retVal = fscanf(fp,"%d %d %lf", &row, &col, &val); row--; col--;
               if (A->getRowMap()->getLocalElement( (GlobalOrdinal) col) != Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) (myOwnedRowsPerBlock[row])++;
             }
             fclose(fp);
@@ -344,12 +365,16 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
             // reopen userBlkFilename and record block information in blockLists
 
             fp = fopen( &userBlkFileName[0],"r");
-            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + 	" file not found");
+            TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + " file not found");
 
             while ( (ch= getc(fp) != '\n'))  ;
-            fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
 
-            fscanf(fp,"%d %d %lf", &row, &col, &val); row=row-1; col=col-1;
+            retVal = fscanf(fp,"%d %d %d\n",&nBlks, &nRows, &nnzs);
+            TEUCHOS_TEST_FOR_EXCEPTION(retVal != 3,
+                std::runtime_error,"unable to parse nBlks, nRows, nnzs in user file " + userBlkFileName);
+
+            retVal = fscanf(fp,"%d %d %lf", &row, &col, &val); row=row-1; col=col-1;
+
             int jj = 1;
             while (jj <= nnzs ) {
               if (ownBlk[row] == true) {
@@ -362,13 +387,13 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
                     buffer.resize(maxDofsInAnyBlock);
                   }
                   buffer[i] = col; i++;
-                  fscanf(fp,"%d %d %lf", &row, &col, &val); jj++; row=row-1; col=col-1;
+                  retVal = fscanf(fp,"%d %d %lf", &row, &col, &val); jj++; row=row-1; col=col-1;
                 }
                 blockLists[currentOwnedRow] = Teuchos::arcp<GlobalOrdinal>(i);
                 for (int k = 0; k < i; k++) { blockLists[currentOwnedRow][k] = (GlobalOrdinal) buffer[k];   }
                 currentOwnedRow++;
               }
-              else { fscanf(fp,"%d %d %lf", &row, &col, &val); jj++;  row=row-1; col=col-1; }
+              else { retVal = fscanf(fp,"%d %d %lf", &row, &col, &val); jj++;  row=row-1; col=col-1; }
             }
             fclose(fp);
             mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").set< Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > >("partitioner: global ID parts", blockLists);

@@ -124,7 +124,7 @@ static size_t TEMPLATE (cholmod_triplet_to_sparse)
     /* use Wj (i/l/l) of size ncol to keep track of duplicates in each row [ */
     for (j = 0 ; j < ncol ; j++)
     {
-	Wj [j] = EMPTY ;
+	Wj [j] = TRILINOS_CHOLMOD_EMPTY ;
     }
 
     anz = 0 ;

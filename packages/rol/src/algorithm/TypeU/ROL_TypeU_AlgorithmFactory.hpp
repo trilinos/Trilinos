@@ -122,12 +122,12 @@ inline EAlgorithmU StringToEAlgorithmU(std::string s) {
 }
 
 template<typename Real>
-inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
+inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
   EAlgorithmU ealg = StringToEAlgorithmU(parlist.sublist("Step").get("Type","Trust Region"));
   switch(ealg) {
     case ALGORITHM_U_BUNDLE:      return makePtr<BundleAlgorithm<Real>>(parlist);
-    case ALGORITHM_U_LINESEARCH:  return makePtr<LineSearchAlgorithm<Real>>(parlist);
-    case ALGORITHM_U_TRUSTREGION: return makePtr<TrustRegionAlgorithm<Real>>(parlist);
+    case ALGORITHM_U_LINESEARCH:  return makePtr<LineSearchAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_U_TRUSTREGION: return makePtr<TrustRegionAlgorithm<Real>>(parlist,secant);
     default:                      return nullPtr;
   }
 }

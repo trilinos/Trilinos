@@ -55,13 +55,12 @@
 #include "stk_mesh/base/FieldState.hpp"     // for FieldState
 #include "stk_mesh/base/Part.hpp"           // for Part
 #include "stk_topology/topology.hpp"        // for topology
-#include "stk_util/util/ParameterList.hpp"  // for STK_ANY_NAMESPACE, Type
+#include "stk_util/util/ParameterList.hpp"  // for Type
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 namespace Ioss { class DatabaseIO; }
 namespace Ioss { class ElementTopology; }
 namespace Ioss { class EntityBlock; }
 namespace Ioss { class Region; }
-namespace Teuchos { class any; }
 namespace stk { namespace io { struct FieldAndName; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class FieldRestriction; } }
@@ -102,12 +101,12 @@ stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta);
 
 struct GlobalAnyVariable {
-  GlobalAnyVariable(const std::string &name, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
+  GlobalAnyVariable(const std::string &name, const std::any *value, stk::util::ParameterType::Type type)
     : m_name(name), m_value(value), m_type(type)
   {}
 
   std::string m_name;
-  const STK_ANY_NAMESPACE::any *m_value;
+  const std::any *m_value;
   stk::util::ParameterType::Type m_type;
 };
 
@@ -136,8 +135,6 @@ struct FieldNameToPartLess
 };
 
 typedef std::vector<FieldNameToPart> FieldNameToPartVector;
-
-stk::mesh::Part *getPart(const stk::mesh::MetaData& meta_data, const std::string& name);
 
 bool is_valid_for_output(stk::io::OutputParams &params, const stk::mesh::Part &part);
 void get_selected_nodes(OutputParams &params,
@@ -344,10 +341,9 @@ std::string map_stk_topology_to_ioss(stk::topology topo);
  * Ioss::GroupingEntity to/from an stk::mesh::Field.  See
  * stk::io::field_data_from_ioss() and stk::io::field_data_to_ioss() for examples.
  */
-void get_input_entity_list(Ioss::GroupingEntity *io_entity,
-                           stk::mesh::EntityRank part_type,
-                           const stk::mesh::BulkData &bulk,
-                           std::vector<stk::mesh::Entity> &entities);
+std::vector<stk::mesh::Entity> get_input_entity_list(Ioss::GroupingEntity *ioEntity,
+                                                     stk::mesh::EntityRank part_type,
+                                                     const stk::mesh::BulkData &bulk);
 
 void get_output_entity_list(Ioss::GroupingEntity *io_entity,
                             stk::mesh::EntityRank part_type,
@@ -373,7 +369,7 @@ bool all_field_states_exist_on_io_entity(const std::string& db_name, const stk::
 
 void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      const stk::mesh::FieldBase *field,
-                                     std::vector<stk::mesh::Entity> &entity_list,
+                                     const std::vector<stk::mesh::Entity> &entity_list,
                                      Ioss::GroupingEntity *io_entity,
                                      const std::string &name,
                                      const size_t state_count,
@@ -381,14 +377,14 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      std::vector<std::string>* multiStateSuffixes=nullptr);
 
 void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
-					       const stk::mesh::FieldBase *field,
-					       std::vector<stk::mesh::Entity> &entity_list,
-					       Ioss::GroupingEntity *io_entity,
-					       const stk::mesh::Part *stk_part,
-					       const std::string &name,
-					       const size_t state_count,
-					       bool ignore_missing_fields = false,
-					       std::vector<std::string>* multiStateSuffixes=nullptr);
+                 const stk::mesh::FieldBase *field,
+                 const std::vector<mesh::Entity> &entity_list,
+                 Ioss::GroupingEntity *io_entity,
+                 const stk::mesh::Part *stk_part,
+                 const std::string &name,
+                 const size_t state_count,
+                 bool ignore_missing_fields = false,
+                 std::vector<std::string>* multiStateSuffixes=nullptr);
 
 /**
  * Fill the specified 'field' with data from the Ioss field named
@@ -398,16 +394,16 @@ void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
  */
 void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           const stk::mesh::FieldBase *field,
-                          std::vector<stk::mesh::Entity> &entities,
+                          const std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name);
 
 void subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
-				    const stk::mesh::FieldBase *field,
-				    std::vector<stk::mesh::Entity> &entities,
-				    Ioss::GroupingEntity *io_entity,
-				    const stk::mesh::Part *stk_part,
-				    const std::string &io_fld_name);
+            const stk::mesh::FieldBase *field,
+            const std::vector<mesh::Entity> &entities,
+            Ioss::GroupingEntity *io_entity,
+            const stk::mesh::Part *stk_part,
+            const std::string &io_fld_name);
 
 void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
                         const stk::mesh::FieldBase *field,
@@ -557,13 +553,17 @@ enum class FieldOutputType {
   MATRIX_22,        //  [xx, xy, yx, yy]
   MATRIX_33,        //  [xx, xy, xz, yx, yy, yz, zx, zy, zz]
   QUATERNION_2D,    //  [s, q]
-  QUATERNION_3D     //  [x, y, z, q]
+  QUATERNION_3D,    //  [x, y, z, q]
+  CUSTOM            //  User-defined subscripting
 };
 
-void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType);
-
 bool has_field_output_type(const stk::mesh::FieldBase & field);
-const Ioss::VariableType * get_field_output_type(const stk::mesh::FieldBase & field);
+
+void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType);
+FieldOutputType get_field_output_type(const stk::mesh::FieldBase & field);
+
+void set_field_output_variable_type(stk::mesh::FieldBase & field, const Ioss::VariableType * type);
+const Ioss::VariableType * get_field_output_variable_type(const stk::mesh::FieldBase & field);
 
 std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta);
 
@@ -638,7 +638,7 @@ void fill_data_for_side_block( OutputParams &params,
                                std::vector<INT> &elem_side_ids,
                                stk::mesh::EntityVector &sides)
 {
-    ThrowRequireMsg(io.type() == Ioss::SIDEBLOCK, "Input GroupingEntity must be of type Ioss::SIDEBLOCK");
+    STK_ThrowRequireMsg(io.type() == Ioss::SIDEBLOCK, "Input GroupingEntity must be of type Ioss::SIDEBLOCK");
 
     stk::topology stk_elem_topology = map_ioss_topology_to_stk(element_topology, params.bulk_data().mesh_meta_data().spatial_dimension());
 

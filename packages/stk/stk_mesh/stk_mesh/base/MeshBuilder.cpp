@@ -34,6 +34,7 @@
 
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/baseImpl/AuraGhostingDownwardConnectivity.hpp>
 
 namespace stk {
@@ -44,8 +45,8 @@ MeshBuilder::MeshBuilder()
    m_haveComm(false),
    m_auraOption(BulkData::AUTO_AURA),
    m_addFmwkData(false),
-   m_fieldDataManager(nullptr),
-   m_bucketCapacity(impl::BucketRepository::default_bucket_capacity),
+   m_initialBucketCapacity(stk::mesh::get_default_initial_bucket_capacity()),
+   m_maximumBucketCapacity(stk::mesh::get_default_maximum_bucket_capacity()),
    m_spatialDimension(0),
    m_entityRankNames(),
    m_upwardConnectivity(true)
@@ -57,8 +58,8 @@ MeshBuilder::MeshBuilder(ParallelMachine comm)
    m_haveComm(true),
    m_auraOption(BulkData::AUTO_AURA),
    m_addFmwkData(false),
-   m_fieldDataManager(nullptr),
-   m_bucketCapacity(impl::BucketRepository::default_bucket_capacity),
+   m_initialBucketCapacity(stk::mesh::get_default_initial_bucket_capacity()),
+   m_maximumBucketCapacity(stk::mesh::get_default_maximum_bucket_capacity()),
    m_spatialDimension(0),
    m_entityRankNames(),
    m_upwardConnectivity(true)
@@ -96,15 +97,36 @@ MeshBuilder& MeshBuilder::set_add_fmwk_data(bool addFmwkData)
   return *this;
 }
 
-MeshBuilder& MeshBuilder::set_field_data_manager(FieldDataManager* fieldDataManager)
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2023-09-27
+STK_DEPRECATED MeshBuilder& MeshBuilder::set_field_data_manager(FieldDataManager* fieldDataManager)
 {
-  m_fieldDataManager = fieldDataManager;
+  m_fieldDataManager = std::unique_ptr<FieldDataManager>(fieldDataManager);
+  return *this;
+}
+#endif
+
+MeshBuilder& MeshBuilder::set_field_data_manager(std::unique_ptr<FieldDataManager> fieldDataManager)
+{
+  m_fieldDataManager = std::move(fieldDataManager);
   return *this;
 }
 
 MeshBuilder& MeshBuilder::set_bucket_capacity(unsigned bucketCapacity)
 {
-  m_bucketCapacity = bucketCapacity;
+  m_initialBucketCapacity = bucketCapacity;
+  m_maximumBucketCapacity = bucketCapacity;
+  return *this;
+}
+
+MeshBuilder& MeshBuilder::set_initial_bucket_capacity(unsigned initialCapacity)
+{
+  m_initialBucketCapacity = initialCapacity;
+  return *this;
+}
+
+MeshBuilder& MeshBuilder::set_maximum_bucket_capacity(unsigned maximumCapacity)
+{
+  m_maximumBucketCapacity = maximumCapacity;
   return *this;
 }
 
@@ -133,7 +155,7 @@ std::shared_ptr<impl::AuraGhosting> MeshBuilder::create_aura_ghosting()
 
 std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData)
 {
-  ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
+  STK_ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
 
   return std::unique_ptr<BulkData>(new BulkData(metaData,
                                                 m_comm,
@@ -141,8 +163,9 @@ std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData
 #ifdef SIERRA_MIGRATION
                                                 m_addFmwkData,
 #endif
-                                                m_fieldDataManager,
-                                                m_bucketCapacity,
+                                                std::move(m_fieldDataManager),
+                                                m_initialBucketCapacity,
+                                                m_maximumBucketCapacity,
                                                 create_aura_ghosting(),
                                                 m_upwardConnectivity));
 }
@@ -154,4 +177,3 @@ std::unique_ptr<BulkData> MeshBuilder::create()
 
 }
 }
-

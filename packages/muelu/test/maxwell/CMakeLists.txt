@@ -4,13 +4,13 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_ML
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos2)
@@ -23,7 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos2)
 ENDIF()
 
 
-IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+IF (${PACKAGE_NAME}_ENABLE_Belos)
 
   TRIBITS_ADD_EXECUTABLE(
     Maxwell3D
@@ -31,20 +31,33 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
     COMM serial mpi
     )
 
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-Tpetra"
+      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
+      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
+      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
+      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
 
-    IF (${PACKAGE_NAME}_ENABLE_Amesos2)
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-Tpetra"
-        ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
-        ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
-        ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
-        ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-        )
-    ENDIF()
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-GMHD"
+      ARGS "--linAlgebra=Tpetra --xml=gmhd.xml --SM=GMHD_curlcurlBlk.dat --D0=GMHD_D0.dat --precType=MueLu-Maxwell1  --belos_xml=Belos.xml --tol=1e9 --coords=GMHD_nodalCoords.dat --GmhdA=GMHD.dat --belosSolverType=\"Block GMRES\" "
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
+
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-GMHD"
+      ARGS "--linAlgebra=Tpetra --xml=gmhd.xml --SM=GMHD_curlcurlBlk.dat --D0=GMHD_D0.dat --precType=MueLu-Maxwell1  --belos_xml=Belos.xml --tol=1e9 --coords=GMHD_nodalCoords.dat --GmhdA=GMHD.dat --belosSolverType=\"Block GMRES\" "
+      COMM serial mpi
+      NUM_MPI_PROCS 2
+      )
 
     IF (${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_ENABLE_Epetra)
       TRIBITS_ADD_TEST(
@@ -130,7 +143,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
-    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Stratimikos.xml Stratimikos_Maxwell1.xml Maxwell.xml Maxwell2.xml Maxwell3.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml Maxwell_ML1_MueLu.xml Maxwell_Reitzinger.xml Maxwell_Reitzinger_repart.xml
+    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Stratimikos.xml Stratimikos_Maxwell1.xml Maxwell.xml Maxwell2.xml Maxwell3.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml Maxwell_ML1_MueLu.xml Maxwell_Reitzinger.xml Maxwell_Reitzinger_repart.xml GMHD.dat GMHD_nodalCoords.dat  GMHD_D0.dat GMHD_curlcurlBlk.dat gmhd.xml
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp_complex

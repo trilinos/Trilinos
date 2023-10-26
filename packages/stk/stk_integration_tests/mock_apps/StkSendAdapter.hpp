@@ -39,8 +39,6 @@ public:
 
   bool called_update_values = false;
 
-  bool owning_rank() const { return stk::parallel_machine_rank(m_mesh.comm())==m_mesh.owning_rank(); }
-
   double get_field_value(const EntityKey & entityKey) const
   {
      return m_mesh.get_stk_field_value(entityKey, m_fieldName);

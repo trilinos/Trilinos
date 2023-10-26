@@ -78,6 +78,13 @@ void get_entities( const BulkData & mesh , EntityRank entity_rank ,
   }
 }
 
+std::vector<Entity> get_entities(const BulkData & mesh, EntityRank entity_rank, bool sortByGlobalId)
+{
+  std::vector<Entity> entities;
+  get_entities(mesh, entity_rank, entities, sortByGlobalId);
+  return entities;
+}
+
 unsigned count_selected_entities(
   const Selector & selector ,
   const BucketVector & input_buckets )
@@ -155,15 +162,24 @@ void get_entities( const BulkData& bulk,
   entities.reserve(count);
 
   for (const Bucket* bptr : buckets) {
-    for(Entity entity : *bptr) {
-      entities.push_back(entity);
-    }
+    entities.insert(entities.end(), bptr->begin(), bptr->end());
   }
 
   if (entities.size() > 0 && sortByGlobalId) {
     std::sort(entities.begin(), entities.end(), EntityLess(bulk));
   }
 }
+
+std::vector<Entity> get_entities(const BulkData& bulk,
+                                 const EntityRank rank,
+                                 const Selector & selector,
+                                 bool sortByGlobalId)
+{
+  std::vector<Entity> entities;
+  get_entities(bulk, rank, selector, entities, sortByGlobalId);
+  return entities;
+}
+
 //----------------------------------------------------------------------
 
 void count_entities(

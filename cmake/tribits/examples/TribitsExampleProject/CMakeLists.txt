@@ -6,7 +6,7 @@
 
 # To be safe, define your minimum CMake version.  This may be newer than the
 # min required by TriBITS.
-cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
 # Make CMake set WIN32 with CYGWIN for older CMake versions.  CMake requires
 # this to be in the top-level CMakeLists.txt file and not an include file :-(
@@ -26,6 +26,8 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
 # CMake requires that you declare the CMake project in the top-level file and
 # not in an include file :-(
 project(${PROJECT_NAME} NONE)
+
+set(TRIBITS_HIDE_DEPRECATED_INCLUDE_DIRECTORIES_OVERRIDE  TRUE)
 
 #
 # B) Pull in the TriBITS system and execute

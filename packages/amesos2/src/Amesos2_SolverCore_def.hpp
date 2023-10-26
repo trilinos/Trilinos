@@ -108,9 +108,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::preOrdering()
 
   loadA(PREORDERING);
 
-  static_cast<solver_type*>(this)->preOrdering_impl();
-  ++status_.numPreOrder_;
-  status_.last_phase_ = PREORDERING;
+  int error_code = static_cast<solver_type*>(this)->preOrdering_impl();
+  if (error_code == EXIT_SUCCESS){
+    ++status_.numPreOrder_;
+    status_.last_phase_ = PREORDERING;
+  }
 
   return *this;
 }
@@ -131,9 +133,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
     loadA(SYMBFACT);
   }
 
-  static_cast<solver_type*>(this)->symbolicFactorization_impl();
-  ++status_.numSymbolicFact_;
-  status_.last_phase_ = SYMBFACT;
+  int error_code = static_cast<solver_type*>(this)->symbolicFactorization_impl();
+  if (error_code == EXIT_SUCCESS){
+    ++status_.numSymbolicFact_;
+    status_.last_phase_ = SYMBFACT;
+  }
 
   return *this;
 }
@@ -154,9 +158,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::numericFactorization()
     loadA(NUMFACT);
   }
 
-  static_cast<solver_type*>(this)->numericFactorization_impl();
-  ++status_.numNumericFact_;
-  status_.last_phase_ = NUMFACT;
+  int error_code = static_cast<solver_type*>(this)->numericFactorization_impl();
+  if (error_code == EXIT_SUCCESS){
+    ++status_.numNumericFact_;
+    status_.last_phase_ = NUMFACT;
+  }
 
   return *this;
 }
@@ -217,9 +223,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
     const_cast<type&>(*this).numericFactorization();
   }
 
-  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), Teuchos::ptrInArg(*b));
-  ++status_.numSolve_;
-  status_.last_phase_ = SOLVE;
+  int error_code = static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), Teuchos::ptrInArg(*b));
+  if (error_code == EXIT_SUCCESS){
+    ++status_.numSolve_;
+    status_.last_phase_ = SOLVE;
+  }
 }
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >

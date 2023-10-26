@@ -48,7 +48,7 @@
 
 #include <Teuchos_SerialDenseVector.hpp>
 
-#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"

@@ -61,7 +61,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class TpetraPreconditioner : public Tpetra::Operator<SC,LO,GO,NO> {
 
     protected:

@@ -1,6 +1,6 @@
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 ADD_SUBDIRECTORY(AdditiveSchwarzRILUK)
 
@@ -42,6 +42,7 @@ ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   DEST_FILES
+  test_database_schwarz.xml
   test_ILUT_calore1_mm.xml 
   test_Jacobi_calore1_mm.xml 
   test_Jacobi_calore1_mm_constGraph.xml 
@@ -67,9 +68,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_2_ILUT_nos1_hb.xml 
   test_2_RILUK_nos1_hb.xml
   test_2_RILUK_HTS_nos1_hb.xml
+  test_2_RILUK_2streams_nos1_hb.xml
+  test_2_RILUK_4streams_nos1_hb.xml
   test_4_ILUT_nos1_hb.xml 
   test_4_RILUK_nos1_hb.xml
   test_4_RILUK_HTS_nos1_hb.xml
+  test_4_RILUK_2streams_nos1_hb.xml
+  test_4_RILUK_4streams_nos1_hb.xml
   test_SGS_calore1_mm.xml 
   test_MTSGS_calore1_mm.xml
   calore1.mtx 
@@ -97,8 +102,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_ILUT_tfqmr_calore1_mm.xml
   5w.mtx 
   5w.vec
+  6w.mtx 
+  6w.vec
   5w_bel_tif_ILUT.xml
   5w_bel_tif_FILU.xml
+  6w_bel_tif_FILU_blockcrs.xml
   5w_bel_tif_FILU_sptrsv.xml
   5w_bel_tif_FILU_sptrsv_host.xml
   5w_bel_tif_FILU_schwarz.xml
@@ -128,6 +136,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_4_MTGS_muelu.xml
   test_4_SGS_muelu.xml
   test_4_MTSGS_muelu.xml
+  schwarz.xml
   # test_SGS_wathen_mm.xml
   # test_MTSGS_wathen_mm.xml
 
@@ -236,6 +245,15 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   tif_belos
+  NAME DatabaseSchwarz_belos
+  ARGS "--xml_file=test_database_schwarz.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
   NAME Jacobi_belos_constGraph
   ARGS "--xml_file=test_Jacobi_calore1_mm_constGraph.xml"
   COMM serial mpi
@@ -332,6 +350,56 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
 )
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Schwarz_RILUK_hb_belos
+  ARGS "--xml_file=schwarz.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+
+
+
+
+IF(Kokkos_ENABLE_CUDA)
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME RILUK_2streams_hb_belos
+    ARGS "--xml_file=test_2_RILUK_2streams_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME RILUK_4streams_hb_belos
+    ARGS "--xml_file=test_2_RILUK_4streams_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME RILUK_2streams_hb_belos
+    ARGS "--xml_file=test_4_RILUK_2streams_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME RILUK_4streams_hb_belos
+    ARGS "--xml_file=test_4_RILUK_4streams_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+  )
+ENDIF()
 ENDIF()
 
 
@@ -470,6 +538,14 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     tif_belos
     NAME FILU_5w
     ARGS "--xml_file=5w_bel_tif_FILU.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME FILU_6w_blockcrs
+    ARGS "--xml_file=6w_bel_tif_FILU_blockcrs.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT

@@ -52,7 +52,7 @@
 #define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
 #endif
 #include "Kokkos_Core_fwd.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Cuda/Kokkos_Cuda.hpp"
 #ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE

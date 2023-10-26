@@ -81,6 +81,7 @@
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 // FIXME
 
@@ -215,7 +216,7 @@
           m_isCommitted = false;
           m_isAdopted = true;
           m_coordinatesField =
-            &m_metaData->declare_field<CoordinatesFieldType_type>( stk::topology::NODE_RANK, "coordinates" );
+            &m_metaData->declare_field<CoordinatesFieldType::value_type>( stk::topology::NODE_RANK, "coordinates" );
           stk::mesh::put_field_on_mesh( *m_coordinatesField, m_metaData->universal_part(), m_spatialDim, nullptr);
         }
       m_isOpen = true;
@@ -2446,7 +2447,7 @@
 
       mesh_data->add_mesh_database(in_filename, type, stk::io::READ_MESH);
 
-      checkForPartsToAvoidReading(*mesh_data->get_input_io_region(), s_omit_part);
+      checkForPartsToAvoidReading(*mesh_data->get_input_ioss_region(), s_omit_part);
 
       // Open, read, filter meta data from the input mesh file:
       // The coordinates field will be set to the correct dimension.
@@ -2484,8 +2485,8 @@
 
     int PerceptMesh::get_ioss_aliases(const std::string &my_name, std::vector<std::string> &aliases)
     {
-      auto *ge = m_iossMeshData->get_input_io_region()->get_entity(my_name);
-      return ge != nullptr ? m_iossMeshData->get_input_io_region()->get_aliases(my_name, ge->type(), aliases) : 0;
+      auto *ge = m_iossMeshData->get_input_ioss_region()->get_entity(my_name);
+      return ge != nullptr ? m_iossMeshData->get_input_ioss_region()->get_aliases(my_name, ge->type(), aliases) : 0;
     }
 
     bool PerceptMesh::checkForPartNameWithAliases(stk::mesh::Part& part, const std::string& bname)
@@ -2537,13 +2538,13 @@
 
     int PerceptMesh::get_database_time_step_count()
     {
-      int timestep_count = m_iossMeshData->get_input_io_region()->get_property("state_count").get_int();
+      int timestep_count = m_iossMeshData->get_input_ioss_region()->get_property("state_count").get_int();
       return timestep_count;
     }
 
     double PerceptMesh::get_database_time_at_step(int step)
     {
-      int timestep_count = m_iossMeshData->get_input_io_region()->get_property("state_count").get_int();
+      int timestep_count = m_iossMeshData->get_input_ioss_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
@@ -2552,17 +2553,17 @@
           throw std::runtime_error("step is out of range for PerceptMesh::get_database_time_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count));
         }
 
-      double state_time = timestep_count > 0 ? m_iossMeshData->get_input_io_region()->get_state_time(step) : 0.0;
+      double state_time = timestep_count > 0 ? m_iossMeshData->get_input_ioss_region()->get_state_time(step) : 0.0;
       return state_time;
     }
 
     int PerceptMesh::get_database_step_at_time(double time)
     {
-      int step_count = m_iossMeshData->get_input_io_region()->get_property("state_count").get_int();
+      int step_count = m_iossMeshData->get_input_ioss_region()->get_property("state_count").get_int();
       double delta_min = 1.0e30;
       int    step_min  = 0;
       for (int istep = 0; istep < step_count; istep++) {
-        double state_time = m_iossMeshData->get_input_io_region()->get_state_time(istep+1);
+        double state_time = m_iossMeshData->get_input_ioss_region()->get_state_time(istep+1);
         double delta = state_time - time;
         if (delta < 0.0) delta = -delta;
         if (delta < delta_min) {
@@ -2597,7 +2598,7 @@
           m_bulkData = mesh_data->bulk_data_ptr();
         }
 
-      int timestep_count = mesh_data->get_input_io_region()->get_property("state_count").get_int();
+      int timestep_count = mesh_data->get_input_ioss_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
@@ -2715,13 +2716,13 @@
 
       if (m_outputActiveChildrenOnly)
         {
-          if (Teuchos::is_null(mesh_data->deprecated_selector()))
+          if (Teuchos::is_null(m_io_mesh_selector))
             {
               Teuchos::RCP<stk::mesh::Selector> io_mesh_selector =
                 Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
-              mesh_data->deprecated_set_selector(io_mesh_selector);
+              m_io_mesh_selector = io_mesh_selector;
             }
-          stk::mesh::Selector & io_mesh_selector = *(mesh_data->deprecated_selector());
+          stk::mesh::Selector & io_mesh_selector = *(m_io_mesh_selector);
 
           stk::mesh::EntityRank part_ranks[] = {element_rank(), side_rank()};
           unsigned num_part_ranks = 2;
@@ -2786,10 +2787,10 @@
       if (m_remove_io_orig_topo_type)
         {
           std::string orig_topo_str = "original_topology_type";
-          if (!Teuchos::is_null(mesh_data->get_input_io_region()))
+          if ((mesh_data->get_input_ioss_region().get()) != nullptr)
             {
               {
-                const Ioss::AliasMap& aliases = mesh_data->get_input_io_region()->get_alias_map(Ioss::ELEMENTBLOCK);
+                const Ioss::AliasMap& aliases = mesh_data->get_input_ioss_region()->get_alias_map(Ioss::ELEMENTBLOCK);
                 Ioss::AliasMap::const_iterator I  = aliases.begin();
                 Ioss::AliasMap::const_iterator IE = aliases.end();
 
@@ -2802,7 +2803,7 @@
 
                     // Query the 'from' database to get the entity (if any) referred
                     // to by the 'alias'
-                    Ioss::GroupingEntity *ge = mesh_data->get_input_io_region()->get_entity(base);
+                    Ioss::GroupingEntity *ge = mesh_data->get_input_ioss_region()->get_entity(base);
 
                     if (ge != NULL) {
                       // See if there is a 'original_topology_type' property...
@@ -2816,7 +2817,7 @@
                 }
               }
 
-              if (0) std::cout << "tmp srk property_exists(original_topology_type) = " << mesh_data->get_input_io_region()->property_exists(orig_topo_str) << std::endl;
+              if (0) std::cout << "tmp srk property_exists(original_topology_type) = " << mesh_data->get_input_ioss_region()->property_exists(orig_topo_str) << std::endl;
             }
           else
             {
@@ -2826,10 +2827,10 @@
       size_t result_file_index = std::numeric_limits<size_t>::max();
       result_file_index = mesh_data->create_output_mesh(out_filename, stk::io::WRITE_RESULTS);
       m_output_file_index = result_file_index;
-      if (mesh_data->get_input_io_region().get() == NULL) {
-          mesh_data->get_output_io_region(result_file_index)->property_add(Ioss::Property("sort_stk_parts",true));
+      if (mesh_data->get_input_ioss_region().get() == NULL) {
+          mesh_data->get_output_ioss_region(result_file_index)->property_add(Ioss::Property("sort_stk_parts",true));
       }
-      mesh_data->set_subset_selector(result_file_index, mesh_data->deprecated_selector());
+      mesh_data->set_subset_selector(result_file_index, Teuchos::get_shared_ptr(m_io_mesh_selector));
 
       if (0)
         {
@@ -2861,8 +2862,8 @@
       else
         mesh_data->process_output_request(result_file_index, time);
 
-      if (!Teuchos::is_null(mesh_data->get_input_io_region()))
-        mesh_data->get_input_io_region()->get_database()->closeDatabase();
+      if (mesh_data->get_input_ioss_region() != nullptr)
+        mesh_data->get_input_ioss_region()->get_database()->closeDatabase();
 
       if (p_rank == 0) std::cout << " ... done" << std::endl;
     }
@@ -4559,14 +4560,13 @@
 
       const std::vector<GeometryEvaluator*>& geomEvals = mesh_geometry.getGeomEvaluators();
       //if (!get_rank()) std::cout << "tmp srk m_sync_io_regions= " << m_sync_io_regions << std::endl;
-      stk::io::StkMeshIoBroker& mesh_data = *m_iossMeshData;
-      if (Teuchos::is_null(mesh_data.deprecated_selector()))
+      if (Teuchos::is_null(m_io_mesh_selector))
         {
           Teuchos::RCP<stk::mesh::Selector> io_mesh_selector =
             Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
-          mesh_data.deprecated_set_selector(io_mesh_selector);
+          m_io_mesh_selector = io_mesh_selector;
         }
-      stk::mesh::Selector & io_mesh_selector = *(mesh_data.deprecated_selector());
+      stk::mesh::Selector & io_mesh_selector = *(m_io_mesh_selector);
       for (unsigned i = 0; i < geomEvals.size(); i++)
         {
           //if (!get_rank()) std::cout << " tmp srk adding geomEvals[i]->mPart->name()..." << geomEvals[i]->mPart->name() << std::endl;
@@ -4925,7 +4925,7 @@
 
                           if (debug && rank == this->side_rank())
                             std::cout << "SPEF::ch_p_e side= " << this->identifier(entity) << std::endl;
-                          ParentElementType_type *fdata_new = NULL;
+                          ParentElementType::value_type *fdata_new = NULL;
 
                           if (this->hasFamilyTree(entity))
                             {
@@ -4955,7 +4955,7 @@
                                                     << std::endl;
                                         }
                                       VERIFY_OP_ON(fdata_new, !=, 0, "bad fdata_new");
-                                      fdata_new[0] = static_cast<ParentElementType_type>(this->identifier(parent_elem));
+                                      fdata_new[0] = static_cast<ParentElementType::value_type>(this->identifier(parent_elem));
                                     }
                                   else if (this->m_parent_element_field_side && is_matching_rank(*this->m_parent_element_field_side, entity))
                                     {
@@ -4992,7 +4992,7 @@
                                                     << std::endl;
                                         }
                                       VERIFY_OP_ON(fdata_new, !=, 0, "bad fdata_new");
-                                      fdata_new[0] = static_cast<ParentElementType_type>(predicted_parent_id);
+                                      fdata_new[0] = static_cast<ParentElementType::value_type>(predicted_parent_id);
                                     }
                                   else
                                     {
@@ -5794,7 +5794,6 @@
       const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
       stk::mesh::Selector new_selector;
-      unsigned num_inactive = 0;
       unsigned num_part_ranks = part_ranks.size();
       if (!num_part_ranks)
         {
@@ -5813,8 +5812,6 @@
 
           if (inactive_parent_elements_part && active_child_elements_part)
             {
-              num_inactive += stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part),
-                                                                 bulk.buckets(part_ranks[irank]));
               //new_selector |= stk::mesh::Selector(*active_child_elements_part);
               new_selector |= stk::mesh::Selector(*inactive_parent_elements_part);
             }
@@ -5901,10 +5898,10 @@
       if (!m_refine_field_set)
         {
           m_refine_field_set = true;
-          m_refine_field = get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+          m_refine_field = get_fem_meta_data()->get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
           if(!m_refine_field) m_refine_field = dynamic_cast<RefineFieldType *>(add_field_int("refine_field", stk::topology::ELEMENT_RANK, scalarDimension));
 
-          m_refine_field_orig = get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field_orig");
+          m_refine_field_orig = get_fem_meta_data()->get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field_orig");
           if(!m_refine_field_orig) m_refine_field_orig = dynamic_cast<RefineFieldType *>(add_field_int("refine_field_orig", stk::topology::ELEMENT_RANK, scalarDimension));
         }
 
@@ -5931,7 +5928,7 @@
           m_parent_element_field = find_field_possible_array_tag<ParentElementType>(*get_fem_meta_data(), stk::topology::ELEMENT_RANK, "parent_element");
           if(!m_parent_element_field)
             {
-              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType_type>(stk::topology::ELEMENT_RANK, "parent_element");
+              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType::value_type>(stk::topology::ELEMENT_RANK, "parent_element");
               stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field = &pe_field;
@@ -5939,7 +5936,7 @@
           m_parent_element_field_side = find_field_possible_array_tag<ParentElementType>(*get_fem_meta_data(), side_rank(), "parent_element_side");
           if(!m_parent_element_field_side)
             {
-              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType_type>(side_rank(), "parent_element_side");
+              ParentElementType& pe_field       = get_fem_meta_data()->declare_field<ParentElementType::value_type>(side_rank(), "parent_element_side");
               stk::mesh::put_field_on_mesh( pe_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(pe_field, Ioss::Field::TRANSIENT);
               m_parent_element_field_side = &pe_field;
@@ -5950,8 +5947,8 @@
               m_node_registry_field = find_field_possible_array_tag<NodeRegistryFieldType>(*get_fem_meta_data(), node_rank(), "node_registry");
               if (!m_node_registry_field)
                 {
-                  NodeRegistryFieldType& nr_field       = get_fem_meta_data()->declare_field<NodeRegistryFieldType_type>(node_rank(), "node_registry");
-                  std::vector<NodeRegistryFieldType_type> vals(NUM_NR_FIELD_SLOTS, static_cast<NodeRegistryFieldType_type>(0));
+                  NodeRegistryFieldType& nr_field       = get_fem_meta_data()->declare_field<NodeRegistryFieldType::value_type>(node_rank(), "node_registry");
+                  std::vector<NodeRegistryFieldType::value_type> vals(NUM_NR_FIELD_SLOTS, static_cast<NodeRegistryFieldType::value_type>(0));
                   stk::mesh::put_field_on_mesh( nr_field , get_fem_meta_data()->universal_part(), NUM_NR_FIELD_SLOTS, &vals[0]);
                   stk::io::set_field_role(nr_field, Ioss::Field::TRANSIENT);
                   m_node_registry_field = &nr_field;
@@ -5963,7 +5960,7 @@
       if (!m_new_nodes_field_set)
         {
           m_new_nodes_field_set = true;
-          m_new_nodes_field = get_fem_meta_data()->get_field<NewNodesType_type>(node_rank(), "new_nodes");
+          m_new_nodes_field = get_fem_meta_data()->get_field<NewNodesType::value_type>(node_rank(), "new_nodes");
           if(!m_new_nodes_field) m_new_nodes_field = dynamic_cast<NewNodesType *>(add_field_int("new_nodes", node_rank(), scalarDimension));
 
         }
@@ -5971,10 +5968,10 @@
       if (!m_weights_field_set)
         {
           m_weights_field_set = true;
-          m_weights_field = get_fem_meta_data()->get_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
+          m_weights_field = get_fem_meta_data()->get_field<WeightsFieldType::value_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
           if (!m_weights_field)
             {
-              m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
+              m_weights_field = &get_fem_meta_data()->declare_field<WeightsFieldType::value_type>(stk::topology::ELEMENT_RANK, "rebalance_weights");
               stk::mesh::put_field_on_mesh( *m_weights_field , get_fem_meta_data()->universal_part(), nullptr);
               stk::io::set_field_role(*m_weights_field, Ioss::Field::TRANSIENT);
             }
@@ -6001,10 +5998,10 @@
 
     void PerceptMesh::register_and_set_smoothing_fields()
     {
-      m_unprojected_coordinates = get_fem_meta_data()->get_field<UnprojectedCoordinatesFieldType_type>(node_rank(), "unprojected_coordinates");
+      m_unprojected_coordinates = get_fem_meta_data()->get_field<UnprojectedCoordinatesFieldType::value_type>(node_rank(), "unprojected_coordinates");
       if(!m_unprojected_coordinates)
         {
-          m_unprojected_coordinates = &get_fem_meta_data()->declare_field<UnprojectedCoordinatesFieldType_type>(node_rank(), "unprojected_coordinates");
+          m_unprojected_coordinates = &get_fem_meta_data()->declare_field<UnprojectedCoordinatesFieldType::value_type>(node_rank(), "unprojected_coordinates");
 
           // we use first 3 slots for coordinates, last for the flag for if it has been set yet
           stk::mesh::put_field_on_mesh( *m_unprojected_coordinates, get_fem_meta_data()->universal_part(), 4, nullptr);
@@ -6012,10 +6009,10 @@
         }
       ADD_FIELD(m_unprojected_coordinates);
 
-      m_wall_distance_field = get_fem_meta_data()->get_field<WallDistanceFieldType_type>(node_rank(), "wall_distance");
+      m_wall_distance_field = get_fem_meta_data()->get_field<WallDistanceFieldType::value_type>(node_rank(), "wall_distance");
       if(!m_wall_distance_field)
         {
-          m_wall_distance_field = &get_fem_meta_data()->declare_field<WallDistanceFieldType_type>(node_rank(), "wall_distance");
+          m_wall_distance_field = &get_fem_meta_data()->declare_field<WallDistanceFieldType::value_type>(node_rank(), "wall_distance");
 
           stk::mesh::put_field_on_mesh( *m_wall_distance_field, get_fem_meta_data()->universal_part(), nullptr);
           stk::io::set_field_role(*m_wall_distance_field, Ioss::Field::TRANSIENT);
@@ -6031,20 +6028,20 @@
       if (!m_refine_level_field_set)
         {
           m_refine_level_field_set = true;
-          m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType_type>(stk::topology::ELEMENT_RANK, "refine_level");
+          m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType::value_type>(stk::topology::ELEMENT_RANK, "refine_level");
         }
 
       if (!m_refine_field_set)
         {
           m_refine_field_set = true;
-          m_refine_field = eMesh.get_fem_meta_data()->get_field<RefineFieldType_type>(stk::topology::ELEMENT_RANK, "refine_field");
+          m_refine_field = eMesh.get_fem_meta_data()->get_field<RefineFieldType::value_type>(stk::topology::ELEMENT_RANK, "refine_field");
         }
 
       if (!m_parent_element_field_set)
         {
           m_parent_element_field_set = true;
-          m_parent_element_field = eMesh.get_fem_meta_data()->get_field<ParentElementType_type>(eMesh.element_rank(), "parent_element");
-          m_parent_element_field_side = eMesh.get_fem_meta_data()->get_field<ParentElementType_type>(eMesh.side_rank(), "parent_element_side");
+          m_parent_element_field = eMesh.get_fem_meta_data()->get_field<ParentElementType::value_type>(eMesh.element_rank(), "parent_element");
+          m_parent_element_field_side = eMesh.get_fem_meta_data()->get_field<ParentElementType::value_type>(eMesh.side_rank(), "parent_element_side");
         }
 
       const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
@@ -6065,6 +6062,7 @@
             {
               continue;
             }
+            
           for (unsigned iel=0; iel < old_owning_elements.size(); iel++)
             {
               stk::mesh::Entity old_owning_elem = old_owning_elements[iel];

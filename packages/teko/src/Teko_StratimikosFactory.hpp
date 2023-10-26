@@ -4,14 +4,16 @@
 #include <vector>
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
-#include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
 #include "Teko_RequestHandler.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_InverseFactory.hpp"
 
+#ifdef TEKO_HAVE_EPETRA
+#include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Epetra_Operator.h"
+#endif
 
 namespace Teko {
 
@@ -32,6 +34,7 @@ public:
   StratimikosFactory(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & builder,
                      const Teuchos::RCP<Teko::RequestHandler> & rh);
     
+#ifdef TEKO_HAVE_EPETRA
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
    *
@@ -42,6 +45,7 @@ public:
    */
   STANDARD_COMPOSITION_MEMBERS(
     Thyra::EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor );
+#endif
 
   //@}
 
@@ -105,6 +109,7 @@ public:
     const Thyra::ESupportSolveUse supportSolveUse
     ) const;
 
+#ifdef TEKO_HAVE_EPETRA
   /** Setup an epetra preconditioner.
     */
   void initializePrec_Epetra(
@@ -112,6 +117,7 @@ public:
     Thyra::PreconditionerBase<double> *prec,
     const Thyra::ESupportSolveUse supportSolveUse
     ) const;
+#endif
 
   /** Access to the application communication request handling mechnism
     */
@@ -129,6 +135,7 @@ public:
 
 private:
 
+#ifdef TEKO_HAVE_EPETRA
   /** Build the segragated jacobian operator according to
     * the input parameter list.
     *
@@ -157,6 +164,7 @@ private:
   void buildStridedVectors(const Epetra_Operator & Jac,
                            const std::vector<int> & decomp,
                            std::vector<std::vector<int> > & vars) const;
+#endif // TEKO_HAVE_EPETRA
 
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
@@ -175,7 +183,7 @@ private:
   * that list of solvers/precondtioners.
   */
 void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
-                               const std::string & stratName="Teko");
+                                 const std::string & stratName="Teko");
 
 /** Inject Teko into a solver builder with a specified name. Note that the builder
   * is used to define the default solvers in Teko. Therefore any dynamically specified
@@ -185,8 +193,8 @@ void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & build
   * that list of solvers/precondtioners.
   */
 void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
-                               const Teuchos::RCP<Teko::RequestHandler> & rh,
-                               const std::string & stratName="Teko");
+                                 const Teuchos::RCP<Teko::RequestHandler> & rh,
+                                 const std::string & stratName="Teko");
 
 } // namespace Teko
 

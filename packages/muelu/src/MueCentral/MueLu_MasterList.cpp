@@ -119,53 +119,56 @@ namespace MueLu {
     // put in auto-generated code here
 
 
-    if (name == "output filename") { ss << "<Parameter name=\"output filename\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "W cycle start level") { ss << "<Parameter name=\"W cycle start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "number of vectors") { ss << "<Parameter name=\"number of vectors\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: use filtered matrix") { ss << "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: use rowsumabs diagonal scaling") { ss << "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: max eigenvalue") { ss << "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: rowsumabs diagonal replacement tolerance") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: rowsumabs use automatic diagonal tolerance") { ss << "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: rowsumabs diagonal replacement value") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "pcoarsen: element") { ss << "<Parameter name=\"pcoarsen: element\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "pcoarsen: lo basis") { ss << "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "smoother: neighborhood type") { ss << "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "tentative: calculate qr") { ss << "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "tentative: constant column sums") { ss << "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: use map") { ss << "<Parameter name=\"repartition: use map\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: use subcommunicators in place") { ss << "<Parameter name=\"repartition: use subcommunicators in place\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: node repartition level") { ss << "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: disable addon") { ss << "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: use as preconditioner") { ss << "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: dump matrices") { ss << "<Parameter name=\"refmaxwell: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: subsolves on subcommunicators") { ss << "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: enable reuse") { ss << "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: skip first (1,1) level") { ss << "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: normalize nullspace") { ss << "<Parameter name=\"refmaxwell: normalize nullspace\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
+    if (name == "output filename") { ss << "<Parameter name=\"output filename\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "W cycle start level") { ss << "<Parameter name=\"W cycle start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "number of vectors") { ss << "<Parameter name=\"number of vectors\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: use filtered matrix") { ss << "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: eigen-analysis type") { ss << "<Parameter name=\"sa: eigen-analysis type\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: use rowsumabs diagonal scaling") { ss << "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: max eigenvalue") { ss << "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs diagonal replacement tolerance") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs use automatic diagonal tolerance") { ss << "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs diagonal replacement value") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "replicate: npdes") { ss << "<Parameter name=\"replicate: npdes\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "combine: numBlks") { ss << "<Parameter name=\"combine: numBlks\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: element") { ss << "<Parameter name=\"pcoarsen: element\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: lo basis") { ss << "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "smoother: neighborhood type") { ss << "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "tentative: calculate qr") { ss << "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "tentative: constant column sums") { ss << "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: use map") { ss << "<Parameter name=\"repartition: use map\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: use subcommunicators in place") { ss << "<Parameter name=\"repartition: use subcommunicators in place\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: node repartition level") { ss << "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: disable addon") { ss << "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: use as preconditioner") { ss << "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: dump matrices") { ss << "<Parameter name=\"refmaxwell: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: subsolves on subcommunicators") { ss << "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: enable reuse") { ss << "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: skip first (1,1) level") { ss << "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: normalize nullspace") { ss << "<Parameter name=\"refmaxwell: normalize nullspace\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     return "";
   }
 
@@ -219,6 +222,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: use ml scaling of drop tol\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"aggregation: compute aggregate qualities\" type=\"bool\" value=\"false\"/>"
@@ -239,7 +243,9 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2a\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"aggregation: match ML phase1\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: match ML phase2a\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: match ML phase2b\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase2a agg factor\" type=\"double\" value=\"0.5\"/>"
   "<Parameter name=\"aggregation: error on nodes with no on-rank neighbors\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase3 avoid singletons\" type=\"bool\" value=\"false\"/>"
@@ -298,6 +304,7 @@ namespace MueLu {
   "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33\"/>"
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"sa: eigen-analysis type\" type=\"string\" value=\"power-method\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=\"false\"/>"
@@ -306,6 +313,8 @@ namespace MueLu {
   "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"replicate: npdes\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"combine: numBlks\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"interp: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
@@ -348,6 +357,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: remap accept partition\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: explicit via new copy rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance Nullspace\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
@@ -371,6 +381,7 @@ namespace MueLu {
   "<ParameterList name=\"maxwell1: 11list\"/>"
   "<ParameterList name=\"maxwell1: 22list\"/>"
   "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"maxwell1: nodal smoother fix zero diagonal threshold\" type=\"double\" value=\"1e-10\"/>"
   "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
   "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"refmaxwell: 11list\"/>"
@@ -655,6 +666,8 @@ namespace MueLu {
       
          ("aggregation: threshold","aggregation: drop tol")
       
+         ("aggregation: use ml scaling of drop tol","aggregation: use ml scaling of drop tol")
+      
          ("aggregation: min agg size","aggregation: min agg size")
       
          ("aggregation: max agg size","aggregation: max agg size")
@@ -695,7 +708,11 @@ namespace MueLu {
       
          ("aggregation: enable phase 3","aggregation: enable phase 3")
       
+         ("aggregation: match ML phase1","aggregation: match ML phase1")
+      
          ("aggregation: match ML phase2a","aggregation: match ML phase2a")
+      
+         ("aggregation: match ML phase2b","aggregation: match ML phase2b")
       
          ("aggregation: phase2a agg factor","aggregation: phase2a agg factor")
       
@@ -813,6 +830,8 @@ namespace MueLu {
       
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
       
+         ("sa: eigen-analysis type","sa: eigen-analysis type")
+      
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
       
          ("not supported by ML","sa: use rowsumabs diagonal scaling")
@@ -828,6 +847,10 @@ namespace MueLu {
          ("not supported by ML","sa: rowsumabs diagonal replacement value")
       
          ("not supported by ML","sa: rowsumabs replace single entry row with zero")
+      
+         ("not supported by ML","replicate: npdes")
+      
+         ("not supported by ML","combine: numBlks")
       
          ("interp: build coarse coordinates","interp: build coarse coordinates")
       
@@ -913,6 +936,8 @@ namespace MueLu {
       
          ("repartition: rebalance P and R","repartition: rebalance P and R")
       
+         ("repartition: explicit via new copy rebalance P and R","repartition: explicit via new copy rebalance P and R")
+      
          ("repartition: rebalance Nullspace","repartition: rebalance Nullspace")
       
          ("repartition: use subcommunicators","repartition: use subcommunicators")
@@ -958,6 +983,8 @@ namespace MueLu {
          ("maxwell1: 22list","maxwell1: 22list")
       
          ("maxwell1: dump matrices","maxwell1: dump matrices")
+      
+         ("maxwell1: nodal smoother fix zero diagonal threshold","maxwell1: nodal smoother fix zero diagonal threshold")
       
          ("refmaxwell: mode","refmaxwell: mode")
       

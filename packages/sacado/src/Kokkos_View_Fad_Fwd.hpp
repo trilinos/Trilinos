@@ -31,7 +31,7 @@
 #define KOKKOS_VIEW_FAD_FWD_HPP
 
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 // We are hooking into Kokkos Core internals here
 // Need to define this macro since we include non-public headers
@@ -227,6 +227,6 @@ as_view_of_rank_n(View<T, Args...>);
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCORE)
+#endif // defined(HAVE_SACADO_KOKKOS)
 
 #endif /* #ifndef KOKKOS_VIEW_FAD_FWD_HPP */

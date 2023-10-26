@@ -89,7 +89,7 @@ void distribute_mesh(stk::mesh::BulkData& bulk, const stk::mesh::EntityIdProcVec
     for(const stk::mesh::EntityIdProc& idProc : idProcVec) {
 
       stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, idProc.first);
-      ThrowRequire(bulk.is_valid(elem));
+      STK_ThrowRequire(bulk.is_valid(elem));
       if(idProc.second != bulk.parallel_rank()) {
         procVec.push_back(std::make_pair(elem, idProc.second));
 //        std::cout << "p:" << bulk.parallel_rank() << " element: " << bulk.entity_key(elem) << std::endl;
@@ -98,7 +98,7 @@ void distribute_mesh(stk::mesh::BulkData& bulk, const stk::mesh::EntityIdProcVec
       stk::mesh::Entity const * elemNodes = bulk.begin_nodes(elem);
       for(unsigned i = 0; i < bulk.num_nodes(elem); i++) {
         stk::mesh::Entity node = elemNodes[i];
-        ThrowRequire(bulk.is_valid(node));
+        STK_ThrowRequire(bulk.is_valid(node));
         if(idProc.second != bulk.parallel_rank() && is_new_owner(bulk, elem, node)) {
           procVec.push_back(std::make_pair(node, idProc.second));
 //          std::cout << "p:" << bulk.parallel_rank() << " node: " << bulk.entity_key(node) << std::endl;
@@ -946,7 +946,6 @@ void setup_mesh_with_hinge_ring(stk::mesh::BulkData& bulk)
   coordNode127[0] = coordNode27[0] - EPS;
   coordNode127[1] = coordNode27[1] - EPS;
   coordNode127[2] = coordNode27[2];
-  // stk::io::write_mesh("output.e", bulk);
 }
 
 stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge(stk::mesh::BulkData& bulk)
@@ -1260,8 +1259,8 @@ unsigned get_num_surface_nodes(const stk::mesh::BulkData& bulk, const std::vecto
   stk::mesh::EntityRank rank = bulk.mesh_meta_data().side_rank();
   for(const std::string& blockName : blockPartNames) {
     stk::mesh::Part* part = bulk.mesh_meta_data().get_part(blockName);
-    ThrowRequire(part != nullptr);
-    ThrowRequire(part->primary_entity_rank() == rank);
+    STK_ThrowRequire(part != nullptr);
+    STK_ThrowRequire(part->primary_entity_rank() == rank);
     blockParts.push_back(part);
   }
   stk::mesh::Selector blockSelector =  stk::mesh::selectUnion(blockParts) & bulk.mesh_meta_data().locally_owned_part();
@@ -1276,7 +1275,7 @@ void create_sideset(stk::mesh::BulkData& bulk,
   stk::mesh::ConstPartVector blockParts;
   for(const std::string& blockName : blockPartNames) {
     stk::mesh::Part* part = bulk.mesh_meta_data().get_part(blockName);
-    ThrowRequire(part != nullptr);
+    STK_ThrowRequire(part != nullptr);
     blockParts.push_back(part);
   }
   stk::mesh::Part& surfacePart = *bulk.mesh_meta_data().get_part(surfacePartName);
@@ -1994,7 +1993,7 @@ stk::mesh::PartVector setup_mesh_3block_4quad_bowtie(stk::mesh::BulkData& bulk)
 void fill_mesh_description_4block_4quad_np1(stk::mesh::BulkData& bulk, unsigned blockOrder,
                                             std::string& meshDesc, std::vector<double>& coordinates)
 {
-  ThrowRequire(bulk.parallel_size() == 1);
+  STK_ThrowRequire(bulk.parallel_size() == 1);
 
   if (blockOrder == 1) {
     meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
@@ -2020,8 +2019,8 @@ void fill_mesh_description_4block_4quad_np1(stk::mesh::BulkData& bulk, unsigned 
 void fill_mesh_description_4block_4quad_np2(stk::mesh::BulkData& bulk, unsigned blockOrder,
                                             std::string& meshDesc, std::vector<double>& coordinates)
 {
-  ThrowRequire(bulk.parallel_size() == 2);
-  ThrowRequire(blockOrder <= 3 && blockOrder > 0);
+  STK_ThrowRequire(bulk.parallel_size() == 2);
+  STK_ThrowRequire(blockOrder <= 3 && blockOrder > 0);
 
   if (blockOrder == 1) {
     meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
@@ -2047,8 +2046,8 @@ void fill_mesh_description_4block_4quad_np2(stk::mesh::BulkData& bulk, unsigned 
 void fill_mesh_description_4block_4quad_np3(stk::mesh::BulkData& bulk, unsigned blockOrder,
                                             std::string& meshDesc, std::vector<double>& coordinates)
 {
-  ThrowRequire(bulk.parallel_size() == 3);
-  ThrowRequire(blockOrder <= 3 && blockOrder > 0);
+  STK_ThrowRequire(bulk.parallel_size() == 3);
+  STK_ThrowRequire(blockOrder <= 3 && blockOrder > 0);
 
   if (blockOrder == 1) {
     meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
@@ -2074,8 +2073,8 @@ void fill_mesh_description_4block_4quad_np3(stk::mesh::BulkData& bulk, unsigned 
 void fill_mesh_description_4block_4quad_np4(stk::mesh::BulkData& bulk, unsigned blockOrder,
                                             std::string& meshDesc, std::vector<double>& coordinates)
 {
-  ThrowRequire(bulk.parallel_size() == 4);
-  ThrowRequire(blockOrder <= 4 && blockOrder > 0);
+  STK_ThrowRequire(bulk.parallel_size() == 4);
+  STK_ThrowRequire(blockOrder <= 4 && blockOrder > 0);
 
   if (blockOrder == 1) {
     meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
@@ -2128,7 +2127,7 @@ stk::mesh::PartVector setup_mesh_4block_4quad(stk::mesh::BulkData& bulk, unsigne
     fill_mesh_description_4block_4quad_np4(bulk, blockOrder, meshDesc, coordinates);
     break;
   default:
-    ThrowRequireMsg(false, "Unexpected proc count for this test\n");
+    STK_ThrowRequireMsg(false, "Unexpected proc count for this test\n");
     break;
   }
 
@@ -2142,7 +2141,7 @@ stk::mesh::PartVector setup_mesh_4block_4quad(stk::mesh::BulkData& bulk, unsigne
 
 void fill_mesh_description_6block_6quad_np1(stk::mesh::BulkData& bulk, std::string& meshDesc, std::vector<double>& coordinates)
 {
-  ThrowRequire(bulk.parallel_size() == 1);
+  STK_ThrowRequire(bulk.parallel_size() == 1);
 
   meshDesc = "0,1,QUAD_4_2D,1,2,6,5,block_1\n"
              "0,2,QUAD_4_2D,2,3,7,6,block_2\n"
@@ -2172,7 +2171,7 @@ stk::mesh::PartVector setup_mesh_6block_6quad(stk::mesh::BulkData& bulk)
     fill_mesh_description_6block_6quad_np1(bulk, meshDesc, coordinates);
     break;
   default:
-    ThrowRequireMsg(false, "Unexpected proc count for this test\n");
+    STK_ThrowRequireMsg(false, "Unexpected proc count for this test\n");
     break;
   }
 
@@ -2181,7 +2180,6 @@ stk::mesh::PartVector setup_mesh_6block_6quad(stk::mesh::BulkData& bulk)
   EXPECT_EQ(8u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6}));
   EXPECT_EQ(12u, get_num_total_nodes(bulk));
 
-  bulk.dump_mesh_per_proc("dump");
   output_mesh(bulk, "initial.g");
 
   return {&block1, &block2, &block3, &block4, &block5, &block6};
@@ -2189,7 +2187,7 @@ stk::mesh::PartVector setup_mesh_6block_6quad(stk::mesh::BulkData& bulk)
 
 void fill_mesh_description_9block_9quad_np1(stk::mesh::BulkData& bulk, std::string& meshDesc, std::vector<double>& coordinates)
 {
-  ThrowRequire(bulk.parallel_size() == 1);
+  STK_ThrowRequire(bulk.parallel_size() == 1);
 
   meshDesc = "0,1,QUAD_4_2D,1,2,6,5,block_1\n"
              "0,2,QUAD_4_2D,2,3,7,6,block_2\n"
@@ -2226,7 +2224,7 @@ stk::mesh::PartVector setup_mesh_9block_9quad(stk::mesh::BulkData& bulk)
     fill_mesh_description_9block_9quad_np1(bulk, meshDesc, coordinates);
     break;
   default:
-    ThrowRequireMsg(false, "Unexpected proc count for this test\n");
+    STK_ThrowRequireMsg(false, "Unexpected proc count for this test\n");
     break;
   }
 
@@ -2235,7 +2233,6 @@ stk::mesh::PartVector setup_mesh_9block_9quad(stk::mesh::BulkData& bulk)
   EXPECT_EQ(12u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9}));
   EXPECT_EQ(16u, get_num_total_nodes(bulk));
 
-  bulk.dump_mesh_per_proc("dump");
   output_mesh(bulk, "initial.g");
 
   return {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9};

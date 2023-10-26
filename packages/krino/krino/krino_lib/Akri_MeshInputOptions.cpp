@@ -45,7 +45,7 @@ MeshInputOptions::get(const std::string &model_name)
 
 int MeshInputOptions::get_generated_mesh_spatial_dimension() const
 {
-  ThrowRequire(use_generated_mesh());
+  STK_ThrowRequire(use_generated_mesh());
   return (my_generated_mesh_domain_type == GENERATED_2D_MESH_FOR_INTERFACE_BOUNDING_BOX || my_generated_mesh_domain.size() == 4) ? 2 : 3;
 }
 

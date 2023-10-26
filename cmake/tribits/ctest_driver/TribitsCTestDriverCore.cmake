@@ -50,7 +50,7 @@ message("*******************************")
 message("")
 
 
-cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
 set(THIS_CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
@@ -137,6 +137,10 @@ if ("${CTEST_BINARY_DIRECTORY}" STREQUAL "")
   set(CTEST_BINARY_DIRECTORY $ENV{PWD}/BUILD)
 endif()
 
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsConstants.cmake")
+tribits_asesrt_minimum_cmake_version()
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsCMakePolicies.cmake"  NO_POLICY_SCOPE)
+
 #
 # Set CMAKE_MODULE_PATH
 #
@@ -144,14 +148,12 @@ set( CMAKE_MODULE_PATH
   "${TRIBITS_PROJECT_ROOT}"
   "${TRIBITS_PROJECT_ROOT}/cmake"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/core/common"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/core/test_support"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
   "${${PROJECT_NAME}_TRIBITS_DIR}/ci_support"
   "${${PROJECT_NAME}_TRIBITS_DIR}/ctest_driver"
   )
-
-include(TribitsConstants)
-tribits_asesrt_minimum_cmake_version()
-include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(Split)
 include(PrintVar)
@@ -1290,9 +1292,9 @@ include(TribitsCTestDriverCoreHelpers)
 # packages and therefore is more robust.  But the package-by-package mode is
 # more expensive in several respects for many projects.
 #
-# For versions of CMake 3.17.0 and above and newer versions of CDash, the
-# CDash server for the all-at-once mode will break down build and test results
-# on a package-by-package basis on CDash together.
+# For newer versions of CDash 3.1+, for the all-at-once mode, the CDash server
+# will break down build and test results on a package-by-package basis on
+# CDash together.
 #
 # .. _Multiple ctest -S invocations (tribits_ctest_driver()):
 #
@@ -2274,8 +2276,9 @@ function(tribits_ctest_driver)
   select_final_set_of_packages_to_directly_test()
   # Above sets ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
 
-  tribits_print_packages_list_enable_status_from_var( ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
-    "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
+  tribits_print_packages_list_enable_status_from_var(
+    ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST
+    "\nFinal set of packages to be explicitly processed by CTest/CDash" "" ON NONEMPTY)
 
   message(
     "\n***"

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -15,6 +15,7 @@
 #include "fmt/ostream.h"
 #include "format_time.h"
 #include "hwm.h"
+#include "open_file_limit.h"
 #include "time_stamp.h"
 
 #include <Ionit_Initializer.h>
@@ -52,8 +53,10 @@ namespace {
                               std::vector<double> &output);
   void   transfer_cell_field(const Ioss::StructuredBlock *sb, const std::vector<double> &input,
                              std::vector<double> &output);
-  void   transfer_nodal_coordinates(const PartVector &part_mesh, Ioss::Region &output_region);
-  double transfer_step(const PartVector &part_mesh, Ioss::Region &output_region, int istep);
+  void   transfer_nodal_coordinates(const PartVector &part_mesh, Ioss::Region &output_region,
+                                    bool minimize_open_files);
+  double transfer_step(const PartVector &part_mesh, Ioss::Region &output_region, int istep,
+                       bool minimize_open_files);
   void   union_zgc_range(Ioss::ZoneConnectivity &zgc_i, const Ioss::ZoneConnectivity &zgc_j);
   void   union_bc_range(Ioss::IJK_t &g_beg, Ioss::IJK_t &g_end, const Ioss::IJK_t &l_beg,
                         const Ioss::IJK_t &l_end, const Ioss::IJK_t &offset);
@@ -71,19 +74,16 @@ namespace {
   bool is_field_valid(const Cpup::StringVector &variable_list, const std::string &field_name)
   {
     if (variable_list.empty() ||
-        (variable_list.size() == 1 && Ioss::Utils::str_equal(variable_list[0], "all") == 0)) {
+        (variable_list.size() == 1 && Ioss::Utils::str_equal(variable_list[0], "all"))) {
       return true;
     }
 
     // At this point, the variable_list contains one or more entries
     // of fields that should be output on combined file.  Run through
     // list and see if `field_name` is in the list.
-    for (const auto &valid : variable_list) {
-      if (Ioss::Utils::str_equal(valid, field_name) == 0) {
-        return true;
-      }
-    }
-    return false;
+    return std::any_of(
+        variable_list.begin(), variable_list.end(),
+        [&field_name](const auto &valid) { return Ioss::Utils::str_equal(valid, field_name); });
   }
 
   int verify_timestep_count(const PartVector &part_mesh)
@@ -163,11 +163,23 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 {
   auto width = Ioss::Utils::number_width(interFace.processor_count(), false);
 
+  bool minimize_open_files = interFace.minimize_open_files();
+
+  if (!minimize_open_files) {
+    // Query the system to see if the number of files exceeds the system limit and we
+    // need to force use of minimize_open_files...
+    int max_files = open_file_limit() - 1; // We also have an output file.
+    if (interFace.processor_count() > max_files) {
+      minimize_open_files = true;
+      fmt::print("Single file mode... (Max open = {})\n", max_files);
+    }
+  }
+
   PartVector part_mesh(interFace.processor_count());
   for (int p = 0; p < interFace.processor_count(); p++) {
     std::string root_dir = interFace.root_dir();
     std::string sub_dir  = interFace.sub_dir();
-    std::string prepend;
+    std::string prepend{};
 
     if (!root_dir.empty()) {
       prepend = root_dir + "/";
@@ -212,6 +224,9 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
       part_mesh[p]->output_summary(std::cerr);
       fmt::print(stderr, "\n");
     }
+    if (minimize_open_files) {
+      part_mesh[p]->get_database()->closeDatabase();
+    }
   }
 
   // Each processor may have a different set of zones.  This routine
@@ -222,9 +237,9 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   GlobalBlockMap all_blocks;
   GlobalIJKMap   global_block;
   for (const auto &part : part_mesh) {
-    auto &blocks = part->get_structured_blocks();
+    const auto &blocks = part->get_structured_blocks();
     for (const auto &block : blocks) {
-      auto &name       = block->name();
+      const auto &name = block->name();
       all_blocks[name] = block;
 
       // Build map of unique blocks in the mesh.
@@ -268,7 +283,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   // NOTE: 'output_region' owns 'dbo' pointer at this time
   Ioss::Region output_region(dbo, "cpup_output_region");
   output_region.property_add(Ioss::Property("code_name", qainfo[0]));
-  output_region.property_add(Ioss::Property("code_version", qainfo[2]));
+  output_region.property_add(Ioss::Property("code_version", qainfo[1] + ":" + qainfo[2]));
 
   output_region.begin_mode(Ioss::STATE_DEFINE_MODEL);
 
@@ -279,8 +294,8 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
   // Create the output structured blocks...
   for (auto &block_range : global_block) {
-    auto &block_name = block_range.first;
-    auto  block      = new Ioss::StructuredBlock(dbo, block_name, 3, block_range.second);
+    const auto &block_name = block_range.first;
+    auto       *block      = new Ioss::StructuredBlock(dbo, block_name, 3, block_range.second);
     output_region.add(block);
 
     // Add BC to the block...
@@ -302,13 +317,13 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   auto       &part  = part_mesh[0];
   const auto &ssets = part->get_sidesets();
   for (const auto &sset : ssets) {
-    auto oss = new Ioss::SideSet(*sset);
+    auto *oss = new Ioss::SideSet(*sset);
     output_region.add(oss);
   }
 
   const auto &assems = part->get_assemblies();
   for (const auto &assem : assems) {
-    auto oass = new Ioss::Assembly(*assem);
+    auto *oass = new Ioss::Assembly(*assem);
     output_region.add(oass);
   }
 
@@ -319,7 +334,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
   output_region.begin_mode(Ioss::STATE_MODEL);
-  transfer_nodal_coordinates(part_mesh, output_region);
+  transfer_nodal_coordinates(part_mesh, output_region, minimize_open_files);
   output_region.end_mode(Ioss::STATE_MODEL);
 
   // ******* Transient Data...
@@ -330,7 +345,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   //        .. Add each valid block and node_block field
   const auto &variable_list = interFace.var_names();
   if (!(variable_list.size() == 1 && Ioss::Utils::str_equal(variable_list[0], "none") == 0)) {
-    auto &blocks = output_region.get_structured_blocks();
+    const auto &blocks = output_region.get_structured_blocks();
     for (const auto &block : blocks) {
       int64_t num_cell = block->get_property("cell_count").get_int();
       int64_t num_node = block->get_property("node_count").get_int();
@@ -339,10 +354,10 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
       // Find all corresponding blocks on the input part meshes...
       for (const auto &prt : part_mesh) {
-        auto &pblocks = prt->get_structured_blocks();
+        const auto &pblocks = prt->get_structured_blocks();
         for (const auto &pblock : pblocks) {
-          auto &name      = pblock->name();
-          auto  name_proc = Iocgns::Utils::decompose_name(name, true);
+          const auto &name      = pblock->name();
+          auto        name_proc = Iocgns::Utils::decompose_name(name, true);
           if (name_proc.first == block->name()) {
             Ioss::NameList fields = pblock->field_describe(Ioss::Field::TRANSIENT);
 
@@ -410,7 +425,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   double cur_time   = start_time;
   for (int time_step = ts_min; time_step <= ts_max; time_step += ts_step) {
     time_step_out++;
-    double time_val = transfer_step(part_mesh, output_region, time_step);
+    double time_val = transfer_step(part_mesh, output_region, time_step, minimize_open_files);
 
     double time_per_step       = Ioss::Utils::timer() - cur_time;
     cur_time                   = Ioss::Utils::timer();
@@ -443,7 +458,7 @@ namespace {
   {
     GlobalZgcMap global_zgc;
     for (const auto &part : part_mesh) {
-      auto &blocks = part->get_structured_blocks();
+      const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         auto name_proc = Iocgns::Utils::decompose_name(block->name(), true);
 
@@ -494,11 +509,11 @@ namespace {
   {
     GlobalBcMap global_bc;
     for (const auto &part : part_mesh) {
-      auto &blocks = part->get_structured_blocks();
+      const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         Ioss::IJK_t offset    = block->get_ijk_offset();
         auto        name_proc = Iocgns::Utils::decompose_name(block->name(), true);
-        auto       &sb_bc     = block->m_boundaryConditions;
+        const auto &sb_bc     = block->m_boundaryConditions;
         for (const auto &bc : sb_bc) {
           auto &gbc = global_bc[std::make_pair(name_proc.first, bc.m_bcName)];
           if (gbc.m_bcName.empty()) {
@@ -513,7 +528,8 @@ namespace {
     return global_bc;
   }
 
-  double transfer_step(const PartVector &part_mesh, Ioss::Region &output_region, int istep)
+  double transfer_step(const PartVector &part_mesh, Ioss::Region &output_region, int istep,
+                       bool minimize_open_files)
   {
     double time  = part_mesh[0]->get_state_time(istep);
     int    ostep = output_region.add_state(time);
@@ -541,8 +557,8 @@ namespace {
         for (const auto &part : part_mesh) {
           const auto &pblocks = part->get_structured_blocks();
           for (const auto &pblock : pblocks) {
-            auto &name      = pblock->name();
-            auto  name_proc = Iocgns::Utils::decompose_name(name, true);
+            const auto &name      = pblock->name();
+            auto        name_proc = Iocgns::Utils::decompose_name(name, true);
             if (name_proc.first == block->name()) {
               if (pblock->field_exists(field_name)) {
                 pblock->get_field_data(field_name, input);
@@ -550,6 +566,9 @@ namespace {
               }
               break; // Should be only a single instance of each block on a part mesh.
             }
+          }
+          if (minimize_open_files) {
+            part->get_database()->closeDatabase();
           }
         }
         block->put_field_data(field_name, output);
@@ -573,10 +592,10 @@ namespace {
 
         // Find all corresponding blocks on the input part meshes...
         for (const auto &part : part_mesh) {
-          auto &pblocks = part->get_structured_blocks();
+          const auto &pblocks = part->get_structured_blocks();
           for (const auto &pblock : pblocks) {
-            auto &name      = pblock->name();
-            auto  name_proc = Iocgns::Utils::decompose_name(name, true);
+            const auto &name      = pblock->name();
+            auto        name_proc = Iocgns::Utils::decompose_name(name, true);
             if (name_proc.first == block->name()) {
               auto &inb = pblock->get_node_block();
               if (inb.field_exists(field_name)) {
@@ -585,6 +604,9 @@ namespace {
               }
               break; // Should be only a single instance of each block on a part mesh.
             }
+          }
+          if (minimize_open_files) {
+            part->get_database()->closeDatabase();
           }
         }
         onb.put_field_data(field_name, output);
@@ -604,7 +626,7 @@ namespace {
     do {
       change_made = false;
       for (const auto &part : part_mesh) {
-        auto &blocks = part->get_structured_blocks();
+        const auto &blocks = part->get_structured_blocks();
         for (const auto &block : blocks) {
           for (const auto &zgc : block->m_zoneConnectivity) {
             if (zgc.is_from_decomp()) {
@@ -612,10 +634,10 @@ namespace {
               if (plane < 3) {
                 // This zone connects to another zone "below" it.
                 // Find the connecting zone and adjust the correct offset
-                auto donor     = all_blocks[zgc.m_donorName];
-                auto offset    = donor->get_ijk_offset();
-                auto range     = donor->get_ijk_local();
-                auto my_offset = block->get_ijk_offset();
+                const auto *donor     = all_blocks[zgc.m_donorName];
+                auto        offset    = donor->get_ijk_offset();
+                auto        range     = donor->get_ijk_local();
+                auto        my_offset = block->get_ijk_offset();
                 if (my_offset[plane] != range[plane] + offset[plane]) {
                   block->set_ijk_offset(plane, range[plane] + offset[plane]);
                   change_made = true;
@@ -631,7 +653,7 @@ namespace {
   void update_global_ijk(const PartVector &part_mesh, GlobalIJKMap &global_block)
   {
     for (const auto &part : part_mesh) {
-      auto &blocks = part->get_structured_blocks();
+      const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         auto  ijk_o      = block->get_ijk_offset();
         auto  ijk_g      = block->get_ijk_global();
@@ -644,7 +666,7 @@ namespace {
     }
 
     for (const auto &part : part_mesh) {
-      auto &blocks = part->get_structured_blocks();
+      const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         auto  name_proc  = Iocgns::Utils::decompose_name(block->name(), true);
         auto &cur_global = global_block[name_proc.first];
@@ -742,7 +764,8 @@ namespace {
     }
   }
 
-  void transfer_nodal_coordinates(const PartVector &part_mesh, Ioss::Region &output_region)
+  void transfer_nodal_coordinates(const PartVector &part_mesh, Ioss::Region &output_region,
+                                  bool minimize_open_files)
   {
     // This implementation results in having to iterate over the part
     // mesh 3 times -- once for each coordinate axis, but minimizes
@@ -763,16 +786,19 @@ namespace {
 
         // Find all corresponding blocks on the input part meshes...
         for (const auto &part : part_mesh) {
-          auto &pblocks = part->get_structured_blocks();
+          const auto &pblocks = part->get_structured_blocks();
           for (const auto &pblock : pblocks) {
-            auto &name      = pblock->name();
-            auto  name_proc = Iocgns::Utils::decompose_name(name, true);
+            const auto &name      = pblock->name();
+            auto        name_proc = Iocgns::Utils::decompose_name(name, true);
             if (name_proc.first == block->name()) {
               std::vector<double> lcoord;
               pblock->get_field_data(fields[dim], lcoord);
               transfer_nodal_field(pblock, lcoord, coord);
               break; // Should be only a single instance of each block on a part mesh.
             }
+          }
+          if (minimize_open_files) {
+            part->get_database()->closeDatabase();
           }
         }
         block->put_field_data(fields[dim], coord);

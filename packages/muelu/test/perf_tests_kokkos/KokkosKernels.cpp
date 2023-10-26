@@ -1,3 +1,4 @@
+#include <iostream>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
@@ -353,10 +354,16 @@ int main(int argc, char* argv[]) {
 #endif
   } else if (node == "hip") {
 #ifdef KOKKOS_ENABLE_HIP
-    return main_<double,int,Kokkos::Experimental::HIP>(argc, argv);
+    return main_<double,int,Kokkos::HIP>(argc, argv);
 #else
     std::cout << "Error: HIP node type is disabled" << std::endl;
 #endif
+  } else if (node == "sycl") {
+#ifdef KOKKOS_ENABLE_SYCL
+    return main_<double,int,Kokkos::Experimental::SYCL>(argc, argv);
+#else
+    std::cout << "Error: SYCL node type is disabled" << std::endl;
+#endif    
   }
 
   Kokkos::finalize();

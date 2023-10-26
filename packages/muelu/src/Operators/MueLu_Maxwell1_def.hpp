@@ -46,12 +46,11 @@
 #define MUELU_MAXWELL1_DEF_HPP
 
 #include <sstream>
+#include "MueLu_SmootherBase.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 
 #include "Xpetra_Map.hpp"
-#include "Xpetra_MatrixMatrix.hpp"
-#include "Xpetra_TripleMatrixMultiply.hpp"
 #include "Xpetra_CrsMatrixUtils.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 
@@ -59,19 +58,15 @@
 #include "MueLu_Maxwell_Utils.hpp"
 
 #include "MueLu_ReitzingerPFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
 #include <MueLu_HierarchyUtils.hpp>
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-# include "MueLu_Utilities_kokkos.hpp"
-#endif
 #include "MueLu_VerbosityLevel.hpp"
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
@@ -106,11 +101,26 @@ namespace MueLu {
 
       // interpret ML list
       newList.sublist("maxwell1: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list,"Maxwell"));
+     
+      // Hardwiring options to ensure ML compatibility
+      newList.sublist("maxwell1: 22list").set("use kokkos refactor", false);
 
-      newList.sublist("maxwell1: 22list").set("tentative: constant column sums", false);
-      newList.sublist("maxwell1: 22list").set("tentative: calculate qr", false);
+      newList.sublist("maxwell1: 11list").set("use kokkos refactor", false);
+      newList.sublist("maxwell1: 11list").set("tentative: constant column sums", false);
+      newList.sublist("maxwell1: 11list").set("tentative: calculate qr", false);
 
-      newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+      newList.sublist("maxwell1: 11list").set("aggregation: use ml scaling of drop tol",true);
+      newList.sublist("maxwell1: 22list").set("aggregation: use ml scaling of drop tol",true);
+
+      newList.sublist("maxwell1: 22list").set("aggregation: min agg size",3);
+      newList.sublist("maxwell1: 22list").set("aggregation: match ML phase1",true);
+      newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2a",true);
+      newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2b",true);
+
+      if(list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
+        newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
+      else
+        newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
       newList.sublist("maxwell1: 11list").set("aggregation: type", "uncoupled");
 
       newList.sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
@@ -134,11 +144,16 @@ namespace MueLu {
 
       newList.sublist("maxwell1: 22list").set("smoother: type", "none");
       newList.sublist("maxwell1: 22list").set("coarse: type", "none");
+   
+      newList.set("maxwell1: nodal smoother fix zero diagonal threshold",1e-10);
+      newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals", true);
+      newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals threshold",1e-10);
+
 
       list = newList;
     }
     std::string  mode_string   = list.get("maxwell1: mode",                  MasterList::getDefault<std::string>("maxwell1: mode"));
-    applyBCsTo22_              = list.get("maxwell1: apply BCs to 22",       true);
+    applyBCsTo22_              = list.get("maxwell1: apply BCs to 22",       false);
     dump_matrices_             = list.get("maxwell1: dump matrices",         MasterList::getDefault<bool>("maxwell1: dump matrices"));
 
     // Default smoother.  We'll copy this around.
@@ -153,11 +168,13 @@ namespace MueLu {
     VerboseObject::SetDefaultVerbLevel(toVerbLevel(verbosity));
 
     // Check the validity of the run mode
-    if(mode_string == "standard")          mode_ = MODE_STANDARD;
-    else if(mode_string == "refmaxwell")   mode_ = MODE_REFMAXWELL;
-    else if(mode_string == "edge only")    mode_ = MODE_EDGE_ONLY;
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell' or 'edge only'.");
+    if(mode_ != MODE_GMHD_STANDARD) {
+      if(mode_string == "standard")          mode_ = MODE_STANDARD;
+      else if(mode_string == "refmaxwell")   mode_ = MODE_REFMAXWELL;
+      else if(mode_string == "edge only")    mode_ = MODE_EDGE_ONLY;
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell', 'edge only', or use the GMHD constructor.");
+      }
     }
 
     // If we're in edge only or standard modes, then the (2,2) hierarchy gets built without smoothers.
@@ -166,7 +183,7 @@ namespace MueLu {
       precList22_     =  list.sublist("maxwell1: 22list");
     else if(list.isSublist("refmaxwell: 22list"))
       precList22_     =  list.sublist("refmaxwell: 22list");
-    if(mode_ == MODE_EDGE_ONLY || mode_ == MODE_STANDARD)
+    if(mode_ == MODE_EDGE_ONLY || mode_ == MODE_STANDARD || mode_ == MODE_GMHD_STANDARD)
       precList22_.set("smoother: pre or post","none");
     else if(!precList22_.isType<std::string>("Preconditioner Type") &&
        !precList22_.isType<std::string>("smoother: type") &&
@@ -175,6 +192,7 @@ namespace MueLu {
       precList22_ = defaultSmootherList;
     }
     precList22_.set("verbosity",precList22_.get("verbosity",verbosity));
+
     
 
     // For the (1,1) hierarchy we'll use Hiptmair (STANDARD) or Chebyshev (EDGE_ONLY / REFMAXWELL) if
@@ -183,6 +201,11 @@ namespace MueLu {
       precList11_     =  list.sublist("maxwell1: 11list");
     else if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
+
+    if(mode_ == MODE_GMHD_STANDARD) {
+      precList11_.set("smoother: pre or post","none");
+      precList11_.set("smoother: type", "none");
+    }
     if(!precList11_.isType<std::string>("Preconditioner Type") &&
        !precList11_.isType<std::string>("smoother: type") &&
        !precList11_.isType<std::string>("smoother: pre type") &&
@@ -190,10 +213,10 @@ namespace MueLu {
       if(mode_ == MODE_EDGE_ONLY || mode_ == MODE_REFMAXWELL) {
         precList11_ = defaultSmootherList;
       }
-      else {
+      if (mode_ == MODE_STANDARD)  {
         precList11_.set("smoother: type", "HIPTMAIR");
-        precList11_.sublist("hiptmair: smoother type 1","CHEBYSHEV");
-        precList11_.sublist("hiptmair: smoother type 2","CHEBYSHEV");
+        precList11_.set("hiptmair: smoother type 1","CHEBYSHEV");
+        precList11_.set("hiptmair: smoother type 2","CHEBYSHEV");
         precList11_.sublist("hiptmair: smoother list 1") = defaultSmootherList;
         precList11_.sublist("hiptmair: smoother list 2") = defaultSmootherList;
       }
@@ -212,31 +235,57 @@ namespace MueLu {
 
 
     // Are we using Kokkos?
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkos_ = false;
-#else
 # ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
       useKokkos_ = false;
 # endif
 # ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
       useKokkos_ = true;
 # endif
 # ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
       useKokkos_ = true;
 # endif
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
-#endif
 
     parameterList_ = list;
 
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GMHDSetupHierarchy(Teuchos::ParameterList& List) const {
+    Teuchos::ParameterList precListGmhd;
+
+    MueLu::HierarchyUtils<SC,LO,GO,NO>::CopyBetweenHierarchies(*Hierarchy11_,*HierarchyGmhd_, "P",  "Psubblock", "RCP<Matrix>");
+
+    HierarchyGmhd_->GetLevel(0)->Set("A", GmhdA_Matrix_);
+    GmhdA_Matrix_->setObjectLabel("GmhdA");
+
+    TEUCHOS_TEST_FOR_EXCEPTION( !List.isSublist("maxwell1: Gmhdlist"), Exceptions::RuntimeError, "Must provide maxwell1: Gmhdlist for GMHD setup");    
+    precListGmhd     =  List.sublist("maxwell1: Gmhdlist");
+    precListGmhd.set("coarse: max size",1);
+    precListGmhd.set("max levels",HierarchyGmhd_->GetNumLevels());
+    RCP<MueLu::HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(precListGmhd,GmhdA_Matrix_->getDomainMap()->getComm()));
+    HierarchyGmhd_->setlib(GmhdA_Matrix_->getDomainMap()->lib());
+    HierarchyGmhd_->SetProcRankVerbose(GmhdA_Matrix_->getDomainMap()->getComm()->getRank());
+    mueLuFactory->SetupHierarchy(*HierarchyGmhd_);
+  }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute(bool reuse) {
+    /* Algorithm overview for Maxwell1 construction:
+
+       1) Create a nodal auxillary hierarchy based on (a) the user's nodal matrix or (b) a matrix constructed
+       by D0^T A D0 if the user doesn't provide a nodal matrix.  We call this matrix "NodeAggMatrix."
+
+       2)  If the user provided a node matrix, we use the prolongators from the auxillary nodal hierarchy
+       to generate matrices for smoothers on all levels.  We call this "NodeMatrix."  Otherwise NodeMatrix = NodeAggMatrix
+
+       3) We stick all of the nodal P matrices and NodeMatrix objects on the final (1,1) hierarchy and then use the
+       ReitzingerPFactory to generate the edge P and A matrices.
+     */
+
 
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("maxwell1: cuda profile setup", false)) cudaProfilerStart();
@@ -250,82 +299,15 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tmCompute = getTimer(timerLabel);
 
     ////////////////////////////////////////////////////////////////////////////////
-    // Remove explicit zeros from matrices
-    Maxwell_Utils<SC,LO,GO,NO>::removeExplicitZeros(parameterList_,D0_Matrix_,SM_Matrix_);
-
-
-    if (IsPrint(Statistics2)) {
-      RCP<ParameterList> params = rcp(new ParameterList());;
-      params->set("printLoadBalancingInfo", true);
-      params->set("printCommInfo",          true);
-      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*SM_Matrix_, "SM_Matrix", params);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    // Detect Dirichlet boundary conditions
-    if (!reuse) {
-      magnitudeType rowSumTol = precList11_.get("aggregation: row sum drop tol",-1.0);
-      Maxwell_Utils<SC,LO,GO,NO>::detectBoundaryConditionsSM(SM_Matrix_,D0_Matrix_,rowSumTol,
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-                                                             useKokkos_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_,
-#endif
-                                                             BCedges_,BCnodes_,BCrows_,BCcols_,BCdomain_,
-                                                             allEdgesBoundary_,allNodesBoundary_);
-      if (IsPrint(Statistics2)) {
-        GetOStream(Statistics2) << "MueLu::Maxwell1::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
-      }
-    }
-
-    if (allEdgesBoundary_) {
-      // All edges have been detected as boundary edges.
-      // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
-      GetOStream(Warnings0) << "All edges are detected as boundary edges!" << std::endl;
-      mode_ = MODE_EDGE_ONLY;
-
-      // Generate single level hierarchy for the edge
-      precList22_.set("max levels", 1);
-    }
-      
-    if (allNodesBoundary_) {
-      // All Nodes have been detected as boundary edges.
-      // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
-      GetOStream(Warnings0) << "All nodes are detected as boundary edges!" << std::endl;
-      mode_ = MODE_EDGE_ONLY;
-
-      // Generate single level hierarchy for the edge
-      precList22_.set("max levels", 1);
-    }
-                                              
-
-    ////////////////////////////////////////////////////////////////////////////////
-    // Apply boundary conditions to D0 (if needed)
-    if(!reuse && applyBCsTo22_) {
-      GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC nodes of D0" << std::endl;
-      D0_Matrix_->resumeFill();
-      Scalar replaceWith;
-      if (D0_Matrix_->getRowMap()->lib() == Xpetra::UseEpetra)
-        replaceWith= Teuchos::ScalarTraits<SC>::eps();
-      else
-        replaceWith = Teuchos::ScalarTraits<SC>::zero();
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-      if (useKokkos_) {
-        Utilities_kokkos::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
-      } else {
-        Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
-      }
-#else
-      Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
-#endif
-      D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////
     // Generate Kn and apply BCs (if needed)
+    bool have_generated_Kn = false;   
     if(Kn_Matrix_.is_null()) {
+      // generate_kn() will do diagonal repair if requested
+      GetOStream(Runtime0) << "Maxwell1::compute(): Kn not provided.  Generating." << std::endl;
       Kn_Matrix_ = generate_kn();
+      have_generated_Kn = true;
     }
-
-    if (parameterList_.get<bool>("rap: fix zero diagonals", true)) {
+    else if (parameterList_.get<bool>("rap: fix zero diagonals", true)) {
       magnitudeType threshold;
       if (parameterList_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
         threshold = parameterList_.get<magnitudeType>("rap: fix zero diagonals threshold",
@@ -374,30 +356,188 @@ namespace MueLu {
         // We do not want (1,1) and (2,2) blocks being repartitioned seperately, so we specify the map that
         // is going to be used (this is generated in ReitzingerPFactory)
         precList11_.set("repartition: use subcommunicators in place",true);
-      }
-
+      }        
         
     }
     else
       precList11_.remove("repartition: enable", false);
    
-    // Build (2,2) hierarcy
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // Remove explicit zeros from matrices
+    /*
+    Maxwell_Utils<SC,LO,GO,NO>::removeExplicitZeros(parameterList_,D0_Matrix_,SM_Matrix_);
+
+
+    if (IsPrint(Statistics2)) {
+      RCP<ParameterList> params = rcp(new ParameterList());;
+      params->set("printLoadBalancingInfo", true);
+      params->set("printCommInfo",          true);
+      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*SM_Matrix_, "SM_Matrix", params);
+    }
+    */
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // Detect Dirichlet boundary conditions
+    if (!reuse) {
+      magnitudeType rowSumTol = precList11_.get("aggregation: row sum drop tol",-1.0);
+      Maxwell_Utils<SC,LO,GO,NO>::detectBoundaryConditionsSM(SM_Matrix_,D0_Matrix_,rowSumTol,
+                                                             useKokkos_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_,
+                                                             BCedges_,BCnodes_,BCrows_,BCcols_,BCdomain_,
+                                                             allEdgesBoundary_,allNodesBoundary_);
+      if (IsPrint(Statistics2)) {
+        GetOStream(Statistics2) << "MueLu::Maxwell1::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
+      }
+    }
+
+    if (allEdgesBoundary_) {
+      // All edges have been detected as boundary edges.
+      // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
+      GetOStream(Warnings0) << "All edges are detected as boundary edges!" << std::endl;
+      mode_ = MODE_EDGE_ONLY;
+
+      // Generate single level hierarchy for the edge
+      precList22_.set("max levels", 1);
+    }
+     
+ 
+    if (allNodesBoundary_) {
+      // All Nodes have been detected as boundary nodes.
+      // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
+      GetOStream(Warnings0) << "All nodes are detected as boundary nodes!" << std::endl;
+      mode_ = MODE_EDGE_ONLY;
+
+      // Generate single level hierarchy for the edge
+      precList22_.set("max levels", 1);
+    }
+                                              
+    ////////////////////////////////////////////////////////////////////////////////
+    // Build (2,2) hierarchy
     Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // Apply boundary conditions to D0 (if needed)
+    if(!reuse) {
+      D0_Matrix_->resumeFill();
+      Scalar replaceWith;
+      if (D0_Matrix_->getRowMap()->lib() == Xpetra::UseEpetra)
+        replaceWith= Teuchos::ScalarTraits<SC>::eps();
+      else
+        replaceWith = Teuchos::ScalarTraits<SC>::zero();
+      
+      if(applyBCsTo22_) {
+        GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows/cols of D0" << std::endl;        
+        if (useKokkos_) {
+          Utilities::ZeroDirichletCols(D0_Matrix_,BCcolsKokkos_,replaceWith);
+        } else {
+          Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
+        }
+      }
+      else {
+        GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows of D0" << std::endl;        
+        if (useKokkos_) {
+          Utilities::ZeroDirichletRows(D0_Matrix_,BCrowsKokkos_,replaceWith);
+        } else {
+          Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
+        }
+      }
+
+      D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // What ML does is generate nodal prolongators with an auxillary hierarchy based on the 
+    // user's (2,2) matrix.  The actual nodal matrices for smoothing are generated by the
+    // Hiptmair smoother construction.  We're not going to do that --- we'll 
+    // do as we insert them into the final (1,1) hierarchy.
+
+    // Level 0
+    RCP<Matrix> Kn_Smoother_0;
+    if(have_generated_Kn) {
+      Kn_Smoother_0 = Kn_Matrix_;
+    }
+    else {
+      Kn_Smoother_0 = generate_kn();
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     // Copy the relevant (2,2) data to the (1,1) hierarchy
     Hierarchy11_ = rcp(new Hierarchy("Maxwell1 (1,1)"));
+    RCP<Matrix> OldSmootherMatrix;
+    RCP<Level>  OldEdgeLevel;
     for(int i=0; i<Hierarchy22_->GetNumLevels(); i++) {
       Hierarchy11_->AddNewLevel();
       RCP<Level> NodeL = Hierarchy22_->GetLevel(i);
       RCP<Level> EdgeL = Hierarchy11_->GetLevel(i);
-      auto NodeOp      = NodeL->Get<RCP<Operator> >("A");
-      auto NodeMatrix  = rcp_dynamic_cast<Matrix>(NodeOp);
+      RCP<Operator> NodeOp      = NodeL->Get<RCP<Operator> >("A");
+      RCP<Matrix> NodeAggMatrix  = rcp_dynamic_cast<Matrix>(NodeOp);
+      std::string labelstr = FormattingHelper::getColonLabel(EdgeL->getObjectLabel());      
 
-      // If we repartition a processor away, a RCP<Operator> is stuck
-      // on the level instead of an RCP<Matrix>
-      if(!NodeMatrix.is_null()) EdgeL->Set("NodeMatrix",NodeMatrix);
-      else                      EdgeL->Set("NodeMatrix",NodeOp);
+      if(i==0) {
+        EdgeL->Set("A", SM_Matrix_);
+        EdgeL->Set("D0", D0_Matrix_);
+
+        EdgeL->Set("NodeAggMatrix",NodeAggMatrix);
+        EdgeL->Set("NodeMatrix",Kn_Smoother_0);
+        OldSmootherMatrix = Kn_Smoother_0;
+        OldEdgeLevel = EdgeL;
+      }
+      else {
+        // Set the Nodal P
+        // NOTE:  ML uses normalized prolongators for the aggregation hierarchy
+        // and then prolongators of all 1's for doing the Reitzinger prolongator
+        // generation for the edge hierarchy.
+        auto NodalP = NodeL->Get<RCP<Matrix> >("P");
+        auto NodalP_ones = Utilities::ReplaceNonZerosWithOnes(NodalP);
+        TEUCHOS_TEST_FOR_EXCEPTION(NodalP_ones.is_null(), Exceptions::RuntimeError, "Applying ones to prolongator failed");        
+        EdgeL->Set("Pnodal",NodalP_ones);
+
+        // If we repartition a processor away, a RCP<Operator> is stuck
+        // on the level instead of an RCP<Matrix>
+        if(!NodeAggMatrix.is_null()) {
+          EdgeL->Set("NodeAggMatrix",NodeAggMatrix);
+          if(!have_generated_Kn) {
+            // The user gave us a Kn on the fine level, so we're using a seperate aggregation
+            // hierarchy from the smoothing hierarchy.
+
+            // ML does a *fixed* 1e-10 diagonal repair on the Nodal Smoothing Matrix
+            // This fix is applied *after* the next level is generated, but before the smoother is.
+            // We can see this behavior from ML, though it isn't 100% clear from the code *how* it happens.
+            // So, here we turn the fix off, then once we've generated the new matrix, we fix the old one.
+
+            // Generate the new matrix
+            Teuchos::ParameterList RAPlist;
+            RAPlist.set("rap: fix zero diagonals", false);
+            RCP<Matrix> NewKn = Maxwell_Utils<SC,LO,GO,NO>::PtAPWrapper(OldSmootherMatrix,NodalP_ones,RAPlist,labelstr);
+            EdgeL->Set("NodeMatrix",NewKn);
+
+            // Fix the old one
+            double thresh = parameterList_.get("maxwell1: nodal smoother fix zero diagonal threshold",1e-10);
+            if(thresh > 0.0) {
+              printf("CMS: Reparing diagonal after next level generation\n");
+              Scalar replacement = Teuchos::ScalarTraits<Scalar>::one();
+              Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(OldSmootherMatrix, true, GetOStream(Warnings1), thresh, replacement);
+            }
+            OldEdgeLevel->Set("NodeMatrix",OldSmootherMatrix);
+
+            OldSmootherMatrix = NewKn;
+          }
+          else {          
+            // The user didn't give us a Kn, so we aggregate and smooth with the same matrix
+            EdgeL->Set("NodeMatrix",NodeAggMatrix);
+          }
+        }
+        else {
+          // We've partitioned things away.
+          EdgeL->Set("NodeMatrix",NodeOp);
+          EdgeL->Set("NodeAggMatrix",NodeOp);
+        }
+
+        OldEdgeLevel = EdgeL;            
+      }
 
       // Get the importer if we have one (for repartitioning)
       // This will get used in ReitzingerPFactory
@@ -405,27 +545,12 @@ namespace MueLu {
         auto importer = NodeL->Get<RCP<const Import> >("Importer");
         EdgeL->Set("NodeImporter",importer);
       }
+    }// end Hierarchy22 loop
 
-      if(i==0) {
-        EdgeL->Set("A", SM_Matrix_);
-        EdgeL->Set("D0", D0_Matrix_);
-      }
-      else {
-        EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));
-        /*
-        auto P = NodeL->Get<RCP<Matrix> >("P");
-        int Pn_r = P.is_null() ? 0 : (int) P->getRangeMap()->getLocalNumElements();
-        int Pn_d = P.is_null() ? 0 : (int) P->getDomainMap()->getLocalNumElements();
-        printf("[%d] Local Level %d: Pn = %d x %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,Pn_r,Pn_d);
-        fflush(stdout);
-        */
 
-      }
-    }
-
-    
     ////////////////////////////////////////////////////////////////////////////////
     // Generating the (1,1) Hierarchy
+    std::string fine_smoother = precList11_.get<std::string>("smoother: type");
     {
       SM_Matrix_->setObjectLabel("A(1,1)");
       precList11_.set("coarse: max size",1);
@@ -472,47 +597,42 @@ namespace MueLu {
 
     describe(GetOStream(Runtime0));
 
+
+#ifdef MUELU_MAXWELL1_DEBUG
+    for(int i=0; i<Hierarchy11_->GetNumLevels(); i++) {
+      RCP<Level> L = Hierarchy11_->GetLevel(i);
+      RCP<Matrix> EdgeMatrix = rcp_dynamic_cast<Matrix>(L->Get<RCP<Operator> >("A"));
+      RCP<Matrix> NodeMatrix = rcp_dynamic_cast<Matrix>(L->Get<RCP<Operator> >("NodeMatrix"));
+      RCP<Matrix> NodeAggMatrix = rcp_dynamic_cast<Matrix>(L->Get<RCP<Operator> >("NodeAggMatrix"));
+      RCP<Matrix> D0         =rcp_dynamic_cast<Matrix>( L->Get<RCP<Operator> >("D0"));
+      
+      auto nrmE = EdgeMatrix->getFrobeniusNorm();
+      auto nrmN = NodeMatrix->getFrobeniusNorm();
+      auto nrmNa = NodeAggMatrix->getFrobeniusNorm();
+      auto nrmD0= D0->getFrobeniusNorm();
+
+      std::cout<<"DEBUG: Norms on Level "<<i<<" E/N/NA/D0 = "<<nrmE<<" / "<<nrmN <<" / "<<nrmNa<<" / "<< nrmD0 <<std::endl;
+      std::cout<<"DEBUG: NNZ on Level    "<<i<<" E/N/NA/D0 = "<< 
+        EdgeMatrix->getGlobalNumEntries()<<" / "<<
+        NodeMatrix->getGlobalNumEntries()<<" / "<<
+        NodeAggMatrix->getGlobalNumEntries()<<" / "<<
+        D0->getGlobalNumEntries()<<std::endl;      
+    }
+#endif
+
   }
 
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::generate_kn() const {
-    // NOTE: This does not nicely support reuse, but the relevant coed can be copied from
-    // RefMaxwell when we decide we want to do this.
 
-    // NOTE: Boundary conditions OAZ are handled via the "rap: fix zero diagonals threshold"
-    RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu Maxwell1: Build Kn");
-    
-    Level fineLevel, coarseLevel;
-    fineLevel.SetFactoryManager(null);
-    coarseLevel.SetFactoryManager(null);
-    coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
-    fineLevel.SetLevelID(0);
-    coarseLevel.SetLevelID(1);
-    fineLevel.Set("A",SM_Matrix_);
-    coarseLevel.Set("P",D0_Matrix_);
-    //coarseLevel.Set("Coordinates",Coords_);
-    
-    coarseLevel.setlib(SM_Matrix_->getDomainMap()->lib());
-    fineLevel.setlib(SM_Matrix_->getDomainMap()->lib());
-    coarseLevel.setObjectLabel("Maxwell1 (2,2)");
-    fineLevel.setObjectLabel("Maxwell1 (2,2)");
-    
-    RCP<RAPFactory> rapFact = rcp(new RAPFactory());
-    ParameterList rapList = *(rapFact->GetValidParameterList());
-    rapList.set("transpose: use implicit", true);
-    rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
-    rapFact->SetParameterList(rapList);
-    coarseLevel.Request("A", rapFact.get());
-    if (enable_reuse_) {
-      coarseLevel.Request("AP reuse data", rapFact.get());
-      coarseLevel.Request("RAP reuse data", rapFact.get());
-    }
-    
-    RCP<Matrix> Kn_Matrix = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
-    Kn_Matrix->setObjectLabel("A(2,2)");
+    // This is important, as we'll be doing diagonal repair *after* the next-level matrix is generated, not before
+    Teuchos::ParameterList RAPlist;
+    RAPlist.set("rap: fix zero diagonals", false);
 
-    return Kn_Matrix;
+    std::string labelstr = "NodeMatrix (Level 0)";
+    RCP<Matrix> rv =  Maxwell_Utils<SC,LO,GO,NO>::PtAPWrapper(SM_Matrix_,D0_Matrix_,RAPlist,labelstr);
+    return rv;
   }
 
 
@@ -578,7 +698,6 @@ namespace MueLu {
     }
   }
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const {
     if (dump_matrices_) {
@@ -590,7 +709,6 @@ namespace MueLu {
             out << vH[i] << "\n";
     }
   }
-#endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Teuchos::TimeMonitor> Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm) const {
@@ -687,12 +805,14 @@ namespace MueLu {
                                                                   Scalar /* alpha */,
                                                                   Scalar /* beta */) const {
     RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu Maxwell1: solve");
-    if(mode_ == MODE_STANDARD || mode_ == MODE_EDGE_ONLY)
+    if(mode_ == MODE_GMHD_STANDARD)
+      HierarchyGmhd_->Iterate(RHS,X,1,true);
+    else if(mode_ == MODE_STANDARD || mode_ == MODE_EDGE_ONLY)
       applyInverseStandard(RHS,X);
     else if(mode_ == MODE_REFMAXWELL)
       applyInverseRefMaxwellAdditive(RHS,X);
     else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell' or 'edge only'.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell' or 'edge only' when not doing GMHD.");
   }
 
 
@@ -726,7 +846,8 @@ namespace MueLu {
 
     Hierarchy11_   = Teuchos::null;
     Hierarchy22_   = Teuchos::null;
-    mode_          = MODE_STANDARD;
+    HierarchyGmhd_  = Teuchos::null;
+    if (mode_ != MODE_GMHD_STANDARD) mode_ = MODE_STANDARD;
 
     // Default settings
     useKokkos_=false;
@@ -735,10 +856,9 @@ namespace MueLu {
     dump_matrices_ = false;
     enable_reuse_=false;
     syncTimers_=false;
-    applyBCsTo22_ = true;
+    applyBCsTo22_ = false;
+
     
-
-
     // set parameters
     setParameters(List);
 
@@ -859,6 +979,9 @@ namespace MueLu {
 
     if (!Hierarchy22_.is_null())
       Hierarchy22_->describe(out, GetVerbLevel());
+
+    if (!HierarchyGmhd_.is_null())
+      HierarchyGmhd_->describe(out, GetVerbLevel());
 
     if (IsPrint(Statistics2)) {
       // Print the grid of processors

@@ -63,7 +63,7 @@ def main(argv=None):
     BuildName        = "Build(Level &fineLevel, Level &coarseLevel)"
 
   if templateType == "SC-LO-GO-NO":
-    templateDefinition = "template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>"
+    templateDefinition = "template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>"
     templateDefShort   = "template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>"
     templateParameters = "<Scalar, LocalOrdinal, GlobalOrdinal, Node>"
   elif templateType == "SC-LO-GO":
@@ -75,7 +75,7 @@ def main(argv=None):
     templateDefShort   = "template <class Scalar, class LocalOrdinal>"
     templateParameters = "<Scalar, LocalOrdinal>"
   elif templateType == "LO-GO-NO":
-    templateDefinition = "template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>"
+    templateDefinition = "template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>"
     templateDefShort   = "template <class LocalOrdinal, class GlobalOrdinal, class Node>"
     templateParameters = "<LocalOrdinal, GlobalOrdinal, Node>"
   else:

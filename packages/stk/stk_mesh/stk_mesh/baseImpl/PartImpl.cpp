@@ -94,7 +94,7 @@ void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
     str << "A part with name '" << m_name << "' "
         << "is defined in two different contexts " << m_mesh_meta_data->entity_rank_name(entity_rank) << " and "
         << m_mesh_meta_data->entity_rank_name(m_entity_rank) << ".";
-    ThrowErrorMsg(str.str());
+    STK_ThrowErrorMsg(str.str());
   }
 
   m_entity_rank = entity_rank;
@@ -107,7 +107,7 @@ void PartImpl::set_topology( stk::topology topo )
 {
   if ( topo == stk::topology::INVALID_TOPOLOGY || topo == m_topology ) return;
 
-  ThrowErrorMsgIf( m_topology != stk::topology::INVALID_TOPOLOGY && m_topology != topo,
+  STK_ThrowErrorMsgIf( m_topology != stk::topology::INVALID_TOPOLOGY && m_topology != topo,
       "Error set_topology: part "
       << name()
       << " already defined with "
@@ -116,7 +116,7 @@ void PartImpl::set_topology( stk::topology topo )
       << topo
   );
 
-  ThrowErrorMsgIf( static_cast<stk::topology::rank_t>(m_entity_rank) != stk::topology::INVALID_RANK
+  STK_ThrowErrorMsgIf( static_cast<stk::topology::rank_t>(m_entity_rank) != stk::topology::INVALID_RANK
       && static_cast<stk::topology::rank_t>(m_entity_rank) != topo.rank(),
       "Error set_topology: part "
       << name()

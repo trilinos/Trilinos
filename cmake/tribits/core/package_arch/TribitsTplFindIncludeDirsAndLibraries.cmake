@@ -139,7 +139,7 @@ function(tribits_tpl_allow_pre_find_package  TPL_NAME  ALLOW_PACKAGE_PREFIND_OUT
     OR (NOT "${${TPL_NAME}_LIBRARY_NAMES}" STREQUAL "")
     OR (NOT "${${TPL_NAME}_LIBRARY_DIRS}" STREQUAL "")
     )
-    # One ore more of the ${TPL_NAME}_XXX variables are set
+    # One or more of the ${TPL_NAME}_XXX variables are set
     if (${TPL_NAME}_FORCE_PRE_FIND_PACKAGE)
       # Even with one or more of the ${TPL_NAME}_XXX vars set, we still want
       # to do the find_package(${TPL_NAME} ...) search and ignore this
@@ -724,8 +724,6 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
   tribits_extpkg_write_config_file(${TPL_NAME} "${tplConfigFile}")
   if (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
     include("${tplConfigFile}")
-    set(${TPL_NAME}_DIR "${tplConfigFileBaseDir}" CACHE INTERNAL
-       "TriBITS-generated ${TPL_NAME}Config.cmake file used from this dir")
   endif()
   # NOTE: The file <tplName>ConfigVersion.cmake will get created elsewhere as
   # will the install targets for the files <tplName>Config and

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 
@@ -6,23 +6,18 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <ctype.h>                                   // for toupper
-#include <stddef.h>                                  // for size_t
+#include <cctype>                                   // for toupper
+#include <cstddef>                                  // for size_t
 #include <algorithm>                                 // for remove, etc
 #include <iterator>                                  // for insert_iterator
-#include <map>
 #include <set>                                       // for set
-#include <sstream>                                   // for operator<<, etc
 #include <string>                                    // for basic_string, etc
 #include <utility>                                   // for pair
 #include <vector>                                    // for vector
-#include <unordered_map>
 #include <sstream>                       // for ostringstream
 #include <iostream>
-#include <functional>
 #include <stdexcept>
 #include <numeric>
-#include <strings.h>
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################

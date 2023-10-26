@@ -67,7 +67,7 @@ class TrapezoidDecorator
   //@{
 
   TrapezoidDecorator(
-                const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model
+                const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelEvaluator
                 );
 
   //@}

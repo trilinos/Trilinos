@@ -1,5 +1,5 @@
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(ASSEMBLY_EXAMPLE_SOURCES
   main.cpp
@@ -10,19 +10,31 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${ASSEMBLY_EXAMPLE_SOURCES}
   )
 
-TRIBITS_ADD_ADVANCED_TEST(
-  MixedPoissonExample
-  EXCLUDE_IF_NOT_TRUE ${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS
-  TEST_0 EXEC MixedPoissonExample
-    ARGS --use-epetra --x-elements=5 --y-elements=5 --z-elements=5 --output-filename="base_mixed_poisson_epetra_"
-    PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
-    NUM_MPI_PROCS 4
-  TEST_1 EXEC MixedPoissonExample
-    ARGS --use-tpetra --x-elements=5 --y-elements=5 --z-elements=5 --output-filename="base_mixed_poisson_tpetra_"
-    PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
-    NUM_MPI_PROCS 4
-  COMM mpi
+IF (PANZER_HAVE_EPETRA_STACK)
+  TRIBITS_ADD_ADVANCED_TEST(
+    MixedPoissonExample
+    EXCLUDE_IF_NOT_TRUE ${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS
+    TEST_0 EXEC MixedPoissonExample
+      ARGS --use-epetra --x-elements=5 --y-elements=5 --z-elements=5 --output-filename="base_mixed_poisson_epetra_"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      NUM_MPI_PROCS 4
+    TEST_1 EXEC MixedPoissonExample
+      ARGS --use-tpetra --x-elements=5 --y-elements=5 --z-elements=5 --output-filename="base_mixed_poisson_tpetra_"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
+      NUM_MPI_PROCS 4
+    COMM mpi
   )
+ELSE (PANZER_HAVE_EPETRA_STACK)
+  TRIBITS_ADD_ADVANCED_TEST(
+    MixedPoissonExample
+    EXCLUDE_IF_NOT_TRUE ${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS
+    TEST_0 EXEC MixedPoissonExample
+      ARGS --use-tpetra --x-elements=5 --y-elements=5 --z-elements=5 --output-filename="base_mixed_poisson_tpetra_"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
+      NUM_MPI_PROCS 4
+    COMM mpi
+  )
+ENDIF (PANZER_HAVE_EPETRA_STACK)
 
 ## basis order 1-3
 FOREACH( ORDER 1 2 3)

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -69,93 +69,97 @@ extern char *ncmpi_inq_libvers();
 const char *ex_config(void)
 {
   static char buffer[2048];
-  int         j =
-      sprintf(buffer, "\tExodus Version %s, Released %s\n", EXODUS_VERSION, EXODUS_RELEASE_DATE);
+  int         buffer_size = sizeof(buffer) / sizeof(buffer[0]);
+
+  int j = snprintf(buffer, buffer_size, "\tExodus Version %s, Released %s\n", EXODUS_VERSION,
+                   EXODUS_RELEASE_DATE);
 #if defined(PARALLEL_AWARE_EXODUS)
-  j += sprintf(buffer + j, "\t\tParallel enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel enabled\n");
 #else
-  j += sprintf(buffer + j, "\t\tParallel NOT enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel NOT enabled\n");
 #endif
 #if defined(EXODUS_THREADSAFE)
-  j += sprintf(buffer + j, "\t\tThread Safe enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tThread Safe enabled\n");
 #else
-  j += sprintf(buffer + j, "\t\tThread Safe NOT enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tThread Safe NOT enabled\n");
 #endif
 #if defined(SEACAS_HIDE_DEPRECATED_CODE)
-  j += sprintf(buffer + j, "\t\tDeprecated Functions NOT built\n\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tDeprecated Functions NOT built\n\n");
 #else
-  j += sprintf(buffer + j, "\t\tDeprecated Functions available\n\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tDeprecated Functions available\n\n");
 #endif
 #if defined(NC_VERSION)
-  j += sprintf(buffer + j, "\tNetCDF Version %s\n", NC_VERSION);
+  j += snprintf(buffer + j, buffer_size - j, "\tNetCDF Version %s\n", NC_VERSION);
 #else
-  j += sprintf(buffer + j, "\tNetCDF Version < 4.3.3\n");
+  j += snprintf(buffer + j, buffer_size - j, "\tNetCDF Version < 4.3.3\n");
 #endif
 #if NC_HAS_CDF5
-  j += sprintf(buffer + j, "\t\tCDF5 enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tCDF5 enabled\n");
 #endif
 #ifndef _MSC_VER
 #if NC_HAS_HDF5
   {
     unsigned major, minor, release;
     H5get_libversion(&major, &minor, &release);
-    j += sprintf(buffer + j, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
+    j += snprintf(buffer + j, buffer_size - j, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor,
+                  release);
   }
-  j += sprintf(buffer + j, "\t\tZlib Compression (read/write) enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tZlib Compression (read/write) enabled\n");
 #if NC_HAS_SZIP_WRITE == 1
-  j += sprintf(buffer + j, "\t\tSZip Compression (read/write) enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tSZip Compression (read/write) enabled\n");
 #else
-  j += sprintf(buffer + j, "\t\tSZip Compression (read/write) NOT enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tSZip Compression (read/write) NOT enabled\n");
 #endif
 #endif
 #endif
 #if defined(PARALLEL_AWARE_EXODUS)
 #if NC_HAS_PARALLEL
-  j += sprintf(buffer + j, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
 #else
-  j += sprintf(buffer + j,
+  j +=
+      snprintf(buffer + j, buffer_size - j,
                "\t\tParallel IO *NOT* enabled via HDF5 and/or PnetCDF (PROBABLY A BUILD ERROR!)\n");
 #endif
 #if NC_HAS_PARALLEL4
-  j += sprintf(buffer + j, "\t\tParallel IO enabled via HDF5\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO enabled via HDF5\n");
 #else
-  j += sprintf(buffer + j, "\t\tParallel IO *NOT* enabled via HDF5\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO *NOT* enabled via HDF5\n");
 #endif
 #if NC_HAS_PAR_FILTERS
-  j += sprintf(buffer + j, "\t\tParallel IO supports filters\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO supports filters\n");
 #endif
 #if NC_HAS_PNETCDF
   {
 #if 0
     char *libver = ncmpi_inq_libvers();
-    j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
+    j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
 #else
-    j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF.\n");
+    j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO enabled via PnetCDF.\n");
 #endif
   }
 #else
-  j += sprintf(buffer + j, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
 #endif
 #endif /* PARALLEL_AWARE_EXODUS */
 
 #if NC_HAS_ERANGE_FILL
-  j += sprintf(buffer + j, "\t\tERANGE_FILL support\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tERANGE_FILL support\n");
 #endif
 #if NC_RELAX_COORD_BOUND
-  j += sprintf(buffer + j, "\t\tRELAX_COORD_BOUND defined\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tRELAX_COORD_BOUND defined\n");
 #endif
 #if defined(NC_COMPACT)
-  j += sprintf(buffer + j, "\t\tNC_COMPACT defined\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tNC_COMPACT defined\n");
 #endif
 #if defined(NC_HAVE_META_H)
-  j += sprintf(buffer + j, "\t\tNC_HAVE_META_H defined\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tNC_HAVE_META_H defined\n");
 #endif
 #if NC_HAS_NC2
-  j += sprintf(buffer + j, "\t\tAPI Version 2 support enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tAPI Version 2 support enabled\n");
 #else
-  j += sprintf(buffer + j, "\t\tAPI Version 2 support NOT enabled\n");
+  j += snprintf(buffer + j, buffer_size - j, "\t\tAPI Version 2 support NOT enabled\n");
 #endif
-  j += sprintf(buffer + j, "\n");
+  j += snprintf(buffer + j, buffer_size - j, "\n");
 
   assert(j < 2048);
   return buffer;
@@ -194,10 +198,10 @@ int ex__check_file_type(const char *path, int *type)
       ex_err(__func__, errmsg, EX_WRONGFILETYPE);
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    int i                   = fread(magic, MAGIC_NUMBER_LEN, 1, fp);
+    int i                   = fread(magic, 1, MAGIC_NUMBER_LEN, fp);
     magic[MAGIC_NUMBER_LEN] = '\0';
     fclose(fp);
-    if (i != 1) {
+    if (i != MAGIC_NUMBER_LEN) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Could not read magic data from file '%s', err = %s.",
                path, strerror(errno));
@@ -513,7 +517,7 @@ char *ex__catstr(const char *string, int num)
 {
   /* Only called from an already locked function */
   char *tmp_string = cur_string;
-  cur_string += sprintf(cur_string, "%s%d", string, num) + 1;
+  cur_string += snprintf(cur_string, MAX_VAR_NAME_LENGTH + 1, "%s%d", string, num) + 1;
   if (cur_string - ret_string > 9 * (MAX_VAR_NAME_LENGTH + 1)) {
     cur_string = ret_string;
   }
@@ -529,7 +533,8 @@ char *ex__catstr2(const char *string1, int num1, const char *string2, int num2)
 {
   /* Only called from an already locked function */
   char *tmp_string = cur_string;
-  cur_string += sprintf(cur_string, "%s%d%s%d", string1, num1, string2, num2) + 1;
+  cur_string +=
+      snprintf(cur_string, MAX_VAR_NAME_LENGTH + 1, "%s%d%s%d", string1, num1, string2, num2) + 1;
   if (cur_string - ret_string > 9 * (MAX_VAR_NAME_LENGTH + 1)) {
     cur_string = ret_string;
   }
@@ -1094,20 +1099,20 @@ void ex__rm_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr)
   struct ex__obj_stats *tmp_ptr            = *obj_ptr;
   struct ex__obj_stats *last_head_list_ptr = *obj_ptr; /* save last head pointer */
 
-  while (tmp_ptr) /* Walk linked list of file ids/vals */
+  while (tmp_ptr)                                      /* Walk linked list of file ids/vals */
   {
-    if (exoid == tmp_ptr->exoid) /* linear search for exodus file id */
+    if (exoid == tmp_ptr->exoid)                       /* linear search for exodus file id */
     {
-      if (tmp_ptr == *obj_ptr) {     /* Are we at the head of the list? */
-        *obj_ptr = (*obj_ptr)->next; /*   yes, reset ptr to head of list */
+      if (tmp_ptr == *obj_ptr) {                       /* Are we at the head of the list? */
+        *obj_ptr = (*obj_ptr)->next;                   /*   yes, reset ptr to head of list */
       }
-      else { /*   no, remove this record from chain*/
+      else {                                           /*   no, remove this record from chain*/
         last_head_list_ptr->next = tmp_ptr->next;
       }
       free(tmp_ptr->id_vals); /* free up memory */
       free(tmp_ptr->stat_vals);
       free(tmp_ptr);
-      break; /* Quit if found */
+      break;                            /* Quit if found */
     }
     last_head_list_ptr = tmp_ptr;       /* save last head pointer */
     tmp_ptr            = tmp_ptr->next; /* Loop back if not */
@@ -1194,12 +1199,12 @@ struct ex__list_item **ex__get_counter_list(ex_entity_type obj_type)
 int ex__inc_file_item(int                    exoid,    /* file id */
                       struct ex__list_item **list_ptr) /* ptr to ptr to list_item */
 {
-  struct ex__list_item *tlist_ptr = *list_ptr; /* use temp list ptr to walk linked list */
-  while (tlist_ptr) {                          /* Walk linked list of file ids/vals */
-    if (exoid == tlist_ptr->exo_id) {          /* linear search for exodus file id */
-      break;                                   /* Quit if found */
+  struct ex__list_item *tlist_ptr = *list_ptr;         /* use temp list ptr to walk linked list */
+  while (tlist_ptr) {                                  /* Walk linked list of file ids/vals */
+    if (exoid == tlist_ptr->exo_id) {                  /* linear search for exodus file id */
+      break;                                           /* Quit if found */
     }
-    tlist_ptr = tlist_ptr->next; /* Loop back if not */
+    tlist_ptr = tlist_ptr->next;                       /* Loop back if not */
   }
 
   if (!tlist_ptr) { /* ptr NULL? */
@@ -1252,7 +1257,7 @@ int ex__get_file_item(int                    exoid,    /* file id */
     if (exoid == tlist_ptr->exo_id) {          /* linear search for exodus file id */
       break;                                   /* Quit if found */
     }
-    tlist_ptr = tlist_ptr->next; /* Loop back if not */
+    tlist_ptr = tlist_ptr->next;               /* Loop back if not */
   }
 
   if (!tlist_ptr) { /* ptr NULL? */
@@ -1299,11 +1304,11 @@ void ex__rm_file_item(int                    exoid,    /* file id */
       if (tlist_ptr == *list_ptr) {    /* Are we at the head of the list? */
         *list_ptr = (*list_ptr)->next; /*   yes, reset ptr to head of list */
       }
-      else { /*   no, remove this record from chain*/
+      else {                           /*   no, remove this record from chain*/
         last_head_list_ptr->next = tlist_ptr->next;
       }
-      free(tlist_ptr); /* free up memory */
-      break;           /* Quit if found */
+      free(tlist_ptr);                    /* free up memory */
+      break;                              /* Quit if found */
     }
     last_head_list_ptr = tlist_ptr;       /* save last head pointer */
     tlist_ptr          = tlist_ptr->next; /* Loop back if not */
@@ -2263,11 +2268,11 @@ int ex__populate_header(int exoid, const char *path, int my_mode, int is_paralle
 #else
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
 #endif
-  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-  ex_err_fn(exoid, __func__, errmsg, status);
-  return (EX_FATAL);
-}
-return EX_NOERR;
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
+    ex_err_fn(exoid, __func__, errmsg, status);
+    return (EX_FATAL);
+  }
+  return EX_NOERR;
 }
 
 /*!
@@ -2283,4 +2288,93 @@ char *ex_copy_string(char *dest, char const *source, size_t elements)
   }
   *d = '\0';
   return d;
+}
+
+/*
+ * Code from:
+ * https://stackoverflow.com/questions/11034002/how-to-get-absolute-path-of-file-or-directory-that-does-not-exist
+ *
+ * Return the input path in a canonical form. This is achieved by
+ * expanding all symbolic links, resolving references to "." and "..",
+ * and removing duplicate "/" characters.
+ *
+ * If the file exists, its path is canonicalized and returned. If the file,
+ * or parts of the containing directory, do not exist, path components are
+ * removed from the end until an existing path is found. The remainder of the
+ * path is then appended to the canonical form of the existing path,
+ * and returned. Consequently, the returned path may not exist. The portion
+ * of the path which exists, however, is represented in canonical form.
+ *
+ * If successful, this function returns a C-string, which needs to be freed by
+ * the caller using free().
+ *
+ * ARGUMENTS:
+ *   file_path
+ *   File path, whose canonical form to return.
+ *
+ * RETURNS:
+ *   On success, returns the canonical path to the file, which needs to be freed
+ *   by the caller.
+ *
+ *   On failure, returns NULL.
+ */
+char *ex__canonicalize_filename(char const *file_path)
+{
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+  return _fullpath(NULL, file_path, _MAX_PATH);
+#else
+  char        *canonical_file_path = NULL;
+  unsigned int file_path_len       = strlen(file_path);
+
+  if (file_path_len > 0) {
+    canonical_file_path = realpath(file_path, NULL);
+    if (canonical_file_path == NULL && errno == ENOENT) {
+      // The file was not found. Back up to a segment which exists,
+      // and append the remainder of the path to it.
+      char *file_path_copy = NULL;
+      if (file_path[0] == '/' || (strncmp(file_path, "./", 2) == 0) ||
+          (strncmp(file_path, "../", 3) == 0)) {
+        // Absolute path, or path starts with "./" or "../"
+        file_path_copy = strdup(file_path);
+      }
+      else {
+        // Relative path
+        file_path_copy = (char *)malloc(strlen(file_path) + 3);
+        strcpy(file_path_copy, "./");
+        strcat(file_path_copy, file_path);
+      }
+
+      // Remove path components from the end, until an existing path is found
+      for (int char_idx = strlen(file_path_copy) - 1; char_idx >= 0 && canonical_file_path == NULL;
+           --char_idx) {
+        if (file_path_copy[char_idx] == '/') {
+          // Remove the slash character
+          file_path_copy[char_idx] = '\0';
+
+          canonical_file_path = realpath(file_path_copy, NULL);
+          if (canonical_file_path != NULL) {
+            // An existing path was found. Append the remainder of the path
+            // to a canonical form of the existing path.
+            char *combined_file_path = (char *)malloc(strlen(canonical_file_path) +
+                                                      strlen(file_path_copy + char_idx + 1) + 2);
+            strcpy(combined_file_path, canonical_file_path);
+            strcat(combined_file_path, "/");
+            strcat(combined_file_path, file_path_copy + char_idx + 1);
+            free(canonical_file_path);
+            canonical_file_path = combined_file_path;
+          }
+          else {
+            // The path segment does not exist. Replace the slash character
+            // and keep trying by removing the previous path component.
+            file_path_copy[char_idx] = '/';
+          }
+        }
+      }
+
+      free(file_path_copy);
+    }
+  }
+  return canonical_file_path;
+#endif
 }

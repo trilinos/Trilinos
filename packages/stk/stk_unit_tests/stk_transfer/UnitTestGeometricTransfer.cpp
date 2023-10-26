@@ -439,13 +439,50 @@ TEST(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInSubCommunica
   MPI_Comm_free(&transfer_shared_pm);
 }
 
+class TwoElemMockMeshA : public MockMeshA_Common
+{
+public:
+  TwoElemMockMeshA()
+  : m_owning_ranks({0, 1})
+  {
+  }
+
+  void set_owning_ranks(const std::array<int, 2>& input_owning_ranks)
+  { m_owning_ranks = input_owning_ranks; }
+
+  std::array<int, 2> owning_ranks() const { return m_owning_ranks; }
+
+  void bounding_boxes(std::vector<BoundingBox> & domain_vector) const
+  {
+    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == owning_ranks()[0])
+    {
+      stk::search::Box<double> box(0.45, 0.45, 0.45, 0.55, 0.55, 0.55);
+      EntityProc entityProc(0, owning_ranks()[0]);
+      domain_vector.emplace_back(box, entityProc);
+    }
+    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == owning_ranks()[1])
+    {
+      stk::search::Box<double> box(0.55, 0.55, 0.55, 0.65, 0.65, 0.65);
+      EntityProc entityProc(3, owning_ranks()[1]);
+      domain_vector.emplace_back(box, entityProc);
+    }
+  }
+  std::array<int, 2> m_owning_ranks;
+};
 
 class ThreeElemMockMeshA : public MockMeshA_Common
 {
 public:
+  ThreeElemMockMeshA()
+  : m_owning_ranks({0, 1, 0})
+  {
+  }
+
   EntityKey elemToFilter;
   EntityKey elemToUse;
-  static std::array<int, 3> owning_ranks() { return {0, 1, 0}; }
+  void set_owning_ranks(const std::array<int, 3>& input_owning_ranks)
+  { m_owning_ranks = input_owning_ranks; }
+  std::array<int, 3> owning_ranks() const { return m_owning_ranks; }
   void bounding_boxes(std::vector<BoundingBox> & domain_vector) const
   {
     if (stk::parallel_machine_rank(MPI_COMM_WORLD) == owning_ranks()[0])
@@ -467,6 +504,7 @@ public:
       domain_vector.emplace_back(box, entityProc);
     }
   }
+  std::array<int, 3> m_owning_ranks;
 };
 
 
@@ -475,9 +513,15 @@ class TwoPointMockMeshB : public MockMeshB_Common
 public:
   //Both points are going to lie in MeshA entities 0 and 3 and
   //cross processor filtering will be needed
-  TwoPointMockMeshB() : pointA(0.5, 0.5, 0.5), pointB(0.6,0.6,0.6) {}
+  TwoPointMockMeshB()
+  : pointA(0.5, 0.5, 0.5), pointB(0.6,0.6,0.6),
+    m_owning_ranks({1, 2})
+  {
+  }
 
-  static std::array<int, 2> owning_ranks() { return {1, 2}; }
+  void set_owning_ranks(const std::array<int, 2>& input_owning_ranks)
+  { m_owning_ranks = input_owning_ranks; }
+  std::array<int, 2> owning_ranks() const { return m_owning_ranks; }
   std::array<unsigned, 2> point_ids = {{0, 1}};
   std::array<Point, 2> get_points() const
   {
@@ -502,15 +546,107 @@ public:
       to_points.push_back(get_points()[entityProc.id()]);
     }
   }
+
   Point pointA;
   Point pointB;
+  std::array<int, 2> m_owning_ranks;
 };
 
-class MockThreeElemToTwoPointsInerpolate : public MockInterpolate_Common<ThreeElemMockMeshA, TwoPointMockMeshB>
+unsigned count_locally_owned(int localRank, const std::array<int,2>& owningRanks)
+{
+  unsigned numLocallyOwned = (owningRanks[0] == localRank ? 1 : 0);
+           numLocallyOwned += (owningRanks[1] == localRank ? 1 : 0);
+  return numLocallyOwned;
+}
+
+class MockTwoElemToTwoPointsInterpolate : public MockInterpolate_Common<TwoElemMockMeshA, TwoPointMockMeshB>
+{
+public:
+  using MeshA = TwoElemMockMeshA;
+  using MeshB = TwoPointMockMeshB;
+
+  static void filter_to_nearest(EntityKeyMap & local_range_to_domain, const MeshA & mesha, const MeshB & meshb)
+  {
+    //don't need to filter in this case
+  }
+
+  void obtain_parametric_coords(typename MeshA::EntityProcVec entities_to_copy_from,
+      MeshA &FromElem,
+      const typename MeshB::ToPointsContainer & to_points_on_from_mesh,
+      typename MeshB::ToPointsDistanceContainer & to_points_distance_on_from_mesh)
+  {
+    for (unsigned i = 0; i < entities_to_copy_from.size(); ++i)
+    {
+        to_points_distance_on_from_mesh[i] = 0.0;
+    }
+  }
+
+  void mask_parametric_coords(const std::vector<int> & filter_mask_from, int from_count)
+  {
+  }
+
+  static void apply(const MeshB & meshb, const MeshA & mesha, EntityKeyMap & local_range_to_domain)
+  {
+    const int localRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+    const unsigned numLocallyOwned = count_locally_owned(localRank, meshb.owning_ranks());
+    ASSERT_EQ(numLocallyOwned, local_range_to_domain.size());
+
+    if (numLocallyOwned > 0 && meshb.owning_ranks()[0] == localRank) {
+      auto matches = local_range_to_domain.equal_range(meshb.point_ids[0]);
+      ASSERT_EQ(1u, std::distance(matches.first, matches.second));
+    }
+    if (numLocallyOwned > 0 && meshb.owning_ranks()[1] == localRank) {
+      auto matches = local_range_to_domain.equal_range(meshb.point_ids[1]);
+      ASSERT_EQ(1u, std::distance(matches.first, matches.second));
+    }
+  }
+
+  void
+  apply(MeshB * ToPoints,
+      MeshA * FromElem,
+      const typename MeshB::EntityProcVec & to_entity_keys_masked,
+      const typename MeshA::EntityProcVec & from_entity_keys_masked,
+      const ReducedDependencyCommData & comm_data)
+  {
+    if (FromElem)
+    {
+      EXPECT_TRUE(FromElem->called_update_values);
+    }
+    if (ToPoints)
+    {
+      EXPECT_FALSE(ToPoints->called_update_values);
+    }
+
+    const int localRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+    std::cout<<"P"<<localRank<<" apply-masked to_keys: ";
+    for(const MeshB::EntityProc& ep : to_entity_keys_masked) std::cout<<ep.id()<<":P"<<ep.proc()<<" ";
+    std::cout<<"from_keys: ";
+    for(const MeshA::EntityProc& ep : from_entity_keys_masked) std::cout<<ep.id()<<":P"<<ep.proc()<<" ";
+    std::cout<<std::endl;
+  }
+
+};
+
+TEST(ReducedDependencyGeometricTransferTest, TwoElemToTwoPoint)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
+  const int localRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  if (localRank == 1) {
+    int discardedId = stk::transfer::impl::get_next_transfer_id();
+    std::cout<<"P"<<localRank<<" throwing away transfer-id "<<discardedId<<" to test out-of-sync..."<<std::endl;
+  }
+  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockTwoElemToTwoPointsInterpolate>> test;
+  test.meshA->set_owning_ranks({0,1});
+  test.meshB->set_owning_ranks({0,0});
+  test.run(stk::search::SearchMethod::KDTREE);
+}
+
+class MockThreeElemToTwoPointsInterpolate : public MockInterpolate_Common<ThreeElemMockMeshA, TwoPointMockMeshB>
 {
 public:
   using MeshA = ThreeElemMockMeshA;
   using MeshB = TwoPointMockMeshB;
+
   static void filter_to_nearest(EntityKeyMap & local_range_to_domain, const MeshA & mesha, const MeshB & meshb)
   {
     auto results = local_range_to_domain.equal_range(meshb.point_ids[0]);
@@ -647,7 +783,7 @@ public:
 TEST(GeometricTransferTest, ThreeElemToTwoPoint)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
   test.run(stk::search::SearchMethod::KDTREE);
@@ -656,7 +792,7 @@ TEST(GeometricTransferTest, ThreeElemToTwoPoint)
 TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPoint)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
   test.run(stk::search::SearchMethod::KDTREE);
@@ -665,7 +801,7 @@ TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPoint)
 TEST(GeometricTransferTest, ThreeElemToTwoPointChangeDistance)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshA->elemToUse = 3;
   test.meshA->elemToFilter = 0;
   test.run(stk::search::SearchMethod::KDTREE);
@@ -674,7 +810,7 @@ TEST(GeometricTransferTest, ThreeElemToTwoPointChangeDistance)
 TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointChangeDistance)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshA->elemToUse = 3;
   test.meshA->elemToFilter = 0;
   test.run(stk::search::SearchMethod::KDTREE);
@@ -683,7 +819,7 @@ TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointChangeDistance)
 TEST(GeometricTransferTest, ThreeElemToTwoPointRequireExpansion)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
   test.meshB->pointA = stk::search::Point<double>(0.5, 1.01, 0.5);
@@ -693,7 +829,7 @@ TEST(GeometricTransferTest, ThreeElemToTwoPointRequireExpansion)
 TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointRequireExpansion)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
   test.meshB->pointA = stk::search::Point<double>(0.5, 1.01, 0.5);
@@ -703,7 +839,7 @@ TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointRequireExpansion
 TEST(GeometricTransferTest, ThreeElemToTwoPointRequireExpansionChangedDistance)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshA->elemToUse = 3;
   test.meshA->elemToFilter = 0;
   test.meshB->pointA = stk::search::Point<double>(0.5, 1.01, 0.5);
@@ -713,7 +849,7 @@ TEST(GeometricTransferTest, ThreeElemToTwoPointRequireExpansionChangedDistance)
 TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointRequireExpansionChangedDistance)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshA->elemToUse = 3;
   test.meshA->elemToFilter = 0;
   test.meshB->pointA = stk::search::Point<double>(0.5, 1.01, 0.5);
@@ -723,7 +859,7 @@ TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointRequireExpansion
 TEST(GeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   //intentionally give duplicate ids for points on separate ranks to test
   //that the entitykey only needs to be locally defined vs. globally consistent
   test.meshB->point_ids = {1, 1};
@@ -735,7 +871,7 @@ TEST(GeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
 TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
-  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
+  GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInterpolate>> test;
   test.meshB->point_ids = {1, 1};
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;

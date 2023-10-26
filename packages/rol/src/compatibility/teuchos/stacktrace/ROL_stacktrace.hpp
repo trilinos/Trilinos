@@ -52,24 +52,7 @@
  */
 
 #define ROL_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
-{ \
-  const bool throw_exception = (throw_exception_test); \
-  if(throw_exception) { \
-    Teuchos::TestForException_incrThrowNumber(); \
-    std::ostringstream omsg; \
-    omsg \
-      << __FILE__ << ":" << __LINE__ << ":\n\n" \
-      << "Throw number = " << Teuchos::TestForException_getThrowNumber() \
-      << "\n\n" \
-      << "Throw test that evaluated to true: "#throw_exception_test \
-      << "\n\n" \
-      << msg; \
-    const std::string &omsgstr = omsg.str(); \
-    TEUCHOS_STORE_STACKTRACE(); \
-    Teuchos::TestForException_break(omsgstr); \
-    throw Exception(omsgstr); \
-  } \
-}
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg)
 
 #endif // ROL_STACKTRACE_HPP
 

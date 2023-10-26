@@ -63,11 +63,11 @@ void transpose_from_pinned_and_mapped_memory(ExecSpaceType & execSpace,
                                              DeviceUnsignedViewType & fieldBucketNumComponentsPerEntity)
 {
   using ValueType = typename DeviceViewType::value_type;
-  using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
+  using TeamHandleType = typename stk::ngp::TeamPolicy<ExecSpaceType>::member_type;
 
   size_t numBuckets = deviceView.extent(0);
 
-  const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+  const auto& teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
   Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
                        KOKKOS_LAMBDA(const TeamHandleType & team) {
                          const unsigned bucketIndex = team.league_rank();
@@ -102,27 +102,27 @@ void transpose_from_pinned_and_mapped_memory(ExecSpaceType & execSpace,
                        });
 }
 
-template <typename DeviceViewType, typename DeviceUnsignedViewType, typename DeviceBoolViewType, typename ExecSpaceType>
+template <typename DeviceViewType, typename DeviceUnsignedViewType, typename ExecSpaceType>
 void transpose_new_and_modified_buckets_to_device(ExecSpaceType & execSpace,
                                                   FieldDataPointerDeviceViewType& ptrToPinnedAndMappedMemory,
                                                   DeviceViewType & deviceView,
                                                   DeviceUnsignedViewType & bucketSizes,
                                                   DeviceUnsignedViewType & fieldBucketNumComponentsPerEntity,
-                                                  DeviceBoolViewType & bucketsMarkedModified)
+                                                  DeviceUnsignedViewType & bucketsMarkedModified)
 {
   using ValueType = typename DeviceViewType::value_type;
-  using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
+  using TeamHandleType = typename stk::ngp::TeamPolicy<ExecSpaceType>::member_type;
 
   size_t numBuckets = deviceView.extent(0);
 
-  const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+  const auto& teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
   Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
                        KOKKOS_LAMBDA(const TeamHandleType & team) {
                          const unsigned bucketIndex = team.league_rank();
                          const unsigned bucketSize = bucketSizes(bucketIndex);
                          const unsigned numComponentsPerEntity = fieldBucketNumComponentsPerEntity(bucketIndex);
 
-                         if(!bucketsMarkedModified(bucketIndex)) { return; }
+                         if(bucketsMarkedModified(bucketIndex) == 0) { return; }
 
                          bool isScalar = (numComponentsPerEntity == 1);
 
@@ -160,11 +160,11 @@ void transpose_to_pinned_and_mapped_memory(ExecSpaceType & execSpace,
                                              DeviceUnsignedViewType & fieldBucketNumComponentsPerEntity)
 {
   using ValueType = typename DeviceViewType::value_type;
-  using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
+  using TeamHandleType = typename stk::ngp::TeamPolicy<ExecSpaceType>::member_type;
 
   size_t numBuckets = deviceView.extent(0);
 
-  const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+  const auto& teamPolicy = stk::ngp::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
   Kokkos::parallel_for("transpose_to_zero_copy_pinned_memory", teamPolicy,
                        KOKKOS_LAMBDA(const TeamHandleType & team) {
 

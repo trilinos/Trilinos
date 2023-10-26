@@ -42,7 +42,6 @@
 #include <string>                       // for string
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, FieldBase

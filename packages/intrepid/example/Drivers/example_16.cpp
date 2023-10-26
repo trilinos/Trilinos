@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
         {
           for (int i=0; i<NX; i++) 
             {
-              int ielem = i + j * NX + k * NY * NY;
+              ielem = i + j * NX + k * NY * NY;
               for (int m=0; m<numNodesPerElem; m++)
                 {
                   fe2nout << elemToNode(ielem,m) <<"  ";
@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
 	{
 	  for (int i=0; i<NX; i++) 
 	    {
-	      int ielem = i + j * NX + k * NX * NY;
+	      ielem = i + j * NX + k * NX * NY;
 	      for (int m=0; m<hexBasis.getCardinality(); m++)
 		{
 		  ltgout << ltgMapping(ielem,m) <<"  ";

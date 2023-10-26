@@ -71,6 +71,7 @@
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
+#include "struct_mesh_utils.hpp"
 
 #define Intrepid2_Experimental
 
@@ -207,7 +208,13 @@ int ConvergenceTri(const bool verbose) {
 
   using ct = CellTools<DeviceType>;
   using ots = OrientationTools<DeviceType>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
   using pts = Experimental::ProjectionTools<DeviceType>;
+  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
+  #else
+  using pts = ProjectionTools<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+  #endif
   using rst = RealSpaceTools<DeviceType>;
   using fst = FunctionSpaceTools<DeviceType>;
 
@@ -230,14 +237,14 @@ int ConvergenceTri(const bool verbose) {
   // a convergence test, but the test can be use for verifying optimal accuracy as well.
   ValueType hgradNorm[numRefinements], hcurlNorm[numRefinements], hdivNorm[numRefinements], hvolNorm[numRefinements];
 
-  ValueType hgrad_errors[4] = {6.57606, 2.52526, 0.351343, 0.0506725};
-  ValueType hcurl_errors[4] = {4.23322, 1.27173, 0.17609, 0.0251254};
-  ValueType hdiv_errors[4] = {5.18662, 1.3798, 0.185423, 0.0261423};
+  ValueType hgrad_errors[4] = {6.66622, 2.52839, 0.351501, 0.0506725};
+  ValueType hcurl_errors[4] = {4.23321, 1.27173, 0.17609, 0.0251254};
+  ValueType hdiv_errors[4] = {5.18644, 1.37984, 0.185423, 0.0261423};
   ValueType hvol_errors[4] = {0.772117, 0.137141, 0.0315048, 0.00402099};
   
-  ValueType hgrad_errors_L2[4] = {6.58864, 2.61191, 0.361595, 0.0523568};
-  ValueType hcurl_errors_L2[4] = {4.49195, 1.39391, 0.326054, 0.0761172};
-  ValueType hdiv_errors_L2[4] = {4.97933, 1.56977, 0.323933, 0.0710959};
+  ValueType hgrad_errors_L2[4] = {6.50272, 2.58882, 0.358254, 0.051854};
+  ValueType hcurl_errors_L2[4] = {4.48887, 1.39391, 0.326054, 0.0761172};
+  ValueType hdiv_errors_L2[4] = {4.92235, 1.56593, 0.317853, 0.0706697};
   ValueType hvol_errors_L2[4] = {0.772117, 0.137141, 0.0315048, 0.00402099};
 
   for(int iter= 0; iter<numRefinements; iter++, NX *= 2) {
@@ -255,80 +262,12 @@ int ConvergenceTri(const bool verbose) {
 
     // *********************************** GENERATE MESH ************************************
 
-    *outStream << "Generating mesh ... \n\n";
-
-    *outStream << "    NX" << "   NY\n";
-    *outStream << std::setw(5) << NX <<
-        std::setw(5) << NY << "\n\n";
-
-    // Print mesh information
-    int numElems = NX*NY*2;
-    int numNodes = (NX+1)*(NY+1);
-    *outStream << " Number of Elements: " << numElems << " \n";
-    *outStream << "    Number of Nodes: " << numNodes << " \n";
-
-    // Cube
-    double leftX = -1.0, rightX = 1.0;
-    double leftY = -1.0, rightY = 1.0;
-    // Mesh spacing
-    double hx = (rightX-leftX)/((double)NX);
-    double hy = (rightY-leftY)/((double)NY);
-
-    // Get nodal coordinates
-    DynRankView ConstructWithLabel(nodeCoord, numNodes, dim);
-    auto hNodeCoord = Kokkos::create_mirror_view(nodeCoord);
-    int inode = 0;
-    for (int j=0; j<NY+1; j++) {
-      for (int i=0; i<NX+1; i++) {
-        hNodeCoord(inode,0) = leftX + (double)i*hx;
-        hNodeCoord(inode,1) = leftY + (double)j*hy;
-        inode++;
-      }
-    }
-
-    // Perturb mesh coordinates (only interior nodes)
-    if (randomMesh){
-      for (int j=1; j<NY; j++) {
-        for (int i=1; i<NX; i++) {
-          int inode = i + j * (NX + 1);
-          // random numbers between -1.0 and 1.0
-          double rx = 2.0 * (double)rand()/RAND_MAX - 1.0;
-          double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
-          // limit variation to 1/4 edge length
-          hNodeCoord(inode,0) = hNodeCoord(inode,0) + 0.125 * hx * rx;
-          hNodeCoord(inode,1) = hNodeCoord(inode,1) + 0.125 * hy * ry;
-        }
-      }
-    }
-    deep_copy(nodeCoord,hNodeCoord);
-
-    // Element to Node map
-    DynRankViewInt ConstructWithLabel(elemNodes, numElems, numNodesPerElem);
-    auto hElemNodes = Kokkos::create_mirror_view(elemNodes);
-    int ielem = 0;
-
-    for (int j=0; j<NY; j++) {
-      for (int i=0; i<NX; i++) {
-        auto v0 = (NX + 1)*j + i;
-        auto v1 = (NX + 1)*j + i + 1;
-        auto v2 = (NX + 1)*(j + 1) + i + 1;
-        auto v3 = (NX + 1)*(j + 1) + i;
-
-        hElemNodes(ielem,0) = v0;
-        hElemNodes(ielem,1) = v1;
-        hElemNodes(ielem,2) = v3;
-        ielem++;
-
-        hElemNodes(ielem,0) = v1;
-        hElemNodes(ielem,1) = v2;
-        hElemNodes(ielem,2) = v3;
-        ielem++;
-      }
-    }
-    deep_copy(elemNodes,hElemNodes);
-
+    DynRankView nodeCoord;
+    DynRankViewInt elemNodes;
+    createStructMesh(nodeCoord, elemNodes, cellTopo, NX, NY, -1, randomMesh, *outStream);
 
     //computing vertices coords
+    ordinal_type numElems = elemNodes.extent(0);
     DynRankView ConstructWithLabel(physVertexes, numElems, numNodesPerElem, dim);
     Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
     KOKKOS_LAMBDA (const int &i) {
@@ -389,7 +328,6 @@ int ConvergenceTri(const bool verbose) {
           DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
           linearBasis.getValues(linearBasisValuesAtRefCoords, refPoints);
           ExecSpaceType().fence();
-          DynRankView ConstructWithLabel(physVertexes, numElems, numNodesPerElem, dim);
           Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
           KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type d=0; d<dim; ++d)
@@ -420,30 +358,16 @@ int ConvergenceTri(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
             projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
           }
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
-
-          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationGradPoints, numElems, numGradPoints, dim);
-
-          if(useL2Projection) {
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          } else {
-            pts::getHGradEvaluationPoints(evaluationPoints,
-                evaluationGradPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          }
-
+          
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationGradPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numGradPoints = evaluationGradPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
           DynRankView ConstructWithLabel(targetGradAtEvalPoints, numElems, numGradPoints, dim);
@@ -458,7 +382,7 @@ int ConvergenceTri(const bool verbose) {
             KOKKOS_LAMBDA (const int &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -467,7 +391,7 @@ int ConvergenceTri(const bool verbose) {
 
               auto basisValuesAtEvalGradPoint = Kokkos::subview(linearBasisValuesAtEvalGradPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numGradPoints; ++j) {
-                auto evalGradPoint = Kokkos::subview(evaluationGradPoints,i,j,Kokkos::ALL());
+                auto evalGradPoint = Kokkos::subview(evaluationGradPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalGradPoint, evalGradPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -501,7 +425,6 @@ int ConvergenceTri(const bool verbose) {
           if(useL2Projection) {
             pts::getL2BasisCoeffs(basisCoeffsHGrad,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -509,8 +432,6 @@ int ConvergenceTri(const bool verbose) {
             pts::getHGradBasisCoeffs(basisCoeffsHGrad,
                 targetAtEvalPoints,
                 targetGradAtEvalPoints,
-                evaluationPoints,
-                evaluationGradPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -669,27 +590,16 @@ int ConvergenceTri(const bool verbose) {
         {
           ordinal_type targetCubDegree(cub_degree),targetDerivCubDegree(cub_degree-1);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
             projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
           }
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationCurlPoints, numElems, numCurlPoints, dim);
-          if(useL2Projection) {
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          } else {
-            pts::getHCurlEvaluationPoints(evaluationPoints,
-                evaluationCurlPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          }
+
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationCurlPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numCurlPoints = evaluationCurlPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(targetCurlAtEvalPoints, numElems, numCurlPoints);
@@ -705,7 +615,7 @@ int ConvergenceTri(const bool verbose) {
             KOKKOS_LAMBDA (const int &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -714,7 +624,7 @@ int ConvergenceTri(const bool verbose) {
 
               auto basisValuesAtEvalCurlPoint = Kokkos::subview(linearBasisValuesAtEvalCurlPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numCurlPoints; ++j) {
-                auto evalGradPoint = Kokkos::subview(evaluationCurlPoints,i,j,Kokkos::ALL());
+                auto evalGradPoint = Kokkos::subview(evaluationCurlPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalCurlPoint, evalGradPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -754,7 +664,6 @@ int ConvergenceTri(const bool verbose) {
           if(useL2Projection) {
             pts::getL2BasisCoeffs(basisCoeffsHCurl,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -762,8 +671,6 @@ int ConvergenceTri(const bool verbose) {
             pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
                 targetAtEvalPoints,
                 targetCurlAtEvalPoints,
-                evaluationPoints,
-                evaluationCurlPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -927,29 +834,16 @@ int ConvergenceTri(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
             projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
           }
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-
-          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-          DynRankView ConstructWithLabel(evaluationDivPoints, numElems, numDivPoints, dim);
-          if(useL2Projection) {
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          } else {
-            pts::getHDivEvaluationPoints(evaluationPoints,
-                evaluationDivPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          }
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          auto evaluationDivPoints = projStruct.getAllDerivEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0), numDivPoints = evaluationDivPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(targetDivAtEvalPoints, numElems, numDivPoints);
@@ -965,7 +859,7 @@ int ConvergenceTri(const bool verbose) {
             KOKKOS_LAMBDA (const int &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -974,7 +868,7 @@ int ConvergenceTri(const bool verbose) {
 
               auto basisValuesAtEvalDivPoint = Kokkos::subview(linearBasisValuesAtEvalDivPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numDivPoints; ++j) {
-                auto evalGradPoint = Kokkos::subview(evaluationDivPoints,i,j,Kokkos::ALL());
+                auto evalGradPoint = Kokkos::subview(evaluationDivPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDivPoint, evalGradPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -1019,7 +913,6 @@ int ConvergenceTri(const bool verbose) {
           if(useL2Projection) {
             pts::getL2BasisCoeffs(basisCoeffsHDiv,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -1027,8 +920,6 @@ int ConvergenceTri(const bool verbose) {
             pts::getHDivBasisCoeffs(basisCoeffsHDiv,
                 targetAtEvalPoints,
                 targetDivAtEvalPoints,
-                evaluationPoints,
-                evaluationDivPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
@@ -1184,27 +1075,15 @@ int ConvergenceTri(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
             projStruct.createHVolProjectionStruct(&basis, targetCubDegree);
           }
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-
-          DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-          if(useL2Projection) {
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          } else {
-            pts::getHVolEvaluationPoints(evaluationPoints,
-                elemOrts,
-                &basis,
-                &projStruct);
-          }
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
 
@@ -1217,7 +1096,7 @@ int ConvergenceTri(const bool verbose) {
             KOKKOS_LAMBDA (const int &i) {
               auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
               for(ordinal_type j=0; j<numPoints; ++j){
-                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                auto evalPoint = Kokkos::subview(evaluationPoints,j,Kokkos::ALL());
                 Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
                 for(ordinal_type k=0; k<numNodesPerElem; ++k)
                   for(ordinal_type d=0; d<dim; ++d)
@@ -1244,14 +1123,12 @@ int ConvergenceTri(const bool verbose) {
           if(useL2Projection) {
             pts::getL2BasisCoeffs(basisCoeffsHVol,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);
           } else {
             pts::getHVolBasisCoeffs(basisCoeffsHVol,
                 targetAtEvalPoints,
-                evaluationPoints,
                 elemOrts,
                 &basis,
                 &projStruct);

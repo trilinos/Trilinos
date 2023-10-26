@@ -52,12 +52,12 @@ MasterElementCalc::determinant(
   {
     if (2 == num_elem_dims)
     {
-      ThrowAssert(3 == num_coord_dims);
+      STK_ThrowAssert(3 == num_coord_dims);
       MasterElementCalc::determinant_element2d_in_3d(nint, npe_g, deriv_g, nelem, coords, det_J, error);
     }
     else
     {
-      ThrowAssert(1 == num_elem_dims);
+      STK_ThrowAssert(1 == num_elem_dims);
       if (2 == num_coord_dims)
       {
         MasterElementCalc::determinant_element1d_in_2d(nint, npe_g, deriv_g, nelem, coords, det_J, error);
@@ -70,7 +70,7 @@ MasterElementCalc::determinant(
   }
   else
   {
-    ThrowAssert(num_elem_dims >= 2 && num_elem_dims <= 3);
+    STK_ThrowAssert(num_elem_dims >= 2 && num_elem_dims <= 3);
     if (2 == num_elem_dims) MasterElementCalc::determinant_2d(nint, npe_g, deriv_g, nelem, coords, det_J, error);
     else MasterElementCalc::determinant_3d(nint, npe_g, deriv_g, nelem, coords, det_J, error);
   }
@@ -90,7 +90,7 @@ MasterElementCalc::gradient_operator(
         double* det_J,           // (nelem,nint)
         double* error)
 {
-  ThrowAssert(num_elem_dims >= 2 && num_elem_dims <= 3);
+  STK_ThrowAssert(num_elem_dims >= 2 && num_elem_dims <= 3);
   if (2 == num_elem_dims) gradient_operator_2d(nint, npe_g, deriv_g, npe_f, deriv_f, nelem, coords, gradop, det_J, error);
   else gradient_operator_3d(nint, npe_g, deriv_g, npe_f, deriv_f, nelem, coords, gradop, det_J, error);
 }

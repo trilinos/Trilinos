@@ -128,7 +128,7 @@ namespace Galeri {
           nz = pL.get<GO>("nz");
 
         GO numGlobalElements = -1;
-        if (matrixType == "Laplace1D" || matrixType == "Helmholtz1D")
+        if (matrixType == "Laplace1D" || matrixType == "Helmholtz1D" || matrixType == "Identity")
           numGlobalElements = nx;
 
         else if (matrixType == "Laplace2D"    ||

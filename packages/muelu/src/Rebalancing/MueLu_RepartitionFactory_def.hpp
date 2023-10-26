@@ -116,6 +116,10 @@ namespace MueLu {
 
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    if (A == Teuchos::null) {
+        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+        return;
+    }
     RCP<const Map>            rowMap = A->getRowMap();
     GO                     indexBase = rowMap->getIndexBase();
     Xpetra::UnderlyingLib  lib       = rowMap->lib();
@@ -292,22 +296,26 @@ namespace MueLu {
 
     // Step 1: Find out how many processors send me data
     // partsIndexBase starts from zero, as the processors ids start from zero
-    GO partsIndexBase = 0;
-    RCP<Map>    partsIHave  = MapFactory   ::Build(lib, Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), myParts(), partsIndexBase, comm);
-    RCP<Map>    partsIOwn   = MapFactory   ::Build(lib,                                                 numProcs,  myPart(), partsIndexBase, comm);
-    RCP<Export> partsExport = ExportFactory::Build(partsIHave, partsIOwn);
-
-    RCP<GOVector> partsISend    = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(partsIHave);
-    RCP<GOVector> numPartsIRecv = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(partsIOwn);
-    if (numSend) {
-      ArrayRCP<GO> partsISendData = partsISend->getDataNonConst(0);
-      for (int i = 0; i < numSend; i++)
-        partsISendData[i] = 1;
+    {
+      SubFactoryMonitor m1(*this, "Mapping Step 1", currentLevel);
+      GO partsIndexBase = 0;
+      RCP<Map>    partsIHave  = MapFactory   ::Build(lib, Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), myParts(), partsIndexBase, comm);
+      RCP<Map>    partsIOwn   = MapFactory   ::Build(lib,                                                 numProcs,  myPart(), partsIndexBase, comm);
+      RCP<Export> partsExport = ExportFactory::Build(partsIHave, partsIOwn);
+      
+      RCP<GOVector> partsISend    = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(partsIHave);
+      RCP<GOVector> numPartsIRecv = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(partsIOwn);
+      if (numSend) {
+        ArrayRCP<GO> partsISendData = partsISend->getDataNonConst(0);
+        for (int i = 0; i < numSend; i++)
+          partsISendData[i] = 1;
+      }
+      (numPartsIRecv->getDataNonConst(0))[0] = 0;
+      
+      numPartsIRecv->doExport(*partsISend, *partsExport, Xpetra::ADD);
+      numRecv = (numPartsIRecv->getData(0))[0];
     }
-    (numPartsIRecv->getDataNonConst(0))[0] = 0;
 
-    numPartsIRecv->doExport(*partsISend, *partsExport, Xpetra::ADD);
-    numRecv = (numPartsIRecv->getData(0))[0];
 
     // Step 2: Get my GIDs from everybody else
     MPI_Datatype MpiType = Teuchos::Details::MpiTypeTraits<GO>::getType();
@@ -355,7 +363,12 @@ namespace MueLu {
     std::sort(myGIDs.begin(), myGIDs.end());
 
     // Step 3: Construct importer
-    RCP<Map>          newRowMap      = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm);
+    RCP<Map>          newRowMap;
+    {
+      SubFactoryMonitor m1(*this, "Map construction", currentLevel);
+      newRowMap = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm);
+    }
+
     RCP<const Import> rowMapImporter;
 
     RCP<const BlockedMap> blockedRowMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rowMap);

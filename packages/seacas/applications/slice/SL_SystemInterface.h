@@ -1,10 +1,9 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef Sierra_SystemInterface_h
-#define Sierra_SystemInterface_h
+#pragma once
 
 #include "GetLongOpt.h"
 
@@ -101,6 +100,9 @@ public:
   bool        zlib_{true};
   bool        outputDecompMap_{false};
   bool        outputDecompField_{false};
+  bool        ignore_x_{false};
+  bool        ignore_y_{false};
+  bool        ignore_z_{false};
   bool        lineDecomp_{false};
   std::string lineSurfaceList_{};
 
@@ -115,4 +117,3 @@ private:
   StringIdVector nsetVarNames_;
   StringIdVector ssetVarNames_;
 };
-#endif

@@ -1015,5 +1015,5 @@ void testRKAppAction(
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test
 #endif // Tempus_UnitTest_RK_Utils_hpp

@@ -392,7 +392,17 @@ Ifpack2PreconditionerFactory<MatrixType>::getValidParameters() const
 template <typename MatrixType>
 std::string Ifpack2PreconditionerFactory<MatrixType>::description() const
 {
-  return "Thyra::Ifpack2PreconditionerFactory";
+  std::ostringstream oss;
+  oss << "Thyra::Ifpack2PreconditionerFactory";
+  oss << "{";
+  std::string *precTypePtr = nullptr;
+  if (nonnull(paramList_) &&
+    (precTypePtr = Teuchos::getParameterPtr<std::string>(*paramList_, "Prec Type")) )
+  {
+    oss << "\"Prec Type\" = \"" << *precTypePtr << "\"";
+  }
+  oss << "}";
+  return oss.str();
 }
 
 

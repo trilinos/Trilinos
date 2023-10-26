@@ -634,10 +634,8 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   if(required_basic_dfdp(outArgs))
      evalModel_basic_dfdp(ae_inargs,inArgs,outArgs);
 
-  // Holding a rcp to f produces a seg fault in Rythmos when the next
-  // f comes in and the resulting dtor is called.  Need to discuss
-  // with Ross.  Clearing all references here works!
-
+  // TODO: Clearing all references prevented a seg-fault with Rythmos,
+  // which is no longer used. Check if it's still needed.
   epGlobalContainer->set_x(Teuchos::null);
   epGlobalContainer->set_dxdt(Teuchos::null);
   epGlobalContainer->set_f(Teuchos::null);

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,8 +8,7 @@
 /* devid.h - these functions are used to map SVDI device code numbers
  *           to device code character strings and vice versa
  */
-#ifndef DEVID_H
-#define DEVID_H
+#pragma once
 
 struct device_ids
 {
@@ -55,6 +54,4 @@ static char *get_devid_char(float number)
   /*  return a null pointer if there is no floating point number match     */
   return (0);
 }
-#endif
-
 #endif

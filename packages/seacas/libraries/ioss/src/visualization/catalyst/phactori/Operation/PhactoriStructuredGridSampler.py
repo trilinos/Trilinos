@@ -131,7 +131,7 @@ class PhactoriStructuredGridSampler(PhactoriOperationSpecifics):
       dataArrayNumCmpnts = -1
       defaultTuple = []
 
-
+  
   def CreateParaViewFilter(self, inInputFilter):
     if PhactoriDbg(100):
       myDebugPrint3("PhactoriStructuredGridSampler.CreateParaViewFilter entered\n", 100)
@@ -139,7 +139,7 @@ class PhactoriStructuredGridSampler(PhactoriOperationSpecifics):
     savedActiveSource = GetActiveSource()
 
     ##segmentListJson = ReadAndMpiBroadcastJsonFile(self.JsonListFileName)
-
+   
     self.myCopyOfInputFilter = inInputFilter
 
     UpdatePipelineWithCurrentTimeArgument(self.myCopyOfInputFilter)
@@ -151,3 +151,4 @@ class PhactoriStructuredGridSampler(PhactoriOperationSpecifics):
       myDebugPrint3("PhactoriStructuredGridSampler.CreateParaViewFilter returning\n", 100)
 
 #phactori_combine_to_single_python_file_subpiece_end_1
+

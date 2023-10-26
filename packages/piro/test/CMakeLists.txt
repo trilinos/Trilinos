@@ -1,9 +1,5 @@
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/../TriKota/Dakota/install/lib/)
-
-# Required for Dakota
-ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF (Piro_ENABLE_NOX)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -13,13 +9,66 @@ IF (Piro_ENABLE_NOX)
     Main_ThyraSolver_Tpetra.cpp
     MockModelEval_A_Tpetra.cpp
     MockModelEval_A_Tpetra.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADDED_EXE_TARGET_NAME_OUT ThyraSolver_NAME
     ADDED_TESTS_NAMES_OUT ThyraSolverTpetra_NAME
   )
-  
+
+  IF (Piro_ENABLE_Tempus)
+    #IF (TPL_ENABLE_MPI)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        AnalysisDriverTempus_MSD
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        SOURCES
+        Main_AnalysisDriver_Tempus.cpp
+        MockModelEval_A_Tpetra.cpp
+        MockModelEval_A_Tpetra.hpp
+        MockModelEval_B_Tpetra.cpp
+        MockModelEval_B_Tpetra.hpp
+        MockModelEval_B_Tpetra_2_parameters.cpp
+        MockModelEval_B_Tpetra_2_parameters.hpp
+        MatrixBased_LOWS.cpp
+        MatrixBased_LOWS.hpp
+        MassSpringDamperModel.cpp
+        MassSpringDamperModel.hpp
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_ReducedSpace_Transient_MSD.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+        ADDED_TESTS_NAMES_OUT AnalysisDriverTempus_MSD_NAME 
+      )
+    #ENDIF()
+    #TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    #  AnalysisDriverTempus
+    #  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    #  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+    #  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+    #  EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+    #  SOURCES
+    #  Main_AnalysisDriver_Tempus.cpp
+    #  MockModelEval_A_Tpetra.cpp
+    #  MockModelEval_A_Tpetra.hpp
+    #  MockModelEval_B_Tpetra.cpp
+    #  MockModelEval_B_Tpetra.hpp
+    #  MockModelEval_B_Tpetra_2_parameters.cpp
+    #  MockModelEval_B_Tpetra_2_parameters.hpp
+    #  MatrixBased_LOWS.cpp
+    #  MatrixBased_LOWS.hpp
+    #  MassSpringDamperModel.cpp
+    #  MassSpringDamperModel.hpp
+    #  NUM_MPI_PROCS 1-4
+    #  ARGS -v
+    #  PASS_REGULAR_EXPRESSION "TEST PASSED"
+    #  ADDED_TESTS_NAMES_OUT AnalysisDriverTempus_NAME 
+    #)
+  ENDIF()
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     AnalysisDriverTpetra
     EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
@@ -32,6 +81,10 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_A_Tpetra.hpp
     MockModelEval_B_Tpetra.cpp
     MockModelEval_B_Tpetra.hpp
+    MockModelEval_B_Tpetra_2_parameters.cpp
+    MockModelEval_B_Tpetra_2_parameters.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -87,7 +140,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_ReducedSpace_LineSearch.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml
+        input_Analysis_ROL_ReducedSpace_Transient.xml
+        input_Analysis_ROL_ReducedSpace_Transient_2_parameters.xml
+        input_Analysis_ROL_ReducedSpace_Transient_MSD.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml
+        input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml
         input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
@@ -98,7 +155,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
 )
 
 
-IF (Piro_ENABLE_Epetra)
+IF (PIRO_HAVE_EPETRA_STACK)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     UnitTests
@@ -165,19 +222,6 @@ IF (Piro_ENABLE_Epetra)
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      AnalysisDriver
-      SOURCES
-      Main_AnalysisDriver.cpp
-      MockModelEval_A.cpp
-      MockModelEval_A.hpp
-      ObserveSolution_Epetra.hpp
-      NUM_MPI_PROCS 1-4
-      ARGS -v
-      PASS_REGULAR_EXPRESSION "TEST PASSED"
-    )
-  
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SecondOrderIntegrator
       SOURCES
       Main_SecondOrderIntegrator.cpp
@@ -222,32 +266,6 @@ IF (Piro_ENABLE_Epetra)
     ENDIF()
 
   ENDIF(Piro_ENABLE_NOX)
-
-  IF (Piro_ENABLE_Rythmos)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      RythmosSolver_UnitTests
-      SOURCES
-      Piro_RythmosSolver_UnitTests.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-      Piro_Test_ThyraSupport.hpp
-      MockModelEval_A.hpp
-      MockModelEval_A.cpp
-      NUM_MPI_PROCS 1-4
-      STANDARD_PASS_OUTPUT
-    )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Epetra_RythmosSolver_UnitTests
-      SOURCES
-      Piro_Epetra_RythmosSolver_UnitTests.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-      Piro_Test_EpetraSupport.hpp
-      MockModelEval_A.hpp
-      MockModelEval_A.cpp
-      NUM_MPI_PROCS 1-4
-      STANDARD_PASS_OUTPUT
-    )
-  ENDIF (Piro_ENABLE_Rythmos)
 
   IF (Piro_ENABLE_Tempus)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -297,15 +315,9 @@ IF (Piro_ENABLE_Epetra)
                  input_Solve_NOX_3.xml                 
 		         input_Solve_NOX_Adjoint.xml
                  input_Solve_LOCA_1.xml
-                 input_Solve_Rythmos_1.xml
-                 input_Solve_Rythmos_1new.xml
-                 input_Solve_Rythmos_2.xml
-                 input_Solve_RythmosSolver_2.xml
                  input_Solve_VV.xml
                  input_Solve_TR.xml
                  input_Solve_NB.xml
-                 input_Analysis_Dakota.xml dak.in
-                 input_Solve_RythmosMatrixFree_Fails.xml
 	             input_SGSolve.xml
 	             input_problem1.xml
 	             input_problem2.xml
@@ -313,12 +325,9 @@ IF (Piro_ENABLE_Epetra)
 	             input_problem1_sg.xml
 	             input_problem2_sg.xml
 	             input_coupled_sg.xml
-	             input_SGAnalysis.xml
-	             dakota_sg.in
-	             dakota_sg_target.txt
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    EXEDEPS ${ThyraSolver_EXENAME} AnalysisDriver UnitTests NOXSolver_UnitTests
+    EXEDEPS ${ThyraSolver_EXENAME} UnitTests NOXSolver_UnitTests
   )
 
-ENDIF(Piro_ENABLE_Epetra)
+ENDIF(PIRO_HAVE_EPETRA_STACK)

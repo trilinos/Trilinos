@@ -115,15 +115,6 @@ int main(int argc, char *argv[]) {
   
   // Define basis and error flag
   shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());   // create cell topology
-  const int deg = 5;
-
-  FieldContainer<double> pts(PointTools::getLatticeSize(line,deg),1);
-  PointTools::getLattice<double,FieldContainer<double> >(pts,line,deg);
-  Basis_HGRAD_LINE_Hermite_FEM<double, FieldContainer<double> > lineBasis(pts);
-
-  *outStream << std::endl;
-
-  lineBasis.printTags( *outStream );
 
   int errorFlag = 0;
 
@@ -138,17 +129,27 @@ int main(int argc, char *argv[]) {
     lineNodes(i,0) = -1.0+(2.0*(double)i)/(double)numIntervals;
   }
 
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
-
-  *outStream << "lineBasis.getCardinality()      = " << lineBasis.getCardinality()      << std::endl;
-  *outStream << "lineBasis.getDegree()           = " << lineBasis.getDegree()           << std::endl;
-  *outStream << "lineBasis.getBaseCellTopology() = " << lineBasis.getBaseCellTopology() << std::endl;
-  *outStream << "lineBasis.getBasisType()        = " << lineBasis.getBasisType()        << std::endl;
-  *outStream << "lineBasis.getCoordinateSystem() = " << lineBasis.getCoordinateSystem() << std::endl;
-  *outStream << std::endl;
-
   try {
+    const int deg = 5;
+
+    FieldContainer<double> pts(PointTools::getLatticeSize(line,deg),1);
+    PointTools::getLattice<double,FieldContainer<double> >(pts,line,deg);
+    Basis_HGRAD_LINE_Hermite_FEM<double, FieldContainer<double> > lineBasis(pts);
+
+    *outStream << std::endl;
+
+    lineBasis.printTags( *outStream );
+  
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    FieldContainer<double> vals;
+
+    *outStream << "lineBasis.getCardinality()      = " << lineBasis.getCardinality()      << std::endl;
+    *outStream << "lineBasis.getDegree()           = " << lineBasis.getDegree()           << std::endl;
+    *outStream << "lineBasis.getBaseCellTopology() = " << lineBasis.getBaseCellTopology() << std::endl;
+    *outStream << "lineBasis.getBasisType()        = " << lineBasis.getBasisType()        << std::endl;
+    *outStream << "lineBasis.getCoordinateSystem() = " << lineBasis.getCoordinateSystem() << std::endl;
+    *outStream << std::endl;
+
 
 #ifdef HAVE_INTREPID_DEBUG
     // exception #1: DIV cannot be applied to scalar functions
@@ -249,7 +250,6 @@ int main(int argc, char *argv[]) {
    try {
 
      int npts=5;
-     shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());   // create cell topology
      FieldContainer<double> pts(PointTools::getLatticeSize(line,npts),1);
      PointTools::getLattice<double,FieldContainer<double> >(pts,line,npts);
      Basis_HGRAD_LINE_Hermite_FEM<double, FieldContainer<double> > lineBasis(pts);

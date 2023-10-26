@@ -122,11 +122,11 @@ namespace Intrepid2 {
     /// The maximum reconstruction order.
     static constexpr ordinal_type MaxOrder             = 8;
     /// The maximum number of integration points for direct cubature rules.
-    static constexpr ordinal_type MaxIntegrationPoints = 1001;    
+    static constexpr ordinal_type MaxIntegrationPoints = 4893;    
     /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.
     static constexpr ordinal_type MaxCubatureDegreeEdge= 20;      
     /// The maximum degree of the polynomial that can be integrated exactly by a direct triangle rule.
-    static constexpr ordinal_type MaxCubatureDegreeTri = 20;      
+    static constexpr ordinal_type MaxCubatureDegreeTri = 50;      
     /// The maximum degree of the polynomial that can be integrated exactly by a direct tetrahedron rule.
     static constexpr ordinal_type MaxCubatureDegreeTet = 20;     
     /// The maximum degree of the polynomial that can be integrated exactly by a direct pyramid rule.

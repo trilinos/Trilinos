@@ -1,6 +1,6 @@
 
 
-INCLUDE_DIRECTORIES(
+TRIBITS_INCLUDE_DIRECTORIES(
   ${PACKAGE_SOURCE_DIR}/../epetraext/example/model_evaluator/2dsim
   ${PACKAGE_SOURCE_DIR}/../epetraext/example/model_evaluator/4dopt
   )

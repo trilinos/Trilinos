@@ -72,7 +72,7 @@
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 
-#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
@@ -129,7 +129,7 @@ namespace MueLuTests {
 #endif
 #endif
     } else if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2)
       ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
       smooProto = rcp( new Ifpack2Smoother("RELAXATION", ifpackList) );
 #endif
@@ -156,16 +156,16 @@ namespace MueLuTests {
 #endif
     } else if (lib == Xpetra::UseTpetra) {
       if (coarseSolver=="amesos2") {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_AMESOS2)
         if (rank == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
         Teuchos::ParameterList paramList; //unused
         coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
 #else
         std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
         return Teuchos::null; // TODO test for exception //EXIT_FAILURE;
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
+#endif // HAVE_MUELU_AMESOS2
       } else if(coarseSolver=="ifpack2") {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2)
         if (rank == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
         Teuchos::ParameterList ifpack2List;
         ifpack2List.set("fact: ilut level-of-fill",(double)99); // TODO ??
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
 
     FactoryManager M;
 
-    M.SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));
+    M.SetFactory("Aggregates", rcp(new UncoupledAggregationFactory()));
     M.SetFactory("Ptent",      rcp(new TentativePFactory()));
     M.SetFactory("P",          rcp(new SaPFactory()));
 

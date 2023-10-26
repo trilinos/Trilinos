@@ -42,7 +42,7 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
+#ifdef PANZER_HAVE_EPETRA_STACK
 
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_GlobalIndexer.hpp"
@@ -180,4 +180,4 @@ void build_local_ids(const panzer_stk::STK_Interface & mesh,
 
 }
 
-#endif // PANZER_HAVE_EPETRA
+#endif // PANZER_HAVE_EPETRA_STACK

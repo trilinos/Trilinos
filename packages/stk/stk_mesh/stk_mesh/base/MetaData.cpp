@@ -54,6 +54,7 @@
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/string_case_compare.hpp>
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 
 namespace stk {
 namespace mesh {
@@ -104,7 +105,7 @@ void MetaData::assign_topology(Part& part, stk::topology stkTopo)
 
   part.m_partImpl.set_topology(stkTopo);
 
-  ThrowRequireMsg(stkTopo != stk::topology::INVALID_TOPOLOGY, "bad topology in MetaData::assign_topology");
+  STK_ThrowRequireMsg(stkTopo != stk::topology::INVALID_TOPOLOGY, "bad topology in MetaData::assign_topology");
 }
 
 void MetaData::set_mesh_on_fields(BulkData* bulk)
@@ -121,24 +122,24 @@ const MetaData & MetaData::get( const BulkData & bulk_data) {
 
 void MetaData::require_not_committed() const
 {
-  ThrowRequireMsg(!m_commit, "mesh MetaData has been committed.");
+  STK_ThrowRequireMsg(!m_commit, "mesh MetaData has been committed.");
 }
 
 void MetaData::require_committed() const
 {
-  ThrowRequireMsg(m_commit, "mesh MetaData has not been committed.");
+  STK_ThrowRequireMsg(m_commit, "mesh MetaData has not been committed.");
 }
 
 void MetaData::require_same_mesh_meta_data( const MetaData & rhs ) const
 {
-  ThrowRequireMsg(this == &rhs, "Different mesh_meta_data.");
+  STK_ThrowRequireMsg(this == &rhs, "Different mesh_meta_data.");
 }
 
 void MetaData::require_valid_entity_rank( EntityRank rank ) const
 {
-  ThrowRequireMsg(check_rank(rank),
+  STK_ThrowRequireMsg(check_rank(rank),
       "entity_rank " << rank << " >= " << m_entity_rank_names.size() );
-  ThrowRequireMsg( !(rank == stk::topology::FACE_RANK && spatial_dimension() == 2),
+  STK_ThrowRequireMsg( !(rank == stk::topology::FACE_RANK && spatial_dimension() == 2),
                    "Should not use FACE_RANK in 2d");
 }
 
@@ -162,7 +163,7 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_surfaceToBlock()
 {
   const size_t numRanks = stk::topology::NUM_RANKS;
-  ThrowRequireMsg(entity_rank_names.size() <= numRanks, "MetaData: number of entity-ranks (" << entity_rank_names.size() << ") exceeds limit of stk::topology::NUM_RANKS (" << numRanks <<")");
+  STK_ThrowRequireMsg(entity_rank_names.size() <= numRanks, "MetaData: number of entity-ranks (" << entity_rank_names.size() << ") exceeds limit of stk::topology::NUM_RANKS (" << numRanks <<")");
 
 #ifdef STK_USE_SIMPLE_FIELDS
   m_use_simple_fields = true;
@@ -211,15 +212,15 @@ void MetaData::initialize(size_t spatial_dimension,
                           const std::vector<std::string> &rank_names,
                           const std::string &coordinate_field_name)
 {
-  ThrowErrorMsgIf( !m_entity_rank_names.empty(), "already initialized");
-  ThrowErrorMsgIf( spatial_dimension == 0, "Min spatial dimension is 1");
-  ThrowErrorMsgIf( spatial_dimension > 3, "Max spatial dimension is 3");
+  STK_ThrowErrorMsgIf( !m_entity_rank_names.empty(), "already initialized");
+  STK_ThrowErrorMsgIf( spatial_dimension == 0, "Min spatial dimension is 1");
+  STK_ThrowErrorMsgIf( spatial_dimension > 3, "Max spatial dimension is 3");
 
   if ( rank_names.empty() ) {
     m_entity_rank_names = stk::mesh::entity_rank_names();
   }
   else {
-    ThrowErrorMsgIf(rank_names.size() < stk::topology::ELEMENT_RANK+1,
+    STK_ThrowErrorMsgIf(rank_names.size() < stk::topology::ELEMENT_RANK+1,
                     "Entity rank name vector must name every rank, rank_names.size() = " <<
                     rank_names.size() << ", need " << stk::topology::ELEMENT_RANK+1 << " names");
     m_entity_rank_names = rank_names;
@@ -236,7 +237,7 @@ void MetaData::initialize(size_t spatial_dimension,
 
 const std::string& MetaData::entity_rank_name( EntityRank entity_rank ) const
 {
-  ThrowErrorMsgIf( entity_rank >= entity_rank_count(),
+  STK_ThrowErrorMsgIf( entity_rank >= entity_rank_count(),
       "entity-rank " << entity_rank <<
       " out of range. Must be in range 0.." << entity_rank_count());
 
@@ -321,7 +322,7 @@ FieldBase const* MetaData::coordinate_field() const
     }
   }
 
-  ThrowErrorMsgIf( m_coord_field == nullptr,
+  STK_ThrowErrorMsgIf( m_coord_field == nullptr,
                    "MetaData::coordinate_field: Coordinate field has not been defined" );
 
   return m_coord_field;
@@ -342,7 +343,7 @@ Part * MetaData::get_part( const std::string & p_name ,
     part = m_part_repo.get_part_by_name(p_name);
   }
 
-  ThrowErrorMsgIf( required_by && nullptr == part,
+  STK_ThrowErrorMsgIf( required_by && nullptr == part,
                    "Failed to find part with name " << p_name <<
                    " for method " << required_by );
   return part;
@@ -377,7 +378,7 @@ Part & MetaData::declare_internal_part( const std::string & p_name )
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, bool arg_force_no_induce )
 {
-  ThrowRequireMsg(is_initialized(), "MetaData: Can't declare ranked part until spatial dimension has been set.");
+  STK_ThrowRequireMsg(is_initialized(), "MetaData: Can't declare ranked part until spatial dimension has been set.");
   require_valid_entity_rank(rank);
 
   return *m_part_repo.declare_part( p_name , rank, arg_force_no_induce );
@@ -406,17 +407,17 @@ void MetaData::declare_part_subset( Part & superset , Part & subset, bool verify
 
   // Check for topology root parts in subset or subset's subsets
   const bool subset_has_root_part = root_part_in_subset(subset);
-  ThrowErrorMsgIf( subset_has_root_part, "MetaData::declare_part_subset:  Error, root cell topology part found in subset or below." );
+  STK_ThrowErrorMsgIf( subset_has_root_part, "MetaData::declare_part_subset:  Error, root cell topology part found in subset or below." );
 
   std::set<stk::topology> topologies;
   find_topologies_in_part_and_subsets_of_same_rank(subset,superset.primary_entity_rank(),topologies);
 
-  ThrowErrorMsgIf( topologies.size() > 1,
+  STK_ThrowErrorMsgIf( topologies.size() > 1,
       "MetaData::declare_part_subset:  Error, multiple topologies of rank "
       << superset.primary_entity_rank() << " defined below subset"
       );
   const bool non_matching_topology = ((topologies.size() == 1) && (*topologies.begin() != superset_stkTopo));
-  ThrowErrorMsgIf( non_matching_topology,
+  STK_ThrowErrorMsgIf( non_matching_topology,
       "MetaData::declare_part_subset:  Error, superset topology = "
       << superset_stkTopo.name() << " does not match the topology = "
       << topologies.begin()->name()
@@ -520,7 +521,7 @@ void MetaData::commit()
   set_mesh_on_fields(m_bulk_data);
 
 #ifdef STK_VERBOSE_OUTPUT
-  dump_all_meta_info(std::cout);
+  impl::dump_all_meta_info(*this, std::cout);
 #endif
 }
 
@@ -621,12 +622,12 @@ void MetaData::internal_declare_known_cell_topology_parts()
 
 Part& MetaData::register_topology(stk::topology stkTopo)
 {
-  ThrowRequireMsg(is_initialized(), "MetaData::register_topology: initialize() must be called before this function");
+  STK_ThrowRequireMsg(is_initialized(), "MetaData::register_topology: initialize() must be called before this function");
 
   TopologyPartMap::iterator iter = m_topologyPartMap.find(stkTopo);
   if (iter == m_topologyPartMap.end()) {
     std::string part_name = std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + stkTopo.name();
-    ThrowErrorMsgIf(get_part(part_name) != 0, "Cannot register topology with same name as existing part '" << stkTopo.name() << "'" );
+    STK_ThrowErrorMsgIf(get_part(part_name) != 0, "Cannot register topology with same name as existing part '" << stkTopo.name() << "'" );
 
     Part& part = declare_internal_part(part_name, stkTopo.rank());
 
@@ -643,7 +644,7 @@ Part& MetaData::register_topology(stk::topology stkTopo)
 Part& MetaData::get_topology_root_part(stk::topology stkTopo) const
 {
     TopologyPartMap::const_iterator iter = m_topologyPartMap.find(stkTopo);
-    ThrowRequireMsg(iter != m_topologyPartMap.end(), "MetaData::get_topology_root_part ERROR, failed to map topology "<<stkTopo<<" to a part.");
+    STK_ThrowRequireMsg(iter != m_topologyPartMap.end(), "MetaData::get_topology_root_part ERROR, failed to map topology "<<stkTopo<<" to a part.");
     return *iter->second;
 }
 
@@ -654,7 +655,7 @@ bool MetaData::has_topology_root_part(stk::topology stkTopo) const
 
 stk::topology MetaData::get_topology(const Part & part) const
 {
-  ThrowRequireMsg(is_initialized(),"MetaData::get_topology(part): initialize() must be called before this function");
+  STK_ThrowRequireMsg(is_initialized(),"MetaData::get_topology(part): initialize() must be called before this function");
 
   PartOrdinal part_ordinal = part.mesh_meta_data_ordinal();
   if (part_ordinal < m_partTopologyVector.size())
@@ -673,7 +674,7 @@ void MetaData::add_part_alias(Part& part, const std::string& alias)
   if(aliasIter == m_partAlias.end()) {
     m_partAlias[alias] = partOrdinal;
   } else {
-    ThrowRequireMsg((*aliasIter).second == partOrdinal, "Part alias '" << alias << "' must be assigned to unique part");
+    STK_ThrowRequireMsg((*aliasIter).second == partOrdinal, "Part alias '" << alias << "' must be assigned to unique part");
   }
 
   std::map<unsigned, std::vector<std::string> >::iterator reverseAliasIter = m_partReverseAlias.find(partOrdinal);
@@ -697,11 +698,11 @@ bool MetaData::delete_part_alias(Part& part, const std::string& alias)
     m_partAlias.erase(iter);
 
     std::map<unsigned, std::vector<std::string> >::iterator reverseAliasIter = m_partReverseAlias.find(partOrdinal);
-    ThrowRequireMsg(reverseAliasIter != m_partReverseAlias.end(), "Could not find reverse alias map entry for part: " << part.name());
+    STK_ThrowRequireMsg(reverseAliasIter != m_partReverseAlias.end(), "Could not find reverse alias map entry for part: " << part.name());
 
     std::vector<std::string>& aliases = reverseAliasIter->second;
     auto result = std::lower_bound(aliases.begin(), aliases.end(), alias );
-    ThrowRequireMsg((result != aliases.end()) && (*result == alias),
+    STK_ThrowRequireMsg((result != aliases.end()) && (*result == alias),
                     "Could not find alias: '" << alias << "' for part: " << part.name() << " in reverse alias map");
 
     aliases.erase(result);
@@ -717,7 +718,7 @@ bool MetaData::delete_part_alias_case_insensitive(Part& part, const std::string&
   unsigned partOrdinal = stk::mesh::InvalidOrdinal;
   for(auto iter = m_partAlias.begin(); iter != m_partAlias.end(); ) {
     if(stk::equal_case(iter->first, alias)) {
-      ThrowRequireMsg((partOrdinal == stk::mesh::InvalidOrdinal) || (partOrdinal == iter->second),
+      STK_ThrowRequireMsg((partOrdinal == stk::mesh::InvalidOrdinal) || (partOrdinal == iter->second),
                       "Part alias '" << alias << "' not  uniquely assigned");
       partOrdinal = iter->second;
       iter = m_partAlias.erase(iter);
@@ -729,7 +730,7 @@ bool MetaData::delete_part_alias_case_insensitive(Part& part, const std::string&
 
   if(partOrdinal != stk::mesh::InvalidOrdinal) {
     std::map<unsigned, std::vector<std::string> >::iterator reverseAliasIter = m_partReverseAlias.find(partOrdinal);
-    ThrowRequireMsg(reverseAliasIter != m_partReverseAlias.end(), "Could not find reverse alias map entry for part: " << part.name());
+    STK_ThrowRequireMsg(reverseAliasIter != m_partReverseAlias.end(), "Could not find reverse alias map entry for part: " << part.name());
 
     std::vector<std::string>& aliases = reverseAliasIter->second;
     for(auto iter = aliases.begin(); iter != aliases.end(); ) {
@@ -786,7 +787,7 @@ public:
     int ok = unpack_verify(comm.recv_buffer());
     stk::all_reduce(m_parallelMachine, ReduceMin<1>(&ok));
 
-    ThrowRequireMsg(ok, "[p" << m_pRank << "] MetaData parallel consistency failure");
+    STK_ThrowRequireMsg(ok, "[p" << m_pRank << "] MetaData parallel consistency failure");
   }
 
   virtual void pack(CommBuffer & b) = 0;
@@ -1153,7 +1154,7 @@ bool is_topology_root_part(const Part & part) {
 void set_topology(Part & part, stk::topology topo)
 {
   MetaData& meta = part.mesh_meta_data();
-  ThrowRequireMsg(meta.is_initialized(),"set_topology: initialize() must be called before this function");
+  STK_ThrowRequireMsg(meta.is_initialized(),"set_topology: initialize() must be called before this function");
 
   if (part.primary_entity_rank() == InvalidEntityRank) {
     //declare_part will set the rank on the part, if the part already exists.
@@ -1204,7 +1205,7 @@ get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<
             first_found_part = &part;
         }
         else {
-          ThrowRequireMsg(top == stk::topology::INVALID_TOPOLOGY || top == topology,
+          STK_ThrowRequireMsg(top == stk::topology::INVALID_TOPOLOGY || top == topology,
               "topology defined as both " << topology.name() << " and as " << top.name()
                   << "; a given mesh entity must have only one topology.");
         }
@@ -1470,34 +1471,6 @@ FieldBase* get_field_by_name( const std::string& name, const MetaData & metaData
   }
 
   return field;
-}
-
-void MetaData::dump_all_meta_info(std::ostream& out) const
-{
-  out << "MetaData info...(ptr=" << this << ")\n";
-
-  out << "spatial dimension = " << m_spatial_dimension << "\n";
-
-  out << "  Entity rank names:\n";
-  for (size_t i = 0, e = m_entity_rank_names.size(); i != e; ++i) {
-    out << "    " << i << ": " << m_entity_rank_names[i] << "\n";
-  }
-  out << "  Special Parts:\n";
-  out << "    Universal part ord = " << m_universal_part->mesh_meta_data_ordinal() << "\n";
-  out << "    Owns part ord = " << m_owns_part->mesh_meta_data_ordinal() << "\n";
-  out << "    Shared part ord = " << m_shares_part->mesh_meta_data_ordinal() << "\n";
-
-  out << "  All parts:\n";
-  const PartVector& all_parts = m_part_repo.get_all_parts();
-  for(const Part* part : all_parts) {
-    print(out, "    ", *part);
-  }
-
-  out << "  All fields:\n";
-  const FieldVector& all_fields = m_field_repo.get_fields();
-  for(const FieldBase* field : all_fields) {
-     print(out, "    ", *field);
-  }
 }
 
 void sync_to_host_and_mark_modified(const MetaData& meta)

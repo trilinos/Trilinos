@@ -26,11 +26,13 @@ ADD_SUBDIRECTORIES(
   Map
   MatrixMatrix
   Merge
+  MPIAdvance
   MultiVector
   Node
   Operator
   PerformanceCGSolve
   Sort
+  Spaces
   Utils
   RowMatrixTransposer
   Tsqr

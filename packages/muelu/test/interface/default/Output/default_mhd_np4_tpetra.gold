@@ -7,6 +7,7 @@ smoother ->
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
+ timer for apply = 0   [unused]
  subdomain solver parameters -> 
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
@@ -42,6 +43,7 @@ smoother ->
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
+ timer for apply = 0   [unused]
  subdomain solver parameters -> 
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
@@ -74,6 +76,8 @@ matrixmatrix: kernel params ->
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

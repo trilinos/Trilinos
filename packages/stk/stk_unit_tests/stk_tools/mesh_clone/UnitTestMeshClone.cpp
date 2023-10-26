@@ -37,7 +37,6 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_tools/mesh_clone/MeshCloneUtils.hpp>
@@ -189,12 +188,12 @@ void expect_equal_fields(stk::mesh::MetaData &newMeta, stk::mesh::FieldBase &old
 
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<oldField.entity_rank(); rank++)
   {
-    EXPECT_EQ(oldField.max_size(rank), newField.max_size(rank));
+    EXPECT_EQ(oldField.max_size(), newField.max_size());
   }
 
   ASSERT_EQ(stk::io::has_field_output_type(oldField), stk::io::has_field_output_type(newField));
   if (stk::io::has_field_output_type(oldField)) {
-    EXPECT_EQ(stk::io::get_field_output_type(oldField)->name(), stk::io::get_field_output_type(newField)->name());
+    EXPECT_EQ(stk::io::get_field_output_type(oldField), stk::io::get_field_output_type(newField));
   }
 
   expect_equal_data_traits(oldField.data_traits(), newField.data_traits());
@@ -299,7 +298,7 @@ protected:
   {
     for (const std::string & partName : partNames) {
       stk::mesh::Part * part = get_meta().get_part(partName);
-      ThrowRequire(part != nullptr);
+      STK_ThrowRequire(part != nullptr);
       get_meta().declare_attribute_no_delete(*part, &m_noDeleteAttribute);
       get_meta().declare_attribute_with_delete(*part, new WithDeleteAttribute);
     }

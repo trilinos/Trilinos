@@ -52,7 +52,6 @@
 
 #include "MueLu_FilteredAFactory_decl.hpp"
 
-#include "MueLu_FactoryManager.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -484,11 +483,9 @@ namespace MueLu {
     Array<bool> vals_dropped_indicator(vals.size(),false);
 
     // In the badAggNeighbors loop, if the entry has any number besides NAN, I add it to the diagExtra and then zero the guy.
-
     RCP<Aggregates>            aggregates     = Get< RCP<Aggregates> >           (currentLevel, "Aggregates");
     RCP<AmalgamationInfo>      amalgInfo      = Get< RCP<AmalgamationInfo> >     (currentLevel, "UnAmalgamationInfo");
     LO                          numAggs       = aggregates->GetNumAggregates();
-    Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0);
 
     // Check map nesting
     RCP<const Map> rowMap = A.getRowMap();
@@ -502,16 +499,27 @@ namespace MueLu {
 
     // Lists of nodes in each aggregate
     struct {
-      Array<LO> ptr,nodes, unaggregated;
+      // GH: For now, copy everything to host until we properly set this factory to run device code
+      // Instead, we'll copy data into HostMirrors and run the algorithms on host, saving optimization for later.
+      typename Aggregates::LO_view             ptr,   nodes,   unaggregated;
+      typename Aggregates::LO_view::HostMirror ptr_h, nodes_h, unaggregated_h;
     } nodesInAgg;
     aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
+    nodesInAgg.ptr_h =          Kokkos::create_mirror_view(nodesInAgg.ptr);
+    nodesInAgg.nodes_h =        Kokkos::create_mirror_view(nodesInAgg.nodes);
+    nodesInAgg.unaggregated_h = Kokkos::create_mirror_view(nodesInAgg.unaggregated);
+    Kokkos::deep_copy(nodesInAgg.ptr_h,          nodesInAgg.ptr);
+    Kokkos::deep_copy(nodesInAgg.nodes_h,        nodesInAgg.nodes);
+    Kokkos::deep_copy(nodesInAgg.unaggregated_h, nodesInAgg.unaggregated);
+    Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0); // GH: this is needed on device, grab the pointer after we call ComputeNodesInAggregate
+
     LO graphNumCols = G.GetImportMap()->getLocalNumElements();
     Array<bool> filter(graphNumCols, false);
 
     // Loop over the unaggregated nodes. Blitz those rows. We don't want to smooth singletons.
-    for(LO i=0; i<nodesInAgg.unaggregated.size(); i++) {
+    for(LO i=0; i< (LO)nodesInAgg.unaggregated_h.extent(0); i++) {
       for (LO m = 0; m < (LO)blkSize; m++) {
-        LO row = amalgInfo->ComputeLocalDOF(nodesInAgg.unaggregated[i],m);
+        LO row = amalgInfo->ComputeLocalDOF(nodesInAgg.unaggregated_h(i),m);
         if (row >= (LO)numRows) continue;
         size_t index_start = rowptr[row];
         A.getLocalRowView(row, indsA, valsA);
@@ -524,7 +532,7 @@ namespace MueLu {
             vals[index_start+k] = ZERO;
         }
       }
-    }//end nodesInAgg.unaggregated.size();
+    }//end nodesInAgg.unaggregated.extent(0);
 
 
     std::vector<LO> badCount(numAggs,0);
@@ -532,7 +540,7 @@ namespace MueLu {
     // Find the biggest aggregate size in *nodes*
     LO maxAggSize=0;
     for(LO i=0; i<numAggs; i++)
-      maxAggSize = std::max(maxAggSize,nodesInAgg.ptr[i+1] - nodesInAgg.ptr[i]);
+      maxAggSize = std::max(maxAggSize,nodesInAgg.ptr_h(i+1) - nodesInAgg.ptr_h(i));
 
 
     // Loop over all the aggregates
@@ -545,14 +553,14 @@ namespace MueLu {
     size_t numSymDrops = 0;
 
     for(LO i=0; i<numAggs; i++) {
-      LO numNodesInAggregate = nodesInAgg.ptr[i+1] - nodesInAgg.ptr[i];
+      LO numNodesInAggregate = nodesInAgg.ptr_h(i+1) - nodesInAgg.ptr_h(i);
       if(numNodesInAggregate == 0) continue;
 
       // Find the root *node*
       LO root_node = INVALID;
-      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
-        if(aggregates->IsRoot(nodesInAgg.nodes[k])) {
-          root_node = nodesInAgg.nodes[k]; break;
+      for (LO k=nodesInAgg.ptr_h(i); k < nodesInAgg.ptr_h(i+1); k++) {
+        if(aggregates->IsRoot(nodesInAgg.nodes_h(k))) {
+          root_node = nodesInAgg.nodes_h(k); break;
         }
       }
 
@@ -591,7 +599,7 @@ namespace MueLu {
       // Go through the filtered graph and count the number of connections to the badAggNeighbors
       // if there are 2 or more of these connections, remove them from the bad list.
 
-      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
+      for (LO k=nodesInAgg.ptr_h(i); k < nodesInAgg.ptr_h(i+1); k++) {
         ArrayView<const LO> nodeNeighbors  = G.getNeighborVertices(k);
         for (LO kk=0; kk < nodeNeighbors.size(); kk++) {
           if ( (vertex2AggId[nodeNeighbors[kk]] >= 0) && (vertex2AggId[nodeNeighbors[kk]] < numAggs))
@@ -603,7 +611,7 @@ namespace MueLu {
       for (LO k=0; k < (LO) badAggNeighbors.size(); k++) {
         if (badCount[badAggNeighbors[k]] <= 1 ) reallyBadAggNeighbors.push_back(badAggNeighbors[k]);
       }
-      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
+      for (LO k=nodesInAgg.ptr_h(i); k < nodesInAgg.ptr_h(i+1); k++) {
         ArrayView<const LO> nodeNeighbors  = G.getNeighborVertices(k);
         for (LO kk=0; kk < nodeNeighbors.size(); kk++) {
           if ( (vertex2AggId[nodeNeighbors[kk]] >= 0) && (vertex2AggId[nodeNeighbors[kk]] < numAggs))
@@ -615,8 +623,8 @@ namespace MueLu {
       // We remove the INVALID marker when we do this so we don't wind up doubling this up later
       for(LO b=0; b<(LO)reallyBadAggNeighbors.size(); b++) {
         LO bad_agg = reallyBadAggNeighbors[b];
-        for (LO k=nodesInAgg.ptr[bad_agg]; k < nodesInAgg.ptr[bad_agg+1]; k++) {
-          LO bad_node = nodesInAgg.nodes[k];
+        for (LO k=nodesInAgg.ptr_h(bad_agg); k < nodesInAgg.ptr_h(bad_agg+1); k++) {
+          LO bad_node = nodesInAgg.nodes_h(k);
           for(LO j = 0; j < (LO)blkSize; j++) {
             LO bad_row = amalgInfo->ComputeLocalDOF(bad_node,j);
             if (bad_row >= (LO)numRows) continue;
@@ -637,8 +645,8 @@ namespace MueLu {
       // Now lets fill the rows in this aggregate and figure out the diagonal lumping
       // We loop over each node in the aggregate and then over the neighbors of that node
 
-      for(LO k=nodesInAgg.ptr[i]; k<nodesInAgg.ptr[i+1]; k++) {
-        LO row_node = nodesInAgg.nodes[k];
+      for(LO k=nodesInAgg.ptr_h(i); k<nodesInAgg.ptr_h(i+1); k++) {
+        LO row_node = nodesInAgg.nodes_h(k);
 
         // Set up filtering array
         ArrayView<const LO> indsG = G.getNeighborVertices(row_node);

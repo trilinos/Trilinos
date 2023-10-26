@@ -50,7 +50,7 @@ void EigenVerify::create_mesh_data(stk::io::StkMeshIoBroker * mesh_data,
 
 void EigenVerify::load_time_data(const int m)
 {
-  Teuchos::RCP<Ioss::Region> ioss_region = mesh_data[m]->get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioss_region = mesh_data[m]->get_input_ioss_region();
 
   const int numTimeSteps =
     ioss_region->get_property("state_count").get_int();
@@ -143,7 +143,7 @@ void compute_field_error(
 {
   const stk::mesh::MetaData & meta = bulkdata.mesh_meta_data();
 
-  const unsigned field_size = field->max_size(stk::topology::NODE_RANK);
+  const unsigned field_size = field->max_size();
   const unsigned nDim = meta.spatial_dimension();
 
   stk::mesh::Selector select_used =

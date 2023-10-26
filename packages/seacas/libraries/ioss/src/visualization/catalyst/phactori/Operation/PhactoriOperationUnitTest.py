@@ -30,22 +30,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from Operation.test_PhactoriVtkDataExportOperation import *
-from Operation.test_PhactoriSegmentCellSampler3 import *
-from Operation.test_PhactoriSegment import *
-from Operation.test_PhactoriPointSourceFromJsonList import *
-from Operation.test_PhactoriSampledCellInfo import *
-from Operation.test_PhactoriGeometricCellSampler1 import *
-from Operation.test_PhactoriVtkCellOperations import *
-from Operation.test_PhactoriDataArtifactMetaDataControl import *
-from Operation.test_PhactoriCreateSegmentsNormalToCells import *
-from Operation.test_PhactoriMarkCellSurfaceStatus2 import *
-from Operation.test_PhactoriSliceWithPlaneOperation import *
-from Operation.test_PhactoriThresholdOperation import *
-from Operation.test_PhactoriContourOperation import *
-from Operation.test_PhactoriClipPlaneOperation import *
+if True:
+  from Operation.test_PhactoriVtkDataExportOperation import *
+  from Operation.test_PhactoriSegmentCellSampler3 import *
+  from Operation.test_PhactoriSegment import *
+  from Operation.test_PhactoriPointSourceFromJsonList import *
+  from Operation.test_PhactoriSampledCellInfo import *
+  from Operation.test_PhactoriGeometricCellSampler1 import *
+  from Operation.test_PhactoriVtkCellOperations import *
+  from Operation.test_PhactoriVariableInfo import *
+  from Operation.test_PhactoriDataArtifactMetaDataControl import *
+  from Operation.test_PhactoriCreateSegmentsNormalToCells import *
+  from Operation.test_PhactoriMarkCellSurfaceStatus2 import *
+  from Operation.test_PhactoriSliceWithPlaneOperation import *
+  from Operation.test_PhactoriExtractBlockOperation import *
+  from Operation.test_PhactoriThresholdOperation import *
+  from Operation.test_PhactoriContourOperation import *
+  from Operation.test_PhactoriClipPlaneOperation import *
+  from Operation.test_PhactoriExtractSurfaceOperation import *
+  from Operation.test_PhactoriCellDataToPointDataOperation import *
+  from Operation.test_PhactoriPointDataToCellDataOperation import *
+  from Operation.test_PhactoriMergeBlocksOperation import *
+if False:
+  print("if statement for temporarily moving tests during development")
 
 if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
+
+

@@ -131,6 +131,7 @@ read_matrix_mm(const std::string& mm_file,
   }
 
   A->FillComplete();
+  delete infile;
 
   return A;
 }
@@ -196,6 +197,7 @@ read_vector_mm(const std::string& mm_file,
       b->ReplaceGlobalValue(irow++, icol, val);
     }
   }
+  delete infile;
 
   return b;
 }

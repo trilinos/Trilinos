@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef ParallelDisksH
-#define ParallelDisksH
+#pragma once
 
 #include <string>
 
@@ -34,4 +32,3 @@ namespace Excn {
     ParallelDisks &operator=(const ParallelDisks &);
   };
 } // namespace Excn
-#endif

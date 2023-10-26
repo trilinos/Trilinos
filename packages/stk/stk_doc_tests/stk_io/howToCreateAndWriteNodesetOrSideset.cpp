@@ -44,7 +44,6 @@
 #include "stk_unit_test_utils/MeshFixture.hpp"
 #include "stk_io/WriteMesh.hpp"
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_unit_test_utils/BuildMesh.hpp>
 

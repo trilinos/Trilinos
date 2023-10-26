@@ -53,10 +53,6 @@
 #include "Piro_Epetra_TrapezoidRuleSolver.hpp"
 #endif
 
-#ifdef HAVE_PIRO_RYTHMOS
-#include "Piro_Epetra_RythmosSolver.hpp"
-#endif
-
 #include "Teuchos_TestForException.hpp"
 
 #include <string>
@@ -156,23 +152,6 @@ SolverFactory::getSource<Piro::Epetra::AdaptiveSolutionManager>()
 }
 #endif /* HAVE_PIRO_NOX */
 
-
-#ifdef HAVE_PIRO_RYTHMOS
-template <>
-std::string
-SolverFactory::getLabel<Rythmos::IntegrationObserverBase<double> >()
-{
-  return "Rythmos Observer";
-}
-
-template <>
-Provider<Rythmos::IntegrationObserverBase<double> > &
-SolverFactory::getSource<Rythmos::IntegrationObserverBase<double> >()
-{
-  return rythmosObserverSource_;
-}
-#endif /* HAVE_PIRO_RYTHMOS */
-
 } // namespace Epetra
 
 } // namespace Piro
@@ -232,14 +211,6 @@ Piro::Epetra::SolverFactory::createSolver(
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
       this->create<NOX::Epetra::Observer>(piroParams);
     result = Teuchos::rcp(new Piro::Epetra::NewmarkSolver(piroParams, model, observer));
-  } else
-#endif
-
-#ifdef HAVE_PIRO_RYTHMOS
-  if (type == "Rythmos") {
-    const Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > observer =
-      this->create<Rythmos::IntegrationObserverBase<double> >(piroParams);
-    result = Teuchos::rcp(new Piro::Epetra::RythmosSolver(piroParams, model, observer));
   } else
 #endif
 

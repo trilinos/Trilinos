@@ -52,9 +52,9 @@ namespace Amesos2 {
   template <class S, class LO, class GO, class D>
   typename Sacado::UQ::PCE<S>::cijk_type
   get_pce_cijk(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
-    const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
-    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
+    const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
   {
     if (A != Teuchos::null) {
       return Kokkos::cijk(A->getLocalValuesDevice(Tpetra::Access::ReadOnly));
@@ -80,17 +80,17 @@ namespace Amesos2 {
     public Solver< Tpetra::CrsMatrix<Sacado::UQ::PCE<Storage>,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device> >,
+                                     Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >,
                    Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
                                        LocalOrdinal,
                                        GlobalOrdinal,
-                                       Kokkos::Compat::KokkosDeviceWrapperNode<Device> >
+                                       Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >
                    >
   {
   public:
 
     typedef Sacado::UQ::PCE<Storage> Scalar;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
 
@@ -512,10 +512,10 @@ namespace Amesos2 {
              class ST, class LO, class GO, class D >
   struct create_solver_with_supported_type<
     ConcreteSolver,
-    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >,
-    Tpetra::MultiVector<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> > > {
+    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> >,
+    Tpetra::MultiVector<Sacado::UQ::PCE<ST>,LO,GO,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > > {
     typedef Sacado::UQ::PCE<ST> SC;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<D> NO;
+    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> NO;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Matrix;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> Vector;
     static Teuchos::RCP<Solver<Matrix,Vector> >
@@ -524,10 +524,10 @@ namespace Amesos2 {
           Teuchos::RCP<const Vector> B )
     {
       ctassert<
-        Meta::is_same<
+        std::is_same_v<
           typename MatrixTraits<Matrix>::scalar_t,
           typename MultiVecAdapter<Vector>::scalar_t
-        >::value
+        >
       > same_scalar_assertion;
       (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
 
@@ -546,10 +546,10 @@ namespace Amesos2 {
     typedef typename Scalar::value_type BaseScalar;
     typedef typename solver_traits<ConcreteSolver>::supported_scalars supported_scalars;
     static const bool value =
-      Meta::if_then_else<Meta::is_same<supported_scalars, Meta::nil_t>::value,
-                         Meta::true_type,
+      std::conditional_t<std::is_same_v<supported_scalars, Meta::nil_t>,
+                         std::true_type,
                          Meta::type_list_contains<supported_scalars,
-                                                  BaseScalar> >::type::value;
+                                                  BaseScalar> >::value;
   };
 
 

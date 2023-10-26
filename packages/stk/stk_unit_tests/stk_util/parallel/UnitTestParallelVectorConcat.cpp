@@ -50,7 +50,8 @@ public:
 };
 
 
-TEST(UnitTestParallel, testParallelVectorConcat) {
+TEST(UnitTestParallel, testParallelVectorConcat)
+{
   int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
   int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
   //
@@ -187,28 +188,32 @@ TEST(UnitTestParallel, testParallelVectorConcat) {
   }
 }
 
-TEST(UnitTestParallel, testParallelVectorConcatLargeBuffer)
+TEST(UnitTestParallel, test_bool_ParallelVectorConcat)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2)
+  int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  //
+  //  concat bool lists, each process P creates P-1 bools
+  //
   {
-    GTEST_SKIP();
-  }
-
-  using Item = std::pair<double,double>;
-  const size_t bufSize = size_t(std::numeric_limits<int>::max())/sizeof(Item) + 1000;
-  std::vector<Item> localBuf(bufSize);
-
-  const int myrank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  for (size_t i=0; i < bufSize; ++i) {
-    localBuf[i] = std::make_pair(static_cast<double>(i + myrank),static_cast<double>(i + myrank));
-  }
-
-  std::vector<Item>globalBuf;
-  stk::parallel_vector_concat(MPI_COMM_WORLD, localBuf, globalBuf);
-  EXPECT_EQ(globalBuf.size(), 2*bufSize);
-
-  for (size_t j=0; j < bufSize; ++j) {
-    EXPECT_EQ(globalBuf[j], Item(double(j), double(j)));
-    EXPECT_EQ(globalBuf[bufSize + j], Item(double(1 + j), double(1 + j)));
+    std::vector<bool> localVec;
+    for(int i=0; i<mpi_rank-1; ++i) {
+      const bool val = i%2==0 ? true : false;
+      localVec.push_back(val);
+    }
+    std::vector<bool> globalVec;
+    int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localVec, globalVec);
+    EXPECT_EQ(status, MPI_SUCCESS);
+    std::vector<bool> expectedVec;
+    for(int iproc=0; iproc<mpi_size; ++iproc) {
+      for(int i=0; i<iproc-1; ++i) {
+        const bool val = i%2==0 ? true : false;
+        expectedVec.push_back(val);
+      }
+    }
+    for(unsigned int i=0; i<expectedVec.size(); ++i) {
+      EXPECT_EQ(globalVec[i], expectedVec[i]);
+    }
   }
 }
+

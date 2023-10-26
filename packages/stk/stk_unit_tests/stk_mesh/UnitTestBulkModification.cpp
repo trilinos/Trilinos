@@ -90,7 +90,7 @@ public:
 
     bulk_data.modification_begin();
     m_ring_mesh.generate_mesh( );
-    ThrowRequire(bulk_data.modification_end());
+    STK_ThrowRequire(bulk_data.modification_end());
 
     m_ring_mesh.fixup_node_ownership( );
 

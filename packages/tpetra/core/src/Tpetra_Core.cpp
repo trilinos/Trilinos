@@ -47,6 +47,7 @@
 
 #include <Kokkos_Core.hpp>
 #include "Tpetra_Details_checkLaunchBlocking.hpp"
+#include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
 
 namespace Tpetra {
 
@@ -240,6 +241,11 @@ namespace Tpetra {
       const int myRank = 0;
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
+
+      // Add Kokkos calls to the TimeMonitor if the environment says so
+      Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
+      Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
   }
@@ -258,6 +264,11 @@ namespace Tpetra {
       const int myRank = 0;
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
+
+      // Add Kokkos::deep calls to the TimeMonitor if the environment says so
+      Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
+      Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
 
@@ -300,6 +311,11 @@ namespace Tpetra {
       // MPI_Comm_rank without first checking MPI_Finalized.
       const int myRank = comm->getRank ();
       initKokkosIfNeeded (argc, argv, myRank);
+
+      // Add Kokkos calls to the TimeMonitor if the environment says so
+      Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
+      Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
     wrappedDefaultComm_ = comm;

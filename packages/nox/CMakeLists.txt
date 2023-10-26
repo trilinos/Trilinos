@@ -156,6 +156,23 @@ COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
   )
 MESSAGE(STATUS "PETSc Abstractions: ${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC}")
 
+# For the stratimikos/epetra stack
+COMBINED_OPTION( NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
+  DEP_OPTIONS_NAMES NOX_ENABLE_Epetra
+                    NOX_ENABLE_EpetraExt
+                    NOX_ENABLE_ThyraCore
+                    NOX_ENABLE_ThyraEpetraAdapters
+                    NOX_ENABLE_ThyraEpetraExtAdapters
+                    NOX_ENABLE_Stratimikos
+                    Stratimikos_ENABLE_Belos
+                    Stratimikos_ENABLE_Ifpack
+                    Stratimikos_ENABLE_Amesos
+  DOCSTR "Enables support for the Stratimikos/Epetra linear solver stack."
+    " Defaults to ON if the Epetra, EpetraExt, ThyraCore, ThyraTpetraAdapters, ThyraEpetraExtAdapters Stratimikos, Amesos, and Ifpack are all enabled,"
+    " otherwise defaults to OFF."
+  )
+MESSAGE(STATUS "Stratimikos/Epetra Stack: ${NOX_ENABLE_STRATIMIKOS_EPETRA_STACK}")
+
 ###################################################
 ###################################################
 
@@ -181,8 +198,6 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 #
 # Exclude files for source package.
 #
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 TRIBITS_EXCLUDE_FILES(
   src-loca/python

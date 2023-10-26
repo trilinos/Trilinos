@@ -48,18 +48,16 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
 #ifdef HAVE_XPETRA_EPETRA
     #include "Epetra_config.h"
 #endif
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     #ifdef HAVE_XPETRA_TPETRA
         #include <Tpetra_Map.hpp>
     #endif
-#endif
 
 namespace Xpetra {
 
@@ -68,9 +66,9 @@ namespace Xpetra {
   // Serial node or OpenMP node (but not both)
 #ifdef HAVE_XPETRA_EPETRA
 # ifdef EPETRA_HAVE_OMP
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
+  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode EpetraNode;
 # else
-  typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode EpetraNode;
 # endif
 #endif
 
@@ -85,7 +83,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class Map
     : public Teuchos::Describable
   {
@@ -221,13 +219,11 @@ namespace Xpetra {
     // it to return the base map.
     virtual RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getMap() const;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type local_map_type;
 
     /// \brief Get the local Map for Kokkos kernels.
     virtual local_map_type getLocalMap () const = 0;
-#endif
 #endif
 
     //@}

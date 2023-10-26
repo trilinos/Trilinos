@@ -89,14 +89,14 @@ computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp)
   if (status != NOX::Abstract::Group::Ok)
   {
     utils.out() << "NOX::LineSearch::Utils::Slope::computeSlope -  Unable to apply Jacobian!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Check that F exists
   if (!grp.isF())
   {
     utils.out() << "NOX::LineSearch::Utils::Slope::computeSlope - Invalid F" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Return <v, F> = F' * J * dir = <J'F, dir> = <g, dir>
@@ -117,7 +117,7 @@ computeSlopeWithOutJac(const Abstract::Vector& dir,
   if (!grp.isF())
   {
     utils.out() << "NOX::LineSearch::Utils::Slope::computeSlope - Invalid F" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Compute the perturbation parameter

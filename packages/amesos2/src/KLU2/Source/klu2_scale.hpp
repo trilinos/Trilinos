@@ -135,7 +135,7 @@ Int KLU_scale           /* return TRUE if successful, FALSE otherwise */
     {
         for (row = 0 ; row < n ; row++)
         {
-            W [row] = EMPTY ;
+            W [row] = AMESOS2_KLU2_EMPTY ;
         }
     }
 

@@ -22,8 +22,8 @@ class BoundingSurface {
 public:
   static BoundingSurface & build( stk::mesh::MetaData & meta, const std::string & name, Surface * surf );
   const std::string & name() const { return myName; }
-  const Surface & surface() const { ThrowAssert(mySurface); return *mySurface; }
-  Surface & surface() { ThrowAssert(mySurface); return *mySurface; }
+  const Surface & surface() const { STK_ThrowAssert(mySurface); return *mySurface; }
+  Surface & surface() { STK_ThrowAssert(mySurface); return *mySurface; }
 private:
   BoundingSurface(const std::string & surfName, Surface * surf);
   std::string myName;

@@ -104,14 +104,14 @@ void copy_surface_to_block_mapping(const stk::mesh::MetaData &oldMeta, stk::mesh
   for(size_t i=0;i<oldSurfacesInMap.size();++i)
   {
     stk::mesh::Part* surfaceNew = get_corresponding_part(newMeta, oldSurfacesInMap[i]);
-    ThrowRequireWithSierraHelpMsg(surfaceNew != nullptr);
+    STK_ThrowRequireWithSierraHelpMsg(surfaceNew != nullptr);
 
     std::vector<const stk::mesh::Part*> oldBlocks = oldMeta.get_blocks_touching_surface(oldSurfacesInMap[i]);
     std::vector<const stk::mesh::Part*> newBlocks(oldBlocks.size());
     for(size_t ii=0;ii<oldBlocks.size();++ii)
     {
       stk::mesh::Part* newBlock = get_corresponding_part(newMeta, oldBlocks[ii]);
-      ThrowRequireWithSierraHelpMsg(newBlock != nullptr);
+      STK_ThrowRequireWithSierraHelpMsg(newBlock != nullptr);
       newBlocks[ii] = newBlock;
     }
     newMeta.set_surface_to_block_mapping(surfaceNew, newBlocks);
@@ -309,6 +309,21 @@ void make_nodes_shared(const stk::mesh::BulkData& inputBulk,
     outputBulk.add_node_sharing(newEntity, sharedProc);
 }
 
+void copy_all_field_data(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSelector, stk::mesh::BulkData &outputBulk)
+{
+  for (int iRank = 0; iRank < inputBulk.mesh_meta_data().entity_rank_count(); ++iRank) {
+    const auto rank = static_cast<stk::topology::rank_t>(iRank);
+    for (const stk::mesh::Bucket * bucket : inputBulk.get_buckets(rank, inputSelector)) {
+      for (stk::mesh::Entity oldEntity : *bucket) {
+        const stk::mesh::Entity newEntity = outputBulk.get_entity(rank, inputBulk.identifier(oldEntity));
+        if (outputBulk.is_valid(newEntity)) {
+          copy_field_data(inputBulk, rank, oldEntity, newEntity, outputBulk);
+        }
+      }
+    }
+  }
+}
+
 void copy_bucket_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSelector, const stk::mesh::Bucket *bucket, stk::mesh::BulkData &outputBulk)
 {
   stk::mesh::EntityRank rank = bucket->entity_rank();
@@ -320,7 +335,6 @@ void copy_bucket_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selec
 
     if(!is_comm_self(outputBulk) && rank == stk::topology::NODE_RANK && bucket->shared())
       make_nodes_shared(inputBulk, oldEntity, outputBulk, newEntity);
-    copy_field_data(inputBulk, rank, oldEntity, newEntity, outputBulk);
   }
 }
 
@@ -330,7 +344,6 @@ void copy_side_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selecto
   {
     if(should_copy_bucket(bucket, outputBulk))
     {
-      stk::mesh::EntityRank rank = bucket->entity_rank();
       stk::mesh::PartVector newParts = get_new_parts(bucket, outputBulk);
 
       for(stk::mesh::Entity oldEntity : *bucket)
@@ -351,9 +364,6 @@ void copy_side_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selecto
             }
           }
         }
-
-        if(outputBulk.is_valid(newEntity))
-          copy_field_data(inputBulk, rank, oldEntity, newEntity, outputBulk);
       }
     }
   }
@@ -367,7 +377,7 @@ void copy_sidesets(const stk::mesh::BulkData & inputBulk, stk::mesh::Selector in
   for (const stk::mesh::SideSet * inputSideSet : inputSideSets) {
     const std::string & partName = inputSideSet->get_name();
     const stk::mesh::Part * outputPart = outputMeta.get_part(partName);
-    ThrowRequire(outputPart != nullptr);
+    STK_ThrowRequire(outputPart != nullptr);
 
     stk::mesh::SideSet & outputSideSet = outputBulk.create_sideset(*outputPart, inputSideSet->is_from_input());
 
@@ -377,7 +387,7 @@ void copy_sidesets(const stk::mesh::BulkData & inputBulk, stk::mesh::Selector in
 
       if (inputSelector(inputBulk.bucket(inputElement))) {
         stk::mesh::Entity outputEntity = outputBulk.get_entity(inputBulk.entity_key(inputElement));
-        ThrowRequire(outputBulk.is_valid(outputEntity));
+        STK_ThrowRequire(outputBulk.is_valid(outputEntity));
         outputSideSet.add(outputEntity, inputOrdinal);
       }
     }
@@ -410,6 +420,8 @@ void copy_relations_for_remaining_ranks(const stk::mesh::BulkData& inputBulk, co
 
 void copy_selected(const stk::mesh::BulkData& inputBulk, const stk::mesh::Selector& inputSelector, stk::mesh::BulkData& outputBulk)
 {
+  outputBulk.deactivate_field_updating();
+
   outputBulk.modification_begin();
   create_entities_of_rank(inputBulk, inputSelector, stk::topology::NODE_RANK, outputBulk);
   create_entities_of_rank(inputBulk, inputSelector, stk::topology::ELEM_RANK, outputBulk);
@@ -437,6 +449,9 @@ void copy_selected(const stk::mesh::BulkData& inputBulk, const stk::mesh::Select
   copy_relations(inputBulk, inputSelector, stk::topology::EDGE_RANK, stk::topology::NODE_RANK, outputBulk);
   copy_relations_for_remaining_ranks(inputBulk, inputSelector, outputBulk);
   outputBulk.modification_end();
+
+  outputBulk.allocate_field_data();
+  copy_all_field_data(inputBulk, inputSelector, outputBulk);
 }
 
 void copy_bulk(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSelector, stk::mesh::BulkData &outputBulk)
@@ -497,7 +512,7 @@ void destroy_all_orphans(const stk::mesh::BulkData &inBulk, stk::mesh::BulkData 
   {
     destroy_upward_connected_aura_entities(outputBulk, entity, outputBulk.entity_rank(entity));
     bool didDestroy = outputBulk.destroy_entity(entity);
-    ThrowRequireMsg(didDestroy, "entity key: " << outputBulk.entity_key(entity));
+    STK_ThrowRequireMsg(didDestroy, "entity key: " << outputBulk.entity_key(entity));
   }
   outputBulk.modification_end();
 }
@@ -505,8 +520,8 @@ void destroy_all_orphans(const stk::mesh::BulkData &inBulk, stk::mesh::BulkData 
 
 void copy_mesh(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSelector, stk::mesh::BulkData &outputBulk)
 {
-  ThrowRequireMsg(&inputBulk != &outputBulk, "Can't copy to same mesh.");
-  ThrowRequireMsg(inputBulk.in_modifiable_state() == false, "Can't copy mesh during modification.");
+  STK_ThrowRequireMsg(&inputBulk != &outputBulk, "Can't copy to same mesh.");
+  STK_ThrowRequireMsg(inputBulk.in_modifiable_state() == false, "Can't copy mesh during modification.");
   copy_meta_with_io_attributes(inputBulk.mesh_meta_data(), outputBulk.mesh_meta_data());
   copy_bulk(inputBulk, inputSelector, outputBulk);
   destroy_all_orphans(inputBulk, outputBulk);

@@ -12,9 +12,10 @@
 
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_AuxMetaData.hpp>
+#include <Akri_FieldRef.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_MasterElement.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -22,6 +23,9 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
+#include <Akri_RefinementSupport.hpp>
+#include <Akri_BoundingBox.hpp>
+#include <Akri_Composite_Surface.hpp>
 
 namespace krino{
 
@@ -33,6 +37,14 @@ double relative_crossing_position(const double ls0, const double ls1)
 }
 
 //----------------------------------------------------------------
+
+BoundingBox IC_Alg::get_surface_bounding_box()
+{
+  BoundingBox bbox;
+  surface_list.insert_into(bbox);
+  return bbox;
+}
+
 void IC_Alg::execute(const double time)
 { /* %TRACE[ON]% */ Trace trace__("krino::IC_Analytic_Alg::execute()"); /* %TRACE% */
 
@@ -62,9 +74,9 @@ void IC_Alg::execute(const double time)
 
     for (int n = 0; n < length; ++n)
     {
-      ThrowAssert(&(dist[n]) != NULL);
+      STK_ThrowAssert(&(dist[n]) != NULL);
 
-      const Vector3d x(&coord[spatial_dim*n], spatial_dim);
+      const stk::math::Vector3d x(&coord[spatial_dim*n], spatial_dim);
 
       dist[n] = surface_list.point_signed_distance_with_narrow_band(x, levelSet.narrow_band_size());
     }
@@ -77,7 +89,7 @@ void IC_Alg::execute(const double time)
     DistanceSweeper::fix_sign_by_sweeping(mesh, dField, surface_list.get_signed_narrow_band_size(levelSet.narrow_band_size()));
   }
 
-  if(CDFEM_Support::get(meta).get_nonconformal_adapt_target_count() > 0)
+  if(RefinementSupport::get(meta).get_nonconformal_adapt_target_count() > 0)
   {
     compute_IC_error_indicator();
   }
@@ -96,18 +108,18 @@ void IC_Alg::compute_IC_error_indicator()
   const FieldRef dField = levelSet.get_distance_field();
   stk::mesh::Selector fieldSelector(dField);
   const int spatial_dim = meta.spatial_dimension();
-  const auto & cdfem_support = CDFEM_Support::get(meta);
+  const auto & refinementSupport = RefinementSupport::get(meta);
 
   const auto & aux_meta = AuxMetaData::get(meta);
-  const auto & indicator_field_name = cdfem_support.get_nonconformal_adapt_indicator_name();
+  const auto & indicator_field_name = refinementSupport.get_nonconformal_adapt_indicator_name();
   auto indicator_field =
       aux_meta.get_field(stk::topology::ELEMENT_RANK, indicator_field_name);
   const auto & elem_buckets =
       mesh.get_buckets(stk::topology::ELEMENT_RANK, meta.locally_owned_part() & fieldSelector);
 
   std::vector<double> nodal_signed_distances;
-  std::vector<Vector3d> nodal_coordinates;
-  std::vector<Vector3d> edge_midpoints;
+  std::vector<stk::math::Vector3d> nodal_coordinates;
+  std::vector<stk::math::Vector3d> edge_midpoints;
   std::vector<double> midpoint_signed_distances, midpoint_interp_signed_distances;
   int edge_nodes[] = {0, 0};
 
@@ -134,7 +146,7 @@ void IC_Alg::compute_IC_error_indicator()
         auto node = nodes[n];
         nodal_signed_distances[n] = *field_data<double>(dField, node);
         const double * coords_data = field_data<double>(xField, node);
-        nodal_coordinates[n] = Vector3d(coords_data, spatial_dim);
+        nodal_coordinates[n] = stk::math::Vector3d(coords_data, spatial_dim);
       }
 
       // Iterate edges, find location of crossing on the edge and compare to location of crossing
@@ -146,11 +158,11 @@ void IC_Alg::compute_IC_error_indicator()
       double err = 0.;
       for (int e=0; e < num_edges; ++e)
       {
-        ThrowAssert(topo.edge_topology(e).num_nodes() == 2);
+        STK_ThrowAssert(topo.edge_topology(e).num_nodes() == 2);
         topo.edge_node_ordinals(e, edge_nodes);
 
-        const Vector3d & x0 = nodal_coordinates[edge_nodes[0]];
-        const Vector3d & x1 = nodal_coordinates[edge_nodes[1]];
+        const stk::math::Vector3d & x0 = nodal_coordinates[edge_nodes[0]];
+        const stk::math::Vector3d & x1 = nodal_coordinates[edge_nodes[1]];
         edge_midpoints[e] = 0.5*(x0+x1);
         const double edge_length_sqr = (x1-x0).length_squared();
 

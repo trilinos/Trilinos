@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   using MV = Tpetra::MultiVector<SC>;
   using LO = map_type::local_ordinal_type; // int LO;
   using GO = map_type::global_ordinal_type; // int GO;
-  // typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+  // typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
 
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   {

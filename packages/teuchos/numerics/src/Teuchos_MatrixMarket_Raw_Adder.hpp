@@ -620,6 +620,12 @@ namespace Teuchos {
         /// "Computed" means "as seen from the matrix data."
         const Ordinal numCols() const { return seenNumCols_; }
 
+        /// \brief Computed number of columns.
+        ///
+        /// "Computed" means "as seen from the matrix data."
+        const Ordinal numEntries() const { return seenNumEntries_; }
+
+
       private:
         Ordinal expectedNumRows_, expectedNumCols_, expectedNumEntries_;
         Ordinal seenNumRows_, seenNumCols_, seenNumEntries_;

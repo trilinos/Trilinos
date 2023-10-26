@@ -112,7 +112,7 @@ void check_quad_4_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_quad4());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_quad4());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::QUAD_4;
 
@@ -234,7 +234,7 @@ void check_quad_6_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_quad6());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_quad6());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::QUAD_6;
 
@@ -356,7 +356,7 @@ void check_quad_8_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_quad8());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_quad8());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::QUAD_8;
 
@@ -474,7 +474,7 @@ void check_quad_9_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_quad9());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_quad9());
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::QUAD_9;
 

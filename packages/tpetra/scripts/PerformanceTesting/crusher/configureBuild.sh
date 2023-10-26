@@ -1,12 +1,18 @@
 #!/bin/bash
-#SBATCH -A cfd116
+#SBATCH -A csc465
 #SBATCH -J configureAndBuildTrilinos
 #SBATCH -t 05:00:00
 #SBATCH -N 1
 #SBATCH --mail-type=BEGIN,END
 
-TRILINOS_SRC="$HOME/crusher/sources/trilinos/Trilinos-muelu"
-TRILINOS_BUILD="$HOME/crusher/builds/performance"
+# ExaWind
+# #SBATCH -A cfd116
+
+#TRILINOS_SRC="$HOME/crusher/sources/trilinos/Trilinos-muelu"
+# FIXME JHU TEMPORARY!!! 2022-07-22
+TRILINOS_SRC="$HOME/crusher/sources/trilinos/Trilinos"
+# FIXME JHU TEMPORARY!!!
+TRILINOS_BUILD="$HOME/crusher/builds/performance-new"
 BUILD_TYPE="RELEASE"
 
 #proxies to allow git operations from compute nodes
@@ -16,13 +22,35 @@ export http_proxy=http://proxy.ccs.ornl.gov:3128/
 export https_proxy=http://proxy.ccs.ornl.gov:3128/
 export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov,*.ncrc.gov',*.olcf.ornl.gov
 
-source "${TRILINOS_SRC}/packages/tpetra/scripts/PerformanceTesting/crusher/load_modules.sh"
+
+#source "${TRILINOS_SRC}/packages/tpetra/scripts/PerformanceTesting/crusher/load_modules.sh"
+# FIXME JHU TEMPORARY!!!
+source "$HOME/crusher/crusher_scripts/load_modules.sh"
 module list
 
+if [[ "1" == "0" ]]; then
+
 cd ${TRILINOS_SRC}
-git fetch
-git checkout develop
-git merge
+#git fetch
+#git checkout develop
+#git merge
+gitCmds=(
+  "git fetch"
+  "git checkout develop"
+  "git merge"
+)
+
+for gc in "${gitCmds[@]}"; do
+  echo "${gc[@]}"
+  realgc=($gc)
+  "${realgc[@]}"
+  if [[ "$?" == "0" ]]; then
+    echo "  \"${realgc[@]}\" succeeded"
+  else
+    echo "  \"${realgc[@]}\" failed"
+  fi
+done
+fi
 
 cd ${TRILINOS_BUILD}
 
@@ -40,8 +68,8 @@ rm -Rf CMakeCache.txt CMakeFiles
 
 THE_REAL_NETCDF_C_ROOT="${CRAY_NETCDF_DIR}/crayclang/10.0"
 
-#CMAKE_OPTIONS="--debug-trycompile"
-CMAKE_OPTIONS=""
+CMAKE_OPTIONS="--debug-trycompile"
+#CMAKE_OPTIONS=""
 
 ARGS=(
     -GNinja
@@ -49,6 +77,8 @@ ARGS=(
     -D Trilinos_ENABLE_Fortran:BOOL=OFF
     -D CMAKE_INSTALL_PREFIX:PATH="${trilinos_install_dir}"
     -D CMAKE_BUILD_TYPE:STRING=$BUILD_TYPE
+
+
 
     #-D MPI_USE_COMPILER_WRAPPERS:BOOL=ON
     # JHU: 2022-02-07 I've been unable to get Trilinos to build with the Cray MPI wrappers.
@@ -58,13 +88,16 @@ ARGS=(
     -D MPI_EXEC:STRING="srun"
     #-D CMAKE_CXX_FLAGS:STRING="-I${ROCM_PATH}/include"
     -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L${ROCM_PATH}/lib -lamdhip64"
-    -D CMAKE_CXX_COMPILER:PATH="$HIP_PATH/bin/hipcc"
+    #-D CMAKE_CXX_COMPILER:PATH="$HIP_PATH/bin/hipcc"
+    -D CMAKE_CXX_COMPILER:PATH="$HIP_CLANG_PATH/../../bin/hipcc"
     -D CMAKE_CXX_FLAGS:STRING="-I${CRAY_MPICH_DIR}/include"
-    -D CMAKE_C_COMPILER:PATH="$HIP_PATH/bin/hipcc"
+    #-D CMAKE_C_COMPILER:PATH="$HIP_PATH/bin/hipcc"
+    -D CMAKE_C_COMPILER:PATH="$HIP_CLANG_PATH/../../bin/hipcc"
     -D CMAKE_C_FLAGS:STRING="-I${CRAY_MPICH_DIR}/include"
     -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L${CRAY_MPICH_DIR}/lib -lmpi -L${CRAY_MPICH_ROOTDIR}/gtl/lib -lmpi_gtl_hsa -L/${CRAY_BINUTILS_VERSION}/cce/x86_64/lib -lcraymath -lu -lf"
 
     -D BUILD_SHARED_LIBS:BOOL=ON
+
 
     -D Trilinos_ENABLE_TESTS:BOOL=OFF
     -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
@@ -103,7 +136,7 @@ ARGS=(
       -D Trilinos_ENABLE_PanzerMiniEM:BOOL=ON
       -D PanzerMiniEM_ENABLE_EXAMPLES:BOOL=ON
       -D PanzerMiniEM_ENABLE_TESTS:BOOL=ON
-    -D Trilinos_ENABLE_Percept:BOOL=OFF
+    -D Trilinos_ENABLE_Percept=OFF
     -D Trilinos_ENABLE_Teko:BOOL=ON
     -D Trilinos_ENABLE_Tpetra:BOOL=ON
     -D   Tpetra_ENABLE_EXAMPLES:BOOL=ON
@@ -160,7 +193,17 @@ ARGS=(
     -D   Zlib_LIBRARY_DIRS:PATH="${OLCF_ZLIB_ROOT}"/lib
 )
 
+CMAKE_START_TIME=`date`
 cmake ${CMAKE_OPTIONS} "${ARGS[@]}" $TRILINOS_SRC |& tee configure_trilinos_performance.log
+CMAKE_END_TIME=`date`
 
+BUILD_START_TIME=`date`
 NUMTHREADS=31
-numactl -C $(seq -s, 0 2 $NUMTHREADS) ninja -j $(seq -s, 0 2 $NUMTHREADS | tr ',' '\n' | wc -l)
+numactl -C $(seq -s, 0 2 $NUMTHREADS) ninja -j $(seq -s, 0 2 $NUMTHREADS | tr ',' '\n' | wc -l) |& tee trilinos_build.log
+BUILD_END_TIME=`date`
+
+echo "cmake start: $CMAKE_START_TIME"
+echo "cmake end: $CMAKE_END_TIME"
+echo ""
+echo "build start: $BUILD_START_TIME"
+echo "build end: $BUILD_END_TIME"

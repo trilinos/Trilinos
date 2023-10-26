@@ -129,15 +129,16 @@ private:
     void destroy_dependent_ghosts(Entity entity,
                                   EntityProcVec& entitiesToRemoveFromSharing,
                                   EntityVector& auraEntitiesToDestroy);
+    void remove_dependent_ghosts(Entity entity,
+                                 int remoteProc,
+                                 EntityProcVec& entitiesToRemoveFromSharing,
+                                 EntityVector& auraEntitiesToDestroy);
     void add_entity_to_same_ghosting(Entity entity, Entity connectedGhost);
     void remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing,
                                       EntityVector & entitiesNoLongerShared);
     void internal_resolve_formerly_shared_entities(const EntityVector& entitiesNoLongerShared);
     void reset_undeleted_entity_states_to_unchanged();
     void ensure_meta_data_is_committed();
-
-    bool internal_resolve_node_sharing(modification_optimization opt);
-    bool internal_modification_end_after_node_sharing_resolution(modification_optimization opt);
 
     stk::mesh::BulkData &m_bulkData;
     std::vector<stk::mesh::EntityState> m_entity_states;

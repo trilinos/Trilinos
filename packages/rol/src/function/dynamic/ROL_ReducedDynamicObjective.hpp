@@ -269,6 +269,28 @@ public:
     }
   }
 
+  void update(const Vector<Real> &x, UpdateType type, int iter = -1) {
+    if (useSketch_) {
+      stateSketch_->update(type);
+      adjointSketch_->update(type);
+      if (useHessian_) stateSensSketch_->update(type);
+    }
+    for (size_type i = 0; i < uhist_.size(); ++i) uhist_[i]->zero();
+    val_ = static_cast<Real>(0);
+    isValueComputed_   = false;
+    isStateComputed_   = false;
+    isAdjointComputed_ = false;
+
+    if (iter >= 0 && iter%freq_==0 && print_) {
+      std::stringstream name;
+      name << "optvector." << iter << ".txt";
+      std::ofstream file;
+      file.open(name.str());
+      x.print(file);
+      file.close();
+    }
+  }
+
   Real value( const Vector<Real> &x, Real &tol ) {
     if (!isValueComputed_) {
       int eflag(0);

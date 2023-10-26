@@ -106,12 +106,12 @@
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
 
 /* FLIP is a "negation about -1", and is used to mark an integer i that is
- * normally non-negative.  FLIP (EMPTY) is EMPTY.  FLIP of a number > EMPTY
+ * normally non-negative.  FLIP (AMESOS2_KLU2_EMPTY) is AMESOS2_KLU2_EMPTY.  FLIP of a number > AMESOS2_KLU2_EMPTY
  * is negative, and FLIP of a number < EMTPY is positive.  FLIP (FLIP (i)) = i
- * for all integers i.  UNFLIP (i) is >= EMPTY. */
-#define EMPTY (-1)
+ * for all integers i.  UNFLIP (i) is >= AMESOS2_KLU2_EMPTY. */
+#define AMESOS2_KLU2_EMPTY (-1)
 #define FLIP(i) (-(i)-2)
-#define UNFLIP(i) (((i) < EMPTY) ? FLIP (i) : (i))
+#define UNFLIP(i) (((i) < AMESOS2_KLU2_EMPTY) ? FLIP (i) : (i))
 
 template <typename Entry, typename Int>
 size_t KLU_kernel   /* final size of LU on output */
@@ -196,67 +196,6 @@ size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
     Int Offi [ ],
     Entry Offx [ ],
     KLU_common<Entry, Int> *Common  /* the control input/output structure */
-) ;
-
-template <typename Entry, typename Int>
-void KLU_lsolve
-(
-    /* inputs, not modified: */
-    Int n,
-    Int Lp [ ],
-    Int Li [ ],
-    Unit LU [ ],
-    Int nrhs,
-    /* right-hand-side on input, solution to Lx=b on output */
-    Entry X [ ]
-) ;
-
-template <typename Entry, typename Int>
-void KLU_ltsolve
-(
-    /* inputs, not modified: */
-    Int n,
-    Int Lp [ ],
-    Int Li [ ],
-    Unit LU [ ],
-    Int nrhs,
-#ifdef COMPLEX
-    Int conj_solve,
-#endif
-    /* right-hand-side on input, solution to L'x=b on output */
-    Entry X [ ]
-) ;
-
-
-template <typename Entry, typename Int>
-void KLU_usolve
-(
-    /* inputs, not modified: */
-    Int n,
-    Int Up [ ],
-    Int Ui [ ],
-    Unit LU [ ],
-    Entry Udiag [ ],
-    Int nrhs,
-    /* right-hand-side on input, solution to Ux=b on output */
-    Entry X [ ]
-) ;
-
-template <typename Entry, typename Int>
-void KLU_utsolve
-(
-    /* inputs, not modified: */
-    Int n,
-    Int Up [ ],
-    Int Ui [ ],
-    Unit LU [ ],
-    Entry Udiag [ ],
-    Int nrhs,
-#ifdef COMPLEX /* TODO : Need to fix this */
-    Int conj_solve,
-#endif
-    /* right-hand-side on input, solution to U'x=b on output */
-    Entry X [ ]
 ) ;
 
 template <typename Entry, typename Int>

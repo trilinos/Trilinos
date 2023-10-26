@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@
 #include <stdlib.h> /* getenv */
 #include <string.h> /* strlen */
 
-#define TRUE 1
+#define TRUE  1
 #define FALSE 0
 
 #define INSYMBOL "FOR0"
@@ -71,18 +71,18 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 
   if (*iunit > -100 && *iunit < 100) {
 #if Build64
-    sprintf(string, "%02ld", labs(*iunit));
+    snprintf(string, 3, "%02ld", labs(*iunit));
 #else
-    sprintf(string, "%02d", abs(*iunit));
+    snprintf(string, 3, "%02d", abs(*iunit));
 #endif
 
     if (*iunit > 0) {
       ExtSymbol = FALSE;
-      sprintf(symbol, "%s%s", INSYMBOL, string);
+      snprintf(symbol, 7, "%s%s", INSYMBOL, string);
     }
     else {
       ExtSymbol = TRUE;
-      sprintf(symbol, "%s%s", EXSYMBOL, string);
+      snprintf(symbol, 7, "%s%s", EXSYMBOL, string);
     }
 
     if ((darg = (char *)getenv(symbol)) != (char *)NULL) {
@@ -95,9 +95,9 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
     }
     else if (!ExtSymbol) {
 #if Build64
-      sprintf(name, "fort.%ld", labs(*iunit));
+      snprintf(name, nlen, "fort.%ld", labs(*iunit));
 #else
-      sprintf(name, "fort.%d", abs(*iunit));
+      snprintf(name, nlen, "fort.%d", abs(*iunit));
 #endif
       *ln = strlen(name);
     }

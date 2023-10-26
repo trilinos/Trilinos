@@ -101,4 +101,4 @@ TEUCHOS_UNIT_TEST(ERK_ForwardEuler, FSAL)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

@@ -2,6 +2,7 @@
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
@@ -21,15 +22,17 @@ protected:
   }
 
   virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                             unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
+                             unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                             unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity())
   {
-    ThrowRequireMsg(bucketCapacity == stk::mesh::impl::BucketRepository::default_bucket_capacity, "allocate_bulk: BulkDataFaceSharingTester doesn't recognize non-default bucket-capacity");
+    STK_ThrowRequireMsg((initialBucketCapacity == stk::mesh::get_default_initial_bucket_capacity()) &&
+                        (maximumBucketCapacity == stk::mesh::get_default_maximum_bucket_capacity()),
+                        "allocate_bulk: BulkDataFaceSharingTester doesn't recognize non-default bucket capacity");
 
     metaData = stk::mesh::MeshBuilder(communicator)
                 .set_spatial_dimension(m_spatialDim)
                 .set_entity_rank_names(m_entityRankNames)
-                .set_aura_option(auraOption)
-                .set_bucket_capacity(bucketCapacity).create_meta_data();
+                .set_aura_option(auraOption).create_meta_data();
 
     set_bulk(std::make_shared<stk::unit_test_util::BulkDataFaceSharingTester>(get_meta(), get_comm(), auraOption));
   }

@@ -66,6 +66,7 @@ using Teuchos::rcpFromRef;
 typedef int (*int_func)(HYPRE_Solver, int);
 typedef int (*double_func)(HYPRE_Solver, double);
 typedef int (*double_int_func)(HYPRE_Solver, double, int);
+typedef int (*int_double_func)(HYPRE_Solver, int, double);
 typedef int (*int_int_func)(HYPRE_Solver, int, int);
 typedef int (*int_star_func)(HYPRE_Solver, int*);
 typedef int (*int_star_star_func)(HYPRE_Solver, int**);
@@ -110,6 +111,14 @@ class FunctionParameter{
       double_int_func_(funct),
       int_param1_(param2),
       double_param1_(param1) {}
+
+    //! Single int, single double constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_double_func funct, int param1, double param2):
+      chooser_(chooser),
+      option_(10),
+      int_double_func_(funct),
+      int_param1_(param1),
+      double_param1_(param2) {}
 
     FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1, int param2):
       chooser_(chooser),
@@ -250,6 +259,8 @@ class FunctionParameter{
         return int_int_int_double_int_int_func_(solver, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
       } else if (option_ == 9) {
         return char_star_func_(solver, char_star_param_);
+      } else if (option_ == 10) {
+        return int_double_func_(solver, int_param1_, double_param1_);
       } else {
         IFPACK_CHK_ERR(-2);
       }
@@ -274,6 +285,8 @@ class FunctionParameter{
         return int_int_int_double_int_int_func_(precond, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
       } else if (option_ == 9) {
         return char_star_func_(solver, char_star_param_);
+      } else if (option_ == 10) {
+        return int_double_func_(precond, int_param1_, double_param1_);
       } else {
         IFPACK_CHK_ERR(-2);
       }
@@ -287,7 +300,11 @@ class FunctionParameter{
   static bool isFuncIntIntDoubleDouble(std::string funct_name) {
     return (hypreMapIntIntDoubleDoubleFunc_.find(funct_name) != hypreMapIntIntDoubleDoubleFunc_.end());
   }
-  
+
+  static bool isFuncIntDouble(std::string funct_name) {
+    return (hypreMapIntDoubleFunc_.find(funct_name) != hypreMapIntDoubleFunc_.end());
+  }
+
   static bool isFuncIntIntIntDoubleIntInt(std::string funct_name) {
     return (hypreMapIntIntIntDoubleIntIntFunc_.find(funct_name) != hypreMapIntIntIntDoubleIntIntFunc_.end());
              }
@@ -302,6 +319,7 @@ class FunctionParameter{
     int_func int_func_;
     double_func double_func_;
     double_int_func double_int_func_;
+    int_double_func int_double_func_;
     int_int_func int_int_func_;
     int_star_func int_star_func_;
     double_star_func double_star_func_;
@@ -324,6 +342,7 @@ class FunctionParameter{
   static const std::map<std::string, int_func> hypreMapIntFunc_;
   static const std::map<std::string, double_func> hypreMapDoubleFunc_;
   static const std::map<std::string, double_int_func> hypreMapDoubleIntFunc_;
+  static const std::map<std::string, int_double_func> hypreMapIntDoubleFunc_;
   static const std::map<std::string, int_int_func> hypreMapIntIntFunc_;
   static const std::map<std::string, int_star_func> hypreMapIntStarFunc_;
   static const std::map<std::string, double_star_func> hypreMapDoubleStarFunc_;
@@ -531,6 +550,10 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
           int arg0 = pl.get<int>("arg 0");
           int arg1 = pl.get<int>("arg 1");
           IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Preconditioner, funct_name , arg0, arg1))));
+        } else if (FunctionParameter::isFuncIntDouble(funct_name)) {
+          int arg0 = pl.get<int>("arg 0");
+          double arg1 = pl.get<double>("arg 1");
+          IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Preconditioner, funct_name , arg0, arg1))));
         } else if (FunctionParameter::isFuncIntIntDoubleDouble(funct_name)) {
           int arg0 = pl.get<int>("arg 0");
           int arg1 = pl.get<int>("arg 1");
@@ -590,6 +613,13 @@ int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solve
   IFPACK_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() - double,int function pointer
+
+//==============================================================================
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, double), int parameter1, double parameter2){
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
+} //SetParameter() - int,double function pointer
 
 //==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2){

@@ -71,4 +71,4 @@ TEUCHOS_UNIT_TEST(TimeEventBase, getValidParameters)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

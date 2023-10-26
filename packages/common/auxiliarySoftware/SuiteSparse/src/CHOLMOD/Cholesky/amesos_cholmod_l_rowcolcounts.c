@@ -75,7 +75,7 @@ static int amesos_initialize_node  /* initial work for kth node in postordered e
     p = Post [k] ;
     /* adjust the weight if p is not a root of the etree */
     parent = Parent [p] ;
-    if (parent != EMPTY)
+    if (parent != TRILINOS_CHOLMOD_EMPTY)
     {
 	ColCount [parent]-- ;
     }
@@ -123,7 +123,7 @@ static void amesos_process_edge
 	/* p is a leaf of the subtree of u */
 	ColCount [p]++ ;
 	prevleaf = PrevLeaf [u] ;
-	if (prevleaf == EMPTY)
+	if (prevleaf == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    /* p is the first leaf of subtree of u; RowCount will be incremented
 	     * by the length of the path in the etree from p up to u. */
@@ -177,7 +177,7 @@ static void amesos_finalize_node    /* compute UNION (p, Parent [p]) */
 {
     /* all nodes in the SetParent tree rooted at p now have as their final
      * root the node Parent [p].  This computes UNION (p, Parent [p]) */
-    if (Parent [p] != EMPTY)
+    if (Parent [p] != TRILINOS_CHOLMOD_EMPTY)
     {
 	SetParent [p] = Parent [p] ;
     }
@@ -294,7 +294,7 @@ int CHOLMOD(rowcolcounts)
 
     for (i = 0 ; i < nrow ; i++)
     {
-	First [i] = EMPTY ;
+	First [i] = TRILINOS_CHOLMOD_EMPTY ;
     }
 
     /* postorder traversal of the etree */
@@ -303,19 +303,19 @@ int CHOLMOD(rowcolcounts)
 	/* node i of the etree is the kth node in the postordered etree */
 	i = Post [k] ;
 
-	/* i is a leaf if First [i] is still EMPTY */
+	/* i is a leaf if First [i] is still TRILINOS_CHOLMOD_EMPTY */
 	/* ColCount [i] starts at 1 if i is a leaf, zero otherwise */
-	ColCount [i] = (First [i] == EMPTY) ? 1 : 0 ;
+	ColCount [i] = (First [i] == TRILINOS_CHOLMOD_EMPTY) ? 1 : 0 ;
 
 	/* traverse the path from node i to the root, stopping if we find a
 	 * node r whose First [r] is already defined. */
 	len = 0 ;
-	for (r = i ; (r != EMPTY) && (First [r] == EMPTY) ; r = Parent [r])
+	for (r = i ; (r != TRILINOS_CHOLMOD_EMPTY) && (First [r] == TRILINOS_CHOLMOD_EMPTY) ; r = Parent [r])
 	{
 	    First [r] = k ;
 	    len++ ;
 	}
-	if (r == EMPTY)
+	if (r == TRILINOS_CHOLMOD_EMPTY)
 	{
 	    /* we hit a root node, the level of which is zero */
 	    len-- ;
@@ -367,7 +367,7 @@ int CHOLMOD(rowcolcounts)
 		    return (FALSE) ;
 		}
 		/* flag column j as having been seen */
-		Anext [j] = EMPTY ;
+		Anext [j] = TRILINOS_CHOLMOD_EMPTY ;
 	    }
 	    /* fset is now valid */
 	    ASSERT (CHOLMOD(dump_perm) (fset, nf, ncol, "fset", Common)) ;
@@ -416,8 +416,8 @@ int CHOLMOD(rowcolcounts)
     }
     for (i = 0 ; i < nrow ; i++)
     {
-	PrevLeaf [i] = EMPTY ;
-	PrevNbr [i] = EMPTY ;
+	PrevLeaf [i] = TRILINOS_CHOLMOD_EMPTY ;
+	PrevNbr [i] = TRILINOS_CHOLMOD_EMPTY ;
 	SetParent [i] = i ;	/* every node is in its own set, by itself */
     }
 
@@ -467,7 +467,7 @@ int CHOLMOD(rowcolcounts)
 	    inode = amesos_initialize_node (k, Post, Parent, ColCount, PrevNbr) ;
 
 	    /* for all cols j whose first postordered row is k: */
-	    for (j = Head [k] ; j != EMPTY ; j = Anext [j])
+	    for (j = Head [k] ; j != TRILINOS_CHOLMOD_EMPTY ; j = Anext [j])
 	    {
 		/* k is the first postordered row in column j of A */
 		/* for all rows i in column j: */
@@ -487,7 +487,7 @@ int CHOLMOD(rowcolcounts)
 		}
 	    }
 	    /* clear link list k */
-	    Head [k] = EMPTY ;
+	    Head [k] = TRILINOS_CHOLMOD_EMPTY ;
 	    /* update SetParent: UNION (inode, Parent [inode]) */
 	    amesos_finalize_node (inode, Parent, SetParent) ;
 	}
@@ -500,7 +500,7 @@ int CHOLMOD(rowcolcounts)
     for (j = 0 ; j < nrow ; j++)
     {
 	parent = Parent [j] ;
-	if (parent != EMPTY)
+	if (parent != TRILINOS_CHOLMOD_EMPTY)
 	{
 	    /* add the ColCount of j to its parent */
 	    ColCount [parent] += ColCount [j] ;
@@ -511,7 +511,7 @@ int CHOLMOD(rowcolcounts)
     /* clear workspace */
     /* ---------------------------------------------------------------------- */
 
-    Common->mark = EMPTY ;
+    Common->mark = TRILINOS_CHOLMOD_EMPTY ;
     CHOLMOD(clear_flag) (Common) ;
     ASSERT (CHOLMOD(dump_work) (TRUE, TRUE, 0, Common)) ;
 

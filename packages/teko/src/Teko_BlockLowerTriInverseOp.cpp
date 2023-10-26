@@ -154,12 +154,12 @@ void BlockLowerTriInverseOp::describe(Teuchos::FancyOStream & out_arg,
                 << ",cols=" <<  blockColCount(L_)
                 << "}\n";
            {
-              OSTab tab(out);
+              OSTab tab2(out);
               *out << "[L Operator] = ";
               *out << Teuchos::describe(*L_,verbLevel);
            }
            {
-              OSTab tab(out);
+              OSTab tab2(out);
               *out << "[invDiag Operators]:\n";
               tab.incrTab();
               for(int i=0;i<blockRowCount(L_);i++) {

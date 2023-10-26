@@ -108,7 +108,7 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionSubset)
     stkIo.add_input_field(mf);
     stkIo.populate_bulk_data();
 
-    double time = stkIo.get_input_io_region()->get_state_time(1);
+    double time = stkIo.get_input_ioss_region()->get_state_time(1);
 
     //+ Populate the fields with data from the input mesh.
     stkIo.read_defined_input_fields(time);

@@ -38,7 +38,6 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_coupling/impl_NamedValues.hpp>
 #include <stk_util/util/ReportHandler.hpp>
-#include <Teuchos_any.hpp>
 #include <cstdint>
 #include <string>
 #include <vector>

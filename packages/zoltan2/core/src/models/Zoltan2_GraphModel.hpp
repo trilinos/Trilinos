@@ -73,7 +73,7 @@ namespace Zoltan2 {
     The template parameter is an InputAdapter, which is an object that
     provides a uniform interface for models to the user's input data.
 
-    GraphModels may represent a local (on-process) graph or 
+    GraphModels may represent a local (on-process) graph or
     a global (all-communicator) graph.
 */
 template <typename Adapter>
@@ -220,7 +220,7 @@ public:
     return nLocalEdges_;
   }
 
-  /*! \brief Return the vtxDist array 
+  /*! \brief Return the vtxDist array
    *  Array of size comm->getSize() + 1
    *  Array[n+1] - Array[n] is number of vertices on rank n
    */
@@ -253,11 +253,11 @@ private:
   const RCP<const Environment > env_;
   const RCP<const Comm<int> > comm_;
 
-  bool localGraph_;    // Flag indicating whether this graph is 
+  bool localGraph_;    // Flag indicating whether this graph is
                        // LOCAL with respect to the process;
                        // if !localGraph_, graph is GLOBAL with respect to
                        // the communicator.
-                       
+
 
   size_t nLocalVertices_;                // # local vertices in built graph
   size_t nGlobalVertices_;               // # global vertices in built graph
@@ -279,7 +279,7 @@ private:
   size_t nGlobalEdges_;                 // # global edges in built graph
   ArrayRCP<gno_t> eGids_;                 // edges of graph built in model
   ArrayRCP<offset_t> eOffsets_;           // edge offsets build in model
-                                          // May be same as adapter's input 
+                                          // May be same as adapter's input
                                           // or may differ
                                           // due to renumbering, self-edge
                                           // removal, or local graph.
@@ -522,7 +522,7 @@ GraphModel<Adapter>::GraphModel(
     // KDDKDD TODO Currently getting global 2nd Adjs and filtering them for
     // KDDKDD TODO local graphs.  That approach is consistent with other
     // KDDKDD TODO adapters, but is more expensive -- why build them just to
-    // KDDKDD TODO throw them away?  Instead, perhaps should build 
+    // KDDKDD TODO throw them away?  Instead, perhaps should build
     // KDDKDD TODO only local adjacencies.
     // KDDKDD TODO Does it suffice to pass a serial comm for local graph?
     try {
@@ -569,7 +569,7 @@ GraphModel<Adapter>::GraphModel(
       ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
                                ewgts, stride, w);
 
-      ArrayRCP<const scalar_t> wgtArray(ewgts, 0, 
+      ArrayRCP<const scalar_t> wgtArray(ewgts, 0,
                                         nLocalEdges_*stride, false);
       eWeights_[w] = input_t(wgtArray, stride);
     }
@@ -598,7 +598,7 @@ void GraphModel<Adapter>::shared_constructor(
   bool removeSelfEdges = modelFlags.test(REMOVE_SELF_EDGES);
   bool subsetGraph = modelFlags.test(BUILD_SUBSET_GRAPH);
 
-  // May modify the graph provided from input adapter; save pointers to 
+  // May modify the graph provided from input adapter; save pointers to
   // the input adapter's data.
   size_t adapterNLocalEdges = nLocalEdges_;
   ArrayRCP<gno_t> adapterVGids = vGids_;     // vertices of graph from adapter
@@ -613,12 +613,12 @@ void GraphModel<Adapter>::shared_constructor(
     // Renumber edge neighbors to be in range [0,nLocalVertices_-1]
 
     // Allocate new space for local graph info
-    // Note that eGids_ and eWeights_[w] may be larger than needed; 
+    // Note that eGids_ and eWeights_[w] may be larger than needed;
     // we would have to pre-count the number of local edges to avoid overalloc
     vGids_ = arcp(new gno_t[nLocalVertices_],
                   0, nLocalVertices_, true);
     eGids_ = arcp(new gno_t[adapterNLocalEdges],
-                  0, adapterNLocalEdges, true);  
+                  0, adapterNLocalEdges, true);
     eOffsets_ = arcp(new offset_t[nLocalVertices_+1],
                      0, nLocalVertices_+1, true);
 
@@ -650,7 +650,7 @@ void GraphModel<Adapter>::shared_constructor(
 
         // Determine whether neighbor vertex is local
         typename std::unordered_map<gno_t, lno_t>::iterator localidx;
-        if ((localidx = globalToLocal.find(adapterEGids[j])) != 
+        if ((localidx = globalToLocal.find(adapterEGids[j])) !=
                         globalToLocal.end()) {
           // neighbor vertex is local
           // Keep the edge and its weights
@@ -659,7 +659,7 @@ void GraphModel<Adapter>::shared_constructor(
             tmpEWeights[w][ecnt] = adapterEWeights[w][j];
 
           ecnt++;
-        }  
+        }
       }
       eOffsets_[i+1] = ecnt;
     }
@@ -696,14 +696,14 @@ void GraphModel<Adapter>::shared_constructor(
     }
 
     // Allocate new memory for edges and offsets, as needed
-    // Note that eGids_ may or may not be larger than needed; 
+    // Note that eGids_ may or may not be larger than needed;
     // would have to pre-count number of edges kept otherwise
     eGids_ = arcp(new gno_t[adapterNLocalEdges],
                   0, adapterNLocalEdges, true);
 
     scalar_t **tmpEWeights = NULL;
     if (subsetGraph || removeSelfEdges) {
-      // May change number of edges and, thus, the offsets 
+      // May change number of edges and, thus, the offsets
       eOffsets_ = arcp(new offset_t[nLocalVertices_+1],
                        0, nLocalVertices_+1, true);
       eOffsets_[0] = 0;
@@ -742,15 +742,15 @@ void GraphModel<Adapter>::shared_constructor(
 
       // Need to filter requested edges to make a unique list,
       // as Tpetra::Map does not return correct info for duplicated entries
-      // (See bug 6412)  
+      // (See bug 6412)
       // The local filter may be more efficient anyway -- fewer communicated
       // values in the Tpetra directory
-      Teuchos::ArrayRCP<gno_t> edgeRemoteUniqueGids = 
+      Teuchos::ArrayRCP<gno_t> edgeRemoteUniqueGids =
                arcp(new gno_t[adapterNLocalEdges], 0, adapterNLocalEdges, true);
 
       size_t nEdgeUnique = 0;
       for (size_t i = 0; i < adapterNLocalEdges; i++) {
-        if (edgeRemoteUniqueMap.find(adapterEGids[i]) == 
+        if (edgeRemoteUniqueMap.find(adapterEGids[i]) ==
             edgeRemoteUniqueMap.end()) {
           edgeRemoteUniqueGids[nEdgeUnique] = adapterEGids[i];
           edgeRemoteUniqueMap[adapterEGids[i]] = nEdgeUnique;
@@ -779,15 +779,15 @@ void GraphModel<Adapter>::shared_constructor(
 
         size_t remoteIdx = edgeRemoteUniqueMap[adapterEGids[j]];
 
-        if (subsetGraph && (edgeRemoteRanks[remoteIdx] == -1)) 
-          continue;  // Skipping edge with neighbor vertex that was not found 
+        if (subsetGraph && (edgeRemoteRanks[remoteIdx] == -1))
+          continue;  // Skipping edge with neighbor vertex that was not found
                      // in communicator
 
         if (consecutiveIdsRequired)
-          // Renumber edge using local number on remote rank plus first 
+          // Renumber edge using local number on remote rank plus first
           // vtx number for remote rank
           eGids_[ecnt] = edgeRemoteLids[remoteIdx]
-                       + vtxDist_[edgeRemoteRanks[remoteIdx]];  
+                       + vtxDist_[edgeRemoteRanks[remoteIdx]];
         else
           eGids_[ecnt] = adapterEGids[j];
 
@@ -897,7 +897,7 @@ void GraphModel<Adapter>::print()
 //    return;
 
   std::ostream *os = env_->getDebugOStream();
-  
+
   int me = comm_->getRank();
 
   *os << me

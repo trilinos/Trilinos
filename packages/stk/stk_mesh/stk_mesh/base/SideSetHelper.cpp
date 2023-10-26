@@ -1,5 +1,6 @@
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SideSetHelper.hpp>
+#include <stk_mesh/base/SideSetUtil.hpp>
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/ExodusTranslator.hpp"
@@ -44,7 +45,7 @@ void SideSetHelper::remove_element_entries_from_sidesets(const Entity entity, st
 void SideSetHelper::remove_side_entry_from_sideset(SideSet* sideset, const SideSetEntry& entry,
                                                    std::set<const Part*> *touchedSidesetParts)
 {
-  ThrowAssert(entry.side != INVALID_CONNECTIVITY_ORDINAL && mesh.entity_rank(entry.element) == stk::topology::ELEM_RANK);
+  STK_ThrowAssert(entry.side != INVALID_CONNECTIVITY_ORDINAL && mesh.entity_rank(entry.element) == stk::topology::ELEM_RANK);
 
   std::vector<SideSetEntry>::iterator lowerBound = std::lower_bound(sideset->begin(), sideset->end(), entry);
 
@@ -137,7 +138,7 @@ void SideSetHelper::add_element_side_entry_to_sideset(SideSetSelector& sidesetSe
     SideSet* sideset = sidesetSelector.sideset();
     const Selector* selector = sidesetSelector.selector();
 
-    ThrowAssertMsg(nullptr != selector, "NULL Element block selector for sideset: " << sideset->get_name());
+    STK_ThrowAssertMsg(nullptr != selector, "NULL Element block selector for sideset: " << sideset->get_name());
 
     if(mesh.bucket(elem).owned() && (*selector)(mesh.bucket(elem))) {
       sideset->add(elem, ordinal);
@@ -220,27 +221,6 @@ void SideSetHelper::fill_coincident_sideset_entries_for_side_using_connectivity(
   }
 }
 
-stk::mesh::Part* SideSetHelper::get_element_block_from_part_ordinals(const stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::PartOrdinal>& partOrdinals)
-{
-    stk::mesh::Part* elementBlockPart = nullptr;;
-    const stk::mesh::PartVector& allParts = bulkData.mesh_meta_data().get_parts();
-    unsigned block_counter = 0;
-
-    for(stk::mesh::PartOrdinal partOrdinal : partOrdinals)
-    {
-      stk::mesh::Part* part = allParts[partOrdinal];
-        if(stk::mesh::is_element_block(*part))
-        {
-            elementBlockPart = part;
-            block_counter++;
-        }
-    }
-
-    bool elementIsAssociatedWithOnlyOneElementBlock = block_counter == 1;
-    ThrowRequireWithSierraHelpMsg(elementIsAssociatedWithOnlyOneElementBlock);
-    ThrowRequireWithSierraHelpMsg(elementBlockPart != nullptr);
-    return elementBlockPart;
-}
 
 bool SideSetHelper::graph_edge_can_be_distinguished(const ElemElemGraph& eeGraph, const GraphEdge& graphEdge, const Selector& selector, bool selectorValue)
 {
@@ -256,12 +236,11 @@ bool SideSetHelper::graph_edge_can_be_distinguished(const ElemElemGraph& eeGraph
   } else {
     // Remote connectivity
     const auto iter = parallelPartInfo.find(graphEdge.elem2());
-    //          ThrowRequireWithSierraHelpMsg(iter != parallelPartInfo.end());
     if(iter == parallelPartInfo.end()) { return false; }
 
-    const std::vector<stk::mesh::PartOrdinal>& otherElementPartOrdinals = iter->second;
+    const std::vector<stk::mesh::PartOrdinal>& otherElementPartOrdinals = iter->second.elementPartOrdinals;
 
-    stk::mesh::Part* otherElementBlockPart = get_element_block_from_part_ordinals(mesh, otherElementPartOrdinals);
+    stk::mesh::Part* otherElementBlockPart = get_element_block_part(mesh, otherElementPartOrdinals);
 
     bool elemSelectorValue = selector(otherElementBlockPart) && activeSelector(otherElementBlockPart);
     if(selectorValue != elemSelectorValue) {
@@ -373,7 +352,7 @@ bool SideSetHelper::element_side_has_remote_coincidence_using_elem_elem_graph(En
     EntityVector sideNodes;
     impl::fill_element_side_nodes_from_topology(mesh.bucket(element).topology(), mesh.begin_nodes(element), ordinal, sideNodes);
     stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, element, sideRank, sideNodes);
-    ThrowRequire(connectedOrdAndPerm.second != INVALID_PERMUTATION);
+    STK_ThrowRequire(connectedOrdAndPerm.second != INVALID_PERMUTATION);
     bool localPolarity = mesh.bucket(element).topology().sub_topology(sideRank, connectedOrdAndPerm.first).is_positive_polarity(connectedOrdAndPerm.second);
 
     for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elemLocalId)) {
@@ -559,14 +538,17 @@ void SideSetHelper::warn_about_internal_sidesets()
   }
 }
 
-void SideSetHelper::reset_internal_sideset_detection(bool rankedPartsChangedOnElems)
+void SideSetHelper::reset_internal_sideset_detection(bool rankedPartsChangedOnElemsOrSides)
 {
   internalSidesetOrdinals.clear();
 
   if(mesh.parallel_size() > 1 && mesh.has_face_adjacent_element_graph()) {
     const ElemElemGraph &graph = mesh.get_face_adjacent_element_graph();
+
     bool needToUpdateParallelPartInfo = (graph.mod_cycle_when_graph_modified() > m_modCycleWhenParallelPartInfoUpdated);
-    if (needToUpdateParallelPartInfo || stk::is_true_on_any_proc(mesh.parallel(), rankedPartsChangedOnElems)) {
+    bool globalRankedPartsChangedOnElemsOrSides = stk::is_true_on_any_proc(mesh.parallel(), rankedPartsChangedOnElemsOrSides);
+
+    if (needToUpdateParallelPartInfo || globalRankedPartsChangedOnElemsOrSides) {
       parallelPartInfo.clear();
 
       impl::populate_part_ordinals_for_remote_edges(mesh, graph, parallelPartInfo);

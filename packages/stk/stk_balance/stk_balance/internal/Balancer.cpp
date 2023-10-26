@@ -55,7 +55,7 @@ void verify_mesh_ids_are_not_too_large(const stk::mesh::BulkData& bulk)
   bool localMeshIdTooLarge = maxMeshId > maxAllowableId;
   bool globalMeshIdTooLarge = stk::is_true_on_any_proc(bulk.parallel(), localMeshIdTooLarge);
 
-  ThrowRequireMsg(!globalMeshIdTooLarge, "Mesh has global-ids too large to represent in the index type that was configured for Trilinos ("<<sizeof(BalanceGlobalNumber)<<" bytes).");
+  STK_ThrowRequireMsg(!globalMeshIdTooLarge, "Mesh has global-ids too large to represent in the index type that was configured for Trilinos ("<<sizeof(BalanceGlobalNumber)<<" bytes).");
 }
 
 bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, unsigned numSubdomainsToCreate, const std::vector<stk::mesh::Selector>& selectors)

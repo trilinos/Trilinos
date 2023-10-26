@@ -41,8 +41,6 @@
 #include <cstddef>                         // for size_t
 #include <stk_mesh/base/MetaData.hpp>      // for MetaData
 #include "Ioss_DatabaseIO.h"               // for DatabaseIO
-#include "Teuchos_RCP.hpp"                 // for RCP::operator->, RCP::RCP<T>
-#include "Teuchos_RCPDecl.hpp"             // for RCP
 #include "mpi.h"                           // for ompi_communicator_t
 #include "stk_io/DatabasePurpose.hpp"      // for READ_MESH
 #include "stk_io/StkMeshIoBroker.hpp"      // for StkMeshIoBroker
@@ -68,7 +66,7 @@ namespace util {
   m_mesh_data.set_active_mesh(ifh);
   m_mesh_data.create_input_mesh();
 
-  auto iossRegion = m_mesh_data.get_input_io_region();
+  auto iossRegion = m_mesh_data.get_input_ioss_region();
   const Iogn::DatabaseIO* database = dynamic_cast<const Iogn::DatabaseIO*>(iossRegion->get_database());
 //  database->set_int_byte_size_api(Ioss::USE_INT64_API);
 
@@ -102,7 +100,7 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
   m_mesh_data.set_active_mesh(ifh);
   m_mesh_data.create_input_mesh();
 
-  auto iossRegion = m_mesh_data.get_input_io_region();
+  auto iossRegion = m_mesh_data.get_input_ioss_region();
   const Iogn::DatabaseIO* database = dynamic_cast<const Iogn::DatabaseIO*>(iossRegion->get_database());
   //  database->set_int_byte_size_api(Ioss::USE_INT64_API);
 

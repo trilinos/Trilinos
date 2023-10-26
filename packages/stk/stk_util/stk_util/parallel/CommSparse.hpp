@@ -95,7 +95,7 @@ public:
   /** Obtain the message buffer for a given processor */
   CommBuffer & send_buffer( int p )
   {
-    ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
+    STK_ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
     if (stk::util::get_common_coupling_version() >= 6) {
@@ -111,7 +111,7 @@ public:
 
   const CommBuffer & send_buffer( int p ) const
   {
-    ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
+    STK_ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
     if (stk::util::get_common_coupling_version() >= 6) {
@@ -128,7 +128,7 @@ public:
   /** Obtain the message buffer for a given processor */
   CommBuffer & recv_buffer( int p )
   {
-    ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
+    STK_ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
     if (stk::util::get_common_coupling_version() >= 6) {
@@ -145,7 +145,7 @@ public:
   /** Obtain the message buffer for a given processor */
   const CommBuffer & recv_buffer( int p ) const
   {
-    ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
+    STK_ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
     if (stk::util::get_common_coupling_version() >= 6) {
@@ -211,9 +211,28 @@ public:
   /** Communicate send buffers to receive buffers, interleave unpacking with
    *    caller-provided functor.  */
   template<typename UNPACK_ALGORITHM>
-  void communicate_with_unpack(const UNPACK_ALGORITHM & alg)
+  void communicate_with_unpack(const UNPACK_ALGORITHM & unpacker)
   {
-    communicate_with_unpacker(alg);
+    auto noExtraWork = [](){};
+    communicate_with_extra_work_and_unpacker(noExtraWork, unpacker, true);
+  }
+
+  /** Communicate send buffers to receive buffers, interleave extra work.
+   */
+  template<typename EXTRA_WORK>
+  void communicate_with_extra_work(const EXTRA_WORK & extraWork)
+  {
+    auto noUnpacker = [](int, CommBuffer&){};
+    communicate_with_extra_work_and_unpacker(extraWork, noUnpacker, true);
+  }
+
+  /** Communicate send buffers to receive buffers, interleave extra work and
+   *  also unpacking with caller-provided functor.
+   */
+  template<typename EXTRA_WORK, typename UNPACK_ALGORITHM>
+  void communicate_with_extra_work_and_unpack(const EXTRA_WORK & extraWork, const UNPACK_ALGORITHM & unpacker)
+  {
+    communicate_with_extra_work_and_unpacker(extraWork, unpacker, true);
   }
 
   /** Reset, but do not reallocate, message buffers for reprocessing.
@@ -227,7 +246,9 @@ private:
   void allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsigned char>& data);
 #endif
   void verify_send_buffers_filled();
-  void communicate_with_unpacker(const std::function<void(int fromProc, CommBuffer& buf)>& functor);
+  void communicate_with_extra_work_and_unpacker(const std::function<void()>& workFunctor,
+                                                const std::function<void(int fromProc, CommBuffer& buf)>& unpackFunctor,
+                                                bool deallocateSendBuffers = false);
 
   ParallelMachine m_comm ;
   int             m_size ;

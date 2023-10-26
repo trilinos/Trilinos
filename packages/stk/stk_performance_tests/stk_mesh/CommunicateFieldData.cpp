@@ -41,7 +41,6 @@
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_topology/topology.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
@@ -352,7 +351,7 @@ void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const s
           set_modify_on_device<double>(ngpFields);
         }
 
-        stk::mesh::communicate_field_data(mesh, ngpFields, true, true);
+        stk::mesh::communicate_field_data(mesh, ngpFields, true);
       }
       batchTimer.stop_batch_timer();
     }

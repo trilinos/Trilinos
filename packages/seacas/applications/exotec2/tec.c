@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -425,17 +425,17 @@ void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_ele
          inode);
   char zname[80];
   char eltype[16];
-  sprintf(zname, "Zone %s_%d", elem_type, elem_id);
+  snprintf(zname, 80, "Zone %s_%d", elem_type, elem_id);
 
   if (ndim == 3 && (node_per_elem == 8 || (node_per_elem == 4 && ifac == 2) ||
                     (node_per_elem == 2 && ifac == 4)))
-    sprintf(eltype, "BRICK");
+    snprintf(eltype, 16, "BRICK");
   else if (ndim == 3 && node_per_elem == 4)
-    sprintf(eltype, "TETRAHEDRON");
+    snprintf(eltype, 16, "TETRAHEDRON");
   else if (ndim == 2 && (node_per_elem == 4 || (node_per_elem == 2 && ifac == 2)))
-    sprintf(eltype, "QUADRILATERAL");
+    snprintf(eltype, 16, "QUADRILATERAL");
   else if (ndim == 2 && node_per_elem == 3)
-    sprintf(eltype, "TRIANGLE");
+    snprintf(eltype, 16, "TRIANGLE");
   else {
     printf("\nBad element type found in teczone\n");
     printf("   Dimensions = %d\n", ndim);

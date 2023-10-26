@@ -53,6 +53,7 @@
 
 #include "Ifpack2_PowerMethod.hpp"
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
+#include "Ifpack2_Details_Chebyshev_Weights.hpp"
 // #include "Ifpack2_Details_ScaledDampedResidual.hpp"
 #include "Ifpack2_Details_ChebyshevKernel.hpp"
 #include "Kokkos_ArithTraits.hpp"
@@ -90,7 +91,7 @@ struct V_ReciprocalThresholdSelfFunctor
   typedef typename XV::execution_space execution_space;
   typedef typename XV::non_const_value_type value_type;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<value_type> KAT;
+  typedef Kokkos::ArithTraits<value_type> KAT;
   typedef typename KAT::mag_type mag_type;
 
   XV X_;
@@ -143,7 +144,7 @@ struct GlobalReciprocalThreshold<TpetraVectorType, true> {
   {
     typedef typename TpetraVectorType::scalar_type scalar_type;
     typedef typename TpetraVectorType::mag_type mag_type;
-    typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+    typedef Kokkos::ArithTraits<scalar_type> STS;
 
     const scalar_type ONE = STS::one ();
     const mag_type min_val_abs = STS::abs (min_val);
@@ -194,7 +195,36 @@ struct LapackHelper{
                            Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> offdiag) {
     throw std::runtime_error("LAPACK does not support the scalar type.");
   }
+
 };
+
+template<class V>
+void
+computeInitialGuessForCG (const V& diagonal, V& x) {
+  using device_type = typename V::node_type::device_type;
+  using range_policy = Kokkos::RangePolicy<typename device_type::execution_space>;
+
+  // Initial randomization of the vector
+  x.randomize();
+
+
+  // Zero the stuff that where the diagonal is equal to one.  These are assumed to
+  // correspond to OAZ rows in the matrix.
+  size_t N = x.getLocalLength();
+  auto d_view = diagonal.template getLocalView<device_type>(Tpetra::Access::ReadOnly);
+  auto x_view = x.template getLocalView<device_type>(Tpetra::Access::ReadWrite);
+
+  auto ONE  = Teuchos::ScalarTraits<typename V::impl_scalar_type>::one();
+  auto ZERO = Teuchos::ScalarTraits<typename V::impl_scalar_type>::zero();
+
+  Kokkos::parallel_for("computeInitialGuessforCG::zero_bcs", range_policy(0,N), KOKKOS_LAMBDA(const size_t & i) {
+      if(d_view(i,0) == ONE)
+        x_view(i,0) = ZERO;       
+    });
+}
+
+
+
 
 
 template<class ScalarType>
@@ -304,7 +334,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
-  textbookAlgorithm_ (false),
+  chebyshevAlgorithm_("first"),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -337,7 +367,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
-  textbookAlgorithm_ (false),
+  chebyshevAlgorithm_("first"),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -384,7 +414,7 @@ setParameters (Teuchos::ParameterList& plist)
   const int defaultEigNormalizationFreq = 1;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
   const bool defaultAssumeMatrixUnchanged = false;
-  const bool defaultTextbookAlgorithm = false;
+  const std::string defaultChebyshevAlgorithm = "first";
   const bool defaultComputeMaxResNorm = false;
   const bool defaultComputeSpectralRadius = true;
   const bool defaultCkUseNativeSpMV = false;
@@ -407,7 +437,7 @@ setParameters (Teuchos::ParameterList& plist)
   int eigNormalizationFreq = defaultEigNormalizationFreq;
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
-  bool textbookAlgorithm = defaultTextbookAlgorithm;
+  std::string chebyshevAlgorithm = defaultChebyshevAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
   bool computeSpectralRadius = defaultComputeSpectralRadius;
   bool ckUseNativeSpMV = defaultCkUseNativeSpMV;
@@ -638,15 +668,40 @@ setParameters (Teuchos::ParameterList& plist)
 
   // We don't want to fill these parameters in, because they shouldn't
   // be visible to Ifpack2::Chebyshev users.
-  if (plist.isParameter ("chebyshev: textbook algorithm")) {
-    textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
+  if (plist.isParameter ("chebyshev: algorithm")) {
+    chebyshevAlgorithm = plist.get<std::string> ("chebyshev: algorithm");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      chebyshevAlgorithm != "first" &&
+      chebyshevAlgorithm != "textbook" &&
+      chebyshevAlgorithm != "fourth" &&
+      chebyshevAlgorithm != "opt_fourth",
+      std::invalid_argument,
+      "Ifpack2::Chebyshev: Ifpack2 only supports \"first\", \"textbook\", \"fourth\", and \"opt_fourth\", for \"chebyshev: algorithm\".");
   }
+
+#ifdef IFPACK2_ENABLE_DEPRECATED_CODE
+  // to preserve behavior with previous input decks, only read "chebyshev:textbook algorithm" setting
+  // if a user has not specified "chebyshev: algorithm"
+  if (!plist.isParameter ("chebyshev: algorithm")) {
+    if (plist.isParameter ("chebyshev: textbook algorithm")) {
+      const bool textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
+      if(textbookAlgorithm){
+        chebyshevAlgorithm = "textbook";
+      } else {
+        chebyshevAlgorithm = "first";
+      }
+    }
+  }
+#endif
+
   if (plist.isParameter ("chebyshev: compute max residual norm")) {
     computeMaxResNorm = plist.get<bool> ("chebyshev: compute max residual norm");
   }
   if (plist.isParameter ("chebyshev: compute spectral radius")) {
     computeSpectralRadius = plist.get<bool> ("chebyshev: compute spectral radius");
   }
+
+
 
   // Test for Ifpack parameters that we won't ever implement here.
   // Be careful to use the one-argument version of get(), since the
@@ -699,7 +754,7 @@ setParameters (Teuchos::ParameterList& plist)
   eigenAnalysisType_ = eigenAnalysisType;
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
-  textbookAlgorithm_ = textbookAlgorithm;
+  chebyshevAlgorithm_ = chebyshevAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
   computeSpectralRadius_ = computeSpectralRadius;
   ckUseNativeSpMV_ = ckUseNativeSpMV;
@@ -826,7 +881,6 @@ Chebyshev<ScalarType, MV>::compute ()
   if (userInvDiag_.is_null ()) {
     Teuchos::RCP<const crs_matrix_type> A_crsMat =
       Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-
     if (D_.is_null ()) { // We haven't computed D_ before
       if (! A_crsMat.is_null () && A_crsMat->isFillComplete ()) {
         // It's a CrsMatrix with a const graph; cache diagonal offsets.
@@ -906,8 +960,9 @@ Chebyshev<ScalarType, MV>::compute ()
                                                                  eigRelTolerance_, eigNormalizationFreq_, stream,
                                                                  computeSpectralRadius_);
     }
-    else
+    else {
       computedLambdaMax = cgMethod (*A_, *D_, eigMaxIters_);
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(
       STS::isnaninf (computedLambdaMax),
       std::runtime_error,
@@ -961,7 +1016,7 @@ Chebyshev<ScalarType, MV>::compute ()
   lambdaMinForApply_ = lambdaMaxForApply_ / userEigRatio_;
   eigRatioForApply_ = userEigRatio_;
 
-  if (! textbookAlgorithm_) {
+  if (chebyshevAlgorithm_ == "first") {
     // Ifpack has a special-case modification of the eigenvalue bounds
     // for the case where the max eigenvalue estimate is close to one.
     const ST one = Teuchos::as<ST> (1);
@@ -1015,7 +1070,10 @@ Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
      "diagonal entries of the matrix has not yet been computed."
      << std::endl << computeBeforeApplyReminder);
 
-  if (textbookAlgorithm_) {
+  if (chebyshevAlgorithm_ == "fourth" || chebyshevAlgorithm_ == "opt_fourth") {
+    fourthKindApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, *D_);
+  }
+  else if (chebyshevAlgorithm_ == "textbook") {
     textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_,
                        lambdaMinForApply_, eigRatioForApply_, *D_);
   }
@@ -1141,8 +1199,8 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
       typedef typename MV::impl_scalar_type IST;
       typedef typename MV::local_ordinal_type LO;
-      typedef Kokkos::Details::ArithTraits<IST> STS;
-      typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+      typedef Kokkos::ArithTraits<IST> ATS;
+      typedef Kokkos::ArithTraits<typename ATS::mag_type> STM;
 
       const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
       for (LO i = 0; i < lclNumRows; ++i) {
@@ -1299,6 +1357,78 @@ textbookApplyImpl (const op_type& A,
 }
 
 template<class ScalarType, class MV>
+void
+Chebyshev<ScalarType, MV>::
+fourthKindApplyImpl (const op_type& A,
+                     const MV& B,
+                     MV& X,
+                     const int numIters,
+                     const ST lambdaMax,
+                     const V& D_inv)
+{
+  // standard 4th kind Chebyshev smoother has \beta_i := 1
+  std::vector<ScalarType> betas(numIters, 1.0);
+  if(chebyshevAlgorithm_ == "opt_fourth"){
+    betas = optimalWeightsImpl<ScalarType>(numIters);
+  }
+
+  const ST invEig = MT(1) / (lambdaMax * boostFactor_);
+
+  // Fetch cached temporary (multi)vector.
+  Teuchos::RCP<MV> Z_ptr = makeTempMultiVector (B);
+  MV& Z = *Z_ptr;
+  
+  // Store 4th-kind result (needed as temporary for bootstrapping opt. 4th-kind Chebyshev)
+  // Fetch the second cached temporary (multi)vector.
+  Teuchos::RCP<MV> X4_ptr = makeSecondTempMultiVector (B);
+  MV& X4 = *X4_ptr;
+
+  // Special case for the first iteration.
+  if (! zeroStartingSolution_) {
+    
+    // X4 = X
+    Tpetra::deep_copy (X4, X);
+
+    if (ck_.is_null ()) {
+      Teuchos::RCP<const op_type> A_op = A_;
+      ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op, ckUseNativeSpMV_));
+    }
+    // Z := (4/3 * invEig)*D_inv*(B-A*X4)
+    // X4 := X4 + Z
+    ck_->compute (Z, MT(4.0/3.0) * invEig, const_cast<V&> (D_inv),
+                   const_cast<MV&> (B), X4, STS::zero());
+
+    // X := X + beta[0] * Z
+    X.update (betas[0], Z, STS::one());
+  }
+  else {
+    // Z := (4/3 * invEig)*D_inv*B and X := 0 + Z.
+    firstIterationWithZeroStartingSolution (Z, MT(4.0/3.0) * invEig, D_inv, B, X4);
+
+    // X := 0 + beta * Z
+    X.update (betas[0], Z, STS::zero());
+  }
+  
+  if (numIters > 1 && ck_.is_null ()) {
+    Teuchos::RCP<const op_type> A_op = A_;
+    ck_ = Teuchos::rcp (new ChebyshevKernel<op_type> (A_op, ckUseNativeSpMV_));
+  }
+
+  for (int i = 1; i < numIters; ++i) {
+    const ST zScale = (2.0 * i - 1.0) / (2.0 * i + 3.0);
+    const ST rScale = MT((8.0 * i + 4.0) / (2.0 * i + 3.0)) * invEig;
+    
+    // Z := rScale*D_inv*(B - A*X4) + zScale*Z.
+    // X4 := X4 + Z
+    ck_->compute (Z, rScale, const_cast<V&> (D_inv),
+                   const_cast<MV&> (B), (X4), zScale);
+    
+    // X := X + beta[i] * Z
+    X.update (betas[i], Z, STS::one());
+  }
+}
+
+template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::MT
 Chebyshev<ScalarType, MV>::maxNormInf (const MV& X) {
   Teuchos::Array<MT> norms (X.getNumVectors ());
@@ -1430,6 +1560,8 @@ ifpackApplyImpl (const op_type& A,
 }
 
 
+
+
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
@@ -1439,11 +1571,12 @@ cgMethodWithInitGuess (const op_type& A,
                           V& r)
 {
   using std::endl;
-  using STS = Teuchos::ScalarTraits<ST>;
   using MagnitudeType = typename STS::magnitudeType;
   if (debug_) {
     *out_ << " cgMethodWithInitGuess:" << endl;
   }
+
+
 
   const ST one = STS::one();
   ST beta, betaOld = one, pAp, pApOld = one, alpha, rHz, rHzOld, rHzOld2 = one, lambdaMax;
@@ -1480,11 +1613,17 @@ cgMethodWithInitGuess (const op_type& A,
       if (debug_) {
         *out_ << " diag[" << iter << "]     = " << diag[iter] << endl;
         *out_ << " offdiag["<< iter-1 << "] = " << offdiag[iter-1] << endl;
-        }
+        *out_ << " rHz = "<<rHz <<endl;
+        *out_ << " alpha = "<<alpha<<endl;
+        *out_ << " beta = "<<beta<<endl;
+      }
     } else {
       diag[iter] = STS::real(pAp/rHzOld);
       if (debug_) {
         *out_ << " diag[" << iter << "]     = " << diag[iter] << endl;
+        *out_ << " rHz = "<<rHz <<endl;
+        *out_ << " alpha = "<<alpha<<endl;
+        *out_ << " beta = "<<beta<<endl;
       }
     }
     rHzOld2 = rHzOld;
@@ -1504,6 +1643,7 @@ Chebyshev<ScalarType, MV>::
 cgMethod (const op_type& A, const V& D_inv, const int numIters)
 {
   using std::endl;
+
   if (debug_) {
     *out_ << "cgMethod:" << endl;
   }
@@ -1513,10 +1653,8 @@ cgMethod (const op_type& A, const V& D_inv, const int numIters)
     r = rcp(new V(A.getDomainMap ()));
     if (eigKeepVectors_)
       eigVector_ = r;
-    // For the first pass, just let the pseudorandom number generator
-    // fill x with whatever values it wants; don't try to make its
-    // entries nonnegative.
-    PowerMethod::computeInitialGuessForPowerMethod (*r, false);
+    // For CG, we need to get the BCs right and we'll use D_inv to get that
+    Details::computeInitialGuessForCG (D_inv,*r);
   } else
     r = eigVector_;
 
@@ -1556,6 +1694,23 @@ makeTempMultiVector (const MV& B)
 }
 
 template<class ScalarType, class MV>
+Teuchos::RCP<MV>
+Chebyshev<ScalarType, MV>::
+makeSecondTempMultiVector (const MV& B)
+{
+  // ETP 02/08/17:  We must check not only if the temporary vectors are
+  // null, but also if the number of columns match, since some multi-RHS
+  // solvers (e.g., Belos) may call apply() with different numbers of columns.
+
+  const size_t B_numVecs = B.getNumVectors ();
+  if (W2_.is_null () || W2_->getNumVectors () != B_numVecs) {
+    W2_ = Teuchos::rcp (new MV (B.getMap (), B_numVecs, false));
+  }
+  return W2_;
+}
+
+
+template<class ScalarType, class MV>
 std::string
 Chebyshev<ScalarType, MV>::
 description () const {
@@ -1568,7 +1723,8 @@ description () const {
       << ", lambdaMax: " << lambdaMaxForApply_
       << ", alpha: " << eigRatioForApply_
       << ", lambdaMin: " << lambdaMinForApply_
-      << ", boost factor: " << boostFactor_;
+      << ", boost factor: " << boostFactor_
+      << ", algorithm: " << chebyshevAlgorithm_;
   if (!userInvDiag_.is_null())
     oss << ", diagonal: user-supplied";
   oss << "}";
@@ -1711,7 +1867,7 @@ describe (Teuchos::FancyOStream& out,
           << "eigNormalizationFreq_: " << eigNormalizationFreq_ << endl
           << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
           << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
-          << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
+          << "chebyshevAlgorithm_: " << chebyshevAlgorithm_ << endl
           << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
     }
   } // print user parameters

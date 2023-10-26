@@ -255,7 +255,7 @@ GLOBAL void TRILINOS_AMD_2
  *	    as (-(j)-2).  Row j has the same pattern as row i.  Note that j
  *	    might later be absorbed into another supervariable j2, in which
  *	    case Pe [i] is still FLIP (j), and Pe [j] = FLIP (j2) which is
- *	    < EMPTY, where EMPTY is defined as (-1) in amd_internal.h.
+ *	    < TRILINOS_AMD_EMPTY, where TRILINOS_AMD_EMPTY is defined as (-1) in amd_internal.h.
  *
  *	Unabsorbed element e:  the index into Iw of the description of element
  *	    e, if e has not yet been absorbed by a subsequent element.  Element
@@ -265,18 +265,18 @@ GLOBAL void TRILINOS_AMD_2
  *	Absorbed element e:  if element e is absorbed into element e2, then
  *	    Pe [e] = FLIP (e2).  This occurs when the pattern of e (which we
  *	    refer to as Le) is found to be a subset of the pattern of e2 (that
- *	    is, Le2).  In this case, Pe [i] < EMPTY.  If element e is "null"
- *	    (it has no nonzeros outside its pivot block), then Pe [e] = EMPTY,
+ *	    is, Le2).  In this case, Pe [i] < TRILINOS_AMD_EMPTY.  If element e is "null"
+ *	    (it has no nonzeros outside its pivot block), then Pe [e] = TRILINOS_AMD_EMPTY,
  *	    and e is the root of an assembly subtree (or the whole tree if
  *	    there is just one such root).
  *
- *	Dense variable i:  if i is "dense", then Pe [i] = EMPTY.
+ *	Dense variable i:  if i is "dense", then Pe [i] = TRILINOS_AMD_EMPTY.
  *
  *	On output, Pe holds the assembly tree/forest, which implicitly
  *	represents a pivot order with identical fill-in as the actual order
  *	(via a depth-first search of the tree), as follows.  If Nv [i] > 0,
  *	then i represents a node in the assembly tree, and the parent of i is
- *	Pe [i], or EMPTY if i is a root.  If Nv [i] = 0, then (i, Pe [i])
+ *	Pe [i], or TRILINOS_AMD_EMPTY if i is a root.  If Nv [i] = 0, then (i, Pe [i])
  *	represents an edge in a subtree, the root of which is a node in the
  *	assembly tree.  Note that i refers to a row/column in the original
  *	matrix, not the permuted matrix.
@@ -361,16 +361,16 @@ GLOBAL void TRILINOS_AMD_2
  *	execution, Elen [i] is the number of elements in the list for
  *	supervariable i.  When e becomes an element, Elen [e] = FLIP (esize) is
  *	set, where esize is the size of the element (the number of pivots, plus
- *	the number of nonpivotal entries).  Thus Elen [e] < EMPTY.
- *	Elen (i) = EMPTY set when variable i becomes nonprincipal.
+ *	the number of nonpivotal entries).  Thus Elen [e] < TRILINOS_AMD_EMPTY.
+ *	Elen (i) = TRILINOS_AMD_EMPTY set when variable i becomes nonprincipal.
  *
- *	For variables, Elen (i) >= EMPTY holds until just before the
+ *	For variables, Elen (i) >= TRILINOS_AMD_EMPTY holds until just before the
  *	postordering and permutation vectors are computed.  For elements,
- *	Elen [e] < EMPTY holds.
+ *	Elen [e] < TRILINOS_AMD_EMPTY holds.
  *
  *	On output, Elen [i] is the degree of the row/column in the Cholesky
  *	factorization of the permuted matrix, corresponding to the original row
- *	i, if i is a super row/column.  It is equal to EMPTY if i is
+ *	i, if i is a super row/column.  It is equal to TRILINOS_AMD_EMPTY if i is
  *	non-principal.  Note that i refers to a row/column in the original
  *	matrix, not the permuted matrix.
  *
@@ -379,7 +379,7 @@ GLOBAL void TRILINOS_AMD_2
  *	which is instead returned in the Next array in this C version,
  *	described below).
  *
- * Last: In a degree list, Last [i] is the supervariable preceding i, or EMPTY
+ * Last: In a degree list, Last [i] is the supervariable preceding i, or TRILINOS_AMD_EMPTY
  *	if i is the head of the list.  In a hash bucket, Last [i] is the hash
  *	key for i.
  *
@@ -391,7 +391,7 @@ GLOBAL void TRILINOS_AMD_2
  *	i = Last [k], then row i is the kth pivot row (where k ranges from 0 to
  *	n-1).  Row Last [k] of A is the kth row in the permuted matrix, PAP'.
  *
- * Next: Next [i] is the supervariable following i in a link list, or EMPTY if
+ * Next: Next [i] is the supervariable following i in a link list, or TRILINOS_AMD_EMPTY if
  *	i is the last in the list.  Used for two kinds of lists:  degree lists
  *	and hash buckets (a supervariable can be in only one kind of list at a
  *	time).
@@ -422,16 +422,16 @@ GLOBAL void TRILINOS_AMD_2
  *	Head [deg] is the first supervariable in a degree list.  All
  *	supervariables i in a degree list Head [deg] have the same approximate
  *	degree, namely, deg = Degree [i].  If the list Head [deg] is empty then
- *	Head [deg] = EMPTY.
+ *	Head [deg] = TRILINOS_AMD_EMPTY.
  *
  *	During supervariable detection Head [hash] also serves as a pointer to
  *	a hash bucket.  If Head [hash] >= 0, there is a degree list of degree
  *	hash.  The hash bucket head pointer is Last [Head [hash]].  If
- *	Head [hash] = EMPTY, then the degree list and hash bucket are both
- *	empty.  If Head [hash] < EMPTY, then the degree list is empty, and
+ *	Head [hash] = TRILINOS_AMD_EMPTY, then the degree list and hash bucket are both
+ *	empty.  If Head [hash] < TRILINOS_AMD_EMPTY, then the degree list is empty, and
  *	FLIP (Head [hash]) is the head of the hash bucket.  After supervariable
  *	detection is complete, all hash buckets are empty, and the
- *	(Last [Head [hash]] = EMPTY) condition is restored for the non-empty
+ *	(Last [Head [hash]] = TRILINOS_AMD_EMPTY) condition is restored for the non-empty
  *	degree lists.
  *
  * W:  An integer array of size n.  The flag array W determines the status of
@@ -577,7 +577,7 @@ GLOBAL void TRILINOS_AMD_2
     nms_lu = 0 ;
     nms_ldl = 0 ;
     dmax = 1 ;
-    me = EMPTY ;
+    me = TRILINOS_AMD_EMPTY ;
 
     mindeg = 0 ;
     ncmpa = 0 ;
@@ -612,11 +612,11 @@ GLOBAL void TRILINOS_AMD_2
 
     for (i = 0 ; i < n ; i++)
     {
-	Last [i] = EMPTY ;
-	Head [i] = EMPTY ;
-	Next [i] = EMPTY ;
+	Last [i] = TRILINOS_AMD_EMPTY ;
+	Head [i] = TRILINOS_AMD_EMPTY ;
+	Next [i] = TRILINOS_AMD_EMPTY ;
 	/* if separate Hhead array is used for hash buckets: *
-	Hhead [i] = EMPTY ;
+	Hhead [i] = TRILINOS_AMD_EMPTY ;
 	*/
 	Nv [i] = 1 ;
 	W [i] = 1 ;
@@ -656,7 +656,7 @@ GLOBAL void TRILINOS_AMD_2
 
 	    Elen [i] = FLIP (1) ;
 	    nel++ ;
-	    Pe [i] = EMPTY ;
+	    Pe [i] = TRILINOS_AMD_EMPTY ;
 	    W [i] = 0 ;
 
 	}
@@ -673,9 +673,9 @@ GLOBAL void TRILINOS_AMD_2
 	    TRILINOS_AMD_DEBUG1 (("Dense node "ID" degree "ID"\n", i, deg)) ;
 	    ndense++ ;
 	    Nv [i] = 0 ;		/* do not postorder this node */
-	    Elen [i] = EMPTY ;
+	    Elen [i] = TRILINOS_AMD_EMPTY ;
 	    nel++ ;
-	    Pe [i] = EMPTY ;
+	    Pe [i] = TRILINOS_AMD_EMPTY ;
 
 	}
 	else
@@ -686,8 +686,8 @@ GLOBAL void TRILINOS_AMD_2
 	     * ------------------------------------------------------------- */
 
 	    inext = Head [deg] ;
-	    ASSERT (inext >= EMPTY && inext < n) ;
-	    if (inext != EMPTY) Last [inext] = i ;
+	    ASSERT (inext >= TRILINOS_AMD_EMPTY && inext < n) ;
+	    if (inext != TRILINOS_AMD_EMPTY) Last [inext] = i ;
 	    Next [i] = inext ;
 	    Head [deg] = i ;
 
@@ -722,7 +722,7 @@ GLOBAL void TRILINOS_AMD_2
 	for (deg = mindeg ; deg < n ; deg++)
 	{
 	    me = Head [deg] ;
-	    if (me != EMPTY) break ;
+	    if (me != TRILINOS_AMD_EMPTY) break ;
 	}
 	mindeg = deg ;
 	ASSERT (me >= 0 && me < n) ;
@@ -733,8 +733,8 @@ GLOBAL void TRILINOS_AMD_2
 	/* ----------------------------------------------------------------- */
 
 	inext = Next [me] ;
-	ASSERT (inext >= EMPTY && inext < n) ;
-	if (inext != EMPTY) Last [inext] = EMPTY ;
+	ASSERT (inext >= TRILINOS_AMD_EMPTY && inext < n) ;
+	if (inext != TRILINOS_AMD_EMPTY) Last [inext] = TRILINOS_AMD_EMPTY ;
 	Head [deg] = inext ;
 
 	/* ----------------------------------------------------------------- */
@@ -798,10 +798,10 @@ GLOBAL void TRILINOS_AMD_2
 
 		    ilast = Last [i] ;
 		    inext = Next [i] ;
-		    ASSERT (ilast >= EMPTY && ilast < n) ;
-		    ASSERT (inext >= EMPTY && inext < n) ;
-		    if (inext != EMPTY) Last [inext] = ilast ;
-		    if (ilast != EMPTY)
+		    ASSERT (ilast >= TRILINOS_AMD_EMPTY && ilast < n) ;
+		    ASSERT (inext >= TRILINOS_AMD_EMPTY && inext < n) ;
+		    if (inext != TRILINOS_AMD_EMPTY) Last [inext] = ilast ;
+		    if (ilast != TRILINOS_AMD_EMPTY)
 		    {
 			Next [ilast] = inext ;
 		    }
@@ -844,7 +844,7 @@ GLOBAL void TRILINOS_AMD_2
 		    pj = Pe [e] ;
 		    ln = Len [e] ;
 		    TRILINOS_AMD_DEBUG2 (("Search element e "ID" in me "ID"\n", e,me)) ;
-		    ASSERT (Elen [e] < EMPTY && W [e] > 0 && pj >= 0) ;
+		    ASSERT (Elen [e] < TRILINOS_AMD_EMPTY && W [e] > 0 && pj >= 0) ;
 		}
 		ASSERT (ln >= 0 && (ln == 0 || (pj >= 0 && pj < iwlen))) ;
 
@@ -858,7 +858,7 @@ GLOBAL void TRILINOS_AMD_2
 		for (knt2 = 1 ; knt2 <= ln ; knt2++)
 		{
 		    i = Iw [pj++] ;
-		    ASSERT (i >= 0 && i < n && (i == me || Elen [i] >= EMPTY));
+		    ASSERT (i >= 0 && i < n && (i == me || Elen [i] >= TRILINOS_AMD_EMPTY));
 		    nvi = Nv [i] ;
 		    TRILINOS_AMD_DEBUG2 ((": "ID" "ID" "ID" "ID"\n",
 				i, Elen [i], Nv [i], wflg)) ;
@@ -883,11 +883,11 @@ GLOBAL void TRILINOS_AMD_2
 			    Pe [me] = p ;
 			    Len [me] -= knt1 ;
 			    /* check if nothing left of supervariable me */
-			    if (Len [me] == 0) Pe [me] = EMPTY ;
+			    if (Len [me] == 0) Pe [me] = TRILINOS_AMD_EMPTY ;
 			    Pe [e] = pj ;
 			    Len [e] = ln - knt2 ;
 			    /* nothing left of element e */
-			    if (Len [e] == 0) Pe [e] = EMPTY ;
+			    if (Len [e] == 0) Pe [e] = TRILINOS_AMD_EMPTY ;
 
 			    ncmpa++ ;	/* one more garbage collection */
 
@@ -957,10 +957,10 @@ GLOBAL void TRILINOS_AMD_2
 
 			ilast = Last [i] ;
 			inext = Next [i] ;
-			ASSERT (ilast >= EMPTY && ilast < n) ;
-			ASSERT (inext >= EMPTY && inext < n) ;
-			if (inext != EMPTY) Last [inext] = ilast ;
-			if (ilast != EMPTY)
+			ASSERT (ilast >= TRILINOS_AMD_EMPTY && ilast < n) ;
+			ASSERT (inext >= TRILINOS_AMD_EMPTY && inext < n) ;
+			if (inext != TRILINOS_AMD_EMPTY) Last [inext] = ilast ;
+			if (ilast != TRILINOS_AMD_EMPTY)
 			{
 			    Next [ilast] = inext ;
 			}
@@ -1222,7 +1222,7 @@ GLOBAL void TRILINOS_AMD_2
 		nvpiv += nvi ;
 		nel += nvi ;
 		Nv [i] = 0 ;
-		Elen [i] = EMPTY ;
+		Elen [i] = TRILINOS_AMD_EMPTY ;
 
 	    }
 	    else
@@ -1263,7 +1263,7 @@ GLOBAL void TRILINOS_AMD_2
 
 		/* if the Hhead array is not used: */
 		j = Head [hash] ;
-		if (j <= EMPTY)
+		if (j <= TRILINOS_AMD_EMPTY)
 		{
 		    /* degree list is empty, hash head is FLIP (j) */
 		    Next [i] = FLIP (j) ;
@@ -1324,33 +1324,33 @@ GLOBAL void TRILINOS_AMD_2
 
 		/* if Hhead array is not used: */
 		j = Head [hash] ;
-		if (j == EMPTY)
+		if (j == TRILINOS_AMD_EMPTY)
 		{
 		    /* hash bucket and degree list are both empty */
-		    i = EMPTY ;
+		    i = TRILINOS_AMD_EMPTY ;
 		}
-		else if (j < EMPTY)
+		else if (j < TRILINOS_AMD_EMPTY)
 		{
 		    /* degree list is empty */
 		    i = FLIP (j) ;
-		    Head [hash] = EMPTY ;
+		    Head [hash] = TRILINOS_AMD_EMPTY ;
 		}
 		else
 		{
 		    /* degree list is not empty, restore Last [j] of head j */
 		    i = Last [j] ;
-		    Last [j] = EMPTY ;
+		    Last [j] = TRILINOS_AMD_EMPTY ;
 		}
 
 		/* if separate Hhead array is used: *
 		i = Hhead [hash] ;
-		Hhead [hash] = EMPTY ;
+		Hhead [hash] = TRILINOS_AMD_EMPTY ;
 		*/
 
-		ASSERT (i >= EMPTY && i < n) ;
+		ASSERT (i >= TRILINOS_AMD_EMPTY && i < n) ;
 		TRILINOS_AMD_DEBUG2 (("----i "ID" hash "ID"\n", i, hash)) ;
 
-		while (i != EMPTY && Next [i] != EMPTY)
+		while (i != TRILINOS_AMD_EMPTY && Next [i] != TRILINOS_AMD_EMPTY)
 		{
 
 		    /* -----------------------------------------------------
@@ -1376,9 +1376,9 @@ GLOBAL void TRILINOS_AMD_2
 
 		    jlast = i ;
 		    j = Next [i] ;
-		    ASSERT (j >= EMPTY && j < n) ;
+		    ASSERT (j >= TRILINOS_AMD_EMPTY && j < n) ;
 
-		    while (j != EMPTY)
+		    while (j != TRILINOS_AMD_EMPTY)
 		    {
 			/* ------------------------------------------------- */
 			/* check if j and i have identical nonzero pattern */
@@ -1409,7 +1409,7 @@ GLOBAL void TRILINOS_AMD_2
 			    /* are the number of variables in i and j: */
 			    Nv [i] += Nv [j] ;
 			    Nv [j] = 0 ;
-			    Elen [j] = EMPTY ;
+			    Elen [j] = TRILINOS_AMD_EMPTY ;
 			    /* delete j from hash bucket */
 			    ASSERT (j != Next [j]) ;
 			    j = Next [j] ;
@@ -1423,7 +1423,7 @@ GLOBAL void TRILINOS_AMD_2
 			    ASSERT (j != Next [j]) ;
 			    j = Next [j] ;
 			}
-			ASSERT (j >= EMPTY && j < n) ;
+			ASSERT (j >= TRILINOS_AMD_EMPTY && j < n) ;
 		    }
 
 		    /* -----------------------------------------------------
@@ -1433,7 +1433,7 @@ GLOBAL void TRILINOS_AMD_2
 
 		    wflg++ ;
 		    i = Next [i] ;
-		    ASSERT (i >= EMPTY && i < n) ;
+		    ASSERT (i >= TRILINOS_AMD_EMPTY && i < n) ;
 
 		}
 	    }
@@ -1471,10 +1471,10 @@ GLOBAL void TRILINOS_AMD_2
 		/* --------------------------------------------------------- */
 
 		inext = Head [deg] ;
-		ASSERT (inext >= EMPTY && inext < n) ;
-		if (inext != EMPTY) Last [inext] = i ;
+		ASSERT (inext >= TRILINOS_AMD_EMPTY && inext < n) ;
+		if (inext != TRILINOS_AMD_EMPTY) Last [inext] = i ;
 		Next [i] = inext ;
-		Last [i] = EMPTY ;
+		Last [i] = TRILINOS_AMD_EMPTY ;
 		Head [deg] = i ;
 
 		/* --------------------------------------------------------- */
@@ -1506,7 +1506,7 @@ GLOBAL void TRILINOS_AMD_2
 	{
 	    /* there is nothing left of the current pivot element */
 	    /* it is a root of the assembly tree */
-	    Pe [me] = EMPTY ;
+	    Pe [me] = TRILINOS_AMD_EMPTY ;
 	    W [me] = 0 ;
 	}
 	if (elenme != 0)
@@ -1613,13 +1613,13 @@ GLOBAL void TRILINOS_AMD_2
  * Variables at this point:
  *
  * Pe: holds the elimination tree.  The parent of j is FLIP (Pe [j]),
- *	or EMPTY if j is a root.  The tree holds both elements and
+ *	or TRILINOS_AMD_EMPTY if j is a root.  The tree holds both elements and
  *	non-principal (unordered) variables absorbed into them.
  *	Dense variables are non-principal and unordered.
  *
  * Elen: holds the size of each element, including the diagonal part.
  *	FLIP (Elen [e]) > 0 if e is an element.  For unordered
- *	variables i, Elen [i] is EMPTY.
+ *	variables i, Elen [i] is TRILINOS_AMD_EMPTY.
  *
  * Nv: Nv [e] > 0 is the number of pivots represented by the element e.
  *	For unordered variables i, Nv [i] is zero.
@@ -1645,15 +1645,15 @@ GLOBAL void TRILINOS_AMD_2
 	Elen [i] = FLIP (Elen [i]) ;
     }
 
-/* Now the parent of j is Pe [j], or EMPTY if j is a root.  Elen [e] > 0
- * is the size of element e.  Elen [i] is EMPTY for unordered variable i. */
+/* Now the parent of j is Pe [j], or TRILINOS_AMD_EMPTY if j is a root.  Elen [e] > 0
+ * is the size of element e.  Elen [i] is TRILINOS_AMD_EMPTY for unordered variable i. */
 
 #ifndef NDEBUG
     TRILINOS_AMD_DEBUG2 (("\nTree:\n")) ;
     for (i = 0 ; i < n ; i++)
     {
 	TRILINOS_AMD_DEBUG2 ((" "ID" parent: "ID"   ", i, Pe [i])) ;
-	ASSERT (Pe [i] >= EMPTY && Pe [i] < n) ;
+	ASSERT (Pe [i] >= TRILINOS_AMD_EMPTY && Pe [i] < n) ;
 	if (Nv [i] > 0)
 	{
 	    /* this is an element */
@@ -1682,7 +1682,7 @@ GLOBAL void TRILINOS_AMD_2
 	    j = Pe [i] ;
 	    cnt = 0 ;
 	    TRILINOS_AMD_DEBUG3 (("  j: "ID"\n", j)) ;
-	    if (j == EMPTY)
+	    if (j == TRILINOS_AMD_EMPTY)
 	    {
 		TRILINOS_AMD_DEBUG3 (("	i is a dense variable\n")) ;
 	    }
@@ -1722,9 +1722,9 @@ GLOBAL void TRILINOS_AMD_2
 
 	    TRILINOS_AMD_DEBUG1 (("Path compression, i unordered: "ID"\n", i)) ;
 	    j = Pe [i] ;
-	    ASSERT (j >= EMPTY && j < n) ;
+	    ASSERT (j >= TRILINOS_AMD_EMPTY && j < n) ;
 	    TRILINOS_AMD_DEBUG3 (("	j: "ID"\n", j)) ;
-	    if (j == EMPTY)
+	    if (j == TRILINOS_AMD_EMPTY)
 	    {
 		/* Skip a dense variable.  It has no parent. */
 		TRILINOS_AMD_DEBUG3 (("      i is a dense variable\n")) ;
@@ -1780,14 +1780,14 @@ GLOBAL void TRILINOS_AMD_2
 
     for (k = 0 ; k < n ; k++)
     {
-	Head [k] = EMPTY ;
-	Next [k] = EMPTY ;
+	Head [k] = TRILINOS_AMD_EMPTY ;
+	Next [k] = TRILINOS_AMD_EMPTY ;
     }
     for (e = 0 ; e < n ; e++)
     {
 	k = W [e] ;
-	ASSERT ((k == EMPTY) == (Nv [e] == 0)) ;
-	if (k != EMPTY)
+	ASSERT ((k == TRILINOS_AMD_EMPTY) == (Nv [e] == 0)) ;
+	if (k != TRILINOS_AMD_EMPTY)
 	{
 	    ASSERT (k >= 0 && k < n) ;
 	    Head [k] = e ;
@@ -1800,7 +1800,7 @@ GLOBAL void TRILINOS_AMD_2
     for (k = 0 ; k < n ; k++)
     {
 	e = Head [k] ;
-	if (e == EMPTY) break ;
+	if (e == TRILINOS_AMD_EMPTY) break ;
 	ASSERT (e >= 0 && e < n && Nv [e] > 0) ;
 	Next [e] = nel ;
 	nel += Nv [e] ;
@@ -1813,14 +1813,14 @@ GLOBAL void TRILINOS_AMD_2
 	if (Nv [i] == 0)
 	{
 	    e = Pe [i] ;
-	    ASSERT (e >= EMPTY && e < n) ;
-	    if (e != EMPTY)
+	    ASSERT (e >= TRILINOS_AMD_EMPTY && e < n) ;
+	    if (e != TRILINOS_AMD_EMPTY)
 	    {
 		/* This is an unordered variable that was merged
 		 * into element e via supernode detection or mass
 		 * elimination of i when e became the pivot element.
 		 * Place i in order just before e. */
-		ASSERT (Next [i] == EMPTY && Nv [e] > 0) ;
+		ASSERT (Next [i] == TRILINOS_AMD_EMPTY && Nv [e] > 0) ;
 		Next [i] = Next [e] ;
 		Next [e]++ ;
 	    }

@@ -15,6 +15,31 @@ For bug reports, documentation errors, and enhancement suggestions, contact:
 - EMAIL: gsjaardema@gmail.com
 - PHONE: (505) 844-2701 (office)
 
+\section db_types Database Types
+
+The IOSS system supports multiple database formats.  The default format is the Sandia-developed Exodus format.  The list below shows all supported
+database input and/or output formats.  Not all of these may be available on all builds; the supported databases on a particular installation can be
+determined by running the `io_info --config` program.
+
+Type             | Input/Output  | Description
+-----------------|---------------|--------------------------
+exodus           | Input/Output  | Sandia-developed database system for unstructured mesh input/output (https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodus-library)
+cgns             | Input/Output  | CFD General Notation System (https://cgns.github.io/)
+generated        | Input         | Generate an unstructured hex/shell mesh using a token string (Iogn::GeneratedMesh::GeneratedMesh)
+textmesh         | Input         | Generate an unstructured mesh using a token string
+heartbeat        | Output        | A text based output for global values
+pamgen           | Input         | (https://trilinos.github.io/pamgen.html)
+gen_struc        | Input         | Generate a structured mesh using a token string (IxJxK)
+catalyst_exodus  | Output        | Visualization pipeline, exodus-based
+catalyst_cgns    | Output        | Visualization pipeline, cgns-based
+null             | Output        | No data written to disk, no calculations done by ioss
+exonull          | Output        | No data written to disk, but uses all of the exodus io database infrastructure/calculations
+adios            | Input/Output  | Adaptable Input/Output system, (https://adios2.readthedocs.io/en/latest/)
+faodel           | Input/Output  | (https://github.com/faodel/faodel)
+exodusii         | Input/Output  | alias for exodus
+genesis          | Input/Output  | alias for exodus
+par_cgns         | Input/Output  | alias for parallel CGNS 
+
 \section properties Properties
 
 ## General Properties
@@ -84,6 +109,7 @@ PARALLEL_IO_MODE | netcdf4, hdf5, pnetcdf, (mpiio and mpiposix are deprecated)
  FIELD_STRIP_TRAILING_UNDERSCORE | on / [off] | If `FIELD_SUFFIX_SEPARATOR` is empty and there are fields that end with an underscore, then strip the underscore. (`a_x`, `a_y`, `a_z` is vector field `a`).
  IGNORE_ATTRIBUTE_NAMES   | on/[off] | Do not read the attribute names that may exist on an input database. Instead for an element block with N attributes, the fields will be named `attribute_1` ... `attribute_N`
  SURFACE_SPLIT_TYPE       | {type} | Specify how to split sidesets into homogeneous sideblocks. Either an integer or string: 1 or `TOPOLOGY`, 2 or `BLOCK`, 3 or `NO_SPLIT`.  Default is `TOPOLOGY` if not specified.
+ DUPLICATE_FIELD_NAME_BEHAVIOR | {behavior} | Determine how to handle duplicate incompatible fields on a database.  Valid values are `IGNORE`, `WARNING`, or `ERROR` (default).  An incompatible field is two or more fields with the same name, but different sizes or roles or types.
 
 ## Output Database-Related Properties
  Property        | Value  | Description

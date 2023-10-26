@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _EXOIILB_CONST_H_
-#define _EXOIILB_CONST_H_
+#pragma once
 
 #include "elb_elem.h"
 #include <cstdio>
@@ -121,12 +119,12 @@ struct Problem_Description
   int   mech_add_procs{-1};   /* adds processors in cases of mechanisms       */
   int   dsd_add_procs{-1};    /* adds processors in cases of disconnected subdomains */
   int   no_sph{-1};
-  int   fix_columns{0}; /* detect, fix vertical column partitioning */
+  int   fix_columns{0};       /* detect, fix vertical column partitioning */
   char *groups{nullptr};
-  int  *group_no{nullptr};
-  int   num_groups{-1};
-  int   int64db{0};  /* integer types for output mesh database */
-  int   int64api{0}; /* integer types for exodus api calls */
+  std::vector<int> group_no{};
+  int              num_groups{-1};
+  int              int64db{0};  /* integer types for output mesh database */
+  int              int64api{0}; /* integer types for exodus api calls */
 
   Problem_Description() = default;
 };
@@ -186,8 +184,8 @@ template <typename INT> struct Mesh_Description
   size_t              max_np_elem{0};
   size_t              ns_list_len{0};
   char                title[MAX_LINE_LENGTH + 1]{};
-  float              *coords{nullptr};
-  E_Type             *elem_type{nullptr};
+  std::vector<float>  coords{};
+  std::vector<E_Type> elem_type{};
   INT               **connect;
 
   Mesh_Description() : connect(nullptr) {}
@@ -196,10 +194,10 @@ template <typename INT> struct Mesh_Description
 /* Structure for handling meshes with spheres */
 struct Sphere_Info
 {
-  size_t num{0};
-  int   *adjust{nullptr};
-  int   *begin{nullptr};
-  int   *end{nullptr};
+  size_t           num{0};
+  std::vector<int> adjust{};
+  std::vector<int> begin{};
+  std::vector<int> end{};
 
   Sphere_Info() = default;
 };
@@ -273,5 +271,3 @@ template <typename INT> struct Graph_Description
 #define EDGE_WGT  4
 #define TIME_INDX 5
 #define VAR_NAME  6
-
-#endif /* _EXOIILB_CONST_H_ */

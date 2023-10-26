@@ -63,14 +63,16 @@
 // MueLu
 #include "MueLu.hpp"
 #include "MueLu_TestHelpers.hpp"
+#include "MueLu_PerfModels.hpp"
+#include "MueLu_PerfModelReporter.hpp"
 #include <MatrixLoad.hpp>
 
-#if defined(HAVE_MUELU_TPETRA)
+
 #include "Xpetra_TpetraMultiVector.hpp"
+#include "Xpetra_TpetraImport.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "KokkosSparse_spmv.hpp"
-#endif
 #include "Kokkos_Core.hpp"
 
 #if defined(HAVE_MUELU_CUSPARSE)
@@ -89,9 +91,15 @@
 #include "petscksp.h"
 #endif
 
+
+Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+Teuchos::RCP<Teuchos::TimeMonitor> globalTimeMonitor;
+
 // =========================================================================
 // Support Routines
 // =========================================================================
+
+
 template<class View1, class View2>
 inline void copy_view_n(const int n, const View1 x1, View2 x2) {
   Kokkos::parallel_for(n,KOKKOS_LAMBDA(const size_t i) {
@@ -117,7 +125,8 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
   printf("\n");
 }
 
-#if defined(HAVE_MUELU_TPETRA)
+  
+
 //==============================================================================
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Matrix,
@@ -181,13 +190,11 @@ void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdina
   }
 }
 
-#endif
-
 
 // =========================================================================
 // PETSC Testing
 // =========================================================================
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
 
 /*#define PETSC_CHK_ERR(x)  {                   \
   PetscCall(x); \
@@ -266,6 +273,7 @@ public:
 
   bool spmv(const Scalar alpha, const Scalar beta) {
     int rv = MatMult(A_p,x_p,y_p);
+    Kokkos::fence();
     return (rv != 0);
   }
 
@@ -283,7 +291,7 @@ private:
 // =========================================================================
 // HYPRE Testing
 // =========================================================================
-#if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MPI)
 
 #define HYPRE_CHK_ERR(x)  { \
     if(x!=0) throw std::runtime_error("ERROR: HYPRE returned non-zero exit code"); \
@@ -364,6 +372,7 @@ public:
 
   bool spmv(const Scalar alpha, const Scalar beta) {
     int rv = HYPRE_ParCSRMatrixMatvec(alpha,parcsr_matrix, x_par,beta, y_par);
+    Kokkos::fence();
     return (rv != 0);
   }
 
@@ -385,7 +394,7 @@ private:
 // =========================================================================
 // MAGMASparse Testing
 // =========================================================================
-#if defined(HAVE_MUELU_MAGMASPARSE) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_MAGMASPARSE)
 #include <magma_v2.h>
 #include <magmasparse.h>
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -405,10 +414,10 @@ public:
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal>
-class MagmaSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+class MagmaSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
   // typedefs shared among other TPLs
   typedef double Scalar;
-  typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
+  typedef typename Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef typename crs_matrix_type::local_matrix_host_type    KCRS;
@@ -492,6 +501,7 @@ public:
   bool spmv(const Scalar alpha, const Scalar beta)
   {
     magma_d_spmv( 1.0, magma_dev_Acrs, magma_dev_x, 0.0, magma_dev_y, queue );
+    Kokkos::fence();
   }
 
 private:
@@ -519,7 +529,7 @@ private:
 // =========================================================================
 // CuSparse Testing
 // =========================================================================
-#if defined(HAVE_MUELU_CUSPARSE) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_CUSPARSE)
 
 #define CHECK_CUDA(func)                                                       \
 {                                                                              \
@@ -557,10 +567,10 @@ public:
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal>
-class CuSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+class CuSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
   // typedefs shared among other TPLs
   typedef double Scalar;
-  typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
+  typedef typename Tpetra::KokkosCompat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
@@ -631,6 +641,12 @@ public:
   cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) {
     // compute: y = alpha*Ax + beta*y
 
+#if CUSPARSE_VERSION >= 11201
+    cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#else
+    cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+#endif
+
     size_t bufferSize;
     CHECK_CUSPARSE(cusparseSpMV_bufferSize(cusparseHandle,
                                            transA,
@@ -640,7 +656,7 @@ public:
                                            &beta,
                                            vecY,
                                            CUDA_R_64F,
-                                           CUSPARSE_MV_ALG_DEFAULT,
+                                           alg,
                                            &bufferSize));
 
     void* dBuffer = NULL;
@@ -654,11 +670,11 @@ public:
                                        &beta,
                                        vecY,
                                        CUDA_R_64F,
-                                       CUSPARSE_MV_ALG_DEFAULT,
+                                       alg,
                                        dBuffer);
 
     CHECK_CUDA(cudaFree(dBuffer));
-
+    Kokkos::fence();
     return (rc);
   }
 private:
@@ -689,7 +705,7 @@ private:
 // =========================================================================
 // MKL Testing
 // =========================================================================
-#if defined(HAVE_MUELU_MKL) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_MKL)
 #include "mkl.h"
 
 
@@ -719,6 +735,7 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
   //sparse_status_t mkl_sparse_d_mv (sparse_operation_t operation, double alpha, const sparse_matrix_t A, struct matrix_descr descr, const double *x, double beta, double *y);
 
   mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,1.0,AMKL,mkl_descr,x,0.0,y);
+  Kokkos::fence();
 }
 
 #endif
@@ -728,10 +745,10 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
 // =========================================================================
 // Tpetra Kernel Testing
 // =========================================================================
-#if defined(HAVE_MUELU_TPETRA)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   A.apply(x,y);
+  Kokkos::fence();
 }
 
 
@@ -742,8 +759,8 @@ void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  
   auto X_lcl = x.getLocalViewDevice (Tpetra::Access::ReadOnly);
   auto Y_lcl = y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
+  Kokkos::fence();
 }
-#endif
 
 
 // =========================================================================
@@ -758,7 +775,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::TimeMonitor;
   using std::endl;
 
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
   PetscInitialize(0,NULL,NULL,NULL);
 #endif
 
@@ -767,6 +784,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool verbose = true;
   try {
     RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    int numProc = comm->getSize();
 
     // =========================================================================
     // Convenient definitions
@@ -793,10 +811,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     std::string rangeMapFile;   clp.setOption("rangemap",         &rangeMapFile,   "rangemap data file");
 
     bool printTimings = true;   clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
-    int  nrepeat      = 100;    clp.setOption("nrepeat",               &nrepeat,      "repeat the experiment N times");
+    int  nrepeat      = 1000;   clp.setOption("nrepeat",               &nrepeat,      "repeat the experiment N times");
 
     bool describeMatrix = true; clp.setOption("showmatrix", "noshowmatrix",  &describeMatrix, "describe matrix");
     bool useStackedTimer = false; clp.setOption("stackedtimer", "nostackedtimer",  &useStackedTimer, "use stacked timer");
+    bool verboseModel  = false; clp.setOption("verbosemodel", "noverbosemodel",  &verboseModel, "use stacked verbose performance model");
+
     // the kernels
     bool do_mkl      = true;
     bool do_tpetra   = true;
@@ -873,7 +893,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       do_cusparse = false;
     }
     #else
-    if(! std::is_same<NO, Kokkos::Compat::KokkosCudaWrapperNode>::value) do_cusparse = false;
+    if(! std::is_same<NO, Tpetra::KokkosCompat::KokkosCudaWrapperNode>::value) do_cusparse = false;
     #endif
 
     #if ! defined(HAVE_MUELU_MAGMASPARSE)
@@ -953,18 +973,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "Matrix:        " << Teuchos::demangleName(typeid(Matrix).name()) << endl
         << "Vector:        " << Teuchos::demangleName(typeid(MultiVector).name()) << endl
         << "Hierarchy:     " << Teuchos::demangleName(typeid(Hierarchy).name()) << endl
+        << "========================================================" << endl
+        << " MPI Ranks:    " << numProc <<endl
         << "========================================================" << endl;
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
-    out<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
+#if defined(HAVE_TPETRA_INST_OPENMP)
+    out<< "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() = "<<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency()<<endl
        << "========================================================" << endl;
 #endif
 
     // =========================================================================
     // Problem construction
     // =========================================================================
-    Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
-    RCP<TimeMonitor> globalTimeMonitor;
     if (useStackedTimer)
       stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_MatvecKernelDriver"));
     else
@@ -979,8 +999,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
     y_baseline->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
 
-
-#ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
     RCP<const crs_matrix_type> At;
@@ -1055,19 +1073,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                               ArowptrMKL.data()+1,
                               AcolindMKL.data(),
                               (double*)Avals.data());
-      auto X_lcl = xt.template getLocalView<device_type> ();
-      auto Y_lcl = yt.template getLocalView<device_type> ();
-      mkl_xdouble = (double*)X_lcl.data();
-      mkl_ydouble = (double*)Y_lcl.data();
     }
     else
       throw std::runtime_error("MKL Type Mismatch");
 
   #endif // end MKL
-#endif
 
 
-    globalTimeMonitor = Teuchos::null;
+    //    globalTimeMonitor = Teuchos::null;
     comm->barrier();
 
     out << "Matrix Read complete." << endl;
@@ -1084,14 +1097,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     std::random_device rd;
     std::mt19937 random_source (rd());
 
-    #ifdef HAVE_MUELU_TPETRA
     // compute the baseline
     vector_type yt_baseline = Xpetra::toTpetra(*y_baseline);
     if (report_error_norms) MV_Tpetra(*At,xt,yt_baseline);
     const bool error_check_y = true;
-    #else
-    const bool error_check_y = false;
-    #endif
     std::vector<typename Teuchos::ScalarTraits< Scalar >::magnitudeType> dummy;
     dummy.resize(1);
     Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > y_norms (dummy.data(), 1);
@@ -1121,12 +1130,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         case Experiments::MKL:
         {
             TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));
+            auto X_lcl = xt.getLocalViewDevice(Tpetra::Access::ReadOnly);
+            auto Y_lcl = yt.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+            mkl_xdouble = (double*)X_lcl.data();
+            mkl_ydouble = (double*)Y_lcl.data();
             MV_MKL(mkl_A,mkl_xdouble,mkl_ydouble);
         }
           break;
         #endif
 
-        #ifdef HAVE_MUELU_TPETRA
         // KK Algorithms
         case Experiments::KK:
         {
@@ -1141,7 +1153,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
            MV_Tpetra(*At,xt,yt);
         }
           break;
-        #endif
 
         #ifdef HAVE_MUELU_CUSPARSE
         // CUSPARSE
@@ -1241,6 +1252,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // restore the IO stream
     std::cout.copyfmt(cout_default_fmt_flags);
 
+
     if (useStackedTimer) {
       stacked_timer->stop("MueLu_MatvecKernelDriver");
       Teuchos::StackedTimer::OutputOptions options;
@@ -1254,11 +1266,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     mkl_sparse_destroy(mkl_A);
 #endif
 
+    // ==========================================
+    // Performance Models
+    // ==========================================
+    std::vector<const char *> timer_names = {"MV MKL: Total",
+                                             "MV KK: Total",
+                                             "MV Tpetra: Total",
+                                             "MV CuSparse: Total",
+                                             "MV MagmaSparse: Total",
+                                             "MV HYPRE: Total",
+                                             "MV Petsc: Total"};
+    
+    MueLu::report_spmv_performance_models<Matrix>(A,nrepeat,timer_names,globalTimeMonitor,"",verboseModel);
+    globalTimeMonitor = Teuchos::null;
+
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_PETSC) && defined(HAVE_MPI)
   PetscFinalize();
 #endif
 

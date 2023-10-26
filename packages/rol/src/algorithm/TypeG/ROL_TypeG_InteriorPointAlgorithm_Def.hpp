@@ -50,8 +50,8 @@ namespace ROL {
 namespace TypeG {
 
 template<typename Real>
-InteriorPointAlgorithm<Real>::InteriorPointAlgorithm(ParameterList &list)
-  : TypeG::Algorithm<Real>::Algorithm(),
+InteriorPointAlgorithm<Real>::InteriorPointAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant)
+  : TypeG::Algorithm<Real>::Algorithm(), secant_(secant),
     list_(list), subproblemIter_(0), print_(false) {
   // Set status test
   status_->reset();
@@ -182,7 +182,7 @@ void InteriorPointAlgorithm<Real>::run( Vector<Real>          &x,
     list_.sublist("Status Test").set("Gradient Tolerance",   gtol_);
     list_.sublist("Status Test").set("Constraint Tolerance", ctol_);
     list_.sublist("Status Test").set("Step Tolerance",       stol_);
-    algo = TypeE::AlgorithmFactory<Real>(list_);
+    algo = TypeE::AlgorithmFactory<Real>(list_,secant_);
     if (hasPolyProj_) algo->run(x,g,ipobj,econ,emul,eres,
                                 *proj_->getLinearConstraint(),
                                 *proj_->getMultiplier(),

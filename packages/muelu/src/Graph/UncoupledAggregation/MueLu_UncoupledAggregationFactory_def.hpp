@@ -58,7 +58,6 @@
 #include "MueLu_InterfaceAggregationAlgorithm.hpp"
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 
 #include "MueLu_AggregationPhase1Algorithm.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm.hpp"
@@ -70,8 +69,6 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -99,7 +96,9 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: match ML phase1");
     SET_VALID_ENTRY("aggregation: match ML phase2a");
+    SET_VALID_ENTRY("aggregation: match ML phase2b");
     SET_VALID_ENTRY("aggregation: phase2a agg factor");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");

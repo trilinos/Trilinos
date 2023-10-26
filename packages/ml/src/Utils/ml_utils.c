@@ -23,8 +23,7 @@ Modified by:      $Author$
 #include "ml_lapack.h"
 #include <time.h>
 #include "ml_viz_stats.h"
-#ifdef _MSC_VER
-#pragma comment(lib, "Ws2_32.lib")
+#ifdef _WIN32
 # include <Winsock2.h>
 # include <process.h>
 void sleep(int sec)

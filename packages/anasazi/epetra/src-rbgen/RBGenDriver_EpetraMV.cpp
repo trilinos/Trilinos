@@ -65,7 +65,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Assert.hpp"
-	
+
 int main( int argc, char* argv[] )
 {
 
@@ -111,13 +111,13 @@ int main( int argc, char* argv[] )
   // ---------------------------------------------------------------
   //
   Teuchos::RCP<Teuchos::ParameterList> BasisParams = RBGen::createParams( xml_file );
-  if (verbose && Comm.MyPID() == 0) 
+  if (verbose && Comm.MyPID() == 0)
   {
     std::cout<<"-------------------------------------------------------"<<std::endl;
     std::cout<<"Input Parameter List: "<<std::endl;
     std::cout<<"-------------------------------------------------------"<<std::endl;
     BasisParams->print();
-  } 
+  }
   //
   // ---------------------------------------------------------------
   //  CREATE THE FILE I/O HANDLER
@@ -134,17 +134,17 @@ int main( int argc, char* argv[] )
   //
   Teuchos::RCP< RBGen::FileIOHandler<Epetra_MultiVector> > mvFileIO;
   Teuchos::RCP< RBGen::FileIOHandler<Epetra_Operator> > opFileIO =
-    Teuchos::rcp( new RBGen::EpetraCrsMatrixFileIOHandler() ); 
+    Teuchos::rcp( new RBGen::EpetraCrsMatrixFileIOHandler() );
   {
     Teuchos::TimeMonitor lcltimer( *timerFileIO );
     mvFileIO = fio_factory.create( *BasisParams );
-    //					    
+    //
     // Initialize file IO handlers
     //
     mvFileIO->Initialize( BasisParams );
     opFileIO->Initialize( BasisParams );
-  }    
-  if (verbose && Comm.MyPID() == 0) 
+  }
+  if (verbose && Comm.MyPID() == 0)
   {
     std::cout<<"-------------------------------------------------------"<<std::endl;
     std::cout<<"File I/O Handlers Generated"<<std::endl;
@@ -164,7 +164,7 @@ int main( int argc, char* argv[] )
   {
     Teuchos::TimeMonitor lcltimer( *timerSnapshotIn );
     testMV = mvFileIO->Read( *filenames );
-  } 
+  }
 
   RBGen::EpetraMVPreprocessorFactory preprocess_factory;
 
@@ -180,14 +180,14 @@ int main( int argc, char* argv[] )
     prep->Initialize( BasisParams, mvFileIO );
   }
 
-  Teuchos::RCP<Teuchos::Time> timerPreprocess = Teuchos::rcp( new Teuchos::Time("Preprocess Snapshot Set") );  
+  Teuchos::RCP<Teuchos::Time> timerPreprocess = Teuchos::rcp( new Teuchos::Time("Preprocess Snapshot Set") );
   timersRBGen.push_back( timerPreprocess );
   {
     Teuchos::TimeMonitor lcltimer( *timerPreprocess );
     prep->Preprocess( testMV );
   }
 
-  if (verbose && Comm.MyPID() == 0) 
+  if (verbose && Comm.MyPID() == 0)
   {
     std::cout<<"-------------------------------------------------------"<<std::endl;
     std::cout<<"Snapshot Set Imported and Preprocessed"<<std::endl;
@@ -208,7 +208,7 @@ int main( int argc, char* argv[] )
   timersRBGen.push_back( timerCreateMethod );
   Teuchos::RCP<RBGen::Method<Epetra_MultiVector,Epetra_Operator> > method;
   {
-    Teuchos::TimeMonitor lcltimer( *timerCreateMethod );  
+    Teuchos::TimeMonitor lcltimer( *timerCreateMethod );
     method = mthd_factory.create( *BasisParams );
     //
     // Initialize reduced basis method.
@@ -221,7 +221,7 @@ int main( int argc, char* argv[] )
   Teuchos::RCP<Teuchos::Time> timerComputeBasis = Teuchos::rcp( new Teuchos::Time("Reduced Basis Computation") );
   timersRBGen.push_back( timerComputeBasis );
   {
-    Teuchos::TimeMonitor lcltimer( *timerComputeBasis );  
+    Teuchos::TimeMonitor lcltimer( *timerComputeBasis );
     method->computeBasis();
   }
   //
@@ -239,8 +239,8 @@ int main( int argc, char* argv[] )
     std::cout<<"Computed Singular Values : "<<std::endl;
     std::cout<<"-------------------------------------------------------"<<std::endl;
     for (unsigned int i=0; i<sv.size(); ++i) { std::cout << sv[i] << std::endl; }
-  }      
-  
+  }
+
   if (Comm.MyPID() == 0) {
     std::cout<<"-------------------------------------------------------"<<std::endl;
     std::cout<<"RBGen Computation Time Breakdown (seconds) : "<<std::endl;

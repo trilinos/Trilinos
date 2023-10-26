@@ -77,7 +77,7 @@ namespace Stratimikos {
     template <typename SC = double,
               typename LO = int,
               typename GO = int,
-              typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              typename NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     void enableFROSch(LinearSolverBuilder<SC>& builder,
                       const string& stratName = "FROSch");
 } // namespace Stratimikos

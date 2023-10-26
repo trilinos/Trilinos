@@ -68,7 +68,6 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_LWGraph.hpp"
 

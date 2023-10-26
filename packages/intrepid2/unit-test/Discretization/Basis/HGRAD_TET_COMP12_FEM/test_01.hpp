@@ -57,64 +57,30 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
+
 #include <random>
 
 namespace Intrepid2 {
 
   namespace Test {
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-    
+
+    using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+
     template<typename ValueType, typename DeviceType>
     int HGRAD_TET_COMP12_FEM_Test01(const bool verbose) {
       
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
-      
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs,       false);
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, "Basis_HGRAD_TET_COMP12_FEM", {
+          "1) Evaluation of Basis Function Values"
+      });
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-      using DeviceSpaceType = typename DeviceType::execution_space;      
-      typedef typename
-        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
-
-      *outStream                                                        
-        << "===============================================================================\n"
-        << "|                                                                             |\n"
-        << "|             Unit Test (Basis_HGRAD_TET_COMP12_FEM)                          |\n"
-        << "|                                                                             |\n"
-        << "|     1) Evaluation of Basis Function Values                                  |\n"
-        << "|                                                                             |\n"
-        << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-        << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-        << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
-        << "|                      Jake Ostien   (jtostie@sandia.gov),                    |\n"
-        << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
-        << "|                                                                             |\n"
-        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-        << "|                                                                             |\n"
-        << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
       int errorFlag = 0;
@@ -129,10 +95,10 @@ namespace Intrepid2 {
         << "===============================================================================\n"
         << "| TEST 1: correctness of basis function values                                |\n"
         << "===============================================================================\n";
-      
+
       // output precision
       outStream -> precision(20);
-      
+
       // VALUE: Each row gives the 10 correct basis set values at an evaluation point
       const ValueType nodalBasisValues[] = {
         // first 4 vertices

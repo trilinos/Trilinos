@@ -1,4 +1,4 @@
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR})
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -435,14 +435,29 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_BackwardEuler_CopyFiles
+  DEST_FILES Tempus_BackwardEuler_SinCos.xml
+  EXEDEPS UnitTest_BackwardEuler
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_DIRK_BackwardEuler_CopyFiles
   DEST_FILES Tempus_DIRK_VanDerPol.xml
   EXEDEPS UnitTest_DIRK_BackwardEuler
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkExplicitAForm_CopyFiles
+  DEST_FILES Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
+  EXEDEPS UnitTest_NewmarkExplicitAForm
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkImplicitAForm_CopyFiles
-  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
+  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml
   EXEDEPS UnitTest_NewmarkImplicitAForm
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkImplicitDForm_CopyFiles
+  DEST_FILES Tempus_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder.xml
+  EXEDEPS UnitTest_NewmarkImplicitDForm
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_IntegratorBasic_CopyFiles
