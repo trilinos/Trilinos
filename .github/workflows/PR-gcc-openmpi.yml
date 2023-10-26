@@ -43,7 +43,7 @@ jobs:
           fetch-depth: 0
       - name: Repo status
         run: |
-	  git fetch --all
+          git fetch --all
           pwd
           ls -lhat
           git status
