@@ -30,9 +30,7 @@
     class SDCHashCode
     {
     public:
-      template<class T, std::size_t N=4>
-      using base_type = percept::NoMallocArray<T,N>;
-
+      typedef percept::NoMallocArray<T,N> base_type;
       int operator()(base_type& sdc);
     };
 
@@ -45,14 +43,10 @@
     public:
       HC m_HashCode;
       CompareClass m_CompareClass;
+      typedef percept::NoMallocArray<T,N> base_type;
+      typedef std::size_t    size_type;
 
-      template<class T, std::size_t N=4>
-      using based_type = percept::NoMallocArray<T,N>;
-
-      using size_type = std::size_t; 
-
-      template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T>, class HC = SDCHashCode<T,N>  >
-      using VAL = SubDimCell<T,N,CompareClass,HC>;
+      typedef SubDimCell<T,N,CompareClass,HC> VAL;
 
       //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
       SubDimCell() : base_type(), m_hash(0u), m_HashCode(), m_CompareClass() {}
@@ -163,10 +157,9 @@
 #define GET(x,i) x[i]
 
     template<class T, std::size_t N>
-    struct my_hash
+    struct my_hash : public std::unary_function< SubDimCell<T,N>, std::size_t>
     {
-      template<class T, std::size_t N>
-      using _Tp = SubDimCell<T,N>;
+      typedef SubDimCell<T,N> _Tp ;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -191,10 +184,9 @@
     };
 
     template<class T, std::size_t N>
-    struct my_fast_hash
+    struct my_fast_hash : public std::unary_function< SubDimCell<T,N>, std::size_t>
     {
-      template<class T, std::size_t N>
-      using _TP = SubDimCell<T,N>;
+      typedef SubDimCell<T,N> _Tp ;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -205,10 +197,10 @@
     };
 
     template<class T, std::size_t N>
-    struct my_equal_to
+    struct my_equal_to :  public std::binary_function<SubDimCell<T,N>,
+                                                      SubDimCell<T,N>, bool>
     {
-      using _Tp = SubDimCell<T,N>;
-
+      typedef SubDimCell<T,N> _Tp ;
       bool
       operator()(const _Tp& x, const _Tp& y) const
       {
@@ -227,11 +219,10 @@
     };
 
     template<class T, std::size_t N>
-    struct my_fast_equal_to
+    struct my_fast_equal_to :  public std::binary_function<SubDimCell<T,N>,
+                                                           SubDimCell<T,N>, bool>
     {
-      template<class T, std::size_t N>
-      using _Tp = SubDimCell<T,N>;
-
+      typedef SubDimCell<T,N> _Tp ;
       inline bool
       operator()(const _Tp& x, const _Tp& y) const
       {

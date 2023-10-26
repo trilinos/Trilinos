@@ -45,7 +45,7 @@
       SDC_DATA_SPACING
     };
 
-    using SDCEntityType = stk::mesh::Entity;
+    typedef stk::mesh::Entity SDCEntityType;
 
     class MyEntityLess {
     public:
@@ -105,8 +105,7 @@
     {
     public:
 
-      template<class T, std::size_t N=4>
-      using sdc_type = percept::NoMallocArray<T, N>;
+      typedef  percept::NoMallocArray<T, N> sdc_type;
 
       percept::PerceptMesh* m_eMesh;
       MySDCHashCode(percept::PerceptMesh* eMesh=0) : m_eMesh(eMesh) {}
@@ -139,8 +138,7 @@
     class MySubDimCell : public SubDimCell<T, N, CompareClass, HC>
     {
     public:
-      template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T>, class HC = MySDCHashCode<T, N> >
-      using base_type = SubDimCell<T, N, CompareClass, HC>; 
+      typedef SubDimCell<T, N, CompareClass, HC> base_type;
 
       percept::PerceptMesh* m_eMesh;
       MySubDimCell(percept::PerceptMesh* eMesh) : base_type(), m_eMesh(eMesh) {
@@ -162,9 +160,9 @@
 
 
     template<>
-    struct my_fast_hash<SDCEntityType, 2>
+    struct my_fast_hash<SDCEntityType, 2> : public std::unary_function< MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>, std::size_t>
     {
-      using _Tp = MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>;
+      typedef MySubDimCell<SDCEntityType, 2, CompareSDCEntityType> _Tp ;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -176,9 +174,9 @@
 
 
     template<>
-    struct my_fast_hash<SDCEntityType, 4>
+    struct my_fast_hash<SDCEntityType, 4> : public std::unary_function< MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>, std::size_t>
     {
-      using _Tp =  MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>;
+      typedef MySubDimCell<SDCEntityType, 4, CompareSDCEntityType> _Tp ;
 
       inline std::size_t
       operator()(const _Tp& x) const
@@ -190,9 +188,10 @@
 
 
     template<>
-    struct my_fast_equal_to<SDCEntityType, 2>     
+    struct my_fast_equal_to<SDCEntityType, 2> :  public std::binary_function< MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>,
+                                                                              MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>, bool>
     {
-      using _Tp = MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>;
+      typedef MySubDimCell<SDCEntityType, 2, CompareSDCEntityType> _Tp ;
       inline bool
       operator()(const _Tp& x, const _Tp& y) const
       {
@@ -210,9 +209,10 @@
     };
 
     template<>
-    struct my_fast_equal_to<SDCEntityType, 4> 
+    struct my_fast_equal_to<SDCEntityType, 4> :  public std::binary_function< MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>,
+                                                                              MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>, bool>
     {
-      using _Tp =  MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>;
+      typedef MySubDimCell<SDCEntityType, 4, CompareSDCEntityType> _Tp ;
       inline bool
       operator()(const _Tp& x, const _Tp& y) const
       {
