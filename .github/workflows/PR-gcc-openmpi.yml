@@ -52,15 +52,15 @@ jobs:
       - name: Generate PR cmake fragment
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source /etc/profile.d/modules-init.sh ; source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
+          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
       - name: Generate enable packages cmake fragment
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source /etc/profile.d/modules-init.sh ; TRILINOS_DIR=${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh HEAD origin/develop package-enables.cmake ctest-labels.cmake" || bash -l -c "cat TribitsDumpDepsXmlScript.log"
+          bash -l -c "TRILINOS_DIR=${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh HEAD origin/develop package-enables.cmake ctest-labels.cmake" || bash -l -c "cat TribitsDumpDepsXmlScript.log"
       - name: configure trilinos
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source /etc/profile.d/modules-init.sh ; cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
+          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
       - name: CMakeCache.txt
         if: always()
         working-directory: /home/Trilinos/build
@@ -68,7 +68,7 @@ jobs:
           bash -l -c "cat CMakeCache.txt"
       - name: build trilinos
         working-directory: /home/Trilinos/build
-        run: bash -l -c "source /etc/profile.d/modules-init.sh ; ninja"
+        run: bash -l -c "ninja"
       - name: ctest
         working-directory: /home/Trilinos/build
-        run: bash -l -c "source /etc/profile.d/modules-init.sh ; ctest -j2"
+        run: bash -l -c "ctest -j2"
