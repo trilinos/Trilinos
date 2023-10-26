@@ -78,14 +78,12 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
              ]
 
         if gpu_utils.has_nvidia_gpus():
-            self.message("-- REMARK: I see that I am running on a machine that has NVidia GPUs; I will attempt to write a GPU resource file for use by ctest")
-            resource_spec_file = os.path.join(self.arg_build_dir, "ctest_resources.json")
+            self.message("-- REMARK: I see that I am running on a machine that has NVidia GPUs; I will feed TriBITS some data enabling GPU resource management")
             slots_per_gpu = 2
             gpu_indices = gpu_utils.list_nvidia_gpus()
             self.message(f"-- REMARK: Using {slots_per_gpu} slots per GPU")
             self.message(f"-- REMARK: Using GPUs {gpu_indices}")
-            gpu_utils.write_ctest_gpu_resource_file(filename=resource_spec_file, gpu_indices=gpu_indices, slots_per_gpu=slots_per_gpu)
-            cmd.append(f"-DCTEST_RESOURCE_SPEC_FILE:FILEPATH={resource_spec_file}")
+            cmd.append(f"-DEXTRA_CONFIGURE_ARGS:STRING=\"-DTrilinos_AUTOGENERATE_TEST_RESOURCE_FILE:BOOL=ON -DTrilinos_CUDA_NUM_GPUS:STRING={len(gpu_indices)} -DTrilinos_CUDA_SLOTS_PER_GPU:STRING={slots_per_gpu}\"")
 
         self.message( "--- ctest version:")
         if not self.args.dry_run:
