@@ -37,10 +37,10 @@ jobs:
         run: |
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
-      - name: clone trilinos
+      - name: Clone trilinos
         uses: actions/checkout@v4
-	with:
-	  fetch-depth: 0
+        with:
+          fetch-depth: 0
       - name: Repo status
         run: |
           pwd
