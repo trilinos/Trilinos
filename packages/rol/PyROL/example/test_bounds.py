@@ -2,6 +2,8 @@ from PyROL.vectors.npVector import npVector as vector_type
 from PyROL import *
 from PyROL.PyROL.ROL import getParametersFromXmlFile
 from PyROL.PyROL.ROL import Bounds_double_t, Problem_double_t, Solver_double_t
+from PyROL.PyROL.ROL import getCout
+import sys
 import numpy as np
 
 # Matrix from rol/example/quadratic/example_01.cpp
@@ -34,4 +36,11 @@ status = StatusTest(params)
 problem = Problem_double_t(obj, x)
 problem.addBoundConstraint(bnd)
 solver = Solver_double_t(problem, params)
-solver.solve(status)
+cout = openOfstream('test.txt')
+solver.solve(cout, status)
+closeOfstream(cout)
+
+state = solver.getAlgorithmState()
+print(state.iter)
+print(state.value)
+print(state.nfval)
