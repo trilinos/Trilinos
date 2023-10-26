@@ -385,7 +385,7 @@ namespace Tpetra {
     resumeFill (params);
     checkInternalState ();
   }
-.
+
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
