@@ -1303,7 +1303,7 @@ namespace Tpetra {
 
     // Once indices are allocated, CrsGraph needs to free this information.
     this->numAllocForAllRows_ = 0;
-    this->k_numAllocPerRow_ =  num_row_entries_type();
+    this->k_numAllocPerRow_ = decltype (k_numAllocPerRow_) ();
     this->indicesAreAllocated_ = true;
 
     try {
