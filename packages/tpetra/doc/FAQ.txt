@@ -152,15 +152,15 @@ However, it currently (as of Aug / Sep 2017) only knows how to do so
 for OpenMPI.  Furthermore, automatic detection only works if not cross
 compiling, since it requires running an OpenMPI executable.  If
 automatic detection does not work, you may set the CMake variable
-~TPETRA_ASSUME_CUDA_AWARE_MPI~ to control the default assumption at
+~Tpetra_ASSUME_GPU_AWARE_MPI~ to control the default assumption at
 configure time.  For example:
 
 #+BEGIN_EXAMPLE
--D TPETRA_ASSUME_CUDA_AWARE_MPI:BOOL=ON
+-D Tpetra_ASSUME_GPU_AWARE_MPI:BOOL=ON
 #+END_EXAMPLE
 
 You may also tell Tpetra, via the environment variable
-~TPETRA_ASSUME_CUDA_AWARE_MPI~, whether to assume that the MPI
+~TPETRA_ASSUME_GPU_AWARE_MPI~, whether to assume that the MPI
 implementation that Trilinos uses is CUDA aware.  To make Tpetra
 assume that MPI is CUDA aware, set this environment variable to some
 true value, like "1" or "TRUE".  To make Tpetra assume that MPI is
