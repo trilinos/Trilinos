@@ -1,4 +1,4 @@
-from PyROL.PyROL import ROL
+from pyrol.pyrol import ROL
 import inspect
 import sys
 
@@ -21,16 +21,16 @@ def withTrackingConstructor(cls):
 
 
 ROL_members = {}
-for cls_name, cls_obj in inspect.getmembers(sys.modules['PyROL.PyROL.ROL']):
+for cls_name, cls_obj in inspect.getmembers(sys.modules['pyrol.pyrol.ROL']):
     if inspect.isclass(cls_obj):
         cls_obj = withTrackingConstructor(cls_obj)
         if cls_name.find('Vector') >= 0:
             trackedTypes.append(cls_obj)
-        setattr(sys.modules['PyROL.PyROL.ROL'], cls_name, cls_obj)
+        setattr(sys.modules['pyrol.pyrol.ROL'], cls_name, cls_obj)
     ROL_members[cls_name] = (cls_obj, inspect.isclass(cls_obj))
 
 
-ROL_classes = [(cls_name , cls_obj) for cls_name, cls_obj in inspect.getmembers(sys.modules['PyROL.PyROL.ROL']) if inspect.isclass(cls_obj)]
+ROL_classes = [(cls_name , cls_obj) for cls_name, cls_obj in inspect.getmembers(sys.modules['pyrol.pyrol.ROL']) if inspect.isclass(cls_obj)]
 
 def getDefaultScalarType():
     return "double"

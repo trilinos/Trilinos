@@ -1,7 +1,7 @@
 import numpy as np
 
-from PyROL import *
-from PyROL.vectors import npVector as myVector
+from pyrol import *
+from pyrol.vectors import npVector as myVector
 
 
 class RosenbrockObjective(Objective):

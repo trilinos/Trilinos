@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import linalg as LA
-from PyROL.PyROL import ROL
-from PyROL.getTypeName import *
+from pyrol.pyrol import ROL
+from pyrol.getTypeName import *
 
 
 class npVector(getTypeName('Vector')):

@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.random import default_rng
 
-from PyROL import *
+from pyrol import *
 from definitions import myVector, ForwardProblem, Loss
 
 

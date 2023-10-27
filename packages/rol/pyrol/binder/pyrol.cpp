@@ -76,8 +76,8 @@ void bind_std_fstream_tcc(std::function< pybind11::module &(std::string const &n
 void bind_PyROL_stream(std::function< pybind11::module &(std::string const &namespace_) > &M);
 
 
-PYBIND11_MODULE(PyROL, root_module) {
-	root_module.doc() = "PyROL module";
+PYBIND11_MODULE(pyrol, root_module) {
+	root_module.doc() = "pyrol module";
 
 	std::map <std::string, pybind11::module> modules;
 	ModuleGetter M = [&](std::string const &namespace_) -> pybind11::module & {

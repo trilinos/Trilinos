@@ -1,7 +1,7 @@
 import numpy as np
 
-from PyROL import *
-from PyROL.vectors import npVector
+from pyrol import *
+from pyrol.vectors import npVector
 
 
 class myVector(npVector):
