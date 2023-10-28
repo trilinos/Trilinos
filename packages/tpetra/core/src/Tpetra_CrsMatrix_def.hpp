@@ -7931,7 +7931,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // Owning PIDs
     Teuchos::Array<int> SourcePids;
-    Teuchos::Array<int> TargetPids;
 
     // Temp variables for sub-communicators
     RCP<const map_type> ReducedRowMap, ReducedColMap,
@@ -8460,6 +8459,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     Teuchos::Array<int> RemotePids;
     if (runOnHost) {
+      Teuchos::Array<int> TargetPids;
       // Backwards compatibility measure.  We'll use this again below.
   
       // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
@@ -8686,6 +8686,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::View<GO*,device_type>     CSR_colind_GID_d;
       Kokkos::View<LO*,device_type>     CSR_colind_LID_d;
       Kokkos::View<impl_scalar_type*,device_type> CSR_vals_d;
+      Kokkos::View<int*,device_type>    TargetPids_d;
   
       Details::unpackAndCombineIntoCrsArrays(
                                      *this, 
@@ -8701,17 +8702,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                      CSR_colind_GID_d,
                                      CSR_vals_d,
                                      SourcePids(),
-                                     TargetPids);
+                                     TargetPids_d);
   
       Kokkos::resize (CSR_colind_LID_d, CSR_colind_GID_d.size());
   
-      // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
-      // owned entries.  Convert them to the actual PID.
-      // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays with a parallel_for.
-      for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
-      {
-        if(TargetPids[i] == -1) TargetPids[i] = MyPID;
-      }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       tmCopySPRdata = Teuchos::null;
 #endif
@@ -8735,7 +8729,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                         CSR_colind_LID_d,
                                                         CSR_colind_GID_d,
                                                         BaseDomainMap,
-                                                        TargetPids,
+                                                        TargetPids_d,
                                                         RemotePids,
                                                         MyColMap);
       }
