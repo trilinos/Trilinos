@@ -291,7 +291,7 @@ unpackAndCombineIntoCrsArrays (
     Kokkos::View<GlobalOrdinal*,typename Node::device_type>&     /*crs_colind_d*/,
     Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,typename Node::device_type>& /*crs_vals_d*/,
     const Teuchos::ArrayView<const int>& SourcePids,
-    Teuchos::Array<int>& TargetPids);
+    Kokkos::View<int*,typename Node::device_type>& /*TargetPids*/);
 
 } // namespace Details
 } // namespace Tpetra
