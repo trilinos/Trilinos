@@ -1204,14 +1204,11 @@ lowCommunicationMakeColMapAndReindex (
   //     each domain GID is a column GID.  we want to do this to
   //     maintain a consistent ordering of GIDs between the columns
   //     and the domain.
-  Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getLocalElementList();
-  auto domainGlobalElements_view = Details::create_mirror_view_from_raw_host_array(exec, domainGlobalElements.getRawPtr(), domainGlobalElements.size(), true, "domainGlobalElements");
-  
   if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
     if (NumLocalColGIDs > 0) {
       // Load Global Indices into first numMyCols elements column GID list
-      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, domainGlobalElements.size()), KOKKOS_LAMBDA(const int i) {
-        ColIndices_view[i] = domainGlobalElements_view[i];
+      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numDomainElements), KOKKOS_LAMBDA(const int i) {
+        ColIndices_view[i] = domainMap_local.getGlobalElement(i);
       });
     }
   }
@@ -1220,7 +1217,7 @@ lowCommunicationMakeColMapAndReindex (
     LO NumLocalAgain = 0;
     Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(0, numDomainElements), KOKKOS_LAMBDA(const int i, LO& update, const bool final) {
       if(final && LocalGIDs_view[i]) {
-        ColIndices_view[update] = domainGlobalElements_view[i];
+        ColIndices_view[update] = domainMap_local.getGlobalElement(i);
       }
       if(LocalGIDs_view[i]) {
         update++;
@@ -1450,14 +1447,11 @@ lowCommunicationMakeColMapAndReindex (
   //     each domain GID is a column GID.  we want to do this to
   //     maintain a consistent ordering of GIDs between the columns
   //     and the domain.
-  Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getLocalElementList();
-  auto domainGlobalElements_view = Details::create_mirror_view_from_raw_host_array(exec, domainGlobalElements.getRawPtr(), domainGlobalElements.size(), true, "domainGlobalElements");
-  
   if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
     if (NumLocalColGIDs > 0) {
       // Load Global Indices into first numMyCols elements column GID list
-      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, domainGlobalElements.size()), KOKKOS_LAMBDA(const int i) {
-        ColIndices_view[i] = domainGlobalElements_view[i];
+      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numDomainElements), KOKKOS_LAMBDA(const int i) {
+        ColIndices_view[i] = domainMap_local.getGlobalElement(i);
       });
     }
   }
@@ -1466,7 +1460,7 @@ lowCommunicationMakeColMapAndReindex (
     LO NumLocalAgain = 0;
     Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(0, numDomainElements), KOKKOS_LAMBDA(const int i, LO& update, const bool final) {
       if(final && LocalGIDs_view[i]) {
-        ColIndices_view[update] = domainGlobalElements_view[i];
+        ColIndices_view[update] = domainMap_local.getGlobalElement(i);
       }
       if(LocalGIDs_view[i]) {
         update++;

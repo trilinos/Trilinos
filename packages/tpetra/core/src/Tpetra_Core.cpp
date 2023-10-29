@@ -242,10 +242,10 @@ namespace Tpetra {
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
 
-      // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
+      // Add Kokkos calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-      // Add Kokkos::fence() to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
   }
@@ -265,10 +265,10 @@ namespace Tpetra {
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
 
-      // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
+      // Add Kokkos::deep calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-      // Add Kokkos::fence() to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
 
@@ -312,10 +312,10 @@ namespace Tpetra {
       const int myRank = comm->getRank ();
       initKokkosIfNeeded (argc, argv, myRank);
 
-      // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
+      // Add Kokkos calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-      // Add Kokkos::fence() to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
     }
     tpetraIsInitialized_ = true;
     wrappedDefaultComm_ = comm;

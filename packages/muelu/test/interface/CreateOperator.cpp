@@ -291,26 +291,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     bool useKokkos = false;
     if(lib == Xpetra::UseTpetra) {
-# ifdef HAVE_MUELU_SERIAL
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-        useKokkos = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_SYCL
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-        useKokkos = true;
-# endif      
+      useKokkos = !Node::is_serial;
     }
     clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
 

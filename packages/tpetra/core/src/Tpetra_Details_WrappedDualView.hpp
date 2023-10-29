@@ -44,6 +44,7 @@
 #include <Tpetra_Details_temporaryViewUtils.hpp>
 #include <Kokkos_DualView.hpp>
 #include "Teuchos_TestForException.hpp"
+#include "Tpetra_Details_ExecutionSpaces.hpp"
 #include <sstream>
 
 //#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
@@ -651,20 +652,9 @@ private:
     if(!wdvTrackingEnabled)
       return false;
 
-    // We check to see if the memory is not aliased *or* if it is a supported accelerator (for shared host/device memory).
-    bool useSync = !memoryIsAliased();
-#if defined(KOKKOS_ENABLE_CUDA)
-    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::Cuda> || useSync;
-#endif
-#if defined(KOKKOS_ENABLE_HIP)
-    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::HIP> || useSync;
-#endif
-#if defined(KOKKOS_ENABLE_SYCL)
-    useSync = std::is_same_v<typename DualViewType::execution_space, Kokkos::Experimental::SYCL> || useSync;
-#endif
-    return useSync;
-      
-
+    // We check to see if the memory is not aliased *or* if it is a supported
+    // (heterogeneous memory) accelerator (for shared host/device memory).
+    return !memoryIsAliased() || Spaces::is_gpu_exec_space<typename DualViewType::execution_space>();
   }
 
 

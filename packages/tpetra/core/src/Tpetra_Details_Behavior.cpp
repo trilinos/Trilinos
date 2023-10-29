@@ -630,6 +630,19 @@ bool Behavior::timeKokkosFence()
 
 }  
 
+bool Behavior::timeKokkosFunctions() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_FUNCTIONS";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}  
+
+
 } // namespace Details
 } // namespace Tpetra
 
