@@ -58,14 +58,11 @@ namespace PHX {
   // ***********************
   template<typename...ParamPack> struct PackSize;
 
-  template<typename...ParamPack>
-  struct PackSize : std::integral_constant<int,PackSize<void,ParamPack...>::value> {};
-
   template<>
-  struct PackSize<void> : std::integral_constant<int,0> {};
+  struct PackSize<> : std::integral_constant<int,0> {};
 
   template<typename NextMember, typename...ParamPack>
-  struct PackSize<void,NextMember,ParamPack...> : std::integral_constant<int,1+PackSize<void,ParamPack...>::value>{};
+  struct PackSize<NextMember,ParamPack...> : std::integral_constant<int,1+PackSize<ParamPack...>::value>{};
 
   // ******************************************************************
   /*! \brief A concrete implementation of the DataLayout class for compile time checked multidimensional arrays.
@@ -143,10 +140,6 @@ namespace PHX {
     std::string m_identifier;
 
   };
-
-  // template<typename... Tags>
-  // std::ostream& operator<<(std::ostream& os,
-  //       		   const PHX::MDALayout<Tags...>& t);
 
 }
 

@@ -54,7 +54,7 @@
 namespace PHX {
 
 //**********************************************************************
-template<int N=0, typename CurrentExtent, typename... Extents>
+template<int N, typename CurrentExtent, typename... Extents>
 void setExtentsVariadic(std::vector<PHX::Device::size_type>& e, CurrentExtent ce, Extents... extents)
 {
   e[N] = ce;
@@ -65,7 +65,7 @@ void setExtentsVariadic(std::vector<PHX::Device::size_type>& e, CurrentExtent ce
 }
 
 //**********************************************************************
-template<int N=0, typename CurrentTag, typename... Tags>
+template<int N, typename CurrentTag, typename... Tags>
 void setTagNames(std::vector<std::string>& names)
 {
   names.push_back(PHX::print<CurrentTag>());
@@ -85,7 +85,7 @@ PHX::MDALayout<Tags...>::MDALayout(Extents... extents)
   static_assert(Rank == PackSize<Extents...>::value);
 
   m_dim_size.resize(Rank);
-  setExtentsVariadic(m_dim_size,extents...);
+  setExtentsVariadic<0>(m_dim_size,extents...);
 
   m_dim_name.clear();
   setTagNames<0,Tags...>(m_dim_name);
@@ -128,7 +128,7 @@ operator==(const PHX::DataLayout& right) const
   if (tmp == 0)
     return false;
 
-  for (size_type i=0; i < sizeof...(Tags); ++i)
+  for (size_type i=0; i < Rank; ++i)
     if (m_dim_size[i] != tmp->m_dim_size[i])
       return false;
 
@@ -139,15 +139,15 @@ operator==(const PHX::DataLayout& right) const
 template<typename... Tags>
 PHX::Device::size_type
 PHX::MDALayout<Tags...>::rank() const
-{ return sizeof...(Tags); }
+{ return Rank; }
 
 //**********************************************************************
 template<typename... Tags>
 void PHX::MDALayout<Tags...>::
 dimensions(std::vector<PHX::Device::size_type>& dim) const
 {
-  dim.resize(sizeof...(Tags));
-  for(std::size_t i=0; i < dim.size(); ++i)
+  dim.resize(Rank);
+  for(std::size_t i=0; i < Rank; ++i)
     dim[i] = m_dim_size[i];
 }
 
@@ -156,7 +156,7 @@ template<typename... Tags>
 void PHX::MDALayout<Tags...>::
 names(std::vector<std::string>& names) const
 {
-  names.resize(sizeof...(Tags));
+  names.resize(Rank);
   for(std::size_t i=0; i < names.size(); ++i)
     names[i] = m_dim_name[i];
 }
@@ -285,13 +285,13 @@ typename std::enable_if<std::is_signed<IndexType>::value>::type
 PHX::MDALayout<Tags...>::
 checkForValidRank(const IndexType& ordinal) const
 {
-  if ( (ordinal > (Rank-1)) || (ordinal < 0) ) {
+  if ( (ordinal >= Rank) || (ordinal < 0) ) {
     std::ostringstream os;
     os << "Requested Ordinal " << ordinal
        << " is outside the valid range of 0 - " << Rank - 1
        << " in DataLayout object:\n"
        << m_identifier << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > (Rank-1) || ordinal < 0,
+    TEUCHOS_TEST_FOR_EXCEPTION(ordinal >= Rank || ordinal < 0,
 			       std::runtime_error, os.str());
   }
 }
@@ -303,25 +303,16 @@ typename std::enable_if<std::is_unsigned<IndexType>::value>::type
 PHX::MDALayout<Tags...>::
 checkForValidRank(const IndexType& ordinal) const
 {
-  if (ordinal > (Rank-1)) {
+  if (ordinal >= Rank) {
     std::ostringstream os;
     os << "Requested Ordinal " << ordinal
        << " is outside the valid range of 0 - " << Rank - 1
        << " in DataLayout object:\n"
        << m_identifier << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > (Rank-1),
+    TEUCHOS_TEST_FOR_EXCEPTION(ordinal >= Rank,
 			       std::runtime_error, os.str());
   }
 }
-
-//**********************************************************************
-// template<typename... Tags>
-// std::ostream&
-// PHX::operator<<(std::ostream& os, const PHX::MDALayout<Tags...>& v)
-// {
-//   v.print(os,0);
-//   return os;
-// }
 
 //**********************************************************************
 
