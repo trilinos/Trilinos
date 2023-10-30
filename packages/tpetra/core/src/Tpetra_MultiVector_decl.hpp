@@ -1722,9 +1722,19 @@ namespace Tpetra {
     /// NaN entries.  It is legal for the input A to alias this
     /// MultiVector.
     void
-    update (const Scalar& alpha,
+    update (const execution_space& space,
+            const Scalar& alpha,
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const Scalar& beta);
+
+    //! @overload
+    void
+    update (const Scalar& alpha,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            const Scalar& beta)
+    {
+      this->update(execution_space{}, alpha, A, beta);
+    }
 
     /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
     ///
@@ -1733,11 +1743,23 @@ namespace Tpetra {
     /// contains NaN entries.  It is legal for the inputs A or B to
     /// alias this MultiVector.
     void
-    update (const Scalar& alpha,
+    update (const execution_space& space,
+            const Scalar& alpha,
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const Scalar& beta,
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
             const Scalar& gamma);
+
+    //! @overload
+    void
+    update (const Scalar& alpha,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            const Scalar& beta,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+            const Scalar& gamma)
+    {
+      this->update(execution_space{}, alpha, A, beta, B, gamma);
+    }
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a host view.
@@ -2045,7 +2067,7 @@ namespace Tpetra {
               const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
               const Scalar& beta);
 
-    /// \brief Multiply a Vector A elementwise by a MultiVector B.
+    /// \brief Multiply a Vector @p A elementwise by a MultiVector @p B.
     ///
     /// Compute <tt>this = scalarThis * this + scalarAB * B @ A</tt>
     /// where <tt>@</tt> denotes element-wise multiplication.  In
@@ -2066,10 +2088,21 @@ namespace Tpetra {
     /// This case may occur in block relaxation algorithms when
     /// applying a diagonal scaling.
     void
-    elementWiseMultiply (Scalar scalarAB,
+    elementWiseMultiply (const execution_space& space,
+                               Scalar scalarAB,
                          const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
                          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                          Scalar scalarThis);
+
+    //! @overload
+    void
+    elementWiseMultiply (Scalar scalarAB,
+                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+                         Scalar scalarThis)
+    {
+      this->elementWiseMultiply(execution_space{}, scalarAB, A, B, scalarThis);
+    }
     //@}
     //! @name Attribute access functions
     //@{

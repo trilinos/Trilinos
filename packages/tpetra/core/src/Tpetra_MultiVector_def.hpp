@@ -3125,7 +3125,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  update (const Scalar& alpha,
+  update (const execution_space& space,
+          const Scalar& alpha,
           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
           const Scalar& beta)
   {
@@ -3161,7 +3162,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
 
     // The device memory of *this is about to be modified
     if (isConstantStride () && A.isConstantStride ()) {
-      KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
+      KokkosBlas::axpby (space, theAlpha, X_lcl, theBeta, Y_lcl);
     }
     else {
       // Make sure that Kokkos only uses the local length for add.
@@ -3171,7 +3172,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
         auto Y_k = subview (Y_lcl, ALL (), Y_col);
         auto X_k = subview (X_lcl, ALL (), X_col);
 
-        KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
+        KokkosBlas::axpby (space, theAlpha, X_k, theBeta, Y_k);
       }
     }
   }
@@ -3179,7 +3180,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  update (const Scalar& alpha,
+  update (const execution_space& space,
+          const Scalar& alpha,
           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
           const Scalar& beta,
           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
@@ -3231,7 +3233,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     auto B_lcl = subview (B.getLocalViewDevice(Access::ReadOnly), rowRng, ALL ());
 
     if (isConstantStride () && A.isConstantStride () && B.isConstantStride ()) {
-      KokkosBlas::update (theAlpha, A_lcl, theBeta, B_lcl, theGamma, C_lcl);
+      KokkosBlas::update (space, theAlpha, A_lcl, theBeta, B_lcl, theGamma, C_lcl);
     }
     else {
       // Some input (or *this) is not constant stride,
@@ -3240,7 +3242,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
         const size_t this_col = isConstantStride () ? k : whichVectors_[k];
         const size_t A_col = A.isConstantStride () ? k : A.whichVectors_[k];
         const size_t B_col = B.isConstantStride () ? k : B.whichVectors_[k];
-        KokkosBlas::update (theAlpha, subview (A_lcl, rowRng, A_col),
+        KokkosBlas::update (space,
+                            theAlpha, subview (A_lcl, rowRng, A_col),
                             theBeta, subview (B_lcl, rowRng, B_col),
                             theGamma, subview (C_lcl, rowRng, this_col));
       }
@@ -4299,7 +4302,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  elementWiseMultiply (Scalar scalarAB,
+  elementWiseMultiply (const execution_space& space,
+                             Scalar scalarAB,
                        const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
                        const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                        Scalar scalarThis)
@@ -4329,7 +4333,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       //
       // If both *this and B have constant stride, we can do an
       // element-wise multiply on all columns at once.
-      KokkosBlas::mult (scalarThis,
+      KokkosBlas::mult (space,
+                        scalarThis,
                         this_view,
                         scalarAB,
                         subview (A_view, ALL (), 0),
@@ -4339,7 +4344,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       for (size_t j = 0; j < numVecs; ++j) {
         const size_t C_col = isConstantStride () ? j : whichVectors_[j];
         const size_t B_col = B.isConstantStride () ? j : B.whichVectors_[j];
-        KokkosBlas::mult (scalarThis,
+        KokkosBlas::mult (space,
+                          scalarThis,
                           subview (this_view, ALL (), C_col),
                           scalarAB,
                           subview (A_view, ALL (), 0),
