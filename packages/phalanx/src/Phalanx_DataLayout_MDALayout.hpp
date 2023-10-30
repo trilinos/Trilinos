@@ -136,7 +136,7 @@ namespace PHX {
 
     std::vector<std::string> m_dim_name;
 
-    PHX::Device::size_type m_dim_size[Rank];
+    std::vector<PHX::Device::size_type> m_dim_size;
 
     PHX::Device::size_type m_size;
 

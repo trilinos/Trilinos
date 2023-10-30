@@ -55,7 +55,7 @@ namespace PHX {
 
 //**********************************************************************
 template<int N=0, typename CurrentExtent, typename... Extents>
-void setExtentsVariadic(std::size_t* e, CurrentExtent ce, Extents... extents)
+void setExtentsVariadic(std::vector<PHX::Device::size_type>& e, CurrentExtent ce, Extents... extents)
 {
   e[N] = ce;
 
@@ -82,9 +82,12 @@ template<typename... Tags>
 template<typename... Extents>
 PHX::MDALayout<Tags...>::MDALayout(Extents... extents)
 {
-  static_assert( Rank == PackSize<Extents...>::value);
+  static_assert(Rank == PackSize<Extents...>::value);
 
+  m_dim_size.resize(Rank);
   setExtentsVariadic(m_dim_size,extents...);
+
+  m_dim_name.clear();
   setTagNames<0,Tags...>(m_dim_name);
 
   m_size = 1;
