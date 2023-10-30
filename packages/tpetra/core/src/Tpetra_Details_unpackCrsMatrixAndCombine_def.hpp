@@ -1456,7 +1456,7 @@ unpackAndCombineIntoCrsArrays (
     Kokkos::View<GlobalOrdinal*,typename Node::device_type>     &crs_colind_d,
     Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,typename Node::device_type>& crs_vals_d,
     const Teuchos::ArrayView<const int>& SourcePids,
-    Teuchos::Array<int>& TargetPids)
+    Kokkos::View<int*,typename Node::device_type> &TargetPids)
 {
   using execution_space = typename Node::execution_space;
   using Tpetra::Details::PackTraits;
@@ -1529,11 +1529,10 @@ unpackAndCombineIntoCrsArrays (
     prefix << "permuteToLIDs.size() = " << permute_to_lids_d.size ()
     << "!= permute_from_lids_d.size() = " << permute_from_lids_d.size () << ".");
 
-  // Preseed TargetPids with -1 for local
   if (static_cast<size_t> (TargetPids.size ()) != TargetNumNonzeros) {
-    TargetPids.resize (TargetNumNonzeros);
+    Kokkos::resize(TargetPids,TargetNumNonzeros);
   }
-  TargetPids.assign (TargetNumNonzeros, -1);
+  Kokkos::deep_copy(execution_space(), TargetPids, -1);
 
   // Grab pointers for sourceMatrix
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
@@ -1547,10 +1546,6 @@ unpackAndCombineIntoCrsArrays (
   auto src_pids_d =
     create_mirror_view_from_raw_host_array(outputDevice, SourcePids.getRawPtr(),
         SourcePids.size(), true, "src_pids");
-
-  auto tgt_pids_d =
-    create_mirror_view_from_raw_host_array(outputDevice, TargetPids.getRawPtr(),
-        TargetPids.size(), true, "tgt_pids");
 
 # ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
@@ -1590,7 +1585,7 @@ unpackAndCombineIntoCrsArrays (
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsArrays(
       local_matrix, local_col_map, import_lids_d, imports_d,
       num_packets_per_lid_d, permute_to_lids_d, permute_from_lids_d,
-      crs_rowptr_d, crs_colind_d, crs_vals_d, src_pids_d, tgt_pids_d,
+      crs_rowptr_d, crs_colind_d, crs_vals_d, src_pids_d, TargetPids,
       numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID,
       bytes_per_value);
 # ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1602,10 +1597,9 @@ unpackAndCombineIntoCrsArrays (
   tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("copy back to host"))));
 # endif
 
-  typename decltype(tgt_pids_d)::HostMirror tgt_pids_h(
-      TargetPids.getRawPtr(), TargetPids.size());
-  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), tgt_pids_h, tgt_pids_d);
+  Kokkos::parallel_for("setLocalEntriesToPID", Kokkos::RangePolicy<typename DT::execution_space>(0,TargetPids.size()), KOKKOS_LAMBDA (const size_t i) {
+    if (TargetPids(i) == -1) TargetPids(i) = MyTargetPID;
+  });
 
 } //unpackAndCombineIntoCrsArrays
 
@@ -1906,7 +1900,7 @@ unpackAndCombineIntoCrsArrays (
     Kokkos::View<GO*,typename NT::device_type>&, \
     Kokkos::View<typename CrsMatrix<ST, LO, GO, NT>::impl_scalar_type*,typename NT::device_type>&, \
     const Teuchos::ArrayView<const int>&, \
-    Teuchos::Array<int>&); \
+    Kokkos::View<int*,typename NT::device_type>&); \
   template void \
   Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
     const CrsMatrix<ST, LO, GO, NT> &, \
