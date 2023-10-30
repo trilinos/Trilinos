@@ -378,6 +378,7 @@ int main(int argc, char *argv[]) {
 int body(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   Kokkos::initialize(argc,argv);
   body(argc,argv);
   if (!Kokkos::is_finalized())
@@ -394,10 +395,9 @@ int body(int argc, char *argv[]) {
   using Teuchos::CommandLineProcessor;
 
   int error = 0;
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  int rank=mpiSession.getRank();
-  int numProcs=mpiSession.getNProc();
+  int rank=comm->getRank();
+  int numProcs=comm->getSize();
   int MyPID=rank;
 
   // Did the user specify --help at the command line to print help

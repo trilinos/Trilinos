@@ -57,6 +57,12 @@ Teko::LinearOp OperatorRequestCallback::request(const Teko::RequestMesg & rm)
      if (matrix_output)
        mini_em::writeOut("ProjectedSchurComplement.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
    }
+   else if(name.substr(0,29)=="ProjectedDarcySchurComplement") {
+     loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("ProjectedDarcySchurComplement " + name.substr(30,name.length()-30)+" Scatter Container"),true)->getGlobalLOC();
+
+     if (matrix_output)
+       mini_em::writeOut("ProjectedDarcySchurComplement.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
+   }
    else if(name=="Weak Gradient") {
      loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("Weak Gradient Scatter Container"),true)->getGlobalLOC();
 
@@ -90,6 +96,10 @@ bool OperatorRequestCallback::handlesRequest(const Teko::RequestMesg & rm)
    }
    else if(name.substr(0,24)=="ProjectedSchurComplement") {
      if(gedc_->containsDataObject("ProjectedSchurComplement " + name.substr(25,name.length()-25)+" Scatter Container"))
+       return true;
+   }
+   else if(name.substr(0,29)=="ProjectedDarcySchurComplement") {
+     if(gedc_->containsDataObject("ProjectedDarcySchurComplement " + name.substr(30,name.length()-30)+" Scatter Container"))
        return true;
    }
    else if(name=="Weak Gradient") {
