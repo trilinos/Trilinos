@@ -224,11 +224,17 @@ int ConvergencePyr(const bool verbose) {
     }
   };
 
-  typedef CellTools<DeviceType> ct;
-  typedef OrientationTools<DeviceType> ots;
-  typedef Experimental::ProjectionTools<DeviceType> pts;
-  typedef RealSpaceTools<DeviceType> rst;
-  typedef FunctionSpaceTools<DeviceType> fst;
+  using ct = CellTools<DeviceType>;
+  using ots = OrientationTools<DeviceType>;
+  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  using pts = Experimental::ProjectionTools<DeviceType>;
+  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
+  #else
+  using pts = ProjectionTools<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+  #endif
+  using rst = RealSpaceTools<DeviceType>;
+  using fst = FunctionSpaceTools<DeviceType>;
 
   constexpr ordinal_type dim = 3;
   const ordinal_type basisDegree = 3;
@@ -368,7 +374,7 @@ int ConvergencePyr(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -659,7 +665,7 @@ int ConvergencePyr(const bool verbose) {
         {
           ordinal_type targetCubDegree(cub_degree),targetDerivCubDegree(cub_degree-1);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -914,7 +920,7 @@ int ConvergencePyr(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
@@ -1161,7 +1167,7 @@ int ConvergencePyr(const bool verbose) {
         {
           ordinal_type targetCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           if(useL2Projection) {
             projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
           } else {
