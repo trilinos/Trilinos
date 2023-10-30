@@ -1536,7 +1536,7 @@ unpackAndCombineIntoCrsArrays (
   if (static_cast<size_t> (TargetPids.size ()) != TargetNumNonzeros) {
     Kokkos::resize(TargetPids,TargetNumNonzeros);
   }
-  Kokkos::parallel_for("initialize_TargetPids", TargetNumNonzeros, KOKKOS_LAMBDA (const int& i) { TargetPids(i) = -1; });
+  Kokkos::deep_copy(execution_space(), TargetPids, -1);
 
   // Grab pointers for sourceMatrix
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
