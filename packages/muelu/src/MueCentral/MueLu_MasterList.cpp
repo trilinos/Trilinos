@@ -112,6 +112,7 @@ namespace MueLu {
       std::stringstream temp1; temp1 << "\"" << "1" << "\"";
       if (value == temp1.str()) {
         RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        out->setOutputToRootOnly(0);
         *out << "WARNING: repartitioning in MueLu is different to MLs. Please refer to the MueLu users Manual for more information." << std::endl;
       }
     }
