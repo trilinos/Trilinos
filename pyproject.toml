@@ -11,9 +11,10 @@ readme = "README.md"
 authors = [
   { name = "Christian Glusa" },
   { name = "Kim Liegeois" },
+  { name = "Aurya Javeed" },
 ]
 requires-python = ">=3.7"
-dependencies = ["numpy>=1.26"]
+dependencies = ["numpy"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: MIT License",
@@ -31,12 +32,6 @@ cmake.verbose = true
 logging.level = "DEBUG"
 cmake.minimum-version = "3.23.0"
 wheel.install-dir = "pyrol"
-
-[tool.cibuildwheel]
-test-command = "pytest {project}/tests"
-test-extras = ["test"]
-test-skip = ["*universal2:arm64"]
-build-verbosity = 1
 
 [tool.scikit-build.cmake.define]
 BUILD_SHARED_LIBS = "ON"
