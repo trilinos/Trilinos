@@ -30,7 +30,6 @@
     class SDCHashCode
     {
     public:
-      template<class T, std::size_t N=4>
       using base_type = percept::NoMallocArray<T,N>;
 
       int operator()(base_type& sdc);
@@ -46,12 +45,10 @@
       HC m_HashCode;
       CompareClass m_CompareClass;
 
-      template<class T, std::size_t N=4>
       using based_type = percept::NoMallocArray<T,N>;
 
       using size_type = std::size_t; 
 
-      template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T>, class HC = SDCHashCode<T,N>  >
       using VAL = SubDimCell<T,N,CompareClass,HC>;
 
       //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
@@ -165,7 +162,6 @@
     template<class T, std::size_t N>
     struct my_hash
     {
-      template<class T, std::size_t N>
       using _Tp = SubDimCell<T,N>;
 
       inline std::size_t
@@ -193,7 +189,6 @@
     template<class T, std::size_t N>
     struct my_fast_hash
     {
-      template<class T, std::size_t N>
       using _TP = SubDimCell<T,N>;
 
       inline std::size_t
@@ -229,7 +224,6 @@
     template<class T, std::size_t N>
     struct my_fast_equal_to
     {
-      template<class T, std::size_t N>
       using _Tp = SubDimCell<T,N>;
 
       inline bool
