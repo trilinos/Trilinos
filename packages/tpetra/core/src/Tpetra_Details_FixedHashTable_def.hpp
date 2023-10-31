@@ -52,7 +52,6 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-#include "Tpetra_Details_Profiling.hpp"
 #include <type_traits>
 
 namespace Tpetra {
