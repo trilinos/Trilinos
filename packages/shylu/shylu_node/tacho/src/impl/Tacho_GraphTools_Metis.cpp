@@ -70,25 +70,46 @@ void GraphTools_Metis::reorder(const ordinal_type verbose) {
   Kokkos::Timer timer;
   double t_metis = 0;
 
-  int ierr = 0;
+  int algo = 2;
+  if (algo == 0) {
+    for (ordinal_type i = 0; i < _nvts; ++i) {
+      _perm(i) = i;
+      _peri(i) = i;
+    }
+  } else if (algo == 1) {
+    int ierr = 0;
+    double amd_info[TRILINOS_AMD_INFO];
 
-  idx_t *xadj = (idx_t *)_xadj.data();
-  idx_t *adjncy = (idx_t *)_adjncy.data();
-  idx_t *vwgt = (idx_t *)_vwgt.data();
+    timer.reset();
+    ierr = trilinos_amd_order(_nvts, _xadj.data(), _adjncy.data(), _perm.data(), NULL, amd_info);
+    t_metis = timer.seconds();
 
-  idx_t *perm = (idx_t *)_perm_t.data();
-  idx_t *peri = (idx_t *)_peri_t.data();
+    for (idx_t i = 0; i < _nvts; ++i) {
+      _peri(_perm(i)) = i;
+    }
 
-  timer.reset();
-  ierr = METIS_NodeND(&_nvts, xadj, adjncy, vwgt, _options, perm, peri);
-  t_metis = timer.seconds();
+    TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, std::runtime_error, "Failed in trilinos_amd");
+  } else {
+    int ierr = 0;
 
-  for (idx_t i = 0; i < _nvts; ++i) {
-    _perm(i) = _perm_t(i);
-    _peri(i) = _peri_t(i);
+    idx_t *xadj = (idx_t *)_xadj.data();
+    idx_t *adjncy = (idx_t *)_adjncy.data();
+    idx_t *vwgt = (idx_t *)_vwgt.data();
+
+    idx_t *perm = (idx_t *)_perm_t.data();
+    idx_t *peri = (idx_t *)_peri_t.data();
+
+    timer.reset();
+    ierr = METIS_NodeND(&_nvts, xadj, adjncy, vwgt, _options, perm, peri);
+    t_metis = timer.seconds();
+
+    for (idx_t i = 0; i < _nvts; ++i) {
+      _perm(i) = _perm_t(i);
+      _peri(i) = _peri_t(i);
+    }
+
+    TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, std::runtime_error, "Failed in METIS_NodeND");
   }
-
-  TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, std::runtime_error, "Failed in METIS_NodeND");
   _is_ordered = true;
 
   if (verbose) {

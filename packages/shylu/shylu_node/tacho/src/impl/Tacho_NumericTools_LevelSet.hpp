@@ -1573,8 +1573,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(buf_factor_ptr);
             if (is_host) {
-              policy_factor = team_policy_factor(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_factor = team_policy_factor(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               // get max teamm size
@@ -2705,8 +2705,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(solve_buf_ptr);
             if (is_host) {
-              policy_solve = team_policy_solve(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_solve = team_policy_solve(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
@@ -2769,8 +2769,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(solve_buf_ptr);
             if (is_host) {
-              policy_solve = team_policy_solve(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_solve = team_policy_solve(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
@@ -2903,8 +2903,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(buf_factor_ptr);
             if (is_host) {
-              policy_factor = team_policy_factor(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_factor = team_policy_factor(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               // get max teamm sizes
@@ -3038,8 +3038,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(solve_buf_ptr);
             if (is_host) {
-              policy_solve = team_policy_solve(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_solve = team_policy_solve(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
@@ -3102,8 +3102,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(solve_buf_ptr);
             if (is_host) {
-              policy_solve = team_policy_solve(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_solve = team_policy_solve(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
@@ -3235,8 +3235,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(buf_factor_ptr);
             if (is_host) {
-              policy_factor = team_policy_factor(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_factor = team_policy_factor(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               // get max teamm sizes
@@ -3372,8 +3372,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(solve_buf_ptr);
             if (is_host) {
-              policy_solve = team_policy_solve(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_solve = team_policy_solve(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
@@ -3436,8 +3436,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(solve_buf_ptr);
             if (is_host) {
-              policy_solve = team_policy_solve(pcnt, 1, 1);
-              policy_update = team_policy_update(pcnt, 1, 1);
+              policy_solve = team_policy_solve(pcnt, Kokkos::AUTO);
+              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
             } else {
               const ordinal_type idx = lvl > half_level;
               policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
