@@ -12,7 +12,7 @@ on:
 
 jobs:
   triloamd01-gcc:
-    if: ${{ (github.event.action == 'labeled' && github.event.label.name == 'AT:PRE-TEST INSPECTED') || (github.event.action == 'opened') || (github.event.action == 'synchronize') }}
+    if: ${{ (github.event.action == 'labeled' && github.event.label.name == 'AT: PRE-TEST INSPECTED') || (github.event.action == 'opened') || (github.event.action == 'synchronize') }}
     runs-on: [self-hosted, triloamd01]
     container:
       image: registry-ex.sandia.gov/evho/github-actions-trilinos-containers/gcc8.3.0
