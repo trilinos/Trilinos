@@ -1069,6 +1069,10 @@ namespace Tpetra {
     replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
+    //! Support function the Map construction that takes a Kokkos::View
+    //FIXME
+    void computeConstantsOnDevice(const Kokkos::View<const GlobalOrdinal*, device_type>& entryList, global_ordinal_type & minMyGID, global_ordinal_type & maxMyGID,global_ordinal_type &firstContiguousGID, global_ordinal_type &lastContiguousGID);
+
   private:
     /// \brief Print the calling process' verbose describe()
     ///   information to the returned string.
@@ -1127,6 +1131,7 @@ namespace Tpetra {
         Kokkos::MemoryUnmanaged>& entryList,
       const global_ordinal_type indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;

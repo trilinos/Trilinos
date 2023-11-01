@@ -906,6 +906,43 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Map<LocalOrdinal,GlobalOrdinal,Node>::
+  computeConstantsOnDevice(const Kokkos::View<const GlobalOrdinal*, device_type>& entryList, global_ordinal_type & minMyGID, global_ordinal_type & maxMyGID, global_ordinal_type &firstContiguousGID, global_ordinal_type &lastContiguousGID) {
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
+    using range_policy = Kokkos::RangePolicy<typename device_type::execution_space, Kokkos::IndexType<size_t> >;
+    
+    typedef typename Kokkos::MinLoc<GO,LO>::value_type minloc_type;
+    minloc_type myMinLoc;
+    
+    // Find the initial sequence of parallel gids
+    // To find the lastContiguousGID_, we find the first guy where
+    // entryList[i] - entryList[0] != i-0
+    Kokkos::parallel_reduce(range_policy(0,numLocalElements_),KOKKOS_LAMBDA(const LO & i, GO &l_myMin, GO&l_myMax, GO& l_firstCont, minloc_type & l_lastCont){
+        auto entry_0 = entryList[0];
+        auto entry_i = entryList[i];
+        
+        // Easy stuff
+        l_myMin = (l_myMin < entry_i) ? l_myMin : entry_i;
+        l_myMax = (l_myMax > entry_i) ? l_myMax : entry_i;
+        l_firstCont = entry_0;
+        
+        // Now the trickier guy.  Here we reduce on indices, but return the value
+        if(entry_i - entry_0 != i) {
+          if (l_lastCont.loc > i) {
+            l_lastCont.loc = i;
+            l_lastCont.val = entry_i;
+          }
+        }
+        
+      },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<GO,LO>(myMinLoc));
+    
+    lastContiguousGID = myMinLoc.val - 1;
+    
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map (const global_size_t numGlobalElements,
        const Kokkos::View<const GlobalOrdinal*, device_type>& entryList,
@@ -1036,12 +1073,18 @@ namespace Tpetra {
 
       using array_layout =
         typename View<const GO*, device_type>::array_layout;
-      View<GO*, array_layout, Kokkos::HostSpace> entryList_host
-        (view_alloc ("entryList_host", WithoutInitializing),
-         entryList.extent(0));
-      // DEEP_COPY REVIEW - DEVICE-TO-HOST
-      Kokkos::deep_copy (execution_space(), entryList_host, entryList);
-      Kokkos::fence("Map::Map"); // UVM follows
+
+
+      // Because you can't use lambdas in constructors on CUDA
+      computeConstantsOnDevice(entryList,minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_);
+      throw std::runtime_error("Unfinished");
+    
+#ifdef OLD_AND_BUSTED
+
+
+      //OLD-AND-BUSTED
+
+
       firstContiguousGID_ = entryList_host[0];
       lastContiguousGID_ = firstContiguousGID_+1;
 
@@ -1126,6 +1169,9 @@ namespace Tpetra {
       lgMap_ = lgMap;
       // We've already created this, so use it.
       lgMapHost_ = lgMap_host;
+
+#endif
+
     }
     else {
       minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
@@ -1137,6 +1183,10 @@ namespace Tpetra {
       lastContiguousGID_ = indexBase_;
       // glMap_ was default constructed, so it's already empty.
     }
+
+
+
+
 
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
