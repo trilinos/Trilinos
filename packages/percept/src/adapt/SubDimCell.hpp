@@ -30,9 +30,10 @@
     class SDCHashCode
     {
     public:
+      template <T,N>
       using base_type = percept::NoMallocArray<T,N>;
 
-      int operator()(base_type& sdc);
+      int operator()(base_type<T,N>& sdc);
     };
 
     /// We assume we don't have any sub-dimensional entities with more than 4 nodes
@@ -45,20 +46,22 @@
       HC m_HashCode;
       CompareClass m_CompareClass;
 
+      template<class T, std::size_t N=4>
       using based_type = percept::NoMallocArray<T,N>;
 
       using size_type = std::size_t; 
 
+      template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T>, class HC = SDCHashCode<T,N>  >
       using VAL = SubDimCell<T,N,CompareClass,HC>;
 
-      //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type(n), m_hash(0u) {}
-      SubDimCell() : base_type(), m_hash(0u), m_HashCode(), m_CompareClass() {}
-      SubDimCell(unsigned n) : base_type(), m_hash(0u), m_HashCode(), m_CompareClass() {}
+      //repo always init to 0 size: SubDimCell(unsigned n=4) : base_type<T,N,CompareClass,HC>(n), m_hash(0u) {}
+      SubDimCell() : base_type<T,N,CompareClass,HC>(), m_hash(0u), m_HashCode(), m_CompareClass() {}
+      SubDimCell(unsigned n) : base_type<T,N,CompareClass,HC>(), m_hash(0u), m_HashCode(), m_CompareClass() {}
       // behaves like std::set
       void insert(T val)
       {
         bool found = false;
-        for (size_type i = 0; i < base_type::size(); i++)
+        for (size_type i = 0; i < base_type<T,N,CompareClass,HC>::size(); i++)
           {
             if (val == (*this)[i])
               {
@@ -68,7 +71,7 @@
           }
         if (!found)
           {
-            base_type::insert(val);
+            base_type<T,N,CompareClass,HC>::insert(val);
             sort();
           }
         updateHashCode();
@@ -76,7 +79,7 @@
 
       void sort()
       {
-        std::sort( base_type::begin(), base_type::end(), m_CompareClass );
+        std::sort( base_type<T,N,CompareClass,HC>::begin(), base_type<T,N,CompareClass,HC>::end(), m_CompareClass );
       }
 
       void updateHashCode()
@@ -99,7 +102,7 @@
       void clear()
       {
         m_hash = 0u;
-        base_type::clear();
+        base_type<T,N,CompareClass,HC>::clear();
       }
 
       bool operator==(const VAL& rhs) const;
@@ -113,11 +116,11 @@
     };
 
     template<class T, std::size_t N>
-    inline int SDCHashCode<T,N>::operator()(SDCHashCode<T,N>::base_type& sdc)
+    inline int SDCHashCode<T,N>::operator()(SDCHashCode<T,N>::base_type<T,N>& sdc)
     {
       std::size_t sum = 0;
 
-      for (typename base_type::iterator i = sdc.begin(); i != sdc.end(); i++)
+      for (typename base_type<T,N>::iterator i = sdc.begin(); i != sdc.end(); i++)
         {
           sum += (size_t)(*i);
         }
@@ -128,9 +131,9 @@
     inline bool SubDimCell<T,N,CompareClass,HC>::
     operator==(const VAL& rhs) const
     {
-      if (base_type::size() != rhs.size())
+      if (base_type<T,N,CompareClass,HC>::size() != rhs.size())
         return false;
-      for (size_type i = 0; i < base_type::size(); i++)
+      for (size_type i = 0; i < base_type<T,N,CompareClass,HC>::size(); i++)
         {
           if ((*this)[i] != rhs[i])
             return false;
@@ -142,13 +145,13 @@
     inline bool SubDimCell<T,N,CompareClass, HC>::
     operator<(const VAL& rhs) const
     {
-      if (base_type::size() < rhs.size())
+      if (base_type<T,N,CompareClass,HC>::size() < rhs.size())
         return true;
-      else if (base_type::size() > rhs.size())
+      else if (base_type<T,N,CompareClass,HC>::size() > rhs.size())
         return false;
       else
         {
-          for (size_type i = 0; i < base_type::size(); i++)
+          for (size_type i = 0; i < base_type<T,N,CompareClass,HC>::size(); i++)
             {
               if ((*this)[i] < rhs[i])
                 return true;

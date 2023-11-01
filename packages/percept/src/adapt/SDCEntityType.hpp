@@ -114,19 +114,19 @@
       int operator()(sdc_type& sdc)
       {
         size_t sum = 0;
-        const typename sdc_type::const_iterator i_begin = sdc.begin();
-        const typename sdc_type::const_iterator i_end = sdc.end();
+        const typename sdc_type<T,N>::const_iterator i_begin = sdc.begin();
+        const typename sdc_type<T,N>::const_iterator i_end = sdc.end();
 
         if (s_compare_using_entity_impl)
           {
-            for (typename sdc_type::const_iterator i = i_begin; i != i_end; ++i)
+            for (typename sdc_type<T,N>::const_iterator i = i_begin; i != i_end; ++i)
               {
                 sum += size_t(i->local_offset());
               }
           }
         else
           {
-            for ( typename sdc_type::const_iterator i = i_begin; i != i_end; ++i)
+            for ( typename sdc_type<T,N>::const_iterator i = i_begin; i != i_end; ++i)
               {
                 sum += static_cast<size_t>(m_eMesh->identifier(*i));
               }
@@ -143,14 +143,14 @@
       using base_type = SubDimCell<T, N, CompareClass, HC>; 
 
       percept::PerceptMesh* m_eMesh;
-      MySubDimCell(percept::PerceptMesh* eMesh) : base_type(), m_eMesh(eMesh) {
-        base_type::m_HashCode = HC(eMesh);
-        base_type::m_CompareClass = CompareClass(eMesh);
+      MySubDimCell(percept::PerceptMesh* eMesh) : base_type<T,N,CompareClass,HC>(), m_eMesh(eMesh) {
+        base_type<T,N,CompareClass,HC>::m_HashCode = HC(eMesh);
+        base_type<T,N,CompareClass,HC>::m_CompareClass = CompareClass(eMesh);
       }
-      MySubDimCell(percept::PerceptMesh* eMesh, unsigned num_ids) : base_type(num_ids), m_eMesh(eMesh)
+      MySubDimCell(percept::PerceptMesh* eMesh, unsigned num_ids) : base_type<T,N,CompareClass,HC>(num_ids), m_eMesh(eMesh)
       {
-        base_type::m_HashCode = HC(eMesh);
-        base_type::m_CompareClass = CompareClass(eMesh);
+        base_type<T,N,CompareClass,HC>::m_HashCode = HC(eMesh);
+        base_type<T,N,CompareClass,HC>::m_CompareClass = CompareClass(eMesh);
       }
       MySubDimCell()
       {
