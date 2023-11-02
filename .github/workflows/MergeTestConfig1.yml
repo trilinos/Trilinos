@@ -38,7 +38,11 @@ jobs:
       - name: clone trilinos
         uses: actions/checkout@v3
         with:
-          path: /home/Trilinos/src/Trilinos
+          path: /home/runner/_work/Trilinos/Trilinos/src/Trilinos
+      - name: move trilinos
+        working-directory: /home/runner/_work/Trilinos/Trilinos/src/Trilinos
+        run: |
+          mv -f * /home/Trilinos/src/Trilinos
       - name: configure trilinos
         working-directory: /home/Trilinos/build/
         run: |
