@@ -118,7 +118,7 @@ namespace { // (anonymous)
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     using range_policy = Kokkos::RangePolicy<typename ViewType::device_type::execution_space, Kokkos::IndexType<LO> >;
-    const size_t numLocalElements(entryList.size());
+    const LO numLocalElements(entryList.size());
     
     typedef typename Kokkos::MinLoc<GO,LO>::value_type minloc_type;
     minloc_type myMinLoc;
@@ -134,21 +134,23 @@ namespace { // (anonymous)
         l_myMin = (l_myMin < entry_i) ? l_myMin : entry_i;
         l_myMax = (l_myMax > entry_i) ? l_myMax : entry_i;
         l_firstCont = entry_0;
-        
-        // Now the trickier guy.  Here we reduce on indices, but return the value
-        if(entry_i - entry_0 != i) {
-          if (l_lastCont.loc > i) {
+
+
+        if(entry_i - entry_0 != i  && l_lastCont.loc > i) {
             l_lastCont.loc = i;
             l_lastCont.val = entry_i;
           }
+        else if(i == numLocalElements-1) {
+          // If we're last we need to enter a fake "N+1" element if we're not noncontiguous
+          l_lastCont.loc = i + 1;
+          l_lastCont.val = entry_i + 1;
         }
         
       },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<GO,LO>(myMinLoc));
 
-    // We got the first non-contiguous GID out of this guy.  So we subtract one.
-    lastContiguousGID_val = myMinLoc.val-1;
-    lastContiguousGID_loc = myMinLoc.loc-1;
-    
+    // We got the first non-contiguous GID out of this guy.  If everyone is contiguous the fake "N+1" guy will allow us to get the right thing here.
+      lastContiguousGID_val = myMinLoc.val-1;
+      lastContiguousGID_loc = myMinLoc.loc-1;
   }
 
 
@@ -1082,7 +1084,9 @@ namespace Tpetra {
       // Because you can't use lambdas in constructors on CUDA.  Or using private/protected data.
       LO lastContiguousGID_loc;
       computeConstantsOnDevice(entryList,minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,lastContiguousGID_loc);
-      throw std::runtime_error("Unfinished");
+
+      printf("CMS: min/max GID = %d/%d first/last contig = %d/%d (%d)\n",minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,lastContiguousGID_loc);
+      //      throw std::runtime_error("Unfinished");
 
       auto nonContigGids = Kokkos::subview(entryList,std::pair<size_t,size_t>(lastContiguousGID_loc+1,entryList.extent(0)));
     
@@ -1090,7 +1094,7 @@ namespace Tpetra {
       glMap_ = global_to_local_table_type(nonContigGids,
                                           firstContiguousGID_,
                                           lastContiguousGID_,
-                                          lastContiguousGID_loc);// FIXME: Does this need +/- 1?
+                                          lastContiguousGID_loc+1);// FIXME: Does this need +/- 1?
 
 
       // FIXME: A bunch of this stuff needs to be lazy
