@@ -29,7 +29,6 @@
 
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp" //TODO
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
