@@ -112,6 +112,46 @@ namespace { // (anonymous)
       }
     }
   }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class ViewType>
+  void computeConstantsOnDevice(const ViewType& entryList, GlobalOrdinal & minMyGID, GlobalOrdinal & maxMyGID, GlobalOrdinal &firstContiguousGID, GlobalOrdinal &lastContiguousGID_val, LocalOrdinal &lastContiguousGID_loc) {
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using range_policy = Kokkos::RangePolicy<typename ViewType::device_type::execution_space, Kokkos::IndexType<LO> >;
+    const size_t numLocalElements(entryList.size());
+    
+    typedef typename Kokkos::MinLoc<GO,LO>::value_type minloc_type;
+    minloc_type myMinLoc;
+    
+    // Find the initial sequence of parallel gids
+    // To find the lastContiguousGID_, we find the first guy where
+    // entryList[i] - entryList[0] != i-0
+    Kokkos::parallel_reduce(range_policy(0,numLocalElements),KOKKOS_LAMBDA(const LO & i, GO &l_myMin, GO&l_myMax, GO& l_firstCont, minloc_type & l_lastCont){
+        auto entry_0 = entryList[0];
+        auto entry_i = entryList[i];
+        
+        // Easy stuff
+        l_myMin = (l_myMin < entry_i) ? l_myMin : entry_i;
+        l_myMax = (l_myMax > entry_i) ? l_myMax : entry_i;
+        l_firstCont = entry_0;
+        
+        // Now the trickier guy.  Here we reduce on indices, but return the value
+        if(entry_i - entry_0 != i) {
+          if (l_lastCont.loc > i) {
+            l_lastCont.loc = i;
+            l_lastCont.val = entry_i;
+          }
+        }
+        
+      },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<GO,LO>(myMinLoc));
+
+    // We got the first non-contiguous GID out of this guy.  So we subtract one.
+    lastContiguousGID_val = myMinLoc.val-1;
+    lastContiguousGID_loc = myMinLoc.loc-1;
+    
+  }
+
+
 } // namespace (anonymous)
 
 namespace Tpetra {
@@ -905,42 +945,6 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Map<LocalOrdinal,GlobalOrdinal,Node>::
-  computeConstantsOnDevice(const Kokkos::View<const GlobalOrdinal*, device_type>& entryList, global_ordinal_type & minMyGID, global_ordinal_type & maxMyGID, global_ordinal_type &firstContiguousGID, global_ordinal_type &lastContiguousGID) {
-    using LO = local_ordinal_type;
-    using GO = global_ordinal_type;
-    using range_policy = Kokkos::RangePolicy<typename device_type::execution_space, Kokkos::IndexType<size_t> >;
-    
-    typedef typename Kokkos::MinLoc<GO,LO>::value_type minloc_type;
-    minloc_type myMinLoc;
-    
-    // Find the initial sequence of parallel gids
-    // To find the lastContiguousGID_, we find the first guy where
-    // entryList[i] - entryList[0] != i-0
-    Kokkos::parallel_reduce(range_policy(0,numLocalElements_),KOKKOS_LAMBDA(const LO & i, GO &l_myMin, GO&l_myMax, GO& l_firstCont, minloc_type & l_lastCont){
-        auto entry_0 = entryList[0];
-        auto entry_i = entryList[i];
-        
-        // Easy stuff
-        l_myMin = (l_myMin < entry_i) ? l_myMin : entry_i;
-        l_myMax = (l_myMax > entry_i) ? l_myMax : entry_i;
-        l_firstCont = entry_0;
-        
-        // Now the trickier guy.  Here we reduce on indices, but return the value
-        if(entry_i - entry_0 != i) {
-          if (l_lastCont.loc > i) {
-            l_lastCont.loc = i;
-            l_lastCont.val = entry_i;
-          }
-        }
-        
-      },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<GO,LO>(myMinLoc));
-    
-    lastContiguousGID = myMinLoc.val - 1;
-    
-  }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -1075,10 +1079,35 @@ namespace Tpetra {
         typename View<const GO*, device_type>::array_layout;
 
 
-      // Because you can't use lambdas in constructors on CUDA
-      computeConstantsOnDevice(entryList,minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_);
+      // Because you can't use lambdas in constructors on CUDA.  Or using private/protected data.
+      LO lastContiguousGID_loc;
+      computeConstantsOnDevice(entryList,minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,lastContiguousGID_loc);
       throw std::runtime_error("Unfinished");
+
+      auto nonContigGids = Kokkos::subview(entryList,std::pair<size_t,size_t>(lastContiguousGID_loc+1,entryList.extent(0)));
     
+
+      glMap_ = global_to_local_table_type(nonContigGids,
+                                          firstContiguousGID_,
+                                          lastContiguousGID_,
+                                          lastContiguousGID_loc);// FIXME: Does this need +/- 1?
+
+
+      // FIXME: A bunch of this stuff needs to be lazy
+
+      // Make host version - when memory spaces match these just do trivial assignment
+      glMapHost_ = global_to_local_table_host_type(glMap_);
+
+
+      // We filled lgMap on host above; now sync back to device.
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), lgMap, lgMap_host);
+
+      // "Commit" the local-to-global lookup table we filled in above.
+      lgMap_ = lgMap;
+      // We've already created this, so use it.
+      lgMapHost_ = lgMap_host;
+        
 #ifdef OLD_AND_BUSTED
 
 
