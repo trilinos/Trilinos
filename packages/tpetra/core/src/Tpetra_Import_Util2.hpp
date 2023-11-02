@@ -1311,10 +1311,6 @@ lowCommunicationMakeColMapAndReindex (
         const int PID = owningPIDs_view[j];
         auto outcome = RemoteGIDs_view_map.insert(GID, PID);
         if(outcome.success() && PID == -1) {
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-          printf("Cannot figure out if ID is owned.\n");
-#endif
           Kokkos::abort("Cannot figure out if ID is owned.\n");
         }
       }
