@@ -1541,9 +1541,10 @@ namespace MueLu {
 
     } else if (spaceNumber == 2) {
 
-      using ATS        = Kokkos::ArithTraits<Scalar>;
+      using ATS         = Kokkos::ArithTraits<Scalar>;
       using impl_Scalar = typename ATS::val_type;
-      using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+      using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+      using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
       RCP<Matrix> facesToNodes;
       {
@@ -1594,9 +1595,9 @@ namespace MueLu {
                                impl_Scalar elementNullspace02 = localNodalCoordinates(n1, 2)-localNodalCoordinates(n0, 2);
                                impl_Scalar elementNullspace12 = localNodalCoordinates(n2, 2)-localNodalCoordinates(n0, 2);
 
-                               localFaceNullspace(f, 0) = ATS::magnitude(elementNullspace01*elementNullspace12-elementNullspace02*elementNullspace11) / 6.0;
-                               localFaceNullspace(f, 1) = ATS::magnitude(elementNullspace02*elementNullspace10-elementNullspace00*elementNullspace12) / 6.0;
-                               localFaceNullspace(f, 2) = ATS::magnitude(elementNullspace00*elementNullspace11-elementNullspace01*elementNullspace10) / 6.0;
+                               localFaceNullspace(f, 0) = impl_ATS::magnitude(elementNullspace01*elementNullspace12-elementNullspace02*elementNullspace11) / 6.0;
+                               localFaceNullspace(f, 1) = impl_ATS::magnitude(elementNullspace02*elementNullspace10-elementNullspace00*elementNullspace12) / 6.0;
+                               localFaceNullspace(f, 2) = impl_ATS::magnitude(elementNullspace00*elementNullspace11-elementNullspace01*elementNullspace10) / 6.0;
                              });
       }
 
