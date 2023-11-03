@@ -17,6 +17,8 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 
 namespace Belos {
 
@@ -62,6 +64,46 @@ namespace Belos {
     {}
   };
 
+  //! @name PseudoBlockGmresIter Structures
+  //@{
+
+  /** \brief Structure to contain pointers to PseudoBlockGmresIter state variables.
+   *
+   * This struct is utilized by PseudoBlockGmresIter::initialize() and PseudoBlockGmresIter::getState().
+   */
+  template <class ScalarType, class MV>
+  struct PseudoBlockGmresIterState {
+
+    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType MagnitudeType;
+
+    /*! \brief The current dimension of the reduction.
+     *
+     * This should always be equal to PseudoBlockGmresIter::getCurSubspaceDim()
+     */
+    int curDim;
+    /*! \brief The current Krylov basis. */
+    std::vector<Teuchos::RCP<const MV> > V;
+    /*! \brief The current Hessenberg matrix.
+     *
+     * The \c curDim by \c curDim leading submatrix of H is the
+     * projection of problem->getOperator() by the first \c curDim vectors in V.
+     */
+    std::vector<Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > > H;
+    /*! \brief The current upper-triangular matrix from the QR reduction of H. */
+    std::vector<Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > > R;
+    /*! \brief The current right-hand side of the least squares system RY = Z. */
+    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > > Z;
+    /*! \brief The current Given's rotation coefficients. */
+    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > > sn;
+    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,MagnitudeType> > > cs;
+
+    PseudoBlockGmresIterState() : curDim(0), V(0),
+                                  H(0), R(0), Z(0),
+                                  sn(0), cs(0)
+    {}
+  };
+
   //@}
 
   //! @name GmresIteration Exceptions
@@ -104,6 +146,20 @@ namespace Belos {
   
   //@}
 
+  //! @name PseudoBlockGmresIter Exceptions
+  //@{
+ 
+  /** \brief PseudoBlockGmresIterOrthoFailure is thrown when the orthogonalization manager is
+   * unable to generate orthonormal columns from the new basis vectors.
+   *
+   * This std::exception is thrown from the PseudoBlockGmresIter::iterate() method.
+   *
+   */
+  class PseudoBlockGmresIterOrthoFailure : public BelosError {public:
+    PseudoBlockGmresIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
+    {}};
+
+  //@}
 
 template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
 class GmresIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
