@@ -50,13 +50,8 @@ done
 
 # apply clang-format inline to each **.cpp, utilizing the style file
 for SOURCE in ${SOURCES} ; do
-  # do not modify MueLu MasterList.cpp
-  if [[ ! "${SOURCE}" =~ "MueLu_MasterList.cpp" ]] ; then
-    echo ${SOURCE}
-    clang-format -style=file -i ${SOURCE}
-  else
-    echo "Skipping ${SOURCE}"
-  fi
+  echo ${SOURCE}
+  clang-format -style=file -i ${SOURCE}
 done
 
 echo "Done running MueLu clang formatting!"
