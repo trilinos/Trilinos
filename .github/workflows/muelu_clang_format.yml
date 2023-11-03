@@ -1,0 +1,29 @@
+name: Check MueLu clang-format
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: DoozyX/clang-format-lint-action@v0.16.2
+      with:
+        source: './packages/muelu'
+        exclude: ''
+        extensions: 'cpp,hpp'
+        clangFormatVersion: 14
+        inplace: true
+    - run: git diff HEAD > format_patch.txt
+    - run: if [ "$(cat format_patch.txt)" == "" ] ; then rm format_patch.txt ; fi
+    - uses: actions/upload-artifact@v3
+      if: ${{ hashFiles('format_patch.txt') != '' }}
+      with:
+        name: MueLu format patch
+        path: format_patch.txt
+    - uses: actions/github-script@v3
+      if: ${{ hashFiles('format_patch.txt') != '' }}
+      with:
+        script: |
+          core.setFailed('Please download and apply the formatting patch!')
