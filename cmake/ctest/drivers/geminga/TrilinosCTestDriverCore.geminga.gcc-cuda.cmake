@@ -148,6 +148,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
         "-DTPL_ENABLE_MPI:BOOL=ON"
             "-DMPI_BASE_DIR:PATH=$ENV{OPENMPI_ROOT}"
+            "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket\\\;-quiet"
        )
 
   ENDIF()
