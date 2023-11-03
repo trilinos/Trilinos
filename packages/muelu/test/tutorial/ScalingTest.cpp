@@ -140,7 +140,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int optTimings = 0;                     clp.setOption("timings",        &optTimings,            "print timings to screen");
 
   // - Levels
-  LO  optMaxLevels     = 10;              clp.setOption("maxLevels",      &optMaxLevels,          "maximum number of levels allowed");
+  LO  optMaxLevels     = 2;              clp.setOption("maxLevels",      &optMaxLevels,          "maximum number of levels allowed");
   int optMaxCoarseSize = 50;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
 
   // - Smoothed-Aggregation
