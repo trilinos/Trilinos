@@ -215,7 +215,10 @@ An example of line smoothing is provided in \texttt{packages/trilinoscouplings/e
                                     This means the coarse ratio is higher than in \verb!mis2 aggregation!.
                                     Faster than coloring-based aggregation.  Cannot control min/max aggregate size. & Yes & Yes \\
       \verb!serial! &               Computes a D2 coloring on host, and then does 4-phase aggregation on device. & No & Optional \\
-      \verb!vertex based bit set! & Computes a D2 coloring in parallel with conflicts resolved by neighbors-of-neighbors loop. Then does 4-phase aggregation on device. & Yes & No \\
+      \verb!default! &              Computes \verb!serial! on a serial device and \verb!net based bit set! on a parallel device. & Yes & Optional \\
+      \verb!vertex based! &         Computes a D2 coloring in parallel with conflicts resolved by neighbors-of-neighbors loop. Then does 4-phase aggregation on device. & Yes & No \\
+      \verb!vertex based bit set! & Computes the same as \verb!vertex based!, but with an optimization using a 32-bit integer instead of 32 bools to track forbidden colors. & Yes & No \\
+      \verb!edge filtering! &       Computes the same as \verb!vertex based bit set!, but with an optimization that can filter and skip some edges. & Yes & No \\
       \verb!net based bit set! &    Computes a D2 coloring in parallel with net-based algorithm, which is asymptotically faster than vertex-based (though not always faster in practice).
                                     Then does 4-phase aggregation on device. & Yes & No \\
       \bottomrule
