@@ -18,7 +18,7 @@
   </ParameterList>
 
   <!-- Aggregation -->
-  <Parameter name="aggregation: type" type="string" value="coupled"/>
+  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
   <Parameter name="aggregation: min agg size" type="int" value="5"/>
   <Parameter name="aggregation: max agg size" type="int" value="9"/>
   <Parameter name="aggregation: drop tol" type="double" value="0.0"/>

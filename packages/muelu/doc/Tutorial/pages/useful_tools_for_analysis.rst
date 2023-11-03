@@ -73,28 +73,6 @@ Figure :ref:`useful_tools_for_analysis/figure_aggsNonSymm` shows the aggregates 
 
     Aggregates for Recirc2D example on :math:`50\times 50` mesh with dropping.
 
-Note on coupled aggregation strategy:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Comparing Figures :ref:`useful_tools_for_analysis/figure_aggsSymm` and :ref:`useful_tools_for_analysis/figure_aggsSymmCoupled` one finds the difference between the *uncoupled* and the *coupled* aggregation method **aggregation: type**). For the *coupled* aggregation strategy the aggregates can overlap processor boundaries.
-
-.. _useful_tools_for_analysis/figure_aggsSymmCoupled:
-
-.. figure:: pics/aggsSymmCoupled.png
-    :width: 0.7
-
-    Aggregates for Laplace2D example on :math:`50\times 50` mesh without dropping using a coupled aggregation strategy.
-
-.. note::
-
-    Using the *coupled* aggregation in general is not recommended, since
-
-    - the aggregation routine itself needs some global communication,
-    - building the tentative prolongation operator from the aggregates needs some global communication,
-    - prolongator smoothing is more expensive due to a higher overlap.
-
-    The implementation of a *coupled* aggregation method is much more complicated and therefore error-prone and less robust.
-
 .. _useful_tools_for_analysis/export_data:
 
 Export data
