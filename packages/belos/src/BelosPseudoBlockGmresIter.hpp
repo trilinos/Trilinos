@@ -17,6 +17,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
+#include "BelosGmresIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosMatOrthoManager.hpp"
@@ -24,6 +25,8 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -46,72 +49,16 @@
 */
 
 namespace Belos {
-  
-  //! @name PseudoBlockGmresIter Structures 
-  //@{ 
-  
-  /** \brief Structure to contain pointers to PseudoBlockGmresIter state variables.
-   *
-   * This struct is utilized by PseudoBlockGmresIter::initialize() and PseudoBlockGmresIter::getState().
-   */
-  template <class ScalarType, class MV>
-  struct PseudoBlockGmresIterState {
 
-    typedef Teuchos::ScalarTraits<ScalarType> SCT;
-    typedef typename SCT::magnitudeType MagnitudeType;
-
-    /*! \brief The current dimension of the reduction.
-     *
-     * This should always be equal to PseudoBlockGmresIter::getCurSubspaceDim()
-     */
-    int curDim;
-    /*! \brief The current Krylov basis. */
-    std::vector<Teuchos::RCP<const MV> > V;
-    /*! \brief The current Hessenberg matrix. 
-     *
-     * The \c curDim by \c curDim leading submatrix of H is the 
-     * projection of problem->getOperator() by the first \c curDim vectors in V. 
-     */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > > H;
-    /*! \brief The current upper-triangular matrix from the QR reduction of H. */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > > R;
-    /*! \brief The current right-hand side of the least squares system RY = Z. */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > > Z;
-    /*! \brief The current Given's rotation coefficients. */    
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > > sn;
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,MagnitudeType> > > cs;
-
-    PseudoBlockGmresIterState() : curDim(0), V(0),
-				  H(0), R(0), Z(0),
-                                  sn(0), cs(0)
-    {}
-  };
-  
-  //! @name PseudoBlockGmresIter Exceptions
-  //@{ 
-  
-  /** \brief PseudoBlockGmresIterOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the new basis vectors.
-   *
-   * This std::exception is thrown from the PseudoBlockGmresIter::iterate() method.
-   *
-   */
-  class PseudoBlockGmresIterOrthoFailure : public BelosError {public:
-    PseudoBlockGmresIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
-  //@}
-  
-  
-  template<class ScalarType, class MV, class OP>
-  class PseudoBlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>  
+  class PseudoBlockGmresIter : virtual public Iteration<ScalarType,MV,OP,DM> {
     
   public:
     
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -129,8 +76,8 @@ namespace Belos {
      */
     PseudoBlockGmresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 			  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-			  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-			  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+			  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+			  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
 			  Teuchos::ParameterList &params );
     
     //! Destructor.
@@ -309,10 +256,10 @@ namespace Belos {
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
-    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-    const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >       lp_;
+    const Teuchos::RCP<OutputManager<ScalarType> >             om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
+    const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >        ortho_;
     
     //
     // Algorithmic parameters
@@ -362,11 +309,11 @@ namespace Belos {
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  PseudoBlockGmresIter<ScalarType,MV,OP>::PseudoBlockGmresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+  template<class ScalarType, class MV, class OP, class DM>
+  PseudoBlockGmresIter<ScalarType,MV,OP,DM>::PseudoBlockGmresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 							       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-							       const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+							       const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
 							       Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -388,8 +335,8 @@ namespace Belos {
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockGmresIter<ScalarType,MV,OP>::setNumBlocks (int numBlocks)
+  template <class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<ScalarType,MV,OP,DM>::setNumBlocks (int numBlocks)
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
@@ -404,8 +351,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the current update from this subspace.
-  template <class ScalarType, class MV, class OP>
-  Teuchos::RCP<MV> PseudoBlockGmresIter<ScalarType,MV,OP>::getCurrentUpdate() const
+  template <class ScalarType, class MV, class OP, class DM>
+  Teuchos::RCP<MV> PseudoBlockGmresIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const
   {
     //
     // If this is the first iteration of the Arnoldi factorization, 
@@ -449,9 +396,9 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the native residuals stored in this iteration.  
   // Note:  No residual vector will be returned by Gmres.
-  template <class ScalarType, class MV, class OP>
+  template <class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<const MV> 
-  PseudoBlockGmresIter<ScalarType,MV,OP>::
+  PseudoBlockGmresIter<ScalarType,MV,OP,DM>::
   getNativeResiduals (std::vector<MagnitudeType> *norms) const 
   {
     typedef typename Teuchos::ScalarTraits<ScalarType> STS;
@@ -474,9 +421,9 @@ namespace Belos {
   }
 
   
-  template <class ScalarType, class MV, class OP>
+  template <class ScalarType, class MV, class OP, class DM>
   void 
-  PseudoBlockGmresIter<ScalarType,MV,OP>::
+  PseudoBlockGmresIter<ScalarType,MV,OP,DM>::
   initialize (const PseudoBlockGmresIterState<ScalarType,MV> & newstate)
   {
     using Teuchos::RCP;
@@ -680,8 +627,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockGmresIter<ScalarType,MV,OP>::iterate()
+  template <class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -797,8 +744,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Update the least squares solution for each right-hand side.
-  template<class ScalarType, class MV, class OP>
-  void PseudoBlockGmresIter<ScalarType,MV,OP>::updateLSQR( int dim )
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockGmresIter<ScalarType,MV,OP,DM>::updateLSQR( int dim )
   {
     // Get correct dimension based on input "dim"
     // Remember that ortho failures result in an exit before updateLSQR() is called.
