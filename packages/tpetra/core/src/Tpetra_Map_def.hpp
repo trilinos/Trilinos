@@ -45,6 +45,15 @@
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
 
+#include <memory>
+#include <sstream>
+#include <stdexcept>
+#include <typeinfo>
+
+#include "Teuchos_as.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_CommHelpers.hpp"
+
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
@@ -52,16 +61,10 @@
 #include "Tpetra_Details_printOnce.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Util.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
-#include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
-#include <memory>
-#include <sstream>
-#include <stdexcept>
-#include <typeinfo>
+#include "Tpetra_Details_Profiling.hpp"
 
 namespace { // (anonymous)
 
@@ -835,6 +838,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     checkMapInputArray ("(GST, const GO[], LO, GO, comm)",
                         indexList, static_cast<size_t> (indexListSize),
                         comm.getRawPtr ());
@@ -866,8 +870,7 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     using std::endl;
-    const char funcName[] =
-      "Map(gblNumInds,entryList(Teuchos::ArrayView),indexBase,comm)";
+    const char* funcName = "Map(gblNumInds,entryList(Teuchos::ArrayView),indexBase,comm)";
 
     const bool verbose = Details::Behavior::verbose("Map");
     std::unique_ptr<std::string> prefix;
@@ -879,6 +882,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
     checkMapInputArray ("(GST, ArrayView, GO, comm)",
                         entryList.getRawPtr (), numLclInds,
@@ -945,6 +949,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     checkMapInputArray ("(GST, Kokkos::View, GO, comm)",
                         entryList.data (),
                         static_cast<size_t> (entryList.extent (0)),

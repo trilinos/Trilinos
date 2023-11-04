@@ -25,15 +25,15 @@
       <!-- <Parameter name="Mesh Type" type="string" value="tet"/> -->
       <Parameter name="CFL" type="double" value="4.0"/>
       <ParameterList name="Mesh Factory Parameter List">
-        <!-- <Parameter name="X Procs" type="int" value="-1" /> -->
-        <!-- <Parameter name="Y Procs" type="int" value="-1" /> -->
-        <!-- <Parameter name="Z Procs" type="int" value="-1" /> -->
+        <Parameter name="X Procs" type="int" value="-1" />
+        <Parameter name="Y Procs" type="int" value="-1" />
+        <Parameter name="Z Procs" type="int" value="-1" />
         <Parameter name="X Blocks" type="int" value="1" />
         <Parameter name="Y Blocks" type="int" value="1" />
         <Parameter name="Z Blocks" type="int" value="1" />
-        <Parameter name="X Elements" type="int" value="15" />
-        <Parameter name="Y Elements" type="int" value="15" />
-        <Parameter name="Z Elements" type="int" value="15" />
+        <Parameter name="X Elements" type="int" value="10" />
+        <Parameter name="Y Elements" type="int" value="10" />
+        <Parameter name="Z Elements" type="int" value="10" />
         <!-- <ParameterList name="Periodic BCs"> -->
         <!--   <Parameter name="Count" type="int" value="3"/> -->
         <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->
@@ -65,6 +65,7 @@
       <ParameterList name="Maxwell Physics">
         <Parameter name="Type"                 type="string" value="Darcy"/>
         <Parameter name="Model ID"             type="string" value="darcy"/>
+        <Parameter name="Diffusivity"          type="string" value="kappa"/>
         <Parameter name="Inverse Diffusivity"  type="string" value="1/kappa"/>
         <Parameter name="Forcing"              type="string" value="f"/>
       </ParameterList>
@@ -96,6 +97,9 @@
       <ParameterList name="NORM u exact">
         <Parameter name="Type" type="string" value="NORM"/>
         <Parameter name="Field" type="string" value="EXACT u"/>
+      </ParameterList>
+      <ParameterList name="kappa">
+        <Parameter name="Value" type="double" value="10."/>
       </ParameterList>
       <!-- Inverse Diffusivity -->
       <ParameterList name="1/kappa">
@@ -129,67 +133,7 @@
   </ParameterList>
 
   <ParameterList name="Boundary Conditions">
-    <!-- Conditions on u-field -->
-    <ParameterList>
-      <Parameter name="Type" type="string" value="Dirichlet"/>
-      <Parameter name="Sideset ID" type="string" value="top"/>
-      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Equation Set Name" type="string" value="u"/>
-      <Parameter name="Strategy" type="string" value="Constant"/>
-      <ParameterList name="Data">
-        <Parameter name="Value" type="double" value="0."/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList>
-      <Parameter name="Type" type="string" value="Dirichlet"/>
-      <Parameter name="Sideset ID" type="string" value="bottom"/>
-      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Equation Set Name" type="string" value="u"/>
-      <Parameter name="Strategy" type="string" value="Constant"/>
-      <ParameterList name="Data">
-        <Parameter name="Value" type="double" value="0."/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList>
-      <Parameter name="Type" type="string" value="Dirichlet"/>
-      <Parameter name="Sideset ID" type="string" value="left"/>
-      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Equation Set Name" type="string" value="u"/>
-      <Parameter name="Strategy" type="string" value="Constant"/>
-      <ParameterList name="Data">
-        <Parameter name="Value" type="double" value="0."/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList>
-      <Parameter name="Type" type="string" value="Dirichlet"/>
-      <Parameter name="Sideset ID" type="string" value="right"/>
-      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Equation Set Name" type="string" value="u"/>
-      <Parameter name="Strategy" type="string" value="Constant"/>
-      <ParameterList name="Data">
-        <Parameter name="Value" type="double" value="0."/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList>
-      <Parameter name="Type" type="string" value="Dirichlet"/>
-      <Parameter name="Sideset ID" type="string" value="front"/>
-      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Equation Set Name" type="string" value="u"/>
-      <Parameter name="Strategy" type="string" value="Constant"/>
-      <ParameterList name="Data">
-        <Parameter name="Value" type="double" value="0."/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList>
-      <Parameter name="Type" type="string" value="Dirichlet"/>
-      <Parameter name="Sideset ID" type="string" value="back"/>
-      <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Equation Set Name" type="string" value="u"/>
-      <Parameter name="Strategy" type="string" value="Constant"/>
-      <ParameterList name="Data">
-        <Parameter name="Value" type="double" value="0."/>
-      </ParameterList>
-    </ParameterList>
+    <!-- natural BCs -->
   </ParameterList>
 
   <ParameterList name="Auxiliary Boundary Conditions">

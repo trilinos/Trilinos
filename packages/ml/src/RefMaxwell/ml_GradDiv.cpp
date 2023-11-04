@@ -63,6 +63,58 @@ ML_Epetra::GradDivPreconditioner::GradDivPreconditioner(const Epetra_CrsMatrix &
 
 
 // ================================================ ====== ==== ==== == =
+ML_Epetra::GradDivPreconditioner::GradDivPreconditioner(const Epetra_CrsMatrix& K2_Matrix,      // Face Grad-div + Mass
+                                                        const Teuchos::ParameterList& List,
+                                                        const bool ComputePrec):
+  ML_Preconditioner(),
+  K2_Matrix_(&K2_Matrix),
+  FaceNode_Matrix_(0),
+  D1_Clean_Matrix_(0),
+  D0_Clean_Matrix_(0),
+  TMT_Matrix_(0),
+#ifdef HAVE_ML_IFPACK
+  IfSmoother(0),
+#endif
+  verbose_(false),very_verbose_(false)
+{
+  using Teuchos::RCP;
+  FaceNode_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("FaceNode");
+  ML_CHK_ERRV((FaceNode_Matrix_==0));
+  D1_Clean_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("D1");
+  ML_CHK_ERRV((D1_Clean_Matrix_==0));
+  D0_Clean_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("D0");
+  ML_CHK_ERRV((D0_Clean_Matrix_==0));
+  TMT_Matrix_ = &*List.get<RCP<const Epetra_CrsMatrix> >("K0");
+  ML_CHK_ERRV((TMT_Matrix_==0));
+
+
+  /* Set the Epetra Goodies */
+  Comm_ = &(K2_Matrix_->Comm());
+  DomainMap_ = &(K2_Matrix_->DomainMap());
+  RangeMap_ = &(K2_Matrix_->RangeMap());
+  EdgeMap_ = &(D1_Clean_Matrix_->DomainMap());
+
+  Label_=new char [80];
+  strcpy(Label_,"ML face-element grad-div preconditioner");
+  List_=List;
+  SetDefaultsGradDiv(List_,false);
+
+#ifdef ML_TIMING
+  /* Internal Timings */
+  NumApplications_ = 0;
+  ApplicationTime_ = 0.0;
+  FirstApplication_ = true;
+  FirstApplicationTime_ = 0.0;
+  NumConstructions_ = 0;
+  ConstructionTime_ = 0.0;
+#endif
+
+  if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
+
+}
+
+
+// ================================================ ====== ==== ==== == =
 ML_Epetra::GradDivPreconditioner::~GradDivPreconditioner()
 {
   if (IsComputePreconditionerOK_)

@@ -2398,7 +2398,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     Teuchos::ArrayRCP<size_t>  rowptr;
     Teuchos::ArrayRCP<GO>      colind;
     Teuchos::ArrayRCP<Scalar>  vals;
-    Teuchos::Array<int>        TargetPids;
+    Kokkos::View<int*,Node::device_type> TargetPids_d;
 
     if (verbose) {
       std::ostringstream os;
@@ -2432,7 +2432,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       colind_d,
       vals_d,
       SourcePids (),
-      TargetPids);
+      TargetPids_d);
 
     auto rowptr_h = create_mirror_view_and_copy(Kokkos::HostSpace(), rowptr_d);
     auto colind_h = create_mirror_view_and_copy(Kokkos::HostSpace(), colind_d);

@@ -787,6 +787,7 @@ init (const keys_type& keys,
   using Kokkos::ViewAllocateWithoutInitializing;
   using Teuchos::TypeNameTraits;
   typedef typename std::decay<decltype (keys.extent (0)) >::type size_type;
+  Tpetra::Details::ProfilingRegion pr("Tpetra::Details::FixedHashTable::init(7-arg)");
   const char prefix[] = "Tpetra::Details::FixedHashTable: ";
 
   const offset_type numKeys = static_cast<offset_type> (keys.extent (0));
@@ -1089,6 +1090,7 @@ init (const host_input_keys_type& keys,
       KeyType initMinKey,
       KeyType initMaxKey)
 {
+  Tpetra::Details::ProfilingRegion pr("Tpetra::Details::FixedHashTable::init(4-arg)");
   const offset_type numKeys = static_cast<offset_type> (keys.extent (0));
   TEUCHOS_TEST_FOR_EXCEPTION
     (static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::ArithTraits<ValueType>::max ()),

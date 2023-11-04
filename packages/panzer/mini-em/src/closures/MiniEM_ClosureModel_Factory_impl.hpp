@@ -18,6 +18,7 @@
 #include "MiniEM_RandomForcing.hpp"
 #include "MiniEM_DarcyAnalyticForcing.hpp"
 #include "MiniEM_DarcyAnalyticSolution.hpp"
+#include "MiniEM_PiecewiseConstant.hpp"
 #include "MiniEM_TensorConductivity.hpp"
 #include "MiniEM_VariableTensorConductivity.hpp"
 
@@ -124,6 +125,22 @@ buildClosureModels(const std::string& model_id,
       if(type=="DARCY ANALYTIC SOLUTION") {
 	RCP<Evaluator<panzer::Traits> > e =
 	  rcp(new mini_em::DarcyAnalyticSolution<EvalT,panzer::Traits>(key,*ir,fl));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="PIECEWISE CONSTANT") {
+        double value0 = plist.get<double>("value0");
+	double value1 = plist.get<double>("value1");
+        double xl = plist.get<double>("xl");
+	double xr = plist.get<double>("xr");
+	double yl = plist.get<double>("yl");
+	double yr = plist.get<double>("yr");
+	double zl = plist.get<double>("zl");
+	double zr = plist.get<double>("zr");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::PiecewiseConstant<EvalT,panzer::Traits>(key,*ir,fl,value0,value1,xl,xr,yl,yr,zl,zr,DoF));
 	evaluators->push_back(e);
 
         found = true;

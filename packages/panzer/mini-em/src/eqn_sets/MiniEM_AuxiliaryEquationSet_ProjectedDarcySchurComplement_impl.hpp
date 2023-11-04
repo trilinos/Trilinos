@@ -1,5 +1,5 @@
-#ifndef _MiniEM_AuxiliaryEquationSet_DarcySchurComplement_impl_hpp_
-#define _MiniEM_AuxiliaryEquationSet_DarcySchurComplement_impl_hpp_
+#ifndef _MiniEM_AuxiliaryEquationSet_ProjectedDarcySchurComplement_impl_hpp_
+#define _MiniEM_AuxiliaryEquationSet_ProjectedDarcySchurComplement_impl_hpp_
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
@@ -14,10 +14,8 @@
 #include "Panzer_BasisIRLayout.hpp"
 
 // include evaluators here
-#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
-#include "Panzer_Integrator_BasisTimesTensorTimesVector.hpp"
-#include "Panzer_Integrator_DivBasisTimesScalar.hpp"
+#include "Panzer_Integrator_CurlBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
 #include "Panzer_Constant.hpp"
@@ -31,8 +29,8 @@
 
 // ***********************************************************************
 template <typename EvalT>
-mini_em::AuxiliaryEquationSet_DarcySchurComplement<EvalT>::
-AuxiliaryEquationSet_DarcySchurComplement(
+mini_em::AuxiliaryEquationSet_ProjectedDarcySchurComplement<EvalT>::
+AuxiliaryEquationSet_ProjectedDarcySchurComplement(
                    const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
                    const Teuchos::RCP<Teuchos::ParameterList>& params,
 		   const int& default_integration_order,
@@ -48,7 +46,7 @@ AuxiliaryEquationSet_DarcySchurComplement(
     valid_parameters.set("Model ID","","Closure model id associated with this equation set");
     valid_parameters.set("DOF Name","","Name of DOF to construct time derivative for");
     valid_parameters.set("Inverse Diffusivity","1/kappa","Inverse Diffusivity");
-    valid_parameters.set("Basis Type","HDiv","Type of Basis to use");
+    valid_parameters.set("Basis Type","HCurl","Type of Basis to use");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",default_integration_order,"Order of the integration rule");
 
@@ -73,7 +71,8 @@ AuxiliaryEquationSet_DarcySchurComplement(
   m_dof_names->push_back(dof_name);
 
   this->addDOF(dof_name,basis_type,basis_order,integration_order,"AUX_MASS_RESIDUAL_"+dof_name);
-  this->addDOFDiv(dof_name,"Div_"+dof_name);
+  // this->addDOF(dof_name,basis_type,basis_order,integration_order);
+  this->addDOFCurl(dof_name,"Curl_"+dof_name);
 
   this->addClosureModel(model_id);
 
@@ -82,7 +81,7 @@ AuxiliaryEquationSet_DarcySchurComplement(
 
 // ***********************************************************************
 template <typename EvalT>
-void mini_em::AuxiliaryEquationSet_DarcySchurComplement<EvalT>::
+void mini_em::AuxiliaryEquationSet_ProjectedDarcySchurComplement<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::FieldLibrary& /* field_library */,
 				      const Teuchos::ParameterList& /* user_data */) const
@@ -90,7 +89,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using panzer::BasisIRLayout;
   using panzer::EvaluatorStyle;
   using panzer::IntegrationRule;
-  using panzer::Integrator_DivBasisTimesScalar;
+  using panzer::Integrator_CurlBasisDotVector;
   using panzer::Traits;
   using PHX::Evaluator;
   using std::string;
@@ -103,48 +102,30 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   std::vector<std::string> residual_operator_names;
   {
-    {
-      std::string resid = "AUX_DARCYSCHURCOMPLEMENT_RESIDUAL_TIME_OP_"+dof_name;
-      ParameterList p("Time Derivative " + dof_name);
+      std::string resid="AUX_PROJECTEDDARCYSCHURCOMPLEMENT_RESIDUAL_INVERSE_DIFFUSIVITY_"+dof_name;
+      ParameterList p("Curl Curl "+dof_name);
       p.set("Residual Name", resid);
-      p.set("Value Name", dof_name);
+      p.set("Value Name", "Curl_"+dof_name);
       p.set("Basis", basis);
       p.set("IR", ir);
       p.set("Multiplier", 1.0);
       const std::vector<std::string> fieldMultiplier = {inverseDiffusivity_};
       p.set("Field Multipliers",Teuchos::rcpFromRef(fieldMultiplier));
-      RCP<Evaluator<Traits> > op = rcp(new
-        panzer::Integrator_BasisTimesVector<EvalT, Traits>(p));
-      fm.template registerEvaluator<EvalT>(op);
-      residual_operator_names.push_back(resid);
-    }
-  }
-  // grad div Operator
-  {
-    {
-      std::string resid = "AUX_DARCYSCHURCOMPLEMENT_RESIDUAL_GRADDIV_"+dof_name;
-      ParameterList p("Grad Div " + dof_name);
-      p.set("Residual Name", resid);
-      p.set("Value Name", "Div_"+dof_name);
-      p.set("Basis", basis);
-      p.set("IR", ir);
-      p.set("Multiplier", 1.0);
-      const std::vector<std::string> fieldMultiplier = {"dt"};
-      p.set("Field Multipliers",Teuchos::rcpFromRef(fieldMultiplier));
-      RCP<Evaluator<Traits> > op = rcp(new
-        Integrator_DivBasisTimesScalar<EvalT, Traits>(p));
-      fm.template registerEvaluator<EvalT>(op);
-      residual_operator_names.push_back(resid);
-    }
-  }
+      RCP<PHX::Evaluator<panzer::Traits> > op =
+        rcp(new Integrator_CurlBasisDotVector<EvalT, panzer::Traits>(p));
 
-  const std::string residualField = "AUX_DARCYSCHURCOMPLEMENT_RESIDUAL_"+dof_name;
+      this->template registerEvaluator<EvalT>(fm, op);
+      residual_operator_names.push_back(resid);
+  }
+  // ProjectedDarcySchurComplement Operator
+
+  const std::string residualField = "AUX_PROJECTEDDARCYSCHURCOMPLEMENT_RESIDUAL_"+dof_name;
   this->buildAndRegisterResidualSummationEvaluator(fm,dof_name,residual_operator_names, residualField);
 }
 
 // ***********************************************************************
 template <typename EvalT >
-void mini_em::AuxiliaryEquationSet_DarcySchurComplement<EvalT>::
+void mini_em::AuxiliaryEquationSet_ProjectedDarcySchurComplement<EvalT>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
 				  const panzer::FieldLibrary& /* field_library */,
                                   const panzer::LinearObjFactory<panzer::Traits> & /* lof */,
@@ -154,7 +135,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
 
 // ***********************************************************************
 template < >
-void mini_em::AuxiliaryEquationSet_DarcySchurComplement<panzer::Traits::Jacobian>::
+void mini_em::AuxiliaryEquationSet_ProjectedDarcySchurComplement<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				  const panzer::FieldLibrary& field_library,
                                   const panzer::LinearObjFactory<panzer::Traits> & lof,
@@ -180,7 +161,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 #endif
 
    std::string fieldStr = (*this->m_dof_names)[0];
-   const std::string residualField = "AUX_DARCYSCHURCOMPLEMENT_RESIDUAL_"+dof_name;
+   const std::string residualField = "AUX_PROJECTEDDARCYSCHURCOMPLEMENT_RESIDUAL_"+dof_name;
    int pFieldNum;
    int blockIndex;
 
@@ -227,6 +208,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
         fm.registerEvaluator<EvalT>(op);
      }
+
 #ifdef PANZER_HAVE_EPETRA_STACK
    } else if(eblof != Teuchos::null) {
      Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr = eblof->getGlobalIndexer();
@@ -272,14 +254,14 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
          = rcp(new std::vector<std::string>);
       inFieldNames->push_back(outPrefix+residualField);
 
-      std::string scatterName = "AUX_"+dof_name+"_DarcySchurComplement";
+      std::string scatterName = "AUX_"+dof_name+"_ProjectedDarcySchurComplement";
 
       Teuchos::ParameterList p("Scatter:" + scatterName);
       p.set("Scatter Name", scatterName);
       p.set("Basis",field_library.lookupBasis(fieldStr));
       p.set("Dependent Names", inFieldNames);
       p.set("Dependent Map", resToField);
-      p.set("Global Data Key", "DarcySchurComplement " + dof_name + " Scatter Container");
+      p.set("Global Data Key", "ProjectedDarcySchurComplement " + dof_name + " Scatter Container");
 
       RCP< PHX::Evaluator<panzer::Traits> > op = nlof->buildScatter<EvalT>(p);
 
@@ -289,10 +271,10 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       fm.requireField<EvalT>(tag);
    }
 
-   if(!m_gedc->containsDataObject("DarcySchurComplement " + dof_name + " Scatter Container")) {
+   if(!m_gedc->containsDataObject("ProjectedDarcySchurComplement " + dof_name + " Scatter Container")) {
       Teuchos::RCP<panzer::GlobalEvaluationData> dataObject
          = Teuchos::rcp(new panzer::LOCPair_GlobalEvaluationData(nlof,panzer::LinearObjContainer::Mat));
-      m_gedc->addDataObject("DarcySchurComplement " + dof_name + " Scatter Container",dataObject);
+      m_gedc->addDataObject("ProjectedDarcySchurComplement " + dof_name + " Scatter Container",dataObject);
    }
 }
 

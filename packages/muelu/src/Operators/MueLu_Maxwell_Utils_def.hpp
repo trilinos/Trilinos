@@ -152,26 +152,28 @@ namespace MueLu {
     // BCcols_[i] is true, iff i is a boundary column
     int BCedgesLocal = 0;
     int BCnodesLocal = 0;
-    BCrowsKokkos_ = Utilities::DetectDirichletRows_kokkos(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
+    {
+      BCrowsKokkos_ = Utilities::DetectDirichletRows_kokkos(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
 
-    if (rowSumTol > 0.)
-      Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
+      if (rowSumTol > 0.)
+        Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
 
-    BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getLocalNumElements());
-    BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), D0_Matrix_->getDomainMap()->getLocalNumElements());
-    Utilities::DetectDirichletColsAndDomains(*D0_Matrix_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_);
+      BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getLocalNumElements());
+      BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), D0_Matrix_->getDomainMap()->getLocalNumElements());
+      Utilities::DetectDirichletColsAndDomains(*D0_Matrix_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_);
 
-    auto BCrowsKokkos=BCrowsKokkos_;
-    Kokkos::parallel_reduce(BCrowsKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
+      auto BCrowsKokkos=BCrowsKokkos_;
+      Kokkos::parallel_reduce(BCrowsKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
         if (BCrowsKokkos(i))
 	  ++sum;
-      }, BCedgesLocal );
+	}, BCedgesLocal );
 
-    auto BCdomainKokkos = BCdomainKokkos_;
-    Kokkos::parallel_reduce(BCdomainKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
+      auto BCdomainKokkos = BCdomainKokkos_;
+      Kokkos::parallel_reduce(BCdomainKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
         if (BCdomainKokkos(i))
 	  ++sum;
-      }, BCnodesLocal);
+	}, BCnodesLocal);
+    }
 
     MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCedgesLocal, BCedges_);
     MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCnodesLocal, BCnodes_);
@@ -179,6 +181,24 @@ namespace MueLu {
 
     allEdgesBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCedges_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements();
     allNodesBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCnodes_) >= D0_Matrix_->getDomainMap()->getGlobalNumElements();
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  removeExplicitZeros(const RCP<Matrix> & A,
+                      const magnitudeType tolerance,
+                      const bool keepDiagonal,
+                      const size_t expectedNNZperRow) {
+    Level fineLevel;
+    fineLevel.SetFactoryManager(null);
+    fineLevel.SetLevelID(0);
+    fineLevel.Set("A",A);
+    fineLevel.setlib(A->getDomainMap()->lib());
+    RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A", tolerance, keepDiagonal, expectedNNZperRow));
+    fineLevel.Request("A",ThreshFact.get());
+    ThreshFact->Build(fineLevel);
+    return fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
   }
 
 
@@ -195,16 +215,7 @@ namespace MueLu {
     // In the construction of the prolongator we use the graph of the
     // matrix, so zero entries mess it up.
     if (parameterList_.get<bool>("refmaxwell: filter D0", true) && D0_Matrix_->getLocalMaxNumRowEntries()>2) {
-      Level fineLevel;
-      fineLevel.SetFactoryManager(null);
-      fineLevel.SetLevelID(0);
-      fineLevel.Set("A",D0_Matrix_);
-      fineLevel.setlib(D0_Matrix_->getDomainMap()->lib());
-      // We expect D0 to have entries +-1, so any threshold value will do.
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1.0e-8,/*keepDiagonal=*/false,/*expectedNNZperRow=*/2));
-      fineLevel.Request("A",ThreshFact.get());
-      ThreshFact->Build(fineLevel);
-      D0_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
+      D0_Matrix_ = removeExplicitZeros(D0_Matrix_, 1e-8, false, 2);
 
       // If D0 has too many zeros, maybe SM and M1 do as well.
       defaultFilter = true;
@@ -216,15 +227,7 @@ namespace MueLu {
       M1_Matrix_->getLocalDiagCopy(*diag);
       magnitudeType threshold = 1.0e-8 * diag->normInf();
 
-      Level fineLevel;
-      fineLevel.SetFactoryManager(null);
-      fineLevel.SetLevelID(0);
-      fineLevel.Set("A",M1_Matrix_);
-      fineLevel.setlib(M1_Matrix_->getDomainMap()->lib());
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
-      fineLevel.Request("A",ThreshFact.get());
-      ThreshFact->Build(fineLevel);
-      M1_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
+      M1_Matrix_ = removeExplicitZeros(M1_Matrix_, threshold, true);
     }
 
     if (!Ms_Matrix_.is_null() && parameterList_.get<bool>("refmaxwell: filter Ms", defaultFilter)) {
@@ -233,15 +236,7 @@ namespace MueLu {
       Ms_Matrix_->getLocalDiagCopy(*diag);
       magnitudeType threshold = 1.0e-8 * diag->normInf();
 
-      Level fineLevel;
-      fineLevel.SetFactoryManager(null);
-      fineLevel.SetLevelID(0);
-      fineLevel.Set("A",Ms_Matrix_);
-      fineLevel.setlib(Ms_Matrix_->getDomainMap()->lib());
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
-      fineLevel.Request("A",ThreshFact.get());
-      ThreshFact->Build(fineLevel);
-      Ms_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
+      Ms_Matrix_ = removeExplicitZeros(Ms_Matrix_, threshold, true);
     }
 
     if (!SM_Matrix_.is_null() && parameterList_.get<bool>("refmaxwell: filter SM", defaultFilter)) {
@@ -250,19 +245,36 @@ namespace MueLu {
       SM_Matrix_->getLocalDiagCopy(*diag);
       magnitudeType threshold = 1.0e-8 * diag->normInf();
 
-      Level fineLevel;
-      fineLevel.SetFactoryManager(null);
-      fineLevel.SetLevelID(0);
-      fineLevel.Set("A",SM_Matrix_);
-      fineLevel.setlib(SM_Matrix_->getDomainMap()->lib());
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
-      fineLevel.Request("A",ThreshFact.get());
-      ThreshFact->Build(fineLevel);
-      SM_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
+      SM_Matrix_ = removeExplicitZeros(SM_Matrix_, threshold, true);
     }
 
   }
 
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  thresholdedAbs(const RCP<Matrix> & A,
+                 const magnitudeType threshold) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
+    using impl_Scalar = typename ATS::val_type;
+    using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
+    using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+
+    const impl_Scalar impl_SC_ONE = impl_ATS::one();
+    const impl_Scalar impl_SC_ZERO = impl_ATS::zero();
+
+    {
+      auto lclMat = A->getLocalMatrixDevice();
+      Kokkos::parallel_for("thresholdedAbs",
+                           range_type(0,lclMat.nnz()),
+                           KOKKOS_LAMBDA(const size_t i) {
+                             if (impl_ATS::magnitude(lclMat.values(i)) >threshold)
+                               lclMat.values(i) = impl_SC_ONE;
+                             else
+                               lclMat.values(i) = impl_SC_ZERO;
+                           });
+    }
+  }
 
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
