@@ -283,6 +283,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     //! [DefineFactoryManager begin]     // define a factory manager
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     //! [DefineFactoryManager end]
 
     //
@@ -348,7 +349,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         //! [ConfigureFactoryManager begin]         
         // configure factory manager
-        M.SetKokkosRefactor(false);
         M.SetFactory("P", PFact);
         M.SetFactory("R", RFact);
         M.SetFactory("A", AcFact);
