@@ -207,6 +207,7 @@ TRIBITS_ADD_TEST(
    POSTFIX_AND_ARGS_0
    "order1" --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=darcyTet.xml --x-elements=15  --y-elements=15 --z-elements=15
    NUM_MPI_PROCS 1
+   RUN_SERIAL
    )
 
 TRIBITS_ADD_TEST(
