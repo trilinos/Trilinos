@@ -39,6 +39,14 @@ struct LU_Algorithm {
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
+struct Batched_LU_Algorithm {
+#if defined(KOKKOS_ENABLE_OPENMP)
+  using type = ActiveHostAlgorithm<runsWithOMP()>::type;
+#else
+  using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
+#endif
+};
+
 } // namespace Tacho
 
 #endif

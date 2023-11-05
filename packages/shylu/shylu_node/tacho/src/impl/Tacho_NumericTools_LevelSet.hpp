@@ -1504,6 +1504,9 @@ public:
   inline void factorizeCholesky(const value_type_array &ax, const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
+Kokkos::Timer tick;
+double time_parallel = 0.0;
+double time_device = 0.0;
 
     timer.reset();
     value_type_array work;
@@ -1596,13 +1599,21 @@ public:
             }
 
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
+Kokkos::fence();
+tick.reset();
             factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, work);
+Kokkos::fence();
+time_device += tick.seconds();
             Kokkos::fence();
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "POTRF (team) returns non-zero error code.");
             }
 
+Kokkos::fence();
+tick.reset();
             Kokkos::parallel_for("update factor", policy_update, functor);
+Kokkos::fence();
+time_parallel += tick.seconds();
             ++stat_level.n_kernel_launching;
             exec_space().fence(); // Kokkos::fence();
           }
@@ -1620,6 +1631,7 @@ public:
       _buf = value_type_array();
     }
     stat.t_extra += timer.seconds();
+printf( "\n == team = %f, device = %f ==\n",time_parallel,time_device );
 
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (CholeskyFactorize)\n", variant);
@@ -3155,6 +3167,10 @@ public:
   inline void factorizeLU(const value_type_array &ax, const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
+Kokkos::Timer tick;
+double time_parallel = 0.0;
+double time_device = 0.0;
+double time_update = 0.0;
 
     timer.reset();
     value_type_array work;
@@ -3235,8 +3251,8 @@ public:
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(buf_factor_ptr);
             if (is_host) {
-              policy_factor = team_policy_factor(pcnt, Kokkos::AUTO);
-              policy_update = team_policy_update(pcnt, Kokkos::AUTO);
+              policy_factor = team_policy_factor(pcnt, 1, 1);
+              policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
               // get max teamm sizes
@@ -3253,19 +3269,31 @@ public:
               // do nothing
               // Kokkos::parallel_for("factor lower", policy_factor, functor);
             } else {
+Kokkos::fence();
+tick.reset();
               Kokkos::parallel_for("factor", policy_factor, functor);
+Kokkos::fence();
+time_parallel += tick.seconds();
               ++stat_level.n_kernel_launching;
             }
 
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
 
+Kokkos::fence();
+tick.reset();
             factorizeLU_OnDevice(pbeg, pend, h_buf_factor_ptr, work);
+Kokkos::fence();
+time_device += tick.seconds();
             Kokkos::fence();
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (team) returns non-zero error code.");
             }
 
+Kokkos::fence();
+tick.reset();
             Kokkos::parallel_for("update factor", policy_update, functor);
+Kokkos::fence();
+time_update += tick.seconds();
             ++stat_level.n_kernel_launching;
             exec_space().fence();
           }
@@ -3286,6 +3314,7 @@ public:
     }
     stat.t_extra += timer.seconds();
 
+printf( "\n == team = %f, device = %f, update = %f\n",time_parallel,time_device,time_update );
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (LU Factorize)\n", variant);
       printf("================================================\n");
