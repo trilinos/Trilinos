@@ -171,7 +171,7 @@ smoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 5
 Operator complexity = 1.49
-Smoother complexity = 0.00
+Smoother complexity = 0.02
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

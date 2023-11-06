@@ -339,6 +339,8 @@ namespace MueLu {
     }
     prec_->setParameters(amesos2_params);
 
+    prec_->numericFactorization();
+
     SmootherPrototype::IsSetup(true);
   }
 
