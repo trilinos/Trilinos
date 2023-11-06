@@ -44,15 +44,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UnitTest_BDF2 
-  SOURCES Tempus_UnitTest_BDF2.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  UnitTest_BackwardEuler
+  SOURCES Tempus_UnitTest_BackwardEuler.cpp ${TEMPUS_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UnitTest_BackwardEuler
-  SOURCES Tempus_UnitTest_BackwardEuler.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  UnitTest_BDF2 
+  SOURCES Tempus_UnitTest_BDF2.cpp ${TEMPUS_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
@@ -438,6 +438,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_BackwardEuler_CopyFiles
   DEST_FILES Tempus_BackwardEuler_SinCos.xml
   EXEDEPS UnitTest_BackwardEuler
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_BDF2_CopyFiles
+  DEST_FILES Tempus_BDF2_SinCos.xml
+  EXEDEPS UnitTest_BDF2
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_DIRK_BackwardEuler_CopyFiles
