@@ -254,26 +254,7 @@ namespace MueLu {
     }
 
     // Check for Kokkos
-# ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-      useKokkos_ = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-      useKokkos_ = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-      useKokkos_ = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-      useKokkos_ = true;
-# endif
-# ifdef HAVE_MUELU_SYCL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-      useKokkos_ = true;
-# endif    
+    useKokkos_ = !Node::is_serial;
     (void)MUELU_TEST_AND_SET_VAR(paramList, "use kokkos refactor", bool, useKokkos_);
 
     // Check for timer synchronization
@@ -987,7 +968,7 @@ namespace MueLu {
          "LINESMOOTHING_BANDEDRELAXATION", "LINESMOOTHING_BANDED_RELAXATION", "LINESMOOTHING_BANDED RELAXATION",
          "LINESMOOTHING_TRIDIRELAXATION", "LINESMOOTHING_TRIDI_RELAXATION", "LINESMOOTHING_TRIDI RELAXATION",
          "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",
-         "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL"}).count(coarseType)) {
+         "TOPOLOGICAL", "FAST_ILU", "FAST_IC", "FAST_ILDL","HIPTMAIR"}).count(coarseType)) {
          coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
        } else {
  #ifdef HAVE_MUELU_MATLAB
@@ -1149,7 +1130,9 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: match ML phase1",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: match ML phase2a",          bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: match ML phase2b",          bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase2a agg factor",      double, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);
@@ -2010,6 +1993,7 @@ namespace MueLu {
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs diagonal replacement value", double, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs use automatic diagonal tolerance", bool, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: enforce constraints", bool, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: eigen-analysis type", std::string, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, Pparams);
 
     P->SetParameterList(Pparams);

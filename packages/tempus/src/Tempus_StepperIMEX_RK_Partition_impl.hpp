@@ -416,15 +416,15 @@ void StepperIMEX_RK_Partition<Scalar>::setModelPair(
     mePairIMEX)
 {
   Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
-    wrapperModelPairIMEX =
+    wrapperModelPairPartIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
       (this->wrapperModel_);
   validExplicitODE    (mePairIMEX->getExplicitModel());
   validImplicitODE_DAE(mePairIMEX->getImplicitModel());
-  wrapperModelPairIMEX = mePairIMEX;
-  wrapperModelPairIMEX->initialize();
+  wrapperModelPairPartIMEX = mePairIMEX;
+  wrapperModelPairPartIMEX->initialize();
 
-  this->wrapperModel_ = wrapperModelPairIMEX;
+  this->wrapperModel_ = wrapperModelPairPartIMEX;
 
   this->isInitialized_ = false;
 }
@@ -453,10 +453,10 @@ template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::initialize()
 {
   Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
-    wrapperModelPairIMEX =
+    wrapperModelPairPartIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
       (this->wrapperModel_);
-  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModelPairIMEX == Teuchos::null,
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModelPairPartIMEX == Teuchos::null,
     std::logic_error,
     "Error - Can not cast the wrapper Model Evaluator to a IMEX Model Pair."
     "StepperIMEX_RK_Partition::initialize()\n");
@@ -466,15 +466,15 @@ void StepperIMEX_RK_Partition<Scalar>::initialize()
   stageF_.resize(numStages);
   stageGx_.resize(numStages);
   for(int i=0; i < numStages; i++) {
-    stageF_[i] = Thyra::createMember(wrapperModelPairIMEX->
+    stageF_[i] = Thyra::createMember(wrapperModelPairPartIMEX->
                                      getExplicitModel()->get_f_space());
-    stageGx_[i] = Thyra::createMember(wrapperModelPairIMEX->
+    stageGx_[i] = Thyra::createMember(wrapperModelPairPartIMEX->
                                      getImplicitModel()->get_f_space());
     assign(stageF_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
     assign(stageGx_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
 
-  xTilde_ = Thyra::createMember(wrapperModelPairIMEX->
+  xTilde_ = Thyra::createMember(wrapperModelPairPartIMEX->
                                 getImplicitModel()->get_x_space());
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
@@ -539,12 +539,12 @@ void StepperIMEX_RK_Partition<Scalar>::evalImplicitModelExplicitly(
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
-    wrapperModelPairIMEX =
+    wrapperModelPairPartIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
       (this->wrapperModel_);
-  MEB::InArgs<Scalar>  inArgs = wrapperModelPairIMEX->getInArgs();
+  MEB::InArgs<Scalar>  inArgs = wrapperModelPairPartIMEX->getInArgs();
   inArgs.set_x(X);
-  inArgs.set_p(wrapperModelPairIMEX->getParameterIndex(), Y);
+  inArgs.set_p(wrapperModelPairPartIMEX->getParameterIndex(), Y);
   if (inArgs.supports(MEB::IN_ARG_t))           inArgs.set_t(time);
   if (inArgs.supports(MEB::IN_ARG_step_size))   inArgs.set_step_size(stepSize);
   if (inArgs.supports(MEB::IN_ARG_stage_number))
@@ -557,10 +557,10 @@ void StepperIMEX_RK_Partition<Scalar>::evalImplicitModelExplicitly(
   // x_dot = f(x, t)
   if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(Teuchos::null);
 
-  MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX->getOutArgs();
+  MEB::OutArgs<Scalar> outArgs = wrapperModelPairPartIMEX->getOutArgs();
   outArgs.set_f(G);
 
-  wrapperModelPairIMEX->getImplicitModel()->evalModel(inArgs,outArgs);
+  wrapperModelPairPartIMEX->getImplicitModel()->evalModel(inArgs,outArgs);
   Thyra::Vt_S(G.ptr(), -1.0);
 }
 
@@ -574,11 +574,11 @@ void StepperIMEX_RK_Partition<Scalar>::evalExplicitModel(
   typedef Thyra::ModelEvaluatorBase MEB;
 
   Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
-    wrapperModelPairIMEX =
+    wrapperModelPairPartIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
       (this->wrapperModel_);
   MEB::InArgs<Scalar> inArgs =
-    wrapperModelPairIMEX->getExplicitModel()->createInArgs();
+    wrapperModelPairPartIMEX->getExplicitModel()->createInArgs();
   inArgs.set_x(Z);
   if (inArgs.supports(MEB::IN_ARG_t))           inArgs.set_t(time);
   if (inArgs.supports(MEB::IN_ARG_step_size))   inArgs.set_step_size(stepSize);
@@ -593,10 +593,10 @@ void StepperIMEX_RK_Partition<Scalar>::evalExplicitModel(
   if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(Teuchos::null);
 
   MEB::OutArgs<Scalar> outArgs =
-    wrapperModelPairIMEX->getExplicitModel()->createOutArgs();
+    wrapperModelPairPartIMEX->getExplicitModel()->createOutArgs();
   outArgs.set_f(F);
 
-  wrapperModelPairIMEX->getExplicitModel()->evalModel(inArgs, outArgs);
+  wrapperModelPairPartIMEX->getExplicitModel()->evalModel(inArgs, outArgs);
   Thyra::Vt_S(F.ptr(), -1.0);
 }
 
@@ -635,16 +635,16 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
-     wrapperModelPairIMEX =
+     wrapperModelPairPartIMEX =
      Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
        (this->wrapperModel_);
 
     bool pass = true;
     Thyra::assign(workingState->getX().ptr(), *(currentState->getX()));
     RCP<Thyra::VectorBase<Scalar> > stageY =
-      wrapperModelPairIMEX->getExplicitOnlyVector(workingState->getX());
+      wrapperModelPairPartIMEX->getExplicitOnlyVector(workingState->getX());
     RCP<Thyra::VectorBase<Scalar> > stageX =
-      wrapperModelPairIMEX->getIMEXVector(workingState->getX());
+      wrapperModelPairPartIMEX->getIMEXVector(workingState->getX());
 
     RCP<StepperIMEX_RK_Partition<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
@@ -655,15 +655,15 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
       this->setStageNumber(i);
 
       Thyra::assign(stageY.ptr(),
-        *(wrapperModelPairIMEX->getExplicitOnlyVector(currentState->getX())));
+        *(wrapperModelPairPartIMEX->getExplicitOnlyVector(currentState->getX())));
       Thyra::assign(xTilde_.ptr(),
-        *(wrapperModelPairIMEX->getIMEXVector(currentState->getX())));
+        *(wrapperModelPairPartIMEX->getIMEXVector(currentState->getX())));
       for (int j = 0; j < i; ++j) {
         if (AHat(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
           RCP<Thyra::VectorBase<Scalar> > stageFy =
-            wrapperModelPairIMEX->getExplicitOnlyVector(stageF_[j]);
+            wrapperModelPairPartIMEX->getExplicitOnlyVector(stageF_[j]);
           RCP<Thyra::VectorBase<Scalar> > stageFx =
-            wrapperModelPairIMEX->getIMEXVector(stageF_[j]);
+            wrapperModelPairPartIMEX->getIMEXVector(stageF_[j]);
           Thyra::Vp_StV(stageY.ptr(),  -dt*AHat(i,j), *stageFy);
           Thyra::Vp_StV(xTilde_.ptr(), -dt*AHat(i,j), *stageFx);
         }
@@ -704,19 +704,19 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
         this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
           StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
-        wrapperModelPairIMEX->setUseImplicitModel(true);
-        this->solver_->setModel(wrapperModelPairIMEX);
+        wrapperModelPairPartIMEX->setUseImplicitModel(true);
+        this->solver_->setModel(wrapperModelPairPartIMEX);
 
         Thyra::SolveStatus<Scalar> sStatus;
-        if (wrapperModelPairIMEX->getParameterIndex() >= 0)
+        if (wrapperModelPairPartIMEX->getParameterIndex() >= 0)
           sStatus = this->solveImplicitODE(stageX, stageGx_[i], ts, p,
-                     stageY, wrapperModelPairIMEX->getParameterIndex());
+                     stageY, wrapperModelPairPartIMEX->getParameterIndex());
         else
           sStatus = this->solveImplicitODE(stageX, stageGx_[i], ts, p);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
-        wrapperModelPairIMEX->setUseImplicitModel(false);
+        wrapperModelPairPartIMEX->setUseImplicitModel(false);
 
         this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
           StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
@@ -736,7 +736,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     // Sum for solution: x_n = x_n-1 - dt*Sum{ bHat(i)*fx(i) + b(i)*gx(i) }
     Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
     RCP<Thyra::VectorBase<Scalar> > Z = workingState->getX();
-    RCP<Thyra::VectorBase<Scalar> > X = wrapperModelPairIMEX->getIMEXVector(Z);
+    RCP<Thyra::VectorBase<Scalar> > X = wrapperModelPairPartIMEX->getIMEXVector(Z);
     for (int i=0; i < numStages; ++i) {
       if (bHat(i) != Teuchos::ScalarTraits<Scalar>::zero())
         Thyra::Vp_StV(Z.ptr(), -dt*bHat(i), *(stageF_[i]));

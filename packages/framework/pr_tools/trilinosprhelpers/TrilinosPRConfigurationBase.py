@@ -108,6 +108,20 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.ctest_drop_site
 
+    @property
+    def arg_use_explicit_cachefile(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores whether or not an explicit cachefile directive
+        will be passed (as opposed to using -C).
+
+        Returns:
+            self.args.use_explicit_cachefile
+        """
+        return self.args.use_explicit_cachefile
 
     @property
     def arg_build_dir(self):

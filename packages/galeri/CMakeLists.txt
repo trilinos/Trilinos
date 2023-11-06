@@ -33,7 +33,7 @@ ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example example-fem example-xpetra)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example example-fem example-xpetra example-tpetra)
 
 #
 # Exclude files for source package.

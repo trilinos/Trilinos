@@ -1,28 +1,36 @@
-#Set up other env variables
-#$DATASTORE is the path to SEMS data store on sherlock
-export DATASTORE="/storage/elements/sems-data-store/trilinos-performance"
-export DATASTORE_MIRROR="/storage/elements/sems-data-store/trilinos-performance-son"
+set -e
+
 export WATCHR_PERF_DIR="$WORKSPACE/VortexData"
 export TRILINOS_SRC="$WORKSPACE/Trilinos"
-#Remove script dir, if it exists
-rm -rf VortexPerfScripts
-#Get a fresh copy
-scp -rp jenkins@sherlock.sandia.gov:$DATASTORE/Scripts/vortex VortexPerfScripts || true
-scp -rp jenkins@sherlock.sandia.gov:$DATASTORE/Scripts/timingPercentages VortexPerfScripts || true
-#Copy the newest performance report tarball from data store
-scp -p jenkins@sherlock.sandia.gov:$DATASTORE/VortexData.tar.gz VortexData.tar.gz || true
-#Unpack it, is directory "VortexData"
+
+#Remove performance dirs, if they exist
+rm -rf PerfScripts
 rm -rf VortexData
-tar -xf VortexData.tar.gz
+
+#make all the new directories
+mkdir PerfScripts
+mkdir VortexData
+
+cp tpetra_performance/scripts/vortex/* PerfScripts/
+cp tpetra_performance/scripts/timingPercentages/* PerfScripts/
+
+cd $WORKSPACE
 #Create build dir, if not already there.
 #Don't need to clear it out, since script will reconfigure everything.
 #Even with reconfigure, this is an incremental build, saving a lot of time.
 mkdir -p build
 #Configure and build on a compute node, then run run tests on 4 compute nodes.
-$WORKSPACE/VortexPerfScripts/launch.sh
-#put the time percentages in each xml file
-python $WORKSPACE/VortexPerfScripts/timing_extractor.py -p VortexData
-#Repack the up to date tarball of data, and put back in datastore
-tar -czf VortexData.tar.gz VortexData
-scp -p VortexData.tar.gz jenkins@sherlock.sandia.gov:$DATASTORE/VortexData.tar.gz || true
-scp -p VortexData.tar.gz jenkins@watson.sandia.gov:$DATASTORE_MIRROR/VortexData.tar.gz || true
+$WORKSPACE/PerfScripts/launch.sh
+
+#calculate percentages then stick XMLs into the repo and push
+python $WORKSPACE/PerfScripts/timing_extractor.py -p VortexData
+
+if [ "$DRYRUN" != "ON" ]
+then
+  cp VortexData/*.xml tpetra_performance/VortexData/
+  cd tpetra_performance
+  git add VortexData/*
+  git commit -m "updating VortexData results" 
+  git pull --rebase
+  git push
+fi

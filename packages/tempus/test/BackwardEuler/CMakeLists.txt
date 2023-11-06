@@ -2,8 +2,29 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR})
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BackwardEuler
-  SOURCES Tempus_BackwardEulerTest.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  BackwardEuler_SinCos
+  SOURCES Tempus_Test_BackwardEuler_SinCos.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BackwardEuler_CDR
+  SOURCES Tempus_Test_BackwardEuler_CDR.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BackwardEuler_VanDerPol
+  SOURCES Tempus_Test_BackwardEuler_VanDerPol.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BackwardEuler_OptInterface
+  SOURCES Tempus_Test_BackwardEuler_OptInterface.cpp ${TEMPUS_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
@@ -36,7 +57,32 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_CopyFiles
-  DEST_FILES Tempus_BackwardEuler_SinCos.xml Tempus_BackwardEuler_SinCos_ASA.xml Tempus_BackwardEuler_CDR.xml Tempus_BackwardEuler_VanDerPol.xml Tempus_BackwardEuler_SteadyQuadratic.xml
-  EXEDEPS BackwardEuler
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_SinCos_CopyFiles
+  DEST_FILES Tempus_BackwardEuler_SinCos.xml 
+  EXEDEPS BackwardEuler_SinCos
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_CDR_CopyFiles
+  DEST_FILES Tempus_BackwardEuler_CDR.xml
+  EXEDEPS BackwardEuler_CDR
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_VanDerPol_CopyFiles
+  DEST_FILES Tempus_BackwardEuler_VanDerPol.xml
+  EXEDEPS BackwardEuler_VanDerPol
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_OptInterface_CopyFiles
+  DEST_FILES Tempus_BackwardEuler_SinCos.xml
+  EXEDEPS BackwardEuler_OptInterface
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_ASA_CopyFiles
+  DEST_FILES Tempus_BackwardEuler_SinCos_ASA.xml
+  EXEDEPS BackwardEuler_ASA
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_PseudoTransient_SA_CopyFiles
+  DEST_FILES Tempus_BackwardEuler_SteadyQuadratic.xml
+  EXEDEPS BackwardEuler_PseudoTransient_SA
   )

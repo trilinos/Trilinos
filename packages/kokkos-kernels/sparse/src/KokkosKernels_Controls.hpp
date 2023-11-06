@@ -64,8 +64,6 @@ class Controls {
                            const std::string& orUnset = "") const {
     auto search = kernel_parameters.find(name);
     if (kernel_parameters.end() == search) {
-      std::cerr << "WARNING: Controls::getParameter for name \"" << name
-                << "\" was unset" << std::endl;
       return orUnset;
     } else {
       return search->second;

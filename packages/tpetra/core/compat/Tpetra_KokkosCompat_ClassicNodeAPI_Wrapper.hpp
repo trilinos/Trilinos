@@ -43,6 +43,24 @@ public:
   /// release.  This Node type is safe to use.
   static constexpr bool classic = false;
 
+  //! Whether the ExecutionSpace is Kokkos::Serial.
+#ifdef KOKKOS_ENABLE_SERIAL
+  static constexpr bool is_serial = std::is_same_v<ExecutionSpace, Kokkos::Serial>;
+#else
+  static constexpr bool is_serial = false;
+#endif
+
+  //! Whether the ExecutionSpace is CPU-like (its default memory space is HostSpace or HBWSpace)
+#ifdef KOKKOS_HBWSPACE_HPP
+  static constexpr bool is_cpu =
+    std::is_same_v<typename ExecutionSpace::memory_space, Kokkos::HostSpace> ||
+    std::is_same_v<typename ExecutionSpace::memory_space, Kokkos::Experimental::HBWSpace>;
+#else
+  static constexpr bool is_cpu = std::is_same_v<typename ExecutionSpace::memory_space, Kokkos::HostSpace>;
+#endif
+  //! Whether the ExecutionSpace is GPU-like (its default memory space is not HostSpace)
+  static constexpr bool is_gpu = !is_cpu;
+
   KokkosDeviceWrapperNode (Teuchos::ParameterList& /* params */) = delete;
   KokkosDeviceWrapperNode () = delete;
 
@@ -55,7 +73,7 @@ public:
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
-  typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::HIP, ::Kokkos::Experimental::HIPSpace> KokkosHIPWrapperNode;
+  typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPSpace> KokkosHIPWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA

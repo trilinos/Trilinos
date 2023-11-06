@@ -393,6 +393,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Node Comm",          Teuchos::null, "Generating factory of the node level communicator");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -564,6 +565,13 @@ namespace MueLu {
     if(bTransferCoordinates_) {
       Set(coarseLevel, "Coordinates", coarseCoords);
     }
+
+    // FIXME: We should remove the NodeComm on levels past the threshold
+    if(fineLevel.IsAvailable("Node Comm")) {
+      RCP<const Teuchos::Comm<int> > nodeComm = Get<RCP<const Teuchos::Comm<int> > >(fineLevel,"Node Comm");
+      Set<RCP<const Teuchos::Comm<int> > >(coarseLevel, "Node Comm", nodeComm);
+    }
+
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "P",         Ptentative);
 

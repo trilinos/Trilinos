@@ -190,7 +190,7 @@ int output_gnu(const char *cmd_file,
     /* Sort by part numbers.  Assumes # parts >= # proc. */
     if (nelems > 0) 
       Zoltan_quicksort_pointer_inc_int_int(index, parts, NULL, 0, nelems-1);
-    MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, zoltan_get_global_comm());
     gnum_part = gmax_part + 1;
   }
 
@@ -267,10 +267,10 @@ int output_gnu(const char *cmd_file,
       }
     }
 
-    MPI_Reduce(&locMinX,&globMinX,1,MPI_FLOAT,MPI_MIN,0,MPI_COMM_WORLD);
-    MPI_Reduce(&locMinY,&globMinY,1,MPI_FLOAT,MPI_MIN,0,MPI_COMM_WORLD);
-    MPI_Reduce(&locMaxX,&globMaxX,1,MPI_FLOAT,MPI_MAX,0,MPI_COMM_WORLD);
-    MPI_Reduce(&locMaxY,&globMaxY,1,MPI_FLOAT,MPI_MAX,0,MPI_COMM_WORLD);
+    MPI_Reduce(&locMinX,&globMinX,1,MPI_FLOAT,MPI_MIN,0,zoltan_get_global_comm());
+    MPI_Reduce(&locMinY,&globMinY,1,MPI_FLOAT,MPI_MIN,0,zoltan_get_global_comm());
+    MPI_Reduce(&locMaxX,&globMaxX,1,MPI_FLOAT,MPI_MAX,0,zoltan_get_global_comm());
+    MPI_Reduce(&locMaxY,&globMaxY,1,MPI_FLOAT,MPI_MAX,0,zoltan_get_global_comm());
 
   }
   else if (pio_info->file_type == NEMESIS_FILE) { /* Nemesis input file */

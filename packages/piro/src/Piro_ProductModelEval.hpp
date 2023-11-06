@@ -306,6 +306,8 @@ ProductModelEvaluator<Real>::evalModelImpl(
     Thyra::ModelEvaluatorBase::InArgsSetup<Real> internal_inArgs;
     Thyra::ModelEvaluatorBase::OutArgsSetup<Real> internal_outArgs;
 
+    internal_outArgs.setModelEvalDescription(outArgs.modelEvalDescription()+"_internal");
+
     internal_inArgs.set_Np_Ng(thyra_model_->Np(), thyra_model_->Ng());
     internal_outArgs.set_Np_Ng(thyra_model_->Np(), thyra_model_->Ng());
 
@@ -944,6 +946,64 @@ ProductModelEvaluator<Real>::block_diagonal_hessian_22(const Teuchos::RCP<Thyra:
     thyra_model_->evalModel(inArgs, outArgs);
 }
 #endif
+
+template <typename Real>
+Teuchos::RCP<Piro::ProductModelEvaluator<Real>> getNonconstProductModelEvaluator(Teuchos::RCP<Thyra::ModelEvaluator<Real>> model) {
+    Teuchos::RCP<Piro::ProductModelEvaluator<Real>> model_PME = 
+        Teuchos::rcp_dynamic_cast<Piro::ProductModelEvaluator<Real>>(model);
+    if (!model_PME.is_null()) {
+        return model_PME;
+    }
+    Teuchos::RCP<Thyra::ModelEvaluator<Real>> model_tmp = model;
+    while (true) {
+        Teuchos::RCP<Thyra::ModelEvaluatorDelegatorBase<Real>> model_MEDB =
+            Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDelegatorBase<Real>>(model_tmp);
+        if (!model_MEDB.is_null()) {
+            model_tmp = model_MEDB->getNonconstUnderlyingModel();
+            //std::cout << model_MEDB->description() << std::endl;
+            model_PME = Teuchos::rcp_dynamic_cast<Piro::ProductModelEvaluator<Real>>(model_tmp);
+            if (!model_PME.is_null()) {
+                return model_PME;
+            }
+        }
+        else
+            return Teuchos::null;
+    }
+}
+
+template <typename Real>
+Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> getProductModelEvaluator(const Teuchos::RCP<const Thyra::ModelEvaluator<Real>> model) {
+    Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> model_PME = 
+        Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(model);
+    if (!model_PME.is_null()) {
+        return model_PME;
+    }
+    Teuchos::RCP<const Thyra::ModelEvaluator<Real>> model_tmp = model;
+    while (true) {
+        Teuchos::RCP<const Thyra::ModelEvaluatorDelegatorBase<Real>> model_MEDB =
+            Teuchos::rcp_dynamic_cast<const Thyra::ModelEvaluatorDelegatorBase<Real>>(model_tmp);
+        if (!model_MEDB.is_null()) {
+            model_tmp = model_MEDB->getUnderlyingModel();
+            //std::cout << model_MEDB->description() << std::endl;
+            model_PME = Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(model_tmp);
+            if (!model_PME.is_null()) {
+                return model_PME;
+            }
+        }
+        else
+            return Teuchos::null;
+    }
+}
+
+template <typename Real>
+Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> getProductModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<Real>> model) {
+    return getProductModelEvaluator(Teuchos::rcp_dynamic_cast<const Thyra::ModelEvaluator<Real>>(model));
+}
+
+template <typename Real>
+Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> getProductModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Real>> model) {
+    return getProductModelEvaluator(Teuchos::rcp_dynamic_cast<const Thyra::ModelEvaluator<Real>>(model));
+}
 
 } // namespace Piro
 

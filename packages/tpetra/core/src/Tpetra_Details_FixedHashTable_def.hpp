@@ -787,6 +787,7 @@ init (const keys_type& keys,
   using Kokkos::ViewAllocateWithoutInitializing;
   using Teuchos::TypeNameTraits;
   typedef typename std::decay<decltype (keys.extent (0)) >::type size_type;
+  Tpetra::Details::ProfilingRegion pr("Tpetra::Details::FixedHashTable::init(7-arg)");
   const char prefix[] = "Tpetra::Details::FixedHashTable: ";
 
   const offset_type numKeys = static_cast<offset_type> (keys.extent (0));
@@ -1027,7 +1028,7 @@ init (const keys_type& keys,
     functor_type functor (val, counts, ptr, theKeys, newStartingValue,
                           initMinKey, initMaxKey);
     typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
-    Kokkos::parallel_reduce (range_type (0, theNumKeys), functor, result);
+    Kokkos::parallel_reduce ("Tpetra::Details::FixedHashTable::FillPairs", range_type (0, theNumKeys), functor, result);
   }
   else {
     Kokkos::HostSpace hostMemSpace;
@@ -1089,6 +1090,7 @@ init (const host_input_keys_type& keys,
       KeyType initMinKey,
       KeyType initMaxKey)
 {
+  Tpetra::Details::ProfilingRegion pr("Tpetra::Details::FixedHashTable::init(4-arg)");
   const offset_type numKeys = static_cast<offset_type> (keys.extent (0));
   TEUCHOS_TEST_FOR_EXCEPTION
     (static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::ArithTraits<ValueType>::max ()),
@@ -1234,7 +1236,7 @@ checkForDuplicateKeys () const
     functor_type functor (val_, ptr_);
     int hasDupKeys = 0;
     typedef Kokkos::RangePolicy<execution_space, offset_type> range_type;
-    Kokkos::parallel_reduce (range_type (0, size), functor, hasDupKeys);
+    Kokkos::parallel_reduce ("Tpetra::Details::FixedHashTable::CheckForDuplicateKeys", range_type (0, size), functor, hasDupKeys);
     return hasDupKeys > 0;
   }
 }

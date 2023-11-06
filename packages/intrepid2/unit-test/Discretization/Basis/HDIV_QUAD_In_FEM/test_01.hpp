@@ -61,21 +61,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+
 namespace Intrepid2 {
 
 namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
 
 template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
@@ -120,8 +110,6 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
-
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
 
   const scalar_type tol = tolerence();
   int errorFlag = 0;
@@ -237,10 +225,10 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
     const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
     const ordinal_type numFields = quadBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, spaceDim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, numFields, spaceDim);
     quadBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, numFields, spaceDim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoeffs, numFields, spaceDim);
     quadBasis.getDofCoeffs(dofCoeffs);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , spaceDim);
@@ -298,7 +286,7 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
     const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
     const ordinal_type numFields = quadBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, spaceDim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, numFields, spaceDim);
     quadBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , spaceDim);
@@ -440,7 +428,7 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
     QuadBasisType quadBasis(order);
 
     // Define array containing array of nodes to evaluate
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(quadNodesHost, 9, 2);
+    DynRankViewHostScalarValueType ConstructWithLabel(quadNodesHost, 9, 2);
     DynRankViewPointValueType ConstructWithLabelPointView(quadNodes, 9, 2);
 
     quadNodesHost(0,0) = -1.0;  quadNodesHost(0,1) = -1.0;

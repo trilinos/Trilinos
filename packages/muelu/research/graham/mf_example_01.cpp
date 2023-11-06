@@ -488,7 +488,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     //Kokkos::OpenMP().print_configuration(std::cout, true/*details*/);
     //std::cout << "OpenMP Max Threads = " << omp_get_max_threads() << std::endl;
     //Kokkos::Cuda().print_configuration(std::cout, true/*details*/);
-    //Kokkos::Experimental::HIP().print_configuration(std::cout, true/*details*/);
+    //Kokkos::HIP().print_configuration(std::cout, true/*details*/);
 
     // Create the operator
     Teuchos::RCP<TridiagonalOperator<SC,LO,GO,NO>> matrix = Teuchos::rcp(new TridiagonalOperator<SC,LO,GO,NO>(n, comm));

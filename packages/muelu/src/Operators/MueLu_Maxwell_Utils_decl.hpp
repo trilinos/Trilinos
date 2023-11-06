@@ -96,6 +96,7 @@ namespace MueLu {
                                            bool & allEdgesBoundary,
                                            bool & allNodesBoundary);
 
+    //! Detect Dirichlet boundary conditions
     static void detectBoundaryConditionsSM(RCP<Matrix> & SM_Matrix,
                                            RCP<Matrix> & D0_Matrix,
                                            magnitudeType rowSumTol,
@@ -108,6 +109,11 @@ namespace MueLu {
                                            bool & allNodesBoundary);
         
     //! Remove explicit zeros
+    static RCP<Matrix> removeExplicitZeros(const RCP<Matrix> & A,
+                                           const magnitudeType tolerance,
+                                           const bool keepDiagonal=true,
+                                           const size_t expectedNNZperRow=0);
+
     static void removeExplicitZeros(Teuchos::ParameterList &parameterList,
                                     RCP<Matrix> & D0_Matrix,
                                     RCP<Matrix> & SM_Matrix,
@@ -120,6 +126,10 @@ namespace MueLu {
       RCP<Matrix> dummy;
       removeExplicitZeros(parameterList,D0_Matrix,SM_Matrix,dummy,dummy);
     }
+
+    static void thresholdedAbs(const RCP<Matrix> & A,
+                               const magnitudeType thresholded);
+
   
     //! Sets matvec params on a matrix
     static void setMatvecParams(Matrix& A, RCP<ParameterList> matvecParams);

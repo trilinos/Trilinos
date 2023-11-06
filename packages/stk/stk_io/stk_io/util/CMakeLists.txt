@@ -33,34 +33,11 @@
 # 
 
 
-#
-# A) Package-specific configuration options
-#
-
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../../seacas/libraries/ioss/src)
-
-#
-# Core headers
-#
 
 #
 # C) Define the targets for package's library(s)
@@ -72,6 +49,11 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEPLIBS stk_io
   )
+
+target_include_directories(stk_io_util PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_io>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/util/)

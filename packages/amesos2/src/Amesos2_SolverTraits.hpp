@@ -97,11 +97,11 @@ namespace Amesos2 {
 	    typename Scalar>
   struct solver_supports_scalar {
     static const bool value =
-              Meta::if_then_else<Meta::is_same<typename solver_traits<ConcreteSolver>::supported_scalars, Meta::nil_t>::value,
-		       Meta::true_type,
+              std::conditional_t<std::is_same_v<typename solver_traits<ConcreteSolver>::supported_scalars, Meta::nil_t>,
+		       std::true_type,
 		       Meta::type_list_contains<
 			 typename solver_traits<ConcreteSolver>::supported_scalars,
-			 Scalar> >::type::value;
+			 Scalar> >::value;
   };
 
   template <template <class,class> class ConcreteSolver,

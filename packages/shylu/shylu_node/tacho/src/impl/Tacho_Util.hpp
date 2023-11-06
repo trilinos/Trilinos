@@ -526,10 +526,10 @@ template <> struct ExecSpaceFactory<Kokkos::Cuda> {
 };
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-template <> struct ExecSpaceFactory<Kokkos::Experimental::HIP> {
-  static void createInstance(Kokkos::Experimental::HIP &exec_instance) { exec_instance = Kokkos::Experimental::HIP(); }
-  static void createInstance(const hipStream_t &s, Kokkos::Experimental::HIP &exec_instance) {
-    exec_instance = Kokkos::Experimental::HIP(s);
+template <> struct ExecSpaceFactory<Kokkos::HIP> {
+  static void createInstance(Kokkos::HIP &exec_instance) { exec_instance = Kokkos::HIP(); }
+  static void createInstance(const hipStream_t &s, Kokkos::HIP &exec_instance) {
+    exec_instance = Kokkos::HIP(s);
   }
 };
 #endif

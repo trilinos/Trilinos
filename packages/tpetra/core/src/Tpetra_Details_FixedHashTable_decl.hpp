@@ -47,9 +47,12 @@
 #include "Tpetra_Details_Hash.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_Profiling.hpp"
+
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
+
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
@@ -249,6 +252,8 @@ public:
     using Kokkos::ViewAllocateWithoutInitializing;
     typedef typename ptr_type::non_const_type nonconst_ptr_type;
     typedef typename val_type::non_const_type nonconst_val_type;
+
+    Tpetra::Details::ProfilingRegion pr("Tpetra::Details::FixedHashTable::ctor(InDeviceType)");
 
     // FIXME (mfh 28 May 2015) The code below _always_ copies.  This
     // shouldn't be necessary if the input and output memory spaces

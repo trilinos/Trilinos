@@ -32,17 +32,28 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
-
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_LIBRARY(
-  stk_coupling
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_coupling
+    NOINSTALLHEADERS ${HEADERS}
+    SOURCES ${SOURCES}
   )
+else()
+  add_library(stk_coupling ${SOURCES})
+
+  target_link_libraries(stk_coupling PUBLIC stk_util_parallel)
+endif()
+
+target_include_directories(stk_coupling PUBLIC
+ $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_coupling>
+ $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_coupling)
 
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_coupling DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

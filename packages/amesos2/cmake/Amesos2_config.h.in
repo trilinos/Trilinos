@@ -48,8 +48,6 @@
 
 #define AMESOS2_VERSION "${AMESOS2_VERSION}"
 
-#define AMESOS2_RELEASE_DATE "${AMESOS2_RELEASE_DATE}"
-
 /******************
  * Config Options *
  ******************/
@@ -86,7 +84,7 @@
 #cmakedefine HAVE_AMESOS2_UMFPACK
 
 /* Defined if you want to enable amesos2-tacho */
-#cmakedefine HAVE_AMESOS2_TACHO
+#cmakedefine HAVE_AMESOS2_SHYLU_NODETACHO
 
 /* Define if you want to build amesos2-superlu */
 #cmakedefine HAVE_AMESOS2_SUPERLU
@@ -116,7 +114,7 @@
 #cmakedefine HAVE_AMESOS2_BASKER
 
 /*Define if you want to use ShyLUBasker */
-#cmakedefine HAVE_AMESOS2_SHYLUBASKER
+#cmakedefine HAVE_AMESOS2_SHYLU_NODEBASKER
 
 /* Define to 1 if SuperLU_DIST uses a SLU_ prefix on a few of its enums */
 #cmakedefine HAVE_SUPERLUDIST_ENUM_NAMESPACE

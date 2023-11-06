@@ -127,8 +127,8 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
   export KOKKOS_NUM_DEVICES=4
 
   # CTEST Settings
-  # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by ats2/local-driver.sh
-  export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=1
+  # Trilinos_CTEST_RUN_GPU_AWARE_MPI is used by ats2/local-driver.sh
+  export Trilinos_CTEST_RUN_GPU_AWARE_MPI=1
 
 fi
 

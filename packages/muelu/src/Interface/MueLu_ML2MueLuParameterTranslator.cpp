@@ -66,13 +66,18 @@ namespace MueLu {
       "MueLu::MLParameterListInterpreter::Setup(): Only \"coarse: type\", \"smoother: type\" or \"smoother: list\" (\"coarse: list\") are "
       "supported as ML parameters for transformation of smoother/solver parameters to MueLu");
 
+    
+
     // string stream containing the smoother/solver xml parameters
     std::stringstream mueluss;
 
     // Check whether we are dealing with coarse level (solver) parameters or level smoother parameters
     std::string mode = "smoother:";
-    if (pname.find("coarse:", 0) == 0)
+    bool is_coarse = false;
+    if (pname.find("coarse:", 0) == 0) {
       mode = "coarse:";
+      is_coarse = true;
+    }
 
     // check whether pre and/or post smoothing
     std::string PreOrPost = "both";
@@ -188,8 +193,11 @@ namespace MueLu {
 
     if ( valuestr == "hiptmair" ) {
       std::string subSmootherType = "Chebyshev";
-      if (paramList.isParameter("subsmoother: type"))
+      if (!is_coarse && paramList.isParameter("subsmoother: type")) 
         subSmootherType = paramList.get<std::string>("subsmoother: type");
+      if (is_coarse && paramList.isParameter("smoother: subsmoother type"))
+        subSmootherType = paramList.get<std::string>("smoother: subsmoother type");
+
       std::string subSmootherIfpackType;
       if (subSmootherType == "Chebyshev")
         subSmootherIfpackType = "CHEBYSHEV";
@@ -204,43 +212,54 @@ namespace MueLu {
 
       mueluss << "<ParameterList name=\"hiptmair: smoother list 1\">" << std::endl;
       if (subSmootherType == "Chebyshev") {
-        if (paramList.isParameter("subsmoother: edge sweeps")) {
-          mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: edge sweeps") << "\"/>" << std::endl;
+        std::string edge_sweeps = is_coarse ? "smoother: edge sweeps" : "subsmoother: edge sweeps";
+        std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev_alpha";
+
+        if (paramList.isParameter(edge_sweeps)) {
+          mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>(edge_sweeps) << "\"/>" << std::endl;
           adaptingParamList.remove("subsmoother: edge sweeps", false);
         }
-        if (paramList.isParameter("subsmoother: Chebyshev alpha")) {
-          mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("subsmoother: Chebyshev alpha") << "\"/>" << std::endl;
+        if (paramList.isParameter(cheby_alpha)) {
+          mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>(cheby_alpha) << "\"/>" << std::endl;
         }
       } else {
-        if (paramList.isParameter("subsmoother: edge sweeps")) {
+        std::string edge_sweeps = is_coarse ? "smoother: edge sweeps" : "subsmoother: edge sweeps";
+        std::string SGS_damping = is_coarse ? "smoother: SGS damping factor" : "subsmoother: SGS damping factor";
+
+        if (paramList.isParameter(edge_sweeps)) {
           mueluss << "<Parameter name=\"relaxation: type\" type=\"string\" value=\"" << subSmootherType << "\"/>" << std::endl;
-          mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: edge sweeps") << "\"/>" << std::endl;
-          adaptingParamList.remove("subsmoother: edge sweeps", false);
+          mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>(edge_sweeps) << "\"/>" << std::endl;
+          adaptingParamList.remove(edge_sweeps, false);
         }
-        if (paramList.isParameter("subsmoother: SGS damping factor")) {
-          mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>("subsmoother: SGS damping factor") << "\"/>" << std::endl;
+        if (paramList.isParameter(SGS_damping)) {
+          mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>(SGS_damping) << "\"/>" << std::endl;
         }
       }
       mueluss << "</ParameterList>" << std::endl;
 
       mueluss << "<ParameterList name=\"hiptmair: smoother list 2\">" << std::endl;
       if (subSmootherType == "Chebyshev") {
-        if (paramList.isParameter("subsmoother: node sweeps")) {
-          mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: node sweeps") << "\"/>" << std::endl;
+        std::string node_sweeps = is_coarse ? "smoother: node sweeps" : "subsmoother: node sweeps";
+        std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev_alpha";
+        if (paramList.isParameter(node_sweeps)) {
+          mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>(node_sweeps) << "\"/>" << std::endl;
           adaptingParamList.remove("subsmoother: node sweeps", false);
         }
-        if (paramList.isParameter("subsmoother: Chebyshev alpha")) {
-          mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("subsmoother: Chebyshev alpha") << "\"/>" << std::endl;
+        if (paramList.isParameter(cheby_alpha)) {
+          mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>(cheby_alpha) << "\"/>" << std::endl;
           adaptingParamList.remove("subsmoother: Chebyshev alpha", false);
         }
       } else {
-        if (paramList.isParameter("subsmoother: node sweeps")) {
+        std::string node_sweeps = is_coarse ? "smoother: node sweeps" : "subsmoother: node sweeps";
+        std::string SGS_damping = is_coarse ? "smoother: SGS damping factor" : "subsmoother: SGS damping factor";
+
+        if (paramList.isParameter(node_sweeps)) {
           mueluss << "<Parameter name=\"relaxation: type\" type=\"string\" value=\"" << subSmootherType << "\"/>" << std::endl;
-          mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: node sweeps") << "\"/>" << std::endl;
+          mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>(node_sweeps) << "\"/>" << std::endl;
           adaptingParamList.remove("subsmoother: node sweeps", false);
         }
-        if (paramList.isParameter("subsmoother: SGS damping factor")) {
-          mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>("subsmoother: SGS damping factor") << "\"/>" << std::endl;
+        if (paramList.isParameter(SGS_damping)) {
+          mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>(SGS_damping) << "\"/>" << std::endl;
           adaptingParamList.remove("subsmoother: SGS damping factor", false);
         }
       }
@@ -270,7 +289,7 @@ namespace MueLu {
 
   std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::ParameterList & paramList_in, const std::string& defaultVals) {
     Teuchos::ParameterList paramList = paramList_in;
-
+    
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
 
 #if defined(HAVE_MUELU_ML) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
@@ -305,6 +324,7 @@ namespace MueLu {
     // See also: ML Guide section 6.4.1, MueLu::CreateSublists, ML_CreateSublists
     ParameterList paramListWithSubList;
     MueLu::CreateSublists(paramList, paramListWithSubList);
+
     paramList = paramListWithSubList; // swap
     Teuchos::ParameterList adaptingParamList = paramList;    // copy of paramList which is used to removed already interpreted parameters
 
@@ -396,8 +416,14 @@ namespace MueLu {
         adaptingParamList.remove(pname,false);
       }
 
+      // make sure that MueLu's phase1 matches ML's
+      mueluss << "<Parameter name=\"aggregation: match ML phase1\"       type=\"bool\"     value=\"true\"/>" << std::endl;
+
       // make sure that MueLu's phase2a matches ML's
       mueluss << "<Parameter name=\"aggregation: match ML phase2a\"      type=\"bool\"     value=\"true\"/>" << std::endl;
+
+      // make sure that MueLu's phase2b matches ML's
+      mueluss << "<Parameter name=\"aggregation: match ML phase2b\"      type=\"bool\"     value=\"true\"/>" << std::endl;
 
       // make sure that MueLu's drop tol matches ML's
       mueluss << "<Parameter name=\"aggregation: use ml scaling of drop tol\"      type=\"bool\"     value=\"true\"/>" << std::endl;

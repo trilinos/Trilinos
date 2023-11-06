@@ -8,7 +8,6 @@
   <Parameter name="refmaxwell: subsolves on subcommunicators" type="bool" value="true"/>
   <Parameter name="refmaxwell: enable reuse" type="bool" value="true"/>
 
-  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
   <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
 
   <Parameter name="smoother: type" type="string" value="RELAXATION"/>

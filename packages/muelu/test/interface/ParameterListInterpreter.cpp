@@ -98,43 +98,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string xmlForceFile = "";
   bool useKokkos = false;
   if(lib == Xpetra::UseTpetra) {
-# ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-      useKokkos = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-      useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-      useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-      useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_SYCL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-      useKokkos = true;
-# endif    
+      useKokkos = !Node::is_serial;
   }
-  bool compareWithGold = true;
-#ifdef KOKKOS_ENABLE_CUDA
-  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-    // Behavior of some algorithms on Cuda is non-deterministic, so we won't check the output.
-    compareWithGold = false;
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-    // Behavior of some algorithms on HIP is non-deterministic, so we won't check the output.
-    compareWithGold = false;
-#endif
-#ifdef KOKKOS_ENABLE_SYCL
-  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-    // Behavior of some algorithms on SYCL is non-deterministic, so we won't check the output.
-    compareWithGold = false;
-#endif
+  bool compareWithGold = !Node::is_gpu;
   clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
   clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
@@ -404,6 +370,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         run_sed("'s/SuperLU solver interface, direct solve/<Direct> solver interface/'", baseFile);
         run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
         run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
+
+        // The smoother complexity depends on the coarse solver.
+        run_sed("'s/Smoother complexity = [0-9]*.[0-9]*/Smoother complexity = <ignored>/'", baseFile);
 
         // Strip template args for some classes
         std::vector<std::string> classes;

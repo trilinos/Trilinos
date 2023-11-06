@@ -50,6 +50,8 @@
 #define __INTREPID2_HGRAD_PYR_C1_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 
 namespace Intrepid2 {
 
@@ -137,8 +139,7 @@ namespace Intrepid2 {
           }
           case OPERATOR_GRAD :
           case OPERATOR_CURL :
-          case OPERATOR_D2 :
-          case OPERATOR_MAX : {
+          case OPERATOR_D2 : {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
@@ -148,8 +149,7 @@ namespace Intrepid2 {
             INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                       opType != OPERATOR_GRAD &&
                                       opType != OPERATOR_CURL &&
-                                      opType != OPERATOR_D2 &&
-                                      opType != OPERATOR_MAX,
+                                      opType != OPERATOR_D2,
                                       ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::Serial::getValues) operator is not supported");
           }
           }
@@ -233,6 +233,34 @@ namespace Intrepid2 {
       return "Intrepid2_HGRAD_PYR_C1_FEM";
     }
 
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell.
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<DeviceType,outputValueType,pointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        return Teuchos::rcp(new
+            Basis_HGRAD_LINE_C1_FEM<DeviceType,outputValueType,pointValueType>());
+      } else if(subCellDim == 2) {
+        if(subCellOrd == 0)  //pyramid base
+          return Teuchos::rcp(new
+            Basis_HGRAD_QUAD_C1_FEM<DeviceType,outputValueType,pointValueType>());
+        else
+          return Teuchos::rcp(new
+            Basis_HGRAD_TRI_C1_FEM<DeviceType,outputValueType,pointValueType>());
+      }
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+
+    BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
+    getHostBasis() const override{
+      return Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>());
+    }
   };
 }// namespace Intrepid2
 

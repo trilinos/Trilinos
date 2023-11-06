@@ -1,5 +1,8 @@
 #include "middle_grid_constraint_generator.hpp"
+#include "mesh.hpp"
+#include "mesh_entity.hpp"
 #include "predicates/point_classifier_normal_wrapper.hpp"
+#include "variable_size_field.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -26,6 +29,7 @@ void MiddleGridConstraintGenerator::create_mesh1_vertices()
   auto& mesh1ElsToVertsIn   = *(m_relationalData->mesh1ElsToVertsIn);
 
   std::vector<mesh::MeshEntityPtr> els1;
+  ExchangerKnown exchanger(m_mesh1->get_comm());
 
   for (auto& vert1 : m_mesh1->get_vertices())
     if (vert1)
@@ -39,7 +43,6 @@ void MiddleGridConstraintGenerator::create_mesh1_vertices()
       mesh::MeshEntityPtr el1 = vert1->get_up(0)->get_up(0);
       int localId             = predicates::impl::get_entity_id(el1, vert1);
       vertsInClassOnMesh1(vertIn, 0, 0) = m_pointClassifier->create_vert_record(el1, localId);
-          //predicates::impl::PointRecord(predicates::impl::PointClassification::Vert, localId, el1);
       fakeVertsToVertsIn[fv.id] = vertIn;
 
       int nels = get_upward(vert1, 2, els1);
@@ -49,7 +52,45 @@ void MiddleGridConstraintGenerator::create_mesh1_vertices()
         if (m_output && m_vertIds.count(vertIn->get_id()) > 0)
           std::cout << "adding vert_in id " << vertIn->get_id() << " to el1 with id " << els1[i]->get_id() << std::endl;
       }
+
+      for (int i=0; i < vert1->count_remote_shared_entities(); ++i)
+      {
+        const mesh::RemoteSharedEntity& remote = vert1->get_remote_shared_entity(i);
+        exchanger.get_send_buf(remote.remoteRank).push_back(remote.remoteId);
+        exchanger.get_send_buf(remote.remoteRank).push_back(vertIn->get_id());
+
+        exchanger.get_recv_buf(remote.remoteRank).push_back(-1);
+        exchanger.get_recv_buf(remote.remoteRank).push_back(-1);        
+      }
     }
+
+  set_mesh1_vert_shared_entities(exchanger);
+}
+
+void MiddleGridConstraintGenerator::set_mesh1_vert_shared_entities(ExchangerKnown& exchanger)
+{
+  auto& verts1ToFakeVerts = *(m_relationalData->verts1ToFakeVerts);
+  auto& fakeVertsToVertsIn = m_relationalData->fakeVertsToVertsIn;
+
+  exchanger.start_nonblocking();
+
+  auto unpacker = [&](int rank, const std::vector<int>& buf)
+  {
+    assert(buf.size() % 2 == 0);
+    for (size_t i=0; i < buf.size(); i += 2)
+    {
+      int vert1Id = buf[i];
+      int vertInRemoteId = buf[i+1];
+
+      mesh::MeshEntityPtr vert1 = m_mesh1->get_vertices()[vert1Id];
+      FakeVert fv = verts1ToFakeVerts(vert1, 0, 0);
+      mesh::MeshEntityPtr vertIn = fakeVertsToVertsIn[fv.id];
+
+      vertIn->add_remote_shared_entity(mesh::RemoteSharedEntity(rank, vertInRemoteId));
+    }
+  };
+
+  exchanger.complete_receives(unpacker);
 }
 
 void MiddleGridConstraintGenerator::create_mesh2_interior_vertices()
@@ -74,7 +115,7 @@ void MiddleGridConstraintGenerator::create_mesh2_interior_vertices()
         if (m_output && m_vertIds.count(vertIn->get_id()) > 0)
           std::cout << "created vert_in id " << vertIn->get_id() << " from fakevert id " << fv.id << std::endl;
 
-        vertsInClassOnMesh1(vertIn, 0, 0) = record;
+        vertsInClassOnMesh1(vertIn, 0, 0) = record;         
         fakeVertsToVertsIn[fv.id]         = vertIn;
         mesh1ElsToVertsIn.insert(record.el, 0, vertIn);
         if (m_output && m_vertIds.count(vertIn->get_id()) > 0)
@@ -87,6 +128,7 @@ void MiddleGridConstraintGenerator::create_mesh2_interior_vertices()
 void MiddleGridConstraintGenerator::create_mesh1_edges()
 {
   auto& verts1ToFakeVerts = *(m_relationalData->verts1ToFakeVerts);
+  ExchangerKnown exchanger(m_mesh1->get_comm());
   for (auto& edge : m_mesh1->get_edges())
     if (edge)
     {
@@ -96,8 +138,47 @@ void MiddleGridConstraintGenerator::create_mesh1_edges()
       mesh::MeshEntityPtr v2In = m_relationalData->fakeVertsToVertsIn[fv2.id];
       assert(!stk::middle_mesh::mesh::get_common_edge(v1In, v2In));
 
-      m_meshIn->create_edge(v1In, v2In);
+      mesh::MeshEntityPtr edgeIn = m_meshIn->create_edge(v1In, v2In);
+
+      for (int i=0; i < edge->count_remote_shared_entities(); ++i)
+      {
+        const mesh::RemoteSharedEntity& edge1Remote = edge->get_remote_shared_entity(i);
+
+        auto& sendBuf = exchanger.get_send_buf(edge1Remote.remoteRank);
+        auto& recvBuf = exchanger.get_recv_buf(edge1Remote.remoteRank);
+        mesh::RemoteSharedEntity v1InRemote = mesh::get_remote_shared_entity(v1In, edge1Remote.remoteRank);
+        mesh::RemoteSharedEntity v2InRemote = mesh::get_remote_shared_entity(v2In, edge1Remote.remoteRank);
+
+        sendBuf.push_back(v1InRemote.remoteId);  recvBuf.push_back(-1);
+        sendBuf.push_back(v2InRemote.remoteId);  recvBuf.push_back(-1);
+        sendBuf.push_back(edgeIn->get_id());     recvBuf.push_back(-1);
+      }
     }
+
+  set_mesh1_edge_shared_entities(exchanger);
+}
+
+void MiddleGridConstraintGenerator::set_mesh1_edge_shared_entities(ExchangerKnown& exchanger)
+{
+  exchanger.start_nonblocking();
+
+  auto unpacker = [&](int rank, const std::vector<int>& buf)
+  {
+    assert(buf.size() % 3 == 0);
+    for (size_t i=0; i < buf.size(); i += 3)
+    {
+      int vert1Id       = buf[i];
+      int vert2Id       = buf[i+1];
+      int edgeRemoteId  = buf[i+2];
+
+      mesh::MeshEntityPtr vert1 = m_meshIn->get_vertices()[vert1Id];
+      mesh::MeshEntityPtr vert2 = m_meshIn->get_vertices()[vert2Id];
+      mesh::MeshEntityPtr edge  = mesh::get_common_edge(vert1, vert2);
+      edge->add_remote_shared_entity(mesh::RemoteSharedEntity(rank, edgeRemoteId));
+    }
+  };
+
+  exchanger.complete_receives(unpacker);
 }
 
 void MiddleGridConstraintGenerator::split_edges()
@@ -108,11 +189,16 @@ void MiddleGridConstraintGenerator::split_edges()
   auto& fakeVertsToVertsIn  = m_relationalData->fakeVertsToVertsIn;
   auto& vertsInClassOnMesh1 = *(m_relationalData->vertsInClassOnMesh1);
   auto& mesh1ElsToVertsIn   = *(m_relationalData->mesh1ElsToVertsIn);
+  ExchangerKnown exchanger(m_mesh1->get_comm());
+
+  auto sharedEntityInfoPtr = mesh::create_variable_size_field<int>(m_mesh1, mesh::FieldShape(0, 2, 0));
 
   for (auto& edge1 : m_mesh1->get_edges())
+  {
     if (edge1 && mesh1EdgesToSplit.get_num_comp(edge1, 0) > 0)
     {
       sort_edge_splits(edge1);
+      bool edge1HasRemote = edge1->count_remote_shared_entities() > 0;
 
       mesh::MeshEntityPtr el1 = edge1->get_up(0);
       int localId             = predicates::impl::get_entity_id(el1, edge1);
@@ -120,13 +206,6 @@ void MiddleGridConstraintGenerator::split_edges()
       auto currEdgeIn = get_mesh_in_edge_from_mesh1_edge(edge1);
       double xiStart  = 0;
       mesh::MeshEntityPtr newEdges[2];
-
-      // std::cout << "about to split edge at xi: ";
-      // for (int i=0; i < mesh1_edges_to_split.get_num_comp(edge1, 0); ++i)
-      //{
-      //   std::cout << mesh1_edges_to_split(edge1, 0, i).xi << ", ";
-      // }
-      // std::cout << std::endl;
 
       for (int i = 0; i < mesh1EdgesToSplit.get_num_comp(edge1, 0); ++i)
       {
@@ -140,6 +219,7 @@ void MiddleGridConstraintGenerator::split_edges()
         if (m_output && (m_vertIds.count(newVert->get_id()) > 0))
           std::cout << "created vert_in id " << newVert->get_id() << " from fakevert id " << fv.id << std::endl;
 
+
         fakeVertsToVertsIn[fv.id] = newVert;
 
         double edgeXiOnReferenceEl = el1->get_down_orientation(localId) == mesh::EntityOrientation::Standard ? xi : 1 - xi;
@@ -152,11 +232,78 @@ void MiddleGridConstraintGenerator::split_edges()
                       << std::endl;
         }
 
+        if (edge1HasRemote)
+        {
+          sharedEntityInfoPtr->insert(edge1, 0, newVert->get_id());
+          sharedEntityInfoPtr->insert(edge1, 1, newEdges[0]->get_id());
+        }
+
         // update for next iteration
         xiStart    = xi;
         currEdgeIn = newEdges[1];
       }
+
+      if (edge1HasRemote)
+      {
+        sharedEntityInfoPtr->insert(edge1, 1, currEdgeIn->get_id());
+        pack_edge_split_shared_info(exchanger, sharedEntityInfoPtr, edge1);
+      }
     }
+  }
+
+  set_edge_split_shared_entities(exchanger, sharedEntityInfoPtr);
+}
+
+void MiddleGridConstraintGenerator::pack_edge_split_shared_info(ExchangerKnown& exchanger, mesh::VariableSizeFieldPtr<int> sharedEntityInfoPtr, mesh::MeshEntityPtr edge1)
+{
+  auto& sharedEntityInfo = *sharedEntityInfoPtr;
+  for (int i=0; i < edge1->count_remote_shared_entities(); ++i)
+  {
+    const mesh::RemoteSharedEntity& remote = edge1->get_remote_shared_entity(i);
+
+    auto& sendBuf = exchanger.get_send_buf(remote.remoteRank);
+    auto& recvBuf = exchanger.get_recv_buf(remote.remoteRank);
+
+    sendBuf.push_back(remote.remoteId); recvBuf.push_back(-1);
+    for (int dim=0; dim < 2; ++dim)
+    {
+      for (int entityId : sharedEntityInfo(edge1, dim))
+      {
+        sendBuf.push_back(entityId);
+        recvBuf.push_back(-1);
+      }
+    }
+  }
+}
+
+void MiddleGridConstraintGenerator::set_edge_split_shared_entities(ExchangerKnown& exchanger, mesh::VariableSizeFieldPtr<int> sharedEntityInfoPtr)
+{
+  auto& sharedEntityInfo = *sharedEntityInfoPtr;
+  exchanger.start_nonblocking();
+
+  auto unpacker = [&](int rank, const std::vector<int>& buf)
+  {
+    size_t idx = 0;
+    while (idx < buf.size())
+    {
+      int edge1Id = buf[idx++];
+      mesh::MeshEntityPtr edge1 = m_mesh1->get_edges()[edge1Id];
+      for (int dim=0; dim < 2; ++dim)
+      {
+        for (int i=0; i < sharedEntityInfo.get_num_comp(edge1, dim); ++i)
+        {
+          assert(idx < buf.size());
+          int remoteEntityId = buf[idx++];
+          int localEntityId = sharedEntityInfo(edge1, dim, i);
+
+          mesh::MeshEntityPtr localVert = m_meshIn->get_mesh_entities(dim)[localEntityId];
+          localVert->add_remote_shared_entity(mesh::RemoteSharedEntity(rank, remoteEntityId));
+        }
+      }
+    }
+  };
+
+  exchanger.complete_receives(unpacker);
 }
 
 void MiddleGridConstraintGenerator::sort_edge_splits(mesh::MeshEntityPtr edge1)
@@ -209,7 +356,7 @@ void MiddleGridConstraintGenerator::create_internal_edges()
                       << ", xi = " << edges2ToFakeVertsIn(edge2, 0, j).xi << std::endl;
         }
 
-        if (!get_common_edge(v1In, v2In))
+        if (v1In && v2In && !get_common_edge(v1In, v2In))
           m_meshIn->create_edge(v1In, v2In);
       }
     }

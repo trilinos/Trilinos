@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  #ifdef HAVE_AMESOS2_SHYLUBASKER
+  #ifdef HAVE_AMESOS2_SHYLU_NODEBASKER
   if( Amesos2::query("ShyLUBasker") ) {
     Teuchos::ParameterList amesos2_params("Amesos2");
       amesos2_params.sublist(solver_name).set("num_threads", 1, "Number of threads");

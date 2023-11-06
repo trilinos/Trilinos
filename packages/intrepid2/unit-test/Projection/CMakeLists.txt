@@ -16,6 +16,7 @@ SET(Intrepid2_TEST_ETI_FILE "")
 LIST(APPEND Intrepid2_TEST_ETI_FILE 
   "test_project_fields"
   "test_convergence_HEX"
+  "test_convergence_PYR"
   "test_convergence_QUAD"
   "test_convergence_TET"
   "test_convergence_TRI"
@@ -47,7 +48,7 @@ IF(Kokkos_ENABLE_CUDA)
 ENDIF()
 IF(Kokkos_ENABLE_HIP)
   LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
-  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
+  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::HIP,Kokkos::HIPSpace>")
 ENDIF()
 
 LIST(LENGTH Intrepid2_TEST_ETI_DEVICE_NAME ETI_DEVICE_COUNT)
