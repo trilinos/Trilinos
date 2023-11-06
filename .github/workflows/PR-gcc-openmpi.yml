@@ -65,11 +65,6 @@ jobs:
         working-directory: /home/Trilinos/build
         run: |
           bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
-      - name: CMakeCache.txt
-        if: always()
-        working-directory: /home/Trilinos/build
-        run: |
-          bash -l -c "cat CMakeCache.txt"
       - name: build trilinos
         working-directory: /home/Trilinos/build
         run: bash -l -c "ninja"
