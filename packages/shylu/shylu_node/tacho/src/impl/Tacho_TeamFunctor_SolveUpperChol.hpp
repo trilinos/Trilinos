@@ -81,8 +81,13 @@ public:
   ///
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void solve_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
+#if 1
+    using GemvAlgoType = typename Batched_GemvAlgorithm::type;
+    using TrsvAlgoType = typename Batched_TrsvAlgorithm::type;
+#else
     using GemvAlgoType = typename GemvAlgorithm::type;
     using TrsvAlgoType = typename TrsvAlgorithm::type;
+#endif
 
     const value_type minus_one(-1), one(1);
     {

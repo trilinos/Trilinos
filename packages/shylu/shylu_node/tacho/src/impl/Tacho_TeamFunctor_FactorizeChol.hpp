@@ -102,6 +102,7 @@ public:
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                   ATR);
+
         member.team_barrier();
         Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
       }

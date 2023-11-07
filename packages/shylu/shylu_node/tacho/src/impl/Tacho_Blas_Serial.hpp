@@ -29,6 +29,45 @@ namespace Tacho {
 
 template <typename T> struct BlasSerial {
 
+  // GEMV
+  inline static void gemv(const char trans, int m, int n,
+                         const T alpha, const T *A, int lda,
+                                        const T *x, int incx,
+                         const T beta,  /* */ T *y, int incy) {
+
+    const T one(1), zero(0);
+
+    {
+      int mn = (trans == 'N' || trans == 'n' ? m : n);
+      if (beta == zero) {
+        for (int i = 0; i < mn; i++) y[i*incy] = zero;
+      } else if (beta != one) {
+        for (int i = 0; i < mn; i++) y[i*incy] *= beta;
+      }
+    }
+    if (alpha == zero)
+      return;
+    if (m <= 0 || n <= 0)
+      return;
+
+    if (trans == 'N' || trans == 'n') {
+      for (int j = 0; j < n; j++) {
+        T val = alpha*x[j*incx] ;
+        for (int i = 0; i < m; i++) {
+          y[i*incy] += (A[i + j*lda] * val);
+        }
+      }
+    } else {
+      for (int j = 0; j < n; j++) {
+        T val = 0.0;
+        for (int i = 0; i < m; i++) {
+          val += (A[i + j*lda] * x[i*incx]);
+        }
+        y[j*incx] += alpha * val;
+      }
+    }
+  }
+
   // GEMM
   inline static void gemm(const char transa, const char transb, int m, int n, int k,
                           const T alpha, const T *A, int lda,
@@ -69,10 +108,10 @@ template <typename T> struct BlasSerial {
             }
           }
         } else {
-          Kokkos::abort("transb is not valid");
+          Kokkos::abort("gemm: transb is not valid");
         }
       } else {
-        Kokkos::abort("transa is not valid");
+        Kokkos::abort("gemm: transa is not valid");
       }
     }
   }
@@ -90,46 +129,46 @@ template <typename T> struct BlasSerial {
 
     if (uplo == 'U' || uplo == 'u') {
       if (trans == 'N' || trans == 'n') {
-        Kokkos::abort("trans is not valid");
+        Kokkos::abort("herk: trans is not valid");
       } else if (trans == 'T' || trans == 't') {
         // C = alpha * (A^T * A) + beta * C
         for (int j = 0; j < n; j++) {
           for (int i = 0; i <= j; i++) {
-            // initialize
-            if (beta == zero)
-              C[i + j*ldc] = zero;
-            else
-              C[i + j*ldc] *= beta;
-
             // update
+            T val = zero;
             if (alpha != zero) {
               for (int l = 0; l < k; ++l) {
-                C[i + j*ldc] += alpha * (A[l + i*lda] * A[l * j*lda]);
+                val += (A[l + i*lda] * A[l * j*lda]);
               }
+              val *= alpha;
             }
+            if (beta == zero)
+              C[i + j*ldc] = val;
+            else
+              C[i + j*ldc] = val + beta * C[i + j*ldc];
           }
         }
       } else if (trans == 'C' || trans == 'c') {
         // C = alpha * (A^T * A) + beta * C
         for (int j = 0; j < n; j++) {
           for (int i = 0; i <= j; i++) {
-            // initialize
-            if (beta == zero)
-              C[i + j*ldc] = zero;
-            else
-              C[i + j*ldc] *= beta;
-
             // update
+            T val = zero;
             if (alpha != zero) {
               for (int l = 0; l < k; ++l) {
-                C[i + j*ldc] += alpha * arith_traits::conj(A[l + i*lda]) * A[l + j*lda];
+                val += (arith_traits::conj(A[l + i*lda]) * A[l + j*lda]);
               }
+              val *= alpha;
             }
+            if (beta == zero)
+              C[i + j*ldc] = val;
+            else
+              C[i + j*ldc] = val + beta * C[i + j*ldc];
           }
         }
       }
     } else {
-      Kokkos::abort("uplo is not valid");
+      Kokkos::abort("herk: uplo is not valid");
     }
     return;
   }
@@ -187,10 +226,35 @@ template <typename T> struct BlasSerial {
             }
           }
         } else {
-          Kokkos::abort("transa is not valid");
+          // Non-transpose solve with Upper-triangular matrix from Left, U^{-1} * B
+          for (int j = 0; j < n; j++) {
+            for (int i = m-1; i >= 0; i--) {
+              if (diag != 'U' && diag != 'u') {
+                B[i + j*ldb] /= A[i + i*lda];
+              }
+              T val = B[i + j*ldb] ;
+              for (int l = 0; l < i; l++) {
+                B[l + j*ldb] -= A[l + i*lda] * val;
+              }
+            }
+          }
         }
       } else if (uplo == 'L' || uplo == 'l') {
-        Kokkos::abort("uplo is not valid");
+        if (transa == 'N' || transa == 'n') {
+          // Transpose-solve with Lower-triangular matrix from Left, L^{-1} * B
+          for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+              for (int l = 0; l < i; l++) {
+                B[i + j*ldb] -= A[i + l*lda] * B[l + j*ldb];
+              }
+              if (diag != 'U' && diag != 'u') {
+                B[i + j*ldb] /= A[i + i*lda];
+              }
+            }
+          }
+        } else {
+          Kokkos::abort("trsm(Left, Lower): transa is not valid");
+        }
       }
     }
 
@@ -212,10 +276,10 @@ template <typename T> struct BlasSerial {
             }
           }
         } else {
-          Kokkos::abort("transa is not valid");
+          Kokkos::abort("trsm(Right, Upper): transa is not valid");
         }
       } else if (uplo == 'L' || uplo == 'l') {
-        Kokkos::abort("uplo is not valid");
+        Kokkos::abort("trsm(Right): uplo is not valid");
       }
     }
   }

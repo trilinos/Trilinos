@@ -75,6 +75,7 @@ Sandia National Laboratories, Albuquerque, NM, USA
 // #include "Tacho_Chol_ByBlocks.hpp"
 
 #include "Tacho_LDL.hpp"
+#include "Tacho_LDL_Serial.hpp"
 #include "Tacho_LDL_External.hpp"
 #include "Tacho_LDL_Internal.hpp"
 //#include "Tacho_LDL_ByBlocks.hpp"
@@ -104,15 +105,18 @@ Sandia National Laboratories, Albuquerque, NM, USA
 // #include "Tacho_Gemm_ByBlocks.hpp"
 
 #include "Tacho_GemmTriangular.hpp"
+#include "Tacho_GemmTriangular_Serial.hpp"
 #include "Tacho_GemmTriangular_External.hpp"
 #include "Tacho_GemmTriangular_Internal.hpp"
 //#include "Tacho_GemmTriangular_OnDevice.hpp"
 
 #include "Tacho_Trsv.hpp"
+#include "Tacho_Trsv_Serial.hpp"
 #include "Tacho_Trsv_External.hpp"
 #include "Tacho_Trsv_Internal.hpp"
 
 #include "Tacho_Gemv.hpp"
+#include "Tacho_Gemv_Serial.hpp"
 #include "Tacho_Gemv_External.hpp"
 #include "Tacho_Gemv_Internal.hpp"
 
