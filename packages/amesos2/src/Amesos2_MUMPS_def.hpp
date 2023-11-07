@@ -389,7 +389,7 @@ namespace Amesos2
     
         Util::get_ccs_helper_kokkos_view<
           MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
-          ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret
+          ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
             ARBITRARY,
             this->rowIndexBase_);
