@@ -357,31 +357,14 @@ namespace PHX {
       m_host_data->m_tag = t;
     }
 
+    /// Default empty constructor
     MDField()
 #ifdef PHX_DEBUG
       : m_data_set(false)
 #endif
     {m_host_data = new HostData;}
 
-    // NOTES: In moving the host data inside a pointer, we now
-    // implement three copy ctors explicitly. (1) These can be used to
-    // move MDFields to device so must be decorated with kokkos device
-    // macros. (2) The non-templated default is used if the fields
-    // match exactly. This is chosen by the compiler over the
-    // templated versions. Prior to introducing the m_host_data
-    // object, the non-templated ctor was being created implicitly by
-    // the compiler. Now that we have a raw pointer for m_host_data,
-    // we need to handle copy construction explicitly (smart_ptrs were
-    // really convenient in this respect). (3) The templated versions
-    // allow for different extra template parameters/dimension
-    // tags. For example, one evaluator could use POINT dim tag in one
-    // evalutor and use the QUAD_POINT dim tag for the same field in a
-    // different evalautor. Another example could be atomic access
-    // flags. (4) The templated versions need separate const and
-    // non-const specified explicitly for template parameter
-    // matching. (5) We duplicate this structure for assignment
-    // operator as well.
-
+    /// Copy ctor
     KOKKOS_FUNCTION
     MDField(const MDField& source)
       : m_view(source.m_view),
@@ -396,26 +379,25 @@ namespace PHX {
       KOKKOS_IF_ON_HOST( m_host_data->m_any_holder.set(source.get_static_view_as_any()); )
     }
 
-    // Non-const templated copy ctor
-    template<typename SourceScalar,typename...SourceProps>
-    KOKKOS_FUNCTION
-    MDField(MDField<SourceScalar,SourceProps...>& source)
-      : m_view(source.m_view),
-        m_host_data(nullptr)
-#ifdef PHX_DEBUG
-      , m_data_set(source.m_data_set)
-#endif
-    {
-      static_assert(std::is_same<typename std::decay<Scalar>::type, typename std::decay<SourceScalar>::type>::value,
-                    "ERROR: Compiletime MDField copy ctor requires scalar types to be the same!");
+    /** \brief Templated copy ctor
 
-      // Do not create host data if on device
-      KOKKOS_IF_ON_HOST( m_host_data = new HostData; )
-      KOKKOS_IF_ON_HOST( m_host_data->m_tag = source.m_host_data->m_tag; )
-      KOKKOS_IF_ON_HOST( m_host_data->m_any_holder.set(source.get_static_view_as_any()); )
-    }
+        The templated version allows for different extra template
+        parameters/dimension tags. For example, one evaluator could a
+        use "Point" dim tag and be copied to an evaluator that uses a
+        "QuadraturePoint" dim tag for the same field in a different
+        evaluator. Another example is for assigning a compiletime
+        MDFields to runtime MDFields and vice versa. Examples:
 
-    // Const templated copy ctor
+        MDField<double,Cell,Point> a("a",data_layout);
+        a.setFieldData(memory);
+        MDField<double,Cell,QuadPoint> b;
+        b = a;
+
+        MDField<double> c; // dynamic rank
+        c = a;
+
+        Another example could be for atomic access flags.
+    */
     template<typename SourceScalar,typename...SourceProps>
     KOKKOS_FUNCTION
     MDField(const MDField<SourceScalar,SourceProps...>& source)
@@ -435,7 +417,7 @@ namespace PHX {
     }
 
     KOKKOS_FUNCTION
-    ~MDField() 
+    ~MDField()
     {
       // Only delete if on host (will not ba allocated on device)
       KOKKOS_IF_ON_HOST( delete m_host_data; )
