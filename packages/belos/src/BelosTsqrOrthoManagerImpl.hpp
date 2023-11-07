@@ -127,7 +127,7 @@ namespace Belos {
   /// metrics you want to collect and how you want to display them
   /// yourself.
   template<class Scalar>
-  class ReorthogonalizationCallback :
+  class ReorthogonalizationCallback
   {
   public:
     //! The template parameter of this class; the type of an inner product result.
