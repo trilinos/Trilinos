@@ -115,7 +115,7 @@ namespace Ifpack2 {
       local_ordinal_type_1d_view packptr; // npack+1
       local_ordinal_type_1d_view packptr_sub;
       local_ordinal_type_1d_view packindices_sub;
-      local_ordinal_type_1d_view packindices_schur;
+      local_ordinal_type_2d_view packindices_schur;
       // part2rowidx0_(i) is the flat row index of the start of the i'th part. It's
       // an alias of partptr_ in the case of no overlap.
       local_ordinal_type_1d_view part2rowidx0; // np+1
@@ -505,10 +505,12 @@ namespace Ifpack2 {
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // subview pattern
-        auto bb = Kokkos::subview(b, block_range, 0);
-        auto xx = Kokkos::subview(x, block_range, 0);
-        auto xx_remote = Kokkos::subview(x_remote, block_range, 0);
-        auto yy = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
+        using subview_1D_right_t = decltype(Kokkos::subview(b, block_range, 0));
+        subview_1D_right_t bb(nullptr, blocksize);
+        subview_1D_right_t xx(nullptr, blocksize);
+        subview_1D_right_t xx_remote(nullptr, blocksize);
+        using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
+        subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
         auto A_block = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
 
         const local_ordinal_type lr = lclrow(rowidx);
@@ -623,10 +625,12 @@ namespace Ifpack2 {
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // subview pattern
-        auto bb = Kokkos::subview(b, block_range, 0);
-        auto xx = bb; //Kokkos::subview(x, block_range, 0);
-        auto xx_remote = bb; //Kokkos::subview(x_remote, block_range, 0);
-        auto yy = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
+        using subview_1D_right_t = decltype(Kokkos::subview(b, block_range, 0));
+        subview_1D_right_t bb(nullptr, blocksize);
+        subview_1D_right_t xx(nullptr, blocksize);
+        subview_1D_right_t xx_remote(nullptr, blocksize);
+        using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
+        subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
         auto A_block = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
         auto colindsub_used = (P == 0 ? colindsub : colindsub_remote);
         auto rowptr_used = (P == 0 ? rowptr : rowptr_remote);
@@ -689,6 +693,7 @@ namespace Ifpack2 {
             ("ComputeResidual::RangePolicy::run<SeqTag>", policy, *this);
         }
         IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
+        IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
       }
 
       // y = b - R (x , x_remote)
@@ -761,6 +766,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
         }
         IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
+        IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
       }
 
       // y = b - R (y , y_remote)
@@ -848,6 +854,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
         }
         IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
+        IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
       }
     };
 
