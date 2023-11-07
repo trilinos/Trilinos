@@ -484,22 +484,6 @@ namespace PHX {
       return *this;
     }
 
-    template<typename SrcScalar,typename...SrcProps>
-    PHX::MDField<Scalar,Props...>&
-    operator=(MDField<SrcScalar,SrcProps...>& source)
-    {
-      m_view = source.m_view;
-      m_host_data->m_tag = source.m_host_data->m_tag;
-      m_host_data->m_any_holder.set(source.get_static_view_as_any());
-#ifdef PHX_DEBUG
-      m_data_set = source.m_data_set;
-#endif
-      static_assert(std::is_same<typename std::decay<Scalar>::type, typename std::decay<SrcScalar>::type>::value,
-                    "ERROR: MDField assignment operator requires scalar types to be the same!");
-
-      return *this;
-    }
-
     template<typename... index_pack>
     KOKKOS_FORCEINLINE_FUNCTION
     typename PHX::MDFieldReturnType<array_type>::return_type
