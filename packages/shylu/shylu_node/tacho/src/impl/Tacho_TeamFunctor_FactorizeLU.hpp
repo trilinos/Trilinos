@@ -203,7 +203,6 @@ public:
       member.team_barrier();
 
       if (n_m > 0) {
-        UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
         UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
         UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
         UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);

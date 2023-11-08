@@ -28,14 +28,13 @@ namespace Tacho {
 /// row exchange
 template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
   template <typename MemberType, typename ViewTypeP, typename ViewTypeD, typename ViewTypeA>
-  inline static int invoke(MemberType &member, const ViewTypeP &P, const ViewTypeD &D, const ViewTypeA &A) {
+  inline static int invoke(MemberType &exec_instance, const ViewTypeP &P, const ViewTypeD &D, const ViewTypeA &A) {
     typedef typename ViewTypeA::non_const_value_type value_type;
 
     const ordinal_type m = A.extent(0), n = A.extent(1);
     if (A.extent(0) == D.extent(0)) {
       if (A.span() > 0) {
         using exec_space = MemberType;
-        const auto exec_instance = member;
 
         if (n == 1) {
           Kokkos::RangePolicy<exec_space> policy(exec_instance, 0, m);

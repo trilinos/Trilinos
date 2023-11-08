@@ -187,8 +187,8 @@ private:
   int _handle_blas, _handle_lapack; // dummy handle for convenience
   using blas_handle_type = int;
   using lapack_handle_type = int;
-  #define getBlasHandle(id)   _handle_blas
-  #define getLapackHandle(id) _handle_lapack
+  #define getBlasHandle()   _handle_blas
+  #define getLapackHandle() _handle_lapack
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
@@ -769,6 +769,9 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -776,11 +779,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -821,6 +823,9 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -828,11 +833,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -888,6 +892,9 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -895,11 +902,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -981,6 +987,9 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -988,11 +997,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1053,6 +1061,9 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -1060,11 +1071,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1140,6 +1150,9 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -1147,11 +1160,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1246,6 +1258,8 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -1253,11 +1267,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1309,6 +1322,9 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
+
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -1316,11 +1332,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1401,6 +1416,8 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        lapack_handle_type handle_lapack = getLapackHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
@@ -1408,11 +1425,10 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type   handle_blas   = getBlasHandle();
+        lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
-        lapack_handle_type handle_lapack = getLapackHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1431,7 +1447,6 @@ public:
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
 
             if (n_m > 0) {
-              UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
               UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
               UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
 
@@ -1661,12 +1676,12 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1708,12 +1723,12 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1759,12 +1774,12 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1814,12 +1829,12 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1861,9 +1876,12 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
+#else
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
         const auto &s = _h_supernodes(sid);
         {
@@ -1882,11 +1900,11 @@ public:
             if (n_m > 0) {
               const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
               const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
             }
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, tT, zero, bT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(handle_blas, one, ATL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
 
             _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
@@ -1909,12 +1927,12 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -1963,13 +1981,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2017,13 +2035,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2078,13 +2096,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2141,13 +2159,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2198,13 +2216,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2260,13 +2278,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2329,13 +2347,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2381,13 +2399,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2439,13 +2457,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2503,13 +2521,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2549,13 +2567,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
@@ -2599,13 +2617,13 @@ public:
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #else
-        const ordinal_type qid = 0;
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
-        blas_handle_type handle_blas = getBlasHandle(qid);
 
         const auto &s = _h_supernodes(sid);
         {
