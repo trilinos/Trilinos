@@ -46,7 +46,7 @@ jobs:
     # Turning off Krino package due to build errors associated with turning off tests
     - run: |
         bash -l -c "./packages/framework/get_dependencies.sh --container"
-        bash -l -c "mkdir -p trilinos_build && cd trilinos_build; source ../packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all-no-epetra .."
+        bash -l -c "mkdir -p trilinos_build && cd trilinos_build; source ../packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all .."
         bash -l -c "cd trilinos_build ; cmake -G Ninja -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Krino=OFF .."
         bash -l -c "cd trilinos_build ; ninja"
 
