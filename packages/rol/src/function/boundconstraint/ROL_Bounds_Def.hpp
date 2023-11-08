@@ -210,19 +210,17 @@ void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, con
 
 template<typename Real>
 bool Bounds<Real>::isFeasible( const Vector<Real> &v ) {
-  const Real one(1), tol(static_cast<Real>(1e-2)*std::sqrt(ROL_EPSILON<Real>())*min_diff_);
+  const Real half(0.5);
   bool flagU = false, flagL = false;
   if (BoundConstraint<Real>::isUpperActivated()) {
-    mask_->set(*upper_);
-    mask_->axpy(-one,v);
-    Real uminusv = mask_->reduce(minimum_);
-    flagU = ((uminusv<-tol) ? true : false);
+    mask_->set(v);
+    mask_->applyBinary(isGreater_,*upper_);
+    flagU = mask_->reduce(maximum_) > half ? false : true;
   }
   if (BoundConstraint<Real>::isLowerActivated()) {
-    mask_->set(v);
-    mask_->axpy(-one,*lower_);
-    Real vminusl = mask_->reduce(minimum_);
-    flagL = ((vminusl<-tol) ? true : false);
+    mask_->set(*lower_);
+    mask_->applyBinary(isGreater_,v);
+    flagL = mask_->reduce(maximum_) > half ? false : true;
   }
   return ((flagU || flagL) ? false : true);
 }
