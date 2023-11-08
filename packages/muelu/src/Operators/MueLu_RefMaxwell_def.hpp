@@ -190,7 +190,7 @@ namespace MueLu {
     params->set("multigrid algorithm", "Unsmoothed");
     params->set("transpose: use implicit", MasterList::getDefault<bool>("transpose: use implicit"));
     params->set("rap: triple product", MasterList::getDefault<bool>("rap: triple product"));
-    params->set("rap: fix zero diagonals", MasterList::getDefault<bool>("rap: fix zero diagonals"));
+    params->set("rap: fix zero diagonals", true);
     params->set("rap: fix zero diagonals threshold", MasterList::getDefault<double>("rap: fix zero diagonals threshold"));
     params->set("fuse prolongation and update", MasterList::getDefault<bool>("fuse prolongation and update"));
     params->set("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
