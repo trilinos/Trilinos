@@ -123,10 +123,8 @@ namespace Stokhos {
 
     //! Predicate class for sorting product eigenfunctions based on eigenvalue
     template <typename E, typename D>
-    struct ProductEigenPairGreater :
-      public std::binary_function<ProductEigenPair<E,D>,
-                                  ProductEigenPair<E,D>,
-                                  bool> {
+    struct ProductEigenPairGreater
+    {
       bool operator() (const ProductEigenPair<E,D>& a,
                        const ProductEigenPair<E,D>& b) {
         return a.eig_val > b.eig_val;
