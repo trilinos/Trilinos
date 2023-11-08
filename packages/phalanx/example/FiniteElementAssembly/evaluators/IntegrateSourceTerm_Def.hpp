@@ -78,7 +78,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,basis_view.extent(1)), KOKKOS_LAMBDA (const int& basis) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,basis_view.extent(1)), [&] (const int& basis) {
       for (int qp = 0; qp < static_cast<int>(basis_view.extent(0)); ++qp)
 #ifdef PHX_ENABLE_KOKKOS_AMT
         residual_atomic(cell,basis) +=  basis_view(qp,basis) * source(cell,qp) * weights(qp) * cell_measure(cell,qp);

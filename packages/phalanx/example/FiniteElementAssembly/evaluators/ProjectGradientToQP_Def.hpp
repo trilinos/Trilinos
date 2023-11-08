@@ -71,7 +71,7 @@ void ProjectGradientToQP<EvalT,Traits>::
 operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_field_at_qp.extent(1)), KOKKOS_LAMBDA (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_field_at_qp.extent(1)), [&] (const int& qp) {
       grad_field_at_qp(cell,qp,0) = ScalarT(0.0);
       grad_field_at_qp(cell,qp,1) = ScalarT(0.0);
       grad_field_at_qp(cell,qp,2) = ScalarT(0.0);

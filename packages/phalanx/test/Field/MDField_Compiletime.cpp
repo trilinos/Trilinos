@@ -56,6 +56,8 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
+#include <limits> // for numeric_limits
+
 // Dimension tags for this problem
 struct Dim {};
 struct Quadrature{};
@@ -555,4 +557,29 @@ TEUCHOS_UNIT_TEST(mdfield, releaseFieldData)
   TEST_EQUALITY(a.extent(0),0);
   TEST_EQUALITY(a.extent(1),0);
   TEST_EQUALITY(a.extent(2),0);
+}
+
+TEUCHOS_UNIT_TEST(mdfield, AssignCompileTimeToRuntime)
+{
+  using namespace PHX;
+
+  const size_t c = 3;
+  const size_t p = 4;
+  const size_t d = 2;
+  MDField<double,Cell,Point,Dim> a("a","",c,p,d);
+
+  MDField<double> a_dyn = a;
+
+  Kokkos::deep_copy(a.get_static_view(),3.0);
+
+  auto a_dyn_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),a_dyn.get_view());
+  const auto tol = 100.0 * std::numeric_limits<double>::epsilon();
+
+  for (size_t i = 0; i < a_dyn_host.extent(0); ++i) {
+    for (size_t j = 0; j < a_dyn_host.extent(1); ++j) {
+      for (size_t k = 0; k < a_dyn_host.extent(2); ++k) {
+        TEST_FLOATING_EQUALITY(a_dyn_host(i,j,k),3.0,tol);
+      }
+    }
+  }
 }
