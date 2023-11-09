@@ -2525,6 +2525,8 @@ namespace MueLu {
           Dk_1 = D0;
         else if (D0.is_null())
           D0 = Dk_1;
+        if (M1_beta.is_null())
+          M1_beta = Mk_one;
       } else if (spaceNumber == 2) {
         if (Dk_2.is_null())
           Dk_2 = D0;
