@@ -1599,6 +1599,151 @@ namespace {
 #endif
   }
 
+
+
+
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TpetraGraphAndValuesConstructor, Scalar, LO, GO, Node )
+  {
+#ifdef HAVE_XPETRA_TPETRA
+    typedef Xpetra::Map<LO, GO, Node> MapClass;
+    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    using Matrix = Xpetra::Matrix<Scalar,LO,GO,Node>;
+    using IST = typename Xpetra::CrsMatrix<Scalar,LO,GO,Node>::impl_scalar_type;
+
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+    {
+      using std::cerr;
+      using std::endl;
+
+      std::ostringstream os;
+      const int myRank = comm->getRank ();
+      os << "Process " << myRank << ": (CrsMatrix, TpetraDeepCopy) test" << endl;
+      cerr << os.str ();
+    }
+
+    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+
+    // Create a Map, which will be the row, domain, and range Map of the matrix A.
+    LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+    {
+      using std::cerr;
+      using std::endl;
+
+      std::ostringstream os;
+      const int myRank = comm->getRank ();
+      os << "Process " << myRank << ": Creating matrix" << endl;
+      cerr << os.str ();
+    }
+
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build (map, 10);
+
+    LO NumMyElements = map->getLocalNumElements();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getLocalElementList();
+
+    {
+      using std::cerr;
+      using std::endl;
+
+      std::ostringstream os;
+      const int myRank = comm->getRank ();
+      os << "Process " << myRank << ": Filling matrix" << endl;
+      cerr << os.str ();
+    }
+
+    // Make A the identity matrix.
+    for (LO i = 0; i < NumMyElements; ++i) {
+      A->insertGlobalValues (MyGlobalElements[i],
+                            Teuchos::tuple<GO> (MyGlobalElements[i]),
+                            Teuchos::tuple<Scalar> (1.0));
+    }
+
+    {
+      using std::cerr;
+      using std::endl;
+
+      std::ostringstream os;
+      const int myRank = comm->getRank ();
+      os << "Process " << myRank << ": Calling fillComplete on matrix A" << endl;
+      cerr << os.str ();
+    }
+
+    A->fillComplete ();
+
+
+    // Create new values array containing all ones.
+    typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type::values_type new_values("new_values",A->getLocalNumEntries());
+    Kokkos::deep_copy(new_values,Teuchos::ScalarTraits<IST>::one());
+
+    // Use the MatrixFactory to build a copy
+    RCP<Matrix> Acopy = Xpetra::MatrixFactory<Scalar, LO, GO, Node>::Build(A->getCrsGraph(),new_values);
+    Acopy->fillComplete(A->getDomainMap(),A->getRangeMap());
+
+    {
+      using std::cerr;
+      using std::endl;
+
+      std::ostringstream os;
+      const int myRank = comm->getRank ();
+      os << "Process " << myRank << ": Building an input Vector" << endl;
+      cerr << os.str ();
+    }
+
+    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > v = Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build (A->getRangeMap ());
+    v->setSeed (8675309);
+    v->randomize (true);
+
+    // r and rcopy are distinct Vectors with the same Map, namely the
+    // range Map of A.  All the Vectors v, r, and rcopy are distinct.
+    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > r =
+      Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build (A->getRangeMap ());
+    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > rcopy =
+      Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build (A->getRangeMap ());
+
+    {
+      using std::cerr;
+      using std::endl;
+
+      std::ostringstream os;
+      const int myRank = comm->getRank ();
+      os << "Process " << myRank << ": Applying matrix A" << endl;
+      cerr << os.str ();
+    }
+
+    // r := A * v.
+    A->apply (*v, *r, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+    Acopy->apply (*v, *rcopy, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+
+    // Since A is the identity matrix, after the above line finishes,
+    // r and rcopy should be exactly equal.  This should be true even in
+    // finite-precision arithmetic.  Test this here.
+    {
+      RCP<Xpetra::Vector<Scalar, LO, GO, Node> > diff =
+        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build (A->getRangeMap ());
+
+      // diff := 1*rcopy + (-1)*r.
+      diff->update (STS::one (), *rcopy, -STS::one (), *r, STS::zero ());
+      Teuchos::Array<magnitude_type> norms (1);
+      diff->norm2 (norms ());
+      // The norm of v - r must be _exactly_ zero.
+      TEST_EQUALITY(norms[0], STM::zero ());
+    }
+
+  
+#endif
+  }
+
+
+
   //
   // INSTANTIATIONS
   //
@@ -1628,7 +1773,8 @@ namespace {
 // for Tpetra tests only
 #define UNIT_TEST_GROUP_ORDINAL_TPETRAONLY( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraGraphAndValuesConstructor, SC, LO, GO, Node )
 // for Epetra tests only
 #define UNIT_TEST_GROUP_ORDINAL_EPETRAONLY( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Constructor_Epetra, SC, LO, GO, Node ) \

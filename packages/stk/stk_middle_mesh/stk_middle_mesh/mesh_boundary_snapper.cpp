@@ -120,7 +120,6 @@ MEPair MeshBoundarySnapper::get_corresponding_edges(MeshEntityPtr v1, MeshEntity
 void MeshBoundarySnapper::snap_verts(VertEdgePair p1, VertEdgePair p2, double& maxSnapDist)
 {
   auto p1In = p1;
-  auto p2In = p2;
   // MeshEntityPtr v1_next = get_other_vert(p1.first, p1.second);
   utils::Point nextVert = get_other_vert(p1.first, p1.second)->get_point_orig(0);
   if (M_OUTPUT)
@@ -133,8 +132,7 @@ void MeshBoundarySnapper::snap_verts(VertEdgePair p1, VertEdgePair p2, double& m
 
   // TODO: in parallel, we the local part may not have the entire boundary
   //       curve
-  while (get_other_vert(p1.first, p1.second) != p1In.first)
-  {
+  do {
     // because we choose the further away point for the next target point,
     // it is always guaranteed that we can advance the starting point by 1.
     // This also helps deal with non-monotonicity causing the algorithm
@@ -177,12 +175,7 @@ void MeshBoundarySnapper::snap_verts(VertEdgePair p1, VertEdgePair p2, double& m
 
     if (M_OUTPUT)
       std::cout << "next_vert = " << nextVert << std::endl;
-  }
-
-  // snap intermediate verts between the last vert that was merged
-  // and the first vert
-  snap_intermediate_verts(p1, p1In, true, maxSnapDist);
-  snap_intermediate_verts(p2, p2In, false, maxSnapDist);
+  } while (p1.first != p1In.first);
 }
 
 void MeshBoundarySnapper::check_zero_length_edges(VertEdgePair p)

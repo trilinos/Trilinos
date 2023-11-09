@@ -47,9 +47,12 @@
 #include "Tpetra_Details_Hash.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_Profiling.hpp"
+
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
+
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
@@ -250,6 +253,8 @@ public:
     typedef typename ptr_type::non_const_type nonconst_ptr_type;
     typedef typename val_type::non_const_type nonconst_val_type;
 
+    Tpetra::Details::ProfilingRegion pr("Tpetra::Details::FixedHashTable::ctor(InDeviceType)");
+
     // FIXME (mfh 28 May 2015) The code below _always_ copies.  This
     // shouldn't be necessary if the input and output memory spaces
     // are the same.  However, it is always correct.
@@ -417,30 +422,30 @@ private:
   /// In Tpetra::Map, this corresponds to the minimum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-  KeyType minKey_ = ::Kokkos::Details::ArithTraits<KeyType>::max();
+  KeyType minKey_ = ::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Maximum key (computed in init()).
   ///
   /// In Tpetra::Map, this corresponds to the maximum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-  KeyType maxKey_ = ::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                    ::Kokkos::Details::ArithTraits<KeyType>::min() :
-                   -::Kokkos::Details::ArithTraits<KeyType>::max();
+  KeyType maxKey_ = ::Kokkos::ArithTraits<KeyType>::is_integer ?
+                    ::Kokkos::ArithTraits<KeyType>::min() :
+                   -::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Minimum value.
   ///
   /// In Tpetra::Map, this corresponds to the minimum local index
   /// (local to the MPI process).
-  ValueType minVal_ = ::Kokkos::Details::ArithTraits<ValueType>::max();
+  ValueType minVal_ = ::Kokkos::ArithTraits<ValueType>::max();
 
   /// \brief Maximum value.
   ///
   /// In Tpetra::Map, this corresponds to the maximum local index
   /// (local to the MPI process).
-  ValueType maxVal_ = ::Kokkos::Details::ArithTraits<ValueType>::is_integer ?
-                      ::Kokkos::Details::ArithTraits<ValueType>::min() :
-                     -::Kokkos::Details::ArithTraits<ValueType>::max();
+  ValueType maxVal_ = ::Kokkos::ArithTraits<ValueType>::is_integer ?
+                      ::Kokkos::ArithTraits<ValueType>::min() :
+                     -::Kokkos::ArithTraits<ValueType>::max();
 
   /// \brief First key in any initial contiguous sequence.
   ///
@@ -448,7 +453,7 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType firstContigKey_ = ::Kokkos::Details::ArithTraits<KeyType>::max();
+  KeyType firstContigKey_ = ::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Last key in any initial contiguous sequence.
   ///
@@ -456,9 +461,9 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType lastContigKey_ = ::Kokkos::Details::ArithTraits<KeyType>::is_integer ?
-                           ::Kokkos::Details::ArithTraits<KeyType>::min() :
-                          -::Kokkos::Details::ArithTraits<KeyType>::max();
+  KeyType lastContigKey_ = ::Kokkos::ArithTraits<KeyType>::is_integer ?
+                           ::Kokkos::ArithTraits<KeyType>::min() :
+                          -::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Whether the table was created using one of the
   ///   constructors that assume contiguous values.

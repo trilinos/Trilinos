@@ -370,7 +370,6 @@ getNominalValues() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgsSetup<Scalar> inArgs = this->createInArgs();
-  inArgs.set_Np(1);
   return std::move(inArgs);
 }
 

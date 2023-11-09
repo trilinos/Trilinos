@@ -22,7 +22,7 @@
 #define KOKKOSKERNELS_MACRO_MIN(x, y) ((x) < (y) ? (x) : (y))
 #define KOKKOSKERNELS_MACRO_MAX(x, y) ((x) < (y) ? (y) : (x))
 #define KOKKOSKERNELS_MACRO_ABS(x) \
-  Kokkos::Details::ArithTraits<typename std::decay<decltype(x)>::type>::abs(x)
+  Kokkos::ArithTraits<typename std::decay<decltype(x)>::type>::abs(x)
 
 namespace KokkosKernels {
 
@@ -38,7 +38,7 @@ class SquareRootFunctor {
 
   KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const {
     typedef typename ViewType::value_type value_type;
-    theView_(i) = Kokkos::Details::ArithTraits<value_type>::sqrt(theView_(i));
+    theView_(i) = Kokkos::ArithTraits<value_type>::sqrt(theView_(i));
   }
 
  private:
@@ -79,16 +79,51 @@ struct InclusiveParallelPrefixSum {
 
 /***
  * \brief Function performs the exclusive parallel prefix sum. That is each
- * entry holds the sum until itself. \param num_elements: size of the array
+ * entry holds the sum until itself.
+ * \param exec: the execution space instance on which to run
+ * \param num_elements: size of the array
+ * \param arr: the array for which the prefix sum will be performed.
+ */
+template <typename view_t, typename MyExecSpace>
+inline void kk_exclusive_parallel_prefix_sum(
+    const MyExecSpace &exec, typename view_t::value_type num_elements,
+    view_t arr) {
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
+                        my_exec_space(exec, 0, num_elements),
+                        ExclusiveParallelPrefixSum<view_t>(arr));
+}
+
+/***
+ * \brief Function performs the exclusive parallel prefix sum. That is each
+ * entry holds the sum until itself.
+ * \param num_elements: size of the array
  * \param arr: the array for which the prefix sum will be performed.
  */
 template <typename view_t, typename MyExecSpace>
 inline void kk_exclusive_parallel_prefix_sum(
     typename view_t::value_type num_elements, view_t arr) {
+  kk_exclusive_parallel_prefix_sum(MyExecSpace(), num_elements, arr);
+}
+
+/***
+ * \brief Function performs the exclusive parallel prefix sum. That is each
+ * entry holds the sum until itself. This version also returns the final sum
+ * equivalent to the sum-reduction of arr before doing the scan.
+ * \param exec: the execution space instance on which to run
+ * \param num_elements: size of the array
+ * \param arr: the array for which the prefix sum will be performed.
+ * \param finalSum: will be set to arr[num_elements - 1] after computing the
+ * prefix sum.
+ */
+template <typename view_t, typename MyExecSpace>
+inline void kk_exclusive_parallel_prefix_sum(
+    const MyExecSpace &exec, typename view_t::value_type num_elements,
+    view_t arr, typename view_t::non_const_value_type &finalSum) {
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
-                        my_exec_space(0, num_elements),
-                        ExclusiveParallelPrefixSum<view_t>(arr));
+                        my_exec_space(exec, 0, num_elements),
+                        ExclusiveParallelPrefixSum<view_t>(arr), finalSum);
 }
 
 /***
@@ -104,10 +139,7 @@ template <typename view_t, typename MyExecSpace>
 inline void kk_exclusive_parallel_prefix_sum(
     typename view_t::value_type num_elements, view_t arr,
     typename view_t::non_const_value_type &finalSum) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
-                        my_exec_space(0, num_elements),
-                        ExclusiveParallelPrefixSum<view_t>(arr), finalSum);
+  kk_exclusive_parallel_prefix_sum(MyExecSpace(), num_elements, arr, finalSum);
 }
 
 /***
@@ -219,7 +251,7 @@ inline void kk_reduce_view2(size_t num_elements, view_t arr,
 }
 
 template <typename view_type1, typename view_type2,
-          typename eps_type = typename Kokkos::Details::ArithTraits<
+          typename eps_type = typename Kokkos::ArithTraits<
               typename view_type2::non_const_value_type>::mag_type>
 struct IsIdenticalFunctor {
   view_type1 view1;
@@ -232,7 +264,7 @@ struct IsIdenticalFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, size_t &is_equal) const {
     typedef typename view_type2::non_const_value_type val_type;
-    typedef Kokkos::Details::ArithTraits<val_type> KAT;
+    typedef Kokkos::ArithTraits<val_type> KAT;
     typedef typename KAT::mag_type mag_type;
     const mag_type val_diff = KAT::abs(view1(i) - view2(i));
 
@@ -266,7 +298,7 @@ bool kk_is_identical_view(view_type1 view1, view_type2 view2, eps_type eps) {
 }
 
 template <typename view_type1, typename view_type2,
-          typename eps_type = typename Kokkos::Details::ArithTraits<
+          typename eps_type = typename Kokkos::ArithTraits<
               typename view_type2::non_const_value_type>::mag_type>
 struct IsRelativelyIdenticalFunctor {
   view_type1 view1;
@@ -378,6 +410,49 @@ KOKKOS_FORCEINLINE_FUNCTION Value xorshiftHash(Value v) {
   return std::is_same<Value, uint32_t>::value
              ? static_cast<Value>((x * 2685821657736338717ULL - 1) >> 16)
              : static_cast<Value>(x * 2685821657736338717ULL - 1);
+}
+
+struct ViewHashFunctor {
+  ViewHashFunctor(const uint8_t *data_) : data(data_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(size_t i, uint32_t &lhash) const {
+    // Compute a hash/digest of both the index i, and data[i]. Then add that to
+    // overall hash.
+    uint32_t x = uint32_t(i);
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    x ^= uint32_t(data[i]);
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    lhash += x;
+  }
+
+  const uint8_t *data;
+};
+
+/// \brief Compute a hash of a view.
+/// \param v: the view to hash. Must be contiguous, and its element type must
+/// not contain any padding bytes.
+template <typename View>
+uint32_t hashView(const View &v) {
+  assert(v.span_is_contiguous());
+  // Note: This type trait is supposed to be part of C++17,
+  // but it's not defined on Intel 19 (with GCC 7.2.0 standard library).
+  // So just check if it's available before using.
+#ifdef __cpp_lib_has_unique_object_representations
+  static_assert(std::has_unique_object_representations<
+                    typename View::non_const_value_type>::value,
+                "KokkosKernels::Impl::hashView: the view's element type must "
+                "not have any padding bytes.");
+#endif
+  size_t nbytes = v.span() * sizeof(typename View::value_type);
+  uint32_t h;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<typename View::execution_space, size_t>(0, nbytes),
+      ViewHashFunctor(reinterpret_cast<const uint8_t *>(v.data())), h);
+  return h;
 }
 
 template <typename V>

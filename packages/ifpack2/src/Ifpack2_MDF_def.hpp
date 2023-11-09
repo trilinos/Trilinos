@@ -155,6 +155,7 @@ auto get_local_crs_row_matrix(
 template<class MatrixType>
 MDF<MatrixType>::MDF (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
+    Verbosity_(0),
     LevelOfFill_ (0),
     Overalloc_ (2.),
     isAllocated_ (false),
@@ -175,6 +176,7 @@ MDF<MatrixType>::MDF (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
 template<class MatrixType>
 MDF<MatrixType>::MDF (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
+    Verbosity_(0),
     LevelOfFill_ (0),
     Overalloc_ (2.),
     isAllocated_ (false),
@@ -472,9 +474,6 @@ void MDF<MatrixType>::initialize ()
   using Teuchos::rcp_implicit_cast;
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  typedef Tpetra::CrsGraph<local_ordinal_type,
-                           global_ordinal_type,
-                           node_type> crs_graph_type;
   const char prefix[] = "Ifpack2::MDF::initialize: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -522,17 +521,7 @@ void MDF<MatrixType>::initialize ()
       MDF_handle_ = rcp( new MDF_handle_device_type(A_local_device) );
       MDF_handle_->set_verbosity(Verbosity_);
 
-      // if constexpr (Details::MDFImpl::is_supported_scalar_type<scalar_type>::value)
-      if constexpr (std::is_arithmetic_v<scalar_type>)
-      {
-        KokkosSparse::Experimental::mdf_symbolic(A_local_device,*MDF_handle_);
-      }
-      else
-      {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Ifpack2::MDF::initialize: "
-          "MDF on complex scalar types is not currently supported. "
-          "Please report this to the Ifpack2 developers.");
-      }
+      KokkosSparse::Experimental::mdf_symbolic(A_local_device,*MDF_handle_);
 
       isAllocated_ = true;
     }
@@ -613,16 +602,7 @@ void MDF<MatrixType>::compute ()
     // Compute the ordering and factorize
     auto A_local_device = A_local_crs->getLocalMatrixDevice();
 
-    if constexpr (std::is_arithmetic_v<scalar_type>)
-    {
-      KokkosSparse::Experimental::mdf_numeric(A_local_device,*MDF_handle_);
-    }
-    else
-    {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, prefix <<
-        "MDF on complex scalar types is not currently supported. "
-        "Please report this to the Ifpack2 developers.");
-    }
+    KokkosSparse::Experimental::mdf_numeric(A_local_device,*MDF_handle_);
   }
 
   // Ordering convention for MDF impl and here are reversed. Do reverse here to avoid confusion

@@ -34,18 +34,61 @@
 #ifndef PACKAGES_STK_STK_MESH_STK_MESH_BASEIMPL_ELEMENTGRAPH_GRAPHTYPES_HPP_
 #define PACKAGES_STK_STK_MESH_STK_MESH_BASEIMPL_ELEMENTGRAPH_GRAPHTYPES_HPP_
 
+#include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/EntityKey.hpp"
+
 namespace stk
 {
 namespace mesh
 {
+struct GraphEdge;
+
 namespace impl
 {
 
-typedef int64_t LocalId;
+using LocalId = int64_t;
 
-typedef std::vector<stk::mesh::PartOrdinal> PartOrdinals;
-typedef std::map<LocalId, PartOrdinals> ParallelPartInfo;
-typedef std::map<LocalId, bool> ParallelSelectedInfo;
+using PartOrdinals = std::vector<stk::mesh::PartOrdinal>;
+
+struct ParallelSideInfoValue
+{
+  ConnectivityOrdinal sideOrdinal;
+  PartOrdinals sidesetPartOrdinals;
+  Permutation sidePermutation{INVALID_PERMUTATION};
+  EntityKey sideKey;
+
+  bool operator<(const ParallelSideInfoValue& rhs) const
+  {
+    return this->sideOrdinal < rhs.sideOrdinal;
+  }
+
+  bool operator<(const ConnectivityOrdinal ordinal) const
+  {
+    return this->sideOrdinal < ordinal;
+  }
+
+  bool operator!=(const ParallelSideInfoValue& rhs) const
+  {
+    return this->sideOrdinal != rhs.sideOrdinal;
+  }
+
+  bool operator!=(const ConnectivityOrdinal ordinal) const
+  {
+    return this->sideOrdinal != ordinal;
+  }
+};
+
+struct ParallelPartInfoValue
+{
+  PartOrdinals elementPartOrdinals;
+  std::vector<ParallelSideInfoValue> sideInfo;
+
+  const ParallelSideInfoValue* get_parallel_side_info(const GraphEdge& edge) const;
+  ParallelSideInfoValue* get_parallel_side_info(const GraphEdge& edge);
+};
+
+using ParallelPartInfo = std::map<LocalId, ParallelPartInfoValue>;
+using ParallelSelectedInfo = std::map<LocalId, bool>;
 
 }
 }

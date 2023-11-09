@@ -5,7 +5,7 @@
 // See packages/seacas/LICENSE for details
 
 #pragma once
-#include <cstddef>   // for size_t
+#include <cstddef> // for size_t
 
 #include "ioss_export.h"
 
@@ -16,10 +16,10 @@ namespace Ioss {
     MemoryUtils()  = default;
     ~MemoryUtils() = default;
 
-  /** \brief Return amount of memory being used on this processor */
-  static size_t get_memory_info();
+    /** \brief Return amount of memory being used on this processor */
+    static size_t get_memory_info();
 
-  /** \brief Return maximum amount of memory that was used on this processor */
-  static size_t get_hwm_memory_info();
+    /** \brief Return maximum amount of memory that was used on this processor */
+    static size_t get_hwm_memory_info();
   };
-}
+} // namespace Ioss

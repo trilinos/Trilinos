@@ -86,6 +86,30 @@ inline std::ostream& operator<<(std::ostream& os, const RemoteSharedEntity& remo
   return os;
 }
 
+inline bool operator<(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  if (lhs.remoteRank != rhs.remoteRank)
+    return lhs.remoteRank < rhs.remoteRank;
+  else
+    return lhs.remoteId < rhs.remoteId;
+}
+
+inline bool operator>(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  return rhs < lhs;
+}
+
+inline bool operator<=(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  return !(lhs > rhs);
+}
+
+inline bool operator>=(const RemoteSharedEntity& lhs, const RemoteSharedEntity& rhs)
+{
+  return !(lhs < rhs);
+}
+
+
 class MeshEntity
 {
   public:
@@ -145,6 +169,7 @@ class MeshEntity
 
     void delete_down(MeshEntityPtr e);
 
+    //TODO: move definition to header to allow inlining
     int count_up() const;
 
     MeshEntityPtr get_up(const int i) const;
@@ -159,7 +184,14 @@ class MeshEntity
 
     void delete_up(MeshEntityPtr e) { delete_entity(e, m_up); }
 
-    void add_remote_shared_entity(const RemoteSharedEntity& remote) { m_remoteEntities.push_back(remote); }
+    void add_remote_shared_entity(const RemoteSharedEntity& remote)
+    {
+#ifndef NDEBUG
+      auto it = std::find(m_remoteEntities.begin(), m_remoteEntities.end(), remote);
+      assert(it == m_remoteEntities.end());
+#endif
+      m_remoteEntities.push_back(remote);
+    }
 
     int count_remote_shared_entities() const { return m_remoteEntities.size(); }
 

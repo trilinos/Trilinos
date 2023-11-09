@@ -187,8 +187,9 @@ namespace MueLuExamples {
     sed_pref = sed_pref +  "\"\" ";
 #endif
 
-    system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
-    system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+    int ret_val = 0; (void) ret_val; // suppress fscanf return value and unused variable warnings
+    ret_val = system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+    ret_val = system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
   }
 
   bool compare_to_gold(int myRank, const std::string & baseFile) {
@@ -197,8 +198,9 @@ namespace MueLuExamples {
 
       // Create a copy of outputs
       std::string cmd = "cp -f ";
-      system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
-      system((cmd + baseFile + ".out "  + baseFile + ".out_filtered").c_str());
+      int ret_val = 0; (void) ret_val; // suppress fscanf return value and unused variable warnings
+      ret_val = system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+      ret_val = system((cmd + baseFile + ".out "  + baseFile + ".out_filtered").c_str());
 
       // Tpetra produces different eigenvalues in Chebyshev due to using
       // std::rand() for generating random vectors, which may be initialized
@@ -229,6 +231,9 @@ namespace MueLuExamples {
       run_sed("'s/SuperLU solver interface, direct solve/<Direct> solver interface/'", baseFile);
       run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
       run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
+
+      // The smoother complexity depends on the coarse solver.
+      run_sed("'s/Smoother complexity = [0-9]*.[0-9]*/Smoother complexity = <ignored>/'", baseFile);
 
       // Nuke all pointers
       run_sed("'s/0x[0-9a-f]*//g'", baseFile);
@@ -289,26 +294,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     bool useKokkos = false;
     if(lib == Xpetra::UseTpetra) {
-# ifdef HAVE_MUELU_SERIAL
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-        useKokkos = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_SYCL
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-        useKokkos = true;
-# endif      
+      useKokkos = !Node::is_serial;
     }
     clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
 

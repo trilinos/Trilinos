@@ -199,8 +199,6 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 # Exclude files for source package.
 #
 
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
 TRIBITS_EXCLUDE_FILES(
   src-loca/python
   test/lapack/LOCA_python

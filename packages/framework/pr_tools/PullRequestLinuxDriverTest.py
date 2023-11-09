@@ -73,12 +73,6 @@ def parse_args():
                           help='Repo with the new changes',
                           required=True)
 
-    required.add_argument('--source-branch-name',
-                          dest="source_branch_name",
-                          action='store',
-                          help='Branch with the new changes',
-                          required=True)
-
     required.add_argument('--target-repo-url',
                           dest="target_repo_url",
                           action='store',
@@ -127,6 +121,13 @@ def parse_args():
                           action='store',
                           default="UNKNOWN",
                           help="Path to the build directory.",
+                          required=False)
+
+    optional.add_argument('--use-explicit-cachefile',
+                          dest='use_explicit_cachefile',
+                          action='store_true',
+                          default=False,
+                          help="Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.",
                           required=False)
 
     optional.add_argument('--ctest-driver',
@@ -250,7 +251,6 @@ def parse_args():
     print("| PullRequestLinuxDriverTest Parameters")
     print("+" + "="*78 + "+")
     print("| - [R] source-repo-url             : {source_repo_url}".format(**vars(arguments)))
-    print("| - [R] source-branch-name          : {source_branch_name}".format(**vars(arguments)))
     print("| - [R] target_repo_url             : {target_repo_url}".format(**vars(arguments)))
     print("| - [R] target_branch_name          : {target_branch_name}".format(**vars(arguments)))
     print("| - [R] pullrequest-build-name      : {pullrequest_build_name}".format(**vars(arguments)))

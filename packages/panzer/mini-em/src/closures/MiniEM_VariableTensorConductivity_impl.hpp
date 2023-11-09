@@ -94,9 +94,9 @@ void VariableTensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::E
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (int point = 0; point < conductivity.extent_int(1); ++point) {
 
-        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
-        const ScalarT& z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
+        auto x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
+        auto y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+        auto z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
 
         if ((xl0<=x) && (x<=xr0) &&
             (yl0<=y) && (y<=yr0) &&
@@ -151,8 +151,8 @@ void VariableTensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::E
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (int point = 0; point < conductivity.extent_int(1); ++point) {
 
-        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+        auto x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
+        auto y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
 
         if ((xl0<=x) && (x<=xr0) &&
             (yl0<=y) && (y<=yr0)) {

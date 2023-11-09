@@ -45,6 +45,15 @@
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
 
+#include <memory>
+#include <sstream>
+#include <stdexcept>
+#include <typeinfo>
+
+#include "Teuchos_as.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_CommHelpers.hpp"
+
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
@@ -52,16 +61,10 @@
 #include "Tpetra_Details_printOnce.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Util.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
-#include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
-#include <memory>
-#include <sstream>
-#include <stdexcept>
-#include <typeinfo>
+#include "Tpetra_Details_Profiling.hpp"
 
 namespace { // (anonymous)
 
@@ -699,7 +702,7 @@ namespace Tpetra {
                          nonContigGids_host.size ());
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
         Kokkos::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
-        Kokkos::fence(); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
+        Kokkos::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         glMap_ = global_to_local_table_type(nonContigGids,
                                             firstContiguousGID_,
@@ -835,6 +838,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     checkMapInputArray ("(GST, const GO[], LO, GO, comm)",
                         indexList, static_cast<size_t> (indexListSize),
                         comm.getRawPtr ());
@@ -866,8 +870,7 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     using std::endl;
-    const char funcName[] =
-      "Map(gblNumInds,entryList(Teuchos::ArrayView),indexBase,comm)";
+    const char* funcName = "Map(gblNumInds,entryList(Teuchos::ArrayView),indexBase,comm)";
 
     const bool verbose = Details::Behavior::verbose("Map");
     std::unique_ptr<std::string> prefix;
@@ -879,6 +882,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
     checkMapInputArray ("(GST, ArrayView, GO, comm)",
                         entryList.getRawPtr (), numLclInds,
@@ -945,6 +949,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     checkMapInputArray ("(GST, Kokkos::View, GO, comm)",
                         entryList.data (),
                         static_cast<size_t> (entryList.extent (0)),
@@ -1036,7 +1041,7 @@ namespace Tpetra {
          entryList.extent(0));
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (execution_space(), entryList_host, entryList);
-      Kokkos::fence(); // UVM follows
+      Kokkos::fence("Map::Map"); // UVM follows
       firstContiguousGID_ = entryList_host[0];
       lastContiguousGID_ = firstContiguousGID_+1;
 
@@ -1989,7 +1994,7 @@ namespace Tpetra {
       // The disabled code here throws the following exception in
       // Map's replaceCommWithSubset test:
       //
-      // Throw test that evaluated to true: static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::Details::ArithTraits<ValueType>::max ())
+      // Throw test that evaluated to true: static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::ArithTraits<ValueType>::max ())
       // 10:
       // 10:   Tpetra::Details::FixedHashTable: The number of keys -3 is greater than the maximum representable ValueType value 2147483647.  This means that it is not possible to use this constructor.
       // 10:   Process 3: origComm->replaceCommWithSubset(subsetComm) threw an exception: /scratch/prj/Trilinos/Trilinos/packages/tpetra/core/src/Tpetra_Details_FixedHashTable_def.hpp:1044:

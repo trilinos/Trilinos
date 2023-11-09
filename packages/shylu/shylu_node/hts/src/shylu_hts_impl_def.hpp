@@ -1209,7 +1209,7 @@ Int partition_ir (const Int n, const Size* const ir, const Int nparts,
 
 template <typename T> inline T& conjugate (T& v) {
 #ifdef HAVE_SHYLU_NODEHTS_KOKKOSKERNELS
-  v = Kokkos::Details::ArithTraits<T>::conj(v);
+  v = Kokkos::ArithTraits<T>::conj(v);
 #else
   v = T(v.real(), -v.imag());
 #endif

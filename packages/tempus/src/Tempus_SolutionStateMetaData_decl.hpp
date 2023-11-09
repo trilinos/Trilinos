@@ -20,6 +20,21 @@
 namespace Tempus {
 
 /** \brief Solution state meta data.
+ *
+ *  The SolutionState’s Metadata contains all the data about the
+ *  solution, except for the solution and its time derivatives.  This
+ *  data includes
+ *   - information about the solution, \f$x(t)\f$, e.g., time,
+ *     timestep index, timestep size, error data, order, and is it
+ *     interpolated
+ *   - historical information, e.g., number of past failures and errors
+ *   - process information, e.g., flags for outputting the solution,
+ *     output screen information, and solution status (currently solution
+ *     passed, working or failed)
+ *  This information is helpful in processing and evolving the
+ *  solution through its time integration (i.e., the time loop) that
+ *  is managed via the Tempus::TimeIntegrator.
+ *
  */
 template<class Scalar>
 class SolutionStateMetaData :

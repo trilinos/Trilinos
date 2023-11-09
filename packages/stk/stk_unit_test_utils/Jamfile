@@ -127,6 +127,7 @@ install install-user-lib
   : stk_unit_test_utils
     stk_unit_main
     stk_mesh_fixtures
+    stk_transfer_fixtures
   : <location>$(install-root)/stk/stk_unit_test_utils/lib
   ;
 
@@ -184,6 +185,25 @@ lib stk_mesh_fixtures
   :
   :
   ;
+
+lib stk_transfer_fixtures
+  :
+    [ ifdevbuild
+      [ glob $(stk_unit_test_utils-root)/stk_unit_test_utils/stk_transfer_fixtures/*.cpp ]
+    ]
+    stk_unit_test_utils      
+    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_middle_mesh_util//stk_middle_mesh_util
+    /sierra/stk_middle_mesh//stk_middle_mesh
+
+  : 
+    [ ifuserbuild
+      <file>$(stk_unit_test_utils-root)/lib/libstk_transfer_fixtures.a
+    ]
+  :
+  :
+  ;
+
 
 lib stk_unit_main
   :

@@ -22,7 +22,7 @@
 #include <cstring>          // for strlen, memset, etc
 #include <ctime>            // for asctime, localtime, time, etc
 #include <numeric>
-#include <vector>           // for vector
+#include <vector> // for vector
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
 
@@ -746,8 +746,8 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     if (Debug_Flag >= 4) {
       fmt::print("Putting concat_elem_block info in file id: {}\n", mesh_exoid);
     }
-    error = ex_put_concat_elem_block(mesh_exoid, &EB_Ids[0], &EB_Types[0], &EB_Cnts[0],
-                                     &EB_NperE[0], &EB_Nattr[0], 1);
+    error = ex_put_concat_elem_block(mesh_exoid, EB_Ids.data(), &EB_Types[0], EB_Cnts.data(),
+                                     EB_NperE.data(), EB_Nattr.data(), 1);
     check_exodus_error(error, "ex_put_concat_elem_block");
 
     safe_free(reinterpret_cast<void **>(&EB_Types));
@@ -940,7 +940,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
       } /* End "if(ilocal < globals.Num_Elem_Blk[iproc])" */
 
-    }   /* End "for(i1=0; i1 < globals.Num_Elem_Block; i1++)" */
+    } /* End "for(i1=0; i1 < globals.Num_Elem_Block; i1++)" */
   }
   total_out_time += (PIO_Time_Array[13] + PIO_Time_Array[14] + PIO_Time_Array[15]);
 
@@ -1281,7 +1281,7 @@ void NemSpread<T, INT>::write_var_timestep(int exoid, int proc, int time_step, I
   /* start by outputting the global variables */
   if (Restart_Info.NVar_Glob > 0) {
 
-    T *var_ptr = &Restart_Info.Glob_Vals[0];
+    T *var_ptr = Restart_Info.Glob_Vals.data();
 
     error = ex_put_var(exoid, time_step, EX_GLOBAL, 1, 0, Restart_Info.NVar_Glob, var_ptr);
 

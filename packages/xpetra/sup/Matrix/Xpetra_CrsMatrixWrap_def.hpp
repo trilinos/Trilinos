@@ -167,6 +167,22 @@ namespace Xpetra {
     CreateDefaultView();
   }
 
+
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(const RCP<const CrsGraph>& graph, 
+                                                                       typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values,
+
+                                                                       const RCP<ParameterList>& paramList)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(graph, values, paramList);
+
+    // Default view
+    CreateDefaultView();
+  }
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~CrsMatrixWrap() {}
 

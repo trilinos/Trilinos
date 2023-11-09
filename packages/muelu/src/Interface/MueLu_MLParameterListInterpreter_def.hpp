@@ -192,27 +192,7 @@ namespace MueLu {
 
     // pull out "use kokkos refactor"
     bool setKokkosRefactor = false;
-    bool useKokkosRefactor;
-# ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-      useKokkosRefactor = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-      useKokkosRefactor = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-      useKokkosRefactor = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-      useKokkosRefactor = true;
-# endif
-# ifdef HAVE_MUELU_SYCL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-      useKokkosRefactor = true;
-#endif
+    bool useKokkosRefactor = !Node::is_serial;
     if (paramList.isType<bool>("use kokkos refactor")) {
       useKokkosRefactor = paramList.get<bool>("use kokkos refactor");
       setKokkosRefactor = true;

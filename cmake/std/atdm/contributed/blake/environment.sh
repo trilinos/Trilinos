@@ -11,30 +11,30 @@
 #
 
 if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_COMPILER=INTEL-18.1.163
+  export ATDM_CONFIG_COMPILER=INTEL-2021.4.0
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "INTEL" ]] ; then
-    export ATDM_CONFIG_COMPILER=INTEL-18.1.163
-  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-18.1.163" ]]; then
+    export ATDM_CONFIG_COMPILER=INTEL-2021.4.0
+  elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-2021.4.0" ]]; then
     echo
     echo "***"
     echo "*** ERROR: INTEL COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only INTEL compilers supported on this system are:"
-    echo "***   intel (defaults to intel-18.1.163)"
-    echo "***   intel-18.1.163"
+    echo "***   intel (defaults to intel-2021.4.0)"
+    echo "***   intel-2021.4.0"
     echo "***"
     return
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "GNU" ]] ; then
-    export ATDM_CONFIG_COMPILER=GNU-7.2.0
-  elif [[ "$ATDM_CONFIG_COMPILER" != "GNU-7.2.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=GNU-11.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" != "GNU-11.2.0" ]] ; then
     echo
     echo "***"
     echo "*** ERROR: GNU COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only GNU compilers supported on this system are:"
-    echo "***   gnu (defaults to gnu-7.2.0)"
-    echo "***   gnu-7.2.0 (default)"
+    echo "***   gnu (defaults to gnu-11.2.0)"
+    echo "***   gnu-11.2.0 (default)"
     echo "***"
     return
   fi
@@ -51,10 +51,18 @@ fi
 #
 
 if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=SKX
+elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "SKX" ]] ; then
+  export ATDM_CONFIG_KOKKOS_ARCH=SKX
+else
+  echo
+  echo "***"
+  echo "*** Unrecognized or unsupported Kokkos arch on this system - unsetting ATDM_CONFIG_KOKKOS_ARCH and letting Kokkos handle it"
+  echo "***"
   unset ATDM_CONFIG_KOKKOS_ARCH
 fi
 
-echo "Using RHEL7 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using blake compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 # TODO: Change to off if issues with ninja...
 export ATDM_CONFIG_USE_NINJA=ON
@@ -76,6 +84,7 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 
 
 module purge
+module load cmake/3.25.2 git
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
@@ -97,48 +106,47 @@ else
   export OMP_NUM_THREADS=1
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.1.163" ]] ; then
-  module load devpack/20171203/openmpi/2.1.2/intel/18.1.163
-  module swap cmake/3.9.0 cmake/3.19.3
-  module load ninja/1.7.2
-  module load python/2.7.13
-
-  export LOCAL_ARCH_FLAG="-xCORE-AVX512 -mkl"
-  export LOCAL_BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
-  export LOCAL_LAPACK_LIBRARIES=${LOCAL_BLAS_LIBRARIES}
+if [[ "$ATDM_CONFIG_COMPILER" == "INTEL-2021.4.0" ]] ; then
+  module load intel/oneAPI/hpc-toolkit/2021.4.0 intel/oneAPI/base-toolkit/2021.4.0 
+  module load openmpi/4.0.5/intel-oneapi/2021.4.0 
+  module swap gcc/7.2.0 gcc/10.2.0
+  module load openblas/0.3.21/gcc/10.2.0
+  module load boost/1.75.0/intel-oneapi/2021.2.0
+  module load hdf5/1.10.7/openmpi/4.0.5/intel-oneapi/2021.2.0 netcdf-c/4.7.4/openmpi/4.0.5/intel-oneapi/2021.2.0 zlib/1.2.11
+  module load python/3.7.3
+  #module load python/2.7.13
 
   export ATDM_CONFIG_CXX_FLAGS="-g"
-  export ATDM_CONFIG_C_FLAGS="${LOCAL_ARCH_FLAG} -g"
-  export ATDM_CONFIG_Fortran_FLAGS="${LOCAL_ARCH_FLAG} -g"
-  export ATDM_CONFIG_EXTRA_LINK_FLAGS="${LOCAL_ARCH_FLAG}"
+  export ATDM_CONFIG_C_FLAGS=" -g"
+  export ATDM_CONFIG_Fortran_FLAGS=" -g"
   #export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
-  export ATDM_CONFIG_LAPACK_LIBS="${LOCAL_LAPACK_LIBRARIES}"
-  export ATDM_CONFIG_BLAS_LIBS="${LOCAL_BLAS_LIBRARIES}"
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-lopenblas"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lopenblas"
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;socket;-map-by;socket"
-elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
-  module load devpack/20171203/openmpi/2.1.2/gcc/7.2.0
-  module swap cmake/3.9.0 cmake/3.19.3
-  module load ninja/1.7.2
-  module load python/2.7.13
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-11.2.0" ]] ; then
+  module load gcc/11.2.0 
+  module load openmpi/3.1.6/gcc/11.2.0 
+  module load netlib-lapack/3.10.1/gcc/11.2.0 
+  module load boost/1.81.0/gcc/11.2.0
+  module load hdf5/1.14.0/gcc/11.2.0/openmpi/3.1.6 zlib/1.2.13/gcc/11.2.0 netcdf-c/4.9.0/gcc/11.2.0/openmpi/3.1.6 netcdf-cxx/4.2/gcc/11.2.0/openmpi/3.1.6
 
-  #export LOCAL_BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
-  #export LOCAL_LAPACK_LIBRARIES=${LOCAL_BLAS_LIBRARIES}
+  module load superlu/5.3.0/gcc/11.2.0 metis/5.1.0/gcc/11.2.0
+  module load python/3.7.3
+  #module load python/2.7.13
 
   export ATDM_CONFIG_CXX_FLAGS="-g"
   export ATDM_CONFIG_C_FLAGS="-g"
   export ATDM_CONFIG_Fortran_FLAGS="-g"
-  #export ATDM_CONFIG_EXTRA_LINK_FLAGS=""
-  #export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp;-lm"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
-#  export ATDM_CONFIG_LAPACK_LIBS="${LAPACK_ROOT}/lib/libopenblas.a"
-#  export ATDM_CONFIG_BLAS_LIBS="${BLAS_ROOT}/lib/libopenblas.a"
+  #export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp;-lm"
+  #export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
+  export ATDM_CONFIG_BLAS_LIBS="${BLAS_ROOT}/lib64/libblas.so"
+  export ATDM_CONFIG_LAPACK_LIBS="${LAPACK_ROOT}/lib64/liblapack.so"
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;socket;-map-by;socket"
 else
   echo
@@ -155,28 +163,21 @@ else
 fi
 
 export ATDM_CONFIG_USE_HWLOC=OFF
-export HWLOC_LIBS=-lhwloc
 
-#export BOOST_ROOT=${SEMS_BOOST_ROOT}
-#export HDF5_ROOT=${SEMS_HDF5_ROOT}
-#export NETCDF_ROOT=${SEMS_NETCDF_ROOT}
-#if [[ "${SEMS_PNETCDF_ROOT}" == "" ]] ; then
-#  export PNETCDF_ROOT=${NETCDF_ROOT}
-#else
-#  export PNETCDF_ROOT=${SEMS_PNETCDF_ROOT}
-#fi
+export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;-ldl"
 
-#HDF5_LIBRARIES="${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a"
-export ATDM_CONFIG_HDF5_LIBS="${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a"
-#export ATDM_CONFIG_HDF5_LIBS="${HDF5_ROOT}/lib/libhdf5_hl.${ATDM_CONFIG_TPL_LIB_EXT};${HDF5_ROOT}/lib/libhdf5.${ATDM_CONFIG_TPL_LIB_EXT};${ZLIB_ROOT}/lib/libz.${ATDM_CONFIG_TPL_LIB_EXT};-ldl"
+if [[ "${NETCDF_C_ROOT}" ]] ; then
+  export NETCDF_ROOT=${NETCDF_C_ROOT}
+fi
 
-#Netcdf_LIBRARIES="${NETCDF_ROOT}/lib/libnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;${PNETCDF_ROOT}/lib/libpnetcdf.a"
-export ATDM_CONFIG_NETCDF_LIBS="${NETCDF_ROOT}/lib/libnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;${PNETCDF_ROOT}/lib/libpnetcdf.a"
-#export ATDM_CONFIG_NETCDF_LIBS="${NETCDF_ROOT}/lib/libnetcdf.${ATDM_CONFIG_TPL_LIB_EXT};${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
-
-# Original
-#export ATDM_CONFIG_NETCDF_LIBS="${NETCDF_ROOT}/lib/libnetcdf.${ATDM_CONFIG_TPL_LIB_EXT};${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
-
+if [[ "${PARALLEL_NETCDF_ROOT}" == "" ]] ; then
+  export PNETCDF_ROOT=${NETCDF_ROOT}
+  export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib64;${NETCDF_ROOT}/lib64/libnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
+else
+  export NETCDF_ROOT=${NETCDF_ROOT}
+  export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
+  export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib64;${NETCDF_ROOT}/lib64/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
+fi
 
 # Set MPI wrappers
 export MPICC=`which mpicc`

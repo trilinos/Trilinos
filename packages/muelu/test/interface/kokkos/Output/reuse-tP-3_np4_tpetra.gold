@@ -6,6 +6,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -56,6 +57,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -107,7 +109,7 @@ Replacing maps with a subcommunicator
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.45
-Smoother complexity = 1.78
+Smoother complexity = 1.93
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
@@ -130,6 +132,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -166,6 +169,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -217,7 +221,7 @@ Replacing maps with a subcommunicator
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.45
-Smoother complexity = 1.78
+Smoother complexity = 1.93
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

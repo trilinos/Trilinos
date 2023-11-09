@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,8 +29,6 @@ void inertial(struct vtx_data **graph,        /* graph data structure */
   double        time;            /* timing parameter */
   float        *inert_coords[3]; /* coord arrays passed down */
   int           i, j;            /* loop counters */
-  double        seconds(void);
-  void          inertial1d(), inertial2d(), inertial3d();
 
   time = seconds();
 

@@ -130,7 +130,7 @@ void Region::commit()
 
   if (krino::CDFEM_Support::is_active(meta))
   {
-    cdfem_support.add_interpolation_field(cdfem_support.get_coords_field());
+    cdfem_support.add_edge_interpolation_field(cdfem_support.get_coords_field());
     const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
     for(auto&& ls : surfaceManager.get_levelsets())
     {
@@ -512,7 +512,7 @@ stk::io::StkMeshIoBroker & Region::stk_IO()
 
 Ioss::Region * Region::get_input_io_region()
 {
-  return stk_IO().get_input_io_region().get();
+  return stk_IO().get_input_ioss_region().get();
 }
 
 std::string Region::name_of_input_mesh() const
@@ -530,7 +530,7 @@ void Region::create_output_mesh()
 
   my_output_file_index = stk_IO().create_output_mesh(my_results_options->get_filename(), stk::io::WRITE_RESULTS, my_results_options->get_properties());
 
-  Teuchos::RCP<stk::mesh::Selector> active_selector = Teuchos::rcp(new stk::mesh::Selector(AuxMetaData::get(get_stk_mesh_meta_data()).active_part()));
+  std::shared_ptr<stk::mesh::Selector> active_selector = std::make_shared<stk::mesh::Selector>(AuxMetaData::get(get_stk_mesh_meta_data()).active_part());
   stk_IO().set_subset_selector(my_output_file_index, active_selector);
 
   stk_IO().write_output_mesh(my_output_file_index);
@@ -679,16 +679,16 @@ Region::set_generated_mesh_domain()
     if (db_options->get_generated_mesh_spatial_dimension() == 2)
     {
       STK_ThrowRequire(domain.size() == 4);
-      const Vector3d min(domain[0], domain[1], 0.);
-      const Vector3d max(domain[2], domain[3], 0.);
+      const stk::math::Vector3d min(domain[0], domain[1], 0.);
+      const stk::math::Vector3d max(domain[2], domain[3], 0.);
       STK_ThrowRequireMsg(max[0]>min[0] && max[1]>min[1], "Invalid domain specified.");
       bbox = BoundingBoxMesh::BoundingBoxType(min, max);
     }
     else
     {
       STK_ThrowRequire(domain.size() == 6);
-      const Vector3d min(domain[0], domain[1], domain[2]);
-      const Vector3d max(domain[3], domain[4], domain[5]);
+      const stk::math::Vector3d min(domain[0], domain[1], domain[2]);
+      const stk::math::Vector3d max(domain[3], domain[4], domain[5]);
       STK_ThrowRequireMsg(max[0]>min[0] && max[1]>min[1] && max[2]>min[2], "Invalid domain specified.");
       bbox = BoundingBoxMesh::BoundingBoxType(min, max);
     }
@@ -704,18 +704,23 @@ Region::set_generated_mesh_domain()
       {
         const BoundingBox ls_IC_surf_bbox = ls->get_IC_surface_bounding_box();
         domain_bbox.accommodate(ls_IC_surf_bbox);
+        STK_ThrowRequireMsg(domain_bbox.valid(), "Cannot accommodate level set initialization surfaces because at least one is unbounded (maybe a plane?).");
       }
     }
+
+    typename Surface::BoundingBoxType surfaceBbox;
     for(auto&& boundingSurface : surfaceManager.get_bounding_surfaces())
     {
-      const BoundingBox surfaceBBox = boundingSurface->surface().get_bounding_box();
-      domain_bbox.accommodate(surfaceBBox);
+      boundingSurface->surface().insert_into(surfaceBbox);
+      STK_ThrowRequireMsg(surfaceBbox.valid(), "Cannot accommodate bounding surfaces because at least one is unbounded (maybe a plane?).");
     }
+    if (surfaceBbox.valid())
+      domain_bbox.accommodate(surfaceBbox);
 
     if (db_options->get_generated_mesh_spatial_dimension() == 2)
     {
-      Vector3d min = domain_bbox.get_min();
-      Vector3d max = domain_bbox.get_max();
+      stk::math::Vector3d min = domain_bbox.get_min();
+      stk::math::Vector3d max = domain_bbox.get_max();
       min[2] = 0.;
       max[2] = 0.;
       domain_bbox = typename BoundingBoxMesh::BoundingBoxType(min, max);

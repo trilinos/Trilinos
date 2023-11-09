@@ -13,6 +13,7 @@
 #include "Tempus_config.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"
@@ -67,5 +68,5 @@ void testFactoryConstruction(std::string stepperType,
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test
 #endif // Tempus_UnitTest_Utils_hpp

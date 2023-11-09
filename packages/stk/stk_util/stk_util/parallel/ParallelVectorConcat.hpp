@@ -203,6 +203,34 @@ namespace stk {
     return MPI_SUCCESS;
   }
 
+  //------------------------------------------------------------------------
+  //
+  //  bool specialization for parallel_vector_concat.
+  //
+  template<>
+  inline int parallel_vector_concat(ParallelMachine comm, const std::vector<bool>& localVec, std::vector<bool>& globalVec ) {
+    //it turns out that std::vector<bool> is a weird beast, it doesn't have a .data() method.
+    //In general, its contents can't be treated like a 'bool*'.
+    //Thus the best approach here is to copy to a vector of chars and
+    //call the general implementation of parallel_vector_concat.
+
+    std::vector<unsigned char> localChars(localVec.size());
+    for(unsigned i=0; i<localVec.size(); ++i) {
+      localChars[i] = localVec[i] ? 1 : 0;
+    }
+
+    std::vector<unsigned char> globalChars;
+
+    int returnValue = parallel_vector_concat(comm, localChars, globalChars);
+
+    globalVec.resize(globalChars.size());
+    for(unsigned i=0; i<globalVec.size(); ++i) {
+      globalVec[i] = globalChars[i] == 1 ? true : false;
+    }
+
+    return returnValue;
+  }
+
 #else
   template <typename T> inline int parallel_vector_concat(ParallelMachine comm, const std::vector<T>& localVec, std::vector<T>& globalVec ) {
     globalVec = localVec;

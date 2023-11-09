@@ -23,6 +23,7 @@ CoalesceDropFactory
 CoalesceDropFactory_kokkos
 CoarseMapFactory
 CoarseningVisualizationFactory
+CombinePFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
@@ -138,4 +139,5 @@ NodePartitionInterface - #if defined(HAVE_MPI)
 XpetraOperator
 RefMaxwell
 Maxwell1
+MultiPhys
 Maxwell_Utils

@@ -17,6 +17,8 @@ LIST(APPEND Intrepid2_TEST_ETI_FILE
   "test_orientation_encoding"
   "test_orientation_HEX"
   "test_orientation_HEX_newBasis"
+  "test_orientation_PYR_QuadFace_newBasis"
+  "test_orientation_PYR_TriFace_newBasis"
   "test_orientation_QUAD"
   "test_orientation_QUAD_newBasis"
   "test_orientation_TET"
@@ -89,7 +91,7 @@ IF(Kokkos_ENABLE_CUDA)
 ENDIF()
 IF(Kokkos_ENABLE_HIP)
   LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
-  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
+  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::HIP,Kokkos::HIPSpace>")
 ENDIF()
 
 LIST(LENGTH Intrepid2_TEST_ETI_DEVICE_NAME ETI_DEVICE_COUNT)

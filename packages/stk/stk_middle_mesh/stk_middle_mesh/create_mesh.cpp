@@ -1,4 +1,5 @@
 #include "create_mesh.hpp"
+#include "utils.hpp"
 #include <iostream>
 
 namespace stk {
@@ -68,6 +69,24 @@ int MeshGenerator::get_process_rank(const std::array<int, 2>& gridIndices)
   return m_processorGridShape[0] * gridIndicesWrapped[1] + gridIndicesWrapped[0];
 }
 
+bool MeshGenerator::is_x_periodic_local()
+{
+  std::array<int, 2> rightNeighborBlock{m_processIndices[0] + 1, m_processIndices[1]};
+  rightNeighborBlock    = wrap_processor_indices(rightNeighborBlock);
+  bool isXperiodicLocal = rightNeighborBlock[0] == m_processIndices[0];  
+
+  return isXperiodicLocal;
+}
+
+bool MeshGenerator::is_y_periodic_local()
+{
+  std::array<int, 2> topNeighborBlock{m_processIndices[0], m_processIndices[1] + 1};
+  topNeighborBlock      = wrap_processor_indices(topNeighborBlock);
+  bool isYperiodicLocal = topNeighborBlock[1] == m_processIndices[1];  
+
+  return isYperiodicLocal;
+}
+
 MeshSpec MeshGenerator::compute_local_mesh_spec()
 {
   auto valsX = get_num_el_in_direction(m_meshspecGlobal.numelX, m_meshspecGlobal.xmin, m_meshspecGlobal.xmax,
@@ -118,13 +137,8 @@ std::vector<MeshEntityPtr> MeshGenerator::create_vertices(const MeshSpec& spec,
   std::vector<MeshEntityPtr> verts;
   verts.resize((spec.numelX + 1) * (spec.numelY + 1));
 
-  std::array<int, 2> rightNeighborBlock{m_processIndices[0] + 1, m_processIndices[1]};
-  rightNeighborBlock    = wrap_processor_indices(rightNeighborBlock);
-  bool isXperiodicLocal = rightNeighborBlock[0] == m_processIndices[0];
-
-  std::array<int, 2> topNeighborBlock{m_processIndices[0], m_processIndices[1] + 1};
-  topNeighborBlock      = wrap_processor_indices(topNeighborBlock);
-  bool isYperiodicLocal = topNeighborBlock[1] == m_processIndices[1];
+  bool isXperiodicLocal = is_x_periodic_local();
+  bool isYperiodicLocal = is_y_periodic_local();
 
   for (int i = 0; i < spec.numelX + 1; ++i)
     for (int j = 0; j < spec.numelY + 1; ++j)
@@ -150,13 +164,8 @@ MeshGenerator::Edges MeshGenerator::create_edges(const MeshSpec& spec, const std
 {
   Edges edges(spec);
 
-  std::array<int, 2> rightNeighborBlock{m_processIndices[0] + 1, m_processIndices[1]};
-  rightNeighborBlock    = wrap_processor_indices(rightNeighborBlock);
-  bool isXperiodicLocal = rightNeighborBlock[0] == m_processIndices[0];
-
-  std::array<int, 2> topNeighborBlock{m_processIndices[0], m_processIndices[1] + 1};
-  topNeighborBlock      = wrap_processor_indices(topNeighborBlock);
-  bool isYperiodicLocal = topNeighborBlock[1] == m_processIndices[1];
+  bool isXperiodicLocal = is_x_periodic_local();
+  bool isYperiodicLocal = is_y_periodic_local();
 
   // x direction edges
   for (int i = 0; i < spec.numelX; ++i)
@@ -234,13 +243,6 @@ void MeshGenerator::create_mesh_elements(const MeshSpec& spec, Edges& edges, con
         EntityOrientation e3Orient = edges.get_x_edge_orientation(i, j + 1);
         m_mesh->create_triangle(e1, e2, e5, e1Orient);
         m_mesh->create_triangle(e5, e3, e4, e3Orient);
-
-        // auto v1 = verts[get_idx(spec, i, j)];
-        // auto v2 = verts[get_idx(spec, i+1, j)];
-        // auto v3 = verts[get_idx(spec, i+1, j+1)];
-        // auto v4 = verts[get_idx(spec, i, j+1)];
-        // m_mesh->create_triangle_from_verts(v1, v2, v3);
-        // m_mesh->create_triangle_from_verts(v1, v3, v4);
       }
   } else
   {
@@ -254,12 +256,6 @@ void MeshGenerator::create_mesh_elements(const MeshSpec& spec, Edges& edges, con
 
         EntityOrientation e1Orient = edges.get_x_edge_orientation(i, j);
         m_mesh->create_quad(e1, e2, e3, e4, e1Orient);
-
-        // auto v1 = verts[get_idx(spec, i, j)];
-        // auto v2 = verts[get_idx(spec, i+1, j)];
-        // auto v3 = verts[get_idx(spec, i+1, j+1)];
-        // auto v4 = verts[get_idx(spec, i, j+1)];
-        // m_mesh->create_quad_from_verts(v1, v2, v3, v4);
       }
   }
 }
@@ -374,51 +370,8 @@ void MeshGenerator::set_edge_adjacent_block_shared_entities(std::shared_ptr<Mesh
                       edgeTagStart + destEdge);
   }
 
-  MeshEntityPtr prevVertL = nullptr, prevVertR = nullptr;
-  for (int j = 0; j <= m_meshspecLocal.numelY; ++j)
-  {
-    auto vertL = verts[get_idx(m_meshspecLocal, 0, j)];
-    auto vertR = verts[get_idx(m_meshspecLocal, m_meshspecLocal.numelX, j)];
-    data[0].verts.push_back(vertL);
-    data[1].verts.push_back(vertR);
-
-    if (prevVertL)
-    {
-      auto edge = get_common_edge(vertL, prevVertL);
-      data[0].edges.push_back(edge);
-    }
-
-    if (prevVertR)
-    {
-      auto edge = get_common_edge(vertR, prevVertR);
-      data[1].edges.push_back(edge);
-    }
-    prevVertL = vertL;
-    prevVertR = vertR;
-  }
-
-  MeshEntityPtr prevVertB = nullptr, prevVertT = nullptr;
-  for (int i = 0; i <= m_meshspecLocal.numelX; ++i)
-  {
-    auto vertB = verts[get_idx(m_meshspecLocal, i, 0)];
-    auto vertT = verts[get_idx(m_meshspecLocal, i, m_meshspecLocal.numelY)];
-    data[2].verts.push_back(vertB);
-    data[3].verts.push_back(vertT);
-
-    if (prevVertB)
-    {
-      auto edge = get_common_edge(vertB, prevVertB);
-      data[2].edges.push_back(edge);
-    }
-
-    if (prevVertT)
-    {
-      auto edge = get_common_edge(vertT, prevVertT);
-      data[3].edges.push_back(edge);
-    }
-    prevVertB = vertB;
-    prevVertT = vertT;
-  }
+  get_y_shared_entities(data[0], data[1], verts);
+  get_x_shared_entities(data[2], data[3], verts);
 
   for (int i = 0; i < 4; ++i)
     if (does_block_exist(neighborBlocks[i]))
@@ -429,9 +382,56 @@ void MeshGenerator::set_edge_adjacent_block_shared_entities(std::shared_ptr<Mesh
       data[i].finish_communication();
 }
 
+void MeshGenerator::get_y_shared_entities(EdgeNeighborData& leftEdge, EdgeNeighborData& rightEdge,
+                                          std::vector<MeshEntityPtr>& verts)
+{
+  int numVertsY = m_meshspecLocal.numelY;
+  if (is_y_periodic_local())
+    numVertsY--;
+
+  for (int j=0; j <= numVertsY; ++j)
+  {
+    leftEdge.verts.push_back(verts[get_idx(m_meshspecLocal, 0, j)]);
+    rightEdge.verts.push_back(verts[get_idx(m_meshspecLocal, m_meshspecLocal.numelX, j)]);
+  }
+
+  for (int j=1; j <= m_meshspecLocal.numelY; ++j)
+  {
+    leftEdge.edges.push_back(get_common_edge(verts[get_idx(m_meshspecLocal, 0, j-1)],
+                                            verts[get_idx(m_meshspecLocal, 0, j)]));
+    rightEdge.edges.push_back(get_common_edge(verts[get_idx(m_meshspecLocal, m_meshspecLocal.numelX, j-1)],
+                                            verts[get_idx(m_meshspecLocal, m_meshspecLocal.numelX, j)]));                                            
+  }  
+}
+
+void MeshGenerator::get_x_shared_entities(EdgeNeighborData& bottomEdge, EdgeNeighborData& topEdge,
+                                          std::vector<MeshEntityPtr>& verts)
+{
+  int numVertsX = m_meshspecLocal.numelX;
+  if (is_x_periodic_local())
+    numVertsX--;
+
+  for (int i=0; i <= numVertsX; ++i)
+  {
+    bottomEdge.verts.push_back(verts[get_idx(m_meshspecLocal, i, 0)]);
+    topEdge.verts.push_back(verts[get_idx(m_meshspecLocal, i, m_meshspecLocal.numelY)]);
+  }
+
+  for (int i=1; i <= m_meshspecLocal.numelX; ++i)
+  {
+    bottomEdge.edges.push_back(get_common_edge(verts[get_idx(m_meshspecLocal, i-1, 0)],
+                                            verts[get_idx(m_meshspecLocal, i,   0)]));
+    topEdge.edges.push_back(get_common_edge(verts[get_idx(m_meshspecLocal, i-1, m_meshspecLocal.numelY)],
+                                            verts[get_idx(m_meshspecLocal, i,   m_meshspecLocal.numelY)]));                                            
+  }    
+}                                    
+
 void MeshGenerator::set_corner_adjacent_block_shared_entities(std::shared_ptr<Mesh> mesh,
                                                               std::vector<MeshEntityPtr>& verts)
 {
+  if (is_x_periodic_local() || is_y_periodic_local())  
+    return;
+
   int numelX = m_meshspecLocal.numelX, numelY = m_meshspecLocal.numelY;
   MeshEntityPtr topRightId    = verts[get_idx(m_meshspecLocal, numelX, numelY)];
   MeshEntityPtr bottomRightId = verts[get_idx(m_meshspecLocal, numelX, 0)];

@@ -82,12 +82,12 @@ void CDFEM_Support::create_parts()
   if (my_aux_meta.using_fmwk())
   {
     const bool restartOnlyIOPart = true;
-    my_child_edge_node_part = &my_aux_meta.declare_io_part_with_topology("CDFEM_EDGE_NODE_2_PARENTS", stk::topology::NODE, restartOnlyIOPart);
+    myChildNodePart = &my_aux_meta.declare_io_part_with_topology("CDFEM_CHILD_NODE", stk::topology::NODE, restartOnlyIOPart);
   }
   else
   {
     // Currently no need to output nodeset for krino usage
-    my_child_edge_node_part = &my_meta.declare_part_with_topology("CDFEM_EDGE_NODE_2_PARENTS", stk::topology::NODE);
+    myChildNodePart = &my_meta.declare_part_with_topology("CDFEM_CHILD_NODE", stk::topology::NODE);
   }
 }
 
@@ -103,9 +103,12 @@ void CDFEM_Support::register_cdfem_mesh_displacements_field()
 void CDFEM_Support::register_parent_node_ids_field()
 {
   FieldType id_field_type = (my_aux_meta.get_assert_32bit_flag()) ? FieldType::UNSIGNED_INTEGER : FieldType::UNSIGNED_INTEGER_64;
-  my_parent_node_ids_field = my_aux_meta.register_field("CDFEM_2_PARENT_NODE_IDS",
+  myParentNodeIdsField = my_aux_meta.register_field("CDFEM_UP_4_PARENT_NODE_IDS",
       id_field_type, stk::topology::NODE_RANK, 1,
-      2, *my_child_edge_node_part);
+      4, *myChildNodePart);
+  myParentNodeWtsField = my_aux_meta.register_field("CDFEM_UP_4_PARENT_NODE_WTS",
+      FieldType::REAL, stk::topology::NODE_RANK, 1,
+      4, *myChildNodePart);
 }
 
 stk::mesh::Selector
@@ -152,6 +155,7 @@ CDFEM_Support::add_ale_prolongation_field(const FieldRef field)
 {
   STK_ThrowAssert(field.valid());
   STK_ThrowRequireMsg(!is_interpolation_field(field), "Cannot add " << field.name() << " as ALE prolongation field because it is already an interpolation field.");
+  STK_ThrowRequireMsg(!is_edge_interpolation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an edge interpolation field.");
   for ( unsigned is = 0; is < field.number_of_states(); ++is )
   {
     const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
@@ -164,6 +168,7 @@ CDFEM_Support::add_interpolation_field(const FieldRef field)
 {
   STK_ThrowAssert(field.valid());
   STK_ThrowRequireMsg(!is_ale_prolongation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an ALE prolongation field.");
+  STK_ThrowRequireMsg(!is_edge_interpolation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an edge interpolation field.");
   for ( unsigned is = 0; is < field.number_of_states(); ++is )
   {
     const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
@@ -172,9 +177,23 @@ CDFEM_Support::add_interpolation_field(const FieldRef field)
 }
 
 void
+CDFEM_Support::add_edge_interpolation_field(const FieldRef field)
+{
+  STK_ThrowAssert(field.valid());
+  STK_ThrowRequireMsg(!is_ale_prolongation_field(field), "Cannot add " << field.name() << " as interpolation field because it is already an ALE prolongation field.");
+  STK_ThrowRequireMsg(!is_interpolation_field(field), "Cannot add " << field.name() << " as ALE prolongation field because it is already an interpolation field.");
+  for ( unsigned is = 0; is < field.number_of_states(); ++is )
+  {
+    const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
+    my_edge_interpolation_fields.insert(field.field_state(state));
+  }
+}
+
+void
 CDFEM_Support::set_snap_fields()
 {
   mySnapFields = get_interpolation_fields();
+  mySnapFields.insert(my_edge_interpolation_fields.begin(), my_edge_interpolation_fields.end());
 
   FieldRef cdfemSnapField = get_cdfem_snap_displacements_field();
   if (cdfemSnapField.valid())
@@ -249,12 +268,17 @@ CDFEM_Support::finalize_fields()
       krinolog << field.name() << " will use interpolation." << stk::diag::dendl;
       continue;
     }
+    else if(is_edge_interpolation_field(field))
+    {
+      krinolog << field.name() << " will use edge interpolation." << stk::diag::dendl;
+      continue;
+    }
     else if(is_ale_prolongation_field(field))
     {
       krinolog << field.name() << " will use ALE prolongation." << stk::diag::dendl;
       continue;
     }
-    else if (field.name() == "node_registry")
+    else if (field.name() == "node_registry" || field.name() == "CDFEM_UP_4_PARENT_NODE_WTS")
     {
       krinolog << field.name() << " will not be modified." << stk::diag::dendl;
       continue;

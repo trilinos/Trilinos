@@ -104,7 +104,7 @@ public:
 
 private: // key compare functors
   class value_compare
-    : public std::binary_function<value_type,value_type,bool> {
+  {
   private:
     key_compare comp ;
   public:
@@ -113,7 +113,7 @@ private: // key compare functors
   };
 
   class value_compare_key
-    : public std::binary_function<value_type,key_type,bool> {
+  {
   private:
     key_compare comp ;
   public:
@@ -122,7 +122,7 @@ private: // key compare functors
   };
 
   class value_compare_unconst_key
-    : public std::binary_function<value_type_unconst_key,key_type,bool> {
+  {
   private:
     key_compare comp ;
   public:

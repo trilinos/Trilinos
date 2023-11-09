@@ -15,39 +15,49 @@
 namespace stk {
 namespace middle_mesh {
 namespace stk_interface {
-namespace impl {
 
 struct MeshPart
 {
-    using MeshFieldPtr = mesh::FieldPtr<::stk::mesh::SideSetEntry>;
-    std::shared_ptr<mesh::Mesh> mesh;
-    MeshFieldPtr stkEls; // TODO: should be stk_faces
-};
-
-class StkMeshCreator
-{
-  public:
-    using FieldScalarType = double; // Note: this should be an integer
+    using VertIdType = double; // Note: this should be an integer
                                     //       type, but IOSS doesn't
                                     //       support integer valued
                                     //       Attribute fields
                                     //       integers up to 2^53 are
                                     //       exactly representable by
-                                    //       doubles, so use this for now
-    using FieldType    = ::stk::mesh::Field<FieldScalarType>;
-    using MeshFieldPtr = MeshPart::MeshFieldPtr;
+                                    //       doubles, so use this for now  
+    using MeshFieldPtr = mesh::FieldPtr<::stk::mesh::SideSetEntry>;
+    std::shared_ptr<mesh::Mesh> mesh;
+    MeshFieldPtr stkEls; // TODO: should be stk_faces
+    stk::mesh::Field<VertIdType>* stkVertField;
+    stk::mesh::Part* stkPart;
+};
 
-    explicit StkMeshCreator(const std::string& fname, MPI_Comm comm=MPI_COMM_WORLD)
-      : m_bulkDataPtr(::stk::mesh::MeshBuilder(comm).set_spatial_dimension(3).create())
-      , m_metaDataPtr(m_bulkDataPtr->mesh_meta_data_ptr())
+class StkMeshCreator
+{
+  public:
+    using VertIdType = MeshPart::VertIdType;
+    using FieldType    = stk::mesh::Field<VertIdType>;
+    using MeshFieldPtr = MeshPart::MeshFieldPtr;
+    static std::string vertex_field_name();
+
+    explicit StkMeshCreator(const std::string& fname, MPI_Comm comm = MPI_COMM_WORLD)
+        : m_bulkDataPtr(::stk::mesh::MeshBuilder(comm).set_spatial_dimension(3).create()),
+          m_metaDataPtr(m_bulkDataPtr->mesh_meta_data_ptr())
     {
       m_metaDataPtr->use_simple_fields();
       declare_stk_vert_field();
       load_mesh(fname);
     }
 
+    explicit StkMeshCreator(::stk::mesh::BulkData * bulkDataPtr)
+      : m_bulkDataPtr(std::shared_ptr<::stk::mesh::BulkData>(bulkDataPtr, [](auto *){})) //no delete antipattern
+      , m_metaDataPtr(m_bulkDataPtr->mesh_meta_data_ptr())
+    {
+      declare_stk_vert_field();
+    }
+
     explicit StkMeshCreator(std::shared_ptr<::stk::mesh::BulkData> bulkDataPtr)
-      : m_bulkDataPtr(bulkDataPtr)
+      : m_bulkDataPtr(bulkDataPtr) //no delete antipattern
       , m_metaDataPtr(m_bulkDataPtr->mesh_meta_data_ptr())
     {
       declare_stk_vert_field();
@@ -58,9 +68,13 @@ class StkMeshCreator
     // copies the coordinates from the Mesh to the STK mesh
     void write_back_coords(std::shared_ptr<mesh::Mesh> mesh, const std::string& name);
 
-    ::stk::mesh::MetaData& get_meta_data() { return *m_metaDataPtr; }
+    stk::mesh::MetaData& get_meta_data() { return *m_metaDataPtr; }
 
-    ::stk::mesh::BulkData& get_bulk_data() { return *m_bulkDataPtr; }
+    stk::mesh::BulkData& get_bulk_data() { return *m_bulkDataPtr; }
+
+    std::shared_ptr<stk::mesh::MetaData> get_meta_data_ptr() { return m_metaDataPtr; }
+
+    std::shared_ptr<stk::mesh::BulkData> get_bulk_data_ptr() { return m_bulkDataPtr; }
 
   private:
     void declare_stk_vert_field();
@@ -81,11 +95,11 @@ class StkMeshCreator
 
     std::shared_ptr<::stk::mesh::BulkData> m_bulkDataPtr;
     std::shared_ptr<::stk::mesh::MetaData> m_metaDataPtr;
-    ::stk::mesh::Part* m_part;
+    stk::mesh::Part* m_part;
     FieldType* m_stkNodeField;
 };
 
-} // namespace impl
+
 } // namespace stk_interface
 } // namespace middle_mesh
 } // namespace stk

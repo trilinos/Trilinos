@@ -8,6 +8,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 1
@@ -67,7 +68,7 @@ Replacing maps with a subcommunicator
 --------------------------------------------------------------------------------
 Number of levels    = 4
 Operator complexity = 1.48
-Smoother complexity = 1.93
+Smoother complexity = 1.98
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
@@ -92,6 +93,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 2
@@ -151,6 +153,7 @@ smoother ->
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 3

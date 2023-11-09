@@ -253,7 +253,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
         EX_FUNC_LEAVE(EX_FATAL);
       }
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to open %s of type %d for reading. Either "
+               "ERROR: failed to open %s of type %d for reading.\n\tEither "
                "the file does not exist,\n\tor there is a permission or file "
                "format issue.",
                canon_path, type);
@@ -275,7 +275,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
     if ((status = nc_open(canon_path, nc_mode, &exoid)) != NC_NOERR) {
       /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to open %s for read/write. Either the file "
+               "ERROR: failed to open %s for read/write.\n\tEither the file "
                "does not exist,\n\tor there is a permission or file format "
                "issue.",
                canon_path);

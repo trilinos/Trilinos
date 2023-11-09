@@ -4302,7 +4302,6 @@ protected:
       this->getStepperType(),A,b,c,order,order,order,emptyBStar,false));
     this->tableau_->setTVD(true);
     this->tableau_->setTVDCoeff(2.0);
-    //TODO: fix this
   }
 
 };

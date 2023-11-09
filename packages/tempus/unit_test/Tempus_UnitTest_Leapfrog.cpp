@@ -460,6 +460,6 @@ TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Observer)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test
 
 

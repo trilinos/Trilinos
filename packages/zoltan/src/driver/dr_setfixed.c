@@ -64,8 +64,8 @@ int i, part;
 int proc, nprocs;
 FILE *fp;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  MPI_Comm_rank(zoltan_get_global_comm(), &proc);
+  MPI_Comm_size(zoltan_get_global_comm(), &nprocs);
 
   /* Initialize fixed elements in mesh */
   for (i = 0; i < mesh->num_elems; i++) mesh->elements[i].fixed_part = -1;

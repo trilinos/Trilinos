@@ -14,563 +14,629 @@
 //
 //@HEADER
 
+/*! \file Test_Sparse_spmv_bsr.hpp
+
+  Test the following 768 combos for at least a few matcies.
+
+  Algorithms              Alpha     Beta     Block Sizes    Modes
+  (none)                  0         0        1              N
+  native              x   1      x  1     x  2           x  T
+  experimental_bsr_tc     -1        -1       5              C
+                          3.7       -1.5     9              H
+
+  There are also a subset of tests on larger matrices
+*/
+
 #include <algorithm>
+#include <iostream>
+#include <stdexcept>
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
-#include <stdexcept>
-#include "KokkosSparse_spmv.hpp"
-#include "KokkosSparse_BsrMatrix.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
 
 #include <KokkosKernels_TestUtils.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
-
 #include "KokkosKernels_Controls.hpp"
 #include "KokkosKernels_default_types.hpp"
 
-typedef Kokkos::complex<double> kokkos_complex_double;
-typedef Kokkos::complex<float> kokkos_complex_float;
+#include "KokkosSparse_spmv.hpp"
+#include "KokkosSparse_BsrMatrix.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_crs_to_bsr_impl.hpp"
+#include "KokkosSparse_bsr_to_crs_impl.hpp"
+#include "KokkosSparse_Utils.hpp"
 
-namespace Test_Bsr {
+using kokkos_complex_double = Kokkos::complex<double>;
+using kokkos_complex_float  = Kokkos::complex<float>;
 
-/// Random generator
-template <typename Scalar>
-inline Scalar random() {
-  auto const max = static_cast<Scalar>(RAND_MAX) + static_cast<Scalar>(1);
-  return static_cast<Scalar>(std::rand()) / max;
+namespace Test_Spmv_Bsr {
+
+/*! \brief Maximum value used to fill A */
+template <typename T>
+constexpr T max_a() {
+  T discard, maxVal;
+  KokkosKernels::Impl::getRandomBounds(10.0, discard, maxVal);
+  return maxVal;
 }
 
-template <typename Scalar>
-inline void set_random_value(Scalar &v) {
-  v = random<Scalar>();
+/*! \brief Maximum value used to fill X */
+template <typename T>
+constexpr T max_x() {
+  T discard, maxVal;
+  KokkosKernels::Impl::getRandomBounds(10.0, discard, maxVal);
+  return maxVal;
 }
 
-template <typename Scalar>
-inline void set_random_value(Kokkos::complex<Scalar> &v) {
-  Scalar vre = random<Scalar>();
-  Scalar vim = random<Scalar>();
-  v          = Kokkos::complex<Scalar>(vre, vim);
+/*! \brief Maximum value used to fill Y */
+template <typename T>
+constexpr T max_y() {
+  T discard, maxVal;
+  KokkosKernels::Impl::getRandomBounds(10.0, discard, maxVal);
+  return maxVal;
 }
 
-template <typename Scalar>
-inline void set_random_value(std::complex<Scalar> &v) {
-  Scalar vre = random<Scalar>();
-  Scalar vim = random<Scalar>();
-  v          = std::complex<Scalar>(vre, vim);
+/*! \brief whether the mode transposes the matrix*/
+inline bool mode_is_transpose(const char *mode) {
+  return mode[0] == 'T' || mode[0] == 'H';
 }
 
-/// \brief Routine to make CRS-style entries of the block matrix
-///
-/// \tparam scalar_t Template type for the numerical values
-/// \param mat_b1  Sparse matrix whose graph will be used
-/// \param blockSize  Block size for each entries
-/// \param mat_rowmap[out]  CRS-style row map for the block matrix
-/// \param mat_colidx[out]  CRS-style column entries for the block matrix
-/// \param mat_val[out]  Numerical (random) values
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename rowmap_type, typename colidx_type, typename values_type>
-void make_block_entries(
-    const KokkosSparse::CrsMatrix<scalar_t, lno_t, Kokkos::HostSpace, void,
-                                  size_type> &mat_b1,
-    int blockSize, rowmap_type &mat_rowmap, colidx_type &mat_colidx,
-    values_type &mat_val) {
-  size_t nnz = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize) *
-               mat_b1.nnz();
+/*! \brief 0x0 matrix */
+template <typename Bsr>
+Bsr bsr_corner_case_0_by_0(const int blockSize) {
+  return Bsr("empty", 0, 0, 0, nullptr, nullptr, nullptr, blockSize);
+}
 
-  for (size_t ii = 0; ii < nnz; ++ii) set_random_value(mat_val[ii]);
+/*! \brief 0x1 matrix */
+template <typename Bsr>
+Bsr bsr_corner_case_0_by_1(const int blockSize) {
+  return Bsr("empty", 0, blockSize, 0, nullptr, nullptr, nullptr, blockSize);
+}
 
-  //
-  // Create graph for CrsMatrix
-  //
+/*! \brief 1x0 matrix */
+template <typename Bsr>
+Bsr bsr_corner_case_1_by_0(const int blockSize) {
+  return Bsr("empty", blockSize, 0, 0, nullptr, nullptr, nullptr, blockSize);
+}
 
-  for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir) {
-    const size_type jbeg = mat_b1.graph.row_map(ir);
-    const size_type jend = mat_b1.graph.row_map(ir + 1);
-    for (lno_t ib = 0; ib < blockSize; ++ib) {
-      const lno_t my_row     = ir * blockSize + ib;
-      mat_rowmap[my_row + 1] = mat_rowmap[my_row] + (jend - jbeg) * blockSize;
-      for (size_type ijk = jbeg; ijk < jend; ++ijk) {
-        const auto col0 = mat_b1.graph.entries(ijk);
-        for (lno_t jb = 0; jb < blockSize; ++jb) {
-          mat_colidx[mat_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
-              col0 * blockSize + jb;
+template <typename Bsr>
+Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
+  using scalar_type  = typename Bsr::non_const_value_type;
+  using ordinal_type = typename Bsr::non_const_ordinal_type;
+  using size_type    = typename Bsr::non_const_size_type;
+  using Crs =
+      KokkosSparse::CrsMatrix<scalar_type, ordinal_type,
+                              typename Bsr::device_type, void, size_type>;
+  using Graph = typename Crs::staticcrsgraph_type;
+
+  // construct a random Crs Matrix
+  Test::RandCsMatrix<scalar_type, Kokkos::LayoutLeft, typename Bsr::device_type,
+                     ordinal_type, size_type>
+      rcs(blockRows, blockCols, scalar_type(0), max_a<scalar_type>());
+
+  const auto colids = Kokkos::subview(
+      rcs.get_ids(), Kokkos::make_pair(size_t(0), rcs.get_nnz()));
+  const auto vals = Kokkos::subview(
+      rcs.get_vals(), Kokkos::make_pair(size_t(0), rcs.get_nnz()));
+  Graph graph(colids, rcs.get_map());
+  Crs crs("crs", blockCols, vals, graph);
+
+  // expand to Bsr matrix
+  return KokkosSparse::Impl::expand_crs_to_bsr<Bsr>(crs, blockSize);
+}
+
+/*! \brief reference SpMV is the KokkosSparse::spmv on the equivalent point
+ * matrix
+ */
+template <typename Alpha, typename Bsr, typename XVector, typename Beta,
+          typename YVector>
+void reference_spmv(const char *mode, const Alpha &alpha, const Bsr &a,
+                    const XVector &x, const Beta &beta, const YVector &y) {
+  using Crs = KokkosSparse::CrsMatrix<
+      typename Bsr::non_const_value_type, typename Bsr::non_const_ordinal_type,
+      typename Bsr::device_type, void, typename Bsr::non_const_size_type>;
+  const Crs crs = KokkosSparse::Impl::bsr_to_crs<Crs>(a);
+
+  KokkosSparse::spmv(mode, alpha, crs, x, beta, y);
+}
+
+/*! \brief test a specific spmv
+
+*/
+template <typename Bsr, typename XVector, typename YVector,
+          typename Alpha = typename Bsr::non_const_value_type,
+          typename Beta  = typename Bsr::non_const_value_type>
+void test_spmv(const char *alg, const char *mode, const Alpha &alpha,
+               const Beta &beta, const Bsr &a, const XVector &x,
+               const YVector &y) {
+  using execution_space = typename Bsr::execution_space;
+  using scalar_type     = typename Bsr::non_const_value_type;
+  using ordinal_type    = typename Bsr::non_const_ordinal_type;
+  using KATS            = Kokkos::ArithTraits<scalar_type>;
+  using mag_type        = typename KATS::mag_type;
+
+  // generate expected result from reference implementation
+  YVector yExp("yExp", y.extent(0));
+  Kokkos::deep_copy(yExp, y);
+  reference_spmv(mode, alpha, a, x, beta, yExp);
+
+  // scratch space for actual value (don't modify input)
+  YVector yAct("yAct", y.extent(0));
+  Kokkos::deep_copy(yAct, y);
+
+  if (alg) {
+    KokkosKernels::Experimental::Controls controls;
+    controls.setParameter("algorithm", alg);
+    KokkosSparse::spmv(controls, mode, alpha, a, x, beta, yAct);
+  } else {
+    KokkosSparse::spmv(mode, alpha, a, x, beta, yAct);
+  }
+
+  // compare yExp and yAct
+  auto hyExp = Kokkos::create_mirror_view(yExp);
+  auto hyAct = Kokkos::create_mirror_view(yAct);
+  Kokkos::deep_copy(hyExp, yExp);
+  Kokkos::deep_copy(hyAct, yAct);
+
+  // max nnz per row is used for the tolerance
+  // for a transposed computation, need to transpose the matrix before
+  // seeing which rows are longest
+  size_t maxNnzPerRow;
+  if (mode_is_transpose(mode)) {
+    auto at = KokkosSparse::Impl::transpose_bsr_matrix(a);
+    maxNnzPerRow =
+        at.blockDim() *
+        KokkosSparse::Impl::graph_max_degree<execution_space, ordinal_type>(
+            at.graph.row_map);
+  } else {
+    maxNnzPerRow =
+        a.blockDim() *
+        KokkosSparse::Impl::graph_max_degree<execution_space, ordinal_type>(
+            a.graph.row_map);
+  }
+
+  /* assume that any floating-point op may introduce eps() error
+     scaling y is one op
+     dot product of x is two ops per entry (mul and add)
+
+     10x means same order of magnitude
+  */
+  const mag_type tolerance =
+      KATS::eps() * KATS::abs(beta) * KATS::abs(max_y<scalar_type>()) +
+      10 * KATS::eps() * maxNnzPerRow * KATS::abs(alpha) *
+          KATS::abs(max_a<scalar_type>()) * KATS::abs(max_x<scalar_type>());
+
+  std::vector<ordinal_type> errIdx;
+
+  for (ordinal_type i = 0; i < ordinal_type(hyAct.extent(0)); ++i) {
+    if (KATS::abs(hyExp(i) - hyAct(i)) > tolerance) {
+      errIdx.push_back(i);
+    }
+  }
+
+  if (!errIdx.empty()) {
+    std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMV failure!"
+              << std::endl;
+    std::cerr << "alg:          " << (alg ? alg : "<none>") << std::endl;
+    std::cerr << "mode:         " << mode << std::endl;
+    std::cerr << "A:            " << a.numRows() << "x" << a.numCols()
+              << std::endl;
+    std::cerr << "A blockdim:   " << a.blockDim() << std::endl;
+    std::cerr << "alpha:        " << alpha << std::endl;
+    std::cerr << "beta:         " << beta << std::endl;
+    std::cerr << "maxNnzPerRow: " << maxNnzPerRow << std::endl;
+    std::cerr << "First 100 errors:" << std::endl;
+    std::cerr << "y\texp\tact\terr\ttol" << std::endl;
+    std::cerr << "-\t---\t---\t---\t---" << std::endl;
+    for (size_t i = 0; i < 100 && i < errIdx.size(); ++i) {
+      size_t ei = errIdx[i];
+      // clang-format off
+      std::cerr << ei 
+                << "\t" << hyExp(ei)
+                << "\t" << hyAct(ei)
+                << "\t" << KATS::abs(hyExp(ei) - hyAct(ei))
+                << "\t" << tolerance
+                << std::endl;
+      // clang-format on
+    }
+  }
+
+  EXPECT_TRUE(errIdx.empty());
+}
+
+template <typename Bsr>
+struct VectorTypeFor {
+  using type = Kokkos::View<typename Bsr::non_const_value_type *,
+                            typename Bsr::device_type>;
+};
+
+template <typename Bsr>
+std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
+           typename VectorTypeFor<Bsr>::type>
+spmv_corner_case_0_by_0(const char * /*mode*/, const int blockSize) {
+  using vector_type = typename VectorTypeFor<Bsr>::type;
+  Bsr a             = bsr_corner_case_0_by_0<Bsr>(blockSize);
+  vector_type x("x", 0);
+  vector_type y("y", 0);
+  return std::make_tuple(a, x, y);
+}
+
+template <typename Bsr>
+std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
+           typename VectorTypeFor<Bsr>::type>
+spmv_corner_case_0_by_1(const char *mode, const int blockSize) {
+  using vector_type     = typename VectorTypeFor<Bsr>::type;
+  using execution_space = typename Bsr::execution_space;
+  using scalar_type     = typename Bsr::non_const_value_type;
+  Bsr a                 = bsr_corner_case_0_by_1<Bsr>(blockSize);
+
+  size_t nx = a.numCols() * a.blockDim();
+  size_t ny = a.numRows() * a.blockDim();
+  if (mode_is_transpose(mode)) {
+    std::swap(nx, ny);
+  }
+  vector_type x("x", nx);
+  vector_type y("y", ny);
+
+  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
+  Kokkos::fill_random(x, random, max_x<scalar_type>());
+  Kokkos::fill_random(y, random, max_y<scalar_type>());
+
+  return std::make_tuple(a, x, y);
+}
+
+template <typename Bsr>
+std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
+           typename VectorTypeFor<Bsr>::type>
+spmv_corner_case_1_by_0(const char *mode, const int blockSize) {
+  using vector_type     = typename VectorTypeFor<Bsr>::type;
+  using execution_space = typename Bsr::execution_space;
+  using scalar_type     = typename Bsr::non_const_value_type;
+  Bsr a                 = bsr_corner_case_1_by_0<Bsr>(blockSize);
+
+  size_t nx = a.numCols() * a.blockDim();
+  size_t ny = a.numRows() * a.blockDim();
+  if (mode_is_transpose(mode)) {
+    std::swap(nx, ny);
+  }
+  vector_type x("x", nx);
+  vector_type y("y", ny);
+
+  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
+  Kokkos::fill_random(x, random, max_x<scalar_type>());
+  Kokkos::fill_random(y, random, max_y<scalar_type>());
+
+  return std::make_tuple(a, x, y);
+}
+
+/*! \brief
+
+*/
+template <typename Bsr>
+std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
+           typename VectorTypeFor<Bsr>::type>
+spmv_random(const char *mode, const int blockSize, const int blockRows,
+            const int blockCols) {
+  using scalar_type = typename Bsr::non_const_value_type;
+
+  // expand to Bsr matrix
+  Bsr a = bsr_random<Bsr>(blockSize, blockRows, blockCols);
+
+  // generate some random vectors
+  using vector_type     = typename VectorTypeFor<Bsr>::type;
+  using execution_space = typename Bsr::execution_space;
+
+  size_t nx = a.numCols() * a.blockDim();
+  size_t ny = a.numRows() * a.blockDim();
+  if (mode_is_transpose(mode)) {
+    std::swap(nx, ny);
+  }
+  vector_type x("x", nx);
+  vector_type y("y", ny);
+
+  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
+  Kokkos::fill_random(x, random, max_x<scalar_type>());
+  Kokkos::fill_random(y, random, max_y<scalar_type>());
+
+  return std::make_tuple(a, x, y);
+}
+
+/*! \brief create random x and y multivectors for a given matrix and spmv mode
+ */
+template <typename Bsr>
+auto random_vecs_for_spmv(const char *mode, const Bsr &a) {
+  using scalar_type     = typename Bsr::non_const_value_type;
+  using vector_type     = typename VectorTypeFor<Bsr>::type;
+  using execution_space = typename Bsr::execution_space;
+
+  size_t nx = a.numCols() * a.blockDim();
+  size_t ny = a.numRows() * a.blockDim();
+  if (mode_is_transpose(mode)) {
+    std::swap(nx, ny);
+  }
+  vector_type x("x", nx);
+  vector_type y("y", ny);
+
+  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
+  Kokkos::fill_random(x, random, max_x<scalar_type>());
+  Kokkos::fill_random(y, random, max_y<scalar_type>());
+
+  return std::make_tuple(x, y);
+}
+
+/*! \brief test all combos of the provided matrix
+ */
+template <typename Bsr>
+void test_spmv_combos(const char *mode, const Bsr &a) {
+  using scalar_type = typename Bsr::non_const_value_type;
+
+  auto [x, y] = random_vecs_for_spmv(mode, a);
+
+  for (auto alg : {(const char *)(nullptr), "native", "experimental_tc_bsr"}) {
+    for (scalar_type alpha :
+         {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(3.7)}) {
+      for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1),
+                               scalar_type(-1.5)}) {
+        test_spmv(alg, mode, alpha, beta, a, x, y);
+      }
+    }
+  }
+}
+
+/*! \brief test all combos of all matrices with different block sizes
+ */
+template <typename Scalar, typename Ordinal, typename Offset, typename Device>
+void test_spmv_corner_cases() {
+  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
+                                                    void, Offset>;
+  for (auto mode : {"N", "T", "C", "H"}) {
+    for (int bs : {1, 2, 5, 9}) {
+      test_spmv_combos(mode, bsr_corner_case_0_by_0<Bsr>(bs));
+      test_spmv_combos(mode, bsr_corner_case_0_by_1<Bsr>(bs));
+      test_spmv_combos(mode, bsr_corner_case_1_by_0<Bsr>(bs));
+    }
+  }
+}
+
+template <typename Scalar, typename Ordinal, typename Offset, typename Device>
+void test_spmv_random() {
+  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
+                                                    void, Offset>;
+  for (auto mode : {"N", "T", "C", "H"}) {
+    for (int bs : {1, 2, 5, 9}) {
+      test_spmv_combos(mode, bsr_random<Bsr>(bs, 10, 10));
+      test_spmv_combos(mode, bsr_random<Bsr>(bs, 10, 50));
+      test_spmv_combos(mode, bsr_random<Bsr>(bs, 50, 10));
+    }
+  }
+
+  // test a tougher case on a big matrix
+  constexpr int blockSizePrime = 7;
+  constexpr int smallPrime     = 11;
+  constexpr int largePrime     = 499;
+  for (auto mode : {"N", "T"}) {
+    test_spmv_combos(mode,
+                     bsr_random<Bsr>(blockSizePrime, smallPrime, largePrime));
+  }
+}
+
+template <typename Scalar, typename Ordinal, typename Offset, typename Device>
+void test_spmv() {
+  test_spmv_corner_cases<Scalar, Ordinal, Offset, Device>();
+  test_spmv_random<Scalar, Ordinal, Offset, Device>();
+}
+
+// ----------------------------------------------------------------------------
+// Multivector
+// ----------------------------------------------------------------------------
+
+template <typename Bsr, typename XVector, typename YVector, typename Alpha,
+          typename Beta>
+void test_spm_mv(const char *alg, const char *mode, const Alpha &alpha,
+                 const Beta &beta, const Bsr &a, const XVector &x,
+                 const YVector &y) {
+  using execution_space = typename Bsr::execution_space;
+  using scalar_type     = typename Bsr::non_const_value_type;
+  using ordinal_type    = typename Bsr::non_const_ordinal_type;
+  using KATS            = Kokkos::ArithTraits<scalar_type>;
+  using mag_type        = typename KATS::mag_type;
+
+  // generate expected result from reference implementation
+  YVector yExp("yExp", y.extent(0), y.extent(1));
+  Kokkos::deep_copy(yExp, y);
+  reference_spmv(mode, alpha, a, x, beta, yExp);
+
+  // scratch space for actual value (don't modify input)
+  YVector yAct("yAct", y.extent(0), y.extent(1));
+  Kokkos::deep_copy(yAct, y);
+
+  if (alg) {
+    KokkosKernels::Experimental::Controls controls;
+    controls.setParameter("algorithm", alg);
+    KokkosSparse::spmv(controls, mode, alpha, a, x, beta, yAct);
+  } else {
+    KokkosSparse::spmv(mode, alpha, a, x, beta, yAct);
+  }
+
+  // compare yExp and yAct
+  auto hyExp = Kokkos::create_mirror_view(yExp);
+  auto hyAct = Kokkos::create_mirror_view(yAct);
+  Kokkos::deep_copy(hyExp, yExp);
+  Kokkos::deep_copy(hyAct, yAct);
+
+  // max nnz per row is used for the tolerance
+  // for a transposed computation, need to transpose the matrix before
+  // seeing which rows are longest
+  size_t maxNnzPerRow;
+  if (mode_is_transpose(mode)) {
+    auto at = KokkosSparse::Impl::transpose_bsr_matrix(a);
+    maxNnzPerRow =
+        at.blockDim() *
+        KokkosSparse::Impl::graph_max_degree<execution_space, ordinal_type>(
+            at.graph.row_map);
+  } else {
+    maxNnzPerRow =
+        a.blockDim() *
+        KokkosSparse::Impl::graph_max_degree<execution_space, ordinal_type>(
+            a.graph.row_map);
+  }
+
+  /* assume that any floating-point op may introduce eps() error
+     scaling y is one op
+     dot product of x is two ops per entry (mul and add)
+  */
+  const mag_type tolerance =
+      KATS::eps() * KATS::abs(beta) * KATS::abs(max_y<scalar_type>()) +
+      10 * KATS::eps() * maxNnzPerRow * KATS::abs(alpha) *
+          KATS::abs(max_a<scalar_type>()) * KATS::abs(max_x<scalar_type>());
+
+  std::vector<std::pair<ordinal_type, ordinal_type>> errIdx;
+
+  for (ordinal_type i = 0; i < ordinal_type(hyAct.extent(0)); ++i) {
+    for (ordinal_type j = 0; j < ordinal_type(hyAct.extent(1)); ++j) {
+      if (KATS::abs(hyExp(i, j) - hyAct(i, j)) > tolerance) {
+        errIdx.push_back({i, j});
+      }
+    }
+  }
+
+  if (!errIdx.empty()) {
+    std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMMV failure!"
+              << std::endl;
+    std::cerr << "alg:          " << (alg ? alg : "<none>") << std::endl;
+    std::cerr << "mode:         " << mode << std::endl;
+    std::cerr << "A:            " << a.numRows() << "x" << a.numCols()
+              << std::endl;
+    std::cerr << "A blockdim:   " << a.blockDim() << std::endl;
+    std::cerr << "alpha:        " << alpha << std::endl;
+    std::cerr << "beta:         " << beta << std::endl;
+    std::cerr << "maxNnzPerRow: " << maxNnzPerRow << std::endl;
+    std::cerr << "First 100 errors:" << std::endl;
+    std::cerr << "i\tj\texp\tact\terr\ttol" << std::endl;
+    std::cerr << "-\t-\t---\t---\t---\t---" << std::endl;
+    for (size_t e = 0; e < 100 && e < errIdx.size(); ++e) {
+      auto ij = errIdx[e];
+      auto i  = ij.first;
+      auto j  = ij.second;
+      // clang-format off
+      std::cerr << i << "\t" << j 
+                << "\t" << hyExp(i,j)
+                << "\t" << hyAct(i,j)
+                << "\t" << KATS::abs(hyExp(i,j) - hyAct(i,j))
+                << "\t" << tolerance
+                << std::endl;
+      // clang-format on
+    }
+  }
+
+  EXPECT_TRUE(errIdx.empty());
+}
+
+template <typename Layout, typename Bsr>
+struct MultiVectorTypeFor {
+  using type = Kokkos::View<typename Bsr::non_const_value_type **, Layout,
+                            typename Bsr::device_type>;
+};
+
+/*! \brief create random x and y multivectors for a given matrix and spmv mode
+ */
+template <typename Layout, typename Bsr>
+auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
+                                 const size_t numVecs) {
+  using scalar_type     = typename Bsr::non_const_value_type;
+  using vector_type     = typename MultiVectorTypeFor<Layout, Bsr>::type;
+  using execution_space = typename Bsr::execution_space;
+
+  size_t nx = a.numCols() * a.blockDim();
+  size_t ny = a.numRows() * a.blockDim();
+  if (mode_is_transpose(mode)) {
+    std::swap(nx, ny);
+  }
+  vector_type x("x", nx, numVecs);
+  vector_type y("y", ny, numVecs);
+
+  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
+  Kokkos::fill_random(x, random, max_x<scalar_type>());
+  Kokkos::fill_random(y, random, max_y<scalar_type>());
+
+  return std::make_tuple(x, y);
+}
+
+template <typename Layout, typename Bsr>
+void test_spm_mv_combos(const char *mode, const Bsr &a) {
+  using scalar_type = typename Bsr::non_const_value_type;
+
+  for (size_t numVecs : {1, 2, 7}) {  // num multivecs
+    auto [x, y] = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs);
+    for (auto alg :
+         {(const char *)(nullptr), "native", "experimental_tc_bsr"}) {
+      for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1),
+                                scalar_type(3.7)}) {
+        for (scalar_type beta : {scalar_type(0), scalar_type(1),
+                                 scalar_type(-1), scalar_type(-1.5)}) {
+          test_spm_mv(alg, mode, alpha, beta, a, x, y);
         }
       }
     }
-  }  // for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir)
+  }
 }
 
-/// \brief Driver routine for checking BsrMatrix times vector
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
-void check_bsrm_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
-                        const lno_t bMax, int &num_errors) {
-  // The mat_structure view is used to generate a matrix using
-  // finite difference (FD) or finite element (FE) discretization
-  // on a cartesian grid.
-  Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure("Matrix Structure",
-                                                             3);
-  mat_structure(0, 0) = 8;  // Request 8 grid point in 'x' direction
-  mat_structure(0, 1) = 0;  // Add BC to the left
-  mat_structure(0, 2) = 0;  // Add BC to the right
-  mat_structure(1, 0) = 7;  // Request 7 grid point in 'y' direction
-  mat_structure(1, 1) = 0;  // Add BC to the bottom
-  mat_structure(1, 2) = 0;  // Add BC to the top
-  mat_structure(2, 0) = 9;  // Request 9 grid point in 'z' direction
-  mat_structure(2, 1) = 0;  // Add BC to the bottom
-  mat_structure(2, 2) = 0;  // Add BC to the top
-
-  typedef
-      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-          crsMat_t;
-  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Kokkos::HostSpace,
-                                           void, size_type>
-      h_crsMat_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef scalar_view_t x_vector_type;
-  typedef scalar_view_t y_vector_type;
-
-  h_crsMat_t mat_b1 =
-      Test::generate_structured_matrix3D<h_crsMat_t>("FD", mat_structure);
-
-  num_errors = 0;
-  for (lno_t blockSize = 1; blockSize <= bMax; ++blockSize) {
-    //
-    // Fill blocks with random values
-    //
-
-    lno_t nRow    = blockSize * mat_b1.numRows();
-    lno_t nCol    = blockSize * mat_b1.numCols();
-    size_type nnz = static_cast<size_type>(blockSize) *
-                    static_cast<size_type>(blockSize) * mat_b1.nnz();
-
-    Kokkos::View<size_type *, device> d_rowmap("crsmatrix", nRow + 1);
-    auto h_rowmap = Kokkos::create_mirror_view(d_rowmap);
-
-    Kokkos::View<lno_t *, device> d_colidx("crsmatrix", nnz);
-    auto h_colidx = Kokkos::create_mirror_view(d_colidx);
-
-    Kokkos::View<scalar_t *, device> d_matval("crsmatrix", nnz);
-    auto h_matval = Kokkos::create_mirror_view(d_matval);
-
-    // Create the entries
-    make_block_entries<scalar_t, lno_t, size_type>(mat_b1, blockSize, h_rowmap,
-                                                   h_colidx, h_matval);
-
-    Kokkos::deep_copy(d_matval, h_matval);
-    Kokkos::deep_copy(d_colidx, h_colidx);
-    Kokkos::deep_copy(d_rowmap, h_rowmap);
-
-    // Create the CrsMatrix for the reference computation
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, d_matval, d_rowmap,
-                  d_colidx);
-
-    x_vector_type xref("new_right_hand_side", nRow);
-    auto h_xref = Kokkos::create_mirror_view(xref);
-    for (lno_t ir = 0; ir < nRow; ++ir) {
-      set_random_value(h_xref(ir));
-    }
-    Kokkos::deep_copy(xref, h_xref);
-
-    y_vector_type y0("y_init", nRow);
-    auto h_y0 = Kokkos::create_mirror_view(y0);
-    for (lno_t ir = 0; ir < nRow; ++ir) set_random_value(h_y0(ir));
-    Kokkos::deep_copy(y0, h_y0);
-
-    y_vector_type ycrs("crs_product_result", nRow);
-    auto h_ycrs = Kokkos::create_mirror_view(ycrs);
-    for (lno_t ir = 0; ir < nRow; ++ir) h_ycrs(ir) = h_y0(ir);
-    Kokkos::deep_copy(ycrs, h_ycrs);
-
-    //
-    // Make reference computation with a CrsMatrix variable
-    //
-    KokkosKernels::Experimental::Controls controls;
-    // Use the native implementation since the CUDA 11.2.2 spmv implementation
-    // is not matching the bsr spmv test tolerance when OFFSET is int.
-    // See https://github.com/kokkos/kokkos-kernels/issues/1586
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (11200 <= CUSPARSE_VERSION)
-    controls.setParameter("algorithm", "native");
-#endif
-    KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
-
-    y_vector_type ybsr("bsr_product_result", nRow);
-    auto h_ybsr = Kokkos::create_mirror_view(ybsr);
-    for (lno_t ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
-    Kokkos::deep_copy(ybsr, h_ybsr);
-
-    // Create the BsrMatrix for the check test
-    KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device, void,
-                                          size_type>
-        Absr(Acrs, blockSize);
-
-    //
-    // Make computation with the BsrMatrix format
-    //
-    KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
-
-    //
-    // Compare the two products
-    //
-    using KATS     = Kokkos::ArithTraits<scalar_t>;
-    using mag_type = typename KATS::mag_type;
-
-    const mag_type zero_mag = Kokkos::ArithTraits<mag_type>::zero();
-    mag_type error = zero_mag, maxNorm = zero_mag;
-
-    Kokkos::deep_copy(h_ycrs, ycrs);
-    Kokkos::deep_copy(h_ybsr, ybsr);
-    for (lno_t ir = 0; ir < nRow; ++ir) {
-      error   = std::max<mag_type>(error, KATS::abs(h_ycrs(ir) - h_ybsr(ir)));
-      maxNorm = std::max<mag_type>(maxNorm, KATS::abs(h_ycrs(ir)));
-    }
-
-    mag_type tmps = KATS::abs(alpha) + KATS::abs(beta);
-    if ((tmps > zero_mag) && (maxNorm == zero_mag)) {
-      std::cout << " BSR - SpMV times MV >> blockSize " << blockSize
-                << " maxNorm " << maxNorm << " error " << error << " alpha "
-                << alpha << " beta " << beta << "\n";
-      num_errors += 1;
-    }
-
-    //
-    // --- Factor ((nnz / nRow) + 1) = Average number of non-zeros per row
-    //
-    const mag_type tol = ((static_cast<mag_type>(nnz) / nRow) + 1) *
-                         Kokkos::ArithTraits<mag_type>::epsilon();
-    if (error > tol * maxNorm) {
-      std::cout << " BSR - SpMV times V >> blockSize " << blockSize << " ratio "
-                << error / maxNorm << " tol " << tol << " maxNorm " << maxNorm
-                << " alpha " << alpha << " beta " << beta << "\n";
-      num_errors += 1;
-    }
-
-  }  // for (int blockSize = 1; blockSize <= bMax; ++blockSize)
-}
-
-/// \brief Driver routine for checking BsrMatrix times multiple vector
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename layout, typename device>
-void check_bsrm_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
-                         const lno_t bMax, int &num_errors) {
-  // The mat_structure view is used to generate a matrix using
-  // finite difference (FD) or finite element (FE) discretization
-  // on a cartesian grid.
-  Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure("Matrix Structure",
-                                                             3);
-  mat_structure(0, 0) = 7;  // Request 7 grid point in 'x' direction
-  mat_structure(0, 1) = 0;  // Add BC to the left
-  mat_structure(0, 2) = 0;  // Add BC to the right
-  mat_structure(1, 0) = 5;  // Request 11 grid point in 'y' direction
-  mat_structure(1, 1) = 0;  // Add BC to the bottom
-  mat_structure(1, 2) = 0;  // Add BC to the top
-  mat_structure(2, 0) = 9;  // Request 13 grid point in 'y' direction
-  mat_structure(2, 1) = 0;  // Add BC to the bottom
-  mat_structure(2, 2) = 0;  // Add BC to the top
-
-  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Kokkos::HostSpace,
-                                           void, size_type>
-      h_crsMat_t;
-  typedef
-      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-          crsMat_t;
-  typedef Kokkos::View<scalar_t **, layout, device> block_vector_t;
-
-  h_crsMat_t mat_b1 =
-      Test::generate_structured_matrix3D<h_crsMat_t>("FD", mat_structure);
-
-  num_errors     = 0;
-  const int nrhs = 5;
-
-  for (lno_t blockSize = 1; blockSize <= bMax; ++blockSize) {
-    //
-    // Fill blocks with random values
-    //
-
-    lno_t nRow    = blockSize * mat_b1.numRows();
-    lno_t nCol    = blockSize * mat_b1.numCols();
-    size_type nnz = static_cast<size_type>(blockSize) *
-                    static_cast<size_type>(blockSize) * mat_b1.nnz();
-
-    Kokkos::View<size_type *, device> d_rowmap("crsmatrix", nRow + 1);
-    auto h_rowmap = Kokkos::create_mirror_view(d_rowmap);
-
-    Kokkos::View<lno_t *, device> d_colidx("crsmatrix", nnz);
-    auto h_colidx = Kokkos::create_mirror_view(d_colidx);
-
-    Kokkos::View<scalar_t *, device> d_matval("crsmatrix", nnz);
-    auto h_matval = Kokkos::create_mirror_view(d_matval);
-
-    // Create the entries
-    make_block_entries<scalar_t, lno_t, size_type>(mat_b1, blockSize, h_rowmap,
-                                                   h_colidx, h_matval);
-
-    Kokkos::deep_copy(d_matval, h_matval);
-    Kokkos::deep_copy(d_colidx, h_colidx);
-    Kokkos::deep_copy(d_rowmap, h_rowmap);
-
-    // Create the CrsMatrix for the reference computation
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, d_matval, d_rowmap,
-                  d_colidx);
-
-    block_vector_t xref("new_right_hand_side", nRow, nrhs);
-    auto h_xref = Kokkos::create_mirror_view(xref);
-    for (int jc = 0; jc < nrhs; ++jc)
-      for (lno_t ir = 0; ir < nRow; ++ir) set_random_value(h_xref(ir, jc));
-    Kokkos::deep_copy(xref, h_xref);
-
-    block_vector_t y0("y_init", nRow, nrhs);
-    auto h_y0 = Kokkos::create_mirror_view(y0);
-    for (int jc = 0; jc < nrhs; ++jc)
-      for (lno_t ir = 0; ir < nRow; ++ir) set_random_value(h_y0(ir, jc));
-    Kokkos::deep_copy(y0, h_y0);
-
-    block_vector_t ycrs("crs_product_result", nRow, nrhs);
-    auto h_ycrs = Kokkos::create_mirror_view(ycrs);
-    for (int jc = 0; jc < nrhs; ++jc)
-      for (lno_t ir = 0; ir < nRow; ++ir) h_ycrs(ir, jc) = h_y0(ir, jc);
-    Kokkos::deep_copy(ycrs, h_ycrs);
-
-    //
-    // Compute the reference product with a CrsMatrix variable
-    //
-    KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
-
-    block_vector_t ybsr("bsr_product_result", nRow, nrhs);
-    auto h_ybsr = Kokkos::create_mirror_view(ybsr);
-    for (int jc = 0; jc < nrhs; ++jc)
-      for (lno_t ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
-    Kokkos::deep_copy(ybsr, h_ybsr);
-
-    // Create the BsrMatrix for the check test
-    KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device, void,
-                                          size_type>
-        Absr(Acrs, blockSize);
-
-    //
-    // Compute the product with the BsrMatrix format
-    //
-    KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
-
-    Kokkos::deep_copy(h_ycrs, ycrs);
-    Kokkos::deep_copy(h_ybsr, ybsr);
-
-    //
-    // Compare the two products
-    //
-    using KATS     = Kokkos::ArithTraits<scalar_t>;
-    using mag_type = typename KATS::mag_type;
-
-    const mag_type zero_mag = Kokkos::ArithTraits<mag_type>::zero();
-    mag_type error = zero_mag, maxNorm = zero_mag;
-    for (int jc = 0; jc < nrhs; ++jc) {
-      for (int ir = 0; ir < nRow; ++ir) {
-        error   = std::max<mag_type>(error,
-                                   KATS::abs(h_ycrs(ir, jc) - h_ybsr(ir, jc)));
-        maxNorm = std::max<mag_type>(maxNorm, KATS::abs(h_ycrs(ir, jc)));
-      }
-    }
-
-    mag_type tmps = KATS::abs(alpha) + KATS::abs(beta);
-    if ((tmps > zero_mag) && (maxNorm == zero_mag)) {
-      std::cout << " BSR - SpMV times MV >> blockSize " << blockSize
-                << " maxNorm " << maxNorm << " error " << error << " alpha "
-                << alpha << " beta " << beta << "\n";
-      num_errors += 1;
-    }
-
-    const mag_type tol = ((static_cast<mag_type>(nnz) / nRow) + 1) *
-                         Kokkos::ArithTraits<mag_type>::epsilon();
-    if (error > tol * maxNorm) {
-      std::cout << " BSR - SpMV times MV >> blockSize " << blockSize
-                << " ratio " << error / maxNorm << " tol " << tol << " maxNorm "
-                << maxNorm << " alpha " << alpha << " beta " << beta << "\n";
-      num_errors += 1;
-    }
-
-  }  // for (int blockSize = 1; blockSize <= bMax; ++blockSize)
-}
-
-}  // namespace Test_Bsr
-
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
-void testSpMVBsrMatrix() {
-  //
-  // Check a few corner cases
-  //
-
-  // 0 x 0 case
-  {
-    typedef
-        typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device,
-                                                       void, size_type>
-            bsrMat_t;
-    bsrMat_t Absr("empty", 0, 0, 0, nullptr, nullptr, nullptr, 1);
-    typedef typename bsrMat_t::values_type::non_const_type scalar_view_t;
-    typedef scalar_view_t x_vector_type;
-    typedef scalar_view_t y_vector_type;
-    x_vector_type x("corner-case-x", Absr.numCols());
-    y_vector_type y("corner-case-y", Absr.numRows());
-    Kokkos::deep_copy(y, static_cast<scalar_t>(0));
-    scalar_t alpha = static_cast<scalar_t>(1);
-    scalar_t beta  = static_cast<scalar_t>(1);
-    const char fOp = 'N';
-    int num_errors = 0;
-    try {
-      KokkosSparse::spmv(&fOp, alpha, Absr, x, beta, y);
-      Kokkos::fence();
-    } catch (std::exception &e) {
-      num_errors += 1;
-      std::cout << e.what();
-    }
-    EXPECT_TRUE(num_errors == 0);
-  }
-
-  // 0 x 1 case
-  {
-    typedef
-        typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device,
-                                                       void, size_type>
-            bsrMat_t;
-    bsrMat_t Absr("empty", 0, 1, 0, nullptr, nullptr, nullptr, 1);
-    typedef typename bsrMat_t::values_type::non_const_type scalar_view_t;
-    typedef scalar_view_t x_vector_type;
-    typedef scalar_view_t y_vector_type;
-    x_vector_type x("corner-case-x", Absr.numCols());
-    y_vector_type y("corner-case-y", Absr.numRows());
-    Kokkos::deep_copy(y, static_cast<scalar_t>(0));
-    scalar_t alpha = static_cast<scalar_t>(1);
-    scalar_t beta  = static_cast<scalar_t>(1);
-    const char fOp = 'N';
-    int num_errors = 0;
-    try {
-      KokkosSparse::spmv(&fOp, alpha, Absr, x, beta, y);
-      Kokkos::fence();
-    } catch (std::exception &e) {
-      num_errors += 1;
-      std::cout << e.what();
-    }
-    EXPECT_TRUE(num_errors == 0);
-  }
-
-  // 1 x 0 case
-  {
-    typedef
-        typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device,
-                                                       void, size_type>
-            bsrMat_t;
-    bsrMat_t Absr("empty", 1, 0, 0, nullptr, nullptr, nullptr, 1);
-    typedef typename bsrMat_t::values_type::non_const_type scalar_view_t;
-    typedef scalar_view_t x_vector_type;
-    typedef scalar_view_t y_vector_type;
-    x_vector_type x("corner-case-x", Absr.numCols());
-    y_vector_type y("corner-case-y", Absr.numRows());
-    Kokkos::deep_copy(y, static_cast<scalar_t>(0));
-    scalar_t alpha = static_cast<scalar_t>(1);
-    scalar_t beta  = static_cast<scalar_t>(1);
-    const char fOp = 'N';
-    int num_errors = 0;
-    try {
-      KokkosSparse::spmv(&fOp, alpha, Absr, x, beta, y);
-      Kokkos::fence();
-    } catch (std::exception &e) {
-      num_errors += 1;
-      std::cout << e.what();
-    }
-    EXPECT_TRUE(num_errors == 0);
-  }
-
-  //
-  // Test for the operation y <- alpha * Op(A) * x + beta * y
-  //
-
-  // Define the function Op: Op(A) = A, Op(A) = conj(A), Op(A) = A^T, Op(A) =
-  // A^H
-  std::vector<char> modes = {'N', 'C', 'T', 'H'};
-
-  // Define a set of pairs (alpha, beta)
-  std::vector<double> testAlphaBeta = {0.0, 0.0, -1.0, 0.0,
-                                       0.0, 1.0, 3.1,  -2.5};
-
-  //
-  // Set the largest block size for the block matrix
-  // The code will create matrices with block sizes 1, .., bMax
-  //
-  constexpr lno_t bMax = 13;
-
-  //
-  //--- Test single vector case
-  //
-  for (const auto mode : modes) {
-    int num_errors = 0;
-    for (size_t ii = 0; ii < testAlphaBeta.size(); ii += 2) {
-      auto alpha_s = static_cast<scalar_t>(testAlphaBeta[ii]);
-      auto beta_s  = static_cast<scalar_t>(testAlphaBeta[ii + 1]);
-      num_errors   = 0;
-      Test_Bsr::check_bsrm_times_v<scalar_t, lno_t, size_type, device>(
-          &mode, alpha_s, beta_s, bMax, num_errors);
-      if (num_errors > 0) {
-        std::cout << "KokkosSparse::Test::spmv_bsr: " << num_errors
-                  << " errors of %i with params: " << bMax << " " << mode << " "
-                  << Kokkos::ArithTraits<scalar_t>::abs(alpha_s) << " "
-                  << Kokkos::ArithTraits<scalar_t>::abs(beta_s) << std::endl;
-      }
-      EXPECT_TRUE(num_errors == 0);
+/*! \brief test all combos of all matrices with different block sizes
+ */
+template <typename Scalar, typename Ordinal, typename Offset, typename Layout,
+          typename Device>
+void test_spm_mv_corner_cases() {
+  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
+                                                    void, Offset>;
+  for (auto mode : {"N", "T", "C", "H"}) {
+    for (int bs : {1, 2, 5, 9}) {
+      test_spm_mv_combos<Layout>(mode, bsr_corner_case_0_by_0<Bsr>(bs));
+      test_spm_mv_combos<Layout>(mode, bsr_corner_case_0_by_1<Bsr>(bs));
+      test_spm_mv_combos<Layout>(mode, bsr_corner_case_1_by_0<Bsr>(bs));
     }
   }
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename layout, typename device>
-void testBsrMatrix_SpM_MV() {
-  //
-  // Test for the operation Y <- alpha * Op(A) * X + beta * Y
-  //
-
-  // Define the function Op: Op(A) = A, Op(A) = conj(A), Op(A) = A^T, Op(A) =
-  // A^H
-  std::vector<char> modes = {'N', 'C', 'T', 'H'};
-
-  // Define a set of pairs (alpha, beta)
-  std::vector<double> testAlphaBeta = {0.0, 0.0, -1.0, 0.0,
-                                       0.0, 1.0, 3.1,  -2.5};
-
-  //
-  // Set the largest block size for the block matrix
-  // The code will create matrices with block sizes 1, .., bMax
-  //
-  const lno_t bMax = 13;
-
-  //--- Test multiple vector case
-  for (auto mode : modes) {
-    int num_errors = 0;
-    for (size_t ii = 0; ii < testAlphaBeta.size(); ii += 2) {
-      auto alpha_s = static_cast<scalar_t>(testAlphaBeta[ii]);
-      auto beta_s  = static_cast<scalar_t>(testAlphaBeta[ii + 1]);
-      num_errors   = 0;
-      Test_Bsr::check_bsrm_times_mv<scalar_t, lno_t, size_type, layout, device>(
-          &mode, alpha_s, beta_s, bMax, num_errors);
-      if (num_errors > 0) {
-        std::cout << "KokkosSparse::Test::spm_mv_bsr: " << num_errors
-                  << " errors of " << bMax << " with params: " << mode << " "
-                  << Kokkos::ArithTraits<scalar_t>::abs(alpha_s) << " "
-                  << Kokkos::ArithTraits<scalar_t>::abs(beta_s) << std::endl;
-      }
-      EXPECT_TRUE(num_errors == 0);
+template <typename Scalar, typename Ordinal, typename Offset, typename Layout,
+          typename Device>
+void test_spm_mv_random() {
+  using Bsr = KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, Device,
+                                                    void, Offset>;
+  // thoroughly test smaller matrices
+  for (auto mode : {"N", "T", "C", "H"}) {
+    for (int bs : {1, 2, 5, 9}) {
+      test_spm_mv_combos<Layout>(mode, bsr_random<Bsr>(bs, 10, 10));
+      test_spm_mv_combos<Layout>(mode, bsr_random<Bsr>(bs, 10, 50));
+      test_spm_mv_combos<Layout>(mode, bsr_random<Bsr>(bs, 50, 10));
     }
   }
+
+  // test a tougher case on a big matrix
+  constexpr int blockSizePrime = 7;
+  constexpr int smallPrime     = 11;
+  constexpr int largePrime     = 499;
+  for (auto mode : {"N", "T"}) {
+    test_spm_mv_combos<Layout>(
+        mode, bsr_random<Bsr>(blockSizePrime, smallPrime, largePrime));
+  }
 }
+
+template <typename Scalar, typename Ordinal, typename Offset, typename Layout,
+          typename Device>
+void test_spm_mv() {
+  test_spm_mv_corner_cases<Scalar, Ordinal, Offset, Layout, Device>();
+  test_spm_mv_random<Scalar, Ordinal, Offset, Layout, Device>();
+}
+
+}  // namespace Test_Spmv_Bsr
 
 //////////////////////////
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)               \
-  TEST_F(                                                                         \
-      TestCategory,                                                               \
-      sparse##_##bsrmat_times_vec##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    testSpMVBsrMatrix<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)          \
+  TEST_F(TestCategory,                                                       \
+         sparse##_##bsr_spmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    Test_Spmv_Bsr::test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>();             \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
@@ -579,11 +645,12 @@ void testBsrMatrix_SpM_MV() {
 
 //////////////////////////
 
-#define EXECUTE_BSR_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)                      \
-  TEST_F(                                                                                         \
-      TestCategory,                                                                               \
-      sparse##_##bsrmat_times_multivec##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
-    testBsrMatrix_SpM_MV<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>();                      \
+#define EXECUTE_BSR_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)          \
+  TEST_F(                                                                             \
+      TestCategory,                                                                   \
+      sparse##_##bsr_spmmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
+    Test_Spmv_Bsr::test_spm_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT,               \
+                               DEVICE>();                                             \
   }
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)

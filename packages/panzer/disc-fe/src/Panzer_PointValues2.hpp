@@ -77,7 +77,7 @@ namespace panzer {
     /** Evaluate the jacobian and derivative information at the requested reference
       * points.
       *
-      * \param[in] node_coords Cell vertices
+      * \param[in] node_coords Cell nodes
       * \param[in] point_coords Reference cell coordinates
       */
     template <typename CoordinateArray,typename PointArray>
@@ -89,11 +89,11 @@ namespace panzer {
       evaluateValues(in_num_cells); }
 
     /** Evaluate the jacobian and derivative information at the requested reference
-      * points. This version allows a shallow copy of the vertex coordinates. 
+      * points. This version allows a shallow copy of the node coordinates. 
       *
-      * \param[in] node_coords Cell vertices
+      * \param[in] node_coords Cell nodes
       * \param[in] point_coords Reference cell coordinates
-      * \param[in] shallow_copy_nodes Enable or disable a shallow copy of the vertices
+      * \param[in] shallow_copy_nodes Enable or disable a shallow copy of the nodes
       */ 
     template <typename PointArray>
     void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coords,
@@ -111,11 +111,17 @@ namespace panzer {
     const PHX::MDField<Scalar,IP,Dim> & getRefCoordinates() const
     { return coords_ref; }
 
+    /////// TO BE DEPRECATED....
     //! Return the vertex coordinates this class uses (Cell,NODE,Dim) sized
     const PHX::MDField<Scalar,Cell,NODE,Dim> & getVertexCoordinates() const
     { return node_coordinates; }
+    /////// END TO BE DEPRECATED
 
-    // input fields: both mutable because of getRefCoordinates/getVertexCoordinates
+    //! Return the node coordinates this class uses (Cell,NODE,Dim) sized
+    const PHX::MDField<Scalar,Cell,NODE,Dim> & getNodeCoordinates() const
+    { return node_coordinates; }
+
+    // input fields: both mutable because of getRefCoordinates/getNodeCoordinates
     //               Not sure this is the best design, but works for this iteration
     mutable PHX::MDField<Scalar,IP,Dim>        coords_ref;       // <IP,Dim>
     mutable PHX::MDField<Scalar,Cell,NODE,Dim> node_coordinates; // <Cell,NODE,Dim>

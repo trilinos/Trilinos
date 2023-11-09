@@ -53,8 +53,6 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 # Exclude files for source package.
 #
 
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
 TRIBITS_EXCLUDE_FILES(
   doc/matrix_.*.gif
   src/Make..*

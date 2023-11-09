@@ -148,7 +148,6 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         """
         output = argparse.Namespace(
             source_repo_url="https://github.com/trilinos/Trilinos",
-            source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
@@ -170,7 +169,8 @@ class TrilinosPRConfigurationStandardTest(TestCase):
             max_cores_allowed=12,
             num_concurrent_tests=-1,
             ccache_enable=False,
-            dry_run = False
+            dry_run = False,
+            use_explicit_cachefile = False
         )
         return output
 

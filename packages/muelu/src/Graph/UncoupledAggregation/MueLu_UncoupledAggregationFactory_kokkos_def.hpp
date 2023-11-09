@@ -101,7 +101,9 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: match ML phase1");
     SET_VALID_ENTRY("aggregation: match ML phase2a");
+    SET_VALID_ENTRY("aggregation: match ML phase2b");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
@@ -167,6 +169,10 @@ namespace MueLu {
     if (pL.get<bool>("aggregation: enable phase 2b")                 == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm_kokkos           (graphFact)));
     if (pL.get<bool>("aggregation: enable phase 3" )                 == true)   algos_.push_back(rcp(new AggregationPhase3Algorithm_kokkos            (graphFact)));
 
+    // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 or Phase 2b, but is in 2a
+    TEUCHOS_TEST_FOR_EXCEPTION( pL.get<bool>("aggregation: match ML phase1"),std::invalid_argument,"Option: 'aggregation: match ML phase1' is not supported in the Kokkos version of uncoupled aggregation");
+    TEUCHOS_TEST_FOR_EXCEPTION( pL.get<bool>("aggregation: match ML phase2b"),std::invalid_argument,"Option: 'aggregation: match ML phase2b' is not supported in the Kokkos version of uncoupled aggregation");
+
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
     RCP<Map> OnePtMap = Teuchos::null;
     if (mapOnePtName.length()) {
@@ -213,6 +219,8 @@ namespace MueLu {
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
+
+    /* FIXME: This chunk of code is still executing on the host */
     if (OnePtMap != Teuchos::null) {
       typename Kokkos::View<unsigned*,typename LWGraph_kokkos::device_type>::HostMirror aggStatHost
         = Kokkos::create_mirror_view(aggStat);
@@ -341,12 +349,14 @@ namespace MueLu {
 
         //run d2 graph coloring
         //graph is symmetric so row map/entries and col map/entries are the same
-        KokkosGraph::Experimental::graph_color_distance2(&kh, numRows, aRowptrs, aColinds);
+        {
+          SubFactoryMonitor sfm2(*this, "Algo \"Graph Coloring\": KokkosGraph Call", currentLevel);//CMS HACK
+          KokkosGraph::Experimental::graph_color_distance2(&kh, numRows, aRowptrs, aColinds);
+        }
 
         // extract the colors and store them in the aggregates
         aggregates->SetGraphColors(coloringHandle->get_vertex_colors());
         aggregates->SetGraphNumColors(static_cast<LO>(coloringHandle->get_num_colors()));
-
 
         //clean up coloring handle
         kh.destroy_distance2_graph_coloring_handle();

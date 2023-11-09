@@ -1033,7 +1033,7 @@ Problem_Manager::computeBlockJacobian(int probId, int depId)
     OffBlock_Manager::idToFind = depId;
 
     std::vector<OffBlock_Manager *>::iterator iter =
-      find_if( managerVec.begin(), managerVec.end(), mem_fun( &OffBlock_Manager::isMember) );
+      find_if( managerVec.begin(), managerVec.end(), mem_fn( &OffBlock_Manager::isMember) );
 
     if( managerVec.end() == iter )
     {
@@ -1096,7 +1096,7 @@ Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
     OffBlock_Manager::idToFind = depId;
 
     std::vector<OffBlock_Manager *>::iterator iter =
-      find_if( offVec.begin(), offVec.end(), mem_fun( &OffBlock_Manager::isMember) );
+      find_if( offVec.begin(), offVec.end(), mem_fn( &OffBlock_Manager::isMember) );
 
     if( offVec.end() == iter )
     {

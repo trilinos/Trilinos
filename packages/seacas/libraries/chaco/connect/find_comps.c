@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,7 +10,13 @@
 #include "structs.h" // for edgeslist, vtx_data
 #include <stdio.h>   // for NULL
 
-static int bfsearch();
+static int bfsearch(struct vtx_data **graph,   /* graph data structure */
+                    int               root,    /* start vertex for DFS */
+                    int              *count,   /* number of vertices in component */
+                    int              *mark,    /* has vtx been seen? */
+                    int              *vtxlist, /* space for storing vtxs to search */
+                    int               comp_num /* current component number */
+);
 
 /* Breadth first search algorithm to find & mark connected components. */
 int find_comps(struct vtx_data **graph,  /* graph data structure */

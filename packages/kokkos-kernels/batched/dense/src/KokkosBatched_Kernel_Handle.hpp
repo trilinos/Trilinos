@@ -14,13 +14,10 @@
 //
 //@HEADER
 
-//
-// Created by Harvey, Evan on 7/13/21.
-//
-
 #ifndef KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 #define KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 
+#include <sstream>
 #include "KokkosKernels_Error.hpp"
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
@@ -92,55 +89,55 @@ struct TplParams {
 // clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
 ///
-/// \var kernelAlgoType  Specifies which algorithm to use for invocation (default, SQUARE).
+/// \param kernelAlgoType  Specifies which algorithm to use for invocation (default, SQUARE).
 ///
-///                    Specifies whether to select optimal invocations based on inputs and
-///                    heuristics:
-///                      SQUARE select invocations based on square matrix heuristics where M=N
-///                      TALL   select invocations based on tall   matrix heuristics where M>N
-///                      WIDE   select invocations based on wide   matrix heuristics where M<N
-///                    Note: If the heuristics indicate SIMD views are required for optimal
-///                          performance, notify the user that SIMD views are required for
-///                          optimal performance.
-///
-///                    Specifies which cmake-enabled TPL algorithm to invoke:
-///                      TPL algorithms currently SUPPORTED by all batched routines:
-///
-///                      TPL algorithms currently UNSUPPORTED by all batched routines:
-///                        ARMPL    Invoke the ArmPL TPL interface
-///                        MKL      Invoke the MKL TPL interface
-///                        CUBLAS   Invoke the CuBLAS TPL interface
-///                        MAGMA    Invoke the Magma TPL interface
-///                    Note: See each routine's handle for details about which TPLs are supported.
-///                    Note: Requires that input views for A, B, and C reside on either host
-///                          or device depending on the TPL selected.
-///                    Note: If the user selects a TPL, an error will be thrown if:
-///                            1. The TPL is not enabled via cmake
-///                            2. The input views do not reside on the host/device as needed
-///
-///                    Specifies which kokkos-kernels (KK) algorithm to invoke:
-///                      KK algorithms currently SUPPORTED   by all KK batched routines:
-///                        KK_SERIAL       Invoke SerialFUNC     via RangePolicy(BatchSz)
-///                      KK algorithms currently UNSUPPORTED by all KK batched routines:
-///                        KK_TEAM         Invoke TeamFUNC       via TeamPolicy(BatchSz)
-///                        KK_TEAMVECTOR   Invoke TeamVectorFUNC via TeamPolicy(BatchSz)
-///                        KK_SERIALSIMD   Invoke SerialFUNC     via TeamPolicy(BatchSz)
-///                        KK_TEAMSIMD     Invoke TeamFUNC       via TeamPolicy(BatchSz)
-///                        KK_SERIAL_RANK0 Invoke SerialFUNC     via RangePolicy(BatchSz*LHS_N*LHS_M)
-///                        KK_SERIAL_SHMEM Invoke SerialFUNC     via TeamPolicy(BatchSz)
-///                        KK_DBLBUF       Solve FUNC            via TeamPolicy(BatchSz*TILES)
-///                                        Uses a tuned functor with tiling and double buffering
-///                                        via shared memory and register buffers.
-///                    Note: See each routine's handle for details about which KK algorithms are
-///                          supported.
-/// \var teamSz        Specifies the team size that will affect any KK algorithm which uses
-///                    TeamPolicy (default, Kokkos::AUTO).
-///                    Note: Only applied if useAlgo_type == KK_*
-/// \var vecLen        Specifies the vector length that will affect any KK algorithm which
-///                    uses TeamPolicy and Kokkos::ThreadVectorRange or Kokkos::TeamVectorRange
-///                    (default, Kokkos::AUTO).
-///                    Note: Only applied if useAlgo_type == KK_*
-/// \var enabledDebug  toggle debug messages.
+///                        Specifies whether to select optimal invocations based on inputs and
+///                        heuristics:
+///                          SQUARE select invocations based on square matrix heuristics where M=N
+///                          TALL   select invocations based on tall   matrix heuristics where M>N
+///                          WIDE   select invocations based on wide   matrix heuristics where M<N
+///                        Note: If the heuristics indicate SIMD views are required for optimal
+///                              performance, notify the user that SIMD views are required for
+///                              optimal performance.
+///    
+///                        Specifies which cmake-enabled TPL algorithm to invoke:
+///                          TPL algorithms currently SUPPORTED by all batched routines:
+///    
+///                          TPL algorithms currently UNSUPPORTED by all batched routines:
+///                            ARMPL    Invoke the ArmPL TPL interface
+///                            MKL      Invoke the MKL TPL interface
+///                            CUBLAS   Invoke the CuBLAS TPL interface
+///                            MAGMA    Invoke the Magma TPL interface
+///                        Note: See each routine's handle for details about which TPLs are supported.
+///                        Note: Requires that input views for A, B, and C reside on either host
+///                              or device depending on the TPL selected.
+///                        Note: If the user selects a TPL, an error will be thrown if:
+///                                1. The TPL is not enabled via cmake
+///                                2. The input views do not reside on the host/device as needed
+///    
+///                        Specifies which kokkos-kernels (KK) algorithm to invoke:
+///                          KK algorithms currently SUPPORTED   by all KK batched routines:
+///                            KK_SERIAL       Invoke SerialFUNC     via RangePolicy(BatchSz)
+///                          KK algorithms currently UNSUPPORTED by all KK batched routines:
+///                            KK_TEAM         Invoke TeamFUNC       via TeamPolicy(BatchSz)
+///                            KK_TEAMVECTOR   Invoke TeamVectorFUNC via TeamPolicy(BatchSz)
+///                            KK_SERIALSIMD   Invoke SerialFUNC     via TeamPolicy(BatchSz)
+///                            KK_TEAMSIMD     Invoke TeamFUNC       via TeamPolicy(BatchSz)
+///                            KK_SERIAL_RANK0 Invoke SerialFUNC     via RangePolicy(BatchSz*LHS_N*LHS_M)
+///                            KK_SERIAL_SHMEM Invoke SerialFUNC     via TeamPolicy(BatchSz)
+///                            KK_DBLBUF       Solve FUNC            via TeamPolicy(BatchSz*TILES)
+///                                            Uses a tuned functor with tiling and double buffering
+///                                            via shared memory and register buffers.
+///                        Note: See each routine's handle for details about which KK algorithms are
+///                              supported.
+/// \param teamSz          Specifies the team size that will affect any KK algorithm which uses
+///                        TeamPolicy (default, Kokkos::AUTO).
+///                        Note: Only applied if useAlgo_type == KK_*
+/// \param vecLen          Specifies the vector length that will affect any KK algorithm which
+///                        uses TeamPolicy and Kokkos::ThreadVectorRange or Kokkos::TeamVectorRange
+///                        (default, Kokkos::AUTO).
+///                        Note: Only applied if useAlgo_type == KK_*
+/// \param enabledDebug    toggle debug messages.
 // clang-format on
 class BatchedKernelHandle {
  public:
@@ -179,10 +176,10 @@ class BatchedKernelHandle {
   }
 
   // clang-format off
-  /// \var _kernelAlgoType Specifies which algorithm to use for invocation (default, SQUARE).
-  /// \var _tplParams      a handle or queue specific to the TPL API.
-  ///                      managed internally unless provided by user via
-  ///                      constructor overload
+  /// kernelAlgoType: Specifies which algorithm to use for invocation (default, SQUARE).
+  /// _tplParams:     a handle or queue specific to the TPL API.
+  ///                 managed internally unless provided by user via
+  ///                 constructor overload
   // clang-format on
  protected:
   // Define TPL params singleton as static class method variable

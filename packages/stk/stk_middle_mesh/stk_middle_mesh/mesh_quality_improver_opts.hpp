@@ -20,7 +20,7 @@ struct MeshQualityImproverOpts
                        // all elements are valid.  The quality optimization can exceed
                        // this number of steps if invalid elements still exist
 
-    double delta = 1e-3; // parameter for the mesh quality objective.  Smaller values prioritize
+    double delta = 0.1; // parameter for the mesh quality objective.  Smaller values prioritize
                          // fixing invalid elements over improving the average quality
 
     bool verboseOutput = false;

@@ -71,9 +71,6 @@ def parseArgs():
     parser.add_argument('sourceRepo',
                         help='Repo with the new changes',
                         action='store')
-    parser.add_argument('sourceBranch',
-                        help='Branch with the new changes',
-                        action='store')
     parser.add_argument('targetRepo',
                         help='Repo to merge into',
                         action='store')
@@ -130,12 +127,11 @@ def check_output_wrapper(args):
     return output
 
 
-def merge_branch(source_url, source_branch, target_branch, sourceSHA):
+def merge_branch(source_url, target_branch, sourceSHA):
     """
     TODO: add docstring.
     """
     source_url    = source_url.strip()
-    source_branch = source_branch.strip()
     target_branch = target_branch.strip()
     sourceSHA     = sourceSHA.strip()
 
@@ -149,11 +145,15 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
         check_call_wrapper(['git', 'remote', 'rm', 'source_remote'])
 
     check_call_wrapper(['git', 'remote', 'add', 'source_remote', source_url])
+    check_call_wrapper(['git', 'prune'])
+    if os.path.isfile(os.path.join('.git', 'gc.log')):
+        os.remove(os.path.join('.git', 'gc.log'))
+    check_call_wrapper(['git', 'gc'])
 
     fetch_succeeded = False
     for i in range(3):
         try:
-            check_call_wrapper(['git', 'fetch', 'source_remote', source_branch])
+            check_call_wrapper(['git', 'fetch', 'source_remote', sourceSHA])
             fetch_succeeded = True
             break
         except subprocess.CalledProcessError:
@@ -166,23 +166,14 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     check_call_wrapper(['git', 'fetch', 'origin', target_branch])
     check_call_wrapper(['git', 'reset', '--hard', 'HEAD'])
     check_call_wrapper(['git', 'checkout', '-B', target_branch, 'origin/' + target_branch])
-    check_call_wrapper(['git', 'merge', '--no-edit', 'source_remote/' + source_branch]),
 
-    actual_source_SHA = check_output_wrapper(['git', 'rev-parse', 'source_remote/' + source_branch])
+    sha_exists_as_branch_on_remote = bool(subprocess.check_output('git rev-parse --verify --quiet source_remote/' + sourceSHA + ' || true', shell=True))
 
-    if isinstance(actual_source_SHA, bytes):
-        actual_source_SHA = actual_source_SHA.decode('utf-8')
-
-    if isinstance(actual_source_SHA, bytes):
-        actual_source_SHA = actual_source_SHA.decode('utf-8')
-
-    actual_source_SHA = actual_source_SHA.strip()
-
-    if actual_source_SHA != sourceSHA:
-        print_wrapper(f"The SHA ({actual_source_SHA}) for the last commit on branch {source_branch}")
-        print_wrapper(f"in repo {source_url} is different from the expected SHA,")
-        print_wrapper(f"which is: {sourceSHA}.")
-        raise SystemExit(-1)
+    if sha_exists_as_branch_on_remote:
+        print_wrapper("REMARK: Detected ref as a remote branch, will merge as such")
+        check_call_wrapper(['git', 'merge', '--no-edit', "source_remote/" + sourceSHA])
+    else:
+        check_call_wrapper(['git', 'merge', '--no-edit', sourceSHA])
 
     return 0
 
@@ -201,7 +192,6 @@ def run():
         echoJenkinsVars(arguments.workspaceDir)
         try:
             merge_branch(arguments.sourceRepo,
-                         arguments.sourceBranch,
                          arguments.targetBranch,
                          arguments.sourceSHA)
         except SystemExit:

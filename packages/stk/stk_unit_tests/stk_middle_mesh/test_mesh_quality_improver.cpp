@@ -104,7 +104,7 @@ TEST(MeshQualityImprover, SinglePoint)
   std::shared_ptr<Mesh> mesh2 = create_mesh(spec, func);
   MeshEntityPtr vert          = find_closest_vert(mesh, utils::Point(0.5, 0.5));
 
-  auto metric = std::make_shared<RegularizedDistortionMetric>();
+  auto metric = std::make_shared<RegularizedDistortionMetric<double>>();
 
   BoundaryFixture filter(mesh);
 
@@ -141,7 +141,7 @@ TEST(MeshQualityImprover, FourPoint)
   std::shared_ptr<Mesh> mesh2 = create_mesh(spec, func);
   MeshEntityPtr vert          = find_closest_vert(mesh, utils::Point(1.0 / 3.0, 1.0 / 3.0), 0.1);
 
-  auto metric = std::make_shared<RegularizedDistortionMetric>();
+  auto metric = std::make_shared<RegularizedDistortionMetric<double>>();
 
   BoundaryFixture filter(mesh);
 
@@ -179,12 +179,12 @@ TEST(MeshQualityImprover, FourPointInvalid)
   std::shared_ptr<Mesh> mesh2 = create_mesh(spec, func);
   MeshEntityPtr vert          = find_closest_vert(mesh, utils::Point(1.0 / 3.0, 1.0 / 3.0), 0.1);
 
-  auto metric = std::make_shared<RegularizedDistortionMetric>(1e-3);
+  auto metric = std::make_shared<RegularizedDistortionMetric<double>>(1e-3);
 
   BoundaryFixture filter(mesh);
 
   auto fixer =
-      make_standard_improver(mesh, filter, {.nlayers = -1, .maxDeltaX = 1e-14, .itermax = 100, .delta = 1e-13});
+      make_standard_improver(mesh, filter, {.nlayers = -1, .maxDeltaX = 1e-14, .itermax = 100, .delta = 1e-3});
 
   // move the vertex to an invalid location
   if (vert)
@@ -225,7 +225,7 @@ TEST(MeshQualityImprover, FourPointAllInvalid)
   BoundaryFixture filter(mesh);
 
   auto fixer =
-      make_standard_improver(mesh, filter, {.nlayers = -1, .maxDeltaX = 1e-14, .itermax = 100, .delta = 1e-13});
+      make_standard_improver(mesh, filter, {.nlayers = -1, .maxDeltaX = 1e-14, .itermax = 100, .delta = 1e-3});
 
   // move all vertices to an invalid location
   if (vert1)
@@ -238,6 +238,51 @@ TEST(MeshQualityImprover, FourPointAllInvalid)
     vert4->set_point_orig(0, utils::Point(0.75, 0, 0.25));
 
   EXPECT_EQ(fixer->count_invalid_points(), 4);
+
+  // the fixer should return the vertex to its original location
+  fixer->run();
+
+  EXPECT_EQ(fixer->count_invalid_points(), 0);
+  test_meshes_identical(mesh, mesh2, 1e-8);
+}
+
+TEST(MeshQualityImprover, 4By4)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) > 4)
+    GTEST_SKIP();
+
+  // in this case, there are 4 dofs, but only one of them is moved from
+  // the initial position
+  MeshSpec spec;
+  spec.numelX = 4;
+  spec.numelY = 4;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;
+
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<Mesh> mesh  = create_mesh(spec, func);
+  std::shared_ptr<Mesh> mesh2 = create_mesh(spec, func);
+
+  BoundaryFixture filter(mesh);
+
+  auto fixer =
+      make_standard_improver(mesh, filter, {.nlayers = -1, .maxDeltaX = 1e-10, .itermax = 1000, .delta = 1e-3});
+
+  double delta = 0.25;
+  for (int i=1; i <= 3; ++i)
+    for (int j=1; j <= 3; ++j)
+    {
+      MeshEntityPtr vert = find_closest_vert(mesh, utils::Point(i*delta, j*delta), 0.01);
+      if (vert)
+      {
+        utils::Point pt = vert->get_point_orig(0);
+        std::cout << "perturbing vert at " << pt << std::endl;
+        vert->set_point_orig(0, pt + utils::Point(0.125, 0.125));
+      }
+    }
 
   // the fixer should return the vertex to its original location
   fixer->run();

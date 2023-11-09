@@ -45,10 +45,6 @@
 #include "MiniEM_HigherOrderMaxwellPreconditionerFactory.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory_Augmentation.hpp"
 #include "MiniEM_FullDarcyPreconditionerFactory.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-# include "MiniEM_DiscreteGradient.hpp"
-# include "MiniEM_DiscreteCurl.hpp"
-#endif
 #include "MiniEM_Interpolation.hpp"
 #include "MiniEM_helpers.hpp"
 
@@ -64,11 +60,10 @@ void writeToExodus(double time_stamp,
                    panzer_stk::STK_Interface & mesh);
 
 /********************************************************************************
- * Sets up an electromagetics problem driven by a simple Gaussian current pulse
- * on the domain [0,1]^3. First order Maxwell equations with edge-face
- * discretization for E,B. Backward Euler time-stepping with fixed CFL. Linear
- * systems solved with Belos GMRES using augmentation based block preconditioner
- * through Teko with multigrid subsolves from MueLu.
+ * This driver sets up either
+ * - first order Maxwell equations with edge-face discretization for E, B,
+ * - mixed form Darcy flow.
+ * We use backward Euler time-stepping with fixed CFL.
  *
  * This is meant to test the components of the Tpetra linear solver stack
  * required by EMPIRE-EM
@@ -85,7 +80,7 @@ void writeToExodus(double time_stamp,
 using namespace mini_em;
 
 using mini_em::physicsType, mini_em::MAXWELL, mini_em::DARCY;
-using mini_em::solverType, mini_em::AUGMENTATION, mini_em::MUELU_REFMAXWELL, mini_em::MUELU_MAXWELL_HO, mini_em::ML_REFMAXWELL, mini_em::CG, mini_em::GMRES, mini_em::MUELU_DARCY;
+using mini_em::solverType, mini_em::AUGMENTATION, mini_em::MUELU, mini_em::ML, mini_em::CG, mini_em::GMRES;
 using mini_em::linearAlgebraType, mini_em::linAlgTpetra, mini_em::linAlgEpetra;
 
 
@@ -119,9 +114,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
     std::string xml = "";
-    solverType solverValues[7] = {AUGMENTATION, MUELU_REFMAXWELL, MUELU_MAXWELL_HO, ML_REFMAXWELL, CG, GMRES, MUELU_DARCY};
-    const char * solverNames[7] = {"Augmentation", "MueLu-RefMaxwell", "MueLu-Maxwell-HO", "ML-RefMaxwell", "CG", "GMRES", "MueLu-Darcy"};
-    solverType solver = MUELU_REFMAXWELL;
+    solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
+    const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
+    solverType solver = MUELU;
     int numTimeSteps = 1;
     double finalTime = -1.;
     bool resetSolver = false;
@@ -145,7 +140,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
     clp.setOption("solverFile",&xml,"XML file with the solver params");
-    clp.setOption<solverType>("solver",&solver,7,solverValues,solverNames,"Solver that is used");
+    clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("finalTime",&finalTime);
     clp.setOption("matrixFree","no-matrixFree",&matrixFree,"matrix-free operators");
@@ -153,6 +148,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
     clp.setOption("stacked-timer","no-stacked-timer",&use_stacked_timer,"Run with or without stacked timer output");
     clp.setOption("test-name", &test_name, "Name of test (for Watchr output)");
+#ifdef HAVE_TEUCHOS_STACKTRACE
+    bool stacktrace = false;
+    clp.setOption("stacktrace", "nostacktrace", &stacktrace, "display stacktrace");
+#endif
 
     // parse command-line argument
     clp.recogniseAllOptions(true);
@@ -164,6 +163,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
+
+#ifdef HAVE_TEUCHOS_STACKTRACE
+    if (stacktrace)
+      Teuchos::print_stack_on_segfault();
+#endif
+
 
     if (use_stacked_timer) {
       stacked_timer = rcp(new Teuchos::StackedTimer("Mini-EM"));
@@ -238,7 +243,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       if (dt <= 0.) {
         if (mesh_pl.get<std::string>("Source") == "Exodus File" || meshFile != "") {
           RCP<Teuchos::ParameterList> input_pl = rcp(new Teuchos::ParameterList(mesh_pl.sublist("Exodus File")));
-          dt = input_pl->get<double>("dt");
+          if (input_pl->isType<double>("dt"))
+            dt = input_pl->get<double>("dt");
+          if (input_pl->isType<int>("num time steps"))
+            numTimeSteps = input_pl->get<int>("num time steps");
+          if (input_pl->isType<double>("final time"))
+            finalTime = input_pl->get<double>("final time");
         } else if (mesh_pl.get<std::string>("Source") ==  "Pamgen Mesh") {
           Teuchos::ParameterList & pamgen_pl = mesh_pl.sublist("Pamgen Mesh");
           dt = pamgen_pl.get<double>("dt");
@@ -263,7 +273,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       if (finalTime <= 0.)
         finalTime = numTimeSteps*dt;
       else {
-        numTimeSteps = std::round(finalTime/dt);
+        numTimeSteps = std::max(Teuchos::as<int>(std::ceil(finalTime/dt)), 1);
         dt = finalTime/numTimeSteps;
       }
 
@@ -272,7 +282,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         throw;
     }
 
-    RCP<Teuchos::ParameterList> lin_solver_pl = mini_em::getSolverParameters(linAlgebra, physics, solver, dim, comm, out, xml);
+    RCP<Teuchos::ParameterList> lin_solver_pl = mini_em::getSolverParameters(linAlgebra, physics, solver, dim, comm, out, xml, basis_order);
 
     if (lin_solver_pl->sublist("Preconditioner Types").isSublist("Teko") &&
         lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").isSublist("Inverse Factory Library")) {
@@ -429,9 +439,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                                                        rcp_dynamic_cast<panzer::BlockedDOFManager>(auxDofManager,true)));
     req_handler->addRequestCallback(callback);
 
-    if (useTpetra) {
-      // The assembly of interpolation type operators only works for Tpetra.
-
+    {
       if (physics == MAXWELL) {
         // add discrete curl
         ops_pl.sublist("Discrete Curl").set("Source", "E_edge");
@@ -449,7 +457,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       }
 
       // add request handlers for all interpolation type operators
-      // (discrete grad & curl, interpolations between spaces of different orders)
+      // (discrete grad, curl, div and interpolations between spaces of different orders)
       std::vector<std::pair<Teuchos::ParameterList,
                             Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > > > opLists = {{ops_pl, linObjFactory},
                                                                                                    {aux_ops_pl, auxLinObjFactory}};
@@ -478,21 +486,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         }
       }
     }
-#ifdef PANZER_HAVE_EPETRA_STACK
-    else if ((solver == MUELU_REFMAXWELL) or (solver == ML_REFMAXWELL)) {
-      // add discrete gradient, Epetra
-      {
-        Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
-        addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
-      }
-
-      // add discrete curl, Epetra
-      {
-        Teuchos::TimeMonitor tMdiscCurl(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete curl")));
-        addDiscreteCurlToRequestHandler(linObjFactory,req_handler);
-      }
-    }
-#endif
 
     // build linear solver
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > lowsFactory
@@ -731,10 +724,10 @@ int main(int argc,char * argv[]){
   const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
   linearAlgebraType linAlgebra = linAlgTpetra;
   clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
-  solverType solverValues[7] = {AUGMENTATION, MUELU_REFMAXWELL, MUELU_MAXWELL_HO, ML_REFMAXWELL, CG, GMRES, MUELU_DARCY};
-  const char * solverNames[7] = {"Augmentation", "MueLu-RefMaxwell", "MueLu-Maxwell-HO", "ML-RefMaxwell", "CG", "GMRES", "MueLu-Darcy"};
-  solverType solver = MUELU_REFMAXWELL;
-  clp.setOption<solverType>("solver",&solver,7,solverValues,solverNames,"Solver that is used");
+  solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
+  const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
+  solverType solver = MUELU;
+  clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);
@@ -745,7 +738,7 @@ int main(int argc,char * argv[]){
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
   }
 
-  if (solver == ML_REFMAXWELL) {
+  if (solver == ML) {
     TEUCHOS_ASSERT(linAlgebra == linAlgEpetra);
     // TEUCHOS_ASSERT(!useComplex);
   }

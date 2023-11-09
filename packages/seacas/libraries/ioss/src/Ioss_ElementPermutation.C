@@ -11,7 +11,6 @@
 
 #include <cassert> // for assert
 #include <cstddef> // for size_t
-#include <fmt/ostream.h>
 #include <ostream> // for basic_ostream, etc
 #include <string>  // for string, char_traits, etc
 #include <utility> // for pair
@@ -119,8 +118,9 @@ namespace Ioss {
   bool ElementPermutation::fill_permutation_indices(Permutation           permutation,
                                                     std::vector<Ordinal> &nodeOrdinalVector) const
   {
-    if (!valid_permutation(permutation))
+    if (!valid_permutation(permutation)) {
       return false;
+    }
 
     nodeOrdinalVector.resize(num_permutation_nodes());
     const auto &ordinals = m_permutationNodeOrdinals[permutation];
@@ -177,7 +177,7 @@ namespace Ioss {
 
   bool ElementPermutation::equal_(const ElementPermutation &rhs, bool quiet) const
   {
-    if (this->m_type.compare(rhs.m_type) != 0) {
+    if (this->m_type != rhs.m_type) {
       if (!quiet) {
         fmt::print(Ioss::OUTPUT(), "Element Permutation: NAME mismatch ({} vs. {})\n",
                    this->m_type.c_str(), rhs.m_type.c_str());

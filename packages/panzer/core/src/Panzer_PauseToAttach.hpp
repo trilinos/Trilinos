@@ -53,15 +53,15 @@
 #include <unistd.h>
 
 namespace panzer {
-  
+
   inline void pauseToAttach(MPI_Comm mpicomm)
   {
-    Teuchos::RCP<Teuchos::Comm<int> > comm = 
+    Teuchos::RCP<Teuchos::Comm<int> > comm =
       Teuchos::createMpiComm<int>(Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
     out.setShowProcRank(true);
     out.setOutputToRootOnly(-1);
-    
+
     comm->barrier();
 
     // try to get them to print out all at once
@@ -74,10 +74,10 @@ namespace panzer {
 
   inline void pauseToAttach()
   {
-    pauseToAttach(MPI_COMM_WORLD);
+    pauseToAttach(MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
   }
 
-  
+
 }
 
 #endif

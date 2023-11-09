@@ -541,8 +541,9 @@ bool compareFloatingArrays(
       l_out << "passed\n";                                        \
       l_out << "\nException message for expected exception:\n\n";   \
       { \
-        Teuchos::OSTab l_tab (out); \
+        Teuchos::OSTab l_tab(out); \
         l_out << except.what () << "\n\n"; \
+        (void)l_tab; \
       } \
     } \
     catch (std::exception& except) { \
@@ -552,8 +553,9 @@ bool compareFloatingArrays(
             << typeid (except).name () << ", which is a subclass of " \
             << "std::exception.  The exception's message is:\n\n"; \
       { \
-        Teuchos::OSTab l_tab (out); \
+        Teuchos::OSTab l_tab(out); \
         l_out << except.what () << "\n\n"; \
+        (void)l_tab; \
       } \
       l_out << "failed\n"; \
     } \
@@ -589,8 +591,9 @@ bool compareFloatingArrays(
             << typeid (except).name () << ", which is a subclass of " \
             << "std::exception.  The exception's message is:\n\n"; \
       { \
-        Teuchos::OSTab l_tab (out); \
+        Teuchos::OSTab l_tab(out); \
         l_out << except.what () << "\n\n"; \
+        (void)l_tab; \
       } \
       l_out << "failed\n"; \
     } \

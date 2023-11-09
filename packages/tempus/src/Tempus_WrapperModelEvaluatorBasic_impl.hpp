@@ -21,6 +21,17 @@ createInArgs() const
   //MEB::InArgsSetup<Scalar> inArgs(appModel_->createInArgs());
   MEB::InArgsSetup<Scalar> inArgs(appModel_->getNominalValues());
 
+  inArgs.set_x(x_);
+  if ( y_ != Teuchos::null ) inArgs.set_p(index_, y_);
+  if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot (xDot_);
+  if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t     (time_);
+  if (inArgs.supports(MEB::IN_ARG_step_size))
+    inArgs.set_step_size(p_->timeStepSize_);
+  if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha (p_->alpha_);
+  if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta  (p_->beta_);
+  if (inArgs.supports(MEB::IN_ARG_stage_number))
+    inArgs.set_stage_number(p_->stageNumber_);
+
   inArgs.setModelEvalDescription(this->description());
   return std::move(inArgs);
 }
@@ -47,8 +58,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
   using Teuchos::RCP;
 
   typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::InArgs<Scalar>  appInArgs (wrapperInArgs_);
-  MEB::OutArgs<Scalar> appOutArgs(wrapperOutArgs_);
+  MEB::InArgs<Scalar>  appInArgs (inArgs);
+  MEB::OutArgs<Scalar> appOutArgs(outArgs);
 
   // Setup input and output arguments for application ME
   switch (evaluationType_)
@@ -104,8 +115,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
       // with the governing equations.
 
       // Setup input arguments
-      appInArgs.set_x(wrapperInArgs_.get_x());  // x is from the Stepper.
-      appInArgs.set_x_dot(inArgs.get_x());      // xDot is from the solver.
+      appInArgs.set_x(x_);                  // x is from the Stepper.
+      appInArgs.set_x_dot(inArgs.get_x());  // xDot is from the solver.
 
       // Setup output arguments
       appOutArgs.set_f(outArgs.get_f());
@@ -120,11 +131,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
     default: {
       TEUCHOS_TEST_FOR_EXCEPT("Invalid EVALUATION_TYPE!");
     }
-  }
-
-  for (int i=0; i<appModel_->Np(); ++i) {
-    if (inArgs.get_p(i) != Teuchos::null)
-      appInArgs.set_p(i, inArgs.get_p(i));
   }
 
   appModel_->evalModel(appInArgs, appOutArgs);
