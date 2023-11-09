@@ -190,7 +190,7 @@ namespace MueLu {
     params->set("multigrid algorithm", "Unsmoothed");
     params->set("transpose: use implicit", MasterList::getDefault<bool>("transpose: use implicit"));
     params->set("rap: triple product", MasterList::getDefault<bool>("rap: triple product"));
-    params->set("rap: fix zero diagonals", MasterList::getDefault<bool>("rap: fix zero diagonals"));
+    params->set("rap: fix zero diagonals", true);
     params->set("rap: fix zero diagonals threshold", MasterList::getDefault<double>("rap: fix zero diagonals threshold"));
     params->set("fuse prolongation and update", MasterList::getDefault<bool>("fuse prolongation and update"));
     params->set("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
@@ -1873,9 +1873,6 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tm = getTimer("vectorial nodal prolongator");
     GetOStream(Runtime0) << solverName_+"::compute(): building vectorial nodal prolongator" << std::endl;
 
-    using ATS        = Kokkos::ArithTraits<Scalar>;
-    using impl_Scalar = typename ATS::val_type;
-    using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     typedef typename Matrix::local_matrix_type KCRS;
@@ -2526,6 +2523,8 @@ namespace MueLu {
           Dk_1 = D0;
         else if (D0.is_null())
           D0 = Dk_1;
+        if (M1_beta.is_null())
+          M1_beta = Mk_one;
       } else if (spaceNumber == 2) {
         if (Dk_2.is_null())
           Dk_2 = D0;
