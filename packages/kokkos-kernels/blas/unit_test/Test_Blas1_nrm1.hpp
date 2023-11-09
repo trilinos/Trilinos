@@ -182,12 +182,12 @@ int test_nrm1_mv() {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrm1_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_float");
-  test_nrm1<float, TestExecSpace>();
+  test_nrm1<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrm1_mv_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_mv_float");
-  test_nrm1_mv<float, TestExecSpace>();
+  test_nrm1_mv<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -197,12 +197,12 @@ TEST_F(TestCategory, nrm1_mv_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrm1_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_double");
-  test_nrm1<double, TestExecSpace>();
+  test_nrm1<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrm1_mv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_mv_double");
-  test_nrm1_mv<double, TestExecSpace>();
+  test_nrm1_mv<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -212,12 +212,12 @@ TEST_F(TestCategory, nrm1_mv_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrm1_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_complex_double");
-  test_nrm1<Kokkos::complex<double>, TestExecSpace>();
+  test_nrm1<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrm1_mv_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_mv_complex_double");
-  test_nrm1_mv<Kokkos::complex<double>, TestExecSpace>();
+  test_nrm1_mv<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -227,12 +227,12 @@ TEST_F(TestCategory, nrm1_mv_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrm1_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_int");
-  test_nrm1<int, TestExecSpace>();
+  test_nrm1<int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrm1_mv_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm1_mv_int");
-  test_nrm1_mv<int, TestExecSpace>();
+  test_nrm1_mv<int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif

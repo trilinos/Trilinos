@@ -43,6 +43,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedTeamTrsm {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b;
 
   ScalarType _alpha;
@@ -74,8 +75,8 @@ struct Functor_TestBatchedTeamTrsm {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _b.extent(0);
-    Kokkos::TeamPolicy<DeviceType, ParamTagType> policy(league_size,
-                                                        Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size,
+                                                             Kokkos::AUTO);
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }

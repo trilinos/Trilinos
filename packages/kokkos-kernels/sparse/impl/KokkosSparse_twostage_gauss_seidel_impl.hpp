@@ -633,22 +633,18 @@ class TwostageGaussSeidel {
     // shift ptr so that it now contains offsets (combine it with the previous
     // functor calls?)
     if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
-      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t,
-                                                            execution_space>(
+      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
           1 + num_rows, rowmap_viewL);
       if (compact_form) {
-        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t,
-                                                              execution_space>(
+        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
             1 + num_rows, rowmap_viewLa);
       }
     }
     if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
-      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t,
-                                                            execution_space>(
+      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
           1 + num_rows, rowmap_viewU);
       if (compact_form) {
-        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t,
-                                                              execution_space>(
+        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
             1 + num_rows, rowmap_viewUa);
       }
     }

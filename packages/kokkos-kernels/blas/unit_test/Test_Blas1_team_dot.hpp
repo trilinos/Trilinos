@@ -28,7 +28,8 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_team_dot(int N) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch M teams of the maximum number of threads per team
@@ -42,8 +43,7 @@ void impl_test_team_dot(int N) {
   view_stride_adapter<ViewTypeA> a("a", N);
   view_stride_adapter<ViewTypeB> b("b", N);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   Kokkos::fill_random(a.d_view, rand_pool, ScalarA(10));
   Kokkos::fill_random(b.d_view, rand_pool, ScalarB(10));
@@ -161,7 +161,8 @@ void impl_test_team_dot(int N) {
 
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_team_dot_mv(int N, int K) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch K teams of the maximum number of threads per team
@@ -173,8 +174,7 @@ void impl_test_team_dot_mv(int N, int K) {
   view_stride_adapter<ViewTypeA> a("A", N, K);
   view_stride_adapter<ViewTypeB> b("B", N, K);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   Kokkos::fill_random(a.d_view, rand_pool, ScalarA(10));
   Kokkos::fill_random(b.d_view, rand_pool, ScalarB(10));
@@ -355,10 +355,10 @@ int test_team_dot_mv() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_dot_float) {
-  test_team_dot<float, float, TestExecSpace>();
+  test_team_dot<float, float, TestDevice>();
 }
 TEST_F(TestCategory, team_dot_mv_float) {
-  test_team_dot_mv<float, float, TestExecSpace>();
+  test_team_dot_mv<float, float, TestDevice>();
 }
 #endif
 
@@ -366,10 +366,10 @@ TEST_F(TestCategory, team_dot_mv_float) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_dot_double) {
-  test_team_dot<double, double, TestExecSpace>();
+  test_team_dot<double, double, TestDevice>();
 }
 TEST_F(TestCategory, team_dot_mv_double) {
-  test_team_dot_mv<double, double, TestExecSpace>();
+  test_team_dot_mv<double, double, TestDevice>();
 }
 #endif
 
@@ -377,30 +377,29 @@ TEST_F(TestCategory, team_dot_mv_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_dot_complex_double) {
-  test_team_dot<Kokkos::complex<double>, Kokkos::complex<double>,
-                TestExecSpace>();
+  test_team_dot<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>();
 }
 TEST_F(TestCategory, team_dot_mv_complex_double) {
   test_team_dot_mv<Kokkos::complex<double>, Kokkos::complex<double>,
-                   TestExecSpace>();
+                   TestDevice>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) ||   \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_dot_int) { test_team_dot<int, int, TestExecSpace>(); }
+TEST_F(TestCategory, team_dot_int) { test_team_dot<int, int, TestDevice>(); }
 TEST_F(TestCategory, team_dot_mv_int) {
-  test_team_dot_mv<int, int, TestExecSpace>();
+  test_team_dot_mv<int, int, TestDevice>();
 }
 #endif
 
 /*#if !defined(KOKKOSKERNELS_ETI_ONLY) &&
 !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) TEST_F( TestCategory,
-team_dot_double_int ) { test_team_dot<double,int,TestExecSpace> ();
+team_dot_double_int ) { test_team_dot<double,int,TestDevice> ();
 }
 TEST_F( TestCategory, team_dot_mv_double_int ) {
-    test_team_dot_mv<double,int,TestExecSpace> ();
+    test_team_dot_mv<double,int,TestDevice> ();
 }
 #endif*/
 

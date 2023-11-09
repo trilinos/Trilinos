@@ -109,10 +109,17 @@ class JacobiPrec {
     }
 
     if (tooSmall > 0)
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::JacobiPrec: %d entrie(s) has/have a too small "
           "magnitude and have been replaced by one, \n",
           (int)tooSmall);
+#else
+      Kokkos::printf(
+          "KokkosBatched::JacobiPrec: %d entrie(s) has/have a too small "
+          "magnitude and have been replaced by one, \n",
+          (int)tooSmall);
+#endif
     computed_inverse = true;
   }
 
@@ -131,10 +138,17 @@ class JacobiPrec {
       }
 
     if (tooSmall > 0)
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::JacobiPrec: %d entrie(s) has/have a too small "
           "magnitude and have been replaced by one, \n",
           (int)tooSmall);
+#else
+      Kokkos::printf(
+          "KokkosBatched::JacobiPrec: %d entrie(s) has/have a too small "
+          "magnitude and have been replaced by one, \n",
+          (int)tooSmall);
+#endif
     computed_inverse = true;
   }
 

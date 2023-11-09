@@ -204,17 +204,31 @@ KOKKOS_INLINE_FUNCTION int SerialXpay::invoke(const alphaViewType& alpha,
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::xpay: Dimensions of X and Y do not match: X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::xpay: Dimensions of X and Y do not match: X: %d x %d, "
+        "Y: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#endif
     return 1;
   }
   if (X.extent(0) != alpha.extent(0)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::xpay: First dimension of X and alpha do not match: X: "
         "%d x %d, alpha: %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
+#else
+    Kokkos::printf(
+        "KokkosBatched::xpay: First dimension of X and alpha do not match: X: "
+        "%d x %d, alpha: %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
+#endif
     return 1;
   }
 #endif
@@ -247,17 +261,31 @@ KOKKOS_INLINE_FUNCTION int TeamXpay<MemberType>::invoke(
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::xpay: Dimensions of X and Y do not match: X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::xpay: Dimensions of X and Y do not match: X: %d x %d, "
+        "Y: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#endif
     return 1;
   }
   if (X.extent(0) != alpha.extent(0)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::xpay: First dimension of X and alpha do not match: X: "
         "%d x %d, alpha: %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
+#else
+    Kokkos::printf(
+        "KokkosBatched::xpay: First dimension of X and alpha do not match: X: "
+        "%d x %d, alpha: %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
+#endif
     return 1;
   }
 #endif
@@ -291,17 +319,31 @@ KOKKOS_INLINE_FUNCTION int TeamVectorXpay<MemberType>::invoke(
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::xpay: Dimensions of X and Y do not match: X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::xpay: Dimensions of X and Y do not match: X: %d x %d, "
+        "Y: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#endif
     return 1;
   }
   if (X.extent(0) != alpha.extent(0)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::xpay: First dimension of X and alpha do not match: X: "
         "%d x %d, alpha: %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
+#else
+    Kokkos::printf(
+        "KokkosBatched::xpay: First dimension of X and alpha do not match: X: "
+        "%d x %d, alpha: %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
+#endif
     return 1;
   }
 #endif

@@ -32,6 +32,7 @@ namespace GMRES {
 template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType, typename KrylovHandleType>
 struct Functor_TestBatchedSerialGMRES {
+  using execution_space = typename DeviceType::execution_space;
   const ValuesViewType _D;
   const IntView _r;
   const IntView _c;
@@ -85,7 +86,7 @@ struct Functor_TestBatchedSerialGMRES {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType> policy(0, _D.extent(0) / _N_team);
+    Kokkos::RangePolicy<execution_space> policy(0, _D.extent(0) / _N_team);
 
     const int N                 = _D.extent(0);
     const int n                 = _X.extent(1);

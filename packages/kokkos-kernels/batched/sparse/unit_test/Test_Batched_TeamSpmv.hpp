@@ -42,6 +42,7 @@ template <typename DeviceType, typename ParamTagType, typename ValuesViewType,
           typename IntView, typename xViewType, typename yViewType,
           typename alphaViewType, typename betaViewType, int dobeta>
 struct Functor_TestBatchedTeamSpmv {
+  using execution_space = typename DeviceType::execution_space;
   const alphaViewType _alpha;
   const ValuesViewType _D;
   const IntView _r;
@@ -99,7 +100,7 @@ struct Functor_TestBatchedTeamSpmv {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::TeamPolicy<DeviceType, ParamTagType> policy(
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(
         _D.extent(0) / _N_team, Kokkos::AUTO(), Kokkos::AUTO());
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();

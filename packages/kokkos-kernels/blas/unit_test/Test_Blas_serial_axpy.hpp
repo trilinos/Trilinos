@@ -32,6 +32,7 @@ struct NaiveAxpyTag {};
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename AlgoTagType>
 struct Functor_TestBlasSerialAxpy {
+  using execution_space = typename DeviceType::execution_space;
   ScalarType _alpha;
   ViewType _x;
   ViewType _y;
@@ -71,7 +72,7 @@ struct Functor_TestBlasSerialAxpy {
     std::string name =
         name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, AlgoTagType> policy(0, _x.extent(0));
+    Kokkos::RangePolicy<execution_space, AlgoTagType> policy(0, _x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
     return;
@@ -155,35 +156,35 @@ int test_blas_serial_axpy() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, serial_axpy_float_float) {
-  test_blas_serial_axpy<TestExecSpace, float, float>();
+  test_blas_serial_axpy<TestDevice, float, float>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, serial_axpy_double_double) {
-  test_blas_serial_axpy<TestExecSpace, double, double>();
+  test_blas_serial_axpy<TestDevice, double, double>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, serial_axpy_dcomplex_dcomplex) {
-  test_blas_serial_axpy<TestExecSpace, Kokkos::complex<double>,
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<double>,
                         Kokkos::complex<double> >();
 }
 
 TEST_F(TestCategory, serial_axpy_dcomplex_double) {
-  test_blas_serial_axpy<TestExecSpace, Kokkos::complex<double>, double>();
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<double>, double>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, serial_axpy_fcomplex_fcomplex) {
-  test_blas_serial_axpy<TestExecSpace, Kokkos::complex<float>,
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<float>,
                         Kokkos::complex<double> >();
 }
 
 TEST_F(TestCategory, serial_axpy_fcomplex_float) {
-  test_blas_serial_axpy<TestExecSpace, Kokkos::complex<float>, float>();
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<float>, float>();
 }
 #endif
 

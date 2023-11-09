@@ -280,12 +280,12 @@ int test_iamax_mv() {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, iamax_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_float");
-  test_iamax<float, TestExecSpace>();
+  test_iamax<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, iamax_mv_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_mvfloat");
-  test_iamax_mv<float, TestExecSpace>();
+  test_iamax_mv<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -295,12 +295,12 @@ TEST_F(TestCategory, iamax_mv_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, iamax_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_double");
-  test_iamax<double, TestExecSpace>();
+  test_iamax<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, iamax_mv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_mv_double");
-  test_iamax_mv<double, TestExecSpace>();
+  test_iamax_mv<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -310,12 +310,12 @@ TEST_F(TestCategory, iamax_mv_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, iamax_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_complex_double");
-  test_iamax<Kokkos::complex<double>, TestExecSpace>();
+  test_iamax<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, iamax_mv_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_mv_complex_double");
-  test_iamax_mv<Kokkos::complex<double>, TestExecSpace>();
+  test_iamax_mv<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -325,12 +325,12 @@ TEST_F(TestCategory, iamax_mv_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, iamax_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_int");
-  test_iamax<int, TestExecSpace>();
+  test_iamax<int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, iamax_mv_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_mv_int");
-  test_iamax_mv<int, TestExecSpace>();
+  test_iamax_mv<int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif

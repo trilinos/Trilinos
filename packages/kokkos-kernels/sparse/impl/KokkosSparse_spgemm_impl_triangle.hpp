@@ -1818,8 +1818,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
                           p_entriesA, bnnz, p_rowmapB_begins, p_rowmapB_ends,
                           p_set_index_b, p_set_b, p_rowmapC, NULL, dummy);
 
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<c_row_view_t,
-                                                        MyExecSpace>(
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(
       this->a_row_cnt + 1, rowmapC_);
   MyExecSpace().fence();
 

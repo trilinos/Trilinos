@@ -89,12 +89,13 @@ struct chem_model_2 {
   }
 };
 
-template <class execution_space>
+template <class Device>
 void test_chem() {
-  using vec_type    = Kokkos::View<double*, execution_space>;
-  using mv_type     = Kokkos::View<double**, execution_space>;
-  using RK_type     = KokkosODE::Experimental::RK_type;
-  using solver_type = KokkosODE::Experimental::RungeKutta<RK_type::RKCK>;
+  using execution_space = typename Device::execution_space;
+  using vec_type        = Kokkos::View<double*, Device>;
+  using mv_type         = Kokkos::View<double**, Device>;
+  using RK_type         = KokkosODE::Experimental::RK_type;
+  using solver_type     = KokkosODE::Experimental::RungeKutta<RK_type::RKCK>;
 
   {
     chem_model_1 chem_model;
@@ -103,7 +104,7 @@ void test_chem() {
 
     KokkosODE::Experimental::ODE_params params(num_steps);
     vec_type tmp("tmp vector", neqs);
-    mv_type kstack("k stack", neqs, solver_type::num_stages());
+    mv_type kstack("k stack", solver_type::num_stages(), neqs);
 
     // Set initial conditions
     vec_type y_new("solution", neqs);
@@ -144,7 +145,7 @@ void test_chem() {
 
     KokkosODE::Experimental::ODE_params params(num_steps);
     vec_type tmp("tmp vector", neqs);
-    mv_type kstack("k stack", neqs, solver_type::num_stages());
+    mv_type kstack("k stack", solver_type::num_stages(), neqs);
 
     // Set initial conditions
     vec_type y_new("solution", neqs);
@@ -188,7 +189,7 @@ void test_chem() {
 }  // namespace Test
 
 int test_chem_models() {
-  Test::test_chem<TestExecSpace>();
+  Test::test_chem<TestDevice>();
 
   return 1;
 }

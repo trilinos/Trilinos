@@ -192,7 +192,7 @@ struct GEMM {
         team_size = blockA0;
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-      if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
+      if (std::is_same<execution_space, Kokkos::HIP>::value)
         team_size = blockA0;
 #endif
 #if defined(KOKKOS_ENABLE_ROCM)

@@ -31,26 +31,25 @@
 
 // ETI is off, test all possible type combos
 
-KOKKOSKERNELS_EXECUTE_TEST(double, int, int, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(double, int64_t, int, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(double, int, size_t, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(float, int, int, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, int, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(float, int, size_t, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(double, int, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(double, int64_t, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(double, int, size_t, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(double, int64_t, size_t, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(float, int, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(float, int, size_t, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, size_t, TestDevice)
 
 #if !defined(NO_TEST_COMPLEX)
 
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int64_t, size_t,
-                           TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int, size_t, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int, size_t, TestDevice)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestDevice)
 
 #endif
 
@@ -61,49 +60,49 @@ KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
      defined(KOKKOSKERNELS_INST_OFFSET_INT))
-KOKKOSKERNELS_EXECUTE_TEST(double, int, int, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(double, int, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_INT))
-KOKKOSKERNELS_EXECUTE_TEST(double, int64_t, int, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(double, int64_t, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
-KOKKOSKERNELS_EXECUTE_TEST(double, int, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(double, int, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
-KOKKOSKERNELS_EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(double, int64_t, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
      defined(KOKKOSKERNELS_INST_OFFSET_INT))
-KOKKOSKERNELS_EXECUTE_TEST(float, int, int, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(float, int, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_INT))
-KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, int, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
-KOKKOSKERNELS_EXECUTE_TEST(float, int, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(float, int, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
-KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, size_t, TestDevice)
 #endif
 
 #if !defined(NO_TEST_COMPLEX)
@@ -111,50 +110,49 @@ KOKKOSKERNELS_EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
      defined(KOKKOSKERNELS_INST_OFFSET_INT))
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
      defined(KOKKOSKERNELS_INST_OFFSET_INT))
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int64_t, size_t,
-                           TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
      defined(KOKKOSKERNELS_INST_OFFSET_INT))
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
      defined(KOKKOSKERNELS_INST_OFFSET_INT))
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
      defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T))
-KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
+KOKKOSKERNELS_EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestDevice)
 #endif
 
 #endif  // !NO_TEST_COMPLEX
