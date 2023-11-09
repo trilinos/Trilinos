@@ -215,12 +215,12 @@ bool Bounds<Real>::isFeasible( const Vector<Real> &v ) {
   if (BoundConstraint<Real>::isUpperActivated()) {
     mask_->set(v);
     mask_->applyBinary(isGreater_,*upper_);
-    flagU = mask_->reduce(maximum_) > half ? false : true;
+    flagU = mask_->reduce(maximum_) > half ? true : false;
   }
   if (BoundConstraint<Real>::isLowerActivated()) {
     mask_->set(*lower_);
     mask_->applyBinary(isGreater_,v);
-    flagL = mask_->reduce(maximum_) > half ? false : true;
+    flagL = mask_->reduce(maximum_) > half ? true : false;
   }
   return ((flagU || flagL) ? false : true);
 }
