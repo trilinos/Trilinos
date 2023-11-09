@@ -1872,9 +1872,6 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tm = getTimer("vectorial nodal prolongator");
     GetOStream(Runtime0) << solverName_+"::compute(): building vectorial nodal prolongator" << std::endl;
 
-    using ATS        = Kokkos::ArithTraits<Scalar>;
-    using impl_Scalar = typename ATS::val_type;
-    using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     typedef typename Matrix::local_matrix_type KCRS;
