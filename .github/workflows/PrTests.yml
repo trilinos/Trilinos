@@ -13,7 +13,7 @@ on:
 
 jobs:
   triloamd01-gcc:
-    runs-on: [self-hosted, trilamd01]
+    runs-on: [self-hosted, triloamd01]
     container:
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/rhel8/trilinos-pr-env:gcc-8.5.0
       options: --hostname trilinos-container-gcc-8
