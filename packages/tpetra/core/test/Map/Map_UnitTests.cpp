@@ -473,7 +473,7 @@ namespace {
 
    out << "Test: Map, KokkosViewConstructor" << std::endl;
 
-   // create a comm                                                                                                                                                                                                                                                          
+   // create a comm
    auto comm = Tpetra::getDefaultComm();
    const int rank = comm->getRank();
 
@@ -488,20 +488,21 @@ namespace {
    Kokkos::View<GO*> myview("DeviceView",N);
    auto myview_h = Kokkos::create_mirror_view(myview);
 
+   int RANK_BASE = rank*100;
    // Contiguous part
    int nstop = 5;
    for(int i=0; i<nstop; i++)
-     myview_h(i) = i;
+     myview_h(i) = RANK_BASE + i;
 
    // Noncontiguous goop
-   myview_h(nstop) = 5000;
+   myview_h(nstop) = RANK_BASE + 5000;
    
    // The rest, is contiguous, except for the last guy
    for(int i=nstop+1; i<N-1; i++)
-     myview_h(i) = i;
+     myview_h(i) = RANK_BASE + i;
    
    // The last guy
-   myview_h(N-1) = 5001;
+   myview_h(N-1) = RANK_BASE + 5001;
    Kokkos::deep_copy(myview,myview_h);
 
    // Now do an Arrayview
@@ -517,7 +518,10 @@ namespace {
    TEST_EQUALITY(map_kokkos.getIndexBase(), map_teuchos.getIndexBase());
    TEST_EQUALITY(map_kokkos.getMinLocalIndex(), map_teuchos.getMinLocalIndex());
    TEST_EQUALITY(map_kokkos.getMaxLocalIndex(), map_teuchos.getMaxLocalIndex());
-   TEST_EQUALITY(map_kokkos.getMaxLocalIndex(), map_teuchos.getMaxLocalIndex());
+   TEST_EQUALITY(map_kokkos.getMaxGlobalIndex(), map_teuchos.getMaxGlobalIndex());
+   TEST_EQUALITY(map_kokkos.getMinGlobalIndex(), map_teuchos.getMinGlobalIndex());
+   TEST_EQUALITY(map_kokkos.getMaxAllGlobalIndex(), map_teuchos.getMaxAllGlobalIndex());
+   TEST_EQUALITY(map_kokkos.getMinAllGlobalIndex(), map_teuchos.getMinAllGlobalIndex());
 
    ArrayView<const GO> glist_kokkos = map_kokkos.getLocalElementList();
    ArrayView<const GO> glist_teuchos = map_teuchos.getLocalElementList();
@@ -529,6 +533,48 @@ namespace {
      LO lo_t = map_teuchos.getLocalElement(map_teuchos.getGlobalElement(i));
      TEST_EQUALITY(lo_k,lo_t);
    }     
+
+   // Ask getLocalElement about stuff that isn't on this rank's map and make sure it gets that right
+   {
+     LO lo_k = map_kokkos.getLocalElement(10000);
+     LO lo_t = map_teuchos.getLocalElement(10000);
+     TEST_EQUALITY(lo_k,lo_t);
+   }
+   {
+     LO lo_k = map_kokkos.getLocalElement(nstop);
+     LO lo_t = map_teuchos.getLocalElement(nstop);
+     TEST_EQUALITY(lo_k,lo_t);
+   }
+       
+   // Check the FHT on device now
+   auto lmap_k = map_kokkos.getLocalMap();
+   auto lmap_t = map_teuchos.getLocalMap();
+
+   using range_policy = Kokkos::RangePolicy<typename M::node_type::device_type::execution_space>;   
+   int failcount=0;
+   Kokkos::parallel_reduce("device_test",range_policy(0,N),KOKKOS_LAMBDA(const int &i, int& l_failcount) {
+       LO lo_k = lmap_k.getLocalElement(lmap_k.getGlobalElement(i));
+       LO lo_t = lmap_t.getLocalElement(lmap_t.getGlobalElement(i));
+
+       if(lo_k != lo_t)
+         l_failcount++;
+     },failcount);
+   TEST_EQUALITY(failcount,0);
+
+   Kokkos::parallel_reduce("device_test2",range_policy(0,1),KOKKOS_LAMBDA(const int &i, int& l_failcount) {
+       LO lo_k = map_kokkos.getLocalElement(nstop);
+       LO lo_t = map_teuchos.getLocalElement(nstop);
+
+       if(lo_k != lo_t)
+         l_failcount++;
+     },failcount);
+   TEST_EQUALITY(failcount,0);
+
+   
+
+   
+   map_teuchos.describe(out,Teuchos::VERB_EXTREME);
+   map_kokkos.describe(out,Teuchos::VERB_EXTREME);
 
  }
 
