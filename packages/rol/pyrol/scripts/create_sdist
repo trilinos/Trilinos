@@ -32,6 +32,9 @@ fi
 
 TRILINOS_VERSION="14.4"
 
+REPO_NAME="ROL-Trilinos"
+cp ./${REPO_NAME}/packages/rol/pyrol/pyproject.toml ./${REPO_NAME}/pyproject.toml
+
 ## Step 1: Use CMake to create a build directory.
 [ -d build ] && rm build
 cmake -G Ninja \
@@ -53,7 +56,7 @@ cmake -G Ninja \
 "-DPyROL_BINDER_LibClang_include_dir:PATH=${LLVM_PREFIX}/lib/clang/${LLVM_VERSION}/include" \
 "-DCPACK_SOURCE_IGNORE_FILES=/packages/rol/example;/packages/rol/test;/packages/teuchos/core/test;/packages/teuchos/core/example;/packages/teuchos/numerics/test;/packages/teuchos/numerics/example;/packages/teuchos/parameterlist/test;/packages/teuchos/parameterlist/example;/packages/teuchos/parser/test;/packages/teuchos/parser/example;/packages/teuchos/remainder/test;/packages/teuchos/remainder/example;/packages/teuchos/comm/test;/packages/teuchos/comm/example" \
 -D CMAKE_INSTALL_PREFIX:PATH=install \
-./py-rol -B./build
+./${REPO_NAME} -B./build
 
 ## Step 2: Run Binder.
 make -C build
