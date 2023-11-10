@@ -25,7 +25,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -49,16 +48,17 @@
 
 namespace Belos {
   
-  template<class ScalarType, class MV, class OP>
-  class PseudoBlockStochasticCGIter : virtual public StochasticCGIteration<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class PseudoBlockStochasticCGIter : virtual public StochasticCGIteration<ScalarType,MV,OP,DM> {
     
   public:
     
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef DenseMatTraits<ScalarType,DM> DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
     
@@ -72,7 +72,7 @@ namespace Belos {
      */
     PseudoBlockStochasticCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 				 const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-				 const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+				 const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 				 Teuchos::ParameterList &params );
     
     //! Destructor.
@@ -240,7 +240,7 @@ namespace Belos {
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
     
     //
     // Algorithmic parameters
@@ -287,10 +287,10 @@ namespace Belos {
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  PseudoBlockStochasticCGIter<ScalarType,MV,OP>::PseudoBlockStochasticCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+  template<class ScalarType, class MV, class OP, class DM>
+  PseudoBlockStochasticCGIter<ScalarType,MV,OP,DM>::PseudoBlockStochasticCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 							       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 							       Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -305,8 +305,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockStochasticCGIter<ScalarType,MV,OP>::initializeCG(StochasticCGIterationState<ScalarType,MV>& newstate)
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockStochasticCGIter<ScalarType,MV,OP,DM>::initializeCG(StochasticCGIterationState<ScalarType,MV>& newstate)
   {
     // Check if there is any multivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
@@ -387,8 +387,8 @@ namespace Belos {
 
  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockStochasticCGIter<ScalarType,MV,OP>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockStochasticCGIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -400,8 +400,9 @@ namespace Belos {
     // Allocate memory for scalars.
     int i=0;
     std::vector<int> index(1);
-    std::vector<ScalarType> rHz( numRHS_ ), rHz_old( numRHS_ ), pAp( numRHS_ );
-    Teuchos::SerialDenseMatrix<int, ScalarType> alpha( numRHS_,numRHS_ ), beta( numRHS_,numRHS_ ), zeta(numRHS_,numRHS_);
+    std::vector<ScalarType> rHz( numRHS_ ), rHz_old( numRHS_ ), pAp( numRHS_ ), beta( numRHS_ );
+    Teuchos::RCP<DM> alpha = DMT::Create( numRHS_,numRHS_ );
+    Teuchos::RCP<DM> zeta = DMT::Create( numRHS_,numRHS_ );
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -442,20 +443,22 @@ namespace Belos {
                                 CGPositiveDefiniteFailure,
                                 "Belos::PseudoBlockStochasticCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
-        alpha(i,i) = rHz[i] / pAp[i];
+        DMT::Value(*alpha,i,i) = rHz[i] / pAp[i];
 
 	// Compute the scaling parameter for the stochastic vector
-	zeta(i,i) = z[i] / Teuchos::ScalarTraits<ScalarType>::squareroot(pAp[i]);
+	DMT::Value(*zeta,i,i) = z[i] / Teuchos::ScalarTraits<ScalarType>::squareroot(pAp[i]);
       }
+      DMT::SyncDeviceToHost( *alpha );
+      DMT::SyncDeviceToHost( *zeta );
 
       //
       // Update the solution std::vector x := x + alpha * P_
       //
-      MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
+      MVT::MvTimesMatAddMv( one, *P_, *alpha, one, *cur_soln_vec );
       lp_->updateSolution();
 
       // Updates the stochastic vector y := y + zeta * P_
-      MVT::MvTimesMatAddMv( one, *P_, zeta, one, *Y_);
+      MVT::MvTimesMatAddMv( one, *P_, *zeta, one, *Y_);
 
       //
       // Save the denominator of beta before residual is updated [ old <R_, Z_> ]
@@ -466,7 +469,7 @@ namespace Belos {
       //
       // Compute the new residual R_ := R_ - alpha * AP_
       //
-      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ );
+      MVT::MvTimesMatAddMv( -one, *AP_, *alpha, one, *R_ );
       //
       // Compute beta := [ new <R_, Z_> ] / [ old <R_, Z_> ], 
       // and the new direction std::vector p.
@@ -495,11 +498,11 @@ namespace Belos {
       //
       // Update the search directions.
       for (i=0; i<numRHS_; ++i) {
-        beta(i,i) = rHz[i] / rHz_old[i];
+        beta[i] = rHz[i] / rHz_old[i];
 	index[0] = i;
 	Teuchos::RCP<const MV> Z_i = MVT::CloneView( *Z_, index );
 	Teuchos::RCP<MV> P_i = MVT::CloneViewNonConst( *P_, index );
-        MVT::MvAddMv( one, *Z_i, beta(i,i), *P_i, *P_i );
+        MVT::MvAddMv( one, *Z_i, beta[i], *P_i, *P_i );
       }
       //      
     } // end while (sTest_->checkStatus(this) != Passed)
