@@ -25,7 +25,9 @@ ENDIF ()
 
 # Checks that only matter if building with CUDA enabled.
 IF (Tpetra_ENABLE_CUDA) 
-  message("CUDA_VERSION=${CUDA_VERSION}")
+  IF (DEFINED CUDA_VERSION)
+    message(STATUS "CUDA_VERSION=${CUDA_VERSION}")
+  ENDIF ()
   IF (NOT DEFINED Kokkos_ENABLE_CUDA_LAMBDA OR NOT Kokkos_ENABLE_CUDA_LAMBDA)
     MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON (this is the default behavior).")
   ENDIF ()
