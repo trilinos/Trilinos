@@ -84,13 +84,13 @@ public:
 
   /** \brief Compute value.
   */
-#ifdef ENABLE_PYBIND11_PYROL 
+#ifdef ENABLE_PYBIND11_PYROL
   virtual Real value_uz( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
 
   virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     return value_uz(u, z, tol);
   }
-#else  // Default build 
+#else  // Default build
   virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
 
 #endif // ENABLE_PYBIND11_PYROL

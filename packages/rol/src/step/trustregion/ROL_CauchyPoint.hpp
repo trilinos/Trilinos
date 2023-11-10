@@ -42,9 +42,7 @@
 // @HEADER
 
 #ifndef ROL_TRUSTREGIONFACTORY_H
-
 #include "ROL_TrustRegionFactory.hpp"
-
 #else
 
 #ifndef ROL_CAUCHYPOINT_H
