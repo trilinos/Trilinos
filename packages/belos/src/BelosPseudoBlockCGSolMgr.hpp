@@ -142,8 +142,8 @@ namespace Belos {
     virtual ~PseudoBlockCGSolMgr() {};
 
     //! clone for Inverted Injection (DII)
-    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new PseudoBlockCGSolMgr<ScalarType,MV,OP>);
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+      return Teuchos::rcp(new PseudoBlockCGSolMgr<ScalarType,MV,OP,DM>);
     }
     //@}
 
@@ -203,7 +203,7 @@ namespace Belos {
     Teuchos::ArrayRCP<MagnitudeType> getEigenEstimates() const {return eigenEstimates_;}
 
     //! Return the residual status test
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> >
     getResidualStatusTest() const { return convTest_; }
 
     //@}
@@ -276,10 +276,10 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -522,8 +522,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP> StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP> StatusTestResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM> StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM> StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter ("Convergence Tolerance")) {
@@ -608,7 +608,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_.is_null ()) {
-    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
+    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP,DM> (maxIters_));
   }
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
@@ -624,7 +624,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   if (outputTest_.is_null () || newResTest) {
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
+    StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory (outputStyle_);
     outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
                                      Passed+Failed+Undefined);
 
@@ -754,15 +754,15 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve ()
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Pseudo-Block CG solver
-  Teuchos::RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
+  Teuchos::RCP<CGIteration<ScalarType,MV,OP,DM> > block_cg_iter;
   if (numRHS2Solve == 1) {
     plist.set("Fold Convergence Detection Into Allreduce",
               foldConvergenceDetectionIntoAllreduce_);
     block_cg_iter =
-      Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, convTest_, plist));
+      Teuchos::rcp (new CGIter<ScalarType,MV,OP,DM> (problem_, printer_, outputTest_, convTest_, plist));
   } else {
     block_cg_iter =
-      Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));
+      Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP,DM> (problem_, printer_, outputTest_, plist));
   }
 
   // Setup condition estimate
@@ -811,7 +811,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve ()
           if ( convTest_->getStatus() == Passed ) {
 
             // Figure out which linear systems converged.
-            std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
+            std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP,DM> >(convTest_)->convIndices();
  
             // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
