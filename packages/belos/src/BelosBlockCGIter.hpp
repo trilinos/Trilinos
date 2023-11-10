@@ -24,6 +24,7 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -78,20 +79,21 @@ namespace Belos {
 
 /// \brief Stub implementation of BlockCGIter, for ScalarType types
 ///   for which Teuchos::LAPACK does NOT have a valid implementation.
-template<class ScalarType, class MV, class OP,
+template<class ScalarType, class MV, class OP, 
+         class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
          const bool lapackSupportsScalarType =
          Belos::Details::LapackSupportsScalar<ScalarType>::value>
-class BlockCGIter : virtual public CGIteration<ScalarType, MV, OP> {
+class BlockCGIter : virtual public CGIteration<ScalarType, MV, OP, DM> {
 public:
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV, DM> MVT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
 
   BlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > & /* problem */,
                const Teuchos::RCP<OutputManager<ScalarType> > & /* printer */,
-               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > & /* tester */,
-               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > & /* ortho */,
+               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > & /* tester */,
+               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > & /* ortho */,
                Teuchos::ParameterList & /* params */ )
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
@@ -162,15 +164,15 @@ public:
 ///   Teuchos::LAPACK has a valid implementation.
 ///
 /// This is the (non-stub) actual implementation of BlockCGIter.
-template<class ScalarType, class MV, class OP>
-class BlockCGIter<ScalarType, MV, OP, true> :
-    virtual public CGIteration<ScalarType,MV,OP>
+template<class ScalarType, class MV, class OP, class DM>
+class BlockCGIter<ScalarType, MV, OP, DM, true> :
+    virtual public CGIteration<ScalarType,MV,OP,DM>
 {
 public:
   //
   // Convenience typedefs
   //
-  using MVT = MultiVecTraits<ScalarType, MV>;
+  using MVT = MultiVecTraits<ScalarType, MV, DM>;
   using OPT = OperatorTraits<ScalarType, MV, OP>;
   using SCT = Teuchos::ScalarTraits<ScalarType>;
   using MagnitudeType = typename SCT::magnitudeType;
@@ -185,8 +187,8 @@ public:
    */
   BlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
                Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -322,7 +324,7 @@ public:
   //
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
   const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
 
   //
@@ -338,11 +340,6 @@ public:
   // is capable of running; _initialize is controlled  by the initialize() member method
   // For the implications of the state of initialized_, please see documentation for initialize()
   bool initialized_;
-
-  // stateStorageInitialized_ specified that the state storage has be initialized.
-  // This initialization may be postponed if the linear problem was generated without
-  // the right-hand side or solution vectors.
-  bool stateStorageInitialized_;
 
   // Current subspace dimension, and number of iterations performed.
   int iter_;
@@ -364,12 +361,12 @@ public:
 
 };
 
-  template<class ScalarType, class MV, class OP>
-  BlockCGIter<ScalarType,MV,OP,true>::
+  template<class ScalarType, class MV, class OP, class DM>
+  BlockCGIter<ScalarType,MV,OP,DM,true>::
   BlockCGIter (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
                const Teuchos::RCP<OutputManager<ScalarType> >& printer,
-               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& tester,
-               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >& ortho,
+               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& tester,
+               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> >& ortho,
                Teuchos::ParameterList& params) :
     lp_(problem),
     om_(printer),
@@ -377,7 +374,6 @@ public:
     ortho_(ortho),
     blockSize_(0),
     initialized_(false),
-    stateStorageInitialized_(false),
     iter_(0)
   {
     // Set the block size and allocate data
@@ -385,8 +381,8 @@ public:
     setBlockSize( bs );
   }
 
-  template <class ScalarType, class MV, class OP>
-  void BlockCGIter<ScalarType,MV,OP,true>::setBlockSize (int blockSize)
+  template<class ScalarType, class MV, class OP, class DM>
+  void BlockCGIter<ScalarType,MV,OP,DM,true>::setBlockSize (int blockSize)
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
@@ -396,15 +392,12 @@ public:
     if (blockSize == blockSize_) {
       return; // do nothing
     }
-    if (blockSize!=blockSize_) {
-      stateStorageInitialized_ = false;
-    }
     blockSize_ = blockSize;
     initialized_ = false;
   }
 
-  template <class ScalarType, class MV, class OP>
-  void BlockCGIter<ScalarType,MV,OP,true>::
+  template <class ScalarType, class MV, class OP, class DM>
+  void BlockCGIter<ScalarType,MV,OP,DM,true>::
   initializeCG (Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0)
   {
     const char prefix[] = "Belos::BlockCGIter::initialize: ";
@@ -460,8 +453,8 @@ public:
     initialized_ = true;
   }
 
-  template <class ScalarType, class MV, class OP>
-  void BlockCGIter<ScalarType,MV,OP,true>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void BlockCGIter<ScalarType,MV,OP,DM,true>::iterate()
   {
     const char prefix[] = "Belos::BlockCGIter::iterate: ";
 
