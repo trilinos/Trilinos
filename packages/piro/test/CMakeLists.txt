@@ -107,9 +107,10 @@ ENDIF(Piro_ENABLE_NOX)
 
 IF (Piro_ENABLE_Tempus)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    TempusSolver_SensitivitySinCosUnitTests
+    TempusSolver_SensitivitySinCos_Combined_FSA_UnitTests
     SOURCES
-    Piro_TempusSolver_SensitivitySinCosUnitTests.cpp
+    Piro_TempusSolver_SensitivitySinCos_Combined_FSA_UnitTests.cpp
+    Piro_TempusSolver_SensitivitySinCos_FSA.hpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     Piro_Test_ThyraSupport.hpp
     SinCosModel.cpp
@@ -119,9 +120,62 @@ IF (Piro_ENABLE_Tempus)
   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    TempusSolver_AdjointSensitivitySinCosUnitTests
+    TempusSolver_SensitivitySinCos_Combined_FSA_Tangent_UnitTests
     SOURCES
-    Piro_TempusSolver_AdjointSensitivitySinCosUnitTests.cpp
+    Piro_TempusSolver_SensitivitySinCos_Combined_FSA_Tangent_UnitTests.cpp
+    Piro_TempusSolver_SensitivitySinCos_FSA.hpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    SinCosModel.cpp
+    SinCosModel.hpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_SensitivitySinCos_Staggered_FSA_UnitTests
+    SOURCES
+    Piro_TempusSolver_SensitivitySinCos_Staggered_FSA_UnitTests.cpp
+    Piro_TempusSolver_SensitivitySinCos_FSA.hpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    SinCosModel.cpp
+    SinCosModel.hpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_SensitivitySinCos_Staggered_FSA_Tangent_UnitTests
+    SOURCES
+    Piro_TempusSolver_SensitivitySinCos_Staggered_FSA_Tangent_UnitTests.cpp
+    Piro_TempusSolver_SensitivitySinCos_FSA.hpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    SinCosModel.cpp
+    SinCosModel.hpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_AdjointSensitivitySinCos_Explicit_UnitTests
+    SOURCES
+    Piro_TempusSolver_AdjointSensitivitySinCos_Explicit_UnitTests.cpp
+    Piro_TempusSolver_AdjointSensitivitySinCosUnitTests.hpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    SinCosModel.cpp
+    SinCosModel.hpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_AdjointSensitivitySinCos_Implicit_UnitTests
+    SOURCES
+    Piro_TempusSolver_AdjointSensitivitySinCos_Implicit_UnitTests.cpp
+    Piro_TempusSolver_AdjointSensitivitySinCosUnitTests.hpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     Piro_Test_ThyraSupport.hpp
     SinCosModel.cpp

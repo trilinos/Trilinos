@@ -61,7 +61,7 @@
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
-#include "Piro_Helpers.hpp" 
+#include "Piro_Helpers.hpp"
 
 #include <stdexcept>
 #include<mpi.h>
@@ -83,11 +83,11 @@ const double tol = 1.0e-8;
 void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdjointME)
 {
   const std::string sens_method_string = "Adjoint";
-  std::string soln_outfile_name; 
-  std::string dgdp_outfile_name; 
-  std::string errfile_name; 
+  std::string soln_outfile_name;
+  std::string dgdp_outfile_name;
+  std::string errfile_name;
 
-  soln_outfile_name = "Tempus_BackwardEuler_SinCos_Sens_ASA_Soln.dat"; 
+  soln_outfile_name = "Tempus_BackwardEuler_SinCos_Sens_ASA_Soln.dat";
   errfile_name = "Tempus_BackwardEuler_SinCos_Sens_ASA_Error.dat";
 
   const RCP<MockObserver<double> > observer(new MockObserver<double>);
@@ -119,8 +119,8 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
     RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
     RCP<SinCosModel> model = Teuchos::rcp(new SinCosModel(scm_pl));
 
-    //Set up adjoint model for adjoint sensivitities 
-    RCP<SinCosModelAdjoint> adjoint_model = explicitAdjointME ? 
+    //Set up adjoint model for adjoint sensivitities
+    RCP<SinCosModelAdjoint> adjoint_model = explicitAdjointME ?
       Teuchos::rcp(new SinCosModelAdjoint(scm_pl)) :
       Teuchos::null;
 
@@ -128,9 +128,9 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
 
      // Set up Tempus PL
     RCP<ParameterList> tempus_pl = sublist(pList, "Tempus", true);
-    
+
     //Set up sensitivity PL
-    // IKT 7/2/2021: TODO - ask Eric Phipps about these options, 
+    // IKT 7/2/2021: TODO - ask Eric Phipps about these options,
     // as w/o them I got runtime errors.
     ParameterList& sens_pl = tempus_pl->sublist("Sensitivities");
     sens_pl.set("Mass Matrix Is Identity", false); // Just for testing
@@ -150,8 +150,8 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
     // Setup the Integrator and reset initial time step
     tempus_pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    
-    Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
+
+    Teuchos::RCP<Piro::TempusIntegrator<double> > integrator
         = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempus_pl, model, adjoint_model, sens_method));
     order = integrator->getStepper()->getOrder();
 
@@ -175,33 +175,33 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
                                 DxDp0, Teuchos::null, Teuchos::null);
     const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
     const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
-    const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver 
-          = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, 
+    const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver
+          = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer,
 				                                                false, false, sens_method));
     integrator->setObserver(tempusObserver);
-   
+
     const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
 
     RCP<ParameterList> stepper_pl = Teuchos::rcp(&(tempus_pl->sublist("Default Stepper")), false);
 
     RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
     const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepper_pl, model);
-    const RCP<TempusSolver<double> > tempus_solver = 
+    const RCP<TempusSolver<double> > tempus_solver =
          //rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string, 1, 0));
          rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string));
-    
+
     const Thyra::MEB::InArgs<double> inArgs = tempus_solver->getNominalValues();
     Thyra::MEB::OutArgs<double> outArgs = tempus_solver->createOutArgs();
     const int solutionResponseIndex = tempus_solver->Ng() - 1;
     const int parameterIndex = 0;
-    tempus_solver->resetSensitivityParamIndex(parameterIndex); 
-    tempus_solver->resetResponseFnIndex(solutionResponseIndex); 
+    tempus_solver->resetSensitivityParamIndex(parameterIndex);
+    tempus_solver->resetResponseFnIndex(solutionResponseIndex);
     const Thyra::MEB::Derivative<double> dxdp_deriv =
         Thyra::create_DgDp_mv(*tempus_solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
     const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
     outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
 
-    //Integrate in time 
+    //Integrate in time
     tempus_solver->evalModel(inArgs, outArgs);
 
     // Test if at 'Final Time'
@@ -218,17 +218,17 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
     RCP<Thyra::MultiVectorBase<double> > DxDp =
       Thyra::createMembers(model->get_x_space(), num_param);
     {
-      dgdp_outfile_name = "Tempus_BackwardEuler_SinCos_Sens_ASA_DgDp_" + std::to_string(n) + ".dat"; 
+      dgdp_outfile_name = "Tempus_BackwardEuler_SinCos_Sens_ASA_DgDp_" + std::to_string(n) + ".dat";
       std::ofstream ftmp(dgdp_outfile_name);
       Thyra::ConstDetachedMultiVectorView<double> dgdp_view(*DgDp);
       Thyra::DetachedMultiVectorView<double> dxdp_view(*DxDp);
       const int num_g = DgDp->domain()->dim();
-      ftmp << std::fixed << std::setprecision(7) << time; 
+      ftmp << std::fixed << std::setprecision(7) << time;
       for (int i=0; i<num_g; ++i) {
         for (int j=0; j<num_param; ++j) {
           dxdp_view(i,j) = dgdp_view(j,i);
           if (comm->getRank() == 0) {
-            ftmp << std::setw(11) << dgdp_view(j,i); 
+            ftmp << std::setw(11) << dgdp_view(j,i);
 	  }
 	}
       }
@@ -282,7 +282,7 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
       ftmp.close();
     }
 
-    //Compare solution from observer and x to verify observer routines 
+    //Compare solution from observer and x to verify observer routines
     const RCP<const Thyra::VectorBase<double> > solution =
       observer->lastSolution();
     TEST_COMPARE_FLOATING_ARRAYS(
@@ -292,10 +292,10 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
 
     //IKT, 7/4/2021: we'll want to add some capability to observe DgDp eventually, maybe,
     //in which case we'd want too add logic similar to the following.
-    /*//Compare solution_dxdp from observer and DxDp to verify observer routines 
+    /*//Compare solution_dxdp from observer and DxDp to verify observer routines
     const RCP<const Thyra::MultiVectorBase<double> > solution_dxdp =
       observer->lastSolution_dxdp();
-    for (int np = 0; np < DxDp->domain()->dim(); np++) { 
+    for (int np = 0; np < DxDp->domain()->dim(); np++) {
       Teuchos::RCP<const Thyra::VectorBase<double>> DxDp_vec = DxDp->col(np);
       Teuchos::RCP<const Thyra::VectorBase<double>> solution_dxdp_vec = solution_dxdp->col(np);
       TEST_COMPARE_FLOATING_ARRAYS(
@@ -342,16 +342,6 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
     ftmp.close();
   }
 
-}
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_AdjointSensitivities_ExplicitAdjointModel)
-{
-  test_sincos_asa(out, success, true);
-}
-
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_AdjointSensitivities_ImplicitAdjointModel)
-{
-  test_sincos_asa(out, success, false);
 }
 
 #endif /* HAVE_PIRO_TEMPUS */
