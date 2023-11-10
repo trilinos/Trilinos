@@ -855,7 +855,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
   plist.set("Assert Positive Definiteness", assertPositiveDefiniteness_);
 
-  RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
+  RCP<CGIteration<ScalarType,MV,OP,DM> > block_cg_iter;
   if (blockSize_ == 1) {
     // Standard (nonblock) CG is faster for the special case of a
     // block size of 1.  A single reduction iteration can also be used
@@ -864,7 +864,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
               foldConvergenceDetectionIntoAllreduce_);
     if (useSingleReduction_) {
       block_cg_iter =
-        rcp (new CGSingleRedIter<ScalarType,MV,OP> (problem_, printer_,
+        rcp (new CGSingleRedIter<ScalarType,MV,OP,DM> (problem_, printer_,
                                                     outputTest_, convTest_, plist));
       if (state_.is_null() || Teuchos::rcp_dynamic_cast<CGSingleRedIterationState<ScalarType, MV> >(state_).is_null())
         state_ = Teuchos::rcp(new CGSingleRedIterationState<ScalarType, MV>());
@@ -872,14 +872,14 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
     }
     else {
       block_cg_iter =
-        rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_,
+        rcp (new CGIter<ScalarType,MV,OP,DM> (problem_, printer_,
                                            outputTest_, convTest_, plist));
       if (state_.is_null() || Teuchos::rcp_dynamic_cast<CGIterationState<ScalarType, MV> >(state_).is_null())
         state_ = Teuchos::rcp(new CGIterationState<ScalarType, MV>());
     }
   } else {
     block_cg_iter =
-      rcp (new BlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_,
+      rcp (new BlockCGIter<ScalarType,MV,OP,DM> (problem_, printer_, outputTest_,
                                               ortho_, plist));
     if (state_.is_null() || Teuchos::rcp_dynamic_cast<BlockCGIterationState<ScalarType, MV> >(state_).is_null())
         state_ = Teuchos::rcp(new BlockCGIterationState<ScalarType, MV>());

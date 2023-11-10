@@ -24,8 +24,9 @@
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -122,16 +123,17 @@ namespace Belos {
 
   };
 
-template<class ScalarType, class MV, class OP>
-class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>  
+class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
 
   public:
 
   //
   // Convenience typedefs
   //
-  using MVT = MultiVecTraits<ScalarType, MV>;
+  using MVT = MultiVecTraits<ScalarType, MV, DM>;
   using OPT = OperatorTraits<ScalarType, MV, OP>;
+  using DMT = DenseMatTraits<ScalarType, DM>;
   using SCT = Teuchos::ScalarTraits<ScalarType>;
   using MagnitudeType = typename SCT::magnitudeType;
 
@@ -145,8 +147,8 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
    */
   CGSingleRedIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                   const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > &convTester,
+                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+                   const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > &convTester,
                    Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -298,8 +300,8 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   //
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-  const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >       convTest_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
+  const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> >       convTest_;
 
   //
   // Current solver state
@@ -349,11 +351,11 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  CGSingleRedIter<ScalarType,MV,OP>::CGSingleRedIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  CGSingleRedIter<ScalarType,MV,OP,DM>::CGSingleRedIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 						     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-						     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                                                     const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > &convTester,
+						     const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+                                                     const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > &convTester,
 						     Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -366,9 +368,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void CGSingleRedIter<ScalarType,MV,OP>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0)
+  // Setup the state storage.
+  template<class ScalarType, class MV, class OP, class DM>
+  void CGSingleRedIter<ScalarType,MV,OP,DM>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0)
   {
     // Initialize the state storage if it isn't already.
     Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
@@ -427,9 +429,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the norms of the residuals native to the solver.
-  template <class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<const MV>
-  CGSingleRedIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const {
+  CGSingleRedIter<ScalarType,MV,OP,DM>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const {
     if (convTest_->getResNormType() == Belos::PreconditionerNorm) {
       (*norms)[0] = std::sqrt(Teuchos::ScalarTraits<ScalarType>::magnitude(rHz_));
       return Teuchos::null;
@@ -443,8 +445,8 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void CGSingleRedIter<ScalarType,MV,OP>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void CGSingleRedIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -454,12 +456,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     }
 
     // Allocate memory for scalars.
-    Teuchos::SerialDenseMatrix<int,ScalarType> sHz( 2, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> sHt( 2, 2 );
-    ScalarType rHz_old;
-    ScalarType alpha;
-    ScalarType beta;
-    ScalarType delta;
+    Teuchos::RCP<DM> sHz = DMT::Create( 2, 1 );
+    Teuchos::RCP<DM> sHt = DMT::Create( 2, 2 );
+    ScalarType rHz_old, alpha, beta, delta;
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -474,15 +473,17 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
     if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
       // Compute first <S_,T_> a.k.a. <R_,Z_>, <AZ_,Z_> and <R_,R_> combined (also computes unneeded <AZ_,R_>)
-      MVT::MvTransMv( one, *S_, *T_, sHt );
-      rHz_ = sHt(1,1);
-      delta = sHt(0,1);
-      rHr_ = sHt(1,0);
+      MVT::MvTransMv( one, *S_, *T_, *sHt );
+      DMT::SyncDeviceToHost( *sHt );
+      rHz_ = DMT::ValueConst(*sHt,1,1);
+      delta = DMT::ValueConst(*sHt,0,1);
+      rHr_ = DMT::ValueConst(*sHt,1,0);
     } else {
       // Compute first <s,z> a.k.a. <r,z> and <Az,z> combined
-      MVT::MvTransMv( one, *S_, *Z_, sHz );
-      rHz_ = sHz(1,0);
-      delta = sHz(0,0);
+      MVT::MvTransMv( one, *S_, *Z_, *sHz );
+      DMT::SyncDeviceToHost( *sHz );
+      rHz_ = DMT::ValueConst(*sHz,1,0);
+      delta = DMT::ValueConst(*sHz,0,0);
     }
     if ((Teuchos::ScalarTraits<ScalarType>::magnitude(delta) < Teuchos::ScalarTraits<ScalarType>::eps()) &&
         (stest_->checkStatus(this) == Passed))
@@ -530,13 +531,14 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         lp_->applyOp( *Z_, *AZ_ );
         //
         // Compute <S_,T_> a.k.a. <R_,Z_>, <AZ_,Z_> and <R_,R_> combined (also computes unneeded <AZ_,R_>)
-        MVT::MvTransMv( one, *S_, *T_, sHt );
+        MVT::MvTransMv( one, *S_, *T_, *sHt );
+        DMT::SyncDeviceToHost( *sHt ); 
         //
         // Update scalars.
         rHz_old = rHz_;
-        rHz_ = sHt(1,1);
-        delta = sHt(0,1);
-        rHr_ = sHt(1,0);
+        rHz_ = DMT::ValueConst(*sHt,1,1);
+        delta = DMT::ValueConst(*sHt,0,1);
+        rHr_ = DMT::ValueConst(*sHt,1,0);
 
         // Increment the iteration
         iter_++;
@@ -605,12 +607,13 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         lp_->applyOp( *Z_, *AZ_ );
         //
         // Compute <S_,Z_> a.k.a. <R_,Z_> and <AZ_,Z_> combined
-        MVT::MvTransMv( one, *S_, *Z_, sHz );
+        MVT::MvTransMv( one, *S_, *Z_, *sHz );
+        DMT::SyncDeviceToHost( *sHz );
         //
         // Update scalars.
         rHz_old = rHz_;
-        rHz_ = sHz(1,0);
-        delta = sHz(0,0);
+        rHz_ = DMT::ValueConst(*sHz,1,0);
+        delta = DMT::ValueConst(*sHz,0,0);
         //
         beta = rHz_ / rHz_old;
         alpha = rHz_ / (delta - (beta*rHz_ / alpha));
