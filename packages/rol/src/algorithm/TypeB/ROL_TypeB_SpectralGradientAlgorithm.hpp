@@ -86,7 +86,7 @@ public:
 
   void writeName( std::ostream &os ) const override;
 
-  void writeOutput( std::ostream &os, bool write_header = false ) const override;
+  void writeOutput( std::ostream &os, const bool write_header = false ) const override;
 
 }; // class ROL::TypeB::SpectralGradientAlgorithm
 
