@@ -30,7 +30,7 @@ then
 fi
 # > python -m pipx install git+pybind11@smart_holder
 
-TRILINOS_VERSION="14.4"
+TRILINOS_VERSION="14.5"
 
 REPO_NAME="ROL-Trilinos"
 cp ./${REPO_NAME}/packages/rol/pyrol/pyproject.toml ./${REPO_NAME}/pyproject.toml
