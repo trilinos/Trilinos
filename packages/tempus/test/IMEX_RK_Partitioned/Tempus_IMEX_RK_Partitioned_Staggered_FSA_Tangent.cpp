@@ -16,11 +16,10 @@ std::string method_name;
 
 namespace Tempus_Test {
 
-TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol_Combined_FSA)
+TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol_Staggered_FSA_Tangent)
 {
-  test_vdp_fsa(method_name, true, false, out, success);
+  test_vdp_fsa(method_name, false, true, out, success);
 }
-
 
 } // namespace Tempus_Test
 
