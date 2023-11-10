@@ -25,6 +25,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_PseudoBlockCG_hb_test
+  SOURCES test_kokkos_pseudo_bl_cg_hb.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_PseudoBlockStochasticCG_hb_test
   SOURCES test_pseudo_stochastic_cg_hb.cpp
   ARGS
@@ -47,7 +54,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_StochasticCG_hb_test
+  SOURCES test_kokkos_stochastic_cg_hb.cpp
+  ARGS
+  COMM serial mpi
+  )
+
 IF (Tpetra_INST_COMPLEX_DOUBLE)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
