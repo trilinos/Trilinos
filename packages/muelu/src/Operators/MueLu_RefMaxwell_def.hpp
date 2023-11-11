@@ -190,7 +190,7 @@ namespace MueLu {
     params->set("multigrid algorithm", "Unsmoothed");
     params->set("transpose: use implicit", MasterList::getDefault<bool>("transpose: use implicit"));
     params->set("rap: triple product", MasterList::getDefault<bool>("rap: triple product"));
-    params->set("rap: fix zero diagonals", MasterList::getDefault<bool>("rap: fix zero diagonals"));
+    params->set("rap: fix zero diagonals", true);
     params->set("rap: fix zero diagonals threshold", MasterList::getDefault<double>("rap: fix zero diagonals threshold"));
     params->set("fuse prolongation and update", MasterList::getDefault<bool>("fuse prolongation and update"));
     params->set("refmaxwell: subsolves on subcommunicators", MasterList::getDefault<bool>("refmaxwell: subsolves on subcommunicators"));
@@ -1541,9 +1541,10 @@ namespace MueLu {
 
     } else if (spaceNumber == 2) {
 
-      using ATS        = Kokkos::ArithTraits<Scalar>;
+      using ATS         = Kokkos::ArithTraits<Scalar>;
       using impl_Scalar = typename ATS::val_type;
-      using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+      using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+      using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
       RCP<Matrix> facesToNodes;
       {
@@ -1594,9 +1595,9 @@ namespace MueLu {
                                impl_Scalar elementNullspace02 = localNodalCoordinates(n1, 2)-localNodalCoordinates(n0, 2);
                                impl_Scalar elementNullspace12 = localNodalCoordinates(n2, 2)-localNodalCoordinates(n0, 2);
 
-                               localFaceNullspace(f, 0) = ATS::magnitude(elementNullspace01*elementNullspace12-elementNullspace02*elementNullspace11) / 6.0;
-                               localFaceNullspace(f, 1) = ATS::magnitude(elementNullspace02*elementNullspace10-elementNullspace00*elementNullspace12) / 6.0;
-                               localFaceNullspace(f, 2) = ATS::magnitude(elementNullspace00*elementNullspace11-elementNullspace01*elementNullspace10) / 6.0;
+                               localFaceNullspace(f, 0) = impl_ATS::magnitude(elementNullspace01*elementNullspace12-elementNullspace02*elementNullspace11) / 6.0;
+                               localFaceNullspace(f, 1) = impl_ATS::magnitude(elementNullspace02*elementNullspace10-elementNullspace00*elementNullspace12) / 6.0;
+                               localFaceNullspace(f, 2) = impl_ATS::magnitude(elementNullspace00*elementNullspace11-elementNullspace01*elementNullspace10) / 6.0;
                              });
       }
 
@@ -1872,9 +1873,6 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tm = getTimer("vectorial nodal prolongator");
     GetOStream(Runtime0) << solverName_+"::compute(): building vectorial nodal prolongator" << std::endl;
 
-    using ATS        = Kokkos::ArithTraits<Scalar>;
-    using impl_Scalar = typename ATS::val_type;
-    using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     typedef typename Matrix::local_matrix_type KCRS;
@@ -2525,6 +2523,8 @@ namespace MueLu {
           Dk_1 = D0;
         else if (D0.is_null())
           D0 = Dk_1;
+        if (M1_beta.is_null())
+          M1_beta = Mk_one;
       } else if (spaceNumber == 2) {
         if (Dk_2.is_null())
           Dk_2 = D0;

@@ -232,6 +232,9 @@ namespace MueLuExamples {
       run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
       run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
 
+      // The smoother complexity depends on the coarse solver.
+      run_sed("'s/Smoother complexity = [0-9]*.[0-9]*/Smoother complexity = <ignored>/'", baseFile);
+
       // Nuke all pointers
       run_sed("'s/0x[0-9a-f]*//g'", baseFile);
 
