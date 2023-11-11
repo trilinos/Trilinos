@@ -40,6 +40,7 @@ def runCommand(cmd):
     return result[1]
 
 def clearWindow():
+    #print("CLEAR")
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def waitForKey():
@@ -53,8 +54,8 @@ def is_number(s):
     except ValueError:
         return False
 
-# some colors
-class bcolors:
+# text output colors
+class usecolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -62,6 +63,16 @@ class bcolors:
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
+
+# no output colors (primarily for logging output to file)
+class nocolors:
+    HEADER = ''
+    OKBLUE = ''
+    OKGREEN = ''
+    OKDARKGREEN = ''
+    WARNING = ''
+    FAIL = ''
+    ENDC = ''
 
 def disable(self):
     self.HEADER = ''
@@ -80,6 +91,7 @@ class ProblemHandler():
     self.problem    = "Laplace 2D"
     self.solver     = "cg"
     self.executable = "MueLu_tutorial_laplace2d.exe"
+    self.bcolors    = usecolors()
     self.meshx      = 50
     self.meshy      = 50
     self.mgsweeps   = 1
@@ -103,10 +115,13 @@ class ProblemHandler():
     for i,option in enumerate(options):
       print('%s. %s' % (i, option)) # display all options
     choice = input('your choice? ')
-    if is_number(str(choice)) and int(choice) < len(options):
-      callbacks[int(choice)]() # call correspondending function
+    if is_number(str(choice)):
+      if int(choice) < len(options) and int(choice) > -1:
+        callbacks[int(choice)]() # call corresponding function
+      else:
+        print("Option is out of range!")
     else:
-      print("ups: choice = " + str(choice) + " len(option)=" + str(len(option)))
+      print("Invalid option! " + str(choice))
 
 
 
@@ -168,7 +183,7 @@ class ProblemHandler():
     # check whether xml file exists
 
     while self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
-      print(bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC)
+      print(self.bcolors.FAIL+"Solver xml parameters: "+self.bcolors.ENDC + str(self.xmlFileName) + self.bcolors.FAIL + " invalid" + self.bcolors.ENDC)
       m = MueLu_XMLgenerator()
       m.askForSolver()
       self.xmlFileName = m.xmlFileName # store xml file
@@ -186,9 +201,9 @@ class ProblemHandler():
       self.printSettings()
       print()
       if self.isDirty == True:
-        print(bcolors.FAIL+ "DO NOT FORGET TO RUN THE EXAMPLE (option 0)" + bcolors.ENDC)
+        print(self.bcolors.FAIL+ "DO NOT FORGET TO RUN THE EXAMPLE (option 0)" + self.bcolors.ENDC)
       else:
-        print(bcolors.OKDARKGREEN + "Results up to date!" + bcolors.ENDC)
+        print(self.bcolors.OKDARKGREEN + "Results up to date!" + self.bcolors.ENDC)
       print()
       self.runMenu(options,callbacks)
 
@@ -280,12 +295,12 @@ class ProblemHandler():
   def postprocessAggregates(self):
     # check whether "example.txt" is available
     if os.path.isfile("example.txt") == False:
-      print(bcolors.FAIL+"Simulation data not available. Run the simulation first." + bcolors.ENDC)
+      print(self.bcolors.FAIL+"Simulation data not available. Run the simulation first." + self.bcolors.ENDC)
       waitForKey()
       return
 
     if os.path.isfile("aggs_level0_proc0.out") == False:
-      print(bcolors.FAIL+"No aggregation debug output found. Do not forget to turn on the AggregationExport factory in your xml file." + bcolors.ENDC)
+      print(self.bcolors.FAIL+"No aggregation debug output found. Do not forget to turn on the AggregationExport factory in your xml file." + self.bcolors.ENDC)
       waitForKey()
       return
 
@@ -304,17 +319,17 @@ class ProblemHandler():
     print(runCommand(cmd))
 
     if os.path.isfile("aggs0.vtp") == False:
-      print(bcolors.WARNING+"Seems that the postprocessing failed (vtp files could not be created)." + bcolors.ENDC)
+      print(self.bcolors.WARNING+"Seems that the postprocessing failed (vtp files could not be created)." + self.bcolors.ENDC)
       waitForKey()
       return
 
-    print(bcolors.OKDARKGREEN+"Use paraview to visualize generated vtk files for aggregates." + bcolors.ENDC)
+    print(self.bcolors.OKDARKGREEN+"Use paraview to visualize generated vtk files for aggregates." + self.bcolors.ENDC)
     waitForKey()
 
   def printScreenOutput(self):
     clearWindow()
     if not os.path.isfile("output.log") or not os.access("output.log", os.R_OK):
-      print(bcolors.FAIL+"Screen output not available."+bcolors.ENDC)
+      print(self.bcolors.FAIL+"Screen output not available."+self.bcolors.ENDC)
     else:
       print(runCommand("less output.log"))
     waitForKey()
@@ -332,7 +347,7 @@ class ProblemHandler():
     self.xmlFileName = input("XML file name: ")
     self.isDirty = True
     while self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
-      print(bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC)
+      print(self.bcolors.FAIL+"Solver xml parameters: "+self.bcolors.ENDC + str(self.xmlFileName) + self.bcolors.FAIL + " invalid" + self.bcolors.ENDC)
       m = MueLu_XMLgenerator()
       m.xmlFileName=self.xmlFileName
       m.generateXMLfile()
@@ -386,17 +401,17 @@ class ProblemHandler():
 
   def printSettings(self):
     ## print out all made settings for xml file
-    print(bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC)
-    print(bcolors.WARNING+"Problem type:          "+bcolors.ENDC + str(self.problem))
-    print(bcolors.WARNING+"Mesh:                  "+bcolors.ENDC + str(self.meshx) + "x" + str(self.meshy))
+    print(self.bcolors.HEADER+"***************************   PROBLEM   ****************************"+self.bcolors.ENDC)
+    print(self.bcolors.WARNING+"Problem type:          "+self.bcolors.ENDC + str(self.problem))
+    print(self.bcolors.WARNING+"Mesh:                  "+self.bcolors.ENDC + str(self.meshx) + "x" + str(self.meshy))
     print()
     if self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
-      print(bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC)
+      print(self.bcolors.FAIL+"Solver xml parameters: "+self.bcolors.ENDC + str(self.xmlFileName) + self.bcolors.FAIL + " invalid" + self.bcolors.ENDC)
     else:
-      print(bcolors.WARNING+"Solver xml parameters:              "+bcolors.ENDC + str(self.xmlFileName))
-    print(bcolors.WARNING+"Number of processors:               "+bcolors.ENDC + str(self.numprocs))
-    print(bcolors.WARNING+"Number of Multigrid solving sweeps: "+bcolors.ENDC + str(self.mgsweeps))
-    print(bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC)
+      print(self.bcolors.WARNING+"Solver xml parameters:              "+self.bcolors.ENDC + str(self.xmlFileName))
+    print(self.bcolors.WARNING+"Number of processors:               "+self.bcolors.ENDC + str(self.numprocs))
+    print(self.bcolors.WARNING+"Number of Multigrid solving sweeps: "+self.bcolors.ENDC + str(self.mgsweeps))
+    print(self.bcolors.HEADER+"***************************   PROBLEM   ****************************"+self.bcolors.ENDC)
 
 class MueLu_XMLChallengeMode():
   """ Menu and options for challenge mode """
@@ -412,6 +427,7 @@ class MueLu_XMLChallengeMode():
     self.problem       = "stru2d"   # string describing problem
     self.xmlReferenceFileName = ""
     self.xmlFileName   = ""
+    self.bcolors       = usecolors()
     self.isDirty       = True  # dirty flag
     self.editor        = "gedit" ### fix me
     self.has_coords    = False
@@ -425,13 +441,13 @@ class MueLu_XMLChallengeMode():
       cmd = "rm -Rf challenges"
       runCommand(cmd)
       print("Download additional files")
-      print(bcolors.WARNING+"https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"+bcolors.ENDC)
+      print(self.bcolors.WARNING+"https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"+self.bcolors.ENDC)
       cmd = "wget --no-check-certificate https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"
       runCommand(cmd)
       print("Extract files...")
       cmd = "tar xvf MueLu_tutorial_challenges.tar.gz"
       runCommand(cmd)
-      print(bcolors.OKDARKGREEN + "Success!" + bcolors.ENDC)
+      print(self.bcolors.OKDARKGREEN + "Success!" + self.bcolors.ENDC)
 
     # generate results for reference xml files
     self.xmlReferenceFileName = "challenges/" + self.problem + "_reference.xml"
@@ -454,8 +470,13 @@ class MueLu_XMLChallengeMode():
     for i,option in enumerate(options):
       print('%s. %s' % (i, option)) # display all options
     choice = input('your choice? ')
-    if is_number(str(choice)) and int(choice) < len(options):
-      callbacks[int(choice)]() # call correspondending function
+    if is_number(str(choice)):
+      if int(choice) < len(options) and int(choice) > -1:
+        callbacks[int(choice)]() # call corresponding function
+      else:
+        print("Option is out of range!")
+    else:
+      print("Invalid option! " + str(choice))
 
   # print main menu for challenge mode
   def printMainMenu(self):
@@ -463,9 +484,9 @@ class MueLu_XMLChallengeMode():
     self.printSettings()
     print()
     if self.isDirty == True:
-      print(bcolors.FAIL+ "DO NOT FORGET TO RUN THE EXAMPLE (option 0)" + bcolors.ENDC)
+      print(self.bcolors.FAIL+ "DO NOT FORGET TO RUN THE EXAMPLE (option 0)" + self.bcolors.ENDC)
     else:
-      print(bcolors.OKDARKGREEN + "Results up to date!" + bcolors.ENDC)
+      print(self.bcolors.OKDARKGREEN + "Results up to date!" + self.bcolors.ENDC)
       print()
       self.printResults()
     print()
@@ -477,17 +498,17 @@ class MueLu_XMLChallengeMode():
 
   def printSettings(self):
     ## print out all made settings for xml file
-    print(bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC)
-    print(bcolors.WARNING+"Problem type:          "+bcolors.ENDC + str(self.problem))
-    print(bcolors.WARNING+"Problem size:          "+bcolors.ENDC + str(self.globalNumDofs))
+    print(self.bcolors.HEADER+"***************************   PROBLEM   ****************************"+self.bcolors.ENDC)
+    print(self.bcolors.WARNING+"Problem type:          "+self.bcolors.ENDC + str(self.problem))
+    print(self.bcolors.WARNING+"Problem size:          "+self.bcolors.ENDC + str(self.globalNumDofs))
     print()
     if self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
-      print(bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC)
+      print(self.bcolors.FAIL+"Solver xml parameters: "+self.bcolors.ENDC + str(self.xmlFileName) + self.bcolors.FAIL + " invalid" + self.bcolors.ENDC)
     else:
-      print(bcolors.WARNING+"Solver xml parameters:              "+bcolors.ENDC + str(self.xmlFileName))
-    print(bcolors.WARNING+"Number of processors:               "+bcolors.ENDC + str(self.numProcs))
-    print(bcolors.WARNING+"Solver (Tolerance): "+bcolors.ENDC + str(self.solver) + " (" + str(self.tol) + ")")
-    print(bcolors.HEADER+"***************************   PROBLEM   ****************************"+bcolors.ENDC)
+      print(self.bcolors.WARNING+"Solver xml parameters:              "+self.bcolors.ENDC + str(self.xmlFileName))
+    print(self.bcolors.WARNING+"Number of processors:               "+self.bcolors.ENDC + str(self.numProcs))
+    print(self.bcolors.WARNING+"Solver (Tolerance): "+self.bcolors.ENDC + str(self.solver) + " (" + str(self.tol) + ")")
+    print(self.bcolors.HEADER+"***************************   PROBLEM   ****************************"+self.bcolors.ENDC)
 
   def printResults(self):
     cmd = "grep 'total iterations:' output.log"
@@ -498,14 +519,14 @@ class MueLu_XMLChallengeMode():
     refiter = runCommand(cmd)
     cmd = "grep 'Solution time:' reference.log"
     reftime = runCommand(cmd)
-    print(bcolors.HEADER+"***************************   RESULTS   ****************************"+bcolors.ENDC)
+    print(self.bcolors.HEADER+"***************************   RESULTS   ****************************"+self.bcolors.ENDC)
     print("Reference settings:")
     print(str(refiter))
     print(str(reftime))
     print("Your settings:")
     print(str(iter))
     print(str(time))
-    print(bcolors.HEADER+"***************************   RESULTS   ****************************"+bcolors.ENDC)
+    print(self.bcolors.HEADER+"***************************   RESULTS   ****************************"+self.bcolors.ENDC)
 
   def doRunReference(self):
     print("Please wait...")
@@ -536,7 +557,7 @@ class MueLu_XMLChallengeMode():
   def printScreenOutput(self):
     clearWindow()
     if not os.path.isfile("output.log") or not os.access("output.log", os.R_OK):
-      print(bcolors.FAIL+"Screen output not available."+bcolors.ENDC)
+      print(self.bcolors.FAIL+"Screen output not available."+self.bcolors.ENDC)
     else:
       print(runCommand("less output.log"))
     waitForKey()
@@ -545,7 +566,7 @@ class MueLu_XMLChallengeMode():
     self.xmlFileName = input("XML file name: ")
     self.isDirty = True
     while self.xmlFileName == "" or not os.path.isfile(self.xmlFileName) or not os.access(self.xmlFileName, os.R_OK):
-      print(bcolors.FAIL+"Solver xml parameters: "+bcolors.ENDC + str(self.xmlFileName) + bcolors.FAIL + " invalid" + bcolors.ENDC)
+      print(self.bcolors.FAIL+"Solver xml parameters: "+self.bcolors.ENDC + str(self.xmlFileName) + self.bcolors.FAIL + " invalid" + self.bcolors.ENDC)
       m = MueLu_XMLgenerator()
       m.xmlFileName=self.xmlFileName
       m.generateXMLfile()
@@ -643,11 +664,12 @@ class MueLu_XMLgenerator():
     self.nnzImbalance = 1.1
     self.rebStartLevel = 1
 
+    self.bcolors = usecolors()
     self.isDirty = True                   # flag to store, whether changes have been saved or not
     self.exitLoop = False                 # set to true to exit current loop
 
-    print(bcolors.FAIL+'===================================================================================='+bcolors.ENDC)
-    print('===================================================================================='+bcolors.ENDC)
+    print(self.bcolors.FAIL+'===================================================================================='+self.bcolors.ENDC)
+    print('===================================================================================='+self.bcolors.ENDC)
 
 
 
@@ -715,7 +737,7 @@ class MueLu_XMLgenerator():
     self.transferOpDamp = 0.0
     if self.restrictionOp == "GenericRFactory":
       self.restrictionOp = "TransPFactory"
-      print(bcolors.WARNING + "GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory."+bcolors.ENDC)
+      print(self.bcolors.WARNING + "GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory."+self.bcolors.ENDC)
       print()
       print("Press any key to proceed")
       waitForKey()
@@ -738,8 +760,8 @@ class MueLu_XMLgenerator():
     self.restrictionOp = "GenericRFactory"
     if self.transferOps == "PA-AMG":
       self.restrictionOp = "TransPFactory"
-      print(bcolors.WARNING+"GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory.")
-      print("To use GenericRFactory you have to select either SaPFactory or PgPFactory for prolongation."+bcolors.ENDC)
+      print(self.bcolors.WARNING+"GenericRFactory cannot be used with non-smoothed PA-AMG prolongation operators. We change it back to TransPFactory.")
+      print("To use GenericRFactory you have to select either SaPFactory or PgPFactory for prolongation."+self.bcolors.ENDC)
       print()
       print("Press any key to proceed")
       waitForKey()
@@ -757,12 +779,20 @@ class MueLu_XMLgenerator():
     self.doRebalancing = False
     self.isDirty = True
 
+  def SetExitLoop(self):
+    self.exitLoop = True
+
   def runMenu(self,options,callbacks):
     for i,option in enumerate(options):
       print('%s. %s' % (i, option)) # display all options
     choice = input('your choice? ')
-    if is_number(str(choice)) and int(choice) < len(options):
-      callbacks[int(choice)]() # call correspondending function
+    if is_number(str(choice)):
+      if int(choice) < len(options) and int(choice) > -1:
+        callbacks[int(choice)]() # call corresponding function
+      else:
+        print("Option is out of range!")
+    else:
+      print("Invalid option! " + str(choice))
 
   def doCommonMenu(self):
     options = ['Max. multigrid levels', 'Max. coarse size', 'Back']
@@ -818,41 +848,41 @@ class MueLu_XMLgenerator():
 
   def printSettings(self):
     ## print out all made settings for xml file
-    print(bcolors.HEADER+"***************************   SETTINGS   ****************************"+bcolors.ENDC)
-    print(bcolors.WARNING+"XML file name:           "+bcolors.ENDC + str(self.xmlFileName))
+    print(self.bcolors.HEADER+"***************************   SETTINGS   ****************************"+self.bcolors.ENDC)
+    print(self.bcolors.WARNING+"XML file name:           "+self.bcolors.ENDC + str(self.xmlFileName))
     print()
-    print(bcolors.WARNING+"Max. MultiGrid levels:   "+bcolors.ENDC + str(self.maxMultLevels))
-    print(bcolors.WARNING+"Max. CoarseSize:         "+bcolors.ENDC + str(self.maxCoarseSize))
+    print(self.bcolors.WARNING+"Max. MultiGrid levels:   "+self.bcolors.ENDC + str(self.maxMultLevels))
+    print(self.bcolors.WARNING+"Max. CoarseSize:         "+self.bcolors.ENDC + str(self.maxCoarseSize))
     print()
-    print(bcolors.WARNING+"Level smoother:          "+bcolors.ENDC + str(self.levelSmoother))
-    print(bcolors.WARNING+"Level smoothing sweeps:  "+bcolors.ENDC + str(self.levelSmootherSweeps))
-    print(bcolors.WARNING+"Level damping parameter: "+bcolors.ENDC + str(self.levelSmootherDamp))
+    print(self.bcolors.WARNING+"Level smoother:          "+self.bcolors.ENDC + str(self.levelSmoother))
+    print(self.bcolors.WARNING+"Level smoothing sweeps:  "+self.bcolors.ENDC + str(self.levelSmootherSweeps))
+    print(self.bcolors.WARNING+"Level damping parameter: "+self.bcolors.ENDC + str(self.levelSmootherDamp))
     print()
-    print(bcolors.WARNING+"Coarse solver:           "+bcolors.ENDC + str(self.coarseSolver))
+    print(self.bcolors.WARNING+"Coarse solver:           "+self.bcolors.ENDC + str(self.coarseSolver))
     print()
-    print(bcolors.WARNING+"Graph drop tolerance:    "+bcolors.ENDC + str(self.dropTolerance))
-    print(bcolors.WARNING+"Aggregate size (min/max):"+bcolors.ENDC + str(self.minAggSize) + "/" + str(self.maxAggSize))
-    print(bcolors.WARNING+"Max. neighbor count:     "+bcolors.ENDC + str(self.maxNeighCount))
+    print(self.bcolors.WARNING+"Graph drop tolerance:    "+self.bcolors.ENDC + str(self.dropTolerance))
+    print(self.bcolors.WARNING+"Aggregate size (min/max):"+self.bcolors.ENDC + str(self.minAggSize) + "/" + str(self.maxAggSize))
+    print(self.bcolors.WARNING+"Max. neighbor count:     "+self.bcolors.ENDC + str(self.maxNeighCount))
     print()
-    print(bcolors.WARNING+"Transfer operators:     "+bcolors.ENDC + str(self.transferOps))
-    print(bcolors.WARNING+"Transfer smoothing par.:"+bcolors.ENDC + str(self.transferOpDamp))
+    print(self.bcolors.WARNING+"Transfer operators:     "+self.bcolors.ENDC + str(self.transferOps))
+    print(self.bcolors.WARNING+"Transfer smoothing par.:"+self.bcolors.ENDC + str(self.transferOpDamp))
     print()
-    print(bcolors.WARNING+"Restriction operator:   "+bcolors.ENDC + str(self.restrictionOp))
+    print(self.bcolors.WARNING+"Restriction operator:   "+self.bcolors.ENDC + str(self.restrictionOp))
     print()
     if self.doRebalancing == False:
-      print(bcolors.WARNING+"NO Rebalancing"+bcolors.ENDC)
+      print(self.bcolors.WARNING+"NO Rebalancing"+self.bcolors.ENDC)
     else:
-      print(bcolors.WARNING+"Rebalancing active:"+ bcolors.ENDC)
-      print(bcolors.WARNING+"Minimum DOFs per proc:  "+ bcolors.ENDC + str(self.minRowsPerProc))
-      print(bcolors.WARNING+"Nonzero imbalance:      "+ bcolors.ENDC + str(self.nnzImbalance))
-      print(bcolors.WARNING+"Start level for rebal.: "+ bcolors.ENDC + str(self.rebStartLevel))
-    print(bcolors.HEADER+"***************************   SETTINGS   ****************************"+bcolors.ENDC)
+      print(self.bcolors.WARNING+"Rebalancing active:"+ self.bcolors.ENDC)
+      print(self.bcolors.WARNING+"Minimum DOFs per proc:  "+ self.bcolors.ENDC + str(self.minRowsPerProc))
+      print(self.bcolors.WARNING+"Nonzero imbalance:      "+ self.bcolors.ENDC + str(self.nnzImbalance))
+      print(self.bcolors.WARNING+"Start level for rebal.: "+ self.bcolors.ENDC + str(self.rebStartLevel))
+    print(self.bcolors.HEADER+"***************************   SETTINGS   ****************************"+self.bcolors.ENDC)
 
     print()
     if self.isDirty == True:
-      print(bcolors.FAIL+ "CHANGES HAVE NOT BEEN SAVED!" + bcolors.ENDC)
+      print(self.bcolors.FAIL+ "CHANGES HAVE NOT BEEN SAVED!" + self.bcolors.ENDC)
     else:
-      print(bcolors.OKDARKGREEN + "CHANGES HAVE BEEN SAVED!" + bcolors.ENDC)
+      print(self.bcolors.OKDARKGREEN + "CHANGES HAVE BEEN SAVED!" + self.bcolors.ENDC)
 
   def generateXMLfile(self):
     # generate HEAD file for pre_exodus

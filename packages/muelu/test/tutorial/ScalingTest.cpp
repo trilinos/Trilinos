@@ -98,10 +98,6 @@
 #include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
 #endif
 
-#ifdef HAVE_MUELU_ISORROPIA
-#include "MueLu_IsorropiaInterface.hpp"
-#endif
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[])
 {

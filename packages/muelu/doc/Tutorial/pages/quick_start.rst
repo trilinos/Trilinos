@@ -46,7 +46,7 @@ The s1_easy.xml file has the following content
   :caption:
 
 As one can easily find from the xml parameters, a multigrid method with not more than 3 levels and a damped Jacobi method for level smoothing shall be used.
-Next, choose option 0 and run the example. That is, the linear system is created and iteratively solved both by a preconditioned CG method (from the AztecOO package) with a MueLu multigrid preconditioner and a standalone multigrid solver (again using MueLu) with the given multigrid parameters.
+Next, choose option 0 and run the example. That is, the linear system is created and iteratively solved both by a preconditioned CG method with a MueLu multigrid preconditioner and a standalone multigrid solver (again using MueLu) with the given multigrid parameters.
 
 .. image:: pics/tut1_3.png
   :width: 10cm
@@ -79,7 +79,7 @@ These lines give you some information about the setup process with some details 
 
 One can see that a three level multigrid method is used with a direct solver on the coarsest level and Jacobi level smoothers on the fine and intermediate level. Furthermore some basic information is printed such as the operator complexity.
 
-In the end the CG convergence is printed when applying the generated multigrid method as preconditioner within a CG solver from the AztecOO package in Trilinos. The numbers give the relative residual after the corresponding number of iterations as well as the solution time in seconds.
+In the end the CG convergence is printed when applying the generated multigrid method as preconditioner within a CG solver. The numbers give the relative residual after the corresponding number of iterations as well as the solution time in seconds.
 
 .. warning::
 
