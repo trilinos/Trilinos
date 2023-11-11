@@ -173,9 +173,13 @@ echo ';
 }
 ' >> $code_file
 
-# fix quotation
-sed -i '/<Parameter/ s/\\""/\\"/g' $code_file
-sed -i '/<Parameter/ s/"\\"/\\"/g' $code_file
+# fix quotation using sed
+# GH: similar to other instances in MueLu, we need to work around the GNU/BSD sed issue
+#     the moral of the story is -i is not portable for testing!
+sed '/<Parameter/ s/\\""/\\"/g' "$code_file" > "$code_file.tmp"
+mv "$code_file.tmp" "$code_file"
+sed '/<Parameter/ s/"\\"/\\"/g' "$code_file" > "$code_file.tmp"
+mv "$code_file.tmp" "$code_file"
 
 # generate LaTeX files (MueLu options and ML compatibility)
 SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" "reuse" "refmaxwell" )
