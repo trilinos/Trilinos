@@ -93,6 +93,7 @@ we provide a chapter describing the migration process from ML to MueLu.
    :caption: More useful informations
 
    pages/virtual_box_image.rst
+   pages/docker_container.rst
    pages/error_messages.rst
 
 Indices and tables
