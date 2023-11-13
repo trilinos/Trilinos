@@ -69,6 +69,11 @@
 
 #include "Amesos2_TypeMap.hpp"
 
+#ifdef KOKKOS_ENABLE_CUDA
+  #include <cublas_v2.h>
+  #include <cuda_runtime_api.h>
+#endif
+
 
 namespace SLUD {
 
