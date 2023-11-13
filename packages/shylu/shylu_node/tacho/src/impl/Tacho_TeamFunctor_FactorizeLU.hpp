@@ -77,15 +77,9 @@ public:
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void factorize_var0(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
                                              const value_type_matrix &ABR) const {
-#if 1
-    using LU_AlgoType = typename Batched_LU_Algorithm::type;
-    using GemmAlgoType = typename Batched_GemmAlgorithm::type;
-    using TrsmAlgoType = typename Batched_TrsmAlgorithm::type;
-#else
-    using LU_AlgoType = typename LU_Algorithm::type;
-    using TrsmAlgoType = typename TrsmAlgorithm::type;
-    using GemmAlgoType = typename GemmAlgorithm::type;
-#endif
+    using LU_AlgoType = typename LU_Algorithm_Team::type;
+    using GemmAlgoType = typename GemmAlgorithm_Team::type;
+    using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
 
     int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;

@@ -74,15 +74,9 @@ public:
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void factorize_var0(MemberType &member, const supernode_type &s,
                                              const value_type_matrix &ABR) const {
-    #if 1
-    using CholAlgoType = typename Batched_CholAlgorithm::type;
-    using TrsmAlgoType = typename Batched_TrsmAlgorithm::type;
-    using HerkAlgoType = typename Batched_HerkAlgorithm::type;
-    #else
-    using CholAlgoType = typename CholAlgorithm::type;
-    using TrsmAlgoType = typename TrsmAlgorithm::type;
-    using HerkAlgoType = typename HerkAlgorithm::type;
-    #endif
+    using CholAlgoType = typename CholAlgorithm_Team::type;
+    using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
+    using HerkAlgoType = typename HerkAlgorithm_Team::type;
 
     int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;

@@ -38,7 +38,7 @@ struct GemvAlgorithm {
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
-struct Batched_GemvAlgorithm {
+struct GemvAlgorithm_Team {
 #if defined(KOKKOS_ENABLE_OPENMP)
   using type = ActiveHostAlgorithm<runsWithOMP()>::type;
 #else

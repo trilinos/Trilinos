@@ -80,15 +80,9 @@ public:
                                              const value_type_matrix &D,
                                              const value_type_array &W, /// STR and workspace for LDL
                                              const value_type_matrix &ABR) const {
-#if 1
-    using LDL_AlgoType = typename Batched_LDL_Algorithm::type;
-    using GemmAlgoType = typename Batched_GemmAlgorithm::type;
-    using TrsmAlgoType = typename Batched_TrsmAlgorithm::type;
-#else
-    using LDL_AlgoType = typename LDL_Algorithm::type;
-    using TrsmAlgoType = typename TrsmAlgorithm::type;
-    using GemmAlgoType = typename GemmAlgorithm::type;
-#endif
+    using LDL_AlgoType = typename LDL_Algorithm_Team::type;
+    using GemmAlgoType = typename GemmAlgorithm_Team::type;
+    using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
 
     int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
