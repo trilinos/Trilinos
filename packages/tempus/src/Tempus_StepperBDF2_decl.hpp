@@ -179,8 +179,6 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  virtual Teuchos::RCP<Tempus::TimeDerivative<Scalar>> getTimeDerivative(Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const override;
-
 private:
 
   Teuchos::RCP<Stepper<Scalar> >              startUpStepper_;
@@ -232,19 +230,6 @@ public:
     //xDot = a*(x_n - x_{n-1}) - b*(x_{n-1} - x_{n-2})
     Thyra::V_StVpStV(xDot.ptr(), a, *x, -(a+b), *xOld_);
     Thyra::Vp_StV(xDot.ptr(), b, *xOldOld_);
-  }
-
-  virtual Scalar get_DxDot_Dx_old()
-  {
-    const Scalar a = ((Scalar(2.0)*dt_ + dtOld_)/(dt_ + dtOld_))/dt_;
-    const Scalar b = (                       dt_/(dt_ + dtOld_))/dtOld_;
-    return -(a+b);
-  }
-
-  virtual Scalar get_DxDot_Dx_new()
-  {
-    const Scalar a = ((Scalar(2.0)*dt_ + dtOld_)/(dt_ + dtOld_))/dt_;
-    return a;
   }
 
   virtual void initialize(Scalar dt, Scalar dtOld,

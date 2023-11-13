@@ -146,8 +146,6 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  virtual Teuchos::RCP<Tempus::TimeDerivative<Scalar>> getTimeDerivative(Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const override;
-
 
 private:
 
@@ -188,16 +186,6 @@ public:
     // Calculate the Trapezoidal method x dot vector
     Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xOld_);
     Thyra::V_VpStV  (xDot.ptr(),*xDot,Scalar(-1.0),*xDotOld_);
-  }
-
-  virtual Scalar get_DxDot_Dx_old()
-  {
-    return s_;
-  }
-
-  virtual Scalar get_DxDot_Dx_new()
-  {
-    return -s_;
   }
 
   virtual void initialize(Scalar s,

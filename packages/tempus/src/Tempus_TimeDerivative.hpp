@@ -40,9 +40,6 @@ public:
     Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
     Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot = Teuchos::null) = 0;
 
-  virtual Scalar get_DxDot_Dx_old () = 0;
-  virtual Scalar get_DxDot_Dx_new () = 0;
-
   // Derived classes may need an initialize, but the argument lists will vary.
   // virtual void initialize(Scalar dt, ... ) = 0;
 };

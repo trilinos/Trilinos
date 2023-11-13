@@ -217,17 +217,6 @@ bool StepperTrapezoidal<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 }
 
 
-template<class Scalar>
-Teuchos::RCP<Tempus::TimeDerivative<Scalar>> StepperTrapezoidal<Scalar>::getTimeDerivative(
-  Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::logic_error,
-          "Not yet implemented.");
-  return Teuchos::null;
-}
-
-
 // Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
 template<class Scalar>

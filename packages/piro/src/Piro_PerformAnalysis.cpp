@@ -898,7 +898,7 @@ Piro::PerformROLTransientAnalysis(
 
   bool useFullSpace = rolParams.get("Full Space",false);
   bool useTempusDriver = rolParams.get("Tempus Driver",false);
-  bool useFinalTimeStepResponse = rolParams.get("Final time step response",true);
+  bool useFinalTimeStepResponse = rolParams.get<bool>("Response Depends Only On Final Time");
 
   if(analysisVerbosity >= 3) {
     *out << "\nPiro PerformAnalysis: ROL options:" << std::endl;
@@ -1227,7 +1227,7 @@ Piro::getValidPiroAnalysisROLParameters(int num_parameters)
   validPL->set<bool>("Bound Constrained", true, "Whether to enforce bounds to the parameters during the optimization");
   validPL->set<bool>("Full Space", true, "Whether to use a full-space or a reduced-space optimization approach");
   validPL->set<bool>("Tempus Driver", false, "Whether to use Tempus to compute the derivative");
-  validPL->set<bool>("Final time step response", true, "Whether to use only the response at the final time step");
+  validPL->set<bool>("Response Depends Only On Final Time", true, "Whether the response depends only on the solution and parameters at the final time");
   validPL->set<bool>("Use NOX Solver", true, "Whether to use NOX for solving the state equation or the native ROL solver");
 
   validPL->set<double>("Objective Recovery Value", 1.0e10, "Objective value used when the state solver does not converge. If not defined, the objective will be computed using the unconverged state");

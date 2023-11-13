@@ -54,9 +54,6 @@
 #include "Tempus_IntegratorPseudoTransientForwardSensitivity.hpp"
 #include "Tempus_IntegratorPseudoTransientAdjointSensitivity.hpp"
 
-#include "Tempus_TimeDerivative.hpp"
-#include "Tempus_StepperBackwardEuler_decl.hpp"
-
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_DefaultNominalBoundsOverrideModelEvaluator.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -67,6 +64,15 @@
 #include "ROL_ThyraVector.hpp"
 
 namespace Piro {
+
+template <typename Real>
+  Teuchos::RCP<Thyra::VectorBase<Real> > compute_u_dot(Teuchos::RCP<const Thyra::VectorBase<Real> > u_new, Teuchos::RCP<const Thyra::VectorBase<Real> > u_old, Real dt) {
+    Real minus_one = -1.;
+    Teuchos::RCP<Thyra::VectorBase<Real> > u_dot = u_new->clone_v();
+    Thyra::Vp_V(u_dot.ptr(), *u_old, minus_one);
+    Thyra::Vt_S(u_dot.ptr(), dt);
+    return u_dot;
+  }
 
 template <typename Real>
 class ThyraProductME_ROL_DynamicObjective : public virtual ROL::DynamicObjective<Real> {
@@ -104,10 +110,10 @@ public:
               const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t) const;
 
   void gradient_uo( Teuchos::RCP<Thyra::VectorBase<Real>> &g, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x_dot, 
-                    const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t, const bool u_new, const Teuchos::RCP<Tempus::TimeDerivative<Real> > timeDer) const;
+                    const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t, const bool u_new, const Real &dt) const;
 
   void gradient_un( Teuchos::RCP<Thyra::VectorBase<Real>> &g, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x_dot, 
-                    const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t, const bool u_new, const Teuchos::RCP<Tempus::TimeDerivative<Real> > timeDer) const;
+                    const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t, const bool u_new, const Real &dt) const;
 
   void gradient_z( Teuchos::RCP<Thyra::VectorBase<Real>> &g, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x_dot, 
                     const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t) const;
@@ -219,11 +225,9 @@ value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
   const ROL::ThyraVector<Real>& thyra_u_old =
     Teuchos::dyn_cast<const ROL::ThyraVector<Real> >(u_old);
 
-  RCP<Thyra::VectorBase<Real> > u_dot = thyra_u_new.getVector()->clone_v();
-
   Real dt = timeStamp.t[timeStamp.t.size()-1] - timeStamp.t[0];
-  Teuchos::RCP<Tempus::TimeDerivative<Real> > timeDer = integrator_->getStepper()->getTimeDerivative(dt, thyra_u_old.getVector());
-  timeDer->compute(thyra_u_new.getVector(), u_dot);
+
+  RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
   Real g = value( thyra_u_new.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[timeStamp.t.size()-1]);
 
@@ -269,16 +273,14 @@ gradient_uo( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
 
   Real dt = timeStamp.t[timeStamp.t.size()-1] - timeStamp.t[0];
 
-  RCP<Thyra::VectorBase<Real> > u_dot = thyra_u_new.getVector()->clone_v();
-  Teuchos::RCP<Tempus::TimeDerivative<Real> > timeDer = integrator_->getStepper()->getTimeDerivative(dt, thyra_u_old.getVector());
-  timeDer->compute(thyra_u_new.getVector(), u_dot);
+  RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
   RCP<Thyra::VectorBase<Real> > dgdx = thyra_dgdx.getVector();
-  gradient_uo( dgdx, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[timeStamp.t.size()-1], true, timeDer);
+  gradient_uo( dgdx, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[timeStamp.t.size()-1], true, dt);
 
   if (!onlyFinalTime_ && useTrapezoidalTimeIntegration_) {
     RCP<Thyra::VectorBase<Real> > dgdx_old = thyra_dgdx.getVector()->clone_v();
-    gradient_uo( dgdx_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[0], false, timeDer);
+    gradient_uo( dgdx_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[0], false, dt);
     Thyra::Vp_V(dgdx.ptr(), *dgdx_old);
     Thyra::Vt_S(dgdx.ptr(), dt/2.);
   }
@@ -319,16 +321,14 @@ gradient_un( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
 
   Real dt = timeStamp.t[timeStamp.t.size()-1] - timeStamp.t[0];
 
-  RCP<Thyra::VectorBase<Real> > u_dot = thyra_u_new.getVector()->clone_v();
-  Teuchos::RCP<Tempus::TimeDerivative<Real> > timeDer = integrator_->getStepper()->getTimeDerivative(dt, thyra_u_old.getVector());
-  timeDer->compute(thyra_u_new.getVector(), u_dot);
+  RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
   RCP<Thyra::VectorBase<Real> > dgdx = thyra_dgdx.getVector();
-  gradient_un( dgdx, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[timeStamp.t.size()-1], true, timeDer);
+  gradient_un( dgdx, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[timeStamp.t.size()-1], true, dt);
 
   if (!onlyFinalTime_ && useTrapezoidalTimeIntegration_) {
     RCP<Thyra::VectorBase<Real> > dgdx_old = thyra_dgdx.getVector()->clone_v();
-    gradient_un( dgdx_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[0], false, timeDer);
+    gradient_un( dgdx_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[0], false, dt);
     Thyra::Vp_V(dgdx.ptr(), *dgdx_old);
     Thyra::Vt_S(dgdx.ptr(), dt/2.);
   }
@@ -369,9 +369,7 @@ gradient_z( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL::
 
   Real dt = timeStamp.t[timeStamp.t.size()-1] - timeStamp.t[0];
 
-  RCP<Thyra::VectorBase<Real> > u_dot = thyra_u_new.getVector()->clone_v();
-  Teuchos::RCP<Tempus::TimeDerivative<Real> > timeDer = integrator_->getStepper()->getTimeDerivative(dt, thyra_u_old.getVector());
-  timeDer->compute(thyra_u_new.getVector(), u_dot);
+  RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
   RCP<Thyra::VectorBase<Real> > dgdp = thyra_dgdp.getVector();
   gradient_z( dgdp, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), timeStamp.t[timeStamp.t.size()-1]);
@@ -415,7 +413,7 @@ template <typename Real>
 void
 ThyraProductME_ROL_DynamicObjective<Real>::
 gradient_uo( Teuchos::RCP<Thyra::VectorBase<Real>> &grad, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x_dot, 
-              const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t, const bool u_new, const Teuchos::RCP<Tempus::TimeDerivative<Real> > timeDer) const
+              const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t, const bool u_new, const Real &dt) const
 {
   using Teuchos::RCP;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -476,10 +474,10 @@ gradient_uo( Teuchos::RCP<Thyra::VectorBase<Real>> &grad, const Teuchos::RCP<con
 
   if (use_dgdx_dot) {
     if (u_new) {
-      Thyra::V_StV(grad.ptr(), timeDer->get_DxDot_Dx_new(), *dgdx_dot);
+      Thyra::V_StV(grad.ptr(), 1./dt, *dgdx_dot);
     }
     else {
-      Thyra::V_StVpStV(grad.ptr(), 1., *dgdx, timeDer->get_DxDot_Dx_old(), *dgdx_dot);
+      Thyra::V_StVpStV(grad.ptr(), 1., *dgdx, -1./dt, *dgdx_dot);
     }
   }
 }
@@ -488,7 +486,7 @@ template <typename Real>
 void
 ThyraProductME_ROL_DynamicObjective<Real>::
 gradient_un( Teuchos::RCP<Thyra::VectorBase<Real>> &grad, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x_dot, 
-              const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t, const bool u_new, const Teuchos::RCP<Tempus::TimeDerivative<Real> > timeDer) const
+              const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t, const bool u_new, const Real &dt) const
 {
   using Teuchos::RCP;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -549,10 +547,10 @@ gradient_un( Teuchos::RCP<Thyra::VectorBase<Real>> &grad, const Teuchos::RCP<con
 
   if (use_dgdx_dot) {
     if (u_new) {
-      Thyra::V_StVpStV(grad.ptr(), 1., *dgdx, timeDer->get_DxDot_Dx_new(), *dgdx_dot);
+      Thyra::V_StVpStV(grad.ptr(), 1., *dgdx, 1./dt, *dgdx_dot);
     }
     else {
-      Thyra::V_StV(grad.ptr(), timeDer->get_DxDot_Dx_old(), *dgdx_dot);
+      Thyra::V_StV(grad.ptr(), -1./dt, *dgdx_dot);
     }
   }
 }

@@ -160,7 +160,7 @@ ThyraProductME_TempusFinalObjective(
   verbosityLevel_(verbLevel),
   observer_(observer),
   tempus_params_(Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList(piroParams.sublist("Tempus")))),
-  time_final_(piroParams.get<Real>("Time final", 1.))
+  time_final_(piroParams.get<Real>("Final Time", 1.))
 {
   
 }

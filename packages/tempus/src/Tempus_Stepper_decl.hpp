@@ -16,7 +16,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_TimeDerivative.hpp"
 
 
 namespace Tempus {
@@ -128,9 +127,6 @@ public:
      * name is the stepper type (e.g., "BDF2" or "Bogacki-Shampine 3(2) Pair").
      */
     std::string getStepperName() const { return stepperName_; }
-
-    virtual Teuchos::RCP<Tempus::TimeDerivative<Scalar>> getTimeDerivative(Scalar dt, Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_old) const
-    { return Teuchos::null; }
 
 protected:
     /// Set the stepper type.
