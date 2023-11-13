@@ -106,9 +106,7 @@ namespace {
     typedef Tpetra::Map<LO,GO,NT> map_type;
     //typedef Teuchos::ScalarTraits<SC> STS; // unused
 
-    Teuchos::OSTab tab0 (out);
     out << "Create test matrix with " << gblNumRows << " row(s)" << endl;
-    Teuchos::OSTab tab1 (out);
 
     TEUCHOS_TEST_FOR_EXCEPTION
       ( gblNumRows == 0, std::invalid_argument, "gblNumRows = 0");
@@ -208,9 +206,7 @@ namespace {
     typedef typename MV::mag_type mag_type;
     typedef Teuchos::ScalarTraits<mag_type> STM;
 
-    Teuchos::OSTab tab0 (out);
     out << "Test solver \"" << solverName << "\" from Amesos2 package" << endl;
-    Teuchos::OSTab tab1 (out);
 
     // NDE: Beginning changes towards passing parameter list to shylu basker
     // for controlling various parameters per test, matrix, etc.

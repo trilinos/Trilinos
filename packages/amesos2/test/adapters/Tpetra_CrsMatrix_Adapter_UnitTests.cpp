@@ -118,9 +118,6 @@ namespace {
 
   // Where to look for input files
   string filedir;
-
-
-
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -202,7 +199,7 @@ namespace {
     }
     eye->fillComplete();
     // Create using non-member function
-    RCP<ADAPT> adapter  = Amesos2::createMatrixAdapter<MAT>(eye);
+    //RCP<ADAPT> adapter  = Amesos2::createMatrixAdapter<MAT>(eye);
 
     // The following should all pass at compile time
     TEST_ASSERT( (std::is_same_v<Scalar,typename ADAPT::scalar_t>) );
@@ -435,9 +432,6 @@ namespace {
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t numprocs = comm->getSize();
     const size_t rank     = comm->getRank();
-    // create a Map for our matrix
-    global_size_t nrows = 6;
-    RCP<const Map<LO,GO,Node> > map = createUniformContigMap<LO,GO>(nrows,comm);
 
     /* We will be using the following matrix for this test (amesos2_test_mat0[_complex].mtx):
      *
