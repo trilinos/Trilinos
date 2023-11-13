@@ -18,14 +18,13 @@
 #include <Akri_ParallelErrorMessage.hpp>
 #include <math.h>
 
+#include "Akri_Eikonal_Calc.hpp"
 namespace krino{
 
 Fast_Marching::Fast_Marching(LevelSet & ls, const stk::mesh::Selector & selector, stk::diag::Timer & parent_timer)
   : my_ls(ls),
     my_selector(selector),
     my_timer("Fast Marching", parent_timer),
-    my_tri_timer("Update Triangle", my_timer),
-    my_tet_timer("Update Tetrahedron", my_timer),
     my_fm_node_less(ls.mesh()),
     trial_nodes(my_fm_node_less)
 {
@@ -53,7 +52,7 @@ Fast_Marching::check_error(const ParallelErrorMessage& err, const std::string & 
     krinolog<< "Error in " << context << ":" << stk::diag::dendl;
     krinolog << globalError.second << stk::diag::dendl;
   }
-  ThrowRequireMsg(!globalError.first, "Error in " << context << ".");
+  STK_ThrowRequireMsg(!globalError.first, "Error in " << context << ".");
 }
 
 void Fast_Marching::redistance()
@@ -147,7 +146,7 @@ void Fast_Marching::redistance()
           const double fm_node_unsigned_dist = fm_node->signed_dist()*fm_node->sign();
           if(min_node_unsigned_dist < fm_node_unsigned_dist)
           {
-            ThrowAssertMsg(fm_node->status() != STATUS_INITIAL || fm_node->status() != STATUS_TRIAL, "Unexpected node to have INITIAL or TRIAL status.");
+            STK_ThrowAssertMsg(fm_node->status() != STATUS_INITIAL || fm_node->status() != STATUS_TRIAL, "Unexpected node to have INITIAL or TRIAL status.");
             fm_node->set_signed_dist(min_node_unsigned_dist*fm_node->sign());
             add_trial_node(*fm_node);
             ++num_locally_updated;
@@ -209,41 +208,22 @@ void Fast_Marching::initialize(ParallelErrorMessage& err)
   for ( auto&& node : field_nodes )
   {
     const double * curr_node_dist = field_data<double>(dRef, node);
-    ThrowAssert(nullptr != curr_node_dist);
+    STK_ThrowAssert(nullptr != curr_node_dist);
 
-    Vector3d coords = Vector3d::ZERO;
+    stk::math::Vector3d coords = stk::math::Vector3d::ZERO;
     const double * xptr = field_data<double>(xRef, node);
-    ThrowAssert(nullptr != xptr);
+    STK_ThrowAssert(nullptr != xptr);
     for ( int d = 0; d < dim; d++ )
     {
       coords[d] = xptr[d];
     }
 
     Fast_Marching_Node * fm_node = get_fm_node(node);
-    ThrowAssert(nullptr != fm_node);
+    STK_ThrowAssert(nullptr != fm_node);
     *fm_node = Fast_Marching_Node(node,STATUS_FAR,LevelSet::sign(*curr_node_dist) * std::numeric_limits<double>::max(),LevelSet::sign(*curr_node_dist),coords);
   }
 
-  // To start the nodes of elements that have interfaces will be redistanced.
-  // I have tried a few different methods for this distance calculation with varying success.
-  // We can:
-  // 1. Use only local facets to redistance the nodes of the element.  This appears to not work too
-  //    well because the closest facet to a node might be in an element that does not support the node.
-  // 2. Use local facets, but use the normal distance instead of the facet distance.  This seems to work
-  //    better than (1) usually.  However, it seems prone to pathalogical behavior when small facets run
-  //    parallel to an element side, producing inaccurate distance measures on this side.
-  // 3. Use the standard parallel redistance calculation used in "normal" redistancing. This is susceptible
-  //    to seeing through walls if the walls are thinner than the distance of the nodes of the cut element to
-  //    the surface.
-  // 4. Start the redistancing from the subelement facets, progressing through the subelements.
-  //    Somewhat surprisingly, this does not work too well.  I think this may be due to the obtuse angles
-  //    in the subelement decomposition.  The results are very similar to that produced by local redistancing (#1).
-  // 5. Rescale each cut element so that it has a unit gradient (or prescribed gradient) and set the nodal
-  //    distance to the minimum (magnitude) from all of the supporting elements.  This seems to work pretty
-  //    well in the test cases and is completely local, and is not susceptible to seeing through walls.
-
   {
-    // Initialize using method #5 (element rescaling)
     std::vector<stk::mesh::Entity> field_elems;
     stk::mesh::get_selected_entities( field_not_ghost, stk_mesh.buckets( stk::topology::ELEMENT_RANK ), field_elems );
     for (auto&& elem : field_elems)
@@ -296,15 +276,15 @@ Fast_Marching::have_crossing(const stk::mesh::Entity & elem) const
 {
   const FieldRef dRef = my_ls.get_distance_field();
   const unsigned npe = mesh().bucket(elem).topology().num_nodes();
-  ThrowAssert(npe > 0);
+  STK_ThrowAssert(npe > 0);
 
   const stk::mesh::Entity * elem_nodes = mesh().begin(elem, stk::topology::NODE_RANK);
   const double * dist0 = field_data<double>(dRef, elem_nodes[0]);
-  ThrowAssert(nullptr != dist0);
+  STK_ThrowAssert(nullptr != dist0);
   for (unsigned n=1; n<npe; ++n)
   {
     const double * dist = field_data<double>(dRef, elem_nodes[n]);
-    ThrowAssert(nullptr != dist);
+    STK_ThrowAssert(nullptr != dist);
     if (LevelSet::sign_change(*dist0, *dist))
     {
       return true;
@@ -313,71 +293,39 @@ Fast_Marching::have_crossing(const stk::mesh::Entity & elem) const
   return false;
 }
 
-static std::function<const Vector3d &(stk::mesh::Entity)> build_get_fm_node_coordinates(Fast_Marching * fm)
+static std::function<const stk::math::Vector3d &(stk::mesh::Entity)> build_get_fm_node_coordinates(Fast_Marching * fm)
 {
-  return [fm](stk::mesh::Entity node) -> const Vector3d &
+  return [fm](stk::mesh::Entity node) -> const stk::math::Vector3d &
     {
       Fast_Marching_Node * fm_node = fm->get_fm_node(node);
-      ThrowAssert(fm_node);
+      STK_ThrowAssert(fm_node);
       return fm_node->coords();
     };
-}
-
-static double calculate_gradient_magnitude(const int npe,
-    const stk::mesh::Entity * elem_nodes,
-    const FieldRef dRef,
-    const std::function<const Vector3d &(stk::mesh::Entity)> & get_coordinates)
-{
-  double mag_grad = 1.0;
-
-  if (3 == npe)
-  {
-    const double d0 = *field_data<double>(dRef, elem_nodes[0]);
-    const double d10 = *field_data<double>(dRef, elem_nodes[1])-d0;
-    const double d20 = *field_data<double>(dRef, elem_nodes[2])-d0;
-
-    const Vector3d x0 = get_coordinates(elem_nodes[0]);
-    const Vector3d x10 = get_coordinates(elem_nodes[1]) - x0;
-    const Vector3d x20 = get_coordinates(elem_nodes[2]) - x0;
-
-    const double detJ = (x10[0]*x20[1]-x20[0]*x10[1]);
-    const Vector3d grad = d10*Vector3d(x20[1],-x20[0],0.0) + d20*Vector3d(-x10[1],x10[0],0.0);
-    mag_grad = grad.length()/detJ;
-  }
-  else
-  {
-    ThrowAssert(4 == npe);
-
-    const double d0 = *field_data<double>(dRef, elem_nodes[0]);
-    const double d10 = *field_data<double>(dRef, elem_nodes[1])-d0;
-    const double d20 = *field_data<double>(dRef, elem_nodes[2])-d0;
-    const double d30 = *field_data<double>(dRef, elem_nodes[3])-d0;
-
-    const Vector3d x0 = get_coordinates(elem_nodes[0]);
-    const Vector3d x10 = get_coordinates(elem_nodes[1]) - x0;
-    const Vector3d x20 = get_coordinates(elem_nodes[2]) - x0;
-    const Vector3d x30 = get_coordinates(elem_nodes[3]) - x0;
-
-    const Vector3d x10_x_x20 = Cross(x10,x20);
-    const Vector3d x20_x_x30 = Cross(x20,x30);
-    const Vector3d x30_x_x10 = Cross(x30,x10);
-
-    const double detJ = Dot(x30,x10_x_x20);
-    const Vector3d grad = d10*x20_x_x30 + d20*x30_x_x10 + d30*x10_x_x20;
-    mag_grad = grad.length()/detJ;
-  }
-
-  return mag_grad;
 }
 
 void
 Fast_Marching::initialize_element(const stk::mesh::Entity & elem, const double speed)
 {
-  // Still another way to initialize fast marching.
-  // Here we go to each cut element and find the current distance gradient.
-  // By comparing this to the desired gradient, we rescale each element.  The nodal
-  // distance is set to the minimum (magnitude) for each of the rescaled elements that
-  // support the node.
+  // To start the nodes of elements that have interfaces will be redistanced.
+  // I have tried a few different methods for this distance calculation with varying success.
+  // We can:
+  // 1. Use only local facets to redistance the nodes of the element.  This appears to not work too
+  //    well because the closest facet to a node might be in an element that does not support the node.
+  // 2. Use local facets, but use the normal distance instead of the facet distance.  This seems to work
+  //    better than (1) usually.  However, it seems prone to pathalogical behavior when small facets run
+  //    parallel to an element side, producing inaccurate distance measures on this side.
+  // 3. Use the standard parallel redistance calculation used in "normal" redistancing. This is susceptible
+  //    to seeing through walls if the walls are thinner than the distance of the nodes of the cut element to
+  //    the surface.
+  // 4. Start the redistancing from the subelement facets, progressing through the subelements.
+  //    Somewhat surprisingly, this does not work too well.  I think this may be due to the obtuse angles
+  //    in the subelement decomposition.  The results are very similar to that produced by local redistancing (#1).
+  // 5. Rescale each cut element so that it has a unit gradient (or prescribed gradient) and set the nodal
+  //    distance to the minimum (magnitude) from all of the supporting elements.  This seems to work pretty
+  //    well in the test cases and is completely local, and is not susceptible to seeing through walls.
+
+  // Initialize using method #5 (element rescaling)
+
   const FieldRef dRef = my_ls.get_distance_field();
   const stk::mesh::Entity * elem_nodes = mesh().begin(elem, stk::topology::NODE_RANK);
   const int npe = mesh().bucket(elem).topology().num_nodes();
@@ -389,12 +337,11 @@ Fast_Marching::initialize_element(const stk::mesh::Entity & elem, const double s
   for (int inode=0; inode<npe; ++inode)
   {
     Fast_Marching_Node * fm_node = get_fm_node(elem_nodes[inode]);
-    ThrowAssert(nullptr != fm_node && fm_node->status() != STATUS_UNUSED);
+    STK_ThrowAssert(nullptr != fm_node && fm_node->status() != STATUS_UNUSED);
     const double elem_node_dist = *field_data<double>(dRef, elem_nodes[inode]) / (mag_grad * speed);
-    const int sign = LevelSet::sign(fm_node->signed_dist());
+    const int sign = fm_node->sign();
     fm_node->set_signed_dist(sign * std::min(std::abs(fm_node->signed_dist()), std::abs(elem_node_dist)));
     fm_node->set_status(STATUS_INITIAL);
-    fm_node->set_sign(sign);
   }
 }
 
@@ -406,10 +353,10 @@ Fast_Marching::update_neighbors(Fast_Marching_Node & accepted_node, ParallelErro
 
   stk::mesh::Entity node = accepted_node.node();
 
-  ThrowAssertMsg(STATUS_ACCEPTED == accepted_node.status() || STATUS_INITIAL == accepted_node.status(), "Expected ACCEPTED OR INITIAL status");
+  STK_ThrowAssertMsg(STATUS_ACCEPTED == accepted_node.status() || STATUS_INITIAL == accepted_node.status(), "Expected ACCEPTED OR INITIAL status");
 
   const int dim = mesh().mesh_meta_data().spatial_dimension();
-  ThrowAssert(2 == dim || 3 == dim);
+  STK_ThrowAssert(2 == dim || 3 == dim);
   const int npe_dist = (2==dim) ? 3 : 4;
   std::vector<Fast_Marching_Node *> elem_nodes(npe_dist);
 
@@ -432,7 +379,7 @@ Fast_Marching::update_neighbors(Fast_Marching_Node & accepted_node, ParallelErro
     for ( int i = 0; i < npe_dist; ++i )
     {
       Fast_Marching_Node * fm_nbr = get_fm_node(nodes[i]);
-      ThrowAssertMsg(nullptr != fm_nbr && (STATUS_INITIAL == fm_nbr->status() || STATUS_ACCEPTED == fm_nbr->status() || STATUS_FAR == fm_nbr->status() || STATUS_TRIAL == fm_nbr->status()), "Unexpected node status.");
+      STK_ThrowAssertMsg(nullptr != fm_nbr && (STATUS_INITIAL == fm_nbr->status() || STATUS_ACCEPTED == fm_nbr->status() || STATUS_FAR == fm_nbr->status() || STATUS_TRIAL == fm_nbr->status()), "Unexpected node status.");
       elem_nodes[i] = fm_nbr;
       bool do_add_trial_node = fm_nbr->status() == STATUS_FAR;
       if (fm_nbr->status() == STATUS_ACCEPTED)
@@ -465,7 +412,7 @@ Fast_Marching::update_neighbors(Fast_Marching_Node & accepted_node, ParallelErro
 void
 Fast_Marching::add_trial_node(Fast_Marching_Node & trial_node)
 {
-  ThrowAssertMsg(trial_node.status() == STATUS_ACCEPTED || trial_node.status() == STATUS_FAR, "Expected ACCEPTED or FAR when adding trial node");
+  STK_ThrowAssertMsg(trial_node.status() == STATUS_ACCEPTED || trial_node.status() == STATUS_FAR, "Expected ACCEPTED or FAR when adding trial node");
   trial_nodes.insert(&trial_node);
   trial_node.set_status(STATUS_TRIAL);
 }
@@ -473,10 +420,10 @@ Fast_Marching::add_trial_node(Fast_Marching_Node & trial_node)
 void
 Fast_Marching::update_trial_node(Fast_Marching_Node & trial_node, const double dist)
 {
-  ThrowAssertMsg(trial_node.status() == STATUS_TRIAL, "Unexpected node status when updating trial node");
+  STK_ThrowAssertMsg(trial_node.status() == STATUS_TRIAL, "Unexpected node status when updating trial node");
 
   auto it = trial_nodes.find(&trial_node);
-  ThrowAssertMsg(it != trial_nodes.end(), "Can't find trial node");
+  STK_ThrowAssertMsg(it != trial_nodes.end(), "Can't find trial node");
 
   trial_nodes.erase(it);
 
@@ -501,7 +448,7 @@ Fast_Marching::update_node(std::vector<Fast_Marching_Node *> & elem_nodes, int n
   }
   else
   {
-    ThrowAssertMsg(false, "Unexpected number of nodes per element: " << npe_dist);
+    STK_ThrowAssertMsg(false, "Unexpected number of nodes per element: " << npe_dist);
   }
 
   Fast_Marching_Node & fm_node = *elem_nodes[node_to_update];
@@ -512,215 +459,30 @@ Fast_Marching::update_node(std::vector<Fast_Marching_Node *> & elem_nodes, int n
 }
 
 double
-Fast_Marching::update_triangle(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed, int side_to_update)
+Fast_Marching::update_triangle(std::vector<Fast_Marching_Node *> & elemNodes, int nodeToUpdate, const double speed)
 {
-  stk::diag::TimeBlock timer__(my_tri_timer);
-  const int dim = mesh().mesh_meta_data().spatial_dimension();
-  ThrowAssert(2 == dim || 3 == dim);
+  static constexpr double far = std::numeric_limits<double>::max();
 
-  int lnn[3];
-  if (2 == dim)
-  {
-    ThrowAssert(-1 == side_to_update);
-    lnn[0] = (node_to_update + 1) % 3;
-    lnn[1] = (node_to_update + 2) % 3;
-    lnn[2] = node_to_update;
-  }
-  else // (3 == dim)
-  {
-    const stk::topology tet4_topology = stk::topology::TETRAHEDRON_4;
-    const unsigned * side_node_ordinals = get_side_node_ordinals(tet4_topology, side_to_update);
-    lnn[0] = side_node_ordinals[(node_to_update + 1) % 3];
-    lnn[1] = side_node_ordinals[(node_to_update + 2) % 3];
-    lnn[2] = side_node_ordinals[node_to_update];
-  }
-
-  const double dist_0 = elem_nodes[lnn[0]]->signed_dist();
-  const double dist_1 = elem_nodes[lnn[1]]->signed_dist();
-  double dist_2 = elem_nodes[lnn[2]]->signed_dist();
-
-  const int sign = elem_nodes[lnn[2]]->sign();
-  if (sign*(dist_2-dist_0) < 0 || sign*(dist_2-dist_1) < 0)
-  {
-    return dist_2;
-  }
-
-  const Vector3d & coords_0 = elem_nodes[lnn[0]]->coords();
-  const Vector3d & coords_1 = elem_nodes[lnn[1]]->coords();
-  const Vector3d & coords_2 = elem_nodes[lnn[2]]->coords();
-
-  const double sqr_speed = speed*speed;
-  const double d10 = dist_1 - dist_0;
-  const Vector3d x10 = coords_1 - coords_0;
-  const Vector3d x20 = coords_2 - coords_0;
-  const double h10 = x10.length();
-  const double h20 = x20.length();
-
-  double detJ = 0;
-  if (2 == dim)
-  {
-    detJ = (x10[0]*x20[1]-x20[0]*x10[1]);
-  }
-  else // (3 == dim)
-  {
-    detJ = Cross(x10,x20).length();
-  }
-  ThrowAssert(detJ > 0.0);
-
-  const double a = h10*h10;
-  const double b = -2.0 * sign*d10 * Dot(x10,x20);
-  const double c = d10*d10 * h20*h20 - detJ*detJ/sqr_speed;
-
-  bool elem_is_defining = false;
-
-  const double det = b*b-4.0*a*c;
-  if (det > 0.0)
-  {
-    // solve quadratic equation, roots are q/a and c/q
-    const int sign_b = ( b < 0.0 ) ? -1 : 1;
-    const double q = -0.5*(b + sign_b*std::sqrt(det));
-
-    const double d20 = sign*std::max(c/q,q/a);
-
-    const bool causal = (sign*d20 > 0.0 && sign*(d20-d10) > 0.0);
-
-    if (causal)
-    {
-      const double loc = (Dot(x10,x20) - sqr_speed*d10*d20) / (h10*h10 - sqr_speed*d10*d10);
-      elem_is_defining = (loc > 0.0 && loc < 1.0);
-
-      if (elem_is_defining)
-      {
-        dist_2 = sign * std::min(sign*dist_2,sign*(dist_0 + d20));
-      }
-    }
-  }
-
-  if (!elem_is_defining)
-  {
-    const double h21 = (coords_2 - coords_1).length();
-    dist_2 = sign * std::min(sign*dist_2,std::min(sign*dist_0+h20/speed,sign*dist_1+h21/speed));
-    // Enforce causality - This is to catch the corner case (literally) where the characteristic is marching along the edges of the element
-    dist_2 = sign * std::max(sign*dist_2,std::max(sign*dist_0,sign*dist_1));
-  }
-
-  ThrowAssert(sign*(dist_2-dist_0)>=0 && sign*(dist_2-dist_1)>=0);
-
-  return dist_2;
+  const std::array<int,3> lnn = get_oriented_nodes_triangle(nodeToUpdate);
+  const std::array<stk::math::Vector3d,3> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords()};
+  const std::array<double,2> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist()};
+  const int sign = elemNodes[lnn[2]]->sign();
+  const double signedDist = eikonal_solve_triangle(x, d, sign, far, speed);
+  // For fast marching, we strictly enforce that the distance is increasing in magnitude
+  return sign * std::max({std::abs(d[0]),std::abs(d[1]),std::abs(signedDist)});
 }
 
 double
-Fast_Marching::update_tetrahedron(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed)
+Fast_Marching::update_tetrahedron(std::vector<Fast_Marching_Node *> & elemNodes, int nodeToUpdate, const double speed)
 {
-  stk::diag::TimeBlock timer__(my_tet_timer);
-  static const unsigned node_permute_0[] = { 1,3,2,0 };
-  static const unsigned node_permute_1[] = { 0,2,3,1 };
-  static const unsigned node_permute_2[] = { 0,3,1,2 };
-  static const unsigned node_permute_3[] = { 0,1,2,3 };
-  static const unsigned * node_permute_table[] = { node_permute_0, node_permute_1, node_permute_2, node_permute_3 };
-
-  int lnn[4];
-  lnn[0] = node_permute_table[node_to_update][0];
-  lnn[1] = node_permute_table[node_to_update][1];
-  lnn[2] = node_permute_table[node_to_update][2];
-  lnn[3] = node_permute_table[node_to_update][3];
-
-  const double dist_0 = elem_nodes[lnn[0]]->signed_dist();
-  const double dist_1 = elem_nodes[lnn[1]]->signed_dist();
-  const double dist_2 = elem_nodes[lnn[2]]->signed_dist();
-  double dist_3 = elem_nodes[lnn[3]]->signed_dist();
-
-  const int sign = elem_nodes[lnn[3]]->sign();
-  if (sign*(dist_3-dist_0) < 0 || sign*(dist_3-dist_1) < 0 || sign*(dist_3-dist_2) < 0)
-  {
-    return dist_3;
-  }
-
-  const Vector3d & coords_0 = elem_nodes[lnn[0]]->coords();
-  const Vector3d & coords_1 = elem_nodes[lnn[1]]->coords();
-  const Vector3d & coords_2 = elem_nodes[lnn[2]]->coords();
-  const Vector3d & coords_3 = elem_nodes[lnn[3]]->coords();
-
-  const double sqr_speed = speed*speed;
-  const double d10 = dist_1-dist_0;
-  const double d20 = dist_2-dist_0;
-
-  const Vector3d x10 = coords_1 - coords_0;
-  const Vector3d x20 = coords_2 - coords_0;
-  const Vector3d x30 = coords_3 - coords_0;
-
-  const Vector3d x10_x_x20 = Cross(x10,x20);
-  const Vector3d x20_x_x30 = Cross(x20,x30);
-  const Vector3d x30_x_x10 = Cross(x30,x10);
-
-  const double detJ = Dot(x30,x10_x_x20);
-  ThrowAssert(detJ > 0);
-
-  const Vector3d contrib12 = sign * (d10*x20_x_x30 + d20*x30_x_x10);
-
-  const double a = x10_x_x20.length_squared();
-  const double b = 2.0 * Dot(x10_x_x20,contrib12);
-  const double c = contrib12.length_squared() - detJ*detJ/sqr_speed;
-
-  bool elem_is_defining = false;
-
-  const double det = b*b-4.0*a*c;
-  if (det > 0.0)
-  {
-    // solve quadratic equation, roots are q/a and c/q
-    const int sign_b = ( b < 0.0 ) ? -1 : 1;
-    const double q = -0.5*(b + sign_b*std::sqrt(det));
-
-    const double d30 = sign*std::max(c/q,q/a);
-
-    const bool causal = (sign*d30 > 0.0 && sign*(d30-d10) > 0.0 && sign*(d30-d20) > 0.0);
-
-    if (causal)
-    {
-      // Solve 2x2 system for parametric coords of intersection of gradient and 0-1-2
-      // A1 r + B1 s == C1
-      // A2 r + B2 s == C2
-      const double A1 = x10.length_squared() - sqr_speed*d10*d10;
-      const double B1 = Dot(x10,x20) - sqr_speed*d10*d20;
-      const double C1 = Dot(x10,x30) - sqr_speed*d10*d30;
-      const double A2 = B1;
-      const double B2 = x20.length_squared() - sqr_speed*d20*d20;
-      const double C2 = Dot(x20,x30) - sqr_speed*d20*d30;
-      const double denom = A2*B1 - A1*B2;
-      const double loc_r = (C2*B1 - C1*B2)/denom;
-      const double loc_s = (A2*C1 - A1*C2)/denom;
-      const double loc_t = 1.0 - loc_r - loc_s;
-      elem_is_defining = (loc_r > 0.0 && loc_s > 0.0 && loc_t > 0.0);
-
-      if (elem_is_defining)
-      {
-        dist_3 = sign * std::min(sign*dist_3,sign*(dist_0 + d30));
-      }
-    }
-  }
-
-  if (!elem_is_defining)
-  {
-    const stk::topology tet4_topology = stk::topology::TETRAHEDRON_4;
-    for (int iside=0; iside<4; ++iside)
-    {
-      const unsigned * side_node_lnn = get_side_node_ordinals(tet4_topology, iside);
-      for (int inode=0; inode<3; ++inode)
-      {
-        if (node_to_update == (int)side_node_lnn[inode])
-        {
-          dist_3 = sign * std::min(sign*dist_3, sign*update_triangle(elem_nodes,inode,speed,iside));
-        }
-      }
-    }
-    // Enforce causality - This is to catch the corner case (literally) where the characteristic is marching along the edges of the element
-    // This is not completely covered by the 2d check because 1 face might still predict a value that is less than the neighbors.
-    dist_3 = sign * std::max(sign*dist_3,std::max(sign*dist_2,std::max(sign*dist_1,sign*dist_0)));
-  }
-
-  ThrowAssert(sign*(dist_3-dist_0)>=0 && sign*(dist_3-dist_1)>=0 && sign*(dist_3-dist_2)>=0);
-
-  return dist_3;
+  static constexpr double far = std::numeric_limits<double>::max();
+  const std::array<int,4> lnn = get_oriented_nodes_tetrahedron(nodeToUpdate);
+  const std::array<stk::math::Vector3d,4> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords(), elemNodes[lnn[3]]->coords()};
+  const std::array<double,3> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist(), elemNodes[lnn[2]]->signed_dist()};
+  const int sign = elemNodes[lnn[3]]->sign();
+  const double signedDist = eikonal_solve_tetrahedron(x, d, sign, far, speed);
+  // For fast marching, we strictly enforce that the distance is increasing in magnitude
+  return sign * std::max({std::abs(d[0]),std::abs(d[1]),std::abs(d[2]),std::abs(signedDist)});
 }
 
 } // namespace krino

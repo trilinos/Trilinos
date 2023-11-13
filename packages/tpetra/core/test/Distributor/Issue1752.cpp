@@ -86,7 +86,7 @@ void fill_and_complete(CrsMatrixType& matrix)
 
   // Fill the sparse matrix, one row at a time.
   auto map = matrix.getRowMap();
-  auto my_num_rows = map->getNodeNumElements();
+  auto my_num_rows = map->getLocalNumElements();
   auto num_rows = map->getGlobalNumElements();
   for (LO i=0; i<static_cast<LO>(my_num_rows); i++) {
     auto gbl_row = map->getGlobalElement(i);
@@ -134,7 +134,7 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
 
   // Fill the sparse matrix, one row at a time.
   auto map = matrix.getRowMap();
-  auto my_num_rows = map->getNodeNumElements();
+  auto my_num_rows = map->getLocalNumElements();
   auto num_rows = matrix.getGlobalNumRows();
 
   for (LO i=0; i<static_cast<LO>(my_num_rows); i++) {

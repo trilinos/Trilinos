@@ -69,7 +69,7 @@ void MeshCoordinateTest::Run(const ParameterList &params,
     y = coords->getDataNonConst(1).getRawPtr();
     z = coords->getDataNonConst(2).getRawPtr();
     
-    const zgno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
+    const zgno_t *globalIds = coords->getMap()->getLocalElementList().getRawPtr();
     typedef Zoltan2::BasicVectorAdapter<tMVector_t> inputAdapter_t;
     
     inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);

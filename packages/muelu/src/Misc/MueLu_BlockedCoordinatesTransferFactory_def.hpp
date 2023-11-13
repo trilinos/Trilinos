@@ -51,8 +51,6 @@
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_IO.hpp"
 
-#include "MueLu_CoarseMapFactory.hpp"
-#include "MueLu_Aggregates.hpp"
 #include "MueLu_BlockedCoordinatesTransferFactory_decl.hpp"
 
 #include "MueLu_Level.hpp"
@@ -122,7 +120,7 @@ namespace MueLu {
       RCP<const BlockedMap> coarseMap = Get< RCP<const BlockedMap> >(coarseLevel, "CoarseMap");
       bool thyraMode = coarseMap->getThyraMode();
 
-      ArrayView<const GO> elementAList = coarseMap->getFullMap()->getNodeElementList();
+      ArrayView<const GO> elementAList = coarseMap->getFullMap()->getLocalElementList();
 
       LO blkSize = 1;
       if (rcp_dynamic_cast<const StridedMap>(coarseMap->getMap(0, thyraMode)) != Teuchos::null)

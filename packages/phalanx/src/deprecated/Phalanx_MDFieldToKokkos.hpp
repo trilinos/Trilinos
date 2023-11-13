@@ -3,7 +3,6 @@
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_config.hpp"
-#include "Kokkos_View.hpp"
 
 //namepsace PHX {
 

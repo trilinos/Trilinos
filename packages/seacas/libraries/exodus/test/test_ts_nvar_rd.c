@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -23,7 +23,7 @@
  */
 
 #define NUM_THREADS 8
-#define NUM_NODES 64
+#define NUM_NODES   64
 
 static int ulpsDistance(float a, float b)
 {
@@ -100,7 +100,7 @@ void *input_nodal_var(void *varg)
     }
   }
 
-  sprintf(ex_name, "NodalVar%ld", arg->threadid + 1);
+  snprintf(ex_name, 33, "NodalVar%ld", arg->threadid + 1);
   ex_get_variable_name(arg->exoid, EX_NODAL, arg->threadid + 1, db_name);
   if (strcmp(db_name, ex_name) != 0) {
     fprintf(stderr,

@@ -233,6 +233,13 @@ namespace Intrepid2 {
         dimension_(b.dimension_),
         cubatureData_(b.cubatureData_) {}
 
+    CubatureDirect& operator=(const CubatureDirect &b) {
+        this->degree_       = b.degree_;
+        this->dimension_    = b.dimension_;
+        this->cubatureData_ = b.cubatureData_;
+        return *this;
+    } 
+    
     CubatureDirect(const ordinal_type degree,
                    const ordinal_type dimension) 
     : degree_(degree),

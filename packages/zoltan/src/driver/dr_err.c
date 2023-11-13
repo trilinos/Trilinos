@@ -171,7 +171,7 @@ void error_report(int Proc)
     }
   }
 
-  MPI_Abort(MPI_COMM_WORLD, -1);
+  MPI_Abort(zoltan_get_global_comm(), -1);
 }
 
 #ifdef __cplusplus

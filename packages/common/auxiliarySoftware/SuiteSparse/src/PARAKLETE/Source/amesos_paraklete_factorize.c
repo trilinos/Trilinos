@@ -529,7 +529,7 @@ paraklete_numeric *amesos_paraklete_factorize
 
 	    /* find mapping of global rows/columns to node c's local indices */
 	    cj = 0 ;
-	    for (a = c ; a != EMPTY ; a = Cparent [a])
+	    for (a = c ; a != TRILINOS_CHOLMOD_EMPTY ; a = Cparent [a])
 	    {
 		PR2 ((Common->file, "ancestor "ID", for c "ID", ncomp "ID"\n",
 			a, c, ncomponents)) ;
@@ -579,7 +579,7 @@ paraklete_numeric *amesos_paraklete_factorize
 
 	    /* create columns for the ancestors of C.  These will become columns
 	     * of U2 and S for node c. */
-	    for (a = Cparent [c] ; a != EMPTY ; a = Cparent [a])
+	    for (a = Cparent [c] ; a != TRILINOS_CHOLMOD_EMPTY ; a = Cparent [a])
 	    {
 		PR2 ((Common->file, "ancestor "ID"\n", a)) ;
 		PR2 ((Common->file, "k1 "ID" k2 "ID"\n", Cstart [a], Cstart [a+1]));

@@ -13,7 +13,10 @@ fi
 
 set -x
 
-#TODO: review appropriate job size
+rdc_regex=".*(-rdc)"
+if [[ ${JOB_BASE_NAME:?} =~ ${rdc_regex} ]]; then
+    export TRILINOS_MAX_CORES=10
+fi
 bsub -Is -nnodes 2 -J ${JOB_NAME} -W ${BSUB_CTEST_TIME_LIMIT} \
   ${WORKSPACE}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh
 

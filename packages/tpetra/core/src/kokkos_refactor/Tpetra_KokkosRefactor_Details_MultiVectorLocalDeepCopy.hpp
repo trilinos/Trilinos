@@ -84,6 +84,8 @@ copyConvertResolvingPossibleAliasing (const DstViewType& dst,
     // allocate.  Hopefully users aren't doing aliased copies in a
     // tight loop.
     auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
+
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy (src_copy, src);
     ::Tpetra::Details::copyConvert (dst, src_copy);
   }

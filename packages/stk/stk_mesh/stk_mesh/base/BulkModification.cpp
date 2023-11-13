@@ -133,7 +133,7 @@ void find_closure( const BulkData & bulk,
   EntityLess entless(bulk);
   std::set<Entity,EntityLess>     temp_entities_closure(entless);
 
-  ThrowRequireMsg(bulk.in_synchronized_state(), "ERROR find_closure requires mesh in synchronized state");
+  STK_ThrowRequireMsg(bulk.in_synchronized_state(), "ERROR find_closure requires mesh in synchronized state");
 
   find_local_closure(bulk, temp_entities_closure, entities);
 

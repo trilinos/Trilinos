@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -51,6 +51,9 @@
 #include <string>
 #include <iostream>
 
+#include "Teko_ConfigDefs.hpp"
+
+#ifdef TEKO_HAVE_EPETRA
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
 #else
@@ -59,11 +62,13 @@
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
+#include "Thyra_EpetraLinearOp.hpp"
+#endif
+
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
 // Teko-Package includes
-#include "Teko_ConfigDefs.hpp"
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_InverseFactory.hpp"
@@ -71,7 +76,6 @@
 #include "Teko_ReorderedLinearOp.hpp"
 
 // Thyra includes
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 
@@ -85,9 +89,10 @@ typedef Teko::NT NT;
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
-using Thyra::epetraLinearOp;
 using Thyra::tpetraLinearOp;
 
+#ifdef TEKO_HAVE_EPETRA
+using Thyra::epetraLinearOp;
 const RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,double a,double b,double c,double d)
 {
    RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,comm));
@@ -109,6 +114,7 @@ const RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,
 
    return Thyra::epetraLinearOp(blk);
 }
+#endif
 
 const RCP<const Thyra::LinearOpBase<ST> > build2x2(const Teuchos::RCP<const Teuchos::Comm<int> > comm,ST a,ST b,ST c,ST d)
 {
@@ -128,10 +134,11 @@ const RCP<const Thyra::LinearOpBase<ST> > build2x2(const Teuchos::RCP<const Teuc
    blk->insertGlobalValues(0,Teuchos::ArrayView<GO>(indices,2),Teuchos::ArrayView<ST>(row0,2));
    blk->insertGlobalValues(1,Teuchos::ArrayView<GO>(indices,2),Teuchos::ArrayView<ST>(row1,2));
    blk->fillComplete();
-   
+
    return Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(blk->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(blk->getDomainMap()),blk);
 }
 
+#ifdef TEKO_HAVE_EPETRA
 TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test)
 {
    // build global (or serial communicator)
@@ -184,6 +191,7 @@ TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test)
          out << "Apply: SUCCESS" << std::endl;
    }
 }
+#endif
 
 TEUCHOS_UNIT_TEST(tLU2x2InverseOp, exact_test_tpetra)
 {

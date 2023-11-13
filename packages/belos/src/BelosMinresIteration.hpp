@@ -92,21 +92,6 @@ namespace Belos {
   //! @name MinresIteration Exceptions
   //@{ 
   
-  /** \brief MinresIterationInitFailure is thrown when the MinresIteration object is unable to
-   * generate an initial iterate in the MinresIteration::initialize() routine.
-   *
-   * This std::exception is thrown from the MinresIteration::initialize() method, which is
-   * called by the user or from the MinresIteration::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this std::exception is thrown, 
-   * MinresIteration::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-  class MinresIterationInitFailure : public BelosError {public:
-    MinresIterationInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
   /** \brief MinresIterateFailure is thrown when the MinresIteration object is unable to
    * compute the next iterate in the MinresIteration::iterate() routine.
    *

@@ -182,7 +182,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   if (att_name_varid >= 0) {
     size_t count[2];
     size_t start[2];
-    char * text = "";
+    char  *text = "";
     size_t i;
 
     count[0] = 1;

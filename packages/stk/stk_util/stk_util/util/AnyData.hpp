@@ -248,6 +248,11 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<double>& t)
     os << t[i] << " ";
   return os;
 }
+inline std::ostream& operator<<(std::ostream& os, const std::vector<int>& t)
+{
+  for (unsigned i = 0; i < t.size(); i++) os << t[i] << " ";
+  return os;
+}
 
 inline Diag::Writer& operator<<(Diag::Writer& dout, const AnyData& data)
 {

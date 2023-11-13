@@ -36,7 +36,7 @@
 #include "exodusII.h"
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
   {
     double scale     = 1.5;
     double offset[]  = {1.1, 2.2, 3.3};
-    char * dimension = "length";
+    char  *dimension = "length";
     int    units[]   = {1, 0, 0, -1};
 
     EXCHECK(ex_put_double_attribute(exoid, EX_BLOB, 100, "Scale", 1, &scale));

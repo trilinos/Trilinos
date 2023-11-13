@@ -13,7 +13,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <Shards_CellTopologyData.h>
 
@@ -22,7 +21,7 @@ namespace percept
 
 Percept_API_KLSolver::Percept_API_KLSolver(
    const stk::mesh::BulkData & mesh,
-   const stk::mesh::Field<double,stk::mesh::SimpleArrayTag> & phi,
+   const stk::mesh::Field<double> & phi,
    std::vector<double> & lambda)
   : 
   RFGen::API_KLSolver(),
@@ -59,7 +58,7 @@ Percept_API_KLSolver::computeLocalIntgData(
   shards::Array<double,shards::NaturalOrder,RFGen::Cell,RFGen::Point,RFGen::Dim> &localIntgPtCoords,
   shards::Array<double,shards::NaturalOrder,RFGen::Cell,RFGen::Point> &localVolumeWeights)
 {
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+  typedef stk::mesh::Field<double> VectorFieldType;
   const VectorFieldType * coordsField = static_cast<const VectorFieldType*>(m_meta.coordinate_field());
 
   double centroid[3];

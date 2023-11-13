@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.16.0 FATAL_ERROR)
 
 # get Compadre_VERSION
 file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/cmake/Compadre_Version.txt Compadre_VERSION)
@@ -59,7 +59,19 @@ else() # Raw CMake Project
   #
   ########## 
 
+  # Disable in-source builds to prevent source tree corruption.
+  if( "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}" )
+    message( FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files and delete CMakeCache.txt." )
+  endif()
+
   PROJECT(Compadre VERSION ${Compadre_VERSION} LANGUAGES CXX)
+  if (NOT CMAKE_CXX_STANDARD)
+      set(CMAKE_CXX_STANDARD 14)
+  endif()
+  set(CMAKE_DISABLE_SOURCE_CHANGES ON)
+  set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+  set(CMAKE_POLICY_DEFAULT_CMP0128 OLD)
+  set(CMAKE_CXX_EXTENSIONS OFF)
 
   get_directory_property(Compadre_HAS_PARENT PARENT_DIRECTORY)
 
@@ -70,16 +82,19 @@ else() # Raw CMake Project
   bob_begin_package()
 
   # Set to OFF for significantly faster performance and ON for error tracking
-  bob_option(Compadre_DEBUG "Run Compadre Toolkit in DEBUG mode" ON)
   bob_option(Compadre_EXTREME_DEBUG "Run Compadre Toolkit in EXTREME DEBUG mode" OFF)
+  bob_option(Compadre_DEBUG "Run Compadre Toolkit in DEBUG mode" ON)
+  if (Compadre_EXTREME_DEBUG)
+    set(Compadre_DEBUG ON)
+    message(STATUS "Compadre_DEBUG: ON (because Compadre_EXTREME_DEBUG is ON)")
+  endif()
 
   # RPATH related settings
   # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling
-  SET(CMAKE_CXX_STANDARD 11)
   SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
   SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-  SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_LIBDIR} ${CMAKE_INSTALL_RPATH})
+  SET(CMAKE_INSTALL_RPATH "../${CMAKE_INSTALL_LIBDIR}")
 
   # RPATH should always include the folder it is called from
   bob_option(PYTHON_CALLING_BUILD "Python setuptools calling build" OFF)
@@ -87,27 +102,27 @@ else() # Raw CMake Project
   bob_option(Compadre_USE_MATLAB "Use MATLAB interface for PYTHON" OFF)
   bob_option(Compadre_USE_MPI "Use MPI (not needed for Compadre toolkit)" OFF)
   set(PYTHON_LIBRARY_PREFIX "..") # relative to examples folder
+  bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
+  IF(NOT(PYTHON_EXECUTABLE))
+    MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
+    EXECUTE_PROCESS(
+      COMMAND which "python"
+      OUTPUT_VARIABLE PYTHON_EXECUTABLE
+      OUTPUT_STRIP_TRAILING_WHITESPACE )
+  ENDIF()
+  MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
   if (Compadre_USE_PYTHON)
-    bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
-    IF(NOT(PYTHON_EXECUTABLE))
-      MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
-      EXECUTE_PROCESS(
-        COMMAND which "python"
-        OUTPUT_VARIABLE PYTHON_EXECUTABLE
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-    MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
-    if (APPLE)
-      SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "@loader_path/")
-      SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "@loader_path/")
-      if (NOT(PYTHON_CALLING_BUILD))
-        # If python is calling the build, it will provide these flags
-        SET(CMAKE_PYTHON_SHARED_LINKER_FLAGS "-undefined dynamic_lookup -nodefaultlibs")
+    # change RPATH for a flat directory structure
+    # when installing pycompadre as Python package
+    if (PYTHON_CALLING_BUILD)
+      if (APPLE)
+        SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "@loader_path/")
+        SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "@loader_path/")
+      else()
+        SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "$ORIGIN/")
+        SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "$ORIGIN/")
+        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,origin")
       endif()
-    else()
-      SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "$ORIGIN/")
-      SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "$ORIGIN/")
-      SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,origin")
     endif()
   endif()
 
@@ -155,6 +170,7 @@ else() # Raw CMake Project
   set(KOKKOSKERNELS_IN_TRILINOS OFF)
   set(KOKKOSKERNELS_EXISTING_ELSEWHERE OFF)
   set(KOKKOSKERNELS_BUILT_FOR_USER OFF)
+  set(KOKKOS_MIN "3.3.01")
 
   if (Trilinos_PREFIX)
     FIND_PACKAGE(Trilinos)
@@ -211,15 +227,14 @@ else() # Raw CMake Project
       MESSAGE(FATAL_ERROR "Found Trilinos but could not find KokkosKernels.")
     ENDIF()
 
-    if(KOKKOSKERNELS_IN_TRILINOS AND NOT(KOKKOS_IN_TRILINOS))
-        MESSAGE(FATAL_ERROR "KokkosKernels found in Trilinos, but not Kokkos")
-    elseif(KOKKOS_IN_TRILINOS AND NOT(KOKKOSKERNELS_IN_TRILINOS))
+    if(KOKKOS_IN_TRILINOS AND NOT(KOKKOSKERNELS_IN_TRILINOS))
         MESSAGE(FATAL_ERROR "Kokkos found in Trilinos, but not KokkosKernels")
     endif()
 
     #  Detect KokkosCore functionality from Trilinos
-    include(${CMAKE_CURRENT_LIST_DIR}/cmake/detect_trilinos_opts.cmake)
-    detect_trilinos_opts()
+    include(${CMAKE_CURRENT_LIST_DIR}/cmake/detect_kokkos_opts.cmake)
+    # cmake/detect_kokkos_opts.cmake populates KokkosCore_HAS_* 
+    detect_kokkos_opts()
 
     # get kokkos settings, change our settings, error to user if we something they requested is not enabled
     if (KokkosCore_HAS_CUDA)
@@ -230,71 +245,51 @@ else() # Raw CMake Project
       set(Compadre_USE_CUDA ON)
     endif()
 
-    if (KokkosCore_HAS_OPENMP)
-      message(STATUS "OPENMP enabled in KokkosCore in Trilinos, setting Compadre_USE_OPENMP to ON")
-      set(Compadre_USE_OPENMP ON)
-    endif()
-
-    if (KokkosCore_HAS_PTHREAD)
-      message(STATUS "PTHREAD enabled in KokkosCore in Trilinos, setting Compadre_USE_PTHREAD to ON")
-      set(Compadre_USE_PTHREAD ON)
-    endif()
-
     FIND_PACKAGE(Kokkos)
-    if (Kokkos_VERSION VERSION_LESS "3.3")
-        message(FATAL_ERROR "${Kokkos_VERSION}: Requires Trilinos with Kokkos version 3.3.01 or greater")
+    message(STATUS "Kokkos Version: ${Kokkos_VERSION}")
+    if (Kokkos_VERSION VERSION_LESS "${KOKKOS_MIN}")
+        message(FATAL_ERROR "${Kokkos_VERSION}: Requires Trilinos with Kokkos version ${KOKKOS_MIN} or greater")
     endif()
 
   ENDIF()
 
-  if (KOKKOS_IN_TRILINOS)
-    if (NOT(TARGET kokkoscore))
-        message(FATAL_ERROR "Target kokkoscore not found.")
-    endif()
-    if (NOT(TARGET kokkoskernels))
-        message(FATAL_ERROR "Target kokkoskernels not found.")
-    endif()
-  else()
+  if (NOT KOKKOS_IN_TRILINOS)
     if (KokkosCore_PREFIX STREQUAL "")
       SET(KOKKOS_BUILT_FOR_USER ON)
       if (APPLE)
         bob_option(Kokkos_ENABLE_CUDA "Whether to use CUDA" OFF)
         bob_option(Kokkos_ENABLE_OPENMP "Whether to use OPENMP" OFF)
-        bob_option(Kokkos_ENABLE_PTHREAD "Whether to use PTHREAD" ON)
+        bob_option(Kokkos_ENABLE_THREADS "Whether to use THREADS" ON)
       else()
         bob_option(Kokkos_ENABLE_CUDA "Whether to use CUDA" OFF)
         bob_option(Kokkos_ENABLE_OPENMP "Whether to use OPENMP" ON)
-        bob_option(Kokkos_ENABLE_PTHREAD "Whether to use PTHREAD" OFF)
+        bob_option(Kokkos_ENABLE_THREADS "Whether to use THREADS" OFF)
       endif()
       option(Kokkos_ENABLE_DEBUG "" "${Compadre_DEBUG}")
+      option(Kokkos_ENABLE_CUDA_UVM "" OFF)
       option(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK "" "${Compadre_EXTREME_DEBUG}")
       option(Kokkos_ENABLE_CUDA_LAMBDA "" "${Kokkos_ENABLE_CUDA}")
       option(Kokkos_ENABLE_TESTS "" OFF)
       option(Kokkos_ENABLE_EXAMPLES "" OFF)
-      add_subdirectory(kokkos)
       if (NOT(KokkosKernels_PREFIX STREQUAL ""))
           MESSAGE(FATAL_ERROR "KokkosKernels_PREFIX specified but KokkosCore_PREFIX not specified. \
           Either provide KokkosCore_PREFIX as well, or remove KokkosKernels_PREFIX specification.")
       endif()
+      # older version of Kokkos shipped with Compadre still uses PTHREAD naming
+      set(Kokkos_ENABLE_PTHREAD ${Kokkos_ENABLE_THREADS}) 
       # set Compadre_USE_ to use whatever Kokkos_ENABLE_ specified, since user is building Kokkos
-      set(Compadre_USE_OPENMP ${Kokkos_ENABLE_OPENMP})
-      set(Compadre_USE_PTHREAD ${Kokkos_ENABLE_PTHREAD})
       set(Compadre_USE_CUDA ${Kokkos_ENABLE_CUDA})
       set(Kokkos_PREFIX ${CMAKE_INSTALL_PREFIX})
     else()
       # Existing KokkosCore indicated by user by setting KokkosCore_PREFIX, so we look for it
       # where specified (only)
       find_package(Kokkos PATHS "${KokkosCore_PREFIX}" NO_DEFAULT_PATH REQUIRED)
-      if (Kokkos_VERSION VERSION_LESS "3.3")
-          message(FATAL_ERROR "${Kokkos_VERSION}: Requires Trilinos with Kokkos version 3.3.01 or greater")
+      message(STATUS "Kokkos Version: ${Kokkos_VERSION}")
+      if (Kokkos_VERSION VERSION_LESS "${KOKKOS_MIN}")
+          message(FATAL_ERROR "${Kokkos_VERSION}: Requires Kokkos version ${KOKKOS_MIN} or greater")
       endif()
       set(KOKKOS_EXISTING_ELSEWHERE ON)
       # set Compadre_USE_ to whatever is enabled in Kokkos build
-      if (TARGET Kokkos::OPENMP)
-        set(Compadre_USE_OPENMP ON)
-      elseif(TARGET Kokkos::PTHREAD)
-        set(Compadre_USE_PTHREAD ON)
-      endif() 
       if (TARGET Kokkos::CUDA)
         set(Compadre_USE_CUDA ON)
       endif()
@@ -303,8 +298,21 @@ else() # Raw CMake Project
   endif()
   message(STATUS "Compadre_USE_CUDA: ${Compadre_USE_CUDA}")
 
+  option(Kokkos_CXX_STANDARD "" "${CMAKE_CXX_STANDARD}")
+
+  if (NOT(KOKKOS_IN_TRILINOS) AND (KokkosCore_PREFIX STREQUAL ""))
+      add_subdirectory(kokkos)
+      get_directory_property(Kokkos_VERSION DIRECTORY kokkos DEFINITION Kokkos_VERSION)
+      message(STATUS "Kokkos Version: ${Kokkos_VERSION}")
+  endif()
+  if(Kokkos_VERSION VERSION_LESS "3.7")
+    set(KOKKOS_THREADS_ARG "--kokkos-threads")
+  else()
+    set(KOKKOS_THREADS_ARG "--kokkos-num-threads")
+  endif()
+
   if (KOKKOSKERNELS_IN_TRILINOS)
-    if (Compadre_US_CUDA)
+    if (Compadre_USE_CUDA)
       list(FIND Trilinos_TPL_LIST "CUDA" CUDAID)
       if (NOT(CUDAID GREATER -1))
           MESSAGE(FATAL_ERROR "Compadre_USE_CUDA set to ON, but CUDA not defined in Trilinos")
@@ -332,6 +340,16 @@ else() # Raw CMake Project
       SET(KokkosKernels_INST_DOUBLE OFF)
       OPTION(KokkosKernels_INST_ORDINAL_INT "" OFF)
       SET(KokkosKernels_INST_ORDINAL_INT OFF)
+      OPTION(KokkosKernels_ENABLE_TPL_CUBLAS "" OFF)
+      SET(KokkosKernels_ENABLE_TPL_CUBLAS OFF)
+      OPTION(KokkosKernels_ENABLE_TPL_CUSPARSE "" OFF)
+      SET(KokkosKernels_ENABLE_TPL_CUSPARSE OFF)
+      OPTION(KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE "" OFF)
+      SET(KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE OFF)
+      OPTION(KokkosKernels_INST_EXECSPACE_THREADS "" ${Kokkos_ENABLE_THREADS})
+      SET(KokkosKernels_INST_EXECSPACE_THREADS ${Kokkos_ENABLE_THREADS})
+      OPTION(KokkosKernels_INST_EXECSPACE_OPENMP "" ${Kokkos_ENABLE_OPENMP})
+      SET(KokkosKernels_INST_EXECSPACE_OPENMP ${Kokkos_ENABLE_OPENMP})
       add_subdirectory(kokkos-kernels)
       if (NOT(KokkosCore_PREFIX STREQUAL ""))
           MESSAGE(FATAL_ERROR "KokkosCore_PREFIX specified but KokkosKernels_PREFIX not specified. \
@@ -378,6 +396,7 @@ else() # Raw CMake Project
 
   bob_option(Compadre_TESTS "Compile Compadre tests" ON)
   bob_option(Compadre_EXAMPLES "Compile Compadre examples" "${Compadre_TESTS}")
+  bob_option(Compadre_COVERAGE "Use code coverage" OFF)
 
 
 endif() 
@@ -400,6 +419,7 @@ set(Compadre_KEY_BOOLS
     Compadre_USE_CUDA
     Compadre_USE_MPI
     Compadre_USE_PYTHON
+    PYTHON_CALLING_BUILD
    )
 
 set(Compadre_KEY_INTS
@@ -413,7 +433,6 @@ set(Compadre_KEY_STRINGS
     Compadre_COMMIT
     Compadre_CXX_FLAGS
     Compadre_CMAKE_ARGS
-    GMLS_Module_DEST
     Compadre_INSTALL_PREFIX
 )
 
@@ -439,7 +458,6 @@ else() # Raw CMake Project
     bob_get_semver()
   endif()
 
-
   ##########
   #
   #
@@ -448,17 +466,31 @@ else() # Raw CMake Project
   #
   ##########
 
+  if (Compadre_COVERAGE)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+    include(CodeCoverage)
+    append_coverage_compiler_flags()
+    setup_target_for_coverage_lcov(
+      NAME coverage
+      EXECUTABLE ctest
+      EXCLUDE "/Library/*" "${PROJECT_SOURCE_DIR}/kokkos/*" 
+              "${PROJECT_SOURCE_DIR}/kokkos-kernels/*" 
+              "${PROJECT_SOURCE_DIR}/pycompadre/*")
+  endif()
+
 
   # compadre library
   add_subdirectory(src)
 
   if (Compadre_EXAMPLES AND Compadre_TESTS)
-    if (NOT TARGET gtest)
-      # gtest from kokkos
-      add_library(gtest
-          kokkos/tpls/gtest/gtest/gtest-all.cc
-      )
-      target_include_directories(gtest PUBLIC kokkos/tpls/gtest)
+    if (NOT Trilinos_PREFIX)
+      if (NOT TARGET gtest)
+        # gtest from kokkos
+        add_library(gtest
+            kokkos/tpls/gtest/gtest/gtest-all.cc
+        )
+        target_include_directories(gtest PUBLIC kokkos/tpls/gtest)
+      endif()
     endif()
   endif()
 
@@ -467,9 +499,28 @@ else() # Raw CMake Project
   endif()
 
   if(Compadre_USE_PYTHON)
+    set(CMAKE_POLICY_DEFAULT_CMP0127 OLD)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "XL")
+        MESSAGE(FATAL_ERROR "
+        IBM XL compiler not supported for pybind11.
+        Set Compadre_USE_PYTHON:BOOL=OFF or switch compilers.
+        ")
+    endif()
     add_subdirectory(pycompadre/pybind11)
-    pybind11_add_module(pycompadre pycompadre/pycompadre.cpp)
-    target_link_libraries(pycompadre PUBLIC compadre)
+    if (${PYTHON_VERSION} VERSION_LESS "3.6")
+        MESSAGE(FATAL_ERROR "
+        Compadre_USE_PYTHON:BOOL=ON but Python version <3.6 is not supported.
+        ")
+    endif()
+    pybind11_add_module(_pycompadre pycompadre/pycompadre.cpp)
+    target_link_libraries(_pycompadre PUBLIC compadre)
+    if (PYTHON_CALLING_BUILD)
+      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" COPYONLY)
+    else()
+      set_target_properties(_pycompadre PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pycompadre")
+      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/pycompadre/__init__.py" COPYONLY)
+    endif()
+    set(CMAKE_POLICY_DEFAULT_CMP0127 NEW)
   endif()
 
 

@@ -74,7 +74,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-    template<typename DeviceSpaceType>
+    template<typename DeviceType>
     int OrientationToolsQuadCoeffMatrix(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -88,14 +88,6 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-      *outStream << "\n";
-
-
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -107,7 +99,7 @@ namespace Intrepid2 {
       const double tol = tolerence();
       constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
-      typedef OrientationTools<DeviceSpaceType> ots;
+      typedef OrientationTools<DeviceType> ots;
       try {
 
         const ordinal_type testOrderBegin = 1;
@@ -127,11 +119,11 @@ namespace Intrepid2 {
 
             {
               *outStream << "\n -- Testing Quadrilateral HGRAD \n\n";
-              Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType> cellBasis(order);
+              Basis_HGRAD_QUAD_Cn_FEM<DeviceType> cellBasis(order);
               if (cellBasis.requireOrientation()) {
                 const auto matData = ots::createCoeffMatrix(&cellBasis);
 
-                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                auto matDataHost = Kokkos::create_mirror_view(matData);
                 Kokkos::deep_copy(matDataHost, matData);
 
                 const ordinal_type lineDim = 1, numEdge = 4, numOrt = 2;
@@ -166,11 +158,11 @@ namespace Intrepid2 {
             }
             {
               *outStream << "\n -- Testing Quadrilateral HCURL \n\n";
-              Basis_HCURL_QUAD_In_FEM<DeviceSpaceType> cellBasis(order);
+              Basis_HCURL_QUAD_In_FEM<DeviceType> cellBasis(order);
               if (cellBasis.requireOrientation()) {
                 if (testOrder == 1) {
                   const ordinal_type ndofBasis = cellBasis.getCardinality();
-                  Kokkos::DynRankView<double,HostSpaceType>
+                  Kokkos::DynRankView<double,Kokkos::HostSpace>
                     outputValues("output", ndofBasis, 3, 2),
                     inputPoints("input", 3, 2);
 
@@ -190,7 +182,7 @@ namespace Intrepid2 {
                 }
                 const auto matData = ots::createCoeffMatrix(&cellBasis);
 
-                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                auto matDataHost = Kokkos::create_mirror_view( matData);
                 Kokkos::deep_copy(matDataHost, matData);
 
                 const ordinal_type lineDim = 1, numEdge = 4, numOrt = 2;
@@ -224,11 +216,11 @@ namespace Intrepid2 {
             }
             {
               *outStream << "\n -- Testing Quadrilateral HDIV \n\n";
-              Basis_HDIV_QUAD_In_FEM<DeviceSpaceType> cellBasis(order);
+              Basis_HDIV_QUAD_In_FEM<DeviceType> cellBasis(order);
               if (cellBasis.requireOrientation()) {
                 const auto matData = ots::createCoeffMatrix(&cellBasis);
 
-                auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+                auto matDataHost = Kokkos::create_mirror_view( matData);
                 Kokkos::deep_copy(matDataHost, matData);
 
                 const ordinal_type lineDim = 1, numEdge = 4, numOrt = 2;

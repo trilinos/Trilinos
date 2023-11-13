@@ -53,7 +53,7 @@ if WITH_MPI:
 ################################################################################
 
 def get_mpi_version():
-    header = "${MPI_BASE_DIR}/include/mpi.h"
+    header = os.path.join(MPI_BASE_DIR, "include/mpi.h")
     version = ""
     for line in open(header, 'r').readlines():
         if "MPI_VERSION" in line:

@@ -1,6 +1,9 @@
 TRIBITS_PACKAGE(TrilinosFrameworkTests)
 
 
+add_subdirectory(github_issue_creator)
+
+
 TRIBITS_ADD_ADVANCED_TEST( ProjectCiFileChangeLogic_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
@@ -50,25 +53,6 @@ TRIBITS_ADD_ADVANCED_TEST( clean_workspace_UnitTests
     PASS_REGULAR_EXPRESSION "OK"
   )
 
-
-# Run the discoverable unit tests under the cmake/std directory tree
-TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_old_UnitTests
-    OVERALL_WORKING_DIRECTORY TEST_NAME
-    OVERALL_NUM_MPI_PROCS 1
-    EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-    TEST_0 CMND bash
-        ARGS pr_python_test_driver.sh ${PYTHON_EXECUTABLE} ${PYTHON_PIP_EXECUTABLE}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std
-        SKIP_CLEAN_WORKING_DIRECTORY
-        PASS_REGULAR_EXPRESSION "=+ [0-9]+ passed in"
-        #ALWAYS_FAIL_ON_NONZERO_RETURN
-)
-# Note: pytest output looks like this:
-# Passing tests:
-# ========...======= 36 passed in 0.79s ====...======
-# Failing tests:
-# ========...======= 1 failed, 35 passed in 0.80s ======...=======
-
 # Run the discoverable unit tests under the packages/framework/pr_tools directory tree
 TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
@@ -78,7 +62,7 @@ TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_UnitTests
         ARGS pr_python_test_driver.sh ${PYTHON_EXECUTABLE} ${PYTHON_PIP_EXECUTABLE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../packages/framework/pr_tools
         SKIP_CLEAN_WORKING_DIRECTORY
-        PASS_REGULAR_EXPRESSION "=+ [0-9]+ passed in"
+        PASS_REGULAR_EXPRESSION "=+ [0-9]+ passed"
         #ALWAYS_FAIL_ON_NONZERO_RETURN
 )
 # Note: pytest output looks like this:
@@ -149,8 +133,7 @@ ENDFUNCTION()
 
 
 set(ALL_TOPLEVEL_PACKAGES_REGEX
-  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*EpetraExt Tpetra .*Domi Thyra .*SEACAS .*Teko Intrepid .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL Piro Panzer Adelus TrilinosCouplings Pike TrilinosBuildStats")
-
+  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*EpetraExt Tpetra .*Thyra .*SEACAS .*Teko Intrepid .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL Piro Panzer Adelus TrilinosCouplings TrilinosBuildStats TrilinosInstallTests")
 
 create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
   "ProjectsList.cmake\npackages/teuchos/core/CMakeLists.txt"
@@ -162,8 +145,8 @@ create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
   # The above test ensures that it can detect global build files as well as
   # package files.  Above, we check several of the parent packages in Trilinos
   # and we want to ensure that no subpackages are listed in the array
-  # CTEST_LABELS_FOR_SUBPROJECTS.  We also check to confirm that excluded
-  # packages TriKota and PyTrilinos are excluded.  To do that, we list non EX
+  # CTEST_LABELS_FOR_SUBPROJECTS.  We also check to confirm that
+  # PyTrilinos is excluded.  To do that, we list non EX
   # packages before and after them as they currently appear in the
   # Trilinos/PackagesList.cmake file.  If the PackagesList.cmake file changes,
   # then this test may have to change to accomidate that.  Therefore, we don't
@@ -182,9 +165,9 @@ create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos_
   # get enabled (but excluded ST package PyTrilinos does not get included).
 
 
-create_get_changed_trilinos_packages_test(TeuchosCore_TriKota_NewPackage_Pliris
-  "packages/teuchos/core/CMakeLists.txt\npackages/TriKota/anything\npackages/new_package/anything\npackages/pliris/a.txt"
-  "TeuchosCore,TriKota,NewPackage,Pliris"
+create_get_changed_trilinos_packages_test(TeuchosCore_NewPackage_Pliris
+  "packages/teuchos/core/CMakeLists.txt\npackages/new_package/anything\npackages/pliris/a.txt"
+  "TeuchosCore,NewPackage,Pliris"
   "TeuchosCore,Pliris"
   "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_Pliris = ON"
   "${ALL_TOPLEVEL_PACKAGES_REGEX}"

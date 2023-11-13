@@ -41,28 +41,42 @@
 namespace stk {
 namespace balance {
 
+enum LifeCycleStatus {
+  SUCCESS                    = 0,
+  PARSE_ERROR                = 1,
+  REBALANCE_CORRUPTION_ERROR = 2,
+  EXECUTION_ERROR            = 3
+};
+
+
+
 class LifeCycle {
 public:
   LifeCycle(MPI_Comm c, int argc, const char** argv);
 
   void run();
-  int exit_code() const;
+  LifeCycleStatus exit_code() const;
+
+  const StkBalanceSettings & get_balance_settings() const { return m_settings; }
 
 private:
   void parse();
-  bool serial_no_op() const;
   void balance();
-
+  void rebalance();
   void set_output_streams();
+
+  bool is_serial_no_op() const;
+  bool rebalance_will_corrupt_data(const stk::io::StkMeshIoBroker & ioBroker, const stk::mesh::MetaData & meta) const;
+
   void print_parse_error(const char* what) const;
   void print_balance_error(const char* what) const;
-  void print_no_op_message() const;
+  void print_serial_no_op_message() const;
   void print_running_message() const;
 
   MPI_Comm m_comm;
   const int m_argc;
   const char** m_argv;
-  int m_exitCode;
+  LifeCycleStatus m_exitCode;
   const bool m_isProc0;
 
   const FileValidator m_validator;

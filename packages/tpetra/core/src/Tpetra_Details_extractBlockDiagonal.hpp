@@ -70,6 +70,8 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
   using scalar_view_t  = typename KCRS::values_type::const_type;
   using local_mv_type  = typename MultiVectorType::dual_view_type::t_dev;
   using range_type     = Kokkos::RangePolicy<typename SparseMatrixType::node_type::execution_space, LO>;
+  using ATS        = Kokkos::ArithTraits<SC>;
+  using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
 
   // Sanity checking: Map Compatibility (A's rowmap matches diagonal's map)
   if (Tpetra::Details::Behavior::debug() == true) {
@@ -79,7 +81,6 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
 
   LO numrows   = diagonal.getLocalLength();
   LO blocksize = diagonal.getNumVectors();
-  SC ZERO = Teuchos::ScalarTraits<typename MultiVectorType::scalar_type>::zero();
 
   // Get Kokkos versions of objects
   local_map_type rowmap  = A.getRowMap()->getLocalMap();
@@ -95,7 +96,7 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
       LO blockStart = diag_col - (diag_col % blocksize);
       LO blockStop  = blockStart + blocksize;
       for(LO k=0; k<blocksize; k++)
-        diag(i,k)=ZERO;
+        diag(i,k)=impl_ATS::zero();
 
       for (size_t k = Arowptr(i); k < Arowptr(i+1); k++) {
         LO col = Acolind(k);

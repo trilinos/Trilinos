@@ -37,10 +37,10 @@
 # ************************************************************************
 # @HEADER
 
-include(GlobalSet)
-include(AssertDefined)
+include("${CMAKE_CURRENT_LIST_DIR}/GlobalSet.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/AssertDefined.cmake")
 
-#
+
 # @FUNCTION: append_global_set()
 #
 # Utility macro that appends arguments to a global variable (reduces

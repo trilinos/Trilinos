@@ -125,7 +125,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
     // empty processors
     std::vector<LO> lelePerProc(comm->getSize(),0);
     std::vector<LO> gelePerProc(comm->getSize(),0);
-    lelePerProc[comm->getRank()] = A->getNodeNumEntries ();
+    lelePerProc[comm->getRank()] = A->getLocalNumEntries ();
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,comm->getSize(),&lelePerProc[0],&gelePerProc[0]);
     if(comm->getRank() == 0) {
       for(int i=0; i<comm->getSize(); i++) {
@@ -149,7 +149,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
     GlobalOrdinal lnansOnDiagonal = 0;
     GlobalOrdinal gnansOnDiagonal = 0;
 
-    for(size_t i = 0; i<diagAVec->getMap()->getNodeNumElements(); ++i) {
+    for(size_t i = 0; i<diagAVec->getMap()->getLocalNumElements(); ++i) {
       if(diagAVecData[i] == Teuchos::ScalarTraits<Scalar>::zero()) {
         lzerosOnDiagonal++;
       } else if(Teuchos::ScalarTraits<Scalar>::magnitude(diagAVecData[i]) < 1e-6) {
@@ -179,7 +179,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
     GlobalOrdinal lnumStrictDiagDomRows = 0;
     GlobalOrdinal gnumStrictDiagDomRows = 0;
     double worstRatio = 99999999.9;
-    for (size_t row = 0; row < A->getRowMap()->getNodeNumElements(); row++) {
+    for (size_t row = 0; row < A->getRowMap()->getLocalNumElements(); row++) {
       GlobalOrdinal grow = A->getRowMap()->getGlobalElement(row);
 
       size_t nnz = A->getNumEntriesInLocalRow(row);
@@ -298,7 +298,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::checkVect
   GO lnans = 0;
   GO gnans = 0;
 
-  for(size_t i = 0; i<vec->getMap()->getNodeNumElements(); ++i) {
+  for(size_t i = 0; i<vec->getMap()->getLocalNumElements(); ++i) {
     if(vecData[i] == zero) {
       lzeros++;
     } else if(Teuchos::ScalarTraits<Scalar>::isnaninf(vecData[i])) {

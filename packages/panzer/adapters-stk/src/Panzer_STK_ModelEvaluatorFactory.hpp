@@ -63,19 +63,23 @@
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
-#include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 
 #include "Panzer_NodeType.hpp"
 
+#ifdef PANZER_HAVE_EPETRA_STACK
+#include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
+#endif
 
 #ifdef PANZER_HAVE_TEKO
 #include "Teko_RequestHandler.hpp"
 #endif
 
 namespace Piro {
-  template <typename ScalarT> class RythmosSolver;
+#ifdef PANZER_HAVE_TEMPUS
+  template <typename ScalarT> class TempusSolverForwardOnly;
+#endif
 }
 
 namespace Thyra {
@@ -97,7 +101,9 @@ namespace panzer_stk {
 
   class STKConnManager;
   class NOXObserverFactory;
-  class RythmosObserverFactory;
+#ifdef PANZER_HAVE_TEMPUS
+  class TempusObserverFactory;
+#endif
   class WorksetFactory;
 
   template<typename ScalarT>
@@ -133,7 +139,9 @@ namespace panzer_stk {
 
     void setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory);
 
-    void setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory);
+#ifdef PANZER_HAVE_TEMPUS
+    void setTempusObserverFactory(const Teuchos::RCP<const panzer_stk::TempusObserverFactory>& tempus_observer_factory);
+#endif
 
     template <typename BuilderT>
     int addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder);
@@ -147,9 +155,14 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> >
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
                                     const Teuchos::RCP<panzer::GlobalData>& global_data,
-                                    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
-                    const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
-                    const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
+#ifdef PANZER_HAVE_TEMPUS
+                                    const Teuchos::RCP<Piro::TempusSolverForwardOnly<ScalarT> > tempusSolver = Teuchos::null,
+#endif
+                                    const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null
+#ifdef PANZER_HAVE_TEMPUS
+                                    , const Teuchos::Ptr<const panzer_stk::TempusObserverFactory> & in_tempus_observer_factory=Teuchos::null
+#endif
+                                    );
 
     //@}
 
@@ -326,7 +339,9 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer::EquationSetFactory> m_eqset_factory;
 
     Teuchos::RCP<const panzer_stk::NOXObserverFactory> m_nox_observer_factory;
-    Teuchos::RCP<const panzer_stk::RythmosObserverFactory> m_rythmos_observer_factory;
+#ifdef PANZER_HAVE_TEMPUS
+    Teuchos::RCP<const panzer_stk::TempusObserverFactory> m_tempus_observer_factory;
+#endif
     Teuchos::RCP<panzer_stk::WorksetFactory> m_user_wkst_factory;
     Teuchos::RCP<panzer::WorksetContainer> m_wkstContainer;
 
@@ -340,6 +355,7 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
 {
   typedef panzer::ModelEvaluator<double> PanzerME;
 
+#ifdef PANZER_HAVE_EPETRA_STACK
   Teuchos::RCP<Thyra::EpetraModelEvaluator> thyra_ep_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
   Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
 
@@ -353,6 +369,12 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
   else if(panzer_me!=Teuchos::null && thyra_ep_me==Teuchos::null) {
     return panzer_me->addResponse(responseName,wkstDesc,builder);
   }
+#else
+  Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
+  if(panzer_me!=Teuchos::null) {
+    return panzer_me->addResponse(responseName,wkstDesc,builder);
+  }
+#endif
 
   TEUCHOS_ASSERT(false);
   return -1;

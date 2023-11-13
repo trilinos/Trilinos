@@ -59,7 +59,7 @@
 
 #include <MueLu_AmesosSmoother.hpp>
 #include <MueLu_AmesosSmoother.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_FactoryManagerBase.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_HierarchyManager.hpp>
@@ -73,7 +73,7 @@
 #include <MueLu_DirectSolver.hpp>
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace MueLuTests {
 
@@ -103,6 +103,9 @@ namespace MueLuTests {
      */
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
@@ -118,7 +121,6 @@ namespace MueLuTests {
 
     Teuchos::ParameterList MueLuList;
     MueLuList.set("verbosity","none");
-    //MueLuList.set("verbosity","high");
     MueLuList.set("coarse: max size",numRows-1); // make it so we want two levels
     MueLuList.set("max levels",2);
 
@@ -208,18 +210,18 @@ namespace MueLuTests {
     H.SetMaxCoarseSize(1);
     H.GetLevel(0)->Set("Coordinates", coordinates);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
     FactoryManager M;
     M.SetKokkosRefactor(false);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", Teuchos::null);
     M.SetFactory("CoarseSolver", Teuchos::null);
 
-    H.GetLevel(0)->Keep("Aggregates", CoupledAggFact.get());
+    H.GetLevel(0)->Keep("Aggregates", UncoupledAggFact.get());
     H.Setup(M, 0, 2);
 
     for (LocalOrdinal l=0; l<H.GetNumLevels()-1;l++) {
-      TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", CoupledAggFact.get()), true);
+      TEST_EQUALITY(H.GetLevel(l)->IsAvailable("Aggregates", UncoupledAggFact.get()), true);
     }
 
   } //FullPopulate_KeepAggregates
@@ -269,11 +271,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace", nullSpace);
     Finest->Set("A", Op);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<CoalesceDropFactory> cdFact;
     RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
@@ -297,7 +298,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", TentPFact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
     M.SetFactory("Coordinates", TentPFact);
@@ -377,11 +378,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace", nullSpace);
     Finest->Set("A", Op);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
 
     RCP<CoalesceDropFactory> cdFact;
     RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
@@ -405,7 +405,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", TentPFact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
     M.SetFactory("Coordinates", TentPFact);
@@ -484,11 +484,10 @@ namespace MueLuTests {
     Finest->Set("Nullspace", nullSpace);
     Finest->Set("Coordinates", coordinates);
 
-    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
-    CoupledAggFact->SetMinNodesPerAggregate(3);
-    CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering("natural");
-    CoupledAggFact->SetPhase3AggCreation(0.5);
+    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+    UncoupledAggFact->SetMinNodesPerAggregate(3);
+    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+    UncoupledAggFact->SetOrdering("natural");
     RCP<CoalesceDropFactory> cdFact;
     RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
@@ -514,7 +513,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", TentPFact);
-    M.SetFactory("Aggregates", CoupledAggFact);
+    M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
     M.SetFactory("Coordinates", TentPFact);
@@ -719,6 +718,9 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
 
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -794,13 +796,16 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
 
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     Teuchos::ParameterList matrixParams;
     matrixParams.set("matrixType","Laplace1D");
-    matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even    
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);  
+    matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
@@ -882,8 +887,8 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     Teuchos::ParameterList matrixParams;
     matrixParams.set("matrixType","Laplace1D");
-    matrixParams.set("nx",(GlobalOrdinal)100);// needs to be even    
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);  
+    matrixParams.set("nx",(GlobalOrdinal)100);// needs to be even
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
@@ -1094,7 +1099,7 @@ namespace MueLuTests {
     GO nx = 10*comm->getSize();
     Teuchos::ParameterList galeriList, ifpack2Params;
     galeriList.set("nx", nx);
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(galeriList,Xpetra::UseTpetra);    
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(galeriList,Xpetra::UseTpetra);
 
     ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
 
@@ -1222,7 +1227,7 @@ namespace MueLuTests {
     // Here we want no pre-smoothing on levels 0 and 1
     RCP<SmootherPrototype> noSmooProto;
     RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSmootherPrototype("Gauss-Seidel", 2);
-    RCP<SmootherFactory>   SmooFact = rcp( new SmootherFactory(noSmooProto,smooProto) );    
+    RCP<SmootherFactory>   SmooFact = rcp( new SmootherFactory(noSmooProto,smooProto) );
     M0.SetFactory("Smoother", SmooFact);
     M1.SetFactory("Smoother", SmooFact);
 
@@ -1544,6 +1549,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     Teuchos::RCP<Teuchos::FancyOStream> allOut = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     using TST                   = Teuchos::ScalarTraits<Scalar>;
     using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
@@ -1559,11 +1567,9 @@ namespace MueLuTests {
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     Teuchos::ParameterList paramList;
-#ifdef HAVE_MPI
     paramList.set("repartition: enable", true);
     paramList.set("repartition: start level", 1);
     paramList.set("repartition: min rows per proc", 6);
-#endif
     paramList.set("coarse: max size", 29);
     //    paramList.sublist("user data").set("Node Comm",nodeComm);
     paramList.set("verbosity", "high");
@@ -1581,11 +1587,13 @@ namespace MueLuTests {
     // Write matrices out, read fine A back in, and check that the read was ok
     // by using a matvec with a random vector.
     char t[] = "XXXXXX";
+    int filedescriptor = 0;
     if (comm->getRank() == 0)
-      mkstemp(t); //mkstemp() creates a temporary file. We use the name of that file as
-                  //the suffix for the various data files produced by Hierarchy::Write().
-                  //A better solution would be to write to a file stream, but this would
-                  //involve writing new interfaces to Epetra's file I/O capabilities.
+      filedescriptor = mkstemp(t); //mkstemp() creates a temporary file. We use the name of that file as
+                       //the suffix for the various data files produced by Hierarchy::Write().
+                       //A better solution would be to write to a file stream, but this would
+                       //involve writing new interfaces to Epetra's file I/O capabilities.
+    TEST_INEQUALITY(filedescriptor, -1); // if the file descriptor is -1, it failed
     std::string tname(t);
     Teuchos::broadcast<int, char>(*comm, 0, tname.size(), &tname[0]);
     LocalOrdinal zero = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
@@ -1673,11 +1681,11 @@ namespace MueLuTests {
 
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, BlockCrs_Mixed, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra);
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
@@ -1790,6 +1798,7 @@ namespace MueLuTests {
     TEST_EQUALITY(0,0);
   }
 
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, CheckNullspaceDimension, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     // Test that HierarchyManager throws if user-supplied nullspace has dimension smaller than numPDEs
@@ -1836,7 +1845,7 @@ namespace MueLuTests {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3levelFacManagers, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchyTestBreakCondition, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Write, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs_Mixed, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, CheckNullspaceDimension, Scalar, LO, GO, Node) \
     
 

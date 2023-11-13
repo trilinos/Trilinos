@@ -20,17 +20,14 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <percept/fixtures/SingleTetFixture.hpp>
 #include <percept/FieldTypes.hpp>
-
+#include <memory>
 /** stk_mesh Use Case 3 - copied and modified here */
 
 #define HET_FIX_INCLUDE_EXTRA_ELEM_TYPES 0
@@ -59,14 +56,15 @@
       void populate();
 
       int m_spatial_dimension;
-      stk::mesh::MetaData m_metaData;
-      stk::mesh::BulkData m_bulkData;
+      std::shared_ptr<stk::mesh::BulkData> m_bulkDataPtr;
+      stk::mesh::BulkData& m_bulkData;
+      stk::mesh::MetaData& m_metaData;
 
       stk::mesh::Part & m_block_tet;
 
       const stk::mesh::EntityRank m_elem_rank;
 
-      CoordinatesFieldType & m_coordinates_field;
+      CoordinatesFieldType * m_coordinates_field;
 
       unsigned m_npts;
       Point *m_points;

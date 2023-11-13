@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,7 +37,8 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
                              const void_int *num_elem_this_blk, const void_int *num_nodes_per_elem,
                              const void_int *num_attr_this_blk, int define_maps)
 {
-  int    i, varid, dimid, dims[2], strdim, *eb_array;
+  size_t i;
+  int    varid, dimid, dims[2], strdim, *eb_array;
   int    temp;
   int    iblk;
   int    status;
@@ -46,9 +47,6 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   size_t length;
   int    cur_num_elem_blk, nelnoddim, numelbdim, numattrdim, connid, numelemdim, numnodedim;
   char   errmsg[MAX_ERR_LENGTH];
-#if NC_HAS_HDF5
-  int fill = NC_FILL_CHAR;
-#endif
 
   EX_FUNC_ENTER();
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
@@ -273,7 +271,8 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-#if NC_HAS_HDF5
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
+      int fill = NC_FILL_CHAR;
       nc_def_var_fill(exoid, temp, 0, &fill);
 #endif
       eb_array[iblk] = temp;
@@ -346,6 +345,8 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
 
   /* leave define mode  */
   if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+    ex_err_fn(exoid, __func__, errmsg, status);
     free(eb_array);
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -355,7 +356,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
      * attribute name.
      */
     size_t start[2], count[2];
-    char * text = "";
+    char  *text = "";
     count[0]    = 1;
     start[1]    = 0;
     count[1]    = strlen(text) + 1;

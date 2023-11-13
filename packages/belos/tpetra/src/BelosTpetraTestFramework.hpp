@@ -70,6 +70,14 @@ namespace Belos {
     }
 
     template<>
+    void convertData( const double* dPtr, const int nnz, float* retVals )
+    {
+      for ( int i=0; i<nnz; ++i )
+        retVals[i] = (float) dPtr[i];
+    }
+
+
+    template<>
     void convertData( const double* dPtr, const int nnz, std::complex<double>* retVals )
     {
       for ( int i=0; i<nnz; ++i )
@@ -671,7 +679,6 @@ namespace Belos {
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
         typedef node_type NT;
-        typedef ::Tpetra::Map<LO, GO, NT> map_type;
 
         // For a square matrix, we only need a Map for the range of the matrix.
         RCP<const map_type> pRangeMap =
@@ -722,7 +729,6 @@ namespace Belos {
         typedef typename SparseMatrixType::local_ordinal_type LO;
         typedef typename SparseMatrixType::global_ordinal_type GO;
         typedef typename SparseMatrixType::node_type NT;
-        typedef ::Tpetra::Map<LO, GO, NT> map_type;
 
         // For a square matrix, we only need a Map for the range of the matrix.
         RCP<const map_type> pRangeMap =

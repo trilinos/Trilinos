@@ -906,10 +906,10 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(MUELU_HAVE_AMESOS) || !defined(MUELU_HAVE_IFPACK)
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(MUELU_HAVE_AMESOS2) || !defined(MUELU_HAVE_IFPACK2)
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
@@ -983,7 +983,7 @@ namespace MueLuTests {
     //coordinate map.  This map will be used to build the "bad" coordinates.
     RCP<const Map> coordMap = coordinates->getMap();
     std::srand(Teuchos::as<unsigned int>(comm->getRank()*31415));
-    Teuchos::ArrayView<const GlobalOrdinal> correctLocalElts = coordMap->getNodeElementList();
+    Teuchos::ArrayView<const GlobalOrdinal> correctLocalElts = coordMap->getLocalElementList();
     std::vector<GlobalOrdinal> eltsToShuffle;
     for (size_t i=0; i < Teuchos::as<size_t>(correctLocalElts.size()); ++i)
       eltsToShuffle.push_back(correctLocalElts[i]);
@@ -1019,10 +1019,10 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
 
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(MUELU_HAVE_AMESOS) || !defined(MUELU_HAVE_IFPACK)
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
-#   if !defined(MUELU_HAVE_AMESOS2) || !defined(MUELU_HAVE_IFPACK2)
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
    
@@ -1054,7 +1054,7 @@ namespace MueLuTests {
     galeriList.set("ny", ny);
     RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
 
-    // build coordinates 
+    // build coordinates
     RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", map, galeriList);
 
     galeriList.set("right boundary" , "Neumann");

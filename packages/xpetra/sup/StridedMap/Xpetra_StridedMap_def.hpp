@@ -107,7 +107,7 @@ StridedMap(UnderlyingLib                                 xlib,
 
         // build an equally distributed node map
         RCP<Map>      nodeMap       = MapFactory_t::Build(xlib, numGlobalNodes, indexBase, comm, lg);
-        global_size_t numLocalNodes = nodeMap->getNodeNumElements();
+        global_size_t numLocalNodes = nodeMap->getLocalNumElements();
 
         // translate local node ids to local dofs
         size_t nStridedOffset = 0;
@@ -141,7 +141,7 @@ StridedMap(UnderlyingLib                                 xlib,
 
         if(stridedBlockId == -1)
         {
-            TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements() * nDofsPerNode),
+            TEUCHOS_TEST_FOR_EXCEPTION(getLocalNumElements() != Teuchos::as<size_t>(nodeMap->getLocalNumElements() * nDofsPerNode),
                                        Exceptions::RuntimeError,
                                        "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
 
@@ -153,8 +153,8 @@ StridedMap(UnderlyingLib                                 xlib,
         else
         {
             size_t nDofsInStridedBlock = stridingInfo[ stridedBlockId ];
-            TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements()
-                                         != Teuchos::as<size_t>(nodeMap->getNodeNumElements() * nDofsInStridedBlock),
+            TEUCHOS_TEST_FOR_EXCEPTION(getLocalNumElements()
+                                         != Teuchos::as<size_t>(nodeMap->getLocalNumElements() * nDofsInStridedBlock),
                                        Exceptions::RuntimeError,
                                        "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
 
@@ -269,7 +269,7 @@ StridedMap(UnderlyingLib                                 xlib,
 
         if(stridedBlockId == -1)
         {
-            TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements() * nDofsPerNode),
+            TEUCHOS_TEST_FOR_EXCEPTION(getLocalNumElements() != Teuchos::as<size_t>(nodeMap->getLocalNumElements() * nDofsPerNode),
                                        Exceptions::RuntimeError,
                                        "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
 
@@ -282,8 +282,8 @@ StridedMap(UnderlyingLib                                 xlib,
         {
             int nDofsInStridedBlock = stridingInfo[ stridedBlockId ];
 
-            TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements()
-                                       != Teuchos::as<size_t>(nodeMap->getNodeNumElements() * nDofsInStridedBlock),
+            TEUCHOS_TEST_FOR_EXCEPTION(getLocalNumElements()
+                                       != Teuchos::as<size_t>(nodeMap->getLocalNumElements() * nDofsInStridedBlock),
                                        Exceptions::RuntimeError,
                                        "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
 
@@ -551,14 +551,14 @@ CheckConsistency()
     if(getStridedBlockId() == -1)
     {
         // Strided map contains the full map
-        if(getNodeNumElements() % getFixedBlockSize() != 0 ||      // number of local  elements is not a multiple of block size
+        if(getLocalNumElements() % getFixedBlockSize() != 0 ||      // number of local  elements is not a multiple of block size
            getGlobalNumElements() % getFixedBlockSize() != 0)      // number of global    -//-
             return false;
     }
     else
     {
         // Strided map contains only the partial map
-        Teuchos::ArrayView<const GlobalOrdinal> dofGids = getNodeElementList();
+        Teuchos::ArrayView<const GlobalOrdinal> dofGids = getLocalElementList();
         // std::sort(dofGids.begin(), dofGids.end());
 
         if(dofGids.size() == 0)      // special treatment for empty processors
@@ -636,9 +636,9 @@ getGlobalNumElements() const
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
 StridedMap<LocalOrdinal, GlobalOrdinal, Node>::
-getNodeNumElements() const
+getLocalNumElements() const
 {
-    return map_->getNodeNumElements();
+    return map_->getLocalNumElements();
 }
 
 
@@ -747,9 +747,9 @@ getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal>& GIDList,
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::ArrayView<const GlobalOrdinal>
 StridedMap<LocalOrdinal, GlobalOrdinal, Node>::
-getNodeElementList() const
+getLocalElementList() const
 {
-    return map_->getNodeElementList();
+    return map_->getLocalElementList();
 }
 
 

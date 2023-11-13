@@ -1209,6 +1209,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
     /* Cleanup */
     ML_Operator_Destroy(&AMGIdentity);
     ML_Operator_Destroy(&Pmatrix);
+    ML_AMG_Destroy(&ml_amg);
   }
 
   

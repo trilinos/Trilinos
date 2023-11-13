@@ -11,7 +11,6 @@
 #define TransferHelper_h
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 namespace shards {
   class CellTopology;
@@ -37,9 +36,9 @@ double
 parametricDistanceToEntity(const double*                 point,
 			   const shards::CellTopology &  cellTopo);
   
-void compute_element_centroid(const stk::mesh::Field<double, stk::mesh::Cartesian> & coordinates, 
+void compute_element_centroid(const stk::mesh::FieldBase & coordinates,
                               const stk::mesh::Entity & entity, double * coords);
-void compute_nodal_coords(    const stk::mesh::Field<double, stk::mesh::Cartesian> & coordinates, 
+void compute_nodal_coords(    const stk::mesh::FieldBase & coordinates,
                               const stk::mesh::Entity & entity, double * coords);
 }
 

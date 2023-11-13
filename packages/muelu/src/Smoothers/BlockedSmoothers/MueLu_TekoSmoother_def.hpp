@@ -49,7 +49,7 @@
 
 #ifdef HAVE_MUELU_TEKO
 
-#include "MueLu_TekoSmoother.hpp"
+#include "MueLu_TekoSmoother_decl.hpp"
 
 namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

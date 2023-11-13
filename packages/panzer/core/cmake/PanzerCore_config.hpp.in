@@ -6,6 +6,7 @@
 #endif
 
 #cmakedefine HAVE_MPI
+#cmakedefine PANZER_HAVE_EPETRA
 
 // What AD Type are you going to use?
 #define PANZER_FADTYPE @Panzer_FADTYPE@

@@ -52,13 +52,8 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Thyra_DiagonalLinearOpBase.hpp"
 
-#ifdef HAVE_PIRO_IFPACK2
-#include "Teuchos_AbstractFactoryStd.hpp"
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#endif
-
 #ifdef HAVE_PIRO_MUELU
+#include "Teuchos_AbstractFactoryStd.hpp"
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 #endif
@@ -94,20 +89,35 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
 
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
-#ifdef HAVE_PIRO_IFPACK2
-  typedef Thyra::PreconditionerFactoryBase<double> Base;
-  typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
-  linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
 #ifdef HAVE_PIRO_MUELU
   Stratimikos::enableMueLu(linearSolverBuilder);
 #endif
 
+   if (stratParams->isParameter("Linear Solver Type")) {
+     const std::string lin_solver_type =  stratParams->get<std::string>("Linear Solver Type");
+     if (lin_solver_type == "Amesos") {
+       *out << "WARNING: Amesos solver does not work with Piro::InvertMassMatrix; switching to Amesos2 to avoid cast error.\n";
+       stratParams->set<std::string>("Linear Solver Type", "Amesos2");  
+     }
+     else if (lin_solver_type == "AztecOO") {
+       *out << "WARNING: AztecOO solver does not work with Piro::InvertMassMatrix; switching to Belos to avoid cast error.\n";
+       stratParams->set<std::string>("Linear Solver Type", "Belos"); 
+       if (stratParams->get<std::string>("Preconditioner Type") == "Ifpack") { 
+         stratParams->set<std::string>("Preconditioner Type", "Ifpack2");  
+         *out << "WARNING: Ifpack preconditioner does not work with Piro::InvertMassMatrix; switching to Ifpack2 to avoid cast error.\n";
+       }
+       else if (stratParams->get<std::string>("Preconditioner Type") ==  "ML") {
+         *out << "WARNING: ML preconditioner does not work with Piro::InvertMassMatrix; switching to MueLu to avoid cast error.\n";
+         stratParams->set<std::string>("Preconditioner Type", "MueLu");  
+       }
+     }
+   }
    linearSolverBuilder.setParameterList(stratParams);
 
   // Create a linear solver factory given information read from the
   // parameter list.
-  lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
+  //lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
+  lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
   // Setup output stream and the verbosity level
   lowsFactory->setOStream(out);
@@ -327,8 +337,7 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
         Thyra::reciprocal<Scalar>(*invDiag, invDiag.ptr());
         //IKT, 5/31/17: adding the following logic which checks invDiag vector for nans
         //and throws an exception if nans are found.
-        typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType ScalarMag;
-        typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+        typedef Teuchos::ScalarTraits<typename Thyra::ModelEvaluator<Scalar>::ScalarMag> SMT;
         const Scalar sumInvDiag = sum(*invDiag);
         bool isNanInvDiag = SMT::isnaninf(sumInvDiag);
         if (isNanInvDiag) {

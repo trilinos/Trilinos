@@ -102,7 +102,7 @@ Stepper<Scalar>::getStepperXDotDot()
   return stepperXDotDot_;
 }
 
-// Need to deprecate.
+
 template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
 Stepper<Scalar>::getStepperXDotDot(Teuchos::RCP<SolutionState<Scalar> > state)

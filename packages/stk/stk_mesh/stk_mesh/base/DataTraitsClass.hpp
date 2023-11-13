@@ -111,25 +111,25 @@ public:
   }  
 
   void print( std::ostream & s , const void * v , std::size_t n ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 
   void sum( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
  
   void max( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
  
   void min( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
  
   void bit_and( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
  
   void bit_or( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
  
   void bit_xor( void * , const void * , std::size_t ) const
-  { ThrowErrorMsg( "not supported" ); }
+  { STK_ThrowErrorMsg( "not supported" ); }
 };
 
 }

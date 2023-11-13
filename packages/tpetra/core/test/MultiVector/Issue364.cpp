@@ -51,7 +51,7 @@ namespace TpetraTest {
 
 template<class ViewType>
 class VectorsEqual {
-  static_assert (Kokkos::Impl::is_view<ViewType>::value,
+  static_assert (Kokkos::is_view<ViewType>::value,
                  "ViewType must be a Kokkos::View specialization.");
   static_assert (static_cast<int> (ViewType::rank) == 1,
                  "ViewType must be a 1-D Kokkos::View.");
@@ -88,8 +88,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
+  join (value_type& dst,
+        const value_type& src) const
   {
     dst = (src == 1 && dst == 1) ? 1 : 0;
   }
@@ -101,7 +101,7 @@ private:
 
 template<class ViewType>
 class NegateAllEntries {
-  static_assert (Kokkos::Impl::is_view<ViewType>::value,
+  static_assert (Kokkos::is_view<ViewType>::value,
                  "ViewType must be a Kokkos::View specialization.");
   static_assert (static_cast<int> (ViewType::rank) == 1,
                  "ViewType must be a 1-D Kokkos::View.");
@@ -135,7 +135,7 @@ namespace { // (anonymous)
   bool
   vectorsEqual (const ViewType& x, const ViewType& y)
   {
-    static_assert (Kokkos::Impl::is_view<ViewType>::value,
+    static_assert (Kokkos::is_view<ViewType>::value,
                    "ViewType must be a Kokkos::View specialization.");
     static_assert (static_cast<int> (ViewType::rank) == 1,
                    "ViewType must be a 1-D Kokkos::View.");
@@ -146,7 +146,7 @@ namespace { // (anonymous)
   void
   negateAllEntries (const ViewType& x)
   {
-    static_assert (Kokkos::Impl::is_view<ViewType>::value,
+    static_assert (Kokkos::is_view<ViewType>::value,
                    "ViewType must be a Kokkos::View specialization.");
     static_assert (static_cast<int> (ViewType::rank) == 1,
                    "ViewType must be a 1-D Kokkos::View.");
@@ -172,7 +172,7 @@ namespace { // (anonymous)
     using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
     using IST = typename MV::impl_scalar_type;
 
-    const IST ONE = Kokkos::Details::ArithTraits<IST>::one ();
+    const IST ONE = Kokkos::ArithTraits<IST>::one ();
 
     out << "Test MultiVector dual view semantics with a "
       "view of a noncontiguous set of columns" << endl;
@@ -207,7 +207,7 @@ namespace { // (anonymous)
       for (LO j = 0; j < numVecs; ++j) {
         for (LO i = 0; i < lclNumRows; ++i) {
           X_lcl(i,j) = curVal;
-          curVal = curVal + Kokkos::Details::ArithTraits<IST>::one ();
+          curVal = curVal + Kokkos::ArithTraits<IST>::one ();
         }
       }
     }
@@ -395,7 +395,7 @@ namespace { // (anonymous)
     typedef typename Kokkos::View<IST**, DT>::HostMirror::memory_space
       host_memory_space;
 
-    const IST ONE = Kokkos::Details::ArithTraits<IST>::one ();
+    const IST ONE = Kokkos::ArithTraits<IST>::one ();
     const IST TWO = ONE + ONE;
 
     out << "Test MultiVector dual view semantics with two disjoint, "
@@ -452,7 +452,7 @@ namespace { // (anonymous)
         for (LO j = 0; j < numVecs; ++j) {
           for (LO i = 0; i < lclNumRows; ++i) {
             X_lcl(i,j) = curVal;
-            curVal = curVal + Kokkos::Details::ArithTraits<IST>::one ();
+            curVal = curVal + Kokkos::ArithTraits<IST>::one ();
           }
         }
       }

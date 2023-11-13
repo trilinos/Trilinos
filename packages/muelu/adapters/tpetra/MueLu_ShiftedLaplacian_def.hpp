@@ -53,7 +53,6 @@
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_CoarseMapFactory.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_CoupledRBMFactory.hpp>
 #include <MueLu_DirectSolver.hpp>
 #include <MueLu_GenericRFactory.hpp>
@@ -232,7 +231,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   Acshift_       = rcp( new RAPShiftFactory             );
   Amalgfact_     = rcp( new AmalgamationFactory         );
   Dropfact_      = rcp( new CoalesceDropFactory         );
-  Aggfact_       = rcp( new CoupledAggregationFactory   );
   UCaggfact_     = rcp( new UncoupledAggregationFactory );
   CoarseMapfact_ = rcp( new CoarseMapFactory            );
   Manager_       = rcp( new FactoryManager              );
@@ -242,12 +240,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   params.set("aggregation: drop scheme","classical");
   Dropfact_  -> SetParameterList(params);
   Manager_   -> SetFactory("Graph", Dropfact_);
-  if(Aggregation_=="coupled") {
-    Manager_   -> SetFactory("Aggregates", Aggfact_   );
-  }
-  else {
-    Manager_   -> SetFactory("Aggregates", UCaggfact_ );
-  }
+  Manager_   -> SetFactory("Aggregates", UCaggfact_ );
   Manager_     -> SetFactory("CoarseMap", CoarseMapfact_);
   Manager_     -> SetFactory("Ptent", TentPfact_);
   if(isSymmetric_==true) {
@@ -565,5 +558,5 @@ ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 
 #define MUELU_SHIFTEDLAPLACIAN_SHORT
 
-#endif //if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+#endif //if defined(HAVE_MUELU_IFPACK2)
 #endif // MUELU_SHIFTEDLAPLACIAN_DEF_HPP

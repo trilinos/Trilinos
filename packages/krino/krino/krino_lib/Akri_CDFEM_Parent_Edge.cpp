@@ -10,7 +10,6 @@
 
 #include <Akri_CDFEM_Parent_Edge.hpp>
 #include <Akri_LevelSet.hpp>
-#include <Akri_Phase_Support.hpp>
 #include <Akri_LowerEnvelope.hpp>
 
 #include <limits>
@@ -34,7 +33,7 @@ double CDFEM_Parent_Edge::get_edge_node_position(stk::mesh::Entity edgeNode) con
   for (size_t i=0; i<my_edge_nodes.size(); ++i)
     if (my_edge_nodes[i] == edgeNode)
       return my_edge_node_positions[i];
-  ThrowRequireMsg(false, "Could not find edge node.");
+  STK_ThrowRequireMsg(false, "Could not find edge node.");
   return -1.0;
 }
 
@@ -50,18 +49,18 @@ CDFEM_Parent_Edge::debug_print_crossings() const
 }
 
 void
-CDFEM_Parent_Edge::find_crossings(const std::vector<std::vector<double> > & nodes_isovar)
+CDFEM_Parent_Edge::find_crossings(const bool oneLSPerPhase, const std::vector<std::vector<double> > & nodes_isovar)
 {
   my_crossings.clear();
   my_crossing_signs.clear();
 
   const int num_nodes = get_num_nodes();
-  ThrowAssert(static_cast<int>(nodes_isovar.size()) == num_nodes);
+  STK_ThrowAssert(static_cast<int>(nodes_isovar.size()) == num_nodes);
   const int num_ls = nodes_isovar[0].size();
-  if (num_ls > 1 && Phase_Support::has_one_levelset_per_phase())
+  if (num_ls > 1 && oneLSPerPhase)
   {
     find_crossings_multiple_levelset(nodes_isovar);
-    find_crossings_including_fake_ones(nodes_isovar);
+    find_crossings_including_fake_ones(oneLSPerPhase, nodes_isovar);
     return;
   }
 
@@ -182,7 +181,7 @@ void adjust_crossing_locations_based_on_node_captured_domains_for_level_set_per_
   for (auto && crossing : crossings)
   {
     const InterfaceID & iface = crossing.first;
-    ThrowAssert(iface.first_ls() == iface.second_ls());
+    STK_ThrowAssert(iface.first_ls() == iface.second_ls());
     const bool in0 = std::binary_search(sortedParentNode0Domains.begin(), sortedParentNode0Domains.end(), iface.first_ls());
     const bool in1 = std::binary_search(sortedParentNode1Domains.begin(), sortedParentNode1Domains.end(), iface.first_ls());
 
@@ -199,7 +198,7 @@ void adjust_crossing_locations_based_on_node_captured_domains_for_level_set_per_
   if (sortedParentNodeDomains.empty())
       return;
 
-  ThrowAssert(parentNodeIndex == 0 || parentNodeIndex == 1);
+  STK_ThrowAssert(parentNodeIndex == 0 || parentNodeIndex == 1);
   const double nodePos = (parentNodeIndex == 0) ? 0. : 1.;
 
   double furthestLocationToAdjust = (parentNodeIndex == 0) ? 0. : 1.;
@@ -423,11 +422,11 @@ bool determine_real_crossings_from_locations(CrossingMap & realCrossings, Crossi
   return true;
 }
 
-void CDFEM_Parent_Edge::adjust_crossing_locations_based_on_node_captured_domains(const std::vector<int> & sortedParentNode0Domains, const std::vector<int> & sortedParentNode1Domains)
+void CDFEM_Parent_Edge::adjust_crossing_locations_based_on_node_captured_domains(const bool oneLSPerPhase, const std::vector<int> & sortedParentNode0Domains, const std::vector<int> & sortedParentNode1Domains)
 {
   if (sortedParentNode0Domains.empty() && sortedParentNode1Domains.empty())
     return;
-  if (Phase_Support::has_one_levelset_per_phase())
+  if (oneLSPerPhase)
   {
     if (my_crossings_including_fake.empty())
       return;
@@ -466,10 +465,10 @@ CDFEM_Parent_Edge::find_crossings_multiple_levelset(const std::vector<std::vecto
 
     const double cur_right = cur.right_endpoint();
     const double next_left = next.left_endpoint();
-    ThrowRequire(cur_right == next_left);
-    ThrowRequire(cur.ls_index() != next.ls_index());
+    STK_ThrowRequire(cur_right == next_left);
+    STK_ThrowRequire(cur.ls_index() != next.ls_index());
     InterfaceID iface(cur.ls_index(), next.ls_index());
-    ThrowRequireMsg(my_crossings.find(iface) == my_crossings.end(), "Multiple interface crossing error after pruning.");
+    STK_ThrowRequireMsg(my_crossings.find(iface) == my_crossings.end(), "Multiple interface crossing error after pruning.");
     my_crossings[iface] = cur_right;
     my_crossing_signs[iface] = (cur.ls_index() < next.ls_index()) ? 1 : -1;
   }
@@ -487,9 +486,9 @@ CDFEM_Parent_Edge::have_any_crossings() const
 }
 
 std::tuple<double, int, bool>
-CDFEM_Parent_Edge::get_crossing_position_and_sign(const InterfaceID key) const
+CDFEM_Parent_Edge::get_crossing_position_and_sign(const bool oneLSPerPhase, const InterfaceID key) const
 {
-  ThrowRequire(Phase_Support::has_one_levelset_per_phase());
+  STK_ThrowRequire(oneLSPerPhase);
 
   if(have_crossing(key))
   {
@@ -531,7 +530,7 @@ static int get_phase_on_interval(const CDFEM_Parent_Edge & edge, const CrossingI
 {
   const std::pair<const InterfaceID,double> * before = crossingInterval[0];
   const std::pair<const InterfaceID,double> * after = crossingInterval[1];
-  ThrowRequire(before != nullptr || after != nullptr);
+  STK_ThrowRequire(before != nullptr || after != nullptr);
   if (before != nullptr)
   {
     return (edge.get_crossing_sign(before->first) == -1) ? before->first.first_ls() : before->first.second_ls();
@@ -586,12 +585,12 @@ void CDFEM_Parent_Edge::fixup_fake_crossing_locations_for_consistency()
 }
 
 void
-CDFEM_Parent_Edge::find_crossings_including_fake_ones(const std::vector<std::vector<double> > & nodes_isovar)
+CDFEM_Parent_Edge::find_crossings_including_fake_ones(const bool oneLSPerPhase, const std::vector<std::vector<double> > & nodes_isovar)
 {
   my_crossings_including_fake.clear();
   my_crossing_signs_including_fake.clear();
 
-  ThrowRequire(Phase_Support::has_one_levelset_per_phase());
+  STK_ThrowRequire(oneLSPerPhase);
   const int numLS = nodes_isovar[0].size();
   std::vector<double> lsMins(numLS,std::numeric_limits<double>::max());
   std::vector<double> lsMaxs(numLS,std::numeric_limits<double>::lowest());
@@ -613,7 +612,7 @@ CDFEM_Parent_Edge::find_crossings_including_fake_ones(const std::vector<std::vec
         InterfaceID iface(ls1, ls2);
         const std::pair<double, int> result = have_crossing(iface) ?
             std::make_pair(get_crossing_position(iface), get_crossing_sign(iface)) :
-            find_crossing_position_and_sign(iface, nodes_isovar);
+            find_crossing_position_and_sign(oneLSPerPhase, iface, nodes_isovar);
         if (result.first >= 0.)
         {
           my_crossings_including_fake[iface] = result.first;
@@ -627,9 +626,9 @@ CDFEM_Parent_Edge::find_crossings_including_fake_ones(const std::vector<std::vec
 }
 
 std::pair<double, int>
-CDFEM_Parent_Edge::find_crossing_position_and_sign(const InterfaceID key, const std::vector<std::vector<double> > & nodes_isovar) const
+CDFEM_Parent_Edge::find_crossing_position_and_sign(const bool oneLSPerPhase, const InterfaceID key, const std::vector<std::vector<double> > & nodes_isovar) const
 {
-  ThrowRequire(Phase_Support::has_one_levelset_per_phase());
+  STK_ThrowRequire(oneLSPerPhase);
   return krino::find_crossing_position_and_sign(key, my_edge_node_positions, nodes_isovar);
 }
 

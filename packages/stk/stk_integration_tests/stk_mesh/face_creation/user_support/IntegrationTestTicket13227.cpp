@@ -10,26 +10,26 @@
  */
 
 
-class Ticket13227 : public stk::unit_test_util::MeshFixture
+class Ticket13227 : public stk::unit_test_util::simple_fields::MeshFixture
 {
 };
 
 TEST_F(Ticket13227, DISABLED_doubly_sided_sideset)
 {
-    if(stk::parallel_machine_size(get_comm())==1)
-    {
-        setup_mesh("meshed_enclosure_double_sideset.g", stk::mesh::BulkData::NO_AUTO_AURA);
-        // EXPECT_TRUE(sideset_2 is doubly_sided);
-        // EXPECT_TRUE(sideset_1 is singly_sided);
-    }
+  if(stk::parallel_machine_size(get_comm())==1)
+  {
+    setup_mesh("meshed_enclosure_double_sideset.g", stk::mesh::BulkData::NO_AUTO_AURA);
+    // EXPECT_TRUE(sideset_2 is doubly_sided);
+    // EXPECT_TRUE(sideset_1 is singly_sided);
+  }
 }
 
 TEST_F(Ticket13227, DISABLED_singly_sided_sideset)
 {
-    if(stk::parallel_machine_size(get_comm())==1)
-    {
-        setup_mesh("meshed_enclosure_single_sideset.g", stk::mesh::BulkData::NO_AUTO_AURA);
-        // EXPECT_TRUE(sideset_2 is singly_sided);
-        // EXPECT_TRUE(sideset_1 is singly_sided);
-    }
+  if(stk::parallel_machine_size(get_comm())==1)
+  {
+    setup_mesh("meshed_enclosure_single_sideset.g", stk::mesh::BulkData::NO_AUTO_AURA);
+    // EXPECT_TRUE(sideset_2 is singly_sided);
+    // EXPECT_TRUE(sideset_1 is singly_sided);
+  }
 }

@@ -47,6 +47,6 @@
 #define FAKEKOKKOS_CONFIGDEFS_H
 
 #include <Xpetra_ConfigDefs.hpp>
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #endif

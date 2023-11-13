@@ -68,12 +68,9 @@ using Teuchos::rcp;
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_Evaluator_UnmanagedFieldDummy.hpp"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Comm.h"
-
 #include "UnitValueEvaluator.hpp"
 
-// for making explicit instantiated tests easier 
+// for making explicit instantiated tests easier
 #define UNIT_TEST_GROUP(TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(integrator_scalar_side,test2d,TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(integrator_scalar_side,test3d,TYPE) \
@@ -86,11 +83,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+     Teuchos::RCP<const Teuchos::MpiComm<int> > eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   #else
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      auto eComm = Teuchos::rcp(Teuchos::DefaultComm<int>::getComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -102,11 +99,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  // FieldArray & coords = workset->cell_vertex_coordinates;
-  // coords.resize(numCells,numVerts,dim);
   MDFieldArrayFactory af("",true);
-  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
-  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
+  workset->cell_node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
+  Workset::CellCoordArray coords = workset->cell_node_coordinates;
   auto coords_v = coords.get_static_view();
   Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
       coords_v(0,0,0) = 1.0; coords_v(0,0,1) = 0.0;
@@ -139,10 +134,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   workset->int_rules.push_back(quadValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
@@ -154,8 +148,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
      p.set("Integrand Name","Unit Value");
      p.set("Multiplier",2.0);
      p.set("IR",quadRule);
-    
-     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval 
+
+     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval
         = rcp(new panzer::Integrator_Scalar<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -170,8 +164,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","Unit Value");
      p.set("IR",quadRule);
-    
-     RCP<PHX::Evaluator<panzer::Traits> > eval 
+
+     RCP<PHX::Evaluator<panzer::Traits> > eval
         = rcp(new UnitValueEvaluator<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -211,8 +205,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   auto integral_v = integral.get_static_view();
   auto integral_h = Kokkos::create_mirror_view(integral_v);
   Kokkos::deep_copy(integral_h, integral_v);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),2.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),2.0*std::sqrt(2.0),1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(0)),2.0,1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(1)),2.0*std::sqrt(2.0),1e-15);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
@@ -220,11 +214,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+     Teuchos::RCP<const Teuchos::MpiComm<int> > eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   #else
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      auto eComm = Teuchos::rcp(Teuchos::DefaultComm<int>::getComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -236,11 +230,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  // FieldArray & coords = workset->cell_vertex_coordinates;
-  // coords.resize(numCells,numVerts,dim);
   MDFieldArrayFactory af("",true);
-  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
-  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
+  workset->cell_node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
+  Workset::CellCoordArray coords = workset->cell_node_coordinates;
   auto coords_v = coords.get_static_view();
   Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
       coords_v(0,0,0) = 1.0; coords_v(0,0,1) = 0.0; coords_v(0,0,2) = 0.0;
@@ -280,10 +272,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   workset->int_rules.push_back(quadValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
@@ -297,8 +288,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
      p.set("IR",quadRule);
      RCP<const std::vector<std::string>> fms = rcp(new std::vector<std::string>{"Dummy Field"});
      p.set("Field Multipliers",fms);
-    
-     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval 
+
+     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval
         = rcp(new panzer::Integrator_Scalar<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -313,8 +304,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","Unit Value");
      p.set("IR",quadRule);
-    
-     RCP<PHX::Evaluator<panzer::Traits> > eval 
+
+     RCP<PHX::Evaluator<panzer::Traits> > eval
         = rcp(new UnitValueEvaluator<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -363,8 +354,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   auto integral_v = integral.get_static_view();
   auto integral_h = Kokkos::create_mirror_view(integral_v);
   Kokkos::deep_copy(integral_h, integral_v);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),4.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),8.0*std::sqrt(2),1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(0)),4.0,1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(1)),8.0*std::sqrt(2),1e-15);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
@@ -372,11 +363,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+     Teuchos::RCP<const Teuchos::MpiComm<int> > eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   #else
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      auto eComm = Teuchos::rcp(Teuchos::DefaultComm<int>::getComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -388,11 +379,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  // FieldArray & coords = workset->cell_vertex_coordinates;
-  // coords.resize(numCells,numVerts,dim);
   MDFieldArrayFactory af("",true);
-  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
-  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
+  workset->cell_node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
+  Workset::CellCoordArray coords = workset->cell_node_coordinates;
   auto coords_v = coords.get_static_view();
   Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
       coords_v(0,0,0) = 1.0; coords_v(0,0,1) = 0.0; coords_v(0,0,2) = 0.0;
@@ -433,10 +422,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   workset->int_rules.push_back(quadValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
@@ -448,8 +436,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
      p.set("Integrand Name","Unit Value");
      p.set("Multiplier",2.0);
      p.set("IR",quadRule);
-    
-     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval 
+
+     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval
         = rcp(new panzer::Integrator_Scalar<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -464,8 +452,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","Unit Value");
      p.set("IR",quadRule);
-    
-     RCP<PHX::Evaluator<panzer::Traits> > eval 
+
+     RCP<PHX::Evaluator<panzer::Traits> > eval
         = rcp(new UnitValueEvaluator<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -503,8 +491,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   auto integral_v = integral.get_static_view();
   auto integral_h = Kokkos::create_mirror_view(integral_v);
   Kokkos::deep_copy(integral_h, integral_v);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),2.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),8.0,1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(0)),2.0,1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(1)),8.0,1e-15);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

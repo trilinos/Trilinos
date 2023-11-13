@@ -78,7 +78,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>
     block_crs_matrix_type;
   typedef typename block_crs_matrix_type::impl_scalar_type IST;
-  typedef Kokkos::Details::ArithTraits<IST> KAT;
+  typedef Kokkos::ArithTraits<IST> KAT;
   typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
   typedef typename block_crs_matrix_type::little_block_type little_blk_type;
 
@@ -87,7 +87,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   const IST zero = KAT::zero ();
   const IST one = KAT::one ();
   const LO numLocalMeshRows =
-    static_cast<LO> (G.getRowMap ()->getNodeNumElements ());
+    static_cast<LO> (G.getRowMap ()->getLocalNumElements ());
   const LO numVecs = static_cast<LO> (X.getNumVectors ());
   const LO blockSize = A.getBlockSize ();
 
@@ -175,10 +175,10 @@ compareLocalMatVec (Teuchos::FancyOStream& out,
      "X_mv and Y_mv must have the same number of columns.");
 
   const auto G = A.getCrsGraph ();
-  const size_t lclNumMeshRows = G.getRowMap ()->getNodeNumElements ();
+  const size_t lclNumMeshRows = G.getRowMap ()->getLocalNumElements ();
   const LO blockSize = A.getBlockSize ();
   const size_t maxNumTermsInRowSum =
-    static_cast<size_t> (G.getNodeMaxNumRowEntries ()) *
+    static_cast<size_t> (G.getLocalMaxNumRowEntries ()) *
     static_cast<size_t> (blockSize);
   const mag_type tol =
     STM::squareroot (static_cast<mag_type> (maxNumTermsInRowSum)) *
@@ -493,7 +493,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   using std::endl;
   typedef Tpetra::BlockCrsMatrix<> matrix_type;
   typedef matrix_type::impl_scalar_type SC;
-  typedef Kokkos::Details::ArithTraits<SC> KAT;
+  typedef Kokkos::ArithTraits<SC> KAT;
   typedef Tpetra::Map<>::local_ordinal_type LO;
 
   // mfh 02 Jun 2016: Prefer Kokkos::Serial to the HostMirror as the
@@ -522,7 +522,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   // columns, or asking the column Map for the number of entries,
   // won't give the correct number of columns in the graph.
   // const GO gblNumCols = graph->getDomainMap ()->getGlobalNumElements ();
-  const LO lclNumRows = meshRowMap.getNodeNumElements ();
+  const LO lclNumRows = meshRowMap.getLocalNumElements ();
   const LO blkSize = opts.blockSize;
 
   RCP<matrix_type> A = rcp (new matrix_type (*graph, blkSize));

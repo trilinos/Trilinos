@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,7 @@ namespace {
     return max;
   }
 
-  void find_range(std::vector<double> &coord, vector3d &min, vector3d &max)
+  void find_range(const std::vector<double> &coord, vector3d &min, vector3d &max)
   {
     if (!coord.empty()) {
       min.set(coord[0], coord[1], coord[2]);
@@ -68,7 +68,7 @@ namespace {
   }
 
   template <typename INT>
-  void find_in_range(std::vector<double> coord, vector3d &min, vector3d &max,
+  void find_in_range(const std::vector<double> &coord, const vector3d &min, const vector3d &max,
                      std::vector<INT> &in_range)
   {
     if (!coord.empty()) {
@@ -123,7 +123,7 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
     vector3d            i_max;
     vector3d            i_min;
     std::vector<double> i_coord;
-    Ioss::NodeBlock *   inb = part_mesh[ip]->get_node_blocks()[0];
+    Ioss::NodeBlock    *inb = part_mesh[ip]->get_node_blocks()[0];
     inb->get_field_data("mesh_model_coordinates", i_coord);
     find_range(i_coord, i_min, i_max);
 
@@ -133,7 +133,7 @@ void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> 
       vector3d            j_max;
       vector3d            j_min;
       std::vector<double> j_coord;
-      Ioss::NodeBlock *   jnb = part_mesh[jp]->get_node_blocks()[0];
+      Ioss::NodeBlock    *jnb = part_mesh[jp]->get_node_blocks()[0];
       jnb->get_field_data("mesh_model_coordinates", j_coord);
       find_range(j_coord, j_min, j_max);
 

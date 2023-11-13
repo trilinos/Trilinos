@@ -75,6 +75,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: rebalance P and R");
+    SET_VALID_ENTRY("repartition: explicit via new copy rebalance P and R");
     SET_VALID_ENTRY("repartition: rebalance Nullspace");
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("repartition: use subcommunicators");
@@ -130,7 +131,15 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
 
+    RCP<Matrix> originalP = Get< RCP<Matrix> >(coarseLevel, "P");
+    // If we don't have a valid P (e.g., # global aggregates is 0), skip this rebalancing. This level will
+    // ultimately be removed in MueLu_Hierarchy_defs.h via a resize() 
+    if (originalP == Teuchos::null) {
+      Set(coarseLevel, "P", originalP);
+      return;
+    }
     int implicit   = !pL.get<bool>("repartition: rebalance P and R");
+    int reallyExplicit = pL.get<bool>("repartition: explicit via new copy rebalance P and R");
     int writeStart = pL.get<int> ("write start");
     int writeEnd   = pL.get<int> ("write end");
 
@@ -162,7 +171,7 @@ namespace MueLu {
 
     std::string transferType = pL.get<std::string>("type");
     if (transferType == "Interpolation") {
-      RCP<Matrix> originalP = Get< RCP<Matrix> >(coarseLevel, "P");
+      originalP = Get< RCP<Matrix> >(coarseLevel, "P");
 
       {
         // This line must be after the Get call
@@ -173,39 +182,67 @@ namespace MueLu {
           Set(coarseLevel, "P", originalP);
 
         } else {
-          // P is the transfer operator from the coarse grid to the fine grid.
-          // P must transfer the data from the newly reordered coarse A to the
-          // (unchanged) fine A.  This means that the domain map (coarse) of P
-          // must be changed according to the new partition. The range map
-          // (fine) is kept unchanged.
-          //
-          // The domain map of P must match the range map of R.  See also note
-          // below about domain/range map of R and its implications for P.
-          //
-          // To change the domain map of P, P needs to be fillCompleted again
-          // with the new domain map.  To achieve this, P is copied into a new
-          // matrix that is not fill-completed.  The doImport() operation is
-          // just used here to make a copy of P: the importer is trivial and
-          // there is no data movement involved.  The reordering actually
-          // happens during the fillComplete() with domainMap == importer->getTargetMap().
-          RCP<Matrix> rebalancedP = originalP;
-          RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalP);
-          TEUCHOS_TEST_FOR_EXCEPTION(crsOp == Teuchos::null, Exceptions::BadCast, "Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+           // There are two version of an explicit rebalanced P and R.
+           // The !reallyExplicit way, is sufficient for all MueLu purposes
+           // with the exception of the CombinePFactory that needs true domain
+           // and column maps.
+           //   !reallyExplicit:
+           //     Rather than calling fillComplete (which would entail creating a new
+           //     column map), it's sufficient to replace the domain map and importer.
+           //     Note that this potentially violates the assumption that in the
+           //     column map, local IDs appear before any off-rank IDs.
+           //
+           //  reallyExplicit:
+           //     P transfers from coarse grid to the fine grid. Here, we change
+           //     the domain map (coarse) of Paccording to the new partition. The
+           //     range map (fine) is kept unchanged.
+           //
+           //     The domain map of P must match the range map of R. To change the
+           //     domain map of P, P needs to be fillCompleted again with the new
+           //     domain map.  To achieve this, P is copied into a new matrix that
+           //     is not fill-completed.  The doImport() operation is just used 
+           //     here to make a copy of P: the importer is trivial and there is 
+           //     no data movement involved.  The reordering actually happens during
+           //     fillComplete() with domainMap == importer->getTargetMap().
 
-          RCP<CrsMatrix> rebalancedP2 = crsOp->getCrsMatrix();
-          TEUCHOS_TEST_FOR_EXCEPTION(rebalancedP2 == Teuchos::null, std::runtime_error, "Xpetra::CrsMatrixWrap doesn't have a CrsMatrix");
-
-          {
-            SubFactoryMonitor subM(*this, "Rebalancing prolongator -- fast map replacement", coarseLevel);
-
-            RCP<const Import> newImporter;
-            {
-              SubFactoryMonitor(*this, "Import construction", coarseLevel);
-              newImporter = ImportFactory::Build(importer->getTargetMap(), rebalancedP->getColMap());
+          RCP<Matrix> rebalancedP;
+          if (reallyExplicit) {
+            size_t totalMaxPerRow = 0;
+            ArrayRCP<size_t> nnzPerRow(originalP->getRowMap()->getLocalNumElements(), 0);
+            for (size_t i=0; i<originalP->getRowMap()->getLocalNumElements();  ++i) {
+              nnzPerRow[i] = originalP->getNumEntriesInLocalRow(i);
+              if (nnzPerRow[i] > totalMaxPerRow) totalMaxPerRow = nnzPerRow[i];
             }
-            rebalancedP2->replaceDomainMapAndImporter(importer->getTargetMap(), newImporter);
-          }
 
+            rebalancedP = MatrixFactory::Build(originalP->getRowMap(), totalMaxPerRow);
+
+           {
+             RCP<Import> trivialImporter = ImportFactory::Build(originalP->getRowMap(), originalP->getRowMap());
+             SubFactoryMonitor m2(*this, "Rebalancing prolongator -- import only", coarseLevel);
+             rebalancedP->doImport(*originalP, *trivialImporter, Xpetra::INSERT);
+           }
+          rebalancedP->fillComplete(importer->getTargetMap(), originalP->getRangeMap() );
+
+          }
+          else  {
+            rebalancedP = originalP;
+            RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(originalP);
+            TEUCHOS_TEST_FOR_EXCEPTION(crsOp == Teuchos::null, Exceptions::BadCast, "Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+  
+            RCP<CrsMatrix> rebalancedP2 = crsOp->getCrsMatrix();
+            TEUCHOS_TEST_FOR_EXCEPTION(rebalancedP2 == Teuchos::null, std::runtime_error, "Xpetra::CrsMatrixWrap doesn't have a CrsMatrix");
+  
+            {
+              SubFactoryMonitor subM(*this, "Rebalancing prolongator -- fast map replacement", coarseLevel);
+  
+              RCP<const Import> newImporter;
+              {
+                SubFactoryMonitor(*this, "Import construction", coarseLevel);
+                newImporter = ImportFactory::Build(importer->getTargetMap(), rebalancedP->getColMap());
+              }
+              rebalancedP2->replaceDomainMapAndImporter(importer->getTargetMap(), newImporter);
+            }
+          }
           ///////////////////////// EXPERIMENTAL
           // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
           // That is probably something for an external permutation factory
@@ -243,12 +280,12 @@ namespace MueLu {
         // This line must be after the Get call
         SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
-        LO nodeNumElts = coords->getMap()->getNodeNumElements();
+        LO nodeNumElts = coords->getMap()->getLocalNumElements();
 
         // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
         LO myBlkSize = 0, blkSize = 0;
         if (nodeNumElts > 0)
-          myBlkSize = importer->getSourceMap()->getNodeNumElements() / nodeNumElts;
+          myBlkSize = importer->getSourceMap()->getLocalNumElements() / nodeNumElts;
         MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
         RCP<const Import> coordImporter;
@@ -262,7 +299,7 @@ namespace MueLu {
           RCP<const Map> origMap   = coords->getMap();
           GO             indexBase = origMap->getIndexBase();
 
-          ArrayView<const GO> OEntries   = importer->getTargetMap()->getNodeElementList();
+          ArrayView<const GO> OEntries   = importer->getTargetMap()->getLocalElementList();
           LO                  numEntries = OEntries.size()/blkSize;
           ArrayRCP<GO> Entries(numEntries);
           for (LO i = 0; i < numEntries; i++)

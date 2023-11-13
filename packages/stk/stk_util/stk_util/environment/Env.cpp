@@ -59,6 +59,10 @@
 
 using namespace std;
 
+#ifdef SIERRA_GCOV
+extern "C" void __gcov_dump();
+#endif
+
 namespace sierra {
 
 std::string
@@ -325,6 +329,11 @@ void abort()
 
   ::sleep(1); // Give the other processors a chance at
               // catching up, seems to help hanging problems.
+
+#ifdef SIERRA_GCOV
+  __gcov_dump();
+#endif
+
 #if defined(STK_HAS_MPI)
   MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER); // First try to die
 #endif
@@ -354,7 +363,6 @@ set_param(
   const char *s = std::strcpy(new char[std::strlen(option) + 1], option);
 
   stk::parse_command_line_args(argc, &s, stk::get_options_specification(), stk::get_parsed_options());
-
   delete [] s;
 }
 

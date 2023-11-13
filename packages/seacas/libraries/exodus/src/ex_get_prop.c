@@ -59,7 +59,7 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
   int    num_props, i, propid;
   int    found = false;
   size_t start[1];
-  char * name;
+  char  *name;
   char   tmpstr[MAX_STR_LENGTH + 1];
 
   char errmsg[MAX_ERR_LENGTH];

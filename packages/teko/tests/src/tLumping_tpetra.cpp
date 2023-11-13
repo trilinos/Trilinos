@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -58,9 +58,6 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
-
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
 
 // Test-rig
 #include "Test_Utils.hpp"
@@ -87,23 +84,23 @@ int tLumping_tpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream &
    failstrm << "tLumping_tpetra";
 
    status = test_lumping(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"lumping\" ... PASSED","   \"lumping\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"lumping\" ... PASSED","   \"lumping\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_invLumping(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"invLumping\" ... PASSED","   \"invLumping\" ... FAILED");
+   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"invLumping\" ... PASSED","   \"invLumping\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tLumping_tpetra...PASSED","tLumping_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"tLumping_tpetra...PASSED","tLumping_tpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tLumping_tpetra...FAILED");
+      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tLumping_tpetra...FAILED");
    }
 
    return failcount;
@@ -124,13 +121,13 @@ bool tLumping_tpetra::test_lumping(int verbosity,std::ostream & os)
    Tpetra::CrsMatrix<ST,LO,GO,NT> A(rcpFromRef(map),5);
    GO indices[5];
    ST values[5] = {1,2,3,4,5};
-   for(size_t i=0;i<A.getNodeNumRows()-5;i++) {
+   for(size_t i=0;i<A.getLocalNumRows()-5;i++) {
       GO index = A.getRowMap()->getGlobalElement(i);
       for(GO j=0;j<5;j++)
          indices[j] = A.getRowMap()->getGlobalElement(i+j);
       A.insertGlobalValues(index,Teuchos::ArrayView<GO>(indices,5),Teuchos::ArrayView<ST>(values,5));
    }
-   for(size_t i=A.getNodeNumRows()-5;i<A.getNodeNumRows();i++) {
+   for(size_t i=A.getLocalNumRows()-5;i<A.getLocalNumRows();i++) {
       GO index = A.getRowMap()->getGlobalElement(i);
       for(LO j=0;j<5;j++)
          indices[j] = A.getRowMap()->getGlobalElement(j);
@@ -141,7 +138,7 @@ bool tLumping_tpetra::test_lumping(int verbosity,std::ostream & os)
    // B matrix...already lumped
    Tpetra::CrsMatrix<ST,LO,GO,NT> B(rcpFromRef(map),1);
    ST number[1] = {15.0};
-   for(size_t i=0;i<B.getNodeNumRows();i++) {
+   for(size_t i=0;i<B.getLocalNumRows();i++) {
       GO index[1] = {B.getRowMap()->getGlobalElement(i)};
       B.insertGlobalValues(index[0],Teuchos::ArrayView<GO>(index,1),Teuchos::ArrayView<ST>(number,1));
    }
@@ -180,13 +177,13 @@ bool tLumping_tpetra::test_invLumping(int verbosity,std::ostream & os)
    Tpetra::CrsMatrix<ST,LO,GO,NT> A(rcpFromRef(map),5);
    GO indices[5];
    ST values[5] = {1,2,3,4,5};
-   for(size_t i=0;i<A.getNodeNumRows()-5;i++) {
+   for(size_t i=0;i<A.getLocalNumRows()-5;i++) {
       GO index = A.getRowMap()->getGlobalElement(i);
       for(GO j=0;j<5;j++)
          indices[j] = A.getRowMap()->getGlobalElement(i+j);
       A.insertGlobalValues(index,Teuchos::ArrayView<GO>(indices,5),Teuchos::ArrayView<ST>(values,5));
    }
-   for(size_t i=A.getNodeNumRows()-5;i<A.getNodeNumRows();i++) {
+   for(size_t i=A.getLocalNumRows()-5;i<A.getLocalNumRows();i++) {
       GO index = A.getRowMap()->getGlobalElement(i);
       for(LO j=0;j<5;j++)
          indices[j] = A.getRowMap()->getGlobalElement(j);
@@ -197,7 +194,7 @@ bool tLumping_tpetra::test_invLumping(int verbosity,std::ostream & os)
    // B matrix...already lumped
    Tpetra::CrsMatrix<ST,LO,GO,NT> B(rcpFromRef(map),1);
    ST number[1] = {1.0/15.0};
-   for(size_t i=0;i<B.getNodeNumRows();i++) {
+   for(size_t i=0;i<B.getLocalNumRows();i++) {
       GO index[1] = {B.getRowMap()->getGlobalElement(i)};
       B.insertGlobalValues(index[0],Teuchos::ArrayView<GO>(index,1),Teuchos::ArrayView<ST>(number,1));
    }

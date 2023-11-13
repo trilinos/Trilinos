@@ -36,6 +36,7 @@
 //
 // ************************************************************************
 // @HEADER
+// clang-format off
 
 #ifndef TPETRA_BLOCKCRSMATRIX_DEF_HPP
 #define TPETRA_BLOCKCRSMATRIX_DEF_HPP
@@ -54,38 +55,7 @@
 #  include <set>
 #endif // HAVE_TPETRA_DEBUG
 
-//
-// mfh 25 May 2016: Temporary fix for #393.
-//
-// Don't use lambdas in the BCRS mat-vec for GCC < 4.8, due to a GCC
-// 4.7.2 compiler bug ("internal compiler error") when compiling them.
-// Also, lambdas for Kokkos::parallel_* don't work with CUDA, so don't
-// use them in that case, either.
-//
-// mfh 31 May 2016: GCC 4.9.[23] appears to be broken ("internal
-// compiler error") too.  Ditto for GCC 5.1.  I'll just disable the
-// thing for any GCC version.
-//
-#if defined(__CUDACC__)
-   // Lambdas for Kokkos::parallel_* don't work with CUDA 7.5 either.
-#  if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#    undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
-#  endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-
-#elif defined(__GNUC__)
-
-#  if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#    undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
-#  endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-
-#else // some other compiler
-
-   // Optimistically assume that other compilers aren't broken.
-#  if ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#    define TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA 1
-#  endif // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#endif // defined(__CUDACC__), defined(__GNUC__)
-
+#include "KokkosSparse_spmv.hpp"
 
 namespace Tpetra {
 
@@ -99,16 +69,6 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION BlockCrsRowStruct(const T& numEnt, const T& numBytes, const T& rowLength)
       : totalNumEntries(numEnt), totalNumBytes(numBytes), maxRowLength(rowLength) {}
   };
-
-  template<typename T>
-  static
-  KOKKOS_INLINE_FUNCTION
-  void operator+=(volatile BlockCrsRowStruct<T> &a,
-                  volatile const BlockCrsRowStruct<T> &b) {
-    a.totalNumEntries += b.totalNumEntries;
-    a.totalNumBytes   += b.totalNumBytes;
-    a.maxRowLength     = a.maxRowLength > b.maxRowLength ? a.maxRowLength : b.maxRowLength;
-  }
 
   template<typename T>
   static
@@ -130,446 +90,12 @@ namespace Impl {
     BlockCrsReducer(value_type &val) : value(&val) {}
 
     KOKKOS_INLINE_FUNCTION void join(value_type &dst, value_type &src) const { dst += src; }
-    KOKKOS_INLINE_FUNCTION void join(volatile value_type &dst, const volatile value_type &src) const { dst += src; }
+    KOKKOS_INLINE_FUNCTION void join(value_type &dst, const value_type &src) const { dst += src; }
     KOKKOS_INLINE_FUNCTION void init(value_type &val) const { val = value_type(); }
     KOKKOS_INLINE_FUNCTION value_type& reference() { return *value; }
     KOKKOS_INLINE_FUNCTION result_view_type view() const { return result_view_type(value); }
   };
 
-  template<class AlphaCoeffType,
-           class GraphType,
-           class MatrixValuesType,
-           class InVecType,
-           class BetaCoeffType,
-           class OutVecType,
-           bool  IsBuiltInType>
-  class BcrsApplyNoTransFunctor {
-  private:
-    static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
-                   "MatrixValuesType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<OutVecType>::value,
-                   "OutVecType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<InVecType>::value,
-                   "InVecType must be a Kokkos::View.");
-    static_assert (std::is_same<MatrixValuesType,
-                   typename MatrixValuesType::const_type>::value,
-                   "MatrixValuesType must be a const Kokkos::View.");
-    static_assert (std::is_same<OutVecType,
-                   typename OutVecType::non_const_type>::value,
-                   "OutVecType must be a nonconst Kokkos::View.");
-    static_assert (std::is_same<InVecType, typename InVecType::const_type>::value,
-                   "InVecType must be a const Kokkos::View.");
-    static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
-                   "MatrixValuesType must be a rank-1 Kokkos::View.");
-    static_assert (static_cast<int> (InVecType::rank) == 1,
-                   "InVecType must be a rank-1 Kokkos::View.");
-    static_assert (static_cast<int> (OutVecType::rank) == 1,
-                   "OutVecType must be a rank-1 Kokkos::View.");
-    typedef typename MatrixValuesType::non_const_value_type scalar_type;
-
-  public:
-    typedef typename GraphType::device_type device_type;
-
-    //! Type of the (mesh) column indices in the sparse graph / matrix.
-    typedef typename std::remove_const<typename GraphType::data_type>::type
-    local_ordinal_type;
-
-    /// \brief Set the current vector / current column of the input
-    ///   (multi)vector X to use.
-    ///
-    /// This lets us handle multiple columns by iterating over them one
-    /// column at a time, without needing to recreate the functor each
-    /// time.
-    void setX (const InVecType& X) { X_ = X; }
-
-    /// \brief Set the current vector / current column of the output
-    ///   (multi)vector Y to use.
-    ///
-    /// This lets us handle multiple columns by iterating over them one
-    /// column at a time, without needing to recreate the functor each
-    /// time.
-    void setY (const OutVecType& Y) { Y_ = Y; }
-
-    typedef typename Kokkos::ArithTraits<typename std::decay<AlphaCoeffType>::type>::val_type alpha_coeff_type;
-    typedef typename Kokkos::ArithTraits<typename std::decay<BetaCoeffType>::type>::val_type beta_coeff_type;
-
-    //! Constructor.
-    BcrsApplyNoTransFunctor (const alpha_coeff_type& alpha,
-                             const GraphType& graph,
-                             const MatrixValuesType& val,
-                             const local_ordinal_type blockSize,
-                             const InVecType& X,
-                             const beta_coeff_type& beta,
-                             const OutVecType& Y) :
-      alpha_ (alpha),
-      ptr_ (graph.row_map),
-      ind_ (graph.entries),
-      val_ (val),
-      blockSize_ (blockSize),
-      X_ (X),
-      beta_ (beta),
-      Y_ (Y)
-    {}
-
-    // Dummy team version
-    KOKKOS_INLINE_FUNCTION void
-    operator () (const typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type & member) const
-    {
-      Kokkos::abort("Tpetra::BcrsApplyNoTransFunctor:: this should not be called");
-    }
-
-    // Range Policy for non built-in types
-    KOKKOS_INLINE_FUNCTION void
-    operator () (const local_ordinal_type& lclRow) const 
-    {
-      using ::Tpetra::COPY;
-      using ::Tpetra::FILL;
-      using ::Tpetra::SCAL;
-      using ::Tpetra::GEMV;
-      using Kokkos::Details::ArithTraits;
-      // I'm not writing 'using Kokkos::make_pair;' here, because that
-      // may break builds for users who make the mistake of putting
-      // 'using namespace std;' in the global namespace.  Please don't
-      // ever do that!  But just in case you do, I'll take this
-      // precaution.
-      using Kokkos::parallel_for;
-      using Kokkos::subview;
-      typedef typename decltype (ptr_)::non_const_value_type offset_type;
-      typedef Kokkos::View<typename MatrixValuesType::const_value_type**,
-                           Kokkos::LayoutRight,
-                           device_type,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-        little_block_type;
-
-      const offset_type Y_ptBeg = lclRow * blockSize_;
-      const offset_type Y_ptEnd = Y_ptBeg + blockSize_;
-      auto Y_cur = subview (Y_, ::Kokkos::make_pair (Y_ptBeg, Y_ptEnd));
-
-      // This version of the code does not use temporary storage.
-      // Each thread writes to its own block of the target vector.
-      if (beta_ == ArithTraits<beta_coeff_type>::zero ()) {
-        FILL (Y_cur, ArithTraits<beta_coeff_type>::zero ());
-      }
-      else if (beta_ != ArithTraits<beta_coeff_type>::one ()) { // beta != 0 && beta != 1
-        SCAL (beta_, Y_cur);
-      }
-
-      if (alpha_ != ArithTraits<alpha_coeff_type>::zero ()) {
-        const offset_type blkBeg = ptr_[lclRow];
-        const offset_type blkEnd = ptr_[lclRow+1];
-        // Precompute to save integer math in the inner loop.
-        const offset_type bs2 = blockSize_ * blockSize_;
-        for (offset_type absBlkOff = blkBeg; absBlkOff < blkEnd;
-             ++absBlkOff) {
-          little_block_type A_cur (val_.data () + absBlkOff * bs2,
-                                   blockSize_, blockSize_);
-          const offset_type X_blkCol = ind_[absBlkOff];
-          const offset_type X_ptBeg = X_blkCol * blockSize_;
-          const offset_type X_ptEnd = X_ptBeg + blockSize_;
-          auto X_cur = subview (X_, ::Kokkos::make_pair (X_ptBeg, X_ptEnd));
-
-          GEMV (alpha_, A_cur, X_cur, Y_cur); // Y_cur += alpha*A_cur*X_cur
-        } // for each entry in current local block row of matrix
-      }
-    }
-
-  private:
-    alpha_coeff_type alpha_;
-    typename GraphType::row_map_type::const_type ptr_;
-    typename GraphType::entries_type::const_type ind_;
-    MatrixValuesType val_;
-    local_ordinal_type blockSize_;
-    InVecType X_;
-    beta_coeff_type beta_;
-    OutVecType Y_;
-  };
-
-  template<class AlphaCoeffType,
-           class GraphType,
-           class MatrixValuesType,
-           class InVecType,
-           class BetaCoeffType,
-           class OutVecType>
-  class BcrsApplyNoTransFunctor<AlphaCoeffType,
-                                GraphType,
-                                MatrixValuesType,
-                                InVecType,
-                                BetaCoeffType,
-                                OutVecType,
-                                true> {
-  private:
-    static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
-                   "MatrixValuesType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<OutVecType>::value,
-                   "OutVecType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<InVecType>::value,
-                   "InVecType must be a Kokkos::View.");
-    static_assert (std::is_same<MatrixValuesType,
-                   typename MatrixValuesType::const_type>::value,
-                   "MatrixValuesType must be a const Kokkos::View.");
-    static_assert (std::is_same<OutVecType,
-                   typename OutVecType::non_const_type>::value,
-                   "OutVecType must be a nonconst Kokkos::View.");
-    static_assert (std::is_same<InVecType, typename InVecType::const_type>::value,
-                   "InVecType must be a const Kokkos::View.");
-    static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
-                   "MatrixValuesType must be a rank-1 Kokkos::View.");
-    static_assert (static_cast<int> (InVecType::rank) == 1,
-                   "InVecType must be a rank-1 Kokkos::View.");
-    static_assert (static_cast<int> (OutVecType::rank) == 1,
-                   "OutVecType must be a rank-1 Kokkos::View.");
-    typedef typename MatrixValuesType::non_const_value_type scalar_type;
-
-  public:
-    typedef typename GraphType::device_type device_type;
-
-    //! Type of the (mesh) column indices in the sparse graph / matrix.
-    typedef typename std::remove_const<typename GraphType::data_type>::type
-    local_ordinal_type;
-
-    /// \brief Set the current vector / current column of the input
-    ///   (multi)vector X to use.
-    ///
-    /// This lets us handle multiple columns by iterating over them one
-    /// column at a time, without needing to recreate the functor each
-    /// time.
-    void setX (const InVecType& X) { X_ = X; }
-
-    /// \brief Set the current vector / current column of the output
-    ///   (multi)vector Y to use.
-    ///
-    /// This lets us handle multiple columns by iterating over them one
-    /// column at a time, without needing to recreate the functor each
-    /// time.
-    void setY (const OutVecType& Y) { Y_ = Y; }
-
-    typedef typename Kokkos::ArithTraits<typename std::decay<AlphaCoeffType>::type>::val_type alpha_coeff_type;
-    typedef typename Kokkos::ArithTraits<typename std::decay<BetaCoeffType>::type>::val_type beta_coeff_type;
-
-    //! Constructor.
-    BcrsApplyNoTransFunctor (const alpha_coeff_type& alpha,
-                             const GraphType& graph,
-                             const MatrixValuesType& val,
-                             const local_ordinal_type blockSize,
-                             const InVecType& X,
-                             const beta_coeff_type& beta,
-                             const OutVecType& Y) :
-      alpha_ (alpha),
-      ptr_ (graph.row_map),
-      ind_ (graph.entries),
-      val_ (val),
-      blockSize_ (blockSize),
-      X_ (X),
-      beta_ (beta),
-      Y_ (Y)
-    {}
-
-    // dummy Range version
-    KOKKOS_INLINE_FUNCTION void
-    operator () (const local_ordinal_type& lclRow) const 
-    {
-      Kokkos::abort("Tpetra::BcrsApplyNoTransFunctor:: this should not be called");
-    }
-
-    // Team policy for built-in types
-    KOKKOS_INLINE_FUNCTION void
-    operator () (const typename Kokkos::TeamPolicy<typename device_type::execution_space>::member_type & member) const
-    {
-      const local_ordinal_type lclRow = member.league_rank();
-
-      using Kokkos::Details::ArithTraits;
-      // I'm not writing 'using Kokkos::make_pair;' here, because that
-      // may break builds for users who make the mistake of putting
-      // 'using namespace std;' in the global namespace.  Please don't
-      // ever do that!  But just in case you do, I'll take this
-      // precaution.
-      using Kokkos::parallel_for;
-      using Kokkos::subview;
-      typedef typename decltype (ptr_)::non_const_value_type offset_type;
-      typedef Kokkos::View<typename MatrixValuesType::const_value_type**,
-                           Kokkos::LayoutRight,
-                           device_type,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-        little_block_type;
-
-      const offset_type Y_ptBeg = lclRow * blockSize_;
-      const offset_type Y_ptEnd = Y_ptBeg + blockSize_;
-      auto Y_cur = subview (Y_, ::Kokkos::make_pair (Y_ptBeg, Y_ptEnd));
-
-      // This version of the code does not use temporary storage.
-      // Each thread writes to its own block of the target vector.
-      if (beta_ == ArithTraits<beta_coeff_type>::zero ()) {
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, blockSize_),
-                             [&](const local_ordinal_type &i) {
-                               Y_cur(i) = ArithTraits<beta_coeff_type>::zero ();
-                             });
-      }
-      else if (beta_ != ArithTraits<beta_coeff_type>::one ()) { // beta != 0 && beta != 1
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, blockSize_),
-                             [&](const local_ordinal_type &i) {
-                               Y_cur(i) *= beta_;
-                             });
-      }
-      member.team_barrier();
-      
-      if (alpha_ != ArithTraits<alpha_coeff_type>::zero ()) {
-        const offset_type blkBeg = ptr_[lclRow];
-        const offset_type blkEnd = ptr_[lclRow+1];
-        // Precompute to save integer math in the inner loop.
-        const offset_type bs2 = blockSize_ * blockSize_;
-        little_block_type A_cur (val_.data (), blockSize_, blockSize_);
-        auto X_cur = subview (X_, ::Kokkos::make_pair (0, blockSize_));
-        Kokkos::parallel_for
-          (Kokkos::TeamThreadRange(member, blkBeg, blkEnd),
-           [&](const local_ordinal_type &absBlkOff) {
-            A_cur.assign_data(val_.data () + absBlkOff * bs2);
-            const offset_type X_blkCol = ind_[absBlkOff];
-            const offset_type X_ptBeg = X_blkCol * blockSize_;
-            X_cur.assign_data(&X_(X_ptBeg));
-            
-            Kokkos::parallel_for
-              (Kokkos::ThreadVectorRange(member, blockSize_),
-               [&](const local_ordinal_type &k0) {
-                scalar_type val(0);
-                for (local_ordinal_type k1=0;k1<blockSize_;++k1)
-                  val += A_cur(k0,k1)*X_cur(k1);
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-                // host space team size is always 1
-                Y_cur(k0) += alpha_*val;
-#else
-                // cuda space team size can be larger than 1
-                // atomic is not allowed for sacado type;
-                // thus this needs to be specialized or 
-                // sacado atomic should be supported.
-                Kokkos::atomic_add(&Y_cur(k0), alpha_*val);
-#endif
-              });
-          }); // for each entry in current local block row of matrix
-      }
-    }
-
-  private:
-    alpha_coeff_type alpha_;
-    typename GraphType::row_map_type::const_type ptr_;
-    typename GraphType::entries_type::const_type ind_;
-    MatrixValuesType val_;
-    local_ordinal_type blockSize_;
-    InVecType X_;
-    beta_coeff_type beta_;
-    OutVecType Y_;
-  };
-
-
-  template<class AlphaCoeffType,
-           class GraphType,
-           class MatrixValuesType,
-           class InMultiVecType,
-           class BetaCoeffType,
-           class OutMultiVecType>
-  void
-  bcrsLocalApplyNoTrans (const AlphaCoeffType& alpha,
-                         const GraphType& graph,
-                         const MatrixValuesType& val,
-                         const typename std::remove_const<typename GraphType::data_type>::type blockSize,
-                         const InMultiVecType& X,
-                         const BetaCoeffType& beta,
-                         const OutMultiVecType& Y
-                         )
-  {
-    static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
-                   "MatrixValuesType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<OutMultiVecType>::value,
-                   "OutMultiVecType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<InMultiVecType>::value,
-                   "InMultiVecType must be a Kokkos::View.");
-    static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
-                   "MatrixValuesType must be a rank-1 Kokkos::View.");
-    static_assert (static_cast<int> (OutMultiVecType::rank) == 2,
-                   "OutMultiVecType must be a rank-2 Kokkos::View.");
-    static_assert (static_cast<int> (InMultiVecType::rank) == 2,
-                   "InMultiVecType must be a rank-2 Kokkos::View.");
-
-    typedef typename GraphType::device_type::execution_space execution_space;
-    typedef typename MatrixValuesType::const_type matrix_values_type;
-    typedef typename OutMultiVecType::non_const_type out_multivec_type;
-    typedef typename InMultiVecType::const_type in_multivec_type;
-    typedef typename Kokkos::ArithTraits<typename std::decay<AlphaCoeffType>::type>::val_type alpha_type;
-    typedef typename Kokkos::ArithTraits<typename std::decay<BetaCoeffType>::type>::val_type beta_type;
-    typedef typename std::remove_const<typename GraphType::data_type>::type LO;
-    
-    constexpr bool is_builtin_type_enabled = std::is_arithmetic<typename InMultiVecType::non_const_value_type>::value;
-
-    const LO numLocalMeshRows = graph.row_map.extent (0) == 0 ?
-      static_cast<LO> (0) :
-      static_cast<LO> (graph.row_map.extent (0) - 1);
-    const LO numVecs = Y.extent (1);
-    if (numLocalMeshRows == 0 || numVecs == 0) {
-      return; // code below doesn't handle numVecs==0 correctly
-    }
-
-    // These assignments avoid instantiating the functor extra times
-    // unnecessarily, e.g., for X const vs. nonconst.  We only need the
-    // X const case, so only instantiate for that case.
-    in_multivec_type X_in = X;
-    out_multivec_type Y_out = Y;
-
-    // The functor only knows how to handle one vector at a time, and it
-    // expects 1-D Views.  Thus, we need to know the type of each column
-    // of X and Y.
-    typedef decltype (Kokkos::subview (X_in, Kokkos::ALL (), 0)) in_vec_type;
-    typedef decltype (Kokkos::subview (Y_out, Kokkos::ALL (), 0)) out_vec_type;
-    typedef BcrsApplyNoTransFunctor<alpha_type, GraphType,
-                                    matrix_values_type, in_vec_type, beta_type, out_vec_type,
-                                    is_builtin_type_enabled> functor_type;
-
-    auto X_0 = Kokkos::subview (X_in, Kokkos::ALL (), 0);
-    auto Y_0 = Kokkos::subview (Y_out, Kokkos::ALL (), 0);
-
-    // Compute the first column of Y.
-    if (is_builtin_type_enabled) {
-      functor_type functor (alpha, graph, val, blockSize, X_0, beta, Y_0);
-      // Built-in version uses atomic add which might not be supported from sacado or any user-defined types.
-      typedef Kokkos::TeamPolicy<execution_space> policy_type;
-      policy_type policy(1,1);
-#if defined(KOKKOS_ENABLE_CUDA)
-      constexpr bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-      constexpr bool is_cuda = false;
-#endif // defined(KOKKOS_ENABLE_CUDA)
-      if (is_cuda) {
-        LO team_size = 8, vector_size = 1;
-        if      (blockSize <= 5)  vector_size =  4; 
-        else if (blockSize <= 9)  vector_size =  8;
-        else if (blockSize <= 12) vector_size = 12;
-        else if (blockSize <= 20) vector_size = 20;
-        else                      vector_size = 20;
-        policy = policy_type(numLocalMeshRows, team_size, vector_size);
-      } else {
-        policy = policy_type(numLocalMeshRows, 1, 1);
-      }
-      Kokkos::parallel_for (policy, functor);
-      
-      // Compute the remaining columns of Y.
-      for (LO j = 1; j < numVecs; ++j) {
-        auto X_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
-        auto Y_j = Kokkos::subview (Y_out, Kokkos::ALL (), j);
-        functor.setX (X_j);
-        functor.setY (Y_j);
-        Kokkos::parallel_for (policy, functor);
-      }
-    } else {
-      functor_type functor (alpha, graph, val, blockSize, X_0, beta, Y_0);
-      Kokkos::RangePolicy<execution_space,LO> policy(0, numLocalMeshRows);
-      Kokkos::parallel_for (policy, functor);
-      for (LO j = 1; j < numVecs; ++j) {
-        auto X_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
-        auto Y_j = Kokkos::subview (Y_out, Kokkos::ALL (), j);
-        functor.setX (X_j);
-        functor.setY (Y_j);
-        Kokkos::parallel_for (policy, functor);
-      }
-    }
-  }
 } // namespace Impl
 
 namespace { // (anonymous)
@@ -620,7 +146,7 @@ public:
 
     // Get a view of the block.  BCRS currently uses LayoutRight
     // regardless of the device.
-    typedef Kokkos::View<const IST**, Kokkos::LayoutRight,
+    typedef Kokkos::View<const IST**, Impl::BlockCrsMatrixLittleBlockArrayLayout,
       device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       const_little_block_type;
     const_little_block_type D_in (val_.data () + pointOffset,
@@ -681,6 +207,7 @@ public:
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
+
     /// KK : additional check is needed that graph is fill complete.
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
@@ -718,10 +245,72 @@ public:
 
       auto ind_h = local_graph_h.entries;
       indHost_ = decltype(indHost_)(Kokkos::ViewAllocateWithoutInitializing("graph column indices"), ind_h.extent(0));
+      // DEEP_COPY REVIEW - HOST-TO-HOST
       Kokkos::deep_copy (indHost_, ind_h);
 
       const auto numValEnt = ind_h.extent(0) * offsetPerBlock ();
       val_ = decltype (val_) (impl_scalar_type_dualview("val", numValEnt));
+    }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  BlockCrsMatrix (const crs_graph_type& graph,
+                  const typename local_matrix_device_type::values_type& values,
+                  const LO blockSize) :
+    dist_object_type (graph.getMap ()),
+    graph_ (graph),
+    rowMeshMap_ (* (graph.getRowMap ())),
+    blockSize_ (blockSize),
+    X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    pointImporter_ (new Teuchos::RCP<typename crs_graph_type::import_type> ()),
+    offsetPerBlock_ (blockSize * blockSize),
+    localError_ (new bool (false)),
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
+  {
+    /// KK : additional check is needed that graph is fill complete.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
+      "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
+      "rows (isSorted() is false).  This class assumes sorted rows.");
+
+    graphRCP_ = Teuchos::rcpFromRef(graph_);
+
+    // Trick to test whether LO is nonpositive, without a compiler
+    // warning in case LO is unsigned (which is generally a bad idea
+    // anyway).  I don't promise that the trick works, but it
+    // generally does with gcc at least, in my experience.
+    const bool blockSizeIsNonpositive = (blockSize + 1 <= 1);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      blockSizeIsNonpositive, std::invalid_argument, "Tpetra::"
+      "BlockCrsMatrix constructor: The input blockSize = " << blockSize <<
+      " <= 0.  The block size must be positive.");
+
+    domainPointMap_ = BMV::makePointMap (* (graph.getDomainMap ()), blockSize);
+    rangePointMap_ = BMV::makePointMap (* (graph.getRangeMap ()), blockSize);
+
+    {
+      // These are rcp
+      const auto domainPointMap = getDomainMap();
+      const auto colPointMap = Teuchos::rcp
+        (new typename BMV::map_type (BMV::makePointMap (*graph_.getColMap(), blockSize_)));
+      *pointImporter_ = Teuchos::rcp
+        (new typename crs_graph_type::import_type (domainPointMap, colPointMap));
+    }
+    {
+      auto local_graph_h = graph.getLocalGraphHost ();
+      auto ptr_h = local_graph_h.row_map;
+      ptrHost_ = decltype(ptrHost_)(Kokkos::ViewAllocateWithoutInitializing("graph row offset"), ptr_h.extent(0));
+      Kokkos::deep_copy(ptrHost_, ptr_h);
+
+      auto ind_h = local_graph_h.entries;
+      indHost_ = decltype(indHost_)(Kokkos::ViewAllocateWithoutInitializing("graph column indices"), ind_h.extent(0));
+      Kokkos::deep_copy (indHost_, ind_h);
+
+      const auto numValEnt = ind_h.extent(0) * offsetPerBlock ();
+      TEUCHOS_ASSERT_EQUALITY(numValEnt, values.size());
+      val_ = decltype (val_) (values);
     }
   }
 
@@ -772,14 +361,17 @@ public:
       auto local_graph_h = graph.getLocalGraphHost ();
       auto ptr_h = local_graph_h.row_map;
       ptrHost_ = decltype(ptrHost_)(Kokkos::ViewAllocateWithoutInitializing("graph row offset"), ptr_h.extent(0));
+      // DEEP_COPY REVIEW - HOST-TO-HOST
       Kokkos::deep_copy(ptrHost_, ptr_h);
 
       auto ind_h = local_graph_h.entries;
       indHost_ = decltype(indHost_)(Kokkos::ViewAllocateWithoutInitializing("graph column indices"), ind_h.extent(0));
+      // DEEP_COPY REVIEW - HOST-TO-HOST
       Kokkos::deep_copy (indHost_, ind_h);
 
       const auto numValEnt = ind_h.extent(0) * offsetPerBlock ();
       val_ = decltype (val_) (impl_scalar_type_dualview("val", numValEnt));
+
     }
   }
 
@@ -828,17 +420,17 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumRows() const
+  getLocalNumRows() const
   {
-    return graph_.getNodeNumRows();
+    return graph_.getLocalNumRows();
   }
 
   template<class Scalar, class LO, class GO, class Node>
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeMaxNumRowEntries() const
+  getLocalMaxNumRowEntries() const
   {
-    return graph_.getNodeMaxNumRowEntries();
+    return graph_.getLocalMaxNumRowEntries();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -850,7 +442,7 @@ public:
          Scalar alpha,
          Scalar beta) const
   {
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
     TEUCHOS_TEST_FOR_EXCEPTION(
       mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS && mode != Teuchos::CONJ_TRANS,
       std::invalid_argument, "Tpetra::BlockCrsMatrix::apply: "
@@ -878,7 +470,7 @@ public:
       // either that or mark fields of this class as 'mutable'.  The
       // problem is that applyBlock wants to do lazy initialization of
       // temporary block multivectors.
-      const_cast<this_type&> (*this).applyBlock (X_view, Y_view, mode, alpha, beta);
+      const_cast<this_BCRS_type&> (*this).applyBlock (X_view, Y_view, mode, alpha, beta);
     } catch (std::invalid_argument& e) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::invalid_argument, "Tpetra::BlockCrsMatrix::"
@@ -937,6 +529,62 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
+  importAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
+                         const Import<LO, GO, Node>& importer) const
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+
+    // Right now, we make many assumptions...
+    TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
+                               "destMatrix is required to be null.");
+ 
+    // BlockCrsMatrix requires a complete graph at construction.
+    // So first step is to import and fill complete the destGraph.
+    RCP<crs_graph_type>  srcGraph = rcp (new  crs_graph_type(this->getCrsGraph()));
+    RCP<crs_graph_type> destGraph = importAndFillCompleteCrsGraph<crs_graph_type>(srcGraph, importer,
+                                                                                  srcGraph->getDomainMap(),
+                                                                                  srcGraph->getRangeMap());
+
+
+    // Final step, create and import the destMatrix.
+    destMatrix = rcp (new this_BCRS_type (*destGraph, getBlockSize()));
+    destMatrix->doImport(*this, importer, Tpetra::INSERT);
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  exportAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
+                         const Export<LO, GO, Node>& exporter) const
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+
+    // Right now, we make many assumptions...
+    TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
+                               "destMatrix is required to be null.");
+ 
+    // BlockCrsMatrix requires a complete graph at construction.
+    // So first step is to import and fill complete the destGraph.
+    RCP<crs_graph_type>  srcGraph = rcp (new  crs_graph_type(this->getCrsGraph()));
+    RCP<crs_graph_type> destGraph = exportAndFillCompleteCrsGraph<crs_graph_type>(srcGraph, exporter,
+                                                                                  srcGraph->getDomainMap(),
+                                                                                  srcGraph->getRangeMap());
+
+
+    // Final step, create and import the destMatrix.
+    destMatrix = rcp (new this_BCRS_type (*destGraph, getBlockSize()));
+    destMatrix->doExport(*this, exporter, Tpetra::INSERT);
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
   setAllToScalar (const Scalar& alpha)
   {
     auto val_d = val_.getDeviceView(Access::OverwriteAll);
@@ -979,7 +627,7 @@ public:
     using Kokkos::parallel_for;
     const char prefix[] = "Tpetra::BlockCrsMatrix::getLocalDiagCopy (2-arg): ";
 
-    const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getLocalNumElements ());
     const LO blockSize = this->getBlockSize ();
     TEUCHOS_TEST_FOR_EXCEPTION
       (static_cast<LO> (diag.extent (0)) < lclNumMeshRows ||
@@ -1004,21 +652,6 @@ public:
                   functor_type (diag, val_d, offsets,
                                 graph_.getLocalGraphDevice ().row_map, blockSize_));
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar,LO,GO,Node>::
-  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
-                    Kokkos::MemoryUnmanaged>& diag,
-                    const Teuchos::ArrayView<const size_t>& offsets) const
-  {
-    auto offsets_view_host = Kokkos::View<size_t*,Kokkos::HostSpace>(const_cast<size_t*>(offsets.getRawPtr()), offsets.size());
-    auto offsets_view_device = Kokkos::create_mirror_view_and_copy(typename device_type::memory_space(), offsets_view_host);
-    getLocalDiagCopy(diag, offsets_view_device);
-    Kokkos::deep_copy(offsets_view_host, offsets_view_device);
-  }
-#endif
 
   template<class Scalar, class LO, class GO, class Node>
   LO
@@ -1052,35 +685,6 @@ public:
     const LO validCount = this->sumIntoLocalValuesByOffsets(localRowInd, offsets, vals, numOffsets);
     return validCount;
   }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  LO
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowView (const LO localRowInd,
-                   const LO*& colInds,
-                   Scalar*& vals,
-                   LO& numInds) const
-  {
-    
-    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
-      colInds = NULL;
-      vals = NULL;
-      numInds = 0;
-      return Teuchos::OrdinalTraits<LO>::invalid ();
-    }
-    else {
-      const size_t absBlockOffsetStart = ptrHost_[localRowInd];
-      colInds = indHost_.data () + absBlockOffsetStart;
-
-      auto vals_host_out = getValuesHost (localRowInd);
-      impl_scalar_type* vals_host_out_raw = const_cast<impl_scalar_type*>(vals_host_out.data ());
-      vals = reinterpret_cast<Scalar*> (vals_host_out_raw);
-      numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
-      return 0; // indicates no error
-    }
-  }
-#endif
-
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -1105,33 +709,6 @@ public:
     }
     NumEntries = numInds;
   }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowCopy (LO LocalRow,
-                   const Teuchos::ArrayView<LO>& Indices,
-                   const Teuchos::ArrayView<Scalar>& Values,
-                   size_t &NumEntries) const
-  {
-    auto vals = getValuesHost(LocalRow);
-    const LO numInds = ptrHost_(LocalRow+1) - ptrHost_(LocalRow);
-    if (numInds > (LO)Indices.size() || numInds*blockSize_*blockSize_ > (LO)Values.size()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-                  "Tpetra::BlockCrsMatrix::getLocalRowCopy : Column and/or values array is not large enough to hold "
-                  << numInds << " row entries");
-    }
-    const LO * colInds = indHost_.data() + ptrHost_(LocalRow);
-    for (LO i=0; i<numInds; ++i) {
-      Indices[i] = colInds[i];
-    }
-    for (LO i=0; i<numInds*blockSize_*blockSize_; ++i) {
-      Values[i] = vals[i];
-    }
-    NumEntries = numInds;
-  }
-#endif
 
   template<class Scalar, class LO, class GO, class Node>
   LO
@@ -1182,8 +759,8 @@ public:
       return static_cast<LO> (0);
     }
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
-    auto val_out = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    auto val_out = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst(localRowInd);
     impl_scalar_type* vOut = val_out.data();
 
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -1258,8 +835,8 @@ public:
     }
     const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-    auto val_out = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_BCRS_type;
+    auto val_out = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst(localRowInd);
     impl_scalar_type* vOut = val_out.data();
 
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -1372,6 +949,23 @@ public:
     } else {
       return static_cast<LO> (numEntInGraph);
     }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  typename BlockCrsMatrix<Scalar, LO, GO, Node>::local_matrix_device_type
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalMatrixDevice () const
+  {
+    auto numCols = this->graph_.getColMap()->getLocalNumElements();
+    auto val = val_.getDeviceView(Access::ReadWrite);
+    const LO blockSize = this->getBlockSize ();
+    const auto graph = this->graph_.getLocalGraphDevice ();
+
+    return local_matrix_device_type("Tpetra::BlockCrsMatrix::lclMatrixDevice",
+                                    numCols,
+                                    val,
+                                    graph,
+                                    blockSize);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1498,33 +1092,27 @@ public:
     }
   }
 
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  localApplyBlockNoTrans (const BlockMultiVector<Scalar, LO, GO, Node>& X,
-                          BlockMultiVector<Scalar, LO, GO, Node>& Y,
-                          const Scalar alpha,
-                          const Scalar beta)
-  {
-    using ::Tpetra::Impl::bcrsLocalApplyNoTrans;
+// clang-format on
+template <class Scalar, class LO, class GO, class Node>
+void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
+    const BlockMultiVector<Scalar, LO, GO, Node> &X,
+    BlockMultiVector<Scalar, LO, GO, Node> &Y, const Scalar alpha,
+    const Scalar beta) {
+  ::Tpetra::Details::ProfilingRegion profile_region(
+      "Tpetra::BlockCrsMatrix::localApplyBlockNoTrans");
+  const impl_scalar_type alpha_impl = alpha;
+  const auto graph = this->graph_.getLocalGraphDevice();
 
-    const impl_scalar_type alpha_impl = alpha;
-    const auto graph = this->graph_.getLocalGraphDevice ();
-    const impl_scalar_type beta_impl = beta;
-    const LO blockSize = this->getBlockSize ();
+  auto X_mv = X.getMultiVectorView();
+  auto Y_mv = Y.getMultiVectorView();
+  auto X_lcl = X_mv.getLocalViewDevice(Access::ReadOnly);
+  auto Y_lcl = Y_mv.getLocalViewDevice(Access::ReadWrite);
 
-    auto X_mv = X.getMultiVectorView ();
-    auto Y_mv = Y.getMultiVectorView ();
-
-    //auto X_lcl = X_mv.template getLocalView<device_type> (Access::ReadOnly);
-    //auto Y_lcl = Y_mv.template getLocalView<device_type> (Access::ReadWrite);
-    auto X_lcl = X_mv.getLocalViewDevice (Access::ReadOnly);
-    auto Y_lcl = Y_mv.getLocalViewDevice (Access::ReadWrite);
-    auto val = val_.getDeviceView(Access::ReadWrite);
-
-    bcrsLocalApplyNoTrans (alpha_impl, graph, val, blockSize, X_lcl,
-                           beta_impl, Y_lcl);
-  }
+  auto A_lcl = getLocalMatrixDevice();
+  KokkosSparse::spmv(KokkosSparse::NoTranspose, alpha_impl, A_lcl, X_lcl, beta,
+                     Y_lcl);
+}
+// clang-format off
 
   template<class Scalar, class LO, class GO, class Node>
   LO
@@ -1621,40 +1209,18 @@ public:
     return little_block_host_type (val + bs2 * pointOffset, blockSize_, rowStride);
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalBlock (const LO localRowInd, const LO localColInd) const
-  {
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
-
-    const size_t absRowBlockOffset = ptrHost_[localRowInd];
-    const LO relBlockOffset = this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
-
-    if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
-      const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-      auto vals = const_cast<this_type&>(*this).getValuesDeviceNonConst();
-      return getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);
-    }
-    else {
-      return little_block_type ();
-    }
-  }
-#endif
-
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalBlockDeviceNonConst (const LO localRowInd, const LO localColInd) const
   {
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO relBlockOffset = this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-      auto vals = const_cast<this_type&>(*this).getValuesDeviceNonConst();
+      auto vals = const_cast<this_BCRS_type&>(*this).getValuesDeviceNonConst();
       auto r_val = getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);      
       return r_val; 
     }
@@ -1668,13 +1234,13 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalBlockHostNonConst (const LO localRowInd, const LO localColInd) const
   {
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO relBlockOffset = this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-      auto vals = const_cast<this_type&>(*this).getValuesHostNonConst();
+      auto vals = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst();
       auto r_val = getNonConstLocalBlockFromInputHost (vals.data(), absBlockOffset);      
       return r_val; 
     }
@@ -1690,8 +1256,8 @@ public:
   checkSizes (const ::Tpetra::SrcDistObject& source)
   {
     using std::endl;
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-    const this_type* src = dynamic_cast<const this_type* > (&source);
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_BCRS_type;
+    const this_BCRS_type* src = dynamic_cast<const this_BCRS_type* > (&source);
 
     if (src == NULL) {
       std::ostream& err = markLocalErrorAndGetStream ();
@@ -1754,7 +1320,7 @@ public:
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::ProfilingRegion;
     using std::endl;
-    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+    using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::copyAndPermute");
     const bool debug = Behavior::debug();
@@ -1808,7 +1374,7 @@ public:
       return;
     }
 
-    const this_type* src = dynamic_cast<const this_type* > (&source);
+    const this_BCRS_type* src = dynamic_cast<const this_BCRS_type* > (&source);
     if (src == NULL) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix
@@ -1928,7 +1494,7 @@ public:
     }
     else { // must convert column indices to global
       // Reserve space to store the destination matrix's local column indices.
-      const size_t maxNumEnt = src->graph_.getNodeMaxNumRowEntries ();
+      const size_t maxNumEnt = src->graph_.getLocalMaxNumRowEntries ();
       Teuchos::Array<LO> lclDstCols (maxNumEnt);
 
       // Copy local rows that are the "same" in both source and target.
@@ -2386,7 +1952,7 @@ public:
 
     typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space host_exec;
 
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_BCRS_type;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::packAndPrepare");
 
@@ -2440,7 +2006,7 @@ public:
       return;
     }
 
-    const this_type* src = dynamic_cast<const this_type* > (&source);
+    const this_BCRS_type* src = dynamic_cast<const this_BCRS_type* > (&source);
     if (src == NULL) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix
@@ -2562,6 +2128,10 @@ public:
         const auto policy =
           policy_type(numExportLIDs, 1, 1)
           .set_scratch_size(0, Kokkos::PerTeam(sizeof(GO)*maxRowLength));
+        // The following parallel_for needs const access to the local values of src.
+        // (the local graph is also accessed on host, but this does not use WDVs).
+        getValuesHost();
+        Details::disableWDVTracking();
         Kokkos::parallel_for
           (policy,
            [=](const typename policy_type::member_type &member) {
@@ -2609,6 +2179,7 @@ public:
               }
             }
           }); // for each LID (of a row) to send
+        Details::enableWDVTracking();
       }
     } // if totalNumEntries > 0
 
@@ -2737,7 +2308,7 @@ public:
         PackTraits<impl_scalar_type>::packValueCount
         (val_host.extent (0) ? val_host(0) : impl_scalar_type ());
     }
-    const size_t maxRowNumEnt = graph_.getNodeMaxNumRowEntries ();
+    const size_t maxRowNumEnt = graph_.getLocalMaxNumRowEntries ();
     const size_t maxRowNumScalarEnt = maxRowNumEnt * blockSize * blockSize;
 
     if (verbose) {
@@ -2822,23 +2393,29 @@ public:
     errorDuringUnpack () = 0;
     {
       using policy_type = Kokkos::TeamPolicy<host_exec>;
-      const auto policy = policy_type (numImportLIDs, 1, 1)
-        .set_scratch_size (0, Kokkos::PerTeam (sizeof (GO) * maxRowNumEnt +
-                                               sizeof (LO) * maxRowNumEnt +
-                                               numBytesPerValue * maxRowNumScalarEnt));
+      size_t scratch_per_row = sizeof(GO) * maxRowNumEnt + sizeof (LO) * maxRowNumEnt + numBytesPerValue * maxRowNumScalarEnt
+        + 2 * sizeof(GO); // Yeah, this is a fudge factor
+
+      const auto policy = policy_type (numImportLIDs, 1, 1)     
+        .set_scratch_size (0, Kokkos::PerTeam (scratch_per_row));
       using host_scratch_space = typename host_exec::scratch_memory_space;
+      
       using pair_type = Kokkos::pair<size_t, size_t>;
+
+      //The following parallel_for modifies values on host while unpacking.
+      getValuesHostNonConst();
+      Details::disableWDVTracking();
       Kokkos::parallel_for
         ("Tpetra::BlockCrsMatrix::unpackAndCombine: unpack", policy,
          [=] (const typename policy_type::member_type& member) {
           const size_t i = member.league_rank();
-
           Kokkos::View<GO*, host_scratch_space> gblColInds
             (member.team_scratch (0), maxRowNumEnt);
           Kokkos::View<LO*, host_scratch_space> lclColInds
             (member.team_scratch (0), maxRowNumEnt);
           Kokkos::View<impl_scalar_type*, host_scratch_space> vals
             (member.team_scratch (0), maxRowNumScalarEnt);
+          
 
           const size_t offval = offset(i);
           const LO lclRow = importLIDsHost(i);
@@ -2944,6 +2521,7 @@ public:
             return;
           }
         }); // for each import LID i
+      Details::enableWDVTracking();
     }
 
     if (errorDuringUnpack () != 0) {
@@ -3242,12 +2820,13 @@ public:
     return graph_.getGlobalNumCols();
   }
 
+
   template<class Scalar, class LO, class GO, class Node>
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumCols() const
+  getLocalNumCols() const
   {
-    return graph_.getNodeNumCols();
+    return graph_.getLocalNumCols();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3269,9 +2848,9 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumEntries() const
+  getLocalNumEntries() const
   {
-    return graph_.getNodeNumEntries();
+    return graph_.getLocalNumEntries();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3346,49 +2925,6 @@ public:
 
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowCopy (GO /* GlobalRow */,
-                    const Teuchos::ArrayView<GO> &/* Indices */,
-                    const Teuchos::ArrayView<Scalar> &/* Values */,
-                    size_t &/* NumEntries */) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::BlockCrsMatrix::getGlobalRowCopy: "
-      "This class doesn't support global matrix indexing.");
-
-  }
-#endif
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowView (GO /* GlobalRow */,
-                    Teuchos::ArrayView<const GO> &/* indices */,
-                    Teuchos::ArrayView<const Scalar> &/* values */) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::BlockCrsMatrix::getGlobalRowView: "
-      "This class doesn't support global matrix indexing.");
-
-  }
-
-  template<class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowView (LO /* LocalRow */,
-                   Teuchos::ArrayView<const LO>& /* indices */,
-                   Teuchos::ArrayView<const Scalar>& /* values */) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::BlockCrsMatrix::getLocalRowView: "
-      "This class doesn't support local matrix indexing.");
-  }
-#endif
-
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -3438,8 +2974,8 @@ public:
       const size_t numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
       colInds = local_inds_host_view_type(indHost_.data()+absBlockOffsetStart, numInds);
 
-      using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
-      vals = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
+      using this_BCRS_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+      vals = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst(localRowInd);
     }
   }
 
@@ -3448,14 +2984,15 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalDiagCopy (::Tpetra::Vector<Scalar,LO,GO,Node>& diag) const
   {
-    const size_t lclNumMeshRows = graph_.getNodeNumRows ();
+    const size_t lclNumMeshRows = graph_.getLocalNumRows ();
 
     Kokkos::View<size_t*, device_type> diagOffsets ("diagOffsets", lclNumMeshRows);
     graph_.getLocalDiagOffsets (diagOffsets);
 
     // The code below works on host, so use a host View.
     auto diagOffsetsHost = Kokkos::create_mirror_view (diagOffsets);
-    Kokkos::deep_copy (diagOffsetsHost, diagOffsets);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    Kokkos::deep_copy (execution_space(), diagOffsetsHost, diagOffsets);
 
     auto vals_host_out = val_.getHostView(Access::ReadOnly);
     const impl_scalar_type* vals_host_out_raw = vals_host_out.data();
@@ -3464,7 +3001,7 @@ public:
     size_t rowOffset = 0;
     size_t offset = 0;
     LO bs = getBlockSize();
-    for(size_t r=0; r<getNodeNumRows(); r++)
+    for(size_t r=0; r<getLocalNumRows(); r++)
     {
       // move pointer to start of diagonal block
       offset = rowOffset + diagOffsetsHost(r)*bs*bs;

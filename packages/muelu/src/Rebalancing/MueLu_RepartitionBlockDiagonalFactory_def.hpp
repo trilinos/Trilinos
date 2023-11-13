@@ -53,11 +53,8 @@
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -80,10 +77,10 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", currentLevel);
     typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  BlockCrs;
 
-    RCP<Matrix> originalA = Get< RCP<Matrix> >(currentLevel, "A");    
+    RCP<Matrix> originalA = Get< RCP<Matrix> >(currentLevel, "A");
     RCP<BlockCrs> A = Teuchos::rcp_dynamic_cast<BlockCrs>(originalA);
 
-    //    RCP<BlockCrs> A = Get< RCP<BlockCrs> >(currentLevel, "A");    
+    //    RCP<BlockCrs> A = Get< RCP<BlockCrs> >(currentLevel, "A");
     TEUCHOS_TEST_FOR_EXCEPTION(A==Teuchos::null, Exceptions::BadCast, "MueLu::RepartitionBlockDiagonalFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
 
     // Build the block diagonal

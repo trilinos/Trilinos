@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -75,10 +75,6 @@ C     --   MATMAT - IN/OUT - true if match by material
       BYSET = (MATNS1 .GT. 0) .AND. (MATNS2 .GT. 0)
 
 C     --Index nodes to match in the nodal point sets
-      call prterr('WARNING',
-     &     'EXPXYZ (By-material matching) is an experimental routine')
-      call prterr('WARNING',
-     &     'Use with caution and check validity of output and mesh')
       ioff1 = 0
       do 200 iblk = 1, nelbl1
          INIT = (NMATCH .LE. 0)

@@ -150,9 +150,9 @@ namespace Amesos2{
             EDistribution distribution)
     {
       // Dispatch to the copy function appropriate for the type
-      if_then_else<is_same<typename MV::scalar_t,S>::value,
+      std::conditional_t<std::is_same_v<typename MV::scalar_t,S>,
         same_type_get_copy<MV>,
-        diff_type_get_copy<MV,S> >::type::apply (mv, vals, ldx, distribution_map, distribution);
+        diff_type_get_copy<MV,S> >::apply (mv, vals, ldx, distribution_map, distribution);
     }
 
     template <class MV, typename S>
@@ -325,9 +325,9 @@ namespace Amesos2{
                                           EDistribution distribution )
     {
       // Dispatch to the copy function appropriate for the type
-      if_then_else<is_same<typename MV::scalar_t,S>::value,
+      std::conditional_t<std::is_same_v<typename MV::scalar_t,S>,
         same_type_data_put<MV>,
-        diff_type_data_put<MV,S> >::type::apply(mv, data, ldx, distribution_map, distribution);
+        diff_type_data_put<MV,S> >::apply(mv, data, ldx, distribution_map, distribution);
     }
 
     template <class MV, typename S>

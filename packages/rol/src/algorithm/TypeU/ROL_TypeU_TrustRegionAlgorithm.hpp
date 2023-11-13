@@ -78,6 +78,10 @@ private:
   int                           SPflag_; ///< Subproblem solver termination flag.
   int                           SPiter_; ///< Subproblem solver iteration count.
 
+  // NONMONOTONE INFORMATION
+  bool useNM_;
+  int  NMstorage_;
+
   // SECANT INFORMATION
   ESecant esec_; ///< Secant type.
   bool useSecantPrecond_;
@@ -89,6 +93,7 @@ private:
   Real              scale1_;     ///< Scale for inexact gradient computation.
   Real scale_, omega_, force_, forceFactor_;
   int updateIter_;
+  Real gtol_;
 
   // VERBOSITY SETTING
   int verbosity_;    ///< Print additional information to screen if > 0.
@@ -134,7 +139,7 @@ private:
       @param[in]      x          is the current optimization variable.
       @param[in]      obj        is the objective function.
   */
-  void computeGradient(const Vector<Real> &x, Objective<Real> &obj);
+  void computeGradient(const Vector<Real> &x, Objective<Real> &obj, bool accept);
 
 }; // class ROL::TrustRegionAlgorithm
 } // namespace TypeU

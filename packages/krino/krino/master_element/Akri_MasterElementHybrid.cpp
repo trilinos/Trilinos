@@ -52,6 +52,7 @@ MasterElementHybrid::MasterElementHybrid(
   m_refPoints.resize(m_numIntgPts*m_numElemDims);
   m_refWeights.resize(m_numIntgPts);
   m_refCoords.resize(m_numNodes*m_numElemDims);
+  m_refVolume = m_Basis->parametric_volume();
 
   // retrieve the cubature points and weights
   std::vector<int> refPointsDims = {m_numIntgPts, m_numElemDims};
@@ -174,7 +175,7 @@ MasterElementHybrid::gradient_operator(
         double* det_J,           // (nelem,nint)
         double* error) const
 {
-  ThrowRequireMsg(m_numElemDims == numCoordDims, "MasterElementHybrid::gradient_operator does not support lower rank elements in higher dimensions (e.g. BAR,QUAD,TRI in 3D).");
+  STK_ThrowRequireMsg(m_numElemDims == numCoordDims, "MasterElementHybrid::gradient_operator does not support lower rank elements in higher dimensions (e.g. BAR,QUAD,TRI in 3D).");
   MasterElementCalc::gradient_operator(m_numElemDims, nint, npe_g, deriv_g, npe_f, deriv_f, nelem, coords, gradop, det_J, error);
 }
 

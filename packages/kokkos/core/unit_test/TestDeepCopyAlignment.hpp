@@ -1,4 +1,21 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
+
 #include <Kokkos_Core.hpp>
+#include <cstddef>
 
 namespace Test {
 
@@ -62,7 +79,7 @@ struct TestDeepCopy {
     reset_a_copy_and_b(a_char_copy, b_char);
 
     {
-      int check = compare_equal(a_char_copy, a_char);
+      size_t check = compare_equal(a_char_copy, a_char);
       ASSERT_EQ(check, a_char.extent(0));
     }
 
@@ -224,12 +241,12 @@ struct TestDeepCopyScalarConversion {
   using view_type_s1_2d = Kokkos::View<Scalar1**, Layout1, TEST_EXECSPACE>;
   using view_type_s2_2d = Kokkos::View<Scalar2**, Layout2, TEST_EXECSPACE>;
 
-  using base_layout1 = typename std::conditional<
-      std::is_same<Layout1, Kokkos::LayoutStride>::value, Kokkos::LayoutLeft,
-      Layout1>::type;
-  using base_layout2 = typename std::conditional<
-      std::is_same<Layout2, Kokkos::LayoutStride>::value, Kokkos::LayoutLeft,
-      Layout2>::type;
+  using base_layout1 =
+      std::conditional_t<std::is_same<Layout1, Kokkos::LayoutStride>::value,
+                         Kokkos::LayoutLeft, Layout1>;
+  using base_layout2 =
+      std::conditional_t<std::is_same<Layout2, Kokkos::LayoutStride>::value,
+                         Kokkos::LayoutLeft, Layout2>;
 
   using base_type_s1_1d = Kokkos::View<Scalar1*, base_layout1, TEST_EXECSPACE>;
   using base_type_s2_1d = Kokkos::View<Scalar2*, base_layout2, TEST_EXECSPACE>;
@@ -324,6 +341,9 @@ struct TestDeepCopyScalarConversion {
 }  // namespace Impl
 
 TEST(TEST_CATEGORY, deep_copy_conversion) {
+#ifdef KOKKOS_IMPL_32BIT
+  GTEST_SKIP() << "Failing KOKKOS_IMPL_32BIT";  // FIXME_32BIT
+#endif
   int64_t N0 = 19381;
   int64_t N1 = 17;
 

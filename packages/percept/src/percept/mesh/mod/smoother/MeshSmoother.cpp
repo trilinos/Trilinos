@@ -23,30 +23,16 @@ namespace std {
 
     template<>
     MeshSmootherImpl<STKMesh>::MeshSmootherImpl(PerceptMesh *eMesh,
-//                   typename STKMesh::MTSelector *boundary_selector,
                    STKMesh::MTSelector *stk_select,
-                   StructuredGrid::MTSelector *sgrid_select,
                    typename STKMesh::MTMeshGeometry *meshGeometry,
                    int innerIter, double gradNorm , int parallelIterations) :
         m_eMesh(eMesh), innerIter(innerIter), gradNorm(gradNorm), parallelIterations(parallelIterations),
-        m_stk_boundarySelector(stk_select),m_sgrid_boundarySelector(sgrid_select), m_meshGeometry(meshGeometry)
+        m_stk_boundarySelector(stk_select),m_meshGeometry(meshGeometry)
       {
 #if defined(STK_PERCEPT_HAS_GEOMETRY)
         if (m_meshGeometry)
           m_meshGeometry->m_cache_classify_bucket_is_active = true;
 #endif
-      }
-
-    template<>
-    MeshSmootherImpl<StructuredGrid>::MeshSmootherImpl(PerceptMesh *eMesh,
-//                   typename StructuredGrid::MTSelector *boundary_selector,
-                   STKMesh::MTSelector *stk_select,
-                   StructuredGrid::MTSelector *sgrid_select,
-                   typename StructuredGrid::MTMeshGeometry *meshGeometry,
-                   int innerIter, double gradNorm , int parallelIterations) :
-        m_eMesh(eMesh), innerIter(innerIter), gradNorm(gradNorm), parallelIterations(parallelIterations),
-        m_stk_boundarySelector(stk_select),m_sgrid_boundarySelector(sgrid_select), m_meshGeometry(meshGeometry)
-      {
       }
 
     template<>
@@ -175,40 +161,10 @@ namespace std {
         }
     }
 
-    template<>
-    GenericAlgorithm_parallel_count_invalid_elements<StructuredGrid>::GenericAlgorithm_parallel_count_invalid_elements(PerceptMesh *eMesh) : m_eMesh(eMesh), utm(eMesh)
-    {
-      init();
-      std::shared_ptr<BlockStructuredGrid> bsg = m_eMesh->get_block_structured_grid();
-      coord_field_current                      = bsg->m_fields["coordinates"].get();
-      coord_field_original                     = bsg->m_fields["coordinates_NM1"].get();
-
-      //std::cout << " coord_field_original= " << coord_field_original->m_name << std::endl;
-
-      bsg->get_elements(elements);
-      topos.resize(elements.size(), static_cast<const typename StructuredGrid::MTCellTopology *>(0));
-    }
-
     template<typename MeshType>
     size_t MeshSmootherImpl<MeshType>::parallel_count_invalid_elements(PerceptMesh *eMesh)
     {
         size_t n_invalid=0;
-
-        if(eMesh->get_block_structured_grid())
-        {//currently this is a member on ReferencMeshSmootherConjugateGradientImpl. This should get consolidated
-            Double mtot=0;
-
-            SGridGenericAlgorithm_total_element_metric< HexMeshSmootherMetric >  ga_tem(eMesh, mtot, n_invalid);
-            ga_tem.m_metric.m_untangling=true;
-
-            unsigned noBlocks =
-                    eMesh->get_block_structured_grid()->m_sblocks.size();
-            for (unsigned iBlock = 0; iBlock < noBlocks; iBlock++) {
-                ga_tem.run(iBlock);
-                mtot += ga_tem.mtot;
-                n_invalid += ga_tem.n_invalid;
-            }
-        }
 
         if(eMesh->get_bulk_data()){
             GenericAlgorithm_parallel_count_invalid_elements<MeshType> ga(eMesh);
@@ -343,80 +299,6 @@ int MeshSmootherImpl<STKMesh>::
       return ret;
     } //get_fixed_flag
 
-    template<>
-    std::pair<bool,int> MeshSmootherImpl<StructuredGrid>::get_fixed_flag(typename StructuredGrid::MTNode node_ptr)
-    {
-      int dof = -1;
-      std::pair<bool,int> ret(true,MS_VERTEX);
-      //if the owner is something other than the top-level owner, the node
-      // is on the boundary; otherwise, it isn't.
-      bool& fixed = ret.first;
-      int& type = ret.second;
-      if (m_sgrid_boundarySelector)
-        {
-          if ((*m_sgrid_boundarySelector)(node_ptr))
-            {
-              fixed=true;
-              type=MS_ON_BOUNDARY;
-            }
-          else
-            {
-              fixed=false;
-              type = MS_NOT_ON_BOUNDARY;
-            }
-        }
-      else
-        {
-#if defined(STK_PERCEPT_HAS_GEOMETRY)
-          if (m_meshGeometry)
-            {
-              size_t curveOrSurfaceEvaluator;
-              dof = m_meshGeometry->classify_node(node_ptr, curveOrSurfaceEvaluator);
-              // vertex
-              if (dof == 0)
-                {
-                  fixed=true;
-                  type=MS_VERTEX;
-                }
-              // curve (for now we hold these fixed)
-              else if (dof == 1)
-                {
-                  fixed=true;
-                  type=MS_CURVE;
-                  //fixed=false;   // FIXME
-                }
-              // surface - also fixed
-              else if (dof == 2)
-                {
-                  //fixed=false;
-                  fixed=true;
-                  if (m_eMesh->get_smooth_surfaces())
-                    {
-                      fixed = false;
-                    }
-                  type=MS_SURFACE;
-                  if (DEBUG_PRINT) std::cout << "tmp srk found surface node unfixed= " << node_ptr << std::endl;
-                }
-              // interior/volume - free to move
-              else
-                {
-                  fixed=false;
-                  type=MS_VOLUME;
-                }
-            }
-          else
-#endif
-            {
-              fixed=false;
-              type=MS_VOLUME;
-            }
-        }
-      if (DEBUG_PRINT) std::cout << "tmp srk classify node= " << node_ptr << " dof= " << dof << " fixed= " << fixed << " type= " << type << std::endl;
-
-      return ret;
-    }
-
-
     template<typename MeshType>
     void MeshSmootherImpl<MeshType>::run()
     {
@@ -460,13 +342,6 @@ int MeshSmootherImpl<STKMesh>::
 #else
       throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
 #endif
-    }
-
-    template<>
-    void MeshSmootherImpl<StructuredGrid>::
-    project_delta_to_tangent_plane(typename StructuredGrid::MTNode node, double *delta, double *norm)
-    {
-      VERIFY_MSG("not impl");
     }
 
     template<>
@@ -562,16 +437,8 @@ int MeshSmootherImpl<STKMesh>::
 #endif
     }
 
-    template<>
-    void MeshSmootherImpl<StructuredGrid>::
-    snap_to(typename StructuredGrid::MTNode node_ptr,
-            double *coordinate, bool reset) const
-    {
-      VERIFY_MSG("not impl");
-    }
 
     template class MeshSmootherImpl<STKMesh>;
-    template class MeshSmootherImpl<StructuredGrid>;
 
   }
 #undef DEBUG_PRINT

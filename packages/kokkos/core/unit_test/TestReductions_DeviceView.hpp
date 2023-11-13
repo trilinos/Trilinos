@@ -1,3 +1,19 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
+
 #include <Kokkos_Core.hpp>
 
 namespace Test {
@@ -54,6 +70,11 @@ void test_reduce_device_view(int64_t N, PolicyType policy,
   Kokkos::deep_copy(reducer_result, result);
   Kokkos::deep_copy(result, 0);
   ASSERT_EQ(N, reducer_result);
+
+  // We need a warm-up to get reasonable results
+  Kokkos::parallel_reduce("Test::ReduceDeviceView::TestView", policy, functor,
+                          result);
+  Kokkos::fence();
   timer.reset();
 
   // Test View

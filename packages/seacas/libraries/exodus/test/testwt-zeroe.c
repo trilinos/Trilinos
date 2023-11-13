@@ -51,7 +51,7 @@ int main(int argc, char **argv)
   float  time_value;
   float  x[100], y[100], z[100];
   float  dist_fact[100];
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char  *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 

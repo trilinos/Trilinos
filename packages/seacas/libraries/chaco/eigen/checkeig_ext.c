@@ -1,12 +1,12 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
-#include "structs.h"
+#include "defs.h"
 #include <stdio.h> // for fprintf, printf, NULL, FILE
 
 /* Check an extended eigenpair of A by direct multiplication. Uses
@@ -19,15 +19,11 @@ double checkeig_ext(double *err, double *work, /* work vector of length n */
                                     contexts this is called */
 )
 {
-  extern FILE *Output_File;   /* output file or null */
-  extern int   DEBUG_EVECS;   /* print debugging output? */
-  extern int   WARNING_EVECS; /* print warning messages? */
-  double       resid;         /* the extended eigen residual */
-  double       ch_norm();     /* vector norm */
-  void         splarax();     /* sparse matrix vector mult */
-  void         scadd();       /* scaled vector add */
-  void         scale_diag();  /* scale vector by another's elements */
-  void         cpvec();       /* vector copy */
+  extern FILE *Output_File;                            /* output file or null */
+  extern int   DEBUG_EVECS;                            /* print debugging output? */
+  extern int   WARNING_EVECS;                          /* print warning messages? */
+  double       resid;                                  /* the extended eigen residual */
+  double       ch_norm(double *vec, int beg, int end); /* vector norm */
 
   splarax(err, A, n, y, vwsqrt, work);
   scadd(err, 1, n, -extval, y);

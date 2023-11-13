@@ -8,13 +8,15 @@
 
 #ifndef KRINO_INCLUDE_AKRI_MATHUTIL_H_
 #define KRINO_INCLUDE_AKRI_MATHUTIL_H_
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <vector>
 #include <functional>
 
 namespace krino {
 
-Vector3d get_parametric_coordinates_of_point(const std::vector<Vector3d> & nodeCoords, const Vector3d & pt);
+double compute_parametric_square_distance(const stk::math::Vector3d childPCoords);
+
+stk::math::Vector3d get_parametric_coordinates_of_point(const std::vector<stk::math::Vector3d> & nodeCoords, const stk::math::Vector3d & pt);
 
 std::pair<bool, double> find_root( const std::function<double(const double)> & f,
     const double xa,

@@ -63,6 +63,8 @@ class STKConnManager : public panzer::ConnManager {
 public:
    typedef typename panzer::ConnManager::LocalOrdinal LocalOrdinal;
    typedef typename panzer::ConnManager::GlobalOrdinal GlobalOrdinal;
+   typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::HostMirror GlobalOrdinalView;
+   typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::HostMirror LocalOrdinalView;
 
    STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB);
 
@@ -109,6 +111,15 @@ public:
      */
    virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const
    { return connSize_[localElmtId]; }
+
+   const GlobalOrdinalView getConnectivityView()
+   { return GlobalOrdinalView(connectivity_.data(), connectivity_.size()); }
+
+   const LocalOrdinalView getConnectivitySizeView()
+   { return LocalOrdinalView(connSize_.data(), connSize_.size()); }
+
+   const LocalOrdinalView getElementLidToConnView()
+   { return LocalOrdinalView(elmtLidToConn_.data(), elmtLidToConn_.size()); }
 
    /** Get the block ID for a particular element.
      *
@@ -224,8 +235,21 @@ protected:
                                 GlobalOrdinal & nodeOffset, GlobalOrdinal & edgeOffset,
                                 GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const;
 
+   /**
+    * @brief Loops over relations of a given rank for a specified element and adds a unique ID to the connectivity vector
+    *    
+    * @param[in] element Mesh element
+    * @param[in] subcellRank Rank of the subcell entities to identify
+    * @param[in] idCnt Number of IDs on the requested subcell type
+    * @param[in] offset Offset for requested subcell type
+    * @param[in,optional] maxIds If positive, maximum number of IDs to connect to this element. If 0 (default), add all IDs.
+    * 
+    * @pre Should call buildOffsetsAndIdCounts() to obtain \p idCnt and \p offset.
+    * @note The connectivity manager needs only the lowest order nodal information. 
+    *       Hence, maxIds should be set appropriately if the STK mesh is second order or higher.
+   */
    LocalOrdinal addSubcellConnectivities(stk::mesh::Entity element,unsigned subcellRank,
-                                         LocalOrdinal idCnt,GlobalOrdinal offset);
+                                         LocalOrdinal idCnt,GlobalOrdinal offset,const unsigned maxIds=0);
 
    void modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity element,
                                     unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,GlobalOrdinal offset);

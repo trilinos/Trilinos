@@ -106,7 +106,7 @@ namespace Intrepid2 {
           typedef Kokkos::pair<int,int> range_type;
           
           // parallel execution with serial interface
-          Kokkos::RangePolicy<DeviceType> policy(0, npts);
+          Kokkos::RangePolicy<typename DeviceType::execution_space> policy(0, npts);
           Kokkos::parallel_for(policy, KOKKOS_LAMBDA(int i) {
               // we evaluate a single point 
               const range_type pointRange = range_type(i,i+1);
@@ -118,7 +118,7 @@ namespace Intrepid2 {
               // wrap static workspace with a view; serial interface has a template view interface.
               // either view or dynrankview with a right size is okay.
               OutValueType workbuf[worksize];
-              Kokkos::View<OutValueType*,Kokkos::Impl::ActiveExecutionMemorySpace> work(&workbuf[0], worksize);
+              Kokkos::View<OutValueType*,Kokkos::AnonymousSpace> work(&workbuf[0], worksize);
               
               // evaluate basis using serial interface
               Impl::Basis_HGRAD_QUAD_Cn_FEM

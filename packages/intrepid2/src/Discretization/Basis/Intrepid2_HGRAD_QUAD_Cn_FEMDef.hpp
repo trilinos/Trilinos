@@ -208,7 +208,8 @@ namespace Intrepid2 {
              typename vinvValueType,        class ...vinvProperties>
     void
     Basis_HGRAD_QUAD_Cn_FEM::
-    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues( const typename DT::execution_space& space,
+                     Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                const EOperator operatorType ) {
@@ -221,7 +222,7 @@ namespace Intrepid2 {
       const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
       const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
-      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
       typedef typename inputPointViewType::value_type inputPointType;
 
@@ -231,7 +232,7 @@ namespace Intrepid2 {
 
       auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
       typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
-      workViewType  work(Kokkos::view_alloc("Basis_HGRAD_QUAD_Cn_FEM::getValues::work", vcprop), workSize, inputPoints.extent(0));
+      workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_QUAD_Cn_FEM::getValues::work", vcprop), workSize, inputPoints.extent(0));
 
       switch (operatorType) {
       case OPERATOR_VALUE: {
@@ -304,6 +305,9 @@ namespace Intrepid2 {
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
+      // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
+      // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
+      INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
       // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
       constexpr ordinal_type maxCardLine = Parameters::MaxOrder + 1;
       ordinal_type tags[maxCardLine*maxCardLine][4];

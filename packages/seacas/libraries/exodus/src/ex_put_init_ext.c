@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -58,7 +58,7 @@ static int ex_write_object_names(int exoid, const char *type, const char *dimens
       return (status); /* exit define mode and return */
     }
     ex__set_compact_storage(exoid, varid);
-#if NC_HAS_HDF5
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
     int fill = NC_FILL_CHAR;
     nc_def_var_fill(exoid, varid, 0, &fill);
 #endif
@@ -70,10 +70,10 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
                                   const char *status_dim_name, const char *id_array_dim_name,
                                   size_t count, int *dimension)
 {
-  int status;
 
   /* Can have nonzero model->num_elem_blk even if model->num_elem == 0 */
   if (count > 0) {
+    int status;
     if ((status = nc_def_dim(exoid, dimension_name, count, dimension)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of %ss in file id %d", type,
@@ -140,8 +140,8 @@ static int ex_write_map_params(int exoid, const char *map_name, const char *map_
   }
 
   /* Can have nonzero model->num_XXXX_map even if model->num_XXXX == 0 */
-  int status;
   if ((map_count) > 0) {
+    int status;
     if ((status = nc_def_dim(exoid, map_dim_name, map_count, map_dimension)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of %ss in file id %d",
@@ -178,7 +178,7 @@ static void invalidate_id_status(int exoid, const char *var_stat, const char *va
                                  int *ids)
 {
   if (count > 0) {
-    if (var_id != 0) {
+    if (var_id != NULL) {
       for (int i = 0; i < count; i++) {
         ids[i] = EX_INVALID_ID;
       }
@@ -187,7 +187,7 @@ static void invalidate_id_status(int exoid, const char *var_stat, const char *va
       (void)nc_put_var_int(exoid, id_var, ids);
     }
 
-    if (var_stat != 0) {
+    if (var_stat != NULL) {
       for (int i = 0; i < count; i++) {
         ids[i] = 0;
       }
@@ -209,11 +209,26 @@ static void invalidate_id_status(int exoid, const char *var_stat, const char *va
 
 int ex_put_init_ext(int exoid, const ex_init_params *model)
 {
-  int numdimdim, numnoddim, elblkdim, edblkdim, fablkdim, esetdim, fsetdim, elsetdim, nsetdim,
-      ssetdim, dim_str_name, dim[2], temp;
-  int nmapdim, edmapdim, famapdim, emapdim, timedim;
-  int status;
-  int title_len;
+  int numdimdim    = 0;
+  int numnoddim    = 0;
+  int elblkdim     = 0;
+  int edblkdim     = 0;
+  int fablkdim     = 0;
+  int esetdim      = 0;
+  int fsetdim      = 0;
+  int elsetdim     = 0;
+  int nsetdim      = 0;
+  int ssetdim      = 0;
+  int dim_str_name = 0;
+  int dim[2];
+  int temp      = 0;
+  int nmapdim   = 0;
+  int edmapdim  = 0;
+  int famapdim  = 0;
+  int emapdim   = 0;
+  int timedim   = 0;
+  int status    = 0;
+  int title_len = 0;
 #if 0
   /* used for header size calculations which are turned off for now */
   int header_size, fixed_var_size, iows;
@@ -519,12 +534,15 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
 
   /* leave define mode */
   if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Fill the id and status arrays with EX_INVALID_ID */
   {
-    int *  invalid_ids = NULL;
+    int   *invalid_ids = NULL;
     size_t maxset      = model->num_elem_blk;
     if (maxset < model->num_edge_blk) {
       maxset = model->num_edge_blk;

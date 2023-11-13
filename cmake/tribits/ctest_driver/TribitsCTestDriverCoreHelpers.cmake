@@ -38,7 +38,7 @@
 # @HEADER
 
 
-include(TribitsGetCDashUrlFromTagFile)
+include(TribitsGetCDashUrlsInsideCTestS)
 
 
 # Wrapper used for unit testing purposes
@@ -50,7 +50,7 @@ macro(extrarepo_execute_process_wrapper)
     if (NOT EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL STREQUAL "0")
       message(SEND_ERROR
         "Error: execute_process(${ARGN}) returned"
-	" '${EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL}'")
+        " '${EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL}'")
     endif()
   else()
     message("execute_process(${ARGN})")
@@ -136,12 +136,12 @@ function(tribits_clone_or_update_extrarepo  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
       set(CLONE_CMND_ARGS
         COMMAND "${GIT_EXECUTABLE}" clone
         ${CHECKOUT_BRANCH_ARG} -o ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
-	"${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
+        "${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
         WORKING_DIRECTORY "${${PROJECT_NAME}_SOURCE_DIRECTORY}"
         OUTPUT_FILE "${EXTRAREPO_CLONE_OUT_FILE}" )
     else()
       message(SEND_ERROR
-	"Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
+        "Error, Invalid EXTRAREPO_REPOTYPE_IN='${EXTRAREPO_REPOTYPE_IN}'!")
     endif()
 
     # Do the clone
@@ -249,8 +249,8 @@ macro(tribits_setup_packages)
   # Second, the extra repos do not even exist in the "driver" source
   # tree.
 
-  set(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
-  set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
+  set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  OFF)
+  set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES  FALSE)
   if (CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE)
     set(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
        "${PROJECT_BINARY_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}")
@@ -394,7 +394,7 @@ macro(enable_only_modified_packages)
       file(STRINGS ${EXTRAREPO_MODIFIED_FILES_FILE_NAME} EXTRAREPO_MODIFIED_FILES_STR)
       set(EXTRAREPO_FILES_STR "")
       foreach(STR_LINE ${EXTRAREPO_MODIFIED_FILES_STR})
-        append_string_var(EXTRAREPO_FILES_STR "${EXTRAREPO_DIR}/${STR_LINE}\n")
+        string(APPEND EXTRAREPO_FILES_STR "${EXTRAREPO_DIR}/${STR_LINE}\n")
       endforeach()
       file(APPEND "${MODIFIED_FILES_FILE_NAME}" ${EXTRAREPO_FILES_STR})
 
@@ -508,14 +508,14 @@ macro(enable_only_modified_packages)
   if (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
     if (NOT ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE)
       message(FATAL_ERROR
-	"Error, failing 'ALL_PACKAGES' only allowed with all-at-once mode!")
+        "Error, failing 'ALL_PACKAGES' only allowed with all-at-once mode!")
     endif()
     message("\nDirectly modified or failing non-disabled packages that need"
       " to be tested:  ALL_PACKAGES")
   else()
-    tribits_print_enabled_se_package_list(
+    tribits_print_package_list_enable_status(
       "\nDirectly modified or failing non-disabled packages that need to be tested"
-      ON FALSE )
+      INTERNAL ON NONEMPTY )
   endif()
 
 endmacro()
@@ -542,7 +542,7 @@ macro(select_final_set_of_packages_to_directly_test)
 
   set(${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST)
 
-  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES})
 
     set(PROCESS_THE_PACKAGE FALSE)
 
@@ -791,7 +791,7 @@ endmacro()
 
 
 # Helper macros to pass through common CMake configure arguments used by both
-# package-by-pacakge approach and all-at-once approach
+# package-by-package approach and all-at-once approach
 #
 macro(tribits_fwd_cmake_config_args_0)
   set( CONFIGURE_OPTIONS
@@ -954,7 +954,7 @@ macro(tribits_ctest_package_by_package)
     if (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
 
       message("${TRIBITS_PACKAGE}: Skipping configure due"
-	" to running in unit testing mode!")
+        " to running in unit testing mode!")
 
     else()
 
@@ -1001,7 +1001,7 @@ macro(tribits_ctest_package_by_package)
 
       if (NOT CTEST_DO_CONFIGURE AND CTEST_DO_SUBMIT)
         message("${TRIBITS_PACKAGE}: Skipping submitting configure"
-	  " and notes due to CTEST_DO_CONFIGURE='${CTEST_DO_CONFIGURE}'!")
+          " and notes due to CTEST_DO_CONFIGURE='${CTEST_DO_CONFIGURE}'!")
       elseif (CTEST_DO_SUBMIT)
         message("\nSubmitting configure and notes ...")
         tribits_ctest_submit( PARTS configure notes )
@@ -1025,7 +1025,7 @@ macro(tribits_ctest_package_by_package)
     if ( NOT PBP_CONFIGURE_PASSED AND CTEST_DO_BUILD )
 
       message("\n${TRIBITS_PACKAGE}: Skipping build due"
-	" to configure failing!")
+        " to configure failing!")
 
       set(PBP_BUILD_PASSED FALSE)
       set(PBP_BUILD_LIBS_PASSED FALSE)
@@ -1033,14 +1033,14 @@ macro(tribits_ctest_package_by_package)
     elseif (NOT CTEST_DO_BUILD)
 
       message("\n${TRIBITS_PACKAGE}: Skipping build due"
-	" to CTEST_DO_BUILD='${CTEST_DO_BUILD}'!")
+        " to CTEST_DO_BUILD='${CTEST_DO_BUILD}'!")
 
     elseif (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING OR
       CTEST_CONFIGURATION_UNIT_TESTING
       )
 
       message("\n${TRIBITS_PACKAGE}: Skipping build due"
-	" to running in unit testing mode!")
+        " to running in unit testing mode!")
 
     else()
 
@@ -1152,7 +1152,7 @@ macro(tribits_ctest_package_by_package)
           " exists so there were failed tests!")
       else()
         message("\n${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
-	  " does NOT exist so all tests passed!")
+          " does NOT exist so all tests passed!")
         set(PBP_TESTS_PASSED TRUE)
       endif()
       # 2009/12/05: ToDo: We need to add an argument to ctest_test(...)
@@ -1190,7 +1190,7 @@ macro(tribits_ctest_package_by_package)
     if (NOT PBP_BUILD_LIBS_PASSED AND CTEST_DO_MEMORY_TESTING)
 
       message("\n${TRIBITS_PACKAGE}: Skipping running memory checking"
-	 "tests since library build failed!\n")
+         "tests since library build failed!\n")
 
     elseif (NOT CTEST_DO_MEMORY_TESTING)
 
@@ -1209,7 +1209,7 @@ macro(tribits_ctest_package_by_package)
         BUILD "${CTEST_BINARY_DIRECTORY}"
         PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
         INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
-	)
+        )
       # ToDo: Determine if memory testing passed or not and affect overall
       # pass/fail!
 
@@ -1262,7 +1262,7 @@ endmacro()
 # ${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON but the target
 # <thePackage>_libs is attempted to be built anyway and we expect it to build
 # nothing and result in no error.  (The outer ctest -S driver is not smart
-# enough to know all the lgoic for if a package will actaully be enabled or
+# enough to know all the lgoic for if a package will actually be enabled or
 # not.  That is the job of the inner TriBITS dependency logic and
 # ${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.) Otherwise, with
 # CMake 3.19+, cmake_build() catches errors in undefined global build targets
@@ -1643,27 +1643,27 @@ macro(tribits_ctest_all_at_once)
 
   if (AAO_CONFIGURE_FAILED OR AAO_BUILD_FAILED OR AAO_INSTALL_FAILED)
     if (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
-      # Special value "ALL_PACAKGES" so that it will trigger enabling all
+      # Special value "ALL_PACKAGES" so that it will trigger enabling all
       # packages on the next CI iteration!
       set(${PROJECT_NAME}_FAILED_PACKAGES  ALL_PACKAGES)
     else()
       # Specific packages were selected to be tested so fail all of them!
       set(${PROJECT_NAME}_FAILED_PACKAGES  ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
     endif()
-    # NOTE: With the all-at-once appraoch, there is no way to determine which
+    # NOTE: With the all-at-once approach, there is no way to determine which
     # packages have build or install failures given the current ctest_build()
     # command.  And since some build targets don't get used in tests, we can't
     # look at what packages have test failures in order to know that a build
     # failure will cause a test failure.  And in the case of install failures,
     # those will never cause test failures.  Therefore, if there are any build
     # or install failures, we just have to assume that any tested package
-    # could have failed.  Hense, we set the above just like for a (global)
+    # could have failed.  Hence, we set the above just like for a (global)
     # configure failures.  Perhaps we could read the generated *.xml files to
-    # figure that out but that is not worth the work righ now.  The only bad
+    # figure that out but that is not worth the work right now.  The only bad
     # consequence of this is that a CI build would end up building and testing
-    # every package even if only one dowstream package had a build failure,
+    # every package even if only one downstream package had a build failure,
     # for example.  That is just one of the downsides of the all-at-once
-    # appraoch vs. the package-by-package appraoch.
+    # approach vs. the package-by-package approach.
   elseif (FAILED_TEST_LOG_FILE)
     tribits_get_failed_packages_from_failed_tests("${FAILED_TEST_LOG_FILE}"
       ${PROJECT_NAME}_FAILED_PACKAGES )

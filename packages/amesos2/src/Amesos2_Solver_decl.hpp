@@ -168,7 +168,6 @@ namespace Amesos2 {
 
     //@} End Mathematical Functions
 
-
     /** \name Parameter Methods
      * @{
      */

@@ -96,6 +96,35 @@ void StochasticProblem<Real>::makeObjectiveStochastic(ParameterList             
 }
 
 template<typename Real>
+void StochasticProblem<Real>::makeObjectiveStochastic(const Ptr<RandVarFunctional<Real>> &rvf,
+                                                      ParameterList                      &list,
+                                                      const Ptr<SampleGenerator<Real>>   &fsampler,
+                                                      const Ptr<SampleGenerator<Real>>   &gsampler,
+                                                      const Ptr<SampleGenerator<Real>>   &hsampler) {
+  // Throw an exception if problem has been finalized
+  ROL_TEST_FOR_EXCEPTION(isFinalized(),std::invalid_argument,
+    ">>> ROL::StochasticProblem::makeObjectiveStochastic: Cannot set stochastic objective after problem has been finalized!");
+  // Throw an exception if the value sampler is null
+  ROL_TEST_FOR_EXCEPTION(fsampler == nullPtr,std::invalid_argument,
+    ">>> ROL::StochasticProblem::makeObjectiveStochastic: Objective function value sampler is null!");
+  // Throw an exception if the value sampler is null
+  ROL_TEST_FOR_EXCEPTION(rvf == nullPtr,std::invalid_argument,
+    ">>> ROL::StochasticProblem::makeObjectiveStochastic: Risk measure is null!");
+  // Store original objective function for reuse later
+  ORIGINAL_obj_ = INPUT_obj_;
+  // Check samplers
+  Ptr<SampleGenerator<Real>> _gsampler, _hsampler;
+  _gsampler = (gsampler == nullPtr ?  fsampler : gsampler);
+  _hsampler = (hsampler == nullPtr ? _gsampler : hsampler);
+  // Determine Stochastic Objective Type
+  needRiskLessObj_ = false;
+  objList_  = makePtr<ParameterList>();
+  *objList_ = list;
+  //objList_->sublist("SOL") = list.sublist("SOL").sublist("Objective");
+  INPUT_obj_ = makePtr<StochasticObjective<Real>>(ORIGINAL_obj_,rvf,fsampler,_gsampler,_hsampler);
+}
+
+template<typename Real>
 void StochasticProblem<Real>::makeConstraintStochastic(std::string                       name,
                                                        ParameterList                    &list,
                                                        const Ptr<SampleGenerator<Real>> &sampler,

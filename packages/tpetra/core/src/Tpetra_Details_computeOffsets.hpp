@@ -127,7 +127,7 @@ public:
     functor_type functor (offsets, counts);
     OffsetType total (0);
     const char funcName[] = "Tpetra::Details::computeOffsetsFromCounts";
-    Kokkos::parallel_scan (range, functor, total, funcName);
+    Kokkos::parallel_scan (funcName, range, functor, total);
     return total;
   }
 
@@ -189,15 +189,20 @@ public:
        const CountType count)
   {
     const SizeType numOffsets (offsets.extent (0));
+    if(numOffsets == SizeType(0))
+    {
+      // Special case that is possible with zero rows
+      return 0;
+    }
     using range_type = Kokkos::RangePolicy<ExecutionSpace, SizeType>;
     range_type range (execSpace, 0, numOffsets);
     using functor_type =
       ComputeOffsetsFromConstantCount<OffsetType, CountType, SizeType>;
     functor_type functor (offsets, count);
-    const OffsetType total = numOffsets*count;
+    const OffsetType total = (numOffsets - 1) * count;
     const char funcName[] =
       "Tpetra::Details::computeOffsetsFromConstantCount";
-    Kokkos::parallel_for (range, functor, funcName);
+    Kokkos::parallel_for (funcName, range, functor);
     return total;
   }
 
@@ -246,9 +251,9 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
 {
   static_assert (Kokkos::is_execution_space<ExecutionSpace>::value,
                  "ExecutionSpace must be a Kokkos execution space.");
-  static_assert (Kokkos::Impl::is_view<OffsetsViewType>::value,
+  static_assert (Kokkos::is_view<OffsetsViewType>::value,
                  "OffsetsViewType (the type of ptr) must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<CountsViewType>::value,
+  static_assert (Kokkos::is_view<CountsViewType>::value,
                  "CountsViewType (the type of counts) must be a Kokkos::View.");
   static_assert (std::is_same<typename OffsetsViewType::value_type,
                    typename OffsetsViewType::non_const_value_type>::value,
@@ -292,7 +297,7 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
       typename offsets_device_type::memory_space;
     using counts_memory_space = typename CountsViewType::memory_space;
     constexpr bool countsAccessibleFromOffsetsExecSpace =
-      Kokkos::Impl::SpaceAccessibility<
+      Kokkos::SpaceAccessibility<
         offsets_memory_space, counts_memory_space>::accessible;
     if (countsAccessibleFromOffsetsExecSpace) {
       // NOTE (mfh 21 Aug 2019) Some compilers have trouble deducing
@@ -306,7 +311,7 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
       using Kokkos::WithoutInitializing;
       counts_copy = counts_copy_type
         (view_alloc ("counts_copy", WithoutInitializing), numCounts);
-      Kokkos::deep_copy (counts_copy, counts);
+      Kokkos::deep_copy (execSpace, counts_copy, counts);
       counts_a = counts_copy;
     }
 
@@ -359,7 +364,7 @@ typename OffsetsViewType::non_const_value_type
 computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
                                  const CountType count)
 {
-  static_assert (Kokkos::Impl::is_view<OffsetsViewType>::value,
+  static_assert (Kokkos::is_view<OffsetsViewType>::value,
                  "ptr must be a Kokkos::View.");
   static_assert (std::is_same<typename OffsetsViewType::value_type,
                    typename OffsetsViewType::non_const_value_type>::value,
@@ -385,7 +390,7 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
     using functor_type =
       ComputeOffsetsFromConstantCount<offset_type, CT, SizeType>;
     execution_space execSpace;
-    functor_type::run (execSpace, ptr, count);
+    total = functor_type::run (execSpace, ptr, count);
   }
   return total;
 }

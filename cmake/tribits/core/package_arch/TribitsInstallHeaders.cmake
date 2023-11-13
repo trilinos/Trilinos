@@ -41,7 +41,6 @@
 include(CMakeParseArguments)
 
 
-#
 # @FUNCTION: tribits_install_headers()
 #
 # Function used to (optionally) install header files using ``install()``
@@ -77,7 +76,7 @@ include(CMakeParseArguments)
 #     If specified, then ``COMPONENT <component>`` will be passed into
 #     ``install()``.  Otherwise, ``COMPONENT ${PROJECT_NAME}`` will get used.
 #
-# If `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE``, then the
+# If `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FALSE``, then the
 # headers will not get installed.
 #
 function(tribits_install_headers)

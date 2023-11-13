@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,9 +7,7 @@
  */
 /* cgidef.h   CGI enumerated type definitions for C programs
  */
-
-#ifndef CGIDEF_H
-#define CGIDEF_H
+#pragma once
 
 /* escape enumerations */
 #define XEMFNM -28372 /* metafile name */
@@ -19,7 +17,7 @@
 #define XEBELL -1003  /* ring the bell */
 
 /* used in many places */
-#define CNO 0
+#define CNO  0
 #define CYES 1
 
 /* force clear viewsurface (argument of CPDS) */
@@ -28,7 +26,7 @@
 
 /* clip indicator */
 #define COFF 0
-#define CON 1
+#define CON  1
 
 /* drawing surface clip indicator */
 #define CDCOFF 0
@@ -36,7 +34,7 @@
 #define CVPORT 2
 
 /* error handling flag (arg of CERHCT) */
-#define CEHON 0
+#define CEHON  0
 #define CEHROF 1
 #define CEHDOF 2
 
@@ -50,8 +48,8 @@
 #define CSOFT 1
 
 /* display type (arg of CQD) */
-#define CVECT 0
-#define CRAST 1
+#define CVECT  0
+#define CRAST  1
 #define COTHER 2
 
 /* dynamic modification (arg of CQD, etc) */
@@ -60,11 +58,11 @@
 #define CIMM 2
 
 /* pixel location relative to coordinates (arg of CQD) */
-#define CPXON 0
+#define CPXON  0
 #define CPXBET 1
 
 /* support indicator */
-#define CSNO 0
+#define CSNO  0
 #define CSYES 1
 #define CSUNR 2
 
@@ -83,20 +81,20 @@
 
 /* text precision */
 #define CSTRNG 0
-#define CCHAR 1
+#define CCHAR  1
 #define CSTROK 2
 
 /* text path */
 #define CTPRIT 0
 #define CTPLFT 1
-#define CTPUP 2
+#define CTPUP  2
 #define CTPDWN 3
 
 /* text horizontal alignment */
 #define CTALFT 0
 #define CTACTR 1
 #define CTARIT 2
-#define CTANH 3
+#define CTANH  3
 #define CTACOH 4
 
 /* text vertical alignment */
@@ -105,7 +103,7 @@
 #define CTAHAF 2
 #define CTABAS 3
 #define CTABOT 4
-#define CTANV 5
+#define CTANV  5
 #define CTACOV 6
 
 /* interior style */
@@ -140,38 +138,38 @@
 #define CLOCAL 2
 
 /* pattern transformation support */
-#define CPTNO 0
+#define CPTNO  0
 #define CPTUNS 1
 #define CPTFUL 2
 
 /* color selection mode availability (arg of CQC) */
-#define CCLRI 0
+#define CCLRI  0
 #define CCLRID 1
 
 /* color overwrite capability (arg of CQC) */
-#define CCSUB 0
-#define CCADD 1
-#define CCREP 2
+#define CCSUB  0
+#define CCADD  1
+#define CCREP  2
 #define CCDMOD 3
 
 /* response validity (arg of most CQxxxx routines) */
 #define CINVAL 0
-#define CVAL 1
+#define CVAL   1
 
 /* input class */
 #define CLOCAT 0
 /* #define CSTROK 1 */
 #define CVALUA 2
 #define CCHOIC 3
-#define CPICK 4
+#define CPICK  4
 /* #define CSTRNG 5 */
 #define CRASTR 6
-#define CGEN 7
+#define CGEN   7
 
 /* request status */
 #define CTRIGR 0
 #define CBREAK 1
-#define CTIME 2
+#define CTIME  2
 #define CMEASC 3
 
 /* input device state */
@@ -189,11 +187,9 @@
 
 /* action required flag */
 #define CNOACT 0
-#define CACT 1
+#define CACT   1
 
 /* pixel validity flag (arg of CGPXA) */
 #define CVNONE 0
-#define CVALL 1
+#define CVALL  1
 #define CVSOME 2
-
-#endif

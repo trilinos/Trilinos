@@ -17,7 +17,7 @@
       <Parameter name="aggregation: max selected neighbors" type="int"    value="0"/>
       <Parameter name="aggregation: min agg size"           type="int"    value="4"/>
       <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
-      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>      
+      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
     </ParameterList>
 
     <ParameterList name="myTentativePFact">

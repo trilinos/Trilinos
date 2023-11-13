@@ -326,7 +326,7 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-    PHX::View<PHX::View<const ScalarT**>*> kokkosFieldMults_;
+    PHX::View<PHX::UnmanagedView<const ScalarT**>*> kokkosFieldMults_;
 
       /**
        *  \brief The number of quadrature points for each cell.
@@ -353,6 +353,9 @@ namespace panzer
        * \brief If set to true, device shared memory will be used.
        */
       bool use_shared_memory;
+
+    /// Temporary for non-shared calculations
+    PHX::View<ScalarT*> tmp_;
 
   }; // end of class Integrator_DivBasisTimesScalar
 

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -23,7 +23,7 @@ int main(int argc, char **argv)
   int         num_elem      = 20;
   int         num_elem_blk  = 5;
   int         num_node_sets = 2;
-  int         num_side_sets = 2;
+  int         num_side_sets = 3;
 
   /* create EXODUS II file */
   int exoid = ex_create("twod.e",       /* filename path */
@@ -77,14 +77,14 @@ int main(int argc, char **argv)
 
   {
     int node_map[] = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130};
-    ex_put_node_num_map(exoid, node_map);
+    ex_put_id_map(exoid, EX_NODE_MAP, node_map);
   }
 
   /* write element order map */
   {
     int elem_map[] = {11,  21,  31,  41,  52,  62,  72,  82,  93,  103,
                       113, 123, 133, 143, 153, 163, 174, 184, 194, 204};
-    ex_put_elem_num_map(exoid, elem_map);
+    ex_put_id_map(exoid, EX_ELEM_MAP, elem_map);
   }
 
   /* write element block parameters */
@@ -161,20 +161,23 @@ int main(int argc, char **argv)
 
   {
     /* write individual side sets */
-    int num_face_in_sset[] = {4, 4};
-    int ssids[]            = {100, 200};
-    int ss1el[]            = {1, 2, 3, 4};
-    int ss1si[]            = {1, 1, 1, 1};
-
-    int         ss2el[]      = {5, 7, 6, 8};
-    int         ss2si[]      = {1, 1, 1, 1};
-    const char *sset_names[] = {"A", "B"};
+    int         num_face_in_sset[] = {4, 4, 4};
+    int         ssids[]            = {100, 200, 300};
+    int         ss1el[]            = {1, 2, 3, 4};
+    int         ss1si[]            = {1, 1, 1, 1};
+    int         ss2el[]            = {5, 7, 6, 8};
+    int         ss2si[]            = {1, 1, 1, 1};
+    int         ss3el[]            = {9, 10, 11, 12};
+    int         ss3si[]            = {1, 1, 2, 2};
+    const char *sset_names[]       = {"A", "B", "C"};
 
     ex_put_set_param(exoid, EX_SIDE_SET, ssids[0], num_face_in_sset[0], 0);
     ex_put_set_param(exoid, EX_SIDE_SET, ssids[1], num_face_in_sset[1], 0);
+    ex_put_set_param(exoid, EX_SIDE_SET, ssids[2], num_face_in_sset[2], 0);
 
     ex_put_set(exoid, EX_SIDE_SET, ssids[0], ss1el, ss1si);
     ex_put_set(exoid, EX_SIDE_SET, ssids[1], ss2el, ss2si);
+    ex_put_set(exoid, EX_SIDE_SET, ssids[2], ss3el, ss3si);
     ex_put_names(exoid, EX_SIDE_SET, (char **)sset_names);
   }
 
@@ -289,7 +292,7 @@ int main(int argc, char **argv)
           nvar[j] = (double)k + ((double)(j + 1) * time_value);
         }
 
-        ex_put_nodal_var(exoid, whole_time_step, k + 1, num_nodes, nvar);
+        ex_put_var(exoid, whole_time_step, EX_NODAL, k + 1, 1, num_nodes, nvar);
       }
 
 #if 0

@@ -72,101 +72,103 @@ namespace
 
 void testSubMesh(stk::unit_test_util::BulkDataTester &oldBulkData, stk::mesh::Selector select, int elementToTestId, size_t goldNumberNodes, size_t goldNumberElements)
 {
-    const stk::mesh::MetaData &oldMetaData = oldBulkData.mesh_meta_data();
-    stk::mesh::MetaData newMetaData;
-    stk::unit_test_util::BulkDataTester newBulkData(newMetaData, MPI_COMM_SELF);
+  const stk::mesh::MetaData &oldMetaData = oldBulkData.mesh_meta_data();
+  stk::mesh::MetaData newMetaData;
+  newMetaData.use_simple_fields();
+  stk::unit_test_util::BulkDataTester newBulkData(newMetaData, MPI_COMM_SELF);
 
-    stk::tools::copy_mesh(oldBulkData, select, newBulkData);
+  stk::tools::copy_mesh(oldBulkData, select, newBulkData);
 
-    const stk::mesh::PartVector &oldParts = oldMetaData.get_parts();
-    const stk::mesh::PartVector &newParts = newMetaData.get_parts();
-    ASSERT_EQ(oldParts.size(), newParts.size());
-    for(size_t i=0; i<oldParts.size(); i++)
-    {
-        EXPECT_EQ(oldParts[i]->name(), newParts[i]->name());
-        EXPECT_EQ(stk::io::is_part_io_part(*oldParts[i]), stk::io::is_part_io_part(*newParts[i]));
-    }
+  const stk::mesh::PartVector &oldParts = oldMetaData.get_parts();
+  const stk::mesh::PartVector &newParts = newMetaData.get_parts();
+  ASSERT_EQ(oldParts.size(), newParts.size());
+  for(size_t i=0; i<oldParts.size(); i++)
+  {
+    EXPECT_EQ(oldParts[i]->name(), newParts[i]->name());
+    EXPECT_EQ(stk::io::is_part_io_part(*oldParts[i]), stk::io::is_part_io_part(*newParts[i]));
+  }
 
-    std::vector<size_t> entityCounts;
-    stk::mesh::count_entities(newMetaData.universal_part(), newBulkData, entityCounts);
-    EXPECT_EQ(goldNumberElements, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ(goldNumberNodes, entityCounts[stk::topology::NODE_RANK]);
+  std::vector<size_t> entityCounts;
+  stk::mesh::count_entities(newMetaData.universal_part(), newBulkData, entityCounts);
+  EXPECT_EQ(goldNumberElements, entityCounts[stk::topology::ELEMENT_RANK]);
+  EXPECT_EQ(goldNumberNodes, entityCounts[stk::topology::NODE_RANK]);
 
-    stk::mesh::Entity elementParallel = oldBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
-    stk::mesh::Entity elementSerial = newBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
-    EXPECT_EQ(oldBulkData.identifier(elementParallel), newBulkData.identifier(elementSerial));
-    unsigned numNodesParallel = oldBulkData.num_nodes(elementParallel);
-    unsigned numNodesSerial = newBulkData.num_nodes(elementSerial);
-    ASSERT_EQ(numNodesParallel, numNodesSerial);
+  stk::mesh::Entity elementParallel = oldBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
+  stk::mesh::Entity elementSerial = newBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToTestId);
+  EXPECT_EQ(oldBulkData.identifier(elementParallel), newBulkData.identifier(elementSerial));
+  unsigned numNodesParallel = oldBulkData.num_nodes(elementParallel);
+  unsigned numNodesSerial = newBulkData.num_nodes(elementSerial);
+  ASSERT_EQ(numNodesParallel, numNodesSerial);
 
-    const stk::mesh::Entity *nodesParallel = oldBulkData.begin_nodes(elementParallel);
-    const stk::mesh::Entity *nodesSerial = newBulkData.begin_nodes(elementSerial);
-    std::set<stk::mesh::EntityId> parallelNodeIds;
-    std::set<stk::mesh::EntityId> serialNodeIds;
-    for(unsigned i = 0; i < numNodesParallel; i++)
-    {
-        parallelNodeIds.insert(oldBulkData.identifier(nodesParallel[i]));
-        serialNodeIds.insert(newBulkData.identifier(nodesSerial[i]));
-    }
-    EXPECT_TRUE(parallelNodeIds == serialNodeIds);
+  const stk::mesh::Entity *nodesParallel = oldBulkData.begin_nodes(elementParallel);
+  const stk::mesh::Entity *nodesSerial = newBulkData.begin_nodes(elementSerial);
+  std::set<stk::mesh::EntityId> parallelNodeIds;
+  std::set<stk::mesh::EntityId> serialNodeIds;
+  for(unsigned i = 0; i < numNodesParallel; i++)
+  {
+    parallelNodeIds.insert(oldBulkData.identifier(nodesParallel[i]));
+    serialNodeIds.insert(newBulkData.identifier(nodesSerial[i]));
+  }
+  EXPECT_TRUE(parallelNodeIds == serialNodeIds);
 
 
-    const stk::mesh::FieldVector &oldFields = oldMetaData.get_fields();
-    const stk::mesh::FieldVector &newFields = newMetaData.get_fields();
-    ASSERT_EQ(oldFields.size(), newFields.size());
-    for(size_t i=0; i<oldFields.size(); i++)
-    {
-        EXPECT_EQ(oldFields[i]->name(), newFields[i]->name());
-    }
+  const stk::mesh::FieldVector &oldFields = oldMetaData.get_fields();
+  const stk::mesh::FieldVector &newFields = newMetaData.get_fields();
+  ASSERT_EQ(oldFields.size(), newFields.size());
+  for(size_t i=0; i<oldFields.size(); i++)
+  {
+    EXPECT_EQ(oldFields[i]->name(), newFields[i]->name());
+  }
 }
 
 TEST(CloningParallelMesh, destinationHasMpiCommSelf_destinationHasAuraEntities)
 {
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int numProcs = -1;
-    MPI_Comm_size(comm, &numProcs);
-    if(numProcs == 2)
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int numProcs = -1;
+  MPI_Comm_size(comm, &numProcs);
+  if(numProcs == 2)
+  {
+    std::string exodusFileName = "generated:1x1x4|sideset:xXyYzZ|nodeset:xXyYzZ";
+    const int spatialDim = 3;
+    stk::mesh::MetaData stkMeshMetaData(spatialDim);
+    stkMeshMetaData.use_simple_fields();
+    stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
+
+    stk::io::StkMeshIoBroker exodusFileReader(comm);
+
+    exodusFileReader.set_bulk_data(stkMeshBulkData);
+    exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+    exodusFileReader.create_input_mesh();
+    exodusFileReader.populate_bulk_data();
+
     {
-        std::string exodusFileName = "generated:1x1x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        const int spatialDim = 3;
-        stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
+      stk::mesh::Selector sel = stkMeshMetaData.universal_part();
+      int elementToTestId = 3;
+      size_t goldNumberNodes = 16;
+      size_t goldNumberElements = 3;
 
-        stk::io::StkMeshIoBroker exodusFileReader(comm);
-
-        exodusFileReader.set_bulk_data(stkMeshBulkData);
-        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-        exodusFileReader.create_input_mesh();
-        exodusFileReader.populate_bulk_data();
-
-        {
-            stk::mesh::Selector sel = stkMeshMetaData.universal_part();
-            int elementToTestId = 3;
-            size_t goldNumberNodes = 16;
-            size_t goldNumberElements = 3;
-
-            testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements);
-        }
-
-        {
-            stk::mesh::Selector sel = stkMeshMetaData.locally_owned_part() | stkMeshMetaData.globally_shared_part();
-            int elementToTestId = 2 + stkMeshBulkData.parallel_rank();
-            size_t goldNumberNodes = 12;
-            size_t goldNumberElements = 2;
-
-            testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements);
-        }
-
-        {
-            stk::mesh::Part *part = stkMeshMetaData.get_part("block_1");
-            stk::mesh::Selector sel = *part;
-            int elementToTestId = 2 + stkMeshBulkData.parallel_rank();
-            size_t goldNumberNodes = 16;
-            size_t goldNumberElements = 3;
-
-            testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements);
-        }
+      testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements);
     }
+
+    {
+      stk::mesh::Selector sel = stkMeshMetaData.locally_owned_part() | stkMeshMetaData.globally_shared_part();
+      int elementToTestId = 2 + stkMeshBulkData.parallel_rank();
+      size_t goldNumberNodes = 12;
+      size_t goldNumberElements = 2;
+
+      testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements);
+    }
+
+    {
+      stk::mesh::Part *part = stkMeshMetaData.get_part("block_1");
+      stk::mesh::Selector sel = *part;
+      int elementToTestId = 2 + stkMeshBulkData.parallel_rank();
+      size_t goldNumberNodes = 16;
+      size_t goldNumberElements = 3;
+
+      testSubMesh(stkMeshBulkData, sel, elementToTestId,  goldNumberNodes, goldNumberElements);
+    }
+  }
 }
 
 }

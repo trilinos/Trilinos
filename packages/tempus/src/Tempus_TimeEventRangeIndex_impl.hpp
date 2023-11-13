@@ -14,7 +14,7 @@ namespace Tempus {
 
 template<class Scalar>
 TimeEventRangeIndex<Scalar>::TimeEventRangeIndex()
-  : start_(0), stop_(0), stride_(1)
+  : start_(0), stop_(0), stride_(1), numEvents_(1)
 {
   this->setType("Range Index");
   std::ostringstream oss;
@@ -27,6 +27,7 @@ TimeEventRangeIndex<Scalar>::TimeEventRangeIndex()
 template<class Scalar>
 TimeEventRangeIndex<Scalar>::TimeEventRangeIndex(
   int start, int stop, int stride, std::string name)
+  : start_(0), stop_(0), stride_(1), numEvents_(1)
 {
   this->setType("Range Index");
   if (name == "") {

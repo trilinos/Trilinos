@@ -67,7 +67,7 @@ bool has_nodes_in_part(const stk::mesh::BulkData& bulk, const stk::mesh::Part* p
   unsigned localCount = stk::mesh::count_selected_entities(*part, bulk.buckets(stk::topology::NODE_RANK));
   unsigned globalCount;
 
-  MPI_Allreduce(&localCount, &globalCount, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&localCount, &globalCount, 1, MPI_UNSIGNED, MPI_SUM, bulk.parallel());
 
   return (globalCount > 0);
 }
@@ -91,7 +91,7 @@ void disconnect_user_blocks_locally(stk::mesh::BulkData& bulk, const BlockPairVe
 }
 
 void disconnect_user_blocks_globally(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect,
-                                         LinkInfo& info)
+                                     LinkInfo& info)
 {
   info.startTime = stk::wall_time();
 

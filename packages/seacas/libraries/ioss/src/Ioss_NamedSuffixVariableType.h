@@ -1,12 +1,13 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef IOSS_Ioss_NamedSuffixVariableType_h
-#define IOSS_Ioss_NamedSuffixVariableType_h
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <string>
@@ -14,7 +15,7 @@
 #include <Ioss_VariableType.h>
 
 namespace Ioss {
-  class NamedSuffixVariableType : public VariableType
+  class IOSS_EXPORT NamedSuffixVariableType : public VariableType
   {
   public:
     //  'which' is 1-based
@@ -40,5 +41,3 @@ namespace Ioss {
     std::vector<std::string> suffixList{};
   };
 } // namespace Ioss
-
-#endif

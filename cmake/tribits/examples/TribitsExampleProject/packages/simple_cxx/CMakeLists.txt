@@ -8,6 +8,7 @@ tribits_package( SimpleCxx  ENABLE_SHADOWING_WARNINGS  CLEANED )
 #
 include(CheckFor__int64)
 check_for___int64(HAVE_SIMPLECXX___INT64)
+tribits_pkg_export_cache_var(HAVE_SIMPLECXX___INT64)
 
 #
 # C) Set up package-specific options
@@ -20,7 +21,18 @@ tribits_add_show_deprecated_warnings_option()
 #
 add_subdirectory(src)
 tribits_add_test_directories(test)
-#tribits_add_example_directories(example)
+
+# Set a variable that will be used in downstream packages
+
+if (SimpleCxx_ENABLE_SimpleTpl)
+  set(simpletplText "simpletpl ")
+else()
+  set(simpletplText)
+endif()
+
+global_set(EXPECTED_SIMPLECXX_AND_DEPS
+  "SimpleCxx ${simpletplText}headeronlytpl")
+tribits_pkg_export_cache_var(EXPECTED_SIMPLECXX_AND_DEPS)
 
 #
 # E) Do standard post processing

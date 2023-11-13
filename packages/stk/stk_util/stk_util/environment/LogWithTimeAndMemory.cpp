@@ -19,8 +19,9 @@ void log_with_time_and_memory(MPI_Comm communicator, const std::string &message)
     static double startTime = stk::wall_time();
     double now = stk::wall_time();
 
-    sierra::Env::outputP0() << "[time:" << std::fixed << std::setprecision(3) << std::setw(10) << now-startTime << " s, hwm:"
-              << std::setfill(' ') << std::right << std::setw(8) << stk::human_bytes(hwm_avg) << "] "<< message << std::endl;
+    sierra::Env::outputP0() << "[time:" << std::right << std::fixed << std::setprecision(3) << std::setw(10)
+                            << now-startTime << " s, hwm:" << std::setfill(' ') << std::right << std::setw(8)
+                            << stk::human_bytes(hwm_avg) << "] "<< message << std::endl;
 }
 
 }

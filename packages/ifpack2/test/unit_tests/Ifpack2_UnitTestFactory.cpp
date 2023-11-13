@@ -62,6 +62,7 @@ for preconditioners it produces.
 #include <Tpetra_BlockCrsMatrix.hpp>
 
 #include <Ifpack2_BlockRelaxation.hpp>
+#include <type_traits>
 
 namespace {
 using Tpetra::global_size_t;
@@ -132,6 +133,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, Test0, Scalar, LocalOrdinal, G
   TEST_EQUALITY(prec_riluk != Teuchos::null, true);
 
   check_precond_basics(prec_riluk, out, success);
+
+  // Avoid unsupported complex types for now. Can be remove on next KokkosKernels integration
+  if constexpr (std::is_arithmetic_v<Scalar>) {
+    RCP<prec_type> prec_mdf = factory.create<row_matrix_type> ("MDF", crsmatrix);
+    TEST_EQUALITY(prec_mdf != Teuchos::null, true);
+
+    check_precond_basics(prec_mdf, out, success);
+  }
 
   RCP<prec_type> prec_relax = factory.create<row_matrix_type> ("RELAXATION", crsmatrix);
   TEST_EQUALITY(prec_relax != Teuchos::null, true);

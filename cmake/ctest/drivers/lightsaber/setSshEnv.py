@@ -1,7 +1,13 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 import pwd
-import commands
+import sys
+# support major versions 2 and 3
+if sys.version_info < (3,0):
+  import commands as subp
+else:
+  import subprocess as subp
 import re
 
 #
@@ -12,10 +18,11 @@ import re
 #
 # It assumes that ssh creates files of the form /tmp/ssh-Abcdefg12345/agent.12345 .
 #
-# TODO 1: It would be better to skip the socket query and instead look directly for the ssh-agent lock files.
-
-# Fingerprint of identity that you will use. You can find it with "ssh-add -l".
+# Fingerprint of the ssh keypair that you will use.  This is the only line of this script that you need to modify.
+# You can find the fingerprint with the command "ssh-keygen -lf /path/to/your/private/key/file".
+# Important: You must delete the string after the fingerprint itself that contains the key filename and type.
 keyFingerprint = "2048 ad:dc:eb:e4:78:a1:e3:e6:7e:ee:9d:05:43:97:9a:89 csiefer@lightsaber.srn.sandia.gov (RSA)"
+
 # socket query tool
 socketCommand="/usr/sbin/ss"
 
@@ -25,16 +32,17 @@ if shell == "/bin/bash" or shell == "/bin/sh":
 elif shell == "/bin/tcsh" or shell == "/bin/csh":
    envCmd="setenv SSH_AUTH_SOCK "
 else:
-  print "Only bash, csh, and tcsh are supported."
+  print ("Only bash, csh, and tcsh are supported.")
   quit()
 
 # Your username.
 userid = pwd.getpwuid(os.getuid())[0]
-[status,charlist]=commands.getstatusoutput(socketCommand + " -xl | grep -o '/tmp/ssh-[[:alnum:]]*/agent.[[:digit:]]*'")
+[status,charlist]=subp.getstatusoutput(socketCommand + " -xl | grep -o '/tmp/ssh-[[:alnum:]]*/agent.[[:digit:]]*'")
 # convert raw characters into list
 agentList=[s.strip() for s in charlist.splitlines()]
 agentFound=0
 keyFound=0
+myagent = ""
 for agent in agentList:
   # See if this is your agent by checking ownership of root of lock directory
   # Check only the root, because if it's not yours, you can't see down into it.
@@ -48,19 +56,20 @@ for agent in agentList:
     dirOwner = pwd.getpwuid(st.st_uid).pw_name
     if dirOwner == userid:
       agentFound=1
+      myagent = agent
       # Your ssh agent has been found
       sshAgentCmd="SSH_AUTH_SOCK=" + agent + " ssh-add -l"
-      [status,result]=commands.getstatusoutput(sshAgentCmd)
+      [status,result]=subp.getstatusoutput(sshAgentCmd)
       keyList=[s.strip() for s in result.splitlines()]
 
       # Check whether this key's fingerprint matches the desired key's
       for key in keyList:
         if keyFingerprint in key:
           keyFound=1
-          print envCmd + agent
+          print (envCmd + myagent)
           break
 
-# If no key matches, just use the last agent found
+# If no key matches, just use the last owned agent found
 if keyFound == 0 and agentFound == 1:
-  #print "export SSH_AUTH_SOCK=" + agent
-  print envCmd + agent
+  #print ("export SSH_AUTH_SOCK=" + myagent)
+  print (envCmd + myagent)

@@ -40,7 +40,7 @@
 
 #cmakedefine STK_HAVE_BOOST
 
-#cmakedefine STK_HAVE_KOKKOSCORE
+#cmakedefine STK_HAVE_KOKKOS
 
 #cmakedefine STK_HAVE_STKMESH
 
@@ -48,9 +48,7 @@
 
 #cmakedefine STK_HAVE_STKNGP_TEST
 
-#cmakedefine HAVE_MPI
-
-#cmakedefine HAVE_STK_CUDA
+#cmakedefine STK_HAS_MPI
 
 #cmakedefine STK_VOLATILE_SIMD
 

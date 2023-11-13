@@ -63,7 +63,7 @@ namespace ADR {
       ADR1DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
 
-		private: 
+		private:
 
 			//domain definition
 			Scalar xleft = 0.0;
@@ -98,8 +98,8 @@ namespace ADR {
       //this->A_ = Galeri::Xpetra::TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, 2.0, -1.0, -1.0);
       Teuchos::RCP<Matrix> mtx = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(this->Map_, 3);
 
-      LocalOrdinal NumMyElements = this->Map_->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = this->Map_->getNodeElementList();
+      LocalOrdinal NumMyElements = this->Map_->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = this->Map_->getLocalElementList();
       GlobalOrdinal indexBase = this->Map_->getIndexBase();
 
       Teuchos::RCP<const Teuchos::Comm<int> > comm = this->Map_->getComm();
@@ -156,7 +156,7 @@ namespace ADR {
 					Values [1] = Values[1] -  diff_prime( xleft + MyGlobalElements[i]*dx )/(2.0 * dx);
   
 					//Advective term
-					Values [0] = Values[0] - adv( xleft + MyGlobalElements[i]*dx )/(2.0 * dx); 
+					Values [0] = Values[0] - adv( xleft + MyGlobalElements[i]*dx )/(2.0 * dx);
 					Values [1] = Values[1] + adv( xleft + MyGlobalElements[i]*dx )/(2.0 * dx);
 
           NumEntries = 2;
@@ -169,10 +169,10 @@ namespace ADR {
         mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
 
         // Put in the diagonal entry
-				//Diffusion 
+				//Diffusion
 				Scalar diag_entry = a * diff( xleft + MyGlobalElements[i]*dx )/(dx * dx);
 				//Reaction
-				diag_entry = diag_entry + reac( xleft + MyGlobalElements[i]*dx ); 
+				diag_entry = diag_entry + reac( xleft + MyGlobalElements[i]*dx );
 
         mtx->insertGlobalValues(MyGlobalElements[i],
                                 Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
@@ -201,7 +201,7 @@ namespace ADR {
       ADR2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
 
-		private: 
+		private:
 
 			//Function that defines the diffusion coefficient
 			inline Scalar diff( Scalar  x, Scalar y ){return 1.0 + 0.0 * x + 0.0 * y;};
@@ -257,10 +257,10 @@ namespace ADR {
 
       Teuchos::RCP<Matrix> mtx = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(this->Map_, nnz);
 
-      LocalOrdinal  numMyElements = (this->Map_)->getNodeNumElements();
+      LocalOrdinal  numMyElements = (this->Map_)->getLocalNumElements();
       GlobalOrdinal indexBase     = (this->Map_)->getIndexBase();
 
-      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = (this->Map_)->getNodeElementList();
+      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = (this->Map_)->getLocalElementList();
 
       GlobalOrdinal center, left, right, lower, upper;
       std::vector<Scalar>        vals(nnz);
@@ -274,7 +274,7 @@ namespace ADR {
 
         center = myGlobalElements[i] - indexBase;
 
-				//Determine coordinates 
+				//Determine coordinates
 				Scalar x1 = (Scalar) (center % nx) * stretchx;
 				Scalar x2 = (Scalar) (std::floor( center/nx )) * stretchy;
 
@@ -338,7 +338,7 @@ namespace ADR {
       ADR3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
 
-		private: 
+		private:
 
 			//Function that defines the diffusion coefficient
 			inline Scalar diff( Scalar  x, Scalar y, Scalar z ){return 1.0 + 0.0 * x + 0.0 * y + 0.0 * z;};
@@ -406,10 +406,10 @@ namespace ADR {
 
       Teuchos::RCP<Matrix> mtx = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(this->Map_, nnz);
 
-      LocalOrdinal  numMyElements = this->Map_->getNodeNumElements();
+      LocalOrdinal  numMyElements = this->Map_->getLocalNumElements();
       GlobalOrdinal indexBase     = this->Map_->getIndexBase();
 
-      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = (this->Map_)->getNodeElementList();
+      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = (this->Map_)->getLocalElementList();
 
       GlobalOrdinal center, left, right, bottom, top, front, back;
       std::vector<GlobalOrdinal> inds(nnz);
@@ -424,7 +424,7 @@ namespace ADR {
 
         center = myGlobalElements[i] - indexBase;
 
-				//Determine coordinates 
+				//Determine coordinates
 				Scalar x3 = (Scalar) (std::floor( center/( nx*ny ) )) * stretchz;
 				int plane = center % (nx*ny);
 				Scalar x1 = (Scalar) (plane % nx) * stretchx;

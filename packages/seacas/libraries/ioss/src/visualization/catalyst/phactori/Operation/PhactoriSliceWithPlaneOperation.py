@@ -118,7 +118,11 @@ colored by block index number (cylically).
     savedActiveSource = GetActiveSource()
 
     newParaViewFilter = SliceWithPlane(Input=inInputFilter)
-    newParaViewFilter.Plane = 'Plane'
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51100:
+      newParaViewFilter.Plane = 'Plane'
+    else:
+      newParaViewFilter.PlaneType = 'Plane'
 
     self.UpdateSlice(inInputFilter, newParaViewFilter)
 
@@ -166,11 +170,14 @@ colored by block index number (cylically).
     if PhactoriDbg():
       myDebugPrint3('  updateslice using normal: ' + \
               str(normalToUse) + '\n')
-    ioOutgoingPvFilter.Plane.Normal = normalToUse
-
-    if PhactoriDbg():
       myDebugPrint3('  updateslice using origin: ' + str(originToUse) + '\n')
-    ioOutgoingPvFilter.Plane.Origin = originToUse
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51100:
+      ioOutgoingPvFilter.Plane.Normal = normalToUse
+      ioOutgoingPvFilter.Plane.Origin = originToUse
+    else:
+      ioOutgoingPvFilter.PlaneType.Normal = normalToUse
+      ioOutgoingPvFilter.PlaneType.Origin = originToUse
 
     if PhactoriDbg():
       myDebugPrint3("PhactoriSliceWithPlanePlaneOperation::UpdateSlice returning\n")

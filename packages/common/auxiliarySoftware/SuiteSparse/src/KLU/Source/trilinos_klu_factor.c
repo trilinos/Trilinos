@@ -6,6 +6,7 @@
  * or TRILINOS_KLU_analyze_given.
  */
 
+#include "TrilinosSS_config.h"
 #include "trilinos_klu_internal.h"
 
 /* ========================================================================== */
@@ -77,7 +78,7 @@ static void factor2
 #ifndef NDEBUG
     for (k = 0 ; k < n ; k++)
     {
-	Pinv [k] = EMPTY ;
+	Pinv [k] = TRILINOS_KLU_EMPTY ;
     }
 #endif
     for (k = 0 ; k < n ; k++)
@@ -86,7 +87,7 @@ static void factor2
 	Pinv [P [k]] = k ;
     }
 #ifndef NDEBUG
-    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != EMPTY) ;
+    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != TRILINOS_KLU_EMPTY) ;
 #endif
 
     lnz = 0 ;
@@ -265,7 +266,7 @@ static void factor2
 	    max_lnz_block = MAX (max_lnz_block, lnz_block) ;
 	    max_unz_block = MAX (max_unz_block, unz_block) ;
 
-	    if (Lnz [block] == EMPTY)
+	    if (Lnz [block] == TRILINOS_KLU_EMPTY)
 	    {
 		/* revise estimate for subsequent factorization */
 		Lnz [block] = MAX (lnz_block, unz_block) ;
@@ -301,7 +302,7 @@ static void factor2
 #ifndef NDEBUG
     for (k = 0 ; k < n ; k++)
     {
-	Pinv [k] = EMPTY ;
+	Pinv [k] = TRILINOS_KLU_EMPTY ;
     }
 #endif
     for (k = 0 ; k < n ; k++)
@@ -310,7 +311,7 @@ static void factor2
 	Pinv [Pnum [k]] = k ;
     }
 #ifndef NDEBUG
-    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != EMPTY) ;
+    for (k = 0 ; k < n ; k++) ASSERT (Pinv [k] != TRILINOS_KLU_EMPTY) ;
 #endif
 
     /* permute scale factors Rs according to pivotal row order */
@@ -397,7 +398,7 @@ TRILINOS_KLU_numeric *TRILINOS_KLU_factor		/* returns NULL if error, or a valid
     Int *R ;
     TRILINOS_KLU_numeric *Numeric ;
     size_t n1, nzoff1, s, b6, n3 ;
-#ifdef KLU_ENABLE_OPENMP
+#ifdef TRILINOSSS_HAVE_OMP 
     int num_threads;
 #endif
 
@@ -406,8 +407,8 @@ TRILINOS_KLU_numeric *TRILINOS_KLU_factor		/* returns NULL if error, or a valid
 	return (NULL) ;
     }
     Common->status = TRILINOS_KLU_OK ;
-    Common->numerical_rank = EMPTY ;
-    Common->singular_col = EMPTY ;
+    Common->numerical_rank = TRILINOS_KLU_EMPTY ;
+    Common->singular_col = TRILINOS_KLU_EMPTY ;
 
     /* ---------------------------------------------------------------------- */
     /* get the contents of the Symbolic object */
@@ -500,7 +501,7 @@ TRILINOS_KLU_numeric *TRILINOS_KLU_factor		/* returns NULL if error, or a valid
      *
      * If OpenMP is enabled the solve uses an Xwork of size num_threads * 4n.
      */
-#ifdef KLU_ENABLE_OPENMP
+#ifdef TRILINOSSS_HAVE_OMP
 #pragma omp parallel
     num_threads = omp_get_num_threads();
     s = TRILINOS_KLU_mult_size_t (n, num_threads * sizeof (Entry), &ok) ;

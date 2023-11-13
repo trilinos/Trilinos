@@ -72,9 +72,9 @@ typedef int    GlobalOrdinal;
 typedef long long GlobalOrdinal;
 #endif
 #if defined(HAVE_TPETRA_INST_OPENMP)
-typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
 #elif defined(HAVE_TPETRA_INST_SERIAL)
-typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode Node;
 #endif
 
 int main(int argc, char *argv[]) {
@@ -95,8 +95,8 @@ int main(int argc, char *argv[]) {
 
     RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::createUniformContigMap(lib, numGlobalElements, comm);
 
-    const size_t numMyElements = map->getNodeNumElements();
-    Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
+    const size_t numMyElements = map->getLocalNumElements();
+    Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getLocalElementList();
 
     RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 3);
 

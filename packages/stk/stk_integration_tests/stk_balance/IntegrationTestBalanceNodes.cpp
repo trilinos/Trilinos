@@ -7,7 +7,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
-class BalanceNodes : public stk::unit_test_util::MeshFixture {};
+class BalanceNodes : public stk::unit_test_util::simple_fields::MeshFixture {};
 
 TEST_F(BalanceNodes, twoHex_initiallyImbalanced)
 {
@@ -17,9 +17,9 @@ TEST_F(BalanceNodes, twoHex_initiallyImbalanced)
   balanceSettings.setUseNodeBalancer(true);
 
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  stk::unit_test_util::setup_text_mesh(get_bulk(),
-                                       "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                                       "0,2,HEX_8,5,6,7,8,9,10,11,12");
+  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(),
+                                                      "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
+                                                      "0,2,HEX_8,5,6,7,8,9,10,11,12");
 
   stk::balance::balanceStkMesh(balanceSettings, get_bulk());
   stk::balance::balanceStkMeshNodes(balanceSettings, get_bulk());
@@ -38,9 +38,9 @@ TEST_F(BalanceNodes, twoHex_initiallyBalanced)
   balanceSettings.setUseNodeBalancer(true);
 
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  stk::unit_test_util::setup_text_mesh(get_bulk(),
-                                       "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                                       "1,2,HEX_8,5,6,7,8,9,10,11,12");
+  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(),
+                                                      "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
+                                                      "1,2,HEX_8,5,6,7,8,9,10,11,12");
 
   stk::balance::balanceStkMeshNodes(balanceSettings, get_bulk());
 
@@ -58,10 +58,10 @@ TEST_F(BalanceNodes, threeHex)
   balanceSettings.setUseNodeBalancer(true);
 
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  stk::unit_test_util::setup_text_mesh(get_bulk(),
-                                       "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                                       "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
-                                       "0,3,HEX_8,9,10,11,12,13,14,15,16");
+  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(),
+                                                      "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
+                                                      "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
+                                                      "0,3,HEX_8,9,10,11,12,13,14,15,16");
 
   stk::balance::balanceStkMesh(balanceSettings, get_bulk());
   stk::balance::balanceStkMeshNodes(balanceSettings, get_bulk());

@@ -1,15 +1,9 @@
 # Simple example of building against an install Trilinos with CMake
 
-```
-******************************************************************
-*** WARNING: THIS CODE IS NOT AUTOMATICALLY TESTED IN TRILINOS ***
-***          BECAUSE IT REQUIRES AN INSTALLED TRILINOS         ***
-******************************************************************
-```
-
 This is a small demonstration of how to build an application code using CMake
 against an installation of Trilinos.  This example also demonstrates how to
 use CTest.
+
 
 To run this example, do the following steps.
 
@@ -21,15 +15,17 @@ To run this example, do the following steps.
   $ cd <tril-build-dir>/
   $ cmake \
     -D CMAKE_INSTALL_PREFIX=<tril-install-prefix> \
-    -D Trilinos_ENABLE_Teuchos=ON \
+    -D TPL_ENABLE_MPI=ON \
     -D Trilinos_ENABLE_Tpetra=ON \
+    -D CMAKE_C_COMPILER=<c-compiler> \
+    -D CMAKE_CXX_COMPILER=<cxx-compiler> \    
     [other options] \
     <trilinos-src>
 ```
 
-NOTE: Must enable at least the Trilinos packages Teuchos and Tpetra in order
-to build this example.  But in a real case, enable and install any packages
-needed by the application.
+NOTE: Must enable at least the Trilinos packages Tpetra in order to build this
+example.  But in a real case, enable and install any packages needed by the
+application.
 
 ## 2. Build and install Trilinos:
 
@@ -48,8 +44,24 @@ This will put a file called `TrilinosConfig.cmake` under a subdirectory of
   $ cd <app-build-dir>/
   $ cmake \
     -D CMAKE_PREFIX_PATH=<tril-install-prefix> \
+    -D CMAKE_C_COMPILER=<c-compiler> \
+    -D CMAKE_CXX_COMPILER=<cxx-compiler> \    
     <trilinos-src>/demos/simpleBuildAgainstTrilinos
 ```
+
+NOTE: To configure `simpleBuildAgainstTrilinos` against the installed Trilinos
+one must pass in compatible compilers used to build Trilinos. For CUDA builds,
+this means using `nvcc_wrapper` (e.g. using OpenMPI with `-D CMAKE_CXX_COMPILER=mpicxx`
+and setting environment variable `export OMPI_CXX=<base-path>/nvcc_wrapper`.)
+
+NOTE: To use the alternative `CMakeLists.txt` file that calls
+`find_package(Tpetra)` and links to `Tpetra::all_libs` instead of
+`find_package(Trilinos)`, copy the source tree `simpleBuildAgainstTrilinos` to
+a directory outside of the Trilinos source tree, copy the file
+`simpleBuildAgainstTrilinos/CMakeLists.by_package.cmake` to
+`simpleBuildAgainstTrilinos/CMakeLists.txt` and then configure as shown above
+(pointing to the copied and modified `simpleBuildAgainstTrilinos` source
+tree).
 
 ## 4. Build the application
 
@@ -63,11 +75,27 @@ This will put a file called `TrilinosConfig.cmake` under a subdirectory of
   $ ctest
 ```
 
-NOTE: That test will not pass unless Trilinos is propertly built with MPI and
+NOTE: That test will not pass unless Trilinos is properly built with MPI and
 MPI is working.
+
 
 ## More info and questions
 
 Look into comments in the `CMakeLists.txt` file for more info.
 
 Send questions to trilinos-framework@software.sandia.gov.
+
+**NOTE:** This example gets tested automatically when Trilinos is configured
+using the options:
+
+```
+  -D TPL_ENABLE_MPI=ON \
+  -D Trilinos_ENABLE_Tpetra=ON \
+  -D Trilinos_ENABLE_TrilinosInstallTests=ON \
+```
+
+and then building and running the tests:
+
+```
+  $ ctest -j4 -R TrilinosInstallTests
+```

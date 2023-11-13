@@ -116,7 +116,7 @@ template <class, class> class MUMPS;
   struct TypeMap<MUMPS,std::complex<float> >
   {
     typedef MUMPST::CMUMPS_COMPLEX type;
-    typedef MUMPST::CMUMPS_COMPLEX  magnitude_type;
+    typedef float                  magnitude_type;
     typedef MUMPST::CMUMPS_STRUC_C MUMPS_STRUC_C;
   };
     
@@ -124,7 +124,7 @@ template <class, class> class MUMPS;
   struct TypeMap<MUMPS,std::complex<double> >
   {
     typedef MUMPST::ZMUMPS_COMPLEX type;
-    typedef MUMPST::ZMUMPS_COMPLEX   magnitude_type;
+    typedef double                 magnitude_type;
     typedef MUMPST::ZMUMPS_STRUC_C MUMPS_STRUC_C; 
   };
   
@@ -132,7 +132,7 @@ template <class, class> class MUMPS;
   struct TypeMap<MUMPS, MUMPST::CMUMPS_COMPLEX>
   {
     typedef MUMPST::CMUMPS_COMPLEX type;
-    typedef MUMPST::CMUMPS_COMPLEX magnitude_type;
+    typedef float                  magnitude_type;
     typedef MUMPST::CMUMPS_STRUC_C MUMPS_STRUC_C;
   };
   
@@ -140,7 +140,7 @@ template <class, class> class MUMPS;
   struct TypeMap<MUMPS, MUMPST::ZMUMPS_COMPLEX>
   {
     typedef MUMPST::ZMUMPS_COMPLEX type;
-    typedef MUMPST::ZMUMPS_COMPLEX magnitude_type;
+    typedef double                 magnitude_type;
     typedef MUMPST::ZMUMPS_STRUC_C MUMPS_STRUC_C;
   };
   

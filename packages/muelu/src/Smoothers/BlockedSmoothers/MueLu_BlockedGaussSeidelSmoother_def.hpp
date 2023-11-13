@@ -61,7 +61,6 @@
 
 #include "MueLu_BlockedGaussSeidelSmoother_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_SmootherBase.hpp"
@@ -202,84 +201,72 @@ namespace MueLu {
 
     // make sure that both rcpX and rcpB are BlockedMultiVector objects
     bool bCopyResultX = false;
+    bool bReorderX = false;
+    bool bReorderB = false;
     RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
     MUELU_TEST_FOR_EXCEPTION(bA.is_null() == true, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): A_ must be a BlockedCrsMatrix");
     RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpX);
     RCP<const BlockedMultiVector> bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
 
-    if(bX.is_null() == true) {
-      RCP<MultiVector> test = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedDomainMap(),rcpX));
-      rcpX.swap(test);
-      bCopyResultX = true;
-    }
+    // check the type of operator
+    RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rbA =
+            Teuchos::rcp_dynamic_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA);
 
-    if(bB.is_null() == true) {
-      RCP<const MultiVector> test = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedRangeMap(),rcpB));
-      rcpB.swap(test);
+    if(rbA.is_null() == false) {
+      // A is a ReorderedBlockedCrsMatrix and thus uses nested maps, retrieve BlockedCrsMatrix and use plain blocked
+      // map for the construction of the blocked multivectors
+
+      // check type of X vector
+      if (bX.is_null() == true) {
+        RCP<MultiVector> vectorWithBlockedMap = Teuchos::rcp(new BlockedMultiVector(rbA->getBlockedCrsMatrix()->getBlockedDomainMap(), rcpX));
+        rcpX.swap(vectorWithBlockedMap);
+        bCopyResultX = true;
+        bReorderX = true;
+      }
+
+      // check type of B vector
+      if (bB.is_null() == true) {
+        RCP<const MultiVector> vectorWithBlockedMap = Teuchos::rcp(new BlockedMultiVector(rbA->getBlockedCrsMatrix()->getBlockedRangeMap(), rcpB));
+        rcpB.swap(vectorWithBlockedMap);
+        bReorderB = true;
+      }
+    }
+    else {
+      // A is a BlockedCrsMatrix and uses a plain blocked map
+      if (bX.is_null() == true) {
+        RCP<MultiVector> vectorWithBlockedMap = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedDomainMap(), rcpX));
+        rcpX.swap(vectorWithBlockedMap);
+        bCopyResultX = true;
+      }
+
+      if(bB.is_null() == true) {
+        RCP<const MultiVector> vectorWithBlockedMap = Teuchos::rcp(new BlockedMultiVector(bA->getBlockedRangeMap(),rcpB));
+        rcpB.swap(vectorWithBlockedMap);
+      }
     }
 
     // we now can guarantee that X and B are blocked multi vectors
     bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpX);
     bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
 
-    // check the type of operator
-    RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rbA = Teuchos::rcp_dynamic_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA);
+    // Finally we can do a reordering of the blocked multivectors if A is a ReorderedBlockedCrsMatrix
     if(rbA.is_null() == false) {
-      // A is a ReorderedBlockedCrsMatrix
+
       Teuchos::RCP<const Xpetra::BlockReorderManager > brm = rbA->getBlockReorderManager();
 
       // check type of X vector
-      if(bX->getBlockedMap()->getNumMaps() != bA->getDomainMapExtractor()->NumMaps()) {
+      if(bX->getBlockedMap()->getNumMaps() != bA->getDomainMapExtractor()->NumMaps() || bReorderX) {
         // X is a blocked multi vector but incompatible to the reordered blocked operator A
-        Teuchos::RCP<MultiVector> test =
-            buildReorderedBlockedMultiVector(brm, bX);
-        rcpX.swap(test);
+        Teuchos::RCP<MultiVector> reorderedBlockedVector = buildReorderedBlockedMultiVector(brm, bX);
+        rcpX.swap(reorderedBlockedVector);
       }
-      if(bB->getBlockedMap()->getNumMaps() != bA->getRangeMapExtractor()->NumMaps()) {
+
+      if(bB->getBlockedMap()->getNumMaps() != bA->getRangeMapExtractor()->NumMaps() || bReorderB) {
         // B is a blocked multi vector but incompatible to the reordered blocked operator A
-        Teuchos::RCP<const MultiVector> test =
-            buildReorderedBlockedMultiVector(brm, bB);
-        rcpB.swap(test);
+        Teuchos::RCP<const MultiVector> reorderedBlockedVector = buildReorderedBlockedMultiVector(brm, bB);
+        rcpB.swap(reorderedBlockedVector);
       }
     }
-
-
-    // check the type of operator
-    /*RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-    MUELU_TEST_FOR_EXCEPTION(bA.is_null() == true, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): A_ must be a BlockedCrsMatrix");
-    RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rbA = Teuchos::rcp_dynamic_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA);
-    if(rbA.is_null() == false) {
-      // A is a ReorderedBlockedCrsMatrix
-      Teuchos::RCP<const Xpetra::BlockReorderManager > brm = rbA->getBlockReorderManager();
-
-      // check type of vectors
-      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpX);
-      RCP<const BlockedMultiVector> bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
-
-      // check type of X vector
-      if(bX.is_null() == false && bX->getBlockedMap()->getNumMaps() != bA->getDomainMapExtractor()->NumMaps()) {
-        RCP<ReorderedBlockedMultiVector> rbX = Teuchos::rcp_dynamic_cast<ReorderedBlockedMultiVector>(bX);
-        if(rbX.is_null() == true) {
-          // X is a blocked multi vector but not reordered
-          // However, A is a reordered blocked operator
-          // We have to make sure, that A and X use compatible maps
-          Teuchos::RCP<MultiVector> test =
-              buildReorderedBlockedMultiVector(brm, bX);
-          rcpX.swap(test);
-        }
-      }
-      if(bB.is_null() == false && bB->getBlockedMap()->getNumMaps() != bA->getRangeMapExtractor()->NumMaps()) {
-        RCP<const ReorderedBlockedMultiVector> rbB = Teuchos::rcp_dynamic_cast<const ReorderedBlockedMultiVector>(bB);
-        if(rbB.is_null() == true) {
-          // B is a blocked multi vector but not reordered
-          // However, A is a reordered blocked operator
-          // We have to make sure, that A and X use compatible maps
-          Teuchos::RCP<const MultiVector> test =
-              buildReorderedBlockedMultiVector(brm, bB);
-          rcpB.swap(test);
-        }
-      }
-    }*/
 
     // Throughout the rest of the algorithm rcpX and rcpB are used for solution vector and RHS
 

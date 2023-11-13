@@ -100,7 +100,7 @@ Teuchos::RCP<CRSM> createTpetraOp(const Teuchos::RCP<const Map>& map)
 
   Scalar posOne = ST::one();
   Scalar negOne = -1.0*posOne;
-  for (std::size_t i = 0; i < map->getNodeNumElements(); ++i) {
+  for (std::size_t i = 0; i < map->getLocalNumElements(); ++i) {
     const GO row = map->getGlobalElement(static_cast<LO>(i));
     if (row == 0) {
       mat->insertGlobalValues(row,

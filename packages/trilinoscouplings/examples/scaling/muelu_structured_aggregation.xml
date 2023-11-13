@@ -22,9 +22,8 @@
       </ParameterList>
 
       <ParameterList name="myAggregationFact">
-        <!-- <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/> -->
         <Parameter name="factory"                             type="string" value="StructuredAggregationFactory"/>
-        <Parameter name="aggregation: mode"               type="string" value="uncoupled"/>
+        <Parameter name="aggregation: mode"                   type="string" value="uncoupled"/>
         <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       </ParameterList>
 
@@ -40,14 +39,8 @@
         <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/>
       </ParameterList>
 
-      <!-- <ParameterList name="myNullspaceFact"> -->
-      <!--   <Parameter name="factory"                             type="string" value="NullspaceFactory"/> -->
-      <!--   <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/> -->
-      <!-- </ParameterList> -->
-
       <ParameterList name="myRestrictorFact">
         <Parameter name="factory"                             type="string" value="TransPFactory"/>
-        <!-- Parameter name="R"                                   type="string" value="myRestrictorFact"/ -->
       </ParameterList>
 
       <ParameterList name="myNullspaceFact">
@@ -58,7 +51,7 @@
       <ParameterList name="myCoordTransferFact">
         <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
         <Parameter name="structured aggregation"              type="bool"   value="true"/>
-        <Parameter name="gCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
+        <Parameter name="numDimensions"                       type="string" value="myAggregationFact"/>
         <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
       </ParameterList>
 
@@ -95,22 +88,21 @@
       <Parameter name="cycle type"                            type="string"   value="W"/>
       <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
       <Parameter name="verbosity"                             type="string"   value="High"/>
+      <Parameter name="use kokkos refactor"                   type="bool"     value="false"/>
 
       <ParameterList name="All">
         <Parameter name="PreSmoother"                         type="string"   value="myILU"/>
         <Parameter name="PostSmoother"                        type="string"   value="NoSmoother"/>
         <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
         <Parameter name="Aggregates"                          type="string"   value="myAggregationFact"/>
+        <Parameter name="lCoarseNodesPerDim"                  type="string"   value="myAggregationFact"/>
         <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
         <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
         <Parameter name="A"                                   type="string"   value="myRAPFact"/>
         <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
         <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
-        <Parameter name="gNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
         <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
-        <!-- <Parameter name="CoarseNumZLayers"                    type="string"   value="myLineDetectionFact"/> -->
-        <!-- <Parameter name="LineDetection_Layers"                type="string"   value="myLineDetectionFact"/> -->
-        <!-- <Parameter name="LineDetection_VertLineIds"           type="string"   value="myLineDetectionFact"/> -->
+        <Parameter name="numDimensions"                       type="string"   value="myCoordTransferFact"/>
       </ParameterList>
     </ParameterList>
 

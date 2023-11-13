@@ -131,10 +131,10 @@ int create_matrices
     // Find the required no of diagonals
     /*int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
     //std::cout << "No of diagonals in Sbar =" << Sdiag << std::endl;
-    Sdiag = MIN(Sdiag, SNumGlobalCols-1);*/
+    Sdiag = SHYLU_CORE_MIN(Sdiag, SNumGlobalCols-1);*/
     int Sdiag = (int) Snr * Sdiagfactor;
-    Sdiag = MIN(Sdiag, Snr-1);
-    Sdiag = MAX(Sdiag, 0);
+    Sdiag = SHYLU_CORE_MIN(Sdiag, Snr-1);
+    Sdiag = SHYLU_CORE_MAX(Sdiag, 0);
     //std::cout << "No of diagonals in Sbar =" << Sdiag << std::endl;
     //assert (Sdiag <= SNumGlobalCols-1);
     if (Snr != 0) assert (Sdiag <= Snr-1);
@@ -322,7 +322,7 @@ int extract_matrices
     double *LeftValues = new double[data->lmax];
     int *RightIndex = new int[data->rmax];
     double *RightValues = new double[data->rmax];
-    int err;
+    int err = 0;
     int lcnt, rcnt ;
     int gcid;
     int gid;
@@ -461,8 +461,8 @@ int extract_matrices
         //config->dm.print(5, "Done R fillcomplete");
 
         int Sdiag = (int) data->Snr * Sdiagfactor;
-        Sdiag = MIN(Sdiag, data->Snr-1);
-        Sdiag = MAX(Sdiag, 0);
+        Sdiag = SHYLU_CORE_MIN(Sdiag, data->Snr-1);
+        Sdiag = SHYLU_CORE_MAX(Sdiag, 0);
 
         // Add the diagonals to Sg
         for (int i = 0; config->schurApproxMethod == 1 && i < nrows ; i++)
@@ -474,8 +474,8 @@ int extract_matrices
             rcnt = 0;
             //TODO Will be trouble if SNumGlobalCols != Snc
             //assert(SNumGlobalCols == Snc);
-            //for (int j = MAX(i-Sdiag,0) ; j<MIN(SNumGlobalCols, i+Sdiag); j++)
-            for (int j = MAX(i-Sdiag, 0) ; j < MIN(data->Snr, i+Sdiag); j++)
+            //for (int j = SHYLU_CORE_MAX(i-Sdiag,0) ; j<SHYLU_CORE_MIN(SNumGlobalCols, i+Sdiag); j++)
+            for (int j = SHYLU_CORE_MAX(i-Sdiag, 0) ; j < SHYLU_CORE_MIN(data->Snr, i+Sdiag); j++)
             {
                 // find the adjacent columns from the row map of S
                 //assert (j >= 0 && j < Snr);
@@ -516,8 +516,7 @@ int extract_matrices
         //Rptr->ColMap().NumMyElements() << std::endl;
     // ]
 
-    return 0;
-
+    return err;
 }
 
 /* Find the DBBD form */
@@ -758,7 +757,7 @@ int shylu_symbolic_factor
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    std::cout << "Symbolic Factorization Time" << ftime.totalElapsedTime() << std::endl;
+    std::cout << " Shylu_Symbolic_Factor(" << myPID << ") :: Symbolic Factorization Time : " << ftime.totalElapsedTime() << std::endl;
     ftime.reset();
 #endif
 
@@ -781,7 +780,7 @@ int shylu_symbolic_factor
         prober->color();
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        std::cout << "Time to color" << ftime.totalElapsedTime() << std::endl;
+        std::cout << " Shylu_Symbolic_Factor(" << myPID << ") :: Time to color " << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
         ftime.start();
 #endif
@@ -832,7 +831,7 @@ int shylu_symbolic_factor
     //data->amesosSchurTime = Teuchos::rcp(new Teuchos::Time("amesos schur time"));
 #ifdef TIMING_OUTPUT
     symtime.stop();
-    std::cout << "Symbolic Time" << symtime.totalElapsedTime() << std::endl;
+    std::cout << " Shylu_Symbolic_Factor(" << myPID << ") :: Total Time " << symtime.totalElapsedTime() << std::endl;
     symtime.reset();
 #endif
 
@@ -844,10 +843,12 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
              shylu_config *config)
 {
 #ifdef TIMING_OUTPUT
+    int myPID = A->Comm().MyPID();
     Teuchos::Time fact_time("factor time");
     fact_time.start();
 #endif
 
+    int err = 0;
     Teuchos::RCP<Epetra_LinearProblem> LP = ssym->LP;
     Teuchos::RCP<Amesos_BaseSolver> Solver = ssym->Solver;
     Teuchos::RCP<Ifpack_Preconditioner> ifpackSolver = ssym->ifSolver;
@@ -877,7 +878,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    std::cout << "Time to factor" << ftime.totalElapsedTime() << std::endl;
+    std::cout << " Shylu_Factor(" << myPID << ") :: Time to factor " << ftime.totalElapsedTime() << std::endl;
     ftime.reset();
 #endif
 
@@ -912,7 +913,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         //std::cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << std::endl;
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        std::cout << "Time to probe" << ftime.totalElapsedTime() << std::endl;
+        std::cout << " Shylu_Factor(" << myPID << ") :: Time to probe " << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
 #endif
     }
@@ -941,7 +942,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         //std::cout << *Sbar << std::endl;
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        std::cout << "Time to Compute Approx Schur Complement" << ftime.totalElapsedTime() << std::endl;
+        std::cout << " Shylu_Factor(" << myPID << ") :: Time to Compute Approx Schur Complement " << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
 #endif
         //std::cout << "Computed Approx Schur complement" << std::endl;
@@ -1021,7 +1022,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         }
         std::string schurPrec = config->schurPreconditioner;
 
-        int err = data->innersolver->SetUserOperator
+        err = data->innersolver->SetUserOperator
                     (data->schur_op.get());
         assert (err == 0);
 
@@ -1055,7 +1056,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         // Doing an inexact Schur complement
         if (config->libName == "Belos")
         {
-            int err = data->innersolver->SetUserMatrix
+            err = data->innersolver->SetUserMatrix
                         (data->Sbar.get());
             assert (err == 0);
 
@@ -1096,8 +1097,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     //std::cout << " Out of factor" << std::endl ;
 #ifdef TIMING_OUTPUT
     fact_time.stop();
-    std::cout << "Factor Time" << fact_time.totalElapsedTime() << std::endl;
+    std::cout << " Shylu_Factor(" << myPID << ") :: Total Time" << fact_time.totalElapsedTime() << std::endl;
     fact_time.reset();
 #endif
-    return 0;
+    return err;
 }

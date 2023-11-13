@@ -61,9 +61,11 @@ local installed-end-user-files =
 # Note that if the --install-developer-files option is passed to bjam these will also
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
+  stk_transfer
   stk_transfer_integration_tests
   stk_transfer_doc_tests
   stk_transfer_utest
+  stk_transfer_test_lib
   ;
 
 #
@@ -120,7 +122,7 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : stk_transfer_impl
+  : stk_transfer
   : <location>$(install-root)/stk/stk_transfer/lib
   ;
 
@@ -136,26 +138,28 @@ local xml-files =
 
 # This is currently a header-only library, so it must not use the lib rule.
 # If sources are added to this library change this target to use the lib rule instead.
-alias stk_transfer
-  : # No sources defined for header-only libraries.
-  : # No build requirements
-  : # No default build
-  : <include>$(stk_transfer-root-inc)
-  ;
+#alias stk_transfer
+#  : # No sources defined for header-only libraries.
+#  : # No build requirements
+#  : # No default build
+#  : <include>$(stk_transfer-root-inc)
+#  ;
 
-lib stk_transfer_impl
+lib stk_transfer
   :
     [ ifdevbuild
       [ glob 
+        $(stk_transfer-root)/stk_transfer/*.cpp 
         $(stk_transfer-root)/stk_transfer/copy_by_id/*.cpp 
       ]
     ]
     /sierra/stk_search//stk_search
     /sierra/stk_util//stk_util_parallel
     /mpi//mpi
+    /sierra/stk_middle_mesh//stk_middle_mesh
   :
     [ ifuserbuild
-        <file>$(stk_transfer-root)/lib/libstk_transfer_impl.a
+        <file>$(stk_transfer-root)/lib/libstk_transfer.a
     ]
     [ ifdevbuild
         # Any parameters within this 'ifdevbuild' block apply to development
@@ -164,6 +168,28 @@ lib stk_transfer_impl
     ]
   ;
 
+lib stk_transfer_test_lib
+  :
+    [ ifdevbuild
+      [ glob 
+        $(stk_transfer-root)/../stk_unit_tests/stk_transfer/fixtures/*.cpp 
+      ]
+    ]
+    stk_transfer
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_unit_test_utils//stk_transfer_fixtures
+  :
+    [ ifuserbuild
+        <file>$(stk_transfer-root)/lib/libstk_transfer_test.a
+    ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
+  ;
+
+
 exe stk_transfer_integration_tests
   :
     [ glob 
@@ -171,7 +197,7 @@ exe stk_transfer_integration_tests
      ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_mesh//stk_mesh_base
-    stk_transfer_impl
+    stk_transfer
   : <tag>@sierra-exec-tag
     <include>$(stk_transfer-root-inc)
   ;
@@ -182,7 +208,9 @@ exe stk_transfer_doc_tests
       $(stk_transfer-root)/../stk_doc_tests/stk_transfer/*.cpp 
      ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_transfer_impl
+    /sierra/stk_transfer_util//stk_transfer_util_base
+    /sierra/stk_coupling//stk_coupling
+    stk_transfer
   : <tag>@sierra-exec-tag
     <include>$(stk_transfer-root-inc)
   ;
@@ -193,7 +221,9 @@ exe stk_transfer_utest
       $(stk_transfer-root)/../stk_unit_tests/stk_transfer/*.cpp 
      ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_transfer_impl
+    stk_transfer
+    stk_transfer_test_lib
+    /sierra/stk_unit_test_utils//stk_transfer_fixtures
   : <tag>@sierra-exec-tag
     <include>$(stk_transfer-root-inc)
   ;

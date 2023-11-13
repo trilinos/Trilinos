@@ -12,12 +12,9 @@
 #include <percept/Percept.hpp>
 #if !defined(NO_GEOM_SUPPORT)
 
-#include <percept/mesh/mod/smoother/gradient_functors.hpp>
 #include <percept/mesh/mod/smoother/ReferenceMeshSmootherBase.hpp>
 #include <percept/mesh/mod/smoother/GenericAlgorithm_update_coordinates.hpp>
 #include <percept/PerceptUtils.hpp>
-#include <percept/mesh/mod/smoother/get_alpha_0_refmesh.hpp>
-#include <percept/mesh/mod/smoother/get_edge_len_avg.hpp>
 
 #define DEBUG_RMSCG_PRINT 0
 #define RMSCG_PRINT(a) do { if (DEBUG_RMSCG_PRINT && !m_eMesh->get_rank()) std::cout << "P[" << m_eMesh->get_rank() <<"] " << a << std::endl; } while(0)
@@ -27,46 +24,6 @@
 struct GenericAlgorithm_update_coordinates;
 
 namespace percept {
-
-struct SGridBoundarySelector : public StructuredGrid::MTSelector {
-	PerceptMesh *m_eMesh;
-	std::shared_ptr<BlockStructuredGrid> m_bsg;
-
-	SGridBoundarySelector(PerceptMesh *eMesh) : m_eMesh(eMesh)
-	{
-	    m_bsg = m_eMesh->get_block_structured_grid();
-	}
-
-	bool operator()(StructuredCellIndex& index)
-	{   //generalized boundary selector, should work with an arbitrary block structured mesh
-		unsigned iblock = index[3];
-
-		std::shared_ptr<StructuredBlock> sblock = m_bsg->m_sblocks[iblock];
-		bool isBC = false;
-		for(unsigned iBC = 0;iBC < sblock->m_boundaryConditions.size() ;iBC++)
-		{
-		    Ioss::BoundaryCondition bc = sblock->m_boundaryConditions[iBC];
-		    std::array<unsigned, 3> beg;
-		    std::array<unsigned, 3> end;
-
-		    for(unsigned ijk=0;ijk<3;ijk++)
-		    {
-		        beg[ijk] = (unsigned)std::min(bc.m_rangeBeg[ijk],bc.m_rangeEnd[ijk]);
-		        end[ijk] = (unsigned)std::max(bc.m_rangeBeg[ijk],bc.m_rangeEnd[ijk]);
-
-		        beg[ijk]--;
-		        end[ijk]--;
-		    }
-		    isBC = ( beg[0]<=index[0] && index[0]<=end[0] ) &&
-                    ( beg[1]<=index[1] && index[1]<=end[1] ) &&
-                    ( beg[2]<=index[2] && index[2]<=end[2] );
-		    if(isBC)
-		        break;
-		}
-
-		return isBC;
-	}
-};
 
     /// A Jacobian based optimization smoother, e.g. 1/A - 1/W, W/A - I, etc. (A = local current Jacobian, W is for original mesh)
     /// Conjugate-gradient version, element-based metrics
@@ -119,9 +76,7 @@ struct SGridBoundarySelector : public StructuredGrid::MTSelector {
 
       /// max_edge_length_factor: used for scaling gradients to approximately this value times local edge length
       ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
-//                                             typename MeshType::MTSelector *boundary_selector=0,
                                              STKMesh::MTSelector *stk_select=0,
-                                             StructuredGrid::MTSelector *sgrid_select=0,
                                              typename MeshType::MTMeshGeometry *meshGeometry=0,
                                              int inner_iterations = 100,
                                              double grad_norm =1.e-8,
@@ -135,10 +90,6 @@ struct SGridBoundarySelector : public StructuredGrid::MTSelector {
 
       GenericAlgorithm_update_coordinates  <MeshType> m_coord_updater;
       GenericAlgorithm_total_element_metric<MeshType> m_metric_computinator;
-      SGridGenericAlgorithm_total_element_metric<HexMeshSmootherMetric> sgrid_metric;
-      sGrid_GenericAlgorithm_get_gradient_1 m_sgrid_gradient;
-      SGrid_GenericAlgorithm_get_alpha_0 m_sgrid_get_alpha_0;
-      sGrid_GenericAlgorithm_get_edge_lengths sgrid_gels;
 
     public:
 

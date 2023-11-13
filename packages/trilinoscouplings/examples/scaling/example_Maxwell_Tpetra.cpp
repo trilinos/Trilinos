@@ -378,9 +378,11 @@ int main(int argc, char *argv[]) {
 int body(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   Kokkos::initialize(argc,argv);
   body(argc,argv);
-  Kokkos::finalize();
+  if (!Kokkos::is_finalized())
+    Kokkos::finalize();
 }
 
 
@@ -393,10 +395,9 @@ int body(int argc, char *argv[]) {
   using Teuchos::CommandLineProcessor;
 
   int error = 0;
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  int rank=mpiSession.getRank();
-  int numProcs=mpiSession.getNProc();
+  int rank=comm->getRank();
+  int numProcs=comm->getSize();
   int MyPID=rank;
 
   // Did the user specify --help at the command line to print help
@@ -2080,7 +2081,7 @@ int body(int argc, char *argv[]) {
   Tpetra_CrsMatrix MassMatrixGinv(MassMatrixG.getRowMap(),MassMatrixG.getRowMap(),1);
   {
     auto d_data = DiagG.getData(0);
-    for(int i=0;i<(int)MassMatrixGinv.getRowMap()->getNodeNumElements();i++) {
+    for(int i=0;i<(int)MassMatrixGinv.getRowMap()->getLocalNumElements();i++) {
       GO GCID=MassMatrixG.getColMap()->getGlobalElement(i);
       GO GRID=MassMatrixG.getRowMap()->getGlobalElement(i);
       MassMatrixGinv.insertGlobalValues(GRID,1,&(d_data[i]),&GCID);
@@ -2511,7 +2512,7 @@ void solution_test(string msg, const Tpetra_Operator &A,const Tpetra_MultiVector
   double d = 0.0, d_tot = 0.0;
   auto lhs_data    = lhs.getData(0);
   auto xexact_data = xexact.getData(0);
-  for(LO i=0 ; i<(LO)lhs.getMap()->getNodeNumElements() ; ++i )
+  for(LO i=0 ; i<(LO)lhs.getMap()->getLocalNumElements() ; ++i )
     d += (lhs_data[i] - xexact_data[i]) * (lhs_data[i] - xexact_data[i]);
 
   TC_sumAll(comm,d,d_tot);
@@ -2673,13 +2674,7 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
 
   /* Stratimikos setup */
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-  Stratimikos::enableMueLuRefMaxwell<LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
-#ifdef HAVE_TRILINOSCOUPLINGS_IFPACK2
-  // Register Ifpack2 as a Stratimikos preconditioner strategy.
-  typedef Thyra::PreconditionerFactoryBase<double>                                   Base;
-  typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double,LO,GO,Node> > Impl;
-  linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
+  Stratimikos::enableMueLuRefMaxwell<SC,LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
 
   linearSolverBuilder.setParameterList(rcp(&SList,false));
   RCP<Thyra::LinearOpWithSolveFactoryBase<SC> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);

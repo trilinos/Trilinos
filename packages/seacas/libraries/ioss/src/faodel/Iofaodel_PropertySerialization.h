@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef Iofaodel_PropertySerialization_h
-#define Iofaodel_PropertySerialization_h
+#pragma once
+
+#include "iofaodel_export.h"
 
 #include "Iofaodel_Utils.h"
 #include <Ioss_Field.h>
@@ -19,7 +20,7 @@
 
 namespace Iofaodel {
 
-  size_t data_size(const Ioss::Property &p);
+  IOFAODEL_EXPORT size_t data_size(const Ioss::Property &p);
 
   // Caller should write their own version of this
   // PropertyFunction should return a function or a lamba that matches the
@@ -32,18 +33,18 @@ namespace Iofaodel {
 
   // Applies PropertyFunction 'op' to all properties encountered in the
   // Ioss::Region and it's various Ioss::GroupingEntities
-  void map_properties(const Ioss::Region &region, PropertyFunction op);
+  IOFAODEL_EXPORT void map_properties(const Ioss::Region &region, PropertyFunction op);
 
   // Applies PropertyFunction 'op' to all properties encountered in the
   // Ioss::GroupingEntity
-  void map_properties(const Ioss::Region &region, const Ioss::GroupingEntity &grouping_entity,
+  IOFAODEL_EXPORT void map_properties(const Ioss::Region &region, const Ioss::GroupingEntity &grouping_entity,
                       PropertyFunction op);
 
-  lunasa::DataObject pack_property(const Ioss::Region &region, const Ioss::GroupingEntity &entity,
+  IOFAODEL_EXPORT lunasa::DataObject pack_property(const Ioss::Region &region, const Ioss::GroupingEntity &entity,
                                    const Ioss::Property &property);
 
   // Put this in the meta data section of the LDO
-  struct property_entry_t
+  struct IOFAODEL_EXPORT property_entry_t
   {
     Ioss::Property::BasicType basic_type;
 
@@ -59,9 +60,7 @@ namespace Iofaodel {
     explicit property_entry_t(const Ioss::Property &property, const size_t start = 0);
   };
 
-  int64_t     property_get_int(lunasa::DataObject ldo);
+  IOFAODEL_EXPORT int64_t     property_get_int(lunasa::DataObject ldo);
   std::string property_get_string(lunasa::DataObject ldo);
 
 } // namespace Iofaodel
-
-#endif

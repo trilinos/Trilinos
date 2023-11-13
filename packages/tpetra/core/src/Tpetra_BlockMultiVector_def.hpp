@@ -44,53 +44,6 @@
 #include "Tpetra_BlockView.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-namespace { // anonymous
-
-  /// \brief Get a raw pointer to the (host) data in a
-  ///   Tpetra::MultiVector.
-  /// \tparam MultiVectorType A specialization of Tpetra::MultiVector.
-  ///
-  /// \warning This is an implementation detail of Tpetra.  It is not
-  ///   part of the public interface and may change or go away at any
-  ///   time.
-  ///
-  /// \note To Tpetra developers: This struct implements the function
-  ///   getRawHostPtrFromMultiVector(); see below.  Call that function
-  ///   instead.
-  template<class MultiVectorType>
-  struct RawHostPtrFromMultiVector {
-    typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
-
-    static impl_scalar_type* getRawPtr (MultiVectorType& X) {
-      return nullptr;
-      //auto X_view_host = X.getLocalViewHost ();
-      //impl_scalar_type* X_raw = X_view_host.data ();
-      //return X_raw;
-    }
-  };
-
-  /// \brief Get a raw pointer to the (host) data in a
-  ///   Tpetra::MultiVector.
-  ///
-  /// \warning This is an implementation detail of Tpetra.  It is not
-  ///   part of the public interface and may change or go away at any
-  ///   time.
-  ///
-  /// \note To Tpetra developers: This function exists to smooth over
-  ///   differences between the "classic" and current ("Kokkos
-  ///   refactor," circa 2014/5) versions of Tpetra::MultiVector.  It
-  ///   also makes the Tpetra::BlockMultiVector
-  ///   implementation below a bit easier to read.
-  template<class S, class LO, class GO, class N>
-  typename Tpetra::MultiVector<S, LO, GO, N>::impl_scalar_type*
-  getRawHostPtrFromMultiVector (Tpetra::MultiVector<S, LO, GO, N>& X) {
-    typedef Tpetra::MultiVector<S, LO, GO, N> MV;
-    return RawHostPtrFromMultiVector<MV>::getRawPtr (X);
-  }
-
-} // namespace (anonymous)
-#endif
 
 namespace Tpetra {
 
@@ -124,9 +77,6 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& in,
   meshMap_ (in.meshMap_),
   pointMap_ (in.pointMap_),
   mv_ (in.mv_, copyOrView),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  mvData_ (getRawHostPtrFromMultiVector (mv_)),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (in.blockSize_)
 {}
 
@@ -137,11 +87,8 @@ BlockMultiVector (const map_type& meshMap,
                   const LO numVecs) :
   dist_object_type (Teuchos::rcp (new map_type (meshMap))), // shallow copy
   meshMap_ (meshMap),
-  pointMap_ (makePointMap (meshMap, blockSize)),
-  mv_ (Teuchos::rcpFromRef (pointMap_), numVecs), // nonowning RCP is OK, since pointMap_ won't go away
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  mvData_ (getRawHostPtrFromMultiVector (mv_)),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  pointMap_ (makePointMapRCP (meshMap, blockSize)),
+  mv_ (pointMap_, numVecs), // nonowning RCP is OK, since pointMap_ won't go away
   blockSize_ (blockSize)
 {}
 
@@ -153,11 +100,8 @@ BlockMultiVector (const map_type& meshMap,
                   const LO numVecs) :
   dist_object_type (Teuchos::rcp (new map_type (meshMap))), // shallow copy
   meshMap_ (meshMap),
-  pointMap_ (pointMap),
-  mv_ (Teuchos::rcpFromRef (pointMap_), numVecs),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  mvData_ (getRawHostPtrFromMultiVector (mv_)),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  pointMap_ (new map_type(pointMap)),
+  mv_ (pointMap_, numVecs),
   blockSize_ (blockSize)
 {}
 
@@ -168,9 +112,6 @@ BlockMultiVector (const mv_type& X_mv,
                   const LO blockSize) :
   dist_object_type (Teuchos::rcp (new map_type (meshMap))), // shallow copy
   meshMap_ (meshMap),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  mvData_ (nullptr), // just for now
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (blockSize)
 {
   using Teuchos::RCP;
@@ -215,12 +156,8 @@ BlockMultiVector (const mv_type& X_mv,
 
   // At this point, mv_ has been assigned, so we can ignore X_mv.
   Teuchos::RCP<const map_type> pointMap = mv_.getMap ();
-  if (! pointMap.is_null ()) {
-    pointMap_ = *pointMap; // Map::operator= also does a shallow copy
-  }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  mvData_ = getRawHostPtrFromMultiVector (mv_);
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  pointMap_ = pointMap; 
+
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -231,11 +168,8 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
                   const size_t offset) :
   dist_object_type (Teuchos::rcp (new map_type (newMeshMap))), // shallow copy
   meshMap_ (newMeshMap),
-  pointMap_ (newPointMap),
+  pointMap_ (new map_type(newPointMap)),
   mv_ (X.mv_, newPointMap, offset * X.getBlockSize ()), // MV "offset view" constructor
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  mvData_ (getRawHostPtrFromMultiVector (mv_)),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (X.getBlockSize ())
 {}
 
@@ -246,11 +180,8 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
                   const size_t offset) :
   dist_object_type (Teuchos::rcp (new map_type (newMeshMap))), // shallow copy
   meshMap_ (newMeshMap),
-  pointMap_ (makePointMap (newMeshMap, X.getBlockSize ())),
+  pointMap_ (makePointMapRCP (newMeshMap, X.getBlockSize ())),
   mv_ (X.mv_, pointMap_, offset * X.getBlockSize ()), // MV "offset view" constructor
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  mvData_ (getRawHostPtrFromMultiVector (mv_)),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (X.getBlockSize ())
 {}
 
@@ -258,9 +189,6 @@ template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
 BlockMultiVector () :
   dist_object_type (Teuchos::null),
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  mvData_ (nullptr),
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (0)
 {}
 
@@ -269,13 +197,13 @@ typename BlockMultiVector<Scalar, LO, GO, Node>::map_type
 BlockMultiVector<Scalar, LO, GO, Node>::
 makePointMap (const map_type& meshMap, const LO blockSize)
 {
-  typedef Tpetra::global_size_t GST;
+typedef Tpetra::global_size_t GST;
   typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
 
   const GST gblNumMeshMapInds =
     static_cast<GST> (meshMap.getGlobalNumElements ());
   const size_t lclNumMeshMapIndices =
-    static_cast<size_t> (meshMap.getNodeNumElements ());
+    static_cast<size_t> (meshMap.getLocalNumElements ());
   const GST gblNumPointMapInds =
     gblNumMeshMapInds * static_cast<GST> (blockSize);
   const size_t lclNumPointMapInds =
@@ -290,7 +218,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
     // "Hilbert's Hotel" trick: multiply each process' GIDs by
     // blockSize, and fill in.  That ensures correctness even if the
     // mesh Map is overlapping.
-    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getNodeElementList ();
+    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getLocalElementList ();
     const size_type lclNumMeshGblInds = lclMeshGblInds.size ();
     Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
     for (size_type g = 0; g < lclNumMeshGblInds; ++g) {
@@ -305,9 +233,55 @@ makePointMap (const map_type& meshMap, const LO blockSize)
     }
     return map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
                      meshMap.getComm ());
+
   }
 }
 
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<const typename BlockMultiVector<Scalar, LO, GO, Node>::map_type>
+BlockMultiVector<Scalar, LO, GO, Node>::
+makePointMapRCP (const map_type& meshMap, const LO blockSize)
+{
+typedef Tpetra::global_size_t GST;
+  typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
+
+  const GST gblNumMeshMapInds =
+    static_cast<GST> (meshMap.getGlobalNumElements ());
+  const size_t lclNumMeshMapIndices =
+    static_cast<size_t> (meshMap.getLocalNumElements ());
+  const GST gblNumPointMapInds =
+    gblNumMeshMapInds * static_cast<GST> (blockSize);
+  const size_t lclNumPointMapInds =
+    lclNumMeshMapIndices * static_cast<size_t> (blockSize);
+  const GO indexBase = meshMap.getIndexBase ();
+
+  if (meshMap.isContiguous ()) {
+    return Teuchos::rcp(new map_type (gblNumPointMapInds, lclNumPointMapInds, indexBase,
+                                     meshMap.getComm ()));
+  }
+  else {
+    // "Hilbert's Hotel" trick: multiply each process' GIDs by
+    // blockSize, and fill in.  That ensures correctness even if the
+    // mesh Map is overlapping.
+    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getLocalElementList ();
+    const size_type lclNumMeshGblInds = lclMeshGblInds.size ();
+    Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
+    for (size_type g = 0; g < lclNumMeshGblInds; ++g) {
+      const GO meshGid = lclMeshGblInds[g];
+      const GO pointGidStart = indexBase +
+        (meshGid - indexBase) * static_cast<GO> (blockSize);
+      const size_type offset = g * static_cast<size_type> (blockSize);
+      for (LO k = 0; k < blockSize; ++k) {
+        const GO pointGid = pointGidStart + static_cast<GO> (k);
+        lclPointGblInds[offset + static_cast<size_type> (k)] = pointGid;
+      }
+    }
+    return Teuchos::rcp(new map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
+                                      meshMap.getComm ()));
+
+  }
+}
 
 template<class Scalar, class LO, class GO, class Node>
 void
@@ -319,7 +293,9 @@ replaceLocalValuesImpl (const LO localRowIndex,
   auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
-  Kokkos::deep_copy (X_dst, X_src);
+  // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+  using exec_space = typename device_type::execution_space;
+  Kokkos::deep_copy (exec_space(), X_dst, X_src);
 }
 
 
@@ -398,58 +374,6 @@ sumIntoGlobalValues (const GO globalRowIndex,
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-template<class Scalar, class LO, class GO, class Node>
-bool
-// TPETRA_DEPRECATED
-BlockMultiVector<Scalar, LO, GO, Node>::
-getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals)
-{
-  if (! meshMap_.isNodeLocalElement (localRowIndex)) {
-    return false;
-  } else {
-    auto X_ij = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
-    vals = reinterpret_cast<Scalar*> (X_ij.data ());
-    return true;
-  }
-}
-
-template<class Scalar, class LO, class GO, class Node>
-bool
-// TPETRA_DEPRECATED
-BlockMultiVector<Scalar, LO, GO, Node>::
-getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals)
-{
-  const LO localRowIndex = meshMap_.getLocalElement (globalRowIndex);
-  if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
-    return false;
-  } else {
-    auto X_ij = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
-    vals = reinterpret_cast<Scalar*> (X_ij.data ());
-    return true;
-  }
-}
-
-template<class Scalar, class LO, class GO, class Node>
-typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
-// TPETRA_DEPRECATED
-BlockMultiVector<Scalar, LO, GO, Node>::
-getLocalBlock (const LO localRowIndex,
-               const LO colIndex)
-{
-  if (! isValidLocalMeshIndex (localRowIndex)) {
-    return little_host_vec_type ();
-  } else {
-    const size_t blockSize = getBlockSize ();
-    const size_t offset = colIndex * this->getStrideY () +
-      localRowIndex * blockSize;
-    impl_scalar_type* blockRaw = this->getRawPtr () + offset;
-    return little_host_vec_type (blockRaw, blockSize);
-  }
-}
-
-#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::const_little_host_vec_type
@@ -520,8 +444,8 @@ getMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src)
   // BlockMultiVector or MultiVector (a Vector is a MultiVector).  Try
   // them in that order; one must succeed.  Note that the target of
   // the Import or Export calls checkSizes in DistObject's doTransfer.
-  typedef BlockMultiVector<Scalar, LO, GO, Node> this_type;
-  const this_type* srcBlkVec = dynamic_cast<const this_type*> (&src);
+  typedef BlockMultiVector<Scalar, LO, GO, Node> this_BMV_type;
+  const this_BMV_type* srcBlkVec = dynamic_cast<const this_BMV_type*> (&src);
   if (srcBlkVec == nullptr) {
     const mv_type* srcMultiVec = dynamic_cast<const mv_type*> (&src);
     if (srcMultiVec == nullptr) {
@@ -660,7 +584,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const Size k) const {
-    const auto zero = Kokkos::Details::ArithTraits<Scalar>::zero();
+    const auto zero = Kokkos::ArithTraits<Scalar>::zero();
     auto D_curBlk = Kokkos::subview(D_, k, Kokkos::ALL (), Kokkos::ALL ());
     const auto num_vecs = X_.extent(1);
     for (Size i = 0; i < num_vecs; ++i) {
@@ -739,7 +663,7 @@ public:
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef Kokkos::pair<LO, LO> range_type;
-    typedef Kokkos::Details::ArithTraits<Scalar> KAT;
+    typedef Kokkos::ArithTraits<Scalar> KAT;
 
     // We only have to implement the alpha != 0 case.
 
@@ -773,9 +697,9 @@ blockJacobiUpdate (const ViewY& Y,
                    const ViewZ& Z,
                    const Scalar& beta)
 {
-  static_assert (Kokkos::Impl::is_view<ViewY>::value, "Y must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ViewD>::value, "D must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewY>::value, "Y must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewD>::value, "D must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
   static_assert (static_cast<int> (ViewY::rank) == static_cast<int> (ViewZ::rank),
                  "Y and Z must have the same rank.");
   static_assert (static_cast<int> (ViewD::rank) == 3, "D must have rank 3.");
@@ -820,8 +744,8 @@ blockWiseMultiply (const Scalar& alpha,
                    const BlockMultiVector<Scalar, LO, GO, Node>& X)
 {
   using Kokkos::ALL;
-  typedef typename device_type::execution_space execution_space;
-  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
+  typedef typename device_type::execution_space exec_space;
+  const LO lclNumMeshRows = meshMap_.getLocalNumElements ();
 
   if (alpha == STS::zero ()) {
     this->putScalar (STS::zero ());
@@ -838,7 +762,7 @@ blockWiseMultiply (const Scalar& alpha,
     // execution space.  For example, if the default execution space
     // is Cuda but the current execution space is Serial, using just a
     // number would incorrectly run with Cuda.
-    Kokkos::RangePolicy<execution_space, LO> range (0, lclNumMeshRows);
+    Kokkos::RangePolicy<exec_space, LO> range (0, lclNumMeshRows);
     Kokkos::parallel_for (range, bwm);
   }
 }

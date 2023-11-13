@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   bool success = false;
   bool verbose = true;
   try {
-    typedef double                                  Scalar;
+    typedef Tpetra::CrsMatrix<>::scalar_type        Scalar;
     typedef Tpetra::Map<>::local_ordinal_type       LO;
 #if defined(HAVE_TPETRA_INST_INT_INT)
     // mfh 07 Aug 2015: Prefer GO = int, for consistency with Epetra,
@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
     RCP<const Map> map =
       rcp (new Map (static_cast<Tpetra::global_size_t> (numGlobalElements),
                     indexBase, comm));
-    const size_t numMyElements = map->getNodeNumElements();
-    Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+    const size_t numMyElements = map->getLocalNumElements();
+    Teuchos::ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
     MemoryUsageStart("Tpetra");
     PrintMemoryUsage("Initial memory usage", "tpetra-init.heap");

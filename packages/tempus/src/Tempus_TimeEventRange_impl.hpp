@@ -15,6 +15,14 @@ namespace Tempus {
 
 template<class Scalar>
 TimeEventRange<Scalar>::TimeEventRange()
+  : start_ (0.0),
+    stop_  (0.0),
+    stride_(0.0),
+    numEvents_(1),
+    timeScale_(1.0),
+    relTol_(this->getDefaultTol()),
+    absTol_(this->getDefaultTol()),
+    landOnExactly_(true)
 {
   this->setType("Range");
   setRelTol(this->getDefaultTol()),
@@ -32,9 +40,12 @@ TimeEventRange<Scalar>::TimeEventRange(
   std::string name, bool landOnExactly, Scalar relTol)
   : start_ (start),
     stop_  (stop),
+    stride_(stride),
+    numEvents_(0),
     timeScale_(std::max(std::abs(start_), std::abs(stop_))),
     relTol_(relTol),
-    absTol_(relTol_*timeScale_)
+    absTol_(relTol_*timeScale_),
+    landOnExactly_(landOnExactly)
 {
   this->setType("Range");
   if (name == "") {
@@ -56,9 +67,12 @@ TimeEventRange<Scalar>::TimeEventRange(
   std::string name, bool landOnExactly, Scalar relTol)
   : start_ (start),
     stop_  (stop),
+    stride_(0.0),
+    numEvents_(numEvents),
     timeScale_(std::max(std::abs(start_), std::abs(stop_))),
     relTol_(relTol),
-    absTol_(relTol_*timeScale_)
+    absTol_(relTol_*timeScale_),
+    landOnExactly_(landOnExactly)
 {
   if (name == "") {
     std::ostringstream oss;

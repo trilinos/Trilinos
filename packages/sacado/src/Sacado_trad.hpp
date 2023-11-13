@@ -224,7 +224,7 @@ ADmemblock {    // We get memory in ADmemblock chunks and never give it back,
                 // but reuse it once computations start anew after call(s) on
                 // ADcontext::Gradcomp() or ADcontext::Weighted_Gradcomp().
         ADmemblock *next;
-        Double memblk[1000];
+   char memblk[1000*sizeof(double)];
         };
 
  template<typename Double> class
@@ -257,6 +257,7 @@ ADcontext {
         static void aval_reset();
         static void free_all();
         static void re_init();
+        static void zero_out();
         static void Weighted_Gradcomp(size_t, ADVar**, Double*);
         static void Outvar_Gradcomp(ADVar&);
 #if RAD_REINIT > 0
@@ -388,9 +389,7 @@ T1(sqrt)
 T1(tan)
 T1(tanh)
 T1(fabs)
-#ifdef HAVE_SACADO_CXX11
 T1(cbrt)
-#endif
 
 T F copy(AI);
 T F copy(Ai);
@@ -453,7 +452,7 @@ ADvari : public Base< ADvari<Double> > {        // implementation of an ADvar
         static int gcgen_cur, last_opno, zap_gcgen, zap_gcgen1, zap_opno;
         static FILE *debug_file;
 #endif
-        Double Val;     // result of this operation
+        mutable Double Val;     // result of this operation
         mutable Double aval;    // adjoint -- partial of final result w.r.t. this Val
         Allow_noderiv(mutable int wantderiv;)
         void *operator new(size_t len) {
@@ -526,9 +525,7 @@ F r f <>(D,Ai);
         T1(R,tanh)
         T1(R,fabs)
         T1(R,copy)
-#ifdef HAVE_SACADO_CXX11
         T1(R,cbrt)
-#endif
         T2(int,operator<)
         T2(int,operator<=)
         T2(int,operator==)
@@ -733,7 +730,7 @@ IndepADvar: protected IndepADvar_base<Double>, public Base< IndepADvar<Double> >
                 cv = 0;
 #endif
                 }
-        inline ~IndepADvar() {}
+   inline ~IndepADvar() {}
         friend IndepADvar& ADvar_operatoreq<>(IndepADvar*, const ADVari&);
 #endif
 
@@ -839,9 +836,7 @@ T1(tan)
 T1(tanh)
 T1(fabs)
 T1(copy)
-#ifdef HAVE_SACADO_CXX11
 T1(cbrt)
-#endif
 
 #undef D
 #undef F
@@ -1866,6 +1861,23 @@ ADcontext<Double>::Outvar_Gradcomp(ADVar &V)
         ADcontext<Double>::Weighted_Gradcomp(1, &v, &w);
         }
 
+ template<typename Double> void
+ADcontext<Double>::zero_out(void)
+{
+  for(DErp *d = DErp::LastDerp; d; d = d->next) {
+    if (d->a)
+      *(const_cast<Double*>(d->a)) = Double(0.0);
+    if (d->b) {
+      d->b->aval = Double(0.0);
+      d->b->Val = Double(0.0);
+    }
+    if (d->c) {
+      d->c->aval = Double(0.0);
+      d->c->Val = Double(0.0);
+    }
+  }
+}
+
  template<typename Double>
 IndepADvar<Double>::IndepADvar(Ttype d) Allow_noderiv(: IndepADvar_base<Double>(1))
 {
@@ -2555,7 +2567,6 @@ fabs(const Base< ADvari<Double> > &vv) {
    return *(new ADvar1s<Double>(t, p, &v));
  }
 
-#ifdef HAVE_SACADO_CXX11
 template<typename Double>
  ADvari<Double>&
 cbrt(const Base< ADvari<Double> > &vv) {
@@ -2563,7 +2574,6 @@ cbrt(const Base< ADvari<Double> > &vv) {
    Double t = std::cbrt(v.Val);
    return *(new ADvar1s<Double>(t, 1.0/(3.0*t*t), &v));
  }
-#endif
 
  template<typename Double>
  ADvari<Double>&
@@ -2693,9 +2703,7 @@ T1(sqrt)
 T1(tan)
 T1(tanh)
 T1(fabs)
-#ifdef HAVE_SACADO_CXX11
 T1(cbrt)
-#endif
 
 T F copy(AI xx)
 {

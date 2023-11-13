@@ -60,7 +60,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_CreateXpetraPreconditioner.hpp"
 
@@ -195,7 +195,7 @@ namespace MueLuTests {
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-    defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
+    defManager->SetFactory("Aggregates", rcp(new UncoupledAggregationFactory()));   // real aggregation factory for Ptent
 
     Level fineLevel, coarseLevel;
     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -281,6 +281,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -392,6 +395,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -469,6 +475,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -557,6 +566,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -646,6 +658,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -735,6 +750,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     typedef Scalar SC;
     typedef GlobalOrdinal GO;

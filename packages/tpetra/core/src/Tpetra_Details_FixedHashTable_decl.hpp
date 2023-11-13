@@ -47,10 +47,14 @@
 #include "Tpetra_Details_Hash.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_Profiling.hpp"
+
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
+
 #include "Kokkos_Core.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 namespace Tpetra {
 namespace Details {
@@ -127,7 +131,7 @@ public:
   typedef Kokkos::View<const KeyType*, Kokkos::LayoutLeft, device_type> keys_type;
 
   //! Default constructor; makes an empty table.
-  FixedHashTable ();
+  KOKKOS_DEFAULTED_FUNCTION FixedHashTable() = default;
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with zero.
@@ -249,6 +253,8 @@ public:
     typedef typename ptr_type::non_const_type nonconst_ptr_type;
     typedef typename val_type::non_const_type nonconst_val_type;
 
+    Tpetra::Details::ProfilingRegion pr("Tpetra::Details::FixedHashTable::ctor(InDeviceType)");
+
     // FIXME (mfh 28 May 2015) The code below _always_ copies.  This
     // shouldn't be necessary if the input and output memory spaces
     // are the same.  However, it is always correct.
@@ -264,7 +270,8 @@ public:
                            src.val_.extent (0));
     // val and src.val_ have the same entry types, unlike (possibly)
     // ptr and src.ptr_.  Thus, we can use Kokkos::deep_copy here.
-    Kokkos::deep_copy (val, src.val_);
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+    Kokkos::deep_copy (execution_space(), val, src.val_);
 
     this->ptr_ = ptr;
     this->val_ = val;
@@ -414,25 +421,31 @@ private:
   ///
   /// In Tpetra::Map, this corresponds to the minimum global index
   /// (local to the MPI process).
-  KeyType minKey_;
+  /// @remark It will be set in @ref init.
+  KeyType minKey_ = ::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Maximum key (computed in init()).
   ///
   /// In Tpetra::Map, this corresponds to the maximum global index
   /// (local to the MPI process).
-  KeyType maxKey_;
+  /// @remark It will be set in @ref init.
+  KeyType maxKey_ = ::Kokkos::ArithTraits<KeyType>::is_integer ?
+                    ::Kokkos::ArithTraits<KeyType>::min() :
+                   -::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Minimum value.
   ///
   /// In Tpetra::Map, this corresponds to the minimum local index
   /// (local to the MPI process).
-  ValueType minVal_;
+  ValueType minVal_ = ::Kokkos::ArithTraits<ValueType>::max();
 
   /// \brief Maximum value.
   ///
   /// In Tpetra::Map, this corresponds to the maximum local index
   /// (local to the MPI process).
-  ValueType maxVal_;
+  ValueType maxVal_ = ::Kokkos::ArithTraits<ValueType>::is_integer ?
+                      ::Kokkos::ArithTraits<ValueType>::min() :
+                     -::Kokkos::ArithTraits<ValueType>::max();
 
   /// \brief First key in any initial contiguous sequence.
   ///
@@ -440,7 +453,7 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType firstContigKey_;
+  KeyType firstContigKey_ = ::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Last key in any initial contiguous sequence.
   ///
@@ -448,7 +461,9 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType lastContigKey_;
+  KeyType lastContigKey_ = ::Kokkos::ArithTraits<KeyType>::is_integer ?
+                           ::Kokkos::ArithTraits<KeyType>::min() :
+                          -::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Whether the table was created using one of the
   ///   constructors that assume contiguous values.
@@ -456,19 +471,20 @@ private:
   /// This is false if this object was created using the two-argument
   /// (keys, vals) constructor (that takes lists of both keys and
   /// values), else true.
-  bool contiguousValues_;
+  bool contiguousValues_ = true;
 
   /// \brief Whether the table has checked for duplicate keys.
   ///
   /// This is set at the end of the first call to hasDuplicateKeys().
   /// The results of that method are cached in hasDuplicateKeys_ (see
   /// below).
-  bool checkedForDuplicateKeys_;
+  /// @remark It will be revised in @ref hasDuplicateKeys.
+  bool checkedForDuplicateKeys_ = true;
 
   /// \brief Whether the table noticed any duplicate keys.
   ///
   /// This is only valid if checkedForDuplicateKeys_ (above) is true.
-  bool hasDuplicateKeys_;
+  bool hasDuplicateKeys_ = false;
 
   /// \brief Whether the table has duplicate keys.
   ///

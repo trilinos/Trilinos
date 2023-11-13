@@ -46,6 +46,7 @@ public:
     const GlobalId &get_unique_id() const { return mUniqueId; }
     size_t get_node_global_id() const { return mUniqueId[0]; }
     size_t get_intersection_point_index() const { return mUniqueId[1]; }
+    void set_intersection_point_index(const size_t intPtIndex) { mUniqueId[1] = intPtIndex; }
     int get_owner() const { return mOwner; }
     const std::vector<int> &get_procs_that_need_to_know_about_this_info() const { return mProcsThatNeedToKnowAboutThisInfo; }
     double get_post_worst_quality() const { return mPostWorstQuality; }
@@ -54,30 +55,26 @@ public:
     int get_snap_rank() const { return mSnapRank; }
     const std::vector<ExclusionIdentifierType> &get_conflicting_ids() const { return mGlobalIdsOfSnapNodeElems; }
 
-    class ConflictFinder
-    {
-    public:
-        std::vector<size_t> get_other_conflicting_infos(const SnapInfo& info) const {return {};}
-    };
     class Comparator
     {
     public:
         Comparator(const QualityMetric &qualityMetric) : mQualityMetric{qualityMetric}{}
         bool is_first_higher_priority_than_second(const SnapInfo& tetSnapInfoA,const SnapInfo& tetSnapInfoB) const;
+        bool does_first_win_priority_tie_with_second(const SnapInfo& tetSnapInfoA,const SnapInfo& tetSnapInfoB) const;
 
     private:
         const QualityMetric &mQualityMetric;
     };
 
 private:
-    const GlobalId mUniqueId;
-    const int mOwner{0u};
-    const std::vector<int> mProcsThatNeedToKnowAboutThisInfo;
-    const std::vector<size_t> mGlobalIdsOfSnapNodeElems;
-    const double mPostWorstQuality{0.0};
-    const stk::math::Vector3d mNodeLocation{};
-    const stk::math::Vector3d mSnapLocation{};
-    const int mSnapRank;
+    GlobalId mUniqueId;
+    int mOwner{0u};
+    std::vector<int> mProcsThatNeedToKnowAboutThisInfo;
+    std::vector<size_t> mGlobalIdsOfSnapNodeElems;
+    double mPostWorstQuality{0.0};
+    stk::math::Vector3d mNodeLocation{};
+    stk::math::Vector3d mSnapLocation{};
+    int mSnapRank;
 };
 
 std::ostream & operator<<(std::ostream & os, const SnapInfo& snapInfo);

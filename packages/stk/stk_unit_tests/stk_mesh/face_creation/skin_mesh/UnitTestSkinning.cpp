@@ -51,13 +51,6 @@
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Bucket; } }
 
-
-
-
-
-
-
-
 static const stk::topology::rank_t NODE_RANK = stk::topology::NODE_RANK;
 
 using stk::mesh::MetaData;
@@ -84,7 +77,7 @@ void UnitTestStkMeshSkinning::test_skinning()
     return;
   }
 
-  stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
+  stk::mesh::fixtures::simple_fields::GridFixture grid_mesh(MPI_COMM_WORLD);
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
@@ -109,7 +102,7 @@ void UnitTestStkMeshSkinning::test_skinning()
   const unsigned num_shell_2_faces = 2;
   const unsigned num_shell_faces = num_shell_1_faces + num_shell_2_faces;
   const unsigned num_entities = count[NODE_RANK] +
-                                count[element_rank];
+      count[element_rank];
 
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
@@ -117,7 +110,7 @@ void UnitTestStkMeshSkinning::test_skinning()
   std::vector<stk::mesh::Entity> shell_faces;
   for (unsigned i = 1; i <= num_shell_faces; ++i) {
     stk::mesh::Entity new_shell = bulk_data.declare_element(num_entities + i,
-                                                           shell_parts);
+                                                            shell_parts);
     shell_faces.push_back(new_shell);
   }
 

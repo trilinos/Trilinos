@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -832,8 +832,8 @@ std::pair<int, size_t> ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt
     Error("exodiff: ERROR:  File not open!");
   }
   if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
-    Error(fmt::format("exodiff: ERROR:  global_elmt_num = {:L} is out of bounds [1, {:L}]!",
-                      global_elmt_num, num_elmts));
+    Error(fmt::format("exodiff: ERROR:  global_elmt_num = {} is out of bounds [1, {}]!",
+                      fmt::group_digits(global_elmt_num), fmt::group_digits(num_elmts)));
   }
 
   int block_index = 0;
@@ -854,7 +854,7 @@ template <typename INT> int ExoII_Read<INT>::Check_State() const
   SMART_ASSERT(io_word_size == 0 || io_word_size == 4 || io_word_size == 8);
 
   SMART_ASSERT(!(file_id >= 0 && io_word_size == 0));
-  SMART_ASSERT(!(file_id >= 0 && file_name == ""));
+  SMART_ASSERT(!(file_id >= 0 && file_name.empty()));
 
   SMART_ASSERT(!(num_elmt_blocks > 0 && !eblocks));
   SMART_ASSERT(!(num_node_sets > 0 && !nsets));
@@ -897,7 +897,7 @@ template <typename INT> std::string ExoII_Read<INT>::Open_File(const char *fname
   if ((fname != nullptr) && std::strlen(fname) > 0) {
     file_name = fname;
   }
-  else if (file_name == "") {
+  else if (file_name.empty()) {
     return "No file name to open!";
   }
   int   ws = 0, comp_ws = 8;
@@ -940,8 +940,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   SMART_ASSERT(file_id >= 0);
 
   // Determine max size of entity and variable names on the database
-  int name_length = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-  ex_set_max_name_length(file_id, name_length);
+  int length_name = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  ex_set_max_name_length(file_id, length_name);
 
   ex_init_params info{};
   info.title[0] = '\0';
@@ -971,16 +971,17 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   if (dimension < 1 || dimension > 3) {
     Error(fmt::format("Init data appears corrupt:\n"
                       "         dimension = {}\n"
-                      "         num_nodes = {:L}\n"
-                      "         num_elmts = {:L}\n"
+                      "         num_nodes = {}\n"
+                      "         num_elmts = {}\n"
                       "         num_elmt_blocks = {}\n"
                       "         num_node_sets = {}\n"
                       "         num_side_sets = {}\n"
                       "         num_edge_blocks = {}\n"
                       "         num_face_blocks = {}\n"
                       " ... Aborting...\n",
-                      dimension, num_nodes, num_elmts, num_elmt_blocks, num_node_sets,
-                      num_edge_blocks, num_face_blocks, num_side_sets));
+                      dimension, fmt::group_digits(num_nodes), fmt::group_digits(num_elmts),
+                      num_elmt_blocks, num_node_sets, num_edge_blocks, num_face_blocks,
+                      num_side_sets));
   }
 
   int num_qa   = ex_inquire_int(file_id, EX_INQ_QA);
@@ -996,7 +997,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   //                   Coordinate Names...
 
-  char **coords = get_name_array(3, name_length);
+  char **coords = get_name_array(3, length_name);
   err           = ex_get_coord_names(file_id, coords);
   if (err < 0) {
     Error("Failed to get coordinate names!  Aborting...\n");
@@ -1010,9 +1011,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   //                 Element Block Data...
 
-  if (eblocks) {
-    delete[] eblocks;
-  }
+  delete[] eblocks;
   eblocks = nullptr;
   if (num_elmt_blocks > 0) {
     eblocks = new Exo_Block<INT>[num_elmt_blocks];
@@ -1042,10 +1041,10 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
     if (e_count != num_elmts && !interFace.quiet_flag) {
       fmt::print(stderr,
-                 "exodiff: WARNING: Total number of elements {:L}"
+                 "exodiff: WARNING: Total number of elements {}"
                  " does not equal the sum of the number of elements "
-                 "in each block {:L}\n",
-                 num_elmts, e_count);
+                 "in each block {}\n",
+                 fmt::group_digits(num_elmts), fmt::group_digits(e_count));
     }
 
     // Gather the attribute names (even though not all attributes are on all blocks)
@@ -1061,9 +1060,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   //                     Node & Side sets...
 
-  if (nsets) {
-    delete[] nsets;
-  }
+  delete[] nsets;
   nsets = nullptr;
   if (num_node_sets > 0) {
     nsets = new Node_Set<INT>[num_node_sets];
@@ -1089,9 +1086,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     }
   }
 
-  if (ssets) {
-    delete[] ssets;
-  }
+  delete[] ssets;
   ssets = nullptr;
   if (num_side_sets) {
     ssets = new Side_Set<INT>[num_side_sets];
@@ -1117,9 +1112,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   //                     Edge & Face blocks...
 
-  if (edge_blocks) {
-    delete[] edge_blocks;
-  }
+  delete[] edge_blocks;
   edge_blocks = nullptr;
   if (num_edge_blocks > 0) {
     edge_blocks = new Edge_Block<INT>[num_edge_blocks];
@@ -1145,9 +1138,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     }
   }
 
-  if (face_blocks) {
-    delete[] face_blocks;
-  }
+  delete[] face_blocks;
   face_blocks = nullptr;
   if (num_face_blocks > 0) {
     face_blocks = new Face_Block<INT>[num_face_blocks];
@@ -1253,7 +1244,12 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   if (num_times) {
     times = new double[num_times];
     SMART_ASSERT(times != nullptr);
-    err = ex_get_all_times(file_id, times);
+    ex_get_all_times(file_id, times);
+    if (time_scale != 1.0 || time_offset != 0.0) {
+      for (int i = 0; i < num_times; i++) {
+        times[i] = time_scale * times[i] + time_offset;
+      }
+    }
   }
 
   if (num_nodal_vars != 0) {

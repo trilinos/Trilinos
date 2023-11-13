@@ -57,7 +57,7 @@ int main(int narg, char **arg)
   vector_t oneToOneVec(oneToOneMap);
 
   // Set values in oneToOneVec:  each entry == rank
-  for (lno_t i = 0; i < lno_t(oneToOneMap->getNodeNumElements()); i++)
+  for (lno_t i = 0; i < lno_t(oneToOneMap->getLocalNumElements()); i++)
     oneToOneVec.replaceLocalValue(i, me);
 
   // Now import oneToOneVec's values back to vecWithCopies
@@ -68,7 +68,7 @@ int main(int narg, char **arg)
   // Print the entries of each vector
   std::cout << me << " ONE TO ONE VEC  ("
                   << oneToOneMap->getGlobalNumElements() << "):  ";
-  lno_t nlocal = lno_t(oneToOneMap->getNodeNumElements());
+  lno_t nlocal = lno_t(oneToOneMap->getLocalNumElements());
   for (lno_t i = 0; i < nlocal; i++)
     std::cout << "[" << oneToOneMap->getGlobalElement(i) << " "
               << oneToOneVec.getData()[i] << "] ";
@@ -77,7 +77,7 @@ int main(int narg, char **arg)
   // Should see copied vector values when print VEC WITH COPIES
   std::cout << me << " VEC WITH COPIES ("
                   << mapWithCopies->getGlobalNumElements() << "):  ";
-  nlocal = lno_t(mapWithCopies->getNodeNumElements());
+  nlocal = lno_t(mapWithCopies->getLocalNumElements());
   for (lno_t i = 0; i < nlocal; i++)
     std::cout << "[" << mapWithCopies->getGlobalElement(i) << " "
               << vecWithCopies.getData()[i] << "] ";

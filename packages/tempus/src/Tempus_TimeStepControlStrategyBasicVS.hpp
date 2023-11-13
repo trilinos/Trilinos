@@ -293,15 +293,14 @@ createTimeStepControlStrategyBasicVS(
   std::string name = "Basic VS")
 {
   auto tscs = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>());
-  if (pList == Teuchos::null) return tscs;
+  if (pList == Teuchos::null || pList->numParams() == 0) return tscs;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    pList->get<std::string>("Strategy Type", "Basic VS") != "Basic VS",
-    std::logic_error,
+    pList->get<std::string>("Strategy Type") != "Basic VS", std::logic_error,
     "Error - Strategy Type != 'Basic VS'.  (='"
     +pList->get<std::string>("Strategy Type")+"')\n");
 
-  pList->validateParametersAndSetDefaults(*tscs->getValidParameters(), 0);
+  pList->validateParametersAndSetDefaults(*tscs->getValidParameters());
 
   tscs->setAmplFactor(  pList->get<double>("Amplification Factor"));
   tscs->setReductFactor(pList->get<double>("Reduction Factor"));

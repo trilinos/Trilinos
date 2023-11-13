@@ -84,15 +84,8 @@ localSolve (Tpetra::MultiVector<
   using Teuchos::CONJ_TRANS;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
-  using MV = Tpetra::MultiVector<
-    typename CrsMatrixType::scalar_type,
-    typename CrsMatrixType::local_ordinal_type,
-    typename CrsMatrixType::global_ordinal_type,
-    typename CrsMatrixType::node_type>;
   using scalar_type = typename CrsMatrixType::scalar_type;
   using STS = Teuchos::ScalarTraits<scalar_type>;
-  using device_type = typename CrsMatrixType::device_type;
-  using dev_memory_space = typename device_type::memory_space;
   const char prefix[] = "localSolve: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -632,8 +625,8 @@ testArrowMatrixWithDense (bool& success, Teuchos::FancyOStream& out, const LO lc
   Kokkos::View<val_type**, HDT> L ("L", lclNumRows, lclNumCols);
   Kokkos::View<val_type**, HDT> U ("U", lclNumRows, lclNumCols);
 
-  const val_type ZERO = Kokkos::Details::ArithTraits<val_type>::zero ();
-  const val_type ONE = Kokkos::Details::ArithTraits<val_type>::one ();
+  const val_type ZERO = Kokkos::ArithTraits<val_type>::zero ();
+  const val_type ONE = Kokkos::ArithTraits<val_type>::one ();
   const val_type TWO = ONE + ONE;
   const val_type N = static_cast<val_type> (static_cast<mag_type> (lclNumRows));
   const val_type d = TWO * N;
@@ -781,7 +774,7 @@ testArrowMatrixAssembly(const int lclNumRows,
   using LO = typename crs_matrix_type::local_ordinal_type;
   using SC = typename crs_matrix_type::scalar_type;
 
-  typedef Kokkos::Details::ArithTraits<SC> KAT;
+  typedef Kokkos::ArithTraits<SC> KAT;
   typedef typename KAT::val_type IST;
   typedef typename KAT::mag_type mag_type;
   typedef typename crs_matrix_type::local_graph_device_type local_graph_type;
@@ -952,7 +945,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   typedef Tpetra::RowMatrix<SC, LO, GO> row_matrix_type;
   typedef Tpetra::Vector<SC, LO, GO> vec_type;
   typedef Ifpack2::LocalSparseTriangularSolver<row_matrix_type> solver_type;
-  typedef Kokkos::Details::ArithTraits<SC> KAT;
+  typedef Kokkos::ArithTraits<SC> KAT;
   typedef typename KAT::val_type IST;
   typedef typename KAT::mag_type mag_type;
   int lclSuccess = 1;
@@ -998,12 +991,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
                                      rowMap,colMap,domMap,ranMap,
                                      L,U,out);
   if(!gblSuccess) return;
-
-  typedef typename crs_matrix_type::local_graph_device_type local_graph_type;
-  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_type;
-  typedef typename local_matrix_type::row_map_type::non_const_type row_offsets_type;
-  typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
-  typedef typename local_matrix_type::values_type::non_const_type values_type;
 
   typedef typename crs_matrix_type::local_inds_host_view_type const_local_inds_type;
   typedef typename crs_matrix_type::values_host_view_type const_values_type;

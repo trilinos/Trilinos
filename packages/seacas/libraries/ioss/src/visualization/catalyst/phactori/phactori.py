@@ -55,8 +55,14 @@ WriteDeadCellSummaryFile = True
 global gPipeAndViewsState
 gPipeAndViewsState = None
 
+def SetgPipeAndViewStateForTesting(testPipe):
+  global gPipeAndViewsState
+  gPipeAndViewsState = testPipe
+
 def GetFrameTagCounter():
   global gPipeAndViewsState
+  if gPipeAndViewsState == None:
+    return 0
   return gPipeAndViewsState.mFrameTagCounter
 
 try: paraview.simple
@@ -71,7 +77,17 @@ global gParaViewCatalystVersionFlag
 #gParaViewCatalystVersionFlag = 40300
 #gParaViewCatalystVersionFlag = 40100
 #gParaViewCatalystVersionFlag = 50400
-gParaViewCatalystVersionFlag = 50502
+#gParaViewCatalystVersionFlag = 50502
+#gParaViewCatalystVersionFlag = 51000
+gParaViewCatalystVersionFlag = 51100
+
+#attempt to use paraview.simple.GetParaViewVersion() to set version
+try:
+  versionTuple = GetParaViewVersion()
+  gParaViewCatalystVersionFlag = versionTuple.major * 10000
+  gParaViewCatalystVersionFlag += versionTuple.minor * 100
+except:
+  raise Exception("exception while working with paraview.simple.GetParaViewVersion()")
 
 global gPointsString
 if gParaViewCatalystVersionFlag <= 40100:
@@ -98,6 +114,9 @@ gBypassUserDataJson = None
 global TestUserDataForBypassScriptCompletedFlag
 TestUserDataForBypassScriptCompletedFlag = False
 
+global gTemporaryGlobalImageTextColor
+gTemporaryGlobalImageTextColor = [1.0, 1.0, 1.0]
+
 global bccolli_controls
 
 global gCameraTestMode
@@ -117,6 +136,8 @@ if "PHACTORI_TEST_CAMERA_MODE" in os.environ:
 def HandleJsonScriptLoadProcessZero(catalyst_script_extra_file):
   if PhactoriDbg():
     myDebugPrint3("HandleJsonScriptLoadProcessZero entered\n")
+    myDebugPrint3("catalyst_script_extra_file: " + \
+      str(catalyst_script_extra_file) + "\n")
   try:
     with open(catalyst_script_extra_file) as data_file:
       if PhactoriDbg(100):
@@ -1336,9 +1357,10 @@ for key, value in gSubstituteImagesetTestingMap.items():
 #-----
 
 global gDefaultTimeFormatString
-gDefaultTimeFormatString = "Time: %.10e"
 #gDefaultTimeFormatString = "Time: %.6e"
 #gDefaultTimeFormatString = "Time: %f"
+#gDefaultTimeFormatString = "Time: %.10e"
+gDefaultTimeFormatString = "Time: {time:.6f}"
 
 global gDefaultImageSizeX
 gDefaultImageSizeX = 1920
@@ -1933,7 +1955,11 @@ def SetDataRepresentationToDefault(inDataRepresentation):
   inDataRepresentation.SelectionPointLabelColor = [0.5, 0.5, 0.5]
   inDataRepresentation.SelectionPointFieldDataArrayName = 'displ'
   inDataRepresentation.SuppressLOD = 0
-  inDataRepresentation.BlockVisibility = []
+  global gParaViewCatalystVersionFlag
+  if gParaViewCatalystVersionFlag < 51000:
+    inDataRepresentation.BlockVisibility = []
+    inDataRepresentation.BlockOpacity = {}
+    inDataRepresentation.BlockColor = {}
   inDataRepresentation.Position = [0.0, 0.0, 0.0]
   inDataRepresentation.BackfaceRepresentation = 'Follow Frontface'
   inDataRepresentation.SelectionOpacity = 1.0
@@ -1984,7 +2010,6 @@ def SetDataRepresentationToDefault(inDataRepresentation):
   inDataRepresentation.Texture = []
   inDataRepresentation.SelectionCellLabelShadow = 0
   inDataRepresentation.AmbientColor = [1.0, 1.0, 1.0]
-  inDataRepresentation.BlockOpacity = {}
   inDataRepresentation.MapScalars = 1
   inDataRepresentation.PointSize = 2.0
   inDataRepresentation.SelectionCellLabelFormat = ''
@@ -2003,7 +2028,6 @@ def SetDataRepresentationToDefault(inDataRepresentation):
   inDataRepresentation.SelectionPointLabelFontSize = 18
   inDataRepresentation.SelectionCellFieldDataArrayName = 'GlobalElementId'
   inDataRepresentation.SelectionColor = [1.0, 0.0, 1.0]
-  inDataRepresentation.BlockColor = {}
   inDataRepresentation.Ambient = 0.0
   inDataRepresentation.ScaleFactor = 0.775
   inDataRepresentation.BackfaceAmbientColor = [1.0, 1.0, 1.0]
@@ -2056,6 +2080,7 @@ def AddRenderView(inPhactoriImagesetInfo, inColorSettings,
     global localCpViews
     global PhactoriRenderViewInfoList
     global currentPhactoriRenderViewInfo
+    global gParaViewCatalystVersionFlag
 
     if PhactoriDbg(100):
       myDebugPrint3("AddRenderView entered\n", 100)
@@ -2126,7 +2151,6 @@ def AddRenderView(inPhactoriImagesetInfo, inColorSettings,
         RenderView1.LightSwitch = 0
       RenderView1.UseOutlineForLODRendering = 0
       RenderView1.KeyLightAzimuth = 10.0
-      RenderView1.UseTexturedBackground = 0
       RenderView1.UseLight = 1
       RenderView1.CameraPosition = [3.681775921856809, 3.2427490288581042, 6.445486324396935]
       RenderView1.FillLightKFRatio = 3.0
@@ -2181,11 +2205,14 @@ def AddRenderView(inPhactoriImagesetInfo, inColorSettings,
       RenderView1.OrientationAxesOutlineColor = [1.0, 1.0, 1.0]
       RenderView1.LODThreshold = 5.0
       RenderView1.CollectGeometryThreshold = 100.0
-      RenderView1.UseGradientBackground = 0
       RenderView1.KeyLightWarmth = 0.6
       RenderView1.OrientationAxesLabelColor = [1.0, 1.0, 1.0]
       #RenderView1.OrientationAxesLabelColor = inColorSettings.mOrientationAxesLabelColor
       #rigid_body_impact_6_ff_e = CreateProducer( datadescription, "input" )
+
+      if gParaViewCatalystVersionFlag < 51000:
+        RenderView1.UseTexturedBackground = 0
+        RenderView1.UseGradientBackground = 0
 
       SetAxesGridVisibility(RenderView1, 0)
 
@@ -2244,11 +2271,8 @@ def AddRenderView(inPhactoriImagesetInfo, inColorSettings,
         else:
           myDebugPrint3AndException("bad m_PlotType")
       else:
-        #UpdatePipelineWithCurrentTimeArgument(GetActiveSource())
         SetParaViewViewToCurrentTime(RenderView1)
-        #myDebugPrint3(str(GetActiveView().ListProperties()) + "\n")
-        #myDebugPrint3("ViewTime: " + str(GetActiveView().ViewTime) + "\n")
-        DataRepresentation1 = Show()
+        DataRepresentation1 = Show(GetActiveSource(), RenderView1, 'UnstructuredGridRepresentation')
         if PhactoriDbg():
           myDebugPrint3("representation made for 3d view:\n" + str(DataRepresentation1) + "\n")
       inPhactoriImagesetInfo.mPvDataRepresentation2 = DataRepresentation1
@@ -2277,7 +2301,7 @@ def AddRenderView(inPhactoriImagesetInfo, inColorSettings,
         if inPhactoriImagesetInfo.mVisiblePvDataReps[ii] == None:
           SetActiveSource(inPhactoriImagesetInfo.mVisibleOps[ii].\
               mParaViewFilter)
-          newPvDataRep = Show()
+          newPvDataRep = Show(GetActiveSource(), RenderView1, 'UnstructuredGridRepresentation')
           SetDataRepresentationToDefault(newPvDataRep)
           inPhactoriImagesetInfo.mVisiblePvDataReps[ii] = newPvDataRep
           if PhactoriDbg(100):
@@ -2404,10 +2428,10 @@ def CheckForParallelVector(vec1, vec2):
 def GetMaximumDimensionFromBounds(inBounds):
   maxDim = inBounds[1] - inBounds[0]
   testDim = inBounds[3] - inBounds[2]
-  if(testDim > testDim):
+  if(testDim > maxDim):
     maxDim = testDim
   testDim = inBounds[5] - inBounds[4]
-  if(testDim > testDim):
+  if(testDim > maxDim):
     maxDim = testDim
   return maxDim
 
@@ -3497,6 +3521,8 @@ def SetForCorrectColorBy(inImagesetInfo, inPhactoriOperation,
         inPvDataRepresentation, inPhactoriRepresentation,
         inInitializeColorLegendFlag):
 
+  global gParaViewCatalystVersionFlag
+
   if PhactoriDbg():
     if inPhactoriOperation != None:
         opStr = inPhactoriOperation.mName
@@ -3530,7 +3556,8 @@ def SetForCorrectColorBy(inImagesetInfo, inPhactoriOperation,
   if inPhactoriRepresentation != None:
     if inPhactoriRepresentation.mColorByBlockFlag == False:
       #clear block color
-      inPvDataRepresentation.BlockColor = {}
+      if gParaViewCatalystVersionFlag < 51000:
+        inPvDataRepresentation.BlockColor = {}
     if inPhactoriRepresentation.mColorByBlockFlag:
       if PhactoriDbg():
         myDebugPrint3("inPhactoriRepresentation.mColorByBlockFlag is true\n")
@@ -3702,9 +3729,21 @@ def ParseOneFilterTypeFromViewMapOperation(ioOperationBlock, inTypeString, inOpe
 def ConstructClipPlaneOperationFromParsedOperationBlockC(ioPipeAndViewsState, ioOperationBlock):
   return
 
+def ConstructPipelineOperationFromParsedOperationBlockC_ForTest(ioOperationBlock, inputParaviewFilter):
+  if PhactoriDbg(100):
+    myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC_ForTest entered\n", 100)
+  particularOperation = ioOperationBlock.mOperationSpecifics
+  if ioOperationBlock.mType == 'group':
+    myDebugPrint3("not doing group yet")
+    raise Exception("not doing group yet")
+  else:
+    inputSource = inputParaviewFilter
+    newParaViewFilter = particularOperation.CreateParaViewFilter2(inputSource, None)
+  ioOperationBlock.mParaViewFilter = newParaViewFilter
+  if PhactoriDbg(100):
+    myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC_ForTest returning\n", 100)
 
 def ConstructPipelineOperationFromParsedOperationBlockC(ioPipeAndViewsState, ioOperationBlock):
-
   if PhactoriDbg(100):
     myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC entered\n", 100)
   if PhactoriDbg():
@@ -3889,10 +3928,21 @@ def MakeFiltersFromViewMapOperationsC(ioPipeAndViewsState, inOperationBlocksJson
               'cylinderclip',
               PhactoriCylinderClipOperation,
               operationParams)
-    elif operationParams['type'] == 'element data to node data':
+    elif (operationParams['type'] == 'element data to node data') or \
+      (operationParams['type'] == 'elementdatatonodedata') or \
+      (operationParams['type'] == 'cell data to point data') or \
+      (operationParams['type'] == 'celldatatopointdata'):
       ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
               'element data to node data',
               PhactoriCellDataToPointDataOperation,
+              operationParams)
+    elif (operationParams['type'] == 'node data to element data') or \
+      (operationParams['type'] == 'nodedatatoelementdata') or \
+      (operationParams['type'] == 'point data to cell data') or \
+      (operationParams['type'] == 'pointdatatocelldata'):
+      ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
+              'node data to element data',
+              PhactoriPointDataToCellDataOperation,
               operationParams)
     elif operationParams['type'] == 'extractcomponent':
       ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
@@ -4107,6 +4157,9 @@ def FindReferredBlockC(referringBlock, referringKey, referredBlockset):
 
 def UpdatePipelineWithCurrentTimeArgument(inParaViewFilter):
   global gPipeAndViewsState
+  if gPipeAndViewsState == None:
+    inParaViewFilter.UpdatePipeline()
+    return
   thisTime = gPipeAndViewsState.CurrentDatadescription.GetTime()
   inParaViewFilter.UpdatePipeline(thisTime)
 
@@ -4256,8 +4309,10 @@ def CreateParaViewRepresentationAndViewFromInfoC(inImageset, inLookDirection, in
       if gPipeAndViewsState.mTimeAnnotationPv == None:
         gPipeAndViewsState.mTimeAnnotationPv = \
             PhactoriAnnotationPv(timeAnnStngs)
+        global gTemporaryGlobalImageTextColor
         gPipeAndViewsState.mTimeAnnotationPv.CreateParaViewStuff(
-            inImageset.mRepresentation.mColorSettings.mTimeAnnotationColor,
+            #inImageset.mRepresentation.mColorSettings.mTimeAnnotationColor,
+            gTemporaryGlobalImageTextColor,
             inImageset)
 
       #if newParaViewRenderInfoC.mTimeAnnotationPv == None:
@@ -4416,6 +4471,8 @@ def ParseOneCameraBlockC(ioCameraBlock, ioCameraBlockJson, inPipeAndViewsState):
   #parse locking setup
   ioCameraBlock.LockAfterNCalls = getParameterFromBlock(ioCameraBlockJson,
     'lock camera call count', -1)
+  if "lockingcamera" in ioCameraBlock.mName:
+    ioCameraBlock.LockAfterNCalls = 1
   
 
 def localGet1or0(inJsn, inKey, inDefault):
@@ -4425,241 +4482,8 @@ def localGet1or0(inJsn, inKey, inDefault):
   else:
     return 0
 
-
 def ParseOneRepresentationBlockC(ioRepresentationBlock, inRepresentationBlockJson, inPipeAndViewsState):
-  """given a python dict (presumably from json) description of a representation block, parse all the
-     representation parameters out of the block"""
-
-  if PhactoriDbg(100):
-    myDebugPrint3('ParseOneRepresentationBlockC entered\n', 100)
-
-  inJsn = inRepresentationBlockJson
-
-  #hack test for colors start
-  #inJsn['surface color'] = [1.0, 0.0, 0.0]
-  #inJsn['background color'] = [0.0, 0.0, 0.0]
-  #inJsn['edge color'] = [0.0, 1.0, 0.0]
-  ##inJsn['axes color'] = [0.0, 1.0, 1.0]
-  #inJsn['text color'] = [1.0, 1.0, 0.0]
-  #hack test for colors end
-
-  #myDebugPrint3('  json: ' + str(inJsn) + '\n')
-
-  if 'point size' in inJsn:
-    ioRepresentationBlock.mPointSize = inJsn['point size']
-
-  #color by variable scalar/vector magnitude/vector component/tensor component
-  ioRepresentationBlock.mColorVariableInfo.\
-    ParseVariableNameAndVectorOrTensorComponent(inJsn, 'color by ')
-
-  if ioRepresentationBlock.mColorVariableInfo.mVariableName != '':
-    ioRepresentationBlock.mColorByBlockFlag = False
-    ioRepresentationBlock.mColorBySolidColorFlag = False
-  elif 'color by blockid' in inJsn:
-    ioRepresentationBlock.mColorByBlockFlag = True
-    ioRepresentationBlock.mColorByBlockExplicitlySet = True
-    ioRepresentationBlock.mColorBySolidColorFlag = False
-  elif 'color by solid color' in inJsn:
-    ioRepresentationBlock.mColorBySolidColorFlag = True
-    ioRepresentationBlock.mColorByBlockFlag = False
-    ioRepresentationBlock.mSolidColor = inJsn['color by solid color']
-
-  #color map range control
-  if 'color legend range' in inJsn:
-    ioRepresentationBlock.mFixedColorRange = inJsn['color legend range']
-    ioRepresentationBlock.mUseFixedColorRange = True
-  else:
-    ioRepresentationBlock.mUseFixedColorRange = False
-
-  #highlight subranges with solid colors
-  if 'highlight subrange 1' in inJsn:
-    highlightSubrangeIndex = 1
-    while True:
-      oneSubrangeKey = 'highlight subrange ' + str(highlightSubrangeIndex)
-      if oneSubrangeKey in inJsn:
-        subrangeArgs = inJsn[oneSubrangeKey]
-        highlightSubrangeIndex += 1
-        if len(subrangeArgs) != 5:
-          if PhactoriDbg():
-            myDebugPrint3("highlight subrange needs 5 values\n");
-          PrintOnProcessZero("highlight subrange needs 5 values, skipping " + \
-                  oneSubrangeKey + "\n");
-          continue
-        srmin = float(subrangeArgs[0])
-        srmax = float(subrangeArgs[1])
-        if srmin > srmax:
-          if PhactoriDbg():
-            myDebugPrint3("subrange highlight min >= max: " + \
-              str(srmin) + ", " + str(srmax) + "\nskipping " + \
-              oneSubrangeKey + "\n", 100)
-          PrintOnProcessZero("subrange highlight min >= max: " + \
-            str(srmin) + ", " + str(srmax) + "\nskipping " + \
-            oneSubrangeKey + "\n")
-          continue
-        srColor = [float(subrangeArgs[2]), float(subrangeArgs[3]),
-                float(subrangeArgs[4])]
-        if (srColor[0] < 0.0) or (srColor[0] > 1.0) or \
-           (srColor[1] < 0.0) or (srColor[1] > 1.0) or \
-           (srColor[2] < 0.0) or (srColor[2] > 1.0):
-          srColor = [1.0, 1.0, 0.0]
-          if PhactoriDbg():
-            myDebugPrint3(oneSubrangeKey + ": bad color "
-              "(component not 0.0-1.0), using rgb 1.0, 1.0, 0.0\n", 100)
-          PrintOnProcessZero(oneSubrangeKey + ": bad color "
-            "(component not 0.0-1.0), using rgb 1.0, 1.0, 0.0\n")
-        ioRepresentationBlock.mHighlightSubranges.append(
-                [srmin, srmax, srColor])
-        ioRepresentationBlock.mUseHighlightSubranges = True
-      else:
-        break
-    if PhactoriDbg():
-      myDebugPrint3("parsed highlight subranges:\n" + \
-              str(ioRepresentationBlock.mHighlightSubranges) + "\n", 100)
-
-  #if 'highlight subranges' in inJsn:
-  #  ioRepresentationBlock.mUseHighlightSubranges = True
-  #  sbrngsJsn = inJsn['highlight subranges']
-  #  for oneSubrange in sbrngsJsn:
-  #    if 'range' in oneSubrange:
-  #      srmin = oneSubrange['range'][0]
-  #      srmax = oneSubrange['range'][1]
-  #      if srmin < srmax:
-  #        if 'color' in oneSubrange:
-  #            srColor = oneSubrange['color']
-  #        else:
-  #            srColor = [1.0, 1.0, 0.0]
-  #        ioRepresentationBlock.mHighlightSubranges.append(
-  #                [srmin, srmax, srColor])
-  #      else:
-  #        if PhactoriDbg():
-  #          myDebugPrint3("highlight min >= max: " + \
-  #            str(srmin) + ", " + str(srmax) + "\nskipping subrange\n", 100)
-  #        PrintOnProcessZero("highlight min >= max: " + \
-  #          str(srmin) + ", " + str(srmax) + "\nskipping subrange\n")
-  #    else:
-  #        if PhactoriDbg():
-  #          myDebugPrint3("subrange is missing 'range' key; skipping\n")
-  #        PrintOnProcessZero("subrange is missing 'range' key; skipping\n")
-  #  if PhactoriDbg():
-  #    myDebugPrint3("parsed highlight subranges:\n" + \
-  #            str(ioRepresentationBlock.mHighlightSubranges) + "\n", 100)
-
-  #additional capability: use ratio-expressed subrange of
-  #range that would otherwise be used to increase concentration of
-  #dynamic range of color map in range of interest
-  if 'color legend subrange' in inJsn:
-    ioRepresentationBlock.mUseColorSubrange = True
-    ioRepresentationBlock.mColorSubrange = inJsn['color legend subrange']
-    goodSubrange = True
-    if ioRepresentationBlock.mColorSubrange[0] < 0.0:
-      goodSubrange = False
-    if ioRepresentationBlock.mColorSubrange[1] > 1.0:
-      goodSubrange = False
-    if ioRepresentationBlock.mColorSubrange[0] > \
-            ioRepresentationBlock.mColorSubrange[1]:
-      goodSubrange = False
-    if goodSubrange == False:
-      myDebugPrint3AndException(
-        "ParseOneRepresentationBlockC:\n"
-        "bad color legend subrange, must be 0.0 <= bottom <= top <= 1.0\n")
-
-  #choose color map by name
-  ioRepresentationBlock.mColorMapSettings.ParseColorMapSettings(inJsn)
-
-  showSurfacesFlag = getParameterFromBlock(inJsn, 'show surfaces', True)
-  showEdgesFlag = getParameterFromBlock(inJsn, 'show edges', False)
-  showPointsFlag = getParameterFromBlock(inJsn, 'show points', False)
-
-  ioRepresentationBlock.mOpacitySetting = getParameterFromBlock(inJsn, 'opacity',
-          ioRepresentationBlock.mOpacitySetting)
-
-  #doVolumeRenderingFlag = getParameterFromBlock(inJsn, 'volume rendering', True)
-  doVolumeRenderingFlag = getParameterFromBlock(inJsn, 'volume rendering', False)
-  ioRepresentationBlock.mScalarOpacityUnitDistance = getParameterFromBlock(
-          inJsn, 'scalar opacity unit distance', -1.0)
-
-  #ioRepresentationBlock.mScalarOpacityUnitDistance = 0.01
-  if PhactoriDbg():
-      myDebugPrint3("doVolumeRenderingFlag: " + \
-              str(doVolumeRenderingFlag) + "\n" + \
-              "ioRepresentationBlock.mScalarOpacityUnitDistance: " + \
-              str(ioRepresentationBlock.mScalarOpacityUnitDistance) + "\n")
-
-  ioRepresentationBlock.mPresetsImportFileName = getParameterFromBlock(inJsn,
-          'color and opacity presets import file', None)
-  if ioRepresentationBlock.mPresetsImportFileName != None:
-    retval = ImportPresets(ioRepresentationBlock.mPresetsImportFileName)
-    if retval != True:
-      myDebugPrint3AndException(
-        "paraview.simple.ImportPresets failed with the file:\n" + \
-        str(ioRepresentationBlock.mPresetsImportFileName) + "\n")
-  ioRepresentationBlock.mNameOfPresetToUse = getParameterFromBlock(inJsn,
-          'color and opacity preset', None)
-
-  showBoundingBoxFlag = getParameterFromBlock(inJsn, 'show bounding box', False)
-
-  ioRepresentationBlock.mMeshRenderControl = 'Surface'
-  if showBoundingBoxFlag:
-    ioRepresentationBlock.mMeshRenderControl = 'Outline'
-    if showSurfacesFlag | showEdgesFlag | showPointsFlag:
-      if PhactoriDbg():
-        myDebugPrint3("  warning:  when show bounding box is true, \n" + \
-            "  show surfaces, show edges, and show points should be false\n")
-  elif showPointsFlag:
-    ioRepresentationBlock.mMeshRenderControl = 'Points'
-  else:
-    if showSurfacesFlag:
-      if showEdgesFlag:
-        ioRepresentationBlock.mMeshRenderControl = 'Surface With Edges'
-      else:
-        ioRepresentationBlock.mMeshRenderControl = 'Surface'
-    else:
-      if showEdgesFlag:
-        ioRepresentationBlock.mMeshRenderControl = 'Wireframe'
-        #ioRepresentationBlock.mMeshRenderControl = 'Points'
-      else:
-        ioRepresentationBlock.mMeshRenderControl = 'Outline'
-
-  if doVolumeRenderingFlag:
-    if PhactoriDbg(100):
-      myDebugPrint3('doing volume rendering\n', 100)
-    ioRepresentationBlock.mMeshRenderControl = 'Volume'
-    ioRepresentationBlock.mDoingVolumeRendering = True
-  else:
-    ioRepresentationBlock.mDoingVolumeRendering = False
-
-  #color legend on/off
-  ioRepresentationBlock.mColorLegendFlag = getParameterFromBlock(inJsn,
-    'show color legend', ioRepresentationBlock.mColorLegendFlag)
-
-  ioRepresentationBlock.mColorLegendPositionAndSize = \
-    getParameterFromBlock(inJsn, 'color legend position',
-        ioRepresentationBlock.mColorLegendPositionAndSize)
-
-  if ioRepresentationBlock.mColorLegendFlag == True:
-    if ioRepresentationBlock.mColorVariableInfo.mVariableName == '':
-      ioRepresentationBlock.mColorLegendFlag = False
-
-  ioRepresentationBlock.mColorRangeMinMaxTracker.PlotValMinMaxTrkCParseJson(
-          inJsn, "color legend ")
-
-  ioRepresentationBlock.mTimeAnnotationSettings.ParseAvsFromJson(inJsn)
-
-  ioRepresentationBlock.mDataCubeAxesFlag = getParameterFromBlock(inJsn,
-    'show axes', ioRepresentationBlock.mDataCubeAxesFlag)
-
-  ioRepresentationBlock.mDataCubeAxesInfo.DcaiParseParametersFromJson(inJsn)
-
-  ioRepresentationBlock.mOrientationAxesFlag = getParameterFromBlock(inJsn,
-    'show orientation axes', ioRepresentationBlock.mOrientationAxesFlag)
-
-  if "image name addon" in inJsn:
-    ioRepresentationBlock.mFilenameAddon = inJsn["image name addon"]
-
-  ioRepresentationBlock.mColorSettings.ParseColorSettingsFromJson(inJsn)
-
-  if PhactoriDbg(100):
-    myDebugPrint3('ParseOneRepresentationBlockC returning\n', 100)
+  ioRepresentationBlock.ParseSettingsFromJson(inRepresentationBlockJson)
 
 global gDefaultImageBasename
 gDefaultImageBasename = "csierra.view."
@@ -4704,7 +4528,12 @@ def breakSpecialVarNameIntoBaseAndComponent(inSpecialVarName,
       raise Exception(errStr)
     #baseVarName = inSpecialVarName[0:(varNameLen-2)] + GetSeparatorString()
 
-    if inAddSeparatorFlag:
+    localinAddSeparatorFlag = inAddSeparatorFlag
+    #for Sierra, as of 2022Aug09, we need inAddSeparatorFlag to default to
+    #False but right here we need to strip the separator from the variable
+    #base name
+    #localinAddSeparatorFlag = True
+    if localinAddSeparatorFlag:
       lenToGrab = varNameLen - 1 - len(GetSeparatorString())
     else:
       lenToGrab = varNameLen - 1
@@ -4826,6 +4655,17 @@ def ParseOneImagesetBlockC(ioImagesetBlock, ioImagesetBlockJson,
     #interaction
     if ioImagesetBlock.mName == 'PhactoriGoInteractive':
       ioPipeAndViewsState.mInteractionEnabled = True
+
+    #we need to get text color for time annotation and text annotation
+    #handled properly: for now we allow a "text color" setting in any
+    #imageset block to set the global text color
+    if 'text color' in ioImagesetBlockJson:
+      global gTemporaryGlobalImageTextColor
+      gTemporaryGlobalImageTextColor = getParameterFromBlock(ioImagesetBlockJson,
+              'text color', [1.0, 1.0, 1.0])
+
+    ioImagesetBlock.mBackground = getParameterFromBlock(ioImagesetBlockJson,
+                           'background color', ioImagesetBlock.mBackground)
 
     #parse on/off criteria
     if 'onoff criteria' in ioImagesetBlockJson:
@@ -5002,6 +4842,9 @@ def ParseOnePlotOverTimeBlockC(ioPlotOverTimeBlock, inPlotOverTimeBlockJson, inP
   ioPlotOverTimeBlock.mImageFileNameCountSettings.\
       ParseImageFileNameCountSettings(inPlotOverTimeBlockJson)
 
+  ioPlotOverTimeBlock.mBackground = getParameterFromBlock(inPlotOverTimeBlockJson,
+                         'background color', ioPlotOverTimeBlock.mBackground)
+
   if PhactoriDbg():
     myDebugPrint3(str(inPlotOverTimeBlockJson) + '\n')
 
@@ -5114,7 +4957,7 @@ class PhactoriUserPointInfo:
     self.mInputNameToUseForMinMaxVariable = None
     self.mInputPvSourceToUseForMinMaxVariable = None
 
-  def UserPointHasValidDisplacementInfo():
+  def UserPointHasValidDisplacementInfo(self):
     return self.mHasDisplacedInfoFlag
 
   def ParseIdAndDisplacement(self, inDisplacementFlag, inJson, inKey):
@@ -5869,253 +5712,8 @@ specify many views of the same operation/representation setup.
 
       self.LockAfterNCalls = -1
 
-
-class PhactoriVariableMinMaxAvgSumCntSave:
-  def __init__(self):
-    self.mStatsTestCounter = -1
-    self.mMin = 0.0
-    self.mMax = 0.0
-    self.mSum = 0.0
-    self.mCount = 0
-    self.mIdsTestCounter = -1
-    self.mLocalFoundMinId = False
-    self.mLocalMinIdCount = -1
-    self.mMinId = -1;
-    self.mLocalFoundMaxId = False
-    self.mLocalMaxIdCount = -1
-    self.mMaxId = -1;
-
-class PhactoriVariableInfo:
-  def __init__(self):
-    self.mVariableIntendedForUseFlag = False
-    self.mVariableName = ""
-    self.mVariableComponent = None
-    self.mVariableType = None
-    self.mVariableTypeNeedsDetection = False
-    self.mVariableTypeWasDetected = False
-    self.mVariableTypeWasCopied = False
-    self.mVariableIsVectorMagnitude = False
-    self.mVariableIsVectorComponent = False
-    self.mVectorBaseName = None
-    self.mStats = PhactoriVariableMinMaxAvgSumCntSave()
-    self.mAddSeparatorToVectorVariableName = True
-
-  def SelfToStr(self):
-    retStr = "PhactoriVariableInfo:\n" +\
-      "\n  mVariableName: " + str(self.mVariableName) +\
-      "\n  mVariableComponent: " + str(self.mVariableComponent) +\
-      "\n  mVariableType: " + str(self.mVariableType) +\
-      "\n  mVariableIsVectorMagnitude: " + \
-          str(self.mVariableIsVectorMagnitude) +\
-      "\n  mVariableIsVectorComponent: " + \
-          str(self.mVariableIsVectorComponent) +\
-      "\n  mVectorBaseName: " + str(self.mVectorBaseName) +\
-      "\n"
-    return retStr
-
-  def ParseVariableNameAndVectorOrTensorComponent(self, inJson, inBaseString):
-    """take a base string such as 'y axis variable ' or 'variable ', use it
-    to construct keys to define a scalar variable, vector component, vector
-    magnitude, or tensor component, and see if the json has those keys.
-    If the json has a key, use it to grab the variable name and setup.
-    Also look to see if the type of the variable is specifically defined
-    (node or element) or needs to be detected
-    """
-    variableFoundFlag = False
-    self.mVariableIsVectorComponent = False
-    self.mVariableIsVectorMagnitude = False
-
-    if 'add separator to vector variable name' in inJson:
-      self.mAddSeparatorToVectorVariableName = \
-        inJson['add separator to vector variable name']
-
-    testKey = inBaseString + 'scalar'
-    if testKey in inJson:
-      variableFoundFlag = True
-      if PhactoriDbg():
-        myDebugPrint3('  scalar found\n')
-      self.mVariableName = inJson[testKey]
-      self.mVariableComponent = None
-    else:
-      testKey = inBaseString + 'vector component'
-      if testKey in inJson:
-        variableFoundFlag = True
-        self.mVariableIsVectorComponent = True
-        if PhactoriDbg():
-          myDebugPrint3('  vector component found\n')
-        varName = inJson[testKey]
-        resultPair = breakSpecialVarNameIntoBaseAndComponent(varName,
-                        self.mAddSeparatorToVectorVariableName)
-        self.mVariableName = resultPair[0]
-        self.mVariableComponent = resultPair[1]
-        self.mVectorBaseName = resultPair[2]
-        if PhactoriDbg():
-          myDebugPrint3('  non comp name: ' + str(self.mVariableName) + '\n')
-      else:
-        testKey = inBaseString + 'vector magnitude'
-        if testKey in inJson:
-          variableFoundFlag = True
-          self.mVariableIsVectorMagnitude = True
-          if PhactoriDbg():
-            myDebugPrint3('  vector magnitude found\n')
-          if self.mAddSeparatorToVectorVariableName:
-            self.mVariableName = inJson[testKey] + GetSeparatorString()
-          else:
-            self.mVariableName = inJson[testKey]
-          self.mVectorBaseName = inJson[testKey]
-        else:
-          testKey = inBaseString + 'tensor component'
-          if testKey in inJson:
-            variableFoundFlag = True
-            if PhactoriDbg():
-              myDebugPrint3('  tensor component found\n')
-            self.mVariableName = inJson[testKey]
-          else:
-            variableFoundFlag = False
-            if PhactoriDbg():
-              myDebugPrint3('  no variable found\n')
-            self.mVariableName = ''
-            self.mComponent = None
-
-    if variableFoundFlag:
-      #it is now apparent variable is intended to be used, not ignored
-      self.mVariableIntendedForUseFlag = True
-      if 'variable type' in inJson:
-        variableType = inJson['variable type']
-        self.mVariableType = variableType
-        if variableType != 'element' \
-            and variableType != 'node' \
-            and variableType != 'global' \
-            and variableType != 'detect':
-          errStr = 'error!  inJson has variable type is neither node nor '\
-              'element nor detect nor global in ParseVariableNameAndVectorOrTensorComponent\n'
-          if PhactoriDbg():
-            myDebugPrint3(errStr)
-          raise Exception(errStr)
-        if variableType == 'detect':
-          self.mVariableType = 'element'
-          self.mVariableTypeNeedsDetection = True
-          self.mVariableTypeWasDetected = False
-        elif variableType == 'element':
-          self.mVariableType = 'element'
-          self.mVariableTypeNeedsDetection = False
-          self.mVariableTypeWasDetected = True
-        elif variableType == 'node':
-          self.mVariableType = 'node'
-          self.mVariableTypeNeedsDetection = False
-          self.mVariableTypeWasDetected = True
-        elif variableType == 'global':
-          self.mVariableType = 'global'
-          self.mVariableTypeNeedsDetection = False
-          self.mVariableTypeWasDetected = True
-      else:
-        self.mVariableType = 'element'
-        self.mVariableTypeNeedsDetection = True
-        self.mVariableTypeWasDetected = False
-    else:
-      self.mVariableType = None
-
-    return variableFoundFlag
-
-  def CopyVariableTypeFrom(self, inSourceVariableInfo):
-    self.mVariableType = inSourceVariableInfo.mVariableType
-    self.mVariableTypeNeedsDetection = False
-    self.mVariableTypeWasDetected = True
-    self.mVariableTypeWasCopied = True
-
-  def DetectVariableType(self, inInputCsData, inInputIsProxy = False,
-          inAllowGlobalVariableDetection = False):
-
-    if self.mVariableTypeNeedsDetection == False:
-      return True
-
-    #testing hack--force to cell
-    #self.mVariableTypeNeedsDetection = False
-    #self.mVariableTypeWasDetected = True
-    #self.mVariableType = 'element'
-    #return
-
-    if PhactoriDbg():
-      myDebugPrint3('PhactoriVariableInfo::DetectVariableType entered\n')
-
-    if inInputIsProxy:
-      pointData = inInputCsData.PointData
-    else:
-      pointData = inInputCsData.GetPointData()
-    if pointData != None:
-      testPointArray = pointData.GetArray(self.mVariableName)
-      if testPointArray != None:
-        if PhactoriDbg():
-          myDebugPrint3('  type node detected!\n')
-        self.mVariableType = 'node'
-        self.mVariableTypeNeedsDetection = False
-        self.mVariableTypeWasDetected = True
-        return True
-
-    if inInputIsProxy:
-      cellData = inInputCsData.CellData
-    else:
-      cellData = inInputCsData.GetCellData()
-    if cellData != None:
-      testCellArray = cellData.GetArray(self.mVariableName)
-      if testCellArray != None:
-        if PhactoriDbg():
-          myDebugPrint3('  type element detected!\n')
-        self.mVariableType = 'element'
-        self.mVariableTypeNeedsDetection = False
-        self.mVariableTypeWasDetected = True
-        return True
-
-    if inAllowGlobalVariableDetection:
-      if inInputIsProxy:
-        fieldData = inInputCsData.FieldData
-      else:
-        fieldData = inInputCsData.GetFieldData()
-      if fieldData != None:
-        testFieldArray = fieldData.GetArray(self.mVariableName)
-        if testFieldArray != None:
-          if PhactoriDbg():
-            myDebugPrint3('  type global detected!\n')
-          self.mVariableType = 'global'
-          self.mVariableTypeNeedsDetection = False
-          self.mVariableTypeWasDetected = True
-          return True
-
-    if PhactoriDbg():
-      myDebugPrint3('  type not detected!\n')
-      #default to 'element' type knowing assumption may be wrong,
-      #leave mVariableTypeNeedsDetection set to True so we know the variable
-      #type has not yet been successfully detected
-      self.mVariableType = 'element'
-      #self.mVariableType = 'node'
-    return False
-
-  def GetXYPlotAxisTitle(self):
-    """for this variable info, construct the name to put on the axis of an XY
-    plot, e.g. with magnitude or component information"""
-
-    if self.mVariableName[-1] == '_':
-      axisTitle = str(self.mVariableName[0:-1])
-    else:
-      axisTitle = self.mVariableName
-
-    if self.mVariableIsVectorComponent:
-      if self.mVariableComponent == 0:
-        axisTitle += ' X component'
-      elif self.mVariableComponent == 1:
-        axisTitle += ' Y component'
-      elif self.mVariableComponent == 2:
-        axisTitle += ' Z component'
-      else:
-        if PhactoriDbg():
-          myDebugPrint3("  variable component is not 0, 1, or 2, using 0 (X)\n")
-        localVariableName = self.mVariableName + '_X'
-    elif self.mVariableIsVectorMagnitude:
-      axisTitle += " Magnitude"
-
-    return axisTitle
-
-
+#phactori_combine_to_single_python_file_parent_1
+from Operation.PhactoriVariableInfo import *
 
 class PhactoriDataCubeOneAxisInfo:
   def __init__(self):
@@ -6175,82 +5773,6 @@ class PhactoriColorMapSettings:
         'preset color scale', self.mColorMapNameId)
     self.mInvertColorMap = getParameterFromBlock(inJsn,
         'invert color scale', self.mInvertColorMap)
-
-class PhactoriRepresentationBlock:
-  def __init__(self):
-    self.mName = ""
-    self.mColorVariableInfo = PhactoriVariableInfo()
-    self.mColorLegendFlag = True
-    #self.mColorLegendPositionAndSize = ['bottom', 1.0]
-    #self.mColorLegendPositionAndSize = ['right', 1.0]
-    self.mColorLegendPositionAndSize = ['bottom right', 1.0]
-    self.mTimeAnnotationSettings = PhactoriAnnotationViewSettings(
-        'time', 'time')
-    self.mDataCubeAxesFlag = False
-    self.mDataCubeAxesInfo = PhactoriDataCubeAxesInfo()
-    #self.mColorByBlockFlag = True
-    self.mColorByBlockFlag = True
-    self.mColorByBlockExplicitlySet = False
-    self.mColorBySolidColorFlag = False
-    self.mSolidColor = None
-    self.mOpacitySetting = 1.0
-    self.mOrientationAxesFlag = True
-    self.mFixedColorRange = None
-    self.mUseFixedColorRange = False
-    self.mColorRangeMinMaxTracker = PlotValMinMaxTrkC()
-    self.mUseHighlightSubranges = False
-    self.mHighlightSubranges = []
-    self.mUseColorSubrange = False
-    self.mColorSubrange = [0.0, 1.0]
-    self.mFilenameAddon = ""
-    self.mColorSettings = PhactoriColorSettings()
-    self.mColorMapSettings = PhactoriColorMapSettings()
-    self.mPointSize = 2.0
-
-  def SetFromRestartInfo(self, inJson):
-    """given a map (json format), use the info in the map to set the
-       representation state--this reads the info created in 
-       GetRestartInfo"""
-
-    if 'mColorRangeMinMaxTracker' not in inJson:
-      if PhactoriDbg():
-        myDebugPrint3("PhactoriRepresentationBlock::" + \
-            "SetFromRestartInfo: no mColorRangeMinMaxTracker, return\n")
-      return
-
-    if PhactoriDbg():
-      myDebugPrint3("Representation::SetFromRestartInfo\n" +
-        "currently set to do something\n" +
-        "before tracker:\n" + self.mColorRangeMinMaxTracker.SelfToStr())
-
-    jsonItem = inJson['mColorRangeMinMaxTracker']
-    self.mColorRangeMinMaxTracker.SetFromRestartInfo(jsonItem)
-
-    if PhactoriDbg():
-      myDebugPrint3("after tracker:\n" +
-          self.mColorRangeMinMaxTracker.SelfToStr())
-
-  def GetRestartInfo(self):
-    """construct, in python map/json format, the information from this
-       representation instance which contains the information
-       which would be needed to restore the representation to the proper
-       state after a simulation restart, particularly color range tracking
-       information.  Return the restart info map/json"""
-    newRestartInfoJson = {}
-    newRestartInfoJson['mColorRangeMinMaxTracker'] = \
-      self.mColorRangeMinMaxTracker.GetRestartInfo()
-    return newRestartInfoJson
-
-  def CalculateDefaultScalarOpacityUnitDistance(self, inPhactoriOperation):
-    """given a phactori operation assumed to have an updated pipeline,
-       calculate a default scalar opacity unit distance the same as paraview,
-       with 0.05 * diagonal length of data bounding box"""
-    bnds = GetGlobalDataBoundsParallel(inPhactoriOperation.mParaViewFilter)
-    xxlen = bnds[1] - bnds[0]
-    yylen = bnds[3] - bnds[2]
-    zzlen = bnds[5] - bnds[4]
-    self.mScalarOpacityUnitDistance = \
-            0.05 * math.sqrt(xxlen*xxlen + yylen*yylen + zzlen*zzlen)
 
 def GetThresholdContourHackVariableNameString(inVariableInfo):
   """gives altered variable name for magnitude or component
@@ -7436,7 +6958,7 @@ class PhactoriNearestPointsOperation(PhactoriOperationSpecifics):
 
     if 'number of points per process' in inJson:
       self.mNumPointsPerProcess = inJson['number of points per process']
-    elif 'number of points per process' in inJson:
+    elif 'number_of_points_per_process' in inJson:
       self.mNumPointsPerProcess = inJson['number_of_points_per_process']
     if 'number of points to find' in inJson:
       self.mNumPointsToFind = inJson['number of points to find']
@@ -8647,14 +8169,19 @@ class PhactoriAnnotationViewSettings:
       self.mType = 'text'
       self.mText = 'Text'
     self.mSizeScale = 1.0
-    self.mFontSize = 18
+    #self.mFontSize = 18
+    self.mFontSize = 36
     self.mFont = 'Arial'
     self.mBold = False
     self.mItalic = False
     self.mShadow = False
     self.mOpacity = 1.0
     self.mAlign = 'Center'
-    self.mWindowLocation = 'UpperLeftCorner'
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51000:
+      self.mWindowLocation = 'UpperLeftCorner'
+    else:
+      self.mWindowLocation = 'Upper Left Corner'
     if PhactoriDbg():
       myDebugPrint3("ViewSettingsPhactoriAnnotation::__init__ returning\n")
 
@@ -8675,22 +8202,41 @@ class PhactoriAnnotationViewSettings:
       winPos = windowPosSize[0]
       winSize = windowPosSize[1]
       self.SetSizeScale(winSize)
-      if winPos == 'top left':
-        self.SetWindowLocation('UpperLeftCorner')
-      elif winPos == 'top right':
-        self.SetWindowLocation('UpperRightCorner')
-      elif winPos == 'top':
-        self.SetWindowLocation('UpperCenter')
-      elif winPos == 'bottom left':
-        self.SetWindowLocation('LowerLeftCorner')
-      elif winPos == 'bottom right':
-        self.SetWindowLocation('LowerRightCorner')
-      elif winPos == 'bottom':
-        self.SetWindowLocation('LowerCenter')
-      else:
-        if PhactoriDbg():
-          myDebugPrint3("bad time annotation position, using upper left\n")
-        self.SetWindowLocation('UpperLeftCorner')
+      global gParaViewCatalystVersionFlag
+      if gParaViewCatalystVersionFlag < 51000:
+        if winPos == 'top left':
+          self.SetWindowLocation('UpperLeftCorner')
+        elif winPos == 'top right':
+          self.SetWindowLocation('UpperRightCorner')
+        elif winPos == 'top':
+          self.SetWindowLocation('UpperCenter')
+        elif winPos == 'bottom left':
+          self.SetWindowLocation('LowerLeftCorner')
+        elif winPos == 'bottom right':
+          self.SetWindowLocation('LowerRightCorner')
+        elif winPos == 'bottom':
+          self.SetWindowLocation('LowerCenter')
+        else:
+          if PhactoriDbg():
+            myDebugPrint3("bad time annotation position, using upper left\n")
+          self.SetWindowLocation('UpperLeftCorner')
+      else: #gParaViewCatalystVersionFlag >= 51000
+        if winPos == 'top left':
+          self.SetWindowLocation('Upper Left Corner')
+        elif winPos == 'top right':
+          self.SetWindowLocation('Upper Right Corner')
+        elif winPos == 'top':
+          self.SetWindowLocation('Upper Center')
+        elif winPos == 'bottom left':
+          self.SetWindowLocation('Lower Left Corner')
+        elif winPos == 'bottom right':
+          self.SetWindowLocation('Lower Right Corner')
+        elif winPos == 'bottom':
+          self.SetWindowLocation('Lower Center')
+        else:
+          if PhactoriDbg():
+            myDebugPrint3("bad time annotation position, using upper left\n")
+          self.SetWindowLocation('UpperLeftCorner')
 
     if 'time format string' in inJsn:
       self.mTimeFormatString = inJsn['time format string']
@@ -8720,9 +8266,15 @@ class PhactoriAnnotationViewSettings:
     #self.mParaViewRepresentation.FontSize = self.mFontSize
 
   def SetWindowLocation(self, inNewPosition):
-    validPositions = ['UpperLeftCorner', 'UpperRightCorner', 
-        'LowerLeftCorner', 'LowerRightCorner',
-        'UpperCenter', 'LowerCenter']
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51000:
+      validPositions = ['UpperLeftCorner', 'UpperRightCorner', 
+          'LowerLeftCorner', 'LowerRightCorner',
+          'UpperCenter', 'LowerCenter']
+    else:
+      validPositions = ['Upper Left Corner', 'Upper Right Corner', 
+          'Lower Left Corner', 'Lower Right Corner',
+          'Upper Center', 'Lower Center']
     if inNewPosition in validPositions:
       #self.mParaViewRepresentation.WindowLocation = inNewPosition
       self.mWindowLocation = inNewPosition
@@ -8984,6 +8536,8 @@ class PhactoriPlot1Base:
     #or not)
     self.mImageFileNameCountSettings = ImageFileNameCountSettings()
 
+    self.mBackground = [0.0, 0.0, 0.0]
+
   def GetInputPhactoriOperation(self):
     #mainly for compatibility between plot blocks and imageset blocks, give
     #same access to phactori operation coming being visualized
@@ -9020,6 +8574,9 @@ class PhactoriPlot1Base:
     #SetUpViewAndRepresentationBeforeWriteImage(oneViewInfo)
     self.SetUpViewAndRepresentationBeforeWriteImage()
 
+    colorPalette = GetSettingsProxy('ColorPalette')
+    colorPalette.Background = self.mBackground
+
     #only need to update color range for first look direction, rest
     #are same
     #if self.mRepresentation.mUseFixedColorRange == False:
@@ -9033,7 +8590,6 @@ class PhactoriPlot1Base:
     self.mSharedPvRenderView2.BottomAxisUseCustomRange = 0
 
     if self.m_PlotType == "PhactoriPlotOverTimeBlock":
-      self.mPvDataRepresentation2.AttributeType = "Point Data"
       self.mPvDataRepresentation2.AttributeType = "Row Data"
       self.mSharedPvRenderView2.LeftAxisTitle = self.m_YAxisVariableInfo.GetXYPlotAxisTitle()
       self.mSharedPvRenderView2.BottomAxisTitle = "Time"
@@ -9288,6 +8844,9 @@ class PhactoriScatterPlotBlock(PhactoriPlot1Base):
         'plot basename', 'plot basedirectory')
     self.mImageFileNameCountSettings.ParseImageFileNameCountSettings(inJsn)
 
+    self.mBackground = getParameterFromBlock(inJsn,
+                         'background color', self.mBackground)
+
     #parse x axis variable
     self.m_XAxisVariableInfo.ParseVariableNameAndVectorOrTensorComponent(inJsn,
         'x axis variable ')
@@ -9343,7 +8902,6 @@ gSharedRenderView = None
 #shared render view to be used by all plots
 global gSharedLineChartView
 gSharedLineChartView = None
-
 
 class PhactoriImagesetBlock:
   """contains information corresponding to an imageset block
@@ -9406,6 +8964,9 @@ class PhactoriImagesetBlock:
     #(which can use microseconds or not, and can be converted to an integer
     #or not)
     self.mImageFileNameCountSettings = ImageFileNameCountSettings()
+
+    self.mBackground = [0.31999694819562063, 0.3400015259021897,
+            0.4299992370489052]
 
   def GetInputPhactoriOperation(self):
     #mainly for compatibility between plot blocks and imageset blocks, give
@@ -9539,6 +9100,9 @@ class PhactoriImagesetBlock:
       #SetUpViewAndRepresentationBeforeWriteImage(oneViewInfo)
       self.SetUpViewAndRepresentationBeforeWriteImage(oneLookDirection, ii)
 
+      colorPalette = GetSettingsProxy('ColorPalette')
+      colorPalette.Background = self.mBackground
+
       #only need to update color range for first look direction, rest
       #are same
       if ii == 0:
@@ -9564,12 +9128,23 @@ class PhactoriImagesetBlock:
                 RunCalculationToCastRays(gPipeAndViewsState)
             UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
           if onevisop.mName == "surfaceofinterest1":
-            svrng = onevisop.mParaViewFilter.ThresholdRange
-            #onevisop.mParaViewFilter.ThresholdRange = [svrng[0]*0.5, svrng[1]*0.5]
-            onevisop.mParaViewFilter.ThresholdRange = [1.0, 10.0]
-            UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
-            onevisop.mParaViewFilter.ThresholdRange = svrng
-            UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
+            global gParaViewCatalystVersionFlag
+            if gParaViewCatalystVersionFlag < 51000:
+              svrng = onevisop.mParaViewFilter.ThresholdRange
+              #onevisop.mParaViewFilter.ThresholdRange = [svrng[0]*0.5, svrng[1]*0.5]
+              onevisop.mParaViewFilter.ThresholdRange = [1.0, 10.0]
+              UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
+              onevisop.mParaViewFilter.ThresholdRange = svrng
+              UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
+            else:
+              svrngLower = onevisop.mParaViewFilter.LowerThreshold
+              svrngUpper = onevisop.mParaViewFilter.UpperThreshold
+              onevisop.mParaViewFilter.LowerThreshold = 1.0
+              onevisop.mParaViewFilter.UpperThreshold = 10.0
+              UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
+              onevisop.mParaViewFilter.LowerThreshold = svrngLower
+              onevisop.mParaViewFilter.UpperThreshold = svrngUpper
+              UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
 
         if PhactoriDbg():
           firstop = self.mVisibleOps[0]
@@ -9953,7 +9528,6 @@ class PhactoriImagesetBlock:
     self.mVisiblePvDataReps.append(None)
     self.mColorLegendRepRefs.append(None)
 
-
 class PhactoriPipeAndViewsState:
   """Top State Container--Pipeline, Cameras, Representations, Imagesets, Plots
 
@@ -9999,7 +9573,7 @@ class PhactoriPipeAndViewsState:
     #default operation for incoming input
     self.mIncomingDefaultOperation = PhactoriOperationBlock()
     self.mIncomingDefaultOperation.mName = "default incoming input"
-    self.mIncomingOperationList = []
+    #self.mIncomingOperationList = []
     self.mOperationBlocks = {}
     self.mImagesetBlocks = {}
     self.mScatterPlotBlocks = {}
@@ -10021,7 +9595,7 @@ class PhactoriPipeAndViewsState:
     self.mOutputResultsBlockId = None
     self.mCurrentDatabaseDummyFileName = None
     self.mProducer = None
-    self.mIncomingGridProducerList = []
+    #self.mIncomingGridProducerList = []
     self.mPipeAndViewsState = None
     self.mRemeshRestartTag = None
     self.mSeparatorString = '_'
@@ -10275,13 +9849,23 @@ def UpdateRepresentationColorBySub1(inPvView, inPvRep,
       ColorByVariableComponentOrMagnitudeXX(inPvRep, inPhactoriRep,
           colorVarName, 'Component', colorVarInfo.mVariableComponent,
           thePvVarType, inPhactoriRep.mColorMapSettings)
+      if colorVarInfo.mVariableComponent == 0:
+        componentString = "X"
+      elif colorVarInfo.mVariableComponent == 1:
+        componentString = "Y"
+      elif colorVarInfo.mVariableComponent == 2:
+        componentString = "Z"
+      else:
+        componentString = str(colorVarInfo.mVariableComponent)
     elif inPhactoriRep.mColorVariableInfo.mVariableIsVectorMagnitude:
       ColorByVariableComponentOrMagnitudeXX(inPvRep, inPhactoriRep,
           colorVarName, 'Magnitude', colorVarInfo.mVariableComponent,
           thePvVarType, inPhactoriRep.mColorMapSettings)
+      componentString = "Magnitude"
     else:
       ColorByVariableScalarXX(inPvRep, inPhactoriRep, colorVarName,
           thePvVarType, inPhactoriRep.mColorMapSettings)
+      componentString = ""
 
   #update the color legend widget
   if inPhactoriRep.mColorLegendFlag:
@@ -10290,7 +9874,7 @@ def UpdateRepresentationColorBySub1(inPvView, inPvRep,
     onoffFlagString = 'off'
   retVal = ShowDataColorLegendXX(inPvView, onoffFlagString,
       inPhactoriRep.mColorLegendPositionAndSize, inPhactoriRep.mColorSettings,
-      inColorLegendRepRef, inPvRep)
+      inColorLegendRepRef, inPvRep, componentString)
 
   if PhactoriDbg():
     myDebugPrint3("UpdateRepresentationColorBySub1 returning\n")
@@ -11768,6 +11352,17 @@ def ColorByVariableScalarXX(inParaViewDataRepresentation, inPhactoriRepresentati
     pv_4_3_LUT.RGBPoints = myRGBPoints
     pv_4_3_LUT.ColorSpace = myColorSpace
     pv_4_3_LUT.NanColor = myNanColor
+    if inPhactoriRepresentation.InterpretValuesAsCategories:
+      if PhactoriDbg():
+        myDebugPrint3("variable name is ObjectId, trying to do categories\n")
+      inPhactoriRepresentation.SetUpForInterpretValuesAsCateories(pv_4_3_LUT)
+      pv_4_3_LUT.InterpretValuesAsCategories = 1
+      pv_4_3_LUT.AnnotationsInitialized = 1
+      pv_4_3_LUT.Annotations = inPhactoriRepresentation.Annotations
+      pv_4_3_LUT.IndexedColors = inPhactoriRepresentation.IndexedColors
+      pv_4_3_LUT.IndexedOpacities = inPhactoriRepresentation.IndexedOpacities
+    else:
+      pv_4_3_LUT.InterpretValuesAsCategories = 0
     return
 
   #rest of function for paraview 4.1
@@ -11906,20 +11501,24 @@ def ColorByBlock(inParaViewDataSource, inParaViewDataRepresentation,
 
   blockAndLeafBlockCounter = [0,0]
 
-  blockColorData = inParaViewDataRepresentation.BlockColor
-  if PhactoriDbg(100):
-    myDebugPrint3('  blockColorData is ' + str(blockColorData) + '\n', 100)
-  if PhactoriDbg(100):
-    myDebugPrint3('  blockColorData type is ' + str(type(blockColorData)) + '\n', 100)
+  global gParaViewCatalystVersionFlag
+  if gParaViewCatalystVersionFlag < 51000:
 
-  ColorByBlockRecurse1(csdata, blockAndLeafBlockCounter, inParaViewDataRepresentation.BlockColor, False)
+    blockColorData = inParaViewDataRepresentation.BlockColor
+    if PhactoriDbg(100):
+      myDebugPrint3('  blockColorData is ' + str(blockColorData) + '\n', 100)
+    if PhactoriDbg(100):
+      myDebugPrint3('  blockColorData type is ' + str(type(blockColorData)) + '\n', 100)
 
-  #inParaViewDataRepresentation.BlockColor = blockColorData
+    ColorByBlockRecurse1(csdata, blockAndLeafBlockCounter, inParaViewDataRepresentation.BlockColor, False)
+
+    #inParaViewDataRepresentation.BlockColor = blockColorData
   
-  if PhactoriDbg(100):
-    myDebugPrint3('   block color data: ' + str(inParaViewDataRepresentation.BlockColor) + '\n', 100)
-  if PhactoriDbg(100):
-    myDebugPrint3('   final count: ' + str(blockAndLeafBlockCounter) + '\n', 100)
+    if PhactoriDbg(100):
+      myDebugPrint3('   block color data: ' + str(inParaViewDataRepresentation.BlockColor) + '\n', 100)
+    if PhactoriDbg(100):
+      myDebugPrint3('   final count: ' + str(blockAndLeafBlockCounter) + '\n', 100)
+
   if PhactoriDbg(100):
     myDebugPrint3('ColorByBlock returning\n', 100)
 
@@ -12501,13 +12100,15 @@ def ShowCubeAxesXX(inPvRenderView, inOnOrOff, inShowDataCubeAxesInfo = None):
 
 def ShowDataColorLegendXX(inPvView,
         inOnOffSetting, inColorLegendPositionAndSize, inColorSettings,
-        inColorLegendRepRef, inPvDataRep):
+        inColorLegendRepRef, inPvDataRep, inComponentString):
   """Turns on or off the display of the color bar legend showing the mapping
      between the color and the data value (and the name of the data value.
      (note this is primarily to do the paraview-side work to turn bar on or
       off, on to set up for rendering in the shared view, off to turn off
       rendering in shared view.  On or off state for rendering is stored
       as a flag in the ioPhactoriImagesetBlock instance"""
+
+  global gParaViewCatalystVersionFlag
 
   if PhactoriDbg(100):
     myDebugPrint3('phactori.ShowDataColorLegendXX entered, setting:' + \
@@ -12546,6 +12147,7 @@ def ShowDataColorLegendXX(inPvView,
       inColorLegendRepRef.Visibility = myVisibility
       inColorLegendRepRef.LookupTable = inPvDataRep.LookupTable
       inColorLegendRepRef.Title = localColorArrayName
+      inColorLegendRepRef.ComponentTitle = inComponentString
       #ioPhactoriImagesetBlock.mColorLegendRepRef.Color = \
       #    inColorSettings.mTextColor
       if PhactoriDbg(100):
@@ -12640,7 +12242,7 @@ def ShowDataColorLegendXX(inPvView,
         "  legendOrientation: " + str(legendOrientation) + "\n"\
         "  legendFontSize: " + str(legendFontSize) + "\n")
 
-  else:
+  elif gParaViewCatalystVersionFlag < 51000:
     defaultLegendLength = 0.33
     defaultMidPos = 0.5 - 0.5*defaultLegendLength
     #legendFontSize = 16
@@ -12682,6 +12284,48 @@ def ShowDataColorLegendXX(inPvView,
     else:
       legendOrientation = 'Vertical'
       legendWindowLocation = 'LowerRightCorner'
+  else:
+    defaultLegendLength = 0.33
+    defaultMidPos = 0.5 - 0.5*defaultLegendLength
+    #legendFontSize = 16
+    #legendSize = 1.0
+    #validPositions = ['UpperLeftCorner', 'UpperRightCorner', 
+    #    'LowerLeftCorner', 'LowerRightCorner',
+    #    'UpperCenter', 'LowerCenter']
+    legendPosition=[0.0, 0.0]
+    if inColorLegendPositionAndSize[0] == 'top':
+      legendOrientation = 'Horizontal'
+      legendWindowLocation = 'Upper Center'
+    elif inColorLegendPositionAndSize[0] == 'bottom':
+      legendOrientation = 'Horizontal'
+      legendWindowLocation = 'Lower Center'
+    elif inColorLegendPositionAndSize[0] == 'left':
+      legendOrientation = 'Vertical'
+      legendPosition=[0.02, defaultMidPos]
+      legendWindowLocation = 'Any Location'
+    elif inColorLegendPositionAndSize[0] == 'right':
+      legendOrientation = 'Vertical'
+      legendPosition=[0.89, defaultMidPos]
+      legendWindowLocation = 'Any Location'
+    elif inColorLegendPositionAndSize[0] == 'top left':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Upper Left Corner'
+    elif inColorLegendPositionAndSize[0] == 'top right':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Upper Right Corner'
+    elif inColorLegendPositionAndSize[0] == 'bottom left':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Lower Left Corner'
+    elif inColorLegendPositionAndSize[0] == 'bottom right':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Lower Right Corner'
+    elif inColorLegendPositionAndSize[0] == 'parameters':
+      legendOrientation = inColorLegendPositionAndSize[1]
+      legendPosition = inColorLegendPositionAndSize[2]
+      legendWindowLocation = 'Any Location'
+    else:
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Lower Right Corner'
 
     #newScalarBarWidgetRepresentation = CreateScalarBar( Title=inPvDataRep.ColorArrayName, Position2=[0.13, 0.5], TitleOpacity=1.0, TitleShadow=0, AutomaticLabelFormat=1, TitleFontSize=12, TitleColor=[1.0, 1.0, 1.0], AspectRatio=20.0, NumberOfLabels=5, ComponentTitle='', Resizable=1, TitleFontFamily='Arial', Visibility=myVisibility, LabelFontSize=12, LabelFontFamily='Arial', TitleItalic=0, Selectable=0, LabelItalic=0, Enabled=0, LabelColor=[1.0, 1.0, 1.0], Position=[0.9, 0.31396255850234012], LabelBold=0, UseNonCompositedRenderer=1, LabelOpacity=1.0, TitleBold=0, LabelFormat='%-#6.3g', Orientation='Vertical', LabelShadow=0, LookupTable=inPvDataRep.LookupTable, Repositionable=1 )
   if gParaViewCatalystVersionFlag <= 40100:
@@ -12747,7 +12391,7 @@ def ShowDataColorLegendXX(inPvView,
       #LabelShadow=0,
       #Repositionable=1
       )
-  else:
+  elif gParaViewCatalystVersionFlag < 51000:
     newScalarBarWidgetRepresentation = CreateScalarBar(
         Title=localColorArrayName, ComponentTitle='')
     newScalarBarWidgetRepresentation.Orientation = legendOrientation
@@ -12756,6 +12400,35 @@ def ShowDataColorLegendXX(inPvView,
       newScalarBarWidgetRepresentation.Position = legendPosition
     if PhactoriDbg():
       nbwr = newScalarBarWidgetRepresentation
+      myDebugPrint3("newScalarBarWidgetRepresentation:\n" +\
+        str(nbwr) + "\n" +\
+        "  Title: " + str(nbwr.Title) + "\n" +\
+        "  ComponentTitle: " + str(nbwr.ComponentTitle) + "\n" +\
+        "  WindowLocation: " + str(nbwr.WindowLocation) + "\n" +\
+        "  Position: " + str(nbwr.Position) + "\n" +\
+        "  ScalarBarLength: " + str(nbwr.ScalarBarLength) + "\n" +\
+        "  ScalarBarThickness: " + str(nbwr.ScalarBarThickness) + "\n" +\
+        "  Orientation: " + str(nbwr.Orientation) + "\n" +\
+        "  LabelFontSize: " + str(nbwr.LabelFontSize) + "\n" +\
+        "  TitleFontSize: " + str(nbwr.TitleFontSize) + "\n" +\
+        "  LabelFontFamily: " + str(nbwr.LabelFontFamily) + "\n" +\
+        "  TitleFontFamily: " + str(nbwr.TitleFontSize) + "\n")
+        #"  LockPosition: " + str(nbwr.LockPosition) + "\n" +\
+        #"  Repositionable: " + str(nbwr.Repositionable) + "\n" +\
+        #"  AutoOrient: " + str(nbwr.AutoOrient) + "\n" +\
+  else:
+    pv_4_3_LUT = GetColorTransferFunction(inPvDataRep.ColorArrayName[1])
+    newScalarBarWidgetRepresentation = GetScalarBar(pv_4_3_LUT, inPvView)
+    newScalarBarWidgetRepresentation.Orientation = legendOrientation
+    global gTemporaryGlobalImageTextColor
+    newScalarBarWidgetRepresentation.TitleColor = gTemporaryGlobalImageTextColor
+    newScalarBarWidgetRepresentation.LabelColor = gTemporaryGlobalImageTextColor
+    newScalarBarWidgetRepresentation.WindowLocation = legendWindowLocation
+    if legendWindowLocation == 'AnyLocation':
+      newScalarBarWidgetRepresentation.Position = legendPosition
+    if PhactoriDbg():
+      nbwr = newScalarBarWidgetRepresentation
+      nbwr.ComponentTitle = ""
       myDebugPrint3("newScalarBarWidgetRepresentation:\n" +\
         str(nbwr) + "\n" +\
         "  Title: " + str(nbwr.Title) + "\n" +\
@@ -12808,76 +12481,6 @@ def ApplyClipPlane(inNormal, inOrigin, inClipPlaneFilterName):
   newClip.ClipType.Origin = inOrigin
   SetActiveSource(newClip);
   AddFilterToFilterMap(inClipPlaneFilterName, newClip)
-
-global gThresholdFilterNameCounter
-gThresholdFilterNameCounter = 0
-
-def ThresholdFilter(inVariableName, inType, inRange, inThresholdFilterName = None):
-  "Apply a threshold filter.  inVariableName is the variable to use for "
-  "thresholding, inType is 'POINTS' or 'CELLS', inRange is the threhold "
-  "range, such as [0.5, 1.5] or [-10.0, 10.0]"
-  if PhactoriDbg(100):
-    myDebugPrint3('phactori.ThresholdFilter entered, setting:' + inVariableName + ' ' + inType + ' ' + str(inRange) + '\n', 100)
-
-  activeSource = GetActiveSource()
-
-  CellDataList = []
-  for ii in range(activeSource.CellData.GetNumberOfArrays()):
-      CellDataList.append(activeSource.CellData.GetArray(ii).Name)
-  if PhactoriDbg():
-    myDebugPrint3('before threshold cell data items: ' + str(CellDataList) + '\n');
-
-  myThreshold = Threshold(activeSource)
-  myThreshold.ThresholdRange = inRange
-  myThreshold.Scalars = [inType, inVariableName]
-  SetActiveSource(myThreshold)
-  if inThresholdFilterName == None:
-    global gThresholdFilterNameCounter
-    inThresholdFilterName = "ThresholdFilter" + str(gThresholdFilterNameCounter)
-    gThresholdFilterNameCounter += 1
-  AddFilterToFilterMap(inThresholdFilterName, myThreshold)
-
-  activeSource = GetActiveSource()
-  CellDataList = []
-  for ii in range(activeSource.CellData.GetNumberOfArrays()):
-      CellDataList.append(activeSource.CellData.GetArray(ii).Name)
-  if PhactoriDbg():
-    myDebugPrint3('after threshold cell data items: ' + str(CellDataList) + '\n');
-
-  if PhactoriDbg(100):
-    myDebugPrint3('phactori.ThresholdFilter returning \n', 100)
-
-
-#def WarpMeshByDisplacement(inDisplacementVariableName, inWarpDisplacementFilterName = 'WarpDisplacementCalculator'):
-#  "Warp the mesh by the displacement variable; in paraview this means we "
-#  "add a calculator with adds the displacement value to the coordinates "
-#  "of each corresponding mesh element"
-#
-#  print 'WarpMeshByDisplacement entered'
-#  print '  active view A: ' + str(GetActiveView())
-#  print '  active source A: ' + str(GetActiveSource())
-#
-#
-#
-#  myDebugPrint3('phactori.WarpMeshByDisplacement entered, setting:' + inDisplacementVariableName + '\n')
-#
-#  PointDataList = []
-#
-#  FunctionString = 'coords + ' + inDisplacementVariableName
-#  DisplacementWarpCalculator = Calculator( guiName="Calculator1", Function=FunctionString, ReplacementValue=0.0, ResultArrayName='Result', ReplaceInvalidResults=1, CoordinateResults=1 )
-#  #DisplacementWarpCalculator = Calculator( guiName="Calculator1", Function=FunctionString, ReplacementValue=0.0, ResultArrayName='Result', ReplaceInvalidResults=1, AttributeMode='point_data', CoordinateResults=1 )
-#  myDebugPrint3('DisplacementWarpCalculator has ' + str(DisplacementWarpCalculator.PointData.GetNumberOfArrays()) + ' point data items\n');
-#  for ii in range(DisplacementWarpCalculator.PointData.GetNumberOfArrays()):
-#      PointDataList.append(DisplacementWarpCalculator.PointData.GetArray(ii).Name)
-#  myDebugPrint3('DisplacementWarpCalculator point data items: ' + str(PointDataList) + '\n');
-#  #tempDataRepresentation = GetDisplayProperties(currentSi.ActiveSource)
-#  #tempDataRepresentation.Visibility = 0
-#  SetActiveSource(DisplacementWarpCalculator);
-#  AddFilterToFilterMap(inWarpDisplacementFilterName, DisplacementWarpCalculator)
-#
-#  print '  active view B: ' + str(GetActiveView())
-#  print '  active source B: ' + str(GetActiveSource())
-#  print 'WarpMeshByDisplacement returning'
 
 def TempAddTestFiltersAfterDispl():
     """create the clip plane filter for ParaView"""
@@ -15425,6 +15028,8 @@ def HandleUserInteractionIfEnabled(ioPipeAndViewsState):
     myDebugPrint3("HandleUserInteractionIfEnabled returning\n")
   return doUpdate
 
+#phactori_combine_to_single_python_file_parent_1
+from Operation.PhactoriRepresentationBlock import *
 
 class PhactoriCriteriaThreshold:
   """
@@ -15927,13 +15532,18 @@ def WriteOutImagesTest(datadescription, coprocessor):
 
 def CreateAllProducersFromAllInputDescriptions(datadescription, inCoprocessor, newRoot):
   global gPipeAndViewsState
-  newRoot.mProducer = inCoprocessor.CreateProducer( datadescription, "input" )
+  inputGrid0Name = datadescription.GetInputDescriptionName(0)
+  #newRoot.mProducer = inCoprocessor.CreateProducer( datadescription, "input" )
+  newRoot.mProducer = inCoprocessor.CreateProducer( datadescription, inputGrid0Name)
   newRoot.mIncomingDefaultOperation.mHasBeenConstructed = True
+  newRoot.mIncomingDefaultOperation.mName = inputGrid0Name
+  newRoot.mIncomingDefaultOperation.mOperationSpecifics = PhactoriOperationSpecifics()
+  newRoot.mOperationBlocks[inputGrid0Name] = newRoot.mIncomingDefaultOperation
   numInputGrids = datadescription.GetNumberOfInputDescriptions()
   if PhactoriDbg():
     myDebugPrint3("numInputGrids: " + str(numInputGrids) + "\n");
     for ii in range(0,numInputGrids):
-      print(str(ii) + ": " + str(datadescription.GetInputDescriptionName(ii)) + "\n")
+      myDebugPrint3(str(ii) + ": " + str(datadescription.GetInputDescriptionName(ii)) + "\n")
   defSrc = GetActiveSource();
   for ii in range(1,numInputGrids):
     incomingInputName = datadescription.GetInputDescriptionName(ii)
@@ -15944,8 +15554,8 @@ def CreateAllProducersFromAllInputDescriptions(datadescription, inCoprocessor, n
     newIncomingOperationBlock.mParaViewFilter = newTrivialProducerForGrid
     newIncomingOperationBlock.mHasBeenConstructed = True
     newIncomingOperationBlock.mOperationSpecifics = PhactoriOperationSpecifics()
-    newRoot.mIncomingOperationList.append(newIncomingOperationBlock)
-    newRoot.mIncomingGridProducerList.append(newTrivialProducerForGrid)
+    #newRoot.mIncomingOperationList.append(newIncomingOperationBlock)
+    #newRoot.mIncomingGridProducerList.append(newTrivialProducerForGrid)
     newRoot.mOperationBlocks[newIncomingOperationBlock.mName] = newIncomingOperationBlock
   SetActiveSource(defSrc);
 

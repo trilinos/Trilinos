@@ -1,5 +1,4 @@
 #include "Compadre_LinearAlgebra_Definitions.hpp"
-#include "Compadre_Functors.hpp"
 
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_ApplyPivot_Decl.hpp"
@@ -25,6 +24,7 @@ namespace GMLS_LinearAlgebra {
     int _pm_getTeamScratchLevel_0;
     int _pm_getTeamScratchLevel_1;
     int _M, _N, _NRHS;
+    bool _implicit_RHS;
 
     KOKKOS_INLINE_FUNCTION
     Functor_TestBatchedTeamVectorSolveUTV(
@@ -32,8 +32,10 @@ namespace GMLS_LinearAlgebra {
                       const int N,
                       const int NRHS,
                       const MatrixViewType_A &a,
-                      const MatrixViewType_B &b)
-      : _a(a), _b(b), _M(M), _N(N), _NRHS(NRHS) { _pm_getTeamScratchLevel_0 = 0; _pm_getTeamScratchLevel_1 = 0; }
+                      const MatrixViewType_B &b,
+                      const bool implicit_RHS)
+      : _a(a), _b(b), _M(M), _N(N), _NRHS(NRHS), _implicit_RHS(implicit_RHS) 
+        { _pm_getTeamScratchLevel_0 = 0; _pm_getTeamScratchLevel_1 = 0; }
 
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
@@ -101,16 +103,16 @@ namespace GMLS_LinearAlgebra {
         Kokkos::single(Kokkos::PerTeam(member), [&] () {
           //print a
           printf("a=zeros(%lu,%lu);\n", aa.extent(0), aa.extent(1));
-              for (size_t j=0; j<aa.extent(0); ++j) {
-                  for (size_t k=0; k<aa.extent(1); ++k) {
-                      printf("a(%lu,%lu)= %f;\n", j+1,k+1, aa(j,k));
+              for (size_t i=0; i<aa.extent(0); ++i) {
+                  for (size_t j=0; j<aa.extent(1); ++j) {
+                      printf("a(%lu,%lu)= %f;\n", i+1,j+1, aa(i,j));
                   }
               }
           //print b
           printf("b=zeros(%lu,%lu);\n", bb.extent(0), bb.extent(1));
-              for (size_t j=0; j<bb.extent(0); ++j) {
-                  for (size_t k=0; k<bb.extent(1); ++k) {
-                      printf("b(%lu,%lu)= %f;\n", j+1,k+1, bb(j,k));
+              for (size_t i=0; i<bb.extent(0); ++i) {
+                  for (size_t j=0; j<bb.extent(1); ++j) {
+                      printf("b(%lu,%lu)= %f;\n", i+1,j+1, bb(i,j));
                   }
               }
         });
@@ -133,15 +135,15 @@ namespace GMLS_LinearAlgebra {
         printf("matrix_rank: %d\n", matrix_rank);
         //print u
         printf("u=zeros(%lu,%lu);\n", uu.extent(0), uu.extent(1));
-        for (size_t j=0; j<uu.extent(0); ++j) {
-            for (size_t k=0; k<uu.extent(1); ++k) {
-                printf("u(%lu,%lu)= %f;\n", j+1,k+1, uu(j,k));
+        for (size_t i=0; i<uu.extent(0); ++i) {
+            for (size_t j=0; j<uu.extent(1); ++j) {
+                printf("u(%lu,%lu)= %f;\n", i+1,j+1, uu(i,j));
             }
         }
         });
       }
       TeamVectorSolveUTVCompadre<MemberType,AlgoTagType>
-        ::invoke(member, matrix_rank, _M, _N, _NRHS, uu, aa, vv, pp, bb, xx, ww_slow, ww_fast);
+        ::invoke(member, matrix_rank, _M, _N, _NRHS, uu, aa, vv, pp, bb, xx, ww_slow, ww_fast, _implicit_RHS);
       member.team_barrier();
 
     }
@@ -181,7 +183,7 @@ namespace GMLS_LinearAlgebra {
 
 
 template <typename A_layout, typename B_layout, typename X_layout>
-void batchQRPivotingSolve(ParallelManager pm, double *A, int lda, int nda, double *B, int ldb, int ndb, int M, int N, int NRHS, const int num_matrices) {
+void batchQRPivotingSolve(ParallelManager pm, double *A, int lda, int nda, double *B, int ldb, int ndb, int M, int N, int NRHS, const int num_matrices, const bool implicit_RHS) {
 
     typedef Algo::UTV::Unblocked algo_tag_type;
     typedef Kokkos::View<double***, A_layout, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
@@ -195,18 +197,18 @@ void batchQRPivotingSolve(ParallelManager pm, double *A, int lda, int nda, doubl
     MatrixViewType_B mat_B(B, num_matrices, ldb, ndb);
 
     Functor_TestBatchedTeamVectorSolveUTV
-      <device_execution_space, algo_tag_type, MatrixViewType_A, MatrixViewType_B, MatrixViewType_X>(M,N,NRHS,mat_A,mat_B).run(pm);
+      <device_execution_space, algo_tag_type, MatrixViewType_A, MatrixViewType_B, MatrixViewType_X>(M,N,NRHS,mat_A,mat_B,implicit_RHS).run(pm);
 
 }
 
-template void batchQRPivotingSolve<layout_right, layout_right, layout_right>(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int);
-template void batchQRPivotingSolve<layout_right, layout_right, layout_left >(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int);
-template void batchQRPivotingSolve<layout_right, layout_left , layout_right>(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int);
-template void batchQRPivotingSolve<layout_right, layout_left , layout_left >(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int);
-template void batchQRPivotingSolve<layout_left , layout_right, layout_right>(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int);
-template void batchQRPivotingSolve<layout_left , layout_right, layout_left >(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int);
-template void batchQRPivotingSolve<layout_left , layout_left , layout_right>(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int);
-template void batchQRPivotingSolve<layout_left , layout_left , layout_left >(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int);
+template void batchQRPivotingSolve<layout_right, layout_right, layout_right>(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int,const bool);
+template void batchQRPivotingSolve<layout_right, layout_right, layout_left >(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int,const bool);
+template void batchQRPivotingSolve<layout_right, layout_left , layout_right>(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int,const bool);
+template void batchQRPivotingSolve<layout_right, layout_left , layout_left >(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int,const bool);
+template void batchQRPivotingSolve<layout_left , layout_right, layout_right>(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int,const bool);
+template void batchQRPivotingSolve<layout_left , layout_right, layout_left >(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int,const bool);
+template void batchQRPivotingSolve<layout_left , layout_left , layout_right>(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int,const bool);
+template void batchQRPivotingSolve<layout_left , layout_left , layout_left >(ParallelManager,double*,int,int,double*,int,int,int,int,int,const int,const bool);
 
 } // GMLS_LinearAlgebra
 } // Compadre

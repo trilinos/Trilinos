@@ -201,10 +201,10 @@ namespace Intrepid2 {
       typedef Kokkos::View<ordinal_type*,DT> mapViewType;
       const auto sideNodeMap = Kokkos::subview(sideNodeMap_, i, Kokkos::ALL());
       
-      typedef typename ExecSpace<typename PointViewType::execution_space,DT>::ExecSpaceType ExecSpaceType;
+      //typedef typename ExecSpace<typename PointViewType::execution_space,DT>::ExecSpaceType ExecSpaceType;
     
       const auto loopSize = numCells;
-      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+      Kokkos::RangePolicy<typename DT::execution_space,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
       
       typedef Functor<PointViewType,weightViewType,tempPointViewType,tempPointViewType,mapViewType> FunctorType;
 

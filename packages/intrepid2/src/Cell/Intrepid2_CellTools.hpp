@@ -64,23 +64,26 @@
 #include "Intrepid2_Basis.hpp"
 
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_LINE_C2_FEM.hpp"
 
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_WEDGE_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_PYR_C1_FEM.hpp"
-
-#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
-
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+
+#include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_COMP12_FEM.hpp"
 
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+
+#include "Intrepid2_HGRAD_WEDGE_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
-//#include "Intrepid2_HGRAD_WEDGE_I2_FEM.hpp"
+
+#include "Intrepid2_HGRAD_PYR_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_PYR_I2_FEM.hpp"
 
 #include "Intrepid2_Data.hpp"
 #include "Intrepid2_CellData.hpp"
@@ -132,6 +135,7 @@ namespace Intrepid2 {
 
       switch (cellTopo.getKey()) {
       case shards::Line<2>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Line<3>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
@@ -140,17 +144,16 @@ namespace Intrepid2 {
       case shards::Pyramid<5>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
 
       case shards::Triangle<6>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Quadrilateral<8>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_I2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Quadrilateral<9>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Tetrahedron<10>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Tetrahedron<11>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<DeviceType,outputValueType,pointValueType>()); break;
-        //case shards::Hexahedron<20>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Hexahedron<20>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Hexahedron<27>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
-        //case shards::Wedge<15>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Wedge<15>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
       case shards::Wedge<18>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
-        //case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
 
-      case shards::Quadrilateral<8>::key: 
-      case shards::Line<3>::key:
       case shards::Beam<2>::key:
       case shards::Beam<3>::key:
       case shards::ShellLine<2>::key:
@@ -315,7 +318,8 @@ public:
                  const Kokkos::DynRankView<pointValueType,pointProperties...>       points,
                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                  const shards::CellTopology cellTopo ) {
-    auto basis = createHGradBasis<pointValueType,pointValueType>(cellTopo);
+    using nonConstPointValueType = std::remove_const_t<pointValueType>;
+    auto basis = createHGradBasis<nonConstPointValueType,nonConstPointValueType>(cellTopo);
     setJacobian(jacobian, 
                 points, 
                 worksetCell, 
@@ -378,6 +382,15 @@ public:
     template<class PointScalar>
     static void setJacobianDet( Data<PointScalar,DeviceType> & jacobianDet,
                                const Data<PointScalar,DeviceType> & jacobian);
+    
+    /** \brief  Computes reciprocals of determinants corresponding to the Jacobians in the Data container provided
+
+        \param  jacobianDet   [out]  - data with shape (C,P), as returned by CellTools::allocateJacobianDet()
+        \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+    */
+    template<class PointScalar>
+    static void setJacobianDetInv( Data<PointScalar,DeviceType> & jacobianDet,
+                                  const Data<PointScalar,DeviceType> & jacobian);
 
     /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
 
@@ -387,6 +400,17 @@ public:
     template<class PointScalar>
     static void setJacobianInv( Data<PointScalar,DeviceType> & jacobianInv,
                                const Data<PointScalar,DeviceType> & jacobian);
+    
+    /** \brief  Multiplies the Jacobian with shape (C,P,D,D) by the reciprocals of the determinants, with shape (C,P), entrywise.
+
+        \param  jacobianDividedByDet   [out]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobian   [in]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobianDetInv          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+    */
+    template<class PointScalar>
+    static void setJacobianDividedByDet( Data<PointScalar,DeviceType> & jacobianDividedByDet,
+                                        const Data<PointScalar,DeviceType> & jacobian,
+                                        const Data<PointScalar,DeviceType> & jacobianDetInv);
     
     //============================================================================================//
     //                                                                                            //
@@ -713,6 +737,27 @@ public:
                              const ordinal_type         worksetEdgeOrd,
                              const shards::CellTopology parentCell );
 
+
+    /** \brief  Computes non-normalized tangent vectors to physical edges in an edge workset
+        \f$\{\mathcal{E}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of edge worksets).
+
+        It is similar to the <var>CellTools::getPhysicalEdgeTangents</var> function above, with the difference that the edge ordinal can change from point to point,
+        and it is provided by the rank-2 input array <var><b>worksetEdgeOrds</b></var>, indexed by (C,P).
+
+        \param  edgeTangents      [out] - rank-3 array (C,P,D1) with tangents on workset edges
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D1,D1) with Jacobians evaluated at ref. edge points
+        \param  worksetEdgeOrds   [in]  - rank-2 array (C,P) with edge ordinals, relative to ref. cell, of the edge workset
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+    template<typename edgeTangentValueType,     class ...edgeTangentProperties,
+             typename worksetJacobianValueType, class ...worksetJacobianProperties,
+             typename edgeOrdValueType,         class ...edgeOrdProperties>
+    static void
+    getPhysicalEdgeTangents(       Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
+                             const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+                             const Kokkos::DynRankView<edgeOrdValueType,edgeOrdProperties...>                 worksetEdgeOrds,
+                             const shards::CellTopology parentCell );
+
     /** \brief  Computes non-normalized tangent vector pairs to physical faces in a face workset
         \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets).
 
@@ -760,6 +805,31 @@ public:
                              const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                              const ordinal_type         worksetFaceOrd,
                              const shards::CellTopology parentCell );
+
+
+    /** \brief  Computes non-normalized tangent vector pairs to physical faces in a face workset
+        \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets).
+
+        It is similar to the <var>CellTools::getPhysicalFaceTangents</var> function above, with the difference that the face ordinal can change from point to point,
+        and it is provided by the rank-2 input array <var><b>worksetFaceOrds</b></var>, indexed by (C,P).
+
+        \param  faceTanU          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+        \param  faceTanV          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
+        \param  worksetFaceOrds   [in]  - rank-2 array (C,P) with face ordinals, relative to ref. cell, of the face workset
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+    template<typename faceTanValueType,        class ...faceTanProperties,
+             typename worksetJacobianValueType, class ...worksetJacobianProperties,
+             typename faceOrdValueType, class ...faceOrdProperties>
+    static void
+    getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanValueType,faceTanProperties...> faceTanU,
+                                   Kokkos::DynRankView<faceTanValueType,faceTanProperties...> faceTanV,
+                             const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+                             const Kokkos::DynRankView<faceOrdValueType,faceOrdProperties...>  worksetFaceOrds,
+                             const shards::CellTopology parentCell );
+
+
 
     /** \brief  Computes non-normalized normal vectors to physical sides in a side workset
         \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$.
@@ -829,6 +899,26 @@ public:
                             const ordinal_type         worksetSideOrd,
                             const shards::CellTopology parentCell );
 
+
+/** \brief  Computes non-normalized normal vectors to physical sides in a side workset
+    \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$.
+    It is similar to the <var>CellTools::getPhysicalSideNormals</var> function above, with the difference that the side ordinal can change from point to point,
+    and it is provided by the rank-2 input array <var><b>worksetSideOrds</b></var>, indexed by (C,P).
+
+    \param  sideNormals       [out] - rank-3 array (C,P,D), normals at workset sides
+    \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. side points
+    \param  worksetSideOrds   [in]  - rank-2 array (C,P) with side ordinals, relative to ref. cell, of the side workset
+    \param  parentCell        [in]  - cell topology of the parent reference cell
+*/
+    template<typename sideNormalValueType,      class ...sideNormalProperties,
+             typename worksetJacobianValueType, class ...worksetJacobianProperties,
+             typename edgeOrdValueType,         class ...edgeOrdProperties>
+    static void
+    getPhysicalSideNormals(       Kokkos::DynRankView<sideNormalValueType,sideNormalProperties...> sideNormals,
+                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+                            const Kokkos::DynRankView<edgeOrdValueType,edgeOrdProperties...>                 worksetSideOrds,
+                            const shards::CellTopology parentCell );
+
     /** \brief  Computes non-normalized normal vectors to physical faces in a face workset
         \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets).
 
@@ -873,6 +963,27 @@ public:
     getPhysicalFaceNormals(       Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
                             const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                             const ordinal_type         worksetFaceOrd,
+                            const shards::CellTopology parentCell );
+
+
+    /** \brief  Computes non-normalized normal vectors to physical faces in a face workset
+        \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets).
+        It is similar to the <var>CellTools::getPhysicalSideNormals</var> function above, with the difference that the side ordinal can change from point to point,
+        and it is provided by the rank-2 input array <var><b>worksetSideOrds</b></var>, indexed by (C,P).
+
+        \param  faceNormals       [out] - rank-3 array (C,P,D), normals at workset faces
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
+        \param  worksetFaceOrds   [in]  - rank-2 array (C,P) with face ordinals, relative to ref. cell, of the face workset
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+
+    template<typename faceNormalValueType,      class ...faceNormalProperties,
+             typename worksetJacobianValueType, class ...worksetJacobianProperties,
+             typename faceOrdValueType, class ...faceOrdProperties>
+    static void
+    getPhysicalFaceNormals(       Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
+                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+                            const Kokkos::DynRankView<faceOrdValueType,faceOrdProperties...>  worksetFaceOrds,
                             const shards::CellTopology parentCell );
 
     //============================================================================================//
@@ -975,7 +1086,8 @@ public:
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
-      auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
+      using nonConstRefPointValueType = std::remove_const_t<refPointValueType>;
+      auto basis = createHGradBasis<nonConstRefPointValueType,nonConstRefPointValueType>(cellTopo);
       mapToPhysicalFrame(physPoints, 
                          refPoints, 
                          worksetCell, 
@@ -1033,14 +1145,40 @@ public:
         \param  subcellOrd        [in]  - subcell ordinal
         \param  parentCell        [in]  - cell topology of the parent cell.
     */
-    template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
-             typename paramPointValueType, class ...paramPointProperties>
+    template<typename refSubcellViewType,
+             typename paramPointViewType>
     static void
-    mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
-                           const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
+    mapToReferenceSubcell(       refSubcellViewType refSubcellPoints,
+                           const paramPointViewType paramPoints,
                            const ordinal_type subcellDim,
                            const ordinal_type subcellOrd,
                            const shards::CellTopology parentCell );
+
+
+    /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
+
+        Overload of the previous function (see explanation above) where the subcell parametrization is used instead of 
+        passing the parent cell topology.
+    */
+
+    template<typename refSubcellViewType, typename paramPointViewType>
+    static void
+    mapToReferenceSubcell(     refSubcellViewType                                             refSubcellPoints,
+                         const paramPointViewType                                             paramPoints,
+                         const typename RefSubcellParametrization<DeviceType>::ConstViewType  subcellParametrization,
+                         const ordinal_type subcellOrd);
+
+    /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
+
+        Overload of the previous function (see explanation above) where the subcellOrd is a rank-1 array (P).
+    */
+
+    template<typename refSubcellViewType, typename paramPointViewType, typename ordViewType>
+    static void
+    mapToReferenceSubcell(     refSubcellViewType                                             refSubcellPoints,
+                         const paramPointViewType                                             paramPoints,
+                         const typename RefSubcellParametrization<DeviceType>::ConstViewType  subcellParametrization,
+                         const ordViewType                                                    subcellOrd);
 
 
     //============================================================================================//

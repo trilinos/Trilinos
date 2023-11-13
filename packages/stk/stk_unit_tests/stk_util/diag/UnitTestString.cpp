@@ -61,3 +61,37 @@ TEST(StkString, case_sensitive_comparison_with_std_string)
   EXPECT_FALSE(strings_do_not_match);
 }
 
+namespace
+{
+class TestClass
+{
+ public:
+  TestClass() = default;
+
+  const sierra::String str_member;
+};
+}  // namespace
+
+TEST(StkString, default_constructible)
+{
+  sierra::String s;
+  EXPECT_TRUE(s.empty());
+
+  sierra::StringBase<sierra::char_label_traits> s_label;
+  EXPECT_TRUE(s_label.empty());
+
+  // If we change the default constructor to "StringBase() = default" this fails to compile unfortunately
+  TestClass d;
+  EXPECT_TRUE(d.str_member.empty());
+}
+
+TEST(StkString, char_label_traits_append)
+{
+  sierra::StringBase<sierra::char_label_traits> s_label;
+
+  s_label.append("abc", 3);
+  EXPECT_EQ("abc", s_label.s_str());
+
+  s_label.append("def");
+  EXPECT_EQ("abc_def", s_label.s_str());
+}

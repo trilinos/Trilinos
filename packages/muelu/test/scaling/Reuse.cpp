@@ -180,7 +180,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib& lib, int a
       Teuchos::ArrayRCP<SC> data0, data1;
       data0 = nullspace->getDataNonConst(0);
       data1 = nullspace->getDataNonConst(1);
-      for (size_t k = 0; k < Aprecond->getRowMap()->getNodeNumElements(); k += 2)
+      for (size_t k = 0; k < Aprecond->getRowMap()->getLocalNumElements(); k += 2)
         data0[k+0] = data1[k+1] = one;
 
       // Build the preconditioner

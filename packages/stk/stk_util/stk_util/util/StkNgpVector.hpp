@@ -50,8 +50,11 @@ public:
     NgpVector() : NgpVector(get_default_name())
     {
     }
-    NgpVector(const std::string &n, size_t s) : mSize(s), deviceVals(Kokkos::view_alloc(Kokkos::WithoutInitializing, n), mSize), hostVals(Kokkos::create_mirror_view(HostSpace(), deviceVals, Kokkos::WithoutInitializing))
-    {
+    NgpVector(const std::string &n, size_t s)
+        : mSize(s),
+          deviceVals(Kokkos::view_alloc(Kokkos::WithoutInitializing, n), mSize),
+          hostVals(Kokkos::create_mirror_view(Kokkos::WithoutInitializing, HostSpace(), deviceVals))
+        {
     }
     NgpVector(size_t s) : NgpVector(get_default_name(), s)
     {
@@ -66,6 +69,9 @@ public:
     KOKKOS_FUNCTION ~NgpVector() {}
 
     std::string name() const { return hostVals.label(); }
+
+    auto view_host() { return Kokkos::subview(hostVals, Kokkos::make_pair(size_t(0), size())); }
+    auto view_device() { return Kokkos::subview(deviceVals, Kokkos::make_pair(size_t(0), size())); }
 
     KOKKOS_FUNCTION size_t size() const { return mSize; }
     KOKKOS_FUNCTION bool empty() const { return mSize == 0; }

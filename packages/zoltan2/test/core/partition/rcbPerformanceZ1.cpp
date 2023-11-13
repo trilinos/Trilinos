@@ -143,7 +143,7 @@ void getObjList(void *data, int numGid, int numLid,
 {
   *ierr = 0;
   size_t localLen = coordinates->getLocalLength();
-  const zgno_t *ids = coordinates->getMap()->getNodeElementList().getRawPtr();
+  const zgno_t *ids = coordinates->getMap()->getLocalElementList().getRawPtr();
   zgno_t *idsNonConst = const_cast<zgno_t *>(ids);
 
   if (sizeof(zgno_t) == sizeof(zgno_t)){

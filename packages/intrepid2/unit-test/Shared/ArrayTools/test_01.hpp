@@ -94,8 +94,8 @@ namespace Intrepid2 {
       using DeviceExecSpaceType = typename DeviceType::execution_space;
       using HostExecSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-      *outStream << "DeviceSpace::  "; DeviceExecSpaceType::print_configuration(std::cout, false);
-      *outStream << "HostSpace::    ";   HostExecSpaceType::print_configuration(std::cout, false);
+      *outStream << "DeviceSpace::  "; DeviceExecSpaceType().print_configuration(std::cout, false);
+      *outStream << "HostSpace::    ";   HostExecSpaceType().print_configuration(std::cout, false);
 
       *outStream      \
         << "===============================================================================\n" \
@@ -116,8 +116,12 @@ namespace Intrepid2 {
       typedef ArrayTools<DeviceType> art; 
       typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 
+#if defined(INTREPID2_ENABLE_SACADO_ETI_TEST)
+#define NumDerivative 10
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__, NumDerivative+1)
+#else
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
-      
+#endif 
       const value_type tol = tolerence()*10000.0;
       int errorFlag = 0;
       

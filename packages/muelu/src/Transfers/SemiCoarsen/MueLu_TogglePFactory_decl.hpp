@@ -52,7 +52,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_ParameterListAcceptor.hpp"
 #include "MueLu_PFactory.hpp"
-#include "MueLu_SingleLevelFactoryBase_fwd.hpp"
 
 namespace MueLu {
 
@@ -147,6 +146,7 @@ template <class Scalar = DefaultScalar,
     //! Returns number of coarse null space factories.
     size_t NumCoarseNullspaceFactories() const { return prolongatorFacts_.size(); }
 
+    RCP<const FactoryBase>  getProlongatorFactory(size_t t) const {return prolongatorFacts_[t]; }
     //@}
   private:
     //! list of user-defined prolongation operator factories

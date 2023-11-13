@@ -87,12 +87,12 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
     TEST_GROUP##_##TEST_NAME##_UnitTest() \
       : Teuchos::UnitTestBase( #TEST_GROUP, #TEST_NAME ) \
     {} \
-    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
-    virtual std::string unitTestFile() const { return __FILE__; } \
-    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
+    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const override; \
+    virtual std::string unitTestFile() const override { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const override { return __LINE__; } \
   }; \
   \
-  TEST_GROUP##_##TEST_NAME##_UnitTest \
+  [[maybe_unused]] TEST_GROUP##_##TEST_NAME##_UnitTest \
     instance_##TEST_GROUP##_##TEST_NAME##_UnitTest; \
   \
         void TEST_GROUP##_##TEST_NAME##_UnitTest::runUnitTestImpl( \
@@ -191,7 +191,7 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
   instance_##TEST_GROUP##_##TYPE##_##TEST_NAME##_UnitTest(#TYPE);
 
 
-#ifdef HAVE_TEUCHOS_FLOAT
+#ifdef HAVE_TEUCHOS_INST_FLOAT
 #  define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_FLOAT(TEST_GROUP, TEST_NAME)\
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(TEST_GROUP, TEST_NAME, float)
 #else
@@ -201,7 +201,7 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
 #define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_DOUBLE(TEST_GROUP, TEST_NAME)\
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(TEST_GROUP, TEST_NAME, double)
 
-#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TEUCHOS_FLOAT)
+#ifdef HAVE_TEUCHOS_INST_COMPLEX_FLOAT
 #  define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_FLOAT(TEST_GROUP, TEST_NAME)\
      typedef std::complex<float> ComplexFloat; \
      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(TEST_GROUP, TEST_NAME, ComplexFloat)
@@ -209,7 +209,7 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
 #  define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_FLOAT(TEST_GROUP, TEST_NAME)
 #endif
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_TEUCHOS_INST_COMPLEX_DOUBLE
 #  define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_DOUBLE(TEST_GROUP, TEST_NAME)\
      typedef std::complex<double> ComplexDouble; \
      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(TEST_GROUP, TEST_NAME, ComplexDouble)

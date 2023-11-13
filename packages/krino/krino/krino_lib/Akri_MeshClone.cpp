@@ -6,10 +6,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
+#include <stk_tools/mesh_clone/ReplaceBulkData.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_io/IossBridge.hpp>
 
@@ -71,7 +72,7 @@ MeshClone &
 MeshClone::get(const stk::mesh::BulkData & mesh)
 { /* %TRACE[ON]% */ Trace trace__("krino::MeshClone::update_cloned_fields(stk::mesh::BulkData & mesh)"); /* %TRACE% */
   MeshClone * clone = const_cast<MeshClone*>(mesh.mesh_meta_data().get_attribute<MeshClone>());
-  ThrowRequireMsg(clone != nullptr, "Could not find MeshClone.");
+  STK_ThrowRequireMsg(clone != nullptr, "Could not find MeshClone.");
   return *clone;
 }
 
@@ -83,16 +84,13 @@ MeshClone::MeshClone( stk::mesh::BulkData & orig_mesh, stk::diag::Timer parent_t
 {
   stk::diag::TimeBlock timer__(my_timer);
   const stk::mesh::MetaData & in_meta = my_orig_mesh->mesh_meta_data();
-  my_meta = std::make_unique<stk::mesh::MetaData>();
+  my_meta = stk::mesh::MeshBuilder().create_meta_data();
   clone_meta_data_parts_and_fields(in_meta, *my_meta);
 
-  my_mesh = std::make_unique<stk::mesh::BulkData>(*my_meta,
-      my_orig_mesh->parallel(),
-      stk::mesh::BulkData::NO_AUTO_AURA
-#ifdef SIERRA_MIGRATION
-      ,my_orig_mesh->add_fmwk_data()
-#endif
-      );
+  my_mesh = stk::mesh::MeshBuilder(my_orig_mesh->parallel())
+                       .set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA)
+                       .set_add_fmwk_data(my_orig_mesh->add_fmwk_data())
+                       .create(my_meta);
 
   my_meta->commit();
 
@@ -126,7 +124,7 @@ void MeshClone::restore(const unsigned step_count)
 
   clone_mesh(in_mesh, out_mesh, false);
 
-  ThrowRequire(step_count == my_step_count);
+  STK_ThrowRequire(step_count == my_step_count);
   mark_mesh_as_up_to_date();
 }
 
@@ -134,33 +132,15 @@ void MeshClone::clone_mesh(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
 { /* %TRACE[ON]% */ Trace trace__("krino::MeshClone::clone_mesh(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkData & out_mesh, const bool full_overwrite)"); /* %TRACE% */
   if (full_overwrite)
   {
-    // Ugly, but legal and effective.
-    stk::mesh::MetaData & out_meta = out_mesh.mesh_meta_data();
-    out_mesh.~BulkData();
-
-    const stk::mesh::BulkData::AutomaticAuraOption aura_option =
-      in_mesh.is_automatic_aura_on() ?
-      stk::mesh::BulkData::AUTO_AURA :
-      stk::mesh::BulkData::NO_AUTO_AURA;
-
-    new (&out_mesh) stk::mesh::BulkData(out_meta,
-      in_mesh.parallel(),
-      aura_option
-#ifdef SIERRA_MIGRATION
-      ,in_mesh.add_fmwk_data()
-#endif
-      );
-
-    out_mesh.modification_begin();
-    clone_bulk_data_entities(in_mesh, out_mesh, false);
-    out_mesh.modification_end();
+//    std::function<void(stk::mesh::BulkData& outMesh_)> op = [](stk::mesh::BulkData& outMesh_) {};
+    stk::tools::replace_bulk_data(in_mesh, out_mesh/*, op*/);
   }
   else
   {
     // I don't think you can start with clone_parallel because you can't know where something goes unless you know about it locally.
     // Therefore I don't think that creation can go before deletion because you can't know if it already exists.
     // Best to just delete everything wrong and then rebuild.
-    ThrowRequireMsg(out_mesh.modification_begin(), "MeshClone::restore must not be called within a modification cycle.");
+    STK_ThrowRequireMsg(out_mesh.modification_begin(), "MeshClone::restore must not be called within a modification cycle.");
     delete_extraneous_entities(in_mesh, out_mesh);
     // Occasionally, there is an issue with deleting and recreating the same entity within the same modification cycle,
     // so we need to end here and begin again for the creation.
@@ -172,9 +152,9 @@ void MeshClone::clone_mesh(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
     out_mesh.modification_begin();
     clone_bulk_data_entities(in_mesh, out_mesh, true);
     out_mesh.modification_end();
+    copy_field_data(in_mesh, out_mesh);
   }
 
-  copy_field_data(in_mesh, out_mesh);
 }
 
 
@@ -202,9 +182,9 @@ MeshClone::clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta,
     else
     {
       more_to_do = ipart < in_parts.size();
-      ThrowRequire(in_part->primary_entity_rank() == stk::topology::INVALID_RANK);
+      STK_ThrowRequire(in_part->primary_entity_rank() == stk::topology::INVALID_RANK);
       stk::mesh::Part & out_part = out_meta.declare_part(in_part->name());
-      ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
+      STK_ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
     }
   }
 
@@ -216,7 +196,7 @@ MeshClone::clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta,
         (in_part->primary_entity_rank() == stk::topology::INVALID_RANK) ?
         out_meta.declare_part(in_part->name()) :
         out_meta.declare_part(in_part->name(), in_part->primary_entity_rank(), in_part->force_no_induce());
-    ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
+    STK_ThrowRequire(out_part.mesh_meta_data_ordinal() == in_part->mesh_meta_data_ordinal());
     if (stk::io::is_part_io_part(*in_part))
     {
       stk::io::put_io_part_attribute(out_part);
@@ -239,8 +219,7 @@ MeshClone::clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta,
   {
     if (in_field->state() == stk::mesh::StateNone)
     {
-      stk::topology::rank_t entity_rank = static_cast<stk::topology::rank_t>(in_field->entity_rank());
-      stk::mesh::FieldBase * out_field = out_meta.declare_field_base(in_field->name(), entity_rank, in_field->data_traits(), in_field->field_array_rank(), in_field->dimension_tags(), in_field->number_of_states());
+      stk::mesh::FieldBase * out_field = in_field->clone(out_meta.get_field_repository());
 
       for ( auto&& in_restriction : in_field->restrictions() )
       {
@@ -287,8 +266,8 @@ MeshClone::delete_extraneous_entities(const stk::mesh::BulkData & in_mesh, stk::
 
       if (!delete_entity)
       {
-        in_mesh.comm_procs(in_mesh.entity_key(in_entity), in_mesh_comm_procs);
-        out_mesh.comm_procs(out_mesh.entity_key(out_entity), out_mesh_comm_procs);
+        in_mesh.comm_procs(in_entity, in_mesh_comm_procs);
+        out_mesh.comm_procs(out_entity, out_mesh_comm_procs);
         delete_entity = in_mesh_comm_procs != out_mesh_comm_procs;
       }
 
@@ -301,7 +280,7 @@ MeshClone::delete_extraneous_entities(const stk::mesh::BulkData & in_mesh, stk::
 
       if (delete_entity)
       {
-        ThrowRequireMsg(disconnect_and_destroy_entity(out_mesh, out_entity), "Could not destroy entity " << out_mesh.entity_key(out_entity) << debug_entity(out_mesh, out_entity));
+        STK_ThrowRequireMsg(disconnect_and_destroy_entity(out_mesh, out_entity), "Could not destroy entity " << out_mesh.entity_key(out_entity) << debug_entity(out_mesh, out_entity));
       }
     }
   }
@@ -315,7 +294,7 @@ MeshClone::delete_extraneous_entities(const stk::mesh::BulkData & in_mesh, stk::
       const unsigned num_nodes = out_mesh.bucket(out_entity).topology().num_nodes();
       if (out_mesh.count_valid_connectivity(out_entity, stk::topology::NODE_RANK) != num_nodes)
       {
-        ThrowRequireMsg(disconnect_and_destroy_entity(out_mesh, out_entity), "Could not destroy entity " << out_mesh.entity_key(out_entity));
+        STK_ThrowRequireMsg(disconnect_and_destroy_entity(out_mesh, out_entity), "Could not destroy entity " << out_mesh.entity_key(out_entity));
       }
     }
   }
@@ -335,7 +314,7 @@ MeshClone::delete_all_entities(stk::mesh::BulkData & mesh)
 
     for (auto && entity : entities)
     {
-      ThrowRequireMsg(mesh.destroy_entity(entity), "Could not destroy entity " << mesh.entity_key(entity));
+      STK_ThrowRequireMsg(mesh.destroy_entity(entity), "Could not destroy entity " << mesh.entity_key(entity));
     }
   }
 }
@@ -477,7 +456,7 @@ MeshClone::copy_field_data(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
   out_field.modify_on_host();
 
   stk::mesh::EntityRank entity_rank = out_field.entity_rank();
-  ThrowRequire(in_field.entity_rank() == entity_rank);
+  STK_ThrowRequire(in_field.entity_rank() == entity_rank);
 
   stk::mesh::MetaData & out_meta = out_mesh.mesh_meta_data();
   stk::mesh::Selector field_selector =
@@ -499,8 +478,8 @@ MeshClone::copy_field_data(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
       stk::mesh::Entity out_entity = b[ib];
       stk::mesh::Entity in_entity = in_mesh.get_entity( entity_rank, out_mesh.identifier(out_entity) );
       const auto in_length = stk::mesh::field_bytes_per_entity(in_field, in_entity);
-      ThrowRequireMsg(in_mesh.is_valid(in_entity), "Missing entity " << out_mesh.entity_key(out_entity));
-      ThrowRequireMsg(in_length == out_length,
+      STK_ThrowRequireMsg(in_mesh.is_valid(in_entity), "Missing entity " << out_mesh.entity_key(out_entity));
+      STK_ThrowRequireMsg(in_length == out_length,
           "Mismatched field size for field " << in_field.name() << " in_length = " << in_length << " out_length = " << out_length << "\n"
           << " for input entity " << debug_entity(in_mesh, in_entity) << " on " << in_mesh.parallel_owner_rank(in_entity)
           << " and output entity " << debug_entity(out_mesh, out_entity) << " on " << out_mesh.parallel_owner_rank(out_entity) );
@@ -522,7 +501,7 @@ MeshClone::copy_field_data(const stk::mesh::BulkData & in_mesh, stk::mesh::BulkD
 
   const stk::mesh::FieldVector & in_fields = in_meta.get_fields();
   const stk::mesh::FieldVector & out_fields = out_meta.get_fields();
-  ThrowAssert(in_fields.size() == out_fields.size());
+  STK_ThrowAssert(in_fields.size() == out_fields.size());
 
   const bool out_mesh_aura_from_communication = out_mesh.is_automatic_aura_on() && !in_mesh.is_automatic_aura_on();
 
@@ -559,11 +538,7 @@ MeshClone::translate_selector(const stk::mesh::Selector & in_selector, const stk
   {
     return in_selector;
   }
-  ThrowRequireMsg(in_selector.is_all_unions(), "Cannot translate selector " << in_selector);
-  stk::mesh::PartVector in_parts, out_parts;
-  in_selector.get_parts(in_parts);
-  translate_parts(in_parts, out_meta, out_parts);
-  return stk::mesh::selectUnion(out_parts);
+  return in_selector.clone_for_different_mesh(out_meta);
 }
 
 stk::mesh::Part *

@@ -46,7 +46,7 @@
 /// \brief Declaration and definition of getLocalNumDiags and getGlobalNumDiags
 ///
 /// These two functions are meant to help Tpetra developers deprecate
-/// and remove the getNodeNumDiags and getGlobalNumDiags methods from
+/// and remove the getLocalNumDiags and getGlobalNumDiags methods from
 /// various Tpetra classes.  See Trilinos GitHub issue #2630.
 
 #include "Tpetra_CrsGraph.hpp"
@@ -129,7 +129,7 @@ namespace Impl {
     else {
       LO lclNumDiags {0};
       functor_type f (G.getLocalGraphDevice (), rowMap->getLocalMap (), colMap->getLocalMap ());
-      Kokkos::parallel_reduce (policy_type (0, G.getNodeNumRows ()), f, lclNumDiags);
+      Kokkos::parallel_reduce (policy_type (0, G.getLocalNumRows ()), f, lclNumDiags);
       return lclNumDiags;
     }
   }
@@ -170,7 +170,7 @@ namespace Impl {
 
       typename ::Tpetra::RowGraph<LO, GO, NT>::local_inds_host_view_type 
                lclColInds;
-      const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
+      const LO lclNumRows = static_cast<LO> (G.getLocalNumRows ());
 
       LO diagCount = 0;
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -210,8 +210,8 @@ namespace Impl {
     }
     else {
       using inds_type = typename ::Tpetra::RowGraph<LO,GO,NT>::nonconst_local_inds_host_view_type;
-      inds_type lclColIndsBuf("lclColIndsBuf",G.getNodeMaxNumRowEntries());
-      const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
+      inds_type lclColIndsBuf("lclColIndsBuf",G.getLocalMaxNumRowEntries());
+      const LO lclNumRows = static_cast<LO> (G.getLocalNumRows ());
 
       LO diagCount = 0;
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -254,7 +254,7 @@ namespace Impl {
     else {
       typename ::Tpetra::RowGraph<LO,GO,NT>::global_inds_host_view_type 
                gblColInds;
-      const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
+      const LO lclNumRows = static_cast<LO> (G.getLocalNumRows ());
 
       LO diagCount = 0;
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -289,7 +289,7 @@ namespace Impl {
     }
     else {
       gids_type gblColIndsBuf;
-      const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
+      const LO lclNumRows = static_cast<LO> (G.getLocalNumRows ());
 
       LO diagCount = 0;
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {

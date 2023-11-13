@@ -743,6 +743,10 @@ public:
                     const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                     const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
                     const ROL::Ptr<const std::vector<Real>> &z_param = ROL::nullPtr) const;
+  void printCellAveragesPDE(const ROL::Ptr<PDE<Real>> &pde,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                            const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                            const ROL::Ptr<const std::vector<Real>> &z_param = ROL::nullPtr) const;
   void serialPrintStateEdgeField(const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                                  const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                  const std::string &filename,

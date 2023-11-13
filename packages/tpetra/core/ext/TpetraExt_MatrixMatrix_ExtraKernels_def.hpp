@@ -56,10 +56,10 @@ template<class CrsMatrixType>
 size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
-  if (A.getNodeNumEntries() > 0)
-    Aest = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 100;
-  if (B.getNodeNumEntries() > 0)
-    Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumRows() : 100;
+  if (A.getLocalNumEntries() > 0)
+    Aest = (A.getLocalNumRows() > 0)?  A.getLocalNumEntries()/A.getLocalNumRows() : 100;
+  if (B.getLocalNumEntries() > 0)
+    Best = (B.getLocalNumRows() > 0) ? B.getLocalNumEntries()/B.getLocalNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow *= nnzperrow;
@@ -72,10 +72,10 @@ size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B){
 template<class CrsMatrixType>
 size_t Ac_estimate_nnz(CrsMatrixType & A, CrsMatrixType &P){
   size_t nnzPerRowA = 100, Pcols = 100;
-  if (A.getNodeNumEntries() > 0)
-    nnzPerRowA = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 9;
-  if (P.getNodeNumEntries() > 0)
-    Pcols = (P.getNodeNumCols() > 0) ? P.getNodeNumCols() : 100;
+  if (A.getLocalNumEntries() > 0)
+    nnzPerRowA = (A.getLocalNumRows() > 0)?  A.getLocalNumEntries()/A.getLocalNumRows() : 9;
+  if (P.getLocalNumEntries() > 0)
+    Pcols = (P.getLocalNumCols() > 0) ? P.getLocalNumCols() : 100;
   return (size_t)(Pcols*nnzPerRowA + 5*nnzPerRowA + 300);
 }
 
@@ -85,14 +85,14 @@ template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
          class LocalOrdinalViewType>
-void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
+                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
                                                  const LocalOrdinalViewType & targetMapToOrigRow,
                                                  const LocalOrdinalViewType & targetMapToImportRow,
                                                  const LocalOrdinalViewType & Bcol2Ccol,
                                                  const LocalOrdinalViewType & Icol2Ccol,
-                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
-                                                 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& C,
+                                                 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Cimport,
                                                  const std::string& label,
                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -108,8 +108,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
 
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_device_type KCRS;
-  //  typedef typename KCRS::device_type device_t;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>::local_matrix_device_type KCRS;
+  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -124,7 +124,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NO;
+  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode NO;
   typedef Map<LO,GO,NO>                     map_type;
 
   // NOTE (mfh 15 Sep 2017) This is specifically only for
@@ -145,7 +145,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
+  size_t b_max_nnz_per_row = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -155,17 +155,17 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
     Irowptr = lclB.graph.row_map;
     Icolind = lclB.graph.entries;
     Ivals   = lclB.values;
-    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getLocalMaxNumRowEntries());
   }
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t m = Aview.origMatrix->getLocalNumRows();
+  size_t n = Ccolmap->getLocalNumElements();
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
   // Get my node / thread info (right from openmp or parameter list)
-  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  size_t thread_max =  Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency();
   if(!params.is_null()) {
     if(params->isParameter("openmp: ltg thread max"))
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -182,8 +182,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   lno_nnz_view_t thread_total_nnz("thread_total_nnz",thread_max+1);
 
   // Thread-local memory
-  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
-  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
+  Kokkos::View<u_lno_nnz_view_t*, device_t> tl_colind("top_colind",thread_max);
+  Kokkos::View<u_scalar_view_t*, device_t> tl_values("top_values",thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
@@ -302,14 +302,14 @@ template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
          class LocalOrdinalViewType>
-void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
+                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
                                                  const LocalOrdinalViewType & targetMapToOrigRow,
                                                  const LocalOrdinalViewType & targetMapToImportRow,
                                                  const LocalOrdinalViewType & Bcol2Ccol,
                                                  const LocalOrdinalViewType & Icol2Ccol,
-                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
-                                                 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& C,
+                                                 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Cimport,
                                                  const std::string& label,
                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -325,7 +325,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_device_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>::local_matrix_device_type KCRS;
   //  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -335,7 +335,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NO;
+  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode NO;
   typedef Map<LO,GO,NO>                     map_type;
 
   // NOTE (mfh 15 Sep 2017) This is specifically only for
@@ -371,11 +371,11 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t m = Aview.origMatrix->getLocalNumRows();
+  size_t n = Ccolmap->getLocalNumElements();
 
   // Get my node / thread info (right from openmp or parameter list)
-  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  size_t thread_max =  Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency();
   if(!params.is_null()) {
     if(params->isParameter("openmp: ltg thread max"))
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -453,15 +453,15 @@ template<class Scalar,
          class GlobalOrdinal,
          class LocalOrdinalViewType>
 void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
-                                                   const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
-                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                   const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> & Dinv,
+                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
+                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
                                                    const LocalOrdinalViewType & targetMapToOrigRow,
                                                    const LocalOrdinalViewType & targetMapToImportRow,
                                                    const LocalOrdinalViewType & Bcol2Ccol,
                                                    const LocalOrdinalViewType & Icol2Ccol,
-                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
-                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& C,
+                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Cimport,
                                                    const std::string& label,
                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -477,9 +477,9 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+  typedef typename Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
-  //  typedef typename KCRS::device_type device_t;
+  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -518,7 +518,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
+  size_t b_max_nnz_per_row = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -528,7 +528,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
     Irowptr = lclB.graph.row_map;
     Icolind = lclB.graph.entries;
     Ivals   = lclB.values;
-    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getLocalMaxNumRowEntries());
   }
 
   // Jacobi-specific inner stuff
@@ -537,12 +537,12 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t m = Aview.origMatrix->getLocalNumRows();
+  size_t n = Ccolmap->getLocalNumElements();
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
   // Get my node / thread info (right from openmp)
-  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  size_t thread_max =  Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency();
   if(!params.is_null()) {
     if(params->isParameter("openmp: ltg thread max"))
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -559,8 +559,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   lno_nnz_view_t thread_total_nnz("thread_total_nnz",thread_max+1);
 
   // Thread-local memory
-  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
-  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
+  Kokkos::View<u_lno_nnz_view_t*, device_t> tl_colind("top_colind",thread_max);
+  Kokkos::View<u_scalar_view_t*, device_t> tl_values("top_values",thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
@@ -703,15 +703,15 @@ template<class Scalar,
          class GlobalOrdinal,
          class LocalOrdinalViewType>
 void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
-                                                   const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
-                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                   const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> & Dinv,
+                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
+                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Bview,
                                                    const LocalOrdinalViewType & targetMapToOrigRow,
                                                    const LocalOrdinalViewType & targetMapToImportRow,
                                                    const LocalOrdinalViewType & Bcol2Ccol,
                                                    const LocalOrdinalViewType & Icol2Ccol,
-                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
-                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& C,
+                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Cimport,
                                                    const std::string& label,
                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -726,7 +726,7 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+  typedef typename Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   //  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
@@ -780,11 +780,11 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t m = Aview.origMatrix->getLocalNumRows();
+  size_t n = Ccolmap->getLocalNumElements();
 
   // Get my node / thread info (right from openmp or parameter list)
-  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  size_t thread_max =  Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency();
   if(!params.is_null()) {
     if(params->isParameter("openmp: ltg thread max"))
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -1024,15 +1024,15 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
 #if defined (HAVE_TPETRA_INST_OPENMP)
 /*********************************************************************************************************/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
-static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Rview,
-                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
+static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Rview,
+                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
+                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Pview,
                                                                  const LocalOrdinalViewType & Acol2PRow,
                                                                  const LocalOrdinalViewType & Acol2PRowImport,
                                                                  const LocalOrdinalViewType & Pcol2Accol,
                                                                  const LocalOrdinalViewType & PIcol2Accol,
-                                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Ac,
-                                                                 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> > Acimport,
+                                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Ac,
+                                                                 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Acimport,
                                                                  const std::string& label,
                                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
@@ -1045,7 +1045,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix LTGCore"))));
   #endif
 
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
         typedef Scalar        SC;
         typedef LocalOrdinal  LO;
         typedef GlobalOrdinal GO;
@@ -1071,8 +1071,8 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
         // Sizes
         RCP<const map_type> Accolmap = Ac.getColMap();
-        size_t m = Rview.origMatrix->getNodeNumRows();
-        size_t n = Accolmap->getNodeNumElements();
+        size_t m = Rview.origMatrix->getLocalNumRows();
+        size_t n = Accolmap->getLocalNumElements();
 
         // Get raw Kokkos matrices, and the raw CSR views
         const KCRS & Rmat = Rview.origMatrix->getLocalMatrixDevice();
@@ -1111,7 +1111,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
         // Get my node / thread info (right from openmp or parameter list)
-        size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+        size_t thread_max =  Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency();
         if(!params.is_null()) {
           if(params->isParameter("openmp: ltg thread max"))
             thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
@@ -1137,8 +1137,8 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         // ("orig") or P_remote ("Import").
 
         // Thread-local memory
-        Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind", thread_max);
-        Kokkos::View<u_scalar_view_t*> tl_values("top_values", thread_max);
+        Kokkos::View<u_lno_nnz_view_t*, device_t> tl_colind("top_colind", thread_max);
+        Kokkos::View<u_scalar_view_t*, device_t> tl_values("top_values", thread_max);
 
         // For each row of R
         Kokkos::parallel_for("MMM::RAP::NewMatrix::LTG::ThreadLocal",range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
@@ -1293,15 +1293,15 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
 /*********************************************************************************************************/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
-static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Rview,
-                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
+static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Rview,
+                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
+                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Pview,
                                                                  const LocalOrdinalViewType & Acol2PRow,
                                                                  const LocalOrdinalViewType & Acol2PRowImport,
                                                                  const LocalOrdinalViewType & Pcol2Accol,
                                                                  const LocalOrdinalViewType & PIcol2Accol,
-                                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Ac,
-                                                                 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> > Acimport,
+                                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Ac,
+                                                                 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Acimport,
                                                                  const std::string& label,
                                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
@@ -1314,7 +1314,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse LTGCore"))));
   #endif
 
-        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+        typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode Node;
         typedef Scalar        SC;
         typedef LocalOrdinal  LO;
         typedef GlobalOrdinal GO;
@@ -1335,8 +1335,8 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
 
         // Sizes
         RCP<const map_type> Accolmap = Ac.getColMap();
-        size_t m = Rview.origMatrix->getNodeNumRows();
-        size_t n = Accolmap->getNodeNumElements();
+        size_t m = Rview.origMatrix->getLocalNumRows();
+        size_t n = Accolmap->getLocalNumElements();
 
         // Get raw Kokkos matrices, and the raw CSR views
         const KCRS & Rmat = Rview.origMatrix->getLocalMatrixDevice();
@@ -1360,7 +1360,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         }
 
         // Get my node / thread info (right from openmp or parameter list)
-        size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+        size_t thread_max =  Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency();
         if(!params.is_null()) {
           if(params->isParameter("openmp: ltg thread max"))
             thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));

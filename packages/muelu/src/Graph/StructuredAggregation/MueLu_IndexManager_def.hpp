@@ -49,7 +49,6 @@
 #include "Teuchos_OrdinalTraits.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
 #include <MueLu_IndexManager_decl.hpp>
 
 /*****************************************************************************
@@ -267,7 +266,6 @@ namespace MueLu {
     *out << "lCoarseNodesPerDir: " << lCoarseNodesPerDir << std::endl;
     *out << "gCoarseNodesPerDir: " << gCoarseNodesPerDir << std::endl;
     *out << "ghostedNodesPerDir: " << ghostedNodesPerDir << std::endl;
-    *out << "gNumCoarseNodes=" << gNumCoarseNodes << std::endl;
     *out << "lNumCoarseNodes=" << lNumCoarseNodes << std::endl;
     *out << "numGhostedNodes=" << numGhostedNodes << std::endl;
   }

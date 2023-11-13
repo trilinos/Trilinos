@@ -76,7 +76,7 @@
 #include "Stokhos_MueLu_QR_Interface_def.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 //#include <MueLu_UseShortNames.hpp>
 
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
@@ -193,13 +193,13 @@ void PrintMatrix(Teuchos::FancyOStream &fos, Teuchos::RCP<Xpetra_Matrix> const &
   ordinal_type sz = basis->size();
   Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > denseEntry = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type,value_type>(
              sz, sz));
-    size_t maxLength = A->getNodeMaxNumRowEntries();
+    size_t maxLength = A->getLocalMaxNumRowEntries();
     size_t NumEntries;
     Scalar val;
     Teuchos::Array<ordinal_type> Indices(maxLength);
     Teuchos::Array<Scalar> Values(maxLength);
     Teuchos::RCP<const Xpetra_Map> colMap = A->getColMap();
-    for (ordinal_type i = 0 ; i < Teuchos::as<ordinal_type>(A->getNodeNumRows()); ++i) {
+    for (ordinal_type i = 0 ; i < Teuchos::as<ordinal_type>(A->getLocalNumRows()); ++i) {
       A->getLocalRowCopy(i, Indices(), Values(), NumEntries);
       fos << "++++++++++++++" << std::endl << "row " << A->getRowMap()->getGlobalElement(i) << ": ";
       fos << "  col ids: ";
@@ -588,7 +588,7 @@ int main(int argc, char *argv[]) {
 
     // Compute mean for mean-based preconditioner
     if (prec_method == MEAN) {
-      size_t nrows = J->getNodeNumRows();
+      size_t nrows = J->getLocalNumRows();
       ArrayView<const LocalOrdinal> indices;
       ArrayView<const Scalar> values;
       J0->resumeFill();

@@ -1,0 +1,85 @@
+<ParameterList name="Linear Solver">
+  <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+  <ParameterList name="Linear Solver Types">
+    <ParameterList name="Belos">
+      <Parameter name="Solver Type" type="string" value="Block CG"/>
+      <ParameterList name="Solver Types">
+        <ParameterList name="Block CG">
+          <Parameter name="Output Frequency" type="int" value="1"/>
+          <Parameter name="Output Style" type="int" value="1"/>
+          <Parameter name="Verbosity" type="int" value="33"/>
+          <Parameter name="Maximum Iterations" type="int" value="200"/>
+          <Parameter name="Convergence Tolerance" type="double" value="1e-10"/>
+          <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Explicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Explicit Residual Test" type="bool" value="true"/>
+        </ParameterList>
+        <ParameterList name="Block GMRES">
+          <Parameter name="Output Frequency" type="int" value="1"/>
+          <Parameter name="Output Style" type="int" value="1"/>
+          <Parameter name="Verbosity" type="int" value="33"/>
+          <Parameter name="Maximum Iterations" type="int" value="200"/>
+          <Parameter name="Convergence Tolerance" type="double" value="1e-10"/>
+          <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Explicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Explicit Residual Test" type="bool" value="true"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <Parameter name="Preconditioner Type" type="string" value="MueLuMaxwell1"/>
+  <ParameterList name="Preconditioner Types">
+    <ParameterList name="MueLuMaxwell1">
+
+      <Parameter name="use kokkos refactor" type="bool" value="false"/>
+      <Parameter name="maxwell1: mode" type="string" value="standard"/>
+
+      <ParameterList name="maxwell1: 11list">
+        <Parameter name="use kokkos refactor" type="bool" value="false"/>
+        <Parameter name="multigrid algorithm" type="string"               value="smoothed reitzinger"/>
+        <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+        <Parameter name="coarse: type" type="string" value="Klu"/>
+        <Parameter name="smoother: type" type="string" value="HIPTMAIR"/>
+        <ParameterList name="smoother: params">
+          <Parameter name="hiptmair: smoother type 1" type="string" value="RELAXATION"/>
+          <Parameter name="hiptmair: smoother type 2" type="string" value="RELAXATION"/>
+          <ParameterList name="hiptmair: smoother list 1">
+            <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+            <Parameter name="relaxation: sweeps" type="int" value="1"/>
+            <Parameter name="relaxation: use l1" type="bool" value="true"/>
+          </ParameterList>
+          <ParameterList name="hiptmair: smoother list 2">
+            <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+            <Parameter name="relaxation: sweeps" type="int" value="1"/>
+            <Parameter name="relaxation: use l1" type="bool" value="true"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+
+      <ParameterList name="maxwell1: 22list">
+        <Parameter name="use kokkos refactor" type="bool" value="false"/>
+        <Parameter name="multigrid algorithm" type="string"  value="unsmoothed"/>
+        <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+        <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
+        <Parameter name="coarse: max size" type="int" value="50"/>
+        <Parameter name="smoother: type" type="string" value="none"/>
+        <Parameter name="coarse: type" type="string" value="none"/>
+
+        <!-- Currently needed but we should fix this -->
+        <Parameter name="tentative: constant column sums" type="bool" value="false"/>
+        <Parameter name="tentative: calculate qr" type="bool" value="false"/>
+
+      </ParameterList>
+
+      <Parameter name="D0" type="string" value="substitute D0"/>
+      <Parameter name="Kn" type="string" value="substitute Kn"/>
+      <Parameter name="Coordinates" type="string" value="substitute Coordinates"/>
+
+
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

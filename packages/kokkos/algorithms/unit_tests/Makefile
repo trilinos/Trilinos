@@ -27,10 +27,8 @@ TARGETS =
 
 tmp := $(foreach device, $(KOKKOS_DEVICELIST), \
   $(if $(filter Test$(device).cpp, $(shell ls Test$(device).cpp 2>/dev/null)),,\
-    $(shell echo "\#include <Test"${device}"_Category.hpp>" > Test$(device).cpp); \
-    $(shell echo "\#include <TestRandomCommon.hpp>" >> Test$(device).cpp); \
-    $(shell echo "\#include <TestSortCommon.hpp>" >> Test$(device).cpp); \
-  ) \
+     $(shell echo "\#include <Test"${device}"_Category.hpp>" > Test$(device).cpp); \
+   ) \
 )
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
@@ -45,14 +43,14 @@ ifeq ($(KOKKOS_INTERNAL_USE_HIP), 1)
 	TEST_TARGETS += test-hip
 endif
 
-ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
+ifeq ($(KOKKOS_INTERNAL_USE_THREADS), 1)
 	OBJ_THREADS = TestThreads.o UnitTestMain.o gtest-all.o
 	TARGETS += KokkosAlgorithms_UnitTest_Threads
 	TEST_TARGETS += test-threads
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
-	OBJ_OPENMP = TestOpenMP.o TestOpenMP_Sort1D.o TestOpenMP_Sort3D.o TestOpenMP_SortDynamicView.o UnitTestMain.o gtest-all.o
+	OBJ_OPENMP = TestOpenMP.o UnitTestMain.o gtest-all.o
 	TARGETS += KokkosAlgorithms_UnitTest_OpenMP
 	TEST_TARGETS += test-openmp
 endif

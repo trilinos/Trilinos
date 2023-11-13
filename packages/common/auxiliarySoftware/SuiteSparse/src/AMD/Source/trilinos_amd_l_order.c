@@ -46,7 +46,7 @@ GLOBAL Int TRILINOS_AMD_order
     {
 	for (i = 0 ; i < TRILINOS_AMD_INFO ; i++)
 	{
-	    Info [i] = EMPTY ;
+	    Info [i] = TRILINOS_AMD_EMPTY ;
 	}
 	Info [TRILINOS_AMD_N] = n ;
 	Info [TRILINOS_AMD_STATUS] = TRILINOS_AMD_OK ;

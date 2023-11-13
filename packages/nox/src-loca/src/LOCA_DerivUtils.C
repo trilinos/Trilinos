@@ -63,9 +63,9 @@
 
 LOCA::DerivUtils::DerivUtils(
             const Teuchos::RCP<LOCA::GlobalData>& global_data,
-            double perturb) :
+            double _perturb) :
   globalData(global_data),
-  perturb(perturb)
+  perturb(_perturb)
 {
   // assert (perturb>0.0);
 }

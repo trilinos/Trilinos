@@ -141,7 +141,7 @@ IF(Sacado_ENABLE_TeuchosNumerics)
 
 ENDIF()
 
-IF (Sacado_ENABLE_KokkosCore)
+IF (Sacado_ENABLE_Kokkos)
 
   IF (Sacado_ENABLE_TeuchosCore)
     TRIBITS_ADD_EXECUTABLE(

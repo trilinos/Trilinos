@@ -176,7 +176,7 @@ void getObjList(void *data, int numGid, int numLid,
 
   size_t localLen = dots_->coordinates->getLocalLength();
   const gno_t *ids =
-               dots_->coordinates->getMap()->getNodeElementList().getRawPtr();
+               dots_->coordinates->getMap()->getLocalElementList().getRawPtr();
 
   if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t))
     memcpy(gids, ids, sizeof(ZOLTAN_ID_TYPE) * localLen);
@@ -2346,30 +2346,29 @@ public:
 
 	  Tpetra::Distributor distributor(comm);
 	  ArrayView<const int> pIds( coordinate_grid_parts, this->numLocalCoords);
-	  /*
-	  for (int i = 0 ; i < this->numLocalCoords; ++i){
-		  std::cout << "me:" << this->myRank << " to part:" << coordinate_grid_parts[i] << std::endl;
-	  }
-	  */
 	  gno_t numMyNewGnos = distributor.createFromSends(pIds);
 
-	  //std::cout << "distribution step 1 me:" << this->myRank << " numLocal:"  <<numMyNewGnos << " old:" <<  numLocalCoords << std::endl;
 
-	  this->numLocalCoords = numMyNewGnos;
-
-
-	  ArrayRCP<scalar_t> recvBuf2(distributor.getTotalReceiveLength());
+          Kokkos::View<scalar_t*, Kokkos::HostSpace> recvBuf2(
+            Kokkos::ViewAllocateWithoutInitializing("recvBuf2"),
+            numMyNewGnos);
 
 	  for (int i = 0; i < this->coordinate_dimension; ++i){
-		  ArrayView<scalar_t> s(this->coords[i], this->numLocalCoords);
-	      distributor.doPostsAndWaits<scalar_t>(s, 1, recvBuf2());
-		  delete [] this->coords[i];
-		  this->coords[i] = new scalar_t[this->numLocalCoords];
-	      for (lno_t j = 0; j < this->numLocalCoords; ++j){
+              Kokkos::View<scalar_t*, Kokkos::HostSpace> s;
+              if (this->numLocalCoords > 0) 
+                s = Kokkos::View<scalar_t *, Kokkos::HostSpace>(
+                            this->coords[i], this->numLocalCoords); //unmanaged
+
+	      distributor.doPostsAndWaits(s, 1, recvBuf2);
+
+	      delete [] this->coords[i];
+	      this->coords[i] = new scalar_t[numMyNewGnos];
+	      for (lno_t j = 0; j < numMyNewGnos; ++j){
 	    	  this->coords[i][j] = recvBuf2[j];
 	      }
 
 	  }
+	  this->numLocalCoords = numMyNewGnos;
   }
 
   //calls MJ for p = numProcs

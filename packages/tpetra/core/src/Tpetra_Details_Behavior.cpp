@@ -281,12 +281,12 @@ namespace { // (anonymous)
     return false;
   }
 
-  constexpr bool assumeMpiIsCudaAwareDefault () {
-#ifdef TPETRA_ASSUME_CUDA_AWARE_MPI
+  constexpr bool assumeMpiIsGPUAwareDefault () {
+#ifdef TPETRA_ASSUME_GPU_AWARE_MPI
     return true;
 #else
     return false;
-#endif // TPETRA_ASSUME_CUDA_AWARE_MPI
+#endif // TPETRA_ASSUME_GPU_AWARE_MPI
   }
 
   constexpr bool cudaLaunchBlockingDefault () {
@@ -342,10 +342,10 @@ bool Behavior::timing ()
                                                    defaultValue);
 }
 
-bool Behavior::assumeMpiIsCudaAware ()
+bool Behavior::assumeMpiIsGPUAware ()
 {
-  constexpr char envVarName[] = "TPETRA_ASSUME_CUDA_AWARE_MPI";
-  constexpr bool defaultValue = assumeMpiIsCudaAwareDefault ();
+  constexpr char envVarName[] = "TPETRA_ASSUME_GPU_AWARE_MPI";
+  constexpr bool defaultValue = assumeMpiIsGPUAwareDefault ();
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
@@ -570,6 +570,77 @@ bool Behavior::overlapCommunicationAndComputation ()
   return idempotentlyGetEnvironmentVariableAsBool
     (value_, initialized_, envVarName, defaultValue);
 }
+
+size_t Behavior::spacesIdWarnLimit ()
+{
+  constexpr char envVarName[] = "TPETRA_SPACES_ID_WARN_LIMT";
+  constexpr size_t defaultValue(16);
+
+  static size_t value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsSize
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+bool Behavior::timeKokkosDeepCopy() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_DEEP_COPY";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}    
+
+bool Behavior::timeKokkosDeepCopyVerbose1() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE1";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}    
+
+bool Behavior::timeKokkosDeepCopyVerbose2() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE2";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}    
+
+bool Behavior::timeKokkosFence() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_FENCE";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}  
+
+bool Behavior::timeKokkosFunctions() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_FUNCTIONS";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}  
 
 
 } // namespace Details

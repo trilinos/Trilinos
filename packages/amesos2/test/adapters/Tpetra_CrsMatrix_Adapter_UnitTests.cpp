@@ -105,8 +105,6 @@ namespace {
 
   using Amesos2::MatrixAdapter;
 
-  using Amesos2::Meta::is_same;
-
   using Amesos2::ROOTED;
   using Amesos2::ARBITRARY;
   using Amesos2::SORTED_INDICES;
@@ -184,7 +182,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos2::is_same<> )
+     * - Correct typedefs
      */
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -207,12 +205,12 @@ namespace {
     RCP<ADAPT> adapter  = Amesos2::createMatrixAdapter<MAT>(eye);
 
     // The following should all pass at compile time
-    TEST_ASSERT( (is_same<Scalar,typename ADAPT::scalar_t>::value) );
-    TEST_ASSERT( (is_same<LO,typename ADAPT::local_ordinal_t>::value) );
-    TEST_ASSERT( (is_same<GO,typename ADAPT::global_ordinal_t>::value) );
-    TEST_ASSERT( (is_same<Node,typename ADAPT::node_t>::value) );
-    TEST_ASSERT( (is_same<global_size_t,typename ADAPT::global_size_t>::value) );
-    TEST_ASSERT( (is_same<MAT,typename ADAPT::matrix_t>::value) );
+    TEST_ASSERT( (std::is_same_v<Scalar,typename ADAPT::scalar_t>) );
+    TEST_ASSERT( (std::is_same_v<LO,typename ADAPT::local_ordinal_t>) );
+    TEST_ASSERT( (std::is_same_v<GO,typename ADAPT::global_ordinal_t>) );
+    TEST_ASSERT( (std::is_same_v<Node,typename ADAPT::node_t>) );
+    TEST_ASSERT( (std::is_same_v<global_size_t,typename ADAPT::global_size_t>) );
+    TEST_ASSERT( (std::is_same_v<MAT,typename ADAPT::matrix_t>) );
 
   }
 

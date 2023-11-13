@@ -51,12 +51,9 @@
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_topology/topology.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
-
-
-
-
 
 using stk::mesh::Part;
 using stk::mesh::MetaData;
@@ -65,7 +62,8 @@ using stk::mesh::Entity;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
 using stk::mesh::EntityId;
-using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::simple_fields::RingFixture;
+using stk::unit_test_util::build_mesh;
 
 //----------------------------------------------------------------------
 // Testing for mesh entities without relations
@@ -83,13 +81,14 @@ void testDestroy_nodes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
   const int spatial_dimension = 3;
-  MetaData meta( spatial_dimension );
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, pm, autoAuraOption);
+  MetaData& meta = bulkPtr->mesh_meta_data();
 
   const PartVector no_parts ;
 
   meta.commit();
 
-  BulkData bulk( meta , pm, autoAuraOption );
+  BulkData& bulk = *bulkPtr;
 
   // Ids for all entities (all entities have type 0):
 
@@ -142,12 +141,12 @@ void testDestroy_nodes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 
 TEST(UnitTestingOfBulkData, testDestroy_nodes_with_aura)
 {
-    testDestroy_nodes(stk::mesh::BulkData::AUTO_AURA);
+  testDestroy_nodes(stk::mesh::BulkData::AUTO_AURA);
 }
 
 TEST(UnitTestingOfBulkData, testDestroy_nodes_without_aura)
 {
-    testDestroy_nodes(stk::mesh::BulkData::NO_AUTO_AURA);
+  testDestroy_nodes(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 //----------------------------------------------------------------------
@@ -170,6 +169,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
 
   const int spatial_dimension = 3;
   MetaData meta( spatial_dimension );
+  meta.use_simple_fields();
 
   meta.commit();
 
@@ -207,10 +207,10 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     ASSERT_TRUE( 1 <= node1_elements && node1_elements <= 2 );
 
     ASSERT_TRUE( bulk.begin_elements(node0)[0] == element ||
-                    bulk.begin_elements(node0)[1] == element );
+        bulk.begin_elements(node0)[1] == element );
 
     ASSERT_TRUE( bulk.begin_elements(node1)[0] == element ||
-                    bulk.begin_elements(node1)[1] == element );
+        bulk.begin_elements(node1)[1] == element );
 
     bulk.modification_begin();
 
@@ -276,14 +276,14 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
-        --irank;
-        stk::mesh::Entity const *to_b = bulk.begin(node, irank);
-        stk::mesh::Entity const *to_e = bulk.end(node, irank);
-        for (; to_b != to_e;
-             to_b = bulk.begin(node, irank), to_e = bulk.end(node, irank))
-        {
-          ASSERT_TRUE( bulk.destroy_entity(*(to_e -1)) );
-        }
+      --irank;
+      stk::mesh::Entity const *to_b = bulk.begin(node, irank);
+      stk::mesh::Entity const *to_e = bulk.end(node, irank);
+      for (; to_b != to_e;
+           to_b = bulk.begin(node, irank), to_e = bulk.end(node, irank))
+      {
+        ASSERT_TRUE( bulk.destroy_entity(*(to_e -1)) );
+      }
     }
     ASSERT_TRUE( bulk.destroy_entity( node ) );
 

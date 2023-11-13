@@ -42,7 +42,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -65,21 +64,21 @@
 #define TEST_ONLY_ON_CUDA(testname) testname
 #endif
 
-class NgpAsyncDeepCopyFixture : public stk::unit_test_util::MeshFixture
+class NgpAsyncDeepCopyFixture : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpAsyncDeepCopyFixture()
-  : m_numComponents(3),
-    m_bucketCapacity(5),
-    m_numBlocks(3),
-    m_numFields(m_numBlocks),
-    m_numStreams(3),
-    m_multiplier(5),
-    m_defaultLaunchBlockingEnvVarSet(false),
-    m_defaultLaunchBlockingEnvVarValue(0)
+    : m_numComponents(3),
+      m_bucketCapacity(5),
+      m_numBlocks(3),
+      m_numFields(m_numBlocks),
+      m_numStreams(3),
+      m_multiplier(5),
+      m_defaultLaunchBlockingEnvVarSet(false),
+      m_defaultLaunchBlockingEnvVarValue(0)
   {
     set_launch_blocking_env_var();
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, m_bucketCapacity);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, m_bucketCapacity, m_bucketCapacity);
   }
 
   ~NgpAsyncDeepCopyFixture()
@@ -100,21 +99,23 @@ public:
 
   void setup_multi_block_mesh_with_field_per_block()
   {
-    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(m_numBlocks);
-    std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
+    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(m_numBlocks);
+    std::vector<double> coordinates = stk::unit_test_util::simple_fields::get_many_block_coordinates(m_numBlocks);
 
     setup_field_per_block();
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
     construct_ngp_fields();
   }
 
   void setup_multi_block_mesh_with_fields_on_all_blocks()
   {
-    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(m_numBlocks);
-    std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
+    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(m_numBlocks);
+    std::vector<double> coordinates = stk::unit_test_util::simple_fields::get_many_block_coordinates(m_numBlocks);
 
     setup_fields_on_all_blocks();
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
     construct_ngp_fields();
   }
 
@@ -139,7 +140,7 @@ public:
       get_meta().set_part_id(part, i);
       EXPECT_NE(&part, nullptr);
 
-      stk::mesh::Field<int>& field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK, fieldName, numStates);
+      stk::mesh::Field<int>& field = get_meta().declare_field<int>(stk::topology::ELEM_RANK, fieldName, numStates);
       m_fields.push_back(&field);
       stk::mesh::put_field_on_mesh(field, part, m_numComponents, init.data());
     }
@@ -160,7 +161,7 @@ public:
 
       for(unsigned j = 1; j <= m_numFields; j++) {
         std::string fieldName = "field_on_all_blocks_" + std::to_string(j);
-        stk::mesh::Field<int>& field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK, fieldName, numStates);
+        stk::mesh::Field<int>& field = get_meta().declare_field<int>(stk::topology::ELEM_RANK, fieldName, numStates);
         stk::mesh::put_field_on_mesh(field, part, m_numComponents, init.data());
         m_fields.push_back(&field);
       }
@@ -170,7 +171,7 @@ public:
   std::vector<stk::mesh::Field<int>*> get_fields()
   {
     return m_fields;
-  } 
+  }
 
   stk::mesh::PartVector get_parts()
   {
@@ -291,16 +292,16 @@ public:
     auto& ngpField = stk::mesh::get_updated_ngp_field<int>(*field);
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, stk::mesh::Selector(*field),
-                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
-                                  {
-                                    auto entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, elem);
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
+                                   {
+                                     auto entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, elem);
 
-                                    for(unsigned i = 0; i < numComponents; i++) {
-                                      int expected = ngpMesh.identifier(entity) * multiplier + i;
-                                      int fieldValue = ngpField(elem, i);
-                                      NGP_EXPECT_EQ(expected, fieldValue);
-                                    }
-                                  });
+                                     for(unsigned i = 0; i < numComponents; i++) {
+                                       int expected = ngpMesh.identifier(entity) * multiplier + i;
+                                       int fieldValue = ngpField(elem, i);
+                                       NGP_EXPECT_EQ(expected, fieldValue);
+                                     }
+                                   });
     Kokkos::fence();
   }
 
@@ -313,16 +314,16 @@ public:
     auto& ngpField = stk::mesh::get_updated_ngp_field<int>(*field);
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
-                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
-                                  {
-                                    auto entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, elem);
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
+                                   {
+                                     auto entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, elem);
 
-                                    for(unsigned i = 0; i < numComponents; i++) {
-                                      int expected = ngpMesh.identifier(entity) * multiplier + i;
-                                      int fieldValue = ngpField(elem, i);
-                                      NGP_EXPECT_EQ(expected, fieldValue);
-                                    }
-                                  });
+                                     for(unsigned i = 0; i < numComponents; i++) {
+                                       int expected = ngpMesh.identifier(entity) * multiplier + i;
+                                       int fieldValue = ngpField(elem, i);
+                                       NGP_EXPECT_EQ(expected, fieldValue);
+                                     }
+                                   });
     Kokkos::fence();
 
     stk::NgpVector<int> ngpVector;
@@ -335,14 +336,14 @@ public:
     ngpVector.copy_host_to_device();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, !selector,
-                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
-                                  {
-                                    for(unsigned i = 0; i < numComponents; i++) {
-                                      int expected = ngpVector.device_get(i);
-                                      int fieldValue = ngpField(elem, i);
-                                      NGP_EXPECT_EQ(expected, fieldValue);
-                                    }
-                                  });
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
+                                   {
+                                     for(unsigned i = 0; i < numComponents; i++) {
+                                       int expected = ngpVector.device_get(i);
+                                       int fieldValue = ngpField(elem, i);
+                                       NGP_EXPECT_EQ(expected, fieldValue);
+                                     }
+                                   });
     Kokkos::fence();
   }
 
@@ -399,13 +400,13 @@ public:
     stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
-                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
-                                    const int numScalarsPerEntity = ngpField.get_num_components_per_entity(entityIndex);
-                                    for (int component=0; component<numScalarsPerEntity; component++) {
-                                      stk::mesh::Entity entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, entityIndex);
-                                      ngpField(entityIndex, component) = ngpMesh.identifier(entity) * multiplier + component;
-                                    }
-                                  });
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
+                                     const int numScalarsPerEntity = ngpField.get_num_components_per_entity(entityIndex);
+                                     for (int component=0; component<numScalarsPerEntity; component++) {
+                                       stk::mesh::Entity entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, entityIndex);
+                                       ngpField(entityIndex, component) = ngpMesh.identifier(entity) * multiplier + component;
+                                     }
+                                   });
   }
 
 private:
@@ -425,10 +426,10 @@ private:
   void check_result_on_host_expect_init_data(FieldType field, stk::mesh::EntityVector& elems)
   {
     auto expectInitData = [](int* data, stk::mesh::Entity entity, unsigned component)
-                          {
-                            int expectedValue = component;
-                            EXPECT_EQ(data[component], expectedValue);
-                          };
+    {
+      int expectedValue = component;
+      EXPECT_EQ(data[component], expectedValue);
+    };
 
     check_result_on_host(field, elems, expectInitData);
   }
@@ -437,10 +438,10 @@ private:
   void check_result_on_host_expect_multiplied_data(FieldType field, stk::mesh::EntityVector& elems, unsigned multiplier)
   {
     auto expectInitData = [this, multiplier](int* data, stk::mesh::Entity elem, unsigned component)
-                          {
-                            int expectedValue = get_bulk().identifier(elem) * multiplier + component;
-                            EXPECT_EQ(data[component], expectedValue);
-                          };
+    {
+      int expectedValue = get_bulk().identifier(elem) * multiplier + component;
+      EXPECT_EQ(data[component], expectedValue);
+    };
 
     check_result_on_host(field, elems, expectInitData);
   }

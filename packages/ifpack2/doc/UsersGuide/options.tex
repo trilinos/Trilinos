@@ -108,6 +108,16 @@ The following parameters are used in the point relaxation methods:
      is used with blocks of size $k$ (see \cite{Saad1999}).
      In the \texttt{apply()} there is significantly less
      error due to parallel updates of the LHS vector.}
+\ccc{relaxation: mtgs coloring algorithm}
+    {string}
+    {``Default''}
+    {Only has an effect if {\tt "relaxation: type"} is {\tt "MT Gauss-Seidel"}
+     or {\tt "MT Symmetric Gauss-Seidel"}. Selects which graph coloring algorithm
+     from Kokkos Kernels will be used to find sets of independent rows. ``Default''
+     selects the algorithm based on the Node type. ``Serial'' is sequential and greedy.
+     ``VB'', ``VBBIT'' and ``VBCS'' are parallel vertex-based (out of these, ``VBBIT'' is recommended).
+     ``EB'' is parallel edge-based (faster than ``VBBIT'' on GPUs for irregular graphs).
+     ``VBD'' and ``VBDBIT'' are parallel and deterministic.}
 \ccc{relaxation: local smoothing indices}
     {Teuchos::ArrayRCP<local\_ordinal>}
     {empty}
@@ -158,12 +168,37 @@ There are several ways the blocks are constructed:
 
     The unknowns are grouped according to a user provided partition. A user
     may provide a non-overlapping partition {\tt "partitioner: map"} or an
-    overlapping one {\tt "partitioner: parts"}.
+    overlapping one via either {\tt "partitioner: parts"} or {\tt "partitioner: global ID parts"}.
 
-    A particular example of a smoother using this approach is a Vanka
+    A particular example of a smoother using  this type of approach might be a Vanka
     smoother~\cite{Vanka1986}, where a user may in {\tt "partition: parts"} pressure
     degrees of freedom, and request a overlap of one thus constructing Vanka
     blocks.
+
+    When blocks overlap, multiple solutions at each dof are combined for all blocks
+    that contain this dof. When overlapping blocks reside on 
+    different MPI ranks,  use block relaxation with 
+    Schwarz  by setting {\tt "subdomain solver name"} to {\tt "BLOCK\_RELAXATION"} (see \ref{s:schwarz}).
+    {\tt "schwarz: overlap level"} must be sufficient so that each block is
+    fully contained within a subdomain. {\tt "schwarz: combine mode"}
+    determines how overlapped values across MPI ranks are combined. If 
+    {\tt "Jacobi"} is used for {\tt "relaxation: type"} when either 
+    {\tt "schwarz: overlap level"} is not zero or when using
+    {\tt "partitioner: parts"} or {\tt "partitioner: global ID parts"}, the main overlap combinations are
+\begin{itemize}
+        \item average solutions at each dof from all block solves containing the dof even when blocks
+           reside on different MPI ranks. Set {\tt "schwarz: combine mode"} to {\tt "ADD"},
+           and  {\tt "partitioner: nonsymmetric overlap combine"} to {\tt "true"} to do this.
+        \item average solutions from all block solves containing the dof residing on MPI rank owning the dof within non-overlapped
+           version of sub-domain (RAS or Restrictive Additive Schwarz). Set {\tt "schwarz: combine mode"} to {\tt "ZERO"}
+           and {\tt "partitioner: nonsymmetric overlap combine"} to {\tt "true"} for this.
+        \item symmetric version of first option when employing CG Krylov solver (i.e., first average block residuals and then average block solutions). 
+           Set {\tt "schwarz: combine mode"} to {\tt "ADD"} and  {\tt "partitioner: nonsymmetric overlap combine"} to {\tt "false"}.
+        \item symmetric version of second option when employing CG Krylov solver (i.e., average block residuals and block solutions
+           for blocks on owning MPI rank). 
+           Set {\tt "schwarz: combine mode"} to {\tt "ZERO"} and  {\tt "partitioner: nonsymmetric overlap combine"} to {\tt "false"}.
+\end{itemize}
+
 \end{itemize}
 The original partitioning may be further modified with {\tt "partitioner: overlap"}
 parameter which will use the local matrix graph to construct overlapping
@@ -236,14 +271,26 @@ The following parameters are used in the block relaxation methods:
     {empty}
     {An array containing the partition number for each element.
      The $i$th entry in the \texttt{ArrayRCP} is the part (block) number that
-     row $i$ belongs to. Use this option if the parts (blocks) do not
+     row $i$ belongs to. Use this option if parts (blocks) do not
      overlap. Only valid for ``user'' partitioner type.}
 \ccc{partitioner: parts}
     {Teuchos::Array<Teuchos::ArrayRCP\\<local\_ordinal>>}
     {empty}
-    {Use this option if the parts (blocks) overlap. The $i$th entry in the
-     \texttt{Array} is an \texttt{ArrayRCP} that contains all the rows in part
+    {Use this option if parts (blocks) overlap. The $i$th entry in the
+     \texttt{Array} is an \texttt{ArrayRCP} containing all rows (local IDs) in part
      (block) $i$. Only valid for ``user'' partitioner type.}
+\ccc{partitioner: global ID parts}
+    {Teuchos::Array<Teuchos::ArrayRCP\\<global\_ordinal>>}
+    {empty}
+    {Use this option if parts (blocks) overlap. The $i$th entry in the
+     \texttt{Array} is an \texttt{ArrayRCP} containing all rows (global IDs) in part
+     (block) $i$. Only valid for ``user'' partitioner type.}
+\ccc{partitioner: nonsymmetric overlap combine"}
+    {bool}
+    {\false}
+    {Valid when using Jacobi relaxation with overlapping blocks.
+     Corresponds to averaging only overlapping solutions as opposed
+     to symmetric averaging which also averages residuals before performing block solves.}
 \ccc{partitioner: line detection threshold}
     {magnitude}
     {0.0}
@@ -329,10 +376,31 @@ The following parameters are used in the Chebyshev method:
     % {bool}
     % {\false}
     % {If true, use the textbook variant; otherwise, use the \ifpack{} variant.}
+\ccc{chebyshev: algorithm}
+    {string}
+    {"first"}
+    {The algorithm for the Chebyshev polynomial. Currently supports
+     the default \ifpack{} variant, otherwise known as the first-kind ("first") Chebyshev polynomials.
+     Chebyshev smoothing via the fourth-kind ("fourth") and optimized fourth-kind ("opt_fourth")
+     are also implemented as in ~\cite{Lottes2022}.
+     Note that these latter two algorithms do not require the ad-hoc minimum eigenvalue estimate
+     as the standard \ifpack{} algorithm ("first").
+     The textbook algorithm ("textbook") as described in ~\cite{Saad2003} is also available.
+     However, the "first", "fourth", and "opt_fourth" kinds are preferred.
+     Currently supported: "first", "fourth", "opt_fourth", and "textbook".
+     Generally, the "fourth" and "opt_fourth" provide better smoothing properties
+     when employing the Chebyshev polynomials as multigrid smoothers, especially at orders
+     greater than or equal to 3.
+    }
 \ccc{chebyshev: compute max residual norm}
     {bool}
     {\false}
     {The \texttt{apply} call will optionally return the norm of the residual.}
+\ccc{chebyshev: compute spectral radius}
+    {bool}
+    {\true}
+    {The power method will compute the spectral radius if true. If false, it will
+     instead compute the dominant eigenvalue (these differ by absolute value).}
 \ccc{eigen-analysis: type}
     {string}
     {"power-method"}
@@ -410,6 +478,30 @@ The following parameters are used in the ILU($k$) method:
      (not including contribution specified by {\tt "fact: absolute
      threshold"}). Can be combined with {\tt "fact: absolute threshold"}.
      The matrix remains unchanged.}
+\ccc{fact: type}
+    {string}
+    {"Serial"}
+    {The RILUK factorization implementation type. Currently supports two types:
+     "Serial" (serial execution on the host) and "KSPILUK" (a Kokkos Kernels's
+     SpILUK on multi-core or GPU).}
+\ccc{trisolver: type}
+    {string}
+    {"Internal"}
+    {The triangular solver type. Currently supports three solver types:
+     "Internal" (serial execution on the host), "HTS" (a ShyLU's sparse
+     triangular solver that uses OpenMP on the host), and "KSPTRSV" (a Kokkos
+     Kernels's SpTRSV on multi-core or GPU).}
+\ccc{fact: kspiluk number-of-streams}
+    {int|global\_ordinal}
+    {0}
+    {Number of streams used by Kokkos Kernels's SpILUK and SpTRSV. When using
+     streams, the sub-domain on each MPI process is divided to diagonal blocks,
+     each of which is handled by SpILUK and SpTRSV on a stream. Because
+     information in off-diagonals of the sub-domain is ignored, it is expected
+     that iterative solvers take more interations to converge. However, since
+     these streams can run concurrently, the total time can be faster. When
+     this option is not set (i.e. not using stream), the entire sub-domain is
+     used instead.}
 % All overlap-related code was removed by M. Hoemmen in
 %
 % commit 162f64572fbf93e2cac73e3034d76a3db918a494
@@ -441,9 +533,11 @@ The following parameters are used in the ILUT method:
 \ccc{fact: ilut level-of-fill}
     {int|magnitude|double}
     {1}
-    {Maximum number of entries to keep in each row of $L$ and $U$. Each row of
-     $L$ ($U$) will have at most $\lceil\frac{(\mbox{\small\tt
-     level-of-fill}-1)nnz(A)}{2n}\rceil$ nonzero entries, where $nnz(A)$ is the
+    {Maximum fill fraction that controls the
+     number of entries to keep in the strict upper triangle of the
+     current row, and in the strict lower triangle of the current
+     row.  This value must be $>= 1.0$.  Each row of $L$ ($U$) will have at most $\lceil\frac{(\mbox{\small\tt
+     level-of-fill}-1)nnz(A)}{2n}\rceil$ nonzero entries, in addition to those from the sparsity pattern of A, where $nnz(A)$ is the
      number of nonzero entries in the matrix, and $n$ is the number of rows.
      ILUT always keeps the diagonal entry in the current row, regardless of the
      drop tolerance or fill level. \textbf{Note:} \textit{This is
@@ -520,6 +614,10 @@ The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
     {int}
     {5}
     {Number of iterations of ILU/IC/ILDL factorization algorithm.}
+\ccc{triangular solve type}
+    {string}
+    {Fast}
+    {Type of triangular solve algorithm to use: ``Fast'' for the block Jacobi triangular solver, ``Standard'' for the standard (forward/backward) substitution based triangular solver (calls Kokkos-Kernels {\bf sptrsv}), or "Standard Host" for the standard triangular solver on host CPU (calls Kokkos-Kernels {\bf trsv} on the host).}
 \ccc{triangular solve iterations}
     {int}
     {1}
@@ -540,7 +638,11 @@ The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
     {bool}
     {true}
     {Whether to run another instance of FastILU/IC/ILDL (but with a lower level of fill) to compute the initial guess (only has an effect if level of fill $> 0$).} 
-\ccc{block size}
+ \ccc{block size for ILU}
+    {int}
+    {1}
+    {Block size for the iterative factorization algorithm.}
+\ccc{block size for SpTRSV}
     {int}
     {1}
     {Block size for the block Jacobi solver.}

@@ -34,6 +34,8 @@
 #ifndef STK_BALANCE_MTON_HPP
 #define STK_BALANCE_MTON_HPP
 
+#include <stk_util/parallel/Parallel.hpp>
+
 namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace balance { class M2NBalanceSettings; } }
 
@@ -41,7 +43,11 @@ namespace stk {
 namespace balance {
 namespace m2n {
 
+void set_output_streams(MPI_Comm comm, const stk::balance::M2NBalanceSettings & balanceSettings);
+
 void m2nRebalance(stk::io::StkMeshIoBroker& ioBroker, const stk::balance::M2NBalanceSettings & balanceSettings);
+
+void rebalance_m2n(stk::balance::M2NBalanceSettings &balanceSettings, MPI_Comm comm);
 
 }}}
 

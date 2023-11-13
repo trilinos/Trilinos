@@ -46,8 +46,6 @@
 #ifndef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP
 #define MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -55,7 +53,7 @@
 
 #include "MueLu_AggregationPhase3Algorithm_kokkos_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
@@ -70,7 +68,7 @@ namespace MueLu {
   void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const ParameterList& params,
                   const LWGraph_kokkos& graph,
-                  Aggregates_kokkos& aggregates,
+                  Aggregates& aggregates,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
 
@@ -91,7 +89,7 @@ namespace MueLu {
   void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregatesRandom(const ParameterList& params,
                         const LWGraph_kokkos& graph,
-                        Aggregates_kokkos& aggregates,
+                        Aggregates& aggregates,
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                         LO& numNonAggregatedNodes) const {
 
@@ -106,10 +104,12 @@ namespace MueLu {
     auto colors        = aggregates.GetGraphColors();
     const LO numColors = aggregates.GetGraphNumColors();
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     Kokkos::View<LO, device_type> numAggregates("numAggregates");
     Kokkos::deep_copy(numAggregates, aggregates.GetNumAggregates());
 
-    Kokkos::View<unsigned*, device_type> aggStatOld("Initial aggregation status", aggStat.extent(0));
+    Kokkos::View<unsigned*, device_type> aggStatOld(Kokkos::ViewAllocateWithoutInitializing("Initial aggregation status"), aggStat.extent(0));
     Kokkos::deep_copy(aggStatOld, aggStat);
     Kokkos::View<LO, device_type> numNonAggregated("numNonAggregated");
     Kokkos::deep_copy(numNonAggregated, numNonAggregatedNodes);
@@ -123,7 +123,7 @@ namespace MueLu {
                                  (aggStatOld(nodeIdx) == IGNORED) ){ return; }
 
                              // Grab node neighbors
-                             auto neighbors = graph.getNeighborVertices(nodeIdx);
+                             auto neighbors = lclLWGraph.getNeighborVertices(nodeIdx);
                              LO neighIdx;
 
                              // We don't want a singleton.
@@ -133,7 +133,7 @@ namespace MueLu {
                                neighIdx = neighbors(neigh);
 
                                if((neighIdx != nodeIdx) &&
-                                  graph.isLocalNeighborVertex(neighIdx) &&
+                                  lclLWGraph.isLocalNeighborVertex(neighIdx) &&
                                   (aggStatOld(neighIdx) == READY)) {
                                  isNewAggregate = true;
                                  break;
@@ -153,7 +153,7 @@ namespace MueLu {
                                for(int neigh = 0; neigh < neighbors.length; ++neigh) {
                                  neighIdx = neighbors(neigh);
                                  if((neighIdx != nodeIdx) &&
-                                    graph.isLocalNeighborVertex(neighIdx) &&
+                                    lclLWGraph.isLocalNeighborVertex(neighIdx) &&
                                     (aggStatOld(neighIdx) == READY)) {
                                    aggStat(neighIdx)         = AGGREGATED;
                                    procWinner(neighIdx, 0)   = myRank;
@@ -168,7 +168,7 @@ namespace MueLu {
                              // Let us try to aggregate into a neighboring aggregate
                              for(int neigh = 0; neigh < neighbors.length; ++neigh) {
                                neighIdx = neighbors(neigh);
-                               if (graph.isLocalNeighborVertex(neighIdx) &&
+                               if (lclLWGraph.isLocalNeighborVertex(neighIdx) &&
                                    (aggStatOld(neighIdx) == AGGREGATED)) {
                                  aggStat(nodeIdx)         = AGGREGATED;
                                  procWinner(nodeIdx, 0)   = myRank;
@@ -229,5 +229,4 @@ namespace MueLu {
 
 } // end namespace
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP

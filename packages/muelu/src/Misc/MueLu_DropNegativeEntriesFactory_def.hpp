@@ -55,10 +55,7 @@
 
 #include "MueLu_DropNegativeEntriesFactory_decl.hpp"
 
-#include "MueLu_FactoryManager.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Graph.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -91,7 +88,7 @@ namespace MueLu {
     // create new empty Operator
     Teuchos::RCP<Matrix> Aout = MatrixFactory::Build(Ain->getRowMap(), Ain->getGlobalMaxNumRowEntries());
 
-    size_t numLocalRows = Ain->getNodeNumRows();
+    size_t numLocalRows = Ain->getLocalNumRows();
     for(size_t row=0; row<numLocalRows; row++) {
       GlobalOrdinal grid = Ain->getRowMap()->getGlobalElement(row);
 

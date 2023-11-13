@@ -45,8 +45,11 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include <FROSch_SchwarzOperators_fwd.hpp>
+#include <ShyLU_DDFROSch_config.h>
 
+#include <FROSch_Types.h>
+
+#include <FROSch_SchwarzOperators_fwd.hpp>
 
 namespace FROSch {
 
@@ -57,7 +60,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class SchwarzPreconditioner : public Operator<SC,LO,GO,NO> {
 
     protected:

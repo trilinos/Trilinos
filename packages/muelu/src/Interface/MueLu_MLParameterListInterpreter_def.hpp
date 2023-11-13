@@ -79,21 +79,16 @@
 #include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-// #include "MueLu_CoarseMapFactory_kokkos.hpp"
 // #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 // #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
-#endif
 
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_IsorropiaInterface.hpp"
@@ -197,27 +192,7 @@ namespace MueLu {
 
     // pull out "use kokkos refactor"
     bool setKokkosRefactor = false;
-    bool useKokkosRefactor;
-#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
-    useKokkosRefactor = false;
-#else
-# ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosSerialWrapperNode).name())
-      useKokkosRefactor = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
-      useKokkosRefactor = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
-      useKokkosRefactor = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
-      useKokkosRefactor = true;
-# endif
-#endif
+    bool useKokkosRefactor = !Node::is_serial;
     if (paramList.isType<bool>("use kokkos refactor")) {
       useKokkosRefactor = paramList.get<bool>("use kokkos refactor");
       setKokkosRefactor = true;
@@ -264,16 +239,14 @@ namespace MueLu {
     this->verbosity_ = eVerbLevel;
 
 
-    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled" && agg_type != "Coupled", Exceptions::RuntimeError,
-        "MueLu::MLParameterListInterpreter::SetParameterList(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError,
+        "MueLu::MLParameterListInterpreter::SetParameterList(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
 
     // Create MueLu factories
     RCP<Factory> dropFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     if(useKokkosRefactor)
       dropFact = rcp( new CoalesceDropFactory_kokkos() );
     else
-#endif
       dropFact = rcp( new CoalesceDropFactory() );
 
     if (agg_use_aux) {
@@ -281,53 +254,22 @@ namespace MueLu {
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(agg_aux_thresh));
     }
 
+    // Uncoupled aggregation
     RCP<Factory> AggFact = Teuchos::null;
-    if (agg_type == "Uncoupled") {
-      // Uncoupled aggregation
-      RCP<Factory> MyUncoupledAggFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-      if(useKokkosRefactor) {
-        MyUncoupledAggFact = rcp( new UncoupledAggregationFactory_kokkos() );
-      }
-      else
-#endif
-        MyUncoupledAggFact = rcp( new UncoupledAggregationFactory() );
-
-      MyUncoupledAggFact->SetFactory("Graph", dropFact);
-      MyUncoupledAggFact->SetFactory("DofsPerNode", dropFact);
-      MyUncoupledAggFact->SetParameter("aggregation: preserve Dirichlet points", Teuchos::ParameterEntry(bKeepDirichletBcs));
-      MyUncoupledAggFact->SetParameter("aggregation: ordering",                  Teuchos::ParameterEntry(std::string("natural")));
-      MyUncoupledAggFact->SetParameter("aggregation: max selected neighbors",    Teuchos::ParameterEntry(maxNbrAlreadySelected));
-      MyUncoupledAggFact->SetParameter("aggregation: min agg size",              Teuchos::ParameterEntry(minPerAgg));
-
-      AggFact = MyUncoupledAggFact;
-    } else {
-      // Coupled Aggregation (default)
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-      if(useKokkosRefactor) {
-        AggFact = rcp( new UncoupledAggregationFactory_kokkos() );
-      } else {
-        RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
-        CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-        CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-        CoupledAggFact2->SetOrdering("natural");
-        CoupledAggFact2->SetPhase3AggCreation(0.5);
-        CoupledAggFact2->SetFactory("Graph", dropFact);
-        CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
-        AggFact = CoupledAggFact2;
-      }
-#else
-      RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
-      CoupledAggFact2 = rcp( new CoupledAggregationFactory() );
-      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-      CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering("natural");
-      CoupledAggFact2->SetPhase3AggCreation(0.5);
-      CoupledAggFact2->SetFactory("Graph", dropFact);
-      CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
-      AggFact = CoupledAggFact2;
-#endif
+    if(useKokkosRefactor) {
+      AggFact = rcp( new UncoupledAggregationFactory_kokkos() );
     }
+    else
+      AggFact = rcp( new UncoupledAggregationFactory() );
+
+    AggFact->SetFactory("Graph", dropFact);
+    AggFact->SetFactory("DofsPerNode", dropFact);
+    AggFact->SetParameter("aggregation: preserve Dirichlet points", Teuchos::ParameterEntry(bKeepDirichletBcs));
+    AggFact->SetParameter("aggregation: ordering",                  Teuchos::ParameterEntry(std::string("natural")));
+    AggFact->SetParameter("aggregation: max selected neighbors",    Teuchos::ParameterEntry(maxNbrAlreadySelected));
+    AggFact->SetParameter("aggregation: min agg size",              Teuchos::ParameterEntry(minPerAgg));
+
+
     if (verbosityLevel > 3) {
       std::ostringstream oss;
       oss << "========================= Aggregate option summary  =========================" << std::endl;
@@ -341,11 +283,9 @@ namespace MueLu {
     RCP<Factory> PFact;
     RCP<Factory> RFact;
     RCP<Factory> PtentFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     if(useKokkosRefactor)
       PtentFact = rcp( new TentativePFactory_kokkos() );
     else
-#endif
       PtentFact = rcp( new TentativePFactory() );
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
@@ -354,11 +294,9 @@ namespace MueLu {
     } else if (agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
       RCP<Factory> SaPFact;
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if(useKokkosRefactor)
         SaPFact = rcp( new SaPFactory_kokkos() );
       else
-#endif
         SaPFact = rcp( new SaPFactory() );
       SaPFact->SetParameter("sa: damping factor", ParameterEntry(agg_damping));
       PFact  = SaPFact;
@@ -648,7 +586,7 @@ namespace MueLu {
 //     // Default coarse grid smoother
 //     std::string type;
 //     if ("smoother" == "coarse") {
-// #if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)) // FIXME: test is wrong (ex: compiled with Epetra&&Tpetra&&Amesos2 but without Amesos => error running Epetra problem)
+// #if (defined(HAVE_MUELU_EPETRA) && defined( HAVE_MUELU_AMESOS)) || (defined(HAVE_MUELU_AMESOS2)) // FIXME: test is wrong (ex: compiled with Epetra&&Tpetra&&Amesos2 but without Amesos => error running Epetra problem)
 //       type = ""; // use default defined by AmesosSmoother or Amesos2Smoother
 // #else
 //       type = "symmetric Gauss-Seidel"; // use a sym Gauss-Seidel (with no damping) as fallback "coarse solver" (TODO: needs Ifpack(2))
@@ -691,6 +629,43 @@ namespace MueLu {
         MUELU_COPY_PARAM(paramList, "smoother: MLS alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
       } else {
         MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+      }
+
+
+      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
+      smooProto->SetFactory("A", AFact);
+
+    } else if (type == "Hiptmair") {
+      ifpackType = "HIPTMAIR";
+      std::string subSmootherType = "Chebyshev";
+      if (paramList.isParameter("subsmoother: type"))
+        subSmootherType = paramList.get<std::string>("subsmoother: type");
+      std::string subSmootherIfpackType;
+      if (subSmootherType == "Chebyshev")
+        subSmootherIfpackType = "CHEBYSHEV";
+      else if (subSmootherType == "Jacobi" || subSmootherType == "Gauss-Seidel" || subSmootherType == "symmetric Gauss-Seidel") {
+        if (subSmootherType == "symmetric Gauss-Seidel") subSmootherType = "Symmetric Gauss-Seidel"; // FIXME
+        subSmootherIfpackType = "RELAXATION";
+      } else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown smoother type. '" << subSmootherType << "' not supported by MueLu.");
+
+      smootherParamList.set("hiptmair: smoother type 1", subSmootherIfpackType);
+      smootherParamList.set("hiptmair: smoother type 2", subSmootherIfpackType);
+
+      auto smoother1ParamList = smootherParamList.sublist("hiptmair: smoother list 1");
+      auto smoother2ParamList = smootherParamList.sublist("hiptmair: smoother list 2");
+
+      if (subSmootherType == "Chebyshev") {
+        MUELU_COPY_PARAM(paramList, "subsmoother: edge sweeps", int, 2, smoother1ParamList, "chebyshev: degree");
+        MUELU_COPY_PARAM(paramList, "subsmoother: node sweeps", int, 2, smoother2ParamList, "chebyshev: degree");
+
+        MUELU_COPY_PARAM(paramList, "subsmoother: Chebyshev", double, 20, smoother1ParamList, "chebyshev: ratio eigenvalue");
+        MUELU_COPY_PARAM(paramList, "subsmoother: Chebyshev", double, 20, smoother2ParamList, "chebyshev: ratio eigenvalue");
+      } else {
+        MUELU_COPY_PARAM(paramList, "subsmoother: edge sweeps", int, 2, smoother1ParamList, "relaxation: sweeps");
+        MUELU_COPY_PARAM(paramList, "subsmoother: node sweeps", int, 2, smoother2ParamList, "relaxation: sweeps");
+
+        MUELU_COPY_PARAM(paramList, "subsmoother: SGS damping factor", double, 0.8, smoother2ParamList, "relaxation: damping factor");
       }
 
 
@@ -792,7 +767,7 @@ namespace MueLu {
       MatrixUtils::checkLocalRowMapMatchesColMap(A);
 #endif // HAVE_MUELU_DEBUG
 
-    } catch (std::bad_cast& e) {
+    } catch (std::bad_cast&) {
       this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
     }
   }

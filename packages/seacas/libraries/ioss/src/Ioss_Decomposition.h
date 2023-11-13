@@ -1,12 +1,13 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef IOSS_DECOMPOSITON_H
-#define IOSS_DECOMPOSITON_H
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Map.h>
@@ -17,6 +18,9 @@
 #include <map>
 #include <string>
 #include <vector>
+
+#include <Ioss_ParallelUtils.h>
+#include <Ioss_Utils.h>
 
 #if !defined(NO_PARMETIS_SUPPORT)
 #include <parmetis.h>
@@ -35,9 +39,9 @@
 #endif
 
 namespace Ioss {
-  const std::vector<std::string> &valid_decomp_methods();
+  IOSS_EXPORT const std::vector<std::string> &valid_decomp_methods();
 
-  class BlockDecompositionData
+  class IOSS_EXPORT BlockDecompositionData
   {
   public:
     BlockDecompositionData() = default;
@@ -84,7 +88,7 @@ namespace Ioss {
     std::vector<int> importIndex;
   };
 
-  class SetDecompositionData
+  class IOSS_EXPORT SetDecompositionData
   {
   public:
     SetDecompositionData()                             = default;
@@ -93,7 +97,7 @@ namespace Ioss {
 
     ~SetDecompositionData()
     {
-      if (setComm_ != MPI_COMM_NULL) {
+      if (setComm_ != Ioss::ParallelUtils::comm_null()) {
         MPI_Comm_free(&setComm_);
       }
     }
@@ -125,14 +129,45 @@ namespace Ioss {
     size_t distributionFactorCount{0};
     double distributionFactorValue{
         0.0}; // If distributionFactorConstant == true, the constant value
-    MPI_Comm setComm_{MPI_COMM_NULL};
-    bool     distributionFactorConstant{false}; // T if all distribution factors the same value.
+    Ioss_MPI_Comm setComm_{Ioss::ParallelUtils::comm_null()};
+    bool distributionFactorConstant{false}; // T if all distribution factors the same value.
   };
+
+  IOSS_EXPORT size_t
+  get_all_block_ioss_element_size(const std::vector<BlockDecompositionData> &blocks);
+
+  IOSS_EXPORT size_t
+  get_all_block_ioss_offset_size(const std::vector<BlockDecompositionData> &blocks,
+                                 const std::vector<int>                    &block_component_count);
+
+  IOSS_EXPORT std::vector<size_t>
+              get_all_block_ioss_offset(const std::vector<BlockDecompositionData> &blocks,
+                                        const std::vector<int>                    &block_component_count);
+
+  IOSS_EXPORT std::vector<size_t>
+              get_all_block_import_offset(const std::vector<BlockDecompositionData> &blocks,
+                                          const std::vector<int>                    &block_component_count);
+
+  IOSS_EXPORT std::vector<int> get_all_block_connectivity_ioss_component_count(
+      const std::vector<BlockDecompositionData> &blocks);
+
+  IOSS_EXPORT size_t
+  get_all_block_connectivity_ioss_offset_size(const std::vector<BlockDecompositionData> &blocks);
+
+  IOSS_EXPORT std::vector<size_t>
+  get_all_block_connectivity_ioss_offset(const std::vector<BlockDecompositionData> &blocks);
+
+  IOSS_EXPORT std::vector<size_t>
+  get_all_block_connectivity_import_offset(const std::vector<BlockDecompositionData> &blocks);
 
   template <typename INT> class Decomposition
   {
   public:
-    Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm);
+    Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm);
+    Decomposition(Decomposition const &)            = default;
+    Decomposition(Decomposition &&)                 = default;
+    Decomposition &operator=(Decomposition const &) = default;
+    Decomposition &operator=(Decomposition &&)      = default;
 
     size_t global_node_count() const { return m_globalNodeCount; }
     size_t global_elem_count() const { return m_globalElementCount; }
@@ -149,7 +184,7 @@ namespace Ioss {
               m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" || m_method == "METIS_SFC");
     }
 
-    void generate_entity_distributions(size_t globalNodeCount, size_t globalElementCount);
+    void generate_entity_distributions(size_t global_node_count, size_t global_element_count);
 
     // T/F if node with global index node owned by this processors ioss-decomp.
     bool i_own_node(size_t global_index) const
@@ -257,6 +292,18 @@ namespace Ioss {
     void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const
     {
       show_progress(__func__);
+      if (m_method == "LINEAR") {
+        assert(m_importPreLocalElemIndex == 0);
+        assert(exportElementMap.size() == 0);
+        assert(importElementMap.size() == 0);
+        // For "LINEAR" decomposition method, the `file_data` is the
+        // same as `ioss_data` Transfer all local data from file_data
+        // to ioss_data...
+        auto size = localElementMap.size() * comp_count;
+        std::copy(file_data, file_data + size, ioss_data);
+        return;
+      }
+
       // Transfer the file-decomposition based data in 'file_data' to
       // the ioss-decomposition based data in 'ioss_data'
       std::vector<T> export_data(exportElementMap.size() * comp_count);
@@ -352,17 +399,19 @@ namespace Ioss {
       std::vector<T> recv_data;
 
       size_t size = set.file_count() * comp_count;
-      if (size == 0)
+      if (size == 0) {
         return;
+      }
 
-      if (set.setComm_ != MPI_COMM_NULL) {
+      if (set.setComm_ != Ioss::ParallelUtils::comm_null()) {
         recv_data.resize(size);
         if (m_processor == set.root_) {
           std::copy(file_data, file_data + size, recv_data.begin());
         }
         // NOTE: This broadcast uses a split communicator, so possibly
         // not all processors participating.
-        MPI_Bcast(recv_data.data(), size, Ioss::mpi_type(T(0)), 0, set.setComm_);
+        Ioss::ParallelUtils pu(set.setComm_);
+        pu.broadcast(recv_data);
       }
       if (comp_count == 1) {
         if (set.root_ == m_processor) {
@@ -405,6 +454,18 @@ namespace Ioss {
                                 size_t comp_count) const
     {
       show_progress(__func__);
+      if (m_method == "LINEAR") {
+        assert(block.localIossOffset == 0);
+        assert(block.exportMap.empty());
+        assert(block.importMap.empty());
+        // For "LINEAR" decomposition method, the `file_data` is the
+        // same as `ioss_data` Transfer all local data from file_data
+        // to ioss_data...
+        auto size = block.localMap.size() * comp_count;
+        std::copy(file_data, file_data + size, ioss_data);
+        return;
+      }
+
       std::vector<U> exports;
       exports.reserve(comp_count * block.exportMap.size());
       std::vector<U> imports(comp_count * block.importMap.size());
@@ -465,6 +526,134 @@ namespace Ioss {
           }
         }
       }
+    }
+
+    template <typename T, typename U>
+    std::vector<size_t> do_communicate_all_block_data(
+        T *file_data, U *ioss_data, const std::vector<BlockDecompositionData> &blocks,
+        const std::vector<size_t> &file_offset, const std::vector<int> &block_component_count) const
+    {
+      size_t export_size = 0;
+      size_t import_size = 0;
+
+      for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+        const Ioss::BlockDecompositionData &blk = blocks[blk_seq];
+
+        size_t comp_count = block_component_count[blk_seq];
+        export_size += blk.exportMap.size() * comp_count;
+        import_size += blk.importMap.size() * comp_count;
+      }
+
+      std::vector<U> exports;
+      exports.reserve(export_size);
+
+      Ioss::ParallelUtils util_(m_comm);
+      int                 nProc = util_.parallel_size();
+
+      for (int proc = 0; proc < nProc; proc++) {
+        for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+          const Ioss::BlockDecompositionData &blk            = blocks[blk_seq];
+          size_t                              comp_count     = block_component_count[blk_seq];
+          size_t                              fileDataOffset = file_offset[blk_seq];
+
+          for (int n = 0; n < blk.exportCount[proc]; n++) {
+            int exportIndex = blk.exportIndex[proc] + n;
+            int i           = blk.exportMap[exportIndex];
+
+            for (size_t j = 0; j < comp_count; j++) {
+              size_t fileIndex = fileDataOffset + i * comp_count + j;
+              exports.push_back(file_data[fileIndex]);
+            }
+          }
+        }
+      }
+
+      std::vector<int64_t> export_count(nProc, 0);
+      std::vector<int64_t> export_disp(nProc, 0);
+      std::vector<int64_t> import_count(nProc, 0);
+      std::vector<int64_t> import_disp(nProc, 0);
+
+      for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+        const Ioss::BlockDecompositionData &blk        = blocks[blk_seq];
+        size_t                              comp_count = block_component_count[blk_seq];
+
+        int proc = 0;
+        for (int i : blk.exportCount) {
+          export_count[proc++] += comp_count * i;
+        }
+
+        proc = 0;
+        for (int i : blk.importCount) {
+          import_count[proc++] += comp_count * i;
+        }
+      }
+
+      std::copy(export_count.begin(), export_count.end(), export_disp.begin());
+      std::copy(import_count.begin(), import_count.end(), import_disp.begin());
+
+      Ioss::Utils::generate_index(export_disp);
+      Ioss::Utils::generate_index(import_disp);
+
+      std::vector<U> imports(import_size);
+      Ioss::MY_Alltoallv(exports, export_count, export_disp, imports, import_count, import_disp,
+                         m_comm);
+      show_progress("\tCommunication 1 finished");
+
+      std::vector<size_t> ioss_offset =
+          Ioss::get_all_block_ioss_offset(blocks, block_component_count);
+      std::vector<size_t> import_offset =
+          Ioss::get_all_block_import_offset(blocks, block_component_count);
+
+      // Map local and imported data to ioss_data.
+      for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+        const Ioss::BlockDecompositionData &block      = blocks[blk_seq];
+        size_t                              comp_count = block_component_count[blk_seq];
+
+        for (size_t i = 0; i < block.localMap.size(); i++) {
+          for (size_t j = 0; j < comp_count; j++) {
+            unsigned fileIndex = file_offset[blk_seq] + block.localMap[i] * comp_count + j;
+            unsigned iossIndex =
+                ioss_offset[blk_seq] + (i + block.localIossOffset) * comp_count + j;
+            ioss_data[iossIndex] = file_data[fileIndex];
+          }
+        }
+
+        for (size_t i = 0; i < block.importMap.size(); i++) {
+          for (size_t j = 0; j < comp_count; j++) {
+            unsigned importIndex = import_offset[blk_seq] + i * comp_count + j;
+
+            size_t   dataOffset = ioss_offset[blk_seq];
+            unsigned iossIndex  = dataOffset + block.importMap[i] * comp_count + j;
+
+            ioss_data[iossIndex] = imports[importIndex];
+          }
+        }
+      }
+
+      return ioss_offset;
+    }
+
+    template <typename T, typename U>
+    std::vector<size_t> communicate_all_block_data(
+        T *file_data, U *ioss_data, const std::vector<BlockDecompositionData> &blocks,
+        const std::vector<size_t> &file_offset, const std::vector<int> &block_component_count) const
+    {
+      show_progress(__func__);
+      if (m_method == "LINEAR") {
+        // For "LINEAR" decomposition method, the `file_data` is the
+        // same as `ioss_data` Transfer all local data from file_data
+        // to ioss_data...
+        auto size = file_offset[blocks.size()];
+        std::copy(file_data, file_data + size, ioss_data);
+
+        return Ioss::get_all_block_ioss_offset(blocks, block_component_count);
+        ;
+      }
+
+      auto retval = do_communicate_all_block_data(file_data, ioss_data, blocks, file_offset,
+                                                  block_component_count);
+
+      return retval;
     }
 
     template <typename T>
@@ -549,7 +738,7 @@ namespace Ioss {
       }
     }
 
-    MPI_Comm            m_comm;
+    Ioss_MPI_Comm       m_comm;
     Ioss::ParallelUtils m_pu;
     int                 m_processor{};
     int                 m_processorCount{};
@@ -668,4 +857,3 @@ namespace Ioss {
 #endif
   };
 } // namespace Ioss
-#endif

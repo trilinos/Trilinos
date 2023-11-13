@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,10 +12,10 @@
 #include <stdio.h>
 
 void opt3d(struct vtx_data **graph,   /* data structure containing vertex weights */
-           double **         yvecs,   /* eigenvectors */
+           double          **yvecs,   /* eigenvectors */
            int               nvtxs,   /* total number of vertices */
            int               nmyvtxs, /* number of vertices I own */
-           double *          vwsqrt,  /* square root of vertex weights */
+           double           *vwsqrt,  /* square root of vertex weights */
            double *ptheta, double *pphi, double *pgamma, /* return optimal angles */
            int using_vwgts                               /* are vertex weights being used? */
 )
@@ -24,8 +24,8 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
 {
   extern int DEBUG_OPTIMIZE;     /* debug flag for optimization */
   extern int OPT3D_NTRIES;       /* number of local opts to find global min */
-  double *   aptr, *bptr, *cptr; /* loop through yvecs */
-  double *   wsptr;              /* loops through vwsqrt */
+  double    *aptr, *bptr, *cptr; /* loop through yvecs */
+  double    *wsptr;              /* loops through vwsqrt */
   double     coeffs[25];         /* various products of yvecs */
   double     vars[3];            /* angular variables */
   double     best[3];            /* best minimizer found so far */
@@ -61,10 +61,6 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
   int        total;            /* total number of iterations */
   int        ntries, maxtries; /* number of local minimizations */
   int        i, j;             /* loop counter */
-  double     func3d(), constraint();
-  double     drandom();
-  void       grad3d(), hess3d(), gradcon(), hesscon(), kramer3(), ch_eigenvec3();
-  void       ch_evals3();
 
   /* Set parameters. */
   best[0] = best[1] = best[2] = 0.0;

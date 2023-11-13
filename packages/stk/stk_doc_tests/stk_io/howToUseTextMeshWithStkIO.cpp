@@ -45,16 +45,17 @@
 
 namespace
 {
+
 TEST(StkIoHowTo, useTextMesh)
 {
-  stk::unit_test_util::initialize_stk_io_for_text_mesh();
   stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+  stkIo.use_simple_fields();
 
   std::string textMeshDesc = "textmesh:0,1,HEX_8,1,2,3,4,5,6,7,8";
 
   stkIo.add_mesh_database(textMeshDesc, stk::io::READ_MESH);
 
-  Ioss::Region* ioRegion = stkIo.get_input_io_region().get();
+  Ioss::Region* ioRegion = stkIo.get_input_ioss_region().get();
   EXPECT_TRUE(ioRegion != nullptr);
 
   Ioss::DatabaseIO* ioDatabase = ioRegion->get_database();
@@ -65,8 +66,8 @@ TEST(StkIoHowTo, useTextMesh)
 
 TEST(StkIoHowTo, useTextMesh_withAllOptions)
 {
-  stk::unit_test_util::initialize_stk_io_for_text_mesh();
   stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+  stkIo.use_simple_fields();
 
   std::string textMeshDesc =
       "textmesh:"
@@ -77,7 +78,7 @@ TEST(StkIoHowTo, useTextMesh_withAllOptions)
 
   stkIo.add_mesh_database(textMeshDesc, stk::io::READ_MESH);
 
-  Ioss::Region* ioRegion = stkIo.get_input_io_region().get();
+  Ioss::Region* ioRegion = stkIo.get_input_ioss_region().get();
   EXPECT_TRUE(ioRegion != nullptr);
 
   Ioss::DatabaseIO* ioDatabase = ioRegion->get_database();

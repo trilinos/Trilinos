@@ -292,7 +292,10 @@ namespace ExponentialRandomFieldUnitTest {
     solverParams.set("Domain Upper Bounds", domain_upper);
     solverParams.set("Domain Lower Bounds", domain_lower);
     solverParams.set("Correlation Lengths", correlation_length);
-    Stokhos::KL::ExponentialRandomField<double> rf(solverParams);
+
+    // Since this test only runs on the host, instantiate the random field
+    // on the host
+    Stokhos::KL::ExponentialRandomField<double,Kokkos::DefaultHostExecutionSpace> rf(solverParams);
 
     int nqp = quad_weights.size();
     success = true;
@@ -337,12 +340,4 @@ namespace ExponentialRandomFieldUnitTest {
     }
   }
 
-}
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Kokkos::initialize();
-  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-  Kokkos::finalize();
-  return ret;
 }

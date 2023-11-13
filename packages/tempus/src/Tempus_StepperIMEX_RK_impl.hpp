@@ -655,7 +655,7 @@ void StepperIMEX_RK<Scalar>::evalImplicitModelExplicitly(
   Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > wrapperModelPairIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairIMEX<Scalar> >(
       this->wrapperModel_);
-  MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX->getInArgs();
+  MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX->createInArgs();
   inArgs.set_x(X);
   if (inArgs.supports(MEB::IN_ARG_t))           inArgs.set_t(time);
   if (inArgs.supports(MEB::IN_ARG_step_size))   inArgs.set_step_size(stepSize);
@@ -669,7 +669,7 @@ void StepperIMEX_RK<Scalar>::evalImplicitModelExplicitly(
   // x_dot = f(x, t)
   if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(Teuchos::null);
 
-  MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX->getOutArgs();
+  MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX->createOutArgs();
   outArgs.set_f(G);
 
   wrapperModelPairIMEX->getImplicitModel()->evalModel(inArgs,outArgs);

@@ -98,7 +98,7 @@ namespace FROSch {
         ConstXMapPtr nullspaceBasisMap = NullspaceBasis_->getMap();
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnity_[i].is_null()) {
-                FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getNodeNumElements()>0,"PartitionOfUnityMaps_[i]->getNodeNumElements()==0");
+                FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getLocalNumElements()>0,"PartitionOfUnityMaps_[i]->getLocalNumElements()==0");
                 tmpBasis[i] = XMultiVectorPtrVecPtr(PartitionOfUnity_[i]->getNumVectors());
                 for (UN j=0; j<PartitionOfUnity_[i]->getNumVectors(); j++) {
                     XMultiVectorPtr tmpBasisJ = MultiVectorFactory<SC,LO,GO,NO>::Build(nullspaceBasisMap,NullspaceBasis_->getNumVectors());
@@ -106,7 +106,7 @@ namespace FROSch {
                     tmpBasis[i][j] = tmpBasisJ;
                 }
             } else {
-                FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getNodeNumElements()==0,"PartitionOfUnityMaps_[i]->getNodeNumElements()!=0");
+                FROSCH_ASSERT(PartitionOfUnityMaps_[i]->getLocalNumElements()==0,"PartitionOfUnityMaps_[i]->getLocalNumElements()!=0");
             }
         }
 

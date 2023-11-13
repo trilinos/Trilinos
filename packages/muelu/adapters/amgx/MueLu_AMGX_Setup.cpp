@@ -54,7 +54,7 @@ namespace MueLu {
   }
 
   void MueLu_AMGX_initialize_plugins()
-  {    
+  {
     AMGX_SAFE_CALL(AMGX_initialize_plugins());
   }
 
@@ -64,7 +64,7 @@ namespace MueLu {
   }
 
   void MueLu_AMGX_finalize_plugins()
-  {    
+  {
    AMGX_print_summary();
    AMGX_SAFE_CALL(AMGX_finalize_plugins());
   }

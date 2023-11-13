@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -16,7 +16,7 @@
 void refine_map(struct vtx_data **graph,        /* graph data structure */
                 int               nvtxs,        /* number of vertices in graph */
                 int               using_ewgts,  /* are edge weights being used? */
-                int *             assign,       /* current assignment */
+                int              *assign,       /* current assignment */
                 int               cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
                 int               ndims_tot,    /* if hypercube, number of dimensions */
                 int               mesh_dims[3]  /* if mesh, dimensions of mesh */
@@ -24,15 +24,11 @@ void refine_map(struct vtx_data **graph,        /* graph data structure */
 {
   struct vtx_data **comm_graph;       /* graph for communication requirements */
   int               nsets_tot = 0;    /* total number of sets */
-  int *             vtx2node  = NULL; /* mapping of comm_graph vtxs to processors */
-  int *             node2vtx  = NULL; /* mapping of sets to comm_graph vtxs */
+  int              *vtx2node  = NULL; /* mapping of comm_graph vtxs to processors */
+  int              *node2vtx  = NULL; /* mapping of sets to comm_graph vtxs */
   double            maxdesire = 0.0;  /* largest possible desire to flip an edge */
   int               error     = 0;    /* out of space? */
   int               i;                /* loop counter */
-
-  double find_maxdeg();
-  void   free_graph(), strout();
-  int    make_comm_graph(), refine_mesh(), refine_cube();
 
   if (cube_or_mesh == 0) {
     nsets_tot = 1 << ndims_tot;

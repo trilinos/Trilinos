@@ -294,6 +294,9 @@ public:
   template<int N>
   inline Array(const Tuple<T,N>& t);
 
+  //! Create an array with braced initialization.
+  inline Array(std::initializer_list<T> list);
+
   //! Destructor.
   inline ~Array();
 
@@ -859,6 +862,14 @@ Array<T>::Array(const Tuple<T,N>& t)
   insert(begin(), t.begin(), t.end());
 }
 
+template<typename T> inline
+Array<T>::Array(std::initializer_list<T> a)
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  : vec_(rcp(new std::vector<T>(a)))
+#else
+  : vec_(a)
+#endif
+{}
 
 template<typename T> inline
 Array<T>& Array<T>::operator=(const Array& a)

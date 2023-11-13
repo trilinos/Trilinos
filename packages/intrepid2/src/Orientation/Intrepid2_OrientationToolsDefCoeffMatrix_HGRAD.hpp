@@ -83,10 +83,15 @@ check_getCoeffMatrix_HGRAD(const subcellBasisType& subcellBasis,
   const ordinal_type cellDim = cellTopo.getDimension();
   const ordinal_type subcellDim = subcellTopo.getDimension();
 
-  INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
+  INTREPID2_TEST_FOR_EXCEPTION( subcellDim > cellDim,
       std::logic_error,
       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-      "cellDim must be greater than subcellDim.");
+      "cellDim cannot be smaller than subcellDim.");
+
+  INTREPID2_TEST_FOR_EXCEPTION( subcellDim > 2,
+      std::logic_error,
+      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+      "subCellDim cannot be larger than 2.");
 
   const auto subcellBaseKey = subcellTopo.getBaseKey();
 
@@ -131,7 +136,8 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
                      const subcellBasisHostType& subcellBasis, /// this must be host basis object
                      const cellBasisHostType& cellBasis, /// this also must be host basis object
                      const ordinal_type subcellId,
-                     const ordinal_type subcellOrt) {
+                     const ordinal_type subcellOrt,
+                     const bool inverse) {
 
 #ifdef HAVE_INTREPID2_DEBUG
   Debug::check_getCoeffMatrix_HGRAD(subcellBasis,cellBasis,subcellId,subcellOrt);
@@ -164,14 +170,18 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
   INTREPID2_TEST_FOR_EXCEPTION( latticeSize != ndofSubcell,
       std::logic_error,
       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-      "Lattice size should be equal to the onber of subcell internal DoFs");
+      "Lattice size should be equal to the number of subcell internal DoFs");
   PointTools::getLattice(refPtsSubcell, subcellTopo, subcellBasis.getDegree(), 1, POINTTYPE_WARPBLEND);
 
   // map the points into the parent, cell accounting for orientation
-  auto subcellParam = Intrepid2::RefSubcellParametrization<host_device_type>::get(subcellDim, cellTopo.getKey());
   Kokkos::DynRankView<value_type,host_device_type> refPtsCell("refPtsCell", ndofSubcell, cellDim);
   // refPtsCell = F_s (\eta_o (refPtsSubcell))
-  mapSubcellCoordsToRefCell(refPtsCell,refPtsSubcell, subcellParam, subcellBaseKey, subcellId, subcellOrt);
+  if(cellDim == subcellDim) //the cell is a side of dimension 1 or 2.
+    mapToModifiedReference(refPtsCell,refPtsSubcell,subcellBaseKey,subcellOrt);
+  else {
+    auto subcellParam = Intrepid2::RefSubcellParametrization<host_device_type>::get(subcellDim, cellTopo.getKey());
+    mapSubcellCoordsToRefCell(refPtsCell,refPtsSubcell, subcellParam, subcellBaseKey, subcellId, subcellOrt);
+  }
 
   //
   // Bases evaluation on the reference points
@@ -195,7 +205,9 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
   // construct Psi and Phi  matrices.  LAPACK wants left layout
   Kokkos::DynRankView<value_type,Kokkos::LayoutLeft,host_device_type>
     PsiMat("PsiMat", ndofSubcell, ndofSubcell),
-    PhiMat("PhiMat", ndofSubcell, ndofSubcell);
+    PhiMat("PhiMat", ndofSubcell, ndofSubcell),
+    RefMat,
+    OrtMat;
   
   auto cellTagToOrdinal = cellBasis.getAllDofOrdinal();
   auto subcellTagToOrdinal = subcellBasis.getAllDofOrdinal();
@@ -209,6 +221,9 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
     }
   }
 
+  RefMat = inverse ? PhiMat : PsiMat;
+  OrtMat = inverse ? PsiMat : PhiMat;
+
   // Solve the system
   {
     Teuchos::LAPACK<ordinal_type,value_type> lapack;
@@ -216,11 +231,11 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
 
     Kokkos::DynRankView<ordinal_type,Kokkos::LayoutLeft,host_device_type> pivVec("pivVec", ndofSubcell);
     lapack.GESV(ndofSubcell, ndofSubcell,
-                PsiMat.data(),
-                PsiMat.stride_1(),
+                RefMat.data(),
+                RefMat.stride_1(),
                 pivVec.data(),
-                PhiMat.data(),
-                PhiMat.stride_1(),
+                OrtMat.data(),
+                OrtMat.stride_1(),
                 &info);
     
     if (info) {
@@ -236,16 +251,16 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
     // transpose B and clean up numerical noise (for permutation matrices)
     const double eps = tolerence();
     for (ordinal_type i=0;i<ndofSubcell;++i) {
-      auto intmatii = std::round(PhiMat(i,i));
-      PhiMat(i,i) = (std::abs(PhiMat(i,i) - intmatii) < eps) ? intmatii : PhiMat(i,i);
+      auto intmatii = std::round(OrtMat(i,i));
+      OrtMat(i,i) = (std::abs(OrtMat(i,i) - intmatii) < eps) ? intmatii : OrtMat(i,i);
       for (ordinal_type j=i+1;j<ndofSubcell;++j) {
-        auto matij = PhiMat(i,j);
+        auto matij = OrtMat(i,j);
 
-        auto intmatji = std::round(PhiMat(j,i));
-        PhiMat(i,j) = (std::abs(PhiMat(j,i) - intmatji) < eps) ? intmatji : PhiMat(j,i);
+        auto intmatji = std::round(OrtMat(j,i));
+        OrtMat(i,j) = (std::abs(OrtMat(j,i) - intmatji) < eps) ? intmatji : OrtMat(j,i);
 
         auto intmatij = std::round(matij);
-        PhiMat(j,i) = (std::abs(matij - intmatij) < eps) ? intmatij : matij;
+        OrtMat(j,i) = (std::abs(matij - intmatij) < eps) ? intmatij : matij;
       }
     }
 
@@ -257,7 +272,7 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
     std::cout  << "|";
     for (ordinal_type i=0;i<ndofSubcell;++i) {
       for (ordinal_type j=0;j<ndofSubcell;++j) {
-        std::cout << PhiMat(i,j) << " ";
+        std::cout << OrtMat(i,j) << " ";
       }
       std::cout  << "| ";
     }
@@ -269,7 +284,7 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
     // move the data to original device memory
     const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofSubcell);
     auto suboutput = Kokkos::subview(output, range, range);
-    auto tmp = Kokkos::create_mirror_view_and_copy(typename OutputViewType::device_type::memory_space(), PhiMat);
+    auto tmp = Kokkos::create_mirror_view_and_copy(typename OutputViewType::device_type::memory_space(), OrtMat);
     Kokkos::deep_copy(suboutput, tmp);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,19 +36,10 @@ int get_ritzvals(double *alpha,         /* vector of Lanczos scalars */
   double     bisection_tol;   /* width of interval bisection should converge to */
   int        pred_steps;      /* predicts # of required bisection steps per eval */
   int        tot_pred_steps;  /* predicts total # of required bisection steps */
-  double *   ritz_sav = NULL; /* copy of ritzvals for debugging */
+  double    *ritz_sav = NULL; /* copy of ritzvals for debugging */
   int        bisect_flag;     /* return status of bisect() */
   int        ql_flag;         /* return status of ql() */
   int        local_debug;     /* whether to check bisection results with ql */
-  int        bisect();        /* locates eigvals using bisection on Sturm seq. */
-  int        ql();            /* computes eigenvalues of T using eispack algorithm */
-  void       shell_sort();    /* sorts vector of eigenvalues */
-  double *   mkvec();         /* to allocate a vector */
-  void       frvec();         /* free vector */
-  void       cpvec();         /* vector copy */
-  void       bail();          /* our exit routine */
-  void       strout();        /* string out to screen and output file */
-
   /* Determine number of ritzvals to find on left and right ends */
   nvals_left  = max(d, left_goodlim);
   nvals_right = min(j - nvals_left, right_goodlim);

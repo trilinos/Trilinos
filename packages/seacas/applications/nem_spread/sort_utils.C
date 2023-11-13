@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,7 +40,7 @@ namespace {
     V[J]   = _t;
   }
 
-  template <typename INT> INT gds_imedian3(INT v[], INT iv[], size_t left, size_t right)
+  template <typename INT> INT gds_imedian3(const INT v[], INT iv[], size_t left, size_t right)
   {
     size_t center = (left + right) / 2;
 
@@ -58,7 +58,7 @@ namespace {
     return iv[right - 1];
   }
 
-  template <typename INT> void gds_iqsort(INT v[], INT iv[], size_t left, size_t right)
+  template <typename INT> void gds_iqsort(const INT v[], INT iv[], size_t left, size_t right)
   {
     if (left + GDS_QSORT_CUTOFF <= right) {
       size_t pivot = gds_imedian3(v, iv, left, right);
@@ -86,7 +86,7 @@ namespace {
     }
   }
 
-  template <typename INT> void gds_iisort(INT v[], INT iv[], size_t N)
+  template <typename INT> void gds_iisort(const INT v[], INT iv[], size_t N)
   {
     if (N == 0) {
       return;
@@ -236,14 +236,14 @@ template <typename INT> void indexed_sort(INT v[], INT iv[], size_t N)
   }
 
 #if DEBUG_SORT
-  fmt::print(stderr, "Checking sort of {:L} values\n", count + 1);
+  fmt::print(stderr, "Checking sort of {} values\n", fmt::group_digits(count + 1));
   for (size_t i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
   }
 #endif
 }
 
-template <typename INT> void gds_iqsort(INT v[], INT iv[], size_t N)
+template <typename INT> void gds_iqsort(const INT v[], INT iv[], size_t N)
 {
   if (N <= 1) {
     return;
@@ -252,7 +252,7 @@ template <typename INT> void gds_iqsort(INT v[], INT iv[], size_t N)
   gds_iisort(v, iv, N);
 
 #if defined(DEBUG_QSORT)
-  fmt::print(stderr, "Checking sort of {:L} values\n", N + 1);
+  fmt::print(stderr, "Checking sort of {} values\n", fmt::group_digits(N + 1));
   size_t i;
   for (i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
@@ -269,17 +269,17 @@ template <typename INT> void gds_qsort(INT v[], size_t N)
   gds_isort(v, N);
 
 #if defined(DEBUG_QSORT)
-  fmt::print(stderr, "Checking sort of {:L} values\n", N + 1);
+  fmt::print(stderr, "Checking sort of {} values\n", fmt::group_digits(N + 1));
   for (size_t i = 1; i < N; i++) {
     assert(v[i - 1] <= v[i]);
   }
 #endif
 }
 
-template void gds_iqsort(int v[], int iv[], size_t N);
+template void gds_iqsort(const int v[], int iv[], size_t N);
 template void gds_qsort(int v[], size_t N);
 
-template void gds_iqsort(int64_t v[], int64_t iv[], size_t N);
+template void gds_iqsort(const int64_t v[], int64_t iv[], size_t N);
 template void gds_qsort(int64_t v[], size_t N);
 
 template void indexed_sort(int v[], int iv[], size_t N);

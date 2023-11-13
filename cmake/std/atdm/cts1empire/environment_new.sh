@@ -19,11 +19,11 @@ export ATDM_CONFIG_BUILD_COUNT=8
 # The second purge will catch any real errors with purging ...
 module purge &> /dev/null
 module purge
-. /projects/sems/modulefiles/utils/sems-modules-init.sh
-module load sems-env
-module load sems-ninja_fortran/1.8.2
-module load sems-git/2.10.1
-module load sems-cmake/3.19.1
+. /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+module load sems-archive-env
+module load sems-archive-ninja_fortran/1.8.2
+module load sems-archive-git/2.10.1
+module load sems-archive-cmake/3.19.1
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8

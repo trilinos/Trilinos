@@ -125,7 +125,7 @@ template<typename DataT,int Rank,typename Layout>
 const PHX::FieldTag&
 PHX::Field<DataT,Rank,Layout>::fieldTag() const
 {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
 #endif
   return *m_tag;
@@ -136,7 +136,7 @@ template<typename DataT,int Rank,typename Layout>
 Teuchos::RCP<const PHX::FieldTag>
 PHX::Field<DataT,Rank,Layout>::fieldTagPtr() const
 {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
 #endif
   return m_tag;
@@ -165,7 +165,7 @@ KOKKOS_INLINE_FUNCTION
 typename PHX::FieldReturnType<typename PHX::Field<DataT,Rank,Layout>::array_type>::return_type
 PHX::Field<DataT,Rank,Layout>::operator()(const index_pack&... indices) const
 {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
   static_assert(Rank == sizeof...(indices), "PHX::Field::operator(const index_pack&... indices) : must have number of indices equal to rank!");
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
@@ -180,7 +180,7 @@ KOKKOS_INLINE_FUNCTION
 typename PHX::FieldReturnType<typename PHX::Field<DataT,Rank,Layout>::array_type>::return_type
 PHX::Field<DataT,Rank,Layout>::access(const index_pack&... indices) const
 {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
   static_assert(Rank == sizeof...(indices), "PHX::Field::operator(const index_pack&... indices) : must have number of indices equal to rank!");
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
@@ -194,7 +194,7 @@ KOKKOS_INLINE_FUNCTION
 typename PHX::Field<DataT,Rank,Layout>::size_type
 PHX::Field<DataT,Rank,Layout>::rank() const
 {
-  return m_field_data.Rank;
+  return m_field_data.rank;
 }
 
 // **********************************************************************
@@ -225,7 +225,7 @@ setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t)
 template<typename DataT,int Rank,typename Layout>
 void PHX::Field<DataT,Rank,Layout>::setFieldData(const PHX::any& a)
 {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
   m_data_set = true;
 #endif

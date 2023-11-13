@@ -10,11 +10,11 @@
 #define Akri_CDFEM_Options_Parser_h
 
 namespace krino { namespace Parser { class Node; } }
-namespace krino { class RegionInterface; }
+namespace stk { namespace mesh { class MetaData; } }
 
 namespace krino {
 namespace CDFEM_Options_Parser {
-  void parse(const Parser::Node & node, RegionInterface & region);
+  void parse(const Parser::Node & node, stk::mesh::MetaData & meta);
 }
 }
 

@@ -52,6 +52,7 @@ template class LOCAAdaptiveSolver<double>;
 template Teuchos::RCP<LOCAAdaptiveSolver<double> > observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> > &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double> > &adjointModel,
     const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<double> > &observer);
 

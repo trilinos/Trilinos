@@ -44,7 +44,7 @@ if [[ "${existing_gitdist}" == "" ]] ; then
 fi
 
 function gitdist_repo_versions {
-  gitdist "$@" --dist-no-color log -1 --pretty=format:"%H [%cd] <%ae>%n%s" | grep -v "^$"
+  gitdist "$@" --dist-no-color log --color=never -1 --pretty=format:"%H [%cd] <%ae>%n%s" | grep -v "^$"
 }
 export -f gitdist_repo_versions
 
@@ -60,7 +60,7 @@ function gitdist_show_full_repo_state {
   echo
   echo "Repo remotes:"
   echo
-  gitdist --dist-no-color "$@" remote -v | grep "\(Git Repo\|push\)"
+  gitdist --dist-no-color "$@" remote -v | grep --color=never "\(Git Repo\|push\)"
 }
 export -f gitdist_show_full_repo_state
 
@@ -73,7 +73,7 @@ alias gitdist-show-full-repo-state=gitdist_show_full_repo_state
 
 # Setup for completions for git command and gitdist options commands
 complete -o default -o nospace -F _git \
-   -W "dist-repo-status --dist-help --dist-use-git --dist-repos --dist-not-repos --dist-version-file --dist-version-file2 --dist-no-color --dist-debug --dist-no-opt --dist-mod-only --dist-legend" \
+   -W "dist-repo-status --dist-help --dist-use-git --dist-repos --dist-not-repos --dist-version-file --dist-version-file2 --dist-no-color --dist-debug --dist-no-opt --dist-mod-only" \
    gitdist gitdist-mod
 complete -o default -o nospace \
    -W "--dist-use-git --dist-repos --dist-not-repos --dist-mod-only" \
@@ -82,5 +82,5 @@ complete -o default -o nospace \
    -W "--dist-use-git --dist-repos --dist-not-repos --dist-mod-only" \
    gitdist_show_full_repo_state gitdist-show-full-repo-state
 complete -o default -o nospace \
-   -W "--dist-repos --dist-not-repos --dist-mod-only" \
+   -W "--dist-repos --dist-not-repos --dist-mod-only --dist-legend" \
    gitdist-status

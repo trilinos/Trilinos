@@ -113,7 +113,7 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   Array<GO>  sendGIDs;
   Array<int> sendPIDs;
   Array<LO>  rNodesPerDim(3);
-  Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
+  Array<LO>  compositeToRegionLIDs(nodeMap->getLocalNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
   Array<GO>  interfaceCompositeGIDs, interfaceRegionGIDs;
@@ -240,9 +240,9 @@ void createProblem(const LocalOrdinal numDofsPerNode,
   // Debug output
   // std::cout << "p=" << comm->getRank() << " | regionMatVecLIDs: " << regionMatVecLIDs << std::endl;
   // std::cout << "p=" << comm->getRank() << " | source map element list: "
-  //           << regionInterfaceImporter->getSourceMap()->getNodeElementList() << std::endl;
+  //           << regionInterfaceImporter->getSourceMap()->getLocalElementList() << std::endl;
   // std::cout << "p=" << comm->getRank() << " | target map element list: "
-  //           << regionInterfaceImporter->getTargetMap()->getNodeElementList() << std::endl;
+  //           << regionInterfaceImporter->getTargetMap()->getLocalElementList() << std::endl;
 
 
 } // createProblem
@@ -346,10 +346,10 @@ void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   typename values_type::HostMirror compositeValues_h = Kokkos::create_mirror_view(compositeValues);
   Kokkos::deep_copy(compositeValues_h, compositeValues);
 
-  TEST_EQUALITY(compositeEntries_h.extent(0), refEntries.extent(0));
+  TEST_EQUALITY(compositeEntries_h.extent(0), refEntries_h.extent(0));
   TEST_EQUALITY(compositeValues_h.extent(0),  refValues_h.extent(0));
   for(LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
-    TEST_EQUALITY(compositeEntries_h(idx), refEntries(idx));
+    TEST_EQUALITY(compositeEntries_h(idx), refEntries_h(idx));
     TEST_FLOATING_EQUALITY(TST::magnitude(compositeValues_h(idx)),
                            TST::magnitude(refValues_h(idx)),
                            100*TMT::eps());
@@ -442,9 +442,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   if(numRanks == 1) {
     TEST_EQUALITY(regionMats->getGlobalNumRows(),     25);
     TEST_EQUALITY(regionMats->getGlobalNumCols(),     25);
-    TEST_EQUALITY(regionMats->getNodeNumRows(),       25);
+    TEST_EQUALITY(regionMats->getLocalNumRows(),       25);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 105);
-    TEST_EQUALITY(regionMats->getNodeNumEntries(),   105);
+    TEST_EQUALITY(regionMats->getLocalNumEntries(),   105);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrixDevice().graph.entries;
@@ -464,9 +464,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
     // All ranks will have the same number of rows/cols/entries
     TEST_EQUALITY(regionMats->getGlobalNumRows(),     36);
     TEST_EQUALITY(regionMats->getGlobalNumCols(),     36);
-    TEST_EQUALITY(regionMats->getNodeNumRows(),        9);
+    TEST_EQUALITY(regionMats->getLocalNumRows(),        9);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 132);
-    TEST_EQUALITY(regionMats->getNodeNumEntries(),    33);
+    TEST_EQUALITY(regionMats->getLocalNumEntries(),    33);
 
     ArrayRCP<LO> refEntries;
     ArrayRCP<SC> refValues;
@@ -637,10 +637,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   typename values_type::HostMirror compositeValues_h = Kokkos::create_mirror_view(compositeValues);
   Kokkos::deep_copy(compositeValues_h, compositeValues);
 
-  TEST_EQUALITY(compositeEntries_h.extent(0), refEntries.extent(0));
+  TEST_EQUALITY(compositeEntries_h.extent(0), refEntries_h.extent(0));
   TEST_EQUALITY(compositeValues_h.extent(0),  refValues_h.extent(0));
   for(LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
-    TEST_EQUALITY(compositeEntries_h(idx), refEntries(idx));
+    TEST_EQUALITY(compositeEntries_h(idx), refEntries_h(idx));
     TEST_FLOATING_EQUALITY(TST::magnitude(compositeValues_h(idx)),
                            TST::magnitude(refValues_h(idx)),
                            100*TMT::eps());
@@ -1134,9 +1134,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   if(numRanks == 1) {
     TEST_EQUALITY(regionMats->getGlobalNumRows(),    30);
     TEST_EQUALITY(regionMats->getGlobalNumCols(),    30);
-    TEST_EQUALITY(regionMats->getNodeNumRows(),      30);
+    TEST_EQUALITY(regionMats->getLocalNumRows(),      30);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 128);
-    TEST_EQUALITY(regionMats->getNodeNumEntries(),   128);
+    TEST_EQUALITY(regionMats->getLocalNumEntries(),   128);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrixDevice().graph.entries;
@@ -1160,8 +1160,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
 
     ArrayRCP<SC> refValues;
     if(myRank == 0) {
-      TEST_EQUALITY(regionMats->getNodeNumRows(),      9);
-      TEST_EQUALITY(regionMats->getNodeNumEntries(),   33);
+      TEST_EQUALITY(regionMats->getLocalNumRows(),      9);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(),   33);
       refValues.deepCopy(ArrayView<const SC>({4.0, -1.0, -1.0,
               -1.0, 4.0, -1.0, -1.0,
               -1.0, 2.0, -0.5,
@@ -1173,8 +1173,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -0.5, -0.5, 1.0}));
 
     } else if(myRank == 1) {
-      TEST_EQUALITY(regionMats->getNodeNumRows(),      12);
-      TEST_EQUALITY(regionMats->getNodeNumEntries(),   46);
+      TEST_EQUALITY(regionMats->getLocalNumRows(),      12);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(),   46);
       refValues.deepCopy(ArrayView<const SC>({2.0, -1.0, -0.5,
               -1.0, 4.0, -1.0, -1.0,
               -1.0, 4.0, -1.0, -1.0,
@@ -1189,8 +1189,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -1.0, -0.5, 2.0}));
 
     } else if(myRank == 2) {
-      TEST_EQUALITY(regionMats->getNodeNumRows(),      9);
-      TEST_EQUALITY(regionMats->getNodeNumEntries(),   33);
+      TEST_EQUALITY(regionMats->getLocalNumRows(),      9);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(),   33);
       refValues.deepCopy(ArrayView<const SC>({2.0, -0.5, -1.0,
               -0.5, 2.0, -0.5, -1.0,
               -0.5, 1.0, -0.5,
@@ -1202,8 +1202,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -0.5, -1.0, 2.0}));
 
     } else if(myRank == 3) {
-      TEST_EQUALITY(regionMats->getNodeNumRows(),      12);
-      TEST_EQUALITY(regionMats->getNodeNumEntries(),   46);
+      TEST_EQUALITY(regionMats->getLocalNumRows(),      12);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(),   46);
       refValues.deepCopy(ArrayView<const SC>({1.0, -0.5, -0.5,
               -0.5, 2.0, -0.5, -1.0,
               -0.5, 2.0, -0.5, -1.0,
@@ -1312,9 +1312,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   if((numRanks == 1) && (myRank == 0)) {
     TEST_EQUALITY(regionMats->getGlobalNumRows(),    120);
     TEST_EQUALITY(regionMats->getGlobalNumCols(),    120);
-    TEST_EQUALITY(regionMats->getNodeNumRows(),      120);
+    TEST_EQUALITY(regionMats->getLocalNumRows(),      120);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 692);
-    TEST_EQUALITY(regionMats->getNodeNumEntries(),   692);
+    TEST_EQUALITY(regionMats->getLocalNumEntries(),   692);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrixDevice().graph.entries;
@@ -1338,8 +1338,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
 
     ArrayRCP<SC> refValues;
     if(myRank == 0) {
-      TEST_EQUALITY(regionMats->getNodeNumRows(),     36);
-      TEST_EQUALITY(regionMats->getNodeNumEntries(), 186);
+      TEST_EQUALITY(regionMats->getLocalNumRows(),     36);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(), 186);
       refValues.deepCopy(ArrayView<const SC>({6.0, -1.0, -1.0, -1.0,
               -1.0, 6.0, -1.0, -1.0, -1.0,
               -1.0, 3.0, -0.5, -0.5,
@@ -1385,8 +1385,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 1) {
-      TEST_EQUALITY(regionMats->getNodeNumRows(),     48);
-      TEST_EQUALITY(regionMats->getNodeNumEntries(), 256);
+      TEST_EQUALITY(regionMats->getLocalNumRows(),     48);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(), 256);
       refValues.deepCopy(ArrayView<const SC>({3.0, -1.0, -0.5, -0.5,
               -1.0, 6.0, -1.0, -1.0, -1.0,
               -1.0, 6.0, -1.0, -1.0, -1.0,
@@ -1444,8 +1444,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 2) {
-      TEST_EQUALITY(regionMats->getNodeNumRows(),     36);
-      TEST_EQUALITY(regionMats->getNodeNumEntries(), 186);
+      TEST_EQUALITY(regionMats->getLocalNumRows(),     36);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(), 186);
       refValues.deepCopy(ArrayView<const SC>({3.0, -0.5, -1.0, -0.5,
               -0.5, 3.0, -0.5, -1.0, -0.5,
               -0.5, 1.5, -0.5, -0.25,
@@ -1491,8 +1491,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 3) {
-      TEST_EQUALITY(regionMats->getNodeNumRows(),     48);
-      TEST_EQUALITY(regionMats->getNodeNumEntries(), 256);
+      TEST_EQUALITY(regionMats->getLocalNumRows(),     48);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(), 256);
       refValues.deepCopy(ArrayView<const SC>({1.5, -0.5, -0.5, -0.25,
               -0.5, 3.0, -0.5, -1.0, -0.5,
               -0.5, 3.0, -0.5, -1.0, -0.5,

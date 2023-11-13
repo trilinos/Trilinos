@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -479,7 +479,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   /* check if I need to get the dimension of the elemental comm map */
   if (varidx[1] == -1) {
     /* Get the elemental comm map information */
-    if ((status = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid)) != NC_NOERR) {
+    if (nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid) != NC_NOERR) {
       varidx[1] = 0;
     }
     else {

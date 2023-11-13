@@ -120,19 +120,23 @@ expressionCopy(const Expr<S>& x)
 template <typename T, typename Storage> 
 OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl() :
-  expansion_(const_expansion_),
+  expansion_(),
   quad_expansion_(),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>)
 {
+  const_expansion_ = Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
+  expansion_ = const_expansion_;
 }
 
 template <typename T, typename Storage> 
 OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl(const typename OrthogPolyImpl<T,Storage>::value_type& x) :
-  expansion_(const_expansion_),
+  expansion_(),
   quad_expansion_(),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(Teuchos::null, 1, &x))
 {
+  const_expansion_ = Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
+  expansion_ = const_expansion_;
 }
 
 template <typename T, typename Storage> 
@@ -142,16 +146,18 @@ OrthogPolyImpl(const Teuchos::RCP<expansion_type>& expansion) :
   quad_expansion_(Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_)),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(expansion_->getBasis()))
 {
+  const_expansion_ = Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
 }
 
 template <typename T, typename Storage> 
 OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl(const Teuchos::RCP<expansion_type>& expansion,
-	   ordinal_type sz) :
+               ordinal_type sz) :
   expansion_(expansion),
   quad_expansion_(Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_)),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(expansion_->getBasis(), sz))
 {
+  const_expansion_ = Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
 }
 
 template <typename T, typename Storage> 
@@ -161,6 +167,7 @@ OrthogPolyImpl(const OrthogPolyImpl<T,Storage>& x) :
   quad_expansion_(x.quad_expansion_),
   th_(x.th_)
 {
+  const_expansion_ = Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
 }
 
 template <typename T, typename Storage> 
@@ -171,6 +178,7 @@ OrthogPolyImpl(const Expr<S>& x) :
   quad_expansion_(Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_)),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(expansion_->getBasis(), x.size()))
 {
+  const_expansion_ = Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
   expressionCopy(x);
 }
 
@@ -225,7 +233,7 @@ isEqualTo(const Expr<S>& x) const {
     if (x.size() != 1)
       return false;
     if ((expansion_ != const_expansion_) && 
-	(x.expansion_ != const_expansion_))
+	(x.expansion_ != x.const_expansion_))
       return false;
   }
   bool eq = true;

@@ -51,7 +51,6 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_Range1D.hpp>
 
@@ -61,6 +60,7 @@
 #  include "Tpetra_Map.hpp"
 #  include "Xpetra_TpetraMultiVector.hpp"
 #  include "Xpetra_TpetraVector.hpp"
+#  include "Tpetra_Details_Behavior.hpp"
 #endif
 #ifdef HAVE_XPETRA_EPETRA
 #  include "Xpetra_EpetraMap.hpp"
@@ -101,7 +101,6 @@ namespace {
   using std::ostream_iterator;
   using std::string;
 
-  using Teuchos::TypeTraits::is_same;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -358,7 +357,7 @@ namespace {
     // getDataNonConst(0).
     {
       Teuchos::ArrayRCP<Scalar> vcopy_data = vcopy->getDataNonConst (0);
-      if (map->getNodeNumElements () != 0) {
+      if (map->getLocalNumElements () != 0) {
         vcopy_data[0] += static_cast<magnitude_type> (10000.0);
       }
       // Destroy the view, so that the changes get written back to the Vector.
@@ -539,10 +538,10 @@ namespace {
 
     // Norms are not computed by Epetra_IntMultiVector so far
     #ifdef HAVE_XPETRA_EPETRA
-    if(!is_same<typename MV::node_type, Xpetra::EpetraNode>::value)
+    if(!std::is_same_v<typename MV::node_type, Xpetra::EpetraNode>)
     #endif
     {
-      if(!(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value)) {
+      if(!(std::is_same_v<typename MV::scalar_type, int> || std::is_same_v<typename MV::scalar_type, long long int>)) {
         out << "Running the norm tests!" << std::endl;
         // we zeroed it out in the constructor; all norms should be zero
         Array<Magnitude> norms(numVecs), zeros(numVecs);
@@ -571,7 +570,7 @@ namespace {
     ArrayRCP<const Scalar> replaceGlobalData = mvec.getData(5);
     ArrayRCP<const Scalar> sumIntoGlobalData = mvec.getData(6);
 
-    if(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value) {
+    if(std::is_same_v<typename MV::scalar_type, int> || std::is_same_v<typename MV::scalar_type, long long int>) {
       TEST_EQUALITY( replaceLocalData[testLID], testValue );
       TEST_EQUALITY( sumIntoLocalData[testLID], testValue + sumValue );
       TEST_EQUALITY( replaceGlobalData[testLID], testValue );
@@ -2464,15 +2463,17 @@ namespace {
       //TEST_THROW(m1n2.scale(rnd,m1n1), std::runtime_error); // abs  // TODO only available with Tpetra??
       //TEST_THROW(m1n2.scale(rnd,m2n2), std::runtime_error);
       TEST_THROW(m1n2.update(rnd,m1n1,rnd), std::runtime_error); // update(alpha,A,beta)
-      TEST_THROW(m1n2.update(rnd,m2n2,rnd), std::runtime_error);
-      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // update(alpha,A,beta,B,gamma) // A incompat
-      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is length            // A incompat
-      TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
-      TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
-      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
-      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
-      TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is numVecs           // A incompat
-      TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error);                                 // A incompat
+      if (::Tpetra::Details::Behavior::debug ()) {
+        TEST_THROW(m1n2.update(rnd,m2n2,rnd), std::runtime_error);
+        TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // update(alpha,A,beta,B,gamma) // A incompat
+        TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is length            // A incompat
+        TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
+        TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
+        TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
+        TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
+        TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is numVecs           // A incompat
+        TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error);                                 // A incompat
+      }
       TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
       TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
       TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat
@@ -2495,25 +2496,25 @@ namespace {
 
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
     {
-      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode> mx;
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
     }
 #endif
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
     {
-      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode> mx;
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
     }
 #endif
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_HIP)
     {
-      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosHIPWrapperNode> mm;
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mm;
       TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosHIPWrapperNode> mx;
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mx;
       TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
     }
 #endif
@@ -2529,10 +2530,10 @@ namespace {
     typedef typename MV::local_ordinal_type local_ordinal_type;
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
-    TEST_EQUALITY_CONST( (is_same< scalar_type         , Scalar        >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LocalOrdinal  >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GlobalOrdinal >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< node_type           , Node          >::value) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same_v< scalar_type         , Scalar        >) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same_v< local_ordinal_type  , LocalOrdinal  >) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same_v< global_ordinal_type , GlobalOrdinal >) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same_v< node_type           , Node          >) == true, true );
 #endif
   }
 

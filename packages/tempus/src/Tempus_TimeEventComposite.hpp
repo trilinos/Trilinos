@@ -125,8 +125,8 @@ public:
      *  next event minus the input time), and the constraining TimeEvent
      *  so additional details about the event can be queried.
      *
-     *  \param time      [in]  The input time.
-     *  \param timeEvent [out] Vector of constraining TimeEvent.
+     *  \param time       [in]  The input time.
+     *  \param timeEvents [out] Vector of constraining TimeEvent.
      *  \return The time to the next event.
      */
     virtual Scalar timeToNextEvent(Scalar time,
@@ -160,8 +160,8 @@ public:
      *  Additionally, output the constraining TimeEvents
      *  so additional details about the events can be queried.
      *
-     *  \param time      [in]  Input time.
-     *  \param timeEvent [out] Constraining TimeEvent.
+     *  \param time       [in]  Input time.
+     *  \param timeEvents [out] Constraining TimeEvent.
      *  \return Time of the next event.
      */
     virtual Scalar timeOfNextEvent(Scalar time,
@@ -291,8 +291,8 @@ public:
 
     /** \brief How many indices until the next event.
      *
-     *  \param index [in] The input index.
-     *  \param timeEvent [out] The constraining TimeEvent.
+     *  \param index      [in] The input index.
+     *  \param timeEvents [out] The constraining TimeEvent.
      *  \return The number of steps (indices) to the next event.
      */
     virtual int indexToNextEvent(int index,
@@ -324,8 +324,8 @@ public:
      *  default index (a index in the distant future) is returned.  If the
      *  input index is an event index, the index of the next event is returned.
      *
-     *  \param index     [in] Input index.
-     *  \param timeEvent [out] Vector of constraining TimeEvent(s).
+     *  \param index      [in] Input index.
+     *  \param timeEvents [out] Vector of constraining TimeEvent(s).
      *  \return Index of the next event.
      */
     virtual int indexOfNextEvent(int index,
@@ -627,7 +627,7 @@ createTimeEventComposite(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   using Teuchos::ParameterList;
 
   auto tec = Teuchos::rcp(new TimeEventComposite<Scalar>());
-  if (pList == Teuchos::null) return tec;  // Return default TimeEventComposite.
+  if (pList == Teuchos::null || pList->numParams() == 0) return tec;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     pList->get<std::string>("Type", "Composite") != "Composite",
@@ -681,7 +681,7 @@ createTimeEventComposite(Teuchos::RCP<Teuchos::ParameterList> const& pList)
         Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1, "createTimeEventComposite()");
-      *out << "Warning -- Unknown Time Event Type!\n"
+      *out << "Warning -- createTimeEventComposite() - Unknown Time Event Type!\n"
            << "'Type' = '" << timeEventType << "'\n"
            << "Should call add() with this "
            << "(app-specific?) Time Event.\n" << std::endl;
@@ -693,9 +693,11 @@ createTimeEventComposite(Teuchos::RCP<Teuchos::ParameterList> const& pList)
       Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1, "createTimeEventComposite()");
-    *out << "Warning -- Did not find a Tempus Time Events to create!\n"
-         << "Should call add() with this (app-specific?) "
-         << "Time Event.\n" << std::endl;
+    *out << "Warning -- createTimeEventComposite() - Did not\n"
+         << "           find/recognize any TimeEvents to create!\n"
+         << "           If there is a app-specific TimeEvent,\n"
+         << "           explicitly add it to this TimeEventComposite.\n"
+         << std::endl;
   }
 
   return tec;

@@ -44,11 +44,6 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }
 
-
-
-
-
-
 namespace {
 
 using stk::mesh::Bucket;
@@ -77,7 +72,7 @@ TEST( UnitTestGetBuckets, ExampleFixture )
 
   // Generate mesh
 
-  stk::mesh::fixtures::SelectorFixture fix ;
+  stk::mesh::fixtures::simple_fields::SelectorFixture fix ;
   fix.m_meta_data.commit();
 
   fix.m_bulk_data.modification_begin();

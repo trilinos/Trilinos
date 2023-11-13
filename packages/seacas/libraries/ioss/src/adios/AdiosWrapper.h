@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioad_AdiosWrapper_h
-#define IOSS_Ioad_AdiosWrapper_h
+#pragma once
+
+#include "ioad_export.h"
 
 #include <Ioss_PropertyManager.h>
 #include <adios2.h>
@@ -13,10 +14,10 @@
 
 namespace Ioad {
 
-  class AdiosWrapper : private adios2::ADIOS, private adios2::IO, private adios2::Engine
+  class IOAD_EXPORT AdiosWrapper : private adios2::ADIOS, private adios2::IO, private adios2::Engine
   {
   public:
-    AdiosWrapper(MPI_Comm communicator, const std::string &filename, bool is_input,
+    AdiosWrapper(Ioss_MPI_Comm communicator, const std::string &filename, bool is_input,
                  unsigned long rank, const Ioss::PropertyManager &properties);
     AdiosWrapper(AdiosWrapper &&wrapper);
     ~AdiosWrapper();
@@ -69,7 +70,7 @@ namespace Ioad {
     const std::string m_MetaSeparator{"::"};
 
     const int      m_Rank;
-    const MPI_Comm m_Communicator;
+    const Ioss_MPI_Comm m_Communicator;
 
     bool m_OpenStep;
     bool m_IsStreaming;
@@ -79,5 +80,3 @@ namespace Ioad {
 } // end of namespace Ioad
 
 #include "adios/AdiosWrapper.hpp"
-
-#endif

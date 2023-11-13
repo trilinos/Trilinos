@@ -75,9 +75,6 @@ namespace Amesos2 {
                                         Teuchos::RCP<Vector>       X,
                                         Teuchos::RCP<const Vector> B)
     : SolverCore<Amesos2::PardisoMKL,Matrix,Vector>(A, X, B) // instantiate superclass
-    , nzvals_()
-    , colind_()
-    , rowptr_()
     , n_(Teuchos::as<int_t>(this->globalNumRows_))
     , perm_(this->globalNumRows_)
     , nrhs_(0)
@@ -95,7 +92,7 @@ namespace Amesos2 {
     }
 
     // set single or double precision
-    if( Meta::is_same<solver_magnitude_type, PMKL::_REAL_t>::value ){
+    if constexpr ( std::is_same_v<solver_magnitude_type, PMKL::_REAL_t> ) {
       iparm_[27] = 1;           // single-precision
     } else {
       iparm_[27] = 0;           // double-precision
@@ -122,8 +119,8 @@ namespace Amesos2 {
       int_t phase = -1;         // release all internal solver memory
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
-                             nzvals_.getRawPtr(), rowptr_.getRawPtr(),
-                             colind_.getRawPtr(), perm_.getRawPtr(), &nrhs_, iparm_,
+                             nzvals_view_.data(), rowptr_view_.data(),
+                             colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
                              const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
     }
 
@@ -158,8 +155,8 @@ namespace Amesos2 {
 
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
-                             nzvals_.getRawPtr(), rowptr_.getRawPtr(),
-                             colind_.getRawPtr(), perm_.getRawPtr(), &nrhs_, iparm_,
+                             nzvals_view_.data(), rowptr_view_.data(),
+                             colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
                              const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
     }
 
@@ -190,8 +187,8 @@ namespace Amesos2 {
 
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
-                             nzvals_.getRawPtr(), rowptr_.getRawPtr(),
-                             colind_.getRawPtr(), perm_.getRawPtr(), &nrhs_, iparm_,
+                             nzvals_view_.data(), rowptr_view_.data(),
+                             colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
                              const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
     }
 
@@ -224,20 +221,12 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      if ( is_contiguous_ == true ) {
-        Util::get_1d_copy_helper<
-          MultiVecAdapter<Vector>,
-          solver_scalar_type>::do_get(B, bvals_(),
-              as<size_t>(ld_rhs),
-              ROOTED, this->rowIndexBase_);
-      }
-      else {
-        Util::get_1d_copy_helper<
-          MultiVecAdapter<Vector>,
-          solver_scalar_type>::do_get(B, bvals_(),
-              as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-      }
+      Util::get_1d_copy_helper<
+        MultiVecAdapter<Vector>,
+        solver_scalar_type>::do_get(B, bvals_(),
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
     }
 
     if( this->root_ ){
@@ -253,9 +242,9 @@ namespace Amesos2 {
                              const_cast<int_t*>(&mtype_),
                              const_cast<int_t*>(&phase),
                              const_cast<int_t*>(&n_),
-                             const_cast<solver_scalar_type*>(nzvals_.getRawPtr()),
-                             const_cast<int_t*>(rowptr_.getRawPtr()),
-                             const_cast<int_t*>(colind_.getRawPtr()),
+                             const_cast<solver_scalar_type*>(nzvals_view_.data()),
+                             const_cast<int_t*>(rowptr_view_.data()),
+                             const_cast<int_t*>(colind_view_.data()),
                              const_cast<int_t*>(perm_.getRawPtr()),
                              &nrhs_,
                              const_cast<int_t*>(iparm_),
@@ -272,20 +261,11 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    if ( is_contiguous_ == true ) {
       Util::put_1d_data_helper<
       MultiVecAdapter<Vector>,
         solver_scalar_type>::do_put(X, xvals_(),
-                                    as<size_t>(ld_rhs),
-                                    ROOTED);
-    }
-    else {
-      Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,
-        solver_scalar_type>::do_put(X, xvals_(),
-                                    as<size_t>(ld_rhs),
-                                    CONTIGUOUS_AND_ROOTED);
-    }
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
   }
 
     return( 0 );
@@ -518,9 +498,9 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
   if( current_phase == PREORDERING ) return( false );
 
   if( this->root_ ){
-    nzvals_.resize(this->globalNumNonZeros_);
-    colind_.resize(this->globalNumNonZeros_);
-    rowptr_.resize(this->globalNumRows_ + 1);
+    Kokkos::resize(nzvals_view_, this->globalNumNonZeros_);
+    Kokkos::resize(colind_view_, this->globalNumNonZeros_);
+    Kokkos::resize(rowptr_view_, this->globalNumRows_ + 1);
   }
 
   int_t nnz_ret = 0;
@@ -529,23 +509,15 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::get_crs_helper<
-        MatrixAdapter<Matrix>,
-        solver_scalar_type,
-        int_t,int_t>::do_get(this->matrixA_.ptr(),
-            nzvals_(), colind_(), rowptr_(),
-            nnz_ret, ROOTED, SORTED_INDICES, this->rowIndexBase_);
-    }
-    else {
-      Util::get_crs_helper<
-        MatrixAdapter<Matrix>,
-        solver_scalar_type,
-        int_t,int_t>::do_get(this->matrixA_.ptr(),
-            nzvals_(), colind_(), rowptr_(),
-            nnz_ret, CONTIGUOUS_AND_ROOTED, SORTED_INDICES, this->rowIndexBase_);
-    }
-}
+    Util::get_crs_helper_kokkos_view<
+      MatrixAdapter<Matrix>,
+      host_value_type_array, host_ordinal_type_array, host_size_type_array>::do_get(
+        this->matrixA_.ptr(),
+        nzvals_view_, colind_view_, rowptr_view_, nnz_ret, 
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        SORTED_INDICES,
+        this->rowIndexBase_);
+  }
 
   return( true );
 }

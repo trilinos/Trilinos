@@ -47,29 +47,29 @@ namespace
 class BalanceSettingsTester : public stk::balance::GraphCreationSettings
 {
 public:
-    BalanceSettingsTester(const std::string& decompMethod)
-      : localMethod(decompMethod) { }
-    virtual ~BalanceSettingsTester() = default;
+  BalanceSettingsTester(const std::string& decompMethod)
+    : localMethod(decompMethod) { }
+  virtual ~BalanceSettingsTester() = default;
 
-    virtual std::string getDecompMethod() const override { return localMethod; }
+  virtual std::string getDecompMethod() const override { return localMethod; }
 
 private:
-    const std::string& localMethod;
+  const std::string& localMethod;
 };
 
 using BlockWeightsMap = std::map<std::string, double>;
 
-class TestBlockWeights : public stk::unit_test_util::MeshFixture
+class TestBlockWeights : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
   void set_up_1x1x8_mesh_one_block()
   {
-    setup_mesh("generated:1x1x8", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:1x1x8", stk::mesh::BulkData::AUTO_AURA);
   }
 
   void set_up_1x1x8_mesh_two_blocks()
   {
-    setup_mesh("generated:1x1x8", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:1x1x8", stk::mesh::BulkData::AUTO_AURA);
     stk::mesh::Part * block2 = &get_meta().declare_part("block_2");
     move_elements_into_part(block2, {5, 6, 7, 8});
   }

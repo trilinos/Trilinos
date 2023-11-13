@@ -343,6 +343,8 @@ namespace Intrepid2 {
         
         constexpr int R = numTensorComponents - 1;
         
+        const int composedTransformRank = composedTransform_.rank();
+        
         for (int a_component=0; a_component < leftComponentSpan_; a_component++)
         {
           const int a = a_offset_ + a_component;
@@ -401,16 +403,35 @@ namespace Intrepid2 {
             
             if (composedTransform_.underlyingMatchesLogical())
             {
-              const auto & composedTransformView = composedTransform_.getUnderlyingView4();
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
-                pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-              });
+              if (composedTransformRank == 4) // (C,P,D,D)
+              {
+                const auto & composedTransformView = composedTransform_.getUnderlyingView4();
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
+              else // rank 2, then: (C,P)
+              {
+                const auto & composedTransformView = composedTransform_.getUnderlyingView2();
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
             }
             else
             {
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-              });
+              if  (composedTransformRank == 4) // (C,P,D,D)
+              {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
+              else  // rank 2, then: (C,P)
+              {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
             }
             
             // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
@@ -614,6 +635,8 @@ namespace Intrepid2 {
 //        int flopsPerCellMeasuresAccess = cellMeasures_.numTensorComponents() - 1;
         
         constexpr int R = numTensorComponents - 1;
+
+        const int composedTransformRank = composedTransform_.rank();
         
         for (int a_component=0; a_component < leftComponentSpan_; a_component++)
         {
@@ -658,9 +681,18 @@ namespace Intrepid2 {
               }
             });
             
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-              pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-            });
+            if (composedTransformRank == 4)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
+            else
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
             // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
             
             // synchronize threads
@@ -1250,6 +1282,8 @@ namespace Intrepid2 {
 
         // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
 
+        const int composedTransformRank = composedTransform_.rank();
+        
         // synchronize threads
         teamMember.team_barrier();
 
@@ -1324,10 +1358,19 @@ namespace Intrepid2 {
                 }
               }
             });
-                        
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-              pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-            });
+            
+            if (composedTransformRank == 4) // (C,P,D,D)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
+            else // (C,P)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
 
             // synchronize threads
             teamMember.team_barrier();
@@ -1490,7 +1533,7 @@ namespace Intrepid2 {
 //            const int numPointsFirst = leftFirstComponent.extent_int(1);
 //
 //            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-//              pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+//              pointWeights(pointOrdinal) = composedTransform_.access(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
 //            });
 //
 //            // synchronize threads
@@ -1608,7 +1651,7 @@ namespace Intrepid2 {
           for (int b_component=0; b_component < rightComponentSpan_; b_component++)
           {
 //            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-//              pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+//              pointWeights(pointOrdinal) = composedTransform_.access(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
 //            });
             flopCount += composedTransform_.extent_int(1) * cellMeasures_.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
 
@@ -1785,15 +1828,66 @@ namespace Intrepid2 {
         return shmem_size;
       }
     };
+  
+    template<class Scalar, class DeviceType>
+    class F_RefSpaceIntegral
+    {
+      ScalarView<Scalar,DeviceType> integral_;
+      Data<Scalar,DeviceType>  left_;
+      Data<Scalar,DeviceType>  right_;
+      Data<Scalar,DeviceType>  weights_;
+      ordinal_type dimSpan_;
+      ordinal_type leftRank_;
+      ordinal_type rightRank_;
+      ordinal_type numPoints_;
+    public:
+      F_RefSpaceIntegral(ScalarView<Scalar,DeviceType> integralView,
+                         Data<Scalar,DeviceType> left, Data<Scalar,DeviceType> right, Data<Scalar,DeviceType> weights,
+                         ordinal_type dimSpan)
+      :
+      integral_(integralView),
+      left_(left),
+      right_(right),
+      weights_(weights),
+      dimSpan_(dimSpan)
+      {
+        leftRank_  = left.rank();
+        rightRank_ = right.rank();
+        numPoints_ = weights.extent_int(0);
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()( const ordinal_type & i, const ordinal_type & j ) const
+      {
+        Scalar refSpaceIntegral = 0.0;
+        for (int ptOrdinal=0; ptOrdinal<numPoints_; ptOrdinal++)
+        {
+          const Scalar & weight = weights_(ptOrdinal);
+          for (int a=0; a<dimSpan_; a++)
+          {
+            const Scalar &  leftValue = ( leftRank_ == 2) ?  left_(i,ptOrdinal) :  left_(i,ptOrdinal,a);
+            const Scalar & rightValue = (rightRank_ == 2) ? right_(j,ptOrdinal) : right_(j,ptOrdinal,a);
+            refSpaceIntegral += leftValue * rightValue * weight;
+          }
+        }
+        integral_(i,j) = refSpaceIntegral;
+      }
+    };
   }
 
 template<typename DeviceType>
 template<class Scalar>
-Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const TransformedVectorData<Scalar,DeviceType> vectorDataLeft,
+Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
                                                                            const TensorData<Scalar,DeviceType> cellMeasures,
-                                                                           const TransformedVectorData<Scalar,DeviceType> vectorDataRight)
+                                                                           const TransformedBasisValues<Scalar,DeviceType> vectorDataRight)
 {
   // allocates a (C,F,F) container for storing integral data
+  
+  // ordinal filter is used for Serendipity basis; we don't yet support Serendipity for sum factorization.
+  // (when we do, the strategy will likely be to do sum factorized assembly and then filter the result).
+  const bool  leftHasOrdinalFilter =  vectorDataLeft.basisValues().ordinalFilter().extent_int(0) > 0;
+  const bool rightHasOrdinalFilter = vectorDataRight.basisValues().ordinalFilter().extent_int(0) > 0;
+  TEUCHOS_TEST_FOR_EXCEPTION(leftHasOrdinalFilter || rightHasOrdinalFilter, std::invalid_argument, "Ordinal filters for BasisValues are not yet supported by IntegrationTools");
   
   // determine cellDataExtent and variation type.  We currently support CONSTANT, MODULAR, and GENERAL as possible output variation types, depending on the inputs.
   // If cellMeasures has non-trivial tensor structure, the rank-1 cell Data object is the first component.
@@ -1804,8 +1898,15 @@ Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const
   const auto leftTransform = vectorDataLeft.transform();
   
   DimensionInfo combinedCellDimInfo = cellMeasureData.getDimensionInfo(CELL_DIM);
-  combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo,  vectorDataLeft.transform().getDimensionInfo(CELL_DIM));
-  combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataRight.transform().getDimensionInfo(CELL_DIM));
+  // transforms may be invalid, indicating an identity transform.  If so, it will not constrain the output at all.
+  if (vectorDataLeft.transform().isValid())
+  {
+    combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataLeft.transform().getDimensionInfo(CELL_DIM));
+  }
+  if (vectorDataRight.transform().isValid())
+  {
+    combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataRight.transform().getDimensionInfo(CELL_DIM));
+  }
 
   DataVariationType cellVariationType = combinedCellDimInfo.variationType;
   int cellDataExtent                  = combinedCellDimInfo.dataExtent;
@@ -1834,13 +1935,19 @@ Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const
 //! 2. arbitrary mesh: cellMeasures has trivial tensor product structure (one tensorial component).
 template<typename DeviceType>
 template<class Scalar>
-void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, const TransformedVectorData<Scalar,DeviceType> & vectorDataLeft,
+void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValues<Scalar,DeviceType> & basisValuesLeft,
                                              const TensorData<Scalar,DeviceType> & cellMeasures,
-                                             const TransformedVectorData<Scalar,DeviceType> & vectorDataRight, const bool sumInto,
+                                             const TransformedBasisValues<Scalar,DeviceType> & basisValuesRight, const bool sumInto,
                                              double* approximateFlops)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
 
+  // ordinal filter is used for Serendipity basis; we don't yet support Serendipity for sum factorization.
+  // (when we do, the strategy will likely be to do sum factorized assembly and then filter the result).
+  const bool  leftHasOrdinalFilter =  basisValuesLeft.basisValues().ordinalFilter().extent_int(0) > 0;
+  const bool rightHasOrdinalFilter = basisValuesRight.basisValues().ordinalFilter().extent_int(0) > 0;
+  TEUCHOS_TEST_FOR_EXCEPTION(leftHasOrdinalFilter || rightHasOrdinalFilter, std::invalid_argument, "Ordinal filters for BasisValues are not yet supported by IntegrationTools");
+  
   if (approximateFlops != NULL)
   {
     *approximateFlops = 0;
@@ -1855,68 +1962,89 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
   }
   
   const int cellDataExtent = integrals.getDataExtent(0);
-  const int numFieldsLeft  = vectorDataLeft.numFields();
-  const int numFieldsRight = vectorDataRight.numFields();
-  const int spaceDim       = vectorDataLeft.spaceDim();
+  const int numFieldsLeft  = basisValuesLeft.numFields();
+  const int numFieldsRight = basisValuesRight.numFields();
+  const int spaceDim       = basisValuesLeft.spaceDim();
   
-  INTREPID2_TEST_FOR_EXCEPTION(vectorDataLeft.spaceDim() != vectorDataRight.spaceDim(), std::invalid_argument, "vectorDataLeft and vectorDataRight must agree on the space dimension");
+  INTREPID2_TEST_FOR_EXCEPTION(basisValuesLeft.spaceDim() != basisValuesRight.spaceDim(), std::invalid_argument, "vectorDataLeft and vectorDataRight must agree on the space dimension");
   
-  // TODO: add more checks against validity of inputs
+  const int leftFamilyCount  =  basisValuesLeft.basisValues().numFamilies();
+  const int rightFamilyCount = basisValuesRight.basisValues().numFamilies();
   
   // we require that the number of tensor components in the vectors are the same for each vector entry
   // this is not strictly necessary, but it makes implementation easier, and we don't at present anticipate other use cases
   int numTensorComponentsLeft = -1;
-  const auto &refVectorLeft   = vectorDataLeft.vectorData();
-  int numFamiliesLeft         = refVectorLeft.numFamilies();
-  int numVectorComponentsLeft = refVectorLeft.numComponents();
-  Kokkos::Array<int,7> maxFieldsForComponentLeft  {0,0,0,0,0,0,0};
-  Kokkos::Array<int,7> maxFieldsForComponentRight {0,0,0,0,0,0,0};
-  for (int familyOrdinal=0; familyOrdinal<numFamiliesLeft; familyOrdinal++)
+  const bool isVectorValued = basisValuesLeft.vectorData().isValid();
+  if (isVectorValued)
   {
-    for (int vectorComponent=0; vectorComponent<numVectorComponentsLeft; vectorComponent++)
+    const bool rightIsVectorValued = basisValuesRight.vectorData().isValid();
+    INTREPID2_TEST_FOR_EXCEPTION(!rightIsVectorValued, std::invalid_argument, "left and right must either both be vector-valued, or both scalar-valued");
+    const auto &refVectorLeft   = basisValuesLeft.vectorData();
+    int numFamiliesLeft         = refVectorLeft.numFamilies();
+    int numVectorComponentsLeft = refVectorLeft.numComponents();
+    Kokkos::Array<int,7> maxFieldsForComponentLeft  {0,0,0,0,0,0,0};
+    Kokkos::Array<int,7> maxFieldsForComponentRight {0,0,0,0,0,0,0};
+    for (int familyOrdinal=0; familyOrdinal<numFamiliesLeft; familyOrdinal++)
     {
-      const TensorData<Scalar,DeviceType> &tensorData = refVectorLeft.getComponent(familyOrdinal,vectorComponent);
-      if (tensorData.numTensorComponents() > 0)
+      for (int vectorComponent=0; vectorComponent<numVectorComponentsLeft; vectorComponent++)
       {
-        if (numTensorComponentsLeft == -1)
+        const TensorData<Scalar,DeviceType> &tensorData = refVectorLeft.getComponent(familyOrdinal,vectorComponent);
+        if (tensorData.numTensorComponents() > 0)
         {
-          numTensorComponentsLeft = tensorData.numTensorComponents();
-        }
-        INTREPID2_TEST_FOR_EXCEPTION(numVectorComponentsLeft != tensorData.numTensorComponents(), std::invalid_argument, "Each valid entry in vectorDataLeft must have the same number of tensor components as every other");
-        for (int r=0; r<numTensorComponentsLeft; r++)
-        {
-          maxFieldsForComponentLeft[r] = std::max(tensorData.getTensorComponent(r).extent_int(0), maxFieldsForComponentLeft[r]);
+          if (numTensorComponentsLeft == -1)
+          {
+            numTensorComponentsLeft = tensorData.numTensorComponents();
+          }
+          INTREPID2_TEST_FOR_EXCEPTION(numVectorComponentsLeft != tensorData.numTensorComponents(), std::invalid_argument, "Each valid entry in vectorDataLeft must have the same number of tensor components as every other");
+          for (int r=0; r<numTensorComponentsLeft; r++)
+          {
+            maxFieldsForComponentLeft[r] = std::max(tensorData.getTensorComponent(r).extent_int(0), maxFieldsForComponentLeft[r]);
+          }
         }
       }
     }
-  }
-  int numTensorComponentsRight = -1;
-  const auto &refVectorRight   = vectorDataRight.vectorData();
-  int numFamiliesRight         = refVectorRight.numFamilies();
-  int numVectorComponentsRight = refVectorRight.numComponents();
-  for (int familyOrdinal=0; familyOrdinal<numFamiliesRight; familyOrdinal++)
-  {
-    for (int vectorComponent=0; vectorComponent<numVectorComponentsRight; vectorComponent++)
+    int numTensorComponentsRight = -1;
+    const auto &refVectorRight   = basisValuesRight.vectorData();
+    int numFamiliesRight         = refVectorRight.numFamilies();
+    int numVectorComponentsRight = refVectorRight.numComponents();
+    for (int familyOrdinal=0; familyOrdinal<numFamiliesRight; familyOrdinal++)
     {
-      const auto &tensorData = refVectorRight.getComponent(familyOrdinal,vectorComponent);
-      if (tensorData.numTensorComponents() > 0)
+      for (int vectorComponent=0; vectorComponent<numVectorComponentsRight; vectorComponent++)
       {
-        if (numTensorComponentsRight == -1)
+        const auto &tensorData = refVectorRight.getComponent(familyOrdinal,vectorComponent);
+        if (tensorData.numTensorComponents() > 0)
         {
-          numTensorComponentsRight = tensorData.numTensorComponents();
-        }
-        INTREPID2_TEST_FOR_EXCEPTION(numVectorComponentsRight != tensorData.numTensorComponents(), std::invalid_argument, "Each valid entry in vectorDataRight must have the same number of tensor components as every other");
-        for (int r=0; r<numTensorComponentsRight; r++)
-        {
-          maxFieldsForComponentRight[r] = std::max(tensorData.getTensorComponent(r).extent_int(0), maxFieldsForComponentRight[r]);
+          if (numTensorComponentsRight == -1)
+          {
+            numTensorComponentsRight = tensorData.numTensorComponents();
+          }
+          INTREPID2_TEST_FOR_EXCEPTION(numVectorComponentsRight != tensorData.numTensorComponents(), std::invalid_argument, "Each valid entry in vectorDataRight must have the same number of tensor components as every other");
+          for (int r=0; r<numTensorComponentsRight; r++)
+          {
+            maxFieldsForComponentRight[r] = std::max(tensorData.getTensorComponent(r).extent_int(0), maxFieldsForComponentRight[r]);
+          }
         }
       }
     }
+    INTREPID2_TEST_FOR_EXCEPTION(numVectorComponentsLeft != numVectorComponentsRight, std::invalid_argument, "Left and right vector entries must have the same number of tensorial components");
   }
-  INTREPID2_TEST_FOR_EXCEPTION(numVectorComponentsLeft != numVectorComponentsRight, std::invalid_argument, "Left and right vector entries must have the same number of tensorial components");
+  else
+  {
+    numTensorComponentsLeft = basisValuesLeft.basisValues().tensorData(0).numTensorComponents(); // family ordinal 0
+    for (int familyOrdinal = 0; familyOrdinal < leftFamilyCount; familyOrdinal++)
+    {
+      INTREPID2_TEST_FOR_EXCEPTION(basisValuesLeft.basisValues().tensorData(familyOrdinal).numTensorComponents() != numTensorComponentsLeft, std::invalid_argument, "All families must match in the number of tensor components");
+    }
+    
+    // check that right tensor component count also agrees
+    for (int familyOrdinal=0; familyOrdinal< rightFamilyCount; familyOrdinal++)
+    {
+      INTREPID2_TEST_FOR_EXCEPTION(basisValuesRight.basisValues().tensorData(familyOrdinal).numTensorComponents() != numTensorComponentsLeft, std::invalid_argument, "Right families must match left in the number of tensor components");
+    }
+  }
   const int numPointTensorComponents = cellMeasures.numTensorComponents() - 1;
     
-  if ((numPointTensorComponents == numTensorComponentsLeft) && vectorDataLeft.axisAligned() && vectorDataRight.axisAligned())
+  if ((numPointTensorComponents == numTensorComponentsLeft) && basisValuesLeft.axisAligned() && basisValuesRight.axisAligned())
   {
     // cellMeasures is a non-trivial tensor product, and the pullbacks are all diagonals.
     
@@ -1932,86 +2060,6 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
       pointDimensions[r] = cellMeasures.getTensorComponent(r+1).extent_int(0);
     }
 
-    Kokkos::Array< Kokkos::Array<ScalarView<Scalar,DeviceType>, Parameters::MaxTensorComponents>, Parameters::MaxTensorComponents> componentIntegrals; // these are reference-space integrals; no Jacobians or cell measures applied as yet
-    
-    for (int r=0; r<numPointTensorComponents; r++)
-    {
-      for (int d=0; d<spaceDim; d++)
-      {
-        /*
-         Four cases to consider:
-         1. Both vector data containers are filled with axial components - first component in 3D has form (f,0,0), second (0,f,0), third (0,0,f).
-         2. Both vector data containers have arbitrary components - in 3D: (f1,f2,f3) where f1 is given by the first component, f2 by the second, f3 by the third.
-         3. First container is axial, second arbitrary.
-         4. First is arbitrary, second axial.
-         
-         But note that in all four cases, the structure of the integral is the same: you have three vector component integrals that get summed.  The actual difference between
-         the cases does not show up in the reference-space integrals here, but in the accumulation in physical space below, where the tensor field numbering comes into play.
-         
-         The choice between axial and arbitrary affects the way the fields are numbered; the arbitrary components' indices refer to the same vector function, so they correspond,
-         while the axial components refer to distinct scalar functions, so their numbering in the data container is cumulative.
-        */
-        
-        const Data<Scalar,DeviceType> &  leftComponent = vectorDataLeft.vectorData().getComponent(d).getTensorComponent(r);
-        const Data<Scalar,DeviceType> & rightComponent = vectorDataRight.vectorData().getComponent(d).getTensorComponent(r);
-        
-        // It may be worth considering the possibility that some of these components point to the same data -- if so, we could possibly get better data locality by making the corresponding componentIntegral entries point to the same location as well.  (And we could avoid some computations here.)
-        
-        const Data<Scalar,DeviceType> & quadratureWeights = cellMeasures.getTensorComponent(r+1);
-        
-        int leftComponentCount  =  leftComponent.extent_int(0);
-        int rightComponentCount = rightComponent.extent_int(0);
-        
-        const bool allocateFadStorage = !std::is_pod<Scalar>::value;
-        if (allocateFadStorage)
-        {
-          auto fad_size_output = dimension_scalar(integrals.getUnderlyingView());
-          componentIntegrals[r][d] = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftComponentCount, rightComponentCount, fad_size_output);
-        }
-        else
-        {
-          componentIntegrals[r][d] = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftComponentCount, rightComponentCount);
-        }
-        
-        Kokkos::deep_copy(componentIntegrals[r][d], 0.0); // initialize
-        
-        const int & numPoints = pointDimensions[r];
-        const int  leftComponentRank =  leftComponent.rank();
-        const int rightComponentRank = rightComponent.rank();
-        
-        const int  leftComponentDimSpan =  leftComponent.extent_int(2);
-        const int rightComponentDimSpan = rightComponent.extent_int(2);
-        INTREPID2_TEST_FOR_EXCEPTION(( leftComponentDimSpan != rightComponentDimSpan), std::invalid_argument, "left and right components must span the same number of dimensions.");
-        
-//        // TODO: add support for cases where the component ranks are 3, and spaceDim > 1.
-//        INTREPID2_TEST_FOR_EXCEPTION(( leftComponentRank == 3) && ( leftComponent.extent_int(2) > 1), std::invalid_argument, "spaceDim > 1 not yet supported by this integrate() use case.");
-//        INTREPID2_TEST_FOR_EXCEPTION((rightComponentRank == 3) && (rightComponent.extent_int(2) > 1), std::invalid_argument, "spaceDim > 1 not yet supported by this integrate() use case.");
-        
-        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{leftComponentCount,rightComponentCount});
-        
-        for (int a=0; a<leftComponentDimSpan; a++)
-        {
-          Kokkos::parallel_for("compute componentIntegrals", policy,
-          KOKKOS_LAMBDA (const int &i, const int &j) {
-            Scalar refSpaceIntegral = 0.0;
-            for (int ptOrdinal=0; ptOrdinal<numPoints; ptOrdinal++)
-            {
-              const Scalar &  leftValue = ( leftComponentRank == 2) ?  leftComponent(i,ptOrdinal) :  leftComponent(i,ptOrdinal,a);
-              const Scalar & rightValue = (rightComponentRank == 2) ? rightComponent(j,ptOrdinal) : rightComponent(j,ptOrdinal,a);
-              refSpaceIntegral += leftValue * rightValue * quadratureWeights(ptOrdinal);
-            }
-            componentIntegrals[r][d](i,j) = refSpaceIntegral;
-          });
-        }
-        
-        if (approximateFlops != NULL)
-        {
-          *approximateFlops += leftComponentCount*rightComponentCount*numPoints*(3); // two multiplies, one add in innermost loop
-        }
-      }
-    }
-    ExecutionSpace().fence(); // ensure that kernels launched above have completed before the kernels below launch.
-
     // only one of these will be a valid container:
     Kokkos::View<Scalar**,  DeviceType> integralView2;
     Kokkos::View<Scalar***, DeviceType> integralView3;
@@ -2023,21 +2071,16 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
     {
       integralView2 = integrals.getUnderlyingView2();
     }
-    
-    const int leftFamilyCount  =  vectorDataLeft.vectorData().numFamilies();
-    const int rightFamilyCount = vectorDataRight.vectorData().numFamilies();
-    
     for (int leftFamilyOrdinal=0; leftFamilyOrdinal<leftFamilyCount; leftFamilyOrdinal++)
     {
-      bool haveLaunchedContributionToLeftFamily = false; // for tracking whether we need a fence() below
-      
       int a_offset = 0; // left vector component offset
-      int leftFieldOffset = vectorDataLeft.vectorData().familyFieldOrdinalOffset(leftFamilyOrdinal);
+      int leftFieldOffset = basisValuesLeft.basisValues().familyFieldOrdinalOffset(leftFamilyOrdinal);
       
-      const int leftVectorComponentCount = vectorDataLeft.vectorData().numComponents();
+      const int leftVectorComponentCount = isVectorValued ? basisValuesLeft.vectorData().numComponents() : 1;
       for (int leftVectorComponentOrdinal = 0; leftVectorComponentOrdinal < leftVectorComponentCount; leftVectorComponentOrdinal++)
       {
-        const auto & leftComponent = vectorDataLeft.vectorData().getComponent(leftFamilyOrdinal, leftVectorComponentOrdinal);
+        TensorData<Scalar,DeviceType> leftComponent = isVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftVectorComponentOrdinal)
+                                                                     : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
         if (!leftComponent.isValid())
         {
           a_offset++; // empty components are understood to take up one dimension
@@ -2049,15 +2092,14 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
         
         for (int rightFamilyOrdinal=0; rightFamilyOrdinal<rightFamilyCount; rightFamilyOrdinal++)
         {
-          bool haveLaunchedContributionToRightFamily = false; // for tracking whether we need a fence() below
-          
           int b_offset = 0; // right vector component offset
-          int rightFieldOffset = vectorDataRight.vectorData().familyFieldOrdinalOffset(rightFamilyOrdinal);
+          int rightFieldOffset = basisValuesRight.vectorData().familyFieldOrdinalOffset(rightFamilyOrdinal);
 
-          const int rightVectorComponentCount = vectorDataRight.vectorData().numComponents();
+          const int rightVectorComponentCount = isVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
           for (int rightVectorComponentOrdinal = 0; rightVectorComponentOrdinal < rightVectorComponentCount; rightVectorComponentOrdinal++)
           {
-            const auto & rightComponent = vectorDataRight.vectorData().getComponent(rightFamilyOrdinal, rightVectorComponentOrdinal);
+            TensorData<Scalar,DeviceType> rightComponent = isVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightVectorComponentOrdinal)
+                                                                          : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
             if (!rightComponent.isValid())
             {
               b_offset++; // empty components are understood to take up one dimension
@@ -2082,13 +2124,70 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
             const int d_start = a_offset;
             const int d_end   = d_start + leftDimSpan;
             
-            if (haveLaunchedContributionToLeftFamily && haveLaunchedContributionToRightFamily)
+            using ComponentIntegralsArray = Kokkos::Array< Kokkos::Array<ScalarView<Scalar,DeviceType>, Parameters::MaxTensorComponents>, Parameters::MaxTensorComponents>;
+            ComponentIntegralsArray componentIntegrals;
+            for (int r=0; r<numPointTensorComponents; r++)
             {
-              // accumulation to the same block in integrals container; fence to ensure that that has completed before the next kernel is launched
-              ExecutionSpace().fence();
-            }
-            haveLaunchedContributionToLeftFamily  = true;
-            haveLaunchedContributionToRightFamily = true;
+              /*
+               Four vector data cases to consider:
+               1. Both vector data containers are filled with axial components - first component in 3D has form (f,0,0), second (0,f,0), third (0,0,f).
+               2. Both vector data containers have arbitrary components - in 3D: (f1,f2,f3) where f1 is given by the first component, f2 by the second, f3 by the third.
+               3. First container is axial, second arbitrary.
+               4. First is arbitrary, second axial.
+               
+               But note that in all four cases, the structure of the integral is the same: you have three vector component integrals that get summed.  The actual difference between
+               the cases does not show up in the reference-space integrals here, but in the accumulation in physical space below, where the tensor field numbering comes into play.
+               
+               The choice between axial and arbitrary affects the way the fields are numbered; the arbitrary components' indices refer to the same vector function, so they correspond,
+               while the axial components refer to distinct scalar functions, so their numbering in the data container is cumulative.
+              */
+                
+              Data<Scalar,DeviceType>  quadratureWeights = cellMeasures.getTensorComponent(r+1);
+              const int numPoints = pointDimensions[r];
+                
+                // It may be worth considering the possibility that some of these components point to the same data -- if so, we could possibly get better data locality by making the corresponding componentIntegral entries point to the same location as well.  (And we could avoid some computations here.)
+        
+              Data<Scalar,DeviceType>  leftTensorComponent =  leftComponent.getTensorComponent(r);
+              Data<Scalar,DeviceType> rightTensorComponent = rightComponent.getTensorComponent(r);
+              
+              const int  leftTensorComponentDimSpan =  leftTensorComponent.extent_int(2);
+              const int  leftTensorComponentFields  =  leftTensorComponent.extent_int(0);
+              const int rightTensorComponentDimSpan = rightTensorComponent.extent_int(2);
+              const int rightTensorComponentFields  = rightTensorComponent.extent_int(0);
+              
+              INTREPID2_TEST_FOR_EXCEPTION(( leftTensorComponentDimSpan != rightTensorComponentDimSpan), std::invalid_argument, "left and right components must span the same number of dimensions.");
+            
+              for (int d=d_start; d<d_end; d++)
+              {
+                ScalarView<Scalar,DeviceType> componentIntegralView;
+                
+                const bool allocateFadStorage = !std::is_pod<Scalar>::value;
+                if (allocateFadStorage)
+                {
+                  auto fad_size_output = dimension_scalar(integrals.getUnderlyingView());
+                  componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields, fad_size_output);
+                }
+                else
+                {
+                  componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields);
+                }
+            
+                auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{leftTensorComponentFields,rightTensorComponentFields});
+                
+                Impl::F_RefSpaceIntegral<Scalar, DeviceType> refSpaceIntegralFunctor(componentIntegralView, leftTensorComponent, rightTensorComponent, quadratureWeights,
+                                                                                     leftTensorComponentDimSpan);
+                Kokkos::parallel_for("compute componentIntegrals", policy, refSpaceIntegralFunctor);
+                
+                componentIntegrals[r][d] = componentIntegralView;
+                
+                if (approximateFlops != NULL)
+                {
+                  *approximateFlops += leftTensorComponentFields*rightTensorComponentFields*numPoints*(3); // two multiplies, one add in innermost loop
+                }
+              } // d
+            } // r
+            
+            ExecutionSpace().fence();
             
             Kokkos::Array<int,3> upperBounds {cellDataExtent,leftComponentFieldCount,rightComponentFieldCount}; // separately declared in effort to get around Intel 17.0.1 compiler weirdness.
             Kokkos::Array<int,3> lowerBounds {0,0,0};
@@ -2107,8 +2206,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
               Scalar integralSum = 0.0;
               for (int d=d_start; d<d_end; d++)
               {
-                const Scalar & transformLeft_d  =  vectorDataLeft.transformWeight(cellDataOrdinal,0,d,d);
-                const Scalar & transformRight_d = vectorDataRight.transformWeight(cellDataOrdinal,0,d,d);
+                const Scalar & transformLeft_d  =  basisValuesLeft.transformWeight(cellDataOrdinal,0,d,d);
+                const Scalar & transformRight_d = basisValuesRight.transformWeight(cellDataOrdinal,0,d,d);
                 
                 const Scalar & leftRightTransform_d = transformLeft_d * transformRight_d;
         //            approximateFlopCount++;
@@ -2136,11 +2235,9 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 }
               }
             });
-            
             b_offset += rightDimSpan;
-          } // rightVectorComponentOrdinal loop
-        } // rightFamilyOrdinal loop
-        
+          } // rightVectorComponentOrdinal
+        } // rightFamilyOrdinal
         a_offset += leftDimSpan;
       } // leftVectorComponentOrdinal
     } // leftFamilyOrdinal
@@ -2154,28 +2251,74 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
   else // general case (not axis-aligned + affine tensor-product structure)
   {
     // prepare composed transformation matrices
-    const Data<Scalar,DeviceType> & leftTransform  = vectorDataLeft.transform();
-    const Data<Scalar,DeviceType> & rightTransform = vectorDataRight.transform();
+    const Data<Scalar,DeviceType> & leftTransform  = basisValuesLeft.transform();
+    const Data<Scalar,DeviceType> & rightTransform = basisValuesRight.transform();
     const bool transposeLeft  = true;
     const bool transposeRight = false;
 //    auto timer = Teuchos::TimeMonitor::getNewTimer("mat-mat");
 //    timer->start();
-    Data<Scalar,DeviceType> composedTransform = leftTransform.allocateMatMatResult(transposeLeft, leftTransform, transposeRight, rightTransform);
-    composedTransform.storeMatMat(transposeLeft, leftTransform, transposeRight, rightTransform);
+    // transforms can be matrices -- (C,P,D,D): rank 4 -- or scalar weights -- (C,P): rank 2
+    const bool matrixTransform = (leftTransform.rank() == 4) || (rightTransform.rank() == 4);
+    Data<Scalar,DeviceType> composedTransform;
+    // invalid/empty transforms are used when the identity is intended.
+    if (leftTransform.isValid() && rightTransform.isValid())
+    {
+      if (matrixTransform)
+      {
+        composedTransform = leftTransform.allocateMatMatResult(transposeLeft, leftTransform, transposeRight, rightTransform);
+        composedTransform.storeMatMat(transposeLeft, leftTransform, transposeRight, rightTransform);
+        
+        // if the composedTransform matrices are full, the following is a good estimate.  If they have some diagonal portions, this will overcount.
+        if (approximateFlops != NULL)
+        {
+          *approximateFlops += composedTransform.getUnderlyingViewSize() * (spaceDim - 1) * 2;
+        }
+      }
+      else
+      {
+        composedTransform = leftTransform.allocateInPlaceCombinationResult(leftTransform, rightTransform);
+        composedTransform.storeInPlaceProduct(leftTransform, rightTransform);
+        
+        // re-cast composedTranform as a rank 4 (C,P,D,D) object -- a 1 x 1 matrix at each (C,P).
+        const int newRank   = 4;
+        auto extents        = composedTransform.getExtents();
+        auto variationTypes = composedTransform.getVariationTypes();
+        composedTransform = composedTransform.shallowCopy(newRank, extents, variationTypes);
+        if (approximateFlops != NULL)
+        {
+          *approximateFlops += composedTransform.getUnderlyingViewSize(); // one multiply per entry
+        }
+      }
+    }
+    else if (leftTransform.isValid())
+    {
+      // rightTransform is the identity
+      composedTransform = leftTransform;
+    }
+    else if (rightTransform.isValid())
+    {
+      // leftTransform is the identity
+      composedTransform = rightTransform;
+    }
+    else
+    {
+      // both left and right transforms are identity
+      Kokkos::Array<ordinal_type,4> extents {basisValuesLeft.numCells(),basisValuesLeft.numPoints(),spaceDim,spaceDim};
+      Kokkos::Array<DataVariationType,4> variationTypes {CONSTANT,CONSTANT,BLOCK_PLUS_DIAGONAL,BLOCK_PLUS_DIAGONAL};
+      
+      Kokkos::View<Scalar*,DeviceType> identityUnderlyingView("Intrepid2::FST::integrate() - identity view",spaceDim);
+      Kokkos::deep_copy(identityUnderlyingView, 1.0);
+      composedTransform = Data<Scalar,DeviceType>(identityUnderlyingView,extents,variationTypes);
+    }
+    
 //    timer->stop();
 //    std::cout << "Completed mat-mat in " << timer->totalElapsedTime() << " seconds.\n";
 //    timer->reset();
     
-    // if the composedTransform matrices are full, the following is a good estimate.  If they have some diagonal portions, this will overcount.
-    if (approximateFlops != NULL)
-    {
-      *approximateFlops += composedTransform.getUnderlyingViewSize() * (spaceDim - 1) * 2;
-    }
-    
-    const int leftFamilyCount     = vectorDataLeft. vectorData().numFamilies();
-    const int rightFamilyCount    = vectorDataRight.vectorData().numFamilies();
-    const int leftComponentCount  = vectorDataLeft. vectorData().numComponents();
-    const int rightComponentCount = vectorDataRight.vectorData().numComponents();
+    const int leftFamilyCount     = basisValuesLeft. basisValues().numFamilies();
+    const int rightFamilyCount    = basisValuesRight.basisValues().numFamilies();
+    const int leftComponentCount  = isVectorValued ? basisValuesLeft. vectorData().numComponents() : 1;
+    const int rightComponentCount = isVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
     
     int leftFieldOrdinalOffset = 0; // keeps track of the number of fields in prior families
     for (int leftFamilyOrdinal=0; leftFamilyOrdinal<leftFamilyCount; leftFamilyOrdinal++)
@@ -2186,11 +2329,12 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
       bool haveLaunchedContributionToCurrentFamilyLeft = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
       for (int leftComponentOrdinal=0; leftComponentOrdinal<leftComponentCount; leftComponentOrdinal++)
       {
-        const TensorData<Scalar,DeviceType> & leftComponent = vectorDataLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal);
+        TensorData<Scalar,DeviceType> leftComponent = isVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
+                                                                     : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
         if (!leftComponent.isValid())
         {
            // represents zero
-          a_offset += vectorDataLeft.vectorData().numDimsForComponent(leftComponentOrdinal);
+          a_offset += basisValuesLeft.vectorData().numDimsForComponent(leftComponentOrdinal);
           continue;
         }
            
@@ -2203,11 +2347,12 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           int b_offset = 0;
           for (int rightComponentOrdinal=0; rightComponentOrdinal<rightComponentCount; rightComponentOrdinal++)
           {
-            const TensorData<Scalar,DeviceType> & rightComponent = vectorDataRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal);
+            TensorData<Scalar,DeviceType> rightComponent = isVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal)
+                                                                          : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
             if (!rightComponent.isValid())
             {
                // represents zero
-              b_offset += vectorDataRight.vectorData().numDimsForComponent(rightComponentOrdinal);
+              b_offset += basisValuesRight.vectorData().numDimsForComponent(rightComponentOrdinal);
               continue;
             }
             
@@ -2246,7 +2391,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 
                 policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 
-                Kokkos::parallel_for( policy , functor, "F_IntegratePointValueCache rank 2");
+                Kokkos::parallel_for("F_IntegratePointValueCache rank 2", policy, functor);
                 
                 if (approximateFlops != NULL)
                 {
@@ -2262,7 +2407,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 
                 policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
-                Kokkos::parallel_for( policy , functor, "F_Integrate rank 2");
+                Kokkos::parallel_for("F_Integrate rank 2", policy, functor);
                 
                 if (approximateFlops != NULL)
                 {
@@ -2281,7 +2426,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 
                 policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
-                Kokkos::parallel_for( policy , functor, "F_IntegratePointValueCache rank 3");
+                Kokkos::parallel_for("F_IntegratePointValueCache rank 3", policy, functor);
                 
                 if (approximateFlops != NULL)
                 {
@@ -2297,7 +2442,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 
                 policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 
-                Kokkos::parallel_for( policy , functor, "F_Integrate rank 3");
+                Kokkos::parallel_for("F_Integrate rank 3", policy, functor);
                 
                 if (approximateFlops != NULL)
                 {
@@ -2305,20 +2450,20 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 }
               }
             }
-            b_offset += vectorDataRight.vectorData().numDimsForComponent(rightComponentOrdinal);
+            b_offset += isVectorValued ? basisValuesRight.vectorData().numDimsForComponent(rightComponentOrdinal) : 1;
           }
-          rightFieldOrdinalOffset += vectorDataRight.vectorData().numFieldsInFamily(rightFamilyOrdinal);
+          rightFieldOrdinalOffset += isVectorValued ? basisValuesRight.vectorData().numFieldsInFamily(rightFamilyOrdinal) : basisValuesRight.basisValues().numFieldsInFamily(rightFamilyOrdinal);
         }
-        a_offset += vectorDataLeft.vectorData().numDimsForComponent(leftComponentOrdinal);
+        a_offset += isVectorValued ? basisValuesLeft.vectorData().numDimsForComponent(leftComponentOrdinal) : 1;
       }
-      leftFieldOrdinalOffset += vectorDataLeft.vectorData().numFieldsInFamily(leftFamilyOrdinal);
+      leftFieldOrdinalOffset += isVectorValued ? basisValuesLeft.vectorData().numFieldsInFamily(leftFamilyOrdinal) : basisValuesLeft.basisValues().numFieldsInFamily(leftFamilyOrdinal);
     }
   }
 //  if (approximateFlops != NULL)
 //  {
 //    std::cout << "Approximate flop count (new): " << *approximateFlops << std::endl;
 //  }
-  ExecutionSpace().fence(); // make sure we've finished writing to integrals container before exiting…
+  ExecutionSpace().fence(); // make sure we've finished writing to integrals container before we return
 }
 
 } // end namespace Intrepid2

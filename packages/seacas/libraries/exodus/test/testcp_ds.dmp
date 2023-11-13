@@ -50,7 +50,7 @@ variables:
 	char ns_names(num_node_sets, len_name) ;
 	char ss_names(num_side_sets, len_name) ;
 	char coor_names(num_dim, len_name) ;
-	int elem_map(num_elem) ;
+	int elem_num_map(num_elem) ;
 	float attrib1(num_el_in_blk1, num_att_in_blk1) ;
 	char attrib_name1(num_att_in_blk1, len_name) ;
 	int connect1(num_el_in_blk1, num_nod_per_el1) ;
@@ -99,10 +99,8 @@ variables:
 		ss_prop2:name = "COLOR" ;
 
 // global attributes:
-		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:maximum_name_length = 32 ;
-		:int64_status = 0 ;
 		:title = "This is a test" ;
 data:
 
@@ -118,13 +116,13 @@ data:
 
  ss_prop1 = 30, 31, 32, 33, 34 ;
 
- coordx = 0, 1, 1, 0, 1, 2, 2, 1, 0, 10, 10, 1, 1, 10, 10, 1, 0, 1, 10, 7, 3, 
+ coordx = 0, 1, 1, 0, 1, 2, 2, 1, 0, 10, 10, 1, 1, 10, 10, 1, 0, 1, 10, 7, 3,
     6, 0, 3, 6, 0 ;
 
- coordy = 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 10, 10, 10, 10, 0, 0, 0, 5, 0, 
+ coordy = 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 10, 10, 10, 10, 0, 0, 0, 5, 0,
     0, 0, 2, 2, 2 ;
 
- coordz = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -10, -10, 0, 0, -10, -10, 0, 5, 2, 3, 
+ coordz = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -10, -10, 0, 0, -10, -10, 0, 5, 2, 3,
     6, 0, 0, 6, 2, 0 ;
 
  eb_names =
@@ -150,7 +148,7 @@ data:
   "ycoor",
   "zcoor" ;
 
- elem_map = 1, 2, 3, 4, 5 ;
+ elem_num_map = 1, 2, 3, 4, 5 ;
 
  attrib1 =
   3.1416 ;

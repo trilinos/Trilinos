@@ -274,7 +274,7 @@ elif [ "$MACHINE" = "white" ]; then
 
   #KDD 7/18  Updated devpack
   #KDD 7/18  module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
-  #KDD 9/18  OpenMPI3 has problems with Tpetra_ASSUME_CUDA_AWARE_MPI=ON
+  #KDD 9/18  OpenMPI3 has problems with Tpetra_ASSUME_GPU_AWARE_MPI=ON
   #KDD 9/18  module load devpack/20180521/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88
   #KDD 9/18  This configuration seems to work
   #module load git/2.10.1

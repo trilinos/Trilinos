@@ -28,6 +28,7 @@
 #include <Akri_OrderedIdPair.hpp>
 #include <Akri_ParentsToChildMapper.hpp>
 #include <Akri_SearchTree.hpp>
+#include "Akri_ProlongationData.hpp"
 
 namespace krino {
 
@@ -45,8 +46,9 @@ class ProlongationFacet;
 class InterpolationEdge;
 class LevelSet;
 class Phase_Support;
+class RefinementSupport;
 class AuxMetaData;
-struct SideRequest;
+struct SideDescription;
 class InterfaceGeometry;
 
 typedef std::vector< const SubElementNode * > NodeVec;
@@ -54,6 +56,7 @@ typedef std::set< const SubElementNode * > NodeSet;
 typedef std::vector< const ProlongationFacet * > ProlongFacetVec;
 typedef std::unordered_map<stk::mesh::EntityId, ProlongationNodeData *> EntityProlongationNodeMap;
 typedef std::unordered_map<stk::mesh::EntityId, ProlongationElementData *> EntityProlongationElementMap;
+typedef std::map<std::vector<unsigned>,std::unique_ptr<SearchTree<const ProlongationFacet*>>> PhaseProlongTreeMap;
 
 enum CDMeshStatus
 {
@@ -64,12 +67,10 @@ enum CDMeshStatus
 class CDMesh {
 public:
 
-  CDMesh( stk::mesh::BulkData & mesh, const std::shared_ptr<CDMesh> & old_mesh);
+  CDMesh(stk::mesh::BulkData & mesh);
 
   virtual ~CDMesh();
 
-  static void check_isovariable_field_existence_on_decomposed_blocks(stk::mesh::BulkData & mesh,
-      const bool conformal_parts_require_field);
   static bool decomposition_needs_update(const InterfaceGeometry & interfaceGeometry,
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs);
   static void handle_possible_failed_time_step( stk::mesh::BulkData & mesh, const int step_count );
@@ -77,36 +78,31 @@ public:
       const InterfaceGeometry & interfaceGeometry,
       const int step_count,
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs );
-  static void nonconformal_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry);
-  static void mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry, const std::string & marker_field_name, const int num_refinements);
-  void delete_cdfem_parent_elements();
+  static void nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const InterfaceGeometry & interfaceGeometry);
+  static void mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const RefinementSupport & refinementSupport, const InterfaceGeometry & interfaceGeometry, const int num_refinements);
   static void fixup_adapted_element_parts(stk::mesh::BulkData & mesh);
   static void rebuild_from_restart_mesh(stk::mesh::BulkData & mesh);
-  void rebuild_after_rebalance();
+  static void undo_previous_snapping_using_interpolation(const stk::mesh::BulkData & mesh);
+  void rebuild_after_rebalance_or_failed_step();
 
-  CDMesh* get_old_mesh() { return my_old_mesh.get(); }
-  const CDMesh* get_old_mesh() const { return my_old_mesh.get(); }
   static CDMesh* get_new_mesh() { return the_new_mesh.get(); }
 
-  static void update_cdfem_constrained_nodes();
   void snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
 
   void communicate_prolongation_facet_fields() const;
-  const ProlongationPointData * find_prolongation_node(const SubElementNode & node) const;
-  const SubElementNode * find_node_with_common_ancestry(const SubElementNode * new_node) const;
+  ProlongationQuery find_prolongation_node(const SubElementNode & node) const;
+  const SubElementNode * find_new_node_with_common_ancestry_as_existing_node_with_given_id(const stk::mesh::EntityId nodeId) const;
+  const SubElementNode * find_new_node_with_common_ancestry_as_existing_child_node(const stk::mesh::Entity node) const;
 
-  bool is_interface(const PhaseTag & phase, const InterfaceID interface) const;
   PhaseTag determine_entity_phase(stk::mesh::Entity obj) const;
-
-  void check_isovariable_field_existence_on_decomposed_blocks(const bool conformal_parts_require_field) const;
 
   std::vector<stk::mesh::Entity> get_nonconformal_elements() const;
   void generate_nonconformal_elements();
 
   bool triangulate(const InterfaceGeometry & interfaceGeometry); //return value indicates if any changes were made
-  void decompose();
-  void cut_sharp_features();
+  void decompose(const InterfaceGeometry & interfaceGeometry);
+  void cut_sharp_features(const InterfaceGeometry & interfaceGeometry);
   void snap_nearby_intersections_to_nodes(const InterfaceGeometry & interfaceGeometry, NodeToCapturedDomainsMap & domainsAtNodes);
   void set_phase_of_uncut_elements(const InterfaceGeometry & interfaceGeometry);
 
@@ -115,16 +111,12 @@ public:
   const Phase_Support & get_phase_support() const { return my_phase_support; }
   const CDFEM_Support & get_cdfem_support() const { return my_cdfem_support; }
   CDFEM_Support & get_cdfem_support() { return my_cdfem_support; }
-  bool need_nodes_for_prolongation() const { return INTERPOLATION != get_prolongation_model() && my_stash_step_count >= 0; }
-  bool need_facets_for_prolongation() const { return ALE_NEAREST_POINT == get_prolongation_model() && my_stash_step_count >= 0; }
+  bool need_nodes_for_prolongation() const { return INTERPOLATION != get_prolongation_model() && was_mesh_previously_decomposed(); }
+  bool need_facets_for_prolongation() const { return ALE_NEAREST_POINT == get_prolongation_model() && was_mesh_previously_decomposed(); }
   Prolongation_Model get_prolongation_model() const { return my_cdfem_support.get_prolongation_model(); }
   Edge_Interpolation_Model get_edge_interpolation_model() const { return my_cdfem_support.get_edge_interpolation_model(); }
-  int num_ls_fields() const { return my_cdfem_support.num_ls_fields(); }
-  int get_ls_index(const LevelSet * ls) const { return my_cdfem_support.get_ls_index(ls); }
-  const LS_Field & ls_field(int i) const { return my_cdfem_support.ls_field(i); }
-  const std::vector<LS_Field> & ls_fields() const { return my_cdfem_support.ls_fields(); }
-  const std::vector<InterfaceID> & all_interface_ids() const;
-  std::vector<InterfaceID> active_interface_ids() const;
+  const std::vector<InterfaceID> & all_interface_ids(const std::vector<Surface_Identifier> & surfaceIdentifiers) const;
+  std::vector<InterfaceID> active_interface_ids(const std::vector<Surface_Identifier> & surfaceIdentifiers) const;
   // This should really only be used for unit test purposes.
   void add_interface_id(const InterfaceID id) { crossing_keys.push_back(id); }
 
@@ -132,11 +124,10 @@ public:
   const FieldRef get_cdfem_displacements_field() const { return my_cdfem_support.get_cdfem_displacements_field(); }
   const FieldSet & get_ale_prolongation_fields() const { return my_cdfem_support.get_ale_prolongation_fields(); }
   const FieldSet & get_interpolation_fields() const { return my_cdfem_support.get_interpolation_fields(); }
+  const FieldSet & get_edge_interpolation_fields() const { return my_cdfem_support.get_edge_interpolation_fields(); }
   const FieldSet & get_zeroed_fields() const { return my_cdfem_support.get_zeroed_fields(); }
   const FieldSet & get_element_fields() const { return my_cdfem_support.get_element_fields(); }
   const CDFEM_Snapper & get_snapper() const { return my_cdfem_support.get_snapper(); }
-
-  const CDFEM_Inequality_Spec * get_death_spec(int ls_index) const { return my_cdfem_support.get_death_spec(ls_index); }
 
   stk::mesh::Part & get_parent_part() const { return my_cdfem_support.get_parent_part(); }
   stk::mesh::Part & get_child_part() const { return my_cdfem_support.get_child_part(); }
@@ -191,11 +182,16 @@ public:
   void get_parent_nodes_and_weights(stk::mesh::Entity child, stk::mesh::Entity & parent0, stk::mesh::Entity & parent1, double & position) const;
   stk::mesh::Entity get_parent_element(stk::mesh::Entity elem_mesh_obj) const;
 
-  double compute_cdfem_cfl() const;
+  double compute_cdfem_cfl(const Interface_CFL_Length_Scale lengthScaleType, const std::function<stk::math::Vector3d(stk::mesh::Entity)> & get_side_displacement) const;
+  double compute_cdfem_displacement_cfl() const;
+  double compute_non_rebased_cdfem_displacement_cfl() const;
+  double compute_interface_velocity_cfl(const FieldRef velocityField, const double dt) const;
 
   int stash_step_count() const { return my_stash_step_count; }
+  bool was_mesh_previously_decomposed() const { return my_stash_step_count >= 0; }
   const ProlongationNodeData * fetch_prolong_node(stk::mesh::EntityId node_id) const { EntityProlongationNodeMap::const_iterator it = my_prolong_node_map.find(node_id); return ( (it == my_prolong_node_map.end()) ? NULL : (it->second) ); }
   const ProlongationElementData * fetch_prolong_element(stk::mesh::EntityId elem_id) const { EntityProlongationElementMap::const_iterator it = my_prolong_element_map.find(elem_id); return ( (it == my_prolong_element_map.end()) ? NULL : (it->second) ); }
+  const PartAndFieldCollections & get_prolong_part_and_field_collections() const { return myProlongPartAndFieldCollections; }
 
   void debug_output() const;
   void print_conformal_volumes_and_surface_areas() const;
@@ -211,6 +207,11 @@ public:
   // expose vector of sorted child elements
   std::vector<const ElementObj *> child_elements;
 
+public: // for unit testing
+  void update_adaptivity_parent_entities();
+  void determine_conformal_parts(stk::mesh::Entity entity, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
+  void clear();
+
 private:
   //: Default constructor not allowed
   CDMesh();
@@ -220,6 +221,9 @@ private:
 
   template <class MESH_FIXTURE>
   friend class AnalyticDecompositionFixture;
+
+  template <class MESH_FIXTURE, class LS_FIELD_POLICY>
+  friend class DecompositionFixture;
 
   void build_parallel_hanging_edge_nodes();
   void handle_hanging_children(const InterfaceID & interface);
@@ -233,47 +237,46 @@ private:
   bool decomposition_has_changed(const InterfaceGeometry & interfaceGeometry);
   bool elem_io_part_changed(const ElementObj & elem) const;
   void determine_nonconformal_parts(stk::mesh::Entity entity, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  void determine_conformal_parts(stk::mesh::Entity entity, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
   void determine_conformal_parts(const stk::mesh::PartVector & current_parts, const stk::mesh::EntityRank entity_rank, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
   void determine_child_conformal_parts(stk::topology topology, const stk::mesh::PartVector & parent_parts, const PhaseTag & phase, stk::mesh::PartVector & child_parts) const;
   void determine_element_side_parts(const stk::mesh::Entity side, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
   bool element_side_should_be_active(const stk::mesh::Entity side) const;
-  void build_and_stash_old_mesh(const int stepCount);
-  void stash_field_data(const int step_count, const CDMesh & new_mesh) const;
-  void stash_nodal_field_data(const CDMesh & new_mesh) const;
+  void stash_field_data(const int step_count) const;
+  void stash_nodal_field_data() const;
   void stash_elemental_field_data() const;
+  std::vector<std::vector<stk::mesh::Entity>> get_subelements_for_CDFEM_parents(const std::vector<stk::mesh::Entity> & sortedCdfemParentElems) const;
 
   void clear_prolongation_trees() const;
   void build_prolongation_trees() const;
 
-  void clear();
   void clear_prolongation_data() const;
 
   Mesh_Element * create_mesh_element(stk::mesh::Entity mesh_obj);
   SubElementMeshNode * add_managed_mesh_node( std::unique_ptr<SubElementMeshNode> node );
 
+  void store_child_node_parent_ids_and_weights_fields() const;
   bool modify_mesh();
-  void update_adaptivity_parent_entities();
-  void handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideRequest> & side_requests);
+  void handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideDescription> & side_requests);
   void create_subelement_mesh_entities(const Mesh_Element & elem,
     const std::vector<const SubElement *> conformal_subelems);
   void attach_existing_and_identify_missing_subelement_sides(const Mesh_Element & elem,
     const std::vector<const SubElement *> conformal_subelems,
-    std::vector<SideRequest> & side_requests);
+    std::vector<SideDescription> & side_requests);
   void update_uncut_element(const Mesh_Element & elem);
 
-  void get_unused_old_child_elements(std::vector<stk::mesh::Entity> & unused_old_child_elems);
-  void set_entities_for_identical_nodes();
+  std::vector<stk::mesh::Entity> get_owned_unused_old_child_elements_and_clear_child_elements();
+  void set_entities_for_child_nodes_with_common_ancestry_as_existing_child_nodes();
   bool set_entities_for_existing_child_elements();
   void create_new_mesh_entities();
   void create_node_entities();
-  void create_element_and_side_entities(std::vector<SideRequest> & side_requests);
+  void create_element_and_side_entities(std::vector<SideDescription> & side_requests);
 
+  void determine_processor_prolongation_bounding_box(const bool guessAndCheckProcPadding, const double maxCFLGuess, BoundingBox & procBbox) const;
   void prolongation();
   void rebase_cdfem_displacements();
   double get_maximum_cdfem_displacement() const;
 
-  void add_possible_interface_sides(std::vector<SideRequest> & sideRequests) const;
+  void add_possible_interface_sides(std::vector<SideDescription> & sideRequests) const;
   bool check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nodes) const;
   void update_element_side_parts();
 
@@ -282,14 +285,17 @@ private:
   void generate_sorted_child_elements();
   void cache_node_ids();
 
-  stk::mesh::Part & get_child_edge_node_part() const { return my_cdfem_support.get_child_edge_node_part(); }
+  stk::mesh::Part & get_child_edge_node_part() const { return my_cdfem_support.get_child_node_part(); }
   FieldRef get_parent_node_ids_field() const { return my_cdfem_support.get_parent_node_ids_field(); }
+  FieldRef get_parent_node_weights_field() const { return my_cdfem_support.get_parent_node_weights_field(); }
 
   void rebuild_child_part();
   void rebuild_parent_and_active_parts_using_nonconformal_and_child_parts();
-  void restore_subelement_edge_nodes();
   void restore_subelements();
-  const SubElementNode * build_subelement_edge_node(const stk::mesh::Entity node_entity);
+  const SubElementNode * build_subelement_child_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
+  const SubElementNode * find_or_build_subelement_node_with_id(const stk::mesh::EntityId nodeId, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
+  const SubElementNode * find_or_build_subelement_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
+  void find_or_build_midside_nodes(const stk::topology & elemTopo, const Mesh_Element & ownerMeshElem, const stk::mesh::Entity * elemNodes, const NodeVec & subelemNodes);
 
   stk::mesh::MetaData& my_meta;
   AuxMetaData& my_aux_meta;
@@ -298,18 +304,19 @@ private:
   const int my_spatial_dim;
   CDFEM_Support & my_cdfem_support;
   Phase_Support & my_phase_support;
+  RefinementSupport & myRefinementSupport;
   typedef std::unordered_map<stk::mesh::EntityId, const SubElementMeshNode*> NodeMap;
   NodeMap mesh_node_map;
 
-  std::shared_ptr<CDMesh> my_old_mesh;
-  static std::shared_ptr<CDMesh> the_new_mesh;
+  static std::unique_ptr<CDMesh> the_new_mesh;
 
   std::unordered_map<stk::mesh::EntityId, std::vector<stk::mesh::EntityId> > my_periodic_node_id_map;
 
   mutable int my_stash_step_count;
-  mutable std::map<std::vector<unsigned>,std::unique_ptr<SearchTree<const ProlongationFacet*>>> my_phase_prolong_tree_map;
+  mutable PhaseProlongTreeMap my_phase_prolong_tree_map;
 
   mutable bool my_missing_remote_prolong_facets;
+  mutable PartAndFieldCollections myProlongPartAndFieldCollections;
   mutable EntityProlongationNodeMap my_prolong_node_map;
   mutable EntityProlongationElementMap my_prolong_element_map;
   mutable ProlongFacetVec my_prolong_facets;

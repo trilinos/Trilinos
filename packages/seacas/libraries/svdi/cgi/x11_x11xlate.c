@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -58,7 +58,7 @@
 #define viinit wx11ii
 #define viterm wx11it
 #define vinwpg wx11ig
-#define vcjob vcjob
+#define vcjob  vcjob
 #define vberrh wx11er
 #define vdloge wx11le
 #define cdrwfs wx11wf
@@ -76,8 +76,8 @@
 #define btkbuf wx11bf
 #define nmtbuf wx11bf
 #define vbimbf wx11ib
-#define vbpkg wx11pk
-#define vbdev wx11dv
+#define vbpkg  wx11pk
+#define vbdev  wx11dv
 #define vdiqrs wx11qr
 #define vdstmp wx11mp
 #define vdstrs wx11rs
@@ -102,7 +102,7 @@
 #define vcscal wx1110
 #define vcddim wx1111
 #define vipoly wx1112
-#define vbout wx1113
+#define vbout  wx1113
 #define cgixxx cgix11
 #endif
 
@@ -151,7 +151,7 @@
 #define viterm WX11IT
 #define vinwpg WX11IG
 #define cdrcom CDRCOM
-#define vcjob VCJOB
+#define vcjob  VCJOB
 #define vconod VCONOD
 #define vberrh WX11ER
 #define vdloge WX11LE
@@ -170,8 +170,8 @@
 #define btkbuf WX11BF
 #define nmtbuf WX11BF
 #define vbimbf WX11IB
-#define vbpkg WX11PK
-#define vbdev WX11DV
+#define vbpkg  WX11PK
+#define vbdev  WX11DV
 #define vdiqrs WX11QR
 #define vdstmp WX11MP
 #define vdstrs WX11RS
@@ -196,7 +196,7 @@
 #define vcscal WX1110
 #define vcddim WX1111
 #define vipoly WX1112
-#define vbout WX1113
+#define vbout  WX1113
 #define wx11zz WX11ZZ
 #define cgixxx CGIX11
 #endif
@@ -246,7 +246,7 @@
 #define viterm wx11it_
 #define vinwpg wx11ig_
 #define cdrcom cdrcom_
-#define vcjob vcjob_
+#define vcjob  vcjob_
 #define vconod vconod_
 #define vberrh wx11er_
 #define vdloge wx11le_
@@ -265,8 +265,8 @@
 #define btkbuf wx11bf_
 #define nmtbuf wx11bf_
 #define vbimbf wx11ib_
-#define vbpkg wx11pk_
-#define vbdev wx11dv_
+#define vbpkg  wx11pk_
+#define vbdev  wx11dv_
 #define vdiqrs wx11qr_
 #define vdstmp wx11mp_
 #define vdstrs wx11rs_
@@ -291,7 +291,7 @@
 #define vcscal wx1110_
 #define vcddim wx1111_
 #define vipoly wx1112_
-#define vbout wx1113_
+#define vbout  wx1113_
 #define wx11bf wx11bf_
 #define wx11zz wx11zz_
 #define cgixxx cgix11_
@@ -300,7 +300,7 @@
 #if defined(CONVEX)
 #define cdrcom_ _cdrcom_
 #define cdrcm2_ _cdrcm2_
-#define vcjob_ _vcjob_
+#define vcjob_  _vcjob_
 #define vconod_ _vconod_
 #define cdrunx_ _cdrunx_
 #endif
@@ -311,6 +311,7 @@
  */
 
 #include "svdi.h"
+
 /******************************************************************************/
 /*                                                                            */
 /*      type and constant declarations                                        */
@@ -319,14 +320,14 @@
 
 #define MAX_DEVICE_SURFACES 1   /* num of surfaces device supports */
                                 /* ...set to 1 for interactive device */
-#define ERROR_LIST_SIZE 10      /* number of errors stored */
+#define ERROR_LIST_SIZE  10     /* number of errors stored */
 #define COLOR_TABLE_SIZE 256    /* max color table for SVDI is 256 */
-#define MAX_TEXT_LENGTH 136     /* max text length for SVDI is 136 */
-#define MAX_POLYLINE -1         /* -1 = no limit */
-#define MAX_DJ_POLYLINE -1      /* -1 = no limit */
-#define MAX_POLYMARKER -1       /* -1 = no limit */
-#define MAX_POLYGON 256         /* uses min of this and SVDI limit */
-#define MAX_ARRAY 1             /* for pixel array and cell array */
+#define MAX_TEXT_LENGTH  136    /* max text length for SVDI is 136 */
+#define MAX_POLYLINE     -1     /* -1 = no limit */
+#define MAX_DJ_POLYLINE  -1     /* -1 = no limit */
+#define MAX_POLYMARKER   -1     /* -1 = no limit */
+#define MAX_POLYGON      256    /* uses min of this and SVDI limit */
+#define MAX_ARRAY        1      /* for pixel array and cell array */
                                 /* ...set to 1 for non raster device */
 #define BUFFER_SIZE 1           /* for batch device buffer routines */
                                 /* ...set to 1 for interactive device */
@@ -334,6 +335,7 @@
 
 /* end cgix11.h */
 #include "data_def.h"
+#include <assert.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -437,13 +439,13 @@ static int   inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
 static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int bound_num);
 /* cdr routines */
 /* -- not used with interactive devices */
-void cdrofs();
-void cdrof3();
-void cdroff();
-void cdrrfs();
-void cdrwfs();
-void cdrcfs();
-void cdroab();
+void cdrofs(int *);
+void cdrof3(int *, int *);
+void cdroff(int *, int *, int *, int *);
+void cdrrfs(int *, int *, char *, int *);
+void cdrwfs(int *, int *, char *, int *);
+void cdrcfs(int *, int *);
+void cdroab(int *, int *);
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {
@@ -1078,16 +1080,16 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
 
         /* first token is SVDI escape number */
         gettoken(&tokenindex, (int *)params[2], (char *)params[3], 80, data);
-        vdi_esc = atoi(data);
+        vdi_esc = strtol(data, NULL, 10);
 
         /* second token is number of parameters to SVDI escape */
         gettoken(&tokenindex, (int *)params[2], (char *)params[3], 80, data);
-        count = atoi(data);
+        count = strtol(data, NULL, 10);
 
         /* the rest of the tokens contain the arguments */
         for (j = 0; j < count && j < 10; j++) {
           gettoken(&tokenindex, (int *)params[2], (char *)params[3], 80, data);
-          args[j] = (float)atof(data);
+          args[j] = (float)strtod(data, NULL);
         }
 
         first = FALSE;
@@ -1104,11 +1106,11 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
 
         /* first token is page size in x */
         gettoken(&tokenindex, (int *)params[2], (char *)params[3], 80, data);
-        args[0] = (float)atof(data);
+        args[0] = (float)strtod(data, NULL);
 
         /* second token is page size in y */
         gettoken(&tokenindex, (int *)params[2], (char *)params[3], 80, data);
-        args[1] = (float)atof(data);
+        args[1] = (float)strtod(data, NULL);
 
         /* page size svdi number is 1400 */
         vdi_esc = 1400;
@@ -1135,7 +1137,7 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
 /* INQUIRE DEVICE IDENTIFICATION */
 static void xcqid(anything **params, anything **surf_list)
 {
-  char *     cgi_devid;      /* pointer to character device id */
+  char      *cgi_devid;      /* pointer to character device id */
   int        maxchr;         /* max number of chars in device id */
   int        qdc_index = 23; /* index for inquiries to vdiqdc */
   float      value;          /* value returned by vdiqdc */
@@ -2122,7 +2124,7 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
 {
   int          i, j;              /* indices for loops */
   int          np;                /* number of points */
-  float *      x, *y;             /* x,y VDC values */
+  float       *x, *y;             /* x,y VDC values */
   float        xnew[MAX_POLYGON]; /* clipped x,y values (VDC or NDC) */
   float        ynew[MAX_POLYGON];
   int          npnew;              /* number of points after clip */
@@ -2230,7 +2232,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
   int   index, index_inc, count; /* array indices */
   int   nx, ny;                  /* number of cells in x,y */
   int   nx1, ny1;                /* number of cells in x,y after clipping */
-  int * cells;                   /* color values */
+  int  *cells;                   /* color values */
   int   ix, iy, yinc;            /* SVDI logical raster coordinates */
   float x1, x2, y1, y2;          /* corners of rectangle in NDC */
   float xmin, xmax, ymin, ymax;  /* SVDI raster viewport (NDC) */
@@ -2375,13 +2377,6 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
       /* set the raster space */
       vdstrs(&nx1, &ny1);
 
-      /* set mapping to virtual and freeform */
-      /*
-      sprintf(map,"%s","VIRTUAL");
-      vdstmp(map,7L);
-      sprintf(map,"%s","FREEFORM");
-      vdstmp(map,8L);
-      */
       imap = 3;
       vbstmp(&imap);
       imap = 5;
@@ -2467,6 +2462,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* reorder the cell colors */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               varray[count++] = cells[index--];
             }
 
@@ -2512,6 +2508,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)cells[index++] / 255.0f;
               garray[count] = (float)cells[index++] / 255.0f;
               barray[count] = (float)cells[index++] / 255.0f;
@@ -2547,6 +2544,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)cells[index] / 255.0f;
               garray[count] = (float)cells[index + 1] / 255.0f;
               barray[count] = (float)cells[index + 2] / 255.0f;
@@ -2580,7 +2578,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
 {
   int          i;                      /* index for loop on surfaces */
   int          j, k;                   /* loop indices */
-  int *        pxclrs;                 /* pixel color values */
+  int         *pxclrs;                 /* pixel color values */
   int          nx, ny;                 /* size of pixel color array */
   int          nx1, ny1;               /* number of pixels after clipping */
   int          index, index_inc;       /* index into pxclrs array */
@@ -2761,13 +2759,6 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
       /* set the raster viewport */
       vdstrv(&xmin, &xmax, &ymin, &ymax);
 
-      /* set mapping to replicate and freeform */
-      /*
-      sprintf(map,"%s","REPLICATE");
-      vdstmp(map,8L);
-      sprintf(map,"%s","FREEFORM");
-      vdstmp(map,9L);
-      */
       imap = 2;
       vbstmp(&imap);
       imap = 5;
@@ -2854,6 +2845,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* reorder the pixel colors */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               varray[count++] = pxclrs[index--];
             }
 
@@ -2898,6 +2890,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)pxclrs[index++] / 255.0f;
               garray[count] = (float)pxclrs[index++] / 255.0f;
               barray[count] = (float)pxclrs[index++] / 255.0f;
@@ -2933,6 +2926,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
           /* store as much info as possible before calling vdpixl */
           for (k = 0; k < ny1; k++) {
             for (j = 0; j < nx1; j++) {
+              assert(count < MAX_ARRAY);
               rarray[count] = (float)pxclrs[index] / 255.0f;
               garray[count] = (float)pxclrs[index + 1] / 255.0f;
               barray[count] = (float)pxclrs[index + 2] / 255.0f;
@@ -4905,25 +4899,25 @@ static void set_foreground_color(surf_statelist *surf_state, int *colors)
 
   else /* direct color */
 
-      /* does foreground need to be updated? */
-      /* -- i need to check this out - might need to store as int */
-      if (colors[0] != (int)(cur_state->vdi_attrib.fg_rgb[0] * 255.0f) ||
-          colors[1] != (int)(cur_state->vdi_attrib.fg_rgb[1] * 255.0f) ||
-          colors[2] != (int)(cur_state->vdi_attrib.fg_rgb[2] * 255.0f)) {
+    /* does foreground need to be updated? */
+    /* -- i need to check this out - might need to store as int */
+    if (colors[0] != (int)(cur_state->vdi_attrib.fg_rgb[0] * 255.0f) ||
+        colors[1] != (int)(cur_state->vdi_attrib.fg_rgb[1] * 255.0f) ||
+        colors[2] != (int)(cur_state->vdi_attrib.fg_rgb[2] * 255.0f)) {
 
-    /* update att_array */
-    cur_state->vdi_attrib.fg_rgb[0] = (float)colors[0] / 255.0f;
-    cur_state->vdi_attrib.fg_rgb[1] = (float)colors[1] / 255.0f;
-    cur_state->vdi_attrib.fg_rgb[2] = (float)colors[2] / 255.0f;
+      /* update att_array */
+      cur_state->vdi_attrib.fg_rgb[0] = (float)colors[0] / 255.0f;
+      cur_state->vdi_attrib.fg_rgb[1] = (float)colors[1] / 255.0f;
+      cur_state->vdi_attrib.fg_rgb[2] = (float)colors[2] / 255.0f;
 
-    /* set new foreground color */
-    vdfrgb(&cur_state->vdi_attrib.fg_rgb[0], &cur_state->vdi_attrib.fg_rgb[1],
-           &cur_state->vdi_attrib.fg_rgb[2]);
+      /* set new foreground color */
+      vdfrgb(&cur_state->vdi_attrib.fg_rgb[0], &cur_state->vdi_attrib.fg_rgb[1],
+             &cur_state->vdi_attrib.fg_rgb[2]);
 
-    /* flag (indexed) that foreground color has changed */
-    /* do i need to do this? */
-    cur_state->vdi_attrib.fg_color = -1;
-  } /* end does foreground... */
+      /* flag (indexed) that foreground color has changed */
+      /* do i need to do this? */
+      cur_state->vdi_attrib.fg_color = -1;
+    } /* end does foreground... */
 
 } /* end set_foreground_color */
 
@@ -4931,7 +4925,7 @@ static void set_foreground_color(surf_statelist *surf_state, int *colors)
 /* Set the SVDI background color */
 static void set_background_color(surf_statelist *surf_state, int *colors)
 {
-  int   i;                      /* loop index */
+  int   i     = 0;              /* loop index */
   int   index = 0;              /* color index */
   float dr, dg, db, dmin, dist; /* for finding the closet index */
   int   one     = 1;
@@ -5158,8 +5152,10 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
     else { /* after 1st time through, use new vertex list */
       curlen  = *lenout;
       *lenout = 0;
-      s.x     = xout[curlen - 1];
-      s.y     = yout[curlen - 1];
+      if (curlen > 0) {
+        s.x = xout[curlen - 1];
+        s.y = yout[curlen - 1];
+      }
     }
 
     for (i = 0; i < curlen; i++) { /* loop through all vertices */
@@ -5236,11 +5232,11 @@ static int inside_bnd(point *v, point *bmin, point *bmax, int bound_num)
 {
   /* this routine assumes a rectangular boundary */
   switch (bound_num) {
-  case 0: return (v->y <= bmax->y); break; /* top */
-  case 1: return (v->x <= bmax->x); break; /* right */
-  case 2: return (v->y >= bmin->y); break; /* bottom */
-  case 3: return (v->x >= bmin->x); break; /* left */
-  default: return (FALSE); break;
+  case 0: return (v->y <= bmax->y); /* top */
+  case 1: return (v->x <= bmax->x); /* right */
+  case 2: return (v->y >= bmin->y); /* bottom */
+  case 3: return (v->x >= bmin->x); /* left */
+  default: return (FALSE);
   } /* end switch */
 } /* end inside_bnd */
 
@@ -5293,15 +5289,14 @@ static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int b
   File descriptor which is returned from open is stored in current
   statelist
 */
-void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatibility */
+void cdrofs(int *ifilcd)
 {
   int        errnum, errsev;
   char       symbol[1024];
-  char       err[50];
   int        qdc_index;
   float      value;
-  char *     devid;
-  char *     env;
+  char      *devid;
+  char      *env;
   static int file_cnt = 1;
 
   /* if user hasn't named the file, build a default */
@@ -5311,10 +5306,10 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
     vdiqdc(&qdc_index, &value);
     devid = get_devid_char(value);
     if (devid != NULL) {
-      sprintf(cur_state->filename, "cgi%s%d", devid, file_cnt++);
+      snprintf(cur_state->filename, 100, "cgi%s%d", devid, file_cnt++);
     }
     else {
-      sprintf(cur_state->filename, "cgiout%d", file_cnt++);
+      snprintf(cur_state->filename, 100, "cgiout%d", file_cnt++);
     }
   }
 
@@ -5324,7 +5319,7 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   /* check the environment to see if a file name has been assigned */
   env = getenv(symbol);
   if (env != 0 && strlen(env) < 1024) {
-    sprintf(symbol, "%s", env);
+    snprintf(symbol, 1024, "%s", env);
   }
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
@@ -5333,30 +5328,24 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   if ((cur_state->file_d = open(symbol, (O_CREAT | O_TRUNC | O_RDWR), 0664)) == -1) {
     errnum = 722;
     errsev = 10;
-    sprintf(err, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
+    char err[50];
+    snprintf(err, 50, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
     perror(err);
   }
 }
 
 /* this routine is here only for compatibility with SVDI drivers */
-void cdrof3(ifilcd, idum) int *ifilcd, *idum;
-{
-  cdrofs(ifilcd);
-}
+void cdrof3(int *ifilcd, int *idum) { cdrofs(ifilcd); }
 
 /* this routine is here only for compatibility with SVDI drivers */
-void cdroff(ifilcd, idum1, idum2, idum3) int *ifilcd, *idum1, *idum2, *idum3;
-{
-  cdrofs(ifilcd);
-}
+void cdroff(int *ifilcd, int *idum1, int *idum2, int *idum3) { cdrofs(ifilcd); }
 
 /*
   Try to read LENGTH words from the file. Return the actual number
   of words read. FORTRAN unit number is ignored, file descriptor is
   gotten from the current statelist
 */
-void  cdrrfs(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
-char *buffer;
+void cdrrfs(int *ifilcd, int *length, char *buffer, int *istat)
 {
 
   /* if the file hasn't been opened, open it */
@@ -5374,8 +5363,7 @@ char *buffer;
   Write LENGTH words from BUFFER to the file.  FORTRAN unit number is
   ignored, file descriptor is gotten from the current state list
 */
-void  cdrwfs(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
-char *buffer;
+void cdrwfs(int *ifilcd, int *length, char *buffer, int *istat)
 {
 
   /* if the file hasn't been opened, open it */
@@ -5396,7 +5384,7 @@ char *buffer;
   Close file sequential. FORTRAN unit number is ignore and file
   descriptor is gotten from current state
 */
-void cdrcfs(ifilcd, eof) int *ifilcd, *eof;
+void cdrcfs(int *ifilcd, int *eof)
 {
   int  istat;
   char buf[4];
@@ -5406,7 +5394,7 @@ void cdrcfs(ifilcd, eof) int *ifilcd, *eof;
   if (*eof == 1) {
     *buf = EOF;
     if ((istat = write(cur_state->file_d, buf, 4)) == -1) {
-      sprintf(err, "%s", "CDRCFS error");
+      snprintf(err, 50, "%s", "CDRCFS error");
       perror(err);
     }
   }
@@ -5416,8 +5404,7 @@ void cdrcfs(ifilcd, eof) int *ifilcd, *eof;
 }
 
 /* open routine for the Abekas */
-void cdroab(ifilcd, frame) int *ifilcd;
-int *frame;
+void cdroab(int *ifilcd, int *frame)
 {
   char ic[5];
   int  i, inbr;
@@ -5431,7 +5418,7 @@ int *frame;
   ic[4] = '\0';
 
   /* set the file name in the state list */
-  sprintf(cur_state->filename, "%s.RGB", ic);
+  snprintf(cur_state->filename, 100, "%s.RGB", ic);
 
   cdrofs(ifilcd);
 }

@@ -484,7 +484,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
    }
 
    if(myRank==0) {
-      TEST_EQUALITY(uMap->getNodeNumElements(),6);
+      TEST_EQUALITY(uMap->getLocalNumElements(),6);
 
       TEST_EQUALITY(uMap->getGlobalElement(0),6);
       TEST_EQUALITY(uMap->getGlobalElement(1),0);
@@ -493,7 +493,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
       TEST_EQUALITY(uMap->getGlobalElement(4),10);
       TEST_EQUALITY(uMap->getGlobalElement(5),13);
 
-      TEST_EQUALITY(tMap->getNodeNumElements(),5);
+      TEST_EQUALITY(tMap->getLocalNumElements(),5);
 
       TEST_EQUALITY(tMap->getGlobalElement(0),7);
       TEST_EQUALITY(tMap->getGlobalElement(1),1);
@@ -502,14 +502,14 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
       TEST_EQUALITY(tMap->getGlobalElement(4),11);
    }
    else if(myRank==1) {
-      TEST_EQUALITY(uMap->getNodeNumElements(),4);
+      TEST_EQUALITY(uMap->getLocalNumElements(),4);
 
       TEST_EQUALITY(uMap->getGlobalElement(0),4);
       TEST_EQUALITY(uMap->getGlobalElement(1),12);
       TEST_EQUALITY(uMap->getGlobalElement(2),15);
       TEST_EQUALITY(uMap->getGlobalElement(3),14);
 
-      TEST_EQUALITY(tMap->getNodeNumElements(),1);
+      TEST_EQUALITY(tMap->getLocalNumElements(),1);
 
       TEST_EQUALITY(tMap->getGlobalElement(0),5);
    }

@@ -58,15 +58,9 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_MultiVector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_GeoInterpFactory_decl.hpp"
 #include <MueLu_Level.hpp>
-#include <MueLu_Monitor.hpp>
-#include <MueLu_Utilities.hpp>
-#include <MueLu_FactoryManagerBase.hpp>
-#include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLu {
 

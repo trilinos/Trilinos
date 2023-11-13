@@ -1,10 +1,9 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef TOLERANCE_H
-#define TOLERANCE_H
+#pragma once
 
 #include "map.h"
 #include <cmath>
@@ -94,42 +93,36 @@ inline double Tolerance::Delta(double v1, double v2) const
     if (type == ToleranceMode::ABSOLUTE_) {
       return std::fabs(v1 - v2);
     }
-    else if (type == ToleranceMode::COMBINED_) {
+    if (type == ToleranceMode::COMBINED_) {
       double max = fabv1 < fabv2 ? fabv2 : fabv1;
       if (max > 1.0) {
         return std::fabs(v1 - v2) / max;
       }
-      else {
-        return std::fabs(v1 - v2);
-      }
+      return std::fabs(v1 - v2);
     }
-    else if (type == ToleranceMode::ULPS_FLOAT_) {
+    if (type == ToleranceMode::ULPS_FLOAT_) {
       return UlpsDiffFloat(v1, v2);
     }
-    else if (type == ToleranceMode::ULPS_DOUBLE_) {
+    if (type == ToleranceMode::ULPS_DOUBLE_) {
       return UlpsDiffDouble(v1, v2);
     }
-    else if (type == ToleranceMode::EIGEN_REL_) {
+    if (type == ToleranceMode::EIGEN_REL_) {
       if (v1 == 0.0 && v2 == 0.0) {
         return 0.0;
       }
       double max = fabv1 < fabv2 ? fabv2 : fabv1;
       return std::fabs(fabv1 - fabv2) / max;
     }
-    else if (type == ToleranceMode::EIGEN_ABS_) {
+    if (type == ToleranceMode::EIGEN_ABS_) {
       return std::fabs(fabv1 - fabv2);
     }
-    else if (type == ToleranceMode::EIGEN_COM_) {
+    if (type == ToleranceMode::EIGEN_COM_) {
       double max = fabv1 < fabv2 ? fabv2 : fabv1;
       if (max > 1.0) {
         return std::fabs(fabv1 - fabv2) / max;
       }
-      else {
-        return std::fabs(fabv1 - fabv2);
-      }
+      return std::fabs(fabv1 - fabv2);
     }
   }
   return 0.0;
 }
-
-#endif

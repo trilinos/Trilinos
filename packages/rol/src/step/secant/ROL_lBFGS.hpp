@@ -65,18 +65,17 @@ public:
   void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const {
     const Real zero(0);
 
-    Hv.set(v.dual());
+    auto tmp = v.clone();
+    tmp->set(v); 
     std::vector<Real> alpha(state_->current+1,zero);
     for (int i = state_->current; i>=0; i--) {
-      alpha[i]  = state_->iterDiff[i]->dot(Hv);
+      alpha[i]  = state_->iterDiff[i]->apply(*tmp);
       alpha[i] /= state_->product[i];
-      Hv.axpy(-alpha[i],(state_->gradDiff[i])->dual());
+      tmp->axpy(-alpha[i],*state_->gradDiff[i]);
     }
 
     // Apply initial inverse Hessian approximation to v
-    Ptr<Vector<Real>> tmp = Hv.clone();
-    Secant<Real>::applyH0(*tmp,Hv.dual());
-    Hv.set(*tmp);
+    Secant<Real>::applyH0(Hv,*tmp);
 
     Real beta(0);
     for (int i = 0; i <= state_->current; i++) {
@@ -127,5 +126,6 @@ public:
 };
 
 }
+
 
 #endif

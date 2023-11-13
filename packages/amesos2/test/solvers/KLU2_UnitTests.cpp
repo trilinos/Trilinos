@@ -101,8 +101,6 @@ namespace {
   // using Amesos2::MultiVecAdapter;
   using Amesos2::KLU2;
 
-  using Amesos2::Meta::is_same;
-
   typedef Tpetra::Map<>::node_type Node;
 
   bool testMpi = true;
@@ -147,7 +145,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos2::is_same<> )
+     * - Correct typedefs
      */
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -185,13 +183,13 @@ namespace {
     TEST_ASSERT( solver->getStatus().getNumSolve() == 0 );
 
     // The following should all pass at compile time
-    TEST_ASSERT( (is_same<MAT,typename SOLVER::matrix_type>::value) );
-    TEST_ASSERT( (is_same<MV,typename SOLVER::vector_type>::value) );
-    TEST_ASSERT( (is_same<SCALAR,typename SOLVER::scalar_type>::value) );
-    TEST_ASSERT( (is_same<LO,typename SOLVER::local_ordinal_type>::value) );
-    TEST_ASSERT( (is_same<GO,typename SOLVER::global_ordinal_type>::value) );
-    TEST_ASSERT( (is_same<global_size_t,typename SOLVER::global_size_type>::value) );
-    // TEST_ASSERT( (is_same<Node,typename SOLVER::node_type>::value) );
+    TEST_ASSERT( (std::is_same_v<MAT,typename SOLVER::matrix_type>) );
+    TEST_ASSERT( (std::is_same_v<MV,typename SOLVER::vector_type>) );
+    TEST_ASSERT( (std::is_same_v<SCALAR,typename SOLVER::scalar_type>) );
+    TEST_ASSERT( (std::is_same_v<LO,typename SOLVER::local_ordinal_type>) );
+    TEST_ASSERT( (std::is_same_v<GO,typename SOLVER::global_ordinal_type>) );
+    TEST_ASSERT( (std::is_same_v<global_size_t,typename SOLVER::global_size_type>) );
+    // TEST_ASSERT( (std::is_same_v<Node,typename SOLVER::node_type>) );
   }
 
 
@@ -365,6 +363,66 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, SolveIR, SCALAR, LO, GO )
+  {
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef ScalarTraits<SCALAR> ST;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    //typedef ScalarTraits<Mag> MT;
+    const size_t numVecs = 1;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+
+    RCP<MAT> A =
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm);
+
+
+    RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
+    RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+
+    RCP<MV> X = rcp(new MV(dmnmap,numVecs));
+    RCP<MV> B = rcp(new MV(rngmap,numVecs));
+    RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
+    X->setObjectLabel("X");
+    B->setObjectLabel("B");
+    Xhat->setObjectLabel("Xhat");
+    X->randomize();
+
+    A->apply(*X,*B);            // no transpose
+
+    bool verbose = false;
+    Xhat->randomize();
+    if (verbose) {
+      Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    }
+
+    // Solve A*Xhat = B for Xhat using the KLU2 solver with iterative refinement
+    RCP<Amesos2::Solver<MAT,MV> > solver
+      = Amesos2::create<MAT,MV>("KLU2", A, Xhat, B );
+
+    Teuchos::ParameterList amesos2_params("Amesos2");
+    amesos2_params.set("Iterative refinement", true);
+    amesos2_params.set("Verboes for iterative refinement", verbose);
+    solver->setParameters( rcpFromRef(amesos2_params) );
+
+    solver->symbolicFactorization();
+    solver->numericFactorization();
+    solver->solve();
+    if (verbose) {
+      Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    }
+
+    // Check result of solve
+    Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
+    Xhat->norm2(xhatnorms());
+    X->norm2(xnorms());
+    TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+  }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, SolveTrans, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -416,6 +474,7 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
+  //! @test Test for non-contiguous GIDs.
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, NonContigGID, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -562,11 +621,6 @@ namespace {
       B->describe(out, Teuchos::VERB_EXTREME);
       Xhat->describe(out, Teuchos::VERB_EXTREME);
       X->describe(out, Teuchos::VERB_EXTREME);
-
-      //A->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-      //B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-      //Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-      //X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
       // Check result of solve
       Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
@@ -800,6 +854,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NumericFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NumericFactorizationNullThrows, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, Solve, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveIR, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, NonContigGID, SCALAR, LO, GO )
 

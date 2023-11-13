@@ -84,6 +84,9 @@ if SmartGetLocalProcessId() == 0:
 #def UseDataSetupMapB(inDataSetupMapB):
 #  PhactoriScript.UseDataSetupMapB_ps(inDataSetupMapB)
 
+global gMyInitialUpdateFrequencies
+gMyInitialUpdateFrequencies = {}
+
 def CreateCoProcessor():
   def _CreatePipeline(coprocessor, datadescription):
     class Pipeline:
@@ -115,11 +118,29 @@ def CreateCoProcessor():
     def LocalExportOperationsData3(self, datadescription, rescale_lookuptable=False):
       ExportOperationsDataForCurrentPipeAndViewsState(datadescription)
 
-      
+    def SetInitialUpdateFrequences(self, datadescription):
+      global gMyInitialUpdateFrequencies
+      freqsChanged = False
+      numInputGrids = datadescription.GetNumberOfInputDescriptions()
+      for ii in range(0,numInputGrids):
+        oneGridName = datadescription.GetInputDescriptionName(ii)
+        if PhactoriDbg():
+          myDebugPrint3("SetInitialUpdateFrequences " + str(ii) + " " + str(oneGridName) + "\n")
+        if oneGridName not in gMyInitialUpdateFrequencies:
+          gMyInitialUpdateFrequencies[oneGridName] = [1]
+          freqsChanged = True
+      if PhactoriDbg():
+        if freqsChanged:
+          myDebugPrint3("gMyInitialUpdateFrequencies changed:\n")
+        else:
+          myDebugPrint3("gMyInitialUpdateFrequencies not changed:\n")
+        myDebugPrint3(str(gMyInitialUpdateFrequencies) + "\n")
+      if freqsChanged:
+        self.SetUpdateFrequencies(gMyInitialUpdateFrequencies)
 
   coprocessor = CoProcessor()
-  freqs = {'input': [1]}
-  coprocessor.SetUpdateFrequencies(freqs)
+  #freqs = {'input': [1]}
+  #coprocessor.SetUpdateFrequencies(freqs)
   return coprocessor
 
 
@@ -249,6 +270,11 @@ gCatchAllExceptionsAndPassUpFlag = True
 
 def RequestDataDescription(datadescription):
   myDebugPrint3("PhactoriDriver.RequestDataDescription entered: " + str(gDoCoProcessingCount)+ "\n");
+  if PhactoriDbg():
+    numInputGrids = datadescription.GetNumberOfInputDescriptions()
+    for ii in range(0,numInputGrids):
+      oneGridName = datadescription.GetInputDescriptionName(ii)
+      myDebugPrint3("RequestDataDescription " + str(ii) + " " + str(oneGridName) + "\n")
 
   TestUserDataForBypassScript(datadescription)
 
@@ -297,8 +323,11 @@ def RequestDataDescriptionSub(datadescription):
         gSkipCountdown = gSkipCountdown - 1
         return 0
       coprocessor = CreateCoProcessor()
+      coprocessor.SetInitialUpdateFrequences(datadescription)
       coprocessor.EnableLiveVisualization(False)
       gFirstTimeInDoCoProcessing = False
+    else:
+      coprocessor.SetInitialUpdateFrequences(datadescription)
 
     #import pdb
     #pdb.set_trace()
@@ -331,6 +360,12 @@ gDoCoProcessingCount = 0
 
 def DoCoProcessing(datadescription):
   myDebugPrint3("PhactoriDriver.DoCoProcessing entered: " + str(gDoCoProcessingCount)+ "\n");
+  if PhactoriDbg():
+    numInputGrids = datadescription.GetNumberOfInputDescriptions()
+    for ii in range(0,numInputGrids):
+      oneGridName = datadescription.GetInputDescriptionName(ii)
+      myDebugPrint3("DoCoProcessing " + str(ii) + " " + str(oneGridName) + "\n")
+
 
   fd = datadescription.GetUserData()
  
@@ -378,8 +413,11 @@ def DoCoProcessingSub(datadescription):
       if gSkipCountdown > 0:
         return
       coprocessor = CreateCoProcessor()
+      coprocessor.SetInitialUpdateFrequences(datadescription)
       coprocessor.EnableLiveVisualization(False)
       gFirstTimeInDoCoProcessing = False
+    else:
+      coprocessor.SetInitialUpdateFrequences(datadescription)
 
     #import pdb
     #pdb.set_trace()

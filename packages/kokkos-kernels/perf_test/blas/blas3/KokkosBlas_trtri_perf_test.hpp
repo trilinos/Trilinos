@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 #ifndef KOKKOSBLAS_TRTRI_PERF_TEST_H_
 #define KOKKOSBLAS_TRTRI_PERF_TEST_H_
 
@@ -54,6 +26,8 @@
 #include "KokkosBatched_Trtri_Decl.hpp"
 #include "KokkosBatched_Trtri_Serial_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
+
+#include <chrono>
 
 //#define TRTRI_PERF_TEST_DEBUG
 
@@ -78,37 +52,40 @@ void (*do_trtri_invoke[LOOP_N][TEST_N])(options_t) = {
 /*************************** Test types and defaults **************************/
 #define DEFAULT_TRTRI_ARGS "UU"
 
-  /**
-   * The KokkosBatched::SerialTrtri implementation performs trmm and scal on subblocks
-   * of the A matrix. a_m subblocks are selected.
-   */
+/**
+ * The KokkosBatched::SerialTrtri implementation performs trmm and scal on
+ * subblocks of the A matrix. a_m subblocks are selected.
+ */
 static inline double __trtri_impl_flop_count(double a_m, double /*a_n*/) {
   double flop_count = 0;
   double flops_per_div, flops_per_mul, flops_per_add;
 
-    if (std::is_same<double, default_scalar>::value ||
-        std::is_same<float, default_scalar>::value ||
-        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
-      flops_per_div = 1;
-      flops_per_mul = 1;
-      flops_per_add = 1;
-    } else {
-      // For complex, we need to count 2 flops for each add and 6 flops for each multiply or divide.
-      flops_per_div = 6;
-      flops_per_mul = 6;
-      flops_per_add = 2;
-    }
+  if (std::is_same<double, default_scalar>::value ||
+      std::is_same<float, default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
+    flops_per_div = 1;
+    flops_per_mul = 1;
+    flops_per_add = 1;
+  } else {
+    // For complex, we need to count 2 flops for each add and 6 flops for each
+    // multiply or divide.
+    flops_per_div = 6;
+    flops_per_mul = 6;
+    flops_per_add = 2;
+  }
 
   for (int i = 0; i < a_m; i++) {
-    flop_count += flops_per_div;                                         // 1 / A[i,j]
-    flop_count += ((i * (i + 1)) / 2) * (flops_per_mul + flops_per_add); // TRMM FLOPS
-    flop_count += i * flops_per_mul;                                     // SCAL FLOPS
+    flop_count += flops_per_div;  // 1 / A[i,j]
+    flop_count +=
+        ((i * (i + 1)) / 2) * (flops_per_mul + flops_per_add);  // TRMM FLOPS
+    flop_count += i * flops_per_mul;                            // SCAL FLOPS
   }
 
   return flop_count;
 }
 
-// Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
+// Flop count formula from lapack working note 41:
+// http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
 static inline double __trtri_flop_count(double a_m, double a_n) {
   double flops;
   double flops_per_mul;
@@ -120,18 +97,21 @@ static inline double __trtri_flop_count(double a_m, double a_n) {
   }
 
   if (std::is_same<double, default_scalar>::value ||
-        std::is_same<float, default_scalar>::value ||
-        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
+      std::is_same<float, default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
     flops_per_mul = 1;
     flops_per_add = 1;
   } else {
-    // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
+    // For complex, we need to count 2 flops for each add and 6 flops for each
+    // multiply.
     flops_per_mul = 6;
     flops_per_add = 2;
   }
 
-  flops = (1./6.*a_n*a_n*a_n + 1./2.*a_n*a_n + 1./3.*a_n) * flops_per_mul +
-          (1./6.*a_n*a_n*a_n - 1./2.*a_n*a_n + 1./3.*a_n) * flops_per_add;
+  flops = (1. / 6. * a_n * a_n * a_n + 1. / 2. * a_n * a_n + 1. / 3. * a_n) *
+              flops_per_mul +
+          (1. / 6. * a_n * a_n * a_n - 1. / 2. * a_n * a_n + 1. / 3. * a_n) *
+              flops_per_add;
 
   return flops;
 }
@@ -151,19 +131,19 @@ static std::string trtri_csv_header_str =
 /*************************** Internal helper fns **************************/
 static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args,
                                    double time_in_seconds) {
-  double flops = trtri_args.A.extent(0) * __trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
-  double gflops = flops / 1e9;
+  double flops =
+      trtri_args.A.extent(0) *
+      __trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
+  double gflops       = flops / 1e9;
   double average_time = time_in_seconds / options.n;
 
   options.out[0] << test_e_str[options.test] << ","
                  << options.blas_args.trtri.trtri_args << ","
-                 << loop_e_str[options.loop] << "," << trtri_args.A.extent(0) << "x" << trtri_args.A.extent(1)
-                 << "x" << trtri_args.A.extent(2) << "," << options.warm_up_n
-                 << "," << options.n << "," << time_in_seconds << ","
-                 << average_time << ","
-                 << flops << ","
-                 << gflops / average_time
-                 << std::endl;
+                 << loop_e_str[options.loop] << "," << trtri_args.A.extent(0)
+                 << "x" << trtri_args.A.extent(1) << "x"
+                 << trtri_args.A.extent(2) << "," << options.warm_up_n << ","
+                 << options.n << "," << time_in_seconds << "," << average_time
+                 << "," << flops << "," << gflops / average_time << std::endl;
 }
 
 #ifdef TRTRI_PERF_TEST_DEBUG
@@ -190,12 +170,11 @@ static void __print_trtri_perf_test_options(options_t) {
 }
 
 /*************************** Internal templated fns **************************/
-#if !defined(KOKKOS_ENABLE_CUDA) \
-  && !defined(KOKKOS_ENABLE_HIP) \
-  && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class scalar_type, class vta, class device_type>
 void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
-// Need to take subviews on the device
+  // Need to take subviews on the device
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -227,7 +206,8 @@ void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
 }
 #else
 template <class scalar_type, class vta, class device_type>
-void __do_trtri_serial_blas(options_t /*options*/, trtri_args_t /*trtri_args*/) {
+void __do_trtri_serial_blas(options_t /*options*/,
+                            trtri_args_t /*trtri_args*/) {
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_DEVICE is defined." << std::endl;
   return;
@@ -235,9 +215,8 @@ void __do_trtri_serial_blas(options_t /*options*/, trtri_args_t /*trtri_args*/) 
 #endif  // !KOKKOS_ENABLE_CUDA
 
 // Need to take subviews on the device
-#if !defined(KOKKOS_ENABLE_CUDA) \
-  && !defined(KOKKOS_ENABLE_HIP) \
-  && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class uplo, class diag>
 void __do_trtri_serial_batched_template(options_t options,
                                         trtri_args_t trtri_args) {
@@ -271,7 +250,7 @@ void __do_trtri_serial_batched_template(options_t options,
 #else
 template <class uplo, class diag>
 void __do_trtri_serial_batched_template(options_t /*options*/,
-					trtri_args_t /*trtri_args*/) {
+                                        trtri_args_t /*trtri_args*/) {
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_DEVICE is defined." << std::endl;
 }
@@ -279,10 +258,10 @@ void __do_trtri_serial_batched_template(options_t /*options*/,
 
 template <class scalar_type, class vta, class device_type>
 void __do_trtri_serial_batched(options_t options, trtri_args_t trtri_args) {
-  char __uplo = tolower(trtri_args.uplo), __diag = tolower(trtri_args.diag);
-
   using KokkosBatched::Diag;
   using KokkosBatched::Uplo;
+
+  char __uplo = tolower(trtri_args.uplo), __diag = tolower(trtri_args.diag);
 
   STATUS;
 
@@ -309,9 +288,8 @@ void __do_trtri_serial_batched(options_t options, trtri_args_t trtri_args) {
   return;
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) \
-  && !defined(KOKKOS_ENABLE_HIP) \
-  && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class ExecutionSpace>
 struct parallel_blas_trtri {
   trtri_args_t trtri_args_;
@@ -325,13 +303,13 @@ struct parallel_blas_trtri {
     KokkosBlas::trtri(&trtri_args_.uplo, &trtri_args_.diag, svA);
   }
 };
-#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP && !KOKKOS_ENABLE_OPENMPTARGET
+#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP &&
+        // !KOKKOS_ENABLE_OPENMPTARGET
 
 template <class scalar_type, class vta, class device_type>
 void __do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
-#if !defined(KOKKOS_ENABLE_CUDA) \
-  && !defined(KOKKOS_ENABLE_HIP) \
-  && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_OPENMPTARGET)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -342,27 +320,32 @@ void __do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
   STATUS;
 
   for (uint32_t i = 0; i < warm_up_n; ++i) {
-    Kokkos::parallel_for("parallelBlasWarmUpLoopTrtri",
-                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
-                        parallel_blas_trtri_functor);
+    Kokkos::parallel_for(
+        "parallelBlasWarmUpLoopTrtri",
+        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+        parallel_blas_trtri_functor);
     // Fence after each batch operation
     Kokkos::fence();
   }
 
   timer.reset();
   for (uint32_t i = 0; i < n; ++i) {
-    Kokkos::parallel_for("parallelBlasTimedLoopTrtri",
-                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
-                        parallel_blas_trtri_functor);
+    Kokkos::parallel_for(
+        "parallelBlasTimedLoopTrtri",
+        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+        parallel_blas_trtri_functor);
     // Fence after each batch operation
     Kokkos::fence();
   }
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
-            << " disabled since KOKKOS_ENABLE_CUDA, KOKKOS_ENABLE_HIP or KOKKOS_ENABLE_OPENMPTARGET is defined." << std::endl;
+            << " disabled since KOKKOS_ENABLE_CUDA, KOKKOS_ENABLE_HIP or "
+               "KOKKOS_ENABLE_OPENMPTARGET is defined."
+            << std::endl;
   __trtri_output_csv_row(options, trtri_args, -1);
-#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP &&
+        // !defined(KOKKOS_ENABLE_OPENMPTARGET)
   return;
 }
 
@@ -394,9 +377,10 @@ void __do_trtri_parallel_batched_template(options_t options,
   STATUS;
 
   for (uint32_t i = 0; i < warm_up_n; ++i) {
-    Kokkos::parallel_for("parallelBatchedWarmUpLoopTrtri",
-                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
-                        parallel_batched_trtri_functor);
+    Kokkos::parallel_for(
+        "parallelBatchedWarmUpLoopTrtri",
+        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+        parallel_batched_trtri_functor);
     // Fence after each batch operation
     Kokkos::fence();
   }
@@ -404,9 +388,10 @@ void __do_trtri_parallel_batched_template(options_t options,
   timer.reset();
 
   for (uint32_t i = 0; i < n; ++i) {
-    Kokkos::parallel_for("parallelBatchedTimedLoopTrtri",
-                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
-                        parallel_batched_trtri_functor);
+    Kokkos::parallel_for(
+        "parallelBatchedTimedLoopTrtri",
+        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+        parallel_batched_trtri_functor);
     // Fence after each batch operation
     Kokkos::fence();
   }
@@ -417,9 +402,10 @@ void __do_trtri_parallel_batched_template(options_t options,
 
 template <class scalar_type, class vta, class device_type>
 void __do_trtri_parallel_batched(options_t options, trtri_args_t trtri_args) {
-  char __uplo = tolower(trtri_args.uplo), __diag = tolower(trtri_args.diag);
   using KokkosBatched::Diag;
   using KokkosBatched::Uplo;
+
+  char __uplo = tolower(trtri_args.uplo), __diag = tolower(trtri_args.diag);
 
   STATUS;
 
@@ -452,7 +438,8 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
   using execution_space = typename device_type::execution_space;
 
   trtri_args_t trtri_args;
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
   typename vta::HostMirror host_A;

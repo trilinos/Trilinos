@@ -72,13 +72,14 @@ TEST_F(DeprecatedWarning, BeforeErrorVersion)
   set_current_version(4, 48);
   stk::reset_doomed_count();
 
-  stk::util::VersionNumber removal_version(4, 50);
+  stk::util::VersionNumber removal_version(4, 51);
   stk::util::DeprecationWarning(removal_version) << "    my feature";
 
   EXPECT_FALSE(stk::is_doomed());
   std::string expected_message(
-      "Deprecated feature removed in Version 4.50 detected.\n    my feature\n");
-  EXPECT_EQ("Message type 0: " + expected_message, test_stream().str());
+      "Deprecated feature removed in Version 4.51 detected.\n    my feature\n");
+  auto actual_message = test_stream().str();
+  EXPECT_TRUE(actual_message.find(expected_message) != std::string::npos);
   if( sierra::Env::parallel_rank() == 0 ) {
     EXPECT_EQ("WARNING: " + expected_message, redirected_cerr.str());
   }
@@ -91,13 +92,21 @@ TEST_F(DeprecatedWarning, ErrorVersion)
 {
   set_current_version(4, 48);
 
-  stk::util::VersionNumber removal_version(4, 46);
+  stk::util::VersionNumber removal_version(4, 47);
   stk::util::DeprecationWarning(removal_version) << "    my feature";
 
   EXPECT_TRUE(stk::is_doomed());
   std::string expected_message(
-      "Deprecated feature removed in Version 4.46 detected.\n    my feature\n");
+      "Deprecated feature removed in Version 4.47 detected.\n    my feature\n");
   EXPECT_EQ("Message type 1: " + expected_message, test_stream().str());
+}
+
+TEST_F(DeprecatedWarning, SetInReleaseVersion)
+{
+  set_current_version(4, 48);
+
+  stk::util::VersionNumber removal_version(4, 48);
+  EXPECT_ANY_THROW(stk::util::DeprecationWarning(removal_version) << "    my feature");
 }
 }
 }

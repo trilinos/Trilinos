@@ -130,7 +130,7 @@
         VERIFY_OP_ON(cell_dimension, ==, meta_dimension, "Dimensions don't match");
 
         const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
-        CoordinatesFieldType& coord_field = *meta.get_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates");
+        CoordinatesFieldType& coord_field = *meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
         // FIXME for fields not on a Node
         unsigned nDOF = m_nDOFs;
@@ -325,7 +325,7 @@
         VERIFY_OP_ON(child_cell_dimension, ==, meta_dimension - 1, "Dimensions don't match");
 
         const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
-        CoordinatesFieldType& coord_field = *meta.get_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates");
+        CoordinatesFieldType& coord_field = *meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
         // FIXME for fields not on a Node
         unsigned nDOF = m_nDOFs;

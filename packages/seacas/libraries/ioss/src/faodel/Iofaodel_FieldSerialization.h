@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef Iofaodel_FieldSerialization_h
-#define Iofaodel_FieldSerialization_h
+#pragma once
+
+#include "iofaodel_export.h"
 
 #include "Iofaodel_Utils.h"
 
@@ -36,7 +37,7 @@
 
 namespace Iofaodel {
 
-  size_t data_size(const Ioss::Field &f);
+  IOFAODEL_EXPORT size_t data_size(const Ioss::Field &f);
 
   // Caller should write their own version of this
   // FieldFunction should return a function or a lamba that matches the
@@ -49,21 +50,21 @@ namespace Iofaodel {
 
   // Applies FieldFunction 'op' to all fields encountered in the
   // Ioss::Region and it's various Ioss::GroupingEntities
-  void map_fields(const Ioss::Region &region, FieldFunction op);
+  IOFAODEL_EXPORT void map_fields(const Ioss::Region &region, FieldFunction op);
 
   // Applies FieldFunction 'op' to all fields encountered in the
   // Ioss::GroupingEntity
-  void map_fields(const Ioss::Region &region, const Ioss::GroupingEntity &grouping_entity,
+  IOFAODEL_EXPORT void map_fields(const Ioss::Region &region, const Ioss::GroupingEntity &grouping_entity,
                   FieldFunction op);
 
-  lunasa::DataObject pack_field(const Ioss::Region &region, const Ioss::GroupingEntity &entity,
+  IOFAODEL_EXPORT lunasa::DataObject pack_field(const Ioss::Region &region, const Ioss::GroupingEntity &entity,
                                 const Ioss::Field &field);
 
-  lunasa::DataObject pack_field(const Ioss::Region &r, const Ioss::GroupingEntity &e,
+  IOFAODEL_EXPORT lunasa::DataObject pack_field(const Ioss::Region &r, const Ioss::GroupingEntity &e,
                                 const Ioss::Field &f, void *data, size_t data_size);
 
   // Put this in the meta data section of the LDO
-  struct field_entry_t
+  struct IOFAODEL_EXPORT field_entry_t
   {
     Ioss::Field::BasicType basic_type;
     Ioss::Field::RoleType  role_type;
@@ -83,5 +84,3 @@ namespace Iofaodel {
   };
 
 } // namespace Iofaodel
-
-#endif

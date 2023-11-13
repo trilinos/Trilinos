@@ -2,12 +2,11 @@
 // Name        : testnas2exo.cpp
 // Author      : Ramon J. Moral (STRA LLC), John Niederhaus (Coordinator, SNL)
 // Version     :
-// Copyright   : (c) Sandia National Labs 2020, 2021
+// Copyright   : (c) Sandia National Labs 2020, 2021, 2022
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
-#ifndef INCLUDE_N2ENASREADER_H_
-#define INCLUDE_N2ENASREADER_H_
+#pragma once
 
 #include "N2EDataTypes.h"
 #include <fstream>
@@ -47,11 +46,11 @@ namespace NasModules {
     std::unique_ptr<std::ifstream> inStream{};
     unsigned                       lineCount{0u};
 
-    std::vector<sectionType> sections;
-    std::vector<gridType>    gridList;
-    std::vector<elementType> elementList;
+    std::vector<sectionType> sections{};
+    std::vector<gridType>    gridList{};
+    std::vector<elementType> elementList{};
 
-    std::string modelTitle;
+    std::string modelTitle{};
 
     bool doesFileExist(const std::string &fname);
     // Local buffer for reading faster
@@ -63,5 +62,3 @@ namespace NasModules {
   };
 
 } // namespace NasModules
-
-#endif /* INCLUDE_N2ENASREADER_H_ */

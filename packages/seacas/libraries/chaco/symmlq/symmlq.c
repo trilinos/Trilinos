@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,6 +8,7 @@
 /* symmlq.f -- translated by f2c (version of 16 May 1991  13:06:06).
  */
 
+#include "prototypes.h"
 #include <math.h>
 
 /* Table of constant values */
@@ -28,20 +29,18 @@ int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w,
   double   d__1, d__2;
 
   /* Local variables */
-  static double               alfa, diag, dbar, beta, gbar, oldb, epsa;
-  extern double               ch_ddot();
-  static double               gmin, gmax, zbar, epsr, epsx, beta1;
-  extern double               chdnrm2();
-  static long int             i;
-  static double               gamma, s, t, delta, z, denom;
-  extern /* Subroutine */ int aprod();
-  static double               bstep;
-  extern /* Subroutine */ int chdcopy();
-  static double               epsln;
-  extern /* Subroutine */ int chdaxpy();
-  static double               tnorm, cs, ynorm2, sn, cgnorm;
-  extern /* Subroutine */ int msolve();
-  static double               snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
+  static double   alfa, diag, dbar, beta, gbar, oldb, epsa;
+  extern double   ch_ddot(long int *n, double *dx, long int *incx, double *dy, long int *incy);
+  static double   gmin, gmax, zbar, epsr, epsx, beta1;
+  extern double   chdnrm2(long int *n, double *dx, long int *incx);
+  static long int i;
+  static double   gamma, s, t, delta, z, denom;
+  extern int    aprod(long *lnvtxs, double *x, double *y, double *dA, double *vwsqrt, double *work,
+                      double *dorthlist /* vectors to orthogonalize against */);
+  static double bstep;
+  static double epsln;
+  static double tnorm, cs, ynorm2, sn, cgnorm;
+  static double snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
 
   /*     ------------------------------------------------------------------
    */

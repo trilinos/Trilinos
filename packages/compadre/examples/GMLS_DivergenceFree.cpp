@@ -249,7 +249,7 @@ bool all_passed = true;
     vector_divfree_basis_gmls.setWeightingType(WeightingFunctionType::Power);
 
     // power to use in that weighting kernel function
-    vector_divfree_basis_gmls.setWeightingPower(2);
+    vector_divfree_basis_gmls.setWeightingParameter(2);
 
     // generate the alphas that to be combined with data for each target operation requested in lro
     vector_divfree_basis_gmls.generateAlphas(15 /* # batches */);

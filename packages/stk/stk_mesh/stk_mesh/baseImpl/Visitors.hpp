@@ -51,35 +51,48 @@ namespace mesh {
 namespace impl {
 
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
+void VisitClosureBelowEntityNoRecurse(
+        const BulkData & mesh,
+        Entity inputEntity,
+        EntityRank inputEntityRank,
+        DO_THIS_FOR_ENTITY_IN_CLOSURE & do_this,
+        DESIRED_ENTITY & desired_entity)
+{
+  for (EntityRank rank = stk::topology::NODE_RANK ; rank < inputEntityRank ; ++rank) {
+      const unsigned num_entities_of_rank = mesh.num_connectivity(inputEntity,rank);
+      if (num_entities_of_rank > 0) {
+        const Entity * entities = mesh.begin(inputEntity,rank);
+
+        for (unsigned i=0 ; i<num_entities_of_rank ; ++i) {
+          if (desired_entity(entities[i])) {
+            do_this(entities[i]);
+          }
+        }
+      }
+  }
+}
+
+template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureNoRecurse(
         const BulkData & mesh,
         Entity inputEntity,
+        EntityRank inputEntityRank,
         DO_THIS_FOR_ENTITY_IN_CLOSURE & do_this,
         DESIRED_ENTITY & desired_entity)
 {
   if (desired_entity(inputEntity)) {
     do_this(inputEntity);
-    const EntityRank inputEntityRank = mesh.entity_rank(inputEntity);
-    for (EntityRank rank = stk::topology::NODE_RANK ; rank < inputEntityRank ; ++rank) {
-        const unsigned num_entities_of_rank = mesh.num_connectivity(inputEntity,rank);
-        if (num_entities_of_rank > 0) {
-          const Entity * entities = mesh.begin(inputEntity,rank);
-
-          for (unsigned i=0 ; i<num_entities_of_rank ; ++i) {
-            if (desired_entity(entities[i])) {
-              do_this(entities[i]);
-            }
-          }
-        }
-    }
+    VisitClosureBelowEntityNoRecurse(mesh, inputEntity, inputEntityRank, do_this, desired_entity);
   }
 }
 
 inline
-EntityRank get_highest_downward_connected_rank(const BulkData& mesh, Entity entity)
+EntityRank get_highest_downward_connected_rank(const BulkData& mesh,
+                                               Entity entity,
+                                               EntityRank entityRank)
 {
-  EntityRank nextLowerRank = static_cast<EntityRank>(mesh.entity_rank(entity) - 1);
-  while (mesh.num_connectivity(entity, nextLowerRank) == 0 && nextLowerRank > stk::topology::NODE_RANK) {
+  EntityRank nextLowerRank = static_cast<EntityRank>(entityRank - 1);
+  while (nextLowerRank > stk::topology::NODE_RANK && mesh.num_connectivity(entity, nextLowerRank) == 0) {
     nextLowerRank = static_cast<EntityRank>(nextLowerRank-1);
   }
   return nextLowerRank;
@@ -89,21 +102,21 @@ template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureGeneral(
         const BulkData & mesh,
         Entity inputEntity,
+        EntityRank inputEntityRank,
         DO_THIS_FOR_ENTITY_IN_CLOSURE & do_this,
         DESIRED_ENTITY & desired_entity)
 {
-  const EntityRank inputEntityRank = mesh.entity_rank(inputEntity);
   if (inputEntityRank <= stk::topology::ELEM_RANK) {
-    VisitClosureNoRecurse(mesh, inputEntity, do_this, desired_entity);
+    VisitClosureNoRecurse(mesh, inputEntity, inputEntityRank, do_this, desired_entity);
   }
   else if (desired_entity(inputEntity)) {
     do_this(inputEntity);
-    const EntityRank nextLowerRank = get_highest_downward_connected_rank(mesh, inputEntity);
+    const EntityRank nextLowerRank = get_highest_downward_connected_rank(mesh, inputEntity, inputEntityRank);
     const unsigned num_entities_of_rank = mesh.num_connectivity(inputEntity,nextLowerRank);
     if (num_entities_of_rank > 0) {
       const Entity * entities = mesh.begin(inputEntity,nextLowerRank);
       for (unsigned i=0 ; i<num_entities_of_rank ; ++i) {
-        VisitClosureGeneral(mesh,entities[i],do_this,desired_entity);
+        VisitClosureGeneral(mesh,entities[i],nextLowerRank,do_this,desired_entity);
       }
     }
   }
@@ -143,7 +156,8 @@ void VisitClosureGeneral(
 {
     for (FORWARD_ITERATOR entity_iterator = start ; entity_iterator != finish ; ++entity_iterator)
     {
-        VisitClosureGeneral<DO_THIS_FOR_ENTITY_IN_CLOSURE,DESIRED_ENTITY>(mesh,get_entity(entity_iterator),do_this,desired_entity);
+        Entity entity = get_entity(entity_iterator);
+        VisitClosureGeneral<DO_THIS_FOR_ENTITY_IN_CLOSURE,DESIRED_ENTITY>(mesh,entity,mesh.entity_rank(entity),do_this,desired_entity);
     }
 }
 
@@ -183,18 +197,6 @@ struct OnlyVisitOnce {
     std::vector<bool> already_visited;
 };
 
-struct OnlyVisitUnchanged
-{
-    OnlyVisitUnchanged(BulkData & mesh_in) : mesh(mesh_in) {}
-    bool operator()(Entity entity){
-        if (mesh.state(entity) == Unchanged) {
-            return true;
-        }
-        return false;
-    }
-    BulkData & mesh;
-};
-
 struct OnlyVisitLocallyOwnedOnce {
     OnlyVisitLocallyOwnedOnce(const BulkData & mesh_in) : mesh(mesh_in), ovo(mesh_in) {}
     bool operator()(Entity entity)
@@ -202,17 +204,6 @@ struct OnlyVisitLocallyOwnedOnce {
         return ovo(entity) && mesh.bucket(entity).owned();
     }
     const BulkData& mesh;
-    OnlyVisitOnce ovo;
-};
-
-struct OnlyVisitSharedOnce {
-    OnlyVisitSharedOnce(const BulkData & mesh_in) : mesh(mesh_in), ovo(mesh_in) {}
-    bool operator()(Entity entity)
-    {
-        if (ovo(entity) && !mesh.in_shared(mesh.entity_key(entity))) { return true; }
-        return false;
-    }
-    const BulkData & mesh;
     OnlyVisitOnce ovo;
 };
 
@@ -234,7 +225,7 @@ void VisitClosure(
         DO_THIS_FOR_ENTITY_IN_CLOSURE & do_this)
 {
     OnlyVisitOnce ovo(mesh);
-    VisitClosureGeneral(mesh,entity_of_interest,do_this,ovo);
+    VisitClosureGeneral(mesh,entity_of_interest,mesh.entity_rank(entity_of_interest),do_this,ovo);
 }
 
 
@@ -263,7 +254,6 @@ void VisitUpwardClosureGeneral(
         if (mesh.is_valid(entity_of_interest)) {
             EntityRank endRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
             EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
-            EntityVector entities_of_rank_up;
             for (EntityRank rank_up = EntityRank(endRank-1) ; rank_up > entity_of_interest_rank ; --rank_up) {
                 size_t num_entities_of_rank_up = mesh.num_connectivity(entity_of_interest,rank_up);
                 const Entity * entity_up_it = mesh.begin(entity_of_interest,rank_up);
@@ -314,42 +304,79 @@ void VisitUpwardClosure(
 struct StoreEntity
 {
     StoreEntity(const BulkData& mesh_in)
-    : mesh(mesh_in), visitedEntity(mesh_in.get_size_of_entity_index_space(), false) {}
+    : mesh(mesh_in), visitedEntities() {}
     void operator()(Entity entity) {
-       visitedEntity[entity.local_offset()] = true;
+       visitedEntities.push_back(entity);
     }
 
     void split_shared(std::vector<Entity>& sharedEntities,
                       std::vector<Entity>& nonSharedEntities)
     {
+      stk::util::sort_and_unique(visitedEntities);
       sharedEntities.clear();
       nonSharedEntities.clear();
-      for(unsigned i=0; i<visitedEntity.size(); ++i) {
-        if (visitedEntity[i]) {
-          Entity entity(i);
-          if (mesh.in_shared(entity)) {
-            sharedEntities.push_back(entity);
-          }
-          else {
-            nonSharedEntities.push_back(entity);
-          }
+      for(Entity ent : visitedEntities) {
+        if (mesh.in_shared(ent)) {
+          sharedEntities.push_back(ent);
+        }
+        else {
+          nonSharedEntities.push_back(ent);
         }
       }
     }
 
     void store_visited_entities_in_vec(std::vector<Entity>& entities)
     {
+      stk::util::sort_and_unique(visitedEntities);
       entities.clear();
-      for(unsigned i=0; i<visitedEntity.size(); ++i) {
-        if (visitedEntity[i]) {
-          entities.emplace_back(i);
-        }
+      for(Entity ent : visitedEntities) {
+        entities.emplace_back(ent);
       }
     }
 
     const BulkData& mesh;
-    std::vector<bool> visitedEntity;
+    std::vector<Entity> visitedEntities;
 };
+
+template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, typename FORWARD_ITERATOR, class DESIRED_ENTITY>
+void VisitUpDownClosureGeneral(
+        const BulkData & mesh,
+        const FORWARD_ITERATOR & start,
+        const FORWARD_ITERATOR & finish,
+        DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this,
+        DESIRED_ENTITY & desired_entity)
+{
+    StoreEntity visitedEntityTracker(mesh);
+    EntityVector entityTmpSpace;
+    VisitUpwardClosure(mesh,start,finish,visitedEntityTracker);
+    visitedEntityTracker.store_visited_entities_in_vec(entityTmpSpace);
+
+    VisitClosureGeneral(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),do_this,desired_entity);
+}
+
+template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, class DESIRED_ENTITY>
+void VisitUpDownClosureGeneral(
+        const BulkData & mesh,
+        Entity entity_of_interest,
+        DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this,
+        DESIRED_ENTITY & desired_entity)
+{
+    const Entity * start = &entity_of_interest;
+    const Entity * finish = start+1;
+    VisitUpDownClosureGeneral(mesh,start,finish,do_this,desired_entity);
+}
+
+template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE>
+void VisitUpDownClosure(
+        const BulkData & mesh,
+        Entity entity_of_interest,
+        DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this)
+{
+    OnlyVisitOnce ovo(mesh);
+    const Entity * start = &entity_of_interest;
+    const Entity * finish = start+1;
+    VisitUpDownClosureGeneral(mesh,start,finish,do_this,ovo);
+}
 
 template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, typename FORWARD_ITERATOR, class DESIRED_ENTITY>
 void VisitAuraClosureGeneral(
@@ -366,7 +393,6 @@ void VisitAuraClosureGeneral(
 
     VisitUpwardClosure(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),visitedEntityTracker);
     visitedEntityTracker.store_visited_entities_in_vec(entityTmpSpace);
-
     VisitClosureGeneral(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),do_this,desired_entity);
 }
 
@@ -419,8 +445,7 @@ struct StoreInEntityProcMapping {
 };
 
 struct StoreInEntityProcSet {
-    StoreInEntityProcSet(
-            BulkData & mesh_in,
+    StoreInEntityProcSet(const BulkData & mesh_in,
             std::set<stk::mesh::EntityProc, stk::mesh::EntityLess> & set_in)
     :mesh(mesh_in)
     ,myset(set_in)
@@ -435,8 +460,29 @@ struct StoreInEntityProcSet {
       return false;
     }
 
-    BulkData & mesh;
+    const BulkData & mesh;
     std::set<stk::mesh::EntityProc , stk::mesh::EntityLess> & myset;
+    int proc;
+    std::vector<int> alreadyGhostedToProc;
+};
+
+struct StoreInEntityProcVec {
+    StoreInEntityProcVec(const BulkData & mesh_in, EntityProcVec& vec_in)
+    :mesh(mesh_in)
+    ,myvec(vec_in)
+    ,alreadyGhostedToProc(mesh_in.get_size_of_entity_index_space(), -1) { }
+
+    bool operator()(Entity entity) {
+      if (proc != alreadyGhostedToProc[entity.local_offset()]) {
+        alreadyGhostedToProc[entity.local_offset()] = proc;
+        myvec.push_back(EntityProc(entity,proc));
+        return true;
+      }
+      return false;
+    }
+
+    const BulkData & mesh;
+    EntityProcVec& myvec;
     int proc;
     std::vector<int> alreadyGhostedToProc;
 };
@@ -456,21 +502,16 @@ struct OnlyGhosts  {
     int proc;
 };
 
-struct OnlyGhostsEPM  {
-    OnlyGhostsEPM(BulkData & mesh_in, const EntityProcMapping& epm_in, const EntityProcMapping& entityShr)
-    : mesh(mesh_in), myMapping(epm_in), entitySharing(entityShr) {}
+struct NotAlreadyShared  {
+    NotAlreadyShared(BulkData & mesh_in)
+    : mesh(mesh_in) {}
     bool operator()(Entity entity) {
-      if (!myMapping.find(entity, proc)) {
-        if (proc != mesh.parallel_owner_rank(entity)) {
-          const bool isSharedWithProc = entitySharing.find(entity, proc);
-          return !isSharedWithProc;
-        }
+      if (proc != mesh.parallel_owner_rank(entity)) {
+        return !mesh.in_shared(entity,proc);
       }
       return false;
     }
     BulkData & mesh;
-    const EntityProcMapping& myMapping;
-    const EntityProcMapping& entitySharing;
     int proc;
 };
 

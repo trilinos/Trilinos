@@ -18,7 +18,7 @@ namespace {
   static SplitComms splitCommsSingleton;
 }
 
-const SplitComms& get_split_comms_singleton()
+SplitComms& get_split_comms_singleton()
 {
   return splitCommsSingleton;
 }

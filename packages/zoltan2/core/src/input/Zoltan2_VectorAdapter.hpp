@@ -95,7 +95,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class VectorAdapter : public BaseAdapter<User> {
+  class VectorAdapter : public AdapterWithCoords<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -110,15 +110,11 @@ public:
   typedef VectorAdapter<User> base_adapter_t;
 #endif
 
-  /*! \brief Destructor
-   */
-  virtual ~VectorAdapter() {};
-
   ////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  enum BaseAdapterType adapterType() const {return VectorAdapterType;}
+  enum BaseAdapterType adapterType() const override {return VectorAdapterType;}
 
   ///////////////////////////////////////////////////////////////
   // User's adapter interface:
@@ -179,18 +175,35 @@ public:
     Kokkos::deep_copy(elements, host_elements);
   }
 
+  /*! \brief Provide a Kokkos view (Host side) to the elements of the specified vector.
+      \param elements will on return point to the vector values
+        corresponding to the global Ids.
+   */
+  virtual void getEntriesHostView(typename AdapterWithCoords<User>::CoordsHostView & elements) const {
+      Z2_THROW_NOT_IMPLEMENTED
+
+  }
+
+  /*! \brief Provide a Kokkos view (Device side) to the elements of the specified vector.
+      \param elements will on return point to the vector values
+        corresponding to the global Ids.
+   */
+  virtual void getEntriesDeviceView(typename AdapterWithCoords<User>::CoordsDeviceView& elements) const {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
   /*! \brief Write files that can be used as input to Zoltan or Zoltan2 driver
    *  Creates chaco-formatted input files for coordinates and weights that
    *  can be used as input for Zoltan or Zoltan2 drivers.
    *  This routine is SERIAL and can be quite slow.
-   *  It is meant as a debugging tool only, to allow Zoltan developers to 
+   *  It is meant as a debugging tool only, to allow Zoltan developers to
    *  replicate performance that applications are seeing using the applicatios'
    *  input.
    */
   void generateFiles(
-    const char *fileprefix, 
+    const char *fileprefix,
     const Teuchos::Comm<int> &comm
-  ) const 
+  ) const
   {
     // Generate the graph file with weights using the base adapter method
     this->generateWeightFileOnly(fileprefix, comm);
@@ -207,29 +220,38 @@ public:
   inline int getDimension() const {return getNumEntriesPerID();}
 
   inline void getCoordinatesView(const scalar_t *&elements, int &stride,
-                                 int idx = 0) const
+                                 int idx = 0) const override
   {
     getEntriesView(elements, stride, idx);
   }
 
-  inline void getCoordinatesKokkosView(
+  void getCoordinatesKokkosView(
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const
+    typename AdapterWithCoords<User>::CoordsDeviceView & elements) const override
   {
     getEntriesKokkosView(elements);
+  }
+
+  void getCoordinatesHostView(typename AdapterWithCoords<User>::CoordsHostView &elements) const override
+  {
+    getEntriesHostView(elements);
+  }
+  void getCoordinatesDeviceView(typename AdapterWithCoords<User>::CoordsDeviceView &elements) const override
+  {
+    getEntriesDeviceView(elements);
   }
 
 private:
 
   void generateCoordsFileOnly(
-    const char* fileprefix, 
+    const char* fileprefix,
     const Teuchos::Comm<int> &comm) const;
 
 };
 
 template <typename User>
 void VectorAdapter<User>::generateCoordsFileOnly(
-  const char *fileprefix, 
+  const char *fileprefix,
   const Teuchos::Comm<int> &comm
 ) const
 {
@@ -240,7 +262,7 @@ void VectorAdapter<User>::generateCoordsFileOnly(
   int me = comm.getRank();
 
   // append suffix to filename
-  
+
   std::string filenamestr = fileprefix;
   filenamestr = filenamestr + ".coords";
   const char *filename = filenamestr.c_str();
@@ -259,7 +281,7 @@ void VectorAdapter<User>::generateCoordsFileOnly(
         // open file for appending
         fp.open(filename, std::ios::app);
       }
-    
+
       // Get the vector entries
       size_t len = this->getLocalNumIDs();
       int nvec = this->getNumEntriesPerID();

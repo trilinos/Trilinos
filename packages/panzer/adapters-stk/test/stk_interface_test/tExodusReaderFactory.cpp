@@ -56,11 +56,7 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
+#include <stk_mesh/base/Comm.hpp>
 
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_IOFactory.h"
@@ -105,6 +101,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
 
    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
    pl->set("File Name","meshes/basic.gen");
+   pl->set("File Type","Exodus");
    facts[1]->setParameterList(pl);
 
    out << "\n***reading from meshes/basic.gen ... writes to meshes/outputcheck.gen" << std::endl;
@@ -592,7 +589,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, multiblock_edge_face_block_phase2_test)
 
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, getMeshDimension)
 {
-   TEST_EQUALITY(panzer_stk::getMeshDimension("meshes/basic.gen",MPI_COMM_WORLD,true),2);
+   TEST_EQUALITY(panzer_stk::getMeshDimension("meshes/basic.gen",MPI_COMM_WORLD,"Exodus"),2);
 }
 
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
@@ -725,6 +722,45 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, percept)
 
   // test  number of total elements to make sure refinement works
   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),32);
+}
+#endif
+
+#ifdef PANZER_HAVE_UMR
+TEUCHOS_UNIT_TEST(tExodusReaderFactory, umr_refine_once_with_geometry)
+{
+  STK_ExodusReaderFactory factory;
+
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
+  pl->set("File Type","Exodus Refinement");
+  pl->set("File Name","meshes/2block_cylinders_30deg.g");
+  pl->set("Geometry File Name","meshes/2block_cylinders_30deg.stp");
+  pl->set("Levels of Uniform Refinement",1);
+  TEST_NOTHROW(factory.setParameterList(pl));
+
+  Teuchos::RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+  factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+
+  TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),12*8);
+
+  std::vector<std::string> sidesets;
+  mesh->getSidesetNames(sidesets);
+  TEST_EQUALITY((int) sidesets.size(),5);
+
+  std::vector<std::string> nodesets;
+  mesh->getNodesetNames(nodesets);
+  TEST_EQUALITY((int) nodesets.size(),3);
+
+  std::map<std::string,int> sidesets_counts = {{"top",4},  {"interface",2}, {"surface_3",2}, {"surface_4",4}, {"inner",2}};
+
+  for (auto const& x : sidesets_counts) {
+    std::vector<size_t> globalCounts;
+    stk::mesh::Part * ss_part = mesh->getSideset(x.first);
+    stk::mesh::Selector selector(*ss_part);
+    stk::mesh::comm_mesh_counts( *(mesh->getBulkData()), globalCounts, &selector);
+
+    TEST_EQUALITY((int) globalCounts[mesh->getFaceRank()],x.second*4);
+  }
+  mesh->writeToExodus("meshes/2block_cylinders_30deg.r1.g");
 }
 #endif
 

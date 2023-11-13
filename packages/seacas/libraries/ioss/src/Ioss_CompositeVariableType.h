@@ -1,17 +1,18 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_CompositeVariableType_h
-#define IOSS_Ioss_CompositeVariableType_h
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_VariableType.h> // for VariableType
 #include <string>              // for string
 
 namespace Ioss {
-  class CompositeVariableType : public VariableType
+  class IOSS_EXPORT CompositeVariableType : public VariableType
   {
   public:
     static std::string   composite_name(const std::string &base, int copies);
@@ -30,4 +31,3 @@ namespace Ioss {
     int                 copies_;
   };
 } // namespace Ioss
-#endif

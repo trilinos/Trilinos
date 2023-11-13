@@ -36,10 +36,9 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>                     // for BulkData
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 #include <stddef.h>                                  // for size_t
 #include <fstream>                                   // for operator<<, etc
-#include <stk_mesh/base/DataTraits.hpp>              // for DataTraits
-#include <stk_mesh/base/FieldTraits.hpp>
 #include <stk_mesh/base/FieldBase.hpp>               // for FieldBase, etc
 #include <stk_mesh/base/Types.hpp>                   // for EntityVector, etc
 #include <vector>                                    // for vector
@@ -93,7 +92,7 @@ public:
 
     void write_meta_data(const stk::mesh::BulkData& meshBulk)
     {
-        meshBulk.mesh_meta_data().dump_all_meta_info(m_out);
+        stk::mesh::impl::dump_all_meta_info(meshBulk.mesh_meta_data(), m_out);
     }
 
 protected:

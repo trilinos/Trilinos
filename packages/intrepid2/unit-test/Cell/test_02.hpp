@@ -79,7 +79,6 @@ namespace Intrepid2 {
         
     template<typename ValueType, typename DeviceType>
     int CellTools_Test02(const bool verbose) {
-      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -92,12 +91,6 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-      
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -187,8 +180,7 @@ namespace Intrepid2 {
               DynRankView ConstructWithLabel(physCellVertices, 1, vCount, cellDim);
               
               // create mirror host views
-              auto hRefCellVertices = Kokkos::create_mirror_view_and_copy(
-                  typename HostSpaceType:: memory_space(), refCellVertices);
+              auto hRefCellVertices = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), refCellVertices);
 
               auto hPhysCellVertices = Kokkos::create_mirror_view(physCellVertices);
 
@@ -247,7 +239,7 @@ namespace Intrepid2 {
                 for (auto pt=0;pt<numCubPoints;++pt) {
                   
                   // Temp storage for directly computed edge tangents
-                  Kokkos::DynRankView<ValueType,HostSpaceType> ConstructWithLabel(hEdgeBenchmarkTangents, 3);
+                  Kokkos::DynRankView<ValueType,Kokkos::HostSpace> ConstructWithLabel(hEdgeBenchmarkTangents, 3);
                   
                   for (size_type d=0;d<cellDim;++d) {
                     hEdgeBenchmarkTangents(d) = (hPhysCellVertices(0, v1ord, d) - hPhysCellVertices(0, v0ord, d))/2.0;

@@ -11,8 +11,10 @@
 #include <vector>
 #include <visualization/catalyst/manager/CatalystManager.h>
 #include <visualization/cgns/CatalystCGNSMeshBase.h>
+#include "vtkPartitionedDataSetCollection.h"
+#include "vtkNew.h"
 
-class vtkMultiBlockDataSet;
+class vtkStructuredGrid;
 
 namespace Iovs_cgns {
 
@@ -37,42 +39,30 @@ namespace Iovs_cgns {
 
     void Delete();
 
-    void CreateBase(int base_id, const std::string &base_name);
+    void AddStructuredZoneData(const ZoneData& zoneData);
 
-    void AddStructuredZoneData(int base_id, int zone_id, const std::string &zone_name,
-                               const std::string &data_name, int ni, int nj, int nk, int comp_count,
-                               bool is_cell_field, char field_suffix_separator, double *data,
-                               int size);
-
-    vtkMultiBlockDataSet *getMultiBlockDataSet();
+    vtkPartitionedDataSetCollection *getPartitionedDataSetCollection();
 
   private:
-    const unsigned int BASES_BLOCK_ID   = 0;
-    const char *       BASES_BLOCK_NAME = "Bases";
-
-    const unsigned int ZONES_BLOCK_ID   = 0;
-    const char *       ZONES_BLOCK_NAME = "Zones";
 
     CatalystCGNSMesh();
     CatalystCGNSMesh(const CatalystCGNSMesh &) = delete;
     CatalystCGNSMesh &operator=(const CatalystCGNSMesh &) = delete;
 
-    std::string createFieldVariableName(std::string fieldNamePrefix, char fieldSuffixSeparator,
-                                        int componentIndex, int componentCount);
+    std::map<int, int> zone_id_to_zone_location_map;
 
-    struct base
-    {
-      int                base_location;
-      std::map<int, int> zone_id_to_zone_location_map;
-    };
-
-    std::map<int, base> base_id_to_base_map;
-
-    vtkMultiBlockDataSet * multiBlock = nullptr;
+    vtkNew<vtkPartitionedDataSetCollection> vpdc;
     Iovs::CatalystManager *catManager = nullptr;
     bool                   writeCatalystMesh;
     std::string            catalystMeshFilePrefix;
     CatalystPipelineInfo   catalystPipelineInfo;
+    const std::string ASSEMBLY_LABEL = "label";
+    const std::string ASSEMBLY_ROOT_NAME = "IOSS";
+    const std::string ASSEMBLY_STRUCTURED_BLOCKS = "structured_blocks";
+    const int PDS_STRUCTURED_GRID_INDEX = 0;
+    int getStructuredBlocksAssemblyNode();
+    void createPartitionedDataSet(const ZoneData& zoneData, vtkStructuredGrid* sg);
+    vtkStructuredGrid* getStucturedGrid(const ZoneData& zoneData);
   };
 
 } // namespace Iovs_cgns

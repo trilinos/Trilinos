@@ -30,6 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from phactori import *
 import unittest
 #from vtk import *
 import vtk
@@ -38,7 +39,7 @@ import paraview.simple
 
 class TestPhactoriSliceWithPlaneOperation(unittest.TestCase):
 
-  def test_DefaultSliceWithPlaneBehavior(unittest.TestCase):
+  def test_DefaultSliceWithPlaneBehavior(self):
     testWavelet = Wavelet()
     testWavelet.UpdatePipeline()
     newOperationBlock = PhactoriOperationBlock()
@@ -48,14 +49,18 @@ class TestPhactoriSliceWithPlaneOperation(unittest.TestCase):
               'slicewithplane',
               PhactoriSliceWithPlaneOperation,
               operationParams)
-    #newOperationBlock.mOperationSpecifics.myCopyOfInputFilter = testWavelet
-    #testWavelet.UpdatePipeline()
-    newOperationBlock.GetPvFilter().updatePipeline()
-    
+    ConstructPipelineOperationFromParsedOperationBlockC_ForTest(newOperationBlock, testWavelet)
+    newOperationBlock.GetPvFilter().UpdatePipeline()
+    pointData = newOperationBlock.GetPvFilter().PointData
+    rtdataArry = pointData.GetArray("RTData")
+    numPoints = rtdataArry.GetNumberOfTuples()
+    self.assertEqual(numPoints, 441)
 
-  def test_OrthogonalSlices(unittest.TestCase):
+  #def test_OrthogonalSlices(self):
 
 if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
+
+

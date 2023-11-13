@@ -46,17 +46,15 @@
 #ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
 #define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos.hpp"
+#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos_decl.hpp"
 
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -66,7 +64,7 @@ namespace MueLu {
   void IsolatedNodeAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const ParameterList& /* params */,
                   const LWGraph_kokkos& graph,
-                  Aggregates_kokkos& /* aggregates */,
+                  Aggregates& /* aggregates */,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggstat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
@@ -80,11 +78,13 @@ namespace MueLu {
       aggStat[idx] = aggstatHost(idx);
     }
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     const LO  numRows = graph.GetNodeNumVertices();
 
     // Remove all isolated nodes
     for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).length == 1) {
+      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && lclLWGraph.getNeighborVertices(i).length == 1) {
         aggStat[i] = IGNORED;
         numNonAggregatedNodes--;
       }
@@ -97,5 +97,4 @@ namespace MueLu {
 
 } // end namespace
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP

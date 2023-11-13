@@ -46,7 +46,7 @@
 #ifndef XPETRA_REORDEREDBLOCKEDMULTIVECTOR_HPP
 #define XPETRA_REORDEREDBLOCKEDMULTIVECTOR_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -69,7 +69,7 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class ReorderedBlockedMultiVector :
     public BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
@@ -246,7 +246,7 @@ Teuchos::RCP<const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
       /*{
         std::cout << "MultiVector:" << std::endl;
         Teuchos::ArrayRCP<const Scalar> vData = vec->getData(0);
-        for(size_t j=0; j< vec->getMap()->getNodeNumElements(); j++) {
+        for(size_t j=0; j< vec->getMap()->getLocalNumElements(); j++) {
             std::cout << j << ": " << vec->getMap()->getGlobalElement(j) << ": " << vData[j] << std::endl;
         }
       }*/

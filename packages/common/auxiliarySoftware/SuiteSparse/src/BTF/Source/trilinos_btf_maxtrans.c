@@ -165,7 +165,7 @@ static Int trilinos_augment
 
     /* start a DFS to find a match for column k */
     found = FALSE ;
-    i = EMPTY ;
+    i = TRILINOS_BTF_EMPTY ;
     head = 0 ;
     Jstack [0] = k ;
     ASSERT (Flag [k] != k) ;
@@ -190,7 +190,7 @@ static Int trilinos_augment
 	    for (p = Cheap [j] ; p < pend && !found ; p++)
 	    {
 		i = Ai [p] ;
-		found = (Match [i] == EMPTY) ;
+		found = (Match [i] == TRILINOS_BTF_EMPTY) ;
 	    }
 	    Cheap [j] = p ;
 
@@ -214,7 +214,7 @@ static Int trilinos_augment
 	if (quick && *work > maxwork)
 	{
 	    /* too much work has been performed; abort the search */
-	    return (EMPTY) ;
+	    return (TRILINOS_BTF_EMPTY) ;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -233,7 +233,7 @@ static Int trilinos_augment
 	{
 	    i = Ai [p] ;
 	    j2 = Match [i] ;
-	    ASSERT (j2 != EMPTY) ;
+	    ASSERT (j2 != TRILINOS_BTF_EMPTY) ;
 	    if (Flag [j2] != k)
 	    {
 		/* Node j2 is not yet visited, start a depth-first search on
@@ -332,13 +332,13 @@ Int TRILINOS_BTF(maxtrans)   /* returns # of columns in the matching */
     for (j = 0 ; j < ncol ; j++)
     {
 	Cheap [j] = Ap [j] ;
-	Flag [j] = EMPTY ; 
+	Flag [j] = TRILINOS_BTF_EMPTY ; 
     }
 
     /* all rows and columns are currently unmatched */
     for (i = 0 ; i < nrow ; i++)
     {
-	Match [i] = EMPTY ;
+	Match [i] = TRILINOS_BTF_EMPTY ;
     }
 
     if (maxwork > 0)
@@ -363,7 +363,7 @@ Int TRILINOS_BTF(maxtrans)   /* returns # of columns in the matching */
 	    /* we found it.  Match [i] = k for some row i has been done. */
 	    nmatch++ ;
 	}
-	else if (result == EMPTY)
+	else if (result == TRILINOS_BTF_EMPTY)
 	{
 	    /* augment gave up because of too much work, and no match found */
 	    work_limit_reached = TRUE ;
@@ -375,12 +375,12 @@ Int TRILINOS_BTF(maxtrans)   /* returns # of columns in the matching */
     /* ---------------------------------------------------------------------- */
 
     /* At this point, row i is matched to j = Match [i] if j >= 0.  i is an
-     * unmatched row if Match [i] == EMPTY. */
+     * unmatched row if Match [i] == TRILINOS_BTF_EMPTY. */
 
     if (work_limit_reached)
     {
 	/* return -1 if the work limit of maxwork*nnz(A) was reached */
-	*work = EMPTY ;
+	*work = TRILINOS_BTF_EMPTY ;
     }
 
     return (nmatch) ;

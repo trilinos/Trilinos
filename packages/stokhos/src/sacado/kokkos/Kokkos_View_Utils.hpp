@@ -44,7 +44,17 @@
 
 #include <stdexcept>
 
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 #include "Kokkos_View.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 namespace Kokkos {
 
@@ -53,11 +63,9 @@ namespace Impl {
 KOKKOS_INLINE_FUNCTION
 void raise_error(const char *msg)
 {
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-  Kokkos::abort(msg);
-#else
-  throw std::runtime_error(msg);
-#endif
+  KOKKOS_IF_ON_HOST(throw std::runtime_error(msg);)
+
+  KOKKOS_IF_ON_DEVICE(Kokkos::abort(msg);)
 }
 
 template< class T , class Device > struct RebindStokhosStorageDevice ;

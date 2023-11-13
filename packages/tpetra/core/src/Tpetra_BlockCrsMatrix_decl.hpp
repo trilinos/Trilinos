@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_BLOCKCRSMATRIX_DECL_HPP
 #define TPETRA_BLOCKCRSMATRIX_DECL_HPP
 
@@ -48,7 +49,22 @@
 #include "Tpetra_BlockMultiVector_decl.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 
+#include "KokkosSparse_BsrMatrix.hpp"
+
 namespace Tpetra {
+
+template<class BlockCrsMatrixType>
+Teuchos::RCP<BlockCrsMatrixType>
+importAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                     const Import<typename BlockCrsMatrixType::local_ordinal_type,
+                                                  typename BlockCrsMatrixType::global_ordinal_type,
+				                  typename BlockCrsMatrixType::node_type>& importer);
+template<class BlockCrsMatrixType>
+Teuchos::RCP<BlockCrsMatrixType>
+exportAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                     const Export<typename BlockCrsMatrixType::local_ordinal_type,
+                                                  typename BlockCrsMatrixType::global_ordinal_type,
+				                  typename BlockCrsMatrixType::node_type>& exporter);
 
 /// \class BlockCrsMatrix
 /// \brief Sparse matrix whose entries are small dense square blocks,
@@ -127,6 +143,16 @@ namespace Tpetra {
 /// }
 /// \endcode
 ///
+
+namespace Impl {
+  /// give an option to use layoutleft
+#if defined(TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT)
+  using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutLeft;
+#else
+  using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutRight;
+#endif
+}
+
 template<class Scalar,
          class LO,
          class GO,
@@ -185,7 +211,7 @@ public:
 
   //! The type used to access nonconst matrix blocks.
   typedef Kokkos::View<impl_scalar_type**,
-                       Kokkos::LayoutRight,
+                       Impl::BlockCrsMatrixLittleBlockArrayLayout,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_block_type;
@@ -193,7 +219,7 @@ public:
 
   //! The type used to access const matrix blocks.
   typedef Kokkos::View<const impl_scalar_type**,
-                       Kokkos::LayoutRight,
+                       Impl::BlockCrsMatrixLittleBlockArrayLayout,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           const_little_block_type;
@@ -227,6 +253,17 @@ public:
   using nonconst_values_host_view_type =
         typename row_matrix_type::nonconst_values_host_view_type;
 
+  using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
+
+  using  local_matrix_device_type =
+    KokkosSparse::Experimental::BsrMatrix<impl_scalar_type,
+                          local_ordinal_type,
+                          device_type,
+                          void,
+                          typename local_graph_device_type::size_type>;
+  using local_matrix_host_type =
+    typename local_matrix_device_type::HostMirror;
+
   //@}
   //! \name Constructors and destructor
   //@{
@@ -244,6 +281,10 @@ public:
   /// \param graph [in] A fill-complete graph.
   /// \param blockSize [in] Number of degrees of freedom per mesh point.
   BlockCrsMatrix (const crs_graph_type& graph, const LO blockSize);
+
+  BlockCrsMatrix (const crs_graph_type& graph,
+                  const typename local_matrix_device_type::values_type& values,
+                  const LO blockSize);
 
   /// \brief Constructor that takes a graph, domain and range point
   ///   Maps, and a block size.
@@ -280,9 +321,9 @@ public:
   global_size_t getGlobalNumRows() const override;
 
   //! get the local number of block rows
-  size_t getNodeNumRows() const override;
+  size_t getLocalNumRows() const override;
 
-  size_t getNodeMaxNumRowEntries() const override;
+  size_t getLocalMaxNumRowEntries() const override;
 
   /// \brief For this matrix A, compute <tt>Y := beta * Y + alpha * Op(A) * X</tt>.
   ///
@@ -350,7 +391,7 @@ public:
   //@{
 
   //! The number of degrees of freedom per mesh point.
-  LO getBlockSize () const { return blockSize_; }
+  virtual LO getBlockSize () const override { return blockSize_; }
 
   //! Get the (mesh) graph.
   virtual Teuchos::RCP<const ::Tpetra::RowGraph<LO,GO,Node> > getGraph () const override;
@@ -367,6 +408,19 @@ public:
               Teuchos::ETransp mode = Teuchos::NO_TRANS,
               const Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
               const Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ());
+
+  /// \brief Import from <tt>this</tt> to the given destination
+  ///   matrix, and make the result fill complete.
+  void
+  importAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
+                         const Import<LO, GO, Node>& importer) const;
+
+  /// \brief Import from <tt>this</tt> to the given destination
+  ///   matrix, and make the result fill complete.
+  void
+  exportAndFillComplete (Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >& destMatrix,
+                         const Export<LO, GO, Node>& exporter) const;
+
 
   /// \brief Replace values at the given (mesh, i.e., block) column
   ///   indices, in the given (mesh, i.e., block) row.
@@ -462,22 +516,6 @@ public:
   ///
   /// \return 0 if \c localRowInd is valid, else
   ///   <tt>Teuchos::OrdinalTraits<LO>::invalid()</tt>.
-  /// KK: we remove this interface 
-  ///     we cannot give a pointer
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  LO
-  getLocalRowView (const LO localRowInd,
-                   const LO*& colInds,
-                   Scalar*& vals,
-                   LO& numInds) const;
-
-
-  /// \brief Not implemented.
-  void
-  getLocalRowView (LO LocalRow,
-                   Teuchos::ArrayView<const LO> &indices,
-                   Teuchos::ArrayView<const Scalar> &values) const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   /// KK: this is inherited from row matrix interface and it returns const
   ///      this cannot replace the deprecated pointer interface
   ///      we need nonconst version of this code
@@ -499,19 +537,6 @@ public:
                    nonconst_local_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
                    size_t& NumEntries) const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getLocalRowCopy (LO LocalRow,
-                   const Teuchos::ArrayView<LO> &Indices,
-                   const Teuchos::ArrayView<Scalar> &Values,
-                   size_t &NumEntries) const override;
-#endif
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  little_block_type
-  getLocalBlock (const LO localRowInd, const LO localColInd) const;
-#endif
-
   little_block_type
   getLocalBlockDeviceNonConst (const LO localRowInd, const LO localColInd) const;
 
@@ -584,6 +609,11 @@ public:
   /// any entries in that row.
   size_t getNumEntriesInLocalRow (const LO localRowInd) const override;
 
+
+  /// Get KokkosSparce::Experimental::BsrMatrix representation
+  /// of this BlockCrsMatrix 
+  local_matrix_device_type getLocalMatrixDevice () const;
+
   /// \brief Whether this object had an error on the calling process.
   ///
   /// Import and Export operations using this object as the target of
@@ -635,7 +665,7 @@ public:
   ///   has a column Map).
   /// \pre All diagonal entries of the matrix's graph must be
   ///   populated on this process.  Results are undefined otherwise.
-  /// \post <tt>offsets.extent(0) == getNodeNumRows()</tt>
+  /// \post <tt>offsets.extent(0) == getLocalNumRows()</tt>
   ///
   /// This method creates an array of offsets of the local diagonal
   /// entries in the matrix.  This array is suitable for use in the
@@ -690,13 +720,6 @@ public:
   /// This method uses the offsets of the diagonal entries, as
   /// precomputed by getLocalDiagOffsets(), to speed up copying the
   /// diagonal of the matrix.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  void
-  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
-                                       Kokkos::MemoryUnmanaged>& diag,
-                    const Teuchos::ArrayView<const size_t>& offsets) const;
-#endif
-
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
   LO
@@ -721,6 +744,12 @@ protected:
 
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source) override;
 
+  // clang-format on
+  using dist_object_type::
+      copyAndPermute; ///< DistObject copyAndPermute has multiple overloads --
+                      ///< use copyAndPermutes for anything we don't override
+                      // clang-format off
+
   virtual void
   copyAndPermute
   (const SrcDistObject& sourceObj,
@@ -730,6 +759,13 @@ protected:
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteFromLIDs,
    const CombineMode CM) override;
+
+  // clang-format on
+  using dist_object_type::packAndPrepare; ///< DistObject overloads
+                                          ///< packAndPrepare. Explicitly use
+                                          ///< DistObject's packAndPrepare for
+                                          ///< anything we don't override
+                                          // clang-format off
 
   virtual void
   packAndPrepare
@@ -741,6 +777,13 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    size_t& constantNumPackets) override;
+
+  // clang-format on
+  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
+                                            ///< unpackAndCombine, use the
+                                            ///< DistObject's implementation for
+                                            ///< anything we don't override.
+                                            // clang-format off
 
   virtual void
   unpackAndCombine
@@ -897,7 +940,7 @@ private:
     // Gonna badly fake this here for other execspaces
 #elif defined(KOKKOS_ENABLE_HIP)
     static constexpr bool value =
-      std::is_same<typename Device::execution_space, Kokkos::Experimental::HIP>::value;
+      std::is_same<typename Device::execution_space, Kokkos::HIP>::value;
 #elif defined(KOKKOS_ENABLE_SYCL)
     static constexpr bool value =
       std::is_same<typename Device::execution_space, Kokkos::Experimental::SYCL>::value;
@@ -907,73 +950,6 @@ private:
   };
 
 public:
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    // KK: sync modify syntax will not work
-    //     the interface is deprecated bu the functionalities are removed
-  //! \name Implementation of "dual view semantics"
-  //@{
-  //! Mark the matrix's valueas as modified in host space
-  inline void modify_host()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Mark the matrix's valueas as modified in device space
-  inline void modify_device()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Mark the matrix's values as modified in the given memory space.
-  template<class MemorySpace>
-  void modify ()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Whether the matrix's values need sync'ing to host space
-  inline bool need_sync_host() const
-  {
-    //throw std::logic_error("do not use");
-    return false; 
-  }
-
-  //! Whether the matrix's values need sync'ing to device space
-  inline bool need_sync_device() const
-  {
-    //throw std::logic_error("do not use");
-    return false; 
-  }
-
-  //! Whether the matrix's values need sync'ing to the given memory space.
-  template<class MemorySpace>
-  bool need_sync () const
-  {
-    //throw std::logic_error("do not use");
-    return false;
-  }
-
-  //! Sync the matrix's values to host space
-  inline void sync_host()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Sync the matrix's values to device space
-  inline void sync_device()
-  {
-    //throw std::logic_error("do not use");
-  }
-
-  //! Sync the matrix's values <i>to</i> the given memory space.
-  template<class MemorySpace>
-  void sync ()
-  {
-    //throw std::logic_error("do not use");
-  }
-#endif
-
-
     typename impl_scalar_type_dualview::t_host::const_type
     getValuesHost() const;
 
@@ -998,22 +974,6 @@ public:
   /// CT: While we reserved the "right" we ignored this and explicitly did const cast away
   /// Hence I made the non-templated functions [getValuesHost and getValuesDevice; see above] const.
   /// KK: This should be deprecated.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template<class MemorySpace>
-  typename std::conditional<is_cuda<MemorySpace>::value,
-                            typename impl_scalar_type_dualview::t_dev,
-                            typename impl_scalar_type_dualview::t_host>::type
-  getValues () const
-  {
-    // Unlike std::conditional, if_c has a select method.
-    return Kokkos::Impl::if_c<
-      is_cuda<MemorySpace>::value,
-      typename impl_scalar_type_dualview::t_dev,
-      typename impl_scalar_type_dualview::t_host
-      >::select (this->getValuesDeviceNonConst (), this->getValuesHostNonConst ());
-  }
-#endif
-
     typename impl_scalar_type_dualview::t_host
     getValuesHostNonConst() const;
 
@@ -1141,6 +1101,7 @@ private:
 
 
 public:
+
   //! The communicator over which this matrix is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
 
@@ -1148,7 +1109,7 @@ public:
   //! The global number of columns of this matrix.
   virtual global_size_t getGlobalNumCols() const override;
 
-  virtual size_t getNodeNumCols() const override;
+  virtual size_t getLocalNumCols() const override;
 
   virtual GO getIndexBase() const override;
 
@@ -1156,8 +1117,7 @@ public:
   virtual global_size_t getGlobalNumEntries() const override;
 
   //! The local number of stored (structurally nonzero) entries.
-  virtual size_t getNodeNumEntries() const override;
-
+  virtual size_t getLocalNumEntries() const override;
   /// \brief The current number of entries on the calling process in the specified global row.
   ///
   /// Note that if the row Map is overlapping, then the calling
@@ -1234,14 +1194,6 @@ public:
                     nonconst_global_inds_host_view_type &Indices,
                     nonconst_values_host_view_type &Values,
                     size_t& NumEntries) const override;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowCopy (GO GlobalRow,
-                    const Teuchos::ArrayView<GO> &Indices,
-                    const Teuchos::ArrayView<Scalar> &Values,
-                    size_t& NumEntries) const override;
-#endif
-
   /// \brief Get a constant, nonpersisting, globally indexed view of
   ///   the given row of the matrix.
   ///
@@ -1266,12 +1218,6 @@ public:
   ///
   /// If \c GlobalRow does not belong to this node, then \c indices
   /// is set to \c null.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowView (GO GlobalRow,
-                    Teuchos::ArrayView<const GO>& indices,
-                    Teuchos::ArrayView<const Scalar>& values) const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
   virtual void
   getGlobalRowView (GO GlobalRow,
                     global_inds_host_view_type & indices,
@@ -1319,7 +1265,48 @@ public:
   virtual typename ::Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
   getFrobeniusNorm () const override;
   //@}
+
+  // Friend declaration for nonmember function.
+  template<class BlockCrsMatrixType>
+  friend Teuchos::RCP<BlockCrsMatrixType>
+  Tpetra::importAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                               const Import<typename BlockCrsMatrixType::local_ordinal_type,
+                                                            typename BlockCrsMatrixType::global_ordinal_type,
+					                    typename BlockCrsMatrixType::node_type>& importer);
+  // Friend declaration for nonmember function.
+  template<class BlockCrsMatrixType>
+  friend Teuchos::RCP<BlockCrsMatrixType>
+  Tpetra::exportAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                               const Export<typename BlockCrsMatrixType::local_ordinal_type,
+                                                            typename BlockCrsMatrixType::global_ordinal_type,
+					                    typename BlockCrsMatrixType::node_type>& exporter);
+
 };
+
+template<class BlockCrsMatrixType>
+Teuchos::RCP<BlockCrsMatrixType>
+importAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                     const Import<typename BlockCrsMatrixType::local_ordinal_type,
+                                                  typename BlockCrsMatrixType::global_ordinal_type,
+                                                  typename BlockCrsMatrixType::node_type>& importer)
+{
+  Teuchos::RCP<BlockCrsMatrixType> destMatrix;
+  sourceMatrix->importAndFillComplete (destMatrix, importer);
+  return destMatrix;
+}
+
+
+template<class BlockCrsMatrixType>
+Teuchos::RCP<BlockCrsMatrixType>
+exportAndFillCompleteBlockCrsMatrix (const Teuchos::RCP<const BlockCrsMatrixType>& sourceMatrix,
+                                     const Export<typename BlockCrsMatrixType::local_ordinal_type,
+                                                  typename BlockCrsMatrixType::global_ordinal_type,
+                                                  typename BlockCrsMatrixType::node_type>& exporter)
+{
+  Teuchos::RCP<BlockCrsMatrixType> destMatrix;
+  sourceMatrix->exportAndFillComplete (destMatrix, exporter);
+  return destMatrix;
+}
 
 } // namespace Tpetra
 

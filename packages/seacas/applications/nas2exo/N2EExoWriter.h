@@ -4,11 +4,9 @@
  *  Created on: Oct 10, 2020
  *      Author: Ramon J. Moral(Contractor, STRA LLC)
  * 		John Niederhouse(ORG 1443, SNL, Coordinator)
- *  Copyright: Sandia National Labs, OCT-2021
+ *  Copyright: Sandia National Labs, OCT-2022
  */
-
-#ifndef _EXOWRITER_H_
-#define _EXOWRITER_H_
+#pragma once
 
 #include "N2EDataTypes.h"
 #include <string>
@@ -44,11 +42,11 @@ namespace ExoModules {
     inline size_t getHexesOut() { return this->writtenHexes; };
 
   protected:
-    std::vector<sectionType> sections;
-    std::vector<gridType>    gridList;
-    std::vector<elementType> elementList;
+    std::vector<sectionType> sections{};
+    std::vector<gridType>    gridList{};
+    std::vector<elementType> elementList{};
 
-    std::string modelTitle;
+    std::string modelTitle{};
 
     int exoFileID{0};
 
@@ -69,5 +67,3 @@ namespace ExoModules {
   };
 
 } // namespace ExoModules
-
-#endif /* INCLUDE_N2EEXOWRITER_H_ */

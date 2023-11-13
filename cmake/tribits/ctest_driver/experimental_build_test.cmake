@@ -100,7 +100,7 @@ include(SetDefaultAndFromEnv)
 
 # All these can be changed by env vars
 set(CTEST_TEST_TYPE Experimental)
-set(CTEST_DO_UPDATES FALSE)
+set(CTEST_UPDATE_VERSION_ONLY TRUE)
 set(${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS "-Werror")
 
 # Don't change these in the env!

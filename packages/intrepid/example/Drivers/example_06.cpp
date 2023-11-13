@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
   // Element to Node map
   // We'll keep it around, but this is only the DOFMap if you are in the lowest order case.
   FieldContainer<int> elemToNode(numElems, numNodesPerElem);
-  int ielem = 0;
+  int ielem=0;
   for (int j=0; j<NY; j++) {
     for (int i=0; i<NX; i++) {
       elemToNode(ielem,0) = (NX + 1)*j + i;
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
   ofstream fe2nout("elem2node.dat");
   for (int j=0; j<NY; j++) {
     for (int i=0; i<NX; i++) {
-      int ielem = i + j * NX;
+      ielem = i + j * NX;
       for (int m=0; m<numNodesPerElem; m++){
 	fe2nout << elemToNode(ielem,m) <<"  ";
       }
@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
 //   ofstream ltgout("ltg.dat");
 //   for (int j=0; j<NY; j++) {
 //     for (int i=0; i<NX; i++) {
-//       int ielem = i + j * NX;
+//       ielem = i + j * NX;
 //       for (int m=0; m<numFieldsG; m++){
 // 	ltgout << ltgMapping(ielem,m) <<"  ";
 //       }

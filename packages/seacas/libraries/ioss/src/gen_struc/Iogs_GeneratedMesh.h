@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iogs_GeneratedMesh_h
-#define IOSS_Iogs_GeneratedMesh_h
+#pragma once
+
+#include "iogs_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityType.h> // for EntityType
@@ -18,9 +19,7 @@
 #include <vector>  // for vector
 
 namespace Iogs {
-  using MapVector = std::vector<int64_t>;
-
-  class GeneratedMesh
+  class IOGS_EXPORT GeneratedMesh
   {
   public:
     enum ShellLocation { MX = 0, PX = 1, MY = 2, PY = 3, MZ = 4, PZ = 5 };
@@ -227,7 +226,7 @@ namespace Iogs {
     /**
      * Return number of elements in all structured blocks on this processor.
      */
-    virtual int64_t element_count_proc() const;
+    int64_t element_count_proc() const;
 
     int64_t timestep_count() const { return timestepCount; }
     /**
@@ -242,7 +241,7 @@ namespace Iogs {
      * block with id 'block_number'. The 'block_number' ranges from
      * '1' to 'block_count()'.
      */
-    virtual int64_t element_count_proc(int64_t block_number) const;
+    int64_t element_count_proc(int64_t block_number) const;
 
     /**
      * Returns pair containing "topology type string" and "number of
@@ -254,7 +253,7 @@ namespace Iogs {
     void            build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc, int64_t slab,
                                    size_t slabOffset, size_t adjacentProc, size_t index);
     virtual int64_t communication_node_count_proc() const;
-    virtual void    node_communication_map(MapVector &map, std::vector<int> &proc);
+    virtual void    node_communication_map(Ioss::Int64Vector &map, std::vector<int> &proc);
     virtual void    owning_processor(int *owner, int64_t num_node);
 
     /**
@@ -262,7 +261,7 @@ namespace Iogs {
      * "map[local_position] = global_id" for the nodes on this
      * processor.
      */
-    virtual void node_map(MapVector &map) const;
+    virtual void node_map(Ioss::Int64Vector &map) const;
     virtual void node_map(Ioss::IntVector &map) const;
 
     /**
@@ -270,7 +269,7 @@ namespace Iogs {
      * "map[local_position] = global_id" for the elements on this
      * processor in block "block_number".
      */
-    virtual void element_map(int64_t block_number, MapVector &map) const;
+    virtual void element_map(int64_t block_number, Ioss::Int64Vector &map) const;
     virtual void element_map(int64_t block_number, Ioss::IntVector &map) const;
 
     /**
@@ -278,7 +277,7 @@ namespace Iogs {
      * "map[local_position] = global_id" for all elements on this
      * processor
      */
-    virtual void element_map(MapVector &map) const;
+    virtual void element_map(Ioss::Int64Vector &map) const;
     virtual void element_map(Ioss::IntVector &map) const;
 
     /**
@@ -288,7 +287,7 @@ namespace Iogs {
      * all elements on the current processor having a face on the
      * surface defined by ShellLocation.
      */
-    void element_surface_map(ShellLocation loc, MapVector &map) const;
+    void element_surface_map(ShellLocation loc, Ioss::Int64Vector &map) const;
 
     /**
      * Return the connectivity for the elements on this processor in
@@ -400,4 +399,3 @@ namespace Iogs {
     bool doRotation{false};
   };
 } // namespace Iogs
-#endif

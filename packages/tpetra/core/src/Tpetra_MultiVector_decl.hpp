@@ -39,6 +39,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_MULTIVECTOR_DECL_HPP
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
@@ -156,6 +157,7 @@ namespace Tpetra {
   template<class SC, class LO, class GO, class NT>
   Teuchos::ArrayView<const size_t>
   getMultiVectorWhichVectors (const MultiVector<SC, LO, GO, NT>& X);
+
 
   /// \brief One or more distributed dense vectors.
   ///
@@ -405,7 +407,7 @@ namespace Tpetra {
     /// MultiVector's data, its entries have type \c impl_scalar_type,
     /// not \c scalar_type.
     using impl_scalar_type =
-      typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      typename Kokkos::ArithTraits<Scalar>::val_type;
 
     //! The type of the Map specialization used by this class.
     using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -466,6 +468,9 @@ namespace Tpetra {
                                             Kokkos::LayoutLeft,
                                             device_type>;
     using wrapped_dual_view_type = Details::WrappedDualView<dual_view_type>;
+
+    using host_view_type = typename dual_view_type::t_host;
+    using device_view_type = typename dual_view_type::t_dev;
 
     //@}
     //! @name Constructors and destructor
@@ -1469,43 +1474,11 @@ namespace Tpetra {
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Clear "modified" flags on both host and device sides.
-    //TPETRA_DEPRECATED
-    void clear_sync_state ();
-
-    /// \brief Update data on device or host only if data in the other
-    ///   space has been marked as modified.
+    /// \brief Return the wrapped dual view holding this MultiVector's local data.
     ///
-    /// If \c TargetDeviceType is the same as this MultiVector's
-    /// device type, then copy data from host to device.  Otherwise,
-    /// copy data from device to host.  In either case, only copy if
-    /// the source of the copy has been modified.
-    ///
-    /// This is a one-way synchronization only.  If the target of the
-    /// copy has been modified, this operation will discard those
-    /// modifications.  It will also reset both device and host modified
-    /// flags.
-    ///
-    /// \note This method doesn't know on its own whether you modified
-    ///   the data in either memory space.  You must manually mark the
-    ///   MultiVector as modified in the space in which you modified
-    ///   it, by calling the modify() method with the appropriate
-    ///   template parameter.
-    template<class TargetDeviceType>
-    //TPETRA_DEPRECATED
-    void sync () {
-      view_.getDualView().template sync<TargetDeviceType> ();
-    }
-
-    //! Synchronize to Host
-    //TPETRA_DEPRECATED
-    void sync_host ();
-
-    //! Synchronize to Device
-    //TPETRA_DEPRECATED
-    void sync_device ();
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    /// \warning This method is ONLY for use by experts. We highly recommend accessing the local data
+    /// by using the member functions getLocalViewHost and getLocalViewDevice.
+    wrapped_dual_view_type getWrappedDualView() const;
 
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
@@ -1519,28 +1492,6 @@ namespace Tpetra {
     //! Whether this MultiVector needs synchronization to the device.
     bool need_sync_device () const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
-    /// \brief Mark data as modified on the given device \c TargetDeviceType.
-    ///
-    /// If \c TargetDeviceType is the same as this MultiVector's
-    /// device type, then mark the device's data as modified.
-    /// Otherwise, mark the host's data as modified.
-    template<class TargetDeviceType>
-    //TPETRA_DEPRECATED
-    void modify () {
-      view_.getDualView().template modify<TargetDeviceType> ();
-    }
-
-    //! Mark data as modified on the device side.
-    //TPETRA_DEPRECATED
-    void modify_device ();
-
-    //! Mark data as modified on the host side.
-    //TPETRA_DEPRECATED
-    void modify_host ();
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
-
     /// \brief Return a view of the local data on a specific device, with the given access mode.
     ///   The return type is either dual_view_type::t_dev, dual_view_type::t_host, or the const_type of
     ///   one of those.
@@ -1550,7 +1501,7 @@ namespace Tpetra {
     /// For example, suppose you create a Tpetra::MultiVector for the
     /// Kokkos::Cuda device, like this:
     /// \code
-    /// typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
+    /// typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
     /// typedef Tpetra::Map<int, int, node_type> map_type;
     /// typedef Tpetra::MultiVector<float, int, int, node_type> mv_type;
     ///
@@ -1590,55 +1541,6 @@ namespace Tpetra {
     {
       return view_.template getView<TargetDeviceType>(s);
     }
-
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief Return a view of the local data on a specific device. This is a
-    ///   generalization of getLocalViewHost() and getLocalViewDevice(). The
-    ///   returned view has type dual_view_type::t_dev or dual_view_type::t_host,
-    ///   depending on which one has a device, memory space or execution space
-    ///   matching that of TargetDeviceType.
-    ///
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// For example, suppose you create a Tpetra::MultiVector for the
-    /// Kokkos::Cuda device, like this:
-    /// \code
-    /// typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
-    /// typedef Tpetra::Map<int, int, node_type> map_type;
-    /// typedef Tpetra::MultiVector<float, int, int, node_type> mv_type;
-    ///
-    /// RCP<const map_type> map = ...;
-    /// mv_type DV (map, 3);
-    /// \endcode
-    /// If you want to get the CUDA device Kokkos::View, do this:
-    /// \code
-    /// typedef typename mv_type::dual_view_type dual_view_type;
-    /// typedef typename dual_view_type::t_dev device_view_type;
-    /// device_view_type cudaView = DV.getLocalView<Kokkos::Cuda> ();
-    /// \endcode
-    /// and if you want to get the host mirror of that View, do this:
-    /// \code
-    /// typedef typename dual_view_type::host_mirror_space host_execution_space;
-    /// typedef typename dual_view_type::t_host host_view_type;
-    /// host_view_type hostView = DV.getLocalView<host_execution_space> ();
-    /// \endcode
-    template<class TargetDeviceType>
-    //TPETRA_DEPRECATED 
-    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView () const
-    {
-      return view_.getDualView().template view<TargetDeviceType>();
-    }
-
-    //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
-    //TPETRA_DEPRECATED 
-    typename dual_view_type::t_host getLocalViewHost () const;
-
-    //! A local Kokkos::View of device memory. This is a low-level expert function - it requires you to call sync_device() and modify_device() on this MultiVector as needed.
-    //TPETRA_DEPRECATED 
-    typename dual_view_type::t_dev getLocalViewDevice () const;
-#endif
 
     //@}
     //! @name Mathematical methods
@@ -1730,6 +1632,7 @@ namespace Tpetra {
          const ViewType& dots) const {
       const Kokkos::View<dot_type*, Kokkos::HostSpace> h_dots("Tpetra::Dots",dots.extent(0));
       this->dot (A, h_dots);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy(dots,h_dots);
     }
 
@@ -1761,6 +1664,7 @@ namespace Tpetra {
       // std::complex conversions, but those two implementations
       // should generally be bitwise compatible.
       // CT: no this can't possible work .....
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (dots, dts);
     }
 
@@ -1859,7 +1763,8 @@ namespace Tpetra {
       using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->norm1 (h_norms);
-      Kokkos::deep_copy (norms, h_norms);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), norms, h_norms);
     }
 
     /// \brief Compute the one-norm of each vector (column), storing
@@ -1890,6 +1795,7 @@ namespace Tpetra {
       // Sacado and Stokhos packages are likely to care about this use
       // case.  It could also come up with Kokkos::complex ->
       // std::complex conversion.
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (norms, tmpNorms);
     }
 
@@ -1951,6 +1857,7 @@ namespace Tpetra {
       using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->norm2 (h_norms);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (norms, h_norms);
     }
 
@@ -1980,6 +1887,7 @@ namespace Tpetra {
       // Sacado and Stokhos packages are likely to care about this use
       // case.  This could also come up with Kokkos::complex ->
       // std::complex conversion.
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (norms, theNorms);
     }
 
@@ -2034,7 +1942,8 @@ namespace Tpetra {
       using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->normInf (h_norms);
-      Kokkos::deep_copy (norms, h_norms);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), norms, h_norms);
     }
 
     /// \brief Compute the infinity-norm of each vector (column),
@@ -2063,6 +1972,7 @@ namespace Tpetra {
       // Sacado and Stokhos packages are likely to care about this use
       // case.  This could also come up with Kokkos::complex ->
       // std::complex conversion.
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (norms, theNorms);
     }
 
@@ -2196,7 +2106,7 @@ namespace Tpetra {
     //@{
 
     //! A simple one-line description of this object.
-    virtual std::string description() const;
+    virtual std::string description() const override;
 
     /// \brief Print the object with the given verbosity level to a FancyOStream.
     ///
@@ -2229,7 +2139,7 @@ namespace Tpetra {
     virtual void
     describe (Teuchos::FancyOStream& out,
               const Teuchos::EVerbosityLevel verbLevel =
-              Teuchos::Describable::verbLevel_default) const;
+              Teuchos::Describable::verbLevel_default) const override;
     //@}
 
     /// \brief Remove processes owning zero rows from the Map and their communicator.
@@ -2246,7 +2156,7 @@ namespace Tpetra {
     ///   is not, this method's behavior is undefined.  This pointer
     ///   will be null on excluded processes.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap) override;
 
     /// \brief Set whether this has copy (copyOrView = Teuchos::Copy)
     ///   or view (copyOrView = Teuchos::View) semantics.
@@ -2427,18 +2337,28 @@ namespace Tpetra {
     /// This method is called in DistObject::doTransfer() to check
     /// whether data redistribution between the two objects is legal.
     virtual bool
-    checkSizes (const SrcDistObject& sourceObj);
+    checkSizes (const SrcDistObject& sourceObj) override;
 
     //! Number of packets to send per LID
-    virtual size_t constantNumberOfPackets () const;
+    virtual size_t constantNumberOfPackets () const override;
 
-    virtual void
-    copyAndPermute
-    (const SrcDistObject& sourceObj,
-     const size_t numSameIDs,
-     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-     const CombineMode CM);
+  // clang-format on
+  virtual void copyAndPermute(
+      const SrcDistObject &sourceObj, const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteFromLIDs,
+      const CombineMode CM, const execution_space &space) override;
+
+  virtual void copyAndPermute(
+      const SrcDistObject &sourceObj, const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+          &permuteFromLIDs,
+      const CombineMode CM) override;
+  // clang-format off
 
     virtual void
     packAndPrepare
@@ -2452,7 +2372,22 @@ namespace Tpetra {
      Kokkos::DualView<
        size_t*,
        buffer_device_type> /* numPacketsPerLID */,
-     size_t& constantNumPackets);
+     size_t& constantNumPackets,
+     const execution_space &space) override;
+
+    virtual void
+    packAndPrepare
+    (const SrcDistObject& sourceObj,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& exportLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type>& exports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     size_t& constantNumPackets) override;
 
     virtual void
     unpackAndCombine
@@ -2466,7 +2401,22 @@ namespace Tpetra {
        size_t*,
        buffer_device_type> /* numPacketsPerLID */,
      const size_t constantNumPackets,
-     const CombineMode CM);
+     const CombineMode CM,
+     const execution_space &space) override;
+
+    virtual void
+    unpackAndCombine
+    (const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& importLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type> imports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     const size_t constantNumPackets,
+     const CombineMode CM) override;
 
   private:
 
@@ -2498,7 +2448,7 @@ namespace Tpetra {
                                  const bool verbose,
                                  const std::string* prefix,
                                  const bool areRemoteLIDsContiguous=false,
-                                 const CombineMode CM=INSERT);
+                                 const CombineMode CM=INSERT) override;
 
 
   public:

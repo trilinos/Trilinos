@@ -228,13 +228,13 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_DOC:
       case Teuchos::YAML::PROD_DOC2: {
         std::size_t offset = prod == Teuchos::YAML::PROD_DOC2 ? 1 : 0;
-        TEUCHOS_ASSERT(!rhs.at(offset).empty());
+        TEUCHOS_ASSERT(rhs.at(offset).has_value());
         swap(result_any, rhs.at(offset));
         TEUCHOS_ASSERT(result_any.type() == typeid(ParameterList));
         break;
       }
       case Teuchos::YAML::PROD_TOP_BMAP: {
-        TEUCHOS_ASSERT(!rhs.at(0).empty());
+        TEUCHOS_ASSERT(rhs.at(0).has_value());
         TEUCHOS_ASSERT(rhs.at(0).type() == typeid(PLPair));
         PLPair& pair = any_ref_cast<PLPair>(rhs.at(0));
         any& pair_rhs_any = pair.value.getAny(/* set isUsed = */ false);
@@ -249,7 +249,7 @@ class Reader : public Teuchos::Reader {
       }
       case Teuchos::YAML::PROD_TOP_NEXT: {
         if (rhs.at(1).type() == typeid(ParameterList)) {
-          TEUCHOS_TEST_FOR_EXCEPTION(!rhs.at(0).empty(), ParserFail,
+          TEUCHOS_TEST_FOR_EXCEPTION(rhs.at(0).has_value(), ParserFail,
               "Can't specify multiple top-level ParameterLists in one YAML file!\n");
           swap(result_any, rhs.at(1));
         } else {
@@ -388,7 +388,7 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_SCALAR_RAW:
       case Teuchos::YAML::PROD_MAP_SCALAR_RAW: {
         Scalar& scalar = make_any_ref<Scalar>(result_any);
-        TEUCHOS_ASSERT(!rhs.at(0).empty());
+        TEUCHOS_ASSERT(rhs.at(0).has_value());
         scalar.text = any_ref_cast<std::string>(rhs.at(0));
         scalar.text += any_ref_cast<std::string>(rhs.at(1));
         if (prod == Teuchos::YAML::PROD_MAP_SCALAR_RAW) {
@@ -531,7 +531,7 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_SPACE_STAR_NEXT:
       case Teuchos::YAML::PROD_SPACE_PLUS_NEXT:
       case Teuchos::YAML::PROD_BSCALAR_HEAD_NEXT: {
-        TEUCHOS_TEST_FOR_EXCEPTION(rhs.at(0).empty(), ParserFail,
+        TEUCHOS_TEST_FOR_EXCEPTION(!rhs.at(0).has_value(), ParserFail,
             "leading characters in " << prod << ": any was empty\n");
         swap(result_any, rhs.at(0));
         std::string& str = any_ref_cast<std::string>(result_any);
@@ -622,7 +622,7 @@ class Reader : public Teuchos::Reader {
   }
   void map_first_item(any& result_any, any& first_item) {
     ParameterList& list = make_any_ref<ParameterList>(result_any);
-    TEUCHOS_ASSERT(!first_item.empty());
+    TEUCHOS_ASSERT(first_item.has_value());
     PLPair& pair = any_ref_cast<PLPair>(first_item);
     safe_set_entry(list, pair.key, pair.value);
   }

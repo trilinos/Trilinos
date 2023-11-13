@@ -213,7 +213,7 @@ Superlu<Matrix,Vector>::preOrdering_impl()
    *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
    */
   int permc_spec = data_.options.ColPerm;
-  if ( permc_spec != SLU::MY_PERMC && this->root_ ){
+  if (!use_metis_ && permc_spec != SLU::MY_PERMC && this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
@@ -240,6 +240,9 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
    * This can be accomplished by setting the options.Fact flag to
    * DOFACT, as well as setting our own internal flag to false.
    */
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
+#endif
   same_symbolic_ = false;
   data_.options.Fact = SLU::DOFACT;
 
@@ -278,7 +281,9 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
 
       // free
       SLU::SUPERLU_FREE(new_col_ptr);
-      SLU::SUPERLU_FREE(new_row_ind);
+      if (new_nz > 0) {
+        SLU::SUPERLU_FREE(new_row_ind);
+      }
     }
 
     // reorder will convert both graph and perm/iperm to the internal METIS integer type
@@ -303,7 +308,6 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
     // Turn off Equil not to mess up METIS ordering?
     //data_.options.Equil = SLU::NO;
   }
-
   return(0);
 }
 
@@ -989,24 +993,14 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         std::runtime_error,
                         "Row and column maps have different indexbase ");
 
-    if ( is_contiguous_ == true ) {
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,
-          host_size_type_array>::do_get(this->matrixA_.ptr(),
-            host_nzvals_view_, host_rows_view_,
-            host_col_ptr_view_, nnz_ret, ROOTED,
-            ARBITRARY,
-            this->rowIndexBase_);
-    }
-    else {
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,
-          host_size_type_array>::do_get(this->matrixA_.ptr(),
-            host_nzvals_view_, host_rows_view_,
-            host_col_ptr_view_, nnz_ret, CONTIGUOUS_AND_ROOTED,
-            ARBITRARY,
-            this->rowIndexBase_);
-    }
+    Util::get_ccs_helper_kokkos_view<
+      MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,
+        host_size_type_array>::do_get(this->matrixA_.ptr(),
+          host_nzvals_view_, host_rows_view_,
+          host_col_ptr_view_, nnz_ret,
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          ARBITRARY,
+          this->rowIndexBase_);
   }
 
   // Get the SLU data type for this type of matrix

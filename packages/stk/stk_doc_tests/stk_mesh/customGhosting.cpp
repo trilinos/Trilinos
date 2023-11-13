@@ -37,6 +37,7 @@
 #include <sstream>                      // for ostringstream, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
@@ -51,99 +52,101 @@ namespace
 
 int get_other_proc(int myProc)
 {
-    return (myProc == 1) ? 0 : 1;
+  return (myProc == 1) ? 0 : 1;
 }
 
 void verify_that_elem1_and_node1_are_only_valid_on_p0(const stk::mesh::BulkData &bulkData, stk::mesh::Entity elem1, stk::mesh::Entity node1)
 {
-    if (bulkData.parallel_rank() == 0)
-    {
-      EXPECT_TRUE(bulkData.is_valid(elem1));
-      EXPECT_TRUE(bulkData.is_valid(node1));
-    }
-    else {
-      EXPECT_FALSE(bulkData.is_valid(elem1)); //elem1 only valid on proc 0, initially
-      EXPECT_FALSE(bulkData.is_valid(node1)); //node1 only valid on proc 0, initially
-    }
+  if (bulkData.parallel_rank() == 0)
+  {
+    EXPECT_TRUE(bulkData.is_valid(elem1));
+    EXPECT_TRUE(bulkData.is_valid(node1));
+  }
+  else {
+    EXPECT_FALSE(bulkData.is_valid(elem1)); //elem1 only valid on proc 0, initially
+    EXPECT_FALSE(bulkData.is_valid(node1)); //node1 only valid on proc 0, initially
+  }
 }
 
 void verify_that_elem1_and_downward_connected_entities_are_ghosted_from_p0_to_p1(const stk::mesh::BulkData &bulkData, stk::mesh::EntityId id)
 {
-    //now we have ghosted elem1 from proc 0 to proc 1, so it should be valid on both procs
-    //when an entity is ghosted, any downward-connected entities for that entity will also
-    //be ghosted. So node1 should now also be valid on both procs
-    stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, id);
-    stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, id);
-    EXPECT_TRUE(bulkData.is_valid(elem1));
-    EXPECT_TRUE(bulkData.is_valid(node1));
+  //now we have ghosted elem1 from proc 0 to proc 1, so it should be valid on both procs
+  //when an entity is ghosted, any downward-connected entities for that entity will also
+  //be ghosted. So node1 should now also be valid on both procs
+  stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, id);
+  stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, id);
+  EXPECT_TRUE(bulkData.is_valid(elem1));
+  EXPECT_TRUE(bulkData.is_valid(node1));
 }
 
 void verify_elem1_is_valid_only_on_p0(const stk::mesh::BulkData &bulk, stk::mesh::Entity elem1)
 {
-    if(bulk.parallel_rank() == 0)
-        EXPECT_TRUE(bulk.is_valid(elem1));
-    else
-        EXPECT_TRUE(!bulk.is_valid(elem1));
+  if(bulk.parallel_rank() == 0)
+    EXPECT_TRUE(bulk.is_valid(elem1));
+  else
+    EXPECT_TRUE(!bulk.is_valid(elem1));
 }
 
 void verify_elem1_is_valid_on_both_procs(const stk::mesh::BulkData &bulk, stk::mesh::EntityId id)
 {
-    stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, id);
-    EXPECT_TRUE(bulk.is_valid(elem1));
+  stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, id);
+  EXPECT_TRUE(bulk.is_valid(elem1));
 }
 
 //BEGIN_GHOST_ELEM
 TEST(StkMeshHowTo, customGhostElem)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) == 2)
-    {
-        stk::mesh::MetaData metaData;
-        stk::mesh::BulkData bulkData(metaData, communicator);
-        stk::io::fill_mesh("generated:1x1x4", bulkData);
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) == 2)
+  {
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
+    bulkPtr->mesh_meta_data().use_simple_fields();
+    stk::mesh::BulkData& bulkData = *bulkPtr;
+    stk::io::fill_mesh("generated:1x1x4", bulkData);
 
-        stk::mesh::EntityId id = 1;
-        stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, id);
-        stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, id);
-        verify_that_elem1_and_node1_are_only_valid_on_p0(bulkData, elem1, node1);
+    stk::mesh::EntityId id = 1;
+    stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, id);
+    stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, id);
+    verify_that_elem1_and_node1_are_only_valid_on_p0(bulkData, elem1, node1);
 
-        bulkData.modification_begin();
-        stk::mesh::Ghosting& ghosting = bulkData.create_ghosting("custom ghost for elem 1");
-        std::vector<std::pair<stk::mesh::Entity, int> > elemProcPairs;
-        if (bulkData.parallel_rank() == 0)
-          elemProcPairs.push_back(std::make_pair(elem1, get_other_proc(bulkData.parallel_rank())));
-        bulkData.change_ghosting(ghosting, elemProcPairs);
-        bulkData.modification_end();
+    bulkData.modification_begin();
+    stk::mesh::Ghosting& ghosting = bulkData.create_ghosting("custom ghost for elem 1");
+    std::vector<std::pair<stk::mesh::Entity, int> > elemProcPairs;
+    if (bulkData.parallel_rank() == 0)
+      elemProcPairs.push_back(std::make_pair(elem1, get_other_proc(bulkData.parallel_rank())));
+    bulkData.change_ghosting(ghosting, elemProcPairs);
+    bulkData.modification_end();
 
-        verify_that_elem1_and_downward_connected_entities_are_ghosted_from_p0_to_p1(bulkData, id);
-    }
+    verify_that_elem1_and_downward_connected_entities_are_ghosted_from_p0_to_p1(bulkData, id);
+  }
 }
 
 TEST(StkMeshHowTo, addElementToGhostingUsingSpecializedModificationForPerformance)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if(stk::parallel_machine_size(communicator) == 2)
-    {
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulk(meta, communicator);
-        stk::io::fill_mesh("generated:1x1x4", bulk);
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if(stk::parallel_machine_size(communicator) == 2)
+  {
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
+    bulkPtr->mesh_meta_data().use_simple_fields();
+    stk::mesh::BulkData& bulk = *bulkPtr;
+    stk::io::fill_mesh("generated:1x1x4", bulk);
 
-        stk::mesh::EntityId elementId = 1;
-        stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, elementId);
-        verify_elem1_is_valid_only_on_p0(bulk, elem1);
+    stk::mesh::EntityId elementId = 1;
+    stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, elementId);
+    verify_elem1_is_valid_only_on_p0(bulk, elem1);
 
-        bulk.modification_begin();
-        stk::mesh::Ghosting& ghosting = bulk.create_ghosting("my custom ghosting");
-        bulk.modification_end();
+    bulk.modification_begin();
+    stk::mesh::Ghosting& ghosting = bulk.create_ghosting("my custom ghosting");
+    bulk.modification_end();
 
-        stk::mesh::EntityProcVec entityProcPairs;
-        if(bulk.parallel_rank() == 0)
-            entityProcPairs.push_back(stk::mesh::EntityProc(elem1, get_other_proc(bulk.parallel_rank())));
+    stk::mesh::EntityProcVec entityProcPairs;
+    if(bulk.parallel_rank() == 0)
+      entityProcPairs.push_back(stk::mesh::EntityProc(elem1, get_other_proc(bulk.parallel_rank())));
 
-        bulk.batch_add_to_ghosting(ghosting, entityProcPairs);
+    bulk.batch_add_to_ghosting(ghosting, entityProcPairs);
 
-        verify_elem1_is_valid_on_both_procs(bulk, elementId);
-    }
+    verify_elem1_is_valid_on_both_procs(bulk, elementId);
+  }
 }
 //END_GHOST_ELEM
 }

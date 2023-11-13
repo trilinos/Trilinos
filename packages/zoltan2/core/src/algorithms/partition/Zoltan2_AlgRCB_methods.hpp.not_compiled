@@ -429,7 +429,7 @@ template <typename mvector_t>
     for (int i=0; i < nprocs-1; i++)
       sendOffset[i+1] = sendOffset[i] + sendCount[i];
 
-    ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
+    ArrayView<const gno_t> gnoList = vectors->getMap()->getLocalElementList();
 
     for (size_t i=0; i < nobj; i++){
       int proc = procId[i];

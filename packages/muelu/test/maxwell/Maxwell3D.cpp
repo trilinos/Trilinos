@@ -72,20 +72,16 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::TimeMonitor;
 
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
-#endif
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
-#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>
 #endif
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#endif
 
 // Stratimikos
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -94,11 +90,8 @@ using Teuchos::TimeMonitor;
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Stratimikos_MueLuHelpers.hpp>
-#ifdef HAVE_MUELU_IFPACK2
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
-#endif
 #endif
 
 // Support for ML interface
@@ -138,19 +131,19 @@ struct EpetraSolvers_Wrapper{
 
 #if defined(HAVE_MUELU_EPETRA)
 template<class GlobalOrdinal>
-struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
-  static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& SM,
-                                                Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& D0,
-                                                Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& Kn,
-                                                Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& nullspace,
-                                                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& coords,
+struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> {
+  static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& SM,
+                                                Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& D0,
+                                                Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& Kn,
+                                                Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& nullspace,
+                                                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& coords,
                                                 Teuchos::ParameterList & mueluList,
-                                                Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
+                                                Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& mlopX) {
 #if defined(HAVE_MUELU_ML)
     typedef double SC;
     typedef int LO;
     typedef GlobalOrdinal GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
+    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode NO;
     typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
     typedef typename Xpetra::Matrix<SC,LO,GO,NO> Matrix;
 
@@ -191,21 +184,21 @@ struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSeri
 #endif
   }
 
-  static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& SM,
-                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& D0,
-                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& Ms,
-                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& M0inv,
-                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& M1,
-                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& nullspace,
-                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& node_material,
-                                                   Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& coords,
+  static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& SM,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& D0,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& Ms,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& M0inv,
+                                                   Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& M1,
+                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& nullspace,
+                                                   Teuchos::RCP<Xpetra::MultiVector<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& node_material,
+                                                   Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& coords,
                                                    Teuchos::ParameterList & mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
+                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& mlopX) {
 #if defined(HAVE_MUELU_ML)
     typedef double SC;
     typedef int LO;
     typedef GlobalOrdinal GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
+    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode NO;
     typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
 
     RCP<const Epetra_CrsMatrix> epetraSM    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(SM);
@@ -253,169 +246,14 @@ struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSeri
 };
 #endif // HAVE_MUELU_EPETRA
 
-// Setup & solve wrappers struct
-// Because C++ doesn't support partial template specialization of functions.
-// By default, do not try to run Stratimikos, since that only works for Scalar=double.
-template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-struct SetupSolveWrappers {
-  static bool SetupSolve(std::map<std::string, void*> inputs);
-};
-
-
-// Partial template specialization on SC=double
-// This code branch gives the option to run with Stratimikos.
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-struct SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node> {
-  static bool SetupSolve(std::map<std::string, void*> inputs);
-};
-
-
-// By default, do not try to run Stratimikos, since that only works for Scalar=double.
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std::map<std::string, void*> inputs) {
+bool SetupSolve(std::map<std::string, void*> inputs) {
 #include <MueLu_UseShortNames.hpp>
 
   typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> coordMV;
 
   RCP<Matrix>            SM_Matrix       = *static_cast<RCP<Matrix>*>(inputs["SM"]);
-  RCP<Matrix>            D0_Matrix       = *static_cast<RCP<Matrix>*>(inputs["D0"]);
-  RCP<Matrix>            M1_Matrix       = *static_cast<RCP<Matrix>*>(inputs["M1"]);
-  RCP<Matrix>            Ms_Matrix       = *static_cast<RCP<Matrix>*>(inputs["Ms"]);
-  RCP<Matrix>            M0inv_Matrix    = *static_cast<RCP<Matrix>*>(inputs["M0inv"]);
-  RCP<Matrix>            Kn_Matrix       = *static_cast<RCP<Matrix>*>(inputs["Kn"]);
-
-  RCP<coordMV>           coords          = *static_cast<RCP<coordMV>*>(inputs["coordinates"]);
-  RCP<MultiVector>       nullspace       = *static_cast<RCP<MultiVector>*>(inputs["nullspace"]);
-  RCP<MultiVector>       material        = *static_cast<RCP<MultiVector>*>(inputs["material"]);
-
-  RCP<MultiVector>       B               = *static_cast<RCP<MultiVector>*>(inputs["B"]);
-  RCP<MultiVector>       X               = *static_cast<RCP<MultiVector>*>(inputs["X"]);
-  RCP<MultiVector>       X0              = *static_cast<RCP<MultiVector>*>(inputs["X0"]);
-
-  Teuchos::ParameterList params          = *static_cast<Teuchos::ParameterList*>(inputs["params"]);
-  Teuchos::ParameterList belosParams     = *static_cast<Teuchos::ParameterList*>(inputs["belosParams"]);
-  std::string            solverName      = *static_cast<std::string*>(inputs["solverName"]);
-  std::string            belosSolverType = *static_cast<std::string*>(inputs["belosSolverType"]);
-  std::string            precType        = *static_cast<std::string*>(inputs["precType"]);
-  int                    numResolves     = *static_cast<int*>(inputs["numResolves"]);
-  bool                   reuse           = *static_cast<bool*>(inputs["reuse"]);
-
-  RCP<const Teuchos::Comm<int> > comm    = *static_cast<RCP<const Teuchos::Comm<int> >*>(inputs["comm"]);
-  RCP<Teuchos::FancyOStream> out         = *static_cast<RCP<Teuchos::FancyOStream>*>(inputs["out"]);
-
-  bool success = false;
-
-  auto tm2 = TimeMonitor::getNewTimer("Maxwell: 2 - Build solver and preconditioner");
-#ifdef HAVE_MUELU_BELOS
-  if (solverName == "Belos") {
-    // construct preconditioner
-    RCP<Operator> preconditioner;
-    if (precType=="MueLu-RefMaxwell") {
-      preconditioner = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
-                                                               M1_Matrix,nullspace,coords,params) );
-#ifdef HAVE_MUELU_TPETRA
-      {
-        // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
-        RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(preconditioner);
-        MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);
-      }
-#endif // HAVE_MUELU_TPETRA
-    }
-    else
-      *out << "Preconditioner not supported\n";
-
-
-#ifdef HAVE_MUELU_TPETRA
-    {
-      // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
-      RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(preconditioner);
-      MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);
-    }
-#endif
-
-    // Belos linear problem
-    typedef MultiVector          MV;
-    typedef Belos::OperatorT<MV> OP;
-    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
-
-    RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
-    problem -> setOperator( belosOp );
-    Teuchos::RCP<OP> belosPrecOp;
-    if (precType != "none") {
-      belosPrecOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(preconditioner)); // Turns a Xpetra::Matrix object into a Belos operator
-      problem -> setRightPrec( belosPrecOp );
-    }
-    problem -> setProblem( X, B );
-
-    bool set = problem->setProblem();
-    if (set == false) {
-      *out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-      return false;
-    }
-
-    // Belos solver
-    RCP< Belos::SolverManager<SC, MV, OP> > solver;
-    RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
-    solver = factory->create(belosSolverType,Teuchos::rcpFromRef(belosParams.sublist(belosSolverType)));
-
-    comm->barrier();
-    tm2 = Teuchos::null;
-
-    auto tm3 = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
-
-    // set problem and solve
-    solver -> setProblem( problem );
-    for(int solveno = 0; solveno<=numResolves; solveno++) {
-      if (X0.is_null())
-        X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-      else
-        X = X0;
-      Belos::ReturnType status = solver -> solve();
-      int iters = solver -> getNumIters();
-      success = (iters<50 && status == Belos::Converged);
-      if (success)
-        *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
-      else
-        *out << "FAILURE! Belos did not converge fast enough." << std::endl;
-    }
-
-    if (reuse) {
-      TEUCHOS_ASSERT(precType == "MueLu-RefMaxwell");
-      for (int solveno = 0; solveno<2; solveno++) {
-        // SM_Matrix->resumeFill();
-        // SM_Matrix->fillComplete();
-        if (X0.is_null())
-          X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-        else
-          X = X0;
-        problem -> setProblem( X, B );
-        Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
-        Belos::ReturnType status = solver -> solve();
-        int iters = solver -> getNumIters();
-        success = (iters<50 && status == Belos::Converged);
-        if (success)
-          *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
-        else
-          *out << "FAILURE! Belos did not converge fast enough." << std::endl;
-      }
-    }
-  }
-#endif // HAVE_MUELU_BELOS
-  comm->barrier();
-
-  return success;
-} // SetupSolve
-
-
-// This code branch gives the option to run with Stratimikos.
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std::map<std::string, void*> inputs) {
-  typedef double Scalar;
-#include <MueLu_UseShortNames.hpp>
-
-  typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> coordMV;
-
-  RCP<Matrix>            SM_Matrix       = *static_cast<RCP<Matrix>*>(inputs["SM"]);
+  RCP<Matrix>            GmhdA_Matrix     = *static_cast<RCP<Matrix>*>(inputs["GmhdA"]);
   RCP<Matrix>            D0_Matrix       = *static_cast<RCP<Matrix>*>(inputs["D0"]);
   RCP<Matrix>            M1_Matrix       = *static_cast<RCP<Matrix>*>(inputs["M1"]);
   RCP<Matrix>            Ms_Matrix       = *static_cast<RCP<Matrix>*>(inputs["Ms"]);
@@ -454,7 +292,10 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
                                                                M1_Matrix,nullspace,coords,params) );
     }
     else if (precType=="MueLu-Maxwell1" || precType=="MueLu-Reitzinger") {
-      preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,nullspace,coords,params) );
+      if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+        preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Kn_Matrix,nullspace,coords,params) );
+      else 
+        preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Kn_Matrix,nullspace,coords,params,GmhdA_Matrix) );
 
     }
 
@@ -472,18 +313,19 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     }
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
     {
       // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
       RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(preconditioner);
       MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);
     }
-#endif
 
     // Belos linear problem
     typedef MultiVector          MV;
     typedef Belos::OperatorT<MV> OP;
-    RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
+    RCP<OP> belosOp;
+    if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+           belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
+    else   belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(GmhdA_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
 
     RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
     problem -> setOperator( belosOp );
@@ -536,7 +378,9 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
         else
           X = X0;
         problem -> setProblem( X, B );
-        Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
+        if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+          Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
+        else Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(GmhdA_Matrix);
         Belos::ReturnType status = solver -> solve();
         int iters = solver -> getNumIters();
         success = (iters<50 && status == Belos::Converged);
@@ -582,6 +426,8 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
           sublist->set(*key_it, M1_Matrix);
         else if (value == "Ms")
           sublist->set(*key_it, Ms_Matrix);
+        else if (value == "Kn")
+          sublist->set(*key_it, Kn_Matrix);
         else if (value == "Coordinates")
           sublist->set(*key_it, coords);
         // else if (*key_it == "Nullspace")
@@ -593,31 +439,28 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
         } else if (value == "eCoordinates")
           sublist->set(*key_it, Teuchos::rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal, Node> >(coords, true)->getEpetra_MultiVector());
 #endif
-#ifdef HAVE_MUELU_TPETRA
         else if (value == "tD0") {
           auto tD0 = Teuchos::rcp_dynamic_cast<TpetraCrsMatrix>(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix(), true)->getTpetra_CrsMatrix();
           sublist->set(*key_it, tD0);
         } else if (value == "tCoordinates") {
           sublist->set(*key_it, Teuchos::rcp_dynamic_cast<TpetraMultiVector>(coords, true)->getTpetra_MultiVector());
         }
-#endif
       }
     }
 
     // Build Thyra linear algebra objects
-    RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(SM_Matrix)->getCrsMatrix());
+    RCP<const Thyra::LinearOpBase<Scalar> > thyraA;
+    if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+         thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(SM_Matrix)->getCrsMatrix());
+    else thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(GmhdA_Matrix)->getCrsMatrix());
     RCP<      Thyra::VectorBase<Scalar> >thyraX = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(X->getVectorNonConst(0)));
     // TODO: Why do we loose a reference when running this with Epetra?
     RCP<const Thyra::VectorBase<Scalar> >thyraB = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(B->getVector(0));
 
     // Build Stratimikos solver
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
-    Stratimikos::enableMueLuRefMaxwell<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
-#ifdef HAVE_MUELU_IFPACK2
-    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
-    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
+    Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
+    Stratimikos::enableMueLuRefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+    Stratimikos::enableMueLuMaxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
     linearSolverBuilder.setParameterList(rcp(&stratimikosParams,false));              // Setup solver parameters using a Stratimikos parameter list.
 
     // Build a new "solver factory" according to the previously specified parameter list.
@@ -626,9 +469,9 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     auto prec = precFactory->createPrec();
 
     // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
-    Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+    Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
     Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = solverFactory->createOp();
-    Thyra::initializePreconditionedOp<double>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
+    Thyra::initializePreconditionedOp<Scalar>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
 
     comm->barrier();
     tm2 = Teuchos::null;
@@ -647,7 +490,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     if (reuse) {
       for (int solveno = 0; solveno<2; solveno++) {
         auto tm6 = TimeMonitor::getNewTimer("Maxwell: 4 - Setup Re");
-        Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+        Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
         comm->barrier();
         tm6 = Teuchos::null;
 
@@ -719,6 +562,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
   std::string rhs_file          = "";                 clp.setOption("rhs",                   &rhs_file);
   std::string x0_file           = "";                 clp.setOption("x0",                    &x0_file);
+  std::string GmhdA_file         = "";                 clp.setOption("GmhdA",                  &GmhdA_file);
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -726,6 +570,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+  }
+
+  if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1" || precType == "ML-Maxwell") {
+    if (SM_file != "")
+      M1_file = "";
+    M0_file = "";
   }
 
   if (xml == ""){
@@ -751,11 +601,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
   // Read matrices in from files
-  RCP<Matrix> D0_Matrix, SM_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix;
+  RCP<Matrix> D0_Matrix, SM_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix, GmhdA_Matrix;
 
   // maps for nodal and edge matrices
   RCP<const Map> node_map;
   RCP<const Map> edge_map;
+  RCP<const Map> Gmhd_map;
+  RCP<const Map> edgeOrGmhdMap;
 
   // gradient matrix
   try {
@@ -770,7 +622,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     if (comm->getSize() > 1)
       colMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(colMap_file, lib, comm);
     D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, edge_map, colMap, node_map, edge_map);
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     // *out << "Skipping D0 maps, because: " << e.what() << std::endl;
     D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, lib, comm);
     node_map = D0_Matrix->getDomainMap();
@@ -789,6 +641,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     if (M1_file != "")
       M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
   }
+  if (GmhdA_file != "") {
+    Teuchos::ArrayView<const GO> edgeMapEleList = edge_map->getLocalElementList();
+    Teuchos::Array<GO> elementList(edgeMapEleList.size()*2);
+    for (int i = 0; i < edgeMapEleList.size(); i++) {
+       elementList[2*i  ] = 2*edgeMapEleList[i];
+       elementList[2*i+1] = 2*edgeMapEleList[i] + 1;
+    }
+    edgeOrGmhdMap = MapFactory::Build(edge_map->lib(), edge_map->getGlobalNumElements()*2, elementList, edge_map->getIndexBase(), edge_map->getComm());
+    GmhdA_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(GmhdA_file, edgeOrGmhdMap);
+  }
+  else edgeOrGmhdMap = edge_map;
+
   if (Ms_file != "")
     Ms_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(Ms_file, edge_map);
   else
@@ -807,7 +671,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::ArrayRCP<LO> colInd;
     Teuchos::ArrayRCP<SC> values;
     Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
-    size_t nodeNumElements = node_map->getNodeNumElements();
+    size_t nodeNumElements = node_map->getLocalNumElements();
     M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
     SC ONE = Teuchos::ScalarTraits<Scalar>::one();
     for (size_t i = 0; i < nodeNumElements; i++) {
@@ -844,23 +708,26 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // setup LHS, RHS
   RCP<MultiVector> X, X0, B;
   if (rhs_file == "") {
-    B = MultiVectorFactory::Build(edge_map,1);
-    RCP<MultiVector> vec = MultiVectorFactory::Build(edge_map,1);
+    B = MultiVectorFactory::Build(edgeOrGmhdMap,1);
+    RCP<MultiVector> vec = MultiVectorFactory::Build(edgeOrGmhdMap,1);
     vec -> putScalar(Teuchos::ScalarTraits<Scalar>::one());
-    SM_Matrix->apply(*vec,*B);
+    if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
+         SM_Matrix->apply(*vec,*B);
+    else GmhdA_Matrix->apply(*vec,*B);
   } else
-    B = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(rhs_file, edge_map);
+    B = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(rhs_file, edgeOrGmhdMap);
 
-  X = MultiVectorFactory::Build(edge_map,1);
+  X = MultiVectorFactory::Build(edgeOrGmhdMap,1);
   X -> putScalar(Teuchos::ScalarTraits<Scalar>::zero());
   if (x0_file != "")
-    X0 = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(x0_file, edge_map);
+    X0 = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(x0_file, edgeOrGmhdMap);
 
   comm->barrier();
   tm = Teuchos::null;
 
   std::map<std::string, void*> inputs;
   inputs["SM"]              = &SM_Matrix;
+  inputs["GmhdA"]           = &GmhdA_Matrix;
   inputs["D0"]              = &D0_Matrix;
   inputs["M1"]              = &M1_Matrix;
   inputs["Ms"]              = &Ms_Matrix;
@@ -888,7 +755,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   inputs["comm"]            = &comm;
   inputs["out"]             = &out;
 
-  bool success = SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(inputs);
+  bool success = SetupSolve<Scalar,LocalOrdinal,GlobalOrdinal,Node>(inputs);
 
   globalTimeMonitor = Teuchos::null;
 

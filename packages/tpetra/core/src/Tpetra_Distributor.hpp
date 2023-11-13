@@ -102,15 +102,10 @@ namespace Tpetra {
   ///
   /// Instances of Distributor take the following parameters that
   /// control communication and debug output:
-  /// - "Barrier between receives and sends" (<tt>bool</tt>):
-  ///   Whether to execute a barrier between receives and sends in
-  ///   do[Reverse]Posts().  A barrier is required for correctness
-  ///   when the "Send type" parameter is "Rsend".  Otherwise, a
-  ///   barrier is correct and may be useful for debugging, but not
-  ///   recommended, since it introduces useless synchronization.
   /// - "Send type" (<tt>std::string</tt>): When using MPI, the
   ///   variant of MPI_Send to use in do[Reverse]Posts().  Valid
-  ///   values include "Isend", "Rsend", "Send", and "Ssend".  The
+  ///   values include "Isend", 
+  ///   and "Send".  The
   ///   default is "Send".  (The receive type is always MPI_Irecv, a
   ///   nonblocking receive.  Since we post receives first before
   ///   sends, this prevents deadlock, even if MPI_Send blocks and
@@ -390,115 +385,6 @@ namespace Tpetra {
     //! @name Methods for executing a communication plan
     //@{
 
-    /// \brief Execute the (forward) communication plan.
-    ///
-    /// Call this version of the method when you have the same number
-    /// of Packets for each LID (local ID) to send or receive.
-    ///
-    /// \tparam Packet The type of data to send and receive.
-    ///
-    /// \param exports [in] Contains the values to be sent by this
-    ///   process.  On exit from this method, it's OK to modify the
-    ///   entries of this buffer.
-    ///
-    /// \param numPackets [in] The number of Packets per export /
-    ///   import.  This version of the routine assumes that each LID
-    ///   has the same number of Packets associated with it.  (\c
-    ///   MultiVector is an example of a DistObject subclass
-    ///   satisfying this property.)
-    ///
-    /// \param imports [out] On entry, buffer must be large enough to
-    ///   accomodate the data exported (sent) to us.  On exit,
-    ///   contains the values exported to us.
-    template <class Packet>
-    void
-    doPostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
-                     size_t numPackets,
-                     const Teuchos::ArrayView<Packet> &imports);
-
-    /// \brief Execute the (forward) communication plan.
-    ///
-    /// Call this version of the method when you have possibly
-    /// different numbers of Packets for each LID (local ID) to send
-    /// or receive.
-    ///
-    /// \tparam Packet The type of data to send and receive.
-    ///
-    /// \param exports [in] Contains the values to be sent by this
-    ///   process.  On exit from this method, it's OK to modify the
-    ///   entries of this buffer.
-    ///
-    /// \param numExportPacketsPerLID [in] The number of packets for
-    ///   each export LID (i.e., each LID to be sent).
-    ///
-    /// \param imports [out] On entry, buffer must be large enough to
-    ///   accomodate the data exported (sent) to us.  On exit,
-    ///   contains the values exported to us.
-    ///
-    /// \param numImportPacketsPerLID [in] The number of packets for
-    ///   each import LID (i.e., each LID to be received).
-    template <class Packet>
-    void
-    doPostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
-                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                     const Teuchos::ArrayView<Packet> &imports,
-                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
-
-    /// \brief Post the data for a forward plan, but do not execute the waits yet.
-    ///
-    /// Call this overload when you have the same number of Packets
-    /// for each LID to send or receive.
-    ///
-    /// \tparam Packet The type of data to send and receive.
-    ///
-    /// \param exports [in] Contains the values to be sent by this
-    ///   process.  This is an ArrayRCP and not an ArrayView so that
-    ///   we have the freedom to use nonblocking sends if we wish.  Do
-    ///   not modify the data in this array until \c doWaits() has
-    ///   completed.
-    ///
-    /// \param numPackets [in] The number of Packets per export /
-    ///   import.  (Same as the three-argument version of
-    ///   doPostsAndWaits().)
-    ///
-    /// \param imports [out] On entry, buffer must be large enough to
-    ///   accomodate the data exported (sent) to us.  This is an
-    ///   ArrayRCP and not an ArrayView so that we have the freedom to
-    ///   use nonblocking sends if we wish.  Do not modify the data in
-    ///   this array until \c doWaits() has completed.  Upon
-    ///   completion of \c doWaits(), this buffer contains the values
-    ///   exported to us.
-    template <class Packet>
-    void
-    doPosts (const Teuchos::ArrayRCP<const Packet> &exports,
-             size_t numPackets,
-             const Teuchos::ArrayRCP<Packet> &imports);
-
-    /// \brief Post the data for a forward plan, but do not execute the waits yet.
-    ///
-    /// Call this overload when you have possibly different numbers of
-    /// Packets for each LID to send or receive.
-    ///
-    /// \tparam Packet The type of data to send and receive.
-    ///
-    /// \param exports [in] Same as in the three-argument version of
-    ///   doPosts().
-    ///
-    /// \param numExportPacketsPerLID [in] Same as in the
-    ///   four-argument version of doPostsAndWaits().
-    ///
-    /// \param imports [out] Same as in the three-argument version of
-    ///   doPosts().
-    ///
-    /// \param numImportPacketsPerLID [in] Same as in the
-    ///   four-argument version of doPostsAndWaits().
-    template <class Packet>
-    void
-    doPosts (const Teuchos::ArrayRCP<const Packet> &exports,
-             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-             const Teuchos::ArrayRCP<Packet> &imports,
-             const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
-
     /// Wait on any outstanding nonblocking message requests to complete.
     ///
     /// This method is for forward mode communication only, that is,
@@ -506,48 +392,6 @@ namespace Tpetra {
     /// (after calling doReversePosts()), call doReverseWaits()
     /// instead.
     void doWaits ();
-
-    /// \brief Execute the reverse communication plan.
-    ///
-    /// This method takes the same arguments as the three-argument
-    /// version of doPostsAndWaits().
-    template <class Packet>
-    void
-    doReversePostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
-                            size_t numPackets,
-                            const Teuchos::ArrayView<Packet> &imports);
-
-    /// \brief Execute the reverse communication plan.
-    ///
-    /// This method takes the same arguments as the four-argument
-    /// version of doPostsAndWaits().
-    template <class Packet>
-    void
-    doReversePostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
-                            const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                            const Teuchos::ArrayView<Packet> &imports,
-                            const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
-
-    /// \brief Post the data for a reverse plan, but do not execute the waits yet.
-    ///
-    /// This method takes the same arguments as the three-argument
-    /// version of doPosts().
-    template <class Packet>
-    void
-    doReversePosts (const Teuchos::ArrayRCP<const Packet> &exports,
-                    size_t numPackets,
-                    const Teuchos::ArrayRCP<Packet> &imports);
-
-    /// \brief Post the data for a reverse plan, but do not execute the waits yet.
-    ///
-    /// This method takes the same arguments as the four-argument
-    /// version of doPosts().
-    template <class Packet>
-    void
-    doReversePosts (const Teuchos::ArrayRCP<const Packet> &exports,
-                    const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                    const Teuchos::ArrayRCP<Packet> &imports,
-                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// Wait on any outstanding nonblocking message requests to complete.
     ///
@@ -578,7 +422,7 @@ namespace Tpetra {
     ///   accomodate the data exported (sent) to us.  On exit,
     ///   contains the values exported to us.
     template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
     doPostsAndWaits (
       const ExpView &exports,
       size_t numPackets,
@@ -606,7 +450,7 @@ namespace Tpetra {
     /// \param numImportPacketsPerLID [in] The number of packets for
     ///   each import LID (i.e., each LID to be received).
     template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
     doPostsAndWaits (const ExpView &exports,
                      const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                      const ImpView &imports,
@@ -637,7 +481,7 @@ namespace Tpetra {
     ///   completion of \c doWaits(), this buffer contains the values
     ///   exported to us.
     template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
     doPosts (const ExpView &exports,
              size_t numPackets,
              const ImpView &imports);
@@ -661,7 +505,7 @@ namespace Tpetra {
     /// \param numImportPacketsPerLID [in] Same as in the
     ///   four-argument version of doPostsAndWaits().
     template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
     doPosts (const ExpView &exports,
              const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
              const ImpView &imports,
@@ -672,7 +516,7 @@ namespace Tpetra {
     /// This method takes the same arguments as the three-argument
     /// version of doPostsAndWaits().
     template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
     doReversePostsAndWaits (const ExpView &exports,
                             size_t numPackets,
                             const ImpView &imports);
@@ -682,7 +526,7 @@ namespace Tpetra {
     /// This method takes the same arguments as the four-argument
     /// version of doPostsAndWaits().
     template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
     doReversePostsAndWaits (const ExpView &exports,
                             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                             const ImpView &imports,
@@ -693,7 +537,7 @@ namespace Tpetra {
     /// This method takes the same arguments as the three-argument
     /// version of doPosts().
     template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
     doReversePosts (const ExpView &exports,
                     size_t numPackets,
                     const ImpView &imports);
@@ -703,19 +547,11 @@ namespace Tpetra {
     /// This method takes the same arguments as the four-argument
     /// version of doPosts().
     template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
     doReversePosts (const ExpView &exports,
                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                     const ImpView &imports,
                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
-
-    /// \brief Information on the last call to do/doReverse
-    ///
-    /// Returns the amount of data sent & recv'd on this processor in bytes
-    void getLastDoStatistics(size_t & bytes_sent,  size_t & bytes_recvd) const{
-      bytes_sent  = lastRoundBytesSend_;
-      bytes_recvd = lastRoundBytesRecv_;
-    }
 
     //@}
     //! @name Implementation of Teuchos::Describable
@@ -783,12 +619,6 @@ namespace Tpetra {
     /// later reuse.  This is why it is declared "mutable".
     mutable Teuchos::RCP<Distributor> reverseDistributor_;
 
-    /// \brief The number of bytes sent by this proc in the last call to do/doReverse
-    size_t lastRoundBytesSend_;
-
-    /// \brief The number of bytes received by this proc in the last call to do/doReverse
-    size_t lastRoundBytesRecv_;
-
     /// \brief Compute send (GID,PID) pairs from receive (GID,PID) pairs.
     ///
     /// GID means "global ID" and PID means "process ID" (rank, in MPI
@@ -819,223 +649,8 @@ namespace Tpetra {
     localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
   }; // class Distributor
 
-
-  template <class Packet>
-  void Distributor::
-  doPostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
-                   size_t numPackets,
-                   const Teuchos::ArrayView<Packet>& imports)
-  {
-    using Teuchos::arcp;
-    using Teuchos::ArrayRCP;
-    typedef typename ArrayRCP<const Packet>::size_type size_type;
-
-    // doPosts() accepts the exports and imports arrays as ArrayRCPs,
-    // requiring that the memory location is persisting (as is
-    // necessary for nonblocking receives).  However, it need only
-    // persist until doWaits() completes, so it is safe for us to use
-    // a nonpersisting reference in this case.  The use of a
-    // nonpersisting reference is purely a performance optimization.
-
-    //const Packet* exportsPtr = exports.getRawPtr();
-    //ArrayRCP<const Packet> exportsArcp (exportsPtr, static_cast<size_type> (0),
-    //                                    exports.size(), false);
-    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr (),
-                                        static_cast<size_type> (0),
-                                        exports.size(), false);
-
-    // For some reason, neither of the options below (that use arcp)
-    // compile for Packet=std::complex<double> with GCC 4.5.1.  The
-    // issue only arises with the exports array.  This is why we
-    // construct a separate nonowning ArrayRCP.
-
-    // doPosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
-    //              numPackets,
-    //              arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
-    // doPosts (arcp<const Packet> (exportsPtr, 0, exports.size(), false),
-    //              numPackets,
-    //              arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
-    doPosts (exportsArcp,
-             numPackets,
-             arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
-    doWaits ();
-
-    lastRoundBytesSend_ = exports.size () * sizeof (Packet);
-    lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
-  }
-
-  template <class Packet>
-  void Distributor::
-  doPostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
-                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                   const Teuchos::ArrayView<Packet> &imports,
-                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
-  {
-    using Teuchos::arcp;
-    using Teuchos::ArrayRCP;
-
-    // doPosts() accepts the exports and imports arrays as ArrayRCPs,
-    // requiring that the memory location is persisting (as is
-    // necessary for nonblocking receives).  However, it need only
-    // persist until doWaits() completes, so it is safe for us to use
-    // a nonpersisting reference in this case.
-
-    // mfh 04 Apr 2012: For some reason, calling arcp<const Packet>
-    // for Packet=std::complex<T> (e.g., T=float) fails to compile
-    // with some versions of GCC.  The issue only arises with the
-    // exports array.  This is why we construct a separate nonowning
-    // ArrayRCP.
-    typedef typename ArrayRCP<const Packet>::size_type size_type;
-    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr (),
-                                        static_cast<size_type> (0),
-                                        exports.size (), false);
-    // mfh 04 Apr 2012: This is the offending code.  This statement
-    // would normally be in place of "exportsArcp" in the
-    // doPosts() call below.
-    //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
-    doPosts (exportsArcp,
-             numExportPacketsPerLID,
-             arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
-             numImportPacketsPerLID);
-    doWaits ();
-
-    lastRoundBytesSend_ = exports.size () * sizeof (Packet);
-    lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
-  }
-
-
-  template <class Packet>
-  void Distributor::
-  doPosts (const Teuchos::ArrayRCP<const Packet>& exports,
-           size_t numPackets,
-           const Teuchos::ArrayRCP<Packet>& imports)
-  {
-    Kokkos::View<const Packet*, Kokkos::HostSpace> exportsView(exports.get(), exports.size());
-    Kokkos::View<Packet*, Kokkos::HostSpace> importsView(imports.get(), imports.size());
-    doPosts(exportsView, numPackets, importsView);
-  }
-
-  template <class Packet>
-  void Distributor::
-  doPosts (const Teuchos::ArrayRCP<const Packet>& exports,
-           const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-           const Teuchos::ArrayRCP<Packet>& imports,
-           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
-  {
-    Kokkos::View<const Packet*, Kokkos::HostSpace> exportsView(exports.get(), exports.size());
-    Kokkos::View<Packet*, Kokkos::HostSpace> importsView(imports.get(), imports.size());
-    doPosts(exportsView, numExportPacketsPerLID, importsView, numImportPacketsPerLID);
-  }
-
-  template <class Packet>
-  void Distributor::
-  doReversePostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
-                          size_t numPackets,
-                          const Teuchos::ArrayView<Packet>& imports)
-  {
-    using Teuchos::arcp;
-    using Teuchos::ArrayRCP;
-    using Teuchos::as;
-
-    // doReversePosts() takes exports and imports as ArrayRCPs,
-    // requiring that the memory locations are persisting.  However,
-    // they need only persist within the scope of that routine, so it
-    // is safe for us to use nonpersisting references in this case.
-
-    // mfh 04 Apr 2012: For some reason, calling arcp<const Packet>
-    // for Packet=std::complex<T> (e.g., T=float) fails to compile
-    // with some versions of GCC.  The issue only arises with the
-    // exports array.  This is why we construct a separate nonowning
-    // ArrayRCP.
-    typedef typename ArrayRCP<const Packet>::size_type size_type;
-    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
-                                        exports.size(), false);
-    // mfh 04 Apr 2012: This is the offending code.  This statement
-    // would normally be in place of "exportsArcp" in the
-    // doReversePosts() call below.
-    //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false)
-    doReversePosts (exportsArcp,
-                    numPackets,
-                    arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
-    doReverseWaits ();
-
-    lastRoundBytesSend_ = exports.size() * sizeof(Packet);
-    lastRoundBytesRecv_ = imports.size() * sizeof(Packet);
-  }
-
-  template <class Packet>
-  void Distributor::
-  doReversePostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
-                          const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                          const Teuchos::ArrayView<Packet> &imports,
-                          const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
-  {
-    using Teuchos::as;
-    using Teuchos::arcp;
-    using Teuchos::ArrayRCP;
-
-    // doReversePosts() accepts the exports and imports arrays as
-    // ArrayRCPs, requiring that the memory location is persisting (as
-    // is necessary for nonblocking receives).  However, it need only
-    // persist until doReverseWaits() completes, so it is safe for us
-    // to use a nonpersisting reference in this case.  The use of a
-    // nonpersisting reference is purely a performance optimization.
-
-    // mfh 02 Apr 2012: For some reason, calling arcp<const Packet>
-    // for Packet=std::complex<double> fails to compile with some
-    // versions of GCC.  The issue only arises with the exports array.
-    // This is why we construct a separate nonowning ArrayRCP.
-    typedef typename ArrayRCP<const Packet>::size_type size_type;
-    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr (), as<size_type> (0),
-                                        exports.size (), false);
-    doReversePosts (exportsArcp,
-                    numExportPacketsPerLID,
-                    arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
-                    numImportPacketsPerLID);
-    doReverseWaits ();
-
-    lastRoundBytesSend_ = exports.size() * sizeof(Packet);
-    lastRoundBytesRecv_ = imports.size() * sizeof(Packet);
-  }
-
-  template <class Packet>
-  void Distributor::
-  doReversePosts (const Teuchos::ArrayRCP<const Packet>& exports,
-                  size_t numPackets,
-                  const Teuchos::ArrayRCP<Packet>& imports)
-  {
-    // FIXME (mfh 29 Mar 2012) WHY?
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! plan_.getIndicesTo().is_null(), std::runtime_error,
-      "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
-      "communication when original data are blocked by process.");
-    if (reverseDistributor_.is_null ()) {
-      createReverseDistributor ();
-    }
-    reverseDistributor_->doPosts (exports, numPackets, imports);
-  }
-
-  template <class Packet>
-  void Distributor::
-  doReversePosts (const Teuchos::ArrayRCP<const Packet>& exports,
-                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                  const Teuchos::ArrayRCP<Packet>& imports,
-                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
-  {
-    // FIXME (mfh 29 Mar 2012) WHY?
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! plan_.getIndicesTo().is_null(), std::runtime_error,
-      "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
-      "communication when original data are blocked by process.");
-    if (reverseDistributor_.is_null ()) {
-      createReverseDistributor ();
-    }
-    reverseDistributor_->doPosts (exports, numExportPacketsPerLID,
-                                  imports, numImportPacketsPerLID);
-  }
-
   template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
   Distributor::
   doPostsAndWaits (const ExpView& exports,
                    size_t numPackets,
@@ -1045,7 +660,7 @@ namespace Tpetra {
   }
 
   template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
   Distributor::
   doPostsAndWaits(const ExpView& exports,
                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
@@ -1057,7 +672,7 @@ namespace Tpetra {
 
 
   template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
   Distributor::
   doPosts (const ExpView &exports,
            size_t numPackets,
@@ -1067,7 +682,7 @@ namespace Tpetra {
   }
 
   template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
   Distributor::
   doPosts (const ExpView &exports,
            const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
@@ -1078,7 +693,7 @@ namespace Tpetra {
   }
 
   template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
   Distributor::
   doReversePostsAndWaits (const ExpView& exports,
                           size_t numPackets,
@@ -1089,7 +704,7 @@ namespace Tpetra {
   }
 
   template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
   Distributor::
   doReversePostsAndWaits (const ExpView& exports,
                           const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
@@ -1102,7 +717,7 @@ namespace Tpetra {
   }
 
   template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
   Distributor::
   doReversePosts (const ExpView &exports,
                   size_t numPackets,
@@ -1120,7 +735,7 @@ namespace Tpetra {
   }
 
   template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
   Distributor::
   doReversePosts (const ExpView &exports,
                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
@@ -1153,7 +768,6 @@ namespace Tpetra {
     // OrdinalType elements of importGIDs (along with their
     // corresponding process IDs, as int) to size_t, and does a
     // doPostsAndWaits<size_t>() to send the packed data.
-    using Teuchos::Array;
     using Teuchos::ArrayView;
     using std::endl;
     using size_type = typename ArrayView<const OrdinalType>::size_type;
@@ -1170,7 +784,7 @@ namespace Tpetra {
        << " != importGIDs.size()=" << importGIDs.size() << ".");
 
     const size_type numImports = importProcIDs.size();
-    Array<size_t> importObjs(2*numImports);
+    Kokkos::View<size_t*, Kokkos::HostSpace> importObjs("importObjs", 2*numImports);
     // Pack pairs (importGIDs[i], my process ID) to send into importObjs.
     for (size_type i = 0; i < numImports; ++i) {
       importObjs[2*i]   = static_cast<size_t>(importGIDs[i]);
@@ -1223,8 +837,8 @@ namespace Tpetra {
        << tempPlan.getTotalReceiveLength() << " < numExports="
        << numExports << "." << suffix);
 
-    Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
-    tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
+    Kokkos::View<size_t*, Kokkos::HostSpace> exportObjs("exportObjs", tempPlan.getTotalReceiveLength() * 2);
+    tempPlan.doPostsAndWaits(importObjs, 2, exportObjs);
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportProcIDs.
     for (size_type i = 0; i < numExports; ++i) {

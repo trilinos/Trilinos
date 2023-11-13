@@ -51,7 +51,7 @@ typename CrsMatrix_t::scalar_type getNorm(CrsMatrix_t& matrix){
   typedef typename CrsMatrix_t::scalar_type Scalar;
   Scalar mySum = 0;
 
-  for(int i =0; ((size_t)i)<matrix.getNodeNumRows(); ++i){
+  for(int i =0; ((size_t)i)<matrix.getLocalNumRows(); ++i){
     size_t numRowEnts = matrix.getNumEntriesInLocalRow(i);
     typename CrsMatrix_t::local_inds_host_view_type indsView;
     typename CrsMatrix_t::values_host_view_type valsView;
@@ -107,9 +107,9 @@ main (int argc, char* argv[])
 
   // Get update list and number of local equations from newly created map.
 
-  const size_t numMyElements = map->getNodeNumElements();
+  const size_t numMyElements = map->getLocalNumElements();
 
-  Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  Teuchos::ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
   // Create an OTeger vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation

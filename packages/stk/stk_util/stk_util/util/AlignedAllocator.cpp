@@ -34,6 +34,7 @@
 #include <stk_util/util/AlignedAllocator.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
+#include <iostream>
 #include "Kokkos_Core.hpp"
 
 namespace non_std {
@@ -45,7 +46,7 @@ void* CUDAPinnedAndMappedAlignedAllocate(size_t size)
   void* ret;
   cudaError_t status = cudaHostAlloc(&ret, size, cudaHostAllocMapped);
 
-  ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAlignedAllocate: " + std::string(cudaGetErrorString(status)));
+  STK_ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAlignedAllocate: " + std::string(cudaGetErrorString(status)));
   return ret;
 }
 
@@ -55,9 +56,28 @@ void CUDAPinnedAndMappedAlignedDeallocate(void* p)
     std::cerr << "Error during CUDAPinnedAndMappedAlignedDeallocate::cudaFreeHost: Kokkos not initialized"<< std::endl;
 
   cudaError_t status = cudaFreeHost(p);
-  ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAlignedDellocate: " + std::string(cudaGetErrorString(status)));
+  STK_ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAlignedDellocate: " + std::string(cudaGetErrorString(status)));
 }
 #endif
 
+#ifdef KOKKOS_ENABLE_HIP
+void* HIPPinnedAndMappedAlignedAllocate(size_t size)
+{
+  void* ret;
+  hipError_t status = hipHostMalloc(&ret, size, hipHostMallocMapped);
+
+  STK_ThrowRequireMsg(status == hipSuccess, "Error during hipPinnedAndMappedAlignedAllocate: " + std::string(hipGetErrorString(status)));
+  return ret;
+}
+
+void HIPPinnedAndMappedAlignedDeallocate(void* p)
+{
+  if (!Kokkos::is_initialized())
+    std::cerr << "Error during HIPPinnedAndMappedAlignedDeallocate::hipFreeHost: Kokkos not initialized"<< std::endl;
+
+  hipError_t status = hipHostFree(p);
+  STK_ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAlignedDellocate: " + std::string(hipGetErrorString(status)));
+}
+#endif
 }
 }

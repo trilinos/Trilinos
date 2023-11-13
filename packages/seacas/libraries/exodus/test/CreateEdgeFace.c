@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -127,14 +127,16 @@ double vals_elem_var1eb1[2][2] = {{8, 8}, {0, -8}};
 double vals_fset_var1fs1[2][2] = {{1., 3.}, {9., 27.}};
 
 #define EXCHECK(funcall, errmsg)                                                                   \
-  if ((funcall) < 0) {                                                                             \
-    fprintf(stderr, errmsg);                                                                       \
-    free(varParams.edge_var_tab);                                                                  \
-    free(varParams.face_var_tab);                                                                  \
-    free(varParams.elem_var_tab);                                                                  \
-    free(varParams.fset_var_tab);                                                                  \
-    return 1;                                                                                      \
-  }
+  do {                                                                                             \
+    if ((funcall) < 0) {                                                                           \
+      fprintf(stderr, errmsg);                                                                     \
+      free(varParams.edge_var_tab);                                                                \
+      free(varParams.face_var_tab);                                                                \
+      free(varParams.elem_var_tab);                                                                \
+      free(varParams.fset_var_tab);                                                                \
+      return 1;                                                                                    \
+    }                                                                                              \
+  } while (0)
 
 int ex_have_arg(int argc, char *argv[], const char *aname)
 {
@@ -241,11 +243,11 @@ int cCreateEdgeFace(int argc, char *argv[])
   varParams.edge_var_tab  = (int *)malloc(2 * sizeof(int));
   varParams.face_var_tab  = (int *)malloc(3 * sizeof(int));
   varParams.elem_var_tab  = (int *)malloc(2 * sizeof(int));
-  varParams.nset_var_tab  = (int *)0;
-  varParams.eset_var_tab  = (int *)0;
+  varParams.nset_var_tab  = NULL;
+  varParams.eset_var_tab  = NULL;
   varParams.fset_var_tab  = (int *)malloc(1 * sizeof(int));
-  varParams.sset_var_tab  = (int *)0;
-  varParams.elset_var_tab = (int *)0;
+  varParams.sset_var_tab  = NULL;
+  varParams.elset_var_tab = NULL;
 
   varParams.num_glob        = 2;
   varParams.num_node        = 1;

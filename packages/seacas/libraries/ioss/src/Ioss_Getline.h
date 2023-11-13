@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 1991, 1992, 1993 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2022, 2023 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -15,19 +15,12 @@
  *   Edin Hodzic, Eric J Bivona, Kai Uwe Rommel, Danny Quah, Ulrich Betzler
  */
 
-#ifndef IOSS_GETLINE_H
-#define IOSS_GETLINE_H
+#pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "ioss_export.h"
 
-char *io_getline_int(const char *); /* read a line of input */
-void  io_gl_setwidth(int);          /* specify width of screen */
-void  io_gl_histadd(const char *);  /* adds entries to hist */
-
-#ifdef __cplusplus
-} /* close brackets on extern "C" declaration */
-#endif
-
-#endif /* IOSS_GETLINE_H */
+namespace Ioss {
+  IOSS_EXPORT char *getline_int(const char *); /* read a line of input */
+  IOSS_EXPORT void  gl_setwidth(int);          /* specify width of screen */
+  IOSS_EXPORT void  gl_histadd(const char *);  /* adds entries to hist */
+} // namespace Ioss

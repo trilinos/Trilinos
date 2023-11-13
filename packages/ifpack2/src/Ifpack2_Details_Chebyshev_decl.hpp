@@ -76,6 +76,7 @@ class ChebyshevKernel; // forward declaration
 /// <ol>
 /// <li> A direct imitation of Ifpack's implementation </li>
 /// <li> A textbook version of the algorithm </li>
+/// <li> Chebyshev polynomials of the 4th kind, using optimal coefficients </li>
 /// </ol>
 ///
 /// All implemented variants use the diagonal of the matrix to
@@ -88,7 +89,9 @@ class ChebyshevKernel; // forward declaration
 /// Linear Systems," 2nd edition.  Experiments show that the Ifpack
 /// imitation is much less sensitive to the eigenvalue bounds than the
 /// textbook version, so users should prefer it.  (In fact, it is the
-/// default.)
+/// default.) Variant #3 is an experimental implementation of Chebyshev
+/// polynomials of the 4th kind with optimal coefficients,
+/// from https://arxiv.org/pdf/2202.08830.pdf.
 ///
 /// We require that the matrix A be real valued and symmetric positive
 /// definite.  If users could provide the ellipse parameters ("d" and
@@ -239,6 +242,9 @@ public:
   ///   always use the zero vector(s) as the initial guess(es).  If
   ///   false, then apply() will use X on input as the initial
   ///   guess(es).
+  /// - "chebyshev: compute spectral radius" (\c bool): If true, the
+  ///   power method will compute the spectral radius of the operator.
+  ///   If false, it will compute the dominant eigenvalue.
   ///
   /// Parameters that govern backwards compatibility:
   /// - "chebyshev: textbook algorithm" (\c bool): If true, use the
@@ -400,8 +406,9 @@ private:
 
   /// \brief In ifpackApplyImpl(): Iteration update MultiVector.
   ///
-  /// We cache this multivector here to avoid creating it on each call.
+  /// We cache these multivectors here to avoid creating them on each call.
   Teuchos::RCP<MV> W_;
+  Teuchos::RCP<MV> W2_;
 
   /// \brief Estimate that we compute for maximum eigenvalue of A.
   ///
@@ -503,11 +510,18 @@ private:
   /// which we have not yet computed before.
   bool assumeMatrixUnchanged_;
 
-  //! Whether to use the textbook version of the algorithm.
-  bool textbookAlgorithm_;
+  //! Chebyshev type
+  std::string chebyshevAlgorithm_;
 
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
+
+  //! Whether the power method will compute the spectral radius or the dominant eigenvalue.
+  bool computeSpectralRadius_;
+
+  /// If true, the ChebyshevKernel operator will not to use a fused kernel
+  /// and insead use native blas/SpMV operators
+  bool ckUseNativeSpMV_;
 
   /// \brief Output stream for debug output ONLY.
   ///
@@ -542,6 +556,14 @@ private:
   /// created MultiVector as W_.  Caching optimizes the common case of
   /// calling apply() many times.
   Teuchos::RCP<MV> makeTempMultiVector (const MV& B);
+
+  /// \brief Set W2 to temporary MultiVector with the same Map as B.
+  ///
+  /// This is an optimization for apply(). This method caches the
+  /// created MultiVector as W2_. Caching optimizes the common case of
+  /// calling apply() many times. This is used by fourth kind
+  /// Chebyshev as two temporary multivectors are needed.
+  Teuchos::RCP<MV> makeSecondTempMultiVector (const MV& B);
 
   //! W = alpha*D_inv*B and X = 0 + W.
   void
@@ -625,6 +647,35 @@ private:
                      const V& D_inv) const;
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
+  ///   diagonal scaling, using the fourth kind Chebyshev polynomials
+  ///   (optionally) with optimal weights, see:
+  ///    https://arxiv.org/pdf/2202.08830.pdf
+  ///   for details.
+  ///
+  /// \pre A must be real-valued and symmetric positive definite.
+  /// \pre numIters <= 16 if using the opt. 4th-kind Chebyshev smoothers
+  ///      -- this is an arbitrary distinction,
+  ///      but the weights are currently hard-coded from the
+  ///      MATLAB scripts from https://arxiv.org/pdf/2202.08830.pdf.
+  /// \pre 0 < lambdaMax
+  /// \pre All entries of D_inv are positive.
+  ///
+  /// \param A [in] The matrix A in the linear system to solve.
+  /// \param B [in] Right-hand side(s) in the linear system to solve.
+  /// \param X [in] Initial guess(es) for the linear system to solve.
+  /// \param numIters [in] Number of Chebyshev iterations.
+  /// \param lambdaMax [in] Estimate of max eigenvalue of A.
+  /// \param D_inv [in] Vector of diagonal entries of A.  It must have
+  ///   the same distribution as B.
+  void
+  fourthKindApplyImpl (const op_type& A,
+                       const MV& B,
+                       MV& X,
+                       const int numIters,
+                       const ST lambdaMax,
+                       const V& D_inv);
+
+  /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, imitating Ifpack's implementation.
   ///
   /// \pre A must be real-valued and symmetric positive definite.
@@ -655,46 +706,6 @@ private:
                    const ST lambdaMin,
                    const ST eigRatio,
                    const V& D_inv);
-
-  /// \brief Fill x with random initial guess for power method
-  ///
-  /// \param x [out] Initial guess vector; a domain Map vector of the
-  ///   matrix.
-  /// \param nonnegativeRealParts [in] Whether to force all entries of
-  ///   x (on output) to have nonnegative real parts.  Defaults to
-  ///   false (don't force).
-  ///
-  /// This is an implementation detail of powerMethod() below.  For a
-  /// justification of the second parameter, see Github Issues #64 and
-  /// #567.
-  void computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts = false) const;
-
-  /// \brief Use the power method to estimate the maximum eigenvalue
-  ///   of A*D_inv, given an initial guess vector x.
-  ///
-  /// \param A [in] The Operator to use.
-  /// \param D_inv [in] Vector to use as implicit right scaling of A.
-  /// \param numIters [in] Maximum number of iterations of the power
-  ///   method.
-  /// \param x [in/out] On input: Initial guess Vector for the power
-  ///   method.  Its Map must be the same as that of the domain Map of
-  ///   A.  This method may use this Vector as scratch space.
-  ///
-  /// \return Estimate of the maximum eigenvalue of A*D_inv.
-  ST
-  powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, V& x);
-
-  /// \brief Use the power method to estimate the maximum eigenvalue
-  ///   of A*D_inv.
-  ///
-  /// \param A [in] The Operator to use.
-  /// \param D_inv [in] Vector to use as implicit right scaling of A.
-  /// \param numIters [in] Maximum number of iterations of the power
-  ///   method.
-  ///
-  /// \return Estimate of the maximum eigenvalue of A*D_inv.
-  ST
-  powerMethod (const op_type& A, const V& D_inv, const int numIters);
 
   /// \brief Use the cg method to estimate the maximum eigenvalue
   ///   of A*D_inv, given an initial guess vector x.

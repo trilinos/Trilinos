@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,21 +19,21 @@
 int maxmatch4(struct vtx_data **graph,  /* array of vtx data for graph */
               int               nvtxs,  /* number of vertices in graph */
               int               nedges, /* number of edges in graph */
-              int *             mflag,  /* flag indicating vtx selected or not */
+              int              *mflag,  /* flag indicating vtx selected or not */
               int               using_ewgts)
 {
   extern int HEAVY_MATCH; /* try for heavy edges in matching? */
-  int *      iptr;        /* loops through integer arrays */
-  float *    edgevals;    /* random values for all edges */
-  float *    evptr;       /* loops through edgevals */
+  int       *iptr;        /* loops through integer arrays */
+  float     *edgevals;    /* random values for all edges */
+  float     *evptr;       /* loops through edgevals */
   double     maxval;      /* largest edge value for a vertex */
   int        neighbor;    /* neighbor of a vertex */
   int        nmerged;     /* number of edges in matching */
   int        change;      /* any new edges in matching? */
-  int *      start;       /* start of edgevals list for each vertex */
+  int       *start;       /* start of edgevals list for each vertex */
   int        i, j, k;     /* loop counters */
 
-  double drandom();
+  double drandom(void);
 
   /* Allocate and initialize space. */
   evptr = edgevals = smalloc(2 * nedges * sizeof(float));

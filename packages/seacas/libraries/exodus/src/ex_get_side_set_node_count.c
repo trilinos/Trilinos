@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -101,10 +101,8 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  int int_size = sizeof(int);
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    int_size = sizeof(int64_t);
-  }
+  bool ints_64  = ex_int64_status(exoid) & EX_BULK_INT64_API;
+  int  int_size = ints_64 ? sizeof(int64_t) : sizeof(int);
 
   /* First determine the  # of elements in the side set*/
   int err;
@@ -248,43 +246,51 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
    * side set.
    */
 
-  j = 0; /* The current element block... */
-  for (ii = 0; ii < tot_num_ss_elem; ii++) {
+  /* There is not partial read for this function, but all ranks must call because exodus runs
+   * NC_COLLECTIVE for all variables.  Typically, either all ranks call and get same data, or one
+   * rank reads.  To do the one rank read, we only store the data if `side_set_node_cnt_list !=
+   * NULL`
+   */
+  if (side_set_node_cnt_list != NULL) {
+    j = 0; /* The current element block... */
+    for (ii = 0; ii < tot_num_ss_elem; ii++) {
 
-    if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-      i    = ((int64_t *)ss_elem_ndx)[ii];
-      elem = ((int64_t *)side_set_elem_list)[i];
-      side = ((int64_t *)side_set_side_list)[i] - 1; /* Convert to 0-based sides */
-    }
-    else {
-      i    = ((int *)ss_elem_ndx)[ii];
-      elem = ((int *)side_set_elem_list)[i];
-      side = ((int *)side_set_side_list)[i] - 1; /* Convert to 0-based sides */
-    }
-
-    /*
-     * Since the elements are being accessed in sorted, order, the
-     * block that contains the elements must progress sequentially
-     * from block 0 to block[num_elem_blks-1]. Once we find an element
-     * not in this block, find a following block that contains it...
-     */
-    for (; j < num_elem_blks; j++) {
-      if (elem <= elem_blk_parms[j].elem_ctr) {
-        break;
+      if (ints_64) {
+        i    = ((int64_t *)ss_elem_ndx)[ii];
+        elem = ((int64_t *)side_set_elem_list)[i];
+        side = ((int64_t *)side_set_side_list)[i] - 1; /* Convert to 0-based sides */
       }
-    }
+      else {
+        i    = ((int *)ss_elem_ndx)[ii];
+        elem = ((int *)side_set_elem_list)[i];
+        side = ((int *)side_set_side_list)[i] - 1; /* Convert to 0-based sides */
+      }
 
-    if (j < num_elem_blks) {
-      assert(side < elem_blk_parms[j].num_sides);
-      side_set_node_cnt_list[i] = elem_blk_parms[j].num_nodes_per_side[side];
-    }
-    else {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: Invalid element number %" PRId64 " found in side set %" PRId64 " in file %d",
-               elem, side_set_id, exoid);
-      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
-      err_stat = EX_FATAL;
-      goto cleanup;
+      /*
+       * Since the elements are being accessed in sorted, order, the
+       * block that contains the elements must progress sequentially
+       * from block 0 to block[num_elem_blks-1]. Once we find an element
+       * not in this block, find a following block that contains it...
+       */
+      for (; j < num_elem_blks; j++) {
+        if (elem <= elem_blk_parms[j].elem_ctr) {
+          break;
+        }
+      }
+
+      if (j < num_elem_blks) {
+        assert(side < elem_blk_parms[j].num_sides);
+        side_set_node_cnt_list[i] = elem_blk_parms[j].num_nodes_per_side[side];
+      }
+      else {
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: Invalid element number %" PRId64 " found in side set %" PRId64
+                 " in file %d",
+                 elem, side_set_id, exoid);
+        ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+        err_stat = EX_FATAL;
+        goto cleanup;
+      }
     }
   }
 

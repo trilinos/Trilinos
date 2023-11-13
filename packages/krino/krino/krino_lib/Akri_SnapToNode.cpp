@@ -8,8 +8,8 @@
 
 #include <Akri_CDFEM_Snapper.hpp>
 #include <Akri_DiagWriter.hpp>
+#include <Akri_InterfaceGeometry.hpp>
 #include <Akri_Intersection_Points.hpp>
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
 
 namespace krino {
 

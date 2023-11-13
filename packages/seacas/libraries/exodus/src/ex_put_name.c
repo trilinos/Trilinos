@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -28,6 +28,50 @@
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex__id_lkup, etc
 
+int ex__put_assembly_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
+                          const char *name)
+{
+  /* Internal function to handle renaming of an existing assembly.
+     Note that assembly must exist or an error will be returned.
+  */
+  /* See if an assembly with this id has already been defined or exists on file... */
+  int  entlst_id = 0;
+  char errmsg[MAX_ERR_LENGTH];
+  if (nc_inq_varid(exoid, VAR_ENTITY_ASSEMBLY(entity_id), &entlst_id) == NC_NOERR) {
+    int status;
+    if ((status = nc_redef(exoid)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+    size_t length = strlen(name) + 1;
+    if ((status = nc_put_att_text(exoid, entlst_id, EX_ATTRIBUTE_NAME, length, name)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store assembly name %s in file id %d",
+               name, exoid);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
+        ex_err_fn(exoid, __func__, errmsg, status);
+      }
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+    /* Update the maximum_name_length attribute on the file. */
+    ex__update_max_name_length(exoid, length - 1);
+    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+    EX_FUNC_LEAVE(EX_NOERR);
+  }
+
+  /* Assembly not found... */
+  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
+           ex_name_of_object(obj_type), entity_id, exoid);
+  ex_err_fn(exoid, __func__, errmsg, EX_LOOKUPFAIL);
+  EX_FUNC_LEAVE(EX_FATAL);
+}
+
 /*!
  * writes the name of the specified entity to the database. The entity
  * with id `entity_id` must exist before calling ex_put_name().
@@ -51,12 +95,7 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   }
 
   switch (obj_type) {
-  case EX_ASSEMBLY:
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: Assembly name is written using `ex_put_assembly()` function");
-    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
-    break;
+  case EX_ASSEMBLY: return ex__put_assembly_name(exoid, obj_type, entity_id, name);
   case EX_EDGE_BLOCK: vobj = VAR_NAME_ED_BLK; break;
   case EX_FACE_BLOCK: vobj = VAR_NAME_FA_BLK; break;
   case EX_ELEM_BLOCK: vobj = VAR_NAME_EL_BLK; break;
@@ -83,16 +122,21 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   }
 
   ent_ndx = ex__id_lkup(exoid, obj_type, entity_id);
-
-  if (ent_ndx == -EX_LOOKUPFAIL) { /* could not find the element block id */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
-             ex_name_of_object(obj_type), entity_id, exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_LOOKUPFAIL);
-    EX_FUNC_LEAVE(EX_FATAL);
+  if (ent_ndx == -EX_LOOKUPFAIL) { /* could not find the entity with `entity_id` */
+    if (obj_type == EX_NODE_MAP || obj_type == EX_ELEM_MAP || obj_type == EX_FACE_MAP ||
+        obj_type == EX_EDGE_MAP) {
+      ent_ndx = entity_id;
+    }
+    else {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
+               ex_name_of_object(obj_type), entity_id, exoid);
+      ex_err_fn(exoid, __func__, errmsg, EX_LOOKUPFAIL);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
   }
 
   /* If this is a null entity, then 'ent_ndx' will be negative.
-   * We don't care in this __func__, so make it positive and continue...
+   * We don't care in this function, so make it positive and continue...
    */
   if (ent_ndx < 0) {
     ent_ndx = -ent_ndx;

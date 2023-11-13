@@ -50,7 +50,7 @@
 #define __INTREPID2_HCURL_TRI_IN_FEM_DEF_HPP__
 
 #include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
-#include "Intrepid2_CubatureDirectTriDefault.hpp"
+#include "Intrepid2_CubatureDirectTriSymmetric.hpp"
 
 namespace Intrepid2 {
 
@@ -137,7 +137,8 @@ namespace Intrepid2 {
              typename vinvValueType,        class ...vinvProperties>
     void
     Basis_HCURL_TRI_In_FEM::
-    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues( const typename DT::execution_space& space,
+                     Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        coeffs,
                const EOperator operatorType) {
@@ -150,7 +151,7 @@ namespace Intrepid2 {
       const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
       const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
-      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
       typedef typename inputPointViewType::value_type inputPointType;
 
@@ -162,14 +163,14 @@ namespace Intrepid2 {
 
       switch (operatorType) {
       case OPERATOR_VALUE: {
-        workViewType  work(Kokkos::view_alloc("Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
+        workViewType  work(Kokkos::view_alloc(space, "Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
           OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
         break;
       }
       case OPERATOR_CURL: {
-        workViewType  work(Kokkos::view_alloc("Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
+        workViewType  work(Kokkos::view_alloc(space, "Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
           OPERATOR_CURL,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
@@ -196,7 +197,7 @@ namespace Intrepid2 {
     this->basisType_         = BASIS_FEM_LAGRANGIAN;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
     this->functionSpace_     = FUNCTION_SPACE_HCURL;
-    pointType_ = pointType;
+    pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
     const ordinal_type card = this->basisCardinality_;
 
@@ -206,7 +207,10 @@ namespace Intrepid2 {
     const ordinal_type  cardVecPn = spaceDim*cardPn;  // dim of (P_{n})^2 -- larger space
     const ordinal_type  cardVecPnm1 = spaceDim*cardPnm1;   // dim of (P_{n-1})^2 -- smaller space
 
-
+    // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
+    // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
+    INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
+    
     // Basis-dependent initializations
     constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
     constexpr ordinal_type maxCard = CardinalityHCurlTri(Parameters::MaxOrder);
@@ -246,7 +250,7 @@ namespace Intrepid2 {
 
     // now I need to integrate { (x,y) \times phi } against the big basis
     // first, get a cubature rule.
-    CubatureDirectTriDefault<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
+    CubatureDirectTriSymmetric<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> cubPoints("Hcurl::Tri::In::cubPoints", myCub.getNumPoints() , spaceDim );
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> cubWeights("Hcurl::Tri::In::cubWeights", myCub.getNumPoints() );
     myCub.getCubature( cubPoints , cubWeights );
@@ -292,7 +296,7 @@ namespace Intrepid2 {
     PointTools::getLattice( linePts,
                             edgeTop,
                             order+1, offset,
-                            pointType );
+                            pointType_ );
 
     // holds the image of the line points
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tri::In::edgePts", numPtsPerEdge , spaceDim );
@@ -357,7 +361,7 @@ namespace Intrepid2 {
                               this->basisCellTopology_ ,
                               order + 1 ,
                               1 ,
-                              pointType );
+                              pointType_ );
 
       Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
         phisAtInternalPoints("Hcurl::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );

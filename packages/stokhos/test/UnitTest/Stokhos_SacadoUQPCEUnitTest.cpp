@@ -48,7 +48,8 @@
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-typedef Kokkos::DefaultExecutionSpace execution_space;
+// Tests only run on the host, so use host execution space
+typedef Kokkos::DefaultHostExecutionSpace execution_space;
 typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
 typedef Sacado::UQ::PCE<storage_type> pce_type;
 
@@ -415,22 +416,4 @@ namespace SacadoPCEUnitTest {
     success = comparePCEs(u, "u", v, "v",
                           setup.rtol, setup.atol, out);
   }
-}
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  Kokkos::initialize();
-//  Kokkos::HostSpace::execution_space::initialize();
-//  if (!Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::initialize();
-
-  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  Kokkos::finalize();
-//  Kokkos::HostSpace::execution_space::finalize();
-//  if (Kokkos::DefaultExecutionSpace::is_initialized())
-//    Kokkos::DefaultExecutionSpace::finalize();
-
-  return res;
 }

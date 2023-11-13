@@ -1,0 +1,36 @@
+IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_CUDA)
+  SET (Tpetra_ENABLE_CUDA_DEFAULT ON)
+ELSE ()
+  SET (Tpetra_ENABLE_CUDA_DEFAULT OFF)
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA_DEFAULT)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_CUDA
+  TPETRA_ENABLE_CUDA
+  "Enable use of CUDA in Tpetra.  This requires TPL_ENABLE_CUDA AND Kokkos_ENABLE_CUDA.  That is, you must build with CUDA enabled, and let Kokkos use CUDA.  (The latter should be ON by default, if building with CUDA enabled.)  If both of those are ON, then Tpetra_ENABLE_CUDA is ON by default.  You may set Tpetra_ENABLE_CUDA:BOOL=OFF explicitly if you do not wish Tpetra or downstream packages to use CUDA."
+  ${Tpetra_ENABLE_CUDA_DEFAULT})
+
+# It's possible for users to _disable_ CUDA in Tpetra.  However,
+# _enabling_ CUDA in Tpetra requires the CUDA TPL, and that Kokkos
+# enable CUDA.
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA AND (NOT TPL_ENABLE_CUDA))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but TPL_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_CUDA must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+ENDIF ()
+IF (Tpetra_ENABLE_CUDA AND (NOT Kokkos_ENABLE_CUDA))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but Kokkos_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_CUDA must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+ENDIF ()
+
+# Checks that only matter if building with CUDA enabled.
+IF (Tpetra_ENABLE_CUDA) 
+  IF (DEFINED CUDA_VERSION)
+    message(STATUS "CUDA_VERSION=${CUDA_VERSION}")
+  ENDIF ()
+  IF (NOT DEFINED Kokkos_ENABLE_CUDA_LAMBDA OR NOT Kokkos_ENABLE_CUDA_LAMBDA)
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON (this is the default behavior).")
+  ENDIF ()
+ENDIF ()
+
+

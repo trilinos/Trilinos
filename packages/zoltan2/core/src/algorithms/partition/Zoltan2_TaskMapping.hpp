@@ -1758,11 +1758,11 @@ protected:
   typedef typename Adapter::lno_t lno_t;
 
 #if defined(KOKKOS_ENABLE_CUDA)
-    using node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
+    using node_t = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
       Kokkos::Cuda, Kokkos::CudaSpace>;
 #elif defined(KOKKOS_ENABLE_HIP)
-    using node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
-      Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
+    using node_t = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
+      Kokkos::HIP, Kokkos::HIPSpace>;
 #else
   using node_t = typename Adapter::node_t;
 #endif

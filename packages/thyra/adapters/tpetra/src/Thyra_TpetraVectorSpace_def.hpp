@@ -77,6 +77,20 @@ void TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize(
 }
 
 
+// Utility functions
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>>
+TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+::createLocallyReplicatedVectorSpace(int size) const
+{
+  return tpetraVectorSpace<Scalar>(
+    Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      size, tpetraMap_->getComm() ) );
+}
+
+
 // Overridden from VectorSpace
 
 
@@ -99,18 +113,12 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createMembers(int num
 {
   return tpetraMultiVector<Scalar>(
     weakSelfPtr_.create_strong().getConst(),
-    tpetraVectorSpace<Scalar>(
-      Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(
-        numMembers, tpetraMap_->getComm()
-        )
-      ),
+    this->createLocallyReplicatedVectorSpace(numMembers),
     Teuchos::rcp(
       new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
         tpetraMap_, numMembers, false)
       )
     );
-  // ToDo: Create wrapper function to create locally replicated vector space
-  // and use it.
 }
 
 
@@ -256,7 +264,7 @@ bool TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasInCoreView(
   const Ordinal l_localOffset = this->localOffset();
 
   const Ordinal myLocalSubDim = tpetraMap_.is_null () ?
-    static_cast<Ordinal> (0) : tpetraMap_->getNodeNumElements ();
+    static_cast<Ordinal> (0) : tpetraMap_->getLocalNumElements ();
 
   return ( l_localOffset<=rng.lbound() && rng.ubound()<l_localOffset+myLocalSubDim );
 }
@@ -291,7 +299,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Ordinal TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::localSubDim() const
 {
   return tpetraMap_.is_null () ? static_cast<Ordinal> (0) :
-    static_cast<Ordinal> (tpetraMap_->getNodeNumElements ());
+    static_cast<Ordinal> (tpetraMap_->getLocalNumElements ());
 }
 
 // private

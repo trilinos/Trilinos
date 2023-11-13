@@ -47,7 +47,7 @@
 
 #include <vector>
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <Teuchos_RCP.hpp>
 
@@ -191,7 +191,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
 
   RCP<Vector> regRes = VectorFactory::Build(revisedRowMap, true);
 
-  const size_t numRows = regionMats->getNodeNumRows();
+  const size_t numRows = regionMats->getLocalNumRows();
 
   // GS iteration loop
   for (int iter = 0; iter < maxIter; ++iter) {

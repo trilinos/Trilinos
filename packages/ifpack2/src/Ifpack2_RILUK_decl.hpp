@@ -318,6 +318,7 @@ class RILUK:
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
     <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
     HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
+  typedef Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type>, kk_handle_type> iluk_graph_type;
   
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
@@ -592,23 +593,28 @@ protected:
   Teuchos::RCP<const row_matrix_type> A_;
 
   //! The ILU(k) graph.
-  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
-                                                   global_ordinal_type,
-                                                   node_type>, kk_handle_type> > Graph_;
+  Teuchos::RCP<iluk_graph_type> Graph_;
+  std::vector< Teuchos::RCP<iluk_graph_type> > Graph_v_;
   /// \brief The matrix whos numbers are used to to compute ILU(k). The graph
   /// may be computed using a crs_matrix_type that initialize() constructs
   /// temporarily.
   Teuchos::RCP<const row_matrix_type> A_local_;
   lno_row_view_t A_local_rowmap_; 
-  lno_nonzero_view_t A_local_entries_; 
+  lno_nonzero_view_t A_local_entries_;
   scalar_nonzero_view_t A_local_values_;
+  std::vector<local_matrix_device_type> A_local_diagblks;
+  std::vector< lno_row_view_t > A_local_diagblks_rowmap_v_;
+  std::vector< lno_nonzero_view_t > A_local_diagblks_entries_v_;
+  std::vector< scalar_nonzero_view_t > A_local_diagblks_values_v_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
+  std::vector< Teuchos::RCP<crs_matrix_type> > L_v_;
   //! Sparse triangular solver for L
   Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > L_solver_;
   //! The U (upper triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> U_;
+  std::vector< Teuchos::RCP<crs_matrix_type> > U_v_;
   //! Sparse triangular solver for U
   Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > U_solver_;
 
@@ -637,6 +643,10 @@ protected:
   //! Optional KokkosKernels implementation.
   bool isKokkosKernelsSpiluk_;
   Teuchos::RCP<kk_handle_type> KernelHandle_;
+  std::vector< Teuchos::RCP<kk_handle_type> > KernelHandle_v_;
+  bool isKokkosKernelsStream_;
+  int num_streams_;
+  std::vector<execution_space> exec_space_instances_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with

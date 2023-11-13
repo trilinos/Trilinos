@@ -1,47 +1,24 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#include <Kokkos_Macros.hpp>
+static_assert(false,
+              "Including non-public Kokkos header files is not allowed.");
+#endif
 #ifndef KOKKOS_MEMORYPOOL_HPP
 #define KOKKOS_MEMORYPOOL_HPP
 
@@ -192,6 +169,9 @@ class MemoryPool {
     if (!accessible) {
       Kokkos::Impl::DeepCopy<Kokkos::HostSpace, base_memory_space>(
           sb_state_array, m_sb_state_array, alloc_size);
+      Kokkos::fence(
+          "MemoryPool::get_usage_statistics(): fence after copying state "
+          "array to HostSpace");
     }
 
     stats.superblock_bytes     = (1LU << m_sb_size_lg2);
@@ -240,6 +220,9 @@ class MemoryPool {
     if (!accessible) {
       Kokkos::Impl::DeepCopy<Kokkos::HostSpace, base_memory_space>(
           sb_state_array, m_sb_state_array, alloc_size);
+      Kokkos::fence(
+          "MemoryPool::print_state(): fence after copying state array to "
+          "HostSpace");
     }
 
     Impl::_print_memory_pool_state(s, sb_state_array, m_sb_count, m_sb_size_lg2,
@@ -449,6 +432,9 @@ class MemoryPool {
     if (!accessible) {
       Kokkos::Impl::DeepCopy<base_memory_space, Kokkos::HostSpace>(
           m_sb_state_array, sb_state_array, header_size);
+      Kokkos::fence(
+          "MemoryPool::MemoryPool(): fence after copying state array from "
+          "HostSpace");
 
       host.deallocate(sb_state_array, header_size);
     } else {
@@ -529,7 +515,7 @@ class MemoryPool {
 #else
     const uint32_t block_id_hint =
         (uint32_t)(Kokkos::Impl::clock_tic()
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
+#ifdef __CUDA_ARCH__  // FIXME_CUDA
                    // Spread out potentially concurrent access
                    // by threads within a warp or thread block.
                    + (threadIdx.x + blockDim.x * threadIdx.y)
@@ -780,9 +766,16 @@ class MemoryPool {
     block_count_capacity = 0;
     block_count_used     = 0;
 
-    if (Kokkos::Impl::MemorySpaceAccess<
-            Kokkos::Impl::ActiveExecutionMemorySpace,
-            base_memory_space>::accessible) {
+    bool can_access_state_array = []() {
+      KOKKOS_IF_ON_HOST(
+          (return SpaceAccessibility<DefaultHostExecutionSpace,
+                                     base_memory_space>::accessible;))
+      KOKKOS_IF_ON_DEVICE(
+          (return SpaceAccessibility<DefaultExecutionSpace,
+                                     base_memory_space>::accessible;))
+    }();
+
+    if (can_access_state_array) {
       // Can access the state array
 
       const uint32_t state =

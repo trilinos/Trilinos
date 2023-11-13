@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,19 +13,23 @@
 #define EX_TEST_FILENAME "edgeFace.exo"
 
 #define EXCHECK(funcall, errmsg)                                                                   \
-  if ((funcall) < 0) {                                                                             \
-    fprintf(stderr, errmsg);                                                                       \
-    return 1;                                                                                      \
-  }
+  do {                                                                                             \
+    if ((funcall) < 0) {                                                                           \
+      fprintf(stderr, errmsg);                                                                     \
+      return 1;                                                                                    \
+    }                                                                                              \
+  } while (0)
 
 #define EXCHKPI(funcall, errmsg, sucmsg, ival)                                                     \
-  if ((funcall) < 0) {                                                                             \
-    fprintf(stderr, errmsg);                                                                       \
-    return 1;                                                                                      \
-  }                                                                                                \
-  else {                                                                                           \
-    fprintf(stdout, sucmsg, ival);                                                                 \
-  }
+  do {                                                                                             \
+    if ((funcall) < 0) {                                                                           \
+      fprintf(stderr, errmsg);                                                                     \
+      return 1;                                                                                    \
+    }                                                                                              \
+    else {                                                                                         \
+      fprintf(stdout, sucmsg, ival);                                                               \
+    }                                                                                              \
+  } while (0)
 
 ex_entity_type obj_types[] = {EX_EDGE_BLOCK, EX_FACE_BLOCK, EX_ELEM_BLOCK, EX_NODE_SET,
                               EX_EDGE_SET,   EX_FACE_SET,   EX_SIDE_SET,   EX_ELEM_SET,
@@ -55,7 +59,7 @@ int obj_sizeinq[] = {EX_INQ_EDGE,
                      -1};
 
 #define OBJECT_IS_BLOCK(i) (((i) < 3))
-#define OBJECT_IS_SET(i) (((i) > 2) && ((i) < 8))
+#define OBJECT_IS_SET(i)   (((i) > 2) && ((i) < 8))
 
 int cReadEdgeFace(int argc, char **argv)
 {
@@ -119,7 +123,7 @@ int cReadEdgeFace(int argc, char **argv)
 
     fprintf(stdout, "=== %ss: %d\n", obj_typenames[i], nids);
 
-    int *  ids       = (int *)malloc(nids * sizeof(int));
+    int   *ids       = (int *)malloc(nids * sizeof(int));
     char **obj_names = (char **)malloc(nids * sizeof(char *));
     for (int obj = 0; obj < nids; ++obj) {
       obj_names[obj] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
@@ -222,7 +226,7 @@ int cReadEdgeFace(int argc, char **argv)
         free(fconn);
 
         if (num_attrs) {
-          char ** attr_names;
+          char  **attr_names;
           double *attr;
           attr       = (double *)malloc(num_entries * num_attrs * sizeof(double));
           attr_names = (char **)malloc(num_attrs * sizeof(char *));

@@ -73,7 +73,7 @@ void make_lexer(FiniteAutomaton& result) {
   std::set<int> all_chars;
   for (int i = 0; i < NCHARS; ++i) all_chars.insert(i);
   std::set<int> nonmeta_chars = all_chars;
-  for (int i = 0; i < size(meta_chars_str); ++i) {
+  for (int i = 0; i < Teuchos::size(meta_chars_str); ++i) {
     int meta_char = at(meta_chars_str, i);
     std::set<int>::iterator it = nonmeta_chars.find(get_symbol(meta_char));
     nonmeta_chars.erase(it);
@@ -89,7 +89,7 @@ void make_lexer(FiniteAutomaton& result) {
   FiniteAutomaton lex_char;
   unite(lex_char, lex_nonmeta, lex_escaped);
   FiniteAutomaton lex_metachars;
-  for (int i = 0; i < size(meta_chars_str); ++i) {
+  for (int i = 0; i < Teuchos::size(meta_chars_str); ++i) {
     int token = TOK_CHAR + i + 1;
     if (i) {
       FiniteAutomaton lex_metachar;
@@ -153,9 +153,9 @@ regex::Reader::Reader(int result_token_in):
 
 void regex::Reader::at_shift(any& result, int token, std::string& text) {
   if (token != TOK_CHAR) return;
-  if (size(text) == 1) {
+  if (Teuchos::size(text) == 1) {
     result = text[0];
-  } else if (size(text) == 2) {
+  } else if (Teuchos::size(text) == 2) {
     TEUCHOS_ASSERT(text[0] == '\\');
     result = text[1];
   } else {

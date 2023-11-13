@@ -58,6 +58,25 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsMatrix.hpp"
 
+// Use new cuSPARSE SpMv/SpMM functions only in CUDA 11 or greater.
+// (while they exist in some versions of CUDA 10, they appear to not always
+// product correct results).
+#if CUSPARSE_VERSION >= 11401
+  #define USE_NEW_SPMV 1
+  #define NEW_SPMV_ALG_DEFAULTS \
+    cusparseSpMVAlg_t alg_spmv = CUSPARSE_SPMV_ALG_DEFAULT;
+  #define NEW_SPMM_ALG_DEFAULTS \
+    cusparseSpMMAlg_t alg_spmm = CUSPARSE_SPMM_ALG_DEFAULT;
+#elif CUSPARSE_VERSION >= 11000
+  #define USE_NEW_SPMV 1
+  #define NEW_SPMV_ALG_DEFAULTS \
+    cusparseSpMVAlg_t alg_spmv = CUSPARSE_MV_ALG_DEFAULT;
+  #define NEW_SPMM_ALG_DEFAULTS \
+    cusparseSpMMAlg_t alg_spmm = CUSPARSE_MM_ALG_DEFAULT;
+#else
+  #define USE_NEW_SPMV 0
+#endif
+
 namespace Stokhos {
 
 class CudaSparseSingleton {
@@ -123,6 +142,46 @@ public:
     const int n = A.graph.row_map.extent(0) - 1 ;
     const int nz = A.graph.entries.extent(0);
 
+#if USE_NEW_SPMV
+    NEW_SPMV_ALG_DEFAULTS
+    using offset_type = typename matrix_type::graph_type::size_type;
+    using entry_type  = typename matrix_type::graph_type::data_type;
+    const cusparseIndexType_t myCusparseOffsetType =
+      sizeof(offset_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    const cusparseIndexType_t myCusparseEntryType =
+      sizeof(entry_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    cusparseSpMatDescr_t A_cusparse;
+    cusparseCreateCsr(
+      &A_cusparse, n, n, nz,
+      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F);
+    cusparseDnVecDescr_t x_cusparse, y_cusparse;
+    cusparseCreateDnVec(&x_cusparse, n, (void*)x.data(), CUDA_R_32F);
+    cusparseCreateDnVec(&y_cusparse, n, (void*)y.data(), CUDA_R_32F);
+    size_t bufferSize = 0;
+    void* dBuffer     = NULL;
+    cusparseSpMV_bufferSize(
+      s.handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+      x_cusparse, &beta, y_cusparse, CUDA_R_32F, alg_spmv,
+      &bufferSize);
+    cudaMalloc(&dBuffer, bufferSize);
+    cusparseStatus_t status =
+      cusparseSpMV(s.handle ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   &alpha ,
+                   A_cusparse ,
+                   x_cusparse ,
+                   &beta ,
+                   y_cusparse ,
+                   CUDA_R_32F ,
+                   alg_spmv ,
+                   dBuffer );
+    cudaFree(dBuffer);
+    cusparseDestroyDnVec(x_cusparse);
+    cusparseDestroyDnVec(y_cusparse);
+    cusparseDestroySpMat(A_cusparse);
+#else
     cusparseStatus_t status =
       cusparseScsrmv( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
@@ -135,6 +194,7 @@ public:
                       x.data() ,
                       &beta ,
                       y.data() );
+#endif
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseScsrmv " ) );
@@ -167,6 +227,46 @@ public:
     const int n = A.graph.row_map.extent(0) - 1 ;
     const int nz = A.graph.entries.extent(0);
 
+#if USE_NEW_SPMV
+    NEW_SPMV_ALG_DEFAULTS
+    using offset_type = typename matrix_type::graph_type::size_type;
+    using entry_type  = typename matrix_type::graph_type::data_type;
+    const cusparseIndexType_t myCusparseOffsetType =
+      sizeof(offset_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    const cusparseIndexType_t myCusparseEntryType =
+      sizeof(entry_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    cusparseSpMatDescr_t A_cusparse;
+    cusparseCreateCsr(
+      &A_cusparse, n, n, nz,
+      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+    cusparseDnVecDescr_t x_cusparse, y_cusparse;
+    cusparseCreateDnVec(&x_cusparse, n, (void*)x.data(), CUDA_R_64F);
+    cusparseCreateDnVec(&y_cusparse, n, (void*)y.data(), CUDA_R_64F);
+    size_t bufferSize = 0;
+    void* dBuffer     = NULL;
+    cusparseSpMV_bufferSize(
+      s.handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+      x_cusparse, &beta, y_cusparse, CUDA_R_64F, alg_spmv,
+      &bufferSize);
+    cudaMalloc(&dBuffer, bufferSize);
+    cusparseStatus_t status =
+      cusparseSpMV(s.handle ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   &alpha ,
+                   A_cusparse ,
+                   x_cusparse ,
+                   &beta ,
+                   y_cusparse ,
+                   CUDA_R_64F ,
+                   alg_spmv ,
+                   dBuffer );
+    cudaFree(dBuffer);
+    cusparseDestroyDnVec(x_cusparse);
+    cusparseDestroyDnVec(y_cusparse);
+    cusparseDestroySpMat(A_cusparse);
+#else
     cusparseStatus_t status =
       cusparseDcsrmv( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
@@ -179,6 +279,7 @@ public:
                       x.data() ,
                       &beta ,
                       y.data() );
+#endif
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
@@ -227,6 +328,52 @@ public:
     }
 
     // Sparse matrix-times-multivector
+#if USE_NEW_SPMV
+    NEW_SPMM_ALG_DEFAULTS
+    using offset_type = typename matrix_type::graph_type::size_type;
+    using entry_type  = typename matrix_type::graph_type::data_type;
+    const cusparseIndexType_t myCusparseOffsetType =
+      sizeof(offset_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    const cusparseIndexType_t myCusparseEntryType =
+      sizeof(entry_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    cusparseSpMatDescr_t A_cusparse;
+    cusparseCreateCsr(
+      &A_cusparse, n, n, nz,
+      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F);
+    cusparseDnMatDescr_t x_cusparse, y_cusparse;
+    cusparseCreateDnMat(
+      &x_cusparse, n, ncol, n,
+      (void*)xx.data(), CUDA_R_32F, CUSPARSE_ORDER_COL);
+    cusparseCreateDnMat(
+      &y_cusparse, n, ncol, n,
+      (void*)yy.data(), CUDA_R_32F, CUSPARSE_ORDER_COL);
+    size_t bufferSize = 0;
+    void* dBuffer     = NULL;
+    cusparseSpMM_bufferSize(
+      s.handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+      x_cusparse, &beta, y_cusparse, CUDA_R_32F, alg_spmm,
+      &bufferSize);
+    cudaMalloc(&dBuffer, bufferSize);
+    cusparseStatus_t status =
+      cusparseSpMM(s.handle ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   &alpha ,
+                   A_cusparse ,
+                   x_cusparse ,
+                   &beta ,
+                   y_cusparse ,
+                   CUDA_R_32F ,
+                   alg_spmm ,
+                   dBuffer );
+    cudaFree(dBuffer);
+    cusparseDestroyDnMat(x_cusparse);
+    cusparseDestroyDnMat(y_cusparse);
+    cusparseDestroySpMat(A_cusparse);
+#else
     cusparseStatus_t status =
       cusparseScsrmm( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
@@ -241,6 +388,7 @@ public:
                       &beta ,
                       yy.data() ,
                       n );
+#endif
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
@@ -396,6 +544,52 @@ public:
     }
 
     // Sparse matrix-times-multivector
+#if USE_NEW_SPMV
+    NEW_SPMM_ALG_DEFAULTS
+    using offset_type = typename matrix_type::graph_type::size_type;
+    using entry_type  = typename matrix_type::graph_type::data_type;
+    const cusparseIndexType_t myCusparseOffsetType =
+      sizeof(offset_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    const cusparseIndexType_t myCusparseEntryType =
+      sizeof(entry_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    cusparseSpMatDescr_t A_cusparse;
+    cusparseCreateCsr(
+      &A_cusparse, n, n, nz,
+      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+    cusparseDnMatDescr_t x_cusparse, y_cusparse;
+    cusparseCreateDnMat(
+      &x_cusparse, n, ncol, n,
+      (void*)xx.data(), CUDA_R_64F, CUSPARSE_ORDER_COL);
+    cusparseCreateDnMat(
+      &y_cusparse, n, ncol, n,
+      (void*)yy.data(), CUDA_R_64F, CUSPARSE_ORDER_COL);
+    size_t bufferSize = 0;
+    void* dBuffer     = NULL;
+    cusparseSpMM_bufferSize(
+      s.handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+      x_cusparse, &beta, y_cusparse, CUDA_R_64F, alg_spmm,
+      &bufferSize);
+    cudaMalloc(&dBuffer, bufferSize);
+    cusparseStatus_t status =
+      cusparseSpMM(s.handle ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   &alpha ,
+                   A_cusparse ,
+                   x_cusparse ,
+                   &beta ,
+                   y_cusparse ,
+                   CUDA_R_64F ,
+                   alg_spmm ,
+                   dBuffer );
+    cudaFree(dBuffer);
+    cusparseDestroyDnMat(x_cusparse);
+    cusparseDestroyDnMat(y_cusparse);
+    cusparseDestroySpMat(A_cusparse);
+#else
     cusparseStatus_t status =
       cusparseDcsrmm( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
@@ -410,6 +604,7 @@ public:
                       &beta ,
                       yy.data() ,
                       n );
+#endif
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
@@ -454,6 +649,52 @@ public:
     const size_t ncol = x.extent(1);
 
     // Sparse matrix-times-multivector
+#if USE_NEW_SPMV
+    NEW_SPMM_ALG_DEFAULTS
+    using offset_type = typename matrix_type::graph_type::size_type;
+    using entry_type  = typename matrix_type::graph_type::data_type;
+    const cusparseIndexType_t myCusparseOffsetType =
+      sizeof(offset_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    const cusparseIndexType_t myCusparseEntryType =
+      sizeof(entry_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    cusparseSpMatDescr_t A_cusparse;
+    cusparseCreateCsr(
+      &A_cusparse, n, n, nz,
+      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F);
+    cusparseDnMatDescr_t x_cusparse, y_cusparse;
+    cusparseCreateDnMat(
+      &x_cusparse, n, ncol, x.stride(1),
+      (void*)x.data(), CUDA_R_32F, CUSPARSE_ORDER_COL);
+    cusparseCreateDnMat(
+      &y_cusparse, n, ncol, y.stride(1),
+      (void*)y.data(), CUDA_R_32F, CUSPARSE_ORDER_COL);
+    size_t bufferSize = 0;
+    void* dBuffer     = NULL;
+    cusparseSpMM_bufferSize(
+      s.handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+      x_cusparse, &beta, y_cusparse, CUDA_R_32F, alg_spmm,
+      &bufferSize);
+    cudaMalloc(&dBuffer, bufferSize);
+    cusparseStatus_t status =
+      cusparseSpMM(s.handle ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   &alpha ,
+                   A_cusparse ,
+                   x_cusparse ,
+                   &beta ,
+                   y_cusparse ,
+                   CUDA_R_32F ,
+                   alg_spmm ,
+                   dBuffer );
+    cudaFree(dBuffer);
+    cusparseDestroyDnMat(x_cusparse);
+    cusparseDestroyDnMat(y_cusparse);
+    cusparseDestroySpMat(A_cusparse);
+#else
     cusparseStatus_t status =
       cusparseScsrmm( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
@@ -468,6 +709,7 @@ public:
                       &beta ,
                       y.data() ,
                       n );
+#endif
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
@@ -502,6 +744,52 @@ public:
     const size_t ncol = x.extent(1);
 
     // Sparse matrix-times-multivector
+#if USE_NEW_SPMV
+    NEW_SPMM_ALG_DEFAULTS
+    using offset_type = typename matrix_type::graph_type::size_type;
+    using entry_type  = typename matrix_type::graph_type::data_type;
+    const cusparseIndexType_t myCusparseOffsetType =
+      sizeof(offset_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    const cusparseIndexType_t myCusparseEntryType =
+      sizeof(entry_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    cusparseSpMatDescr_t A_cusparse;
+    cusparseCreateCsr(
+      &A_cusparse, n, n, nz,
+      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+    cusparseDnMatDescr_t x_cusparse, y_cusparse;
+    cusparseCreateDnMat(
+      &x_cusparse, n, ncol, x.stride(1),
+      (void*)x.data(), CUDA_R_64F, CUSPARSE_ORDER_COL);
+    cusparseCreateDnMat(
+      &y_cusparse, n, ncol, y.stride(1),
+      (void*)y.data(), CUDA_R_64F, CUSPARSE_ORDER_COL);
+    size_t bufferSize = 0;
+    void* dBuffer     = NULL;
+    cusparseSpMM_bufferSize(
+      s.handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+      x_cusparse, &beta, y_cusparse, CUDA_R_64F, alg_spmm,
+      &bufferSize);
+    cudaMalloc(&dBuffer, bufferSize);
+    cusparseStatus_t status =
+      cusparseSpMM(s.handle ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   &alpha ,
+                   A_cusparse ,
+                   x_cusparse ,
+                   &beta ,
+                   y_cusparse ,
+                   CUDA_R_64F ,
+                   alg_spmm ,
+                   dBuffer );
+    cudaFree(dBuffer);
+    cusparseDestroyDnMat(x_cusparse);
+    cusparseDestroyDnMat(y_cusparse);
+    cusparseDestroySpMat(A_cusparse);
+#else
     cusparseStatus_t status =
       cusparseDcsrmm( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
@@ -516,6 +804,7 @@ public:
                       &beta ,
                       y.data() ,
                       n );
+#endif
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
@@ -637,6 +926,52 @@ public:
     }
 
     // Sparse matrix-times-multivector
+#if USE_NEW_SPMV
+    NEW_SPMM_ALG_DEFAULTS
+    using offset_type = typename matrix_type::graph_type::size_type;
+    using entry_type  = typename matrix_type::graph_type::data_type;
+    const cusparseIndexType_t myCusparseOffsetType =
+      sizeof(offset_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    const cusparseIndexType_t myCusparseEntryType =
+      sizeof(entry_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    cusparseSpMatDescr_t A_cusparse;
+    cusparseCreateCsr(
+      &A_cusparse, n, n, nz,
+      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F);
+    cusparseDnMatDescr_t x_cusparse, y_cusparse;
+    cusparseCreateDnMat(
+      &x_cusparse, n, ncol, n,
+      (void*)xx.data(), CUDA_R_32F, CUSPARSE_ORDER_COL);
+    cusparseCreateDnMat(
+      &y_cusparse, n, ncol, n,
+      (void*)yy.data(), CUDA_R_32F, CUSPARSE_ORDER_COL);
+    size_t bufferSize = 0;
+    void* dBuffer     = NULL;
+    cusparseSpMM_bufferSize(
+      s.handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+      x_cusparse, &beta, y_cusparse, CUDA_R_32F, alg_spmm,
+      &bufferSize);
+    cudaMalloc(&dBuffer, bufferSize);
+    cusparseStatus_t status =
+      cusparseSpMM(s.handle ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   &alpha ,
+                   A_cusparse ,
+                   x_cusparse ,
+                   &beta ,
+                   y_cusparse ,
+                   CUDA_R_32F ,
+                   alg_spmm ,
+                   dBuffer );
+    cudaFree(dBuffer);
+    cusparseDestroyDnMat(x_cusparse);
+    cusparseDestroyDnMat(y_cusparse);
+    cusparseDestroySpMat(A_cusparse);
+#else
     cusparseStatus_t status =
       cusparseScsrmm( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
@@ -651,6 +986,7 @@ public:
                       &beta ,
                       yy.data() ,
                       n );
+#endif
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
@@ -702,6 +1038,52 @@ public:
     }
 
     // Sparse matrix-times-multivector
+#if USE_NEW_SPMV
+    NEW_SPMM_ALG_DEFAULTS
+    using offset_type = typename matrix_type::graph_type::size_type;
+    using entry_type  = typename matrix_type::graph_type::data_type;
+    const cusparseIndexType_t myCusparseOffsetType =
+      sizeof(offset_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    const cusparseIndexType_t myCusparseEntryType =
+      sizeof(entry_type) == 4 ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
+    cusparseSpMatDescr_t A_cusparse;
+    cusparseCreateCsr(
+      &A_cusparse, n, n, nz,
+      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+    cusparseDnMatDescr_t x_cusparse, y_cusparse;
+    cusparseCreateDnMat(
+      &x_cusparse, n, ncol, n,
+      (void*)xx.data(), CUDA_R_64F, CUSPARSE_ORDER_COL);
+    cusparseCreateDnMat(
+      &y_cusparse, n, ncol, n,
+      (void*)yy.data(), CUDA_R_64F, CUSPARSE_ORDER_COL);
+    size_t bufferSize = 0;
+    void* dBuffer     = NULL;
+    cusparseSpMM_bufferSize(
+      s.handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+      x_cusparse, &beta, y_cusparse, CUDA_R_64F, alg_spmm,
+      &bufferSize);
+    cudaMalloc(&dBuffer, bufferSize);
+    cusparseStatus_t status =
+      cusparseSpMM(s.handle ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                   &alpha ,
+                   A_cusparse ,
+                   x_cusparse ,
+                   &beta ,
+                   y_cusparse ,
+                   CUDA_R_64F ,
+                   alg_spmm ,
+                   dBuffer );
+    cudaFree(dBuffer);
+    cusparseDestroyDnMat(x_cusparse);
+    cusparseDestroyDnMat(y_cusparse);
+    cusparseDestroySpMat(A_cusparse);
+#else
     cusparseStatus_t status =
       cusparseDcsrmm( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
@@ -716,6 +1098,7 @@ public:
                       &beta ,
                       yy.data() ,
                       n );
+#endif
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );

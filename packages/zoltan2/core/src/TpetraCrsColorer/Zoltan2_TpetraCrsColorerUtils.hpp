@@ -9,6 +9,7 @@
 //#include "Tpetra_RowMatrixTransposer.hpp"
 
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosSparse_Utils.hpp"
 
 namespace Zoltan2
 {
@@ -29,7 +30,7 @@ check_coloring(
   Teuchos::RCP<const Teuchos::Comm<int>> comm = graph.getRowMap()->getComm();
   const int rank = comm->getRank();
   auto local_graph = graph.getLocalGraphDevice();
-  const size_t num_rows = graph.getNodeNumRows();
+  const size_t num_rows = graph.getLocalNumRows();
   size_t num_conflict = 0;
 
   Kokkos::parallel_reduce(
@@ -70,7 +71,7 @@ compute_local_transpose_graph(
   const LocalCrsGraphType &local_graph, 
   const size_t num_cols)
 {
-  using KokkosKernels::Impl::transpose_graph;
+  using KokkosSparse::Impl::transpose_graph;
 
   typedef LocalCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
@@ -125,7 +126,7 @@ compute_transpose_graph(const Tpetra::CrsGraph<LO, GO, NO> &graph)
   local_graph_t local_graph = graph.getLocalGraphDevice();
   local_graph_t local_trans_graph = 
                    compute_local_transpose_graph(local_graph,
-                                                 graph.getNodeNumCols());
+                                                 graph.getLocalNumCols());
 
   // Build (possibly overlapped) transpose graph using original graph's
   // column map as the new row map, and vice versa

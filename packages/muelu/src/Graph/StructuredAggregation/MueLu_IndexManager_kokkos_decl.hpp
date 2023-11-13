@@ -49,15 +49,10 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Types.hpp"
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Kokkos_View.hpp>
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Teuchos_OrdinalTraits.hpp"
 
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_IndexManager_kokkos_fwd.hpp"
@@ -187,5 +182,4 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_INDEXMANAGER_KOKKOS_SHORT
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_INDEXMANAGER_KOKKOS_DECL_HPP

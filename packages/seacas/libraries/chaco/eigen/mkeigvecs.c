@@ -1,38 +1,35 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
-#include "structs.h" // for scanlink
-#include <stdio.h>   // for NULL
+#include "defs.h"
+#include <stdio.h> // for NULL
 
 /* Assemble eigenvectors, return bounds, etc. */
 void mkeigvecs(struct scanlink *scanlist, /* linked list of fields to do with min ritz vals */
-               double *         lambda,   /* ritz approximation to eigenvals of A */
-               double *         bound,    /* on ritz pair approximations to eig pairs of A */
-               int *            index,    /* the Ritz index of an eigenpair */
-               double *         bj,       /* beta(j)*(last el. of corr. eigvec s of T) */
+               double          *lambda,   /* ritz approximation to eigenvals of A */
+               double          *bound,    /* on ritz pair approximations to eig pairs of A */
+               int             *index,    /* the Ritz index of an eigenpair */
+               double          *bj,       /* beta(j)*(last el. of corr. eigvec s of T) */
                int              d,        /* problem dimension = number of eigvecs to find */
-               double *         Sres_max, /* Max value of Sres */
-               double *         alpha,    /* vector of Lanczos scalars */
-               double *         beta,     /* vector of Lanczos scalars */
+               double          *Sres_max, /* Max value of Sres */
+               double          *alpha,    /* vector of Lanczos scalars */
+               double          *beta,     /* vector of Lanczos scalars */
                int              j,        /* number of Lanczos iterations taken */
-               double *         s,        /* approximate eigenvector of T */
-               double **        y,        /* columns of y are eigenvectors of A  */
+               double          *s,        /* approximate eigenvector of T */
+               double         **y,        /* columns of y are eigenvectors of A  */
                int              n,        /* problem size */
-               double **        q         /* columns of q are Lanczos basis vectors */
+               double         **q         /* columns of q are Lanczos basis vectors */
 )
 {
 
-  int              i, k;     /* indcies */
-  double           Sres;     /* how well Tevec calculated eigvec s */
-  struct scanlink *curlnk;   /* for traversing the scanlist */
-  void             setvec(); /* initialize a vector */
-  void             scadd();  /* add scalar multiple of vector to another */
-  double           Tevec();  /* calc eigenvector of T by linear recurrence */
+  int              i, k;   /* indcies */
+  double           Sres;   /* how well Tevec calculated eigvec s */
+  struct scanlink *curlnk; /* for traversing the scanlist */
 
   /* Scan for some data which is used here or later */
   i      = d;

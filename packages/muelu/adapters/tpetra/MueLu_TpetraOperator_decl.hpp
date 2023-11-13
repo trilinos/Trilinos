@@ -48,7 +48,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_MultiVector_decl.hpp>
 #include "MueLu_Level.hpp"
@@ -64,7 +63,7 @@ namespace MueLu {
             class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraOperator : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   protected:
-    TpetraOperator() { }
+    TpetraOperator() = delete;
   public:
 
     //! @name Constructor/Destructor
@@ -119,7 +118,5 @@ namespace MueLu {
   };
 
 } // namespace
-
-#endif //ifdef HAVE_MUELU_TPETRA
 
 #endif // MUELU_TPETRAOPERATOR_DECL_HPP

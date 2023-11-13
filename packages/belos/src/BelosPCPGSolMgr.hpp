@@ -66,7 +66,6 @@
 #if defined(HAVE_TEUCHOSCORE_CXX11)
 #  include <type_traits>
 #endif // defined(HAVE_TEUCHOSCORE_CXX11)
-#include "Teuchos_TypeTraits.hpp"
 
 namespace Belos {
 
@@ -100,16 +99,6 @@ namespace Belos {
    */
   class PCPGSolMgrLAPACKFailure : public BelosError {public:
     PCPGSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief PCPGSolMgrRecyclingFailure is thrown when any problem occurs in using/creating
-   * the recycling subspace.
-   *
-   * The PCPGSolMgr::solve() method throws the exception.
-   *
-   */
-  class PCPGSolMgrRecyclingFailure : public BelosError {public:
-    PCPGSolMgrRecyclingFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
   //@}
@@ -377,13 +366,6 @@ namespace Belos {
     static constexpr int outputFreq_default_ = -1;
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "ICGS";
-// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
-#if defined(_WIN32) && defined(__clang__)
-    static constexpr std::ostream * outputStream_default_ =
-       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
-#else
-    static constexpr std::ostream * outputStream_default_ = &std::cout;
-#endif
 
     //
     // Current solver values.
@@ -425,7 +407,7 @@ namespace Belos {
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr() :
-  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   orthoKappa_(DefaultSolverParameters::orthoKappa),
   achievedTol_(Teuchos::ScalarTraits<MagnitudeType>::zero()),
@@ -449,7 +431,7 @@ PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr(
                                              const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                              const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
-  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  outputStream_(Teuchos::rcpFromRef(std::cout)),
 
   convtol_(DefaultSolverParameters::convTol),
   orthoKappa_(DefaultSolverParameters::orthoKappa),
@@ -720,7 +702,7 @@ PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
+    pl->set("Output Stream", Teuchos::rcpFromRef(std::cout),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
     pl->set("Timer Label", static_cast<const char *>(label_default_),
@@ -909,14 +891,6 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
                                "Belos::PCPGSolMgr::solve(): Invalid return from PCPGIter::iterate().");
           } // end if
         } // end try
-        catch (const PCPGIterOrthoFailure &e) {
-
-          // Check to see if the most recent solution yielded convergence.
-          sTest_->checkStatus( &*pcpg_iter );
-          if (convTest_->getStatus() != Passed)
-            isConverged = false;
-          break;
-        }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught exception in PCPGIter::iterate() at iteration "
                                    << pcpg_iter->getNumIters() << std::endl

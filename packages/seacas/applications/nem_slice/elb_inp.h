@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _ELB_INP_CONST_H_
-#define _ELB_INP_CONST_H_
+#pragma once
 
 #include <string> // for string
 struct Machine_Description;
@@ -20,10 +18,10 @@ template <typename INT> struct Weight_Description;
 template <typename INT>
 int cmd_line_arg_parse(
     int                  argc,           /* The command line argument count */
-    char *               argv[],         /* The command line arguments array */
-    std::string &        exoII_inp_file, /* The ExodusII input FEM file name */
-    std::string &        ascii_inp_file, /* The ASCII input file name */
-    std::string &        nemI_out_file,  /* The output NemesisI file name */
+    char                *argv[],         /* The command line arguments array */
+    std::string         &exoII_inp_file, /* The ExodusII input FEM file name */
+    std::string         &ascii_inp_file, /* The ASCII input file name */
+    std::string         &nemI_out_file,  /* The output NemesisI file name */
     Machine_Description *machine,        /* Pointer to structure in which to place machine
                                           * information */
     LB_Description<INT> *lb,             /* Pointer to structure in which to place load
@@ -38,9 +36,9 @@ int cmd_line_arg_parse(
 
 /* Prototype for function which reads in the ASCII input file */
 template <typename INT>
-int read_cmd_file(std::string &        ascii_inp_file, /* The ASCII input file name */
-                  std::string &        exoII_inp_file, /* The ExodusII input FEM file name */
-                  std::string &        nemI_out_file,  /* The output NemesisI file name */
+int read_cmd_file(std::string         &ascii_inp_file, /* The ASCII input file name */
+                  std::string         &exoII_inp_file, /* The ExodusII input FEM file name */
+                  std::string         &nemI_out_file,  /* The output NemesisI file name */
                   Machine_Description *machine, /* Pointer to structure in which to place machine
                                                  * information */
                   LB_Description<INT> *lb,      /* Pointer to structure in which to place load
@@ -55,8 +53,8 @@ int read_cmd_file(std::string &        ascii_inp_file, /* The ASCII input file n
 
 /* Prototype for function which checks the user specified input */
 template <typename INT>
-int check_inp_specs(std::string &        exoII_inp_file, /* The ExodusII input FEM file name */
-                    std::string &        nemI_out_file,  /* The output NemesisI file name */
+int check_inp_specs(std::string         &exoII_inp_file, /* The ExodusII input FEM file name */
+                    std::string         &nemI_out_file,  /* The output NemesisI file name */
                     Machine_Description *machine, /* Pointer to structure in which to place machine
                                                    * information */
                     LB_Description<INT> *lb,      /* Pointer to structure in which to place load
@@ -71,5 +69,3 @@ int check_inp_specs(std::string &        exoII_inp_file, /* The ExodusII input F
 
 /* Various defines used by the input routines */
 #define NS_NONE -1
-
-#endif /* _ELB_INP_CONST_H_ */

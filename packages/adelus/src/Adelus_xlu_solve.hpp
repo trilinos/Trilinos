@@ -50,17 +50,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "Adelus_defines.h"
 #include "mpi.h"
-#include "Adelus_vars.hpp"
+#include "Kokkos_Core.hpp"
+#include "Adelus_defines.h"
 #include "Adelus_macros.h"
-#include "Adelus_block.h"
+#include "Adelus_vars.hpp"
+#include "Adelus_mytime.hpp"
 #include "Adelus_solve.hpp"
 #include "Adelus_factor.hpp"
 #include "Adelus_perm1.hpp"
-#include "Adelus_pcomm.hpp"
-#include "Adelus_mytime.hpp"
-#include "Kokkos_Core.hpp"
 
 #ifdef ADELUS_HAVE_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -68,71 +66,38 @@
 
 namespace Adelus {
 
-template<class ZDView>
+template<class HandleType, class ZRHSViewType>
 inline
-void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, double *secs)
+void lusolve_(HandleType& ahandle, ZRHSViewType& ZRHS, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
 #endif
 
-  using value_type      = typename ZDView::value_type;
+  using value_type      = typename ZRHSViewType::value_type;
 #ifdef PRINT_STATUS
-  using execution_space = typename ZDView::device_type::execution_space;
+  using execution_space = typename ZRHSViewType::device_type::execution_space;
 #endif
-  using memory_space    = typename ZDView::device_type::memory_space;
+  using memory_space    = typename ZRHSViewType::device_type::memory_space;
 
-  double run_secs;              // time (in secs) during which the prog ran
-  double tsecs;                 // intermediate storage of timing info
-  int totmem;
+  int blksz   = ahandle.get_blksz();
+  int my_rows = ahandle.get_my_rows();
+  int my_cols = ahandle.get_my_cols();
+  int nrhs    = ahandle.get_nrhs();
+  int my_rhs  = ahandle.get_my_rhs();
 
-  // Determine who I am (me ) and the total number of nodes (nprocs_cube)
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs_cube);
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
-
-  nrows_matrix = *matrix_size;
-  ncols_matrix = *matrix_size;
-  nprocs_row   = *num_procsr;
-
-  totmem=0;                      // Initialize the total memory used
-  nprocs_col = nprocs_cube/nprocs_row;
-  max_procs = (nprocs_row < nprocs_col) ? nprocs_col : nprocs_row;
-
-  // Set up communicators for rows and columns
-  myrow = mesh_row(me);
-  mycol = mesh_col(me);
-
-  MPI_Comm_split(MPI_COMM_WORLD,myrow,mycol,&row_comm);
-
-  MPI_Comm_split(MPI_COMM_WORLD,mycol,myrow,&col_comm);
-
-  // Distribution for the matrix on me
-  my_first_col = mesh_col(me);
-  my_first_row = mesh_row(me);
-
-  my_rows = nrows_matrix / nprocs_col;
-  if (my_first_row < nrows_matrix % nprocs_col)
-    ++my_rows;
-  my_cols = ncols_matrix / nprocs_row;
-  if (my_first_col < ncols_matrix % nprocs_row)
-    ++my_cols;
-
-  // blksz parameter must be set
-  blksz = DEFBLKSZ;
-
-  // Distribution for the rhs on me
-  nrhs = *num_rhs;
-  my_rhs = nrhs / nprocs_row;
-  if (my_first_col < nrhs % nprocs_row) ++my_rhs;
+  double run_secs; // time (in secs) during which the prog ran
+  double tsecs;    // intermediate storage of timing info
+  int totmem = 0;  // Initialize the total memory used
 
 #ifdef PRINT_STATUS
-  printf("Rank %i -- lusolve_() Begin LU+Solve+Perm with blksz %d, value_type %s, execution_space %s, memory_space %s\n", me, blksz, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- lusolve_() Begin LU+Solve+Perm with blksz %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), blksz, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 
   // Allocate arrays for factor/solve
   typedef Kokkos::View<value_type*,  Kokkos::LayoutLeft, memory_space> ViewType1D;
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewType2D;
-  typedef Kokkos::View<int*, Kokkos::LayoutLeft, memory_space> ViewIntType1D;
+  typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewIntType1D;
 
   totmem += (blksz) * (my_rows) * sizeof(ADELUS_DATA_TYPE);             //col1_view
   totmem += blksz * (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);//row1_view
@@ -146,42 +111,44 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
   ViewType1D    row3_view      ( "row3_view",      my_cols + blksz + nrhs );  
   ViewIntType1D pivot_vec_view ( "pivot_vec_view", my_cols );
 
-  
   {
   // Factor and Solve the system
 
   tsecs = get_seconds(0.0);
 
-  initcomm();
-
 #ifdef PRINT_STATUS
-  printf("OpenMP or Cuda: Rank %i -- factor() starts ...\n", me);
+  printf("OpenMP or Cuda: Rank %i -- factor() starts ...\n", ahandle.get_myrank());
 #endif
 #ifdef ADELUS_HAVE_TIME_MONITOR
   {
     TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: factor"));
 #endif
-    factor(ZV,
+    factor(ahandle,
+           ZRHS,
            col1_view,
            row1_view,
            row2_view, 
            row3_view, 
-           pivot_vec_view);
+           pivot_vec_view,
+           nrhs, my_rhs);
 #ifdef ADELUS_HAVE_TIME_MONITOR
   }
 #endif
 
   if (nrhs > 0) {
+    auto Z   = subview(ZRHS, Kokkos::ALL(), Kokkos::make_pair(0, my_cols));
+    auto RHS = subview(ZRHS, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
+
     // Perform the backsolve
 
 #ifdef PRINT_STATUS
-    printf("OpenMP or Cuda: Rank %i -- back_solve6() starts ...\n", me);
+    printf("OpenMP or Cuda: Rank %i -- back_solve6() starts ...\n", ahandle.get_myrank());
 #endif
 #ifdef ADELUS_HAVE_TIME_MONITOR
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: backsolve"));
 #endif
-      back_solve6(ZV);
+      back_solve6(ahandle, Z, RHS);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif
@@ -189,14 +156,13 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
     // Permute the results -- undo the torus map
 
 #ifdef PRINT_STATUS
-    printf("OpenMP or Cuda: Rank %i -- perm1_()(permute the results -- undo the torus map) starts ...\n", me);
+    printf("OpenMP or Cuda: Rank %i -- perm1_()(permute the results -- undo the torus map) starts ...\n", ahandle.get_myrank());
 #endif
 #ifdef ADELUS_HAVE_TIME_MONITOR
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: permutation"));
 #endif
-      auto sub_ZV = subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
-      perm1_(sub_ZV, &my_rhs);
+      perm1_(ahandle, RHS);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif
@@ -209,7 +175,8 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
   // Solve time secs
 
   *secs = run_secs;
-  showtime("Total time in Factor and Solve",&run_secs);
+  showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+           "Total time in Factor and Solve", &run_secs);
   }
 }
 

@@ -2,269 +2,53 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_balance/balanceUtils.hpp>
+#include <stk_balance/internal/Balancer.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
+#include "UnitTestSpiderMeshSetup.hpp"
+#include "stk_balance/setup/DefaultSettings.hpp"
+#include "stk_balance/io/BalanceIO.hpp"
+#include "stk_unit_test_utils/getOption.h"
 
 namespace {
 
-class SpiderElement : public stk::unit_test_util::MeshFixture
+class SpiderElement : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
   SpiderElement()
   {
     m_balanceSettings.setShouldFixSpiders(true);
-    const int initValue = 0;
-
-    stk::mesh::Field<int> & beamConnectivityField =
-        get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK,
-                                                        m_balanceSettings.getSpiderBeamConnectivityCountFieldName());
-    stk::mesh::put_field_on_mesh(beamConnectivityField, get_meta().universal_part(), &initValue);
-
-    stk::mesh::Field<int> & volumeConnectivityField =
-        get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK,
-                                                        m_balanceSettings.getSpiderVolumeConnectivityCountFieldName());
-    stk::mesh::put_field_on_mesh(volumeConnectivityField, get_meta().universal_part(), &initValue);
 
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+    stk::balance::internal::register_internal_fields_and_parts(get_bulk(), m_balanceSettings);
   }
 
-  void make_mesh_non_spider_no_volume_elements()
-  {
-    std::string meshDesc = "2,1,BEAM_2,1,7\n"
-                           "2,2,BEAM_2,2,7\n"
-                           "2,3,BEAM_2,3,7\n"
-                           "2,4,BEAM_2,4,7\n"
-                           "3,5,BEAM_2,5,7\n"
-                           "3,6,BEAM_2,6,7\n";
+  void fill_decomp_list_from_current_ownership(stk::mesh::EntityProcVec & decomp) {
+    stk::mesh::Part & spiderPart = *m_balanceSettings.getSpiderPart(get_bulk());
+    stk::mesh::EntityVector localElems = stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK,
+                                                                 get_meta().locally_owned_part() & !spiderPart);
 
-    std::vector<double> coordinates {
-      0,0,1, 0,0,0, 1,0,1, 1,0,0, 2,0,1, 2,0,0,
-      1,1,0.5
-    };
-
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
-  }
-
-  void make_mesh_non_spider_not_enough_legs()
-  {
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                           "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
-                           "1,3,HEX_8,9,10,11,12,13,14,15,16\n"
-                           "1,4,HEX_8,13,14,15,16,17,18,19,20\n"
-                           "2,5,HEX_8,17,18,19,20,21,22,23,24\n"
-                           "2,6,HEX_8,21,22,23,24,25,26,27,28\n"
-                           "3,7,HEX_8,25,26,27,28,29,30,31,32\n"
-                           "3,8,HEX_8,29,30,31,32,33,34,35,36\n"
-                           "2,9,BEAM_2,8,37\n"
-                           "2,10,BEAM_2,9,37\n"
-                           "2,11,BEAM_2,12,37\n"
-                           "3,12,BEAM_2,13,37\n"
-                           "3,13,BEAM_2,16,37\n";
-
-    std::vector<double> coordinates {
-      0,1,1, 0,0,1, 0,0,0, 0,1,0,
-      1,1,1, 1,0,1, 1,0,0, 1,1,0,
-      2,1,1, 2,0,1, 2,0,0, 2,1,0,
-      3,1,1, 3,0,1, 3,0,0, 3,1,0,
-      4,1,1, 4,0,1, 4,0,0, 4,1,0,
-      5,1,1, 5,0,1, 5,0,0, 5,1,0,
-      6,1,1, 6,0,1, 6,0,0, 6,1,0,
-      7,1,1, 7,0,1, 7,0,0, 7,1,0,
-      8,1,1, 8,0,1, 8,0,0, 8,1,0,
-      2,2,0.5
-    };
-
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
-  }
-
-  void make_mesh_one_spider_no_body_element()
-  {
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                           "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
-                           "1,3,HEX_8,9,10,11,12,13,14,15,16\n"
-                           "1,4,HEX_8,13,14,15,16,17,18,19,20\n"
-                           "2,5,HEX_8,17,18,19,20,21,22,23,24\n"
-                           "2,6,HEX_8,21,22,23,24,25,26,27,28\n"
-                           "3,7,HEX_8,25,26,27,28,29,30,31,32\n"
-                           "3,8,HEX_8,29,30,31,32,33,34,35,36\n"
-                           "2,9,BEAM_2,5,37\n"
-                           "2,10,BEAM_2,8,37\n"
-                           "2,11,BEAM_2,9,37\n"
-                           "2,12,BEAM_2,12,37\n"
-                           "3,13,BEAM_2,13,37\n"
-                           "3,14,BEAM_2,16,37\n";
-
-    std::vector<double> coordinates {
-      0,1,1, 0,0,1, 0,0,0, 0,1,0,
-      1,1,1, 1,0,1, 1,0,0, 1,1,0,
-      2,1,1, 2,0,1, 2,0,0, 2,1,0,
-      3,1,1, 3,0,1, 3,0,0, 3,1,0,
-      4,1,1, 4,0,1, 4,0,0, 4,1,0,
-      5,1,1, 5,0,1, 5,0,0, 5,1,0,
-      6,1,1, 6,0,1, 6,0,0, 6,1,0,
-      7,1,1, 7,0,1, 7,0,0, 7,1,0,
-      8,1,1, 8,0,1, 8,0,0, 8,1,0,
-      2,2,0.5
-    };
-
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
-  }
-
-  void make_mesh_one_spider_particle_body()
-  {
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                           "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
-                           "1,3,HEX_8,9,10,11,12,13,14,15,16\n"
-                           "1,4,HEX_8,13,14,15,16,17,18,19,20\n"
-                           "2,5,HEX_8,17,18,19,20,21,22,23,24\n"
-                           "2,6,HEX_8,21,22,23,24,25,26,27,28\n"
-                           "3,7,HEX_8,25,26,27,28,29,30,31,32\n"
-                           "3,8,HEX_8,29,30,31,32,33,34,35,36\n"
-                           "2,9,BEAM_2,5,37\n"
-                           "2,10,BEAM_2,8,37\n"
-                           "2,11,BEAM_2,9,37\n"
-                           "2,12,BEAM_2,12,37\n"
-                           "3,13,BEAM_2,13,37\n"
-                           "3,14,BEAM_2,16,37\n"
-                           "3,15,PARTICLE,37\n";
-
-    std::vector<double> coordinates {
-      0,1,1, 0,0,1, 0,0,0, 0,1,0,
-      1,1,1, 1,0,1, 1,0,0, 1,1,0,
-      2,1,1, 2,0,1, 2,0,0, 2,1,0,
-      3,1,1, 3,0,1, 3,0,0, 3,1,0,
-      4,1,1, 4,0,1, 4,0,0, 4,1,0,
-      5,1,1, 5,0,1, 5,0,0, 5,1,0,
-      6,1,1, 6,0,1, 6,0,0, 6,1,0,
-      7,1,1, 7,0,1, 7,0,0, 7,1,0,
-      8,1,1, 8,0,1, 8,0,0, 8,1,0,
-      2,2,0.5
-    };
-
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
-  }
-
-  void make_mesh_one_spider_beam_body()
-  {
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                           "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
-                           "1,3,HEX_8,9,10,11,12,13,14,15,16\n"
-                           "1,4,HEX_8,13,14,15,16,17,18,19,20\n"
-                           "2,5,HEX_8,17,18,19,20,21,22,23,24\n"
-                           "2,6,HEX_8,21,22,23,24,25,26,27,28\n"
-                           "3,7,HEX_8,25,26,27,28,29,30,31,32\n"
-                           "3,8,HEX_8,29,30,31,32,33,34,35,36\n"
-                           "2,9,BEAM_2,5,37\n"
-                           "2,10,BEAM_2,8,37\n"
-                           "2,11,BEAM_2,9,37\n"
-                           "2,12,BEAM_2,12,37\n"
-                           "3,13,BEAM_2,13,37\n"
-                           "3,14,BEAM_2,16,37\n"
-                           "3,15,BEAM_2,37,38\n";
-
-    std::vector<double> coordinates {
-      0,1,1, 0,0,1, 0,0,0, 0,1,0,
-      1,1,1, 1,0,1, 1,0,0, 1,1,0,
-      2,1,1, 2,0,1, 2,0,0, 2,1,0,
-      3,1,1, 3,0,1, 3,0,0, 3,1,0,
-      4,1,1, 4,0,1, 4,0,0, 4,1,0,
-      5,1,1, 5,0,1, 5,0,0, 5,1,0,
-      6,1,1, 6,0,1, 6,0,0, 6,1,0,
-      7,1,1, 7,0,1, 7,0,0, 7,1,0,
-      8,1,1, 8,0,1, 8,0,0, 8,1,0,
-      2,2,0.5,
-      2,3,0.5
-    };
-
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
-  }
-
-  void make_mesh_compound_spider_beam_body()
-  {
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                           "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
-                           "1,3,HEX_8,9,10,11,12,13,14,15,16\n"
-                           "1,4,HEX_8,13,14,15,16,17,18,19,20\n"
-                           "2,5,HEX_8,17,18,19,20,21,22,23,24\n"
-                           "2,6,HEX_8,21,22,23,24,25,26,27,28\n"
-                           "3,7,HEX_8,25,26,27,28,29,30,31,32\n"
-                           "3,8,HEX_8,29,30,31,32,33,34,35,36\n"
-                           "2,9,BEAM_2,5,37\n"
-                           "2,10,BEAM_2,8,37\n"
-                           "2,11,BEAM_2,9,37\n"
-                           "2,12,BEAM_2,12,37\n"
-                           "3,13,BEAM_2,13,37\n"
-                           "3,14,BEAM_2,16,37\n"
-                           "0,15,BEAM_2,21,38\n"
-                           "0,16,BEAM_2,24,38\n"
-                           "0,17,BEAM_2,25,38\n"
-                           "0,18,BEAM_2,28,38\n"
-                           "1,19,BEAM_2,29,38\n"
-                           "1,20,BEAM_2,32,38\n"
-                           "3,21,BEAM_2,37,38\n";
-
-    std::vector<double> coordinates {
-      0,1,1, 0,0,1, 0,0,0, 0,1,0,
-      1,1,1, 1,0,1, 1,0,0, 1,1,0,
-      2,1,1, 2,0,1, 2,0,0, 2,1,0,
-      3,1,1, 3,0,1, 3,0,0, 3,1,0,
-      4,1,1, 4,0,1, 4,0,0, 4,1,0,
-      5,1,1, 5,0,1, 5,0,0, 5,1,0,
-      6,1,1, 6,0,1, 6,0,0, 6,1,0,
-      7,1,1, 7,0,1, 7,0,0, 7,1,0,
-      8,1,1, 8,0,1, 8,0,0, 8,1,0,
-      2,2,0.5,
-      6,2,0.5
-    };
-
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
-  }
-
-  void make_mesh_two_spiders_particle_body()
-  {
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
-                           "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
-                           "1,3,HEX_8,9,10,11,12,13,14,15,16\n"
-                           "1,4,HEX_8,13,14,15,16,17,18,19,20\n"
-                           "2,5,HEX_8,17,18,19,20,21,22,23,24\n"
-                           "2,6,HEX_8,21,22,23,24,25,26,27,28\n"
-                           "3,7,HEX_8,25,26,27,28,29,30,31,32\n"
-                           "3,8,HEX_8,29,30,31,32,33,34,35,36\n"
-                           "2,9,BEAM_2,5,37\n"
-                           "2,10,BEAM_2,8,37\n"
-                           "2,11,BEAM_2,9,37\n"
-                           "2,12,BEAM_2,12,37\n"
-                           "3,13,BEAM_2,13,37\n"
-                           "3,14,BEAM_2,16,37\n"
-                           "3,15,PARTICLE,37\n"
-                           "0,16,BEAM_2,21,38\n"
-                           "0,17,BEAM_2,24,38\n"
-                           "0,18,BEAM_2,25,38\n"
-                           "0,19,BEAM_2,28,38\n"
-                           "1,20,BEAM_2,29,38\n"
-                           "1,21,BEAM_2,32,38\n"
-                           "1,22,PARTICLE,38\n";
-
-    std::vector<double> coordinates {
-      0,1,1, 0,0,1, 0,0,0, 0,1,0,
-      1,1,1, 1,0,1, 1,0,0, 1,1,0,
-      2,1,1, 2,0,1, 2,0,0, 2,1,0,
-      3,1,1, 3,0,1, 3,0,0, 3,1,0,
-      4,1,1, 4,0,1, 4,0,0, 4,1,0,
-      5,1,1, 5,0,1, 5,0,0, 5,1,0,
-      6,1,1, 6,0,1, 6,0,0, 6,1,0,
-      7,1,1, 7,0,1, 7,0,0, 7,1,0,
-      8,1,1, 8,0,1, 8,0,0, 8,1,0,
-      2,2,0.5,
-      6,2,0.5
-    };
-
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    // Fill list as if this is what came back from the partitioner, with local offsets
+    // placing the results at the start of the (now oversized) array.
+    unsigned listOffset = 0;
+    for (const stk::mesh::Entity & elem : localElems) {
+      decomp[listOffset++] = std::make_pair(elem, get_bulk().parallel_owner_rank(elem));
+    }
   }
 
   void fix_spider_elements()
   {
-    stk::balance::internal::fill_spider_connectivity_count_fields(get_bulk(), m_balanceSettings);
-    stk::balance::internal::fix_spider_elements(m_balanceSettings, get_bulk());
+    stk::balance::internal::fill_spider_connectivity_count_fields_and_parts(get_bulk(), m_balanceSettings);
+
+    const size_t numLocallyOwned = stk::mesh::count_entities(get_bulk(), stk::topology::ELEM_RANK,
+                                                             get_meta().locally_owned_part());
+    stk::mesh::EntityProcVec decomp;
+    decomp.resize(numLocallyOwned, std::make_pair(stk::mesh::Entity(), get_bulk().parallel_rank()));
+
+    fill_decomp_list_from_current_ownership(decomp);
+    stk::balance::internal::fill_output_subdomain_field(get_bulk(), m_balanceSettings, decomp);
+    m_changeList = std::make_unique<stk::balance::DecompositionChangeList>(get_bulk(), decomp);
+
+    stk::balance::internal::fix_spider_elements(m_balanceSettings, get_bulk(), *m_changeList);
   }
 
   void check_spider_body(const stk::mesh::EntityKeyProcVec & spiderBody)
@@ -277,24 +61,24 @@ protected:
     check_entity_key_ownership(spiderLegs);
   }
 
-  void check_spider_feet(const stk::mesh::EntityKeyProcVec & spiderFeet)
-  {
-    check_entity_key_ownership(spiderFeet);
-  }
-
-private:
+protected:
   void check_entity_key_ownership(const stk::mesh::EntityKeyProcVec & entityKeyProcs)
   {
     for (const stk::mesh::EntityKeyProc & entityKeyProc : entityKeyProcs) {
-      if (entityKeyProc.second == get_parallel_rank()) {
-        const stk::mesh::Entity entity = get_bulk().get_entity(entityKeyProc.first);
-        EXPECT_TRUE(get_bulk().is_valid(entity) && get_bulk().bucket(entity).owned())
-                    << entityKeyProc.first << " not owned on proc " << entityKeyProc.second;
+      const stk::mesh::Entity entity = get_bulk().get_entity(entityKeyProc.first);
+      if (get_bulk().is_valid(entity) && get_bulk().bucket(entity).owned()) {
+        const int expectedNewOwner = entityKeyProc.second;
+        const int changedNewOwner = m_changeList->get_entity_destination(entity);
+        const int actualNewOwner = (changedNewOwner >= 0) ? changedNewOwner : get_bulk().parallel_owner_rank(entity);
+
+        EXPECT_EQ(actualNewOwner, expectedNewOwner)
+            << "New owner for " << entityKeyProc.first << " is " << actualNewOwner << " and not " << expectedNewOwner;
       }
     }
   }
 
   stk::balance::StkBalanceSettings m_balanceSettings;
+  std::unique_ptr<stk::balance::DecompositionChangeList> m_changeList;
 };
 
 //
@@ -323,10 +107,14 @@ TEST_F(SpiderElement, notASpider_EnoughLegsNoVolumeElements_NoMovement)
 {
   if (stk::parallel_machine_size(get_comm()) != 4) return;
 
-  make_mesh_non_spider_no_volume_elements();
+  make_mesh_non_spider_no_volume_elements(get_bulk());
 
   fix_spider_elements();
 
+  // Since these elements don't count as a spider, the normal balance code path
+  // will change the decomposition.  The spider-fixing code will not touch it
+  // afterward.  Since we are only testing the spider-fixing code, there should
+  // be no change.
   check_spider_body({{stk::mesh::EntityKey(stk::topology::NODE_RANK, 7), 2}});
 
   check_spider_legs({{stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1), 2},
@@ -335,13 +123,6 @@ TEST_F(SpiderElement, notASpider_EnoughLegsNoVolumeElements_NoMovement)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 4), 2},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 5), 3},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 6), 3}});
-
-  check_spider_feet({{stk::mesh::EntityKey(stk::topology::NODE_RANK, 1), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 2), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 3), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 4), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 5), 3},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 6), 3}});
 }
 
 //
@@ -378,7 +159,7 @@ TEST_F(SpiderElement, notASpider_NotEnoughLegs_NoMovement)
 {
   if (stk::parallel_machine_size(get_comm()) != 4) return;
 
-  make_mesh_non_spider_not_enough_legs();
+  make_mesh_non_spider_not_enough_legs(get_bulk());
 
   fix_spider_elements();
 
@@ -389,13 +170,6 @@ TEST_F(SpiderElement, notASpider_NotEnoughLegs_NoMovement)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 11), 2},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 12), 3},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 3}});
-
-  check_spider_feet({{stk::mesh::EntityKey(stk::topology::NODE_RANK,  5), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  8), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  9), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 12), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 13), 1},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 16), 1}});
 }
 
 
@@ -460,7 +234,7 @@ TEST_F(SpiderElement, oneSpider_NoBodyElement)
 {
   if (stk::parallel_machine_size(get_comm()) != 4) return;
 
-  make_mesh_one_spider_no_body_element();
+  make_mesh_one_spider_no_body_element(get_bulk());
 
   fix_spider_elements();
 
@@ -472,13 +246,6 @@ TEST_F(SpiderElement, oneSpider_NoBodyElement)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 12), 0},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 1},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 14), 1}});
-
-  check_spider_feet({{stk::mesh::EntityKey(stk::topology::NODE_RANK,  5), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  8), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  9), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 12), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 13), 1},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 16), 1}});
 }
 
 //
@@ -539,7 +306,7 @@ TEST_F(SpiderElement, oneSpider_ParticleBody)
 {
   if (stk::parallel_machine_size(get_comm()) != 4) return;
 
-  make_mesh_one_spider_particle_body();
+  make_mesh_one_spider_particle_body(get_bulk());
 
   fix_spider_elements();
 
@@ -552,13 +319,6 @@ TEST_F(SpiderElement, oneSpider_ParticleBody)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 12), 0},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 1},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 14), 1}});
-
-  check_spider_feet({{stk::mesh::EntityKey(stk::topology::NODE_RANK,  5), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  8), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  9), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 12), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 13), 1},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 16), 1}});
 }
 
 
@@ -621,7 +381,7 @@ TEST_F(SpiderElement, oneSpider_BeamBody)
 {
   if (stk::parallel_machine_size(get_comm()) != 4) return;
 
-  make_mesh_one_spider_beam_body();
+  make_mesh_one_spider_beam_body(get_bulk());
 
   fix_spider_elements();
 
@@ -634,13 +394,6 @@ TEST_F(SpiderElement, oneSpider_BeamBody)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 12), 0},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 1},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 14), 1}});
-
-  check_spider_feet({{stk::mesh::EntityKey(stk::topology::NODE_RANK,  5), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  8), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  9), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 12), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 13), 1},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 16), 1}});
 }
 
 //
@@ -702,7 +455,7 @@ TEST_F(SpiderElement, compoundSpider_BeamBody)
 {
   if (stk::parallel_machine_size(get_comm()) != 4) return;
 
-  make_mesh_compound_spider_beam_body();
+  make_mesh_compound_spider_beam_body(get_bulk());
 
   fix_spider_elements();
 
@@ -723,20 +476,6 @@ TEST_F(SpiderElement, compoundSpider_BeamBody)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 18), 2},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 19), 3},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 20), 3}});
-
-  check_spider_feet({{stk::mesh::EntityKey(stk::topology::NODE_RANK,  5), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  8), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  9), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 12), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 13), 1},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 16), 1},
-
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 21), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 24), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 25), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 28), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 29), 3},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 32), 3}});
 }
 
 
@@ -799,7 +538,7 @@ TEST_F(SpiderElement, twoSpiders_ParticleBody)
 {
   if (stk::parallel_machine_size(get_comm()) != 4) return;
 
-  make_mesh_two_spiders_particle_body();
+  make_mesh_two_spiders_particle_body(get_bulk());
 
   fix_spider_elements();
 
@@ -822,20 +561,76 @@ TEST_F(SpiderElement, twoSpiders_ParticleBody)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 19), 2},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 20), 3},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 21), 3}});
+}
 
-  check_spider_feet({{stk::mesh::EntityKey(stk::topology::NODE_RANK,  5), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  8), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK,  9), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 12), 0},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 13), 1},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 16), 1},
+void set_sd_flag_options(const std::string & fileName, int numProcessors, stk::balance::BalanceSettings & settings) {
+  settings.setVertexWeightMethod(stk::balance::DefaultSettings::sdVertexWeightMethod);
+  settings.setGraphEdgeWeightMultiplier(stk::balance::DefaultSettings::sdGraphEdgeWeightMultiplier);
+  settings.setVertexWeightMultiplierForVertexInSearch(stk::balance::DefaultSettings::sdFaceSearchVertexMultiplier);
+  settings.setEdgeWeightForSearch(stk::balance::DefaultSettings::sdFaceSearchEdgeWeight);
+  settings.setShouldFixSpiders(stk::balance::DefaultSettings::sdFixSpiders);
+  settings.set_input_filename(fileName);
+  settings.set_output_filename(fileName);
+  settings.set_num_input_processors(numProcessors);
+  settings.set_num_output_processors(numProcessors);
+  settings.set_is_rebalancing(false);
+}
 
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 21), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 24), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 25), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 28), 2},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 29), 3},
-                     {stk::mesh::EntityKey(stk::topology::NODE_RANK, 32), 3}});
+void compare_identical_volume_decompositions(stk::balance::BalanceMesh & meshNode,
+                                             stk::balance::BalanceMesh & meshParticle)
+{
+  stk::mesh::BulkData & bulkNode = meshNode.get_bulk();
+  stk::mesh::MetaData & metaNode = bulkNode.mesh_meta_data();
+  stk::mesh::BulkData & bulkParticle = meshParticle.get_bulk();
+  stk::mesh::MetaData & metaParticle = bulkParticle.mesh_meta_data();
+
+  const bool sortElems = true;
+  stk::mesh::EntityVector hexesNode = stk::mesh::get_entities(bulkNode, stk::topology::ELEM_RANK,
+                                                              metaNode.locally_owned_part() &
+                                                              metaNode.get_topology_root_part(stk::topology::HEX_8),
+                                                              sortElems);
+  stk::mesh::EntityVector hexesParticle = stk::mesh::get_entities(bulkParticle, stk::topology::ELEM_RANK,
+                                                                  metaParticle.locally_owned_part() &
+                                                                  metaParticle.get_topology_root_part(stk::topology::HEX_8),
+                                                                  sortElems);
+
+  ASSERT_EQ(hexesNode.size(), hexesParticle.size());
+
+  for (unsigned i = 0; i < hexesNode.size(); ++i) {
+    EXPECT_EQ(bulkNode.identifier(hexesNode[i]), bulkParticle.identifier(hexesParticle[i]));
+  }
+}
+
+TEST_F(SpiderElement, cubeMeshWithSpider_ParticleBodyInsensitivity)
+{
+  const unsigned meshSize = stk::unit_test_util::simple_fields::get_command_line_option<unsigned>("--size", 2);
+
+  bool addParticleBody = false;
+  const std::string fileNameNode = "cube_spider_node.g";
+  write_serial_cube_mesh_with_spider(meshSize, addParticleBody, fileNameNode);
+
+  stk::balance::StkBalanceSettings balanceSettingsNode;
+  set_sd_flag_options(fileNameNode, stk::parallel_machine_size(get_comm()), balanceSettingsNode);
+  stk::balance::BalanceIO ioNode(get_comm(), balanceSettingsNode);
+  const stk::balance::Balancer balancerNode(balanceSettingsNode);
+
+  stk::balance::BalanceMesh& meshNode = ioNode.initial_decomp();
+  balancerNode.balance(meshNode);
+
+
+  addParticleBody = true;
+  const std::string fileNameParticle = "cube_spider_particle.g";
+  write_serial_cube_mesh_with_spider(meshSize, addParticleBody, fileNameParticle);
+
+  stk::balance::StkBalanceSettings balanceSettingsParticle;
+  set_sd_flag_options(fileNameParticle, stk::parallel_machine_size(get_comm()), balanceSettingsParticle);
+  stk::balance::BalanceIO ioParticle(get_comm(), balanceSettingsParticle);
+  const stk::balance::Balancer balancerParticle(balanceSettingsParticle);
+
+  stk::balance::BalanceMesh& meshParticle = ioParticle.initial_decomp();
+  balancerParticle.balance(meshParticle);
+
+  compare_identical_volume_decompositions(meshNode, meshParticle);
 }
 
 }

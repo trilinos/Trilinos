@@ -15,6 +15,7 @@
 #include <Akri_Facet.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
+#include <Akri_Phase_Support.hpp>
 #include <Akri_Snap.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <gtest/gtest.h>
@@ -47,7 +48,7 @@ public:
     auto & vec_type = fixture.meta_data().spatial_dimension() == 2 ? FieldType::VECTOR_2D : FieldType::VECTOR_3D;
     coord_field = aux_meta.register_field("coordinates", vec_type, stk::topology::NODE_RANK, 1u, 1u, fixture.meta_data().universal_part());
     cdfemSupport.set_coords_field(coord_field);
-    cdfemSupport.add_interpolation_field(coord_field);
+    cdfemSupport.add_edge_interpolation_field(coord_field);
 
     cdfemSupport.set_prolongation_model(INTERPOLATION);
   }
@@ -55,19 +56,19 @@ public:
   void setup_phase_support(const stk::mesh::PartVector & blocks)
   {
     PhaseTag p, n;
-    const LevelSet_Identifier id0(0);
-    p.add(id0, 1);
-    n.add(id0, -1);
+    p.add(surfaceIdentifier, 1);
+    n.add(surfaceIdentifier, -1);
     PhaseVec named_phases{{"A", p}, {"B", n}};
 
     Phase_Support & phase_support = Phase_Support::get(fixture.meta_data());
     Block_Surface_Connectivity block_surface_info;
     phase_support.set_input_block_surface_connectivity(block_surface_info);
-    LevelSet * ls_ptr = nullptr;
-    phase_support.register_blocks_for_level_set(ls_ptr, blocks);
-    phase_support.decompose_blocks(blocks, named_phases, LS_Name_Generator());
-    LS_Field lsField("LS", id0);
-    cdfemSupport.add_ls_field(lsField, nullptr);
+    phase_support.register_blocks_for_level_set(surfaceIdentifier, blocks);
+    std::vector<std::tuple<stk::mesh::PartVector, 
+      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
+    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
+    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
+    phase_support.decompose_blocks(ls_sets);
   }
 
   stk::mesh::Part & declare_input_block(const std::string & name, const stk::topology topo)
@@ -81,31 +82,33 @@ public:
   {
     NodeToCapturedDomainsMap nodesToCapturedDomains;
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-      nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(), krino_mesh->get_active_part(), cdfemSupport.get_interpolation_fields(), interfaceGeometry, cdfemSupport.get_global_ids_are_parallel_consistent());
-    interfaceGeometry.prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
-
-    if(!krino_mesh->my_old_mesh)
     {
-      krino_mesh->my_old_mesh = std::make_shared<CDMesh>(fixture.bulk_data(), std::shared_ptr<CDMesh>());
-      krino_mesh->my_old_mesh->generate_nonconformal_elements();
+      const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
+      nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
+          krino_mesh->get_active_part(),
+          cdfemSupport.get_snap_fields(),
+          interfaceGeometry,
+          cdfemSupport.get_global_ids_are_parallel_consistent(),
+          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
+          minIntPtWeightForEstimatingCutQuality,
+          cdfemSupport.get_max_edge_snap());
     }
+    interfaceGeometry.prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
 
     krino_mesh->generate_nonconformal_elements();
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
       krino_mesh->snap_nearby_intersections_to_nodes(interfaceGeometry, nodesToCapturedDomains);
     krino_mesh->set_phase_of_uncut_elements(interfaceGeometry);
     krino_mesh->triangulate(interfaceGeometry);
-    krino_mesh->my_old_mesh->stash_field_data(-1, *krino_mesh);
-
-
-    krino_mesh->decompose();
+    krino_mesh->decompose(interfaceGeometry);
+    krino_mesh->stash_field_data(-1);
     krino_mesh->modify_mesh();
     krino_mesh->prolongation();
   }
 
   void commit()
   {
-    krino_mesh = std::make_shared<CDMesh>(fixture.bulk_data(), std::shared_ptr<CDMesh>());
+    krino_mesh = std::make_unique<CDMesh>(fixture.bulk_data());
   }
 
   void write_results(const std::string & filename)
@@ -164,8 +167,9 @@ public:
   MESH_FIXTURE fixture;
   FieldRef coord_field;
   CDFEM_Support & cdfemSupport;
-  std::shared_ptr<CDMesh> krino_mesh;
+  std::unique_ptr<CDMesh> krino_mesh;
   LogRedirecter log;
+  Surface_Identifier surfaceIdentifier{0};
 };
 
 template <class MESH_FIXTURE>
@@ -174,18 +178,18 @@ class SphereDecompositionFixture : public AnalyticDecompositionFixture<MESH_FIXT
 public:
   SphereDecompositionFixture()
   {
-    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry(mySphere, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&mySphere}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *mySphereGeometry; }
   typename BoundingBoxMesh::BoundingBoxType get_domain() const
   {
-    const Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? Vector3d(1.,1.,0.) : Vector3d(1.,1.,1.);
+    const stk::math::Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? stk::math::Vector3d(1.,1.,0.) : stk::math::Vector3d(1.,1.,1.);
     typename BoundingBoxMesh::BoundingBoxType domain(-0.5*extents, 0.5*extents);
     return domain;
   }
   double get_mesh_size() const { return 1./6.; }
-  Sphere mySphere{"test sphere",  Vector3d::ZERO, 0.35};
+  Sphere mySphere{"test sphere",  stk::math::Vector3d::ZERO, 0.35};
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> mySphereGeometry;
 };
 
@@ -222,7 +226,7 @@ public:
   CubeDecompositionFixture()
   {
     const double x = 0.25;
-    const std::array<Vector3d,8> cubeVerts =
+    const std::array<stk::math::Vector3d,8> cubeVerts =
       {{
         {-x,-x,-x}, {+x,-x,-x}, {+x,+x,-x}, {-x,+x,-x},
         {-x,-x,+x}, {+x,-x,+x}, {+x,+x,+x}, {-x,+x,+x}
@@ -243,13 +247,13 @@ public:
       myCube.add( std::move(facet) );
     }
 
-    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry(myCube, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&myCube}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *myCubeGeometry; }
   typename BoundingBoxMesh::BoundingBoxType get_domain() const
   {
-    const Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? Vector3d(1.,1.,0.) : Vector3d(1.,1.,1.);
+    const stk::math::Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? stk::math::Vector3d(1.,1.,0.) : stk::math::Vector3d(1.,1.,1.);
     typename BoundingBoxMesh::BoundingBoxType domain(-0.5*extents, 0.5*extents);
     return domain;
   }

@@ -91,7 +91,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
     tif_utest::create_tridiag_graph<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
 
   int num_procs = crsgraph->getRowMap()->getComm()->getSize();
-  TEST_EQUALITY( crsgraph->getRowMap()->getNodeNumElements(), num_rows_per_proc)
+  TEST_EQUALITY( crsgraph->getRowMap()->getLocalNumElements(), num_rows_per_proc)
   TEST_EQUALITY( crsgraph->getRowMap()->getGlobalNumElements(), num_rows_per_proc*num_procs)
 
   TEST_EQUALITY( crsgraph->getGlobalNumRows(),crsgraph->getRowMap()->getGlobalNumElements())
@@ -135,9 +135,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
     KernelHandle0 = Teuchos::rcp (new kk_handle_type ());
     KernelHandle0->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
-                                         crsgraph->getNodeNumRows(),
-                                         2*crsgraph->getNodeNumEntries()*(fill_levels+1), 
-                                         2*crsgraph->getNodeNumEntries()*(fill_levels+1) );
+                                         crsgraph->getLocalNumRows(),
+                                         2*crsgraph->getLocalNumEntries()*(fill_levels+1), 
+                                         2*crsgraph->getLocalNumEntries()*(fill_levels+1) );
 
     Ifpack2::IlukGraph<crs_graph_type, kk_handle_type> iluk0_graph(crsgraph, fill_levels, overlap_levels);
     iluk0_graph.initialize(KernelHandle0);
@@ -153,9 +153,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
     KernelHandle2 = Teuchos::rcp (new kk_handle_type ());
     KernelHandle2->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
-                                         crsgraph->getNodeNumRows(),
-                                         2*crsgraph->getNodeNumEntries()*(fill_levels+1), 
-                                         2*crsgraph->getNodeNumEntries()*(fill_levels+1) );
+                                         crsgraph->getLocalNumRows(),
+                                         2*crsgraph->getLocalNumEntries()*(fill_levels+1), 
+                                         2*crsgraph->getLocalNumEntries()*(fill_levels+1) );
 
 
     Ifpack2::IlukGraph<crs_graph_type, kk_handle_type> iluk2_graph(crsgraph, fill_levels, overlap_levels);

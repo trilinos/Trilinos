@@ -406,7 +406,7 @@ cholmod_factor *CHOLMOD(analyze_p)
     RETURN_IF_XTYPE_INVALID (A, CHOLMOD_PATTERN, CHOLMOD_ZOMPLEX, NULL) ;
     Common->status = CHOLMOD_OK ;
     status = CHOLMOD_OK ;
-    Common->selected = EMPTY ;
+    Common->selected = TRILINOS_CHOLMOD_EMPTY ;
     Common->called_nd = FALSE ;
 
     /* ---------------------------------------------------------------------- */
@@ -421,7 +421,7 @@ cholmod_factor *CHOLMOD(analyze_p)
     /* set the default strategy */
     /* ---------------------------------------------------------------------- */
 
-    lnz_best = (double) EMPTY ;
+    lnz_best = (double) TRILINOS_CHOLMOD_EMPTY ;
     skip_best = FALSE ;
     nmethods = MIN (Common->nmethods, CHOLMOD_MAXMETHODS) ;
     nmethods = MAX (0, nmethods) ;
@@ -516,7 +516,7 @@ cholmod_factor *CHOLMOD(analyze_p)
     }
     Lperm = L->Perm ;
     Lcolcount = L->ColCount ;
-    Common->anz = EMPTY ;
+    Common->anz = TRILINOS_CHOLMOD_EMPTY ;
 
     /* ---------------------------------------------------------------------- */
     /* try all the requested ordering options and backup to AMD if needed */
@@ -532,14 +532,14 @@ cholmod_factor *CHOLMOD(analyze_p)
 	/* determine the method to try */
 	/* ------------------------------------------------------------------ */
 
-	Common->fl = EMPTY ;
-	Common->lnz = EMPTY ;
+	Common->fl = TRILINOS_CHOLMOD_EMPTY ;
+	Common->lnz = TRILINOS_CHOLMOD_EMPTY ;
 	skip_analysis = FALSE ;
 
 	if (method == nmethods)
 	{
 	    /* All methods failed: backup to AMD */
-	    if (Common->selected == EMPTY && !default_strategy)
+	    if (Common->selected == TRILINOS_CHOLMOD_EMPTY && !default_strategy)
 	    {
 		PRINT1 (("All methods requested failed: backup to AMD\n")) ;
 		ordering = CHOLMOD_AMD ;
@@ -712,7 +712,7 @@ cholmod_factor *CHOLMOD(analyze_p)
 	/* ------------------------------------------------------------------ */
 
 	/* fl.pt. compare, but lnz can never be NaN */
-	if (Common->selected == EMPTY || Common->lnz < lnz_best)
+	if (Common->selected == TRILINOS_CHOLMOD_EMPTY || Common->lnz < lnz_best)
 	{
 	    Common->selected = method ;
 	    PRINT1 (("this is best so far, method "ID"\n", method)) ;
@@ -768,7 +768,7 @@ cholmod_factor *CHOLMOD(analyze_p)
     /* return if no ordering method succeeded */
     /* ---------------------------------------------------------------------- */
 
-    if (Common->selected == EMPTY)
+    if (Common->selected == TRILINOS_CHOLMOD_EMPTY)
     {
 	/* All methods failed.  
 	 * If two or more methods failed, they may have failed for different
@@ -842,7 +842,7 @@ cholmod_factor *CHOLMOD(analyze_p)
 	    {
 		oldchild = Post [newchild] ;
 		oldparent = Lparent [oldchild] ;
-		newparent = (oldparent == EMPTY) ? EMPTY : InvPost [oldparent] ;
+		newparent = (oldparent == TRILINOS_CHOLMOD_EMPTY) ? TRILINOS_CHOLMOD_EMPTY : InvPost [oldparent] ;
 		Wi [newchild] = newparent ;
 	    }
 	    for (k = 0 ; k < n ; k++)

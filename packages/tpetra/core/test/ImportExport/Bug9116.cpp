@@ -57,8 +57,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9116, LargeImport,
 // Import from one-to-one vector to large overlap vector
 // Check overlap vector for expected values
 // The bug in #9116 should cause this test to 
-// pass with TPETRA_ASSUME_CUDA_AWARE_MPI=1 and 
-// fail with TPETRA_ASSUME_CUDA_AWARE_MPI=0.
+// pass with TPETRA_ASSUME_GPU_AWARE_MPI=1 and 
+// fail with TPETRA_ASSUME_GPU_AWARE_MPI=0.
 
   using map_t = Tpetra::Map<>;
   using vector_t = Tpetra::Vector<Scalar>;
@@ -81,7 +81,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9116, LargeImport,
 
   // One-to-one (oto) map across all processors
   Teuchos::RCP<const map_t> map_oto = rcp(new map_t(len, 0, comm));
-  size_t myLen = map_oto->getNodeNumElements();
+  size_t myLen = map_oto->getLocalNumElements();
 
   // create one-to-one Vector with entries = GIDs
   vector_t x_oto(map_oto);
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9116, LargeImport,
   size_t ierr = 0;
   {
     auto x_h = x_olap.getLocalViewHost(Tpetra::Access::ReadOnly);
-    for (size_t i = 0; i < map_olap->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < map_olap->getLocalNumElements(); i++) {
       if (x_h(i,0) != map_olap->getGlobalElement(i)) {
 //      std::cout << comm->getRank() << " of " << np << ": x_olap[ " << i 
 //                << "] " << x_h(i, 0) << " != "

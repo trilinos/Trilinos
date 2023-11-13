@@ -56,7 +56,6 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -212,7 +211,7 @@ namespace MueLu {
     LO blockSize = A->GetFixedBlockSize();
     TEUCHOS_TEST_FOR_EXCEPTION(blockSize == 0, Exceptions::RuntimeError, "MueLu::Zoltan : Matrix has block size 0.");
 
-    return A->getRowMap()->getNodeNumElements() / blockSize;
+    return A->getRowMap()->getLocalNumElements() / blockSize;
   } //GetLocalNumberOfRows()
 
   //-------------------------------------------------------------------------------------------------------------
@@ -236,8 +235,8 @@ namespace MueLu {
     LO blockSize = A->GetFixedBlockSize();
     TEUCHOS_TEST_FOR_EXCEPTION(blockSize == 0, Exceptions::RuntimeError, "MueLu::Zoltan : Matrix has block size 0.");
 
-    size_t              numElements = map->getNodeNumElements();
-    ArrayView<const GO> mapGIDs     = map->getNodeElementList();
+    size_t              numElements = map->getLocalNumElements();
+    ArrayView<const GO> mapGIDs     = map->getLocalElementList();
 
     if (blockSize == 1) {
       for (size_t i = 0; i < numElements; i++) {

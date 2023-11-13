@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,6 +12,7 @@
  *****************************************************************************/
 
 #include "exodusII.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,7 +55,7 @@ int main(int argc, char **argv)
   int  num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets;
   int  num_side_sets;
   int  error = ex_get_init(exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk,
-                          &num_node_sets, &num_side_sets);
+                           &num_node_sets, &num_side_sets);
 
   printf("after ex_get_init, error = %3d\n", error);
 
@@ -184,14 +185,13 @@ int main(int argc, char **argv)
 
   int *elem_map = (int *)calloc(num_elem, sizeof(int));
 
-  error = ex_get_map(exoid, elem_map);
-  printf("\nafter ex_get_map, error = %3d\n", error);
+  error = ex_get_id_map(exoid, EX_ELEM_MAP, elem_map);
+  printf("\nafter ex_get_id_map, error = %3d\n", error);
 
   for (int i = 0; i < num_elem; i++) {
-    printf("elem_map(%d) = %d \n", i, elem_map[i]);
+    printf("elem_id_map(%d) = %d \n", i, elem_map[i]);
   }
-
-  free(elem_map);
+  /* NOTE: elem_map used below */
 
   /* read element block parameters */
 
@@ -231,6 +231,20 @@ int main(int argc, char **argv)
       printf("num_attr = %2d\n", num_attr[i]);
       printf("name = '%s'\n", block_names[i]);
       free(block_names[i]);
+    }
+
+    /* Read per-block id map and compare to overall id map... */
+    int offset = 0;
+    for (int i = 0; i < num_elem_blk; i++) {
+      int *block_map = (int *)calloc(num_elem_in_block[i], sizeof(int));
+      error          = ex_get_block_id_map(exoid, EX_ELEM_BLOCK, ids[i], block_map);
+
+      /* Compare values with overall id map */
+      for (int j = 0; j < num_elem_in_block[i]; j++) {
+        assert(block_map[j] == elem_map[offset + j]);
+      }
+      offset += num_elem_in_block[i];
+      free(block_map);
     }
 
     /* read element block properties */
@@ -314,6 +328,7 @@ int main(int argc, char **argv)
     free(num_nodes_per_elem);
     free(num_attr);
   }
+  free(elem_map);
 
   /* read individual node sets */
   if (num_node_sets > 0) {
@@ -346,7 +361,7 @@ int main(int argc, char **argv)
       printf("num_nodes = %2d\n", num_nodes_in_set);
       printf("name = '%s'\n", nset_names[i]);
       free(nset_names[i]);
-      int *  node_list = (int *)calloc(num_nodes_in_set, sizeof(int));
+      int   *node_list = (int *)calloc(num_nodes_in_set, sizeof(int));
       float *dist_fact = (float *)calloc(num_nodes_in_set, sizeof(float));
 
       error = ex_get_set(exoid, EX_NODE_SET, ids[i], node_list, NULL);
@@ -545,10 +560,10 @@ int main(int argc, char **argv)
 
       /* Note: The # of elements is same as # of sides!  */
       int    num_elem_in_set = num_sides_in_set;
-      int *  elem_list       = (int *)calloc(num_elem_in_set, sizeof(int));
-      int *  side_list       = (int *)calloc(num_sides_in_set, sizeof(int));
-      int *  node_ctr_list   = (int *)calloc(num_elem_in_set, sizeof(int));
-      int *  node_list       = (int *)calloc(num_elem_in_set * 21, sizeof(int));
+      int   *elem_list       = (int *)calloc(num_elem_in_set, sizeof(int));
+      int   *side_list       = (int *)calloc(num_sides_in_set, sizeof(int));
+      int   *node_ctr_list   = (int *)calloc(num_elem_in_set, sizeof(int));
+      int   *node_list       = (int *)calloc(num_elem_in_set * 21, sizeof(int));
       float *dist_fact       = (float *)calloc(num_df_in_set, sizeof(float));
 
       error = ex_get_set(exoid, EX_SIDE_SET, ids[i], elem_list, side_list);
@@ -652,11 +667,11 @@ int main(int argc, char **argv)
 
     int *ids              = (int *)calloc(num_side_sets, sizeof(int));
     num_elem_per_set      = (int *)calloc(num_side_sets, sizeof(int));
-    int *  num_df_per_set = (int *)calloc(num_side_sets, sizeof(int));
-    int *  elem_ind       = (int *)calloc(num_side_sets, sizeof(int));
-    int *  df_ind         = (int *)calloc(num_side_sets, sizeof(int));
-    int *  elem_list      = (int *)calloc(elem_list_len, sizeof(int));
-    int *  side_list      = (int *)calloc(elem_list_len, sizeof(int));
+    int   *num_df_per_set = (int *)calloc(num_side_sets, sizeof(int));
+    int   *elem_ind       = (int *)calloc(num_side_sets, sizeof(int));
+    int   *df_ind         = (int *)calloc(num_side_sets, sizeof(int));
+    int   *elem_list      = (int *)calloc(elem_list_len, sizeof(int));
+    int   *side_list      = (int *)calloc(elem_list_len, sizeof(int));
     float *dist_fact      = (float *)calloc(df_list_len, sizeof(float));
 
     set_specs.sets_ids            = ids;

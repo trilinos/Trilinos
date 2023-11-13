@@ -1387,9 +1387,9 @@
           for (auto& node : new_nodes_list)
             {
               m_eMesh.get_bulk_data()->change_entity_parts( node, add_parts, remove_parts );
-              NewNodesType_type *ndata = stk::mesh::field_data(*m_eMesh.m_new_nodes_field, node);
+              NewNodesType::value_type *ndata = stk::mesh::field_data(*m_eMesh.m_new_nodes_field, node);
               VERIFY_OP_ON(ndata, !=, 0, "bad new_nodes");
-              ndata[0] = static_cast<NewNodesType_type>(1);
+              ndata[0] = static_cast<NewNodesType::value_type>(1);
             }
         }
     }
@@ -2644,10 +2644,10 @@
             {
               if (m_eMesh.m_new_nodes_field)
                 {
-                  NewNodesType_type *ndata = stk::mesh::field_data(*m_eMesh.m_new_nodes_field, new_nodes[ind]);
+                  NewNodesType::value_type *ndata = stk::mesh::field_data(*m_eMesh.m_new_nodes_field, new_nodes[ind]);
                   if (ndata)
                     {
-                      ndata[0] = static_cast<NewNodesType_type>(1);
+                      ndata[0] = static_cast<NewNodesType::value_type>(1);
                     }
                 }
               m_eMesh.get_bulk_data()->change_entity_parts( new_nodes[ind], add_parts, remove_parts );

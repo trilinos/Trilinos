@@ -1,5 +1,7 @@
 Clearing old data (if any)
+
 Level 0
+
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -29,6 +31,7 @@ matrixmatrix: kernel params ->
 Computing Ac (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
+
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -61,13 +64,15 @@ matrixmatrix: kernel params ->
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
-Smoother complexity = 0.00
+Smoother complexity = 0.15
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

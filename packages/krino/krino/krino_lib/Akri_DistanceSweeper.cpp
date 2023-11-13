@@ -26,14 +26,14 @@ namespace {
 bool node_has_other_sign(stk::mesh::Entity node, const FieldRef distance_field, const double signed_narrow_band)
 {
   double * distance = field_data<double>(distance_field, node);
-  ThrowAssert(nullptr != distance);
+  STK_ThrowAssert(nullptr != distance);
   return (signed_narrow_band < 0.) ? (*distance > 0.) : (*distance < 0.);
 }
 
 bool node_is_inside_narrow_band(stk::mesh::Entity node, const FieldRef distance_field, const double signed_narrow_band)
 {
   double * distance = field_data<double>(distance_field, node);
-  ThrowAssert(nullptr != distance);
+  STK_ThrowAssert(nullptr != distance);
   return (signed_narrow_band < 0.) ? (*distance > signed_narrow_band) : (*distance < signed_narrow_band);
 }
 
@@ -147,7 +147,7 @@ void DistanceSweeper::fix_sign_by_sweeping(const stk::mesh::BulkData& mesh, cons
       nodes_ready_to_update.erase(nodes_ready_to_update.begin());
 
       double * distance = field_data<double>(distance_field, node);
-      ThrowAssert(nullptr != distance);
+      STK_ThrowAssert(nullptr != distance);
       *distance = -signed_narrow_band;
 
       get_neighbor_nodes_ready_to_update(aux_meta, mesh, distance_field, signed_narrow_band, check_if_nbr_is_outside_band, node, nodes_ready_to_update);

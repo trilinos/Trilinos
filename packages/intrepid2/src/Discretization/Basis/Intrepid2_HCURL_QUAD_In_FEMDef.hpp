@@ -254,14 +254,14 @@ namespace Intrepid2 {
 
     // this should be in host
     Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointType );
-    Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
+    Basis_HVOL_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
 
     const ordinal_type
       cardLine = lineBasis.getCardinality(),
       cardBubble = bubbleBasis.getCardinality();
 
-    this->vinvLine_   = Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>("Hcurl::Quad::In::vinvLine", cardLine, cardLine);
-    this->vinvBubble_ = Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>("Hcurl::Quad::In::vinvBubble", cardBubble, cardBubble);
+    this->vinvLine_   = Kokkos::DynRankView<typename ScalarViewType::value_type,DT>("Hcurl::Quad::In::vinvLine", cardLine, cardLine);
+    this->vinvBubble_ = Kokkos::DynRankView<typename ScalarViewType::value_type,DT>("Hcurl::Quad::In::vinvBubble", cardBubble, cardBubble);
 
     lineBasis.getVandermondeInverse(this->vinvLine_);
     bubbleBasis.getVandermondeInverse(this->vinvBubble_);
@@ -282,6 +282,10 @@ namespace Intrepid2 {
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
+      // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
+      // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
+      INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
+      
       // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration
       constexpr ordinal_type maxCardLine = Parameters::MaxOrder + 1;
       constexpr ordinal_type maxCardBubble = Parameters::MaxOrder;
@@ -373,16 +377,16 @@ namespace Intrepid2 {
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       dofCoeffsHost("dofCoeffsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,DT>
       dofCoordsLine("dofCoordsLine", cardLine, 1),
       dofCoordsBubble("dofCoordsBubble", cardBubble, 1);
 
     lineBasis.getDofCoords(dofCoordsLine);
-    auto dofCoordsLineHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), dofCoordsLine);
+    auto dofCoordsLineHost = Kokkos::create_mirror_view(dofCoordsLine);
     Kokkos::deep_copy(dofCoordsLineHost, dofCoordsLine);
 
     bubbleBasis.getDofCoords(dofCoordsBubble);
-    auto dofCoordsBubbleHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), dofCoordsBubble);
+    auto dofCoordsBubbleHost = Kokkos::create_mirror_view(dofCoordsBubble);
     Kokkos::deep_copy(dofCoordsBubbleHost, dofCoordsBubble);
 
     {

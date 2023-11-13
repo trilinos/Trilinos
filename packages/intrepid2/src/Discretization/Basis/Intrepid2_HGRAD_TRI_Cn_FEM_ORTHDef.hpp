@@ -330,7 +330,7 @@ getValues( OutputViewType output,
   }
 }
 
-template<typename SpT, ordinal_type numPtsPerEval,
+template<typename DT, ordinal_type numPtsPerEval,
 typename outputValueValueType, class ...outputValueProperties,
 typename inputPointValueType,  class ...inputPointProperties>
 void
@@ -341,7 +341,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     const EOperator operatorType ) {
   typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
   typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-  typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+  typedef typename DT::execution_space ExecSpaceType;
 
   // loopSize corresponds to the # of points
   const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
@@ -387,8 +387,8 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 
 // -------------------------------------------------------------------------------------
 
-template<typename SpT, typename OT, typename PT>
-Basis_HGRAD_TRI_Cn_FEM_ORTH<SpT,OT,PT>::
+template<typename DT, typename OT, typename PT>
+Basis_HGRAD_TRI_Cn_FEM_ORTH<DT,OT,PT>::
 Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
 
   constexpr ordinal_type spaceDim = 2;

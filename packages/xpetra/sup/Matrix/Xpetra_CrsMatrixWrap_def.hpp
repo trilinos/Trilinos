@@ -49,7 +49,7 @@
 #ifndef XPETRA_CRSMATRIXWRAP_DEF_HPP
 #define XPETRA_CRSMATRIXWRAP_DEF_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
@@ -115,7 +115,6 @@ namespace Xpetra {
     CreateDefaultView();
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params)
@@ -145,7 +144,6 @@ namespace Xpetra {
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
 #endif
 #endif
-#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(RCP<CrsMatrix> matrix)
@@ -168,6 +166,22 @@ namespace Xpetra {
     // Default view
     CreateDefaultView();
   }
+
+
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::CrsMatrixWrap(const RCP<const CrsGraph>& graph, 
+                                                                       typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values,
+
+                                                                       const RCP<ParameterList>& paramList)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(graph, values, paramList);
+
+    // Default view
+    CreateDefaultView();
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~CrsMatrixWrap() {}
@@ -232,8 +246,8 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeNumRows() const {
-    return matrixData_->getNodeNumRows();
+  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalNumRows() const {
+    return matrixData_->getLocalNumRows();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -242,8 +256,8 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeNumEntries() const {
-    return matrixData_->getNodeNumEntries();
+  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalNumEntries() const {
+    return matrixData_->getLocalNumEntries();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -262,8 +276,8 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeMaxNumRowEntries() const {
-    return matrixData_->getNodeMaxNumRowEntries();
+  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMaxNumRowEntries() const {
+    return matrixData_->getLocalMaxNumRowEntries();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -444,15 +458,7 @@ namespace Xpetra {
     matrixData_->setObjectLabel(objectLabel);
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
-  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrix () const {
-    return getLocalMatrixDevice();
-  }
-#endif
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrixHost () const {
@@ -466,7 +472,6 @@ namespace Xpetra {
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 
@@ -503,6 +508,28 @@ namespace Xpetra {
     }
   }
 
+
+  // Expert only
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceCrsMatrix(RCP<CrsMatrix> & M) {
+    // Clear the old view table
+    Teuchos::Hashtable<viewLabel_t, RCP<MatrixView> > dummy_table;
+    Matrix::operatorViewTable_ = dummy_table;
+
+    finalDefaultView_ = M->isFillComplete();
+    // Set matrix data
+    matrixData_ = M;
+    
+
+    // Default view
+    CreateDefaultView();
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetStorageBlockSize() const {
+    return matrixData_->GetStorageBlockSize();
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::residual(

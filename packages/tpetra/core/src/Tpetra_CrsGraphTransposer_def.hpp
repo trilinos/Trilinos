@@ -49,7 +49,7 @@
 #include "Tpetra_Details_shortSort.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_spadd.hpp"
 
@@ -294,7 +294,6 @@ namespace Tpetra {
       global_col_inds_array globalColindsSym;
 
       KokkosSparse::Experimental::spadd_symbolic
-        <KKH_GO, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
         (&handle, rowptrs, colindsConverted, rowptrsT, colindsTConverted, rowptrsSym);
       globalColindsSym = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("global colinds sym"), addHandle->get_c_nnz());
 
@@ -326,10 +325,6 @@ namespace Tpetra {
       auto addHandle = handle.get_spadd_handle();
 
       KokkosSparse::Experimental::spadd_symbolic
-        <KKH_LO,
-         typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-         typename row_ptrs_array::const_type, typename col_inds_array::const_type,
-         row_ptrs_array, col_inds_array>
         (&handle, rowptrs, colinds, rowptrsT, colindsT, rowptrsSym);
       colindsSym = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 
@@ -362,7 +357,7 @@ namespace Tpetra {
 
     bool sort = true;
     if (sort)
-      KokkosKernels::sort_crs_graph<execution_space, row_ptrs_array, col_inds_array>(rowptrsSym, colindsSym);
+      KokkosSparse::sort_crs_graph<execution_space, row_ptrs_array, col_inds_array>(rowptrsSym, colindsSym);
 
     local_graph_device_type lclGraphSym = local_graph_device_type(colindsSym, rowptrsSym);
 
@@ -462,11 +457,11 @@ namespace Tpetra {
     using c_entries_t = typename local_graph_device_type::entries_type;
     using rowmap_t = typename local_graph_device_type::row_map_type::non_const_type;
     using entries_t = typename local_graph_device_type::entries_type::non_const_type;
-    LocalOrdinal numCols = origGraph_->getColMap()->getNodeNumElements();
+    LocalOrdinal numCols = origGraph_->getColMap()->getLocalNumElements();
     rowmap_t lclGraphT_rowmap("Transpose rowmap", numCols + 1);
     entries_t lclGraphT_entries(
                                 Kokkos::ViewAllocateWithoutInitializing("Transpose entries"), lclGraph.entries.extent(0));
-    KokkosKernels::Impl::transpose_graph<
+    KokkosSparse::Impl::transpose_graph<
       c_rowmap_t, c_entries_t,
       rowmap_t, entries_t,
       rowmap_t, typename local_graph_device_type::execution_space>(
@@ -475,7 +470,7 @@ namespace Tpetra {
                                                                    lclGraphT_rowmap, lclGraphT_entries);
 
     if (sort)
-      KokkosKernels::sort_crs_graph<
+      KokkosSparse::sort_crs_graph<
         typename local_graph_device_type::execution_space,
         rowmap_t, entries_t>(
                              lclGraphT_rowmap,

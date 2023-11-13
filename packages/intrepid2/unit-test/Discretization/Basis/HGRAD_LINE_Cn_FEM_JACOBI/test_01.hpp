@@ -58,67 +58,27 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM_JACOBI.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_RCP.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
   namespace Test {
-    
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-    
-    
-    template<typename ValueType, typename DeviceSpaceType>
+
+    template<typename ValueType, typename DeviceType>
     int HGRAD_LINE_Cn_FEM_JACOBI_Test01(const bool verbose) {
 
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
-
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs,       false);
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, "Basis_HGRAD_LINE_Cn_FEM_JACOBI", {
+          "1) Conversion of Dof tags into Dof ordinals and back",
+          "2) Basis values for VALUE, GRAD, CURL, and Dk operators"
+      });
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-
-      *outStream                                                       
-        << "===============================================================================\n"
-        << "|                                                                             |\n"
-        << "|               Unit Test (Basis_HGRAD_LINE_Cn_FEM_JACOBI)                    |\n"
-        << "|                                                                             |\n"
-        << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
-        << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n"
-        << "|                                                                             |\n"
-        << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-        << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-        << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
-        << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
-        << "|                                                                             |\n"
-        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-        << "|                                                                             |\n"
-        << "===============================================================================\n";
-      
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,Kokkos::HostSpace>   DynRankViewHost;
       
       const ValueType tol = tolerence();
       int errorFlag = 0;
@@ -128,12 +88,12 @@ namespace Intrepid2 {
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
 
-      typedef Basis_HGRAD_LINE_Cn_FEM_JACOBI<DeviceSpaceType,outputValueType,pointValueType> LineBasisType;
-      typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
+      typedef Basis_HGRAD_LINE_Cn_FEM_JACOBI<DeviceType,outputValueType,pointValueType> LineBasisType;
+      typedef CubatureDirectLineGauss<DeviceType,pointValueType,weightValueType> CubatureLineType;
 
       constexpr ordinal_type maxOrder = Parameters::MaxOrder;
       
-      typedef FunctionSpaceTools<DeviceSpaceType> fst;
+      typedef FunctionSpaceTools<DeviceType> fst;
       
       *outStream
         << "\n"
@@ -285,7 +245,7 @@ namespace Intrepid2 {
             fst::integrate(massMatrix, valsLeftCell, valsRightCell);
 
             // host mirror for comparison
-            auto massMatrixHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), massMatrix);
+            auto massMatrixHost = Kokkos::create_mirror_view(massMatrix);
             Kokkos::deep_copy(massMatrixHost, massMatrix);
             
             // check orthogonality property
@@ -355,7 +315,7 @@ namespace Intrepid2 {
         for (ordinal_type i=0;i<numPoints;++i)
           lineNodesHost(i, 0) = -1.0+(2.0*i)/(numPoints-1);
 
-        const auto lineNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lineNodesHost);
+        const auto lineNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lineNodesHost);
         Kokkos::deep_copy(lineNodes, lineNodesHost);
         
         // test basis values
@@ -365,7 +325,7 @@ namespace Intrepid2 {
           lineBasis.getValues(vals, lineNodes, OPERATOR_VALUE);
 
           // host mirror for comparison
-          auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          auto valsHost = Kokkos::create_mirror_view(vals);
           Kokkos::deep_copy(valsHost, vals);
           
           for (ordinal_type i=0;i<numFields;++i)
@@ -395,7 +355,7 @@ namespace Intrepid2 {
           lineBasis.getValues(vals, lineNodes, OPERATOR_D1);
 
           // host mirror for comparison
-          auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          auto valsHost = Kokkos::create_mirror_view(vals);
           Kokkos::deep_copy(valsHost, vals);
 
           for (ordinal_type i=0;i<numFields;++i)
@@ -425,7 +385,7 @@ namespace Intrepid2 {
           lineBasis.getValues(vals, lineNodes, OPERATOR_D2);
 
           // host mirror for comparison
-          auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          auto valsHost = Kokkos::create_mirror_view(vals);
           Kokkos::deep_copy(valsHost, vals);
 
           for (ordinal_type i=0;i<numFields;++i)
@@ -455,7 +415,7 @@ namespace Intrepid2 {
           lineBasis.getValues(vals, lineNodes, OPERATOR_D3);
 
           // host mirror for comparison
-          auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          auto valsHost = Kokkos::create_mirror_view(vals);
           Kokkos::deep_copy(valsHost, vals);
 
           for (ordinal_type i=0;i<numFields;++i)

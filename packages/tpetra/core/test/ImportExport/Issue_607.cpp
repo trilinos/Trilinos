@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, IsLocallyComplete, LO, GO, NT )
     out << "Create map4 (noncontiguous, compatible with map1)" << endl;
     RCP<const map_type> map4;
     {
-      const LO map1LclSize = static_cast<LO> (map1->getNodeNumElements ());
+      const LO map1LclSize = static_cast<LO> (map1->getLocalNumElements ());
       TEST_ASSERT( trueOnAllProcesses (*comm, map1LclSize == static_cast<LO> (10)) );
       Teuchos::Array<GO> gids4 (map1LclSize);
       for (LO map1_lid = 0; map1_lid < map1LclSize; ++map1_lid) {
@@ -219,7 +219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, IsLocallyComplete, LO, GO, NT )
     out << "Create map5 (noncontiguous, compatible with map3)" << endl;
     RCP<const map_type> map5;
     {
-      const LO map3LclSize = static_cast<LO> (map3->getNodeNumElements ());
+      const LO map3LclSize = static_cast<LO> (map3->getLocalNumElements ());
       TEST_ASSERT( trueOnAllProcesses (*comm, map3LclSize == static_cast<LO> (11)) );
       Teuchos::Array<GO> gids5 (map3LclSize);
       for (LO map3_lid = 0; map3_lid < map3LclSize; ++map3_lid) {

@@ -2,7 +2,7 @@
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ImportExport_UnitTests
   SOURCES
-    ImportExport_UnitTests
+    ImportExport_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -12,17 +12,53 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ImportExport_ImportConstructExpert
   SOURCES
-    ImportExport_ImportConstructExpert
+    ImportExport_ImportConstructExpert.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2-4
   STANDARD_PASS_OUTPUT
   )
 
+
+
+### Import memory testing for GDSW ###
+# This test only makes sense in an MPI build with > 1 processes.
+TRIBITS_ADD_EXECUTABLE(
+  ImportExport_GDSWStyle
+  SOURCES
+  ImportExport_GDSWStyle.cpp
+  COMM mpi
+  CATEGORIES BASIC PERFORMANCE
+  )
+
+TRIBITS_ADD_TEST(
+  ImportExport_GDSWStyle
+  NAME GDSWStyle_BaselineTpetra
+  ARGS "--case=1 --watchr-output"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES BASIC PERFORMANCE
+  )
+
+TRIBITS_ADD_TEST(
+  ImportExport_GDSWStyle
+  NAME GDSWStyle_ImportSquareMatrix
+  ARGS "--case=2 --watchr-output"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  RUN_SERIAL
+  CATEGORIES BASIC PERFORMANCE
+  )
+
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Import_Union
   SOURCES
-    Import_Union
+    Import_Union.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
@@ -32,16 +68,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Bug9116
   SOURCES
-    Bug9116
+    Bug9116.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi 
+  COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SubmapExportTests
   SOURCES
-    SubmapExport
+    SubmapExport.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -51,7 +87,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SubmapImportTests
   SOURCES
-    SubmapImport
+    SubmapImport.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -155,7 +191,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Issue_607
   SOURCES
-    Issue_607
+    Issue_607.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -168,7 +204,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE(
   Issue_2198
   SOURCES
-    Issue_2198
+    Issue_2198.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )
@@ -199,7 +235,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_EXECUTABLE(
   Issue_3968
   SOURCES
-    Issue_3968
+    Issue_3968.cpp
   COMM serial mpi
   )
 

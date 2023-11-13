@@ -50,7 +50,7 @@ EvaluatorTpetraHeq(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   // communicate the number of unknows and min GID on each proc to all procs
   procNumElements_.resize(comm_->getSize());
-  const std::size_t numMyElements = xMap_->getNodeNumElements();
+  const std::size_t numMyElements = xMap_->getLocalNumElements();
   Teuchos::gatherAll(*comm_, 1, &numMyElements, comm_->getSize(), procNumElements_.data());
 
   procMinGIDs_.resize(comm->getSize());
@@ -145,7 +145,7 @@ EvaluatorTpetraHeq<Scalar, LO, GO, Node>::create_W_prec() const
   typedef Tpetra::CrsGraph<LO, GO, Node> tpetra_graph;
   typedef typename tpetra_graph::local_graph_device_type::row_map_type::non_const_type row_map_type;
   typedef typename tpetra_graph::local_graph_device_type::entries_type::non_const_type view_type;
-  const std::size_t numMyElements = xMap_->getNodeNumElements();
+  const std::size_t numMyElements = xMap_->getLocalNumElements();
   row_map_type offsets("row offsets", numMyElements+1);
   view_type indices("column indices", numMyElements);
   GraphSetupFunctor<tpetra_graph> functor(offsets, indices, numMyElements);
@@ -248,7 +248,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     }
 
     // Compute the integral operator
-    typedef typename tpetra_vec::dual_view_type::t_dev view_type;
     typedef typename tpetra_vec::execution_space execution_space;
     typedef Kokkos::TeamPolicy<execution_space> team_policy;
 
@@ -287,7 +286,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     }
 
     // Residual computation
-    const std::size_t numMyElements = xMap_->getNodeNumElements();
+    const std::size_t numMyElements = xMap_->getLocalNumElements();
     if (fill_f) {
       Teuchos::TimeMonitor timer(*residTimer_);
 
@@ -388,14 +387,13 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
   }
 
   // Apply the integral operator to the input multivector
-  typedef typename tpetra_vec::dual_view_type::t_dev view_type;
   typedef typename tpetra_vec::execution_space execution_space;
   typedef Kokkos::TeamPolicy<execution_space> team_policy;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = map_->getComm();
   const int myRank = comm->getRank();
   const GO myMinGID = map_->getMinGlobalIndex();
-  const std::size_t numMyElements = map_->getNodeNumElements();
+  const std::size_t numMyElements = map_->getLocalNumElements();
 
   // Loop over vecs
   for (std::size_t col = 0; col < X.getNumVectors(); ++col) {

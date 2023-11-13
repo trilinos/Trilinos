@@ -102,7 +102,6 @@ public:
     model.precond(*v_,*g_,s,tol);
     // Initialize basis vector
     p_->set(*v_); p_->scale(-one);
-    //Real pnorm2 = v_->dot(g_->dual());
     Real pnorm2 = v_->apply(*g_);
     if ( pnorm2 <= zero ) {
       iflag = 4;
@@ -112,14 +111,13 @@ public:
     // Initialize scalar storage
     iter = 0; iflag = 0;
     Real kappa(0), beta(0), sigma(0), alpha(0), tmp(0), sMp(0);
-    Real gv = pnorm2; //v_->dot(g_->dual());
+    Real gv = pnorm2;
     pRed = zero;
     // Iterate CG
     for (iter = 0; iter < maxit_; iter++) {
       // Apply Hessian to direction p
       model.hessVec(*Hp_,*p_,s,tol);
       // Check positivity of Hessian
-      //kappa = p_->dot(Hp_->dual());
       kappa = p_->apply(*Hp_);
       if (kappa <= zero) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
@@ -149,13 +147,10 @@ public:
       // Check for convergence
       g_->axpy(alpha,*Hp_);
       normg = g_->norm();
-      if (normg < gtol) {
-        break;
-      }
+      if (normg < gtol) break;
       // Preconditioned updated (projected) gradient vector
       model.precond(*v_,*g_,s,tol);
       tmp   = gv;
-      //gv    = v_->dot(g_->dual());
       gv    = v_->apply(*g_);
       beta  = gv/tmp;
       // Update basis vector
@@ -165,19 +160,11 @@ public:
       pnorm2 = gv + beta*beta*pnorm2;
     }
     // Update model predicted reduction
-    if (iflag > 0) {
-      pRed += sigma*(gv-half*sigma*kappa);
-    }
-    else {
-      snorm = std::sqrt(snorm2);
-    }
+    if (iflag > 0) pRed += sigma*(gv-half*sigma*kappa);
+    else           snorm = std::sqrt(snorm2);
     // Check iteration count
-    if (iter == maxit_) {
-      iflag = 1;
-    }
-    if (iflag != 1) {
-      iter++;
-    }
+    if (iter == maxit_) iflag = 1;
+    if (iflag != 1)     iter++;
   }
 };
 

@@ -159,7 +159,9 @@ typename inputPointValueType,  class ...inputPointProperties,
 typename vinvValueType,        class ...vinvProperties>
 void
 Basis_HGRAD_TET_Cn_FEM::
-getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+getValues(
+    const typename DT::execution_space& space,
+          Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
     const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
     const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
     const EOperator operatorType) {
@@ -172,7 +174,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
   const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
-  Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+  Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
   typedef typename inputPointViewType::value_type inputPointType;
 
@@ -184,7 +186,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 
   switch (operatorType) {
   case OPERATOR_VALUE: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
+    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_VALUE,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
@@ -192,7 +194,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
+    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
@@ -201,7 +203,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   case OPERATOR_D2: {
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D2,numPtsPerEval> FunctorType;
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality*outputValues.extent(2), inputPoints.extent(0));
+    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TET_Cn_FEM::getValues::work", vcprop), cardinality*outputValues.extent(2), inputPoints.extent(0));
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
     break;
   }
@@ -241,6 +243,10 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   dofCoords("Hgrad::Tet::Cn::dofCoords", card, spaceDim);
 
+  // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
+  // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
+  INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
+  
   // Basis-dependent initializations
   constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
   constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();

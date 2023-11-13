@@ -91,22 +91,23 @@ class SharedSidesCommunication
 {
 public:
     SharedSidesCommunication(stk::mesh::BulkData& bulkData,
-                             const impl::ElemSideToProcAndFaceId & elementSidesToSend)
+                             const impl::ElemSideProcVector & elementSidesToSend)
     : m_bulkData(bulkData),
+      m_commSparse(bulkData.parallel()),
       m_elementSidesToSend(elementSidesToSend)
     {
-        communicate_element_sides();
     }
 
-    SideNodeToReceivedElementDataMap get_received_element_sides() const { return m_elementSidesReceived; }
-private:
     void communicate_element_sides();
-    void pack_shared_side_nodes_of_elements(stk::CommSparse &comm) const;
-    void unpack_side_data(stk::CommSparse &comm);
+    void unpack_side_data_map(SideNodeToReceivedElementDataMap& elementSidesReceived);
+    void unpack_side_data_vec(impl::ParallelElementDataVector& elementSidesReceived);
+
 private:
+    void pack_shared_side_nodes_of_elements(stk::CommSparse& comm) const;
+
     stk::mesh::BulkData& m_bulkData;
-    const impl::ElemSideToProcAndFaceId & m_elementSidesToSend;
-    SideNodeToReceivedElementDataMap m_elementSidesReceived;
+    stk::CommSparse m_commSparse;
+    const impl::ElemSideProcVector & m_elementSidesToSend;
 };
 
 
@@ -223,13 +224,15 @@ public:
 
 protected:
     void fill_graph();
-    void fill_parallel_graph(impl::ElemSideToProcAndFaceId & elementSidesToSend, SideNodeToReceivedElementDataMap & elementSidesReceived);
+    void fill_parallel_graph(impl::ElemSideProcVector & elementSidesToSend, impl::ParallelElementDataVector & elementSidesReceived);
     void create_parallel_graph_edge(const impl::ParallelElementData &elementData,
                                     const stk::mesh::impl::ParallelElementData &remoteElementData,
-                                    impl::ElemSideToProcAndFaceId & elementSidesToSend,
-                                    std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
+                                    impl::ElemSideProcVector & elementSidesToSend,
+                                    std::vector<impl::SharedEdgeInfo> &newlySharedEdges,
+                                    impl::ParallelGraphInfo& newParallelGraphInfo);
 
-    SideNodeToReceivedElementDataMap communicate_shared_sides(impl::ElemSideToProcAndFaceId& elementSidesToSend);
+    void communicate_shared_sides(impl::ElemSideProcVector& elementSidesToSend,
+                                  impl::ParallelElementDataVector& elementSidesReceived);
 
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
 
@@ -283,7 +286,9 @@ protected:
 
     void delete_remote_connections(const std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
 
-    void delete_remote_connection(stk::mesh::Entity connected_elem, stk::mesh::EntityId deleted_elem_global_id);
+    void delete_remote_connection(stk::mesh::Entity connected_elem,
+                                  stk::mesh::EntityId deleted_elem_global_id,
+                                  std::vector<GraphEdge>& pllEdgesToDelete);
 
     void reconnect_volume_elements_across_deleted_shells(std::vector<impl::ShellConnectivityData> & shellConnectivityList);
 
@@ -325,7 +330,7 @@ private:
     void add_new_local_edges_to_graph(GraphType &graph, const std::vector<stk::mesh::GraphEdge> &newGraphEdges);
 
     void add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem_to_add);
-    stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
+    std::pair<stk::mesh::EntityVector,stk::mesh::EntityVector> filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
     stk::mesh::impl::DeletedElementInfoVector filter_delete_elements_argument(const stk::mesh::impl::DeletedElementInfoVector& elements_to_delete_argument) const;
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts);
@@ -373,18 +378,16 @@ inline
 stk::mesh::OrdinalAndPermutation flip_shell_to_get_opposing_normal(const stk::mesh::OrdinalAndPermutation &connectedOrdAndPerm,
                                                                         stk::topology topology)
 {
-    ThrowRequireWithSierraHelpMsg(static_cast<unsigned>(connectedOrdAndPerm.second) < topology.num_positive_permutations());
+    STK_ThrowRequireWithSierraHelpMsg(static_cast<unsigned>(connectedOrdAndPerm.second) < topology.num_positive_permutations());
     unsigned sideOrdinal = connectedOrdAndPerm.first == 0u ? 1u : 0u;
     unsigned perm = connectedOrdAndPerm.second + topology.num_positive_permutations();
     return stk::mesh::OrdinalAndPermutation(static_cast<stk::mesh::ConnectivityOrdinal>(sideOrdinal),
                                             static_cast<stk::mesh::Permutation>(perm));
 }
 
-impl::ElemSideToProcAndFaceId gather_element_side_ids_to_send(const stk::mesh::BulkData& bulkData);
+impl::ElemSideProcVector gather_element_side_ids_to_send(const stk::mesh::BulkData& bulkData);
 
-void fill_suggested_side_ids(stk::mesh::BulkData &bulkData, impl::ElemSideToProcAndFaceId& elements_to_communicate);
-
-stk::mesh::EntityVector gather_shells_connected_to_solid_element_on_given_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side);
+stk::mesh::EntityVector gather_solid_elements_connected_to_shell(const stk::mesh::BulkData& bulkData, stk::mesh::Entity shellElement);
 
 } // end impl
 

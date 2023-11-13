@@ -59,15 +59,15 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   std::vector<std::string> element_blocks;
 
   std::vector<std::size_t> local_cell_ids;
-  Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates;
+  Kokkos::DynRankView<double,PHX::Device> cell_node_coordinates;
 
-  getIdsAndVertices(mesh, eBlock, local_cell_ids, cell_vertex_coordinates);
+  getIdsAndNodes(mesh, eBlock, local_cell_ids, cell_node_coordinates);
 
   // only build workset if there are elements to worry about
   // this may be processor dependent, so an element block
   // may not have elements and thus no contribution
   // on this processor
-  return panzer::buildWorksets(needs, eBlock, local_cell_ids, cell_vertex_coordinates);
+  return panzer::buildWorksets(needs, eBlock, local_cell_ids, cell_node_coordinates);
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
@@ -166,11 +166,11 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
       if(itr->second.size()==0)
         continue;
 
-      Kokkos::DynRankView<double,PHX::Device> vertices;
-      mesh.getElementVertices(itr->second,eBlock,vertices);
+      Kokkos::DynRankView<double,PHX::Device> nodes;
+      mesh.getElementNodes(itr->second,eBlock,nodes);
   
       Teuchos::RCP<std::vector<panzer::Workset> > current
-         = panzer::buildWorksets(needs, eBlock, itr->second, vertices);
+         = panzer::buildWorksets(needs, eBlock, itr->second, nodes);
 
       // correct worksets so the sides are correct
       for(std::size_t w=0;w<current->size();w++) {
@@ -269,13 +269,13 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
     local_cell_ids_b.push_back(mesh.elementLocalId(element_b));
   }
 
-  Kokkos::DynRankView<double,PHX::Device> vertex_coordinates_a, vertex_coordinates_b;
-  mesh.getElementVertices(local_cell_ids_a,blockid_a,vertex_coordinates_a);
-  mesh.getElementVertices(local_cell_ids_b,blockid_b,vertex_coordinates_b);
+  Kokkos::DynRankView<double,PHX::Device> node_coordinates_a, node_coordinates_b;
+  mesh.getElementNodes(local_cell_ids_a,blockid_a,node_coordinates_a);
+  mesh.getElementNodes(local_cell_ids_b,blockid_b,node_coordinates_b);
 
   // worksets to be returned
-  return buildBCWorkset(needs_a,blockid_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
-                        needs_b,blockid_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b);
+  return buildBCWorkset(needs_a,blockid_a, local_cell_ids_a, local_side_ids_a, node_coordinates_a,
+                        needs_b,blockid_b, local_cell_ids_b, local_side_ids_b, node_coordinates_b);
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
@@ -346,10 +346,10 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
       Teuchos::RCP<const shards::CellTopology> topo 
          = mesh.getCellTopology(eblockID);
 
-      Kokkos::DynRankView<double,PHX::Device> vertices;
-      mesh.getElementVertices(local_cell_ids,eblockID,vertices);
+      Kokkos::DynRankView<double,PHX::Device> nodes;
+      mesh.getElementNodes(local_cell_ids,eblockID,nodes);
   
-      return panzer::buildBCWorkset(needs, eblockID, local_cell_ids, local_side_ids, vertices);
+      return panzer::buildBCWorkset(needs, eblockID, local_cell_ids, local_side_ids, nodes);
   }
   
   return Teuchos::null;
@@ -398,7 +398,8 @@ void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
 				 const std::string & blockId, 
 				 const std::vector<stk::mesh::Entity> & entities,
 				 std::vector<std::size_t> & localEntityIds, 
-				 std::vector<stk::mesh::Entity> & elements)
+				 std::vector<stk::mesh::Entity> & elements,
+                                 std::vector<std::size_t> & missingElementIndices)
 {
   // for verifying that an element is in specified block
   stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
@@ -407,9 +408,11 @@ void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
 
   // loop over each entitiy extracting elements and local entity ID that
   // are containted in specified block.
+  std::size_t entityIndex =-1;
   std::vector<stk::mesh::Entity>::const_iterator entityItr;
   for(entityItr=entities.begin();entityItr!=entities.end();++entityItr) {
     stk::mesh::Entity entity = *entityItr;
+    entityIndex += 1;
 
     const size_t num_rels = bulkData.num_elements(entity);
     stk::mesh::Entity const* element_rels = bulkData.begin_elements(entity);
@@ -426,6 +429,10 @@ void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
         // add element and Side ID to output vectors
         elements.push_back(element);
         localEntityIds.push_back(entityId);
+      } else if(!inBlock && (num_rels == 1)) {
+        // add index of side whose neighbor element in blockPart does not belong 
+        // to the current processor
+        missingElementIndices.push_back(entityIndex);
       }
     }
   }

@@ -81,6 +81,11 @@ const Ptr<Constraint<Real>> PolyhedralProjection<Real>::getLinearConstraint(void
 }
 
 template<typename Real>
+const Ptr<BoundConstraint<Real>> PolyhedralProjection<Real>::getBoundConstraint(void) const {
+  return bnd_;
+}
+
+template<typename Real>
 const Ptr<Vector<Real>> PolyhedralProjection<Real>::getMultiplier(void) const {
   return mul_;
 }

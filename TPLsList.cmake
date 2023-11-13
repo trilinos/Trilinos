@@ -63,6 +63,8 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   CUSPARSE        "cmake/TPLs/"    PT
   Thrust          "cmake/TPLs/"    ST
   Cusp            "cmake/TPLs/"    ST
+  ROCBLAS         "cmake/TPLs/"    PT
+  ROCSPARSE       "cmake/TPLs/"    PT
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    PT
   HWLOC           "cmake/TPLs/"    ST
@@ -71,12 +73,13 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   ARPREC          "packages/teuchos/cmake/tpls/"    ST
   QD              "packages/teuchos/cmake/tpls/"    ST
   MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/" PT
-  BLAS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
-  LAPACK          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
+  BLAS            "cmake/TPLs/"   PT
+  LAPACK          "cmake/TPLs/"   PT
   Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
   Scotch          "cmake/TPLs/"    ST
   OVIS            "cmake/TPLs/"    ST
   gpcd            "cmake/TPLs/"    ST
+  DataWarp        "cmake/TPLs/"    SS
   METIS           "cmake/TPLs/"    TS
   MTMETIS         "cmake/TPLs/"    EX
   ParMETIS        "cmake/TPLs/"    PT
@@ -97,7 +100,10 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   CGNS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   Pnetcdf         "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   Netcdf          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
-  ADIOS2          "packages/seacas/cmake/tpls/"    EX
+  ADIOS2          "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    EX
+  Faodel          "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    SS
+  Cereal          "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    SS
+  Catalyst2       "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    EX
   y12m            "cmake/TPLs/"    ST
   SuperLUDist     "cmake/TPLs/"    ST
   SuperLUMT	  "cmake/TPLs/"	   ST
@@ -151,8 +157,6 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   RTlib           "cmake/TPLs/"    ST
   DLlib           "cmake/TPLs/"    ST
   AmgX            "cmake/TPLs/"    EX
-  CGAL            "cmake/TPLs/"    EX
-  CGALCore        "cmake/TPLs/"    EX
   VTune           "cmake/TPLs/"    ST
   TASMANIAN       "cmake/TPLs/"    EX
   ArrayFireCPU    "cmake/TPLs/"    EX
@@ -170,6 +174,8 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   MAGMASparse     "cmake/TPLs/"    EX
   Check           "cmake/TPLs/"    EX
   SARMA           "cmake/TPLs/"    EX
+  CDT             "cmake/TPLs/"    EX
+  mpi_advance     "cmake/TPLs/"    EX
   )
 
 # NOTES:

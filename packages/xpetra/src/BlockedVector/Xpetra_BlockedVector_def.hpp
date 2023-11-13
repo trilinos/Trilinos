@@ -416,10 +416,10 @@ elementWiseMultiply( Scalar /* scalarAB */,
     XPETRA_TEST_FOR_EXCEPTION(B.getMap()->isSameAs(*(this->getMap())) == false,
                               Xpetra::Exceptions::RuntimeError,
                               "BlockedVector::elementWiseMultipy: B must have same blocked map than this.");
-    TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getNodeNumElements() != B.getMap()->getNodeNumElements(),
+    TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getLocalNumElements() != B.getMap()->getLocalNumElements(),
                                Xpetra::Exceptions::RuntimeError,
                                "BlockedVector::elementWiseMultipy: A has "
-                                 << A.getMap()->getNodeNumElements() << " elements, B has " << B.getMap()->getNodeNumElements()
+                                 << A.getMap()->getLocalNumElements() << " elements, B has " << B.getMap()->getLocalNumElements()
                                  << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getGlobalNumElements() != B.getMap()->getGlobalNumElements(),
                                Xpetra::Exceptions::RuntimeError,

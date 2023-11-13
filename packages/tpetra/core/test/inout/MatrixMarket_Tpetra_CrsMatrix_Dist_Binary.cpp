@@ -420,7 +420,7 @@ private:
 
     // Write the header
     unsigned int nRows = static_cast<unsigned int>(AmatWrite->getRowMap()->getMaxAllGlobalIndex()) + 1;
-    unsigned long long  nNzs = static_cast<unsigned long long>(AmatWrite->getNodeNumEntries());
+    unsigned long long  nNzs = static_cast<unsigned long long>(AmatWrite->getLocalNumEntries());
     out.write((char *)& nRows, sizeof(unsigned int));
     out.write((char *)& nRows, sizeof(unsigned int));
     out.write((char *)& nNzs, sizeof(unsigned long long));
@@ -433,7 +433,7 @@ private:
 
     // Write the nonzeros
     unsigned int entry[2];
-    for(size_t r = 0; r < graph->getNodeNumRows(); r++) {
+    for(size_t r = 0; r < graph->getLocalNumRows(); r++) {
 
       // Get the global index for row r
       auto gblRow = rowMap->getGlobalElement(static_cast<gno_t>(r));
@@ -546,7 +546,7 @@ private:
     const Teuchos::RCP<vector_t> &y_test
   )
   {
-    const scalar_t epsilon = 0.0000001;
+    const scalar_t epsilon = 10*Teuchos::ScalarTraits<scalar_t>::squareroot(Teuchos::ScalarTraits<scalar_t>::eps());
     int ierr = 0;
 
     // First compare the norms of the result vector to the baseline

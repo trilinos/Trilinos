@@ -8,7 +8,8 @@ assignees: ''
 ---
 
 ## Documentation
-@trilinos/\<PackageName\>
+Trilinos organization members, please @ mention the correct package team.  
+If you are not a member, please refer to https://github.com/trilinos/Trilinos/wiki/Trilinos-Package-Owners to mention the correct parties (because non-members cannot mention Github teams).
 
 What would you like to see in the documentation?  How does our current
 documentation not meet your needs?  How has this lack of documentation affected

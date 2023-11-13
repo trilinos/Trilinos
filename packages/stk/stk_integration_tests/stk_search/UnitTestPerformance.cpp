@@ -87,7 +87,7 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
 
                 int id = x * numColumnsPerProcessor + y;
 
-                smallBoxVector.push_back(generateBoundingVolume<StkBox>(centerX,
+                smallBoxVector.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<StkBox>(centerX,
                         centerY,
                         centerZ,
                         radius,
@@ -104,7 +104,7 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
         double centerY = radius;
         double centerZ = boxSize / 2;
         int id = 1;
-        bigBoxVector.push_back(generateBoundingVolume<StkBox>(centerX,
+        bigBoxVector.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<StkBox>(centerX,
                 centerY,
                 centerZ,
                 radius - boxSize / 2,
@@ -117,7 +117,7 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
     stk::search::coarse_search(smallBoxVector, bigBoxVector, searchMethod, comm, boxIdPairResults);
 
     double elapsedTime = stk::wall_time() - startTime;
-    printPeformanceStats(elapsedTime, comm);
+    stk::unit_test_util::simple_fields::printPeformanceStats(elapsedTime, comm);
 
     size_t numExpectedResults = numColumnsPerProcessor * numColumnsPerProcessor;
     bool lastProcessorWithOddNumberOfProcs = numProcs % 2 != 0 && proc == numProcs - 1;
@@ -166,17 +166,17 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBo
     StkBoxVector stkBoxes(domainBoxes.size());
     fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
 
-    std::string rangeBoxComm = stk::unit_test_util::get_option("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = stk::unit_test_util::simple_fields::get_option("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
     double startTime = stk::wall_time();
     stk::search::coarse_search(stkBoxes, stkBoxes, searchMethod, comm, boxIdPairResults, rangeResultsCommunicated);
     double elapsedTime = stk::wall_time() - startTime;
 
-    printPeformanceStats(elapsedTime, comm);
+    stk::unit_test_util::simple_fields::printPeformanceStats(elapsedTime, comm);
 
-    gatherResultstoProcZero(comm, boxIdPairResults);
-    size_t goldValueNumber = getGoldValueForTest();
+    stk::unit_test_util::simple_fields::gatherResultstoProcZero(comm, boxIdPairResults);
+    size_t goldValueNumber = stk::unit_test_util::simple_fields::getGoldValueForTest();
     if ( procId == 0 )
     {
         if ( goldValueNumber != 0u)
@@ -199,17 +199,17 @@ void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domain
         searchBoxPairs[i] = std::make_pair(domainBoxes[i], domainBoxId);
     }
 
-    std::string rangeBoxComm = stk::unit_test_util::get_option("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = stk::unit_test_util::simple_fields::get_option("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
     double startTime = stk::wall_time();
     stk::search::coarse_search(searchBoxPairs, searchBoxPairs, searchMethod, comm, boxIdPairResults, rangeResultsCommunicated);
     double elapsedTime = stk::wall_time() - startTime;
 
-    printPeformanceStats(elapsedTime, comm);
+    stk::unit_test_util::simple_fields::printPeformanceStats(elapsedTime, comm);
 
-    gatherResultstoProcZero(comm, boxIdPairResults);
-    size_t goldValueNumber = getGoldValueForTest();
+    stk::unit_test_util::simple_fields::gatherResultstoProcZero(comm, boxIdPairResults);
+    size_t goldValueNumber = stk::unit_test_util::simple_fields::getGoldValueForTest();
     if ( procId == 0 )
     {
         if ( goldValueNumber != 0u)

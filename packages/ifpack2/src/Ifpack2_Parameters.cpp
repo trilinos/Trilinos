@@ -79,6 +79,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // params.set("chebyshev: operator inv diagonal",Teuchos::null);
   params.set("chebyshev: min diagonal value", STS::eps());
   params.set("chebyshev: zero starting solution", true);
+  params.set("chebyshev: use native spmv", false);
 
   // Ifpack2_Amesos.cpp
   params.set("amesos: solver type", "Amesos_Klu");
@@ -107,6 +108,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: absolute threshold", 0.0);
   params.set("fact: relative threshold", 1.0);
   params.set("fact: relax value", 0.0);
+  params.set("fact: type", "serial");
+  params.sublist("parallel ILUT options"); //FIXME this should be validated
 
   // Ifpack2_LocalSparseTriangularSolver.cpp
   params.set("trisolver: type", "Internal");
@@ -132,6 +135,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("relaxation: banded container superdiagonals", -1);
   params.set("relaxation: banded container subdiagonals", -1);
   params.set("relaxation: mtgs cluster size", 1);
+  params.set("relaxation: mtgs coloring algorithm", "Default");
   params.set("relaxation: long row threshold", 0);
 
   // Ifpack2_SPARSKIT.cpp
@@ -150,6 +154,11 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);
   params.set("schwarz: overlap level", 0);
+  params.set("schwarz: num iterations", 1);
+  params.set("subdomain solver name", "");
+  Teuchos::ParameterList dummyListSubdomain;
+  params.set("subdomain solver parameters",dummyListSubdomain);
+  params.sublist("subdomain solver parameters").disableRecursiveValidation();
 
   // Ifpack2_BlockRelaxation.hpp
   // params.set("relaxation: type", "Jacobi"); // already set

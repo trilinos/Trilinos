@@ -126,6 +126,7 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    const Epetra_Comm & comm_epetra = *GetComm();
+   RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
 
    TEST_MSG("\n   tTpetraOperatorWrapper::test_functionality: "
          << "Running on " << comm_epetra.NumProc() << " processors");
@@ -230,8 +231,8 @@ bool tTpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
          << " checking ThyraIntoTpetra copy "
          << "( thyra dim = " << tv->range()->dim()
          << ", global length = " <<  ev->getGlobalLength() << " )" );
-      LO numMyElements = domainMap->getNodeNumElements();
-TEST_MSG("domainMap->getNodeNumElements() = " << domainMap->getNodeNumElements());
+      LO numMyElements = domainMap->getLocalNumElements();
+TEST_MSG("domainMap->getLocalNumElements() = " << domainMap->getLocalNumElements());
       bool compareThyraToTpetraValue = true;
       ST tval = 0.0;
       for(LO i=0;i<numMyElements;i++) {
@@ -275,7 +276,7 @@ TEST_MSG("domainMap->getNodeNumElements() = " << domainMap->getNodeNumElements()
          << " checking TpetraIntoThyra copy "
          << "( thyra dim = " << tv->range()->dim()
          << ", global length = " <<  ev->getGlobalLength() << " )" );
-      LO numMyElements = domainMap->getNodeNumElements();
+      LO numMyElements = domainMap->getLocalNumElements();
       bool compareTpetraToThyraValue = true;
       ST tval = 0.0;
       for(LO i=0;i<numMyElements;i++) {

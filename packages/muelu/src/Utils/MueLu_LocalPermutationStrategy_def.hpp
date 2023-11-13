@@ -77,7 +77,7 @@ namespace MueLu {
 
     // loop over local nodes
     // TODO what about nOffset?
-    LocalOrdinal numLocalNodes = A->getRowMap()->getNodeNumElements()/nDofsPerNode;
+    LocalOrdinal numLocalNodes = A->getRowMap()->getLocalNumElements()/nDofsPerNode;
     for (LocalOrdinal node = 0; node < numLocalNodes; ++node) {
 
       // zero out block matrix
@@ -204,7 +204,7 @@ namespace MueLu {
     Teuchos::RCP<CrsMatrixWrap> permPTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1));
     Teuchos::RCP<CrsMatrixWrap> permQTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1));
 
-    for(size_t row=0; row<A->getNodeNumRows(); row++) {
+    for(size_t row=0; row<A->getLocalNumRows(); row++) {
       Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(PpermData[row]))); // column idx for Perm^T
       Teuchos::ArrayRCP<GlobalOrdinal> indoutQ(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(QpermData[row]))); // column idx for Qperm
       Teuchos::ArrayRCP<Scalar> valout(1,Teuchos::ScalarTraits<Scalar>::one());
@@ -217,7 +217,7 @@ namespace MueLu {
 
     Teuchos::RCP<Matrix> permPmatrix = Utilities::Transpose(*permPTmatrix,true);
 
-    /*for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
+    /*for(size_t row=0; row<permPTmatrix->getLocalNumRows(); row++) {
       if(permPTmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0) <<"#entries in row " << row << " of permPTmatrix is " << permPTmatrix->getNumEntriesInLocalRow(row) << std::endl;
       if(permPmatrix->getNumEntriesInLocalRow(row) != 1)
@@ -239,12 +239,12 @@ namespace MueLu {
     // build scaling matrix
     Teuchos::RCP<Vector> diagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
     Teuchos::RCP<Vector> invDiagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
-    Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
     Teuchos::ArrayRCP< Scalar > invDiagVecData = invDiagVec->getDataNonConst(0);
 
     LO lCntZeroDiagonals = 0;
     permPApermQt->getLocalDiagCopy(*diagVec);
-    for(size_t i = 0; i<diagVec->getMap()->getNodeNumElements(); ++i) {
+    Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
+    for(size_t i = 0; i<diagVec->getMap()->getLocalNumElements(); ++i) {
       if(diagVecData[i] != SC_ZERO)
         invDiagVecData[i] = Teuchos::ScalarTraits<Scalar>::one()/diagVecData[i];
       else {
@@ -263,7 +263,7 @@ namespace MueLu {
 
     Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1));
 
-    for(size_t row=0; row<A->getNodeNumRows(); row++) {
+    for(size_t row=0; row<A->getLocalNumRows(); row++) {
       Teuchos::ArrayRCP<GlobalOrdinal> indout(1,permPApermQt->getRowMap()->getGlobalElement(row)); // column idx for Perm^T
       Teuchos::ArrayRCP<Scalar> valout(1,invDiagVecData[row]);
       diagScalingOp->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()), valout.view(0,valout.size()));
@@ -285,7 +285,7 @@ namespace MueLu {
     Teuchos::ArrayRCP< const Scalar > diagPVecData = diagPVec->getData(0);
     GlobalOrdinal lNumRowPermutations = 0;
     GlobalOrdinal gNumRowPermutations = 0;
-    for(size_t i = 0; i<diagPVec->getMap()->getNodeNumElements(); ++i) {
+    for(size_t i = 0; i<diagPVec->getMap()->getLocalNumElements(); ++i) {
       if(diagPVecData[i] == SC_ZERO) {
         lNumRowPermutations++;
       }
@@ -301,7 +301,7 @@ namespace MueLu {
     Teuchos::ArrayRCP< const Scalar > diagQTVecData = diagQTVec->getData(0);
     GlobalOrdinal lNumColPermutations = 0;
     GlobalOrdinal gNumColPermutations = 0;
-    for(size_t i = 0; i<diagQTVec->getMap()->getNodeNumElements(); ++i) {
+    for(size_t i = 0; i<diagQTVec->getMap()->getLocalNumElements(); ++i) {
       if(diagQTVecData[i] == SC_ZERO) {
         lNumColPermutations++;
       }

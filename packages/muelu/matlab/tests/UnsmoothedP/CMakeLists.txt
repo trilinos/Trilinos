@@ -6,7 +6,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Ptent_Tests_cp
 
 TRIBITS_ADD_ADVANCED_TEST(
   Matlab_Ptent
-  TEST_0 CMND ${MATLAB_ROOT}/bin/matlab ARGS -nodesktop -nosplash -r Ptent_UnitTest
+  TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/../../bin/matlab ARGS -r Ptent_UnitTest
   PASS_REGULAR_EXPRESSION "passed"
   CATEGORIES BASIC NIGHTLY
   COMM serial
@@ -14,7 +14,7 @@ TRIBITS_ADD_ADVANCED_TEST(
 
 TRIBITS_ADD_ADVANCED_TEST(
   Matlab_PtentEasy
-  TEST_0 CMND ${MATLAB_ROOT}/bin/matlab ARGS -nodesktop -nosplash -r PtentEasy_UnitTest
+  TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/../../bin/matlab ARGS -r PtentEasy_UnitTest
   PASS_REGULAR_EXPRESSION "passed"
   CATEGORIES BASIC NIGHTLY
   COMM serial

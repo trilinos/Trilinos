@@ -276,7 +276,7 @@ namespace Intrepid2 {
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
         return Teuchos::rcp(new
-            Basis_HGRAD_LINE_Cn_FEM<DeviceType,outputValueType,pointValueType>
+            Basis_HVOL_LINE_Cn_FEM<DeviceType,outputValueType,pointValueType>
             (this->basisDegree_-1, POINTTYPE_GAUSS));
       } else if(subCellDim == 2) {
         return Teuchos::rcp(new

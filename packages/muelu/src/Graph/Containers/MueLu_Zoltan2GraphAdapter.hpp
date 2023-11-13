@@ -105,16 +105,16 @@ public:
   //! MueLu::GraphBase Compatibility Layer
   const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return graph_->GetComm();}
   const Teuchos::RCP< const Xpetra::Map<lno_t, gno_t, node_t> > getRowMap() const { return graph_->GetDomainMap();}
-  const RCP< const Xpetra::Map<lno_t, gno_t, node_t> > getColMap() const { 
+  const RCP< const Xpetra::Map<lno_t, gno_t, node_t> > getColMap() const {
     // For some GraphBases' this is a ColMap, in others it is a seperate map that is
     // only non-null in parallel.
     Teuchos::RCP<const Xpetra::Map<lno_t,gno_t,node_t> > map =  graph_->GetImportMap();
     if(map.is_null()) map = graph_->GetDomainMap();
     return map;
   }
-  size_t getNodeNumEntries() const { return graph_->GetNodeNumEdges();}
-  size_t getNodeNumRows() const { return getRowMap()->getNodeNumElements();}
-  size_t getNodeNumCols() const { return getColMap()->getNodeNumElements();}
+  size_t getLocalNumEntries() const { return graph_->GetNodeNumEdges();}
+  size_t getLocalNumRows() const { return getRowMap()->getLocalNumElements();}
+  size_t getLocalNumCols() const { return getColMap()->getLocalNumElements();}
 
   void getLocalRowView(lno_t LocalRow, Teuchos::ArrayView< const lno_t > &indices) const {
    indices = graph_->getNeighborVertices(LocalRow);
@@ -135,7 +135,7 @@ public:
    * one does because the user is obviously a Trilinos user.
    */
 
-   MueLuGraphBaseAdapter(const RCP<const User> &ingraph, 
+   MueLuGraphBaseAdapter(const RCP<const User> &ingraph,
                       int nVtxWeights=0, int nEdgeWeights=0);
 
   /*! \brief Provide a pointer to weights for the primary entity type.
@@ -143,7 +143,7 @@ public:
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
    *             \c n th entity for index \idx.
-   *    \param idx A number from 0 to one less than 
+   *    \param idx A number from 0 to one less than
    *          weight idx specified in the constructor.
    *
    *  The order of the weights should match the order that
@@ -157,13 +157,13 @@ public:
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
    *             \c n th vertex for index \idx.
-   *    \param idx A number from 0 to one less than 
+   *    \param idx A number from 0 to one less than
    *          number of vertex weights specified in the constructor.
    *
    *  The order of the vertex weights should match the order that
    *  vertices appear in the input data structure.
    *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
+   *       TheGraph->getRowMap()->getLocalElementList()
    *     \endcode
    */
 
@@ -171,14 +171,14 @@ public:
 
   /*! \brief Specify an index for which the weight should be
               the degree of the entity
-   *    \param idx Zoltan2 will use the entity's 
+   *    \param idx Zoltan2 will use the entity's
    *         degree as the entity weight for index \c idx.
    */
   void setWeightIsDegree(int idx);
 
   /*! \brief Specify an index for which the vertex weight should be
               the degree of the vertex
-   *    \param idx Zoltan2 will use the vertex's 
+   *    \param idx Zoltan2 will use the vertex's
    *         degree as the vertex weight for index \c idx.
    */
   void setVertexWeightIsDegree(int idx);
@@ -196,7 +196,7 @@ public:
    *
    *  By vertex:
    *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
+   *       TheGraph->getRowMap()->getLocalElementList()
    *     \endcode
    *
    *  Then by vertex neighbor:
@@ -208,11 +208,11 @@ public:
   void setEdgeWeights(const scalar_t *val, int stride, int idx);
 
   /*! \brief Access to Xpetra-wrapped user's graph.
-   */ 
+   */
   RCP<const xgraph_t> getXpetraGraph() const { return graph_; }
 
-  /*! \brief Access to user's graph 
-   */ 
+  /*! \brief Access to user's graph
+   */
   RCP<const User> getUserGraph() const { return ingraph_; }
 
   ////////////////////////////////////////////////////
@@ -223,18 +223,18 @@ public:
   // The GraphAdapter interface.
   ////////////////////////////////////////////////////
 
-  // TODO:  Assuming rows == objects; 
+  // TODO:  Assuming rows == objects;
   // TODO:  Need to add option for columns or nonzeros?
-  size_t getLocalNumVertices() const { return getNodeNumRows(); }
+  size_t getLocalNumVertices() const { return getLocalNumRows(); }
 
-  void getVertexIDsView(const gno_t *&ids) const 
+  void getVertexIDsView(const gno_t *&ids) const
   {
     ids = NULL;
     if (getLocalNumVertices())
-      ids = getRowMap()->getNodeElementList().getRawPtr();
+      ids = getRowMap()->getLocalElementList().getRawPtr();
   }
 
-  size_t getLocalNumEdges() const { return getNodeNumEntries(); }
+  size_t getLocalNumEdges() const { return getLocalNumEntries(); }
 
   void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const
   {
@@ -252,7 +252,7 @@ public:
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid vertex weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
     }
 
 
@@ -271,7 +271,7 @@ public:
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid edge weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
     }
 
 
@@ -331,8 +331,8 @@ template <typename User, typename UserCoord>
   graph_ = ingraph;
 
   comm_ = getRowMap()->getComm();
-  size_t nvtx = getNodeNumRows();
-  size_t nedges = getNodeNumEntries();
+  size_t nvtx = getLocalNumRows();
+  size_t nedges = getLocalNumEntries();
 
   // Unfortunately we have to copy the offsets and edge Ids
   // because edge Ids are not usually stored in vertex id order.
@@ -356,7 +356,7 @@ template <typename User, typename UserCoord>
   }
 
   if (nWeightsPerVertex_ > 0) {
-    vertexWeights_ = 
+    vertexWeights_ =
           arcp(new input_t[nWeightsPerVertex_], 0, nWeightsPerVertex_, true);
     vertexDegreeWeight_ =
           arcp(new bool[nWeightsPerVertex_], 0, nWeightsPerVertex_, true);
@@ -374,7 +374,7 @@ template <typename User, typename UserCoord>
 {
   if (this->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX)
     setVertexWeights(weightVal, stride, idx);
-  else 
+  else
     setEdgeWeights(weightVal, stride, idx);
 }
 
@@ -390,7 +390,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid vertex weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
   size_t nvtx = getLocalNumVertices();
@@ -424,7 +424,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid vertex weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
   vertexDegreeWeight_[idx] = true;
@@ -442,7 +442,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid edge weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
   size_t nedges = getLocalNumEdges();
@@ -454,6 +454,6 @@ template <typename User, typename UserCoord>
 }  //namespace MueLu
 
 
-#endif// MUELU_HAVE_ZOLTAN2
+#endif// HAVE_MUELU_ZOLTAN2
   
 #endif

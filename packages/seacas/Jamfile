@@ -42,6 +42,7 @@ if $(RTenv-arg) = "user" {
 } else {
   seacas-root-inc = $(seacas-root)
                     $(seacas-root)/libraries/ioss/src
+                    $(seacas-root)/libraries/ioss/src/elements
                     $(seacas-root)/libraries/ioss/src/init ;
 }
 
@@ -125,6 +126,7 @@ local installed-developer-files =
   Utst_ioel
   Utst_superelement
   Utst_database_io
+  Utst_textmesh
   Utst_sort
   Utst_map
   Utst_structured_decomp
@@ -173,7 +175,7 @@ install install-user-include0
 explicit install-user-include1 ;
 install install-user-include1
   : [ glob $(seacas-root)/libraries/suplib_c/*.h ]
-  : <location>$(install-root)/seacas/include
+  : <location>$(install-root)/sierra_seacas/include
   ;
 
 # This rule copies all headers it finds in the named directory of the
@@ -182,14 +184,14 @@ install install-user-include1
 explicit install-user-include2 ;
 install install-user-include2
   : [ path.glob-tree $(seacas-root)/libraries/exodus/include : *.h ]
-  : <location>$(install-root)/seacas/include/exodus
+  : <location>$(install-root)/sierra_seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus/include
   ;
 
 explicit install-user-include2b ;
 install install-user-include2b
   : [ path.glob-tree $(seacas-root)/libraries/exodus/sierra : *.h ]
-  : <location>$(install-root)/seacas/include/exodus
+  : <location>$(install-root)/sierra_seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus/sierra
   ;
 
@@ -199,21 +201,21 @@ install install-user-include2b
 explicit install-user-include3 ;
 install install-user-include3
   : [ path.glob-tree $(seacas-root)/libraries/nemesis : *.h ]
-  : <location>$(install-root)/seacas/include/nemesis
+  : <location>$(install-root)/sierra_seacas/include/nemesis
     <install-source-root>$(seacas-root)/libraries/nemesis
   ;
 
 explicit install-user-include4 ;
 install install-user-include4
   : [ path.glob-tree $(seacas-root)/libraries/exodus_for/include : *.inc ]
-  : <location>$(install-root)/seacas/include/exodus
+  : <location>$(install-root)/sierra_seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus_for/include
   ;
 
 explicit install-user-include5 ;
 install install-user-include5
   : [ glob $(seacas-root)/libraries/suplib_cpp/*.h ]
-  : <location>$(install-root)/seacas/include
+  : <location>$(install-root)/sierra_seacas/include
   ;
 
 explicit install-user-include6 ;
@@ -228,7 +230,7 @@ install install-user-include6
 explicit install-user-include7 ;
 install install-user-include7
   : [ glob $(seacas-root)/libraries/aprepro_lib/*.h ]
-  : <location>$(install-root)/seacas/include
+  : <location>$(install-root)/sierra_seacas/include
   ;
 
 
@@ -247,7 +249,7 @@ alias install-user-env : install-user-jamfile
 explicit install-user-jamfile ;
 install install-user-jamfile
   : [ glob $(seacas-root)/Jamfile ]
-  : <location>$(install-root)/seacas
+  : <location>$(install-root)/sierra_seacas
     <install-source-root>$(seacas-root)
   ;
 
@@ -269,17 +271,20 @@ install install-user-lib
     mapvarlib
     aprepro_lib
     ioex
+    ioexnl
     io_info_lib
     iocgns
     iopg
     iohb
     iogn
     iogs
+    ionull
     ioinit
     ioss
     iotr
+    iotm
     iovs
-  : <location>$(install-root)/seacas/lib
+  : <location>$(install-root)/sierra_seacas/lib
   ;
 
 
@@ -325,6 +330,23 @@ lib ioex
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libioex.a
+    ]
+  ;
+
+lib ioexnl
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+         [ glob $(seacas-root)/libraries/ioss/src/exonull/*.[C] ]
+    ]
+    ioss
+    exodus
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libioexnl.a
     ]
   ;
 
@@ -416,6 +438,38 @@ lib iogn
         <file>$(seacas-root)/lib/libiogn.a
     ]
   ;
+lib ionull
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/ioss/src/null/*.C ]
+    ]
+    ioss
+    /mpi//mpi
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libionull.a
+    ]
+  ;
+lib iotm
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/ioss/src/text_mesh/*.C ]
+    ]
+    ioss
+    /mpi//mpi
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libiotm.a
+    ]
+  ;
 
 lib iogs
   :
@@ -443,10 +497,13 @@ lib ioinit
     ]
     iocgns
     ioex
+    ioexnl
+    ionull
     iopg
     iohb
     iogn
     iogs
+    iotm
     iotr
     iovs
     /mpi//mpi
@@ -463,7 +520,8 @@ lib ioss
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/*.[cC] ]
+        [ glob $(seacas-root)/libraries/ioss/src/*.[cC] 
+               $(seacas-root)/libraries/ioss/src/elements/*.[cC] ]
     ]
     /tpl/trilinos//zoltan
     /tpl/parmetis//parmetis
@@ -529,6 +587,7 @@ obj blot_main : $(seacas-root)/applications/blot/blot.f
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -544,6 +603,7 @@ obj fastq_main : $(seacas-root)/applications/fastq/fastq.f
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -571,7 +631,7 @@ lib exodus
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libexodus.a
+        <file>$(sierra-root)/sierra_seacas/lib/libexodus.a
     ]
   :
   : <define>BUILT_IN_SIERRA
@@ -584,7 +644,7 @@ lib exodus
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include/exodus
+        <include>$(sierra-root)/sierra_seacas/include/exodus
     ]
   ;
 
@@ -600,6 +660,7 @@ obj addrwrap : $(seacas-root)/libraries/exodus_for/src/addrwrap.F
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -626,7 +687,7 @@ lib exodus_for
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libexodus_for.a
+        <file>$(sierra-root)/sierra_seacas/lib/libexodus_for.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -634,6 +695,7 @@ lib exodus_for
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -648,7 +710,7 @@ lib exodus_for
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include/exodus
+        <include>$(sierra-root)/sierra_seacas/include/exodus
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -656,6 +718,7 @@ lib exodus_for
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -681,7 +744,7 @@ lib exoIIv2for32
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libexoIIv2for32.a
+        <file>$(sierra-root)/sierra_seacas/lib/libexoIIv2for32.a
     ]
     <define>DEFAULT_REAL_INT
   :
@@ -695,7 +758,7 @@ lib exoIIv2for32
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include/exodus
+        <include>$(sierra-root)/sierra_seacas/include/exodus
     ]
     <define>DEFAULT_REAL_INT
   ;
@@ -718,7 +781,7 @@ lib nemesis
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libnemesis.a
+        <file>$(sierra-root)/sierra_seacas/lib/libnemesis.a
     ]
   :
   :
@@ -730,7 +793,7 @@ lib nemesis
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include/nemesis
+        <include>$(sierra-root)/sierra_seacas/include/nemesis
     ]
   ;
 
@@ -754,7 +817,7 @@ lib suplib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -762,6 +825,7 @@ lib suplib
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -776,7 +840,7 @@ lib suplib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -784,6 +848,7 @@ lib suplib
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -806,7 +871,7 @@ lib suplib_cpp
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
   :
   :
@@ -818,7 +883,7 @@ lib suplib_cpp
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
   ;
 
@@ -840,7 +905,7 @@ lib suplib_c
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
   :
   :
@@ -852,7 +917,7 @@ lib suplib_c
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
   ;
 
@@ -873,7 +938,7 @@ lib plt
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libplt.a
+        <file>$(sierra-root)/sierra_seacas/lib/libplt.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -881,6 +946,7 @@ lib plt
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -895,7 +961,7 @@ lib plt
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -903,6 +969,7 @@ lib plt
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -928,7 +995,7 @@ lib svdi_cdr
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libsvdi_cdr.a
+        <file>$(sierra-root)/sierra_seacas/lib/libsvdi_cdr.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -936,6 +1003,7 @@ lib svdi_cdr
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -950,7 +1018,7 @@ lib svdi_cdr
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -958,6 +1026,7 @@ lib svdi_cdr
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -993,7 +1062,7 @@ lib svdi_cgi
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libsvdi_cgi.a
+        <file>$(sierra-root)/sierra_seacas/lib/libsvdi_cgi.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1001,6 +1070,7 @@ lib svdi_cgi
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1015,7 +1085,7 @@ lib svdi_cgi
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1023,6 +1093,7 @@ lib svdi_cgi
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1053,6 +1124,7 @@ obj vdx11cps : $(seacas-root)/libraries/svdi/vdi_drivers/vdx11cps.F
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1067,6 +1139,7 @@ obj vdicps_dual : $(seacas-root)/libraries/svdi/vdi_drivers/vdicps_dual.f
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1081,6 +1154,7 @@ obj svdi_cgi_cps : $(seacas-root)/libraries/svdi/vdi_drivers/vdicps.f
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1104,7 +1178,7 @@ lib blotlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libblotlib.a
+        <file>$(sierra-root)/sierra_seacas/lib/libblotlib.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1112,6 +1186,7 @@ lib blotlib
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1121,7 +1196,7 @@ lib blotlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1129,6 +1204,7 @@ lib blotlib
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1152,7 +1228,7 @@ lib fastqlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libfastqlib.a
+        <file>$(sierra-root)/sierra_seacas/lib/libfastqlib.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1160,6 +1236,7 @@ lib fastqlib
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1169,7 +1246,7 @@ lib fastqlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1177,6 +1254,7 @@ lib fastqlib
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1202,7 +1280,7 @@ lib mapvarlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libmapvarlib.a
+        <file>$(sierra-root)/sierra_seacas/lib/libmapvarlib.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1210,6 +1288,7 @@ lib mapvarlib
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1224,7 +1303,7 @@ lib mapvarlib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1232,6 +1311,7 @@ lib mapvarlib
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1257,7 +1337,7 @@ lib supes
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libsupes.a
+        <file>$(sierra-root)/sierra_seacas/lib/libsupes.a
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1265,6 +1345,7 @@ lib supes
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1279,7 +1360,7 @@ lib supes
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1287,6 +1368,7 @@ lib supes
     <toolset>armhpc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
+    <toolset>oneapi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
@@ -1316,7 +1398,7 @@ lib aprepro_lib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libaprepro_lib.a
+        <file>$(sierra-root)/sierra_seacas/lib/libaprepro_lib.a
     ]
   :
   : <define>EXODUS_SUPPORT
@@ -1328,7 +1410,7 @@ lib aprepro_lib
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
  ;
 
@@ -1369,7 +1451,7 @@ lib chaco
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(sierra-root)/seacas/lib/libchaco.a
+        <file>$(sierra-root)/sierra_seacas/lib/libchaco.a
     ]
  :
  :
@@ -1381,7 +1463,7 @@ lib chaco
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <include>$(sierra-root)/seacas/include
+        <include>$(sierra-root)/sierra_seacas/include
     ]
  ;
 
@@ -1489,6 +1571,7 @@ exe exo_format
 exe exo2mat
   :
   $(seacas-root)/applications/exo2mat/exo2mat.C
+    suplib_cpp
     suplib_c
     exodus
     /tpl/matio//matio
@@ -1780,13 +1863,24 @@ exe Utst_superelement
 
 exe Utst_database_io
   :
-  [ glob $(seacas-root)/libraries/ioss/src/unit_tests/*.C ]
+  [ glob $(seacas-root)/libraries/ioss/src/utest/Utst_IofxDatabaseIO.C ]
     ioinit
     /tpl/netcdf-c//netcdf
     /tpl/gtest//gtest
   : <tag>@utility-exec-tag
   ;
 
+exe Utst_textmesh
+  :
+  [ glob $(seacas-root)/libraries/ioss/src/unit_tests/*.C ]
+    ioinit
+    iotm
+    /tpl/netcdf-c//netcdf
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+  
 rule xcb-for_cray-rule ( properties * )
 {
   if $(cray-system) = "yes"

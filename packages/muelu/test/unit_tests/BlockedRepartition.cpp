@@ -85,7 +85,6 @@
 #include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 
@@ -112,7 +111,7 @@ namespace MueLuTests {
 #include "MueLu_UseShortNames.hpp"
     Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(rangemap, 3);
 
-    LocalOrdinal NumMyRowElements = rangemap->getNodeNumElements();
+    LocalOrdinal NumMyRowElements = rangemap->getLocalNumElements();
 
     GlobalOrdinal minGColId = domainmap->getMinAllGlobalIndex();  // minimum over all procs
     GlobalOrdinal maxGColId = domainmap->getMaxAllGlobalIndex();  // maximum over all procs
@@ -203,9 +202,9 @@ namespace MueLuTests {
     map2   = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
 
     std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
-    Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
+    Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getLocalElementList(); // append all local gids from map1 and map2
     localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
-    Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getLocalElementList();
     localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
     Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
     bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
@@ -289,7 +288,7 @@ namespace MueLuTests {
       // create dummy "Partition" array
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(Op11->getRowMap(), false);
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-      for(size_t r=0; r<decomposition->getMap()->getNodeNumElements(); r++) {
+      for(size_t r=0; r<decomposition->getMap()->getLocalNumElements(); r++) {
         if(r%2 == 0) decompEntries[r] = 0;
         else decompEntries[r] = 1;
       }
@@ -301,7 +300,7 @@ namespace MueLuTests {
     // create dummy "Partition" array
     RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(Op11->getRowMap(), false);
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-    for(size_t r=0; r<decomposition->getMap()->getNodeNumElements(); r++) {
+    for(size_t r=0; r<decomposition->getMap()->getLocalNumElements(); r++) {
       if(r%2 == 0) decompEntries[r] = 0;
       else decompEntries[r] = 1;
     }
@@ -358,7 +357,7 @@ namespace MueLuTests {
     // get number of active processes used in rebalanced matrix
     std::vector<int> amActive  = std::vector<int>(comm->getSize(),0);
     std::vector<int> areActive = std::vector<int>(comm->getSize(),0);
-    if(rebA->getNodeNumEntries() > 0) amActive[comm->getRank()] = 1;
+    if(rebA->getLocalNumEntries() > 0) amActive[comm->getRank()] = 1;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX,comm->getSize(),&amActive[0],&areActive[0]);
     int nNumProcsReb = 0;
     for(int p = 0; p < comm->getSize(); p++)
@@ -446,9 +445,9 @@ namespace MueLuTests {
     map2   = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
 
     std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
-    Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
+    Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getLocalElementList(); // append all local gids from map1 and map2
     localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
-    Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getLocalElementList();
     localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
     Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
     bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
@@ -536,7 +535,7 @@ namespace MueLuTests {
       // create dummy "Partition" array
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(Op11->getRowMap(), false);
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-      for(size_t r=0; r<decomposition->getMap()->getNodeNumElements(); r++) {
+      for(size_t r=0; r<decomposition->getMap()->getLocalNumElements(); r++) {
         if(r%2 == 0) decompEntries[r] = 0;
         else decompEntries[r] = 1;
       }
@@ -548,7 +547,7 @@ namespace MueLuTests {
     // create dummy "Partition" array
     RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(Op11->getRowMap(), false);
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-    for(size_t r=0; r<decomposition->getMap()->getNodeNumElements(); r++) {
+    for(size_t r=0; r<decomposition->getMap()->getLocalNumElements(); r++) {
       if(r%2 == 0) decompEntries[r] = 0;
       else decompEntries[r] = 1;
     }
@@ -686,9 +685,9 @@ namespace MueLuTests {
   map2   = StridedMapFactory::Build(lib, numElements2, 0, stridingInfo, comm, -1, numElements1);
 
   std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
-  Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
+  Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getLocalElementList(); // append all local gids from map1 and map2
   localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
-  Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
+  Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getLocalElementList();
   localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
   Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
   bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
@@ -730,10 +729,12 @@ namespace MueLuTests {
   // coordinates
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coord = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(bOp->getFullRangeMap(),1);
   int PID = comm->getRank();
-  Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
-  for(size_t i = 0; i < (size_t) coordData.size(); ++i)
-    coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
-
+  // GH: scope data manipulation because we should not let a pointer to this data live once we call MueLu
+  {
+    Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
+    for(size_t i = 0; i < (size_t) coordData.size(); ++i)
+      coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
+  }
   // nullspace
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(bOp->getFullRangeMap(),1);
   Teuchos::ArrayRCP<SC> nspData = nullspace->getDataNonConst(0);
@@ -976,9 +977,9 @@ namespace MueLuTests {
   map2   = StridedMapFactory::Build(lib, numElements2, 0, stridingInfo, comm, -1, numElements1);
 
   std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
-  Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
+  Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getLocalElementList(); // append all local gids from map1 and map2
   localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
-  Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
+  Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getLocalElementList();
   localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
   Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
   bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
@@ -1020,9 +1021,12 @@ namespace MueLuTests {
   // coordinates
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coord = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(bOp->getFullRangeMap(),1);
   int PID = comm->getRank();
-  Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
-  for(size_t i = 0; i < (size_t) coordData.size(); ++i)
-    coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
+  // GH: scope data manipulation because we should not let a pointer to this data live once we call MueLu
+  {
+    Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
+    for(size_t i = 0; i < (size_t) coordData.size(); ++i)
+      coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
+  }
 
   // nullspace
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(bOp->getFullRangeMap(),1);
@@ -1188,25 +1192,33 @@ namespace MueLuTests {
   RepHeuFact->SetParameter("repartition: start level",Teuchos::ParameterEntry(0));
   RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(40));
 
+#ifdef HAVE_MUELU_ZOLTAN2
   RCP<Zoltan2Interface> zoltan11 = rcp(new Zoltan2Interface());
   zoltan11->SetFactory("A",AR11Fact);
   zoltan11->SetFactory("number of partitions",RepHeuFact);
   zoltan11->SetFactory("Coordinates",Coord11);
+#endif
 
   RCP<RepartitionFactory> repart11 = rcp(new RepartitionFactory());
   repart11->SetFactory("A",AR11Fact);
   repart11->SetFactory("number of partitions",RepHeuFact);
+#ifdef HAVE_MUELU_ZOLTAN2
   repart11->SetFactory("Partition", zoltan11);
+#endif
 
+#ifdef HAVE_MUELU_ZOLTAN2
   RCP<Zoltan2Interface> zoltan22 = rcp(new Zoltan2Interface());
   zoltan22->SetFactory("A",AR22Fact);
   zoltan22->SetFactory("number of partitions",RepHeuFact);
   zoltan22->SetFactory("Coordinates",Coord22);
+#endif
 
   RCP<RepartitionFactory> repart22 = rcp(new RepartitionFactory());
   repart22->SetFactory("A",AR22Fact);
   repart22->SetFactory("number of partitions",RepHeuFact);
+#ifdef HAVE_MUELU_ZOLTAN2
   repart22->SetFactory("Partition", zoltan22);
+#endif
 
   RCP<FactoryManager> MReb11 = rcp(new FactoryManager());
   MReb11->SetFactory("A", AR11Fact);

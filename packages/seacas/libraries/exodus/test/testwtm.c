@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -68,10 +68,10 @@ int main(int argc, char **argv)
   float  x[100], y[100], z[100];
   float  attrib[1], dist_fact[1008];
   float  attrib2[1], dist_fact2[100];
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char * coord_names2[3], *qa_record2[2][4], *info2[3], *var_names2[3];
+  char  *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char  *coord_names2[3], *qa_record2[2][4], *info2[3], *var_names2[3];
   char   tmpstr[80];
-  char * prop_names[2];
+  char  *prop_names[2];
   char   exofname[256];
 
   ex_opts(EX_VERBOSE | EX_ABORT);
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 
   for (n = 0; n < nexofiles; n++) {
-    sprintf(exofname, "test%d.exo", n);
+    snprintf(exofname, 256, "test%d.exo", n);
     printf("test file name: %s\n", exofname);
     exoidm[n] = ex_create(exofname,       /* filename path */
                           EX_CLOBBER,     /* create mode */
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
   num_side_sets2 = 5;
 
   for (n = 0; n < nexofiles; n++) {
-    sprintf(tmpstr, "This is test %d", n);
+    snprintf(tmpstr, 80, "This is test %d", n);
 
     error = ex_put_init(exoidm[n], tmpstr, num_dim2, num_nodes2, num_elem2, num_elem_blk2,
                         num_node_sets2, num_side_sets2);
@@ -256,8 +256,8 @@ int main(int argc, char **argv)
     elem_map[i - 1] = i;
   }
 
-  error = ex_put_map(exoid, elem_map);
-  printf("after ex_put_map, error = %d\n", error);
+  error = ex_put_id_map(exoid, EX_ELEM_MAP, elem_map);
+  printf("after ex_put_id_map, error = %d\n", error);
 
   free(elem_map);
 
@@ -268,8 +268,8 @@ int main(int argc, char **argv)
   }
 
   for (n = 0; n < nexofiles; n++) {
-    error = ex_put_map(exoidm[n], elem_map2);
-    printf("after ex_put_map (%d), error = %d\n", n, error);
+    error = ex_put_id_map(exoidm[n], EX_ELEM_MAP, elem_map2);
+    printf("after ex_put_id_map (%d), error = %d\n", n, error);
   }
 
   free(elem_map2);

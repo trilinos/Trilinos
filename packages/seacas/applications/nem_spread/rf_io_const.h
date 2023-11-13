@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef RF_IO_CONST_H
-#define RF_IO_CONST_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -92,5 +91,3 @@ extern int Num_Nset_Var; /* The number of nodeset variables to reserve */
 
 extern int Num_Sset_Var; /* The number of sideset variables to reserve */
                          /* space in the output file for. */
-
-#endif

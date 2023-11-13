@@ -80,12 +80,10 @@ class EpetraCrsGraphT
   //! The specialization of Map used by this class.
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type    local_graph_type;
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::node_type           node_type;
   typedef typename node_type::execution_space                                               execution_space;
-#endif
 #endif
 
 public:
@@ -129,7 +127,6 @@ public:
 
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
   EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
@@ -160,7 +157,6 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
-#endif
 #endif
 
   //! Destructor.
@@ -247,10 +243,10 @@ public:
   global_size_t getGlobalNumCols() const { return 0; }
 
   //! Returns the number of graph rows owned on the calling node.
-  size_t getNodeNumRows() const { return 0; }
+  size_t getLocalNumRows() const { return 0; }
 
   //! Returns the number of columns connected to the locally owned rows of this graph.
-  size_t getNodeNumCols() const { return 0; }
+  size_t getLocalNumCols() const { return 0; }
 
   //! Returns the index base for global indices for this graph.
   GlobalOrdinal getIndexBase() const { return 0; }
@@ -259,7 +255,7 @@ public:
   global_size_t getGlobalNumEntries() const { return 0; }
 
   //! Returns the local number of entries in the graph.
-  size_t getNodeNumEntries() const { return 0; }
+  size_t getLocalNumEntries() const { return 0; }
 
   //! Returns the current number of entries on this node in the specified global row.
   size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
@@ -277,7 +273,7 @@ public:
   size_t getGlobalMaxNumRowEntries() const { return 0; }
 
   //! Maximum number of entries in all rows owned by the calling process.
-  size_t getNodeMaxNumRowEntries() const { return 0; }
+  size_t getLocalMaxNumRowEntries() const { return 0; }
 
   //! Whether the graph has a column Map.
   bool hasColMap() const { return false; }
@@ -300,12 +296,11 @@ public:
   //! Return a const, nonpersisting view of local indices in the given row.
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {  }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
       "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
+    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
   }
 #else
 #ifdef __GNUC__
@@ -324,7 +319,6 @@ public:
 #warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
 #endif
 
-#endif
 #endif
 
 
@@ -398,12 +392,10 @@ class EpetraCrsGraphT<int, EpetraNode>
   //! The specialization of Map used by this class.
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type    local_graph_type;
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::node_type           node_type;
   typedef typename node_type::execution_space                                               execution_space;
-#endif
 #endif
 
 public:
@@ -459,7 +451,6 @@ public:
 
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
   EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
@@ -490,7 +481,6 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using a local graph!");
   }
-#endif
 #endif
 
   //! Destructor.
@@ -530,7 +520,7 @@ public:
       // and values (see below).  The problem is that Tpetra insists on using
       // size_t, and Epetra uses int internally.  So we only resize here, and
       // will need to copy in setAllValues
-      rowptr.resize(getNodeNumRows()+1);
+      rowptr.resize(getLocalNumRows()+1);
 
       int  lowerOffset = 0;
       bool ownMemory   = false;
@@ -547,7 +537,7 @@ public:
     XPETRA_MONITOR("EpetraCrsGraphT::setAllIndices");
 
     // Check sizes
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(rowptr.size()) != getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(rowptr.size()) != getLocalNumRows()+1, Xpetra::Exceptions::RuntimeError,
                                "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
     if (colind.size() > 0) {
       TEUCHOS_TEST_FOR_EXCEPTION(colind.getRawPtr() != graph_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError,
@@ -556,7 +546,7 @@ public:
 
     // We have to make a copy here, it is unavoidable
     // See comments in allocateAllIndices
-    const size_t N = getNodeNumRows();
+    const size_t N = getLocalNumRows();
 
     Epetra_IntSerialDenseVector& myRowptr = graph_->ExpertExtractIndexOffset();
     myRowptr.Resize(N+1);
@@ -572,8 +562,8 @@ public:
     int  lowerOffset = 0;
     bool ownMemory   = false;
 
-    const size_t n   = getNodeNumRows();
-    const size_t nnz = getNodeNumEntries();
+    const size_t n   = getLocalNumRows();
+    const size_t nnz = getLocalNumEntries();
 
     // Row offsets
     // We have to make a copy here, it is unavoidable (see comments in allocateAllValues)
@@ -664,10 +654,10 @@ public:
   global_size_t getGlobalNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumCols"); return graph_->NumGlobalCols64(); }
 
   //! Returns the number of graph rows owned on the calling node.
-  size_t getNodeNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumRows"); return graph_->NumMyRows(); }
+  size_t getLocalNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getLocalNumRows"); return graph_->NumMyRows(); }
 
   //! Returns the number of columns connected to the locally owned rows of this graph.
-  size_t getNodeNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumCols"); return graph_->NumMyCols(); }
+  size_t getLocalNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getLocalNumCols"); return graph_->NumMyCols(); }
 
   //! Returns the index base for global indices for this graph.
   GlobalOrdinal getIndexBase() const { XPETRA_MONITOR("EpetraCrsGraphT::getIndexBase"); return (GlobalOrdinal) graph_->IndexBase64(); }
@@ -676,7 +666,7 @@ public:
   global_size_t getGlobalNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumEntries"); return graph_->NumGlobalEntries64(); }
 
   //! Returns the local number of entries in the graph.
-  size_t getNodeNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumEntries"); return graph_->NumMyEntries(); }
+  size_t getLocalNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getLocalNumEntries"); return graph_->NumMyEntries(); }
 
   //! Returns the current number of entries on this node in the specified global row.
   size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumEntriesInGlobalRow"); return graph_->NumGlobalIndices(globalRow); }
@@ -694,7 +684,7 @@ public:
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalMaxNumRowEntries"); return graph_->GlobalMaxNumIndices(); }
 
   //! Maximum number of entries in all rows owned by the calling process.
-  size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeMaxNumRowEntries"); return graph_->MaxNumIndices(); }
+  size_t getLocalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getLocalMaxNumRowEntries"); return graph_->MaxNumIndices(); }
 
   //! Whether the graph has a column Map.
   bool hasColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::hasColMap"); return graph_->HaveColMap(); }
@@ -737,12 +727,11 @@ public:
     indices = ArrayView<const int>(eIndices, numEntries);
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((local_graph_type::HostMirror()));
+    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
   }
 #else
 #ifdef __GNUC__
@@ -760,8 +749,6 @@ public:
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
 #endif
-#endif
-
 #endif
 
   //! Force the computation of global constants if we don't have them
@@ -886,12 +873,10 @@ class EpetraCrsGraphT<long long, EpetraNode>
   //! The specialization of Map used by this class.
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type    local_graph_type;
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::node_type           node_type;
   typedef typename node_type::execution_space                                               execution_space;
-#endif
 #endif
 
 public:
@@ -923,7 +908,6 @@ public:
     graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), numEntriesPerRowToAlloc.getRawPtr(), true));
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
   EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &/* rowMap */,
@@ -954,7 +938,6 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support CrsGraph constructors using a local graph!");
   }
-#endif
 #endif
 
   //! Destructor.
@@ -994,7 +977,7 @@ public:
       // and values (see below).  The problem is that Tpetra insists on using
       // size_t, and Epetra uses int internally.  So we only resize here, and
       // will need to copy in setAllValues
-      rowptr.resize(getNodeNumRows()+1);
+      rowptr.resize(getLocalNumRows()+1);
 
       int  lowerOffset = 0;
       bool ownMemory   = false;
@@ -1011,7 +994,7 @@ public:
     XPETRA_MONITOR("EpetraCrsGraphT::setAllIndices");
 
     // Check sizes
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(rowptr.size()) != getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(rowptr.size()) != getLocalNumRows()+1, Xpetra::Exceptions::RuntimeError,
                                "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
     if (colind.size() > 0) {
       TEUCHOS_TEST_FOR_EXCEPTION(colind.getRawPtr() != graph_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError,
@@ -1020,7 +1003,7 @@ public:
 
     // We have to make a copy here, it is unavoidable
     // See comments in allocateAllIndices
-    const size_t N = getNodeNumRows();
+    const size_t N = getLocalNumRows();
 
     Epetra_IntSerialDenseVector& myRowptr = graph_->ExpertExtractIndexOffset();
     myRowptr.Resize(N+1);
@@ -1036,8 +1019,8 @@ public:
     int  lowerOffset = 0;
     bool ownMemory   = false;
 
-    const size_t n   = getNodeNumRows();
-    const size_t nnz = getNodeNumEntries();
+    const size_t n   = getLocalNumRows();
+    const size_t nnz = getLocalNumEntries();
 
     // Row offsets
     // We have to make a copy here, it is unavoidable (see comments in allocateAllValues)
@@ -1128,10 +1111,10 @@ public:
   global_size_t getGlobalNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumCols"); return graph_->NumGlobalCols64(); }
 
   //! Returns the number of graph rows owned on the calling node.
-  size_t getNodeNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumRows"); return graph_->NumMyRows(); }
+  size_t getLocalNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getLocalNumRows"); return graph_->NumMyRows(); }
 
   //! Returns the number of columns connected to the locally owned rows of this graph.
-  size_t getNodeNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumCols"); return graph_->NumMyCols(); }
+  size_t getLocalNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getLocalNumCols"); return graph_->NumMyCols(); }
 
   //! Returns the index base for global indices for this graph.
   GlobalOrdinal getIndexBase() const { XPETRA_MONITOR("EpetraCrsGraphT::getIndexBase"); return (GlobalOrdinal) graph_->IndexBase64(); }
@@ -1140,7 +1123,7 @@ public:
   global_size_t getGlobalNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumEntries"); return graph_->NumGlobalEntries64(); }
 
   //! Returns the local number of entries in the graph.
-  size_t getNodeNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumEntries"); return graph_->NumMyEntries(); }
+  size_t getLocalNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getLocalNumEntries"); return graph_->NumMyEntries(); }
 
   //! Returns the current number of entries on this node in the specified global row.
   size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumEntriesInGlobalRow"); return graph_->NumGlobalIndices(globalRow); }
@@ -1158,7 +1141,7 @@ public:
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalMaxNumRowEntries"); return graph_->GlobalMaxNumIndices(); }
 
   //! Maximum number of entries in all rows owned by the calling process.
-  size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeMaxNumRowEntries"); return graph_->MaxNumIndices(); }
+  size_t getLocalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getLocalMaxNumRowEntries"); return graph_->MaxNumIndices(); }
 
   //! Whether the graph has a column Map.
   bool hasColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::hasColMap"); return graph_->HaveColMap(); }
@@ -1201,12 +1184,11 @@ public:
     indices = ArrayView<const int>(eIndices, numEntries);
   }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-  local_graph_type getLocalGraphHost () const {
+  typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
+    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
   }
 #else
 #ifdef __GNUC__
@@ -1222,7 +1204,6 @@ public:
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 

@@ -57,20 +57,20 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_TPETRA_INST_SERIAL
-template class EpetraCrsMatrixT<int, Kokkos::Compat::KokkosSerialWrapperNode >;
+template class EpetraCrsMatrixT<int, Tpetra::KokkosCompat::KokkosSerialWrapperNode >;
 #endif
 #ifdef HAVE_TPETRA_INST_PTHREAD
-template class EpetraCrsMatrixT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
+template class EpetraCrsMatrixT<int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode>;
 #endif
 #ifdef HAVE_TPETRA_INST_OPENMP
-template class EpetraCrsMatrixT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+template class EpetraCrsMatrixT<int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >;
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
-typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode default_node_type;
 template class EpetraCrsMatrixT<int, default_node_type >;
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
-typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode default_node_type;
 template class EpetraCrsMatrixT<int, default_node_type >;
 #endif
 #else
@@ -89,20 +89,20 @@ template class EpetraCrsMatrixT<int, default_node_type >;
 #endif
 
 #ifdef HAVE_TPETRA_INST_SERIAL
-template class EpetraCrsMatrixT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
+template class EpetraCrsMatrixT<long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode >;
 #endif
 #ifdef HAVE_TPETRA_INST_PTHREAD
-template class EpetraCrsMatrixT<long long, Kokkos::Compat::KokkosThreadsWrapperNode>;
+template class EpetraCrsMatrixT<long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode>;
 #endif
 #ifdef HAVE_TPETRA_INST_OPENMP
-template class EpetraCrsMatrixT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+template class EpetraCrsMatrixT<long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >;
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
-typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode default_node_type;
 template class EpetraCrsMatrixT<long long, default_node_type >;
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
-typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode default_node_type;
 template class EpetraCrsMatrixT<long long, default_node_type >;
 #endif
 #else

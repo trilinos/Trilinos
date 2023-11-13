@@ -6,38 +6,36 @@
 namespace
 {
 
-class OrphanedNodeMesh : public stk::unit_test_util::MeshFixture {};
-
-
+class OrphanedNodeMesh : public stk::unit_test_util::simple_fields::MeshFixture {};
 
 bool doOrphanededNodesExist(const stk::mesh::BulkData& bulk)
 {
-    std::ostringstream os;
-    os << "For processor " << bulk.parallel_rank() << std::endl;
-    stk::mesh::EntityVector nodes;
-    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodes);
-    bool isOrphanedMesh = false;
-    for(stk::mesh::Entity node : nodes)
+  std::ostringstream os;
+  os << "For processor " << bulk.parallel_rank() << std::endl;
+  stk::mesh::EntityVector nodes;
+  stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodes);
+  bool isOrphanedMesh = false;
+  for(stk::mesh::Entity node : nodes)
+  {
+    if(bulk.num_elements(node) == 0 )
     {
-        if(bulk.num_elements(node) == 0 )
-        {
-            isOrphanedMesh = true;
-            os << "\tNode " << bulk.identifier(node) << " is an orphan\n";
-        }
+      isOrphanedMesh = true;
+      os << "\tNode " << bulk.identifier(node) << " is an orphan\n";
     }
+  }
 
-    if(isOrphanedMesh)
-        std::cerr << os.str();
+  if(isOrphanedMesh)
+    std::cerr << os.str();
 
-    return isOrphanedMesh;
+  return isOrphanedMesh;
 }
 
 TEST_F(OrphanedNodeMesh, detectOrphanedNodes)
 {
-    std::string filename = stk::unit_test_util::get_option("-i", "generated:1x1x100");
-    setup_mesh(filename, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "generated:1x1x100");
+  setup_mesh(filename, stk::mesh::BulkData::NO_AUTO_AURA);
 
-    EXPECT_TRUE(!doOrphanededNodesExist(get_bulk()));
+  EXPECT_TRUE(!doOrphanededNodesExist(get_bulk()));
 }
 
 }

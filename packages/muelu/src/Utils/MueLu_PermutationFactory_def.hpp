@@ -70,7 +70,6 @@
 #include <Xpetra_ImportFactory.hpp>
 
 #include "MueLu_Level.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
 #include "MueLu_AlgebraicPermutationStrategy.hpp"

@@ -53,15 +53,6 @@
 #include <zoltan.h>
 
 #include <Zoltan2_Util.hpp>
-#define MEMORY_CHECK(iPrint, msg) \
-  if (iPrint){ \
-    long kb = Zoltan2::getProcessKilobytes(); \
-    std::cout.width(10); \
-    std::cout.fill('*'); \
-    std::cout << kb << " KB, " << msg << std::endl; \
-    std::cout.width(0); \
-    std::cout.fill(' '); \
-  }
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -72,7 +63,7 @@
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Tpetra_MultiVector.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include <GeometricGenerator.hpp>
 
 #include <vector>
@@ -217,7 +208,7 @@ void getObjList(void *data, int numGid, int numLid,
 
   size_t localLen = dots->coordinates->getLocalLength();
   const zgno_t *ids =
-               dots->coordinates->getMap()->getNodeElementList().getRawPtr();
+               dots->coordinates->getMap()->getLocalElementList().getRawPtr();
 
   if (sizeof(ZOLTAN_ID_TYPE) == sizeof(zgno_t))
     memcpy(gids, ids, sizeof(ZOLTAN_ID_TYPE) * localLen);

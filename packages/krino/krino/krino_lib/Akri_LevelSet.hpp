@@ -20,8 +20,8 @@
 #include <Akri_FieldRef.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Faceted_Surface.hpp>
-#include <Akri_LevelSet_Identifier.hpp>
-#include <Akri_Vec.hpp>
+#include <Akri_Surface_Identifier.hpp>
+#include <stk_math/StkVector.hpp>
 
 #include <map>
 #include <set>
@@ -36,6 +36,7 @@ namespace sierra { namespace Sctl { class Event; } }
 namespace krino { class AuxMetaData; }
 namespace krino { class IC_Alg; }
 namespace krino { class ParallelErrorMessage; }
+namespace krino { class ContourElement; }
 
 namespace krino {
 
@@ -43,6 +44,7 @@ enum Redistance_Method
 {
   CLOSEST_POINT=0,
   FAST_MARCHING,
+  FAST_ITERATIVE,
   MAX_REDISTANCE_METHOD_TYPE
 };
 
@@ -60,7 +62,7 @@ public:
   const AuxMetaData & aux_meta() const;
 
   const std::string & name() const { return my_name; }
-  LevelSet_Identifier get_identifier() const {return my_identifier; }
+  Surface_Identifier get_identifier() const {return my_identifier; }
   stk::diag::Timer & get_timer() const { return my_timer; }
   stk::diag::Timer & get_parent_timer() const { return my_parent_timer; }
 
@@ -68,9 +70,6 @@ public:
   static void setup(stk::mesh::MetaData & meta);
   static void post_commit_setup(stk::mesh::MetaData & meta);
   virtual void setup();
-
-  static void set_current_coordinates(stk::mesh::MetaData & meta, const FieldRef ref);
-  static FieldRef get_current_coordinates(stk::mesh::MetaData & meta);
 
   void register_fields();
 
@@ -82,21 +81,28 @@ public:
     const FieldRef  & field_ref,
     double * field);
 
+  static double compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect);
+  static double compute_global_average_edge_length_for_selected_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const stk::mesh::Selector & elementSelector);
+  static void build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, Faceted_Surface & facets);
   double compute_average_edge_length() const;
 
   void build_facets_locally(const stk::mesh::Selector & selector);
 
-  void compute_sizes( double & area, double & neg_vol, double & pos_vol, const double distance = 0.0 );
+  void compute_levelset_sizes( double & area, double & negVol, double & posVol, const FieldRef isovar, const double isoval ) const;
+  void compute_sizes( double & area, double & neg_vol, double & pos_vol, const double distance = 0.0 ) const;
+
+  double CDFEM_gradient_magnitude_error();
   double gradient_magnitude_error();
   void compute_continuous_gradient() const;
 
   void compute_distance( stk::mesh::Entity n,
 			 const double & deltaTime ) const;
+
+  void increment_distance(const double increment, const bool enforce_sign = false, const double & signChangePurtubationTol = 0.5);
+
   void estimate_error();
 
-  // hack to dump facet list to exoii databse.
-  void facets_exoii();
-  void facets_exoii(Faceted_Surface & cs);
+  void write_facets();
 
   bool elem_on_interface(stk::mesh::Entity e) const;
 
@@ -120,8 +126,8 @@ public:
   const FieldRef & get_old_distance_field() const { return my_old_distance_field; }
   void set_old_distance_field( const FieldRef & ref ) { my_old_distance_field = ref; }
 
-  void set_extension_velocity( const Vector3d & extension_velocity ) { my_extension_velocity = extension_velocity; }
-  const Vector3d & get_extension_velocity() const { return my_extension_velocity; }
+  void set_extension_velocity( const stk::math::Vector3d & extension_velocity ) { my_extension_velocity = extension_velocity; }
+  const stk::math::Vector3d & get_extension_velocity() const { return my_extension_velocity; }
 
   const FieldRef & get_coordinates_field() const { return my_coordinates_field; }
 
@@ -150,10 +156,6 @@ public:
   void set_time_of_arrival_block_speed(const std::string & blockName, const double blockSpeed);
   Faceted_Surface & get_facets() { return *facets; }
   const Faceted_Surface & get_facets() const { return *facets; }
-
-  static std::vector<std::string> the_levelSet_names;
-  static LevelSet_Identifier get_identifier(const std::string & name);
-  static std::string & get_name(const LevelSet_Identifier identifier) { ThrowAssert(identifier.get() < the_levelSet_names.size()); return the_levelSet_names[identifier.get()]; }
 
   void narrow_band_multiplier( double multiplier ) { my_narrow_band_multiplier = multiplier; }
   const double & narrow_band_size() const { return my_narrow_band_size; }
@@ -194,18 +196,26 @@ public:
   std::vector<stk::mesh::Part *> & get_compute_surface_distance_parts() { return my_compute_surface_distance_parts; }
   void set_surface_distance(std::vector<stk::mesh::Part *> surfaces, const double in_distance);
   void compute_surface_distance(const double narrowBandSize=0.0, const double farFieldValue=0.0);
-  static void initialize(stk::mesh::MetaData & meta, const bool requires_additional_initialization);
-  void initialize(const double time = 0.0, const bool requires_additional_initialization = false);
+  static void initialize(stk::mesh::MetaData & meta);
+  void initialize(const double time = 0.0);
+  static void clear_initialization_data(stk::mesh::MetaData & meta);
+  void clear_initialization_data();
   void redistance();
   void redistance(const stk::mesh::Selector & selector);
-  void fast_marching_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
+  void fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
+  void interface_conforming_redistance();
 
-  void set_initial_volume(const double v) { my_initial_neg_vol = v; }
-  double constrained_redistance(const bool use_initial_vol = false);
+  std::pair<double,double> get_conserved_negative_volume_and_time() const;
+  void set_conserved_negative_volume_and_time(const double vol, const double time);
+
+  double get_conserved_negative_volume() const { return myConservedNegVolume; }
+  void set_initial_volume(const double v) { myConservedNegVolume = v; }
+  double constrained_redistance(const bool use_initial_vol = false, const double & signChangePurtubationTol = 0.5);
+  void locally_conserved_redistance();
 
   void compute_nodal_bbox( const stk::mesh::Selector & selector,
     BoundingBox & node_bbox,
-    const Vector3d & displacement = Vector3d::ZERO ) const;
+    const stk::math::Vector3d & displacement = stk::math::Vector3d::ZERO ) const;
 
   double find_redistance_correction( const double start_area,
 				   const double start_neg_vol,
@@ -217,20 +227,24 @@ public:
   BoundingBox get_IC_surface_bounding_box();
   IC_Alg& get_IC_alg();
 
-  static LevelSet & build(stk::mesh::MetaData & in_meta, const std::string & ls_name, stk::diag::Timer & parent_timer);
+  static LevelSet & build(stk::mesh::MetaData & in_meta, const std::string & ls_name, const stk::diag::Timer & parent_timer);
 
   virtual ~LevelSet();
 
 private:
-  LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, stk::diag::Timer & parent_timer);
+  LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, const stk::diag::Timer & parent_timer);
+  void sync_all_fields_to_host();
+  void redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector);
+  void append_facets_from_side(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side);
+  void build_interface_conforming_facets(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideBlockSelector);
 
-private:
   stk::mesh::MetaData & my_meta;
   AuxMetaData & my_aux_meta;
-  const LevelSet_Identifier my_identifier;
+  const Surface_Identifier my_identifier;
   const std::string my_name;
   mutable stk::diag::Timer my_parent_timer;
   mutable stk::diag::Timer my_timer;
+  mutable stk::diag::Timer my_redistance_timer;
 
 public:
   const unsigned spatial_dimension;
@@ -242,6 +256,8 @@ private:
   FieldRef my_old_distance_field;
   FieldRef my_isovar_field;
   FieldRef myTimeOfArrivalElementSpeedField;
+  FieldRef myDistanceCorrectionNumerator;
+  FieldRef myDistanceCorrectionDenominator;
 
   std::string my_distance_name;
   std::string my_isovar_name;
@@ -274,7 +290,7 @@ private:
     // vector of current facets
   std::unique_ptr<Faceted_Surface> facets;
 
-  Vector3d my_extension_velocity;
+  stk::math::Vector3d my_extension_velocity;
   const double epsilon;
 
   bool trackIsoSurface;
@@ -282,7 +298,8 @@ private:
   // used to increment file name for facet exoii database hack
   int my_facetFileIndex;
 
-  double my_initial_neg_vol;
+  double myConservedNegVolume{0.0};
+  double myConservedNegVolumeTime{0.0};
 
   bool my_needs_reinitialize_every_step;
 
@@ -291,7 +308,6 @@ private:
 
 
   void set_distance(const double & distance)  const;
-  void increment_distance(const double increment, const bool enforce_sign = false)  const;
   void scale_distance(const double scale)  const;
   void negate_distance()  const;
 
@@ -301,35 +317,11 @@ private:
 
   void compute_distance_semilagrangian(const double & deltaTime, const stk::mesh::Selector & selector );
 
-  double distance( const Vector3d & x,
+  double distance( const stk::math::Vector3d & x,
 		 const int previous_sign,
 		 const bool enforce_sign ) const;
 
   bool compute_time_of_arrival() const { return !my_time_of_arrival_element_speed_field_name.empty() || !myTimeOfArrivalBlockSpeeds.empty(); }
-};
-
-class LevelSetManager {
-public:
-  LevelSetManager() {}
-  LevelSetManager(LevelSetManager const&) = delete;
-  LevelSetManager& operator=(LevelSetManager const&) = delete;
-
-  static LevelSetManager & get(stk::mesh::MetaData & meta);
-  static LevelSetManager & get(const stk::mesh::MetaData & meta);
-
-  int numberLevelSets() const { return my_level_sets.size(); }
-  LevelSet & levelSet(const unsigned ordinal) const { ThrowAssert(ordinal < my_level_sets.size()); return *my_level_sets[ordinal]; }
-  bool has_levelSet(const std::string & ls_name) const;
-  void add(LevelSet * ls) { my_level_sets.emplace_back(ls); }
-
-  std::vector< std::unique_ptr<LevelSet> >::const_iterator begin() const { return my_level_sets.begin(); }
-  std::vector< std::unique_ptr<LevelSet> >::const_iterator end() const { return my_level_sets.end(); }
-
-  void set_current_coordinates(FieldRef current_coords) { my_current_coordinates = current_coords; }
-  FieldRef get_current_coordinates() const { return my_current_coordinates; }
-private:
-  std::vector< std::unique_ptr<LevelSet> > my_level_sets;
-  FieldRef my_current_coordinates;
 };
 
 std::string print_sizes(const LevelSet & ls);

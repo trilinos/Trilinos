@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,6 +10,8 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <visualization/utils/Iovs_CatalystLogging.h>
+#include <visualization/utils/Iovs_CatalystVersion.h>
 #include <visualization/utils/Iovs_Utils.h>
 
 #if defined(__IOSS_WINDOWS__)
@@ -57,6 +59,7 @@ namespace Iovs {
   {
     if (this->catalystManager == nullptr) {
       this->catalystManager = this->createCatalystManagerInstance();
+      this->checkCatalystInterfaceAndPluginVersions();
     }
     return *this->catalystManager;
   }
@@ -85,6 +88,17 @@ namespace Iovs {
 #else
     return nullptr;
 #endif
+  }
+
+  void Utils::checkCatalystInterfaceAndPluginVersions()
+  {
+    CatalystVersion cv;
+    std::string     iVer = cv.getIOSSCatalystInterfaceVersion();
+    std::string     pVer = this->catalystManager->getCatalystPluginVersion();
+    if (!cv.isInterfaceCompatibleWithPlugin(iVer, pVer)) {
+      throw std::runtime_error("IOSS Catalyst interface version: " + iVer +
+                               ", is not compatible with IOSS Catalyst plugin version: " + pVer);
+    }
   }
 
   std::unique_ptr<Iovs_exodus::CatalystExodusMeshBase>
@@ -134,7 +148,7 @@ namespace Iovs {
     else if (props.exists("PHACTORI_JSON_SCRIPT")) {
       bool        readOkay             = false;
       std::string phactoriJSONFilePath = props.get("PHACTORI_JSON_SCRIPT").get_string();
-      if (dbinfo.myRank == 0) {
+      if (dbinfo.parallelUtils->parallel_rank() == 0) {
         std::ifstream f(phactoriJSONFilePath);
         if (f) {
           std::ostringstream ss;
@@ -156,7 +170,7 @@ namespace Iovs {
     else if (props.exists("PHACTORI_INPUT_SYNTAX_SCRIPT")) {
       std::string phactoriFilePath = props.get("PHACTORI_INPUT_SYNTAX_SCRIPT").get_string();
       CatalystManagerBase::ParseResult pres;
-      if (dbinfo.myRank == 0) {
+      if (dbinfo.parallelUtils->parallel_rank() == 0) {
         this->getCatalystManager().parsePhactoriFile(phactoriFilePath, pres);
       }
       this->broadCastStatusCode(pres.parseFailed, dbinfo);
@@ -228,6 +242,16 @@ namespace Iovs {
     }
   }
 
+  void Utils::writeToCatalystLogFile(const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props)
+  {
+    if (dbinfo.parallelUtils->parallel_rank() == 0) {
+      CatalystLogging catLog = CatalystLogging();
+      catLog.setProperties(&props);
+      catLog.writeToLogFile();
+    }
+    dbinfo.parallelUtils->barrier();
+  }
+
   std::string Utils::getRestartTag(const std::string &databaseFilename)
   {
     std::string            restartTag;
@@ -248,7 +272,7 @@ namespace Iovs {
     return (stat(filepath.c_str(), &buffer) == 0);
   }
 
-  std::string Utils::getDatabaseOutputFilePath(const std::string &          databaseFilename,
+  std::string Utils::getDatabaseOutputFilePath(const std::string           &databaseFilename,
                                                const Ioss::PropertyManager &properties)
   {
 
@@ -476,7 +500,7 @@ namespace Iovs {
   void Utils::createDatabaseOutputFile(const DatabaseInfo &dbinfo)
   {
     std::ostringstream errmsg;
-    if (dbinfo.myRank == 0) {
+    if (dbinfo.parallelUtils->parallel_rank() == 0) {
       if (!Utils::fileExists(dbinfo.databaseFilename)) {
         std::ofstream output_file;
         output_file.open(dbinfo.databaseFilename.c_str(), std::ios::out | std::ios::trunc);
@@ -488,9 +512,10 @@ namespace Iovs {
         output_file.close();
       }
     }
+    dbinfo.parallelUtils->barrier();
   }
 
-  void Utils::reportCatalystErrorMessages(const std::vector<int> &        error_codes,
+  void Utils::reportCatalystErrorMessages(const std::vector<int>         &error_codes,
                                           const std::vector<std::string> &error_messages,
                                           int                             myRank)
   {
@@ -499,9 +524,9 @@ namespace Iovs {
         error_codes.size() == error_messages.size()) {
       for (unsigned int i = 0; i < error_codes.size(); i++) {
         if (error_codes[i] > 0) {
-          Ioss::WARNING() << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
+          Ioss::WarnOut() << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
                           << error_codes[i] << ", On Processor " << myRank << " **\n\n";
-          Ioss::WARNING() << error_messages[i];
+          Ioss::WarnOut() << error_messages[i];
         }
         else {
           std::ostringstream errmsg;
@@ -514,28 +539,30 @@ namespace Iovs {
     }
   }
 
-  void Utils::broadCastString(std::string &s, const DatabaseInfo &dbinfo)
+  void Utils::broadCastString(IOSS_MAYBE_UNUSED std::string        &s,
+                              IOSS_MAYBE_UNUSED const DatabaseInfo &dbinfo)
   {
-    PAR_UNUSED(s);
-    PAR_UNUSED(dbinfo);
+    IOSS_PAR_UNUSED(s);
+    IOSS_PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
     int size = s.size();
-    MPI_Bcast(&size, 1, MPI_INT, 0, dbinfo.communicator);
-    if (dbinfo.myRank != 0) {
+    dbinfo.parallelUtils->broadcast(size);
+    if (dbinfo.parallelUtils->parallel_rank() != 0) {
       s.resize(size);
     }
-    MPI_Bcast(const_cast<char *>(s.data()), size, MPI_CHAR, 0, dbinfo.communicator);
+    dbinfo.parallelUtils->broadcast(s);
 #endif
   }
 
-  void Utils::broadCastStatusCode(bool &statusCode, const DatabaseInfo &dbinfo)
+  void Utils::broadCastStatusCode(IOSS_MAYBE_UNUSED bool               &statusCode,
+                                  IOSS_MAYBE_UNUSED const DatabaseInfo &dbinfo)
   {
-    PAR_UNUSED(statusCode);
-    PAR_UNUSED(dbinfo);
+    IOSS_PAR_UNUSED(statusCode);
+    IOSS_PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
 
     int code = statusCode;
-    MPI_Bcast(&code, 1, MPI_INT, 0, dbinfo.communicator);
+    dbinfo.parallelUtils->broadcast(code);
     statusCode = code;
 #endif
   }

@@ -23,6 +23,7 @@ files'
 copyable
 sucess
 msdos
+parm
 pard
 chatch
 mke
@@ -44,4 +45,4 @@ iterm
 hist
 dof
 varns
-
+inout

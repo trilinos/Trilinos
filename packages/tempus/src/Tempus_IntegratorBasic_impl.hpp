@@ -11,6 +11,7 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
+#include "Tempus_NumericalUtils.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 
@@ -34,6 +35,9 @@ IntegratorBasic<Scalar>::IntegratorBasic()
   integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
   stepperTimer_    = rcp(new Teuchos::Time("Stepper Timer"));
 
+  // integrator is not initialized.  Still requires calls to setModel
+  // and setSolutionHistory for initial conditions before calling
+  // initialize() to be fully constructed.
 }
 
 
@@ -60,6 +64,24 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
   stepperTimer_    = rcp(new Teuchos::Time("Stepper Timer"));
 
+  initialize();
+}
+
+
+template<class Scalar>
+void IntegratorBasic<Scalar>::copy(Teuchos::RCP<IntegratorBasic<Scalar> > iB)
+{
+  this->setIntegratorType           (iB->getIntegratorType()           );
+  this->setIntegratorName           (iB->getIntegratorName()           );
+  this->setStepper                  (iB->getStepper()                  );
+  this->setSolutionHistory          (iB->getNonConstSolutionHistory()  );
+  this->setTimeStepControl          (iB->getNonConstTimeStepControl()  );
+  this->setObserver                 (iB->getObserver()                 );
+  this->setScreenOutputIndexList    (iB->getScreenOutputIndexList()    );
+  this->setScreenOutputIndexInterval(iB->getScreenOutputIndexInterval());
+  this->setStatus                   (iB->getStatus()                   );
+  integratorTimer_ = iB->getIntegratorTimer();
+  stepperTimer_    = iB->getStepperTimer();
 }
 
 
@@ -423,14 +445,29 @@ void IntegratorBasic<Scalar>::checkTimeStep()
     return;
   }
 
+  // Timestep size is at the minimum timestep size and the step failed.
+  if (ws->getTimeStep() <= timeStepControl_->getMinTimeStep() &&
+      ws->getSolutionStatus() == Status::FAILED) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
+    Teuchos::OSTab ostab(out, 1, "checkTimeStep");
+    *out << "Failure - Stepper has failed and the time step size is "
+         << "at the minimum.\n"
+         << "  Solution Status = " << toString(ws->getSolutionStatus())
+         << std::endl
+         << "  (TimeStep = " << ws->getTimeStep()
+         << ") <= (Minimum TimeStep = "
+         << timeStepControl_->getMinTimeStep()
+         << ")" << std::endl;
+    setStatus(Status::FAILED);
+    return;
+  }
+
   // Check Stepper failure.
   if (ws->getSolutionStatus() == Status::FAILED ||
        // Constant time step failure
        ((timeStepControl_->getStepType() == "Constant") &&
-        (ws->getTimeStep() != timeStepControl_->getInitTimeStep()) &&
-        (ws->getOutput() != true) &&
-        (ws->getTime() != timeStepControl_->getFinalTime())
-       )
+        !approxEqual(ws->getTimeStep(), timeStepControl_->getInitTimeStep()))
      )
   {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -558,9 +595,12 @@ IntegratorBasic<Scalar>::getValidParameters() const
 // ------------------------------------------------------------------------
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                     tempusPL,
-  bool runInitialize)
+  Teuchos::RCP<Teuchos::ParameterList> tempusPL, bool runInitialize)
 {
+  auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
+  if (tempusPL == Teuchos::null || tempusPL->numParams() == 0)
+    return integrator;  // integrator is not initialized (missing model and IC).
+
   auto integratorName = tempusPL->get<std::string>("Integrator Name");
   auto integratorPL = Teuchos::sublist(tempusPL, integratorName, true);
 
@@ -571,8 +611,14 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
     << "'Integrator Basic'.\n"
     << "    Integrator Type = " << integratorType << "\n");
 
-  auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
   integrator->setIntegratorName(integratorName);
+
+  // Validate the Integrator ParameterList
+  auto validPL =
+    Teuchos::rcp_const_cast<Teuchos::ParameterList>(integrator->getValidParameters());
+  auto vIntegratorName = validPL->template get<std::string>("Integrator Name");
+  auto vIntegratorPL = Teuchos::sublist(validPL, vIntegratorName, true);
+  integratorPL->validateParametersAndSetDefaults(*vIntegratorPL,1);
 
   // Set Stepper
   if (integratorPL->isParameter("Stepper Name")) {
@@ -621,20 +667,6 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   auto str = integratorPL->get<std::string>("Screen Output Index List", "");
   integrator->setScreenOutputIndexList(str);
 
-  auto validPL = Teuchos::rcp_const_cast<Teuchos::ParameterList>(integrator->getValidParameters());
-
-  // Validate the Integrator ParameterList
-  auto vIntegratorName = validPL->template get<std::string>("Integrator Name");
-  auto vIntegratorPL = Teuchos::sublist(validPL, vIntegratorName, true);
-  integratorPL->validateParametersAndSetDefaults(*vIntegratorPL,1);
-
-  // Validate the Stepper ParameterList
-  auto stepperName = integratorPL->get<std::string>("Stepper Name");
-  auto stepperPL   = Teuchos::sublist(tempusPL, stepperName, true);
-  auto vStepperName = vIntegratorPL->template get<std::string>("Stepper Name");
-  auto vStepperPL   = Teuchos::sublist(validPL, vStepperName, true);
-  stepperPL->validateParametersAndSetDefaults(*vStepperPL);
-
   return integrator;  // integrator is not initialized (missing model and IC).
 }
 
@@ -669,7 +701,7 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   sh->addState(newState);
   integrator->getStepper()->setInitialConditions(sh);
 
-  if(runInitialize) integrator->initialize();
+  if (runInitialize) integrator->initialize();
 
   return integrator;
 }
@@ -681,8 +713,7 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   std::string stepperType)
 {
-  using Teuchos::rcp;
-  auto integrator = rcp(new IntegratorBasic<Scalar>());
+  auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
 
   auto sf = Teuchos::rcp(new StepperFactory<Scalar>());
   auto stepper = sf->createStepper(stepperType, model);

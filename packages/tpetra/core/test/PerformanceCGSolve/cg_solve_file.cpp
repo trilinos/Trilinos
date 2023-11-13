@@ -290,7 +290,6 @@ int run()
 }
 
 int main(int argc, char *argv[]) {
-  using namespace Kokkos::Compat;
   using namespace CGParams;
   using default_exec = Tpetra::Details::DefaultTypes::execution_space;
   Teuchos::oblackholestream blackhole;
@@ -362,7 +361,7 @@ int main(int argc, char *argv[]) {
     }
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
-    if(std::is_same<default_exec, Kokkos::Experimental::HIP>::value)
+    if(std::is_same<default_exec, Kokkos::HIP>::value)
     {
       std::cout << "No node specified in command-line args, so using default (HIP)\n";
       useHIP = true;
@@ -403,37 +402,37 @@ int main(int argc, char *argv[]) {
   (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
 #endif // HAVE_MPI
 
-  Kokkos::InitArguments kokkosArgs;
-  kokkosArgs.num_threads = numthreads;
-  kokkosArgs.device_id = myRank % numgpus;
-  kokkosArgs.skip_device = skipgpu;
-  kokkosArgs.disable_warnings = !verbose;
+  Kokkos::InitializationSettings kokkosArgs;
+  kokkosArgs.set_num_threads(numthreads);
+  kokkosArgs.set_device_id(myRank % numgpus);
+  kokkosArgs.set_skip_device(skipgpu);
+  kokkosArgs.set_disable_warnings(!verbose);
 
   Kokkos::initialize (kokkosArgs);
   {
 #ifdef HAVE_TPETRA_INST_SYCL
     if(useSYCL)
-      return run<KokkosSYCLWrapperNode>();
+      return run<Tpetra::KokkosCompat::KokkosSYCLWrapperNode>();
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
     if(useHIP)
-      return run<KokkosHIPWrapperNode>();
+      return run<Tpetra::KokkosCompat::KokkosHIPWrapperNode>();
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
     if(useCuda)
-      return run<KokkosCudaWrapperNode>();
+      return run<Tpetra::KokkosCompat::KokkosCudaWrapperNode>();
 #endif
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(useOpenMP)
-      return run<KokkosOpenMPWrapperNode>();
+      return run<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>();
 #endif
 #ifdef HAVE_TPETRA_INST_PTHREAD
     if(useThreads)
-      return run<KokkosThreadsWrapperNode>();
+      return run<Tpetra::KokkosCompat::KokkosThreadsWrapperNode>();
 #endif
 #ifdef HAVE_TPETRA_INST_SERIAL
     if(useSerial)
-      return run<KokkosSerialWrapperNode>();
+      return run<Tpetra::KokkosCompat::KokkosSerialWrapperNode>();
 #endif
     if(myRank == 0)
       std::cerr << "Error: no node type was enabled. CG was not run.\n";

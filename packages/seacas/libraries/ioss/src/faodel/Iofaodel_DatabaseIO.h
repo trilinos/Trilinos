@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef Iofaodel_DatabaseIO_h
-#define Iofaodel_DatabaseIO_h
+#pragma once
+
+#include "iofaodel_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>      // for DatabaseUsage
@@ -48,7 +49,7 @@ namespace Ioss {
  */
 namespace Iofaodel {
 
-  class IOFactory : public Ioss::IOFactory
+  class IOFAODEL_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();
@@ -56,15 +57,16 @@ namespace Iofaodel {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
+                              Ioss_MPI_Comm                communicator,
+                              const Ioss::PropertyManager &properties) const;
   };
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOFAODEL_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &properties);
-    DatabaseIO(const DatabaseIO &from) = delete;
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties);
+    DatabaseIO(const DatabaseIO &from)            = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
@@ -88,10 +90,10 @@ namespace Iofaodel {
     int         nodeset_count() const { return nodesetCount; }
     int         maximum_symbol_length() const override { return 32; }
 
-    void compute_block_membership(Ioss::SideBlock *         efblock,
+    void compute_block_membership(Ioss::SideBlock          *efblock,
                                   std::vector<std::string> &block_membership) const;
 
-    const std::string get_format() const override;
+    std::string get_format() const override;
 
   private:
     bool put_properties() const;
@@ -243,4 +245,3 @@ namespace Iofaodel {
     std::vector<PropertyPair> property_publish_state;
   };
 } // namespace Iofaodel
-#endif // Iofaodel_DatabaseIO_h

@@ -208,6 +208,88 @@ namespace {
 
 
   template <typename Scalar, typename LO, typename GO>
+  class MultiVectorGroupTransferFixture {
+  private:
+    using map_type = Map<LO, GO>;
+    using mv_type = MultiVector<Scalar, LO, GO>;
+
+  public:
+    MultiVectorGroupTransferFixture(FancyOStream& o, bool& s)
+      : out(o),
+        success(s),
+        comm(getDefaultComm()),
+        numProcs(comm->getSize()),
+        myRank(comm->getRank()),
+        numMVs(4)
+    { }
+
+    ~MultiVectorGroupTransferFixture() { }
+
+    template <typename MapSetup>
+    void setup(int collectRank) {
+      setupMaps<MapSetup>(collectRank);
+      setupMultiVectors();
+    }
+
+    template <typename TransferMethod>
+    void performTransfer(const TransferMethod& transfer) {
+      transfer(sourceMVs, targetMVs);
+    }
+
+    template <typename ReferenceSolution>
+    void checkResults(const ReferenceSolution& referenceSolution) {
+      for (int i=0; i<numMVs; i++) {
+        RCP<const mv_type> referenceMV = referenceSolution.generateWithClassicalCodePath(sourceMVs[i], targetMap);
+        compareMultiVectors(targetMVs[i], referenceMV);
+      }
+    }
+
+  private:
+    template <typename MapSetup>
+    void setupMaps(int collectRank) {
+      MapSetup maps(comm);
+      maps.setup(collectRank);
+      sourceMap = maps.getSourceMap();
+      targetMap = maps.getTargetMap();
+    }
+
+    void setupMultiVectors() {
+      for (int i=0; i<numMVs; i++) {
+        sourceMVs.push_back(rcp(new mv_type(sourceMap, 1)));
+        sourceMVs[i]->randomize();
+
+        targetMVs.push_back(rcp(new mv_type(targetMap, 1)));
+        targetMVs[i]->putScalar(ScalarTraits<Scalar>::zero());
+      }
+    }
+
+    void compareMultiVectors(RCP<const mv_type> resultMV, RCP<const mv_type> referenceMV) {
+      auto data = resultMV->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto referenceData = referenceMV->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      TEST_EQUALITY(data.size(), referenceData.size());
+      for (LO localRow = 0; localRow < as<LO>(data.size()); localRow++) {
+        TEST_EQUALITY(data(localRow, 0), referenceData(localRow, 0));
+      }
+    }
+
+    FancyOStream& out;
+    bool& success;
+
+    RCP<const Comm<int>> comm;
+    const int numProcs;
+    const int myRank;
+
+    const int numMVs;
+
+    RCP<const map_type> sourceMap;
+    RCP<const map_type> targetMap;
+
+    std::vector<RCP<mv_type>> sourceMVs;
+    std::vector<RCP<mv_type>> targetMVs;
+  };
+
+  template <typename Scalar, typename LO, typename GO>
   class DiagonalCrsMatrixTransferFixture {
   private:
     using map_type = Map<LO, GO>;
@@ -232,11 +314,11 @@ namespace {
     template <typename TransferMethod>
     void performTransfer(const TransferMethod& transfer) {
       transfer(sourceMat, targetMat);
-      targetMat->fillComplete();
     }
 
     template <typename ReferenceSolution>
     void checkResults(const ReferenceSolution& referenceSolution) {
+      targetMat->fillComplete();
       RCP<const crs_type> referenceMat = referenceSolution.generateUsingAllInOne(sourceMat, targetMap);
       checkMatrixIsDiagonal(targetMat);
       checkMatrixIsDiagonal(referenceMat);
@@ -403,12 +485,13 @@ namespace {
     template <typename TransferMethod>
     void performTransfer(const TransferMethod& transfer) {
       transfer(sourceMat, targetMat);
-      targetMat->fillComplete();
     }
 
     void checkResults() {
       using lids_type = typename crs_type::local_inds_host_view_type;
       using vals_type = typename crs_type::values_host_view_type;
+
+      targetMat->fillComplete();
 
       const RCP<const map_type> colMap = targetMat->getColMap();
 
@@ -693,6 +776,346 @@ namespace {
   }
 
 
+  template <typename Packet, typename LO, typename GO>
+  class CheckDefaultTransferStatus {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    CheckDefaultTransferStatus(FancyOStream& o, bool& s)
+      : out(o),
+        success(s)
+    { }
+
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      TEST_ASSERT(target->transferArrived());
+    }
+
+  private:
+    FancyOStream& out;
+    bool& success;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, MultiVector_defaultTrue, Scalar, LO, GO )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(CheckDefaultTransferStatus<Scalar, LO, GO>(out, success));
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, CrsMatrix_defaultTrue, Scalar, LO, GO )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup();
+    fixture.performTransfer(CheckDefaultTransferStatus<char, LO, GO>(out, success));
+  }
+
+
+  template <typename Packet, typename LO, typename GO>
+  class CheckTransferArrivedForwardImport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    CheckTransferArrivedForwardImport(FancyOStream& o, bool& s)
+      : out(o),
+        success(s)
+    { }
+
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Import<LO, GO> importer(source->getMap(), target->getMap());
+
+      target->beginImport(*source, importer, INSERT);
+      while (!target->transferArrived());
+      target->endImport(*source, importer, INSERT);
+
+      TEST_ASSERT(target->transferArrived());
+    }
+
+  private:
+    FancyOStream& out;
+    bool& success;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, MultiVector_forwardImportTrue, Scalar, LO, GO )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(CheckTransferArrivedForwardImport<Scalar, LO, GO>(out, success));
+    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, CrsMatrix_forwardImportTrue, Scalar, LO, GO )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup();
+    fixture.performTransfer(CheckTransferArrivedForwardImport<char, LO, GO>(out, success));
+    fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
+  }
+
+
+  template <typename Packet, typename LO, typename GO>
+  class CheckTransferArrivedForwardExport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    CheckTransferArrivedForwardExport(FancyOStream& o, bool& s)
+      : out(o),
+        success(s)
+    { }
+
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Export<LO, GO> exporter(source->getMap(), target->getMap());
+
+      target->beginExport(*source, exporter, INSERT);
+      while (!target->transferArrived());
+      target->endExport(*source, exporter, INSERT);
+
+      TEST_ASSERT(target->transferArrived());
+    }
+
+  private:
+    FancyOStream& out;
+    bool& success;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, MultiVector_forwardExportTrue, Scalar, LO, GO )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(CheckTransferArrivedForwardExport<Scalar, LO, GO>(out, success));
+    fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, CrsMatrix_forwardExportTrue, Scalar, LO, GO )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup();
+    fixture.performTransfer(CheckTransferArrivedForwardExport<char, LO, GO>(out, success));
+    fixture.checkResults(ReferenceExportMatrix<Scalar, LO, GO>());
+  }
+
+
+  template <typename Packet, typename LO, typename GO>
+  class CheckTransferNotArrivedForwardImport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    CheckTransferNotArrivedForwardImport(FancyOStream& o, bool& s)
+      : out(o),
+        success(s)
+    { }
+
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      auto comm = target->getMap()->getComm();
+      int myRank = comm->getRank();
+      int numProcs = comm->getSize();
+
+      Import<LO, GO> importer(source->getMap(), target->getMap());
+
+      if (numProcs > 1) {
+        if (myRank == 0) {
+          target->beginImport(*source, importer, INSERT);
+          TEST_ASSERT(!target->transferArrived());
+        }
+        comm->barrier();
+        if (myRank != 0) {
+          target->beginImport(*source, importer, INSERT);
+        }
+        target->endImport(*source, importer, INSERT);
+      }
+    }
+
+  private:
+    FancyOStream& out;
+    bool& success;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, MultiVector_forwardImportFalse, Scalar, LO, GO )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(CheckTransferNotArrivedForwardImport<Scalar, LO, GO>(out, success));
+  }
+
+
+  template <typename Packet, typename LO, typename GO>
+  class CheckTransferNotArrivedForwardExport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    CheckTransferNotArrivedForwardExport(FancyOStream& o, bool& s)
+      : out(o),
+        success(s)
+    { }
+
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      auto comm = target->getMap()->getComm();
+      int myRank = comm->getRank();
+      int numProcs = comm->getSize();
+
+      Export<LO, GO> exporter(source->getMap(), target->getMap());
+
+      if (numProcs > 1) {
+        if (myRank == 0) {
+          target->beginExport(*source, exporter, INSERT);
+          TEST_ASSERT(!target->transferArrived());
+        }
+        comm->barrier();
+        if (myRank != 0) {
+          target->beginExport(*source, exporter, INSERT);
+        }
+        target->endExport(*source, exporter, INSERT);
+      }
+    }
+
+  private:
+    FancyOStream& out;
+    bool& success;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, MultiVector_forwardExportFalse, Scalar, LO, GO )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(CheckTransferNotArrivedForwardExport<Scalar, LO, GO>(out, success));
+  }
+
+
+  template <typename Packet, typename LO, typename GO>
+  class ForwardImportGroup {
+  private:
+    using DistObjectRCP = RCP<MultiVector<Packet, LO, GO>>;
+
+  public:
+    void operator()(std::vector<DistObjectRCP>& sources, std::vector<DistObjectRCP>& targets) const {
+      Import<LO, GO> importer(sources[0]->getMap(), targets[0]->getMap());
+
+      for (unsigned i=0; i<sources.size(); i++) {
+        targets[i]->beginImport(*sources[i], importer, INSERT);
+      }
+
+      unsigned completedImports = 0;
+      std::vector<bool> completedImport(sources.size(), false);
+      while (completedImports < completedImport.size()) {
+        for (unsigned i=0; i<sources.size(); i++) {
+          if (completedImport[i]) continue;
+          if (targets[i]->transferArrived()) {
+            targets[i]->endImport(*sources[i], importer, INSERT);
+            completedImport[i] = true;
+            completedImports++;
+          }
+        }
+      }
+    }
+  };
+
+  template <typename LO, typename GO>
+  class ContiguousMaps {
+  private:
+    using map_type = Map<LO, GO>;
+
+  public:
+    ContiguousMaps(RCP<const Comm<int>> c)
+      : comm(c),
+        numProcs(comm->getSize()),
+        myRank(comm->getRank())
+    { }
+
+    void setup(int collectRank) {
+      const GO indexBase = 0;
+      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+
+      const size_t sourceNumLocalElements = 3;
+      const size_t totalElements = numProcs*sourceNumLocalElements;
+      const size_t targetNumLocalElements = (myRank == collectRank) ? totalElements : 0;
+
+      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
+      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+    }
+
+    RCP<const map_type> getSourceMap() { return sourceMap; }
+    RCP<const map_type> getTargetMap() { return targetMap; }
+
+  private:
+    RCP<const Comm<int>> comm;
+    const int numProcs;
+    const int myRank;
+
+    RCP<const map_type> sourceMap;
+    RCP<const map_type> targetMap;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVectorGroup_ContiguousMaps_rank0, Scalar, LO, GO )
+  {
+    MultiVectorGroupTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.template setup<ContiguousMaps<LO, GO>>(0);
+    fixture.performTransfer(ForwardImportGroup<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
+  }
+
+  template <typename LO, typename GO>
+  class CyclicMaps {
+  private:
+    using map_type = Map<LO, GO>;
+
+  public:
+    CyclicMaps(RCP<const Comm<int>> c)
+      : comm(c),
+        numProcs(comm->getSize()),
+        myRank(comm->getRank())
+    { }
+
+    void setup(int collectRank) {
+      const GO indexBase = 0;
+      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+
+      const size_t sourceNumLocalElements = 3;
+      const size_t totalElements = numProcs*sourceNumLocalElements;
+      const size_t targetNumLocalElements = (myRank == collectRank) ? totalElements : 0;
+
+      Teuchos::Array<GO> sourceEntries(sourceNumLocalElements);
+      for (size_t i=0; i<sourceNumLocalElements; i++) {
+        sourceEntries[i] = i*numProcs + myRank;
+      }
+
+      sourceMap = rcp(new map_type(INVALID, sourceEntries, indexBase, comm));
+      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+    }
+
+    RCP<const map_type> getSourceMap() { return sourceMap; }
+    RCP<const map_type> getTargetMap() { return targetMap; }
+
+  private:
+    RCP<const Comm<int>> comm;
+    const int numProcs;
+    const int myRank;
+
+    RCP<const map_type> sourceMap;
+    RCP<const map_type> targetMap;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVectorGroup_CyclicMaps_rank0, Scalar, LO, GO )
+  {
+    MultiVectorGroupTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.template setup<CyclicMaps<LO, GO>>(0);
+    fixture.performTransfer(ForwardImportGroup<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
+  }
+
   //
   // INSTANTIATIONS
   //
@@ -714,6 +1137,16 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, MultiVector_rank1, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, DiagonalCrsMatrix, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, LowerTriangularCrsMatrix, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_defaultTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_defaultTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardImportTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_forwardImportTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardExportTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_forwardExportTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardImportFalse, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardExportFalse, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVectorGroup_ContiguousMaps_rank0, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVectorGroup_CyclicMaps_rank0, SC, LO, GO ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

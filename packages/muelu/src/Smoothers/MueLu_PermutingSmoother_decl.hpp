@@ -54,7 +54,6 @@
 #define MUELU_PERMUTINGSMOOTHER_DECL_HPP
 
 #include <Teuchos_ParameterList.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
@@ -66,14 +65,13 @@
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_TrilinosSmoother_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_PermutationFactory_fwd.hpp"
 
 namespace MueLu {
 
   /*!
     @class PermutingSmoother
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief This class first calculates row- and column permutation operators and applies a smoother to the permuted linear system.
 
   */

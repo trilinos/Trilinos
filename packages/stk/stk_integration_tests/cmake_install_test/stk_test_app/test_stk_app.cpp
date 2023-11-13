@@ -2,7 +2,10 @@
 #include <iostream>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
+#include <stk_unit_test_utils/CommandLineArgs.hpp>
 
+#include "src/test_stk_coupling.hpp"
+#include "src/test_stk_search.hpp"
 #include "src/test_stk_simd.hpp"
 #include "src/test_stk_io.hpp"
 #include "src/test_stk_tools.hpp"
@@ -36,6 +39,10 @@ int main(int argc, char** argv)
   if (proc0) {
     std::cout << "Test-STK-App" << std::endl;
   }
+
+  test_stk_lib::test_stk_coupling();
+
+  test_stk_lib::test_stk_search();
 
   test_stk_lib::test_stk_simd(MPI_COMM_WORLD);
 

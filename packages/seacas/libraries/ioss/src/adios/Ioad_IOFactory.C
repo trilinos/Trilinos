@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,8 +8,8 @@
 #include "Ioss_IOFactory.h"        // for IOFactory
 #include <adios/Ioad_DatabaseIO.h> // for DatabaseIO
 #include <adios/Ioad_IOFactory.h>
-#include <stddef.h> // for nullptr
-#include <string>   // for string
+#include <cstddef> // for nullptr
+#include <string>  // for string
 
 #include <adios2/common/ADIOSConfig.h>
 #include <fmt/ostream.h>
@@ -29,7 +29,7 @@ namespace Ioad {
   IOFactory::IOFactory() : Ioss::IOFactory("adios") { Ioss::IOFactory::alias("adios", "adios2"); }
 
   Ioss::DatabaseIO *IOFactory::make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                                       MPI_Comm                     communicator,
+                                       Ioss_MPI_Comm                communicator,
                                        const Ioss::PropertyManager &properties) const
   {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, properties);

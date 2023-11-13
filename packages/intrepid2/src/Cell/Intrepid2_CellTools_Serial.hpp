@@ -89,9 +89,9 @@ public:
       const auto  physDim = jacobian.extent(0);
       const auto refDim = jacobian.extent(1);
 
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE( numNodes != grads.extent(0), "grad dimension_0 does not match to cardinality.");
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(refDim != grads.extent(1), "grad dimension_1 does not match to space dim.");
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE( physDim != nodes.extent(1), "node dimension_1 does not match to space dim.");
+      INTREPID2_TEST_FOR_ABORT( numNodes != grads.extent(0), "grad dimension_0 does not match to cardinality.");
+      INTREPID2_TEST_FOR_ABORT(refDim != grads.extent(1), "grad dimension_1 does not match to space dim.");
+      INTREPID2_TEST_FOR_ABORT( physDim != nodes.extent(1), "node dimension_1 does not match to space dim.");
 
       Kernels::Serial::gemm_trans_notrans(1.0, nodes, grads, 0.0, jacobian);
     }
@@ -112,8 +112,8 @@ public:
       const auto numNodes = vals.extent(0);
       const auto physDim = point.extent(0);
 
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(numNodes != nodes.extent(0), "nodes dimension_0 does not match to vals dimension_0.");
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(physDim != nodes.extent(1), "node dimension_1 does not match to space dim.");
+      INTREPID2_TEST_FOR_ABORT(numNodes != nodes.extent(0), "nodes dimension_0 does not match to vals dimension_0.");
+      INTREPID2_TEST_FOR_ABORT(physDim != nodes.extent(1), "node dimension_1 does not match to space dim.");
 
       Kernels::Serial::gemv_trans(1.0, nodes, vals, 0.0, point);
     }
@@ -157,9 +157,9 @@ public:
       const ordinal_type physDim = physPoint.extent(0);
       const ordinal_type numNodes = nodes.extent(0);
 
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(refDim > physDim, "the dimension of the reference cell is greater than physical cell dimension.");
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(physDim != static_cast<ordinal_type>(nodes.extent(1)), "physPoint dimension_0 does not match to space dim.");
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(numNodes > 27, "function hard-coded to support at most mappings with 27 Dofs");
+      INTREPID2_TEST_FOR_ABORT(refDim > physDim, "the dimension of the reference cell is greater than physical cell dimension.");
+      INTREPID2_TEST_FOR_ABORT(physDim != static_cast<ordinal_type>(nodes.extent(1)), "physPoint dimension_0 does not match to space dim.");
+      INTREPID2_TEST_FOR_ABORT(numNodes > 27, "function hard-coded to support at most mappings with 27 Dofs");
 
       typedef typename refPointViewType::non_const_value_type value_type;
 
@@ -167,35 +167,35 @@ public:
       // NMAX = 27, MAXDIM = 3
       value_type buf[27*3 + 27 + 9 + 9 + 9 + 9 + 3 + 3] = {}, *ptr = &buf[0];
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> grads(ptr, numNodes, refDim); ptr += numNodes*refDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> vals(ptr, numNodes); ptr += numNodes;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> jac(ptr, physDim, refDim); ptr += physDim*refDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> metric(ptr, refDim, refDim); ptr += refDim*refDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> invMetric(ptr, refDim, refDim); ptr += refDim*refDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> invDf(ptr, refDim, physDim); ptr += refDim*physDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> tmpPhysPoint(ptr, physDim); ptr += physDim;
 
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> oldRefPoint(ptr, refDim); ptr += refDim;
 
       // set initial guess
@@ -285,7 +285,7 @@ public:
       typedef typename ParamViewType::non_const_value_type value_type;
       const ordinal_type dim = edgeParametrization.extent(1);
       value_type buf[3];
-      Kokkos::DynRankView<value_type, Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::DynRankView<value_type, Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> refEdgeTangent(&buf[0], dim);
 
       getReferenceEdgeTangent(refEdgeTangent, edgeParametrization, edgeOrdinal);
@@ -302,11 +302,11 @@ public:
         const ordinal_type faceOrdinal) {
       typedef typename ParamViewType::non_const_value_type value_type;
       const ordinal_type dim = faceParametrization.extent(1);
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(dim != 3,
+      INTREPID2_TEST_FOR_ABORT(dim != 3,
           "computing face tangents requires dimension 3.");
       value_type buf[6];
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> refFaceTanU(&buf[0], dim), refFaceTanV(&buf[3], dim);
 
       getReferenceFaceTangent(refFaceTanU,
@@ -328,11 +328,11 @@ public:
         const ordinal_type faceOrdinal) {
       typedef typename ParamViewType::non_const_value_type value_type;
       const ordinal_type dim = faceParametrization.extent(1);
-      INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(dim != 3,
+      INTREPID2_TEST_FOR_ABORT(dim != 3,
           "computing face normal requires dimension 3.");
       value_type buf[6];
       Kokkos::DynRankView<value_type,
-      Kokkos::Impl::ActiveExecutionMemorySpace,
+      Kokkos::AnonymousSpace,
       Kokkos::MemoryUnmanaged> faceTanU(&buf[0], dim), faceTanV(&buf[3], dim);
 
       getPhysicalFaceTangents(faceTanU, faceTanV,
@@ -355,7 +355,7 @@ public:
       case 2: {
         value_type buf[3];
         Kokkos::DynRankView<value_type,
-        Kokkos::Impl::ActiveExecutionMemorySpace,
+        Kokkos::AnonymousSpace,
         Kokkos::MemoryUnmanaged> edgeTangent(&buf[0], dim);
         getPhysicalEdgeTangent(edgeTangent, sideParametrization, jacobian, sideOrdinal);
         sideNormal(0) =  edgeTangent(1);
@@ -367,7 +367,7 @@ public:
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(true, "cell dimension is out of range.");
+        INTREPID2_TEST_FOR_ABORT(true, "cell dimension is out of range.");
         break;
       }
       }

@@ -51,7 +51,6 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Ifpack2Smoother.hpp"
 
 
 namespace MueLu {

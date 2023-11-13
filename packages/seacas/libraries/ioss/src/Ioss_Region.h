@@ -1,16 +1,18 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Region_h
-#define IOSS_Ioss_Region_h
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CoordinateFrame.h> // for CoordinateFrame
 #include <Ioss_DatabaseIO.h>      // for DatabaseIO
 #include <Ioss_EntityType.h>      // for EntityType, etc
-#include <Ioss_GroupingEntity.h>  // for GroupingEntity
+#include <Ioss_Field.h>
+#include <Ioss_GroupingEntity.h> // for GroupingEntity
 #include <Ioss_MeshType.h>
 #include <Ioss_Property.h> // for Property
 #include <Ioss_State.h>    // for State
@@ -65,7 +67,7 @@ namespace Ioss {
 
   using CoordinateFrameContainer = std::vector<CoordinateFrame>;
 
-  using AliasMap = std::map<std::string, std::string, std::less<std::string>>;
+  using AliasMap = std::map<std::string, std::string, std::less<>>;
 
   /** \brief A grouping entity that contains other grouping entities.
    *
@@ -74,7 +76,7 @@ namespace Ioss {
    * GroupingEntities is through the Region class; clients of the IO subsystem have no direct
    * access to the underlying GroupingEntities (other than the Region).
    */
-  class Region : public GroupingEntity
+  class IOSS_EXPORT Region : public GroupingEntity
   {
   public:
     explicit Region(DatabaseIO *iodatabase = nullptr, const std::string &my_name = "");
@@ -86,9 +88,9 @@ namespace Ioss {
     std::string contains_string() const override { return "Entities"; }
     EntityType  type() const override { return REGION; }
 
-    MeshType          mesh_type() const;
-    const std::string mesh_type_string() const;
-    bool              node_major() const;
+    MeshType    mesh_type() const;
+    std::string mesh_type_string() const;
+    bool        node_major() const;
 
     void output_summary(std::ostream &strm, bool do_transient = true) const;
 
@@ -129,6 +131,10 @@ namespace Ioss {
      */
     bool transient_defined() const { return transientDefined; }
 
+    /** \brief Remove all fields of the specified `role` from all entities in the region
+     */
+    void erase_fields(Field::RoleType role);
+
     // Return a pair consisting of the step (1-based) corresponding to
     // the maximum time on the database and the corresponding maximum
     // time value. Note that this may not necessarily be the last step
@@ -160,58 +166,60 @@ namespace Ioss {
     // Special purpose...
     bool remove(Assembly *removal);
 
-    const NodeBlockContainer &      get_node_blocks() const;
-    const EdgeBlockContainer &      get_edge_blocks() const;
-    const FaceBlockContainer &      get_face_blocks() const;
-    const ElementBlockContainer &   get_element_blocks() const;
-    const SideSetContainer &        get_sidesets() const;
-    const NodeSetContainer &        get_nodesets() const;
-    const EdgeSetContainer &        get_edgesets() const;
-    const FaceSetContainer &        get_facesets() const;
-    const ElementSetContainer &     get_elementsets() const;
-    const CommSetContainer &        get_commsets() const;
+    const NodeBlockContainer       &get_node_blocks() const;
+    const EdgeBlockContainer       &get_edge_blocks() const;
+    const FaceBlockContainer       &get_face_blocks() const;
+    const ElementBlockContainer    &get_element_blocks() const;
+    const SideSetContainer         &get_sidesets() const;
+    const NodeSetContainer         &get_nodesets() const;
+    const EdgeSetContainer         &get_edgesets() const;
+    const FaceSetContainer         &get_facesets() const;
+    const ElementSetContainer      &get_elementsets() const;
+    const CommSetContainer         &get_commsets() const;
     const StructuredBlockContainer &get_structured_blocks() const;
-    const AssemblyContainer &       get_assemblies() const;
-    const BlobContainer &           get_blobs() const;
+    const AssemblyContainer        &get_assemblies() const;
+    const BlobContainer            &get_blobs() const;
     const CoordinateFrameContainer &get_coordinate_frames() const;
 
     // Retrieve the Grouping Entity with the specified name.
     // Returns nullptr if the entity does not exist
-    GroupingEntity * get_entity(const std::string &my_name, EntityType io_type) const;
-    GroupingEntity * get_entity(const std::string &my_name) const;
-    NodeBlock *      get_node_block(const std::string &my_name) const;
-    EdgeBlock *      get_edge_block(const std::string &my_name) const;
-    FaceBlock *      get_face_block(const std::string &my_name) const;
-    ElementBlock *   get_element_block(const std::string &my_name) const;
-    SideSet *        get_sideset(const std::string &my_name) const;
-    SideBlock *      get_sideblock(const std::string &my_name) const;
-    NodeSet *        get_nodeset(const std::string &my_name) const;
-    EdgeSet *        get_edgeset(const std::string &my_name) const;
-    FaceSet *        get_faceset(const std::string &my_name) const;
-    ElementSet *     get_elementset(const std::string &my_name) const;
-    CommSet *        get_commset(const std::string &my_name) const;
+    GroupingEntity  *get_entity(const std::string &my_name, EntityType io_type) const;
+    GroupingEntity  *get_entity(const std::string &my_name) const;
+    NodeBlock       *get_node_block(const std::string &my_name) const;
+    EdgeBlock       *get_edge_block(const std::string &my_name) const;
+    FaceBlock       *get_face_block(const std::string &my_name) const;
+    ElementBlock    *get_element_block(const std::string &my_name) const;
+    SideSet         *get_sideset(const std::string &my_name) const;
+    SideBlock       *get_sideblock(const std::string &my_name) const;
+    NodeSet         *get_nodeset(const std::string &my_name) const;
+    EdgeSet         *get_edgeset(const std::string &my_name) const;
+    FaceSet         *get_faceset(const std::string &my_name) const;
+    ElementSet      *get_elementset(const std::string &my_name) const;
+    CommSet         *get_commset(const std::string &my_name) const;
     StructuredBlock *get_structured_block(const std::string &my_name) const;
-    Assembly *       get_assembly(const std::string &my_name) const;
-    Blob *           get_blob(const std::string &my_name) const;
+    Assembly        *get_assembly(const std::string &my_name) const;
+    Blob            *get_blob(const std::string &my_name) const;
 
     // Not guaranteed to be efficient...
     // Note that not all GroupingEntity's are guaranteed to have an 'id'...
-    GroupingEntity *get_entity(const int64_t id, EntityType io_type) const;
+    GroupingEntity *get_entity(int64_t id, EntityType io_type) const;
 
     const CoordinateFrame &get_coordinate_frame(int64_t id) const;
 
-    // Add the name 'alias' as an alias for the database entity with the
-    // name 'db_name'. Returns true if alias added; false if problems
-    // adding alias.
+    // Add the name 'alias' as an alias for the database entity of
+    // type 'type' with the name 'db_name'. Returns true if alias
+    // added; false if problems adding alias.
+    bool        add_alias(const std::string &db_name, const std::string &alias, EntityType type);
     bool        add_alias(const std::string &db_name, const std::string &alias);
     bool        add_alias(const GroupingEntity *ge);
-    std::string get_alias(const std::string &alias) const;
-    std::string get_alias__(const std::string &alias) const; // Not locked by mutex
+    std::string get_alias(const std::string &alias, EntityType type) const;
+    std::string get_alias__(const std::string &alias, EntityType type) const; // Not locked by mutex
 
-    const AliasMap &get_alias_map() const;
+    const AliasMap &get_alias_map(EntityType entity_type) const;
 
-    /// Get a map containing all aliases defined for the entity with basename 'name'
-    int get_aliases(const std::string &my_name, std::vector<std::string> &aliases) const;
+    /// Get a map containing all aliases defined for the entity with basename 'my_name'
+    int get_aliases(const std::string &my_name, EntityType type,
+                    std::vector<std::string> &aliases) const;
 
     // This routine transfers all relevant aliases from the 'this'
     // region and applies them to the 'to' file.
@@ -229,6 +237,8 @@ namespace Ioss {
     // code is repeated here instead of something more generic.
     bool is_valid_io_entity(const std::string &my_name, unsigned int io_type,
                             std::string *my_type = nullptr) const;
+
+    void check_for_duplicate_names(const Ioss::GroupingEntity *entity) const;
 
     // Retrieve the element block that contains the specified element
     // The 'local_id' is the local database id (1-based), not the global id.
@@ -255,6 +265,10 @@ namespace Ioss {
     void add_qa_record(const std::string &code, const std::string &code_qa,
                        const std::string &date = "", const std::string &time = "");
 
+    template <typename T>
+    std::vector<size_t> get_all_block_field_data(const std::string &field_name,
+                                                 std::vector<T>    &field_data) const;
+
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,
                                     size_t data_size = 0) const override;
@@ -262,11 +276,17 @@ namespace Ioss {
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size = 0) const override;
 
+    int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                       size_t *data_size) const override;
+
   private:
+    std::vector<size_t> internal_get_all_block_field_data(const std::string &field_name, void *data,
+                                                          size_t data_size = 0) const;
+
     // Add the name 'alias' as an alias for the database entity with the
     // name 'db_name'. Returns true if alias added; false if problems
     // adding alias. Not protected by mutex -- call internally only.
-    bool add_alias__(const std::string &db_name, const std::string &alias);
+    bool add_alias__(const std::string &db_name, const std::string &alias, EntityType type);
     bool add_alias__(const GroupingEntity *ge);
 
     bool begin_mode__(State new_state);
@@ -274,7 +294,7 @@ namespace Ioss {
 
     void delete_database() override;
 
-    AliasMap aliases_; ///< Stores alias mappings
+    mutable std::map<EntityType, AliasMap> aliases_; ///< Stores alias mappings
 
     // Containers for all grouping entities
     NodeBlockContainer    nodeBlocks;
@@ -310,7 +330,7 @@ inline int Ioss::Region::get_current_state() const { return currentState; }
 
 inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const
 {
-  return static_cast<unsigned int>((get_database()->entity_field_support() & fld_type) != 0u) != 0u;
+  return static_cast<unsigned int>((get_database()->entity_field_support() & fld_type) != 0U) != 0U;
 }
 
 inline int64_t Ioss::Region::node_global_to_local(int64_t global, bool must_exist) const
@@ -385,5 +405,3 @@ inline const std::vector<std::string> &Ioss::Region::get_qa_records() const
   IOSS_FUNC_ENTER(m_);
   return get_database()->get_qa_records();
 }
-
-#endif

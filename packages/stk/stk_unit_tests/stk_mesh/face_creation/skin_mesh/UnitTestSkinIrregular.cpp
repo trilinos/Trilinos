@@ -36,6 +36,7 @@
 // clang-format off
 #include <gtest/gtest.h>                             // for AssertHelper, etc
 #include <stk_mesh/base/BulkData.hpp>                // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/Entity.hpp>                  // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>              // for declare_element
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData
@@ -48,13 +49,6 @@ namespace stk { namespace mesh { class Part; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 namespace stk { namespace mesh { class Bucket; } }
-
-
-
-
-
-
-
 
 using stk::mesh::EntityId;
 using stk::mesh::EntityRank;
@@ -70,9 +64,12 @@ TEST( UnitTestSkin, SkinPocket)
   const unsigned p_rank = stk::parallel_machine_rank( pm );
   const unsigned p_size = stk::parallel_machine_size( pm );
 
-  stk::mesh::MetaData fem_meta;
-  fem_meta.initialize(SpatialDim);
-  stk::mesh::BulkData bulk_data( fem_meta , pm );
+  stk::mesh::MeshBuilder builder(pm);
+  builder.set_spatial_dimension(SpatialDim);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+  stk::mesh::BulkData& bulk_data = *bulkPtr;
+  stk::mesh::MetaData& fem_meta = bulk_data.mesh_meta_data();
+  fem_meta.use_simple_fields();
   stk::mesh::Part & hex_part = fem_meta.declare_part_with_topology( "hex_part", stk::topology::HEX_8 );
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
   const EntityRank side_rank    = fem_meta.side_rank();

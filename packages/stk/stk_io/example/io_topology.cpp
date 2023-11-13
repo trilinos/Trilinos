@@ -30,20 +30,23 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#include <Ioss_ConcreteVariableType.h>  // for StorageInitializer
-#include <Ioss_ElementTopology.h>       // for ElementTopology
-#include <Ioss_Initializer.h>           // for Initializer
-#include <stdlib.h>                     // for EXIT_FAILURE, etc
-#include <iomanip>                      // for operator<<, setw
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_io/IossBridge.hpp>        // for map_ioss_topology_to_stk
-#include <stk_topology/topology.hpp>    // for topology, operator++, etc
-#include <string>                       // for operator<<, operator!=, etc
-#include "Ioss_CodeTypes.h"             // for HAVE_MPI
-#include "Ioss_VariableType.h"          // for NameList
-#include <stk_util/parallel/Parallel.hpp>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <Ioss_ConcreteVariableType.h>     // for StorageInitializer
+#include <Ioss_ElementTopology.h>          // for ElementTopology
+#include <Ioss_Initializer.h>              // for Initializer
+#include <cstdlib>                         // for EXIT_FAILURE, EXIT_SUCCESS
+#include <iomanip>                         // for operator<<, setw
+#include <iostream>                        // for operator<<, basic_ostream
+#include <stk_io/IossBridge.hpp>           // for map_ioss_topology_to_stk
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_finalize
+#include <string>                          // for operator<<, char_traits
+#include "Ioss_CodeTypes.h"                // for NameList
+#include "stk_topology/topology.hpp"       // for topology, operator++, topo...
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 #define OUTPUT std::cerr
 

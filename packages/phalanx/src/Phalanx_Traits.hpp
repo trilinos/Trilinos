@@ -47,7 +47,6 @@
 
 #include "Kokkos_View_Fad.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
-#include "Kokkos_View.hpp"
 #include "Phalanx_config.hpp"
 
 namespace PHX {

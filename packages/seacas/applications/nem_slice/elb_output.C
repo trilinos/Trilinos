@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -169,7 +169,7 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
 
   /* Generate a QA record for the utility */
   time_t      time_val = time(nullptr);
-  auto *      lt       = std::localtime(&time_val);
+  auto       *lt       = std::localtime(&time_val);
   std::string time     = fmt::format("{:%H:%M:%S}", *lt);
   std::string date     = fmt::format("{:%Y/%m/%d}", *lt);
 
@@ -551,9 +551,9 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
     float *yptr = nullptr;
     float *zptr = nullptr;
     switch (mesh->num_dims) {
-    case 3: zptr = (mesh->coords) + 2 * mesh->num_nodes; FALL_THROUGH;
-    case 2: yptr = (mesh->coords) + mesh->num_nodes; FALL_THROUGH;
-    case 1: xptr = mesh->coords;
+    case 3: zptr = mesh->coords.data() + 2 * mesh->num_nodes; FALL_THROUGH;
+    case 2: yptr = mesh->coords.data() + mesh->num_nodes; FALL_THROUGH;
+    case 1: xptr = mesh->coords.data();
     }
     if (ex_put_coord(exid_vis, xptr, yptr, zptr) < 0) {
       Gen_Error(0, "fatal: unable to output coords to vis file");
@@ -593,7 +593,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
       vis_el_blk_ptr[bcnt] = ccnt;
       int    pos           = 0;
       int    old_pos       = 0;
-      INT *  el_ptr        = elem_block.data();
+      INT   *el_ptr        = elem_block.data();
       size_t ecnt          = mesh->num_elems;
       while (pos != -1) {
         pos = in_list(bcnt, ecnt, el_ptr);
@@ -670,7 +670,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
       }
 
       for (int pcnt = 0; pcnt < machine->num_procs; pcnt++) {
-        for (auto &elem : lb->bor_nodes[pcnt]) {
+        for (const auto &elem : lb->bor_nodes[pcnt]) {
           proc_vals[elem] = machine->num_procs + 1;
         }
       }

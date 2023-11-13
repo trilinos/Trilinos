@@ -58,7 +58,7 @@
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_InterfaceAggregationAlgorithm.hpp"
+#include "MueLu_InterfaceAggregationAlgorithm_decl.hpp"
 
 //#include "MueLu_Graph.hpp"
 #include "MueLu_GraphBase.hpp"

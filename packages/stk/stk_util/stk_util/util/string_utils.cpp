@@ -138,6 +138,11 @@ std::vector<std::string> make_vector_of_strings(const std::string& inputString, 
   return vecStr;
 }
 
+bool string_starts_with(const std::string & queryString, const std::string & prefix)
+{
+  return (queryString.rfind(prefix, 0) == 0);
+}
+
 std::string ltrim_string(std::string s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(),
                                   [](unsigned char ch) { return !std::isspace(ch); }

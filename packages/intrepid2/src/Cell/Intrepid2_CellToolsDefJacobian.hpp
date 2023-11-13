@@ -55,6 +55,7 @@
 #endif
 
 #include "Intrepid2_Kernels.hpp"
+#include "Intrepid2_DataTools.hpp"
 
 namespace Intrepid2 {
 
@@ -457,6 +458,16 @@ namespace Intrepid2 {
     {
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "jacobian's underlying view must have rank 2,3, or 4");
     }
+  }
+
+  template<typename DeviceType>
+  template<class PointScalar>
+  void CellTools<DeviceType>::setJacobianDetInv( Data<PointScalar,DeviceType> &jacobianDetInv, const Data<PointScalar,DeviceType> & jacobian )
+  {
+    setJacobianDet(jacobianDetInv, jacobian);
+    
+    auto unitData = jacobianDetInv.allocateConstantData(1.0);
+    jacobianDetInv.storeInPlaceQuotient(unitData, jacobianDetInv);
   }
 
   template<typename DeviceType>
@@ -902,6 +913,16 @@ namespace Intrepid2 {
     RealSpaceTools<DeviceType>::det(jacobianDet, jacobian);
   }
 
+  template<typename DeviceType>
+  template<typename Scalar>
+  void
+  CellTools<DeviceType>::
+  setJacobianDividedByDet( Data<Scalar,DeviceType> & jacobianDividedByDet,
+                          const Data<Scalar,DeviceType> & jacobian,
+                          const Data<Scalar,DeviceType> & jacobianDetInv)
+  {
+    DataTools::multiplyByCPWeights(jacobianDividedByDet,jacobian,jacobianDetInv);
+  }
 }
 
 #endif

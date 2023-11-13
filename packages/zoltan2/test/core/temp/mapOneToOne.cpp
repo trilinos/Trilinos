@@ -49,14 +49,14 @@ int main(int narg, char **arg)
   // Print the entries of each map
   std::cout << me << " MAP WITH COPIES ("
                   << mapWithCopies->getGlobalNumElements() << "):  ";
-  lno_t nlocal = lno_t(mapWithCopies->getNodeNumElements());
+  lno_t nlocal = lno_t(mapWithCopies->getLocalNumElements());
   for (lno_t i = 0; i < nlocal; i++)
     std::cout << mapWithCopies->getGlobalElement(i) << " ";
   std::cout << std::endl;
 
   std::cout << me << " ONE TO ONE MAP  ("
                   << oneToOneMap->getGlobalNumElements() << "):  ";
-  nlocal = lno_t(oneToOneMap->getNodeNumElements());
+  nlocal = lno_t(oneToOneMap->getLocalNumElements());
   for (lno_t i = 0; i < nlocal; i++)
     std::cout << oneToOneMap->getGlobalElement(i) << " ";
   std::cout << std::endl;

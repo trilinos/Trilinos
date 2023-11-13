@@ -59,6 +59,7 @@
 #include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
 
 #include <MueLu_SchurComplementFactory.hpp>
+#include <MueLu_InverseApproximationFactory.hpp>
 
 namespace MueLuTests {
 
@@ -158,8 +159,6 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     RCP<SchurComplementFactory> schurFact = rcp( new SchurComplementFactory() );
     schurFact->SetFactory("A",MueLu::NoFactory::getRCP());
     schurFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-    schurFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
-    schurFact->SetParameter("fixing", Teuchos::ParameterEntry(false));
 
     // request SchurComplement operator
     level.Request("A", schurFact.get());
@@ -181,7 +180,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     else localEntries = 300;
     if(comm->getSize() == 2) localEntries = 299;
     if(comm->getSize() == 1) localEntries = 298;*/
-    //    TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
+    //    TEST_EQUALITY(sOp->getLocalNumEntries(), localEntries);
     //    TEST_EQUALITY(sOp->getGlobalNumEntries(),  Teuchos::as<size_t>(comm->getSize() * 300 - 2));
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);
@@ -211,7 +210,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     if(comm->getSize() == 2) localEntries = 299;
     if(comm->getSize() == 1) localEntries = 298;*/
 
-    //    TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
+    //    TEST_EQUALITY(sOp->getLocalNumEntries(), localEntries);
     //    TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 300 - 2));
 
     /*v = VectorFactory::Build(sOp->getRangeMap(),true);
@@ -241,8 +240,6 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     RCP<SchurComplementFactory> schurFact = rcp( new SchurComplementFactory() );
     schurFact->SetFactory("A",MueLu::NoFactory::getRCP());
     schurFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-    schurFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
-    schurFact->SetParameter("fixing", Teuchos::ParameterEntry(false));
 
     // request SchurComplement operator
     level.Request("A", schurFact.get());
@@ -258,7 +255,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     TEST_EQUALITY(sOp->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * 10 + 9);
     TEST_EQUALITY(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(sOp), Teuchos::null);
 
-    TEST_EQUALITY(sOp->getNodeNumEntries(), 5);
+    TEST_EQUALITY(sOp->getLocalNumEntries(), 5);
     TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 5));
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);
@@ -286,11 +283,14 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     Level level; TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
     level.Set("A", A);
 
+    RCP<InverseApproximationFactory> approxInvFactory = rcp( new InverseApproximationFactory() );
+    approxInvFactory->SetFactory("A",MueLu::NoFactory::getRCP());
+    approxInvFactory->SetParameter("inverse: fixing", Teuchos::ParameterEntry(true));
+
     RCP<SchurComplementFactory> schurFact = rcp( new SchurComplementFactory() );
     schurFact->SetFactory("A",MueLu::NoFactory::getRCP());
+    schurFact->SetFactory("Ainv", approxInvFactory);
     schurFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(0.5)));
-    schurFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
-    schurFact->SetParameter("fixing", Teuchos::ParameterEntry(true));
 
     // request SchurComplement operator
     level.Request("A", schurFact.get());
@@ -312,6 +312,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
 
     // consecutive Thyra GIDs with offset comm->getSize() * 100!
     RCP<Matrix> sOp = level.Get<RCP<Matrix> >("A", schurFact.get());
+
     TEST_EQUALITY(sOp.is_null(), false);
     TEST_EQUALITY(sOp->getRangeMap()->getMinGlobalIndex(), comm->getSize() * 100 + comm->getRank() * 100);
     TEST_EQUALITY(sOp->getRangeMap()->getMaxGlobalIndex(), comm->getSize() * 200 + comm->getRank() * 100 + 99);
@@ -321,6 +322,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     TEST_EQUALITY(sOp->getRangeMap()->getMaxAllGlobalIndex(), comm->getSize() * 300 - 1);
     TEST_EQUALITY(sOp->getDomainMap()->getMinAllGlobalIndex(), comm->getSize() * 100);
     TEST_EQUALITY(sOp->getDomainMap()->getMaxAllGlobalIndex(), comm->getSize() * 300 - 1);
+
     RCP<BlockedCrsMatrix> bsOp = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(sOp);
     TEST_EQUALITY(bsOp == Teuchos::null, false);
     TEST_EQUALITY(bsOp->Rows(), 2);
@@ -361,8 +363,6 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     RCP<SchurComplementFactory> schurFact = rcp( new SchurComplementFactory() );
     schurFact->SetFactory("A",MueLu::NoFactory::getRCP());
     schurFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-    schurFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
-    schurFact->SetParameter("fixing", Teuchos::ParameterEntry(false));
 
     // request SchurComplement operator
     level.Request("A", schurFact.get());
@@ -383,13 +383,14 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     schurFact->Build(level);
 #if 1
     RCP<Matrix> sOp = level.Get<RCP<Matrix> >("A", schurFact.get());
+
     TEST_EQUALITY(sOp.is_null(), false);
     TEST_EQUALITY(sOp->getRangeMap()->getMinGlobalIndex(), comm->getRank() * 40 + 5);
     TEST_EQUALITY(sOp->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 19);
     TEST_EQUALITY(sOp->getDomainMap()->getMinGlobalIndex(), comm->getRank() * 40 + 5);
     TEST_EQUALITY(sOp->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 19);
 
-    TEST_EQUALITY(sOp->getNodeNumEntries(), 15);
+    TEST_EQUALITY(sOp->getLocalNumEntries(), 15);
     TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 15));
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);

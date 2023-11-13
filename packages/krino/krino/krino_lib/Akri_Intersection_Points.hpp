@@ -26,7 +26,7 @@ class IntersectionPoint
 {
 public:
   IntersectionPoint(const bool owned, const std::vector<stk::mesh::Entity> & nodes, const std::vector<double> & weights, const std::vector<int> & sortedDomains)
-  : mOwned(owned), mNodes(nodes), mWeights(weights), mSortedDomains(sortedDomains) {ThrowAssert(mNodes.size() == mWeights.size());}
+  : mOwned(owned), mNodes(nodes), mWeights(weights), mSortedDomains(sortedDomains) {STK_ThrowAssert(mNodes.size() == mWeights.size());}
   bool is_owned() const { return mOwned; }
   const std::vector<stk::mesh::Entity> & get_nodes() const { return mNodes; }
   const std::vector<double> & get_weights() const { return mWeights; }
@@ -38,6 +38,18 @@ private:
   std::vector<int> mSortedDomains;
 };
 
+class InterpolationPoint
+{
+public:
+  InterpolationPoint(const std::vector<stk::mesh::Entity> & nodes, const std::vector<double> & weights)
+  : mNodes(nodes), mWeights(weights) {STK_ThrowAssert(mNodes.size() == mWeights.size());}
+  const std::vector<stk::mesh::Entity> & get_nodes() const { return mNodes; }
+  const std::vector<double> & get_weights() const { return mWeights; }
+private:
+  std::vector<stk::mesh::Entity> mNodes;
+  std::vector<double> mWeights;
+};
+
 struct EdgeIntersection
 {
   EdgeIntersection(const IntersectionPoint & intersectionPt);
@@ -46,7 +58,14 @@ struct EdgeIntersection
   InterfaceID interface;
 };
 
-void communicate_intersection_points(const stk::mesh::BulkData & mesh, std::vector<IntersectionPoint> & intersectionPoints);
+template <typename T>
+bool any_entity_in_first_vector_is_contained_in_second_sorted_vector(const std::vector<T> & firstVec, const std::vector<T> & secondVec)
+{
+  for (auto && first : firstVec)
+    if (std::binary_search(secondVec.begin(), secondVec.end(), first))
+      return true;
+  return false;
+}
 
 typedef std::function<bool(const std::vector<stk::mesh::Entity> &, const std::vector<int> &)> IntersectionPointFilter;
 
@@ -64,7 +83,7 @@ std::vector<IntersectionPoint> build_uncaptured_intersection_points(const stk::m
     const InterfaceGeometry & geometry,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains);
 
-void update_intersection_points_after_snap_iteration(const stk::mesh::BulkData & mesh,
+std::vector<size_t> update_intersection_points_after_snap_iteration(const stk::mesh::BulkData & mesh,
   const InterfaceGeometry & geometry,
   const std::vector<stk::mesh::Entity> & iterationSortedSnapNodes,
   const NodeToCapturedDomainsMap & nodesToCapturedDomains,

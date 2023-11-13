@@ -1,16 +1,18 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_IOFactory_h
-#define IOSS_Ioss_IOFactory_h
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <string>
 
 #include <Ioss_DBUsage.h>
+#include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 
 #include <map>
@@ -23,21 +25,23 @@ namespace Ioss {
   class IOFactory;
 
   using NameList     = std::vector<std::string>;
-  using IOFactoryMap = std::map<std::string, IOFactory *, std::less<std::string>>;
+  using IOFactoryMap = std::map<std::string, IOFactory *, std::less<>>;
 
   class DatabaseIO;
 
   /** \brief The main public user interface for creating Ioss::DatabaseIO objects.
    */
-  class IOFactory
+  class IOSS_EXPORT IOFactory
   {
   public:
     virtual ~IOFactory() = default;
     static DatabaseIO *create(const std::string &type, const std::string &filename,
-                              DatabaseUsage db_usage, MPI_Comm communicator = MPI_COMM_WORLD,
+                              DatabaseUsage db_usage,
+                              Ioss_MPI_Comm communicator = Ioss::ParallelUtils::comm_world(),
                               const Ioss::PropertyManager &properties = Ioss::PropertyManager());
 
     static int         describe(NameList *names);
+    static NameList    describe();
     static void        clean();
     static std::string show_configuration();
 
@@ -45,7 +49,7 @@ namespace Ioss {
     explicit IOFactory(const std::string &type);
 
     virtual DatabaseIO *make_IO(const std::string &filename, DatabaseUsage db_usage,
-                                MPI_Comm                     communicator,
+                                Ioss_MPI_Comm                communicator,
                                 const Ioss::PropertyManager &properties) const = 0;
 
     virtual std::string show_config() const { return std::string(""); }
@@ -56,4 +60,3 @@ namespace Ioss {
     static IOFactoryMap *registry();
   };
 } // namespace Ioss
-#endif

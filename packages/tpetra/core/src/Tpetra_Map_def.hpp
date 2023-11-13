@@ -45,6 +45,15 @@
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
 
+#include <memory>
+#include <sstream>
+#include <stdexcept>
+#include <typeinfo>
+
+#include "Teuchos_as.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_CommHelpers.hpp"
+
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
@@ -52,25 +61,17 @@
 #include "Tpetra_Details_printOnce.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Util.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
-#include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
-#include <memory>
-#include <sstream>
-#include <stdexcept>
-#include <typeinfo>
+#include "Tpetra_Details_Profiling.hpp"
 
 namespace { // (anonymous)
 
-  template<class ExecutionSpace>
   void
   checkMapInputArray (const char ctorName[],
                       const void* indexList,
                       const size_t indexListSize,
-                      const ExecutionSpace& execSpace,
                       const Teuchos::Comm<int>* const comm)
   {
     using Tpetra::Details::Behavior;
@@ -699,7 +700,9 @@ namespace Tpetra {
         View<GO*, LayoutLeft, device_type>
           nonContigGids (view_alloc ("nonContigGids", WithoutInitializing),
                          nonContigGids_host.size ());
-        Kokkos::deep_copy (nonContigGids, nonContigGids_host);
+        // DEEP_COPY REVIEW - HOST-TO-DEVICE
+        Kokkos::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
+        Kokkos::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         glMap_ = global_to_local_table_type(nonContigGids,
                                             firstContiguousGID_,
@@ -730,7 +733,8 @@ namespace Tpetra {
       }
 
       // We filled lgMap on host above; now sync back to device.
-      Kokkos::deep_copy (lgMap, lgMap_host);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), lgMap, lgMap_host);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
@@ -834,9 +838,9 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     checkMapInputArray ("(GST, const GO[], LO, GO, comm)",
                         indexList, static_cast<size_t> (indexListSize),
-                        Kokkos::DefaultHostExecutionSpace (),
                         comm.getRawPtr ());
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
@@ -866,8 +870,7 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     using std::endl;
-    const char funcName[] =
-      "Map(gblNumInds,entryList(Teuchos::ArrayView),indexBase,comm)";
+    const char* funcName = "Map(gblNumInds,entryList(Teuchos::ArrayView),indexBase,comm)";
 
     const bool verbose = Details::Behavior::verbose("Map");
     std::unique_ptr<std::string> prefix;
@@ -879,10 +882,10 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
     checkMapInputArray ("(GST, ArrayView, GO, comm)",
                         entryList.getRawPtr (), numLclInds,
-                        Kokkos::DefaultHostExecutionSpace (),
                         comm.getRawPtr ());
     // Not quite sure if I trust both ArrayView and View to behave
     // correctly if the pointer is nonnull but the array length is
@@ -946,10 +949,11 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::ProfilingRegion pr(funcName);
     checkMapInputArray ("(GST, Kokkos::View, GO, comm)",
                         entryList.data (),
                         static_cast<size_t> (entryList.extent (0)),
-                        execution_space (), comm.getRawPtr ());
+                        comm.getRawPtr ());
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
@@ -1035,8 +1039,9 @@ namespace Tpetra {
       View<GO*, array_layout, Kokkos::HostSpace> entryList_host
         (view_alloc ("entryList_host", WithoutInitializing),
          entryList.extent(0));
-      Kokkos::deep_copy (entryList_host, entryList);
-
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      Kokkos::deep_copy (execution_space(), entryList_host, entryList);
+      Kokkos::fence("Map::Map"); // UVM follows
       firstContiguousGID_ = entryList_host[0];
       lastContiguousGID_ = firstContiguousGID_+1;
 
@@ -1114,7 +1119,8 @@ namespace Tpetra {
       }
 
       // We filled lgMap on host above; now sync back to device.
-      Kokkos::deep_copy (lgMap, lgMap_host);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), lgMap, lgMap_host);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
@@ -1347,7 +1353,7 @@ namespace Tpetra {
     return local_map_type (glMap_, lgMap_, getIndexBase (),
                            getMinGlobalIndex (), getMaxGlobalIndex (),
                            firstContiguousGID_, lastContiguousGID_,
-                           getNodeNumElements (), isContiguous ());
+                           getLocalNumElements (), isContiguous ());
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1409,7 +1415,7 @@ namespace Tpetra {
 
     // Do both Maps have the same number of indices on each process?
     const int locallyCompat =
-      (getNodeNumElements () == map.getNodeNumElements ()) ? 1 : 0;
+      (getLocalNumElements () == map.getLocalNumElements ()) ? 1 : 0;
 
     int globallyCompat = 0;
     reduceAll<int, int> (*comm_, REDUCE_MIN, locallyCompat, outArg (globallyCompat));
@@ -1428,7 +1434,7 @@ namespace Tpetra {
     // If both Maps are contiguous, we can compare their GID ranges
     // easily by looking at the min and max GID on this process.
     // Otherwise, we'll compare their GID lists.  If only one Map is
-    // contiguous, then we only have to call getNodeElementList() on
+    // contiguous, then we only have to call getLocalElementList() on
     // the noncontiguous Map.  (It's best to avoid calling it on a
     // contiguous Map, since it results in unnecessary storage that
     // persists for the lifetime of the Map.)
@@ -1438,7 +1444,7 @@ namespace Tpetra {
       // equality on all processes, since Map is immutable.
       return true;
     }
-    else if (getNodeNumElements () != map.getNodeNumElements ()) {
+    else if (getLocalNumElements () != map.getLocalNumElements ()) {
       return false;
     }
     else if (getMinGlobalIndex () != map.getMinGlobalIndex () ||
@@ -1454,7 +1460,7 @@ namespace Tpetra {
           TEUCHOS_TEST_FOR_EXCEPTION(
             ! this->isContiguous () || map.isContiguous (), std::logic_error,
             "Tpetra::Map::locallySameAs: BUG");
-          ArrayView<const GO> rhsElts = map.getNodeElementList ();
+          ArrayView<const GO> rhsElts = map.getLocalElementList ();
           const GO minLhsGid = this->getMinGlobalIndex ();
           const size_type numRhsElts = rhsElts.size ();
           for (size_type k = 0; k < numRhsElts; ++k) {
@@ -1470,7 +1476,7 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(
           this->isContiguous () || ! map.isContiguous (), std::logic_error,
           "Tpetra::Map::locallySameAs: BUG");
-        ArrayView<const GO> lhsElts = this->getNodeElementList ();
+        ArrayView<const GO> lhsElts = this->getLocalElementList ();
         const GO minRhsGid = map.getMinGlobalIndex ();
         const size_type numLhsElts = lhsElts.size ();
         for (size_type k = 0; k < numLhsElts; ++k) {
@@ -1484,15 +1490,15 @@ namespace Tpetra {
       else if (this->lgMap_.data () == map.lgMap_.data ()) {
         // Pointers to LID->GID "map" (actually just an array) are the
         // same, and the number of GIDs are the same.
-        return this->getNodeNumElements () == map.getNodeNumElements ();
+        return this->getLocalNumElements () == map.getLocalNumElements ();
       }
       else { // we actually have to compare the GIDs
-        if (this->getNodeNumElements () != map.getNodeNumElements ()) {
+        if (this->getLocalNumElements () != map.getLocalNumElements ()) {
           return false; // We already checked above, but check just in case
         }
         else {
-          ArrayView<const GO> lhsElts =     getNodeElementList ();
-          ArrayView<const GO> rhsElts = map.getNodeElementList ();
+          ArrayView<const GO> lhsElts =     getLocalElementList ();
+          ArrayView<const GO> rhsElts = map.getLocalElementList ();
 
           // std::equal requires that the latter range is as large as
           // the former.  We know the ranges have equal length, because
@@ -1511,12 +1517,15 @@ namespace Tpetra {
     if (this == &map)
       return true;
 
-    // We are going to check if lmap1 is fitted into lmap2
+    // We are going to check if lmap1 is fitted into lmap2:
+    // Is lmap1 (map) a subset of lmap2 (this)?
+    // And do the first lmap1.getLocalNumElements() global elements
+    // of lmap1,lmap2 owned on each process exactly match?
     auto lmap1 = map.getLocalMap();
     auto lmap2 = this->getLocalMap();
 
-    auto numLocalElements1 = lmap1.getNodeNumElements();
-    auto numLocalElements2 = lmap2.getNodeNumElements();
+    auto numLocalElements1 = lmap1.getLocalNumElements();
+    auto numLocalElements2 = lmap2.getLocalNumElements();
 
     if (numLocalElements1 > numLocalElements2) {
       // There are more indices in the first map on this process than in second map.
@@ -1689,7 +1698,7 @@ namespace Tpetra {
            "noncontiguous Map.  Please report this bug to the Tpetra "
            "developers.");
       }
-      const LO numElts = static_cast<LO> (getNodeNumElements ());
+      const LO numElts = static_cast<LO> (getLocalNumElements ());
 
       using Kokkos::view_alloc;
       using Kokkos::WithoutInitializing;
@@ -1709,8 +1718,14 @@ namespace Tpetra {
 
       auto lgMapHost =
         Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
-      Kokkos::deep_copy (lgMapHost, lgMap);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      auto exec_instance = execution_space();
+      Kokkos::deep_copy (exec_instance, lgMapHost, lgMap);
 
+      // There's a non-trivial chance we'll grab this on the host,
+      // so let's make sure the copy finishes
+      exec_instance.fence();
+      
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
       lgMapHost_ = lgMapHost;
@@ -1726,7 +1741,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalElementList () const
   {
     using GO = global_ordinal_type;
 
@@ -1799,7 +1814,7 @@ namespace Tpetra {
     out << "Process " << myRank << " of " << numProcs << ":" << endl;
     Teuchos::OSTab tab1 (out);
 
-    const LO numEnt = static_cast<LO> (this->getNodeNumElements ());
+    const LO numEnt = static_cast<LO> (this->getLocalNumElements ());
     out << "My number of entries: " << numEnt << endl
         << "My minimum global index: " << this->getMinGlobalIndex () << endl
         << "My maximum global index: " << this->getMaxGlobalIndex () << endl;
@@ -1979,7 +1994,7 @@ namespace Tpetra {
       // The disabled code here throws the following exception in
       // Map's replaceCommWithSubset test:
       //
-      // Throw test that evaluated to true: static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::Details::ArithTraits<ValueType>::max ())
+      // Throw test that evaluated to true: static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (::Kokkos::ArithTraits<ValueType>::max ())
       // 10:
       // 10:   Tpetra::Details::FixedHashTable: The number of keys -3 is greater than the maximum representable ValueType value 2147483647.  This means that it is not possible to use this constructor.
       // 10:   Process 3: origComm->replaceCommWithSubset(subsetComm) threw an exception: /scratch/prj/Trilinos/Trilinos/packages/tpetra/core/src/Tpetra_Details_FixedHashTable_def.hpp:1044:
@@ -1988,19 +2003,19 @@ namespace Tpetra {
       using size_type =
         typename std::decay<decltype (lgMap.extent (0)) >::type;
       const size_type lclNumInds =
-        static_cast<size_type> (this->getNodeNumElements ());
+        static_cast<size_type> (this->getLocalNumElements ());
       using Teuchos::TypeNameTraits;
       TEUCHOS_TEST_FOR_EXCEPTION
         (lgMap.extent (0) != lclNumInds, std::logic_error,
          "Tpetra::Map::replaceCommWithSubset: Result of getMyGlobalIndices() "
          "has length " << lgMap.extent (0) << " (of type " <<
-         TypeNameTraits<size_type>::name () << ") != this->getNodeNumElements()"
-         " = " << this->getNodeNumElements () << ".  The latter, upon being "
+         TypeNameTraits<size_type>::name () << ") != this->getLocalNumElements()"
+         " = " << this->getLocalNumElements () << ".  The latter, upon being "
          "cast to size_type = " << TypeNameTraits<size_type>::name () << ", "
          "becomes " << lclNumInds << ".  Please report this bug to the Tpetra "
          "developers.");
 #else
-      Teuchos::ArrayView<const GO> lgMap = this->getNodeElementList ();
+      Teuchos::ArrayView<const GO> lgMap = this->getLocalElementList ();
 #endif // 1
 
       const GO indexBase = this->getIndexBase ();
@@ -2523,7 +2538,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
         cerr << os.str ();
       }
       ArrayView<const GO> myGids =
-        (myRank == 0) ? M->getNodeElementList() : Teuchos::null;
+        (myRank == 0) ? M->getLocalElementList() : Teuchos::null;
       auto retMap =
         rcp(new map_type(GINV, myGids(), M->getIndexBase(),
                          M->getComm()));
@@ -2552,8 +2567,8 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
       cerr << os.str ();
     }
     Tpetra::Directory<LO, GO, NT> directory;
-    const size_t numMyElems = M->getNodeNumElements ();
-    ArrayView<const GO> myElems = M->getNodeElementList ();
+    const size_t numMyElems = M->getLocalNumElements ();
+    ArrayView<const GO> myElems = M->getLocalElementList ();
     Array<int> owner_procs_vec (numMyElems);
 
     if (verbose) {
@@ -2648,8 +2663,8 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
     os << *prefix << "Done initializing Directory" << endl;
     cerr << os.str ();
   }
-  size_t numMyElems = M->getNodeNumElements ();
-  ArrayView<const GO> myElems = M->getNodeElementList ();
+  size_t numMyElems = M->getLocalNumElements ();
+  ArrayView<const GO> myElems = M->getLocalElementList ();
   Array<int> owner_procs_vec (numMyElems);
   if (verbose) {
     std::ostringstream os;

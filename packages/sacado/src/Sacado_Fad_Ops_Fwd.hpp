@@ -82,9 +82,7 @@ namespace Sacado {
     template <typename ExprT> class ATanhOp;
     template <typename ExprT> class AbsOp;
     template <typename ExprT> class FAbsOp;
-#ifdef HAVE_SACADO_CXX11
     template <typename ExprT> class CbrtOp;
-#endif
     template <typename ExprT, bool is_simd = IsSimdType<ExprT>::value>
     class SafeSqrtOp;
 

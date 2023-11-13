@@ -196,7 +196,7 @@ nodal attribute 1 = 'Node_attr_2'
   0.0
  10.0
 
-after ex_get_map, error =   0
+after ex_get_id_map, error =   0
 elem_map(0) = 1 
 elem_map(1) = 2 
 elem_map(2) = 3 

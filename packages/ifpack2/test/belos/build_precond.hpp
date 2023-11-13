@@ -61,10 +61,11 @@ build_precond (Teuchos::ParameterList& test_params,
   using std::cout;
   using std::endl;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  Teuchos::Time timer_init("init");
-  Teuchos::Time timer("precond");
-  Teuchos::Time timer2("precond_reuse");
-  const int myRank = A->getRowMap ()->getComm ()->getRank ();
+  Teuchos::Time timer_init("Init preconditioner");
+  Teuchos::Time timer("Compute preconditioner");
+  Teuchos::Time timer2("Compute preconditioner (reuse)");
+  auto comm = A->getRowMap ()->getComm ();
+  const int myRank = comm->getRank ();
 
   RCP<FancyOStream> out = getFancyOStream (rcpFromRef (cout));
 
@@ -89,12 +90,14 @@ build_precond (Teuchos::ParameterList& test_params,
   if (myRank == 0) {
     *out << "Configuring, initializing, and computing Ifpack2 preconditioner" << endl;
   }
+  comm->barrier();
   {
     OSTab tab (*out);
     prec->setParameters (tif_params);
     {
       Teuchos::TimeMonitor timeMon (timer_init);
       prec->initialize ();
+      comm->barrier();
     }
      if (myRank == 0) {
       *out << "Time Init: " << timer_init.totalElapsedTime() << endl;
@@ -102,6 +105,7 @@ build_precond (Teuchos::ParameterList& test_params,
     {
       Teuchos::TimeMonitor timeMon (timer);
       prec->compute ();
+      comm->barrier();
     }
     if (myRank == 0) {
       *out << "Finished computing Ifpack2 preconditioner" << endl;
@@ -113,6 +117,7 @@ build_precond (Teuchos::ParameterList& test_params,
 	{
 	  Teuchos::TimeMonitor timeMon (timer2);
 	  prec->compute ();
+          comm->barrier();
 	}
 	if (myRank == 0) {
 	  *out << "Finished recomputing Ifpack2 preconditioner" 

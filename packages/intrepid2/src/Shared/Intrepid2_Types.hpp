@@ -122,11 +122,11 @@ namespace Intrepid2 {
     /// The maximum reconstruction order.
     static constexpr ordinal_type MaxOrder             = 8;
     /// The maximum number of integration points for direct cubature rules.
-    static constexpr ordinal_type MaxIntegrationPoints = 1001;    
+    static constexpr ordinal_type MaxIntegrationPoints = 4893;    
     /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.
     static constexpr ordinal_type MaxCubatureDegreeEdge= 20;      
     /// The maximum degree of the polynomial that can be integrated exactly by a direct triangle rule.
-    static constexpr ordinal_type MaxCubatureDegreeTri = 20;      
+    static constexpr ordinal_type MaxCubatureDegreeTri = 50;      
     /// The maximum degree of the polynomial that can be integrated exactly by a direct tetrahedron rule.
     static constexpr ordinal_type MaxCubatureDegreeTet = 20;     
     /// The maximum degree of the polynomial that can be integrated exactly by a direct pyramid rule.
@@ -139,6 +139,8 @@ namespace Intrepid2 {
     static constexpr ordinal_type MaxDerivative        = 10;
     /// Maximum number of tensor/Cartesian products that can be taken: this allows hypercube basis in 7D to be formed by 7 line basis components.
     static constexpr ordinal_type MaxTensorComponents  = 7;
+    /// Maximum number of components that a VectorData object will store -- 66 corresponds to OPERATOR_D10 on an H^1 hexahedral basis.  For now, we limit to 7, matching MaxTensorComponents.
+    static constexpr ordinal_type MaxVectorComponents  = 7;
 
     // we do not want to use hard-wired epsilon, threshold and tolerence. 
     // static constexpr double Epsilon   = 1.0e-16; 

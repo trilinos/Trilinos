@@ -16,7 +16,8 @@ outputFile = argv[2]
 
 functionInt = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Int\s*[^\s*]+\s*\)')
 functionDouble = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Real\s*[^\s*]+\s*\)')
-functionDoubleInt = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Real\s*[^\s*]+\s*\)')
+functionDoubleInt = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Real\s*[^\s*]+\s*,\s*HYPRE_Int\s*[^\s*]+\s*\)')
+functionIntDouble = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Real\s*[^\s*]+\s*\)')
 functionIntInt = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Int\s*[^\s*]+\s*\)')
 functionIntStar = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Int\s*\*[^\s*]+\s*\)')
 functionDoubleStar = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Real\s*\*[^\s*]+\s*\)')
@@ -59,6 +60,12 @@ with open(outputFile, 'w') as out:
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
     out.write("const std::map<std::string, double_int_func> FunctionParameter::hypreMapDoubleIntFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+
+    out.write('\n\n')
+    m = functionIntDouble.findall(s)
+    m = list(set(m))
+    fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
+    out.write("const std::map<std::string, int_double_func> FunctionParameter::hypreMapIntDoubleFunc_ = {{\n{}}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionIntInt.findall(s)

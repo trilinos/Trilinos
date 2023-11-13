@@ -44,9 +44,19 @@
 
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
-#include "Kokkos_Core_fwd.hpp"
-#include "Kokkos_View.hpp"
+#include "Kokkos_View_UQ_PCE_Fwd.hpp"
+
+// We are hooking into Kokkos Core internals here
+// Need to define this macro since we include non-public headers
+#ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE
+#define KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 #include "Kokkos_Layout.hpp"
+#ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE
+#undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
+#endif
 
 #include "Kokkos_AnalyzeStokhosShape.hpp"
 #include "Kokkos_View_Utils.hpp"
@@ -54,22 +64,6 @@
 
 
 //----------------------------------------------------------------------------
-
-namespace Sacado {
-  namespace UQ {
-    template <typename Storage >
-    class PCE;
-  }
-}
-
-namespace Kokkos {
-
-  namespace Impl {
-    template<class Space, class T, class ... P>
-    struct MirrorType;
-  }
-
-}
 
 namespace Kokkos {
 namespace Experimental {
@@ -95,111 +89,6 @@ struct is_ViewPCEContiguous< Kokkos::View<D,P...> , Args... > {
 } // namespace Kokkos
 
 namespace Kokkos {
-
-// Declare overloads of create_mirror() so they are in scope
-// Kokkos_Core.hpp is included below
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror(
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
-    !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-        Kokkos::LayoutStride >::value >::type * = 0);
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror(
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
-    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-      Kokkos::LayoutStride >::value >::type * = 0);
-
-template<class Space, class T, class ... P>
-typename Impl::MirrorType<Space,T,P ...>::view_type
-create_mirror(
-  const Space&,
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Experimental::Impl::ViewPCEContiguous >::value >::type * = 0);
-
-// Overload of deep_copy for UQ::PCE views intializing to a constant scalar
-template< class DT, class ... DP >
-void deep_copy(
-  const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::array_type::value_type & value
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-                 )>::type * = 0 );
-
-// Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
-template< class DT, class ... DP >
-void deep_copy(
-  const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::value_type & value
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-                 )>::type * = 0 );
-
-// Overload of deep_copy for UQ::PCE views intializing to a constant scalar
-template< class ExecSpace , class DT, class ... DP >
-void deep_copy(
-  const ExecSpace &,
-  const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::array_type::value_type & value
-  , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-                 )>::type * = 0 );
-
-// Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
-template< class ExecSpace , class DT, class ... DP >
-void deep_copy(
-  const ExecSpace &,
-  const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::value_type & value
-  , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-                 )>::type * = 0 );
-
-/* Specialize for deep copy of UQ::PCE */
-template< class DT , class ... DP , class ST , class ... SP >
-inline
-void deep_copy( const View<DT,DP...> & dst ,
-                const View<ST,SP...> & src
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  &&
-  std::is_same< typename ViewTraits<ST,SP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-                  )>::type * = 0 );
-
-/* Specialize for deep copy of UQ::PCE */
-template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
-inline
-void deep_copy( const ExecSpace &,
-                const View<DT,DP...> & dst ,
-                const View<ST,SP...> & src
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  &&
-  std::is_same< typename ViewTraits<ST,SP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-                  )>::type * = 0 );
 
 template <typename T, typename ... P>
 struct is_view_uq_pce< View<T,P...> > {
@@ -311,16 +200,13 @@ struct FlatArrayType< View<D,P...>,
 
 template< class T , class ... P >
 inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror( const Kokkos::View<T,P...> & src
-             , typename std::enable_if<
-                 std::is_same< typename ViewTraits<T,P...>::specialize ,
-                   Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-               &&
-                 ! std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
-                               , Kokkos::LayoutStride >::value
-               >::type *
-             )
+typename std::enable_if<
+  std::is_same< typename ViewTraits<T,P...>::specialize ,
+    Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
+  !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+    Kokkos::LayoutStride >::value,
+  typename Kokkos::View<T,P...>::HostMirror>::type
+create_mirror(const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
   typedef typename src_type::HostMirror  dst_type ;
@@ -334,16 +220,13 @@ create_mirror( const Kokkos::View<T,P...> & src
 
 template< class T , class ... P >
 inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror( const Kokkos::View<T,P...> & src
-             , typename std::enable_if<
-                 std::is_same< typename ViewTraits<T,P...>::specialize ,
-                     Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-                &&
-                   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
-                               , Kokkos::LayoutStride >::value
-               >::type *
-             )
+typename std::enable_if<
+  std::is_same< typename ViewTraits<T,P...>::specialize ,
+    Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
+  std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+    Kokkos::LayoutStride >::value,
+  typename Kokkos::View<T,P...>::HostMirror>::type
+create_mirror(const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
   typedef typename src_type::HostMirror  dst_type ;
@@ -374,18 +257,131 @@ create_mirror( const Kokkos::View<T,P...> & src
                              src.impl_map().cijk()), layout);
 }
 
-template<class Space, class T, class ... P>
-typename Impl::MirrorType<Space,T,P ...>::view_type
-create_mirror(const Space& , const Kokkos::View<T,P...> & src
-             , typename std::enable_if<
-                 std::is_same< typename ViewTraits<T,P...>::specialize ,
-                     Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-               >::type *) {
+template<class Space, class T, class ... P, typename Enabled>
+  typename std::enable_if<
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Experimental::Impl::ViewPCEContiguous >::value,
+  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+create_mirror(const Space& , const Kokkos::View<T,P...> & src)
+{
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
   return typename Impl::MirrorType<Space,T,P ...>::view_type(
     view_alloc(src.label(), src.impl_map().cijk()),layout);
+}
+
+template< class T , class ... P >
+inline
+typename std::enable_if<
+  std::is_same< typename ViewTraits<T,P...>::specialize ,
+    Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
+  !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+      Kokkos::LayoutStride >::value,
+  typename Kokkos::View<T,P...>::HostMirror>::type
+create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
+              const Kokkos::View<T,P...> & src)
+{
+  typedef View<T,P...>                   src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+
+  return dst_type(view_alloc(std::string(src.label()).append("_mirror"), wi,
+                             src.impl_map().cijk()), layout);
+}
+
+template< class T , class ... P >
+inline
+typename std::enable_if<
+  std::is_same< typename ViewTraits<T,P...>::specialize ,
+    Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
+  std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+    Kokkos::LayoutStride >::value,
+  typename Kokkos::View<T,P...>::HostMirror>::type
+create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
+              const Kokkos::View<T,P...> & src)
+{
+  typedef View<T,P...>                   src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  Kokkos::LayoutStride layout ;
+
+  layout.dimension[0] = src.extent(0);
+  layout.dimension[1] = src.extent(1);
+  layout.dimension[2] = src.extent(2);
+  layout.dimension[3] = src.extent(3);
+  layout.dimension[4] = src.extent(4);
+  layout.dimension[5] = src.extent(5);
+  layout.dimension[6] = src.extent(6);
+  layout.dimension[7] = src.extent(7);
+
+  layout.stride[0] = src.stride_0();
+  layout.stride[1] = src.stride_1();
+  layout.stride[2] = src.stride_2();
+  layout.stride[3] = src.stride_3();
+  layout.stride[4] = src.stride_4();
+  layout.stride[5] = src.stride_5();
+  layout.stride[6] = src.stride_6();
+  layout.stride[7] = src.stride_7();
+
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+
+  return dst_type(view_alloc(std::string(src.label()).append("_mirror"), wi,
+                             src.impl_map().cijk()), layout);
+}
+
+template<class Space, class T, class ... P, typename Enable>
+typename std::enable_if<
+  std::is_same< typename ViewTraits<T,P...>::specialize ,
+    Kokkos::Experimental::Impl::ViewPCEContiguous >::value,
+  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
+              const Space& , const Kokkos::View<T,P...> & src)
+{
+  typedef View<T,P...> src_type ;
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+  return typename Impl::MirrorType<Space,T,P ...>::view_type(
+    view_alloc(src.label(), wi, src.impl_map().cijk()), layout);
+}
+
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name,
+    typename std::enable_if<
+        std::is_same<typename ViewTraits<T, P...>::specialize,
+            Kokkos::Experimental::Impl::ViewPCEContiguous>::value &&
+        Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type*)
+{
+  (void)name;
+  fence(
+      "Kokkos::create_mirror_view_and_copy: fence before returning src view");  // same behavior as deep_copy(src, src)
+  return src;
+}
+
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name,
+    typename std::enable_if<
+        std::is_same<typename ViewTraits<T, P...>::specialize,
+            Kokkos::Experimental::Impl::ViewPCEContiguous>::value &&
+        !Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type*)
+{
+  using src_type    = View<T,P...>;
+  using Mirror      = typename Impl::MirrorViewType<Space, T, P...>::view_type;
+  std::string label = name.empty() ? src.label() : name;
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+  auto mirror       = typename Mirror::non_const_type{
+      view_alloc(WithoutInitializing, label, src.impl_map().cijk()), layout};
+  deep_copy(mirror, src);
+  return mirror;
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant scalar
@@ -437,7 +433,7 @@ void deep_copy(
   const View<DT,DP...> & view ,
   const typename View<DT,DP...>::array_type::value_type & value
   , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  Kokkos::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
   )>::type * )
@@ -463,7 +459,7 @@ void deep_copy(
   const View<DT,DP...> & view ,
   const typename View<DT,DP...>::value_type & value
   , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  Kokkos::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
   )>::type * )
@@ -563,11 +559,17 @@ void deep_copy( const ExecSpace &,
     else {
 
       typedef View< typename src_type::non_const_data_type ,
-                    typename src_type::array_layout ,
+                    std::conditional_t<std::is_same<typename src_type::array_layout,
+                                                    Kokkos::LayoutStride>::value,
+                                       Kokkos::LayoutRight,
+                                       typename src_type::array_layout>,
                     typename src_type::execution_space > tmp_src_type;
       typedef typename tmp_src_type::array_type tmp_src_array_type;
       typedef View< typename dst_type::non_const_data_type ,
-                    typename dst_type::array_layout ,
+                    std::conditional_t<std::is_same<typename dst_type::array_layout,
+                                                    Kokkos::LayoutStride>::value,
+                                       Kokkos::LayoutRight,
+                                       typename dst_type::array_layout>,
                     typename dst_type::execution_space > tmp_dst_type;
       typedef typename tmp_dst_type::array_type tmp_dst_array_type;
 
@@ -585,7 +587,7 @@ void deep_copy( const ExecSpace &,
         src_dims[5] = src.extent(5);
         src_dims[6] = src.extent(6);
         src_dims[7] = src.extent(7);
-        src_dims[src_type::Rank] = dimension_scalar(src);
+        src_dims[src_type::rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
           view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
@@ -610,7 +612,7 @@ void deep_copy( const ExecSpace &,
         dst_dims[5] = dst.extent(5);
         dst_dims[6] = dst.extent(6);
         dst_dims[7] = dst.extent(7);
-        dst_dims[dst_type::Rank] = dimension_scalar(dst);
+        dst_dims[dst_type::rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
           view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
@@ -634,7 +636,7 @@ void deep_copy( const ExecSpace &,
         src_dims[5] = src.extent(5);
         src_dims[6] = src.extent(6);
         src_dims[7] = src.extent(7);
-        src_dims[src_type::Rank] = dimension_scalar(src);
+        src_dims[src_type::rank] = dimension_scalar(src);
         tmp_src_type src_tmp(
           view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
           src_dims[0], src_dims[1], src_dims[2], src_dims[3],
@@ -650,7 +652,7 @@ void deep_copy( const ExecSpace &,
         dst_dims[5] = dst.extent(5);
         dst_dims[6] = dst.extent(6);
         dst_dims[7] = dst.extent(7);
-        dst_dims[dst_type::Rank] = dimension_scalar(dst);
+        dst_dims[dst_type::rank] = dimension_scalar(dst);
         tmp_dst_type dst_tmp(
           view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
           dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
@@ -681,6 +683,35 @@ void deep_copy( const View<DT,DP...> & dst ,
   Kokkos::fence();
   Kokkos::deep_copy(exec_space(), dst, src);
   Kokkos::fence();
+}
+
+namespace Impl {
+
+template <unsigned N, typename... Args>
+KOKKOS_FUNCTION std::enable_if_t<
+    N == View<Args...>::rank &&
+    std::is_same<typename ViewTraits<Args...>::specialize,
+                 Kokkos::Experimental::Impl::ViewPCEContiguous>::value,
+    View<Args...>>
+as_view_of_rank_n(View<Args...> v) {
+  return v;
+}
+
+// Placeholder implementation to compile generic code for DynRankView; should
+// never be called
+template <unsigned N, typename T, typename... Args>
+std::enable_if_t<
+    N != View<T, Args...>::rank &&
+        std::is_same<typename ViewTraits<T, Args...>::specialize,
+                     Kokkos::Experimental::Impl::ViewPCEContiguous>::value,
+    View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
+         Args...>>
+as_view_of_rank_n(View<T, Args...>) {
+  Kokkos::Impl::throw_runtime_exception(
+      "Trying to get at a View of the wrong rank");
+  return {};
+}
+
 }
 
 }
@@ -1366,6 +1397,7 @@ public:
     //  Only set the the pointer and initialize if the allocation is non-zero.
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
+      auto space = ((ViewCtorProp<void,execution_space> const &) prop).value;
 
       m_impl_handle.set( reinterpret_cast< pointer_type >( record->data() ),
                     m_impl_offset.span(), m_sacado_size );
@@ -1373,7 +1405,7 @@ public:
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
       record->m_destroy = m_impl_handle.create_functor(
-        ( (ViewCtorProp<void,execution_space> const &) prop).value
+        space
         , ctor_prop::initialize
         , m_impl_offset.span()
         , m_sacado_size
@@ -1381,9 +1413,19 @@ public:
 
       // Construct values
       record->m_destroy.construct_shared_allocation();
+      space.fence();
     }
 
     return record ;
+  }
+
+  template< class ... P >
+  SharedAllocationRecord<> *
+  allocate_shared( ViewCtorProp< P... > const & prop
+                 , typename Traits::array_layout const & layout
+                 , bool /*execution_space_specified*/)
+  {
+    return allocate_shared(prop, layout);
   }
 
 };
@@ -1586,7 +1628,11 @@ public:
                                       typename DstTraits::array_layout(
                                         dims[0] , dims[1] , dims[2] , dims[3] ,
                                         dims[4] , dims[5] , dims[6] , dims[7] ) );
-      dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
+
+      // For CudaLDGFetch, which doesn't define operator=() for pointer RHS
+      // but does define a constructor
+      //dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
+      dst.m_impl_handle = typename DstType::handle_type(src.m_impl_handle.scalar_ptr);
     }
 };
 

@@ -99,15 +99,15 @@ int verifyInputAdapter(
 {
   typedef typename Zoltan2::InputTraits<User>::offset_t offset_t;
 
-  RCP<const Comm<int> > comm = graph.getComm();
+  auto comm = graph.getComm();
   int fail = 0, gfail=0;
 
   if (!fail &&
-      ia.getLocalNumVertices() != graph.getNodeNumRows())
+      ia.getLocalNumVertices() != graph.getLocalNumRows())
     fail = 4;
 
   if (!fail &&
-      ia.getLocalNumEdges() != graph.getNodeNumEntries())
+      ia.getLocalNumEdges() != graph.getLocalNumEntries())
       fail = 6;
 
   gfail = globalFail(*comm, fail);
@@ -122,7 +122,7 @@ int verifyInputAdapter(
     ia.getVertexIDsView(vtxIds);
     ia.getEdgesView(offsets, edgeIds);
 
-    if (nvtx != graph.getNodeNumRows())
+    if (nvtx != graph.getLocalNumRows())
       fail = 8;
 
     gfail = globalFail(*comm, fail);
@@ -163,16 +163,16 @@ int main(int narg, char *arg[])
   TEST_FAIL_AND_EXIT(*comm, aok, "input ", 1);
 
   // Input crs graph and row graph cast from it.
-  RCP<ztcrsgraph_t> tG = uinput->getUITpetraCrsGraph();
-  RCP<ztrowgraph_t> trG = rcp_dynamic_cast<ztrowgraph_t>(tG);
+  auto tG = uinput->getUITpetraCrsGraph();
+  auto trG = rcp_dynamic_cast<ztrowgraph_t>(tG);
 
   RCP<ztrowgraph_t> newG;   // migrated graph
 
-  size_t nvtx = tG->getNodeNumRows();
+  size_t nvtx = tG->getLocalNumRows();
 
   // To test migration in the input adapter we need a Solution object.
 
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
+  const auto env = rcp(new Zoltan2::Environment(comm));
 
   int nWeights = 1;
 
@@ -224,8 +224,7 @@ int main(int narg, char *arg[])
       gfail = globalFail(*comm, fail);
 
       if (!gfail){
-        RCP<const ztrowgraph_t> cnewG =
-                                rcp_const_cast<const ztrowgraph_t>(newG);
+        auto cnewG = rcp_const_cast<const ztrowgraph_t>(newG);
         RCP<adapter_t> newInput;
         try{
           newInput = rcp(new adapter_t(cnewG));

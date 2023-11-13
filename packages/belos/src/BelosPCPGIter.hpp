@@ -55,6 +55,7 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosCGIteration.hpp"
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
@@ -128,42 +129,6 @@ namespace Belos {
   
   //@}
   
-  //! @name PCPGIter Exceptions
-  //@{
-  
-  /** \brief PCPGIterInitFailure is thrown when the PCPGIter object is unable to
-   * generate an initial iterate in the PCPGIter::initialize() routine.
-   *
-   * This std::exception is thrown from the PCPGIter::initialize() method, which is
-   * called by the user or from the PCPGIter::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this std::exception is thrown,
-   * PCPGIter::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-  class PCPGIterInitFailure : public BelosError {public:
-    PCPGIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief PCPGIterateFailure is thrown when the PCPGIter object breaks down.
-   * The std::exception is thrown from the PCPGIter::iterate() method, and
-   * is due to a coefficient matrix that is not positive definite.
-   */
-  class PCPGIterateFailure : public BelosError {public:
-    PCPGIterateFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief PCPGIterOrthoFailure is thrown when the PCPGIter object is unable to
-   * compute independent direction vectors in the PCPGIter::iterate() routine.
-   *
-   * This std::exception is thrown from the PCPGIter::iterate() method.
-   *
-   */
-  class PCPGIterOrthoFailure : public BelosError {public:
-    PCPGIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
   template<class ScalarType, class MV, class OP>
   class PCPGIter : virtual public Iteration<ScalarType,MV,OP> {
     
@@ -695,12 +660,12 @@ namespace Belos {
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution std::vector only has one column.
-    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, PCPGIterInitFailure,
-                        "Belos::CGIter::iterate(): current linear system has more than one std::vector!" );
+    TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, CGIterationInitFailure,
+                        "Belos::PCPGIter::iterate(): current linear system has more than one std::vector!" );
 
     //Check that the input is correctly set up 
-    TEUCHOS_TEST_FOR_EXCEPTION( curDim_  != prevUdim_ + 1, PCPGIterInitFailure,
-                        "Belos::CGIter::iterate(): mistake in initialization !" );
+    TEUCHOS_TEST_FOR_EXCEPTION( curDim_  != prevUdim_ + 1, CGIterationInitFailure,
+                        "Belos::PCPGIter::iterate(): mistake in initialization !" );
 
 
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -765,15 +730,15 @@ namespace Belos {
         (*D_)(iter_ -1 ,iter_ -1 ) = pAp(0,0);
 
       // positive pAp required 
-      TEUCHOS_TEST_FOR_EXCEPTION( pAp(0,0) <= zero, PCPGIterateFailure,
-                          "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
+      TEUCHOS_TEST_FOR_EXCEPTION( pAp(0,0) <= zero, CGPositiveDefiniteFailure,
+                          "Belos::PCPGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
       // alpha := <R_,Z_> / <P,AP>
       alpha(0,0) = rHz(0,0) / pAp(0,0);
 
       // positive alpha required 
-      TEUCHOS_TEST_FOR_EXCEPTION( alpha(0,0) <= zero, PCPGIterateFailure,
-                          "Belos::CGIter::iterate(): non-positive value for alpha encountered!" );
+      TEUCHOS_TEST_FOR_EXCEPTION( alpha(0,0) <= zero, CGPositiveDefiniteFailure,
+                          "Belos::PCPGIter::iterate(): non-positive value for alpha encountered!" );
 
       // solution update  x += alpha * P
       if( curDim_ < savedBlocks_ ){

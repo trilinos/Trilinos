@@ -35,8 +35,8 @@ DualViewType create_dualview(const std::string& name, unsigned size)
 
 inline void setup_mesh_4hex_4block(stk::mesh::BulkData& bulk, unsigned bucketCapacity)
 {
-  std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(4);
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc);
+  std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(4);
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, meshDesc);
 }
 
 inline void setup_mesh_3hex_3block(stk::mesh::BulkData& bulk, unsigned bucketCapacity)
@@ -44,7 +44,7 @@ inline void setup_mesh_3hex_3block(stk::mesh::BulkData& bulk, unsigned bucketCap
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                          "0,2,HEX_8,5,6,7,8,9,10,11,12,block_2\n"
                          "0,3,HEX_8,9,10,11,12,13,14,15,16,block_3";
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc);
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, meshDesc);
 }
 
 inline void setup_mesh_3hex_2block(stk::mesh::BulkData& bulk, unsigned bucketCapacity)
@@ -52,15 +52,37 @@ inline void setup_mesh_3hex_2block(stk::mesh::BulkData& bulk, unsigned bucketCap
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                          "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n"
                          "0,3,HEX_8,9,10,11,12,13,14,15,16,block_3";
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc);
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, meshDesc);
 }
 
 inline void setup_mesh_2hex_2block(stk::mesh::BulkData& bulk, unsigned bucketCapacity)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                          "0,2,HEX_8,5,6,7,8,9,10,11,12,block_2";
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc);
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, meshDesc);
 }
+
+struct CheckElementMembership {
+  using BucketPartOrdinalType = Kokkos::View<stk::mesh::PartOrdinal*, stk::ngp::MemSpace>;
+  CheckElementMembership(
+      const stk::mesh::NgpMesh& _ngpMesh, BucketPartOrdinalType _bucketPartOrdinals, size_t _numBuckets)
+    : ngpMesh(_ngpMesh), bucketPartOrdinals(_bucketPartOrdinals), numBuckets(_numBuckets)
+  {
+  }
+
+  KOKKOS_FUNCTION
+  void operator()(size_t) const
+  {
+    for (unsigned i = 0; i < numBuckets; ++i) {
+      NGP_EXPECT_TRUE(ngpMesh.get_bucket(stk::topology::ELEM_RANK, i).member(bucketPartOrdinals[i]));
+    }
+  }
+
+private:
+  stk::mesh::NgpMesh ngpMesh;
+  BucketPartOrdinalType bucketPartOrdinals;
+  size_t numBuckets;
+};
 
 inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vector<BucketContents> & expectedBucketLayout)
 {
@@ -93,12 +115,8 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
   Kokkos::deep_copy(bucketPartOrdinals, hostBucketPartOrdinals);
 
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t /*index*/) {
-                         NGP_ASSERT_EQ(ngpMesh.num_buckets(stk::topology::ELEM_RANK), numBuckets);
-                         for (unsigned i = 0; i < numBuckets; ++i) {
-                           NGP_EXPECT_TRUE(ngpMesh.get_bucket(stk::topology::ELEM_RANK, i).member(bucketPartOrdinals[i]));
-                         }
-                       });
+  CheckElementMembership checkElementMembership(ngpMesh, bucketPartOrdinals, numBuckets);
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), checkElementMembership);
 
   using BucketEntitiesType = Kokkos::View<stk::mesh::EntityId*, stk::ngp::MemSpace>;
   BucketEntitiesType bucketEntities("bucketEntities", numElemsAcrossBuckets+numBuckets);
@@ -113,12 +131,12 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
   }
   Kokkos::deep_copy(bucketEntities, hostBucketEntities);
 
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t /*index*/) {
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(size_t /*index*/) {
                          NGP_ASSERT_EQ(ngpMesh.num_buckets(stk::topology::ELEM_RANK), numBuckets);
                          size_t idx = 0;
                          for (unsigned bucketIdx = 0; bucketIdx < numBuckets; ++bucketIdx) {
                            const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK,
-                                                                                              bucketIdx);
+                           bucketIdx);
                            NGP_ASSERT_EQ(bucket.size(), bucketEntities[idx++]);
                            for (size_t i = 0; i < bucket.size(); ++i) {
                              NGP_EXPECT_EQ(ngpMesh.identifier(bucket[i]), bucketEntities[idx++]);

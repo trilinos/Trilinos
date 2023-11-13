@@ -277,6 +277,22 @@ TEST(CommandLineParser, oneOptionalPositional_optionAndValueProvided_getValueRet
   EXPECT_EQ(parser.get_option_value<std::string>("positionalOpt"), "providedValue");
 }
 
+TEST(CommandLineParser, oneOptionalPositional_disallowUnrecognized_unrecognizedOptionInPlaceOfPositional_errorDuringParse)
+{
+  stk::CommandLineParser parser;
+  parser.add_optional_positional<std::string>({"positionalOpt", "p", "One positional description"}, "defaultValue");
+  parser.disallow_unrecognized();
+
+  Args args({"exe", "--unrecognizedOpt"});
+  EXPECT_TRUE(parse_command_line_with_error(parser, args, "Unrecognized option: '--unrecognizedOpt'"));
+
+  EXPECT_FALSE(parser.is_empty());
+  EXPECT_FALSE(parser.is_option_parsed("positionalOpt"));
+  EXPECT_TRUE(parser.is_option_provided("positionalOpt"));
+
+  EXPECT_EQ(parser.get_option_value<std::string>("positionalOpt"), "defaultValue");
+}
+
 
 //==============================================================================
 TEST(CommandLineParser, oneRequired_notProvided_printErrorDuringParse_getValueThrows)
@@ -446,6 +462,35 @@ TEST(CommandLineParser, oneOptional_optionAndNoValueProvided_errorDuringParse)
   EXPECT_EQ(parser.get_option_value<std::string>("optionalOpt"), "defaultValue");
 }
 
+TEST(CommandLineParser, oneOptional_noDefault_notProvided_getValueThrows)
+{
+  stk::CommandLineParser parser;
+  parser.add_optional<std::string>({"optionalOpt" ,"o", "One optional option description"});
+
+  Args args({"exe"});
+  EXPECT_TRUE(parse_command_line_without_error(parser, args));
+
+  EXPECT_TRUE(parser.is_empty());
+  EXPECT_FALSE(parser.is_option_parsed("optionalOpt"));
+  EXPECT_FALSE(parser.is_option_provided("optionalOpt"));
+
+  EXPECT_THROW(parser.get_option_value<std::string>("optionalOpt"), std::logic_error);
+}
+
+TEST(CommandLineParser, oneOptional_noDefault_optionProvided_getValueReturnsProvided)
+{
+  stk::CommandLineParser parser;
+  parser.add_optional<std::string>({"optionalOpt" ,"o", "One optional option description"});
+
+  Args args({"exe", "--optionalOpt", "providedValue"});
+  EXPECT_TRUE(parse_command_line_without_error(parser, args));
+
+  EXPECT_FALSE(parser.is_empty());
+  EXPECT_TRUE(parser.is_option_parsed("optionalOpt"));
+  EXPECT_TRUE(parser.is_option_provided("optionalOpt"));
+
+  EXPECT_EQ(parser.get_option_value<std::string>("optionalOpt"), "providedValue");
+}
 
 //==============================================================================
 TEST(CommandLineParser, oneOptionalImplicit_provided_getValueReturnsProvided)
@@ -515,6 +560,22 @@ TEST(CommandLineParser, twoRequired_bothOptionsAndValuesProvided_getValueReturns
 }
 
 
+TEST(CommandLineParser, oneRequiredPositional_disallowUnrecognized_unrecognizedOptionInPlaceOfPositional_errorDuringParse)
+{
+  stk::CommandLineParser parser;
+  parser.add_required_positional<std::string>({"positionalOpt", "p", "One positional description"});
+  parser.disallow_unrecognized();
+
+  Args args({"exe", "--unrecognizedOpt"});
+  EXPECT_TRUE(parse_command_line_with_error(parser, args, "Required option '--positionalOpt' not found"));
+
+  EXPECT_TRUE(parser.is_empty());
+  EXPECT_FALSE(parser.is_option_parsed("positionalOpt"));
+  EXPECT_FALSE(parser.is_option_provided("positionalOpt"));
+
+  EXPECT_THROW(parser.get_option_value<std::string>("positionalOpt"), std::exception);
+}
+
 TEST(CommandLineParser, oneRequiredPositionalAndOneOptional_disallowUnrecognized_bothOptionsProvidedWithUnrecognized_errorDuringParse)
 {
   stk::CommandLineParser parser;
@@ -523,7 +584,7 @@ TEST(CommandLineParser, oneRequiredPositionalAndOneOptional_disallowUnrecognized
   parser.disallow_unrecognized();
 
   Args args({"exe", "positionalValue", "--unrecognizedOpt", "unrecognizedValue", "--optionalOpt", "optionalValue"});
-  EXPECT_TRUE(parse_command_line_with_error(parser, args, "Unrecognized option: --unrecognizedOpt"));
+  EXPECT_TRUE(parse_command_line_with_error(parser, args, "Unrecognized option: '--unrecognizedOpt'"));
 
   EXPECT_FALSE(parser.is_empty());
   EXPECT_FALSE(parser.is_option_parsed("positionalOpt"));

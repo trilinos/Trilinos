@@ -47,7 +47,6 @@
 
 #include "Phalanx_config.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Kokkos_View.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Mesh.hpp"
 

@@ -59,6 +59,8 @@
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_LAPACK.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+
 namespace Intrepid2 {
 
   namespace Test {
@@ -213,12 +215,6 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-
       *outStream 
         << "===============================================================================\n" \
         << "|                                                                             |\n" \
@@ -245,7 +241,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-      #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
       int errorFlag = 0;
@@ -389,8 +384,7 @@ namespace Intrepid2 {
                 //create basis
                 // for virtual function, value and point types are declared in the class
                 typedef ValueType outputValueType;
-                typedef ValueType pointValueType;
-                
+
                 Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> basis;
                 //Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
                 //  Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM<double,FieldContainer<double> >() );

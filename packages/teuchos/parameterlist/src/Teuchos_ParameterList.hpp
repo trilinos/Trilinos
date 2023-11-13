@@ -316,7 +316,8 @@ public:
    * \note This is required to preserve the isDefault value when reading back
    * from XML. KL 7 August 2004 
    */
-  ParameterList& setEntry(const std::string& name, const ParameterEntry& entry);
+  template <typename U, typename = std::enable_if_t<std::is_same_v<std::decay_t<U>, ParameterEntry>>>
+  ParameterList& setEntry(const std::string& name, U&&  entry);
 
   /** \brief Recursively attach a validator to parameters of type T.
    *
@@ -1009,13 +1010,13 @@ ParameterList& ParameterList::set(
 }
 
 
+template <typename U, typename>
 inline
-ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntry const& entry_in)
+ParameterList& ParameterList::setEntry(std::string const& name_in, U&& entry_in)
 {
-  params_.setObj(name_in, entry_in);
+  params_.setObj(name_in, std::forward<U>(entry_in));
   return *this;
 }
-
 
 template<typename T>
 void ParameterList::recursivelySetValidator(

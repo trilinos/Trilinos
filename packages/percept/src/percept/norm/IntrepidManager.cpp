@@ -36,7 +36,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <Shards_CellTopology.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -562,7 +561,7 @@
 
       // FIXME consider caching the coords_field in FieldFunction
       const stk::mesh::MetaData& metaData = bulkData.mesh_meta_data();
-      CoordinatesFieldType *coords_field = metaData.get_field<CoordinatesFieldType >(stk::topology::NODE_RANK, "coordinates");
+      stk::mesh::FieldBase *coords_field = metaData.get_field(stk::topology::NODE_RANK, "coordinates");
 
       const stk::mesh::Bucket & bucket = bulkData.bucket(element);
       const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket.topology()).getCellTopologyData();
@@ -589,7 +588,7 @@
           for (unsigned iNode = 0; iNode < numNodes; iNode++)
             {
               stk::mesh::Entity node = elem_nodes[iNode].entity();
-              double * node_coord_data = stk::mesh::field_data( *coords_field , node);
+              double * node_coord_data = static_cast<double*>(stk::mesh::field_data( *coords_field , node));
               for (unsigned iDim=0; iDim < cellDim; iDim++)
                 {
                   cellWorkset(iCell, iNode, iDim) = node_coord_data[iDim];

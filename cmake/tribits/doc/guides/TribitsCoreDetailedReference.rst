@@ -61,6 +61,7 @@ The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
 * `${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE`_
+* `${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`_
 * `${PROJECT_NAME}_C_Standard`_
 * `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
@@ -72,7 +73,6 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_ENABLE_CXX`_
 * `${PROJECT_NAME}_ENABLE_C`_
 * `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_
-* `${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`_
 * `${PROJECT_NAME}_ENABLE_Fortran`_
 * `${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`_
 * `${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE`_
@@ -80,6 +80,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
 * `${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`_
 * `${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_
+* `${PROJECT_NAME}_IMPORTED_NO_SYSTEM`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`_
 * `${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE`_
@@ -88,6 +89,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
 * `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
+* `${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`_
 * `${PROJECT_NAME}_TEST_CATEGORIES`_
 * `${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`_
 * `${PROJECT_NAME}_TRACE_ADD_TEST`_
@@ -97,6 +99,7 @@ a given TriBITS project are:
 * `CMAKE_INSTALL_RPATH_USE_LINK_PATH`_
 * `MPI_EXEC_MAX_NUMPROCS`_
 * `PythonInterp_FIND_VERSION`_
+* `TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE`_
 
 These options are described below.
 
@@ -119,6 +122,25 @@ These options are described below.
     set(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE_DEFAULT WARNING)
 
   in the project's base `<projectDir>/ProjectName.cmake`_ file.
+
+
+.. _${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES:
+
+**${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES**
+
+  To set ``${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`` a different default,
+  set::
+
+    set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_DEFAULT  <newDefault>)
+
+  in the project's base `<projectDir>/ProjectName.cmake`_ file, where
+  ``<newDefault>`` can be ``FATAL_ERROR``, ``SEND_ERROR``, ``WARNING``,
+  ``NOTICE`` or ``IGNORE``
+
+  Otherwise, the default is ``WARNING`` when
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is ``ON`` and if ``IGNORE`` if
+  ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is ``OFF``.
+
 
 .. _${PROJECT_NAME}_C_Standard:
 
@@ -257,7 +279,7 @@ These options are described below.
   processed in CTest -S driver scripts using ``tribits_ctest_driver()``.)
 
   In general, a project should change the default to ``TRUE`` when using a
-  newer CDash installation with CDash versions 3.0+ that can accomidate the
+  newer CDash installation with CDash versions 3.0+ that can accommodate the
   results coming from ctest -S and display them package-by-package very
   nicely.  Otherwise, most projects are better off with package-by-package
   mode since it results in nicer display on CDash for older CDash versions.
@@ -280,7 +302,7 @@ These options are described below.
 
 **${PROJECT_NAME}_ELEVATE_ST_TO_PT**
 
-  If ``${PROJECT_NAME}_ELEVATE_ST_TO_PT`` is set to ``ON``, then all ``ST`` SE
+  If ``${PROJECT_NAME}_ELEVATE_ST_TO_PT`` is set to ``ON``, then all ``ST``
   packages will be elevated to ``PT`` packages.  The TriBITS default is
   obviously ``OFF``.  The default can be changed by setting::
 
@@ -349,28 +371,12 @@ These options are described below.
   to ``OFF`` when creating a release (see `Project and Repository Versioning
   and Release Mode`_).  When ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is
   ``ON``, several other variables are given defaults appropriate for
-  development mode.  For example, ``${PROJECT_NAME}_ASSERT_MISSING_PACKAGES``
-  is set to ``ON`` by default in development mode but is set to ``OFF`` by
-  default in release mode.  In addition, strong compiler warnings are enabled
-  by default in development mode but are disabled by default in release mode.
-  This variable also affects the behavior of `tribits_set_st_for_dev_mode()`_.
-  
-.. _${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES:
-
-**${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES**
-  
-  If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
-  ``Makefile.export.<PackageName>`` will get created at configure time in the
-  build tree and installed into the install tree.  See `TribitsBuildReference`_
-  for details.  The TriBITS default is ``ON`` but a project can decide to turn
-  this off by default by setting::
-  
-    set(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
-  
-  A project might want to disable the generation of export makefiles by default
-  if its main purpose is to provide executables.  There is no reason to provide
-  an export makefile if libraries and headers are not actually installed (see
-  `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_)
+  development mode.  For example,
+  ``${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES`` is set to ``FATAL_ERROR`` by
+  default in development mode but is set to ``IGNORE`` by default in release
+  mode.  In addition, strong compiler warnings are enabled by default in
+  development mode but are disabled by default in release mode.  This variable
+  also affects the behavior of `tribits_set_st_for_dev_mode()`_.
  
 .. _${PROJECT_NAME}_ENABLE_Fortran:
   
@@ -385,6 +391,10 @@ These options are described below.
     set(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
 
   This default can be set in `<projectDir>/ProjectName.cmake`_ or `<projectDir>/CMakeLists.txt`_.
+
+  On WIN32 systems, the default for ``${PROJECT_NAME}_ENABLE_Fortran_DEFAULT``
+  is set to ``OFF`` since it can be difficult to get a Fortran compiler for
+  native Windows.
 
   Given that a native Fortran compiler is not supported by default on Windows
   and on most Mac OSX systems, projects that have optional Fortran code may
@@ -455,13 +465,12 @@ These options are described below.
 **${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES**
 
   If ``${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`` is ``ON``, then the
-  data-structures needed to generate ``Makefile.export.<PackageName>`` and
-  ``<PackageName>Config.cmake`` are created.  These data structures are also
-  needed in order to generate export makefiles on demand using the function
+  data-structures needed to generate ``<PackageName>Config.cmake`` files are
+  created.  These data structures are also needed in order to generate export
+  makefiles on demand using the function
   `tribits_write_flexible_package_client_export_files()`_.  The default in
   TriBITS is to turn this ``ON`` automatically by default if
-  ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` or
-  ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` are ``ON``.  Else, by
+  ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` is ``ON``.  Else, by
   default, TriBITS sets this to ``OFF``.  The only reason for the project to
   override the default is to set it to ``ON`` as with::
 
@@ -498,7 +507,46 @@ These options are described below.
     set(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT ON)
 
   in the `<projectDir>/ProjectName.cmake`_ file.
-  
+
+  Note that if a ``git`` exectauble cannot be found at configure time, then
+  the default ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT`` will be
+  overridden to ``OFF``.  But if the user sets
+  ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE=ON`` in the cache and ``git``
+  can't be found, then an configure-time error will occur.
+
+
+.. _${PROJECT_NAME}_IMPORTED_NO_SYSTEM:
+
+**${PROJECT_NAME}_IMPORTED_NO_SYSTEM**
+
+  By default, include directories from IMPORTED library targets from the
+  TriBITS project's installed ``<Package>Config.cmake`` files will be
+  considered ``SYSTEM`` headers and therefore be included on the compile lines
+  of downstream CMake projects with ``-isystem`` with most compilers.
+  However, if ``${PROJECT_NAME}_IMPORTED_NO_SYSTEM`` is set to ``ON`` (only
+  supported for CMake versions 3.23 or greater), then all of the IMPORTED
+  library targets exported into the set of installed ``<Package>Config.cmake``
+  files will have the ``IMPORTED_NO_SYSTEM`` property set.  This will cause
+  downstream customer CMake projects to apply the include directories from
+  these IMPORTED library targets as non-system include directories.  On most
+  compilers, that means that the include directories will be listed on the
+  compile lines with ``-I`` instead of with ``-isystem``.  (See more details
+  in the TriBITS Build Reference for ``<Project>_IMPORTED_NO_SYSTEM``.)
+
+  The default value set by TriBITS itself is ``OFF`` but a TriBITS project can
+  change the default value to ``ON`` by adding::
+
+    if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.23)
+      set(${PROJECT_NAME}_IMPORTED_NO_SYSTEM_DEFAULT ON)
+    endif()
+
+  in the `<projectDir>/ProjectName.cmake`_ file.  (NOTE: The above ``if()``
+  statement ensures that a configure error will not occur if a version of
+  CMake less than 3.23 is used.  But if the TriBITS project minimum CMake
+  version is 3.23 or greater, then the above ``if()`` statement guard can be
+  removed.)
+
+
 .. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
 
 **${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS**
@@ -624,6 +672,19 @@ These options are described below.
   date/time for regular tests added with `tribits_add_test()`_ (which uses a
   raw command with ``add_test()``).
 
+.. _${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES:
+
+**${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES**
+
+  To change the default value of the
+  ``${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`` to ``TRUE``, for
+  example, for a TriBITS project, set::
+
+    set(${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES_DEFAULT TRUE)
+
+  in the project's `<projectDir>/CMakeLists.txt`_ or
+  `<projectDir>/ProjectName.cmake`_ files.
+
 .. _${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE:
 
 **${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE**
@@ -698,14 +759,14 @@ These options are described below.
   thereby avoid the defect with gfortran described above.  If CMake version
   3.3 or greater is used, this variable is not required.
 
-  NOTE: Currently, a TriBITS SE package must have a direct dependency on a TPL
+  NOTE: Currently, a TriBITS package must have a direct dependency on a TPL
   to have ``-isystem`` added to a TPL's include directories on the compile
   lines for that package.  That is, the TPL must be listed in the
   ``LIB_REQUIRED_TPLS`` or ``LIB_OPTIONAL_TPLS`` arguments passed into the
-  `tribits_package_define_dependencies()`_ function in the SE package's
+  `tribits_package_define_dependencies()`_ function in the package's
   `<packageDir>/cmake/Dependencies.cmake`_ file.  In addition, to have
   ``-isystem`` added to the include directories for a TPL when compiling the
-  tests for an SE package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
+  tests for an package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
   ``TEST_OPTIONAL_TPLS`` arguments.  This is a limitation of the TriBITS
   implementation that will be removed in a future version of TriBITS.
 
@@ -735,7 +796,7 @@ These options are described below.
   A project can use the paths given the cmake module ``GNUInstallDirs`` by
   default by setting::
   
-    set(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT FALSE)
+    set(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT TRUE)
 
   in the project's top-level `<projectDir>/CMakeLists.txt`_ file or its
   `<projectDir>/ProjectName.cmake`_ file.  The default is ``FALSE``.
@@ -815,6 +876,19 @@ These options are described below.
   Python by configuring with, for example::
 
     -D PythonInterp_FIND_VERSION="3.6.2"
+
+.. _TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE:
+
+**TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE**
+
+  Determines how the function `tribits_deprecated()`_ behaves.  To change the
+  default behavor, such as call ``message(FATAL_ERROR ...)``, set::
+
+    set(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_DEFAULT  FATAL_ERROR)
+
+  in the project's `<projectDir>/ProjectName.cmake`_ file, or
+  `<projectDir>/CMakeLists.txt`_ file, or on the individual package basis in
+  its `<packageDir>/CMakeLists.txt`_ file.
 
 
 TriBITS Macros and Functions

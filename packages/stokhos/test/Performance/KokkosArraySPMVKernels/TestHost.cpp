@@ -136,18 +136,18 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   const size_t threads_per_team =
     Kokkos::hwloc::get_available_threads_per_core();
 
-  Kokkos::InitArguments init_args;
-  init_args.num_threads = team_count*threads_per_team;
+  Kokkos::InitializationSettings init_args;
+  init_args.set_num_threads(team_count*threads_per_team);
   Kokkos::initialize( init_args );
 
   std::string name = "Host";
 #ifdef KOKKOS_ENABLE_THREADS
-  Kokkos::Threads::print_configuration( std::cout );
+  Kokkos::Threads().print_configuration( std::cout );
   if (std::is_same<Device,Kokkos::Threads>::value)
     name = "Threads";
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
-  Kokkos::OpenMP::print_configuration( std::cout );
+  Kokkos::OpenMP().print_configuration( std::cout );
   if (std::is_same<Device,Kokkos::OpenMP>::value)
     name = "OpenMP";
 #endif

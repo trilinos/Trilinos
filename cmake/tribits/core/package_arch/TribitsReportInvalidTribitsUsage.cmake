@@ -37,11 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-if (__TribitsReportInvalidTribitsUsage_INCLUDED__)
-  return()
-else()
-  set(__TribitsReportInvalidTribitsUsage_INCLUDED__ TRUE)
-endif()
+include_guard()
 
 include(MessageWrapper)
 
@@ -57,6 +53,7 @@ include(MessageWrapper)
 #   * FATAL_ERROR: Calls message(FATAL_ERROR "<error_message>")
 #   * SEND_ERROR: Calls message(SEND_ERROR "<error_message>")
 #   * WARNING: Calls message(WARNING "<error_message>")
+#   * NOTICE: Calls message(NOTICE "<error_message>")
 #   * IGNORE: Does not call message() at all and is silent
 #
 # If '${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE}' is empty on call, then
@@ -64,24 +61,14 @@ include(MessageWrapper)
 #
 function(tribits_report_invalid_tribits_usage)
   if ("${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE}" STREQUAL "")
-    set(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE FATAL_ERROR)
+    set(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE  FATAL_ERROR)
   endif()
-  set(PRINT_ERR_MSG)
-  if (${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE STREQUAL "FATAL_ERROR")
-    set(PRINT_ERR_MSG FATAL_ERROR)
-  elseif (${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE STREQUAL "SEND_ERROR")
-    set(PRINT_ERR_MSG SEND_ERROR)
-  elseif (${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE STREQUAL "WARNING")
-    set(PRINT_ERR_MSG WARNING)
-  elseif (${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE STREQUAL "IGNORE")
-    set(PRINT_ERR_MSG)
-  else()
-    message_wrapper(FATAL_ERROR "Error, invalid value for"
-      " ${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE ="
-      " '${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE}'!"
-      "  Value values include 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', and 'IGNORE'!")
+  set(printErrMsgMode ${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE})
+  set(ignoreValues  "IGNORE" "OFF")
+  if(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE  IN_LIST  ignoreValues)
+    set(printErrMsgMode "")
   endif()
-  if (PRINT_ERR_MSG)
-    message_wrapper(${PRINT_ERR_MSG} ${ARGN})
+  if (printErrMsgMode)
+    message_wrapper(${printErrMsgMode} ${ARGN})
   endif()
 endfunction()

@@ -41,6 +41,7 @@
 // @HEADER
 
 #include "PanzerAdaptersSTK_config.hpp"
+
 #include "Panzer_STK_SetupLOWSFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_ParameterListCallbackBlocked.hpp"
@@ -49,11 +50,11 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "EpetraExt_VectorOut.h"
-
-#include "ml_rbm.h"
+#endif // PANZER_HAVE_EPETRA_STACK
 
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -63,17 +64,10 @@
 #endif
 
 #ifdef PANZER_HAVE_MUELU
-#include <Thyra_MueLuPreconditionerFactory.hpp>
-#include <Thyra_MueLuRefMaxwellPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 //#include "MatrixMarket_Tpetra.hpp"
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
-#endif
-
-#ifdef PANZER_HAVE_IFPACK2
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
-#include "Tpetra_CrsMatrix_decl.hpp"
 #endif
 
 namespace panzer_stk {
@@ -178,24 +172,16 @@ namespace {
 
     #ifdef PANZER_HAVE_MUELU
     {
-      Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu");
-      Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell");
+      Stratimikos::enableMueLu<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu");
+      Stratimikos::enableMueLuRefMaxwell<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell");
+      Stratimikos::enableMueLuMaxwell1<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuMaxwell1");
       #ifndef PANZER_HIDE_DEPRECATED_CODE
       // the next two are only for backwards compatibility
-      Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
-      Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
+      Stratimikos::enableMueLu<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuRefMaxwell<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
       #endif
     }
     #endif // MUELU
-    #ifdef PANZER_HAVE_IFPACK2
-    {
-      typedef Thyra::PreconditionerFactoryBase<double> Base;
-      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::GlobalOrdinal,panzer::TpetraNodeType> > Impl;
-
-      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-    }
-    #endif // MUELU
-
 
     #ifdef PANZER_HAVE_TEKO
     RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
@@ -276,6 +262,7 @@ namespace {
           }
 
           if(writeCoordinates) {
+#ifdef PANZER_HAVE_EPETRA_STACK
              // force parameterlistcallback to build coordinates
              callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
 
@@ -306,9 +293,12 @@ namespace {
              default:
                 TEUCHOS_ASSERT(false);
              }
+#else
+             TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: Panzer_STK_SetupLOWSFactory.cpp - writeCoordinates not implemented for Tpetra yet!");
+#endif
           }
 
-          #ifdef PANZER_HAVE_MUELU
+#ifdef PANZER_HAVE_MUELU
           if(rcp_dynamic_cast<const panzer::GlobalIndexer>(globalIndexer)!=Teuchos::null
              && useCoordinates) {
              if(!writeCoordinates)
@@ -377,6 +367,7 @@ namespace {
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
 
        if(writeCoordinates) {
+#ifdef PANZER_HAVE_EPETRA_STACK
           RCP<const panzer::BlockedDOFManager> blkDofs =
              rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer);
 
@@ -464,6 +455,9 @@ namespace {
             #endif
 
           } /* end loop over all physical fields */
+#else // PANZER_HAVE EPETRA
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: Panzer_STK_SetupLOWSFactory - writeCoordinates not implemented for Tpetra yet!")
+#endif
        }
 
        if(writeTopo) {

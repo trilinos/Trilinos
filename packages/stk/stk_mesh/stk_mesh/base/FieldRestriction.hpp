@@ -79,6 +79,11 @@ class FieldRestriction {
     return *this ;
   }
 
+  void add_union(const Selector& otherSelector)
+  {
+    m_selector |= otherSelector;
+  }
+
   explicit FieldRestriction( const Selector& input_selector)
    : m_selector(input_selector),
      m_num_scalars_per_entity(0),
@@ -107,11 +112,7 @@ class FieldRestriction {
     return this->m_selector != rhs.m_selector;
   }
 
-  void print(
-      std::ostream & os,
-      const Selector & selector,
-      FieldArrayRank field_rank
-      ) const;
+  void print(std::ostream & os, const Selector & selector) const;
 
   private:
   Selector m_selector;
@@ -121,11 +122,7 @@ class FieldRestriction {
 
 typedef std::vector<FieldRestriction> FieldRestrictionVector;
 
-std::string print_restriction(
-    const FieldRestriction & restr,
-    const Selector& selector,
-    FieldArrayRank field_rank
-    );
+std::string print_restriction(const FieldRestriction & restr, const Selector& selector);
 
 } // namespace mesh
 } // namespace stk

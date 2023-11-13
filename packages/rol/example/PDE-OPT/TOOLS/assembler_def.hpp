@@ -2575,6 +2575,35 @@ void Assembler<Real>::printDataPDE(const ROL::Ptr<PDE<Real>> &pde,
 }
 
 template<class Real>
+void Assembler<Real>::printCellAveragesPDE(const ROL::Ptr<PDE<Real>> &pde,
+                                           const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                           const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                           const ROL::Ptr<const std::vector<Real>> &z_param) const {
+  std::stringstream tag;
+  if (numProcs_==1) tag << "";
+  else              tag << "_" << myRank_ << "_" << numProcs_;
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff;
+  getCoeffFromStateVector(u_coeff,u);
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> z_coeff;
+  getCoeffFromControlVector(z_coeff,z);
+
+  // Print to cell id file.
+  std::stringstream nameCellid;
+  nameCellid << "cellid" << tag.str() << ".txt";
+  std::ofstream fileCellid;
+  fileCellid.open(nameCellid.str());
+  for (int i = 0; i < numCells_; ++i) {
+      fileCellid << myCellIds_[i] << std::endl;
+  }
+  fileCellid.close();
+
+  // Print cell average data.
+  pde->printCellAverages(tag.str(),u_coeff,z_coeff,z_param);
+}
+
+template<class Real>
 void Assembler<Real>::serialPrintStateEdgeField(const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                                                 const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                                 const std::string &filename,
@@ -2841,7 +2870,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   // Build maps.
   myOverlapStateMap_    = ROL::makePtr<Tpetra::Map<>>
     (Teuchos::OrdinalTraits<GO>::invalid(), myGlobalIds1, GO(0), comm_);
-  //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
+  //std::cout << std::endl << myOverlapMap_->getLocalElementList()<<std::endl;
   /** One can also use the non-member function:
       myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobalIds_, comm_);
       to build the overlap map.
@@ -2852,7 +2881,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   myOverlapControlMap_  = ROL::makePtr<Tpetra::Map<>>
      (Teuchos::OrdinalTraits<GO>::invalid(), myGlobalIds2, GO(0), comm_);
   myUniqueControlMap_   = Tpetra::createOneToOne(myOverlapControlMap_);;
-  //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
+  //std::cout << std::endl << myUniqueMap_->getLocalElementList() << std::endl;
   //  myCellMap_ = ROL::makePtr<Tpetra::Map<>>(
   //               Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
   //               myCellIds_, 0, comm_);

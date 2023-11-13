@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #ifndef KOKKOS_TEST_DUALVIEW_HPP
 #define KOKKOS_TEST_DUALVIEW_HPP
@@ -258,7 +230,7 @@ struct test_dual_view_deep_copy {
   }
 };
 
-template <typename Scalar, class Device>
+template <typename Scalar, class Device, bool Initialize>
 struct test_dualview_resize {
   using scalar_type     = Scalar;
   using execution_space = Device;
@@ -274,7 +246,10 @@ struct test_dualview_resize {
 
     /* Covers case "Resize on Device" */
     a.modify_device();
-    Kokkos::resize(a, factor * n, factor * m);
+    if (Initialize)
+      Kokkos::resize(Kokkos::WithoutInitializing, a, factor * n, factor * m);
+    else
+      Kokkos::resize(a, factor * n, factor * m);
     ASSERT_EQ(a.extent(0), n * factor);
     ASSERT_EQ(a.extent(1), m * factor);
 
@@ -300,12 +275,15 @@ struct test_dualview_resize {
 
     // Check
     ASSERT_EQ(a_h_sum, a_d_sum);
-    ASSERT_EQ(a_h_sum, a.extent(0) * a.extent(1));
+    ASSERT_EQ(a_h_sum, scalar_type(a.extent(0) * a.extent(1)));
 
     /* Covers case "Resize on Host" */
     a.modify_host();
 
-    Kokkos::resize(a, n / factor, m / factor);
+    if (Initialize)
+      Kokkos::resize(Kokkos::WithoutInitializing, a, n / factor, m / factor);
+    else
+      Kokkos::resize(a, n / factor, m / factor);
     ASSERT_EQ(a.extent(0), n / factor);
     ASSERT_EQ(a.extent(1), m / factor);
 
@@ -330,7 +308,7 @@ struct test_dualview_resize {
       }
 
     // Check
-    ASSERT_EQ(a_h_sum, a.extent(0) * a.extent(1));
+    ASSERT_EQ(a_h_sum, scalar_type(a.extent(0) * a.extent(1)));
     ASSERT_EQ(a_h_sum, a_d_sum);
 
   }  // end run_me
@@ -340,7 +318,7 @@ struct test_dualview_resize {
   }
 };
 
-template <typename Scalar, class Device>
+template <typename Scalar, class Device, bool Initialize>
 struct test_dualview_realloc {
   using scalar_type     = Scalar;
   using execution_space = Device;
@@ -351,7 +329,10 @@ struct test_dualview_realloc {
     const unsigned int m = 5;
 
     ViewType a("A", n, m);
-    Kokkos::realloc(a, n, m);
+    if (Initialize)
+      Kokkos::realloc(Kokkos::WithoutInitializing, a, n, m);
+    else
+      Kokkos::realloc(a, n, m);
 
     Kokkos::deep_copy(a.d_view, 1);
     a.modify_device();
@@ -375,7 +356,7 @@ struct test_dualview_realloc {
       }
 
     // Check
-    ASSERT_EQ(a_h_sum, a.extent(0) * a.extent(1));
+    ASSERT_EQ(a_h_sum, scalar_type(a.extent(0) * a.extent(1)));
     ASSERT_EQ(a_h_sum, a_d_sum);
   }  // end run_me
 
@@ -405,12 +386,14 @@ void test_dualview_deep_copy() {
 
 template <typename Scalar, typename Device>
 void test_dualview_realloc() {
-  Impl::test_dualview_realloc<Scalar, Device>();
+  Impl::test_dualview_realloc<Scalar, Device, false>();
+  Impl::test_dualview_realloc<Scalar, Device, true>();
 }
 
 template <typename Scalar, typename Device>
 void test_dualview_resize() {
-  Impl::test_dualview_resize<Scalar, Device>();
+  Impl::test_dualview_resize<Scalar, Device, false>();
+  Impl::test_dualview_resize<Scalar, Device, true>();
 }
 
 TEST(TEST_CATEGORY, dualview_combination) {
@@ -455,7 +438,8 @@ namespace {
  * that we keep the semantics of UVM DualViews intact.
  */
 // modify if we have other UVM enabled backends
-#ifdef KOKKOS_ENABLE_CUDA  // OR other UVM builds
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_SYCL) || \
+    defined(KOKKOS_ENABLE_HIP)  // OR other UVM builds
 #define UVM_ENABLED_BUILD
 #endif
 
@@ -468,6 +452,20 @@ struct UVMSpaceFor;
 template <>
 struct UVMSpaceFor<Kokkos::Cuda> {
   using type = Kokkos::CudaUVMSpace;
+};
+#endif
+
+#ifdef KOKKOS_ENABLE_SYCL  // specific to SYCL
+template <>
+struct UVMSpaceFor<Kokkos::Experimental::SYCL> {
+  using type = Kokkos::Experimental::SYCLSharedUSMSpace;
+};
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP  // specific to HIP
+template <>
+struct UVMSpaceFor<Kokkos::HIP> {
+  using type = Kokkos::HIPManagedSpace;
 };
 #endif
 

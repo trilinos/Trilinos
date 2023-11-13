@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,8 +7,10 @@
  */
 #include "CP_SystemInterface.h"
 #include "CP_Version.h" // for qainfo
+#include "FileInfo.h"
 #include "GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_CodeTypes.h"
+#include "Ioss_Utils.h"
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
 #include <cctype>        // for tolower
@@ -16,23 +18,26 @@
 #include <cstdlib> // for strtol, abs, exit, strtoul, etc
 #include <cstring> // for strchr, strlen
 #include <fmt/ostream.h>
+#include <glob.h>
 #include <sstream>
 #include <stdexcept>
 #include <string> // for string, char_traits, etc
 #include <term_width.h>
+#include <unistd.h>
 #include <utility> // for pair, make_pair
 #include <vector>  // for vector
 
-namespace {
-  bool is_path_absolute(const std::string &path)
-  {
-#ifdef __IOSS_WINDOWS__
-    return path[0] == '\\' || path[1] == ':';
-#else
-    return path[0] == '/';
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+#define __SUP_WINDOWS__ 1
+#include <direct.h>
 #endif
-  }
 
+#if !defined(__SUP_WINDOWS__)
+#include <dirent.h>
+#endif
+
+namespace {
   bool str_equal(const std::string &s1, const std::string &s2)
   {
     return (s1.size() == s2.size()) &&
@@ -40,7 +45,8 @@ namespace {
                       [](char a, char b) { return std::tolower(a) == std::tolower(b); });
   }
 
-  void parse_variable_names(const char *tokens, Cpup::StringVector *variable_list);
+  void        parse_variable_names(const char *tokens, Cpup::StringVector *variable_list);
+  std::string find_matching_file(const std::string &path, const std::string &basename);
 } // namespace
 
 Cpup::SystemInterface::SystemInterface(int rank) : myRank_(rank) { enroll_options(); }
@@ -63,7 +69,7 @@ void Cpup::SystemInterface::enroll_options()
                   "\t\tEnter LAST for last step",
                   "1:", nullptr, true);
   options_.enroll("extension", GetLongOption::MandatoryValue,
-                  "CGNS database extension for the input files", "e");
+                  "CGNS database extension for the input files", "cgns");
 
   options_.enroll("output", GetLongOption::MandatoryValue, "filename for output CGNS database",
                   nullptr);
@@ -183,6 +189,12 @@ void Cpup::SystemInterface::enroll_options()
                   "0");
 
 #endif
+  options_.enroll(
+      "minimize_open_files", GetLongOption::NoValue,
+      "Keep only one input file open at a time.\n"
+      "\t\tUsed when number of files exceeds the maximum number of open files on a system.",
+      nullptr);
+
   options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
                   nullptr);
 
@@ -221,6 +233,8 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
     if (myRank_ == 0) {
       options_.usage();
       fmt::print("\n\tCan also set options via CPUP_OPTIONS environment variable.\n\n"
+                 "\n\tDocumentation: "
+                 "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#cpup\n"
                  "\tWrites: current_directory/basename.output_extension\n"
                  "\tReads:  root/sub/basename.extension.#p.0 to\n"
                  "\t\troot/sub/basename.extension.#p.#p-1\n"
@@ -307,9 +321,11 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
   omitSidesets_ = options_.retrieve("omit_sidesets") != nullptr;
 #endif
 
+  minimizeOpenFiles_ = options_.retrieve("minimize_open_files") != nullptr;
+
   if (options_.retrieve("copyright") != nullptr) {
     if (myRank_ == 0) {
-      fmt::print("{}", copyright("2010-2021"));
+      fmt::print("{}", copyright("2010-2022"));
     }
     return false;
   }
@@ -322,17 +338,62 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
       // Determine Root, Proc, Extension, and Basename automatically
       // by parsing the basename_ entered by the user.  Assumed to be
       // in the form: "/directory/sub/basename.ext.#proc.34"
-      bool success = decompose_filename(basename_);
-      if (!success) {
+      FileInfo file(basename_);
+      auto     path = file.pathname();
+      if (path.empty()) {
+        path = ".";
+      }
+#if defined(__SUP_WINDOWS__)
+      rootDirectory_ = _fullpath(nullptr, path.c_str(), _MAX_PATH);
+#else
+      char *tmp = ::realpath(path.c_str(), nullptr);
+      if (tmp != nullptr) {
+        rootDirectory_ = std::string(tmp);
+        free(tmp);
+      }
+#endif
+
+      basename_ = file.tailname();
+      if (basename_.empty()) {
         std::ostringstream errmsg;
         fmt::print(
             errmsg,
             "\nERROR: (CPUP) If the '-auto' option is specified, the basename must specify an "
-            "existing filename.\n"
-            "       The entered basename does not contain an extension or processor count.\n");
+            "existing filename or portion of a base of a filename (no rank/proc count).\n"
+            "       The entered basename ('{}') does not contain a filename.\n",
+            basename_);
         throw std::runtime_error(errmsg.str());
       }
+      bool success = decompose_filename(basename_);
+      if (!success) {
+        // See if we can find files that match the basename and take the first match as the "new"
+        // basename...
+        std::string candidate = find_matching_file(rootDirectory_, basename_);
+        if (!candidate.empty()) {
+          basename_ = candidate;
+          success   = decompose_filename(basename_);
+          if (!success) {
+            std::ostringstream errmsg;
+            fmt::print(
+                errmsg,
+                "\nERROR: (CPUP) If the '-auto' option is specified, the basename must specify an "
+                "existing filename or a basename (no rank/proc count).\n"
+                "       The entered basename ('{}') does not contain an extension or processor "
+                "count.\n",
+                basename_);
+            throw std::runtime_error(errmsg.str());
+          }
+        }
+      }
       auto_ = true;
+      if (myRank_ == 0) {
+        fmt::print("\nThe following options were determined automatically:\n"
+                   "\t basename = '{}'\n"
+                   "\t-processor_count {}\n"
+                   "\t-extension {}\n"
+                   "\t-Root_directory {}\n\n",
+                   basename_, processorCount_, inExtension_, rootDirectory_);
+      }
     }
   }
   else {
@@ -368,7 +429,7 @@ std::string Cpup::SystemInterface::output_filename() const
       outputFilename_ += "." + output_suffix();
     }
 
-    if (!cwd().empty() && !is_path_absolute(outputFilename_)) {
+    if (!cwd().empty() && !Ioss::Utils::is_path_absolute(outputFilename_)) {
       outputFilename_ = cwd() + "/" + outputFilename_;
     }
     set_output_filename(outputFilename_);
@@ -380,7 +441,7 @@ void Cpup::SystemInterface::dump(std::ostream & /*unused*/) const {}
 
 std::string Cpup::SystemInterface::output_suffix() const
 {
-  if (outExtension_ == "") {
+  if (outExtension_.empty()) {
     return inExtension_;
   }
   return outExtension_;
@@ -417,17 +478,13 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
     if (strchr(tokens, ':') != nullptr) {
       // The string contains a separator
 
-      int vals[3];
-      vals[0] = stepMin_;
-      vals[1] = stepMax_;
-      vals[2] = stepInterval_;
+      std::array<int, 3> vals{stepMin_, stepMax_, stepInterval_};
 
       int j = 0;
       for (auto &val : vals) {
         // Parse 'i'th field
         char tmp_str[128];
-        ;
-        int k = 0;
+        int  k = 0;
 
         while (tokens[j] != '\0' && tokens[j] != ':') {
           tmp_str[k++] = tokens[j++];
@@ -502,27 +559,9 @@ bool Cpup::SystemInterface::decompose_filename(const std::string &cs)
     s.erase(ind);
   }
 
-  // Remainder of 's' consists of the basename_ and the rootDirectory_
-  // If there is no '/', then it is all basename_; otherwise the
-  // basename_ is the portion following the '/' and the rootDirectory_
-  // is the portion preceding the '/'
-  ind = s.find_last_of('/', std::string::npos);
-  if (ind != std::string::npos) {
-    basename_      = s.substr(ind + 1, std::string::npos);
-    rootDirectory_ = s.substr(0, ind);
-  }
-  else {
-    basename_ = s;
-  }
-
-  if (myRank_ == 0) {
-    fmt::print("\nThe following options were determined automatically:\n"
-               "\t basename = '{}'\n"
-               "\t-processor_count = {}\n"
-               "\t-extension = '{}'\n"
-               "\t-Root_directory = '{}'\n",
-               basename_, processorCount_, inExtension_, rootDirectory_);
-  }
+  // The directory path was stripped prior to entering this function,
+  // so remainder of 's' is just the new basename_
+  basename_ = s;
   return true;
 }
 
@@ -542,12 +581,34 @@ namespace {
     if (tokens != nullptr) {
       std::string        token_string(tokens);
       Cpup::StringVector var_list = SLIB::tokenize(token_string, ",");
-      for (auto &var : var_list) {
+      for (const auto &var : var_list) {
         std::string low_var = LowerCase(var);
         (*variable_list).push_back(low_var);
       }
       // Sort the list...
       std::sort(variable_list->begin(), variable_list->end());
     }
+  }
+
+  std::string find_matching_file(const std::string &path, const std::string &basename)
+  {
+    glob::glob g(basename + ".*.*");
+#if !defined(__SUP_WINDOWS__)
+    struct dirent *entry = nullptr;
+    DIR           *dp    = nullptr;
+
+    dp = opendir(path.c_str());
+    if (dp != nullptr) {
+      while ((entry = readdir(dp))) {
+        std::string filename = entry->d_name;
+        if (glob::glob_match(filename, g)) {
+          closedir(dp);
+          return filename;
+        }
+      }
+    }
+    closedir(dp);
+#endif
+    return "";
   }
 } // namespace

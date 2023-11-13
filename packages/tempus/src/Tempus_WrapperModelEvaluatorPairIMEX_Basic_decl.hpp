@@ -65,31 +65,22 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getAppModel() const;
 
-    /// Set InArgs the wrapper ModelEvalutor.
-    virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
-    { wrapperImplicitInArgs_.setArgs(inArgs); }
-
-    /// Get InArgs the wrapper ModelEvalutor.
-    virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
-    { return wrapperImplicitInArgs_; }
-
-    /// Set OutArgs the wrapper ModelEvalutor.
-    virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
-    { wrapperImplicitOutArgs_.setArgs(outArgs); }
-
-    /// Get OutArgs the wrapper ModelEvalutor.
-    virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
-    { return wrapperImplicitOutArgs_; }
-
     /// Set parameters for application implicit ModelEvaluator solve.
-    virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
-      Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs,
-      EVALUATION_TYPE /* evaluationType */ = SOLVE_FOR_X)
+    void setForSolve(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
+      const Scalar time,
+      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y = Teuchos::null,
+      const int index = -1    /* index and y are for IMEX_RK_Partition */ )
     {
-      timeDer_ = timeDer;
-      wrapperImplicitInArgs_.setArgs(inArgs);
-      wrapperImplicitOutArgs_.setArgs(outArgs);
+      x_ = x;
+      xDot_ = xDot;
+      time_ = time;
+      p_ = p;
+      y_ = y;
+      index_ = index;
+      timeDer_ = p->timeDer_;
     }
 
   //@}
@@ -162,9 +153,13 @@ protected:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > explicitModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > implicitModel_;
 
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xDot_;
+  Scalar time_;
+  Teuchos::RCP<ImplicitODEParameters<Scalar> > p_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > y_;
+  int index_;
   Teuchos::RCP<TimeDerivative<Scalar> >              timeDer_;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>          wrapperImplicitInArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         wrapperImplicitOutArgs_;
 };
 
 } // namespace Tempus

@@ -325,7 +325,7 @@ void ArrayToFieldVector::buildFieldVector(const Tpetra::Vector<int,int,panzer::G
                                 Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::zero(), ugi_->getComm()));
    Teuchos::RCP<IntVector> localFieldVector = Teuchos::rcp(new IntVector(destMap));
 
-   Tpetra::Import<int,panzer::GlobalOrdinal> importer(source.getMap(),destMap);
+   Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> importer(source.getMap(),destMap);
    localFieldVector->doImport(source,importer,Tpetra::INSERT);
 
    fieldVector_ = localFieldVector;

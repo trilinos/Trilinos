@@ -54,11 +54,6 @@
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Teko_Utilities.hpp"
 
-#ifdef HAVE_Teko_ENABLE_Ifpack2
-#include "Thyra_Ifpack2PreconditionerFactory.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#endif
-
 #include <algorithm>
 
 using Teuchos::RCP;
@@ -81,13 +76,6 @@ void addToStratimikosBuilder(const RCP<Stratimikos::DefaultLinearSolverBuilder> 
      factory = Teuchos::abstractFactoryStd<PrecFactory,Teko::NeumannSeriesPreconditionerFactory<double> >();
      builder->setPreconditioningStrategyFactory(factory,"Neumann Series");
    }
-   #ifdef HAVE_Teko_ENABLE_Ifpack2
-   {
-     typedef Thyra::PreconditionerFactoryBase<ST> Base;
-     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<ST,LO,GO,NT> > Impl;
-     builder->setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-   }
-   #endif // IFPACK2
 
 }
 

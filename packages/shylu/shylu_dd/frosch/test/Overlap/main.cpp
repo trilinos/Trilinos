@@ -96,7 +96,7 @@ using UN    = unsigned;
 using SC    = double;
 using LO    = int;
 using GO    = FROSch::DefaultGlobalOrdinal;
-using NO    = KokkosClassic::DefaultNode::DefaultNodeType;
+using NO    = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType;
 
 using namespace std;
 using namespace Teuchos;
@@ -177,6 +177,7 @@ int main(int argc, char *argv[])
         ArrayRCP<RCP<MultiVector<SC,LO,GO,NO> > > Coordinates(NumberOfBlocks);
         ArrayRCP<UN> dofsPerNodeVector(NumberOfBlocks);
 
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
         for (UN block=0; block<(UN) NumberOfBlocks; block++) {
             Comm->barrier(); if (Comm->getRank()==0) cout << "###################\n# Assembly Block " << block << " #\n###################\n" << endl;
 
@@ -208,16 +209,16 @@ int main(int argc, char *argv[])
             RCP<Map<LO,GO,NO> > UniqueMap;
 
             if (DOFOrdering == 0) {
-                Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getNodeNumElements());
-                for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
+                Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getLocalNumElements());
+                for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     for (UN j=0; j<dofsPerNodeVector[block]; j++) {
                         uniqueMapArray[dofsPerNodeVector[block]*i+j] = dofsPerNodeVector[block]*UniqueMapTmp->getGlobalElement(i)+j;
                     }
                 }
 
-                UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
+                UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,uniqueMapArray(),0,Comm);
                 K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KTmp->getGlobalMaxNumRowEntries());
-                for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
+                for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     ArrayView<const LO> indices;
                     ArrayView<const SC> values;
                     KTmp->getLocalRowView(i,indices,values);
@@ -232,16 +233,16 @@ int main(int argc, char *argv[])
                 }
                 K[block]->fillComplete();
             } else if (DOFOrdering == 1) {
-                Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getNodeNumElements());
-                for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
+                Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getLocalNumElements());
+                for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     for (UN j=0; j<dofsPerNodeVector[block]; j++) {
-                        uniqueMapArray[i+UniqueMapTmp->getNodeNumElements()*j] = UniqueMapTmp->getGlobalElement(i)+(UniqueMapTmp->getMaxAllGlobalIndex()+1)*j;
+                        uniqueMapArray[i+UniqueMapTmp->getLocalNumElements()*j] = UniqueMapTmp->getGlobalElement(i)+(UniqueMapTmp->getMaxAllGlobalIndex()+1)*j;
                     }
                 }
 
-                UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
+                UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,uniqueMapArray(),0,Comm);
                 K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KTmp->getGlobalMaxNumRowEntries());
-                for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
+                for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     ArrayView<const LO> indices;
                     ArrayView<const SC> values;
                     KTmp->getLocalRowView(i,indices,values);
@@ -272,18 +273,18 @@ int main(int argc, char *argv[])
             Array<GO> uniqueMapArray(0);
             GO tmpOffset = 0;
             for (UN block=0; block<(UN) NumberOfBlocks; block++) {
-                ArrayView<const GO> tmpgetGlobalElements = K[block]->getMap()->getNodeElementList();
+                ArrayView<const GO> tmpgetGlobalElements = K[block]->getMap()->getLocalElementList();
                 for (LO i=0; i<tmpgetGlobalElements.size(); i++) {
                     uniqueMapArray.push_back(tmpgetGlobalElements[i]+tmpOffset);
                 }
                 tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex()+1;
             }
-            RCP<Map<LO,GO,NO> > UniqueMapMonolithic = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
+            RCP<Map<LO,GO,NO> > UniqueMapMonolithic = MapFactory<LO,GO,NO>::Build(xpetraLib,INVALID,uniqueMapArray(),0,Comm);
 
             tmpOffset = 0;
             KMonolithic = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMapMonolithic,K[0]->getGlobalMaxNumRowEntries());
             for (UN block=0; block<(UN) NumberOfBlocks; block++) {
-                for (LO i=0; i<(LO) K[block]->getNodeNumRows(); i++) {
+                for (LO i=0; i<(LO) K[block]->getLocalNumRows(); i++) {
                     ArrayView<const LO> indices;
                     ArrayView<const SC> values;
                     K[block]->getLocalRowView(i,indices,values);
@@ -361,8 +362,8 @@ int main(int argc, char *argv[])
         }
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
-        Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-        Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
+        Stratimikos::LinearSolverBuilder<SC> linearSolverBuilder;
+        Stratimikos::enableFROSch<SC,LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(parameterList);
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "######################\n# Thyra PrepForSolve #\n######################\n" << endl;
@@ -379,8 +380,8 @@ int main(int argc, char *argv[])
         linearOpWithSolve(*lowsFactory, K_thyra);
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#########\n# Solve #\n#########" << endl;
-        SolveStatus<double> status =
-        solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+        SolveStatus<SC> status =
+        solve<SC>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }

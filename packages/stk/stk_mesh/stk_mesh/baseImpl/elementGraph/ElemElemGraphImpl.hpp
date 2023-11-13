@@ -69,6 +69,10 @@ public:
 
     void set_proc_rank(int proc) { m_other_proc = proc; }
 
+    bool operator==(const RemoteElementData& rhs) const {
+        return m_other_proc == rhs.m_other_proc;
+    }
+
     bool operator!=(const RemoteElementData& rhs) const {
         return m_other_proc != rhs.m_other_proc;
     }
@@ -107,6 +111,8 @@ public:
         m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
     ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology) :
         m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
+    ParallelInfo() :
+        m_permutation(INVALID_PERMUTATION), m_remote_element_topology(stk::topology::INVALID_TOPOLOGY), remoteElementData(-1) {}
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
@@ -114,6 +120,12 @@ public:
 
     int m_permutation;
     stk::topology m_remote_element_topology;
+
+    bool operator==(const ParallelInfo& rhs) const {
+        return m_permutation == rhs.m_permutation && 
+                m_remote_element_topology == rhs.m_remote_element_topology &&
+                remoteElementData == rhs.remoteElementData;
+    }
 
     bool operator!=(const ParallelInfo& rhs) const {
         return m_permutation != rhs.m_permutation ||
@@ -277,8 +289,7 @@ struct IdViaSidePair
 
 }//namespace impl
 
-const int max_num_sides_per_elem = 10;
-const double inverse_of_max_num_sides_per_elem = 0.1;
+constexpr int max_num_sides_per_elem = 8;
 
 struct GraphEdge
 {
@@ -289,7 +300,7 @@ struct GraphEdge
     }
 
     GraphEdge() :
-        vertex1(std::numeric_limits<impl::LocalId>::max()), vertex2(std::numeric_limits<impl::LocalId>::max())
+        vertex1(impl::INVALID_LOCAL_ID), vertex2(impl::INVALID_LOCAL_ID)
     {}
 
     GraphEdge(const GraphEdge& rhs)
@@ -326,12 +337,12 @@ struct GraphEdge
 
     impl::LocalId elem1() const
     {
-        return vertex1*inverse_of_max_num_sides_per_elem;
+        return vertex1/max_num_sides_per_elem;
     }
 
     impl::LocalId elem2() const
     {
-        return vertex2*inverse_of_max_num_sides_per_elem;
+        return vertex2/max_num_sides_per_elem;
     }
 
     int get_side(const impl::LocalId& vertex) const
@@ -349,6 +360,11 @@ struct GraphEdge
     impl::LocalId vertex1;
     impl::LocalId vertex2;
 };
+
+constexpr bool is_valid(const GraphEdge& lhs)
+{
+    return lhs.vertex1 != impl::INVALID_LOCAL_ID;
+}
 
 using CoincidentElementConnection = GraphEdge;
 
@@ -383,6 +399,17 @@ struct GraphEdgeLessByElem1 {
     }
 };
 
+struct GraphEdgeLessByElem2Only
+{
+    bool operator()(const GraphEdge& a, const GraphEdge& b) const
+    {
+        impl::LocalId a_elem2 = std::abs(a.elem2());
+        impl::LocalId b_elem2 = std::abs(b.elem2());
+
+        return a_elem2 < b_elem2 || (a_elem2 == b_elem2 && a.side2() < b.side2());
+    }  
+};
+
 inline
 bool operator<(const GraphEdge& a, const GraphEdge& b)
 {
@@ -410,6 +437,19 @@ struct GraphEdgeLessByElem2 {
             return a.side1() < b.side1();
         }
     }
+
+    bool operator()(const std::pair<GraphEdge,impl::ParallelInfo>& a, const GraphEdge& b) const
+    {
+        return operator()(a.first, b);
+    }
+    bool operator()(const GraphEdge& a, const std::pair<GraphEdge,impl::ParallelInfo>& b) const
+    {
+        return operator()(a, b.first);
+    }
+    bool operator()(const std::pair<GraphEdge,impl::ParallelInfo>& a, const std::pair<GraphEdge,impl::ParallelInfo>& b) const
+    {
+        return operator()(a.first, b.first);
+    }
 };
 
 inline
@@ -419,16 +459,24 @@ bool operator==(const GraphEdge& a, const GraphEdge& b)
 }
 
 inline
+bool operator!=(const GraphEdge& a, const GraphEdge& b)
+{
+    return  !(a == b);
+}
+
+inline
 std::ostream& operator<<(std::ostream& out, const GraphEdge& graphEdge)
 {
-    out << "(" << graphEdge.vertex1 << " -> " << graphEdge.vertex2 << ")";
+    out << "GraphEdge vertices: (" << graphEdge.vertex1 << " -> " << graphEdge.vertex2 
+        << "), element-side pairs: (" << graphEdge.elem1() << ", " << graphEdge.side1() 
+        << ") -> (" << graphEdge.elem2() << ", " << graphEdge.side2() << ")";
     return out;
 }
 
 namespace impl {
 
 typedef std::pair<LocalId,int> ElementSidePair;
-typedef std::map<GraphEdge, ParallelInfo, GraphEdgeLessByElem2> ParallelGraphInfo;
+typedef std::vector<std::pair<GraphEdge,ParallelInfo>> ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
 typedef std::vector<ParallelElementData> ParallelElementDataVector;
@@ -437,16 +485,39 @@ typedef std::vector<SerialElementData> SerialElementDataVector;
 typedef std::vector<GraphEdge> GraphEdgeVector;
 
 NAMED_PAIR( EntitySidePair , stk::mesh::Entity , entity , unsigned , side_id )
-NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , side_id )
-NAMED_PAIR( ProcVecFaceIdPair , std::vector<int> , proc_vec , stk::mesh::EntityId , side_id )
 
-typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
+struct ElemSideProc{
+  ElemSideProc(stk::mesh::Entity elem, unsigned side, int procArg)
+  : elemSidePair(elem, side), proc(procArg)
+  {}
+
+  EntitySidePair elemSidePair;
+  int proc;
+
+  bool operator<(const EntitySidePair& rhs) const
+  {
+    return elemSidePair < rhs;
+  }
+
+  bool operator<(const ElemSideProc& rhs) const
+  {
+    return elemSidePair < rhs.elemSidePair;
+  }
+};
+
+inline
+bool operator<(const EntitySidePair& lhs, const ElemSideProc& rhs)
+{
+  return lhs < rhs.elemSidePair;
+}
+
+using ElemSideProcVector = std::vector<ElemSideProc>;
 
 unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData);
 
 bool fill_topologies(stk::mesh::ElemElemGraph& eeGraph, const stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
 
-ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
+ElemSideProcVector build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
 std::vector<GraphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
@@ -490,7 +561,7 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
 bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity side);
 
 bool is_local_element(stk::mesh::impl::LocalId elemId);
-void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index, stk::mesh::EntityVector& side_nodes);
+void fill_element_side_nodes_from_topology(stk::topology elemTopo, const stk::mesh::Entity* elemNodes, unsigned side_index, stk::mesh::EntityVector& side_nodes);
 
 inline bool is_shell_or_beam2(stk::topology top)
 {

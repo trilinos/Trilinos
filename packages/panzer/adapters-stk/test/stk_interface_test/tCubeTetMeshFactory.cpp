@@ -53,12 +53,6 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_Region.h"

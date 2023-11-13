@@ -480,7 +480,7 @@ public:
   void init( unsigned & update ) const { update = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile unsigned & update , const volatile unsigned & input ) const { update += input ; }
+  void join( unsigned & update , const unsigned & input ) const { update += input ; }
 
   //------------------------------------
 };

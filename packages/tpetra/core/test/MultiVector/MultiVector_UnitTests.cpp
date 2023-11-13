@@ -42,6 +42,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_KokkosCounter.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -1003,7 +1004,7 @@ namespace {
     typedef Tpetra::Map<LO,GO,Node> map_type;
     typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
     typedef Tpetra::Vector<ST,LO,GO,Node> V;
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
 
     out << "Tpetra::MultiVector::elementWiseMultiply test" << endl;
     Teuchos::OSTab tab0 (out);
@@ -1053,7 +1054,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S0, A, B, S0);
@@ -1073,7 +1074,7 @@ namespace {
         const ST S3 = S1 + S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S3);
@@ -1093,7 +1094,7 @@ namespace {
       // update rules.
       {
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1115,7 +1116,7 @@ namespace {
         const ST S2 = S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1139,7 +1140,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S1, A, B, S0);
@@ -1161,7 +1162,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (-S1, A, B, S0);
@@ -1266,7 +1267,7 @@ namespace {
         B.putScalar (S4);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S2, A, B, S0);
@@ -1328,7 +1329,7 @@ namespace {
     typedef Tpetra::Map<LO,GO,Node> map_type;
     typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
     typedef Tpetra::Vector<ST,LO,GO,Node> V;
-    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef typename Kokkos::ArithTraits<ST>::val_type IST;
 
     out << "Tpetra::MultiVector::elementWiseMultiplyLg test" << endl;
     Teuchos::OSTab tab0 (out);
@@ -1378,7 +1379,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S0, A, B, S0);
@@ -1398,7 +1399,7 @@ namespace {
         const ST S3 = S1 + S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S3);
@@ -1418,7 +1419,7 @@ namespace {
       // update rules.
       {
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1440,7 +1441,7 @@ namespace {
         const ST S2 = S1 + S1;
 
         // Prefill A and B with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         A.putScalar (nan);
         B.putScalar (nan);
         C.putScalar (S1);
@@ -1464,7 +1465,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S1, A, B, S0);
@@ -1486,7 +1487,7 @@ namespace {
         B.putScalar (S1);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (-S1, A, B, S0);
@@ -1591,7 +1592,7 @@ namespace {
         B.putScalar (S4);
 
         // Prefill C with NaN, if NaN exists for ST.
-        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        const ST nan = static_cast<ST> (Kokkos::ArithTraits<IST>::nan ());
         C.putScalar (nan);
 
         C.elementWiseMultiply (S2, A, B, S0);
@@ -3971,7 +3972,7 @@ namespace {
     RCP<const map_type> map = rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
     TEST_ASSERT( ! map.is_null () );
     TEST_EQUALITY( map->getGlobalNumElements (), gblNumRows );
-    TEST_EQUALITY( map->getNodeNumElements (), lclNumRows );
+    TEST_EQUALITY( map->getLocalNumElements (), lclNumRows );
     TEST_EQUALITY( map->getIndexBase (), indexBase );
 
     //
@@ -4030,37 +4031,6 @@ namespace {
       }
     }
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-    // FIXME (mfh 10 Jul 2014) Just testing if Kokkos Refactor is
-    // enabled isn't enough; we have to make sure that the Node type
-    // is one of the new Kokkos Nodes.
-
-    // // Make sure that the Views have the right dimensions.
-    // {
-    //   typedef typename MV::dual_view_type dual_view_type;
-    //   typedef typename dual_view_type::t_dev device_view_type;
-    //   typedef typename dual_view_type::t_host host_view_type;
-
-    //   device_view_type X_dev =
-    //     X.template getLocalView<typename device_view_type::execution_space> ();
-    //   host_view_type X_host =
-    //     X.template getLocalView<typename host_view_type::execution_space> ();
-
-    //   if (comm->getRank () == 0) {
-    //     TEST_EQUALITY( X_dev.extent (0), static_cast<size_t> (0) );
-    //     TEST_EQUALITY( X_dev.extent (1), numCols );
-    //     TEST_EQUALITY( X_host.extent (0), static_cast<size_t> (0) );
-    //     TEST_EQUALITY( X_host.extent (1), numCols );
-    //   }
-    //   else { // my rank is not zero
-    //     TEST_EQUALITY( X_dev.extent (0), lclNumRows );
-    //     TEST_EQUALITY( X_dev.extent (1), numCols );
-    //     TEST_EQUALITY( X_host.extent (0), lclNumRows );
-    //     TEST_EQUALITY( X_host.extent (1), numCols );
-    //   }
-    // }
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
-
     //
     // Replace the MultiVector's subset Map with its original Map.
     //
@@ -4073,28 +4043,6 @@ namespace {
     TEST_EQUALITY( X.getLocalLength (), lclNumRows );
     TEST_EQUALITY( X.getGlobalLength (), gblNumRows );
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-    // FIXME (mfh 10 Jul 2014) Just testing if Kokkos Refactor is
-    // enabled isn't enough; we have to make sure that the Node type
-    // is one of the new Kokkos Nodes.
-
-    // // Make sure that the Views have the right dimensions.
-    // {
-    //   typedef typename MV::dual_view_type dual_view_type;
-    //   typedef typename dual_view_type::t_dev device_view_type;
-    //   typedef typename dual_view_type::t_host host_view_type;
-
-    //   device_view_type X_dev =
-    //     X.template getLocalView<typename device_view_type::execution_space> ();
-    //   host_view_type X_host =
-    //     X.template getLocalView<typename host_view_type::execution_space> ();
-
-    //   TEST_EQUALITY( X_dev.extent (0), lclNumRows );
-    //   TEST_EQUALITY( X_dev.extent (1), numCols );
-    //   TEST_EQUALITY( X_host.extent (0), lclNumRows );
-    //   TEST_EQUALITY( X_host.extent (1), numCols );
-    // }
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
     // Make sure that the test passed on all processes, not just Proc 0.
     int lclSuccess = success ? 1 : 0;
@@ -5255,12 +5203,178 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyCounterCheck, LO , GO , Scalar , Node ) {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    using device_view = typename MV::dual_view_type::t_dev;
+    using host_view   = typename MV::dual_view_type::t_host;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<const map_type> map = rcp (new map_type (100, 0, comm));
+    MV x(map, 1);
+    x.putScalar(Teuchos::ScalarTraits<Scalar>::one());
+
+    const device_view x_d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    host_view y_h = create_mirror_view(x_d);  
+
+    size_t correct_count;
+    // Check to see if we'll be deep_copy-ing between memory spaces
+    if(std::is_same<typename device_view::memory_space,typename host_view::memory_space>::value) {
+      correct_count = 0;
+    }
+    else {
+      correct_count = 1;
+    }
+
+
+    // Stop / Start  (reset first to clear counts from previous unit test calls)   
+    Tpetra::Details::DeepCopyCounter::reset();   
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    Tpetra::Details::DeepCopyCounter::stop();   
+    size_t count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // Reset / get_count (should be zero now)
+    Tpetra::Details::DeepCopyCounter::reset();   
+    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    TEST_EQUALITY(count,0);
+
+
+    // Second  Stop / Start (should have the original count)
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    Tpetra::Details::DeepCopyCounter::stop();   
+    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // This guy should not get counted, since the counter is stopped
+    Kokkos::deep_copy(y_h,x_d);
+    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    TEST_EQUALITY(count,correct_count);
+
+
+    // Third Second  Stop / Start (should have double the original count)
+    Tpetra::Details::DeepCopyCounter::start();
+    Kokkos::deep_copy(y_h,x_d);
+    Tpetra::Details::DeepCopyCounter::stop();   
+    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    TEST_EQUALITY(count,2*correct_count);
+          
+  }
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, FenceCounterCheck, LO , GO , Scalar , Node ) {
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    auto exec_space = typename Node::execution_space();
+    const std::string space = exec_space.name();
+
+    /***********************************************************************/
+    // Global fences
+    size_t global_correct_count=1;
+
+    // Stop / Start  (reset first to clear counts from previous unit test calls)   
+    Tpetra::Details::FenceCounter::reset();   
+    Tpetra::Details::FenceCounter::start();
+    Kokkos::fence();
+    Tpetra::Details::FenceCounter::stop();   
+    size_t global_count = Tpetra::Details::FenceCounter::get_count_global(space);   
+    size_t instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,global_correct_count);
+    TEST_EQUALITY(instance_count,0);
+
+    // Reset / get_count (should be zero now)
+    Tpetra::Details::FenceCounter::reset();   
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,0);
+    TEST_EQUALITY(instance_count,0);
+
+    // Second  Stop / Start (should have the original count)
+    Tpetra::Details::FenceCounter::start();
+    Kokkos::fence();
+    Tpetra::Details::FenceCounter::stop();   
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,global_correct_count);
+    TEST_EQUALITY(instance_count,0);
+
+    // This guy should not get counted, since the counter is stopped
+    Kokkos::fence();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,global_correct_count);
+    TEST_EQUALITY(instance_count,0);
+
+    // Third Second  Stop / Start (should have double the original count)
+    Tpetra::Details::FenceCounter::start();
+    Kokkos::fence();
+    Tpetra::Details::FenceCounter::stop();   
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,2*global_correct_count);
+    TEST_EQUALITY(instance_count,0);
+
+    /***********************************************************************/
+    // Instance Fences
+    size_t instance_correct_count = 1;
+
+    // Stop / Start  (reset first to clear counts from previous unit test calls)   
+    Tpetra::Details::FenceCounter::reset();   
+    Tpetra::Details::FenceCounter::start();
+    exec_space.fence();
+    Tpetra::Details::FenceCounter::stop();   
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,0);
+    TEST_EQUALITY(instance_count,instance_correct_count);
+
+    // Reset / get_count (should be zero now)
+    Tpetra::Details::FenceCounter::reset();   
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,0);
+    TEST_EQUALITY(instance_count,0);
+
+    // Second  Stop / Start (should have the original count)
+    Tpetra::Details::FenceCounter::start();
+    exec_space.fence();    
+    Tpetra::Details::FenceCounter::stop();   
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,0);
+    TEST_EQUALITY(instance_count,instance_correct_count);
+
+    // This guy should not get counted, since the counter is stopped
+    exec_space.fence();        
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,0);
+    TEST_EQUALITY(instance_count,instance_correct_count);
+
+    // Third Second  Stop / Start (should have double the original count)
+    Tpetra::Details::FenceCounter::start();
+    exec_space.fence();        
+    Tpetra::Details::FenceCounter::stop();   
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    TEST_EQUALITY(global_count,0);
+    TEST_EQUALITY(instance_count,2*instance_correct_count);      
+  }
+
+
+
+
+
 
 #ifdef KOKKOS_ENABLE_OPENMP
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OpenMP_ThreadedSum, LO , GO , Scalar , Node ) {
     // Restrict to OpenMPNode and disable in debug mode (weird things happen w/ GCC 8.3.0 since RCP's
     // are not necessarily thread-safe
-    if(typeid(Node)!=typeid(Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>) ||
+    if(typeid(Node)!=typeid(Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>) ||
        ::Tpetra::Details::Behavior::debug())
        return;
 
@@ -5270,7 +5384,7 @@ namespace {
     RCP<const map_type> map = rcp (new map_type (1000, 0, comm));
     MV x(map, 1);
     x.putScalar(0.0);
-    LO N= (LO) map->getNodeNumElements();
+    LO N= (LO) map->getLocalNumElements();
 
     // Vector parallel fill
     // If we
@@ -5327,7 +5441,9 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyCounterCheck, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, FenceCounterCheck, LO, GO, SCALAR, NODE )
 
 #ifdef KOKKOS_ENABLE_OPENMP
   // Add special test for OpenMP

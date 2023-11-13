@@ -46,8 +46,6 @@
 #ifndef MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP
 #define MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <queue>
 #include <vector>
 
@@ -58,7 +56,7 @@
 
 #include "MueLu_AggregationPhase1Algorithm_kokkos_decl.hpp"
 
-#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
@@ -72,7 +70,7 @@ namespace MueLu {
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const Teuchos::ParameterList& params,
                   const LWGraph_kokkos& graph,
-                  Aggregates_kokkos& aggregates,
+                  Aggregates& aggregates,
                   Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
 
@@ -105,7 +103,7 @@ namespace MueLu {
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregatesRandom(const LO maxAggSize,
                         const LWGraph_kokkos& graph,
-                        Aggregates_kokkos& aggregates,
+                        Aggregates& aggregates,
                         Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                         LO& numNonAggregatedNodes) const
   {
@@ -116,6 +114,8 @@ namespace MueLu {
     auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto procWinner   = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto colors       = aggregates.GetGraphColors();
+
+    auto lclLWGraph = graph.getLocalLWGraph();
 
     LO numAggregatedNodes = 0;
     LO numLocalAggregates = aggregates.GetNumAggregates();
@@ -165,10 +165,10 @@ namespace MueLu {
                                  && (aggStat(nodeIdx) == READY || aggStat(nodeIdx) == NOTSEL)) {
                                 // Get neighbors of vertex i and look for local, aggregated,
                                 // color 1 neighbor (valid root).
-                                auto neighbors = graph.getNeighborVertices(nodeIdx);
+                                auto neighbors = lclLWGraph.getNeighborVertices(nodeIdx);
                                 for(LO j = 0; j < neighbors.length; ++j) {
                                   auto nei = neighbors.colidx(j);
-                                  if(graph.isLocalNeighborVertex(nei) && colors(nei) == 1
+                                  if(lclLWGraph.isLocalNeighborVertex(nei) && colors(nei) == 1
                                      && aggStat(nei) == AGGREGATED) {
 
                                     // This atomic guarentees that any other node trying to
@@ -206,7 +206,7 @@ namespace MueLu {
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregatesDeterministic(const LO maxAggSize,
                                const LWGraph_kokkos& graph,
-                               Aggregates_kokkos& aggregates,
+                               Aggregates& aggregates,
                                Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                                LO& numNonAggregatedNodes) const
   {
@@ -216,6 +216,8 @@ namespace MueLu {
     auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto procWinner   = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto colors       = aggregates.GetGraphColors();
+
+    auto lclLWGraph = graph.getLocalLWGraph();
 
     LO numLocalAggregates = aggregates.GetNumAggregates();
     Kokkos::View<LO, device_type> numLocalAggregatesView("Num aggregates");
@@ -254,11 +256,11 @@ namespace MueLu {
                               vertex2AggId(root, 0) = aggID;
                               procWinner(root, 0) = myRank;
                               aggStat(root) = AGGREGATED;
-                              auto neighOfRoot = graph.getNeighborVertices(root);
+                              auto neighOfRoot = lclLWGraph.getNeighborVertices(root);
                               for(LO n = 0; n < neighOfRoot.length; n++)
                                 {
                                   LO neigh = neighOfRoot(n);
-                                  if (graph.isLocalNeighborVertex(neigh) && aggStat(neigh) == READY)
+                                  if (lclLWGraph.isLocalNeighborVertex(neigh) && aggStat(neigh) == READY)
                                     {
                                       //add neigh to aggregate
                                       vertex2AggId(neigh, 0) = aggID;
@@ -281,5 +283,4 @@ namespace MueLu {
 
 } // end namespace
 
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP

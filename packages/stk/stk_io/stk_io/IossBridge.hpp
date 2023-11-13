@@ -37,32 +37,37 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <Ioss_DBUsage.h>                // for DatabaseUsage
-#include <Ioss_Field.h>                  // for Field, Field::RoleType, etc
-#include <stddef.h>                      // for size_t
-#include <stk_mesh/base/Types.hpp>       // for EntityId, EntityRank
-#include <stk_topology/topology.hpp>     // for topology
-#include <string>                        // for string, operator<, etc
-#include <utility>                       // for pair
-#include <vector>                        // for vector
-#include "Ioss_EntityType.h"             // for EntityType
-#include "Ioss_GroupingEntity.h"
-#include "stk_mesh/base/FieldState.hpp"  // for FieldState
-#include "stk_mesh/base/FieldBase.hpp"  // for FieldState
-#include "stk_mesh/base/Part.hpp"        // for Part
-#include "stk_mesh/base/SideSetUtil.hpp"
-#include "Ioss_GroupingEntity.h"                     // for GroupingEntity
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include "SidesetTranslator.hpp"
-#include "stk_io/OutputParams.hpp"
-#include "stk_io/FieldAndName.hpp"
-
-namespace stk { namespace mesh { class BulkData; } }
+#include <Ioss_DBUsage.h>                   // for DatabaseUsage
+#include <Ioss_Field.h>                     // for Field, Field::RoleType
+#include <cstddef>                          // for size_t
+#include <cstdint>                          // for int64_t
+#include <stk_mesh/base/MetaData.hpp>       // for MetaData
+#include <stk_mesh/base/Types.hpp>          // for EntityId, EntityRank, Ent...
+#include <string>                           // for string, operator<, basic_...
+#include <utility>                          // for pair
+#include <vector>                           // for vector
+#include <functional>
+#include "Ioss_EntityType.h"                // for EntityType, SIDEBLOCK
+#include "Ioss_GroupingEntity.h"            // for GroupingEntity
+#include "SidesetTranslator.hpp"            // for fill_element_and_side_ids
+#include "stk_io/OutputParams.hpp"          // for OutputParams
+#include "stk_mesh/base/BulkData.hpp"       // for BulkData
+#include "stk_mesh/base/FieldState.hpp"     // for FieldState
+#include "stk_mesh/base/Part.hpp"           // for Part
+#include "stk_topology/topology.hpp"        // for topology
+#include "stk_util/util/ParameterList.hpp"  // for Type
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class ElementTopology; }
+namespace Ioss { class EntityBlock; }
+namespace Ioss { class Region; }
+namespace stk { namespace io { struct FieldAndName; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class FieldRestriction; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }
-namespace stk { namespace mesh { class Selector; } }
+
+namespace stk { namespace mesh { class BulkData; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -74,10 +79,6 @@ class SideBlock;
 class NodeBlock;
 class Field;
 class GroupingEntity;
-class Region;
-class ElementTopology;
-class EntityBlock;
-class DatabaseIO;
 }
 
 void STKIORequire(bool cond);
@@ -94,25 +95,27 @@ namespace stk {
  */
 namespace io {
 
+using TopologyErrorHandler = std::function<void(stk::mesh::Part &part)>;
+
 stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta);
 
 struct GlobalAnyVariable {
-  GlobalAnyVariable(const std::string &name, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
+  GlobalAnyVariable(const std::string &name, const std::any *value, stk::util::ParameterType::Type type)
     : m_name(name), m_value(value), m_type(type)
   {}
 
   std::string m_name;
-  const STK_ANY_NAMESPACE::any *m_value;
+  const std::any *m_value;
   stk::util::ParameterType::Type m_type;
 };
 
-static const std::string s_internal_selector_name("_stk_io_internal_selector");
-static const std::string s_ignore_disconnected_nodes("ignore_disconnected_nodes");
-static const std::string s_process_all_input_nodes("process_all_input_nodes");
-static const std::string s_sort_stk_parts("sort_stk_parts");
-static const std::string s_entity_nodes_suffix("_n");
-static const std::string s_distribution_factors("distribution_factors");
+static const std::string s_internalSelectorName("_stk_io_internal_selector");
+static const std::string s_ignoreDisconnectedNodes("ignore_disconnected_nodes");
+static const std::string s_processAllInputNodes("process_all_input_nodes");
+static const std::string s_sortStkParts("sort_stk_parts");
+static const std::string s_entityNodesSuffix("_n");
+static const std::string s_distributionFactors("distribution_factors");
 
 typedef std::pair<stk::mesh::EntityId, int> EntityIdToProcPair;
 typedef std::vector<EntityIdToProcPair> EntitySharingInfo;
@@ -133,9 +136,7 @@ struct FieldNameToPartLess
 
 typedef std::vector<FieldNameToPart> FieldNameToPartVector;
 
-stk::mesh::Part *getPart(const stk::mesh::MetaData& meta_data, const std::string& name);
-
-bool is_valid_for_output(const stk::mesh::Part &part, const stk::mesh::Selector *output_selector = nullptr);
+bool is_valid_for_output(stk::io::OutputParams &params, const stk::mesh::Part &part);
 void get_selected_nodes(OutputParams &params,
                         const stk::mesh::Selector &selector,
                         stk::mesh::EntityVector &nodes);
@@ -156,9 +157,9 @@ bool node_is_connected_to_local_element(const stk::mesh::BulkData &bulk, stk::me
  */
 bool include_entity(const Ioss::GroupingEntity *entity);
 
-void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta);
+void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 
-void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta);
+void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
 
 /** This is the primary function used by an application to define
  *	the stk::mesh which corresponds to the Ioss mesh read from the
@@ -171,11 +172,22 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
  *	results or restart file.
  */
 template <typename T>
-void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta)
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
-    internal_part_processing(entity, meta);
+    internal_part_processing(entity, meta, handler);
+  }
+}
+
+template <typename T>
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta)
+{
+  TopologyErrorHandler handler = [](stk::mesh::Part &part) { };
+
+  for(size_t i=0; i < entities.size(); i++) {
+    T* entity = entities[i];
+    internal_part_processing(entity, meta, handler);
   }
 }
 
@@ -329,10 +341,9 @@ std::string map_stk_topology_to_ioss(stk::topology topo);
  * Ioss::GroupingEntity to/from an stk::mesh::Field.  See
  * stk::io::field_data_from_ioss() and stk::io::field_data_to_ioss() for examples.
  */
-void get_input_entity_list(Ioss::GroupingEntity *io_entity,
-                           stk::mesh::EntityRank part_type,
-                           const stk::mesh::BulkData &bulk,
-                           std::vector<stk::mesh::Entity> &entities);
+std::vector<stk::mesh::Entity> get_input_entity_list(Ioss::GroupingEntity *ioEntity,
+                                                     stk::mesh::EntityRank part_type,
+                                                     const stk::mesh::BulkData &bulk);
 
 void get_output_entity_list(Ioss::GroupingEntity *io_entity,
                             stk::mesh::EntityRank part_type,
@@ -358,7 +369,7 @@ bool all_field_states_exist_on_io_entity(const std::string& db_name, const stk::
 
 void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      const stk::mesh::FieldBase *field,
-                                     std::vector<stk::mesh::Entity> &entity_list,
+                                     const std::vector<stk::mesh::Entity> &entity_list,
                                      Ioss::GroupingEntity *io_entity,
                                      const std::string &name,
                                      const size_t state_count,
@@ -366,14 +377,14 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                      std::vector<std::string>* multiStateSuffixes=nullptr);
 
 void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
-					       const stk::mesh::FieldBase *field,
-					       std::vector<stk::mesh::Entity> &entity_list,
-					       Ioss::GroupingEntity *io_entity,
-					       const stk::mesh::Part *stk_part,
-					       const std::string &name,
-					       const size_t state_count,
-					       bool ignore_missing_fields = false,
-					       std::vector<std::string>* multiStateSuffixes=nullptr);
+                 const stk::mesh::FieldBase *field,
+                 const std::vector<mesh::Entity> &entity_list,
+                 Ioss::GroupingEntity *io_entity,
+                 const stk::mesh::Part *stk_part,
+                 const std::string &name,
+                 const size_t state_count,
+                 bool ignore_missing_fields = false,
+                 std::vector<std::string>* multiStateSuffixes=nullptr);
 
 /**
  * Fill the specified 'field' with data from the Ioss field named
@@ -383,16 +394,16 @@ void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
  */
 void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           const stk::mesh::FieldBase *field,
-                          std::vector<stk::mesh::Entity> &entities,
+                          const std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name);
 
 void subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
-				    const stk::mesh::FieldBase *field,
-				    std::vector<stk::mesh::Entity> &entities,
-				    Ioss::GroupingEntity *io_entity,
-				    const stk::mesh::Part *stk_part,
-				    const std::string &io_fld_name);
+            const stk::mesh::FieldBase *field,
+            const std::vector<mesh::Entity> &entities,
+            Ioss::GroupingEntity *io_entity,
+            const stk::mesh::Part *stk_part,
+            const std::string &io_fld_name);
 
 void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
                         const stk::mesh::FieldBase *field,
@@ -458,11 +469,15 @@ bool is_part_edge_block_io_part(const stk::mesh::Part &part);
 
 bool is_part_assembly_io_part(const stk::mesh::Part &part);
 
-Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part);
+bool is_part_element_block_io_part(const stk::mesh::Part &part);
+
+bool is_part_surface_io_part(const stk::mesh::Part &part);
+
+Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, const stk::mesh::Part& part);
 
 std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& meta, stk::mesh::EntityRank rank);
 
-std::vector<Ioss::EntityType> get_ioss_entity_types(stk::mesh::Part& part);
+std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::Part& part);
 
 std::string getPartName(const stk::mesh::Part& part);
 
@@ -513,12 +528,50 @@ void put_edge_block_io_part_attribute( stk::mesh::Part &part);
 
 void put_assembly_io_part_attribute( stk::mesh::Part &part);
 
+void create_named_suffix_field_output_type(const std::string & typeName, const std::vector<std::string> & suffices);
+void set_named_suffix_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName);
+
+enum class FieldOutputType {
+  //                  Output Subscripts:
+  SCALAR,           //  []
+  VECTOR_2D,        //  [x, y]
+  VECTOR_3D,        //  [x, y, z]
+  FULL_TENSOR_36,   //  [xx, yy, zz, xy, yz, zx, yx, zy, xz]
+  FULL_TENSOR_32,   //  [xx, yy, zz, xy, yx]
+  FULL_TENSOR_22,   //  [xx, yy, xy, yx]
+  FULL_TENSOR_16,   //  [xx, xy, yz, zx, yx, zy, xz]
+  FULL_TENSOR_12,   //  [xx, xy, yx]
+  SYM_TENSOR_33,    //  [xx, yy, zz, xy, yz, zx]
+  SYM_TENSOR_31,    //  [xx, yy, zz, xy]
+  SYM_TENSOR_21,    //  [xx, yy, xy]
+  SYM_TENSOR_13,    //  [xx, xy, yz, zx]
+  SYM_TENSOR_11,    //  [xx, xy]
+  SYM_TENSOR_10,    //  [xx]
+  ASYM_TENSOR_03,   //  [xy, yz, zx]
+  ASYM_TENSOR_02,   //  [xy, yz]
+  ASYM_TENSOR_01,   //  [xy]
+  MATRIX_22,        //  [xx, xy, yx, yy]
+  MATRIX_33,        //  [xx, xy, xz, yx, yy, yz, zx, zy, zz]
+  QUATERNION_2D,    //  [s, q]
+  QUATERNION_3D,    //  [x, y, z, q]
+  CUSTOM            //  User-defined subscripting
+};
+
+bool has_field_output_type(const stk::mesh::FieldBase & field);
+
+void set_field_output_type(stk::mesh::FieldBase & field, FieldOutputType fieldOutputType);
+FieldOutputType get_field_output_type(const stk::mesh::FieldBase & field);
+
+void set_field_output_variable_type(stk::mesh::FieldBase & field, const Ioss::VariableType * type);
+const Ioss::VariableType * get_field_output_variable_type(const stk::mesh::FieldBase & field);
+
 std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta);
 
 std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta, const std::string& assemblyName);
 
 bool has_sub_assemblies(const stk::mesh::MetaData& meta, const std::string& assemblyName);
 
+stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::Part &assemblyPart);
 stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::MetaData& meta, const std::string& assemblyName);
 
 /** Remove the existing attribute on the specified part 'part' that indicates that
@@ -533,15 +586,14 @@ void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension
 
 Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename, int index_subdomain, int num_subdomains);
 
-void add_properties_for_subdomain(stk::mesh::BulkData& bulkData, Ioss::Region &out_region, int index_subdomain,
+void add_properties_for_subdomain(stk::io::OutputParams& params, int index_subdomain,
                                   int num_subdomains, int global_num_nodes, int global_num_elems);
 
-void write_mesh_data_for_subdomain(Ioss::Region& out_region, stk::mesh::BulkData& bulkData, const EntitySharingInfo& nodeSharingInfo);
+void write_mesh_data_for_subdomain(stk::io::OutputParams& params, const EntitySharingInfo& nodeSharingInfo);
 
-int write_transient_data_for_subdomain(Ioss::Region &out_region, stk::mesh::BulkData& bulkData, double timeStep);
+int write_transient_data_for_subdomain(stk::io::OutputParams& params, double timeStep);
 
-void write_file_for_subdomain(Ioss::Region &out_region,
-                              stk::mesh::BulkData& bulkData,
+void write_file_for_subdomain(stk::io::OutputParams& params,
                               const EntitySharingInfo &nodeSharingInfo,
                               int numSteps = -1,
                               double timeStep = 0.0);
@@ -551,7 +603,7 @@ void write_file_for_subdomain(const std::string &baseFilename,
                               int num_subdomains,
                               int global_num_nodes,
                               int global_num_elems,
-                              stk::mesh::BulkData& bulkData,
+                              stk::io::OutputParams& params,
                               const EntitySharingInfo &nodeSharingInfo,
                               int numSteps = -1,
                               double timeStep = 0.0);
@@ -586,7 +638,7 @@ void fill_data_for_side_block( OutputParams &params,
                                std::vector<INT> &elem_side_ids,
                                stk::mesh::EntityVector &sides)
 {
-    ThrowRequireMsg(io.type() == Ioss::SIDEBLOCK, "Input GroupingEntity must be of type Ioss::SIDEBLOCK");
+    STK_ThrowRequireMsg(io.type() == Ioss::SIDEBLOCK, "Input GroupingEntity must be of type Ioss::SIDEBLOCK");
 
     stk::topology stk_elem_topology = map_ioss_topology_to_stk(element_topology, params.bulk_data().mesh_meta_data().spatial_dimension());
 

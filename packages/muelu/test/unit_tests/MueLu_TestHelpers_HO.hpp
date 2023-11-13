@@ -65,7 +65,7 @@ namespace MueLuTests {
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void AllocateEpetraFECrsMatrix(RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & pn_rowmap,  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & B)
     {
-      throw MueLu::Exceptions::RuntimeError("MueLuTests::TestHelpers::AllocateEpetraFECrsMatrix only works for Kokkos::Compat::KokkosSerialWrapperNode");
+      throw MueLu::Exceptions::RuntimeError("MueLuTests::TestHelpers::AllocateEpetraFECrsMatrix only works for Tpetra::KokkosCompat::KokkosSerialWrapperNode");
     }
 
 #if defined(HAVE_MUELU_EPETRA) && \
@@ -73,14 +73,14 @@ namespace MueLuTests {
             (defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_SERIAL)) \
            )
     template <>
-    void AllocateEpetraFECrsMatrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>(RCP<const Xpetra::Map<int,int,Kokkos::Compat::KokkosSerialWrapperNode> > & pn_rowmap,  RCP<const Xpetra::Map<int,int,Kokkos::Compat::KokkosSerialWrapperNode> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode > > & B)
+    void AllocateEpetraFECrsMatrix<double,int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode>(RCP<const Xpetra::Map<int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode> > & pn_rowmap,  RCP<const Xpetra::Map<int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode> > pn_colmap, Teuchos::RCP<Xpetra::Matrix<double,int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode > > & B)
 
     {
       // Epetra is hard
       const Epetra_Map & pn_rowmap_epetra = Xpetra::toEpetra(*pn_rowmap);
       const Epetra_Map & pn_colmap_epetra = Xpetra::toEpetra(*pn_colmap);
       RCP<Epetra_CrsMatrix> B_epetra = rcp(new Epetra_FECrsMatrix(Copy,pn_rowmap_epetra,pn_colmap_epetra,0));
-      B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>(B_epetra);
+      B = MueLu::Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,Tpetra::KokkosCompat::KokkosSerialWrapperNode>(B_epetra);
     }
 #endif
 
@@ -129,7 +129,7 @@ namespace MueLuTests {
 
       // Count edges.   For shared edges, lower PID gets the owning nodes
       GO global_num_nodes       = p1_rowmap->getGlobalNumElements();
-      size_t local_num_nodes    = p1_rowmap->getNodeNumElements();
+      size_t local_num_nodes    = p1_rowmap->getLocalNumElements();
       GO global_num_elements    = global_num_nodes -1;
       size_t local_num_elements = local_num_nodes;
       if(p1_rowmap->getGlobalElement(local_num_elements-1) == global_num_nodes-1) local_num_elements--;
@@ -137,7 +137,7 @@ namespace MueLuTests {
       printf("[%d] P1 Problem Size: nodes=%d/%d elements=%d/%d\n",MyPID,(int)local_num_nodes,(int)global_num_nodes,(int)local_num_elements,(int)global_num_elements);
 
       int num_edge_dofs   = (degree-1)*local_num_elements;
-      size_t p1_num_ghost_col_dofs = p1_colmap->getNodeNumElements() - local_num_nodes;
+      size_t p1_num_ghost_col_dofs = p1_colmap->getLocalNumElements() - local_num_nodes;
 
       // Scansum owned edge counts
       int edge_start=0;
@@ -167,7 +167,7 @@ namespace MueLuTests {
       size_t idx=pn_owned_dofs.size();
       if(MyPID!=0) {
         // Left side nodal
-        pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_rowmap->getNodeNumElements());
+        pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_rowmap->getLocalNumElements());
         idx++;
         // Left side, edge
         for(size_t i=0; i<(size_t)(degree-1); i++) {
@@ -177,7 +177,7 @@ namespace MueLuTests {
       }
       if(MyPID!=Nproc-1) {
         // Right side nodal
-        pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_colmap->getNodeNumElements()-1);
+        pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_colmap->getLocalNumElements()-1);
         idx++;
       }
 
@@ -186,19 +186,19 @@ namespace MueLuTests {
 #if 0
       {
         printf("[%d] TH P1 RowMap = ",MyPID);
-        for(size_t i=0; i<p1_rowmap->getNodeNumElements(); i++)
+        for(size_t i=0; i<p1_rowmap->getLocalNumElements(); i++)
           printf("%d ",(int)p1_rowmap->getGlobalElement(i));
         printf("\n");
         printf("[%d] TH P1 ColMap = ",MyPID);
-        for(size_t i=0; i<p1_colmap->getNodeNumElements(); i++)
+        for(size_t i=0; i<p1_colmap->getLocalNumElements(); i++)
           printf("%d ",(int) p1_colmap->getGlobalElement(i));
         printf("\n");
         printf("[%d] TH Pn RowMap = ",MyPID);
-        for(size_t i=0; i<pn_rowmap->getNodeNumElements(); i++)
+        for(size_t i=0; i<pn_rowmap->getLocalNumElements(); i++)
           printf("%d ",(int) pn_rowmap->getGlobalElement(i));
         printf("\n");
         printf("[%d] TH Pn ColMap = ",MyPID);
-        for(size_t i=0; i<pn_colmap->getNodeNumElements(); i++)
+        for(size_t i=0; i<pn_colmap->getLocalNumElements(); i++)
           printf("%d ",(int) pn_colmap->getGlobalElement(i));
         printf("\n");
         fflush(stdout);

@@ -51,7 +51,6 @@
 #include "Teuchos_DebugDefaultAsserts.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_TypeTraits.hpp"
 #include "Stratimikos_Config.h"
 #ifdef HAVE_STRATIMIKOS_THYRATPETRAADAPTERS
 #  include "Thyra_TpetraThyraWrappers.hpp"
@@ -207,7 +206,7 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
         defaultTol_ =
           as<magnitude_type> (solverPL_->get<double> ("Convergence Tolerance"));
       }
-      else if (Teuchos::TypeTraits::is_same<double, magnitude_type>::value) {
+      else if (std::is_same_v<double, magnitude_type>) {
         // magnitude_type == double in this case, and we've already
         // checked double above.
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -257,7 +256,7 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
       defaultTol_ =
         as<magnitude_type> (defaultPL->get<double> ("Convergence Tolerance"));
     }
-    else if (Teuchos::TypeTraits::is_same<double, magnitude_type>::value) {
+    else if (std::is_same_v<double, magnitude_type>) {
       // magnitude_type == double in this case, and we've already
       // checked double above.
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -432,13 +431,12 @@ void BelosLinearOpWithSolve<Scalar>::describe(
   RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch (verbLevel) {
+    case Teuchos::VERB_DEFAULT: // fall-through
     case Teuchos::VERB_LOW:
-      break;
-    case Teuchos::VERB_DEFAULT:
-    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_MEDIUM: // fall-through
       *out << this->description() << std::endl;
       break;
-    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_HIGH: // fall-through
     case Teuchos::VERB_EXTREME:
     {
       *out
@@ -737,7 +735,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         // was.
         const ArrayView<const ScalarMag> achievedTol =
           generalSolveCriteriaBelosStatusTest->achievedTol();
-        solveStatus.achievedTol = ST::zero();
+        solveStatus.achievedTol = Teuchos::ScalarTraits<ScalarMag>::zero();
         for (Ordinal i = 0; i < achievedTol.size(); ++i) {
           solveStatus.achievedTol = std::max(solveStatus.achievedTol, achievedTol[i]);
         }

@@ -76,13 +76,13 @@ namespace { // (anonymous)
 #define STD_TESTS(graph) \
   { \
     auto STCOMM = graph.getComm(); \
-    auto STMYGIDS = graph.getRowMap()->getNodeElementList(); \
+    auto STMYGIDS = graph.getRowMap()->getLocalElementList(); \
     size_t STMAX = 0; \
-    for (size_t STR = 0; STR < graph.getNodeNumRows(); ++STR) { \
+    for (size_t STR = 0; STR < graph.getLocalNumRows(); ++STR) { \
       TEST_EQUALITY( graph.getNumEntriesInLocalRow (STR), graph.getNumEntriesInGlobalRow (STMYGIDS[STR]) ); \
       STMAX = std::max (STMAX, graph.getNumEntriesInLocalRow(STR)); \
     } \
-    TEST_EQUALITY( graph.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( graph.getLocalMaxNumRowEntries(), STMAX ); \
     GST STGMAX; \
     Teuchos::reduceAll<int, GST> (*STCOMM, Teuchos::REDUCE_MAX, STMAX, Teuchos::outArg (STGMAX)); \
     TEST_EQUALITY( graph.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -551,6 +551,11 @@ namespace { // (anonymous)
       TEST_NOTHROW( G->expertStaticFillComplete(rmap,rmap) );
       TEST_EQUALITY( G->getRowMap(), rmap );
       TEST_EQUALITY( G->getColMap(), rmap );
+
+      // Test whether setAllIndices works for an already fillComplete'd graph
+      TEST_NOTHROW(G->resumeFill());
+      TEST_NOTHROW( G->setAllIndices(rowptr,colind) );
+      TEST_NOTHROW( G->expertStaticFillComplete(rmap,rmap) );
     }
 
     // All procs fail if any node fails

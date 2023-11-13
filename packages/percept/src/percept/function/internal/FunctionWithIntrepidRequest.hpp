@@ -62,7 +62,7 @@
       ExampleFunctionWithIntrepidRequest(BulkData& bulkData) : FunctionWithIntrepidRequest()
       {
         stk::mesh::MetaData& metaData = stk::mesh::MetaData::get(bulkData);
-        FieldBase *pressure =  metaData.get_field<FieldBase>(stk::topology::NODE_RANK, "pressure");
+        FieldBase *pressure =  metaData.get_field(stk::topology::NODE_RANK, "pressure");
         m_pressure_array.resize(10, 1);
         m_pressure_grad_array.resize(10, 1, 3);
         m_order_values[pressure] = &m_pressure_array;
@@ -110,7 +110,7 @@
       Example2FunctionWithIntrepidRequest(BulkData& bulkData) : FunctionWithIntrepidRequest()
       {
         stk::mesh::MetaData& metaData = stk::mesh::MetaData::get(bulkData);
-        FieldBase *pressure = metaData.get_field<FieldBase>(stk::topology::NODE_RANK, "pressure");
+        FieldBase *pressure = metaData.get_field(stk::topology::NODE_RANK, "pressure");
         m_pressure_array.resize(10, 1);
         m_pressure_grad_array.resize(10, 1, 3);
         m_order_values[pressure] = &m_pressure_array;

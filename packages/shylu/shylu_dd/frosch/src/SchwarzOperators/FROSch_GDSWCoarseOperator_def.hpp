@@ -127,6 +127,7 @@ namespace FROSch {
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,nodeList);
         this->assembleInterfaceCoarseSpace();
         this->buildCoarseSolveMap(this->AssembledInterfaceCoarseSpace_->getBasisMapUnique());
+        this->extractLocalSubdomainMatrix_Symbolic();
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
         return 0;
@@ -417,11 +418,11 @@ namespace FROSch {
                 << " | " << setw(41) << blockId
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Spatial dimensions" << right
                 << " | " << setw(41) << dimension
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Number of degrees of freedom per node" << right
                 << " | " << setw(41) << dofsPerNode
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "

@@ -48,6 +48,7 @@
 #include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_CellTools.hpp"
+#include "Phalanx_Scratch_Utilities.hpp"
 
 namespace panzer {
 
@@ -111,19 +112,28 @@ evaluateFields(
       // return normalized vectors
       auto local_normals = normals;
       auto local_num_qp = num_qp;
-      auto local_num_dim = num_dim;
+      auto local_num_dim = num_dim;      
+
+      if (Sacado::IsADType<ScalarT>::value) {
+	scratch = PHX::View<ScalarT*>("normals:scratch",workset.num_cells,PHX::getFadSize(local_normals.get_static_view()));
+      }
+      else
+	scratch = PHX::View<ScalarT*>("normals:scratch",workset.num_cells);
+  
+      auto norm = scratch;
+
       Kokkos::parallel_for("normalize", workset.num_cells, KOKKOS_LAMBDA (index_t c) {
         for(std::size_t q=0;q<local_num_qp;q++) {
-          ScalarT norm = 0.0;
+	  norm(c) = 0.0;
    
           // compute squared norm
           for(std::size_t d=0;d<local_num_dim;d++)
-            norm += local_normals(c,q,d)*local_normals(c,q,d);
+            norm(c) += local_normals(c,q,d)*local_normals(c,q,d);
     
           // adjust for length of vector, now unit vectors
-          norm = sqrt(norm);
+          norm(c) = sqrt(norm(c));
           for(std::size_t d=0;d<local_num_dim;d++)
-            local_normals(c,q,d) /= norm;
+            local_normals(c,q,d) /= norm(c);
         }
       });
     }

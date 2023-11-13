@@ -7,14 +7,17 @@
 #ifndef IOSS_IOVS_UTILS_H
 #define IOSS_IOVS_UTILS_H
 
+#include "iovs_export.h"
+
 #include "CatalystManagerBase.h"
 #include <Ioss_DBUsage.h>
+#include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <string>
 
 namespace Iovs {
 
-  class Utils
+  class IOVS_EXPORT Utils
   {
 
   public:
@@ -32,10 +35,9 @@ namespace Iovs {
 
     struct DatabaseInfo
     {
-      std::string databaseFilename;
-      std::string separatorCharacter;
-      int         myRank;
-      MPI_Comm    communicator;
+      std::string                databaseFilename;
+      std::string                separatorCharacter;
+      const Ioss::ParallelUtils *parallelUtils;
     };
 
     void createDatabaseOutputFile(const DatabaseInfo &dbinfo);
@@ -52,6 +54,8 @@ namespace Iovs {
     void reportCatalystErrorMessages(const std::vector<int> &        error_codes,
                                      const std::vector<std::string> &error_messages, int myRank);
 
+    void writeToCatalystLogFile(const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props);
+
     CatalystManagerBase &getCatalystManager();
 
   private:
@@ -63,6 +67,7 @@ namespace Iovs {
     CatalystManagerBase *catalystManager = nullptr;
 
     CatalystManagerBase *createCatalystManagerInstance();
+    void checkCatalystInterfaceAndPluginVersions();
 
     void initMeshFromIOSSProps(CatalystManagerBase::CatalystMeshInit &cmInit,
                                const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props);

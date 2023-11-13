@@ -75,7 +75,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class SchwarzOperator : public Operator<SC,LO,GO,NO> {
 
     protected:
@@ -231,6 +231,11 @@ namespace FROSch {
         ConstXMatrixPtr K_;
 
         ParameterListPtr ParameterList_;
+
+        // result of ExtractLocalSubdomainMatrix_Symbolic
+        bool ExtractLocalSubdomainMatrix_Symbolic_Done_ = false;
+        XMatrixPtr subdomainMatrix_;
+        XMatrixPtr localSubdomainMatrix_;
 
         bool Verbose_ = false;
 

@@ -112,7 +112,7 @@ Build(const RCP<const StridedMap>& map, LocalOrdinal stridedBlockId)
 
   std::vector<size_t> stridingInfo = map->getStridingData();
 
-  Teuchos::ArrayView<const GlobalOrdinal> dofGids = map->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> dofGids = map->getLocalElementList();
 
   // determine nStridedOffset
   size_t nStridedOffset = 0;
@@ -121,7 +121,7 @@ Build(const RCP<const StridedMap>& map, LocalOrdinal stridedBlockId)
     nStridedOffset += stridingInfo[ j ];
   }
 
-  const size_t numMyBlockDofs = (stridingInfo[stridedBlockId] * map->getNodeNumElements()) / map->getFixedBlockSize();
+  const size_t numMyBlockDofs = (stridingInfo[stridedBlockId] * map->getLocalNumElements()) / map->getFixedBlockSize();
 
   std::vector<GlobalOrdinal> subBlockDofGids(numMyBlockDofs);
 
@@ -154,9 +154,9 @@ Build(const StridedMap& map)
 {
   XPETRA_MONITOR("MapFactory::Build");
 
-  LocalOrdinal N = map.getNodeNumElements();
-  Teuchos::ArrayView<const GlobalOrdinal> oldElements = map.getNodeElementList();
-  Teuchos::Array<GlobalOrdinal> newElements(map.getNodeNumElements());
+  LocalOrdinal N = map.getLocalNumElements();
+  Teuchos::ArrayView<const GlobalOrdinal> oldElements = map.getLocalElementList();
+  Teuchos::Array<GlobalOrdinal> newElements(map.getLocalNumElements());
 
   for(LocalOrdinal i = 0; i < N; i++)
     newElements[ i ] = oldElements[ i ];

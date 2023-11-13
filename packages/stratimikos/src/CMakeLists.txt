@@ -34,23 +34,30 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_InternalConfig.h)
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_Config.h
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   Stratimikos_ConfigDefs.hpp
   Stratimikos_DefaultLinearSolverBuilder.hpp
+  Stratimikos_LinearSolverBuilder_decl.hpp
+  Stratimikos_LinearSolverBuilder_def.hpp
   Thyra_DefaultRealLinearSolverBuilder.hpp
   )
 
 APPEND_SET(SOURCES
-  Stratimikos_DefaultLinearSolverBuilder.cpp
+  Stratimikos_LinearSolverBuilder.cpp
   )
+
+INCLUDE(TrilinosCreateClientTemplateHeaders)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR})
+
+APPEND_GLOB(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
 
 #
 # C) Define the targets for package's library(s)

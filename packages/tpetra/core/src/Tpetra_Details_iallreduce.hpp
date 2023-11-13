@@ -305,9 +305,9 @@ iallreduce (const InputViewType& sendbuf,
             const ::Teuchos::EReductionType op,
             const ::Teuchos::Comm<int>& comm)
 {
-  static_assert (Kokkos::Impl::is_view<InputViewType>::value,
+  static_assert (Kokkos::is_view<InputViewType>::value,
                  "InputViewType must be a Kokkos::View specialization.");
-  static_assert (Kokkos::Impl::is_view<OutputViewType>::value,
+  static_assert (Kokkos::is_view<OutputViewType>::value,
                  "OutputViewType must be a Kokkos::View specialization.");
   constexpr int rank = static_cast<int> (OutputViewType::rank);
   static_assert (static_cast<int> (InputViewType::rank) == rank,

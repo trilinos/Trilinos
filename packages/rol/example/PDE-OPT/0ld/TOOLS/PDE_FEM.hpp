@@ -278,13 +278,13 @@ public:
 
     // Build maps.
     myOverlapMap_ = ROL::makePtr<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),                                            myGlobIds_, 0, commPtr_);
-    //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
+    //std::cout << std::endl << myOverlapMap_->getLocalElementList()<<std::endl;
     /** One can also use the non-member function:
         myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, commPtr_);
         to build the overlap map.
     **/
     myUniqueMap_ = Tpetra::createOneToOne(myOverlapMap_);
-    //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
+    //std::cout << std::endl << myUniqueMap_->getLocalElementList() << std::endl;
     myCellMap_ = ROL::makePtr<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
                               this->myCellIds_, 0, this->commPtr_);
   }
@@ -387,7 +387,7 @@ public:
     /****************************************/
 
     Teuchos::ArrayRCP<const GO> cellDofsArrayRCP = cellDofs_.getData();
-    Teuchos::Array<size_t> graphEntriesPerRow(myUniqueMap_->getNodeNumElements());
+    Teuchos::Array<size_t> graphEntriesPerRow(myUniqueMap_->getLocalNumElements());
     for (GO i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs_; ++j) {
         GO gid = cellDofs_(myCellIds_[i],j);

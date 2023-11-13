@@ -343,6 +343,9 @@ namespace panzer
       PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP,
         panzer::Dim> basis_;
 
+    /// Scratch space for caching temporary values in the kokkos kernel. 
+    PHX::View<ScalarT*> tmp_;
+
   }; // end of class Integrator_BasisTimesTensorTimesVector
 
 } // end of namespace panzer

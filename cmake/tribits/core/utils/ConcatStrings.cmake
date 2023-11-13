@@ -37,10 +37,9 @@
 # ************************************************************************
 # @HEADER
 
-include(PrintVar)
+include("${CMAKE_CURRENT_LIST_DIR}/PrintVar.cmake")
 
 
-#
 # @FUNCTION: concat_strings()
 #
 # Concatenate a set of string arguments.

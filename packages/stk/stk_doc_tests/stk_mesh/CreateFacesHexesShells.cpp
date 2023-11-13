@@ -52,136 +52,139 @@ namespace
 //BEGIN2hex
 TEST(StkMeshHowTo, CreateFacesTwoHexes)
 {
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
-        //  -----------
-        //  |    |    |
-        //  |HEX1|HEX2|
-        //  |    |    |
-        //  -----------
-        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-        stkMeshIoBroker.add_mesh_database("AA.e", stk::io::READ_MESH);
-        stkMeshIoBroker.create_input_mesh();
-        stkMeshIoBroker.populate_bulk_data();
-        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+    //  -----------
+    //  |    |    |
+    //  |HEX1|HEX2|
+    //  |    |    |
+    //  -----------
+    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.use_simple_fields();
+    stkMeshIoBroker.add_mesh_database("AA.e", stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
 
-        stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
+    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
 
-        //  ------  F  ------
-        //  |    |  A  |    |
-        //  |HEX1|<-C->|HEX2|   Also external faces!
-        //  |    |  E  |    |
-        //  ------  !  ------
+    //  ------  F  ------
+    //  |    |  A  |    |
+    //  |HEX1|<-C->|HEX2|   Also external faces!
+    //  |    |  E  |    |
+    //  ------  !  ------
 
-        unsigned first_bucket = 0;
-        unsigned first_element_in_bucket = 0;
-        stk::mesh::Entity first_element = (*mesh.buckets(stk::topology::ELEMENT_RANK)[first_bucket])[first_element_in_bucket];
-        stk::mesh::Entity internal_face = mesh.begin_faces(first_element)[5];
+    unsigned first_bucket = 0;
+    unsigned first_element_in_bucket = 0;
+    stk::mesh::Entity first_element = (*mesh.buckets(stk::topology::ELEMENT_RANK)[first_bucket])[first_element_in_bucket];
+    stk::mesh::Entity internal_face = mesh.begin_faces(first_element)[5];
 
-        unsigned num_elements_connected_to_single_face = 2;
-        EXPECT_EQ(num_elements_connected_to_single_face, mesh.num_elements(internal_face));
+    unsigned num_elements_connected_to_single_face = 2;
+    EXPECT_EQ(num_elements_connected_to_single_face, mesh.num_elements(internal_face));
 
-        unsigned num_expected_external_faces = 10u;
-        unsigned num_expected_internal_faces = 1u;
-        unsigned num_expected_faces = num_expected_external_faces + num_expected_internal_faces;
-        stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
-        std::vector<size_t> entity_counts;
-        stk::mesh::count_entities(all_entities, mesh, entity_counts);
-        EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
-    }
+    unsigned num_expected_external_faces = 10u;
+    unsigned num_expected_internal_faces = 1u;
+    unsigned num_expected_faces = num_expected_external_faces + num_expected_internal_faces;
+    stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
+    std::vector<size_t> entity_counts;
+    stk::mesh::count_entities(all_entities, mesh, entity_counts);
+    EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
+  }
 }
 //END2hex
 
 //BEGINshell
 TEST(StkMeshHowTo, CreateFacesSingleShell)
 {
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
-        //  S
-        //  H
-        //  E
-        //  L
-        //  L
-        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-        stkMeshIoBroker.add_mesh_database("e.e", stk::io::READ_MESH);
-        stkMeshIoBroker.create_input_mesh();
-        stkMeshIoBroker.populate_bulk_data();
-        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+    //  S
+    //  H
+    //  E
+    //  L
+    //  L
+    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.use_simple_fields();
+    stkMeshIoBroker.add_mesh_database("e.e", stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
 
-        stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
+    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
 
-        //  F  S  F
-        //  A  H  A
-        //  C->E<-C
-        //  E  L  E
-        //  1  L  2
+    //  F  S  F
+    //  A  H  A
+    //  C->E<-C
+    //  E  L  E
+    //  1  L  2
 
-        unsigned first_bucket = 0;
-        unsigned first_element_in_bucket = 0;
-        stk::mesh::Entity first_element = (*mesh.buckets(stk::topology::ELEMENT_RANK)[first_bucket])[first_element_in_bucket];
-        stk::mesh::Entity face_one = mesh.begin_faces(first_element)[0];
-        unsigned num_elements_connected_to_face_one = 1;
-        EXPECT_EQ(num_elements_connected_to_face_one, mesh.num_elements(face_one));
+    unsigned first_bucket = 0;
+    unsigned first_element_in_bucket = 0;
+    stk::mesh::Entity first_element = (*mesh.buckets(stk::topology::ELEMENT_RANK)[first_bucket])[first_element_in_bucket];
+    stk::mesh::Entity face_one = mesh.begin_faces(first_element)[0];
+    unsigned num_elements_connected_to_face_one = 1;
+    EXPECT_EQ(num_elements_connected_to_face_one, mesh.num_elements(face_one));
 
-        stk::mesh::Entity face_two = mesh.begin_faces(first_element)[1];
-        unsigned num_elements_connected_to_face_two = 1;
-        EXPECT_EQ(num_elements_connected_to_face_two, mesh.num_elements(face_two));
+    stk::mesh::Entity face_two = mesh.begin_faces(first_element)[1];
+    unsigned num_elements_connected_to_face_two = 1;
+    EXPECT_EQ(num_elements_connected_to_face_two, mesh.num_elements(face_two));
 
-        EXPECT_NE(face_one, face_two);
+    EXPECT_NE(face_one, face_two);
 
-        unsigned num_expected_faces = 2u;
-        stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
-        std::vector<size_t> entity_counts;
-        stk::mesh::count_entities(all_entities, mesh, entity_counts);
-        EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
-    }
+    unsigned num_expected_faces = 2u;
+    stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
+    std::vector<size_t> entity_counts;
+    stk::mesh::count_entities(all_entities, mesh, entity_counts);
+    EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
+  }
 }
 //ENDshell
 
 //BEGINhexshellhex
 TEST(StkMeshHowTo, CreateFacesTwoHexesInternalShell)
 {
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
-        //  ------S------
-        //  |    |H|    |
-        //  |HEX1|E|HEX2|
-        //  |    |L|    |
-        //  ------L------
-        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-        stkMeshIoBroker.add_mesh_database("AeA.e", stk::io::READ_MESH);
-        stkMeshIoBroker.create_input_mesh();
-        stkMeshIoBroker.populate_bulk_data();
-        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+    //  ------S------
+    //  |    |H|    |
+    //  |HEX1|E|HEX2|
+    //  |    |L|    |
+    //  ------L------
+    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.use_simple_fields();
+    stkMeshIoBroker.add_mesh_database("AeA.e", stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
 
-        stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
+    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
 
-        //  ------  F  S  F  ------
-        //  |    |  A  H  A  |    |
-        //  |HEX1|<-C->E<-C->|HEX2|   Also external faces!
-        //  |    |  E  L  E  |    |
-        //  ------  1  L  2  ------
+    //  ------  F  S  F  ------
+    //  |    |  A  H  A  |    |
+    //  |HEX1|<-C->E<-C->|HEX2|   Also external faces!
+    //  |    |  E  L  E  |    |
+    //  ------  1  L  2  ------
 
-        unsigned first_bucket = 0;
-        unsigned first_element_in_bucket = 0;
-        stk::mesh::Entity first_element = (*mesh.buckets(stk::topology::ELEMENT_RANK)[first_bucket])[first_element_in_bucket];
-        stk::mesh::Entity internal_face_one = mesh.begin_faces(first_element)[5];
-        unsigned num_elements_connected_to_face_one = 2;
-        EXPECT_EQ(num_elements_connected_to_face_one, mesh.num_elements(internal_face_one));
+    unsigned first_bucket = 0;
+    unsigned first_element_in_bucket = 0;
+    stk::mesh::Entity first_element = (*mesh.buckets(stk::topology::ELEMENT_RANK)[first_bucket])[first_element_in_bucket];
+    stk::mesh::Entity internal_face_one = mesh.begin_faces(first_element)[5];
+    unsigned num_elements_connected_to_face_one = 2;
+    EXPECT_EQ(num_elements_connected_to_face_one, mesh.num_elements(internal_face_one));
 
-        unsigned second_element_in_bucket = 1;
-        stk::mesh::Entity second_element = (*mesh.buckets(stk::topology::ELEMENT_RANK)[first_bucket])[second_element_in_bucket];
-        stk::mesh::Entity internal_face_two = mesh.begin_faces(second_element)[4];
-        unsigned num_elements_connected_to_face_two = 2;
-        EXPECT_EQ(num_elements_connected_to_face_two, mesh.num_elements(internal_face_two));
+    unsigned second_element_in_bucket = 1;
+    stk::mesh::Entity second_element = (*mesh.buckets(stk::topology::ELEMENT_RANK)[first_bucket])[second_element_in_bucket];
+    stk::mesh::Entity internal_face_two = mesh.begin_faces(second_element)[4];
+    unsigned num_elements_connected_to_face_two = 2;
+    EXPECT_EQ(num_elements_connected_to_face_two, mesh.num_elements(internal_face_two));
 
-        EXPECT_NE(internal_face_one, internal_face_two);
+    EXPECT_NE(internal_face_one, internal_face_two);
 
-        unsigned num_expected_external_faces = 10u;
-        unsigned num_expected_internal_faces = 2u;
-        unsigned num_expected_faces = num_expected_external_faces + num_expected_internal_faces;
-        stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
-        std::vector<size_t> entity_counts;
-        stk::mesh::count_entities(all_entities, mesh, entity_counts);
-        EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
-    }
+    unsigned num_expected_external_faces = 10u;
+    unsigned num_expected_internal_faces = 2u;
+    unsigned num_expected_faces = num_expected_external_faces + num_expected_internal_faces;
+    stk::mesh::Selector all_entities = mesh.mesh_meta_data().universal_part();
+    std::vector<size_t> entity_counts;
+    stk::mesh::count_entities(all_entities, mesh, entity_counts);
+    EXPECT_EQ(num_expected_faces, entity_counts[stk::topology::FACE_RANK]);
+  }
 }
 //ENDhexshellhex
 

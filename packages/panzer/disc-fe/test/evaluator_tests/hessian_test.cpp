@@ -268,7 +268,6 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   typedef InputConditionsEvaluator<panzer::Traits::Hessian,panzer::Traits> InputCondEval;
   typedef HessianTestEvaluator<panzer::Traits::Hessian,panzer::Traits> HessTestEval;
   typedef panzer::Traits::HessianType ScalarT;
-  typedef Sacado::ScalarValue<ScalarT> Value;
  
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -300,16 +299,16 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   fm->postEvaluate<panzer::Traits::Hessian>(0);
 
   for(int i=0;i<5;i++) {
-    double x  = Value::eval(ic_eval->x(i));
-    double y  = Value::eval(ic_eval->y(i));
-    double dx = Value::eval(ic_eval->dx(i));
-    double dy = Value::eval(ic_eval->dy(i));
+    double x  = Sacado::scalarValue(ic_eval->x(i));
+    double y  = Sacado::scalarValue(ic_eval->y(i));
+    double dx = Sacado::scalarValue(ic_eval->dx(i));
+    double dy = Sacado::scalarValue(ic_eval->dy(i));
     double f = func(x,y);
     std::vector<double> hess = hess_func(x,y,dx,dy);
 
     ScalarT r = ht_eval->result(i);
 
-    TEST_EQUALITY(Value::eval(r),f);
+    TEST_EQUALITY(Sacado::scalarValue(r),f);
     TEST_EQUALITY(r.fastAccessDx(0).fastAccessDx(0),hess[0]);
     TEST_EQUALITY(r.fastAccessDx(1).fastAccessDx(0),hess[1]);
   }

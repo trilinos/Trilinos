@@ -1,12 +1,12 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef SEACAS_Variables_H
-#define SEACAS_Variables_H
+#pragma once
+
 #include "EP_ObjectType.h"
 #include <cstring>
 #include <smart_assert.h>
@@ -24,6 +24,7 @@ namespace Excn {
     {
       SMART_ASSERT(otype == Excn::ObjectType::EBLK || otype == Excn::ObjectType::NSET ||
                    otype == Excn::ObjectType::SSET || otype == Excn::ObjectType::NODE ||
+                   otype == Excn::ObjectType::EDBLK || otype == Excn::ObjectType::FABLK ||
                    otype == Excn::ObjectType::GLOBAL);
     }
 
@@ -45,6 +46,8 @@ namespace Excn {
       case Excn::ObjectType::GLOBAL: return "global";
       case Excn::ObjectType::NODE: return "nodal";
       case Excn::ObjectType::SSET: return "sideset";
+      case Excn::ObjectType::EDBLK: return "edgeblock";
+      case Excn::ObjectType::FABLK: return "faceblock";
       default: return "UNKNOWN";
       }
     }
@@ -57,6 +60,8 @@ namespace Excn {
       case Excn::ObjectType::SSET: return EX_SIDE_SET;
       case Excn::ObjectType::NODE: return EX_NODAL;
       case Excn::ObjectType::GLOBAL: return EX_GLOBAL;
+      case Excn::ObjectType::EDBLK: return EX_EDGE_BLOCK;
+      case Excn::ObjectType::FABLK: return EX_FACE_BLOCK;
       default: return EX_INVALID;
       }
     }
@@ -70,5 +75,3 @@ namespace Excn {
     std::string type_{};
   };
 } // namespace Excn
-
-#endif

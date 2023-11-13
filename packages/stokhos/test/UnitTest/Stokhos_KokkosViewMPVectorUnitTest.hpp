@@ -633,11 +633,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, AssignData, Storage, Layout )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(                                 \
     Kokkos_View_MP, DeepCopy_Subview_Range, STORAGE )
 
+// Removing the DynamicStorage tests since we don't use it for anything real,
+// and it doesn't necessarily work without UVM
 #define VIEW_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
   typedef Stokhos::StaticFixedStorage<ORDINAL,SCALAR,global_num_cols,DEVICE> SFS;     \
-  typedef Stokhos::DynamicStorage<ORDINAL,SCALAR,DEVICE> DS;            \
   VIEW_MP_VECTOR_TESTS_STORAGE( SFS )                                   \
-  VIEW_MP_VECTOR_TESTS_STORAGE( DS )                                    \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, PartitionHost, SFS, NoLayout )                      \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \

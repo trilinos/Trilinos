@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -120,7 +120,7 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
     if (numEntity != 0u) {
       int err = 0;
       err     = ex_get_var(fileId, time_step, exodus_type(), var_index + 1, id_, numEntity,
-                       results_[var_index]);
+                           results_[var_index]);
 
       if (err < 0) {
         Error(fmt::format("Exo_Entity::Load_Results(): Call to exodus routine"
@@ -191,7 +191,7 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
 
       if (t1 != t2) {
         results2.resize(numEntity);
-        err = ex_get_var(fileId, t2, exodus_type(), var_index + 1, id_, numEntity, &results2[0]);
+        err = ex_get_var(fileId, t2, exodus_type(), var_index + 1, id_, numEntity, results2.data());
 
         if (err < 0) {
           Error(fmt::format("Exo_Entity::Load_Results(): Call to exodus routine"

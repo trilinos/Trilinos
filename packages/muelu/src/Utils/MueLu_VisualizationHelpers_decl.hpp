@@ -47,8 +47,6 @@
 #ifndef MUELU_VISUALIZATIONHELPERS_DECL_HPP_
 #define MUELU_VISUALIZATIONHELPERS_DECL_HPP_
 
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_VisualizationHelpers_fwd.hpp"
@@ -149,11 +147,6 @@ namespace MueLu {
     static void doJacks(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId);
     static void doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords);
     static void doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& zCoords);
-
-#ifdef HAVE_MUELU_CGAL
-    static void doCGALConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords);
-    static void doCGALConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& zCoords);
-#endif
 
     static void doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fx, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fy, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> & fz);
 

@@ -3,7 +3,7 @@
 <ParameterList name="MueLu">
   <ParameterList name="Factories">
     <ParameterList name="reentrantPFactory">
-      <Parameter name="factory" type="string" value="TwoLevelMatlabFactory"/> 
+      <Parameter name="factory" type="string" value="TwoLevelMatlabFactory"/>
       <Parameter name="Provides" type="string" value="P"/>
       <Parameter name="Needs Fine" type="string" value="A"/>
       <Parameter name="Needs Coarse" type="string" value=""/>

@@ -81,9 +81,9 @@ namespace ExoModules {
     this->writtenTets   = 0;
     this->writtenHexes  = 0;
 
-    result &= this->sections.size() > 0;
-    result &= this->gridList.size() >= 4;   // One Tet???
-    result &= this->elementList.size() > 0; // At least one element
+    result &= !this->sections.empty();
+    result &= this->gridList.size() >= 4; // One Tet???
+    result &= !this->elementList.empty(); // At least one element
 
     result &= this->writeFileParams();
     result &= this->writeCoords();
@@ -133,8 +133,8 @@ namespace ExoModules {
 
     auto tmp = this->modelTitle.substr(0, MAX_LINE_LENGTH - 1);
     int  ret = ex_put_init(this->exoFileID, tmp.c_str(), 3 /* 3D models only*/,
-                          this->gridList.size(), this->elementList.size(), this->sections.size(), 0,
-                          0); // Make your fancy pants nodes and side sets elsewherem, laddy.
+                           this->gridList.size(), this->elementList.size(), this->sections.size(), 0,
+                           0); // Make your fancy pants nodes and side sets elsewherem, laddy.
 
     if (ret != 0) {
       std::cerr << "Problem initializing model params in N2EExoWriter::writeFile(). punching out\n";
@@ -154,18 +154,18 @@ namespace ExoModules {
     for (const sectionType &sect : this->sections) {
 
       std::vector<elementType> thisBlock;
-      int64_t                  block = (int)std::get<0>(sect);
+      auto                     block = std::get<0>(sect);
 
       int retvalue{0};
 
       for (const elementType &elem : this->elementList) {
 
-        if ((int)std::get<1>(elem) == block) {
+        if (std::get<1>(elem) == block) {
           thisBlock.emplace_back(elem);
         }
       }
 
-      int64_t nodes_per_elem = (int)std::get<2>(thisBlock[0]);
+      auto nodes_per_elem = std::get<2>(thisBlock[0]);
 
       int n = nodes_per_elem == 4 ? 0 : 1;
 

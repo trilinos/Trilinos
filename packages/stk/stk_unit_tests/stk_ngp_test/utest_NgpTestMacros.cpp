@@ -1,5 +1,6 @@
 #include <limits>
 #include <stk_ngp_test/ngp_test.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 
 static constexpr double eps = std::numeric_limits<double>::epsilon();
 
@@ -153,7 +154,7 @@ void assert_near() {
 
 template<class Func>
 void execute(Func func, int howmany = 1) {
-  Kokkos::parallel_for(Kokkos::RangePolicy<>(0, howmany), func);
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, howmany), func);
   Kokkos::fence();
 }
 

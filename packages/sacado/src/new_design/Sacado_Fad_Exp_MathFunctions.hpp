@@ -130,7 +130,7 @@ BINARYFUNC_MACRO(min, MinOp)
 
 #undef BINARYFUNC_MACRO
 
-#if defined(HAVE_SACADO_KOKKOSCORE)
+#if defined(HAVE_SACADO_KOKKOS)
 
 namespace Sacado {
   namespace Fad {

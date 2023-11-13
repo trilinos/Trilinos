@@ -85,32 +85,32 @@ namespace Xpetra {
   template const Epetra_Map & toEpetra<int, Xpetra::EpetraNode >(const Map< int, int, Xpetra::EpetraNode> & map);
 #endif
 #ifdef HAVE_TPETRA_INST_SERIAL
-//template class EpetraMapT<int, Kokkos::Compat::KokkosSerialWrapperNode >;
-template const RCP< const Map<int, int, Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosSerialWrapperNode>(const Epetra_BlockMap &map);
-template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosSerialWrapperNode >(const RCP< const Map<int, int, Kokkos::Compat::KokkosSerialWrapperNode > > & map);
-template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosSerialWrapperNode >(const Map< int, int, Kokkos::Compat::KokkosSerialWrapperNode> & map);
+//template class EpetraMapT<int, Tpetra::KokkosCompat::KokkosSerialWrapperNode >;
+template const RCP< const Map<int, int, Tpetra::KokkosCompat::KokkosSerialWrapperNode > > toXpetra<int, Tpetra::KokkosCompat::KokkosSerialWrapperNode>(const Epetra_BlockMap &map);
+template const Epetra_Map & toEpetra<int, Tpetra::KokkosCompat::KokkosSerialWrapperNode >(const RCP< const Map<int, int, Tpetra::KokkosCompat::KokkosSerialWrapperNode > > & map);
+template const Epetra_Map & toEpetra<int, Tpetra::KokkosCompat::KokkosSerialWrapperNode >(const Map< int, int, Tpetra::KokkosCompat::KokkosSerialWrapperNode> & map);
 #endif
 #ifdef HAVE_TPETRA_INST_PTHREAD
-//template class EpetraMapT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
-template const RCP< const Map<int, int, Kokkos::Compat::KokkosThreadsWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosThreadsWrapperNode>(const Epetra_BlockMap &map);
-template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosThreadsWrapperNode >(const RCP< const Map<int, int, Kokkos::Compat::KokkosThreadsWrapperNode > > &map);
-template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosThreadsWrapperNode >(const Map< int, int, Kokkos::Compat::KokkosThreadsWrapperNode> & map);
+//template class EpetraMapT<int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode>;
+template const RCP< const Map<int, int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode > > toXpetra<int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode>(const Epetra_BlockMap &map);
+template const Epetra_Map & toEpetra<int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode >(const RCP< const Map<int, int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode > > &map);
+template const Epetra_Map & toEpetra<int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode >(const Map< int, int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> & map);
 #endif
 #ifdef HAVE_TPETRA_INST_OPENMP
-//template class EpetraMapT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
-template const RCP< const Map<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_BlockMap &map);
-template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const RCP< const Map<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > > &map);
-template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const Map< int, int, Kokkos::Compat::KokkosOpenMPWrapperNode> & map);
+//template class EpetraMapT<int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >;
+template const RCP< const Map<int, int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode > > toXpetra<int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>(const Epetra_BlockMap &map);
+template const Epetra_Map & toEpetra<int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >(const RCP< const Map<int, int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode > > &map);
+template const Epetra_Map & toEpetra<int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >(const Map< int, int, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> & map);
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
-typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode default_node_type;
 //template class EpetraMapT<int, default_node_type >;
 template const RCP< const Map<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<int, default_node_type >(const RCP< const Map<int, int, default_node_type > > &map);
 template const Epetra_Map & toEpetra<int, default_node_type >(const Map< int, int, default_node_type> & map);
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
-typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode default_node_type;
 //template class EpetraMapT<int, default_node_type >;
 template const RCP< const Map<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<int, default_node_type >(const RCP< const Map<int, int, default_node_type > > &map);
@@ -140,28 +140,28 @@ template const Epetra_Map & toEpetra<long long, Xpetra::EpetraNode >(const Map< 
 #endif
 
 #ifdef HAVE_TPETRA_INST_SERIAL
-//template class EpetraMapT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
-template const RCP< const Map<int, long long, Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode>(const Epetra_BlockMap &map);
-template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode >(const RCP< const Map<int, long long, Kokkos::Compat::KokkosSerialWrapperNode > > & map);
-template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode >(const Map< int, long long, Kokkos::Compat::KokkosSerialWrapperNode> & map);
+//template class EpetraMapT<long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode >;
+template const RCP< const Map<int, long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode > > toXpetra<long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode>(const Epetra_BlockMap &map);
+template const Epetra_Map & toEpetra<long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode >(const RCP< const Map<int, long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode > > & map);
+template const Epetra_Map & toEpetra<long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode >(const Map< int, long long, Tpetra::KokkosCompat::KokkosSerialWrapperNode> & map);
 #endif
 
 #ifdef HAVE_TPETRA_INST_PTHREAD
-//template class EpetraMapT<long long, Kokkos::Compat::KokkosThreadsWrapperNode>;
-template const RCP< const Map<int, long long, Kokkos::Compat::KokkosThreadsWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosThreadsWrapperNode>(const Epetra_BlockMap &map);
-template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosThreadsWrapperNode >(const RCP< const Map<int, long long, Kokkos::Compat::KokkosThreadsWrapperNode > > &map);
-template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosThreadsWrapperNode >(const Map< int, long long, Kokkos::Compat::KokkosThreadsWrapperNode> & map);
+//template class EpetraMapT<long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode>;
+template const RCP< const Map<int, long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode > > toXpetra<long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode>(const Epetra_BlockMap &map);
+template const Epetra_Map & toEpetra<long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode >(const RCP< const Map<int, long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode > > &map);
+template const Epetra_Map & toEpetra<long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode >(const Map< int, long long, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> & map);
 #endif
 
 #ifdef HAVE_TPETRA_INST_OPENMP
-//template class EpetraMapT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
-template const RCP< const Map<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_BlockMap &map);
-template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const RCP< const Map<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > > &map);
-template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const Map< int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> & map);
+//template class EpetraMapT<long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >;
+template const RCP< const Map<int, long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode > > toXpetra<long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>(const Epetra_BlockMap &map);
+template const Epetra_Map & toEpetra<long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >(const RCP< const Map<int, long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode > > &map);
+template const Epetra_Map & toEpetra<long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode >(const Map< int, long long, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> & map);
 #endif
 
 #ifdef HAVE_TPETRA_INST_CUDA
-typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode default_node_type;
 //template class EpetraMapT<long long, default_node_type >;
 template const RCP< const Map<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<long long, default_node_type >(const RCP< const Map<int, long long, default_node_type > > &map);
@@ -169,7 +169,7 @@ template const Epetra_Map & toEpetra<long long, default_node_type >(const Map< i
 #endif
 
 #ifdef HAVE_TPETRA_INST_HIP
-typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode default_node_type;
 //template class EpetraMapT<long long, default_node_type >;
 template const RCP< const Map<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<long long, default_node_type >(const RCP< const Map<int, long long, default_node_type > > &map);

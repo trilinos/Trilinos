@@ -117,6 +117,10 @@ public:
 
   typedef FunctionMap<Amesos2::Superludist,slu_type>           function_map;
 
+  typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+  typedef Kokkos::View<SLUD::int_t*, HostExecSpaceType>   host_size_type_array;
+  typedef Kokkos::View<SLUD::int_t*, HostExecSpaceType>   host_ordinal_type_array;
+  typedef Kokkos::View<slu_type*,    HostExecSpaceType>   host_value_type_array;
 
   /// \name Constructor/Destructor methods
   //@{
@@ -138,6 +142,14 @@ public:
   //@}
 
 private:
+
+  /**
+   * \brief Compute the row permutation for option LargeDiag-MC64.
+   *
+   * SuperLU_DIST supports several forms of row permutations.  Refer
+   * to \ref slu_mt_options for the available \c RowPerm options.
+   */
+  void computeRowPermutationLargeDiagMC64(SLUD::SuperMatrix& GA);
 
   /**
    * \brief Performs pre-ordering on the matrix to increase efficiency.
@@ -304,15 +316,16 @@ private:
     SLUD::DiagScale_t equed;    ///< Whether/what kind of equilibration to use/has been used
     bool rowequ, colequ;        ///< whether row/col equilibration has been applied to AC
     magnitude_type rowcnd, colcnd, amax;
+    int largediag_mc64_job;     // job id for LargeDiag_MC64 row permutation
   } data_;
 
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for SuperLU_DIST
-  Teuchos::Array<slu_type> nzvals_;
+  host_value_type_array nzvals_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<SLUD::int_t> colind_;
+  host_ordinal_type_array colind_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<SLUD::int_t> rowptr_;
+  host_size_type_array rowptr_view_;
   /// 1D store for B values
   mutable Teuchos::Array<slu_type> bvals_;
   /// 1D store for X values
@@ -321,6 +334,7 @@ private:
   /// \c true if this processor is in SuperLU_DISTS's 2D process grid
   bool in_grid_;
   bool same_symbolic_;
+  bool force_symbfact_;
   mutable bool same_solve_struct_; // may be modified in solve_impl, but still `logically const'
 
   /// Maps rows of the matrix to processors in the SuperLU_DIST processor grid

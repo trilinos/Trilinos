@@ -49,10 +49,12 @@ void fill_split_coincident_connections(const stk::mesh::BulkData & bulk, const i
 
 SideNodeToReceivedElementDataMap get_element_sides_from_other_procs(stk::mesh::BulkData & bulkData)
 {
-    impl::ElemSideToProcAndFaceId elementSideIdsToSend = impl::gather_element_side_ids_to_send(bulkData);
-    impl::fill_suggested_side_ids(bulkData, elementSideIdsToSend);
+    impl::ElemSideProcVector elementSideIdsToSend = impl::gather_element_side_ids_to_send(bulkData);
     SharedSidesCommunication sharedSidesCommunication(bulkData, elementSideIdsToSend);
-    return sharedSidesCommunication.get_received_element_sides();
+    sharedSidesCommunication.communicate_element_sides();
+    SideNodeToReceivedElementDataMap elementSidesReceived;
+    sharedSidesCommunication.unpack_side_data_map(elementSidesReceived);
+    return elementSidesReceived;
 }
 
 SplitCoincidentInfo get_split_coincident_elements_from_received_element_sides(stk::mesh::BulkData& bulkData, const impl::ElementLocalIdMapper & localIdMapper, SideNodeToReceivedElementDataMap & elementSidesReceived)
@@ -110,7 +112,7 @@ std::vector<std::string> get_messages_for_split_coincident_elements(const stk::m
 void throw_if_any_proc_has_false(MPI_Comm comm, bool is_all_ok_locally)
 {
     bool is_all_ok_globally = stk::is_true_on_all_procs(comm, is_all_ok_locally);
-    ThrowRequireMsg(is_all_ok_globally, "Mesh diagnostics failed.");
+    STK_ThrowRequireMsg(is_all_ok_globally, "Mesh diagnostics failed.");
 }
 
 stk::mesh::Selector get_owned_or_shared_selector(const stk::mesh::BulkData & bulkData)

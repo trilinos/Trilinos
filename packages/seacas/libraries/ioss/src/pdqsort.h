@@ -1,7 +1,7 @@
 /*
     pdqsort.h - Pattern-defeating quicksort.
 
-    Copyright (c) 2021 Orson Peters
+    Copyright (c) 2021, 2022, 2023 Orson Peters
 
     This software is provided 'as-is', without any express or implied warranty. In no event will the
     authors be held liable for any damages arising from the use of this software.
@@ -69,7 +69,7 @@ namespace pdqsort_detail {
 #endif
 
   // Returns floor(log2(n)), assumes n > 0.
-  template <class T> inline int log2(T n)
+  template <class T> inline int pdq_log2(T n)
   {
     int log = 0;
     while (n >>= 1)
@@ -179,9 +179,9 @@ namespace pdqsort_detail {
   template <class T> inline T *align_cacheline(T *p)
   {
 #if defined(UINTPTR_MAX) && __cplusplus >= 201103L
-    std::uintptr_t ip = reinterpret_cast<std::uintptr_t>(p);
+    auto ip = reinterpret_cast<std::uintptr_t>(p);
 #else
-    std::size_t ip = reinterpret_cast<std::size_t>(p);
+    auto ip = reinterpret_cast<std::size_t>(p);
 #endif
     int icacheline_size = int(cacheline_size);
     ip                  = (ip + icacheline_size - 1) & -icacheline_size;
@@ -274,35 +274,35 @@ namespace pdqsort_detail {
         // Fill the offset blocks.
         if (left_split >= block_size) {
           for (size_t i = 0; i < block_size;) {
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
           }
         }
         else {
           for (size_t i = 0; i < left_split;) {
-            offsets_l[num_l] = i++;
+            offsets_l[num_l] = (unsigned char)i++;
             num_l += !comp(*first, pivot);
             ++first;
           }
@@ -310,27 +310,27 @@ namespace pdqsort_detail {
 
         if (right_split >= block_size) {
           for (size_t i = 0; i < block_size;) {
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
           }
         }
         else {
           for (size_t i = 0; i < right_split;) {
-            offsets_r[num_r] = ++i;
+            offsets_r[num_r] = (unsigned char)++i;
             num_r += comp(*--last, pivot);
           }
         }
@@ -581,10 +581,10 @@ template <class Iter, class Compare> inline void pdqsort(Iter begin, Iter end, C
       Iter, Compare,
       pdqsort_detail::is_default_compare<typename std::decay<Compare>::type>::value &&
           std::is_arithmetic<typename std::iterator_traits<Iter>::value_type>::value>(
-      begin, end, comp, pdqsort_detail::log2(end - begin));
+      begin, end, comp, pdqsort_detail::pdq_log2(end - begin));
 #else
   pdqsort_detail::pdqsort_loop<Iter, Compare, false>(begin, end, comp,
-                                                     pdqsort_detail::log2(end - begin));
+                                                     pdqsort_detail::pdq_log2(end - begin));
 #endif
 }
 
@@ -600,7 +600,7 @@ inline void pdqsort_branchless(Iter begin, Iter end, Compare comp)
   if (begin == end)
     return;
   pdqsort_detail::pdqsort_loop<Iter, Compare, true>(begin, end, comp,
-                                                    pdqsort_detail::log2(end - begin));
+                                                    pdqsort_detail::pdq_log2(end - begin));
 }
 
 template <class Iter> inline void pdqsort_branchless(Iter begin, Iter end)

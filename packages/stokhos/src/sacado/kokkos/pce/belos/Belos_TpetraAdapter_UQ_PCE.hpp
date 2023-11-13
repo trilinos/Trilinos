@@ -343,7 +343,8 @@ namespace Belos {
       }
 
       // Ensure A and C have constant stride
-      RCP<const MV> Atmp, Ctmp;
+      RCP<const MV> Atmp;
+      RCP<MV> Ctmp;
       if (A.isConstantStride() == false) Atmp = rcp (new MV (A, Teuchos::Copy));
       else Atmp = rcp(&A,false);
 
@@ -352,10 +353,12 @@ namespace Belos {
 
       // Create flattened view's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
+      typedef Tpetra::MultiVector<const dot_type,LO,GO,Node> CFMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
+      typedef typename CFMV::dual_view_type::t_dev const_flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
-      flat_view_type flat_A_view = Atmp->template getLocalView<execution_space>();
-      flat_view_type flat_C_view = Ctmp->template getLocalView<execution_space>();
+      const_flat_view_type flat_A_view = Atmp->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
+      flat_view_type flat_C_view = Ctmp->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
 
       // Create a view for B on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> b_host_view_type;
@@ -370,7 +373,12 @@ namespace Belos {
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> b_1d_view_type;
       b_1d_view_type B_1d_view_dev(Kokkos::ViewAllocateWithoutInitializing("B"), numRowsB*numColsB);
       b_view_type B_view_dev( B_1d_view_dev.data(), numRowsB, numColsB);
-      Kokkos::deep_copy(B_view_dev, B_view_host);
+      //Kokkos::deep_copy(B_view_dev, B_view_host);
+      // Device-to-host copies requires dest to be contiguous, which
+      // C_view_host may not be.  So do 1 column at a time.
+      for (int j=0; j<numColsB; ++j)
+        Kokkos::deep_copy(Kokkos::subview(B_view_dev,Kokkos::ALL,j),
+                          Kokkos::subview(B_view_host,Kokkos::ALL,j));
 
       // Do local multiply
       {
@@ -464,11 +472,11 @@ namespace Belos {
       else Btmp = rcp(&B,false);
 
       // Create flattened Kokkos::MultiVector's
-      typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
+      typedef Tpetra::MultiVector<const dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
-      flat_view_type flat_A_view = Atmp->template getLocalView<execution_space>();
-      flat_view_type flat_B_view = Btmp->template getLocalView<execution_space>();
+      flat_view_type flat_A_view = Atmp->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
+      flat_view_type flat_B_view = Btmp->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
 
       // Create a view for C on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> c_host_view_type;
@@ -490,22 +498,29 @@ namespace Belos {
         KokkosBlas::gemm (
           &ctransA, &ctransB,                  
           alpha, flat_A_view, flat_B_view,
-          Kokkos::Details::ArithTraits<dot_type>::zero(),
+          Kokkos::ArithTraits<dot_type>::zero(),
           C_view_dev);
       }
       // reduce across processors -- could check for RDMA
       RCP<const Comm<int> > pcomm = A.getMap()->getComm ();
-      if (pcomm->getSize () == 1)
-        Kokkos::deep_copy(C_view_host, C_view_dev);
+      if (pcomm->getSize () == 1) {
+        //Kokkos::deep_copy(C_view_host, C_view_dev);
+        // Device-to-host copies requires dest to be contiguous, which
+        // C_view_host may not be.  So do 1 column at a time.
+        for (int j=0; j<numColsC; ++j)
+          Kokkos::deep_copy(Kokkos::subview(C_view_host,Kokkos::ALL,j),
+                            Kokkos::subview(C_view_dev,Kokkos::ALL,j));
+      }
       else {
         typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, Kokkos::HostSpace> c_1d_host_view_type;
         c_1d_host_view_type C_1d_view_tmp(Kokkos::ViewAllocateWithoutInitializing("C_tmp"), strideC*numColsC);
         c_host_view_type C_view_tmp( C_1d_view_tmp.data(),
                                      strideC, numColsC);
-        Kokkos::deep_copy(Kokkos::subview(C_view_tmp,
-                                          Kokkos::pair<int,int>(0, numRowsC),
-                                          Kokkos::pair<int,int>(0, numColsC)),
-                          C_view_dev);
+        for (int j=0; j<numColsC; ++j)
+          Kokkos::deep_copy(Kokkos::subview(C_view_tmp,
+                                            Kokkos::pair<int,int>(0, numRowsC),
+                                            j),
+                            Kokkos::subview(C_view_dev, Kokkos::ALL, j));
         reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,
                         C_view_tmp.data(),
                         C_view_host.data());

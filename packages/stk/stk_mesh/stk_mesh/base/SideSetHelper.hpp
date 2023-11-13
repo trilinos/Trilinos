@@ -52,6 +52,43 @@ namespace mesh
 {
 class BulkData;
 
+struct PartChangeAccumulator
+{
+  Entity entity;
+  OrdinalVector partOrdinals;
+
+  PartChangeAccumulator()
+  : entity(Entity()) {}
+
+  PartChangeAccumulator(Entity entity_)
+  : entity(entity_) {}
+
+  PartChangeAccumulator(Entity entity_, const OrdinalVector& partOrdinals_)
+  : entity(entity_), partOrdinals(partOrdinals_) {}
+
+  bool operator!=(const Entity& entity_) const
+  {
+    return entity != entity_;
+  }
+
+  bool operator<(const Entity& entity_) const
+  {
+    return entity < entity_;
+  }
+
+  bool operator!=(const PartChangeAccumulator &rhs) const
+  {
+    return entity != rhs.entity;
+  }
+
+  bool operator<(const PartChangeAccumulator &rhs) const
+  {
+    return entity < rhs.entity;
+  }
+};
+
+using PartChangeAccumulatorVector = std::vector<PartChangeAccumulator>;
+
 struct SideSetHelper
 {
   SideSetHelper(BulkData& mesh_, const Selector& activeSelector_, std::ostream *outputStream_ = nullptr)
@@ -65,6 +102,7 @@ struct SideSetHelper
     outputStream = &ostrm;
   }
 
+  void remove_side_entry_from_sideset(SideSet* sideset, const SideSetEntry& entry, std::set<const Part*> *touchedSidesetParts = nullptr);
   void remove_side_entry_from_sidesets(Entity elem, ConnectivityOrdinal ordinal, std::set<const Part*> *touchedSidesetParts = nullptr);
   void remove_side_entry_from_sidesets(SideSetVector& sidesets, Entity elem, ConnectivityOrdinal ordinal, std::set<const Part*> *touchedSidesetParts = nullptr);
 
@@ -91,10 +129,12 @@ struct SideSetHelper
   bool element_side_has_coincidence_using_connectivity(const Entity side, const Entity element, const ConnectivityOrdinal ordinal);
   bool element_side_has_coincidence_using_elem_elem_graph(const Entity side, const Entity element, const ConnectivityOrdinal ordinal);
 
-  void reset_internal_sideset_detection(bool elemRankedPartsChanged);
+  void reset_internal_sideset_detection(bool elemOrSideRankedPartsChanged);
   void warn_internal_sideset_detection();
 
   void set_warn_about_internal_sideset(bool flag);
+
+  const impl::ParallelPartInfo& get_parallel_part_info() const { return parallelPartInfo; }
 
 private:
   BulkData& mesh;
@@ -102,7 +142,7 @@ private:
   std::ostream* outputStream = nullptr;
 
   bool internalSidesetWarningHasBeenIssued = false;
-  stk::mesh::impl::ParallelPartInfo parallelPartInfo;
+  impl::ParallelPartInfo parallelPartInfo;
   unsigned m_modCycleWhenParallelPartInfoUpdated;
   std::set<unsigned> internalSidesetOrdinals;
   bool warnAboutInternalSidesets = false;
@@ -122,8 +162,6 @@ private:
 
   bool element_side_has_remote_coincidence_using_elem_elem_graph(Entity element,  ConnectivityOrdinal ordinal);
   bool element_side_has_local_coincidence_using_elem_elem_graph(Entity element,  ConnectivityOrdinal ordinal);
-
-  stk::mesh::Part* get_element_block_from_part_ordinals(const stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::PartOrdinal>& partOrdinals);
 };
 
 inline void issue_internal_sideset_warning(const std::string& sidesetName, std::ostream& ostrm)

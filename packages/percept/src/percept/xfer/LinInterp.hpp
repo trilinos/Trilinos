@@ -16,7 +16,6 @@
 #include <utility>
 
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
@@ -84,8 +83,8 @@ LinInterp<FROM,TO>::filter_to_nearest (
   const stk::mesh::BulkData &fromBulkData = FromElem.fromBulkData_;
   stk::mesh::BulkData &toBulkData = ToPoints.toBulkData_;
 
-  const stk::mesh::Field<double, stk::mesh::Cartesian> *fromcoordinates = FromElem.fromcoordinates_;
-  const stk::mesh::Field<double, stk::mesh::Cartesian> *tocoordinates   = ToPoints.tocoordinates_;
+  const stk::mesh::FieldBase *fromcoordinates = FromElem.fromcoordinates_;
+  const stk::mesh::FieldBase *tocoordinates   = ToPoints.tocoordinates_;
 
   stk::mesh::EntityRank toRank = ToPoints.toFields_[0]->entity_rank();
 
@@ -146,7 +145,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
       for ( int ni = 0; ni < num_nodes; ++ni ) {
         stk::mesh::Entity node = elem_node_rels[ni];
 
-        const double * fromcoords = stk::mesh::field_data(*fromcoordinates, node );
+        const double * fromcoords = static_cast<double*>(stk::mesh::field_data(*fromcoordinates, node ));
         for ( unsigned j = 0; j < nDim; ++j ) {
 	  cellWorkset(0,ni,j) = fromcoords[j];
         }
@@ -252,7 +251,7 @@ LinInterp<FROM,TO>::apply_from_elem_field (
   stk::mesh::Entity theNode)
 {
   stk::mesh::EntityRank toRank = ToPoints.toFields_[0]->entity_rank();
-  const unsigned from_field_size = FromElem.fromFields_[0]->max_size(stk::topology::ELEMENT_RANK);
+  const unsigned from_field_size = FromElem.fromFields_[0]->max_size();
   const double * fromField_data = (double *) stk::mesh::field_data(*(FromElem.fromFields_[0]), theElem);
   double         * toField_data = (double *) stk::mesh::field_data(*(ToPoints.toFields_[0]),  theNode);
 
@@ -320,7 +319,7 @@ LinInterp<FROM,TO>::apply_from_nodal_field (
   const std::vector<double> &isoParCoords)
 {
   const unsigned nDim = FromElem.fromMetaData_.spatial_dimension();
-  const unsigned from_field_size = FromElem.fromFields_[0]->max_size(stk::topology::NODE_RANK);
+  const unsigned from_field_size = FromElem.fromFields_[0]->max_size();
 
   const stk::mesh::BulkData &fromBulkData = FromElem.fromBulkData_;
 

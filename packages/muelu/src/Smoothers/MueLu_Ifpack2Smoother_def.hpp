@@ -48,13 +48,14 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_IFPACK2)
 
 #include <Teuchos_ParameterList.hpp>
 
 #include <Tpetra_RowMatrix.hpp>
 
 #include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_Hiptmair.hpp>
 #include <Ifpack2_RILUK.hpp>
 #include <Ifpack2_Relaxation.hpp>
 #include <Ifpack2_ILUT.hpp>
@@ -67,6 +68,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 
@@ -74,7 +76,6 @@
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -135,13 +136,16 @@ namespace MueLu {
 
     RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
 
+    // Do we want an Ifpack2 apply timer?
+    precList->set("timer for apply", this->IsPrint(Timings));
+
     if(!precList.is_null() && precList->isParameter("partitioner: type") && precList->get<std::string>("partitioner: type") == "linear" &&
        !precList->isParameter("partitioner: local parts")) {
       LO matrixBlockSize = 1;
-      int lclSize = A_->getRangeMap()->getNodeNumElements();
+      int lclSize = A_->getRangeMap()->getLocalNumElements();
       RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_);
       if (!matA.is_null()) {
-        lclSize = matA->getNodeNumRows();
+        lclSize = matA->getLocalNumRows();
         matrixBlockSize = matA->GetFixedBlockSize();
       }
       precList->set("partitioner: local parts", lclSize / matrixBlockSize);
@@ -227,7 +231,6 @@ namespace MueLu {
       if (blocksize) {
         // NOTE: Don't think you can move this out of the if block.  You can't. The test MueLu_MeshTyingBlocked_SimpleSmoother_2dof_medium_MPI_1 will fail
 
-        using TpetraBlockCrsMatrix = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
         RCP<CrsMatrixWrap> AcrsWrap = rcp_dynamic_cast<CrsMatrixWrap>(A_);
         if(AcrsWrap.is_null())
           throw std::runtime_error("Ifpack2Smoother: Cannot convert matrix A to CrsMatrixWrap object.");
@@ -235,16 +238,21 @@ namespace MueLu {
         if(Acrs.is_null())
           throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix from matrix A.");
         RCP<TpetraCrsMatrix> At = rcp_dynamic_cast<TpetraCrsMatrix>(Acrs);
-        if(At.is_null())
-          throw std::runtime_error("Ifpack2Smoother: Cannot extract TpetraCrsMatrix from matrix A.");
-
-        RCP<Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> > blockCrs = Tpetra::convertToBlockCrsMatrix(*At->getTpetra_CrsMatrix(),blocksize);
-        RCP<CrsMatrix> blockCrs_as_crs  = rcp(new TpetraBlockCrsMatrix(blockCrs));
-        RCP<CrsMatrixWrap> blockWrap = rcp(new CrsMatrixWrap(blockCrs_as_crs));
-        A_ = blockWrap;
-        this->GetOStream(Statistics0) << "Ifpack2Smoother: Using BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
-
-        paramList.remove("smoother: use blockcrsmatrix storage");
+        if(At.is_null()) {
+          if(!Xpetra::Helpers<Scalar,LO,GO,Node>::isTpetraBlockCrs(matA))
+            throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix or BlockCrsMatrix from matrix A.");
+          this->GetOStream(Statistics0) << "Ifpack2Smoother: Using (native) BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
+          paramList.remove("smoother: use blockcrsmatrix storage");
+        }
+        else {
+          RCP<Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> > blockCrs = Tpetra::convertToBlockCrsMatrix(*At->getTpetra_CrsMatrix(),blocksize);
+          RCP<CrsMatrix> blockCrs_as_crs  = rcp(new TpetraBlockCrsMatrix(blockCrs));
+          RCP<CrsMatrixWrap> blockWrap = rcp(new CrsMatrixWrap(blockCrs_as_crs));
+          A_ = blockWrap;
+          this->GetOStream(Statistics0) << "Ifpack2Smoother: Using BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
+          
+          paramList.remove("smoother: use blockcrsmatrix storage");
+        }
       }
     }
 
@@ -278,7 +286,7 @@ namespace MueLu {
              type_ == "TRIDIRELAXATION" ||
              type_ == "TRIDIAGONAL_RELAXATION" ||
              type_ == "TRIDIAGONAL RELAXATION" ||
-             type_ == "TRIDIAGONALRELAXATION") 
+             type_ == "TRIDIAGONALRELAXATION")
       SetupBlockRelaxation(currentLevel);
 
     else if (type_ == "CHEBYSHEV")
@@ -292,10 +300,10 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "'TOPOLOGICAL' smoother choice requires Intrepid2");
 #endif
     }
-    else if (type_ == "AGGREGATE") 
+    else if (type_ == "AGGREGATE")
       SetupAggregate(currentLevel);
 
-    else if (type_ == "HIPTMAIR") 
+    else if (type_ == "HIPTMAIR")
       SetupHiptmair(currentLevel);
 
     else
@@ -354,16 +362,21 @@ namespace MueLu {
         ParameterList& subList = paramList.sublist(sublistName);
 
         std::string partName = "partitioner: type";
-        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+        // Pretty sure no one has been using this. Unfortunately, old if
+        // statement (which checked for equality with "user") prevented
+        // anyone from employing other types of Ifpack2 user partition
+        // options. Leaving this and switching if to "vanka user" just
+        // in case some day someone might want to use this.
+        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "vanka user") {
           isBlockedMatrix = true;
 
           RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
           TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
                                      "Matrix A must be of type BlockedCrsMatrix.");
 
-          size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
-          size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
-          size_t numRows = rcp_dynamic_cast<Matrix>(A_, true)->getNodeNumRows();
+          size_t numVels = bA->getMatrix(0,0)->getLocalNumRows();
+          size_t numPres = bA->getMatrix(1,0)->getLocalNumRows();
+          size_t numRows = rcp_dynamic_cast<Matrix>(A_, true)->getLocalNumRows();
 
           ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
 
@@ -391,6 +404,7 @@ namespace MueLu {
           if (haveBoundary)
             numBlocks++;
 
+          subList.set("partitioner: type","user");
           subList.set("partitioner: map",         blockSeeds);
           subList.set("partitioner: local parts", as<int>(numBlocks));
 
@@ -425,7 +439,7 @@ namespace MueLu {
 
     if (this->IsSetup() == true) {
       this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupAggregate(): Setup() has already been called" << std::endl;
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupAggregate(): reuse of this type is not available, reverting to full construction" << std::endl;    
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupAggregate(): reuse of this type is not available, reverting to full construction" << std::endl;
     }
 
     this->GetOStream(Statistics0) << "Ifpack2Smoother: Using Aggregate Smoothing"<<std::endl;
@@ -445,7 +459,7 @@ namespace MueLu {
       dof_ids.resize(aggregate_ids.size() * blocksize);
       for(LO i=0; i<(LO)aggregate_ids.size(); i++) {
         for(LO j=0; j<(LO)blocksize; j++)
-          dof_ids[i*blocksize+j] = aggregate_ids[i];    
+          dof_ids[i*blocksize+j] = aggregate_ids[i];
       }
     }
     else {
@@ -521,7 +535,7 @@ namespace MueLu {
     
     // Ifpack2 wants the seeds in an array of the same length as the number of local elements,
     // with local partition #s marked for the ones that are seeds, and invalid for the rest
-    int myNodeCount = matA->getRowMap()->getNodeNumElements();
+    int myNodeCount = matA->getRowMap()->getLocalNumElements();
     ArrayRCP<LocalOrdinal> nodeSeeds(myNodeCount,lo_invalid);
     int localPartitionNumber = 0;
     for (LocalOrdinal seed : seeds[dimension])
@@ -566,7 +580,7 @@ namespace MueLu {
         if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
       }
       RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_, true);
-      size_t numLocalRows = matA->getNodeNumRows();
+      size_t numLocalRows = matA->getLocalNumRows();
 
       TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError,
         "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
@@ -670,10 +684,10 @@ namespace MueLu {
         Teuchos::RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>(*xCoordinates));
 
         RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_);
-        size_t lclSize = A_->getRangeMap()->getNodeNumElements();
+        size_t lclSize = A_->getRangeMap()->getLocalNumElements();
         if (!matA.is_null())
-          lclSize = matA->getNodeNumRows();
-        size_t numDofsPerNode = lclSize / xCoordinates->getMap()->getNodeNumElements();
+          lclSize = matA->getLocalNumRows();
+        size_t numDofsPerNode = lclSize / xCoordinates->getMap()->getLocalNumElements();
         myparamList.set("partitioner: coordinates", coordinates);
         myparamList.set("partitioner: PDE equations", (int) numDofsPerNode);
       }
@@ -774,19 +788,18 @@ namespace MueLu {
     }
 
     // If we're doing Chebyshev subsmoothing, we'll need to get the eigenvalues
+    SC negone = -Teuchos::ScalarTraits<Scalar>::one();
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
     std::string smoother1  = paramList.get("hiptmair: smoother type 1","CHEBYSHEV");
     std::string smoother2  = paramList.get("hiptmair: smoother type 2","CHEBYSHEV");
-    //    SC lambdaMax11,lambdaMax22;
+    SC lambdaMax11 = negone;
 
     if(smoother1 == "CHEBYSHEV") {
       ParameterList & list1 = paramList.sublist("hiptmair: smoother list 1");
-      //lambdaMax11 = 
-      SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list1);
+      lambdaMax11 = SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list1);
     }
     if(smoother2 == "CHEBYSHEV") {
       ParameterList & list2 = paramList.sublist("hiptmair: smoother list 2");
-      //lambdaMax22 = 
       SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list2);
     }
 
@@ -794,8 +807,8 @@ namespace MueLu {
     // the regular SetupChebyshev
 
     // Grab the auxillary matrices and stick them on the list
-    RCP<Matrix> NodeMatrix = currentLevel.Get<RCP<Matrix> >("NodeMatrix");
-    RCP<Matrix> D0         = currentLevel.Get<RCP<Matrix> >("D0");
+    RCP<Operator> NodeMatrix = currentLevel.Get<RCP<Operator> >("NodeMatrix");
+    RCP<Operator> D0         = currentLevel.Get<RCP<Operator> >("D0");
 
     RCP<tRowMatrix> tNodeMatrix = Utilities::Op2NonConstTpetraRow(NodeMatrix);
     RCP<tRowMatrix> tD0         = Utilities::Op2NonConstTpetraRow(D0);
@@ -811,6 +824,26 @@ namespace MueLu {
     }
 
     prec_->compute();
+
+    // Post-processing the (1,1) eigenvalue, if we have one
+    if(smoother1 == "CHEBYSHEV" && lambdaMax11 == negone) {
+      using Teuchos::rcp_dynamic_cast;
+      typedef Tpetra::RowMatrix<SC, LO, GO, NO> MatrixType;
+      auto hiptmairPrec = rcp_dynamic_cast<Ifpack2::Hiptmair<MatrixType> >(prec_);
+      if(hiptmairPrec != Teuchos::null) {
+        auto chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(hiptmairPrec->getPrec1());
+        if (chebyPrec != Teuchos::null) {
+          lambdaMax11 = chebyPrec->getLambdaMaxForApply();
+          RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_);
+          if (!matA.is_null())
+            matA->SetMaxEigenvalueEstimate(lambdaMax11);
+          this->GetOStream(Statistics1) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax11 << std::endl;
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax11 == negone, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): no maximum eigenvalue estimate");
+      }
+    }
+
+
   }
 
 
@@ -826,13 +859,16 @@ namespace MueLu {
     std::string maxEigString   = "chebyshev: max eigenvalue";
     std::string eigRatioString = "chebyshev: ratio eigenvalue";
     
-    // Get/calculate the maximum eigenvalue      
+    // Get/calculate the maximum eigenvalue
     if (paramList.isParameter(maxEigString)) {
       if (paramList.isType<double>(maxEigString))
         lambdaMax = paramList.get<double>(maxEigString);
       else
         lambdaMax = paramList.get<SC>(maxEigString);
       this->GetOStream(Statistics1) << label << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
+      RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_);
+      if (!matA.is_null())
+        matA->SetMaxEigenvalueEstimate(lambdaMax);
       
     } else {
       lambdaMax = currentA->GetMaxEigenvalueEstimate();
@@ -868,24 +904,39 @@ namespace MueLu {
     
     this->GetOStream(Statistics1) << label << eigRatioString << " (computed) = " << ratio << std::endl;
     paramList.set(eigRatioString, ratio);
-    
+
     if (paramList.isParameter("chebyshev: use rowsumabs diagonal scaling")) {
       this->GetOStream(Runtime1) << "chebyshev: using rowsumabs diagonal scaling" << std::endl;
       bool doScale = false;
       doScale = paramList.get<bool>("chebyshev: use rowsumabs diagonal scaling");
       paramList.remove("chebyshev: use rowsumabs diagonal scaling");
       double chebyReplaceTol = Teuchos::ScalarTraits<Scalar>::eps()*100;
-      if (paramList.isParameter("chebyshev: rowsumabs diagonal replacement tolerance")) {
-        paramList.get<double>("chebyshev: rowsumabs diagonal replacement tolerance",chebyReplaceTol);
-        paramList.remove("chebyshev: rowsumabs diagonal replacement tolerance");
+      std::string paramName = "chebyshev: rowsumabs diagonal replacement tolerance";
+      if (paramList.isParameter(paramName)) {
+        chebyReplaceTol = paramList.get<double>(paramName);
+        paramList.remove(paramName);
       }
       double chebyReplaceVal = Teuchos::ScalarTraits<double>::zero();
-      if (paramList.isParameter("chebyshev: rowsumabs diagonal replacement value")) {
-        paramList.get<double>("chebyshev: rowsumabs diagonal replacement value",chebyReplaceVal);
-        paramList.remove("chebyshev: rowsumabs diagonal replacement value");
+      paramName = "chebyshev: rowsumabs diagonal replacement value";
+      if (paramList.isParameter(paramName)) {
+        chebyReplaceVal = paramList.get<double>(paramName);
+        paramList.remove(paramName);
+      }
+      bool chebyReplaceSingleEntryRowWithZero = false;
+      paramName = "chebyshev: rowsumabs replace single entry row with zero";
+      if (paramList.isParameter(paramName)) {
+        chebyReplaceSingleEntryRowWithZero = paramList.get<bool>(paramName);
+        paramList.remove(paramName);
+      }
+      bool useAverageAbsDiagVal = false;
+      paramName = "chebyshev: rowsumabs use automatic diagonal tolerance";
+      if (paramList.isParameter(paramName)) {
+        useAverageAbsDiagVal = paramList.get<bool>(paramName);
+        paramList.remove(paramName);
       }
       if (doScale) {
-        RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*currentA,true, chebyReplaceTol, chebyReplaceVal);
+        const bool doReciprocal = true;
+        RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*currentA, doReciprocal, chebyReplaceTol, chebyReplaceVal, chebyReplaceSingleEntryRowWithZero, useAverageAbsDiagVal);
         const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
         paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
       }
@@ -1061,5 +1112,5 @@ namespace MueLu {
 
 } // namespace MueLu
 
-#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_IFPACK2
+#endif // HAVE_MUELU_IFPACK2
 #endif // MUELU_IFPACK2SMOOTHER_DEF_HPP

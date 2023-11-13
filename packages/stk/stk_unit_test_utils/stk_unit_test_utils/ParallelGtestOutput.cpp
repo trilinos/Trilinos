@@ -28,45 +28,8 @@ namespace unit_test_util
 #endif
 #define GTEST_FLAG(name) ::testing::FLAGS_gtest_##name
 
-enum GTestColor {
-  COLOR_DEFAULT,
-  COLOR_RED,
-  COLOR_GREEN,
-  COLOR_YELLOW
-};
-
 bool should_print_time() {
   return GTEST_FLAG(print_time);
-}
-
-const char* GetAnsiColorCode(GTestColor color) {
-  switch (color) {
-    case COLOR_RED:     return "1";
-    case COLOR_GREEN:   return "2";
-    case COLOR_YELLOW:  return "3";
-    default:            return NULL;
-  };
-}
-
-void ColoredPrintf(GTestColor color, const char* fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-
-    static const bool in_color_mode = true;
-    const bool use_color = in_color_mode && (color != COLOR_DEFAULT);
-
-    if (!use_color)
-    {
-        vprintf(fmt, args);
-        va_end(args);
-        return;
-    }
-
-    printf("\033[0;3%sm", GetAnsiColorCode(color));
-    vprintf(fmt, args);
-    printf("\033[m"); // Resets the terminal to default.
-        va_end(args);
 }
 
 class MinimalistPrinter : public ::testing::EmptyTestEventListener
@@ -163,7 +126,12 @@ private:
         {
             if(numTotalFailures == 0)
             {
-                ColoredPrintf(COLOR_GREEN, "[       OK ] ");
+#ifdef STK_BUILT_IN_SIERRA
+              ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[       OK ] ");
+#else
+//newer versions of gtest don't allow external access to ColoredPrintf
+              printf("[       OK ] ");
+#endif
             }
             else
             {
@@ -246,14 +214,24 @@ private:
 
     void print_failed(const std::string &message)
     {
-        ColoredPrintf(COLOR_RED, "[  FAILED  ] ");
-        printf("%s\n", message.c_str());
+#ifdef STK_BUILT_IN_SIERRA
+      ::testing::internal::ColoredPrintf(::testing::internal::COLOR_RED, "[  FAILED  ] ");
+#else
+//newer versions of gtest don't allow external access to ColoredPrintf
+      printf("[  FAILED  ] ");
+#endif
+      printf("%s\n", message.c_str());
     }
 
     void print_passed(const std::string &message)
     {
-        ColoredPrintf(COLOR_GREEN, "[  PASSED  ] ");
-        printf("%s\n", message.c_str());
+#ifdef STK_BUILT_IN_SIERRA
+      ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[  PASSED  ] ");
+#else
+//newer versions of gtest don't allow external access to ColoredPrintf
+      printf("[  PASSED  ] ");
+#endif
+      printf("%s\n", message.c_str());
     }
 };
 
@@ -268,6 +246,18 @@ void create_parallel_output(int procId)
 {
     create_parallel_output_with_comm(procId, MPI_COMM_WORLD);
 }
+
+namespace simple_fields {
+
+void create_parallel_output(int procId) {
+  stk::unit_test_util::create_parallel_output(procId);
+}
+
+void create_parallel_output_with_comm(int procId, MPI_Comm comm) {
+  stk::unit_test_util::create_parallel_output_with_comm(procId, comm);
+}
+
+} // namespace simple_fields
 
 }
 }

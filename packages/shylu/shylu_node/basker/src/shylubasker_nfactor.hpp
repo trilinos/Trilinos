@@ -165,6 +165,10 @@ namespace BaskerNS
         printf("Time DOMAIN: %lf \n", timer.seconds());
         timer.reset();
       }
+      #ifdef BASKER_TIMER
+      printf("Time DOMAIN: %lf \n", timer.seconds());
+      timer.reset();
+      #endif
 
 #else// else basker_kokkos
       #pragma omp parallel
@@ -272,6 +276,10 @@ namespace BaskerNS
         printf("Time SEP: %lf \n", timer.seconds());
         timer.reset();
       }
+      #ifdef BASKER_TIMER
+      printf("Time SEP: %lf \n", timer.seconds());
+      timer.reset();
+      #endif
     }
 
     // ---------------------------------------------------------------------------------------- //
@@ -348,6 +356,9 @@ namespace BaskerNS
       {
         printf("Time BTF: %lf \n", timer.seconds());
       }
+      #ifdef BASKER_TIMER
+      printf("Time BTF: %lf \n", timer.seconds());
+      #endif
     }//end btf call
 
     Kokkos::Timer tzback;

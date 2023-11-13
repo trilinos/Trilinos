@@ -1,16 +1,19 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iotr_Scale3D_h
-#define IOSS_Iotr_Scale3D_h
+#pragma once
 
-#include "Ioss_VariableType.h" // for VariableType
+#include "iotr_export.h"
+
+#include <Ioss_VariableType.h> // for VariableType
 #include <Ioss_Transform.h>    // for Transform, Factory
-#include <string>              // for string
-#include <vector>              // for vector
+#include <transform/Iotr_Factory.h>
+
+#include <string>
+#include <vector>
 namespace Ioss {
   class Field;
 } // namespace Ioss
@@ -20,7 +23,7 @@ namespace Ioss {
 
 namespace Iotr {
 
-  class Scale3D_Factory : public Factory
+  class IOTR_EXPORT Scale3D_Factory : public Factory
   {
   public:
     static const Scale3D_Factory *factory();
@@ -30,7 +33,7 @@ namespace Iotr {
     Ioss::Transform *make(const std::string & /*unused*/) const override;
   };
 
-  class Scale3D : public Ioss::Transform
+  class IOTR_EXPORT Scale3D : public Ioss::Transform
   {
     friend class Scale3D_Factory;
 
@@ -51,5 +54,3 @@ namespace Iotr {
     double realScale[3]{};
   };
 } // namespace Iotr
-
-#endif // IOSS_Iotr_Scale3D_h

@@ -8,6 +8,7 @@ fortran_macro=${FORTRAN_MACRO:-FORTRAN_ONE_UNDERSCORE}
 cmake_cxx_flags=${CMAKE_CXX_FLAGS}
 cmake_exe_linker_flags=${CMAKE_EXE_LINKER_FLAGS}
 cuda_on_or_off=${CUDA:-OFF}
+clear_cache=${CLEAR_CACHE:-ON}
 
 printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
 printf "BUILD_DIR=${build_dir}\n";
@@ -24,12 +25,13 @@ mkdir -p $build_dir
 
 cd ${build_dir}
 
+if [ "${clear_cache}" == "ON" ] ; then
 # Cleanup old cache before we configure
-rm -rf CMakeFiles CMakeCache.txt
+  rm -rf CMakeFiles CMakeCache.txt
+fi
 
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
--DTrilinos_ENABLE_CXX11=ON \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
 -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -DTrilinos_ENABLE_TESTS:BOOL=OFF \
@@ -51,10 +53,14 @@ cmake \
 -DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan:BOOL=ON \
 -DTrilinos_ENABLE_Fortran:BOOL=OFF \
+-DCMAKE_CXX_STANDARD:STRING=17 \
 -DCMAKE_CXX_FLAGS:STRING="-DNOT_HAVE_STK_SEACASAPREPRO_LIB -D${fortran_macro} ${cmake_cxx_flags}" \
 -DSTK_ENABLE_TESTS:BOOL=OFF \
 -DTrilinos_ENABLE_STK:BOOL=ON \
--DTrilinos_ENABLE_Gtest:BOOL=OFF \
+-DTrilinos_ENABLE_STKNGP_TEST:BOOL=ON \
+-DTrilinos_ENABLE_STKUnit_test_utils:BOOL=ON \
+-DTrilinos_ENABLE_Gtest:BOOL=ON \
+-DCDT_ROOT="/fgs/william/CDT/install" \
 -DTrilinos_ENABLE_SEACASExodus:BOOL=ON \
 -DTrilinos_ENABLE_SEACASIoss:BOOL=ON \
 -DTPL_ENABLE_Netcdf:BOOL=ON \

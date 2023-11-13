@@ -50,10 +50,15 @@
 
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <Ifpack2_Preconditioner.hpp>
-#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include <shylu_fastutil.hpp>
+
+#ifdef HAVE_IFPACK2_METIS
+#include "metis.h"
+#endif
 
 namespace Ifpack2
 {
@@ -72,6 +77,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef typename Node::device_type device_type;
     //! Kokkos execution space
     typedef typename device_type::execution_space execution_space;
+    //! Kokkos scalar type
+    typedef typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type ImplScalar;
     //! Tpetra row matrix
     typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TRowMatrix;
     //! Tpetra CRS matrix
@@ -83,11 +90,14 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Array of LocalOrdinal on device
     typedef Kokkos::View<LocalOrdinal *, execution_space> OrdinalArray;
     //! Array of LocalOrdinal on host
-    typedef Kokkos::View<LocalOrdinal *, Kokkos::HostSpace> OrdinalArrayHost;
+    typedef typename Kokkos::View<LocalOrdinal *, execution_space>::HostMirror OrdinalArrayHost;
     //! Array of Scalar on device
-    typedef Kokkos::View<Scalar *, execution_space> ScalarArray;
-    //! Array of Scalar on host
-    typedef Kokkos::View<Scalar *, Kokkos::HostSpace> ScalarArrayHost;
+    typedef Kokkos::View<  ImplScalar *, execution_space>  ImplScalarArray;
+    typedef Kokkos::View<      Scalar *, execution_space>      ScalarArray;
+    typedef Kokkos::View<const Scalar *, execution_space> ConstScalarArray;
+    #ifdef HAVE_IFPACK2_METIS
+    typedef Kokkos::View<idx_t*, Kokkos::HostSpace> MetisArrayHost;
+    #endif
 
     //! Constructor
     FastILU_Base(Teuchos::RCP<const TRowMatrix> mat_);
@@ -120,6 +130,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
      *    \"block size\" | int | 1 | The block size for the block Jacobi iterations
      */
     void setParameters (const Teuchos::ParameterList& List);
+
+    bool isBlockCrs() const;
 
     //! Initialize the preconditioner
     void initialize();
@@ -160,6 +172,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Get the "sweeps" parameter
     virtual int getSweeps() const = 0;
 
+    //! Get the name of triangular solve algorithm
+    virtual std::string getSpTrsvType() const = 0;
+
     //! Get the "triangular solve iterations" parameter
     virtual int getNTrisol() const = 0;
 
@@ -185,10 +200,11 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     int nComputed_;
     mutable int nApply_;
     //store the local CRS components
-    ScalarArray localValues_;     //set at beginning of compute()
+    ImplScalarArray localValues_; //set at beginning of compute()
     OrdinalArray localRowPtrs_;   //set in initialize()
     OrdinalArray localColInds_;   //set in initialize()
     OrdinalArrayHost localRowPtrsHost_; //set in initialize() and used to get localValues_ in compute()
+
     double initTime_;
     double computeTime_;
     mutable double applyTime_;
@@ -199,17 +215,29 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     {
       Params() {}
       Params(const Teuchos::ParameterList& pL, std::string precType);
+      bool use_metis;
+      FastILU::SpTRSV sptrsv_algo;
       int nFact;
       int nTrisol;
       int level;
+      int blkSize;
       double omega;
       double shift;
       bool guessFlag;
+      int blockSizeILU;
       int blockSize;
+      bool blockCrs;
+      int blockCrsSize;
+      bool fillBlocks;
       static Params getDefaults();
     };
 
     Params params_;
+
+    #ifdef HAVE_IFPACK2_METIS
+    MetisArrayHost metis_perm_;
+    MetisArrayHost metis_iperm_;
+    #endif
 
     //! Construct the underlying preconditioner (localPrec_) using given params and then call localPrec_->initialize()
     // \pre !mat_.is_null()
@@ -217,7 +245,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Get values array from the matrix and then call compute() on the underlying preconditioner
     virtual void computeLocalPrec() = 0;
     //! Apply the local preconditioner with 1-D views of the local parts of X and Y (one vector only)
-    virtual void applyLocalPrec(ScalarArray x, ScalarArray y) const = 0;
+    virtual void applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const = 0;
     //! Get the name of the underlying preconditioner ("Filu", "Fildl" or "Fic")
     virtual std::string getName() const = 0;
 };

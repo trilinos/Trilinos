@@ -70,12 +70,9 @@ using Teuchos::rcp;
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Comm.h"
-
 #include "UnitValueEvaluator.hpp"
 
-// for making explicit instantiated tests easier 
+// for making explicit instantiated tests easier
 #define UNIT_TEST_GROUP(TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,value,TYPE)
 
@@ -112,14 +109,14 @@ DummyFieldEvaluator(
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
-  Teuchos::RCP<panzer::PureBasis> basis 
+  Teuchos::RCP<panzer::PureBasis> basis
      = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
 
   // grab information from quadrature rule
   fieldValue = PHX::MDField<ScalarT,Cell,BASIS>(name, basis->functional);
 
   this->addEvaluatedField(fieldValue);
-  
+
   std::string n = "DummyFieldEvaluator: " + name;
   this->setName(n);
 }
@@ -128,9 +125,9 @@ void
 DummyFieldEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
-{ 
+{
   auto lfieldValue=fieldValue;
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) { 
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) {
       int i = 0;
       for(int cell=0;cell<lfieldValue.extent_int(0);cell++) {
 	for(int pt=0;pt<lfieldValue.extent_int(1);pt++) {
@@ -180,7 +177,7 @@ RefCoordEvaluator(
   fieldValue = PHX::MDField<ScalarT,panzer::Point,panzer::Dim>(name, coordsLayout);
 
   this->addEvaluatedField(fieldValue);
-  
+
   std::string n = "RefCoordEvaluator: " + name;
   this->setName(n);
 }
@@ -189,10 +186,10 @@ void
 RefCoordEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
-{ 
+{
   auto lfieldValue = fieldValue;
   auto lcub_points = quadValues->cub_points;
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) { 
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) {
       for(int cell=0;cell<lfieldValue.extent_int(0);cell++)
 	for(int pt=0;pt<lfieldValue.extent_int(1);pt++)
 	  lfieldValue(cell,pt) = lcub_points(cell,pt);
@@ -202,16 +199,13 @@ evaluateFields(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 {
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> SV;
-
-
   // build global (or serial communicator)
   #ifdef HAVE_MPI
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+     Teuchos::RCP<const Teuchos::MpiComm<int> > eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   #else
-     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      auto eComm = Teuchos::rcp(Teuchos::DefaultComm<int>::getComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -222,12 +216,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   //////////////////////////////////////////////////////////
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  // FieldArray & coords = workset->cell_vertex_coordinates;
-  // coords.resize(numCells,numVerts,dim);
   MDFieldArrayFactory af("",true);
-  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
-  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) { 
+  workset->cell_node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
+  Workset::CellCoordArray coords = workset->cell_node_coordinates;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) {
       coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
       coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
       coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
@@ -254,7 +246,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   std::string basisName = "Q2";
   Teuchos::RCP<panzer::PureBasis> pureBasis = Teuchos::rcp(new panzer::PureBasis(basisName,2,numCells,topo));
   Teuchos::RCP<panzer::BasisIRLayout> basisLayout = Teuchos::rcp(new panzer::BasisIRLayout(pureBasis,*quadRule));
-  Teuchos::RCP<panzer::BasisValues2<double> > basisValues 
+  Teuchos::RCP<panzer::BasisValues2<double> > basisValues
      = Teuchos::rcp(new panzer::BasisValues2<double>("",true,true));
   basisValues->setupArrays(basisLayout);
   basisValues->evaluateValues(quadValues->cub_points,quadValues->jac,quadValues->jac_det,quadValues->jac_inv,quadValues->weighted_measure,coords);
@@ -271,7 +263,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   workset->bases.push_back(basisValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // add in some evaluators
   ///////////////////////////////////////////////////
@@ -280,7 +272,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","TestField");
      p.set("Basis",pureBasis);
-     RCP<panzer::DummyFieldEvaluator<EvalType,panzer::Traits> > eval 
+     RCP<panzer::DummyFieldEvaluator<EvalType,panzer::Traits> > eval
         = rcp(new panzer::DummyFieldEvaluator<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -294,7 +286,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      p.set("Name","TestField");
      p.set("Basis",basisLayout);
      p.set("IR",quadRule);
-     RCP<panzer::DOF<EvalType,panzer::Traits> > eval 
+     RCP<panzer::DOF<EvalType,panzer::Traits> > eval
         = rcp(new panzer::DOF<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -307,7 +299,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","RefCoord");
      p.set("Quad Values",quadValues);
-     RCP<panzer::RefCoordEvaluator<EvalType,panzer::Traits> > eval 
+     RCP<panzer::RefCoordEvaluator<EvalType,panzer::Traits> > eval
         = rcp(new panzer::RefCoordEvaluator<EvalType,panzer::Traits>(p));
 
      coordsLayout = eval->coordsLayout;
@@ -318,10 +310,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   ///////////////////////////////////////////////////
 
   // test 0
-  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point> dofPointField0 
+  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point> dofPointField0
      = PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point>("TestFieldpostfix",quadRule->dl_scalar);
   {
-     RCP<panzer::DOF_PointField<EvalType,panzer::Traits> > eval 
+     RCP<panzer::DOF_PointField<EvalType,panzer::Traits> > eval
         = rcp(new panzer::DOF_PointField<EvalType,panzer::Traits>("postfix","TestField",*pureBasis,"RefCoord",coordsLayout,quadRule->dl_scalar));
 
      Teuchos::RCP<PHX::FieldTag> ft = eval->evaluatedFields()[0];
@@ -333,10 +325,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   }
 
   // test 1
-  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point> dofPointField1 
+  PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point> dofPointField1
      = PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point>("TestFieldRefCoord",quadRule->dl_scalar);
   {
-     RCP<panzer::DOF_PointField<EvalType,panzer::Traits> > eval 
+     RCP<panzer::DOF_PointField<EvalType,panzer::Traits> > eval
         = rcp(new panzer::DOF_PointField<EvalType,panzer::Traits>("TestField",*pureBasis,"RefCoord",coordsLayout,quadRule->dl_scalar,true));
 
      Teuchos::RCP<PHX::FieldTag> ft = eval->evaluatedFields()[0];
@@ -391,8 +383,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   Kokkos::deep_copy(dofPointField1_h, dofPointField1.get_view());
   for(int cell=0;cell<refField.extent_int(0);cell++) {
     for(int pt=0;pt<refField.extent_int(1);pt++) {
-      TEST_FLOATING_EQUALITY(SV::eval(refField_h(cell,pt)),SV::eval(dofPointField0_h(cell,pt)),1e-15);
-      TEST_FLOATING_EQUALITY(SV::eval(refField_h(cell,pt)),SV::eval(dofPointField1_h(cell,pt)),1e-15);
+      TEST_FLOATING_EQUALITY(Sacado::scalarValue(refField_h(cell,pt)),Sacado::scalarValue(dofPointField0_h(cell,pt)),1e-15);
+      TEST_FLOATING_EQUALITY(Sacado::scalarValue(refField_h(cell,pt)),Sacado::scalarValue(dofPointField1_h(cell,pt)),1e-15);
       // TEST_EQUALITY(refField_h(cell,pt),dofPointField0_h(cell,pt));
       // TEST_EQUALITY(refField_h(cell,pt),dofPointField1_h(cell,pt));
     }

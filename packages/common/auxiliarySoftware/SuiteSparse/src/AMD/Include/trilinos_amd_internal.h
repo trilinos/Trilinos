@@ -101,8 +101,8 @@
 #undef MIN
 #endif
 
-#ifdef EMPTY
-#undef EMPTY
+#ifdef TRILINOS_AMD_EMPTY
+#undef TRILINOS_AMD_EMPTY
 #endif
 
 #ifdef GLOBAL
@@ -114,12 +114,12 @@
 #endif
 
 /* FLIP is a "negation about -1", and is used to mark an integer i that is
- * normally non-negative.  FLIP (EMPTY) is EMPTY.  FLIP of a number > EMPTY
+ * normally non-negative.  FLIP (TRILINOS_AMD_EMPTY) is TRILINOS_AMD_EMPTY.  FLIP of a number > TRILINOS_AMD_EMPTY
  * is negative, and FLIP of a number < EMTPY is positive.  FLIP (FLIP (i)) = i
- * for all integers i.  UNFLIP (i) is >= EMPTY. */
-#define EMPTY (-1)
+ * for all integers i.  UNFLIP (i) is >= TRILINOS_AMD_EMPTY. */
+#define TRILINOS_AMD_EMPTY (-1)
 #define FLIP(i) (-(i)-2)
-#define UNFLIP(i) ((i < EMPTY) ? FLIP (i) : (i))
+#define UNFLIP(i) ((i < TRILINOS_AMD_EMPTY) ? FLIP (i) : (i))
 
 /* for integer MAX/MIN, or for doubles when we don't care how NaN's behave: */
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
@@ -141,7 +141,7 @@
 #define FALSE (0)
 #define PRIVATE static
 #define GLOBAL
-#define EMPTY (-1)
+#define TRILINOS_AMD_EMPTY (-1)
 
 /* Note that Linux's gcc 2.96 defines NULL as ((void *) 0), but other */
 /* compilers (even gcc 2.95.2 on Solaris) define NULL as 0 or (0).  We */

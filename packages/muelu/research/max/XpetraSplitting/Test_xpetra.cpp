@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   typedef scalar_type         												Scalar;
   typedef local_ordinal_type  												LocalOrdinal;
   typedef global_ordinal_type 												GlobalOrdinal;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
   typedef Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseTpetra, false> tpetra_splitting;

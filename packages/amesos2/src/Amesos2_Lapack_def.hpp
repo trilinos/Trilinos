@@ -66,9 +66,6 @@ namespace Amesos2 {
                                 Teuchos::RCP<Vector>       X,
                                 Teuchos::RCP<const Vector> B)
     : SolverCore<Amesos2::Lapack,Matrix,Vector>(A, X, B) // instantiate superclass
-    , nzvals_()
-    , rowind_()
-    , colptr_()
     , is_contiguous_(true)
   {
     // Set default parameters
@@ -153,12 +150,10 @@ namespace Amesos2 {
 #endif
       typedef Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
                                        scalar_type> copy_helper;
-      if ( is_contiguous_ == true ) {
-        copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), ROOTED, 0);
-      }
-      else {
-        copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, 0);
-      }
+      copy_helper::do_get(B, rhsvals_(),
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        0);
     }
 
     int solve_ierr         = 0;
@@ -196,18 +191,10 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      if ( is_contiguous_ == true ) {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
-              as<size_t>(ld_rhs),
-              ROOTED);
-      }
-      else {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
-              as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED);
-      }
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
     }
 
     return( 0 );
@@ -277,9 +264,9 @@ namespace Amesos2 {
     if( current_phase < NUMFACT ) return( false );
 
     if( this->root_ ){
-      nzvals_.resize(this->globalNumNonZeros_);
-      rowind_.resize(this->globalNumNonZeros_);
-      colptr_.resize(this->globalNumCols_ + 1);
+      Kokkos::resize(nzvals_view_,this->globalNumNonZeros_);
+      Kokkos::resize(rowind_view_,this->globalNumNonZeros_);
+      Kokkos::resize(colptr_view_,this->globalNumCols_ + 1);
     }
 
     // global_size_type nnz_ret = 0;
@@ -291,18 +278,14 @@ namespace Amesos2 {
 
       // typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
       //        scalar_type, global_ordinal_type, global_size_type> ccs_helper;
-      typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
-        scalar_type, int, int> ccs_helper;
-    if ( is_contiguous_ == true ) {
-      ccs_helper::do_get(this->matrixA_.ptr(),
-                         nzvals_(), rowind_(), colptr_(),
-                         nnz_ret, ROOTED, SORTED_INDICES, 0);
-    }
-    else {
-      ccs_helper::do_get(this->matrixA_.ptr(),
-                         nzvals_(), rowind_(), colptr_(),
-                         nnz_ret, CONTIGUOUS_AND_ROOTED, SORTED_INDICES, 0);
-    }
+    typedef Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
+        host_value_type_array, host_ordinal_type_array, host_ordinal_type_array> ccs_helper;
+
+    ccs_helper::do_get(this->matrixA_.ptr(),
+      nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
+      (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+      ARBITRARY,
+      this->rowIndexBase_);
   }
 
     if( this->root_ ){
@@ -312,10 +295,10 @@ namespace Amesos2 {
       // Put entries of ccs representation into the dense matrix
       global_size_type end_col = this->globalNumCols_;
       for( global_size_type col = 0; col < end_col; ++col ){
-        global_ordinal_type ptr = colptr_[col];
-        global_ordinal_type end_ptr = colptr_[col+1];
+        global_ordinal_type ptr = colptr_view_[col];
+        global_ordinal_type end_ptr = colptr_view_[col+1];
         for( ; ptr < end_ptr; ++ptr ){
-          lu_(rowind_[ptr], col) = nzvals_[ptr];
+          lu_(rowind_view_[ptr], col) = nzvals_view_[ptr];
         }
       }
 

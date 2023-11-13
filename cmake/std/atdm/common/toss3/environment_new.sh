@@ -25,12 +25,12 @@ else
   echo "NOTE: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 is set so using pre-loaded sparc-dev module!"
 fi
 
-. /projects/sems/modulefiles/utils/sems-modules-init.sh
-module load sems-env
-module load sems-git/2.10.1
+. /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+module load sems-archive-env
+module load sems-archive-git/2.10.1
 
 # Common paths and modules for both intel-1{8,9}
-module load sems-cmake/3.19.1
+module load sems-archive-cmake/3.19.1
 
 atdm_config_load_sparc_dev_module sparc-dev/intel-19.0.4_openmpi-4.0.3
 
@@ -48,7 +48,7 @@ else
     return
 fi
 
-module load sems-ninja_fortran/1.8.2
+module load sems-archive-ninja_fortran/1.8.2
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8

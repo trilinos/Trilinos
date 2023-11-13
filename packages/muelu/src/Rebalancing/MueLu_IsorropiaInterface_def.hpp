@@ -29,9 +29,7 @@
 #include <Isorropia_EpetraPartitioner.hpp>
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraCrsGraph.hpp>
-#endif
 #endif // ENDIF HAVE_MUELU_ISORROPIA
 
 #include "MueLu_Level.hpp"
@@ -39,7 +37,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Graph.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -129,14 +126,14 @@ namespace MueLu {
     RCP<const BlockedMap> bnodeMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(nodeMap);
     if(!bnodeMap.is_null()) nodeMap=bnodeMap->getMap();
 
-    GetOStream(Statistics0) << "IsorropiaInterface:Build(): nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
+    GetOStream(Statistics0) << "IsorropiaInterface:Build(): nodeMap " << nodeMap->getLocalNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
     
 
     // 3) create graph of amalgamated matrix
-    RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, A->getNodeMaxNumRowEntries()*blockdim);
+    RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, A->getLocalMaxNumRowEntries()*blockdim);
 
     // 4) do amalgamation. generate graph of amalgamated matrix
-    for(LO row=0; row<Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); row++) {
+    for(LO row=0; row<Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); row++) {
       // get global DOF id
       GO grid = rowMap->getGlobalElement(row);
 
@@ -201,7 +198,7 @@ namespace MueLu {
       const int* array = NULL;
       isoPart->extractPartsView(size,array);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(size != Teuchos::as<int>(nodeMap->getNodeNumElements()), Exceptions::RuntimeError, "length of array returned from extractPartsView does not match local length of rowMap");
+      TEUCHOS_TEST_FOR_EXCEPTION(size != Teuchos::as<int>(nodeMap->getLocalNumElements()), Exceptions::RuntimeError, "length of array returned from extractPartsView does not match local length of rowMap");
 
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(nodeMap, false);
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
@@ -216,14 +213,12 @@ namespace MueLu {
     }
 #endif // ENDIF HAVE_MUELU_EPETRA
 
-#ifdef HAVE_MUELU_TPETRA
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
     RCP< Xpetra::TpetraCrsGraph<LO, GO, Node> > tpCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsGraph<LO, GO, Node> >(crsGraph);
     TEUCHOS_TEST_FOR_EXCEPTION(tpCrsGraph != Teuchos::null, Exceptions::RuntimeError, "Tpetra is not supported with Isorropia.");
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Isorropia is an interface to Zoltan which only has support for LO=GO=int and SC=double.");
 #endif // ENDIF HAVE_MUELU_INST_DOUBLE_INT_INT
-#endif // ENDIF HAVE_MUELU_TPETRA
 #endif // HAVE_MUELU_ISORROPIA
 #else  // if we don't have MPI
 

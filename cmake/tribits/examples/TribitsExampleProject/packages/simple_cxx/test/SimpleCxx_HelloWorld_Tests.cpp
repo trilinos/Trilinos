@@ -1,8 +1,4 @@
-
-#include <iostream>
-#include <sstream>
-#include <cstdlib>
-#include "SimpleCxx_HelloWorld.hpp"
+#include "SimpleCxx_HelloWorld_Tests.hpp"
 
 
 #define TEST_FIND_SUBSTR_IN_STR(SUBSTR, STR) \
@@ -41,6 +37,14 @@ int main() {
 #ifdef HAVE_SIMPLECXX_SIMPLETPL
   TEST_FIND_SUBSTR_IN_STR("Cube(3) = 27", oss.str());
 #endif
+
+  srand(time(NULL));
+  std::cout
+    << "<DartMeasurement type=\"numeric/double\" name=\"sqr_rand\">"
+    << HeaderOnlyTpl::sqr(rand() % 10)  // Random number between 1 and 100
+    << "</DartMeasurement>\n";
+  // NOTE: The above produces a numeric test measurement that change each time
+  // it calls and produce an interesting numeric plot on CDash.
 
   if (success) {
     std::cout << "End Result: TEST PASSED\n";

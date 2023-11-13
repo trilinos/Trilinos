@@ -54,66 +54,33 @@
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_RCP.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
   namespace Test {
 
-#define INTREPID2_TEST_ERROR_EXPECTED( S )              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
+    using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
     template<typename ValueType, typename DeviceType>
     int HGRAD_LINE_C1_FEM_Test01(const bool verbose) {
 
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
+      //! Create an execution space instance.
+      const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
 
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs,       false);
+      //! Setup test output stream.
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, "Basis_HGRAD_LINE_C1_FEM", {
+          "1) Conversion of Dof tags into Dof ordinals and back",
+          "2) Basis values for VALUE, GRAD, CURL, DIV, and Dk operators"
+      });
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-      
-      using DeviceSpaceType = typename DeviceType::execution_space;
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-
-      *outStream
-        << "===============================================================================n"
-        << "|                                                                             |\n"
-        << "|                 Unit Test (Basis_HGRAD_LINE_C1_FEM)                         |\n"
-        << "|                                                                             |\n"
-        << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
-        << "|     2) Basis values for VALUE, GRAD, CURL, DIV, and Dk operators            |\n"
-        << "|                                                                             |\n"
-        << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-        << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-        << "|                      Kara Peterson (dridzal@sandia.gov).                    |\n"
-        << "|                                                                             |\n"
-        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-        << "|                                                                             |\n"
-        << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
       int errorFlag = 0;
@@ -313,7 +280,7 @@ namespace Intrepid2 {
           { {-0.5}, {0.5} }
         };
 
-        Basis_HGRAD_LINE_C1_FEM<DeviceType> lineBasis;
+        Basis_HGRAD_LINE_C1_FEM<DeviceType> lineB;
 
         // Define array containing the 2 vertices of the reference Line, its center and another point
         DynRankViewHost ConstructWithLabel(lineNodesHost, 4, 1);
@@ -326,14 +293,14 @@ namespace Intrepid2 {
         Kokkos::deep_copy(lineNodes, lineNodesHost);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
-        const ordinal_type numFields = lineBasis.getCardinality();
+        const ordinal_type numFields = lineB.getCardinality();
         const ordinal_type numPoints = lineNodes.extent(0);
-        const ordinal_type spaceDim  = lineBasis.getBaseCellTopology().getDimension();
+        const ordinal_type spaceDim = lineB.getBaseCellTopology().getDimension();
 
         // Check VALUE of basis functions: resize vals to rank-2 container:
         {
           DynRankView ConstructWithLabel(vals, numFields, numPoints);
-          lineBasis.getValues(vals, lineNodes, OPERATOR_VALUE);
+          lineB.getValues(space, vals, lineNodes, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (ordinal_type i=0;i<numFields;++i)
@@ -360,7 +327,7 @@ namespace Intrepid2 {
                                     OPERATOR_MAX };
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
-            lineBasis.getValues(vals, lineNodes, op);
+            lineB.getValues(space, vals, lineNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
             for (auto i=0;i<numFields;++i)
@@ -395,7 +362,7 @@ namespace Intrepid2 {
             const auto op = ops[h];
             const auto DkCardin  = getDkCardinality(op, spaceDim);
             DynRankView ConstructWithLabel(vals, numFields, numPoints, DkCardin);
-            lineBasis.getValues(vals, lineNodes, op);
+            lineB.getValues(vals, lineNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
             for (ordinal_type i1=0;i1<numFields;++i1)

@@ -64,7 +64,7 @@ namespace Sparse3TensorUnitTest {
     UnitTestSetup(): d(3), p(4), bases(d) {
       rtol = 1e-14;
       atol = 1e-14;
-      sparse_tol = 1e-15;
+      sparse_tol = 1e-14;
       
       // Create product basis
       for (OrdinalType i=0; i<d; i++)

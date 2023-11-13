@@ -283,7 +283,10 @@ namespace panzer
        *  \brief The fields to which we'll contribute, or in which we'll store,
        *         the result of computing this integral.
        */
-      PHX::View<PHX::MDField<ScalarT, Cell, BASIS>*> fields_;
+      std::vector<PHX::MDField<ScalarT,Cell,BASIS>> fields_host_;
+      using InnerView = PHX::UnmanagedView<ScalarT**>;
+      using OuterView = PHX::View<InnerView*>;
+      OuterView fields_;
 
       /**
        *  \brief A field representing the vector-valued function we're
@@ -308,7 +311,7 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-      PHX::View<PHX::View<const ScalarT**>*> kokkosFieldMults_;
+      PHX::View<PHX::UnmanagedView<const ScalarT**>*> kokkosFieldMults_;
 
       /**
        *  \brief The number of dimensions associated with the vector.
@@ -335,8 +338,7 @@ namespace panzer
        *  \brief The gradient vector basis information necessary for
        *         integration.
        */
-      PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,
-        panzer::Dim> basis_;
+      PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP, panzer::Dim> basis_;
 
   }; // end of class Integrator_GradBasisCrossVector
 

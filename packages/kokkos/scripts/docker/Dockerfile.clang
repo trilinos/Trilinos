@@ -1,8 +1,9 @@
-FROM nvidia/cuda:9.2-devel
+FROM ubuntu:18.04
 
 RUN apt-get update && apt-get install -y \
         bc \
         git \
+        build-essential \
         wget \
         ccache \
         && \
@@ -26,7 +27,7 @@ RUN CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSIO
     wget --quiet ${CMAKE_URL}/${CMAKE_SHA256}.asc && \
     wget --quiet ${CMAKE_URL}/${CMAKE_SCRIPT} && \
     gpg --verify ${CMAKE_SHA256}.asc ${CMAKE_SHA256} && \
-    grep ${CMAKE_SCRIPT} ${CMAKE_SHA256} | sha256sum --check && \
+    grep -i ${CMAKE_SCRIPT} ${CMAKE_SHA256} | sed -e s/linux/Linux/ | sha256sum --check && \
     mkdir -p ${CMAKE_DIR} && \
     sh ${CMAKE_SCRIPT} --skip-license --prefix=${CMAKE_DIR} && \
     rm cmake*
@@ -34,7 +35,7 @@ ENV PATH=${CMAKE_DIR}/bin:$PATH
 
 ENV LLVM_DIR=/opt/llvm
 RUN LLVM_VERSION=8.0.0 && \
-    LLVM_URL=http://releases.llvm.org/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
+    LLVM_URL=https://releases.llvm.org/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-18.04.tar.xz && \
     LLVM_ARCHIVE=llvm-${LLVM_VERSION}.tar.xz && \
     SCRATCH_DIR=/scratch && mkdir -p ${SCRATCH_DIR} && cd ${SCRATCH_DIR} && \
     wget --quiet ${LLVM_URL} --output-document=${LLVM_ARCHIVE} && \

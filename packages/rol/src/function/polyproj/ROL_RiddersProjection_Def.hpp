@@ -65,10 +65,48 @@ RiddersProjection<Real>::RiddersProjection(const Vector<Real>               &xpr
     ltol_      (DEFAULT_ltol_),
     maxit_     (DEFAULT_maxit_),
     verbosity_ (DEFAULT_verbosity_) {
+  initialize(xprim,xdual,bnd,con,mul,res);
+}
+
+template<typename Real>
+RiddersProjection<Real>::RiddersProjection(const Vector<Real>               &xprim,
+                                           const Vector<Real>               &xdual,
+                                           const Ptr<BoundConstraint<Real>> &bnd,
+                                           const Ptr<Constraint<Real>>      &con,
+                                           const Vector<Real>               &mul,
+                                           const Vector<Real>               &res,
+                                           ParameterList                    &list)
+  : PolyhedralProjection<Real>(xprim,xdual,bnd,con,mul,res),
+    DEFAULT_atol_      (std::sqrt(ROL_EPSILON<Real>()*std::sqrt(ROL_EPSILON<Real>()))),
+    DEFAULT_rtol_      (std::sqrt(ROL_EPSILON<Real>())),
+    DEFAULT_ltol_      (ROL_EPSILON<Real>()),
+    DEFAULT_maxit_     (5000),
+    DEFAULT_verbosity_ (0),
+    atol_      (DEFAULT_atol_),
+    rtol_      (DEFAULT_rtol_),
+    ltol_      (DEFAULT_ltol_),
+    maxit_     (DEFAULT_maxit_),
+    verbosity_ (DEFAULT_verbosity_) {
+  atol_      = list.sublist("General").sublist("Polyhedral Projection").get("Absolute Tolerance",   DEFAULT_atol_);
+  rtol_      = list.sublist("General").sublist("Polyhedral Projection").get("Relative Tolerance",   DEFAULT_rtol_);
+  ltol_      = list.sublist("General").sublist("Polyhedral Projection").get("Multiplier Tolerance", DEFAULT_ltol_);
+  maxit_     = list.sublist("General").sublist("Polyhedral Projection").get("Iteration Limit",      DEFAULT_maxit_);
+  verbosity_ = list.sublist("General").get("Output Level", DEFAULT_verbosity_);
+  initialize(xprim,xdual,bnd,con,mul,res);
+}
+
+template<typename Real>
+void RiddersProjection<Real>::initialize(const Vector<Real>               &xprim,
+                                         const Vector<Real>               &xdual,
+                                         const Ptr<BoundConstraint<Real>> &bnd,
+                                         const Ptr<Constraint<Real>>      &con,
+                                         const Vector<Real>               &mul,
+                                         const Vector<Real>               &res) {
   dim_ = mul.dimension();
   ROL_TEST_FOR_EXCEPTION(dim_!=1,std::logic_error,
     ">>> ROL::RiddersProjection : The range of the linear constraint must be one dimensional!");
   xnew_  = xprim.clone();
+  Px_    = xprim.clone();
   mul1_  = static_cast<Real>(0);
   dlam1_ = static_cast<Real>(2);
   // con.value(x) = xprim_->dot(x) + b_
@@ -85,29 +123,12 @@ RiddersProjection<Real>::RiddersProjection(const Vector<Real>               &xpr
   //xnew_->zero();
   //bnd_->project(*xnew_);
   //Real res0 = std::abs(residual(*xnew_));
-  Real resl = std::abs(residual(*bnd_->getLowerBound()));
-  Real resu = std::abs(residual(*bnd_->getUpperBound()));
+  Real resl = ROL_INF<Real>(), resu = ROL_INF<Real>();
+  if (bnd_->isLowerActivated()) resl = residual(*bnd_->getLowerBound());
+  if (bnd_->isUpperActivated()) resu = residual(*bnd_->getUpperBound());
   Real res0 = std::max(resl,resu);
-  if (res0 < atol_) {
-    res0 = static_cast<Real>(1);
-  }
+  if (res0 < atol_) res0 = static_cast<Real>(1);
   ctol_ = std::min(atol_,rtol_*res0);
-}
-
-template<typename Real>
-RiddersProjection<Real>::RiddersProjection(const Vector<Real>               &xprim,
-                                           const Vector<Real>               &xdual,
-                                           const Ptr<BoundConstraint<Real>> &bnd,
-                                           const Ptr<Constraint<Real>>      &con,
-                                           const Vector<Real>               &mul,
-                                           const Vector<Real>               &res,
-                                           ParameterList                    &list)
-  : RiddersProjection<Real>(xprim,xdual,bnd,con,mul,res) {
-  atol_      = list.sublist("General").sublist("Polyhedral Projection").get("Absolute Tolerance",   DEFAULT_atol_);
-  rtol_      = list.sublist("General").sublist("Polyhedral Projection").get("Relative Tolerance",   DEFAULT_rtol_);
-  ltol_      = list.sublist("General").sublist("Polyhedral Projection").get("Multiplier Tolerance", DEFAULT_ltol_);
-  maxit_     = list.sublist("General").sublist("Polyhedral Projection").get("Iteration Limit",      DEFAULT_maxit_);
-  verbosity_ = list.sublist("General").get("Output Level", DEFAULT_verbosity_);
 }
 
 template<typename Real>

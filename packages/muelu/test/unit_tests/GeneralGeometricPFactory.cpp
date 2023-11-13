@@ -52,6 +52,7 @@
 
 #include <complex>
 
+#include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
@@ -71,7 +72,7 @@
 
 namespace MueLuTests {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class GeneralGeometricPFactoryTester {
 #include "MueLu_UseShortNames.hpp"
 

@@ -1,12 +1,11 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include <heartbeat/Iohb_Layout.h>
-#include <string> // for operator<<, string, etc
-#include <vector> // for vector, vector<>::size_type
+#include <string>
 
 namespace Iohb {
   Layout::Layout(bool show_labels, int precision, std::string separator, int field_width)

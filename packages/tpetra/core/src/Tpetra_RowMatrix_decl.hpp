@@ -180,14 +180,14 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! The number of rows owned by the calling process.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
 
     /// \brief The number of columns needed to apply the forward operator on this node.
     ///
     /// This is the same as the number of elements listed in the
     /// column Map.  It is <i>not</i> necessarily the same as the
     /// number of domain Map elements owned by the calling process.
-    virtual size_t getNodeNumCols() const = 0;
+    virtual size_t getLocalNumCols() const = 0;
 
     //! The index base for global indices in this matrix.
     virtual GlobalOrdinal getIndexBase() const = 0;
@@ -196,7 +196,7 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumEntries() const = 0;
 
     //! The local number of stored (structurally nonzero) entries.
-    virtual size_t getNodeNumEntries() const = 0;
+    virtual size_t getLocalNumEntries() const = 0;
 
     /// \brief The current number of entries on the calling process in the specified global row.
     ///
@@ -230,6 +230,9 @@ namespace Tpetra {
     /// zeros count as "entries."
     virtual size_t getGlobalMaxNumRowEntries () const = 0;
 
+    //! The number of degrees of freedom per mesh point.
+    virtual local_ordinal_type getBlockSize () const = 0;
+
     /// \brief Maximum number of entries in any row of the matrix,
     ///   on this process.
     ///
@@ -238,7 +241,7 @@ namespace Tpetra {
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
-    virtual size_t getNodeMaxNumRowEntries () const = 0;
+    virtual size_t getLocalMaxNumRowEntries () const = 0;
 
     //! Whether this matrix has a well-defined column Map.
     virtual bool hasColMap () const = 0;
@@ -301,13 +304,7 @@ namespace Tpetra {
                       nonconst_global_inds_host_view_type &Indices,
                       nonconst_values_host_view_type &Values,
                       size_t& NumEntries) const = 0;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual void
-    getGlobalRowCopy (GlobalOrdinal GlobalRow,
-                      const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                      const Teuchos::ArrayView<Scalar> &Values,
-                      size_t &NumEntries) const = 0;
-#endif
+
     /// \brief Get a copy of the given local row's entries.
     ///
     /// This method only gets the entries in the given row that are
@@ -333,13 +330,7 @@ namespace Tpetra {
                      nonconst_local_inds_host_view_type &Indices,
                      nonconst_values_host_view_type &Values,
                      size_t& NumEntries) const = 0;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual void
-    getLocalRowCopy (LocalOrdinal LocalRow,
-                     const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                     const Teuchos::ArrayView<Scalar> &Values,
-                     size_t &NumEntries) const = 0;
-#endif
+
     /// \brief Get a constant, nonpersisting, globally indexed view of
     ///   the given row of the matrix.
     ///
@@ -368,12 +359,6 @@ namespace Tpetra {
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       global_inds_host_view_type &indices,
                       values_host_view_type &values) const = 0;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual void
-    getGlobalRowView (GlobalOrdinal GlobalRow,
-                      Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                      Teuchos::ArrayView<const Scalar> &values) const = 0;
-#endif
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix.
@@ -403,44 +388,6 @@ namespace Tpetra {
     getLocalRowView (LocalOrdinal LocalRow,
                      local_inds_host_view_type & indices,
                      values_host_view_type & values) const = 0;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual void
-    getLocalRowView (LocalOrdinal LocalRow,
-                     Teuchos::ArrayView<const LocalOrdinal>& indices,
-                     Teuchos::ArrayView<const Scalar>& values) const = 0;
-
-    /// \brief Get a constant, nonpersisting, locally indexed view of
-    ///   the given row of the matrix, using "raw" pointers instead of
-    ///   Teuchos::ArrayView.
-    ///
-    /// The returned views of the column indices and values are not
-    /// guaranteed to persist beyond the lifetime of <tt>this</tt>.
-    /// Furthermore, some RowMatrix implementations allow changing the
-    /// values, or the indices and values.  Any such changes
-    /// invalidate the returned views.
-    ///
-    /// This method only gets the entries in the given row that are
-    /// stored on the calling process.  Note that if the matrix has an
-    /// overlapping row Map, it is possible that the calling process
-    /// does not store all the entries in that row.
-    ///
-    /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
-    /// \post <tt>numEnt == getNumEntriesInGlobalRow (LocalRow)</tt>
-    ///
-    /// \param lclRow [in] Local index of the row.
-    /// \param numEnt [out] Number of entries in the row that are
-    ///   stored on the calling process.
-    /// \param lclColInds [out] Local indices of the columns
-    ///   corresponding to values.
-    /// \param vals [out] Matrix values.
-    ///
-    /// \return Error code; zero on no error.
-    virtual LocalOrdinal
-    getLocalRowViewRaw (const LocalOrdinal lclRow,
-                        LocalOrdinal& numEnt,
-                        const LocalOrdinal*& lclColInds,
-                        const Scalar*& vals) const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Get a copy of the diagonal entries, distributed by the row Map.
     ///

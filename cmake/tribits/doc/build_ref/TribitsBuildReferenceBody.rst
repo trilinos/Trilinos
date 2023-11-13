@@ -49,7 +49,7 @@ If you have access to the <Project> git repositories (which which includes a
 snapshot of TriBITS), then install CMake with::
 
   $ cd <some-scratch-space>/
-  $ export TRIBITS_BASE_DIR=<project-base-dir>/cmake/tribits
+  $ TRIBITS_BASE_DIR=<project-base-dir>/cmake/tribits
   $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py \
      --install-dir-base=<INSTALL_BASE_DIR> --cmake-version=X.Y.Z \
      --do-all
@@ -75,19 +75,12 @@ back-end build system.  It also provides some other nice features like ``ninja
 -n -d explain`` to show why the build system decides to (re)build the targets
 that it decides to build.
 
-The Kitware fork of Ninja at:
-
-  https://github.com/Kitware/ninja/releases
-
-provides releases of Ninja that allows CMake 3.7.0+ to build Fortran code with
-Ninja.  For example, the Kitware Ninja release ``1.7.2.git.kitware.dyndep-1``
-works with Fortran.  As of Ninja 1.10+, Fortran support is part of the
-official Google-maintained version of Ninja as can be obtained from:
+As of Ninja 1.10+, Fortran support is part of the official GitHub version of
+Ninja as can be obtained from:
 
   https://github.com/ninja-build/ninja/releases
 
-and as of CMake 3.17+, cmake will recognize native Fortran support for Ninja
-1.10+ (see `CMake Ninja Fortran Support`_).
+(see `CMake Ninja Fortran Support`_).
 
 Ninja is easy to install from source on almost any machine.  On Unix/Linux
 systems it is as simple as ``configure --prefix=<dir>``, ``make`` and ``make
@@ -165,6 +158,12 @@ Basic configuration
 
 A few different approaches for configuring are given below.
 
+* `Create a do-configure script [Recommended]`_
+* `Create a *.cmake file and point to it [Most Recommended]`_
+* `Using the QT CMake configuration GUI`_
+
+.. _Create a do-configure script [Recommended]:
+
 a) Create a 'do-configure' script such as [Recommended]::
 
     #!/bin/bash
@@ -178,7 +177,7 @@ a) Create a 'do-configure' script such as [Recommended]::
 
     ./do-configure [OTHER OPTIONS] -D<Project>_ENABLE_<TRIBITS_PACKAGE>=ON
 
-  where ``<TRIBITS_PACKAGE>`` is a valid SE Package name (see above), etc. and
+  where ``<TRIBITS_PACKAGE>`` is a valid Package name (see above), etc. and
   ``SOURCE_BASE`` is set to the <Project> source base directory (or your can
   just give it explicitly in the script).
 
@@ -192,6 +191,8 @@ a) Create a 'do-configure' script such as [Recommended]::
   `Reconfiguring completely from scratch`_).
 
 .. _<Project>_CONFIGURE_OPTIONS_FILE:
+
+.. _Create a *.cmake file and point to it [Most Recommended]:
 
 b) Create a ``*.cmake`` file and point to it [Most Recommended].
 
@@ -218,14 +219,16 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   MyConfigureOptions.cmake"`` makes it easy see where that variable got set
   when looking an the generated ``CMakeCache.txt`` file.  Also, when this
   ``*.cmake`` fragment file changes, CMake will automatically trigger a
-  reconfgure during a make (because it knows about the file and will check its
+  reconfigure during a make (because it knows about the file and will check its
   time stamp, unlike when using ``-C <file-name>.cmake``, see below).
 
   One can use the ``FORCE`` option in the ``set()`` commands shown above and
-  that will override any value of the options that might already be set.
-  However, that will not allow the user to override the options on the CMake
-  command-line using ``-D<VAR>=<value>`` so it is generally **not** desired to
-  use ``FORCE``.
+  that will override any value of the options that might already be set (but
+  when using ``-C`` to include this forced ``set(<var> ... FORCE)`` will only
+  override the value if the file with the ``set()`` is listed after the
+  ``-D<var>=<val>`` command-line option).  However, that will not allow the
+  user to override the options on the CMake command-line using
+  ``-D<VAR>=<value>`` so it is generally **not** desired to use ``FORCE``.
 
   One can also pass in a list of configuration fragment files separated by
   commas ``','`` which will be read in the order they are given as::
@@ -265,30 +268,55 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   project source directory location may not be known or easy to get).
 
   2) When configuration files are read in using
-  ``<Project>_CONFIGURE_OPTIONS_FILE``, the will get reprocessed on every
+  ``<Project>_CONFIGURE_OPTIONS_FILE``, they will get reprocessed on every
   reconfigure (such as when reconfigure happens automatically when running
   ``make``).  That means that if options change in those included ``*.cmake``
   files from the initial configure, then those updated options will get
   automatically picked up in a reconfigure.  But when processing ``*.cmake``
-  files using the built-in ``-C <file-name>.cmake`` argument, updated options
-  will not get set.  Therefore, if one wants to have the ``*.cmake`` files
+  files using the built-in ``-C <frag>.cmake`` argument, updated options will
+  not get set.  Therefore, if one wants to have the ``*.cmake`` files
   automatically be reprocessed, then one should use
   ``<Project>_CONFIGURE_OPTIONS_FILE``.  But if one does not want to have the
-  contents of the ``*.cmake`` file reread on reconfigures, then one would want
-  to use ``-C``.
+  contents of the ``<frag>.cmake`` file reread on reconfigures, then one would
+  want to use ``-C <frag>.cmake``.
 
-  3) One can create and use parametrized ``*.cmake`` files that can be used
-  with multiple TriBITS projects.  For example, one can have set statements
-  like ``set(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
-  is known before the file is included.  One can't do that with ``cmake -C``
-  and instead would have to the full variables names specific for a given
-  project.
+  3) When using ``<Project>_CONFIGURE_OPTIONS_FILE``, one can create and use
+  parameterized ``*.cmake`` files that can be used with multiple TriBITS
+  projects.  For example, one can have set statements like
+  ``set(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME`` is
+  known before the file is included.  One cannot do that with ``-C`` and
+  instead would have to provide the full variables names specific for a given
+  TriBITS project.
 
-  4) Non-cache project-level variables can be set in a ``*.cmake`` file that
-  will impact the configuration.  When using the ``-C`` option, only variables
-  set with ``set(<varName> CACHE <TYPE> ...)`` will impact the configuration.
+  4) When using ``<Project>_CONFIGURE_OPTIONS_FILE``, non-cache project-level
+  variables can be set in a ``*.cmake`` file that will impact the
+  configuration.  When using the ``-C`` option, only variables set with
+  ``set(<varName> <val> CACHE <TYPE> ...)`` will impact the configuration.
 
-  5) However, the ``*.cmake`` files specified by
+  5) Cache variables forced set with ``set(<varName> <val> CACHE <TYPE>
+  "<doc>" FORCE)`` in a ``<frag>.cmake`` file pulled in with ``-C
+  <frag>.cmake`` will only override a cache variable ``-D<varName>=<val2>``
+  passed on the command-line if the ``-C <frag>.cmake`` argument comes
+  **after** the ``-D<varName>=<val2>`` argument (i.e. ``cmake
+  -D<varName>=<val2> -C <frag>.cmake``).  Otherwise, if the order of the
+  ``-D`` and ``-C`` arguments is reversed (i.e. ``cmake -C <frag>.cmake
+  -D<varName>=<val2>``) then the forced ``set()`` statement **WILL NOT**
+  override the cache var set on the command-line with ``-D<varName>=<val2>``.
+  However, note that a forced ``set()`` statement **WILL** override other
+  cache vars set with non-forced ``set()`` statements ``set(<varName> <val1>
+  CACHE <TYPE> "<doc>")`` in the same ``*.cmake`` file or in previously read
+  ``-C <frag2>.cmake`` files included on the command-line before the file ``-C
+  <frag>.cmake``.  Alternatively, if the file is pulled in with
+  ``-D<Project>_CONFIGURE_OPTIONS_FILE=<frag>.cmake``, then a ``set(<varName>
+  <val> CACHE <TYPE> "<doc>" FORCE)`` statement in a ``<frag>.cmake`` **WILL**
+  override a cache variable passed in on the command-line
+  ``-D<varName>=<val2>`` no matter the order of the arguments
+  ``-D<Project>_CONFIGURE_OPTIONS_FILE=<frag>.cmake`` and
+  ``-D<varName>=<val2>``.  (This is because the file ``<frag>.cmake`` is
+  included as part of the processing of the project's top-level
+  ``CMakeLists.txt`` file.)
+
+  6) However, the ``*.cmake`` files specified by
   ``<Project>_CONFIGURE_OPTIONS_FILE`` will only get read in **after** the
   project's ``ProjectName.cmake`` and other ``set()`` statements are called at
   the top of the project's top-level ``CMakeLists.txt`` file.  So any CMake
@@ -304,9 +332,18 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   ``CMakeCache.txt`` file.
 
   In other words, the context and impact of what get be set from a ``*.cmake``
-  file read in through the ``-C`` argument is more limited while the code
-  listed in the ``*.cmake`` file behaves just like regular CMake statements
-  executed in the project's top-level ``CMakeLists.txt`` file.
+  file read in through the built-in CMake ``-C`` argument is more limited
+  while the code listed in the ``*.cmake`` file pulled in with
+  ``-D<Project>_CONFIGURE_OPTIONS_FILE=<frag>.cmake`` behaves just like
+  regular CMake statements executed in the project's top-level
+  ``CMakeLists.txt`` file.  In addition, any forced set statements in a
+  ``*.cmake`` file pulled in with ``-C`` **may or may not** override cache
+  vars sets on the command-line with ``-D<varName>=<val>`` depending on the
+  order of the ``-C`` and ``-D`` options.  (There is no order dependency for
+  ``*.cmake`` files passed in through
+  ``-D<Project>_CONFIGURE_OPTIONS_FILE=<frag>.cmake``.)
+
+.. _Using the QT CMake configuration GUI:
 
 c) Using the QT CMake configuration GUI:
 
@@ -344,26 +381,26 @@ See the following use cases:
 Determine the list of packages that can be enabled
 ++++++++++++++++++++++++++++++++++++++++++++++++++
 
-In order to see the list of available <Project> SE Packages to enable, just
+In order to see the list of available <Project> Packages to enable, just
 run a basic CMake configure, enabling nothing, and then grep the output to see
 what packages are available to enable.  The full set of defined packages is
-contained the lines starting with ``'Final set of enabled SE packages'`` and
-``'Final set of non-enabled SE packages'``.  If no SE packages are enabled by
+contained the lines starting with ``'Final set of enabled packages'`` and
+``'Final set of non-enabled packages'``.  If no packages are enabled by
 default (which is base behavior), the full list of packages will be listed on
-the line ``'Final set of non-enabled SE packages'``.  Therefore, to see the
+the line ``'Final set of non-enabled packages'``.  Therefore, to see the
 full list of defined packages, run::
 
-  ./do-configure 2>&1 | grep "Final set of .*enabled SE packages"
+  ./do-configure 2>&1 | grep "Final set of .*enabled packages"
 
 Any of the packages shown on those lines can potentially be enabled using ``-D
 <Project>_ENABLE_<TRIBITS_PACKAGE>=ON`` (unless they are set to disabled
 for some reason, see the CMake output for package disable warnings).
 
-Another way to see the full list of SE packages that can be enabled is to
+Another way to see the full list of packages that can be enabled is to
 configure with `<Project>_DUMP_PACKAGE_DEPENDENCIES`_ = ``ON`` and then grep
-for ``<Project>_SE_PACKAGES`` using, for example::
+for ``<Project>_INTERNAL_PACKAGES`` using, for example::
 
-  ./do-configure 2>&1 | grep "<Project>_SE_PACKAGES: "
+  ./do-configure 2>&1 | grep "<Project>_INTERNAL_PACKAGES: "
 
 
 Print package dependencies
@@ -376,27 +413,21 @@ setting the configure option::
 
   -D <Project>_DUMP_PACKAGE_DEPENDENCIES=ON
 
-This will print the basic forward/upstream dependencies for each SE package.
+This will print the basic forward/upstream dependencies for each package.
 To find this output, look for the line::
 
   Printing package dependencies ...
 
-and the dependencies are listed below this for each SE package in the form::
+and the dependencies are listed below this for each package in the form::
 
-  -- <PKG>_LIB_REQUIRED_DEP_TPLS: <TPL0> <TPL1> ...
-  -- <PKG>_LIB_OPTIONAL_DEP_TPLS: <TPL2> <TPL3> ...
-  -- <PKG>_LIB_REQUIRED_DEP_PACKAGES: <PKG0> <[PKG1> ...
-  -- <PKG>_LIB_OPTIONAL_DEP_PACKAGES: <PKG2> <PKG3> ...
-  -- <PKG>_TEST_REQUIRED_DEP_TPLS: <TPL4> <TPL5> ...
-  -- <PKG>_TEST_OPTIONAL_DEP_TPLS: <TPL6> <TPL7> ...
-  -- <PKG>_TEST_REQUIRED_DEP_PACKAGES: <PKG4> <[PKG5> ...
-  -- <PKG>_TEST_OPTIONAL_DEP_PACKAGES: <PKG6> <PKG7> ...
-  
+  -- <PKG>_LIB_DEFINED_DEPENDENCIES: <PKG0>[O] <[PKG1>[R] ...
+  -- <PKG>_TEST_DEFINED_DEPENDENCIES: <PKG6>[R] <[PKG8>[R] ...
+
 (Dependencies that don't exist are left out of the output.  For example, if
-there are no ``<PKG>_LIB_OPTIONAL_DEP_PACKAGES`` dependencies, then that line
-is not printed.)
+there are no extra test dependencies, then ``<PKG>_TEST_DEFINED_DEPENDENCIES``
+will not be printed.)
 
-To also see the direct forward/downstream dependencies for each SE package,
+To also see the direct forward/downstream dependencies for each package,
 also include::
 
   -D <Project>_DUMP_FORWARD_PACKAGE_DEPENDENCIES=ON
@@ -411,10 +442,12 @@ Both of these variables are automatically enabled when
 Enable a set of packages
 ++++++++++++++++++++++++
 
+.. _<Project>_ENABLE_ALL_OPTIONAL_PACKAGES:
+
 .. _<Project>_ENABLE_TESTS:
 
-To enable an SE package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
-and examples), configure with::
+To enable a package ``<TRIBITS_PACKAGE>`` (and optionally also its tests and
+examples), configure with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON \
   -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
@@ -425,14 +458,18 @@ as all packages that ``<TRIBITS_PACKAGE>`` can use.  All of the package's
 optional "can use" upstream dependent packages are enabled with
 ``-D<Project>_ENABLE_ALL_OPTIONAL_PACKAGES=ON``.  However,
 ``-D<Project>_ENABLE_TESTS=ON`` will only enable tests and examples for
-``<TRIBITS_PACKAGE>`` (or any other packages specifically enabled).
+``<TRIBITS_PACKAGE>`` (and any other packages explicitly enabled).
 
-If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. ``<A>``,
-``<B>``, etc.), then enabling the package is equivalent to setting::
+If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. subpackages
+``<A>``, ``<B>``, ...), then enabling the package is equivalent to enabling
+all of the required **and optional** subpackagses::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>=ON \
   -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>=ON \
    ...
+
+(In this case, the parent package's optional subpackages are enabled
+regardless the value of ``<Project>_ENABLE_ALL_OPTIONAL_PACKAGES``.)
 
 However, a TriBITS subpackage will only be enabled if it is not already
 disabled either explicitly or implicitly.
@@ -443,7 +480,7 @@ take on the string enum values of ``"ON"``, ``"OFF"``, end empty ``""``.  An
 empty enable means that the TriBITS dependency system is allowed to decide if
 an enable should be turned on or off based on various logic.  The CMake GUI
 will enforce the values of ``"ON"``, ``"OFF"``, and empty ``""`` but it will
-not enforce this if you set the value on the command line or in a set()
+not enforce this if you set the value on the command line or in a ``set()``
 statement in an input ```*.cmake`` options files.  However, setting
 ``-DXXX_ENABLE_YYY=TRUE`` and ``-DXXX_ENABLE_YYY=FALSE`` is allowed and will
 be interpreted correctly..
@@ -467,8 +504,9 @@ packages.
 .. _<TRIBITS_PACKAGE>_ENABLE_TESTS:
 
 If one wants to enable a package along with the enable of other packages, but
-not the test suite for that package, then when can disable the tests for that
-package by configuring with::
+not the test suite for that package, then one can use a "exclude-list"
+appraoch to disable the tests for that package by configuring with, for
+example::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_2>=ON \
@@ -478,9 +516,27 @@ package by configuring with::
 
 The above will enable the package test suites for ``<TRIBITS_PACKGE_1>`` and
 ``<TRIBITS_PACKGE_3>`` but **not** for ``<TRIBITS_PACKAGE_2>`` (or any other
-packages that might get implicitly enabled).  One might use this if one wants
-to build and install package ``<TRIBITS_PACKAGE_2>`` but does not want to
-build and run the test suite for that package.
+packages that might get implicitly enabled).  One might use this approach if
+one wants to build and install package ``<TRIBITS_PACKAGE_2>`` but does not
+want to build and run the test suite for that package.
+
+Alternatively, one can use an "include-list" appraoch to enable packages and
+only enable tests for specific packages, for example, configuring with::
+
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
+    -D <TRIBITS_PACKAGE_1>_ENABLE_TESTS=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_2>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_3>=ON \
+    -D <TRIBITS_PACKAGE_3>_ENABLE_TESTS=ON \
+
+That will have the same result as using the "exclude-list" approach above.
+
+**NOTE:** Setting ``<TRIBITS_PACKAGE>_ENABLE_TESTS=ON`` will set
+``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES=ON`` by default.  Also, setting
+``<TRIBITS_PACKAGE>_ENABLE_TESTS=ON`` will result in setting
+``<TRIBITS_PACKAGE><SP>_ENABLE_TESTS=ON`` for all subpackages in a parent
+package that are explicitly enabled or are enabled in the forward sweep as a
+result of `<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES`_ being set to ``ON``.
 
 These and other options give the user complete control of what packages get
 enabled or disabled and what package test suites are enabled or disabled.
@@ -489,7 +545,9 @@ enabled or disabled and what package test suites are enabled or disabled.
 Enable to test all effects of changing a given package(s)
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-To enable an SE package ``<TRIBITS_PACKAGE>`` to test it and all of its
+.. _<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES:
+
+To enable a package ``<TRIBITS_PACKAGE>`` to test it and all of its
 down-stream packages, configure with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON \
@@ -499,14 +557,20 @@ down-stream packages, configure with::
 The above set of arguments will result in package ``<TRIBITS_PACKAGE>`` and
 all packages that depend on ``<TRIBITS_PACKAGE>`` to be enabled and have all
 of their tests turned on.  Tests will not be enabled in packages that do not
-depend on ``<TRIBITS_PACKAGE>`` in this case.  This speeds up and robustifies
-pre-push testing.
+depend (at least implicitly) on ``<TRIBITS_PACKAGE>`` in this case.  This
+speeds up and robustifies testing for changes in specific packages (like in
+per-merge testing in a continuous integration process).
+
+NOTE: setting ``<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON`` also
+automatically sets and overrides `<Project>_ENABLE_ALL_OPTIONAL_PACKAGES`_ to
+be ``ON`` as well.  (It makes no sense to want to enable forward dependent
+packages for testing purposes unless you are enabling all optional packages.)
 
 
 Enable all packages (and optionally all tests)
 ++++++++++++++++++++++++++++++++++++++++++++++
 
-To enable all defined packages and subpakages add the configure option::
+To enable all defined packages, add the configure option::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
 
@@ -515,13 +579,12 @@ packages, add the configure option::
 
   -D <Project>_ENABLE_TESTS=ON \
 
-Specific packages can be disabled (i.e. "black-listed") by adding
+Specific packages can be disabled (i.e. "exclude-listed") by adding
 ``<Project>_ENABLE_<TRIBITS_PACKAGE>=OFF``.  This will also disable all
 packages that depend on ``<TRIBITS_PACKAGE>``.
 
 Note, all examples are also enabled by default when setting
-``<Project>_ENABLE_TESTS=ON`` (and so examples are considered a subset of the
-tests).
+``<Project>_ENABLE_TESTS=ON``.
 
 By default, setting ``<Project>_ENABLE_ALL_PACKAGES=ON`` only enables primary
 tested (PT) packages and code.  To have this also enable all secondary tested
@@ -530,7 +593,7 @@ tested (PT) packages and code.  To have this also enable all secondary tested
   -D <Project>_ENABLE_SECONDARY_TESTED_CODE=ON \
 
 NOTE: If this project is a "meta-project", then
-``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the SE packages but
+``<Project>_ENABLE_ALL_PACKAGES=ON`` may not enable *all* the packages but
 only the project's primary meta-project packages.  See `Package Dependencies
 and Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_ for
 details.
@@ -539,50 +602,58 @@ details.
 Disable a package and all its dependencies
 ++++++++++++++++++++++++++++++++++++++++++
 
-To disable an SE package and all of the packages that depend on it, add the
-configure options::
+To disable a package and all of the packages that depend on it, add the
+configure option::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE>=OFF
 
 For example::
 
-  -D <Project>_ENABLE_<PACKAGE_A>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_A>=ON \
   -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
-  -D <Project>_ENABLE_<PACKAGE_B>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_B>=OFF \
 
-will enable ``<PACKAGE_A>`` and all of the packages that it depends on except
-for ``<PACKAGE_B>`` and all of its forward dependencies.
+will enable ``<TRIBITS_PACKAGE_A>`` and all of the packages that it depends on
+except for ``<TRIBITS_PACKAGE_B>`` and all of its forward dependencies.
 
-If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. ``<A>``,
-``<B>``, etc.), then disabling the package is equivalent to setting::
+If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. a parent
+package with subpackages ``<A>``, ``<B>``, ...), then disabling the parent
+package is equivalent to disabling all of the required and optional
+subpackages::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>=OFF \
   -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>=OFF \
   ...
 
-The disable of the subpackage is this case will override any enables.
+The disable of the subpackages in this case will override any enables.
+
+.. _<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:
 
 If a disabled package is a required dependency of some explicitly enabled
-downstream package, then the configure will error out if
-``<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF``.  Otherwise, a WARNING
-will be printed and the downstream package will be disabled and configuration
-will continue.
+downstream package, then the configure will error out if::
+
+  -D <Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF \
+
+is set.  Otherwise, if ``<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON``,
+a ``NOTE`` will be printed and the downstream package will be disabled and
+configuration will continue.
 
 
 Remove all package enables in the cache
 +++++++++++++++++++++++++++++++++++++++
 
 To wipe the set of package enables in the ``CMakeCache.txt`` file so they can
-be reset again from scratch, configure with::
+be reset again from scratch, re-configure with::
 
-  $ ./-do-confiugre -D <Project>_UNENABLE_ENABLED_PACKAGES=TRUE
+  $ cmake -D <Project>_UNENABLE_ENABLED_PACKAGES=TRUE .
 
 This option will set to empty '' all package enables, leaving all other cache
 variables as they are.  You can then reconfigure with a new set of package
 enables for a different set of packages.  This allows you to avoid more
-expensive configure time checks and to preserve other cache variables that you
-have set and don't want to loose.  For example, one would want to do this to
-avoid compiler and TPL checks.
+expensive configure time checks (like the standard CMake compiler checks) and
+to preserve other cache variables that you have set and don't want to loose.
+For example, one would want to do this to avoid more expensive compiler and
+TPL checks.
 
 
 Selecting compiler and linker options
@@ -769,19 +840,38 @@ then they must be the same or a configure error will occur.
 
 Options can also be targeted to a specific TriBITS package using::
 
-  -D <TRIBITS_PACKAGE>_<LANG>_FLAGS="<EXTRA_COMPILER_OPTIONS>"
+  -D <TRIBITS_PACKAGE>_<LANG>_FLAGS="<PACKAGE_EXTRA_COMPILER_OPTIONS>"
 
-The package-specific options get appended to those already in
+The package-specific options get appended **after** those already in
 ``CMAKE_<LANG>_FLAGS`` and therefore override (but not replace) those set
-globally in ``CMAKE_<LANG>_FLAGS`` (either internally or by the user in the
-cache).
+globally in ``CMAKE_<LANG>_FLAGS`` (either internally in the CMakeLists.txt
+files or by the user in the cache).
+
+In addition, flags can be targeted to a specific TriBITS subpackage using the
+same syntax::
+
+  -D <TRIBITS_SUBPACKAGE>_<LANG>_FLAGS="<SUBPACKAGE_EXTRA_COMPILER_OPTIONS>"
+
+If top-level package-specific flags and subpackage-specific flags are both set
+for the same parent package such as with::
+
+  -D SomePackage_<LANG>_FLAGS="<Package-flags>" \
+  -D SomePackageSpkgA_<LANG>_FLAGS="<Subpackage-flags>" \
+
+then the flags for the subpackage ``SomePackageSpkgA`` will be listed after
+those for its parent package ``SomePackage`` on the compiler command-line as::
+
+  <Package-flags> <SubPackage-flags>
+
+That way, compiler options for a subpackage override flags set for the parent
+package.
 
 NOTES:
 
-1) Setting ``CMAKE_<LANG>_FLAGS`` will override but will not replace any
-other internally set flags in ``CMAKE_<LANG>_FLAGS`` defined by the
-<Project> CMake system because these flags will come after those set
-internally.  To get rid of these project/TriBITS default flags, see below.
+1) Setting ``CMAKE_<LANG>_FLAGS`` as a cache variable by the user on input be
+listed after and therefore override, but will not replace, any internally set
+flags in ``CMAKE_<LANG>_FLAGS`` defined by the <Project> CMake system.  To get
+rid of these project/TriBITS set compiler flags/options, see the below items.
 
 2) Given that CMake passes in flags in
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` after those in
@@ -828,30 +918,6 @@ NOTES: The TriBITS CMake cache variable
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` because is given a default
 internally by CMake and the new variable is needed to make the override
 explicit.
-
-
-Appending arbitrary libraries and link flags every executable
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-In order to append any set of arbitrary libraries and link flags to your
-executables use::
-
-  -D<Project>_EXTRA_LINK_FLAGS="<EXTRA_LINK_LIBRARIES>" \
-  -DCMAKE_EXE_LINKER_FLAGS="<EXTRA_LINK_FLAGG>"
-
-Above, you can pass any type of library and they will always be the last
-libraries listed, even after all of the TPLs.
-
-NOTE: This is how you must set extra libraries like Fortran libraries and
-MPI libraries (when using raw compilers).  Please only use this variable
-as a last resort.
-
-NOTE: You must only pass in libraries in ``<Project>_EXTRA_LINK_FLAGS`` and
-*not* arbitrary linker flags.  To pass in extra linker flags that are not
-libraries, use the built-in CMake variable ``CMAKE_EXE_LINKER_FLAGS``
-instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
-in this respect but the name remains due to backward compatibility
-requirements.
 
 
 Turning off strong warnings for individual packages
@@ -934,8 +1000,51 @@ To get the compiler to add debug symbols to the build, configure with::
 
   -D <Project>_ENABLE_DEBUG_SYMBOLS=ON
 
-This will add ``-g`` on most compilers.  NOTE: One does **not** generally
-need to create a fully debug build to get debug symbols on most compilers.
+This will add ``-g`` on most compilers.  NOTE: One does **not** generally need
+to create a full debug build to get debug symbols on most compilers.
+
+
+Printing out compiler flags for each package
+++++++++++++++++++++++++++++++++++++++++++++
+
+To print out the exact ``CMAKE_<LANG>_FLAGS`` that will be used for each
+package, set::
+
+  -D <Project>_PRINT_PACKAGE_COMPILER_FLAGS=ON
+
+That will print lines in STDOUT that are formatted as::
+
+  <TRIBITS_SUBPACKAGE>: CMAKE_<LANG>_FLAGS="<exact-flags-usedy-by-package>"
+  <TRIBITS_SUBPACKAGE>: CMAKE_<LANG>_FLAGS_<BUILD_TYPE>="<build-type-flags>"
+
+This will print the value of the ``CMAKE_<LANG>_FLAGS`` and
+``CMAKE_<LANG>_FLAGS_<BUILD_TYPE>`` variables that are used as each package is
+being processed and will contain the flags in the exact order they are applied
+by CMake
+
+
+Appending arbitrary libraries and link flags every executable
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In order to append any set of arbitrary libraries and link flags to your
+executables use::
+
+  -D<Project>_EXTRA_LINK_FLAGS="<EXTRA_LINK_LIBRARIES>" \
+  -DCMAKE_EXE_LINKER_FLAGS="<EXTRA_LINK_FLAGG>"
+
+Above, you can pass any type of library and they will always be the last
+libraries listed, even after all of the TPLs.
+
+NOTE: This is how you must set extra libraries like Fortran libraries and
+MPI libraries (when using raw compilers).  Please only use this variable
+as a last resort.
+
+NOTE: You must only pass in libraries in ``<Project>_EXTRA_LINK_FLAGS`` and
+*not* arbitrary linker flags.  To pass in extra linker flags that are not
+libraries, use the built-in CMake variable ``CMAKE_EXE_LINKER_FLAGS``
+instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
+in this respect but the name remains due to backward compatibility
+requirements.
 
 
 Enabling support for Ninja
@@ -1224,7 +1333,7 @@ c) **Setting up to run MPI programs:**
 
   MPI test and example executables are passed to CTest ``add_test()`` as::
 
-    add_test(
+    add_test(NAME <testName> COMMAND
       ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
       ${MPI_EXEC_NUMPROCS_FLAG} <NP>
       ${MPI_EXEC_POST_NUMPROCS_FLAGS}
@@ -1363,6 +1472,52 @@ search for extra required libraries (such as the mpi library and the gfortran
 library for gnu compilers) to locate static versions.
 
 
+Changing include directories in downstream CMake projects to non-system
+-----------------------------------------------------------------------
+
+By default, include directories from IMPORTED library targets from the
+<Project> project's installed ``<Package>Config.cmake`` files will be
+considered ``SYSTEM`` headers and therefore will be included on the compile
+lines of downstream CMake projects with ``-isystem`` with most compilers.
+However, when using CMake 3.23+, by configuring with::
+
+  -D <Project>_IMPORTED_NO_SYSTEM=ON
+
+then all of the IMPORTED library targets in the set of installed
+``<Package>Config.cmake`` files will have the ``IMPORTED_NO_SYSTEM`` target
+property set.  This will cause downstream customer CMake projects to apply the
+include directories from these IMPORTED library targets as non-SYSTEM include
+directories.  On most compilers, that means that the include directories will
+be listed on the compile lines with ``-I`` instead of with ``-isystem`` (for
+compilers that support the ``-isystem`` option).  (Changing from ``-isystem
+<incl-dir>`` to ``-I <incl-dir>`` moves ``<incl-dir>`` forward in the
+compiler's include directory search order and could also result in the found
+header files emitting compiler warnings that would other otherwise be silenced
+when the headers were found in include directories pulled in with
+``-isystem``.)
+
+**NOTE:** Setting ``<Project>_IMPORTED_NO_SYSTEM=ON`` when using a CMake
+version less than 3.23 will result in a fatal configure error (so don't do
+that).
+
+**A workaround for CMake versions less than 3.23** is for **downstream
+customer CMake projects** to set the native CMake cache variable::
+
+  -D CMAKE_NO_SYSTEM_FROM_IMPORTED=TRUE
+
+This will result in **all** include directories from **all** IMPORTED library
+targets used in the downstream customer CMake project to be listed on the
+compile lines using ``-I`` instead of ``-isystem``, and not just for the
+IMPORTED library targets from this <Project> project's installed
+``<Package>Config.cmake`` files!
+
+**NOTE:** Setting ``CMAKE_NO_SYSTEM_FROM_IMPORTED=TRUE`` in the <Project>
+CMake configure will **not** result in changing how include directories from
+<Project>'s IMPORTED targets are handled in a downstream customer CMake
+project!  It will only change how include directories from upstream package's
+IMPORTED targets are handled in the <Project> CMake project build itself.
+
+
 Enabling the usage of resource files to reduce length of build lines
 --------------------------------------------------------------------
 
@@ -1437,27 +1592,70 @@ NOTE: Newer versions of CMake may automatically determine when these options
 need to be turned on so watch for that in looking at the build lines.
 
 
-Enabling support for an optional Third-Party Library (TPL)
-----------------------------------------------------------
+External Packages/Third-Party Library (TPL) support
+---------------------------------------------------
 
-To enable a given TPL, set::
+A set of external packages/third-party libraries (TPL) can be enabled and
+disabled and the locations of those can be specified at configure time (if
+they are not found in the default path).
+
+
+Enabling support for an optional Third-Party Library (TPL)
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+To enable a given external packages/TPL, set::
 
   -D TPL_ENABLE_<TPLNAME>=ON
 
 where ``<TPLNAME>`` = ``BLAS``, ``LAPACK`` ``Boost``, ``Netcdf``, etc.
+(Requires TPLs for enabled package will automatically be enabled.)
 
 The full list of TPLs that is defined and can be enabled is shown by doing a
 configure with CMake and then grepping the configure output for ``Final set of
-.* TPLs``.  The set of TPL names listed in ``'Final set of enabled TPLs'`` and
-``'Final set of non-enabled TPLs'`` gives the full list of TPLs that can be
-enabled (or disabled).
+.* TPLs``.  The set of TPL names listed in ``'Final set of enabled external
+packages/TPLs'`` and ``'Final set of non-enabled external packages/TPLs'``
+gives the full list of TPLs that can be enabled (or disabled).
+
+Optional package-specific support for a TPL can be turned off by setting::
+
+  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=OFF
+
+This gives the user full control over what TPLs are supported by which package
+independent of whether the TPL is enabled or not.
+
+Support for an optional TPL can also be turned on implicitly by setting::
+
+  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=ON
+
+where ``<TRIBITS_PACKAGE>`` is a TriBITS package that has an optional
+dependency on ``<TPLNAME>``.  That will result in setting
+``TPL_ENABLE_<TPLNAME>=ON`` internally (but not set in the cache) if
+``TPL_ENABLE_<TPLNAME>=OFF`` is not already set.
+
+
+Specifying the location of the parts of an enabled external package/TPL
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Once an external package/TPL is enabled, the parts of that TPL must be found.
+For many external packages/TPLs, this will be done automatically by searching
+the environment paths.
+
+Some external packages/TPLs are specified with a call to
+``find_package(<externalPkg>)`` (see CMake documentation for
+``find_package()``).  Many other external packages/TPLs use a legacy TriBITS
+system that locates the parts using the CMake commands ``find_file()`` and
+``find_library()`` as described below.
+
+Every defined external package/TPL uses a specification provided in a
+``FindTPL<TPLNAME>.cmake`` module file.  This file describes how the package
+is found in a way that provides modern CMake IMPORTED targets (including the
+``<TPLNAME>::all_libs`` target) that is used by the downstream packages.
 
 Some TPLs require only libraries (e.g. Fortran libraries like BLAS or LAPACK),
 some TPL require only include directories, and some TPLs require both.
 
-Each TPL specification is defined in a ``FindTPL<TPLNAME>.cmake`` module file.
-The job of each of these of these module files is to set the CMake cache
-variables:
+For ``FindTPL<TPLNAME>.cmake`` files using the legacy TriBITS TPL system, a
+TPL is fully specified through the following cache variables:
 
 * ``TPL_<TPLNAME>_INCLUDE_DIRS:PATH``: List of paths to header files for the
   TPL (if the TPL supplies header files).
@@ -1465,8 +1663,8 @@ variables:
 * ``TPL_<TPLNAME>_LIBRARIES:PATH``: List of (absolute) paths to libraries,
   ordered as they will be on the link line (of the TPL supplies libraries).
 
-These variables are the only variables that are actually used in the CMake
-build system.  Therefore, one can set these two variables as CMake cache
+These variables are the only variables are used to create IMPORTED CMake
+targets for the TPL.  One can set these two variables as CMake cache
 variables, for ``SomeTPL`` for example, with::
 
   -D TPL_SomeTPL_INCLUDE_DIRS="${LIB_BASE}/include/a;${LIB_BASE}/include/b" \
@@ -1476,7 +1674,7 @@ Using this approach, one can be guaranteed that these libraries and these
 include directories and will used in the compile and link lines for the
 packages that depend on this TPL ``SomeTPL``.
 
-**WARNING:** When specifying ``TPL_<TPLNAME>_INCLUDE_DIRS`` and/or
+**NOTE:** When specifying ``TPL_<TPLNAME>_INCLUDE_DIRS`` and/or
 ``TPL_<TPLNAME>_LIBRARIES``, the build system will use these without question.
 It will **not** check for the existence of these directories or files so make
 sure that these files and directories exist before these are used in the
@@ -1484,24 +1682,31 @@ compiles and links.  (This can actually be a feature in rare cases the
 libraries and header files don't actually get created until after the
 configure step is complete but before the build step.)
 
-**WARNING:** Do **not** try to hack the system and set, for example::
+**NOTE:** It is generally *not recommended* to specify the TPLs libraries as
+just a set of link options as, for example::
 
-  TPL_BLAS_LIBRARIES="-L/some/dir -llib1 -llib2 ..."
+  TPL_SomeTPL_LIBRARIES="-L/some/dir;-llib1;-llib2;..."
 
-This is not compatible with proper CMake usage and it not guaranteed to be
-supported for all use cases or all platforms!  You should instead always use
-the full library paths when setting ``TPL_<TPLNAME>_LIBRARIES``.
+But this is supported as long as this link line contains only link library
+directories and library names.  (Link options that are not order-sensitive are
+also supported like ``-mkl``.)
 
 When the variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
 ``TPL_<TPLNAME>_LIBRARIES`` are not specified, then most
 ``FindTPL<TPLNAME>.cmake`` modules use a default find operation.  Some will
-call ``find_package(<TPLNAME>)`` internally by default and some may implement
-the default find in some other way.  To know for sure, see the documentation
-for the specific TPL (e.g. looking in the ``FindTPL<TPLNAME>.cmake`` file to
-be sure).
+call ``find_package(<externalPkg>)`` internally by default and some may
+implement the default find in some other way.  To know for sure, see the
+documentation for the specific external package/TPL (e.g. looking in the
+``FindTPL<TPLNAME>.cmake`` file to be sure).  NOTE: if a given
+``FindTPL<TPLNAME>.cmake`` will use ``find_package(<externalPkg>)`` by
+default, this can be disabled by configuring with::
 
-Most TPLs, however, use a standard system for finding include directories
-and/or libraries based on the function
+  -D<TPLNAME>_ALLOW_PACKAGE_PREFIND=OFF
+
+(Not all ``FindTPL<TPLNAME>.cmake`` files support this option.)
+
+Many ``FindTPL<TPLNAME>.cmake`` files, use the legacy TriBITS TPL system for
+finding include directories and/or libraries based on the function
 `tribits_tpl_find_include_dirs_and_libraries()`_.  These simple standard
 ``FindTPL<TPLNAME>.cmake`` modules specify a set of header files and/or
 libraries that must be found.  The directories where these header files and
@@ -1521,47 +1726,36 @@ library files are looked for are specified using the CMake cache variables:
   files will be searched for using ``find_library()``, for each library, in
   order.
 
-Most ``FindTPL<TPLNAME>.cmake`` modules will define a default set of libraries
-to look for and therefore ``<TPLNAME>_LIBRARY_NAMES`` can typically be left
-off.
+Most of these ``FindTPL<TPLNAME>.cmake`` modules will define a default set of
+libraries to look for and therefore ``<TPLNAME>_LIBRARY_NAMES`` can typically
+be left off.
+
+Therefore, to find the same set of libraries for ``SimpleTPL`` shown
+above, one would specify::
+
+  -D SomeTPL_LIBRARY_DIRS="${LIB_BASE}/lib"
+
+and if the set of libraries to be found is different than the default, one can
+override that using::
+
+  -D SomeTPL_LIBRARY_NAMES="lib1;lib2"
+
+Therefore, this is in fact the preferred way to specify the libraries for
+these legacy TriBITS TPLs.
 
 In order to allow a TPL that normally requires one or more libraries to ignore
 the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES`` to empty, for example::
 
   -D <TPLNAME>_LIBRARY_NAMES=""
 
-Optional package-specific support for a TPL can be turned off by setting::
-
-  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=OFF
-
-This gives the user full control over what TPLs are supported by which package
-independently.
-
-Support for an optional TPL can also be turned on implicitly by setting::
-
-  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=ON
-
-where ``<TRIBITS_PACKAGE>`` is a TriBITS package that has an optional
-dependency on ``<TPLNAME>``.  That will result in setting
-``TPL_ENABLE_<TPLNAME>=ON`` internally (but not set in the cache) if
-``TPL_ENABLE_<TPLNAME>=OFF`` is not already set.
-
-If all the parts of a TPL are not found on an initial configure the configure
+If all the parts of a TPL are not found on an initial configure, the configure
 will error out with a helpful error message.  In that case, one can change the
 variables ``<TPLNAME>_INCLUDE_DIRS``, ``<TPLNAME>_LIBRARY_NAMES``, and/or
 ``<TPLNAME>_LIBRARY_DIRS`` in order to help fund the parts of the TPL.  One
-can do this over and over until the TPL is found. By reconfiguring, one avoid
+can do this over and over until the TPL is found. By reconfiguring, one avoids
 a complete configure from scratch which saves time.  Or, one can avoid the
 find operations by directly setting ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
-``TPL_<TPLNAME>_LIBRARIES``.
-
-**WARNING:** The cmake cache variable ``TPL_<TPLNAME>_LIBRARY_DIRS`` does
-**not** control where libraries are found.  Instead, this variable is set
-during the find processes and is not actually used in the CMake build system
-at all.
-
-In summary, this gives the user complete and direct control in specifying
-exactly what is used in the build process.
+``TPL_<TPLNAME>_LIBRARIES`` as described above.
 
 **TPL Example 1: Standard BLAS Library**
 
@@ -1621,7 +1815,7 @@ For example, the Intel Math Kernel Library (MKL) implementation for the BLAS
 is usually given in several libraries.  The exact set of libraries needed
 depends on the version of MKL, whether 32bit or 64bit libraries are needed,
 etc.  Figuring out the correct set and ordering of these libraries for a given
-platform may not be trivial.  But once the set and the order of the libraries
+platform may be non-trivial.  But once the set and the order of the libraries
 is known, then one can provide the correct list at configure time.
 
 For example, suppose one wants to use the threaded MKL libraries listed in the
@@ -1665,22 +1859,54 @@ libraries in the right order by configuring with::
 (where ``...`` are the rest of the libraries found in order).
 
 
+Adjusting upstream dependencies for a Third-Party Library (TPL)
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Some TPLs have dependencies on one or more upstream TPLs.  These dependencies
+must be specified correctly for the compile and links to work correctly.  The
+<Project> Project already defines these dependencies for the average situation
+for all of these TPLs.  However, there may be situations where the
+dependencies may need to be tweaked to match how these TPLs were actually
+installed on some systems.  To redefine what dependencies a TPL can have (if
+the upstream TPLs are enabled), set::
+
+  -D <TPLNAME>_LIB_DEFINED_DEPENDENCIES="<tpl_1>;<tpl_2>;..."
+
+A dependency on an upstream TPL ``<tpl_i>`` will be set if the an upstream TPL
+``<tpl_i>`` is actually enabled.
+
+If any of the specified dependent TPLs ``<tpl_i>`` are listed after
+``<TPLNAME>`` in the ``TPLsList.cmake`` file (or are not listed at all), then
+a configure-time error will occur.
+
+To take complete control over what dependencies an TPL has, set::
+
+  -D <TPLNAME>_LIB_ENABLED_DEPENDENCIES="<tpl_1>;<tpl_2>;..."
+
+If the upstream TPLs listed here are not defined upstream and enabled TPLs,
+then a configure-time error will occur.
+
+
 Disabling support for a Third-Party Library (TPL)
---------------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Disabling a TPL explicitly can be done using::
 
   -D TPL_ENABLE_<TPLNAME>=OFF
 
+This will result in the disabling of any direct or indirect downstream
+packages that have a required dependency on ``<TPLNAME>`` as described in
+`Disable a package and all its dependencies`_.
+
 NOTE: If a disabled TPL is a required dependency of some explicitly enabled
 downstream package, then the configure will error out if
-<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF.  Otherwise, a WARNING will
-be printed and the downstream package will be disabled and configuration will
-continue.
+`<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_ ``= OFF``.  Otherwise, a
+NOTE will be printed and the downstream package will be disabled and
+configuration will continue.
 
 
 Disabling tentatively enabled TPLs
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 To disable a tentatively enabled TPL, set::
 
@@ -1704,7 +1930,7 @@ also want to explicitly disable the TPL as shown above.
 
 
 Require all TPL libraries be found
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 By default, some TPLs don't require that all of the libraries listed in
 ``<tplName>_LIBRARY_NAMES`` be found.  To change this behavior so that all
@@ -1716,7 +1942,7 @@ This makes the configure process catch more mistakes with the env.
 
 
 Disable warnings from TPL header files
---------------------------------------
+++++++++++++++++++++++++++++++++++++++
 
 To disable warnings coming from included TPL header files for C and C++ code,
 set::
@@ -1732,12 +1958,100 @@ and module files.  Therefore, don't enable this if Fortran code in your
 project is pulling in module files from TPLs.
 
 
+Building against pre-installed packages
+---------------------------------------
+
+The <Project> project can build against any pre-installed packages defined in
+the project and ignore the internally defined packages.  To trigger the enable
+of a pre-installed internal package treated as an external package, configure
+with::
+
+  -D TPL_ENABLE_<TRIBITS_PACKAGE>=ON
+
+That will cause the <Project> CMake project to pull in the pre-installed
+package ``<TRIBITS_PACKAGE>`` as an external package using
+``find_package(<TRIBITS_PACKAGE>)`` instead of configuring and building the
+internally defined ``<TRIBITS_PACKAGE>`` package.
+
+Configuring and building against a pre-installed package treated as an
+external packages has several consequences:
+
+* Any internal packages that are upstream from ``<TRIBITS_PACKAGE>`` from an
+  enabled set of dependencies will also be treated as external packages (and
+  therefore must be pre-installed as well).
+
+* The TriBITS package ``Dependencies.cmake`` files for the
+  ``<TRIBITS_PACKAGE>`` package and all of its upstream packages must still
+  exist and will still be read in by the <Project> CMake project and the same
+  enable/disable logic will be performed as if the packages were being treated
+  internal.  (However, the base ``CMakeLists.txt`` and all of other files for
+  these internally defined packages being treated as external packages can be
+  missing and will be ignored.)
+
+* The same set of enabled and disabled upstream dependencies must be specified
+  to the <Project> CMake project that was used to pre-build and pre-install
+  these internally defined packages being treated as external packages.
+  (Otherwise, a configure error will result from the mismatch.)
+
+* The definition of any TriBITS external packages/TPLs that are enabled
+  upstream dependencies from any of these external packages should be defined
+  automatically and will **not** be found again. (But there can be exceptions
+  for minimally TriBITS-compliant external packages; see the section
+  "TriBITS-Compliant External Packages" in the "TriBITS Users Guide".)
+
+The logic for treating internally defined packages as external packages will
+be printed in the CMake configure output in the section ``Adjust the set of
+internal and external packages`` with output like::
+
+  Adjust the set of internal and external packages ...
+
+  -- Treating internal package <PKG2> as EXTERNAL because TPL_ENABLE_<PKG2>=ON
+  -- Treating internal package <PKG1> as EXTERNAL because downstream package <PKG2> being treated as EXTERNAL
+  -- NOTE: <TPL2> is indirectly downstream from a TriBITS-compliant external package
+  -- NOTE: <TPL1> is indirectly downstream from a TriBITS-compliant external package
+
+All of these internally defined being treated as external (and all of their
+upstream dependencies) are processed in a loop over these just these
+TriBITS-compliant external packages and ``find_package()`` is only called on
+the terminal TriBITS-compliant external packages.  This is shown in the CMake
+output in the section ``Getting information for all enabled TriBITS-compliant
+or upstream external packages/TPLs`` and looks like::
+
+  Getting information for all enabled TriBITS-compliant or upstream external packages/TPLs in reverse order ...
+
+  Processing enabled external package/TPL: <PKG2> (...)
+  -- Calling find_package(<PKG2> for TriBITS-compliant external package
+  Processing enabled external package/TPL: <PKG1> (...)
+  -- The external package/TPL <PKG1> was defined by a downstream TriBITS-compliant external package already processed
+  Processing enabled external package/TPL: <TPL2> (...)
+  -- The external package/TPL <TPL2> was defined by a downstream TriBITS-compliant external package already processed
+  Processing enabled external package/TPL: <TPL1> (...)
+  -- The external package/TPL <TPL1> was defined by a downstream TriBITS-compliant external package already processed
+
+In the above example ``<TPL1>``, ``<TPL2>`` and ``<PKG1>`` are all direct or
+indirect dependencies of ``<PKG2>`` and therefore calling just
+``find_package(<PKG2>)`` fully defines those TriBITS-compliant external
+packages as well.
+
+All remaining TPLs that are not defined in that first reverse loop are defined
+in a second forward loop over regular TPLs::
+
+  Getting information for all remaining enabled external packages/TPLs ...
+
+NOTE: The case is also supported where a TriBITS-compliant external package
+like ``<PKG2>`` does not define all of it upstream dependencies (i.e. does not
+define the ``<TPL2>::all_libs`` target) and these external packages/TPLs will
+be found again.  This allows the possibility of finding different/inconsistent
+upstream dependencies but this is allowed to accommodate some packages with
+non-TriBITS CMake build systems that don't create fully TriBITS-compliant
+external packages.
+
+
 xSDK Configuration Options
 --------------------------
 
-The configure of <Project> will adhere to the xSDK configuration standard
-(todo: put in reference to final document) simply by setting the CMake cache
-variable::
+The configure of <Project> will adhere to the `xSDK Community Package
+Policies`_ simply by setting the CMake cache variable::
 
   -D USE_XSDK_DEFAULTS=TRUE
 
@@ -1855,6 +2169,26 @@ To enable/disable deprecated warnings for a single <Project> package, set::
 This will override the global behavior set by
 ``<Project>_SHOW_DEPRECATED_WARNINGS`` for individual package
 ``<TRIBITS_PACKAGE>``.
+
+
+Adjusting CMake DEPRECATION warnings
+------------------------------------
+
+By default, deprecated TriBITS features being used in the project's CMake
+files will result in CMake deprecation warning messages (issued by calling
+``message(DEPRECATION ...)`` internally).  The handling of these deprecation
+warnings can be changed by setting the CMake cache variable
+``TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE``.  For example, to remove all
+deprecation warnings, set::
+
+  -D TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE=IGNORE
+
+Other valid values include:
+
+* ``DEPRECATION``: Issue a CMake ``DEPRECATION`` message and continue (default).
+* ``AUTHOR_WARNING``: Issue a CMake ``AUTHOR_WARNING`` message and continue.
+* ``SEND_ERROR``: Issue a CMake ``SEND_ERROR`` message and continue.
+* ``FATAL_ERROR``: Issue a CMake ``FATAL_ERROR`` message and exit.
 
 
 Disabling deprecated code
@@ -2306,11 +2640,6 @@ NOTES:
   for the ``CTEST_RESOURCE_SPEC_FILE`` cache variable was not added until
   CMake 3.18.)
 
-* CMake versions 3.18+ can be used to get built-in CMake/CTest support for the
-  ``CTEST_RESOURCE_SPEC_FILE`` cache variable.  This avoids needing to
-  explicitly pass the ctest resource file to ``ctest`` at runtime for
-  CMake/CTest versions 3.17.z.
-
 * **WARNING:** This currently only works for a single node, not multiple
   nodes.  (CTest needs to be extended to work correctly for multiple nodes
   where each node has multiple GPUs.  Alternatively, TriBITS could be extended
@@ -2507,7 +2836,7 @@ To add timers to various configure steps, configure with::
 
   -D <Project>_ENABLE_CONFIGURE_TIMING=ON
 
-This will do baulk timing for the major configure steps which is independent
+This will do bulk timing for the major configure steps which is independent
 of the number of packages in the project.
 
 To additionally add timing for the configure of individual packages, configure
@@ -2547,9 +2876,9 @@ NOTES:
 Generating export files
 -----------------------
 
-The project <Project> can generate export files for external CMake projects or
-external Makefile projects.  These export files provide the lists of
-libraries, include directories, compilers and compiler options, etc.
+The project <Project> can generate export files for external CMake projects.
+These export files provide the lists of libraries, include directories, compilers
+and compiler options, etc.
 
 To configure to generate CMake export files for the project, configure with::
 
@@ -2559,19 +2888,16 @@ This will generate the file ``<Project>Config.cmake`` for the project and the
 files ``<Package>Config.cmake`` for each enabled package in the build tree.
 In addition, this will install versions of these files into the install tree.
 
-To configure Makefile export files, configure with::
-
-  -D <Project>_ENABLE_EXPORT_MAKEFILES=ON
-
-which will generate the file ``Makefile.export.<Project>`` for the project and
-the files ``Makefile.export.<Package>`` for each enabled package in the build
-tree.  In addition, this will install versions of these files into the install
-tree.
-
 The list of export files generated can be reduced by specifying the exact list
 of packages the files are requested for with::
 
-  -D <Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_SE_PACKAGES="<pkg0>;<pkg1>"
+  -D <Project>_GENERATE_EXPORT_FILES_FOR_ONLY_LISTED_PACKAGES="<pkg0>;<pkg1>"
+
+To only install the package ``<Package>Config.cmake`` files and **not** the
+project-level ``<Project>Config.cmake`` file, configure with::
+
+   -D <Project>_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON \
+   -D <Project>_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES=ON \
 
 NOTES:
 
@@ -2579,6 +2905,13 @@ NOTES:
 
 * One would only want to limit the export files generated for very large
   projects where the cost my be high for doing so.
+
+* One would want to skip the installation of the project-level
+  ``<Project>Config.cmake`` file in cases where the TriBITS project's packages
+  may be built in smaller subsets of packages in different individual CMake
+  project builds where there is no clear completion to the installation of the
+  packages for a given TriBITS project containing a larger collection of
+  packages.
 
 
 Generating a project repo version file
@@ -2692,13 +3025,19 @@ package directories.  In development mode, the failure to find a package
 directory is usually a programming error (i.e. a miss-spelled package
 directory name).  But in a tarball release of the project, package directories
 may be purposefully missing (see `Creating a tarball of the source tree`_) and
-must be ignored.  When building from a reduced source tarball created from the
+must be ignored.
+
+When building from a reduced source tarball created from the
 development sources, set::
 
-  -D <Project>_ASSERT_MISSING_PACKAGES=OFF
+  -D <Project>_ASSERT_DEFINED_DEPENDENCIES=OFF
+
+or to ``IGNORE``.  (valid values include ``FATAL_ERROR``, ``SEND_ERROR``,
+``WARNING``, ``NOTICE``, ``IGNORE`` and ``OFF``)
 
 Setting this ``OFF`` will cause the TriBITS CMake configure to simply ignore
-any missing packages and turn off all dependencies on these missing packages.
+any undefined packages and turn off all dependencies on these missing
+packages.
 
 Another type of checking is for optional inserted/external packages
 (e.g. packages who's source can optionally be included and is flagged with
@@ -2709,27 +3048,29 @@ printed by configuring with::
 
   -D <Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE
 
-These warnings (starting with 'NOTE', not 'WARNING' that would otherwise
-trigger warnings in CDash) about missing inserted/external packages will print
-regardless of the setting for ``<Project>_ASSERT_MISSING_PACKAGES``.
+These warnings starting with 'NOTE' (not starting with 'WARNING' that would
+otherwise trigger warnings in CDash) about missing inserted/external packages
+will print regardless of the setting for
+``<Project>_ASSERT_DEFINED_DEPENDENCIES``.
 
 Finally, ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` results in a number of
-checks for invalid usage of TriBITS in the project's ``CMakeList.txt`` files
-and will abort configure with a fatal error on the first check failure. This
-is appropriate for development mode when a project is clean of all such
-invalid usage patterns but there are times when it makes sense to report these
-check failures in different ways (such as when upgrading TriBITS in a project
-that has some invalid usage patterns that just happen work but may be
+checks for invalid usage of TriBITS in the project's ``CMakeLists.txt`` files
+and will, by default, abort configure with a fatal error on the first failed
+check. This is appropriate for development mode when a project is clean of all
+such invalid usage patterns but there are times when it makes sense to report
+these check failures in different ways (such as when upgrading TriBITS in a
+project that has some invalid usage patterns that just happen work but may be
 disallowed in future versions of TriBITS).  To change how these invalid usage
 checks are handled, set::
 
   -D <Project>_ASSERT_CORRECT_TRIBITS_USAGE=<check-mode>
 
-where ``<check-mode>`` can be 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', or
-'IGNORE'.
+where ``<check-mode>`` can be ``FATAL_ERROR``, ``SEND_ERROR``, ``WARNING``,
+``IGNORE`` or ``OFF`` (where ``IGNORE`` or ``OFF`` avoids any error reporting
+or warnings).
 
 For ``<Project>_ENABLE_DEVELOPMENT_MODE=OFF``, the default for
-``<Project>_ASSERT_CORRECT_TRIBITS_USAGE`` is actually set to ``IGNORE``.
+``<Project>_ASSERT_CORRECT_TRIBITS_USAGE`` is set to ``IGNORE``.
 
 
 Building (Makefile generator)
@@ -3268,6 +3609,8 @@ For more details, see the following subsections:
 * `Setting install RPATH`_
 * `Avoiding installing libraries and headers`_
 * `Installing the software`_
+* `Using the installed software in downstream CMake projects`_
+* `Using packages from the build tree in downstream CMake projects`_
 
 
 Setting the install prefix
@@ -3640,6 +3983,110 @@ This will ensure that every package that builds correctly will get installed.
 (The default 'install' target aborts on the first file install failure.)
 
 
+Using the installed software in downstream CMake projects
+---------------------------------------------------------
+
+As described in `Generating export files`_, when ``-D
+<Project>_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON`` is set at configure time, a
+``<Project>Config.cmake`` file and a different ``<Package>Config.cmake`` file
+for each enabled package is installed into the install tree under ``-D
+CMAKE_INSTALL_PREFIX=<upstreamInstallDir>``.  A downstream CMake project can
+then pull in CMake targets for the installed libraries using
+``find_package()`` in the downstream project's ``CMakeLists.txt`` file.  All
+of the built and installed libraries can be pulled in and built against at the
+project level by configuring the downstream CMake project with::
+
+  -D CMAKE_PREFIX_PATH=<upstreamInstallDir>
+
+and having the downstream project's ``CMakeLists.txt`` file call, for
+example::
+
+  find_package(<Project> REQUIRED)
+  ...
+  target_link_libraries( <downstream-target>
+    PRIVATE <Project>::all_libs )
+
+This will put the needed include directories and other imported compiler
+options on the downstream compile lines as specified through the IMPORTED
+library targets and will put the needed libraries on the link line.
+
+To pull in libraries from only a subset of the installed packages ``<pkg0>
+<pkg1> ...``, use, for example::
+
+  find_package(<Project> REQUIRED COMPONENTS <pkg0> <pkg1> ...)
+  ...
+  target_link_libraries( <downstream-target>
+    PRIVATE <Project>::all_selected_libs )
+
+The target ``<Project>::all_selected_libs`` only contains the library targets
+for the selected packages (through their ``<Package>::all_libs`` targets) for
+the packages requested in the ``COMPONENTS <pkg0> <pkg1> ...`` argument.
+(NOTE, the target ``<Project>::all_libs`` is unaffected by the ``COMPONENTS``
+argument and always links to all of the enabled package's libraries.)
+
+Downstream projects can also pull in and use installed libraries by finding
+individual packages by calling ``find_package(<Package> REQUIRED)`` for each
+package ``<Package>`` and then linking against the defined IMPORTED CMake
+target ``<Package>::all_libs`` such as::
+
+  find_package(<Package1> REQUIRED)
+  find_package(<Package2> REQUIRED)
+  ...
+  target_link_libraries( <downstream-target>
+    PUBLIC <Package1>::all_libs
+    PRIVATE <Package2>::all_libs
+    )
+
+Finding and using libraries for packages at the package-level provides better
+fine-grained control over internal linking and provides greater flexibility in
+case these packages are not all installed in the same upstream CMake project
+in the future.
+
+To see an example of all of these use cases being demonstrated, see
+`TribitsExampleApp`_ and the `TriBITS TribitsExampleApp Tests`_.
+
+
+Using packages from the build tree in downstream CMake projects
+------------------------------------------------------------------
+
+Note that libraries from enabled and built packages can also be used from the
+``<Project>`` build tree without needing to install.  Being able to build
+against pre-built packages in the build tree can be very useful such as when
+the project is part of a CMake super-build where one does not want to install
+the intermediate packages.
+
+Let ``<upstreamBuildDir>`` be the build directory for ``<Project>`` that has
+already been configured and built (but not necessarily installed).  A
+downstream CMake project can pull in and link against any of the enabled
+libraries in the upstream ``<Project>`` configuring the downstream CMake
+project with::
+
+  -D CMAKE_PREFIX_PATH=<upstreamBuildDir>/cmake_packages
+
+and then finding the individual packages and linking to them in the downstream
+CMake project's ``CMakeLists.txt`` file as usual using, for example::
+
+  find_package(<Package1> REQUIRED)
+  find_package(<Package2> REQUIRED)
+  ...
+  target_link_libraries( <downstream-target>
+    PUBLIC <Package1>::all_libs
+    PRIVATE <Package2>::all_libs
+    )
+
+Note that in this case, ``target_link_libraries()`` ensures that the include
+directories and other imported compiler options from the source tree and the
+build tree are automatically injected into the build targets associated with
+the ``<downstream-target>`` object compile lines and link lines.
+
+Also note that package config files for all of the enabled external
+packages/TPLs will also be written into the build tree under
+``<upstreamBuildDir>/external_packages``.  These contain modern CMake targets
+that are pulled in by the downstream ``<Package>Config.cmake`` files under
+``<upstreamBuildDir>/external_packages``.  These external package/TPL config
+files are placed in a separate directory to avoid being found by accident.
+
+
 Installation Testing
 ====================
 
@@ -3651,7 +4098,7 @@ build, and install just the libraries and header files using::
   $ cd BUILD_LIBS/
 
   $ cmake \
-    -DCMAKE_INSTLAL_PREFIX=<install-dir> \
+    -DCMAKE_INSTALL_PREFIX=<install-dir> \
     -D<Project>_ENABLE_ALL_PACKAGES=ON \
     -D<Project>_ENABLE_TESTS=OFF \
     [other options] \
@@ -3735,22 +4182,31 @@ match files to exclude, set::
 
   -D <Project>_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
 
+Extra directories or files can be excluded from the reduced source tarball by
+adding the configure argument::
+
+  "-DCPACK_SOURCE_IGNORE_FILES=<extra-exclude-regex-0>;<extra-exclude-regex-1>;..."
+
+NOTE: The entries in ``CPACK_SOURCE_IGNORE_FILES`` are regexes and **not**
+file globs, so be careful when specifying these or more files and directories
+will be excluded from the reduced source tarball that intended/desired.
+
 While a set of default CPack source generator types is defined for this
 project (see the ``CMakeCache.txt`` file), it can be overridden using, for
 example::
 
   -D <Project>_CPACK_SOURCE_GENERATOR="TGZ;TBZ2"
 
-(see CMake documentation to find out the types of supported CPack source
-generators on your system).
+(See CMake documentation to find out the types of CPack source generators
+supported on your system.)
 
 NOTE: When configuring from an untarred source tree that has missing packages,
 one must configure with::
 
-  -D <Project>_ASSERT_MISSING_PACKAGES=OFF
+  -D <Project>_ASSERT_DEFINED_DEPENDENCIES=OFF
 
 Otherwise, TriBITS will error out complaining about missing packages.  (Note
-that ``<Project>_ASSERT_MISSING_PACKAGES`` will default to ```OFF``` in
+that ``<Project>_ASSERT_DEFINED_DEPENDENCIES`` will default to ```OFF``` in
 release mode, i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE==OFF``.)
 
 
@@ -3758,7 +4214,7 @@ Dashboard submissions
 =====================
 
 All TriBITS projects have built-in support for submitting configure, build,
-and test results to CDash using the custom ``dashbaord`` target.  This uses
+and test results to CDash using the custom ``dashboard`` target.  This uses
 the `tribits_ctest_driver()`_ function internally set up to work correctly
 from an existing binary directory with a valid initial configure.  The few of
 the advantages of using the custom TriBITS-enabled ``dashboard`` target over
@@ -3772,7 +4228,7 @@ just using the standard ``ctest -D Experimental`` command are:
 For more details, see `tribits_ctest_driver()`_.
 
 To use the ``dashboard`` target, first, configure as normal but add cache vars
-for the the build and test parallel levels with::
+for the build and test parallel levels with::
 
   -DCTEST_BUILD_FLAGS=-j4 -DCTEST_PARALLEL_LEVEL=4
 
@@ -3795,6 +4251,12 @@ pipe this to a file with::
 and then watch that file in another terminal with::
 
   $ tail -f make.dashboard.out
+
+**NOTE:** To pass multiple arguments for ``CTEST_BUILD_FLAGS`` (like adding
+ ``-k 99999999`` to tell ninja to continue even if there are build errors),
+ one must quote the entire argument string as::
+
+  "-DCTEST_BUILD_FLAGS=-j4 -k 99999999"
 
 
 Setting options to change behavior of 'dashboard' target
@@ -3990,5 +4452,11 @@ original configure state.  Even with the all-at-once mode, if one kills the
 with an invalid configuration of the project.  In these cases, one may need to
 configure from scratch to get back to the original state before calling ``make
 dashboard``.
+
+.. _TribitsExampleApp: https://github.com/TriBITSPub/TriBITS/tree/master/tribits/examples/TribitsExampleApp
+
+.. _TriBITS TribitsExampleApp Tests: https://github.com/TriBITSPub/TriBITS/blob/master/test/core/ExamplesUnitTests/TribitsExampleApp_Tests.cmake
+
+.. _xSDK Community Package Policies: https://doi.org/10.6084/m9.figshare.4495136
 
 ..  LocalWords:  templated instantiation Makefiles CMake

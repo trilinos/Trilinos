@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_StructuredBlock_h
-#define IOSS_Ioss_StructuredBlock_h
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_BoundingBox.h>
 #include <Ioss_CodeTypes.h>
@@ -19,18 +20,18 @@
 
 #if defined(SEACAS_HAVE_CGNS) && !defined(BUILT_IN_SIERRA)
 #include <cgnstypes.h>
-using INT = cgsize_t;
+using IOSS_SB_INT = cgsize_t;
 #else
 // If this is not being built with CGNS, then default to using 32-bit integers.
 // Currently there is no way to input/output a structured mesh without CGNS,
 // so this block is simply to get things to compile and probably has no use.
-using INT = int;
+using IOSS_SB_INT = int;
 #endif
 
 namespace Ioss {
   class Region;
 
-  struct BoundaryCondition
+  struct IOSS_EXPORT BoundaryCondition
   {
     BoundaryCondition(std::string name, std::string fam_name, Ioss::IJK_t range_beg,
                       Ioss::IJK_t range_end)
@@ -50,7 +51,8 @@ namespace Ioss {
     // necessary.
     BoundaryCondition() = default;
 
-    BoundaryCondition(const BoundaryCondition &copy_from) = default;
+    BoundaryCondition(const BoundaryCondition &copy_from)            = default;
+    BoundaryCondition &operator=(const BoundaryCondition &copy_from) = default;
 
     // Determine which "face" of the parent block this BC is applied to.
     int which_face() const;
@@ -85,11 +87,13 @@ namespace Ioss {
     bool equal_(const Ioss::BoundaryCondition &rhs, bool quiet) const;
   };
 
+  IOSS_EXPORT std::ostream &operator<<(std::ostream &os, const BoundaryCondition &bc);
+
   class DatabaseIO;
 
   /** \brief A structured zone -- i,j,k
    */
-  class StructuredBlock : public EntityBlock
+  class IOSS_EXPORT StructuredBlock : public EntityBlock
   {
   public:
     StructuredBlock(DatabaseIO *io_database, const std::string &my_name, int index_dim, int ni,
@@ -115,7 +119,7 @@ namespace Ioss {
     EntityType  type() const override { return STRUCTUREDBLOCK; }
 
     const Ioss::NodeBlock &get_node_block() const { return m_nodeBlock; }
-    Ioss::NodeBlock &      get_node_block() { return m_nodeBlock; }
+    Ioss::NodeBlock       &get_node_block() { return m_nodeBlock; }
 
     /** \brief Does block contain any cells
      */
@@ -229,10 +233,10 @@ namespace Ioss {
       return get_local_node_offset(index[0], index[1], index[2]);
     }
 
-    std::vector<INT> get_cell_node_ids(bool add_offset) const
+    std::vector<IOSS_SB_INT> get_cell_node_ids(bool add_offset) const
     {
-      size_t           node_count = get_property("node_count").get_int();
-      std::vector<INT> ids(node_count);
+      size_t                   node_count = get_property("node_count").get_int();
+      std::vector<IOSS_SB_INT> ids(node_count);
       get_cell_node_ids(ids.data(), add_offset);
       return ids;
     }
@@ -271,7 +275,7 @@ namespace Ioss {
         }
       }
 
-      for (auto idx_id : m_globalIdMap) {
+      for (const auto &idx_id : m_globalIdMap) {
         idata[idx_id.first] = idx_id.second;
       }
 
@@ -331,6 +335,9 @@ namespace Ioss {
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
 
+    int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                       size_t *data_size) const override;
+
   private:
     bool  equal_(const Ioss::StructuredBlock &rhs, bool quiet) const;
     IJK_t m_ijk;
@@ -357,4 +364,3 @@ namespace Ioss {
     }
   };
 } // namespace Ioss
-#endif

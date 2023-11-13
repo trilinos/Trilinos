@@ -17,6 +17,9 @@
 #include <stk_mesh/base/ExodusTranslator.hpp>
 #include "stk_io/WriteMesh.hpp"
 #include "stk_unit_test_utils/FaceTestingUtils.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"
+
+using stk::unit_test_util::build_mesh_no_simple_fields;
 
 namespace
 {
@@ -102,7 +105,7 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
     for(;iter!=goldSideset.end();++iter)
     {
         int id = iter->first;
-        stk::mesh::Part *part = stk::unit_test_util::get_surface_part_with_id(bulkData.mesh_meta_data(), id);
+        stk::mesh::Part *part = stk::unit_test_util::simple_fields::get_surface_part_with_id(bulkData.mesh_meta_data(), id);
         stk::mesh::SideSet &sset = bulkData.get_sideset(*part);
         ElementSidePairs goldSet = iter->second;
         ASSERT_EQ(goldSet.size(), sset.size());
@@ -154,12 +157,11 @@ void fill_sideset_data_structure_and_test(const std::string& filename, const Exo
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     if(stk::parallel_machine_size(comm) <= 2)
     {
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulkData(meta, comm);
-        fill_mesh(bulkData, filename);
+        std::shared_ptr<stk::mesh::BulkData> bulkData = build_mesh_no_simple_fields(comm);
+        fill_mesh(*bulkData, filename);
 
-        verify_element_side_pairs(bulkData, goldSideset);
-        write_mesh(filename, bulkData);
+        verify_element_side_pairs(*bulkData, goldSideset);
+        write_mesh(filename, *bulkData);
     }
 }
 
@@ -206,21 +208,20 @@ void fill_sideset_data_structure_and_test_output_on_block_1(const std::string& f
     {
         std::string output_file_name = get_output_file_name(filename);
         {
-            stk::mesh::MetaData meta;
-            stk::mesh::BulkData bulkData(meta, comm);
-            fill_mesh(bulkData, filename);
+            std::shared_ptr<stk::mesh::BulkData> bulkData = build_mesh_no_simple_fields(comm);
+            stk::mesh::MetaData& meta = bulkData->mesh_meta_data();
+            fill_mesh(*bulkData, filename);
 
             stk::mesh::Part* part = meta.get_part("block_1");
             ASSERT_TRUE(part!=nullptr);
             stk::mesh::Selector subset = *part;
-            stk::io::write_mesh_subset(output_file_name, bulkData, subset);
+            stk::io::write_mesh_subset(output_file_name, *bulkData, subset);
         }
 
         {
-            stk::mesh::MetaData meta;
-            stk::mesh::BulkData bulkData(meta, comm);
-            stk::io::fill_mesh(output_file_name, bulkData);
-            verify_element_side_pairs(bulkData, goldSideset);
+            std::shared_ptr<stk::mesh::BulkData> bulkData = build_mesh_no_simple_fields(comm);
+            stk::io::fill_mesh(output_file_name, *bulkData);
+            verify_element_side_pairs(*bulkData, goldSideset);
         }
     }
 }

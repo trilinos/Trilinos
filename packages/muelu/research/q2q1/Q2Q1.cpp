@@ -53,14 +53,12 @@
 
 #include "MueLu.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-#endif
 
 #ifdef HAVE_MUELU_STRATIMIKOS
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Stratimikos_MueLuHelpers.hpp>
 #endif
 
@@ -77,7 +75,6 @@
 
 #include <Thyra_DefaultPreconditioner.hpp>
 #include <Thyra_DefaultScaledAdjointLinearOp.hpp>
-#include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearOpWithSolveFactoryBase.hpp>
@@ -324,17 +321,16 @@ int main(int argc, char *argv[]) {
 
     // Stratimikos vodou
     typedef Thyra::PreconditionerFactoryBase<SC>             Base;
-    typedef Thyra::Ifpack2PreconditionerFactory<tCrsMatrix > Impl;
     typedef Thyra::LinearOpWithSolveFactoryBase<SC>          LOWSFB;
     typedef Thyra::LinearOpWithSolveBase<SC>                 LOWSB;
     typedef Thyra::MultiVectorBase<SC>                       TH_Mvb;
 
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::LinearSolverBuilder<SC> linearSolverBuilder;
 
     //Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);
 
-    Stratimikos::enableMueLu(linearSolverBuilder);                                          // Epetra
-    Stratimikos::enableMueLuTpetraQ2Q1<LO,GO,NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");  // Tpetra
+    Stratimikos::enableMueLu<SC,LO,GO,NO>(linearSolverBuilder);                                          // Epetra
+    Stratimikos::enableMueLuTpetraQ2Q1<SC,LO,GO,NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");  // Tpetra
 
     linearSolverBuilder.setParameterList(stratimikosList);
     RCP<const LOWSFB> lowsFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
@@ -344,7 +340,7 @@ int main(int argc, char *argv[]) {
     // simply reading the data again. Normally, this would be supplied by Eric
     // Cyr and would be Teko operators.
 
-    int numElem = A12->getRangeMap()->getNodeNumElements() + A21->getRangeMap()->getNodeNumElements();
+    int numElem = A12->getRangeMap()->getLocalNumElements() + A21->getRangeMap()->getLocalNumElements();
     RCP<const tMap> fullMap = Utilities::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
 
     RCP<tOperator> A;

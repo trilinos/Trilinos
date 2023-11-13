@@ -30,15 +30,18 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
+
+#include <algorithm>
+#include <iostream>   // for operator<<, ostringstream, basic_ostream, bas...
+#include <memory>
+#include <stdexcept>  // for runtime_error
+#include <string>     // for operator==, string, char_traits
+#include <vector>
 
 #include "gtest/gtest.h"
+#include "stk_util/diag/String.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for source_relative_path, set_report_handler, report
-#include <iostream>                         // for operator<<, ostringstream, basic_ostream, bas...
-#include <stdexcept>                        // for runtime_error
-#include <string>                           // for operator==, string, char_traits
-
-
 
 namespace {
 
@@ -89,3 +92,99 @@ TEST(UnitTestReportHandler, UnitTest)
   ASSERT_EQ((std::string("/smile/Test.cpp") == stk::source_relative_path("/smile/Test.cpp")), true);
 }
 
+namespace
+{
+template <typename T>
+bool condition_test(const T& val)
+{
+  return stk::impl::is_valid_throw_condition<T>::value;
+}
+}  // namespace
+
+TEST(UnitTestReportHandler, ConditionType)
+{
+  EXPECT_TRUE(condition_test(bool()));
+  EXPECT_TRUE(condition_test(double()));
+  EXPECT_TRUE(condition_test(int()));
+
+  EXPECT_FALSE(condition_test("test"));
+  EXPECT_FALSE(condition_test(std::string("test")));
+  EXPECT_FALSE(condition_test(sierra::String("test")));
+
+  {
+    const char* test = "test";
+    EXPECT_FALSE(condition_test(test));
+  }
+  {
+    const double* test = nullptr;
+    EXPECT_TRUE(condition_test(test));
+  }
+  {
+    const std::unique_ptr<double> test{};
+    EXPECT_TRUE(condition_test(test));
+  }
+  {
+    std::vector<bool> someVec = {true, false};
+    EXPECT_TRUE(condition_test(std::any_of(someVec.begin(), someVec.end(), [](bool x) { return x; })));
+  }
+}
+
+namespace
+{
+class TestCondition
+{
+  bool res;
+  unsigned call_cnt;
+
+ public:
+  TestCondition(bool res_) : res(res_), call_cnt(0) {}
+
+  bool get()
+  {
+    ++call_cnt;
+    return res;
+  }
+  unsigned count() { return call_cnt; }
+};
+}  // namespace
+
+#define COUNT_CALLS_AND_CHECK_THROW(expr, val) \
+  {                                            \
+    TestCondition cond(!val);                  \
+    EXPECT_ANY_THROW(expr);                    \
+    EXPECT_EQ(cond.count(), 1u);               \
+  }                                            \
+  {                                            \
+    TestCondition cond(val);                   \
+    EXPECT_NO_THROW(expr);                     \
+    EXPECT_EQ(cond.count(), 1u);               \
+  }
+
+TEST(UnitTestReportHandler, ExprCalledOnce)
+{
+  // Host throw require/if functions
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowRequireWithSierraHelpMsg(cond.get()), true);
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowRequireMsg(cond.get(), ""), true);
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowRequire(cond.get()), true);
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowErrorMsgIf(cond.get(), ""), false);
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowErrorIf(cond.get()), false);
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowInvalidArgMsgIf(cond.get(), ""), false);
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowInvalidArgIf(cond.get()), false);
+
+  // Device require functions
+  COUNT_CALLS_AND_CHECK_THROW(STK_NGP_ThrowRequireMsg(cond.get(), ""), true);
+  COUNT_CALLS_AND_CHECK_THROW(STK_NGP_ThrowRequire(cond.get()), true);
+  COUNT_CALLS_AND_CHECK_THROW(STK_NGP_ThrowErrorMsgIf(cond.get(), ""), false);
+  COUNT_CALLS_AND_CHECK_THROW(STK_NGP_ThrowErrorIf(cond.get()), false);
+
+  // Debug only
+#ifndef NDEBUG
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowAssertMsg(cond.get(), ""), true);
+  COUNT_CALLS_AND_CHECK_THROW(STK_ThrowAssert(cond.get()), true);
+  COUNT_CALLS_AND_CHECK_THROW(STK_NGP_ThrowAssertMsg(cond.get(), ""), true);
+  COUNT_CALLS_AND_CHECK_THROW(STK_NGP_ThrowAssert(cond.get()), true);
+#endif
+}
+
+#undef COUNT_CALLS_AND_CHECK_THROW
+#undef CONDITION_TEST_MACRO

@@ -34,42 +34,60 @@
 #ifndef STK_SIMD_PARALLEL_H
 #define STK_SIMD_PARALLEL_H
 
-#include <stk_simd_view/simd_view.hpp>
+#include <Kokkos_Core.hpp>
+#include <stk_simd_view/simd_layout.hpp>
 #include <stk_simd_view/has_typedef.hpp>
 #include <stk_simd_view/simd_index.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <typeinfo>
 
 namespace stk {
 namespace simd {
 
+namespace internal {
+template <class T>
+using ExecutionSpaceArchetypeAlias = typename T::execution_space;
+
+template <class T>
+using DeviceTypeArchetypeAlias = typename T::device_type;
+
+template <class Functor>
+struct DeduceFunctorExecutionSpace {
+  using execution_space = Kokkos::detected_or_t<
+      std::conditional_t<
+          Kokkos::is_detected<DeviceTypeArchetypeAlias, Functor>::value,
+          Kokkos::detected_t<ExecutionSpaceArchetypeAlias, Kokkos::detected_t<DeviceTypeArchetypeAlias, Functor>>,
+          Kokkos::DefaultExecutionSpace>,
+      ExecutionSpaceArchetypeAlias, Functor>;
+};
+} // namespace internal
+
 template <typename Func>
-STK_INLINE
+KOKKOS_INLINE_FUNCTION
 constexpr bool is_gpu() {
-  typedef typename
-    Kokkos::Impl::FunctorPolicyExecutionSpace<Func, void>::execution_space execution_space;
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+using execution_space = typename internal::DeduceFunctorExecutionSpace<Func>::execution_space;
   return std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   return false;
 #endif
 }
 
-
 template <typename T, typename Func>
-STK_INLINE
+KOKKOS_INLINE_FUNCTION
 int get_simd_loop_size(int N) {
   return is_gpu<Func>() ? N : simd_pad<T>(N) / SimdSizeTraits<T>::simd_width;
 }
 
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 
 template <typename T=double, typename Func, typename PolicyTag>
 inline void
-parallel_for(std::string forName, const Kokkos::RangePolicy<PolicyTag>& range, const Func& func) {
+parallel_for(std::string forName, const stk::ngp::RangePolicy<PolicyTag>& range, const Func& func) {
   assert(range.begin() == 0);
   const int simdLoopSize = get_simd_loop_size<T, Func>(range.end());
-  Kokkos::RangePolicy<PolicyTag> simdRange(0, simdLoopSize);
+  stk::ngp::RangePolicy<PolicyTag> simdRange(0, simdLoopSize);
   Kokkos::parallel_for(forName, simdRange, KOKKOS_LAMBDA(const PolicyTag& tag, const int i) {
     func( tag, simd::DeviceIndex(i) );
   });
@@ -77,10 +95,10 @@ parallel_for(std::string forName, const Kokkos::RangePolicy<PolicyTag>& range, c
 
 template <typename T=double, typename Func>
 inline void
-parallel_for(std::string forName, const Kokkos::RangePolicy<void>& range, const Func& func) {
+parallel_for(std::string forName, const stk::ngp::RangePolicy<void>& range, const Func& func) {
   assert(range.begin() == 0); // only supporting ranges starting at 0
   const int simdLoopSize = get_simd_loop_size<T, Func>(range.end());
-  Kokkos::RangePolicy<void> simdRange(0, simdLoopSize);
+  stk::ngp::RangePolicy<void> simdRange(0, simdLoopSize);
   Kokkos::parallel_for(forName, simdRange, KOKKOS_LAMBDA(const int i) {
     func( simd::DeviceIndex(i) );
   });
@@ -89,17 +107,17 @@ parallel_for(std::string forName, const Kokkos::RangePolicy<void>& range, const 
 template <typename T=double, typename Func>
 inline void
 parallel_for(std::string forName, int N, const Func& func) {
-  parallel_for<T>(forName, Kokkos::RangePolicy<void>(0,N), func);
+  parallel_for<T>(forName, stk::ngp::DeviceRangePolicy(0, N), func);
 }
 
 #else
 
 template <typename T, typename Func, typename PolicyTag>
 inline void
-parallel_for(std::string forName, const Kokkos::RangePolicy<PolicyTag>& range, const Func& func) {
+parallel_for(std::string forName, const stk::ngp::RangePolicy<PolicyTag>& range, const Func& func) {
   assert(range.begin() == 0);
   const int simdLoopSize = get_simd_loop_size<T, Func>(range.end());
-  Kokkos::RangePolicy<PolicyTag> simdRange(0, simdLoopSize);
+  stk::ngp::RangePolicy<PolicyTag> simdRange(0, simdLoopSize);
   Kokkos::parallel_for(forName, simdRange, KOKKOS_LAMBDA(const PolicyTag& tag, const int i) {
     func( tag, simd::DeviceIndex(i) );
   });
@@ -107,10 +125,10 @@ parallel_for(std::string forName, const Kokkos::RangePolicy<PolicyTag>& range, c
 
 template <typename T, typename Func>
 inline void
-parallel_for(std::string forName, const Kokkos::RangePolicy<void>& range, const Func& func) {
+parallel_for(std::string forName, const stk::ngp::RangePolicy<void>& range, const Func& func) {
   assert(range.begin() == 0); // only supporting ranges starting at 0
   const int simdLoopSize = get_simd_loop_size<T, Func>(range.end());
-  Kokkos::RangePolicy<void> simdRange(0, simdLoopSize);
+  stk::ngp::RangePolicy<void> simdRange(0, simdLoopSize);
   Kokkos::parallel_for(forName, simdRange, KOKKOS_LAMBDA(const int i) {
     func( simd::DeviceIndex(i) );
   });
@@ -119,21 +137,21 @@ parallel_for(std::string forName, const Kokkos::RangePolicy<void>& range, const 
 template <typename T, typename Func>
 inline void
 parallel_for(std::string forName, int N, const Func& func) {
-  parallel_for<T>(forName, Kokkos::RangePolicy<void>(0,N), func);
+  parallel_for<T>(forName, stk::ngp::HostRangePolicy(0,N), func);
 }
 
 // specialize/overoad for the case where no type is specified: default to double
 
 template <typename Func, typename PolicyTag>
 inline void
-parallel_for(std::string forName, const Kokkos::RangePolicy<PolicyTag>& range, const Func& func) {
+parallel_for(std::string forName, const stk::ngp::RangePolicy<PolicyTag>& range, const Func& func) {
   parallel_for<double>(forName, range, func);
 }
 
 template <typename Func>
 inline void
 parallel_for(std::string forName, int N, const Func& func) {
-  parallel_for<double>(forName, Kokkos::RangePolicy<void>(0,N), func);
+  parallel_for<double>(forName, stk::ngp::RangePolicy<void>(0,N), func);
 }
 
 #endif
@@ -142,7 +160,7 @@ parallel_for(std::string forName, int N, const Func& func) {
 // ThreadTeamRange
 template <typename Func>
 KOKKOS_INLINE_FUNCTION void
-parallel_for(const Kokkos::TeamPolicy<>::member_type& thread, int N, const Func& func) {
+parallel_for(const stk::ngp::DeviceTeamPolicy::member_type& thread, int N, const Func& func) {
   const int simdLoopSize = get_simd_loop_size<double, Func>(N);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, simdLoopSize), [&](const int i) {
     func( simd::DeviceIndex(i) );
@@ -151,7 +169,7 @@ parallel_for(const Kokkos::TeamPolicy<>::member_type& thread, int N, const Func&
 
 
 template <typename T, typename Func>
-STK_INLINE void
+KOKKOS_INLINE_FUNCTION void
 for_each(int N, const Func& func) {
   const int simdLoopSize = get_simd_loop_size<T, Func>(N);
   for (int i=0; i < simdLoopSize; ++i) {
@@ -160,7 +178,7 @@ for_each(int N, const Func& func) {
 }
 
 template <typename Func>
-STK_INLINE void
+KOKKOS_INLINE_FUNCTION void
 for_each(int N, const Func& func) {
   const int simdLoopSize = get_simd_loop_size<double, Func>(N);
   for (int i=0; i < simdLoopSize; ++i) {
@@ -181,7 +199,7 @@ struct SimdReduct {
     initialVal = 0.0;
   }
 
-  STK_INLINE void operator() (PolicyTag tag, const int n, value_type& reductee) const {
+  KOKKOS_INLINE_FUNCTION void operator() (PolicyTag tag, const int n, value_type& reductee) const {
     if (n != simdLoopSizeWithoutRemainder) {
       func(tag, simd::DeviceIndex(n), reductee);
     } else {
@@ -209,7 +227,7 @@ struct SimdReduct<Func, RealType, void> {
     initialVal = 0.0;
   }
 
-  STK_INLINE void operator() (const int n, value_type& reductee) const {
+  KOKKOS_INLINE_FUNCTION void operator() (const int n, value_type& reductee) const {
     if (n != simdLoopSizeWithoutRemainder) {
       func(simd::DeviceIndex(n), reductee);
     } else {
@@ -227,7 +245,7 @@ struct SimdReduct<Func, RealType, void> {
 
 template <typename Func, typename PolicyTag, typename ScalarType>
 typename std::enable_if<!is_gpu<Func>()>::type
-parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> policy, const Func& func, ScalarType& reductee) {
+parallel_reduce_sum(std::string reduceName, stk::ngp::RangePolicy<PolicyTag> policy, const Func& func, ScalarType& reductee) {
   typedef typename stk::Traits<ScalarType>::simd_type SimdType;
   constexpr int simdLength = stk::Traits<SimdType>::length;
   SimdType reducteeSimd(reductee);
@@ -238,7 +256,7 @@ parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> polic
   for (int i=0; i<simdLength; ++i) ones[i] = 1.0;
   SimdType remainderMask = stk::simd::load_part(ones, N%simdLength);
   SimdReduct<Func,SimdType,PolicyTag> reductor(func, simdLoopSizeWithoutRemainder, remainderMask);
-  Kokkos::RangePolicy<PolicyTag> policySimd(0, simdLoopSize);
+  stk::ngp::RangePolicy<PolicyTag> policySimd(0, simdLoopSize);
   Kokkos::parallel_reduce(reduceName, policySimd, reductor, reducteeSimd);
   reductee = stk::simd::reduce_sum(reducteeSimd);
 }
@@ -246,12 +264,12 @@ parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> polic
 template <typename Func, typename ScalarType>
 typename std::enable_if<!is_gpu<Func>()>::type
 parallel_reduce_sum(std::string reduceName, const int N, const Func& func, ScalarType& reductee) {
-  parallel_reduce_sum(reduceName, Kokkos::RangePolicy<void>(0,N), func, reductee);
+  parallel_reduce_sum(reduceName, stk::ngp::RangePolicy<void>(0, N), func, reductee);
 }
 
 template <typename Func, typename PolicyTag, typename ScalarType>
 typename std::enable_if<is_gpu<Func>()>::type
-parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> policy, const Func& func, ScalarType& reductee) {
+parallel_reduce_sum(std::string reduceName, stk::ngp::RangePolicy<PolicyTag> policy, const Func& func, ScalarType& reductee) {
   Kokkos::parallel_reduce(reduceName, policy, KOKKOS_LAMBDA(PolicyTag tag, const int i, ScalarType& v) {
     func(tag, i, v);
   }, 
@@ -261,7 +279,7 @@ parallel_reduce_sum(std::string reduceName, Kokkos::RangePolicy<PolicyTag> polic
 template <typename Func, typename ScalarType>
 typename std::enable_if<is_gpu<Func>()>::type
 parallel_reduce_sum(std::string reduceName, const int N, const Func& func, ScalarType& reductee) {
-  Kokkos::parallel_reduce(reduceName, Kokkos::RangePolicy<void>(0,N), KOKKOS_LAMBDA(const int i, ScalarType& v) {
+  Kokkos::parallel_reduce(reduceName, stk::ngp::RangePolicy<void>(0,N), KOKKOS_LAMBDA(const int i, ScalarType& v) {
     func(i, v);
   }, 
   reductee);

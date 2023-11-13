@@ -46,7 +46,6 @@
 #include "Teuchos_RCPNode.hpp"
 #include "Teuchos_ENull.hpp"
 #include "Teuchos_NullIteratorTraits.hpp"
-#include "Teuchos_ConstTypeTraits.hpp"
 #include <vector>
 
 namespace Teuchos {
@@ -84,7 +83,7 @@ template<class T> class ArrayRCP;
  * attempt to replace memory debugging tools such as the Memcheck tool
  * in <a href="http://en.wikipedia.org/wiki/Valgrind">Valgrind</a>.
  *
- * \section Teuchos_ArrayRCP_Req Requirements on the type T
+ * \section Teuchos_ArrayView_Req Requirements on the type T
  *
  * ArrayView imposes the following requirements on the type T of
  * elements in the array:
@@ -203,10 +202,10 @@ public:
   ArrayView (const ArrayView<T>& array);
 
   //! Create a nonconst view of an std::vector<T>.
-  ArrayView (std::vector<typename ConstTypeTraits<T>::NonConstType>& vec);
+  ArrayView (std::vector<typename std::remove_const_t<T>>& vec);
 
   //! Create a const view of an std::vector<T>.
-  ArrayView (const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec);
+  ArrayView (const std::vector<typename std::remove_const_t<T>>& vec);
 
   //! Shallow copy assignment operator.
   ArrayView<T>& operator= (const ArrayView<T>& array);
@@ -456,9 +455,9 @@ public:
 
   ArrayView (const ArrayView<const T>& array);
 
-  ArrayView (std::vector<typename ConstTypeTraits<T>::NonConstType>& vec);
+  ArrayView (std::vector<typename std::remove_const_t<T>>& vec);
 
-  ArrayView (const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec);
+  ArrayView (const std::vector<typename std::remove_const_t<T>>& vec);
 
   ArrayView<const T>& operator= (const ArrayView<const T>& array);
 

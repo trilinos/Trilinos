@@ -184,9 +184,12 @@ Thyra::createLinearOp(
   const RCP<const VectorSpaceBase<Scalar> > domainSpace
   )
 {
+  Teuchos::RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraRangeSpace = getOrCreateTpetraVectorSpace(rangeSpace, tpetraOperator_in->getRangeMap());
+  Teuchos::RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraDomainSpace = getOrCreateTpetraVectorSpace(domainSpace, tpetraOperator_in->getDomainMap());
+  
   return tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-    getOrCreateTpetraVectorSpace(rangeSpace, tpetraOperator_in->getRangeMap()),
-    getOrCreateTpetraVectorSpace(domainSpace, tpetraOperator_in->getDomainMap()),
+    tpetraRangeSpace,
+    tpetraDomainSpace,
     tpetraOperator_in
     );
 }
@@ -200,9 +203,11 @@ Thyra::createConstLinearOp(
   const RCP<const VectorSpaceBase<Scalar> > domainSpace
   )
 {
+  Teuchos::RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraRangeSpace = getOrCreateTpetraVectorSpace(rangeSpace, tpetraOperator_in->getRangeMap());
+  Teuchos::RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpetraDomainSpace = getOrCreateTpetraVectorSpace(domainSpace, tpetraOperator_in->getDomainMap());
   return constTpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-    getOrCreateTpetraVectorSpace(rangeSpace, tpetraOperator_in->getRangeMap()),
-    getOrCreateTpetraVectorSpace(domainSpace, tpetraOperator_in->getDomainMap()),
+    tpetraRangeSpace,
+    tpetraDomainSpace,
     tpetraOperator_in
     );
 }

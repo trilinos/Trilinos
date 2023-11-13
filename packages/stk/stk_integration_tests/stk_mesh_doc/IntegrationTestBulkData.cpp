@@ -36,6 +36,7 @@
 
 #include "../stk_unit_tests/stk_mesh/Setup8Quad4ProcMesh.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_io/FillMesh.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -67,6 +68,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
@@ -74,6 +76,7 @@
 
 namespace
 {
+using stk::unit_test_util::build_mesh;
 
 //BEGIN_DOC1
 TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
@@ -86,15 +89,9 @@ TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
 
     if(stkMeshBulkData.parallel_size() == 2)
     {
-        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
-        {
-            stk::io::StkMeshIoBroker exodusFileReader(communicator);
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            exodusFileReader.populate_bulk_data();
-        }
+        stk::io::fill_mesh(exodusFileName, stkMeshBulkData);
     }
 
     stkMeshBulkData.set_use_entity_ids_for_resolving_sharing(false);
@@ -113,16 +110,9 @@ TEST(BulkData_test, testTwoDimProblemForSharingOfDifferentEdgesWithSameNodesFour
 
     if ( stkMeshBulkData.parallel_size() == 4 )
     {
-        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
-        {
-            stk::io::StkMeshIoBroker exodusFileReader(communicator);
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            // With in populate_bulk_data, the option set_use_entity_ids_for_resolving_sharing is set to true
-            exodusFileReader.populate_bulk_data();
-        }
+        stk::io::fill_mesh(exodusFileName, stkMeshBulkData);
 
         std::vector<size_t> globalCounts;
         stk::mesh::comm_mesh_counts(stkMeshBulkData, globalCounts);
@@ -141,15 +131,12 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesTwoProc)
 
     if ( stkMeshBulkData.parallel_size() == 2 )
     {
-        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
             exodusFileReader.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            exodusFileReader.populate_bulk_data();
+            stk::io::fill_mesh_preexisting(exodusFileReader, exodusFileName, stkMeshBulkData);
         }
 
         std::vector<size_t> globalCounts;
@@ -167,15 +154,12 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
     if ( stkMeshBulkData.parallel_size() == 1 )
     {
-        std::string exodusFileName = stk::unit_test_util::get_option("-i", "mesh.exo");
+        std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
             exodusFileReader.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            exodusFileReader.populate_bulk_data();
+            stk::io::fill_mesh_preexisting(exodusFileReader, exodusFileName, stkMeshBulkData);
         }
 
         std::vector<size_t> globalCounts;
@@ -190,8 +174,9 @@ TEST(IntegrationTest, PartChangeGenerated)
     MPI_Comm communicator = MPI_COMM_WORLD;
 
     const int spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+    stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
+    stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
     if (stkMeshBulkData.parallel_size() != 4) return;
     stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
     stk::mesh::PartVector add_parts;
@@ -200,10 +185,7 @@ TEST(IntegrationTest, PartChangeGenerated)
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
-        exodusFileReader.set_bulk_data(stkMeshBulkData);
-        exodusFileReader.add_mesh_database("generated:1x1x4", stk::io::READ_MESH);
-        exodusFileReader.create_input_mesh();
-        exodusFileReader.populate_bulk_data();
+        stk::io::fill_mesh_preexisting(exodusFileReader, "generated:1x1x4", stkMeshBulkData);
         stkMeshBulkData.modification_begin();
         stk::mesh::EntityVector entities;
         stk::mesh::Selector select_owned(stkMeshMetaData.locally_owned_part());
@@ -224,54 +206,27 @@ TEST(IntegrationTest, PartChangeGenerated)
     }
 }
 
-//Test now segfaults instead of throws, but it passes (no throws) if the graph is kept around
-TEST(IntegrationTest, DISABLED_ShellPartChangeCylinder)
+TEST(IntegrationTest, ShellPartChangeCylinder)
 {
-    //demonstrates failing when reading a mesh with shells and changing parts, see ticket 13216
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    const std::string exodusFileName = "cyl_3block.g";
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 4) { GTEST_SKIP(); }
 
-    const int spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
-    if (stkMeshBulkData.parallel_size() != 4) return;
-    stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
-    stk::mesh::PartVector add_parts;
-    add_parts.push_back(&partToAdd);
+  const std::string exodusFileName = "cyl_3block.g";
 
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
+  stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
+  stk::mesh::PartVector add_parts {&stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK)};
 
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
-    exodusFileReader.set_bulk_data(stkMeshBulkData);
-    exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-    exodusFileReader.create_input_mesh();
-    exodusFileReader.populate_bulk_data();
-    stk::mesh::EntityVector entities;
-    stk::mesh::Selector select_owned(stkMeshMetaData.locally_owned_part());
-    {
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, select_owned);
-        for(size_t i = 0; i < buckets.size(); ++i)
-        {
-            for (unsigned j = 0; j < buckets[i]->size(); j++) {
-                stk::mesh::Entity entity = (*buckets[i])[j];
-                entities.push_back(entity);
-            }
-        }
-    }
-    stkMeshBulkData.modification_begin();
-    for (size_t i = 0; i < entities.size(); ++i) {
-        stkMeshBulkData.change_entity_parts(entities[i], add_parts);
-    }
-#ifndef NDEBUG
-    stkMeshBulkData.modification_end(); //will throw/hang in DEBUG but we'd like it not to
-#else
-    if (stkMeshBulkData.parallel_rank() == 1 || stkMeshBulkData.parallel_rank() == 3) {
-        EXPECT_NO_THROW(stkMeshBulkData.modification_end());
-    }
-    else {
-        EXPECT_THROW(stkMeshBulkData.modification_end(), std::logic_error); //we'd like this not to throw in release either
-    }
-#endif
+  stk::io::StkMeshIoBroker exodusFileReader(communicator);
+  exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
+  stk::io::fill_mesh_preexisting(exodusFileReader, exodusFileName, stkMeshBulkData);
+  stk::mesh::EntityVector entities;
+  stk::mesh::get_entities(stkMeshBulkData, stk::topology::ELEM_RANK, stkMeshMetaData.locally_owned_part(), entities);
+  stkMeshBulkData.modification_begin();
+  stkMeshBulkData.change_entity_parts(entities, add_parts);
+  EXPECT_NO_THROW(stkMeshBulkData.modification_end());
 }
 
 // now using graph to create faces during mesh read, split coincident test cases fail
@@ -282,8 +237,9 @@ TEST(IntegrationTest, ShellPartChange2Hexes2Shells)
     const std::string exodusFileName = "ALefLRA.e";
 
     const int spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+    stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
+    stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
     if (stkMeshBulkData.parallel_size() != 4) return;
     stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
     stk::mesh::PartVector add_parts;
@@ -292,10 +248,7 @@ TEST(IntegrationTest, ShellPartChange2Hexes2Shells)
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
     exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
-    exodusFileReader.set_bulk_data(stkMeshBulkData);
-    exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-    exodusFileReader.create_input_mesh();
-    exodusFileReader.populate_bulk_data();
+    stk::io::fill_mesh_preexisting(exodusFileReader, exodusFileName, stkMeshBulkData);
     stk::mesh::EntityVector entities;
     stk::mesh::Selector select_owned(stkMeshMetaData.locally_owned_part());
 

@@ -49,7 +49,13 @@ int main(int argc, char *argv[])
         }
         catch (std::exception & /* e */) {
           // If cannot convert to double; make it a string variable...
-          aprepro.add_variable(var, value, true); // Make it immutable
+          try {
+            aprepro.add_variable(var, value, true); // Make it immutable
+          }
+          catch (std::exception &e) {
+            std::cerr << "Aprepro terminated due to exception: " << e.what() << '\n';
+            exit_status = EXIT_FAILURE;
+          }
         }
       }
     }
@@ -87,9 +93,15 @@ int main(int argc, char *argv[])
   else {
     std::fstream infile(input_files[0], std::fstream::in);
     if (!infile.good()) {
-      std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << '\n'
-                << "                Error Code: " << strerror(errno) << '\n';
-      return EXIT_FAILURE;
+      if (!aprepro.ap_options.include_path.empty() && input_files[0][0] != '/') {
+	std::string filename = aprepro.ap_options.include_path + "/" + input_files[0];
+	infile.open(filename, std::fstream::in);
+      }
+      if (!infile.good()) {
+	std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << '\n'
+		  << "                Error Code: " << strerror(errno) << '\n';
+	return EXIT_FAILURE;
+      }
     }
 
     // Read and parse a file.  The entire file will be parsed and

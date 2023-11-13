@@ -17,8 +17,47 @@ SET (Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT ON)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_DEPRECATED_CODE
   TPETRA_ENABLE_DEPRECATED_CODE
-  "Whether Tpetra enables deprecated code (that is, anything marked with the TPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled), but note that all existing deprecated code was purged in Dec. 2019."
+  "Whether Tpetra enables deprecated code (that is, anything marked with the TPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled)."
   ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
+)
+
+# Supported Kokkos version in Trilinos
+# NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
+# compatibility with external Kokkos
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.1.00")
+
+
+# Option to allow developers to ignore incompatible Kokkos versions
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_IGNORE_KOKKOS_COMPATIBILITY
+  ""
+  "If true, disables the Kokkos version compatibility checking in Tpetra"
+  OFF
+)
+# Kokkos version checking
+ASSERT_DEFINED (Tpetra_IGNORE_KOKKOS_COMPATIBILITY)
+IF(TPL_ENABLE_Kokkos)
+  # If we're using external Kokkos, we check the supported version, unless the cmake option says otherwise
+  IF(DEFINED Kokkos_VERSION)
+    IF(Kokkos_VERSION VERSION_EQUAL Tpetra_SUPPORTED_KOKKOS_VERSION)
+      MESSAGE(STATUS "Tpetra: Detected compatible external Kokkos version: ${Kokkos_VERSION}")
+    ELSEIF(Tpetra_IGNORE_KOKKOS_COMPATIBILITY)
+      MESSAGE(WARNING "Tpetra: Ignoring Kokkos compatibility between external Kokkos version (${Kokkos_VERSION}) and Trilinos supported version (${Tpetra_SUPPORTED_KOKKOS_VERSION}) at user request.  This may lead to problems in Trilinos.")
+    ELSE()
+      MESSAGE(FATAL_ERROR "Tpetra: Incompatible external Kokkos version ${Kokkos_VERSION}.  Tpetra requires ${Tpetra_SUPPORTED_KOKKOS_VERSION}")
+    ENDIF()      
+  ENDIF()
+ELSE()
+  # If we're using the snapshot, we don't need to check the version
+  MESSAGE(STATUS "Tpetra: Using internal Kokkos")
+ENDIF()
+
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
+  TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
+  "Tpetra enables block crs little block layout left (default is layout right)"
+  OFF
 )
 
 ASSERT_DEFINED (Tpetra_ENABLE_DEPRECATED_CODE)
@@ -28,83 +67,291 @@ ELSE ()
   MESSAGE(STATUS "Tpetra: Disabling deprecated code")
 ENDIF ()
 
-# mfh 06 Nov 2017: Do users want to build Tpetra with CUDA enabled?
-# This doesn't meant that users actually want to instantiate Tpetra
-# objects for CUDA.  See Trilinos GitHub issue #1939.
 
+
+# Asserts for Accelerator support.
 ASSERT_DEFINED(TPL_ENABLE_CUDA)
 
-ASSERT_DEFINED(Kokkos_ENABLE_OPENMP)
-ASSERT_DEFINED(Kokkos_ENABLE_PTHREAD)
-ASSERT_DEFINED(Kokkos_ENABLE_SERIAL)
-ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
-ASSERT_DEFINED(Kokkos_ENABLE_SYCL)
-ASSERT_DEFINED(Kokkos_ENABLE_HIP)
+# Support for "ENABLE" Cuda, rather than "INST"
+INCLUDE(CMakeCuda.txt)
 
-IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_CUDA)
-  SET (Tpetra_ENABLE_CUDA_DEFAULT ON)
-ELSE ()
-  SET (Tpetra_ENABLE_CUDA_DEFAULT OFF)
-ENDIF ()
+######################################################################
+# Explicit template instantiation (ETI) and test instantiation logic
+######################################################################
 
-ASSERT_DEFINED (Tpetra_ENABLE_CUDA_DEFAULT)
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_CUDA
-  TPETRA_ENABLE_CUDA
-  "Enable use of CUDA in Tpetra.  This requires TPL_ENABLE_CUDA AND Kokkos_ENABLE_CUDA.  That is, you must build with CUDA enabled, and let Kokkos use CUDA.  (The latter should be ON by default, if building with CUDA enabled.)  If both of those are ON, then Tpetra_ENABLE_CUDA is ON by default.  You may set Tpetra_ENABLE_CUDA:BOOL=OFF explicitly if you do not wish Tpetra or downstream packages to use CUDA."
-  ${Tpetra_ENABLE_CUDA_DEFAULT})
+# For
+#   - Scalar types,
+#   - (LocalOrdinal, GlobalOrdinal) type pairs, and
+#   - Node types,
+#
+# Tpetra defines macros which say
+#   1. Whether Tpetra instantiates (if ETI is enabled) and/or tests
+#      its objects for that type (or type pair)
+#   2. Whether the type (or type pair) is available
+#
+# If ETI is enabled, both are identical.  If not, the settings of the
+# latter depend on both Kokkos settings and Trilinos' settings.
+#
+# The availability macros have the following pattern: HAVE_TPETRA_[TYPE]
+# The instantiation macros have the pattern:          HAVE_TPETRA_INST_[TYPE]
+# The CMake options have the pattern:                 Tpetra_INST_[TYPE]
+#
+# The availability and instantiation macros are THE SAME.
+#
+# The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG, INT_UNSIGNED_LONG
+# The node types are:    SERIAL, OPENMP, PTHREAD, CUDA
+# The scalar types are:  DOUBLE, FLOAT, LONG_DOUBLE, COMPLEX_DOUBLE, COMPLEX_FLOAT
+#
+# A downstream package or application should use the availability
+# macros to check whether something can be used/instantiated.
+#
+# Note on (1) above: Tpetra also adds enabled GlobalOrdinal types
+# internally to the Scalar types for instantiation of MultiVector.
+#
+# Note on (2) above: some of the types can only be enabled if certain
+# requirements are fulfilled.
+#
 
-# It's possible for users to _disable_ CUDA in Tpetra.  However,
-# _enabling_ CUDA in Tpetra requires the CUDA TPL, and that Kokkos
-# enable CUDA.
+
+SET(${PACKAGE_NAME}_ETI_SCALARS "")
+# Exclude all ordinal types (GlobalOrdinal and int)
+SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
+# Kokkos versions of Scalar types.  For now, this just means replacing
+# std::complex<T> with Kokkos::complex<T>.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "")
+# Kokkos versions of Scalar types, excluding ordinal types.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "")
+# Kokkos versions of Scalar types, including ONLY ordinal types.
+# This relates to Github Issue #700.
+SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "")
+
+SET(${PACKAGE_NAME}_ETI_LORDS "")
+SET(${PACKAGE_NAME}_ETI_GORDS "")
+SET(${PACKAGE_NAME}_ETI_NODES "")
+
+# ============================================================
+# Kokkos execution space types
+# ============================================================
+
+# Decide what Kokkos execution spaces to use by default.  If ETI is
+# ON, "using an execution space ExecutionSpace" means that Tpetra
+# objects with Node =
+# Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecutionSpace> will
+#
+#   1. get instantiated explicitly for that Node type, and
+#   2. get tested for that Node type, if their test is also
+#      templated on Node type.
+#
+# If ETI is OFF, #1 no longer holds, but #2 still holds.
+#
+# Tpetra uses exactly one Kokkos execution space by default, whether
+# ETI is ON or OFF.  This keeps build times for tests down in the
+# non-ETI case, and library sizes small in the ETI case.
+
+GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_SYCL_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT OFF)
+
+# We already have a separate Tpetra_ENABLE_CUDA option that we defined
+# above, so we don't have to check Kokkos_ENABLE_CUDA here.
 
 ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
-IF (Tpetra_ENABLE_CUDA AND (NOT TPL_ENABLE_CUDA))
-  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but TPL_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_CUDA must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
-ENDIF ()
-IF (Tpetra_ENABLE_CUDA AND (NOT Kokkos_ENABLE_CUDA))
-  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but Kokkos_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_CUDA must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
-ENDIF ()
-
-# Checks that only matter if building with CUDA enabled.
 IF (Tpetra_ENABLE_CUDA)
-  # As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
-  IF (DEFINED CUDA_VERSION AND (CUDA_VERSION VERSION_LESS "7.5"))
-    MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+  # If you bothered to build with CUDA enabled, then we assume you
+  # only want CUDA.
+  GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)
+ELSE()
+  IF (Kokkos_ENABLE_OPENMP)
+    # It takes effort (setting a nondefault compiler flag) to turn
+    # on OpenMP, so we assume that if OpenMP is ON, then you must
+    # want it as the Node type.
+    #
+    # mfh 06 Nov 2017: However, see GitHub issue #1939, for the
+    # analogous situation with CUDA.
+    GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)
+  ELSE()
+    IF (Kokkos_ENABLE_SERIAL)
+      GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT ON)
+    ELSE()
+      IF (Kokkos_ENABLE_THREADS)
+        GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
+      ELSE()
+        MESSAGE(FATAL_ERROR "Tpetra: No Kokkos execution space is enabled.  This message should only come up if you explicitly disabled all the Kokkos execution spaces.  If you don't want Tpetra to use threads, try setting Kokkos_ENABLE_SERIAL=ON.")
+      ENDIF()  # Kokkos_ENABLE_THREADS
+    ENDIF() # Kokkos_ENABLE_SERIAL
+  ENDIF() # Kokkos_ENABLE_OPENMP
+ENDIF() # Tpetra_ENABLE_CUDA
+
+# Don't turn on both Serial and Threads by default.  Prefer Serial,
+# because Threads is a last resort.  Of course, users may still
+# enable Threads explicitly, by setting TPETRA_INST_PTHREAD=ON.
+IF (HAVE_TPETRA_INST_SERIAL_DEFAULT AND HAVE_TPETRA_INST_PTHREAD_DEFAULT)
+  GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
+ENDIF ()
+
+# The Kokkos refactor version of Tpetra is ON, so the "classic" Node
+# type must be OFF.  (We will enforce this below.)
+GLOBAL_SET(HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT OFF)
+
+# Set up all the public "Tpetra_INST_*" CMake options for enabling
+# Node types.  Each enables both instantations and tests in the ETI ON
+# case, and only tests in the ETI OFF case.  Nevertheless, the options
+# exist whether ETI is ON or OFF.
+#
+# While setting up the options, check that the default Node type is
+# actually enabled.  Print out a helpful STATUS message if a Kokkos
+# execution space is ON, but ETI for its corresponding Node type is
+# OFF.  This may help users diagnose link errors.
+
+# Kokkos::Serial (Tpetra::KokkosCompat::KokkosSerialWrapperNode)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_SERIAL
+  HAVE_TPETRA_INST_SERIAL
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosSerialWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SERIAL_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_SERIAL_DEFAULT}
+  )
+GLOBAL_SET(HAVE_TPETRA_SERIAL ${Tpetra_INST_SERIAL})
+IF (Tpetra_INST_SERIAL)
+  IF (NOT Kokkos_ENABLE_SERIAL)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Serial execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_SERIAL=ON.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, you must enable the Kokkos::Serial execution space by setting Kokkos_ENABLE_SERIAL=ON.")
   ENDIF ()
+ELSE () # NOT Tpetra_INST_SERIAL
+  IF (HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosSerialWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SERIAL:BOOL=ON and Tpetra_INST_SERIAL:BOOL=ON.")
+  ENDIF ()
+  IF (Kokkos_ENABLE_SERIAL)
+    MESSAGE(STATUS "NOTE: Kokkos::Serial is ON (the CMake option Kokkos_ENABLE_SERIAL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, please also set the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If you use the Kokkos::Serial Node type in Tpetra without doing this, you will get link errors!")
+  ENDIF ()
+ENDIF () # Tpetra_INST_SERIAL
 
-  message("CUDA_VERSION=${CUDA_VERSION}")
-
-  # mfh 30 Sep 2017: Make sure that either Trilinos_CXX_FLAGS
-  # or CMAKE_CXX_FLAGS includes the "--expt-extended-lambda"
-  # or "-expt-extended-lambda" (either is valid; see #1797
-  # discussion) flag.
-  # jjw 25 Oct 2019: It is no longer necessary to verify flags in this way
-  # As long as Kokkos_ENABLE_CUDA_LAMBDA is set, then Kokkos will transitively add all
-  # flags necessary for correctness via target_link_libraries
-  #SET (TpetraCore_FOUND_CUDA_LAMBDA_FLAG OFF)
-  #IF (DEFINED Trilinos_CXX_FLAGS AND Trilinos_CXX_FLAGS MATCHES "-expt-extended-lambda")
-  #  # mfh 30 Sep 2017: Even if you put the flag in Trilinos_CXX_FLAGS,
-  #  # Trilinos seems to move that flag into CMAKE_CXX_FLAGS for some
-  #  # reason.  Nevertheless, it doesn't hurt to check both.
-  #  SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
-  #ELSEIF (DEFINED CMAKE_CXX_FLAGS AND CMAKE_CXX_FLAGS MATCHES "-expt-extended-lambda")
-  #  SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
-  #ENDIF ()
-  #IF (NOT TpetraCore_FOUND_CUDA_LAMBDA_FLAG)
-  #  MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require, at least with CUDA_VERSION >= 7.5 and <= 9.0, that you add \"--expt-extended-lambda\" to CMAKE_CXX_FLAGS.  You must also set Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON, if it is not already ON by default.")
-  #ENDIF ()
-
-  IF (NOT DEFINED Kokkos_ENABLE_CUDA_LAMBDA OR NOT Kokkos_ENABLE_CUDA_LAMBDA)
-    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You must also use at least with CUDA_VERSION >= 7.5.")
+# Kokkos::OpenMP (Tpetra::KokkosCompat::KokkosOpenMPWrapperNode)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_OPENMP
+  HAVE_TPETRA_INST_OPENMP
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosOpenMPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_OPENMP_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_OPENMP_DEFAULT}
+  )
+GLOBAL_SET(HAVE_TPETRA_OPENMP ${Tpetra_INST_OPENMP})
+IF (Tpetra_INST_OPENMP)
+  IF (NOT ${PROJECT_NAME}_ENABLE_OpenMP)
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must also enable OpenMP in all of Trilinos by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.")
+  ENDIF ()
+  IF (NOT Kokkos_ENABLE_OPENMP)
+    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must enable OpenMP in Kokkos by setting Kokkos_ENABLE_OPENMP:BOOL=ON.  Capitalization matters.  You do not normally need to set Kokkos_ENABLE_OPENMP:BOOL=ON explicitly if you have enabled OpenMP in all of Trilinos (by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON).  Thus, this message likely will only appear if you enabled OpenMP in Trilinos, explicitly disabled OpenMP in Kokkos, and explicitly enabled OpenMP in Tpetra.  ")
+  ENDIF ()
+ELSE () # NOT Tpetra_INST_OPENMP
+  IF (HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: The OpenMP Node is disabled, since Tpetra_INST_OPENMP:BOOL=OFF, but you set that as the default Node type.  Please don't do that.  If you want OpenMP in Tpetra, you must set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  If this still does not work, please make sure that you are not disabling OpenMP in Kokkos (by setting Kokkos_ENABLE_OPENMP incorrectly).")
+  ENDIF()
+  IF (Kokkos_ENABLE_OPENMP)
+    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OPENMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors.  This is not an error unless you actually try using OpenMP in Tpetra.")
   ENDIF ()
 ENDIF ()
 
-# Ask the MPI implementation if it is CUDA aware.  See #1571.
+# Kokkos::Threads (Tpetra::KokkosCompat::KokkosThreadsWrapperNode)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_PTHREAD
+  HAVE_TPETRA_INST_PTHREAD
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosThreadsWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_PTHREAD_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_PTHREAD_DEFAULT}
+  )
+GLOBAL_SET(HAVE_TPETRA_PTHREAD ${Tpetra_INST_PTHREAD})
+IF (Tpetra_INST_PTHREAD)
+  IF (NOT Kokkos_ENABLE_THREADS)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Threads execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_PTHREAD=ON [sic; it is really PTHREAD, not PTHREADS].  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, you must enable the Kokkos::Threads execution space by setting Kokkos_ENABLE_THREADS=ON [again sic].")
+  ENDIF ()
+  IF (Tpetra_INST_OPENMP)
+    MESSAGE(WARNING "We do NOT recommend enabling both the Kokkos::Serial and Kokkos::Threads Node types in Tpetra in the same build!  The threads that the Kokkos::Threads execution space creates will interfere with OpenMP's threads, causing performance problems.  You are seeing this warning because both CMake options Tpetra_INST_OPENMP and Tpetra_INST_PTHREAD are ON, which is not the default.")
+  ENDIF ()
+ELSE () # NOT Tpetra_INST_PTHREAD
+  IF (HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_THREADS:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
+  ENDIF()
+  IF (Kokkos_ENABLE_THREADS)
+    MESSAGE(STATUS "NOTE: Kokkos::Threads is ON (the CMake option Kokkos_ENABLE_THREADS is ON), but the corresponding Tpetra Node type is disabled.  Note that unlike with other Kokkos execution spaces, Tpetra disables Kokkos::Threads by default, as long as some other Kokkos execution space is enabled.  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, please also set the CMake option Tpetra_INST_PTHREAD:BOOL=ON.  If you use the Kokkos::Threads version of Tpetra without doing this, you will get link errors!  We do NOT recommend using Kokkos::Threads if Kokkos::OpenMP is enabled.")
+  ENDIF ()
+ENDIF () # Tpetra_INST_PTHREAD
+
+# Kokkos::Cuda (Tpetra::KokkosCompat::KokkosCudaWrapperNode)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_CUDA
+  HAVE_TPETRA_INST_CUDA
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosCudaWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_CUDA_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_CUDA_DEFAULT}
+  )
+GLOBAL_SET(HAVE_TPETRA_CUDA ${Tpetra_INST_CUDA})
+IF (Tpetra_INST_CUDA)
+  IF (NOT Kokkos_ENABLE_CUDA)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Cuda execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_CUDA=ON.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, you must enable the Kokkos::Cuda execution space by setting Kokkos_ENABLE_CUDA=ON.")
+  ENDIF ()
+ELSE () # NOT Tpetra_INST_CUDA
+  IF (HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosCudaWrapperNode is disabled (since Tpetra_INST_CUDA=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_CUDA:BOOL=ON and Tpetra_INST_CUDA:BOOL=ON.  If you are building with a CUDA-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable CUDA support by default in that case.")
+  ENDIF()
+  IF (Kokkos_ENABLE_CUDA)
+    MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_CUDA is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
+  ENDIF ()
+ENDIF () # Tpetra_INST_CUDA
+
+# Kokkos::HIP (Tpetra::KokkosCompat::KokkosHIPWrapperNode)
+GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT OFF)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_HIP
+  HAVE_TPETRA_INST_HIP
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosHIPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_HIP_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_HIP_DEFAULT}
+  )
+GLOBAL_SET(HAVE_TPETRA_HIP ${Tpetra_INST_HIP})
+IF (Tpetra_INST_HIP)
+  IF (NOT Kokkos_ENABLE_HIP)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::HIP execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_HIP=ON.  If you want to enable instantiation and use of Kokkos::HIP in Tpetra, you must enable the Kokkos::HIP execution space by setting Kokkos_ENABLE_HIP=ON.")
+  ENDIF ()
+ELSE () # NOT Tpetra_INST_HIP
+  IF (HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosHIPWrapperNode is disabled (since Tpetra_INST_HIP=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_HIP:BOOL=ON and Tpetra_INST_HIP:BOOL=ON.  If you are building with a HIP-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable HIP support by default in that case.")
+  ENDIF()
+  IF (Kokkos_ENABLE_HIP)
+    MESSAGE(STATUS "NOTE: Kokkos::HIP is ON (the CMake option Kokkos_ENABLE_HIP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::HIP in Tpetra, please also set the CMake option Tpetra_INST_HIP:BOOL=ON.  If you use the Kokkos::HIP version of Tpetra without doing this, you will get link errors!")
+  ENDIF ()
+ENDIF () # Tpetra_INST_HIP
+
+# Kokkos::SYCL (Tpetra::KokkosCompat::KokkosSYCLWrapperNode)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_SYCL
+  HAVE_TPETRA_INST_SYCL
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosSYCLWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SYCL_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_SYCL_DEFAULT}
+  )
+GLOBAL_SET(HAVE_TPETRA_SYCL ${Tpetra_INST_SYCL})
+IF (Tpetra_INST_SYCL)
+  IF (NOT Kokkos_ENABLE_SYCL)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::SYCL execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_SYCL=ON.  If you want to enable instantiation and use of Kokkos::SYCL in Tpetra, you must enable the Kokkos::SYCL execution space by setting Kokkos_ENABLE_SYCL=ON.")
+  ENDIF ()
+ELSE () # NOT Tpetra_INST_SYCL
+  IF (HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosSYCLWrapperNode is disabled (since Tpetra_INST_SYCL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SYCL:BOOL=ON and Tpetra_INST_SYCL:BOOL=ON.  If you are building with a SYCL-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable SYCL support by default in that case.")
+  ENDIF()
+  IF (Kokkos_ENABLE_SYCL)
+    MESSAGE(STATUS "NOTE: Kokkos::SYCL is ON (the CMake option Kokkos_ENABLE_SYCL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::SYCL in Tpetra, please also set the CMake option Tpetra_INST_SYCL:BOOL=ON.  If you use the Kokkos::SYCL version of Tpetra without doing this, you will get link errors!")
+  ENDIF ()
+ENDIF () # Tpetra_INST_SYCL
+
+
+############################################################
+# Device-aware MPI Support
+############################################################
+
+# Ask the MPI implementation if it is GPU aware.  See #1571.
 #
-# If users have already set Tpetra_ASSUME_CUDA_AWARE_MPI, we just
+# If users have already set Tpetra_ASSUME_GPU_AWARE_MPI, we just
 # accept their setting.  This helps with cross-compilation.
 # Otherwise, we try to figure it out for them.
+#
+# We support Tpetra_ASSUME_CUDA_AWARE_MPI as a backward-compatibility
+# option.  It will just set Tpetra-ASSUME_GPU_AWARE_MPI
 #
 # Currently, we only have logic to figure it out for them if using
 # OpenMPI >= 1.7.4.  In that case, then we may ask ompi_info:
@@ -121,47 +368,63 @@ ENDIF ()
 # safe, but possibly less performant assumption that MPI is not CUDA
 # aware.
 
-SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
 
 ASSERT_DEFINED (TPL_ENABLE_MPI)
-ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
-MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is CUDA aware:")
+MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is GPU aware:")
 
-IF (NOT Tpetra_ENABLE_CUDA)
-  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is OFF, so Tpetra will assume that MPI is not CUDA aware.")
-  SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
+IF (NOT Tpetra_INST_CUDA AND NOT Tpetra_INST_HIP AND NOT Tpetra_INST_SYCL)
+  MESSAGE (STATUS "  - Tpetra_INST_CUDA, Tpetra_INST_HIP and Tpetra_INST_SYCL atre OFF, so Tpetra will assume that MPI is not GPU aware.")
+  SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
 ELSEIF (NOT TPL_ENABLE_MPI)
-  # Even if CUDA is enabled but MPI is not, Teuchos::SerialComm may
+  # Even if GPUs is enabled but MPI is not, Teuchos::SerialComm may
   # assume host access of input and output buffers (e.g.,
   # Teuchos::reduceAll on a SerialComm may copy input into output on
   # host).  Thus, it's safer to assume that "MPI" (rather,
-  # Teuchos::SerialComm, a kind of MPI stub) can't access CUDA memory.
-  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not CUDA aware.")
-  SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
-ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
-  # The user set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+  # Teuchos::SerialComm, a kind of MPI stub) can't access GPU memory.
+  MESSAGE (STATUS "  - TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not GPU aware.")
+  SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
+ELSEIF (DEFINED Tpetra_ASSUME_GPU_AWARE_MPI)
+  # The user set Tpetra_ASSUME_GPU_AWARE_MPI explicitly.
   # Just use that value as the default.
   #
   # It may seem a little strange to set a default value for a
   # variable that the user explicitly set.  However, it ensures
   # consistency over all cases and can help debugging.
 
-  IF (Tpetra_ASSUME_CUDA_AWARE_MPI)
-    SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
-    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI=ON.  This means that you assume that the MPI implementation you want to use with Trilinos is CUDA aware.  If this is NOT true, then solvers will segfault or otherwise fail.")
+  IF (Tpetra_ASSUME_GPU_AWARE_MPI)
+    SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
+    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI=ON.  This means that you assume that the MPI implementation you want to use with Trilinos is GPU aware.  If this is NOT true, then solvers will segfault or otherwise fail.")
   ELSE ()
-    SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
-    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI=OFF.  This means that you assume that the MPI implementation you want to use with Trilinos is NOT CUDA aware.  This is always the safe option, but it may reduce performance if it is not true.")
+    SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
+    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI=OFF.  This means that you assume that the MPI implementation you want to use with Trilinos is NOT GPU aware.  This is always the safe option, but it may reduce performance if it is not true.")
+  ENDIF ()
+ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
+  # The user set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+  # Just use that value as the default.
+  #
+  # This is a backward-compatibility optipn
+  #
+  # It may seem a little strange to set a default value for a
+  # variable that the user explicitly set.  However, it ensures
+  # consistency over all cases and can help debugging.
+
+  IF (Tpetra_ASSUME_CUDA_AWARE_MPI)
+    SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
+    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI=ON.  This means that you assume that the MPI implementation you want to use with Trilinos is GPU aware.  If this is NOT true, then solvers will segfault or otherwise fail.")
+  ELSE ()
+    SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
+    MESSAGE (STATUS "  - You explicitly set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI=OFF.  This means that you assume that the MPI implementation you want to use with Trilinos is NOT GPU aware.  This is always the safe option, but it may reduce performance if it is not true.")
   ENDIF ()
 ELSE ()
-  # The user did not set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
+  # The user did not set Tpetra_ASSUME_GPU_AWARE_MPI explicitly.
 
   IF (DEFINED CMAKE_CROSSCOMPILING AND CMAKE_CROSSCOMPILING)
-    MESSAGE (STATUS "  - Since you are cross compiling, if you wish Tpetra to assume that MPI is CUDA aware, you must set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.  For now, Tpetra will assume that MPI is NOT CUDA aware; this is always the safe option, but it may reduce performance if it is not true.")
+    MESSAGE (STATUS "  - Since you are cross compiling, if you wish Tpetra to assume that MPI is GPU aware, you must set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI:BOOL=ON explicitly at configure time.  For now, Tpetra will assume that MPI is NOT GPU aware; this is always the safe option, but it may reduce performance if it is not true.")
   ELSE ()
     # We are not cross compiling, so it is safe to try to auto-detect
     # by searching for and running the "ompi_info" executable.
-    MESSAGE (STATUS "  - Attempt to detect whether MPI is CUDA aware, by searching for \"ompi_info\" executable.")
+    MESSAGE (STATUS "  - Attempt to detect whether MPI is GPU aware, by searching for \"ompi_info\" executable.")
 
     SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE OFF)
 
@@ -220,7 +483,7 @@ ELSE ()
     ENDIF ()
 
     IF (Tpetra_FOUND_OMPI_INFO_EXECUTABLE)
-      MESSAGE (STATUS "  - Calling \"ompi_info\" (full path: ${Tpetra_OMPI_INFO_EXECUTABLE}) to find out whether MPI is CUDA aware.")
+      MESSAGE (STATUS "  - Calling \"ompi_info\" (full path: ${Tpetra_OMPI_INFO_EXECUTABLE}) to find out whether MPI is GPU aware.")
 
       # ompi_info produces a LOT of output.  Making CMake capture and
       # parse all of it could be slow.  Instead, we use "grep" to get
@@ -237,323 +500,54 @@ ELSE ()
 
         # STRING FIND returns -1 if it didn't find the substring.
         IF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_TRUE EQUAL -1))
-          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is CUDA aware.")
-          SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
+          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is GPU aware.")
+          SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
         ELSEIF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE EQUAL -1))
-          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is NOT CUDA aware.  You may want to use a different OpenMPI installation that is CUDA aware, or reconfigure and rebuild OpenMPI in order to make it CUDA aware.  For details, please refer to OpenMPI's website: https://www.open-mpi.org/faq/?category=runcuda")
+          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is NOT GPU aware.  You may want to use a different OpenMPI installation that is GPU aware, or reconfigure and rebuild OpenMPI in order to make it GPU aware.  For details, please refer to OpenMPI's website: https://www.open-mpi.org/faq/?category=runcuda .  You can still override this at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
         ELSE ()
-          MESSAGE (STATUS "  - \"ompi_info\" claims to know nothing about whether your MPI implementation is CUDA aware.  Its output is \"${Tpetra_OMPI_INFO_OUTPUT}\".")
+          MESSAGE (STATUS "  - \"ompi_info\" claims to know nothing about whether your MPI implementation is GPU aware.  Its output is \"${Tpetra_OMPI_INFO_OUTPUT}\".")
         ENDIF ()
       ELSE ()
-        MESSAGE (STATUS "  - While I found the \"ompi_info\" executable, it would not run.  Thus, I will make the sane assumption that your MPI implementation is NOT CUDA aware.")
+        MESSAGE (STATUS "  - While I found the \"ompi_info\" executable, it would not run.  Thus, I will make the sane assumption that your MPI implementation is NOT GPU aware. You can change this at configure time with the option Tpetra_ASSUME_GPU_AWARE_MPI=ON, and override the configure-time setting at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
       ENDIF ()
     ELSE ()
-      MESSAGE (STATUS "  - Tpetra did not find the \"ompi_info\" executable.  This may not be bad; for example, if your MPI implementation is not OpenMPI, then you won't have this executable.  Tpetra will conservatively assume that your MPI implementation is NOT CUDA aware.  If you would like to change this, please set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.")
+      MESSAGE (STATUS "  - Search for \"ompi_info\" failed, unable to automatically detect whether MPI is GPU-aware.")
+      MESSAGE (STATUS "  - Whether MPI is GPU-aware may be specified at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
     ENDIF () # Tpetra_FOUND_OMPI_INFO_EXECUTABLE
   ENDIF () # Whether we are cross compiling
 ENDIF () # Whether we have CUDA and MPI
 
 # Sanity checks for Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT.
 
-IF (NOT (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT))
-  MESSAGE (FATAL_ERROR "Failed to set Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT!")
+IF (NOT (DEFINED Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT))
+  MESSAGE (FATAL_ERROR "Failed to set Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT!")
 ENDIF ()
 
-IF (NOT Tpetra_ENABLE_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT)
-  MESSAGE (FATAL_ERROR "Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT is ON, but CUDA is not enabled!")
+IF (NOT Tpetra_INST_CUDA AND NOT Tpetra_INST_HIP AND NOT Tpetra_INST_SYCL AND Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT)
+  MESSAGE (FATAL_ERROR "Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT is ON, but GPU is not enabled!")
 ENDIF ()
+
+
+SET(GPU_AWARE_MESSAGE  "Assume that the MPI implementation that Tpetra uses is GPU aware.  \"GPU aware\" means that MPI can use GPU device allocations (the result of cudaMalloc) as send and receive buffers.  If MPI is GPU aware, then Tpetra can give GPU device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations (see https://www.open-mpi.org/faq/?category=runcuda ).  Tpetra developers may safely assume that MPI_*[Ss]end and MPI_*[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation." )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ASSUME_CUDA_AWARE_MPI
   TPETRA_ASSUME_CUDA_AWARE_MPI
-  "Assume that the MPI implementation that Tpetra uses is CUDA aware.  \"CUDA aware\" means that MPI can use CUDA device allocations (the result of cudaMalloc) as send and receive buffers.  If MPI is CUDA aware, then Tpetra can give CUDA device allocations directly to MPI sends and receives.  MPI implementations might not support all MPI communication operations.  For example, different versions of OpenMPI support different subsets of MPI operations (see https://www.open-mpi.org/faq/?category=runcuda ).  Tpetra developers may safely assume that MPI_*[Ss]end and MPI_*[Rr]ecv work.  Anything more than that should be considered specific to the MPI implementation."
-  ${Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT})
+  ${GPU_AWARE_MESSAGE}
+  ${Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT})
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_Refactor
-  TPETRA_ENABLE_KOKKOS_REFACTOR
-  "Enable the \"Kokkos refactor\" version of Tpetra.  DO NOT SET THIS EXPLICITLY!  It is ON by default and that is the only supported value."
-  ON
-  )
-IF (NOT Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(FATAL_ERROR "The 'classic' version of Tpetra has been deprecated for a long time, and is not longer available.  If you don't want to see this message, please stop setting Tpetra_ENABLE_Kokkos_Refactor to OFF.  (It is ON by default; you should not set it explicitly.)")
-ENDIF ()
+  Tpetra_ASSUME_GPU_AWARE_MPI
+  TPETRA_ASSUME_GPU_AWARE_MPI
+  ${GPU_AWARE_MESSAGE}
+  ${Tpetra_ASSUME_CUDA_AWARE_MPI})
 
-######################################################################
-# Explicit template instantiation (ETI) and test instantiation logic
-######################################################################
 
-# For
-#   - Scalar types,
-#   - (LocalOrdinal, GlobalOrdinal) type pairs, and
-#   - Node types,
+MESSAGE(STATUS "Tpetra: defaulting to Tpetra_ASSUME_GPU_AWARE_MPI: ${Tpetra_ASSUME_GPU_AWARE_MPI}")
+
 #
-# Tpetra defines macros which say
-#   1. Whether Tpetra instantiates (if ETI is enabled) and/or tests
-#      its objects for that type (or type pair)
-#   2. Whether the type (or type pair) is available
-#
-# If ETI is enabled, both are identical.  If not, the settings of the
-# latter depend on both Kokkos settings and Trilinos' settings.
-#
-# The availability macros have the following pattern: HAVE_TPETRA_[TYPE]
-# The instantiation macros have the pattern:          HAVE_TPETRA_INST_[TYPE]
-# The CMake options have the pattern:                 Tpetra_INST_[TYPE]
-#
-# The availability and instantiation macros are THE SAME.
-#
-# The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG, INT_UNSIGNED_LONG
-# The node types are:    SERIAL, OPENMP, PTHREAD, CUDA
-# The scalar types are:  DOUBLE, FLOAT, LONG_DOUBLE, COMPLEX_DOUBLE, COMPLEX_FLOAT
-#
-# A downstream package or application should use the availability
-# macros to check whether something can be used/instantiated.
-#
-# Note on (1) above: Tpetra also adds enabled GlobalOrdinal types
-# internally to the Scalar types for instantiation of MultiVector.
-#
-# Note on (2) above: some of the types can only be enabled if certain
-# requirements are fulfilled.
-#
-# Tpetra also keeps a list of the Kokkos Device types (specializations
-# of Kokkos::Device) over which it does instantiations and/or tests.
-# This is the Tpetra_ETI_DEVICES CMake variable.  Eventually, we will
-# deprecate and remove the above Node instantiation list, and just use
-# the list of enabled Devices.  We use devices rather than execution
-# spaces, because a Kokkos::Device is an (execution space, memory
-# space) pair.  This means that it is more general.  For example,
-# Device<Cuda, CudaSpace> != Device<Cuda, CudaUVMSpace>, yet some
-# users may want both represented.  The particular use case I have in
-# mind here is Device<OpenMP, $MEM_SPACE> where $MEM_SPACE could be
-# either HostSpace or the HBM (high-bandwidth memory) memory space.
-#
+# Check that users did not attempt to enable both the OpenMP and
 
-SET(${PACKAGE_NAME}_ETI_SCALARS "")
-# Exclude all ordinal types (GlobalOrdinal and int)
-SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
-# Kokkos versions of Scalar types.  For now, this just means replacing
-# std::complex<T> with Kokkos::complex<T>.
-SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "")
-# Kokkos versions of Scalar types, excluding ordinal types.
-SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "")
-# Kokkos versions of Scalar types, including ONLY ordinal types.
-# This relates to Github Issue #700.
-SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "")
-
-SET(${PACKAGE_NAME}_ETI_LORDS "")
-SET(${PACKAGE_NAME}_ETI_GORDS "")
-SET(${PACKAGE_NAME}_ETI_DEVICES "")
-SET(${PACKAGE_NAME}_ETI_NODES "")
-
-# ============================================================
-# Kokkos execution space types
-# ============================================================
-
-# Decide what Kokkos execution spaces to use by default.  If ETI is
-# ON, "using an execution space ExecutionSpace" means that Tpetra
-# objects with Node =
-# Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpace> will
-#
-#   1. get instantiated explicitly for that Node type, and
-#   2. get tested for that Node type, if their test is also
-#      templated on Node type.
-#
-# If ETI is OFF, #1 no longer holds, but #2 still holds.
-#
-# Tpetra uses exactly one Kokkos execution space by default, whether
-# ETI is ON or OFF.  This keeps build times for tests down in the
-# non-ETI case, and library sizes small in the ETI case.
-
-GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
-GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
-GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)
-GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
-GLOBAL_SET(HAVE_TPETRA_INST_SYCL_DEFAULT OFF)
-GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT OFF)
-
-# We already have a separate Tpetra_ENABLE_CUDA option that we defined
-# above, so we don't have to check Kokkos_ENABLE_CUDA here.
-
-ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
-IF (Tpetra_ENABLE_CUDA)
-  # If you bothered to build with CUDA enabled, then we assume you
-  # only want CUDA.
-  GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)
-ELSE()
-  IF (Kokkos_ENABLE_OPENMP)
-    # It takes effort (setting a nondefault compiler flag) to turn
-    # on OpenMP, so we assume that if OpenMP is ON, then you must
-    # want it as the Node type.
-    #
-    # mfh 06 Nov 2017: However, see GitHub issue #1939, for the
-    # analogous situation with CUDA.
-    GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)
-  ELSE()
-    IF (Kokkos_ENABLE_SERIAL)
-      GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT ON)
-    ELSE()
-      IF (Kokkos_ENABLE_PTHREAD)
-        GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
-      ELSE()
-        MESSAGE(FATAL_ERROR "Tpetra: No Kokkos execution space is enabled.  This message should only come up if you explicitly disabled all the Kokkos execution spaces.  If you don't want Tpetra to use threads, try setting Kokkos_ENABLE_SERIAL=ON.")
-      ENDIF()  # Kokkos_ENABLE_PTHREAD
-    ENDIF() # Kokkos_ENABLE_SERIAL
-  ENDIF() # Kokkos_ENABLE_OPENMP
-ENDIF() # Tpetra_ENABLE_CUDA
-
-# Don't turn on both Serial and Threads by default.  Prefer Serial,
-# because Threads is a last resort.  Of course, users may still
-# enable Threads explicitly, by setting TPETRA_INST_PTHREAD=ON.
-IF (HAVE_TPETRA_INST_SERIAL_DEFAULT AND HAVE_TPETRA_INST_PTHREAD_DEFAULT)
-  GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
-ENDIF ()
-
-# The Kokkos refactor version of Tpetra is ON, so the "classic" Node
-# type must be OFF.  (We will enforce this below.)
-GLOBAL_SET(HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT OFF)
-
-# Set up all the public "Tpetra_INST_*" CMake options for enabling
-# Node types.  Each enables both instantations and tests in the ETI ON
-# case, and only tests in the ETI OFF case.  Nevertheless, the options
-# exist whether ETI is ON or OFF.
-#
-# While setting up the options, check that the default Node type is
-# actually enabled.  Print out a helpful STATUS message if a Kokkos
-# execution space is ON, but ETI for its corresponding Node type is
-# OFF.  This may help users diagnose link errors.
-
-# Kokkos::Serial (Kokkos::Compat::KokkosSerialWrapperNode)
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_SERIAL
-  HAVE_TPETRA_INST_SERIAL
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosSerialWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SERIAL_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_SERIAL_DEFAULT}
-  )
-GLOBAL_SET(HAVE_TPETRA_SERIAL ${Tpetra_INST_SERIAL})
-IF (Tpetra_INST_SERIAL)
-  IF (NOT Kokkos_ENABLE_SERIAL)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Serial execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_SERIAL=ON.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, you must enable the Kokkos::Serial execution space by setting Kokkos_ENABLE_SERIAL=ON.")
-  ENDIF ()
-ELSE () # NOT Tpetra_INST_SERIAL
-  IF (HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosSerialWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SERIAL:BOOL=ON and Tpetra_INST_SERIAL:BOOL=ON.")
-  ENDIF ()
-  IF (Kokkos_ENABLE_SERIAL)
-    MESSAGE(STATUS "NOTE: Kokkos::Serial is ON (the CMake option Kokkos_ENABLE_SERIAL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, please also set the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If you use the Kokkos::Serial Node type in Tpetra without doing this, you will get link errors!")
-  ENDIF ()
-ENDIF () # Tpetra_INST_SERIAL
-
-# Kokkos::OpenMP (Kokkos::Compat::KokkosOpenMPWrapperNode)
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_OPENMP
-  HAVE_TPETRA_INST_OPENMP
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosOpenMPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_OPENMP_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_OPENMP_DEFAULT}
-  )
-GLOBAL_SET(HAVE_TPETRA_OPENMP ${Tpetra_INST_OPENMP})
-IF (Tpetra_INST_OPENMP)
-  IF (NOT ${PROJECT_NAME}_ENABLE_OpenMP)
-    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must also enable OpenMP in all of Trilinos by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.")
-  ENDIF ()
-  IF (NOT Kokkos_ENABLE_OPENMP)
-    MESSAGE(FATAL_ERROR "Tpetra: If you want to enable OpenMP in Tpetra by setting the CMake option Tpetra_INST_OPENMP:BOOL=ON, then you must enable OpenMP in Kokkos by setting Kokkos_ENABLE_OPENMP:BOOL=ON.  Capitalization matters.  You do not normally need to set Kokkos_ENABLE_OPENMP:BOOL=ON explicitly if you have enabled OpenMP in all of Trilinos (by setting ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON).  Thus, this message likely will only appear if you enabled OpenMP in Trilinos, explicitly disabled OpenMP in Kokkos, and explicitly enabled OpenMP in Tpetra.  ")
-  ENDIF ()
-ELSE () # NOT Tpetra_INST_OPENMP
-  IF (HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: The OpenMP Node is disabled, since Tpetra_INST_OPENMP:BOOL=OFF, but you set that as the default Node type.  Please don't do that.  If you want OpenMP in Tpetra, you must set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON.  Capitalization matters.  If this still does not work, please make sure that you are not disabling OpenMP in Kokkos (by setting Kokkos_ENABLE_OPENMP incorrectly).")
-  ENDIF()
-  IF (Kokkos_ENABLE_OPENMP)
-    MESSAGE(STATUS "NOTE: Kokkos::OpenMP is ON (the CMake option Kokkos_ENABLE_OPENMP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, please also set the CMake option Tpetra_INST_OPENMP:BOOL=ON.  If you use the Kokkos::OpenMP Node type in Tpetra without doing this, you will get link errors.  This is not an error unless you actually try using OpenMP in Tpetra.")
-  ENDIF ()
-ENDIF ()
-
-# Kokkos::Threads (Kokkos::Compat::KokkosThreadsWrapperNode)
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_PTHREAD
-  HAVE_TPETRA_INST_PTHREAD
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosThreadsWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_PTHREAD_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_PTHREAD_DEFAULT}
-  )
-GLOBAL_SET(HAVE_TPETRA_PTHREAD ${Tpetra_INST_PTHREAD})
-IF (Tpetra_INST_PTHREAD)
-  IF (NOT Kokkos_ENABLE_PTHREAD)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Threads execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_PTHREAD=ON [sic; it is really PTHREAD, not PTHREADS].  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, you must enable the Kokkos::Threads execution space by setting Kokkos_ENABLE_PTHREAD=ON [again sic].")
-  ENDIF ()
-  IF (Tpetra_INST_OPENMP)
-    MESSAGE(WARNING "We do NOT recommend enabling both the Kokkos::Serial and Kokkos::Threads Node types in Tpetra in the same build!  The threads that the Kokkos::Threads execution space creates will interfere with OpenMP's threads, causing performance problems.  You are seeing this warning because both CMake options Tpetra_INST_OPENMP and Tpetra_INST_PTHREAD are ON, which is not the default.")
-  ENDIF ()
-ELSE () # NOT Tpetra_INST_PTHREAD
-  IF (HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_PTHREAD:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
-  ENDIF()
-  IF (Kokkos_ENABLE_PTHREAD)
-    MESSAGE(STATUS "NOTE: Kokkos::Threads is ON (the CMake option Kokkos_ENABLE_PTHREAD is ON), but the corresponding Tpetra Node type is disabled.  Note that unlike with other Kokkos execution spaces, Tpetra disables Kokkos::Threads by default, as long as some other Kokkos execution space is enabled.  If you want to enable instantiation and use of Kokkos::Threads in Tpetra, please also set the CMake option Tpetra_INST_PTHREAD:BOOL=ON.  If you use the Kokkos::Threads version of Tpetra without doing this, you will get link errors!  We do NOT recommend using Kokkos::Threads if Kokkos::OpenMP is enabled.")
-  ENDIF ()
-ENDIF () # Tpetra_INST_PTHREAD
-
-# Kokkos::Cuda (Kokkos::Compat::KokkosCudaWrapperNode)
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_CUDA
-  HAVE_TPETRA_INST_CUDA
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosCudaWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_CUDA_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_CUDA_DEFAULT}
-  )
-GLOBAL_SET(HAVE_TPETRA_CUDA ${Tpetra_INST_CUDA})
-IF (Tpetra_INST_CUDA)
-  IF (NOT Kokkos_ENABLE_CUDA)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Cuda execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_CUDA=ON.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, you must enable the Kokkos::Cuda execution space by setting Kokkos_ENABLE_CUDA=ON.")
-  ENDIF ()
-ELSE () # NOT Tpetra_INST_CUDA
-  IF (HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosCudaWrapperNode is disabled (since Tpetra_INST_CUDA=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_CUDA:BOOL=ON and Tpetra_INST_CUDA:BOOL=ON.  If you are building with a CUDA-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable CUDA support by default in that case.")
-  ENDIF()
-  IF (Kokkos_ENABLE_CUDA)
-    MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_CUDA is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
-  ENDIF ()
-ENDIF () # Tpetra_INST_CUDA
-
-# Kokkos::HIP (Kokkos::Compat::KokkosHIPWrapperNode)
-GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT OFF)
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_HIP
-  HAVE_TPETRA_INST_HIP
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosHIPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_HIP_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_HIP_DEFAULT}
-  )
-GLOBAL_SET(HAVE_TPETRA_HIP ${Tpetra_INST_HIP})
-IF (Tpetra_INST_HIP)
-  IF (NOT Kokkos_ENABLE_HIP)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::HIP execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_HIP=ON.  If you want to enable instantiation and use of Kokkos::HIP in Tpetra, you must enable the Kokkos::HIP execution space by setting Kokkos_ENABLE_HIP=ON.")
-  ENDIF ()
-ELSE () # NOT Tpetra_INST_HIP
-  IF (HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosHIPWrapperNode is disabled (since Tpetra_INST_HIP=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_HIP:BOOL=ON and Tpetra_INST_HIP:BOOL=ON.  If you are building with a HIP-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable HIP support by default in that case.")
-  ENDIF()
-  IF (Kokkos_ENABLE_HIP)
-    MESSAGE(STATUS "NOTE: Kokkos::HIP is ON (the CMake option Kokkos_ENABLE_HIP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::HIP in Tpetra, please also set the CMake option Tpetra_INST_HIP:BOOL=ON.  If you use the Kokkos::HIP version of Tpetra without doing this, you will get link errors!")
-  ENDIF ()
-ENDIF () # Tpetra_INST_HIP
-
-# Kokkos::SYCL (Kokkos::Compat::KokkosSYCLWrapperNode)
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_SYCL
-  HAVE_TPETRA_INST_SYCL
-  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosSYCLWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SYCL_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_SYCL_DEFAULT}
-  )
-GLOBAL_SET(HAVE_TPETRA_SYCL ${Tpetra_INST_SYCL})
-IF (Tpetra_INST_SYCL)
-  IF (NOT Kokkos_ENABLE_SYCL)
-    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::SYCL execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_SYCL=ON.  If you want to enable instantiation and use of Kokkos::SYCL in Tpetra, you must enable the Kokkos::SYCL execution space by setting Kokkos_ENABLE_SYCL=ON.")
-  ENDIF ()
-ELSE () # NOT Tpetra_INST_SYCL
-  IF (HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosSYCLWrapperNode is disabled (since Tpetra_INST_SYCL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SYCL:BOOL=ON and Tpetra_INST_SYCL:BOOL=ON.  If you are building with a SYCL-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable SYCL support by default in that case.")
-  ENDIF()
-  IF (Kokkos_ENABLE_SYCL)
-    MESSAGE(STATUS "NOTE: Kokkos::SYCL is ON (the CMake option Kokkos_ENABLE_SYCL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::SYCL in Tpetra, please also set the CMake option Tpetra_INST_SYCL:BOOL=ON.  If you use the Kokkos::SYCL version of Tpetra without doing this, you will get link errors!")
-  ENDIF ()
-ENDIF () # Tpetra_INST_SYCL
 
 #
 # Check that users did not attempt to enable both the OpenMP and
@@ -568,37 +562,22 @@ ENDIF ()
 # Construct the list of enabled Device and Node types.
 #
 IF(Tpetra_INST_SERIAL)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSerialWrapperNode")
 ENDIF()
 IF(Tpetra_INST_PTHREAD)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosThreadsWrapperNode")
 ENDIF()
 IF(Tpetra_INST_OPENMP)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode")
 ENDIF()
 IF(Tpetra_INST_CUDA)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::CudaSpace as well as
-  # Kokkos::CudaUVMSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 ENDIF()
 IF(Tpetra_INST_HIP)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::HIPSpace as well as
-  # Kokkos::HIPHostPinnedSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosHIPWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosHIPWrapperNode")
 ENDIF()
 IF(Tpetra_INST_SYCL)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::SYCLDeviceUSMSpace as well as
-  # Kokkos::SYCLSharedUSMSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosSYCLWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSYCLWrapperNode")
 ENDIF()
 
 # Tell users what Nodes are enabled.
@@ -610,10 +589,11 @@ MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
 MESSAGE(STATUS "  - HIP:     ${HAVE_TPETRA_HIP}")
 MESSAGE(STATUS "  - SYCL:    ${HAVE_TPETRA_SYCL}")
 
+
 # Fix Github Issue #190 by making sure that users enabled at least one
 # Node type.
 IF(NOT Tpetra_INST_SERIAL AND NOT Tpetra_INST_PTHREAD AND NOT Tpetra_INST_OPENMP AND NOT Tpetra_INST_CUDA AND NOT Tpetra_INST_HIP AND NOT Tpetra_INST_SYCL)
-  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_SYCL, Kokkos_ENABLE_HIP, Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_PTHREAD, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, Tpetra_INST_HIP, Tpetra_INST_SYCL or Tpetra_INST_CUDA.")
+  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_SYCL, Kokkos_ENABLE_HIP, Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_THREADS, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, Tpetra_INST_HIP, Tpetra_INST_SYCL or Tpetra_INST_CUDA.")
 ENDIF()
 
 # ============================================================
@@ -687,7 +667,7 @@ MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled by default.")
 
 # IF anything other than long long is defined and enabled, and long long isn't defined then we disable long long
 IF( (    (    DEFINED Tpetra_INST_INT_INT           AND Tpetra_INST_INT_INT)
-     OR  (    DEFINED Tpetra_INST_INT_LONG          AND Tpetra_INST_INT_UNSIGNED_LONG)
+     OR  (    DEFINED Tpetra_INST_INT_LONG          AND Tpetra_INST_INT_LONG)
      OR  (    DEFINED Tpetra_INST_INT_UNSIGNED      AND Tpetra_INST_INT_UNSIGNED)
      OR  (    DEFINED Tpetra_INST_INT_UNSIGNED_LONG AND Tpetra_INST_INT_UNSIGNED_LONG))
      AND (NOT DEFINED Tpetra_INST_INT_LONG_LONG) )
@@ -804,6 +784,20 @@ IF(Tpetra_INST_INT_UNSIGNED_LONG)
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "unsigned long")
 ENDIF()
 
+# ============================================================
+# MPI advance
+# ============================================================
+
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_mpi_advance)
+  IF (DEFINED TpetraCore_ENABLE_mpi_advance)
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TpetraCore_ENABLE_mpi_advance}")
+  ELSEIF (DEFINED TPL_ENABLE_mpi_advance)
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TPL_ENABLE_mpi_advance}")
+  ELSE ()
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance OFF)
+  ENDIF ()
+ENDIF ()
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_mpi_advance)
 
 # ============================================================
 # Scalar types
@@ -1085,15 +1079,9 @@ ENDIF ()
 
 # Decide whether to instantiate / test Scalar = qd_real ("quad
 # double", provided by the QD TPL) by default.  It requires the QD TPL
-# and does not work with the Kokkos refactor version of Tpetra (due to
-# the missing Kokkos::atomic_* and volatile overloaded functions /
-# methods).
-ASSERT_DEFINED (Tpetra_ENABLE_Kokkos_Refactor)
-IF (${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
-ENDIF()
+# and does not work with Tpetra (due to the missing Kokkos::atomic_*
+# and volatile overloaded functions / methods).
+GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
 
 # Set up the Tpetra_INST_QD_REAL option: whether to instantiate / test
 # Scalar = qd_real.
@@ -1106,20 +1094,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_QD_REAL)
 GLOBAL_SET (HAVE_TPETRA_QD_REAL ${Tpetra_INST_QD_REAL})
 
-IF (Tpetra_INST_QD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE (SEND_ERROR "Scalar = qd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+IF (Tpetra_INST_QD_REAL)
+  MESSAGE (SEND_ERROR "Scalar = qd_real does not currently work with Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
 ENDIF ()
 
 # Decide whether to instantiate / test Scalar = dd_real ("double
 # double", provided by the QD TPL) by default.  It requires the QD TPL
-# and does not work with the Kokkos refactor version of Tpetra (due to
-# the missing Kokkos::atomic_* and volatile overloaded functions /
-# methods).
-IF (${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
-ENDIF()
+# and does not work with Tpetra (due to the missing Kokkos::atomic_*
+# and volatile overloaded functions / methods).
+GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
 
 # Set up the Tpetra_INST_DD_REAL option: whether to instantiate / test
 # Scalar = dd_real.
@@ -1132,8 +1115,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_DD_REAL)
 GLOBAL_SET (HAVE_TPETRA_DD_REAL ${Tpetra_INST_DD_REAL})
 
-IF (Tpetra_INST_DD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE (SEND_ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+IF (Tpetra_INST_DD_REAL)
+  MESSAGE (SEND_ERROR "Scalar = dd_real does not currently work with Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
 ENDIF ()
 
 #
@@ -1272,7 +1255,6 @@ TRIBITS_PACKAGE_DEF()
 #
 # Identify what files to exclude when making a source tarball.
 #
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 TRIBITS_EXCLUDE_FILES(
   core/doc/CodingGuidelines

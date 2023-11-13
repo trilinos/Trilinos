@@ -29,8 +29,8 @@
 @FUNCTION: print_nonempty_var() +
 @FUNCTION: print_nonempty_var_with_spaces() +
 @FUNCTION: print_var() +
+@FUNCTION: print_var_with_spaces() +
 @FUNCTION: remove_global_duplicates() +
-@MACRO: set_and_inc_dirs() +
 @FUNCTION: set_cache_on_off_empty() +
 @MACRO: set_default() +
 @MACRO: set_default_and_from_env() +
@@ -38,10 +38,17 @@
 @FUNCTION: timer_get_raw_seconds() +
 @FUNCTION: timer_get_rel_seconds() +
 @FUNCTION: timer_print_rel_time() +
+@FUNCTION: tribits_add_enum_cache_var() +
+@MACRO:    tribits_advanced_set_cache_var_and_default() +
+@FUNCTION: tribits_deprecated() +
+@FUNCTION: tribits_deprecated_command() +
+@MACRO:    tribits_create_reverse_list() +
+@MACRO:    tribits_set_cache_var_and_default() +
 @FUNCTION: tribits_strip_quotes_from_str() +
 @FUNCTION: unittest_compare_const() +
 @FUNCTION: unittest_has_substr_const() +
 @FUNCTION: unittest_not_has_substr_const() +
 @FUNCTION: unittest_string_regex() +
+@FUNCTION: unittest_string_var_regex() +
 @FUNCTION: unittest_file_regex() +
 @FUNCTION: unittest_final_result() +

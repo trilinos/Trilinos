@@ -709,7 +709,7 @@ Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistoryPL(
   auto sh = rcp(new SolutionHistory<Scalar>());
   sh->setName("From createSolutionHistoryPL");
 
-  if (pl == Teuchos::null) return sh;  // Return default SolutionHistory.
+  if (pl == Teuchos::null || pl->numParams() == 0) return sh;
 
   pl->validateParametersAndSetDefaults(*sh->getValidParameters());
 

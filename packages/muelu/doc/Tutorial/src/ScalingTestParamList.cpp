@@ -49,7 +49,7 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include <Kokkos_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
+#include <Tpetra_KokkosCompat_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
 
 #include "Xpetra_ConfigDefs.hpp"
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -85,7 +85,7 @@
 typedef double Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
         belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
         belosList.set("Output Frequency",      1);
         belosList.set("Output Style",          Belos::Brief);
-        if (!scaleResidualHistory) 
+        if (!scaleResidualHistory)
           belosList.set("Implicit Residual Scaling", "None");
 
         // Create an iterative solver manager

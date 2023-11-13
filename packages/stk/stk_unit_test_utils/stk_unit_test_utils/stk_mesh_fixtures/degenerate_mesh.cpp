@@ -47,127 +47,184 @@
 
 namespace stk { namespace mesh { class Part; } }
 
-
-
-
 namespace stk {
-  namespace mesh {
-    namespace fixtures {
+namespace mesh {
+namespace fixtures {
 
-      enum { SpatialDim = 3 };
+enum { SpatialDim = 3 };
 
-      //----------------------------------------------------------------------
+void degenerate_mesh_meta_data(stk::mesh::MetaData & meta_data, VectorFieldType & node_coord)
+{
+  stk::mesh::Part & universal = meta_data.universal_part();
+  stk::mesh::Part& part = meta_data.declare_part_with_topology( "hexes", stk::topology::HEX_8);
+  stk::io::put_io_part_attribute(part);
 
-      //--------------------------------------------------------------------
-      //
+  const stk::mesh::FieldBase::Restriction & res = stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );
 
-      void degenerate_mesh_meta_data(
-				     stk::mesh::MetaData & meta_data ,
-				     VectorFieldType & node_coord )
-      {
-	stk::mesh::Part & universal        = meta_data.universal_part();
-	stk::mesh::Part& part = meta_data.declare_part_with_topology( "hexes", stk::topology::HEX_8);
-        stk::io::put_io_part_attribute(part);
+  if ( res.num_scalars_per_entity() != 3 ) {
+    std::ostringstream msg ;
+    msg << "stk_mesh/unit_tests/degenerate_mesh_meta_data FAILED, coordinate dimension must be 3 != "
+        << res.num_scalars_per_entity() ;
+    throw std::runtime_error( msg.str() );
+  }
+}
 
-	const stk::mesh::FieldBase::Restriction & res =
-	  stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );
-
-	if ( res.num_scalars_per_entity() != 3 ) {
-	  std::ostringstream msg ;
-	  msg << "stk_mesh/unit_tests/degenerate_mesh_meta_data FAILED, coordinate dimension must be 3 != "
-	      << res.num_scalars_per_entity() ;
-	  throw std::runtime_error( msg.str() );
-	}
-      }
-
-      //--------------------------------------------------------------------
-      /*----------------------------------------------------------------------
+//--------------------------------------------------------------------
+/*----------------------------------------------------------------------
        * Degenerate hex mesh generation
        *
        * 12 hexes degenerated down to wedges.
        *
        *----------------------------------------------------------------------*/
 
-      namespace {
+namespace {
 
-	enum { node_count = 10 };
-	enum { number_hex = 2 };
+enum { node_count = 10 };
+enum { number_hex = 2 };
 
-	/*  Z = 0 plane:
-	 *
-	 *    Y
-	 *    ^ 
-	 *    !
-	 *     
-	 *   4*       *5
-	 *    |\     /|
-	 *    | \   / |
-	 *    |  \ /  |
-	 *    *---*---* ----> X
-	 *    1   2   3
-	 *
-	 *  Z = -1 plane:
-	 *
-	 *    Y
-	 *    ^ 
-	 *    !
-	 *     
-	 *   9*       *10
-	 *    |\     /|
-	 *    | \   / |
-	 *    |  \ /  |
-	 *    *---*---* ----> X
-	 *    6   7   8
-	 *
-	 */
+/*  Z = 0 plane:
+   *
+   *    Y
+   *    ^
+   *    !
+   *
+   *   4*       *5
+   *    |\     /|
+   *    | \   / |
+   *    |  \ /  |
+   *    *---*---* ----> X
+   *    1   2   3
+   *
+   *  Z = -1 plane:
+   *
+   *    Y
+   *    ^
+   *    !
+   *
+   *   9*       *10
+   *    |\     /|
+   *    | \   / |
+   *    |  \ /  |
+   *    *---*---* ----> X
+   *    6   7   8
+   *
+   */
 
-	static const double node_coord_data[ node_count ][ SpatialDim ] = {
-	  { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 2, 0, 0} , {0, 1, 0}, {2, 1, 0}, 
-	  { 0 , 0 ,-1 } , { 1 , 0 ,-1 } , { 2, 0,-1} , {0, 1,-1}, {2, 1,-1}};
+static const double node_coord_data[ node_count ][ SpatialDim ] = {
+  { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 2, 0, 0} , {0, 1, 0}, {2, 1, 0},
+  { 0 , 0 ,-1 } , { 1 , 0 ,-1 } , { 2, 0,-1} , {0, 1,-1}, {2, 1,-1}
+};
 
-	typedef stk::topology::topology_type<stk::topology::HEX_8> Hex8;
-	static const stk::mesh::EntityIdVector hex_node_ids[number_hex] {
-	  { 1, 2, 7, 6, 4, 2,  7, 9},
-	  { 2, 3, 8, 7, 2, 5, 10, 7}};
+typedef stk::topology::topology_type<stk::topology::HEX_8> Hex8;
+static const stk::mesh::EntityIdVector hex_node_ids[number_hex] {
+  { 1, 2, 7, 6, 4, 2,  7, 9},
+  { 2, 3, 8, 7, 2, 5, 10, 7}
+};
 
-      }
-      //----------------------------------------------------------------------
-      //----------------------------------------------------------------------
+}
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
 
-      void degenerate_mesh_bulk_data(
-				     stk::mesh::BulkData & bulk_data ,
-				     const VectorFieldType & node_coord )
-      {
-	static const char method[] =
-	  "stk_mesh::fixtures::heterogenous_mesh_bulk_data" ;
+void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord)
+{
+  static const char method[] = "stk_mesh::fixtures::heterogenous_mesh_bulk_data" ;
 
-	bulk_data.modification_begin();
+  bulk_data.modification_begin();
 
-	const stk::mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
+  const stk::mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
 
-	stk::mesh::Part & hex_block        = * meta_data.get_part("hexes",method);
+  stk::mesh::Part & hex_block = * meta_data.get_part("hexes",method);
 
-	unsigned elem_id = 1 ;
+  unsigned elem_id = 1 ;
 
-	for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id ) {
-	  stk::mesh::declare_element( bulk_data, hex_block, elem_id, hex_node_ids[i] );
-	}
+  for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id ) {
+    stk::mesh::declare_element( bulk_data, hex_block, elem_id, hex_node_ids[i] );
+  }
 
-	for ( unsigned i = 0 ; i < node_count ; ++i ) {
+  for ( unsigned i = 0 ; i < node_count ; ++i ) {
 
-	  stk::mesh::Entity const node = bulk_data.get_entity( stk::topology::NODE_RANK , i + 1 );
+    stk::mesh::Entity const node = bulk_data.get_entity( stk::topology::NODE_RANK , i + 1 );
 
-	  double * const coord = stk::mesh::field_data( node_coord , node );
+    double * const coord = stk::mesh::field_data( node_coord , node );
 
-	  coord[0] = node_coord_data[i][0] ;
-	  coord[1] = node_coord_data[i][1] ;
-	  coord[2] = node_coord_data[i][2] ;
-	}
+    coord[0] = node_coord_data[i][0] ;
+    coord[1] = node_coord_data[i][1] ;
+    coord[2] = node_coord_data[i][2] ;
+  }
 
-	bulk_data.modification_end();
-      }
+  bulk_data.modification_end();
+}
 
-    }}}
+namespace simple_fields {
+
+enum { SpatialDim = 3 };
+
+void degenerate_mesh_meta_data(stk::mesh::MetaData & meta_data, VectorFieldType & node_coord)
+{
+  stk::mesh::Part & universal = meta_data.universal_part();
+  stk::mesh::Part& part = meta_data.declare_part_with_topology( "hexes", stk::topology::HEX_8);
+  stk::io::put_io_part_attribute(part);
+
+  const stk::mesh::FieldBase::Restriction & res = stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );
+
+  if ( res.num_scalars_per_entity() != 3 ) {
+    std::ostringstream msg ;
+    msg << "stk_mesh/unit_tests/degenerate_mesh_meta_data FAILED, coordinate dimension must be 3 != "
+        << res.num_scalars_per_entity() ;
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+namespace {
+
+enum { node_count = 10 };
+enum { number_hex = 2 };
+
+static const double node_coord_data[ node_count ][ SpatialDim ] = {
+  { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 2, 0, 0} , {0, 1, 0}, {2, 1, 0},
+  { 0 , 0 ,-1 } , { 1 , 0 ,-1 } , { 2, 0,-1} , {0, 1,-1}, {2, 1,-1}
+};
+
+typedef stk::topology::topology_type<stk::topology::HEX_8> Hex8;
+static const stk::mesh::EntityIdVector hex_node_ids[number_hex] {
+  { 1, 2, 7, 6, 4, 2,  7, 9},
+  { 2, 3, 8, 7, 2, 5, 10, 7}
+};
+}
+
+void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord)
+{
+  static const char method[] = "stk_mesh::fixtures::heterogenous_mesh_bulk_data";
+
+  bulk_data.modification_begin();
+
+  const stk::mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
+
+  stk::mesh::Part & hex_block = * meta_data.get_part("hexes",method);
+
+  unsigned elem_id = 1 ;
+
+  for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id ) {
+    stk::mesh::declare_element( bulk_data, hex_block, elem_id, hex_node_ids[i] );
+  }
+
+  for ( unsigned i = 0 ; i < node_count ; ++i ) {
+
+    stk::mesh::Entity const node = bulk_data.get_entity( stk::topology::NODE_RANK , i + 1 );
+
+    double * const coord = stk::mesh::field_data( node_coord , node );
+
+    coord[0] = node_coord_data[i][0] ;
+    coord[1] = node_coord_data[i][1] ;
+    coord[2] = node_coord_data[i][2] ;
+  }
+
+  bulk_data.modification_end();
+}
+
+}  // namespace simple_fields
+
+}}}
 
 //----------------------------------------------------------------------
 

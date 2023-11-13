@@ -129,7 +129,6 @@
 #include "AztecOO.h"
 
 // MueLu Includes
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #  include "MueLu.hpp"
 #  include "MueLu_ParameterListInterpreter.hpp"
 #  include "MueLu_TpetraOperator.hpp"
@@ -142,16 +141,13 @@
 #  include "MueLu_AvatarInterface.hpp"
 #endif
 
-#endif // HAVE_TRILINOSCOUPLINGS_MUELU
-
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef HAVE_INTREPID_KOKKOS
 #include "Sacado.hpp"
 #else
 // Sacado includes
 #include "Sacado_No_Kokkos.hpp"
 #endif
 
-//#if defined(HAVE_TRINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
@@ -159,7 +155,6 @@
 #include <BelosFixedPointSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-//#endif
 
 using namespace std;
 using namespace Intrepid;
@@ -209,7 +204,7 @@ typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
 typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
@@ -1435,7 +1430,7 @@ int main(int argc, char *argv[]) {
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
   std::cout << "numBCNodes = " << numBCNodes << std::endl;
-  std::cout << "globalMapG #elts = " << globalMapG->getNodeNumElements() << std::endl;
+  std::cout << "globalMapG #elts = " << globalMapG->getLocalNumElements() << std::endl;
   Apply_Dirichlet_BCs(BCNodes,StiffMatrix_aux,*rhsVector_aux,*rhsVector_aux,v);
 
   tm = Teuchos::null;
@@ -2143,7 +2138,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   // compute difference between exact solution and ML one //
   // ==================================================== //
   double d = 0.0, d_tot = 0.0 , s =0.0, s_tot=0.0;
-  for( size_t i=0 ; i<lhs->getMap()->getNodeNumElements() ; ++i ) {
+  for( size_t i=0 ; i<lhs->getMap()->getLocalNumElements() ; ++i ) {
     d += (lhsdata[i] - xexactdata[i]) * (lhsdata[i] - xexactdata[i]);
     s +=  xexactdata[i]* xexactdata[i];
   }
@@ -2876,7 +2871,7 @@ void CreateLinearSystem(int numWorksets,
   vector_type laplDiagOwned(rowMap, true);
   typename crs_matrix_type::local_inds_host_view_type indices;
   typename crs_matrix_type::values_host_view_type values;
-  size_t numOwnedRows = rowMap->getNodeNumElements();
+  size_t numOwnedRows = rowMap->getLocalNumElements();
   for (size_t row=0; row<numOwnedRows; row++) {
     StiffMatrix.getLocalRowView(row, indices, values);
     size_t numIndices = indices.size();

@@ -42,8 +42,11 @@ namespace stk {
 namespace performance_tests {
 
 void setup_multiple_blocks(stk::mesh::MetaData& meta, unsigned numBlocks);
+void setup_elem_fields_on_blocks(stk::mesh::MetaData& meta, unsigned numFields);
 void setup_sidesets_between_blocks(stk::mesh::MetaData& meta);
+void setup_sidesets_for_blocks(stk::mesh::MetaData& meta);
 void move_elements_to_other_blocks(stk::mesh::BulkData& bulk, unsigned numElemsInDimX);
+void move_elements_to_other_contiguous_blocks(stk::mesh::BulkData& bulk, unsigned numElemsInDimX);
 void fill_sidesets_between_blocks(stk::mesh::BulkData& bulk);
 
 }}

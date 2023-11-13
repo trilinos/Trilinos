@@ -38,6 +38,7 @@
 # @HEADER
 
 include(TribitsPackageDefineDependencies)
+include(TribitsPackageDependencies)
 include(SetDefault)
 include(DualScopeSet)
 
@@ -55,21 +56,21 @@ include(DualScopeSet)
 # `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_ files and builds the
 # package dependency graph variables.
 #
-# This macro reads from the variables::
+# This macro reads from the variables:
 #
-#   ${PROJECT_NAME}_ALL_REPOSITORIES (old)
-#   ${PROJECT_NAME}_PACKAGES (old)
+#   * `${PROJECT_NAME}_ALL_REPOSITORIES`_
+#   * `${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_
 #
-# and writes to the variable::
+# and writes to the variables:
 #
-#   ${PROJECT_NAME}_SE_PACKAGES (old)
+#   * `${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES`_
 #
-# as well creates the package dependency variables described in `List
-# variables defining the package dependencies graph`_ that defines the
-# directed acyclic dependency (DAG) package dependency graph (with navigation
-# up and down the graph).
+# as well creates the package dependency variables described in `Variables
+# defining the package dependencies graph`_ that defines the directed acyclic
+# dependency (DAG) package dependency graph (with navigation up and down the
+# graph).
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_read_deps_files_create_deps_graph)
 
@@ -91,20 +92,15 @@ endmacro()
 # Process any dependency logic at the repo level by loading
 # `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_ files.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_process_all_repository_deps_setup_files)
-  foreach(TIBITS_REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+  foreach(TIBITS_REPO  IN LISTS  ${PROJECT_NAME}_ALL_REPOSITORIES)
     tribits_get_repo_name_dir(${TIBITS_REPO}  REPO_NAME  REPO_DIR)
     tribits_set_base_repo_dir(${PROJECT_SOURCE_DIR}  ${REPO_DIR}  BASE_REPO_DIR)
     tribits_get_repo_name(${TIBITS_REPO} REPOSITORY_NAME)
-    #print_var(TIBITS_REPO)
-    #print_var(REPO_NAME)
-    #print_var(REPO_DIR)
-    #print_var(REPOSITORY_NAME)
     set(REPO_DEPENDENCIES_SETUP_FILE
       "${BASE_REPO_DIR}/cmake/RepositoryDependenciesSetup.cmake")
-    #print_var(REPO_DEPENDENCIES_SETUP_FILE)
     if (EXISTS ${REPO_DEPENDENCIES_SETUP_FILE})
       tribits_trace_file_processing(REPOSITORY  INCLUDE
         "${REPO_DEPENDENCIES_SETUP_FILE}")
@@ -128,7 +124,7 @@ endmacro()
 # Process any dependency logic at the project level by loading the
 # `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ file
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_process_project_dependency_setup_file)
   set(PROJECT_DEPENDENCIES_SETUP_FILE
@@ -161,40 +157,75 @@ endmacro()
 # packages and subpackages, respectively, and builds the package dependency
 # graph variables.
 #
-# This macro reads from the variables::
+# This macro reads from the variables:
 #
-#   ${PROJECT_NAME}_ALL_REPOSITORIES
-#   ${PROJECT_NAME}_PACKAGES (old)
+#   * `${PROJECT_NAME}_ALL_REPOSITORIES`_
+#   * `${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_
 #
-# And writes to the variable::
+# And writes to the variable:
 #
-#   ${PROJECT_NAME}_SE_PACKAGES (old)
+#   * `${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES`_
 #
-# as well creates the package dependency variables described in `List
-# variables defining the package dependencies graph`_ that defines the
-# directed acyclic dependency (DAG) package dependency graph (with navigation
-# up and down the graph).
+# as well creates the package dependency variables described in `Variables
+# defining the package dependencies graph`_ that defines the directed acyclic
+# dependency (DAG) package dependency graph (with navigation up and down the
+# graph).
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_read_all_package_deps_files_create_deps_graph)
 
-  set(${PROJECT_NAME}_SE_PACKAGES) # Packages and subpackages
-
-  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
-    tribits_read_toplevel_package_deps_files_add_to_graph(${TRIBITS_PACKAGE}
-      ${${TRIBITS_PACKAGE}_REL_SOURCE_DIR})
+  foreach(tribitsExternalPkg  IN LISTS  ${PROJECT_NAME}_DEFINED_TPLS)
+    tribits_read_external_package_deps_files_add_to_graph(${tribitsExternalPkg})
   endforeach()
 
-  # Create a reverse SE packages list for later use
-  set(${PROJECT_NAME}_REVERSE_SE_PACKAGES ${${PROJECT_NAME}_SE_PACKAGES})
-  if (${PROJECT_NAME}_REVERSE_SE_PACKAGES)
-    list(REVERSE ${PROJECT_NAME}_REVERSE_SE_PACKAGES)
+  set(${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES "") # Packages and subpackages
+
+  foreach(TRIBITS_PACKAGE  IN LISTS ${PROJECT_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES)
+    tribits_read_toplevel_package_deps_files_add_to_graph(${TRIBITS_PACKAGE})
+  endforeach()
+
+  list(LENGTH ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES
+    ${PROJECT_NAME}_NUM_DEFINED_INTERNAL_PACKAGES)
+  print_var(${PROJECT_NAME}_NUM_DEFINED_INTERNAL_PACKAGES)
+
+endmacro()
+
+
+# @MACRO: tribits_read_external_package_deps_files_add_to_graph()
+#
+# Reads in dependencies for the external packages/TPL ``<tplName>`` and
+# creates the package dependency graph entries for it.
+#
+# Usage::
+#
+#   tribits_read_external_package_deps_files_add_to_graph(<tplName>)
+#
+# This reads in the file ``${<tplName>_DEPENDENCIES_FILE}`` and sets the
+# variable::
+#
+#   <tplName>_LIB_DEFINED_DEPENDENCIES
+#
+# See `Function call tree for constructing package dependency graph`_.
+#
+macro(tribits_read_external_package_deps_files_add_to_graph  tplName)
+  # Set up empty lists for forward dependencies
+  set(${tplName}_FORWARD_LIB_DEFINED_DEPENDENCIES "")
+  set(${tplName}_FORWARD_TEST_DEFINED_DEPENDENCIES "")
+  # Read in and process the external package/TPL dependency file
+  if (IS_ABSOLUTE "${${tplName}_DEPENDENCIES_FILE}")
+    set(absTplDepsFile "${${tplName}_DEPENDENCIES_FILE}")
+  else()
+    set(absTplDepsFile "${${PROJECT_NAME}_SOURCE_DIR}/${${tplName}_DEPENDENCIES_FILE}")
   endif()
-
-  list(LENGTH ${PROJECT_NAME}_SE_PACKAGES ${PROJECT_NAME}_NUM_SE_PACKAGES)
-  print_var(${PROJECT_NAME}_NUM_SE_PACKAGES)
-
+  if (EXISTS "${absTplDepsFile}")
+    tribits_trace_file_processing(TPL  INCLUDE  "${absTplDepsFile}")
+    include(${absTplDepsFile})
+    foreach(depPkg  IN LISTS  ${tplName}_LIB_DEFINED_DEPENDENCIES)
+      global_set(${tplName}_LIB_DEP_REQUIRED_${depPkg}  FALSE)
+    endforeach()
+    tribits_append_forward_dep_packages(${tplName}  LIB)
+  endif()
 endmacro()
 
 
@@ -202,37 +233,28 @@ endmacro()
 #
 # Usage::
 #
-#  tribits_read_toplevel_package_deps_files_add_to_graph(<packageName>)
+#   tribits_read_toplevel_package_deps_files_add_to_graph(<packageName>)
 #
 # Macro that reads in package dependencies for a top-level package from the
 # file `<packageDir>/cmake/Dependencies.cmake`_ and appends the forward
 # dependencies list vars for packages already read in for this package
-# ``<packageName>``.
+# ``<packageName>`` (see `Variables defining the package dependencies
+# graph`_).
 #
-# Modifies the global variables::
+# It also appends the list variable:
 #
-#   ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES
-#   ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES
-#   ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES
-#   ${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES
-#   ${PACKAGE_NAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES
-#   ${PACKAGE_NAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES
-#   ${PACKAGE_NAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES
-#   ${PACKAGE_NAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES
+#   * `${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES`_
 #
-# It also appends the list variable::
-#
-#   ${PROJECT_NAME}_SE_PACKAGES (old)
-#
-# as for the subpackage dependencies under this top-level package are read in
+# Also, the subpackage dependencies under this top-level package are read in
 # order and then this top-level package is appended and dependencies are
-# dependencies are created for them.
+# created for them.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_read_toplevel_package_deps_files_add_to_graph  PACKAGE_NAME)
 
-  # A) Get ready to read in the contents of this this pakages's Dependencies.cmake file
+  # A) Get ready to read in the contents of this package's Dependencies.cmake
+  # file
 
   tribits_prep_to_read_dependencies(${PACKAGE_NAME})
 
@@ -258,7 +280,7 @@ macro(tribits_read_toplevel_package_deps_files_add_to_graph  PACKAGE_NAME)
 
   # B.2) Process this package's subpackages first *before* finishing this packages!
 
-  tribits_parse_subpackages_append_se_packages_add_options(${PACKAGE_NAME})
+  tribits_parse_subpackages_append_packages_add_options(${PACKAGE_NAME})
 
   tribits_read_package_subpackage_deps_files_add_to_graph(${PACKAGE_NAME})
 
@@ -271,15 +293,15 @@ macro(tribits_read_toplevel_package_deps_files_add_to_graph  PACKAGE_NAME)
 
   # Append the subpackages to the dependencies list if this top-level package
   set(SUBPACKAGE_IDX 0)
-  foreach(TRIBITS_SUBPACKAGE ${${PACKAGE_NAME}_SUBPACKAGES})
+  foreach(TRIBITS_SUBPACKAGE   IN LISTS  ${PACKAGE_NAME}_SUBPACKAGES)
     set(SUBPACKAGE_FULLNAME ${PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
     list(GET ${PACKAGE_NAME}_SUBPACKAGE_OPTREQ ${SUBPACKAGE_IDX} SUBPACKAGE_OPTREQ)
     list(APPEND LIB_${SUBPACKAGE_OPTREQ}_DEP_PACKAGES ${SUBPACKAGE_FULLNAME})
     math(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
   endforeach()
 
-  # Append this package to list of SE packages *after* subpackages are added!
-  list(APPEND ${PROJECT_NAME}_SE_PACKAGES ${PACKAGE_NAME})
+  # Append this package to list of packages *after* subpackages are added!
+  list(APPEND ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES ${PACKAGE_NAME})
 
   # Process this parent package's dependency lists!
   tribits_process_package_dependencies_lists(${PACKAGE_NAME})
@@ -302,33 +324,34 @@ endmacro()
 # Macro that sets to undefined all of the variables that must be set by the
 # `tribits_package_define_dependencies()`_ macro.
 #
-# It also sets to empty the forward dependency list vars::
+# It also sets to empty the forward dependency list vars:
 #
-#    <packageName>_FORWARD_<listType>
+#  * `${PACKAGE_NAME}_FORWARD_LIB_DEFINED_DEPENDENCIES`_
+#  * `${PACKAGE_NAME}_FORWARD_TEST_DEFINED_DEPENDENCIES`_
 #
-# for each of the forward/downstream in `List variables defining the package
-# dependencies graph`_.
+# for each of the forward/downstream package/dependency in `Variables defining
+# the package dependencies graph`_.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_prep_to_read_dependencies  PACKAGE_NAME_IN)
 
+  # Initial vars that must be set in the Dependencies.cmake file
   tribits_declare_undefined(LIB_REQUIRED_DEP_PACKAGES)
   tribits_declare_undefined(LIB_OPTIONAL_DEP_PACKAGES)
   tribits_declare_undefined(TEST_REQUIRED_DEP_PACKAGES)
   tribits_declare_undefined(TEST_OPTIONAL_DEP_PACKAGES)
 
-  tribits_declare_undefined(LIB_REQUIRED_DEP_TPLS "")
-  tribits_declare_undefined(LIB_OPTIONAL_DEP_TPLS "")
-  tribits_declare_undefined(TEST_REQUIRED_DEP_TPLS "")
-  tribits_declare_undefined(TEST_OPTIONAL_DEP_TPLS "")
+  tribits_declare_undefined(LIB_REQUIRED_DEP_TPLS)
+  tribits_declare_undefined(LIB_OPTIONAL_DEP_TPLS)
+  tribits_declare_undefined(TEST_REQUIRED_DEP_TPLS)
+  tribits_declare_undefined(TEST_OPTIONAL_DEP_TPLS)
 
   set(REGRESSION_EMAIL_LIST "") # Allow to be empty
 
-  set(${PACKAGE_NAME_IN}_FORWARD_LIB_REQUIRED_DEP_PACKAGES "")
-  set(${PACKAGE_NAME_IN}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES "")
-  set(${PACKAGE_NAME_IN}_FORWARD_TEST_REQUIRED_DEP_PACKAGES "")
-  set(${PACKAGE_NAME_IN}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES "")
+  # Initialize other vars
+  set(${PACKAGE_NAME_IN}_FORWARD_LIB_DEFINED_DEPENDENCIES "")
+  set(${PACKAGE_NAME_IN}_FORWARD_TEST_DEFINED_DEPENDENCIES "")
 
 endmacro()
 
@@ -343,7 +366,7 @@ endmacro()
 # `tribits_package_define_dependencies()`_ in the file
 # `<packageDir>/cmake/Dependencies.cmake`_ have been set.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_assert_read_dependency_vars  PACKAGE_NAME)
 
@@ -368,7 +391,7 @@ endmacro()
 #
 # Saves off package dependency variables with variable suffix ``_<postfix>``.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_save_off_dependency_vars  POSTFIX)
 
@@ -394,7 +417,7 @@ endmacro()
 # Read back the local package dependency vars from the saved-off vars with
 # suffix ``_<postfix>``.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_read_back_dependencies_vars  POSTFIX)
 
@@ -417,46 +440,62 @@ endmacro()
 #
 #   tribits_process_package_dependencies_lists(<packageName>)
 #
-# Sets up the upstream and downstream/forward package dependency list
-# variables for ``<packageName>`` described in `List variables defining the
-# package dependencies graph`_.  Note that the downstream/forward dependencies
-# of upstream packages on this package ``<packageName>`` are built up
-# incrementally.
+# Sets up the upstream/backward and downstream/forward package dependency list
+# variables for ``<packageName>`` described in `Variables defining the package
+# dependencies graph`_.  Note that the downstream/forward dependencies of
+# upstream packages for this package ``<packageName>`` are built up
+# incrementally.  (The forward dependency list vars are initialized to empty
+# in `tribits_prep_to_read_dependencies()`_.)
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 # 
-macro(tribits_process_package_dependencies_lists  PACKAGE_NAME)
+macro(tribits_process_package_dependencies_lists  packageName)
 
-  tribits_set_dep_packages(${PACKAGE_NAME} LIB  REQUIRED)
-  tribits_set_dep_packages(${PACKAGE_NAME} LIB  OPTIONAL)
-  tribits_set_dep_packages(${PACKAGE_NAME} TEST  REQUIRED)
-  tribits_set_dep_packages(${PACKAGE_NAME} TEST  OPTIONAL)
+  # Initialize backward dep vars
+  set(${packageName}_LIB_DEFINED_DEPENDENCIES "")
+  set(${packageName}_TEST_DEFINED_DEPENDENCIES "")
 
-  set(${PACKAGE_NAME}_LIB_REQUIRED_DEP_TPLS ${LIB_REQUIRED_DEP_TPLS})
-  set(${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS ${LIB_OPTIONAL_DEP_TPLS})
-  set(${PACKAGE_NAME}_TEST_REQUIRED_DEP_TPLS ${TEST_REQUIRED_DEP_TPLS})
-  set(${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS ${TEST_OPTIONAL_DEP_TPLS})
+  # Append the XXX_TPLS list on the end of the XXX_PACKAGES list
+  list(APPEND LIB_REQUIRED_DEP_PACKAGES ${LIB_REQUIRED_DEP_TPLS})
+  list(APPEND LIB_OPTIONAL_DEP_PACKAGES ${LIB_OPTIONAL_DEP_TPLS})
+  list(APPEND TEST_REQUIRED_DEP_PACKAGES ${TEST_REQUIRED_DEP_TPLS})
+  list(APPEND TEST_OPTIONAL_DEP_PACKAGES ${TEST_OPTIONAL_DEP_TPLS})
+  set(LIB_REQUIRED_DEP_TPLS "")
+  set(LIB_OPTIONAL_DEP_TPLS "")
+  set(TEST_REQUIRED_DEP_TPLS "")
+  set(TEST_OPTIONAL_DEP_TPLS "")
 
-  tribits_append_forward_dep_packages(${PACKAGE_NAME} LIB_REQUIRED_DEP_PACKAGES)
-  tribits_append_forward_dep_packages(${PACKAGE_NAME} LIB_OPTIONAL_DEP_PACKAGES)
-  tribits_append_forward_dep_packages(${PACKAGE_NAME} TEST_REQUIRED_DEP_PACKAGES)
-  tribits_append_forward_dep_packages(${PACKAGE_NAME} TEST_OPTIONAL_DEP_PACKAGES)
+  # Fill the backward dependency vars
+  tribits_set_dep_packages(${packageName} LIB  REQUIRED  PACKAGES)
+  tribits_set_dep_packages(${packageName} LIB  OPTIONAL  PACKAGES)
+  tribits_set_dep_packages(${packageName} TEST  REQUIRED  PACKAGES)
+  tribits_set_dep_packages(${packageName} TEST  OPTIONAL  PACKAGES)
+
+  # Fill forward deps lists #63
+  tribits_append_forward_dep_packages(${packageName}  LIB)
+  tribits_append_forward_dep_packages(${packageName}  TEST)
 
 endmacro()
 
 
-# @FUNCTION: tribits_set_dep_packages()
+# @MACRO: tribits_set_dep_packages()
+#
+# Macro set up backward package dependency lists for a given package given the
+# vars read in from the macro `tribits_package_define_dependencies()`_.
 #
 # Usage::
 #
-#   tribits_set_dep_packages(<packageName>  LIB|TEST  REQUIRED|OPTIONAL)
+#   tribits_set_dep_packages(<packageName> <testOrLib> <requiredOrOptional> <pkgsOrTpls>)
 #
-# Function that helps to set up backward package dependency lists for a given
-# package given the vars read in from the macro
-# `tribits_package_define_dependencies()`_.
+# where:
 #
-# Sets the upstream/backward dependency variables defined in the section `List
-# variables defining the package dependencies graph`_.
+# * ``<testOrLib>``: ``LIB`` or ``TEST``
+# * ``<requiredOrOptional>``: ``REQUIRED`` or ``OPTIONAL``
+# * ``<pkgsOrTpls>``: ``PACKAGES`` or ``TPLS``
+#
+#
+# Sets the upstream/backward dependency variables defined in the section
+# `Variables defining the package dependencies graph`_.
 #
 # This also handles the several types of issues:
 #
@@ -467,124 +506,143 @@ endmacro()
 #   `tribits_abort_on_missing_package()`_ or allow to be missing and disable
 #   this package if this is a required dependency).
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
-function(tribits_set_dep_packages  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIONAL)
+macro(tribits_set_dep_packages  packageName  testOrLib  requiredOrOptional  pkgsOrTpls)
 
-  if (TRIBITS_SET_DEP_PACKAGES_DEBUG_DUMP)
-    message("\nTRIBITS_SET_DEP_PACKAGES:  ${PACKAGE_NAME}  ${LIB_OR_TEST}  ${REQUIRED_OR_OPTIONAL})")
-  endif()
+  set(inputListType  ${testOrLib}_${requiredOrOptional}_DEP_${pkgsOrTpls})
+  set(packageEnableVar  ${PROJECT_NAME}_ENABLE_${packageName})
 
-  set(LIST_TYPE  ${LIB_OR_TEST}_${REQUIRED_OR_OPTIONAL}_DEP_PACKAGES)
-  set(PACKAGE_DEPS_LIST)
-  set(SE_PACKAGE_ENABLE_VAR  ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
-
-  foreach(DEP_PKG ${${LIST_TYPE}})
-    if (TRIBITS_SET_DEP_PACKAGES_DEBUG_DUMP)
-      print_var(DEP_PKG)
+  foreach(depPkg  IN LISTS  ${inputListType})
+    if (${depPkg} STREQUAL ${packageName})
+      tribits_abort_on_self_dep("${packageName}" "${inputListType}")
     endif()
-    if (${DEP_PKG} STREQUAL ${PACKAGE_NAME})
-      tribits_abort_on_self_dep("${PACKAGE_NAME}" "${LIST_TYPE}")
-    endif()
-    if (${DEP_PKG}_SOURCE_DIR)
-      set(DEP_PKG_DEFINED_AND_EXISTS TRUE)
-    else()
-      set(DEP_PKG_DEFINED_AND_EXISTS FALSE)
-    endif()
-    if (TRIBITS_SET_DEP_PACKAGES_DEBUG_DUMP)
-      print_var(DEP_PKG_DEFINED_AND_EXISTS)
-    endif()
-    if (DEP_PKG_DEFINED_AND_EXISTS)
-      list(APPEND PACKAGE_DEPS_LIST ${DEP_PKG})
-    else()
-      if (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES
-          AND NOT ${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE
-        )
-        tribits_abort_on_missing_package(
-          "${DEP_PKG}" "${PACKAGE_NAME}" "${PROJECT_NAME}_SE_PACKAGES")
+    tribits_is_pkg_defined(${depPkg} depPkgIsDefined)
+    if (depPkgIsDefined)
+      list(APPEND ${packageName}_${testOrLib}_DEFINED_DEPENDENCIES ${depPkg})
+      if ("${requiredOrOptional}"  STREQUAL  "REQUIRED")
+        global_set(${packageName}_${testOrLib}_DEP_REQUIRED_${depPkg}  TRUE)
+      elseif ("${requiredOrOptional}"  STREQUAL  "OPTIONAL")
+        global_set(${packageName}_${testOrLib}_DEP_REQUIRED_${depPkg}  FALSE)
       else()
-        if (${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE)
-          if (${PROJECT_NAME}_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES)
-            message_wrapper("NOTE: ${DEP_PKG} is being ignored since its directory"
-              " is missing and ${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE ="
-              " ${${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE}!")
-          endif()
-          if (REQUIRED_OR_OPTIONAL STREQUAL "REQUIRED")
-            message_wrapper("NOTE: Setting ${SE_PACKAGE_ENABLE_VAR}=OFF because"
-              " package ${PACKAGE_NAME} has a required dependency on missing"
-              " package ${DEP_PKG}!")
-            dual_scope_set(${SE_PACKAGE_ENABLE_VAR} OFF)
-          endif()
-        endif()
-        if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-          message(
-            "\n***"
-            "\n*** NOTE: The package ${DEP_PKG} which is a dependent package of"
-              " ${PACKAGE_NAME} being ignored because ${DEP_PKG} is missing!"
-            "\n***\n" )
-        endif()
-        # Must set enable vars for missing package to off so that logic in
-        # existing downstream packages that key off of these vars will still
-        # work.
-        dual_scope_set(${PROJECT_NAME}_ENABLE_${DEP_PKG} OFF)
-        dual_scope_set(${PACKAGE_NAME}_ENABLE_${DEP_PKG} OFF)
+        message(FATAL_ERROR
+          "Invalid value for requiredOrOptional='${requiredOrOptional}'!")
       endif()
+    else()
+      tribits_set_dep_packages__handle_undefined_pkg(${packageName} ${depPkg}
+        ${requiredOrOptional} ${pkgsOrTpls} ${packageEnableVar})
     endif()
   endforeach()
 
-  #print_var(PACKAGE_DEPS_LIST)
+endmacro()
 
-  global_set(${PACKAGE_NAME}_${LIST_TYPE} ${PACKAGE_DEPS_LIST})
 
+# Determine if a (internal or external) package is defined or not
+#
+function(tribits_is_pkg_defined  depPkg    depPkgIsDefinedOut)
+  set(depPkgIsDefined  FALSE)
+  if (${depPkg}_SOURCE_DIR)
+    set(depPkgIsDefined  TRUE)
+  elseif(${depPkg}_FINDMOD)
+    set(depPkgIsDefined  TRUE)
+  endif()
+  set(${depPkgIsDefinedOut} ${depPkgIsDefined} PARENT_SCOPE)
 endfunction()
 
 
-# @FUNCTION: tribits_append_forward_dep_packages()
+# Implementation macro for tribits_set_dep_packages() to deal with a package
+# that is not defined by TriBITS.
 #
-# Usage: tribits_append_forward_dep_packages(<packageName> <listType>)
+# ToDo #63: This may need to be modified when dealing with TriBITS-compliant
+# packages already installed out on the system.  We may need a mode where we
+# don't assert packages that are not defined but instead just assume they are
+# TriBITS-compliant packages already installed.
 #
-# Function that helps to set up forward package dependency lists for an
-# upstream package given that a downstream package declared a dependency on
-# it.  In particular, it appends the var::
+macro(tribits_set_dep_packages__handle_undefined_pkg  packageName  depPkg
+    requiredOrOptional  pkgsOrTpls  packageEnableVar
+  )
+  # Determine if it is allowed for this depPkg to not be defined
+  set(errorOutForUndefinedDepPkg  TRUE)
+  if (${depPkg}_ALLOW_MISSING_EXTERNAL_PACKAGE)
+    set(errorOutForUndefinedDepPkg  FALSE)
+  elseif (NOT  ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  IN_LIST
+      ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_ERROR_VALUES_LIST
+    )
+    set(errorOutForUndefinedDepPkg  FALSE)
+  endif()
+  # Produce error or deal with allowed undefined ${depPkg}
+  if (errorOutForUndefinedDepPkg)
+    tribits_abort_on_missing_package("${depPkg}" "${packageName}")
+  else()
+    if (${depPkg}_ALLOW_MISSING_EXTERNAL_PACKAGE)
+      if (${PROJECT_NAME}_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES)
+        message_wrapper("NOTE: ${depPkg} is being ignored since its directory"
+          " is missing and ${depPkg}_ALLOW_MISSING_EXTERNAL_PACKAGE ="
+          " ${${depPkg}_ALLOW_MISSING_EXTERNAL_PACKAGE}!")
+      endif()
+      if ("${requiredOrOptional}" STREQUAL "REQUIRED")
+        message_wrapper("NOTE: Setting ${packageEnableVar}=OFF because"
+          " package ${packageName} has a required dependency on missing"
+          " package ${depPkg}!")
+        set(${packageEnableVar} OFF)
+      endif()
+    endif()
+    # Must set enable vars for missing package to off so that logic in
+    # existing downstream packages that key off of these vars will still
+    # work.
+    set(${PROJECT_NAME}_ENABLE_${depPkg} OFF)
+    set(${packageName}_ENABLE_${depPkg} OFF)
+  endif()
+endmacro()
+
+
+# @MACRO: tribits_append_forward_dep_packages()
+#
+# Appends forward/downstream package dependency lists for the upstream
+# dependent package list provided.
+#
+# Usage::
+#
+#   tribits_append_forward_dep_packages(<packageName> <listType>)
+#
+# In particular, it appends the var::
 #
 #    <packageName>_FORWARD_<listType>
 #
-# for one of the vars listed in `List variables defining the package
-# dependencies graph`_.
+# for one of the vars listed in `Variables defining the package dependencies
+# graph`_.
 #
 # This function is called multiple times to build up the forward package
 # dependencies for a given ``<packageName>`` by the downstream packages that
 # declare dependencies on it.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
-function(tribits_append_forward_dep_packages PACKAGE_NAME LIST_TYPE)
+macro(tribits_append_forward_dep_packages  packageName  libOrTest)
 
-  set(DEP_PKG_LIST_NAME "${PACKAGE_NAME}_${LIST_TYPE}")
-
-  assert_defined(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
-  foreach(DEP_PKG ${${DEP_PKG_LIST_NAME}})
-    set(FWD_DEP_PKG_LIST_NAME "${DEP_PKG}_FORWARD_${LIST_TYPE}")
-    if (NOT DEFINED ${FWD_DEP_PKG_LIST_NAME})
-      if (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
-        tribits_abort_on_missing_package(${DEP_PKG} ${PACKAGE_NAME} ${DEP_PKG_LIST_NAME})
+  foreach(depPkg  IN LISTS  ${packageName}_${libOrTest}_DEFINED_DEPENDENCIES)
+    set(fwdDepPkgListName ${depPkg}_FORWARD_${libOrTest}_DEFINED_DEPENDENCIES)
+    if (DEFINED ${fwdDepPkgListName})
+      list(APPEND ${fwdDepPkgListName} ${packageName})
+    else()
+      if (${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  IN_LIST
+          ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_ERROR_VALUES_LIST
+        )
+        tribits_abort_on_missing_package(${depPkg} ${packageName})
       else()
         if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           message(
             "\n***"
-            "\n*** NOTE: The package ${DEP_PKG} has forward dependent package"
-              " ${PACKAGE_NAME}, but that dependency is being ignored because the package"
-              " ${DEP_PKG} is missing!"
+            "\n*** NOTE: The package ${depPkg} has forward dependent package"
+              " ${packageName}, but that dependency is being ignored because the package"
+              " ${depPkg} is missing!"
             "\n***\n" )
         endif()
       endif()
-    else()
-      set(${FWD_DEP_PKG_LIST_NAME} ${${FWD_DEP_PKG_LIST_NAME}} ${PACKAGE_NAME}
-        PARENT_SCOPE)
     endif()
   endforeach()
 
-endfunction()
+endmacro()
 
 
 # @MACRO: tribits_set_package_regression_email_list()
@@ -596,9 +654,9 @@ endfunction()
 # Macro that sets a pacakge's regression email address
 # ``${PACKAGE_NAME}_REGRESSION_EMAIL_LIST`` as described in ???.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
-macro(tribits_set_package_regression_email_list PACKAGE_NAME)
+macro(tribits_set_package_regression_email_list  PACKAGE_NAME)
 
   # Lower-case package name To be used with auto email naming based on base email address
   string(TOLOWER "${PACKAGE_NAME}" LPACKAGE)
@@ -607,7 +665,6 @@ macro(tribits_set_package_regression_email_list PACKAGE_NAME)
   endif()
 
   tribits_get_repo_name(${${PACKAGE_NAME}_PARENT_REPOSITORY} REPOSITORY_NAME)
-  #print_var(REPOSITORY_NAME)
 
   if(${REPOSITORY_NAME}_REPOSITORY_OVERRIDE_PACKAGE_EMAIL_LIST)
     set(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST
@@ -641,25 +698,28 @@ endmacro()
 #
 # Usage::
 #
-#   tribits_abort_on_missing_package(<depPkg>  <packageName> <depPkgListName>)
+#   tribits_abort_on_missing_package(<depPkg>  <packageName>)
 #
 # Function that creates error message about missing/misspelled package.  This
 # error message also suggests that the package might be defining an upstream
 # dependency on a downstream dependency (i.e. a circular dependency).
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
-function(tribits_abort_on_missing_package   DEP_PKG  PACKAGE_NAME  DEP_PKG_LIST_NAME)
+function(tribits_abort_on_missing_package   depPkg  packageName)
   multiline_set(ERRMSG
-    "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
-    " '${PACKAGE_NAME}' is in the list '${DEP_PKG_LIST_NAME}' but the package"
-    " '${DEP_PKG}' is either not defined or is listed later in the package order."
+    "Error, the package '${depPkg}' is listed as a dependency of the package"
+    " '${packageName}' but the package '${depPkg}' is either not defined or"
+    " is listed later in the package order."
     "  This may also be an attempt to create a circular dependency between"
-    " the packages '${DEP_PKG}' and '${PACKAGE_NAME}' (which is not allowed)."
-    "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
+    " the packages '${depPkg}' and '${packageName}' (which is not allowed)."
+    "  Check the spelling of '${depPkg}' or see how it is listed in"
     " a call to tribits_repository_define_packages() in relation to"
-    " '${PACKAGE_NAME}'.")
-  message(FATAL_ERROR ${ERRMSG})
+    " '${packageName}'."
+    "  To ignore/disable the undefined package '${depPkg}', set the cache"
+    " variable ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES=IGNORE."
+    )
+  message(${${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES} "${ERRMSG}")
 endfunction()
 
 
@@ -672,7 +732,7 @@ endfunction()
 # Prints a fatal error message for an attempt for a self dependency
 # declaration and which list it comes from.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 function(tribits_abort_on_self_dep  PACKAGE_NAME  DEP_PKG_LIST_NAME)
   multiline_set(ERRMSG
@@ -687,18 +747,19 @@ endfunction()
 ################################################################################
 
 
-# @MACRO: tribits_parse_subpackages_append_se_packages_add_options()
+# @MACRO: tribits_parse_subpackages_append_packages_add_options()
 #
 # Usage::
 #
-#   tribits_parse_subpackages_append_se_packages_add_options(<toplevelPackageName>)
+#   tribits_parse_subpackages_append_packages_add_options(<parentPackageName>)
 #
 # Macro that parses the read-in variable
 # ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` set by the macro
-# `tribits_package_define_dependencies()`_ , add subpackages to the list of
-# defined packages, and define user cache var options for those subpackages.
+# `tribits_package_define_dependencies()`_ , adds subpackages to the list of
+# defined packages, and defines user cache var options for those subpackages.
 #
-# This sets the list variables for the parent package ``<toplevelPackageName>``::
+# This sets the list variables for the parent package
+# ``<parentPackageName>``::
 #
 #   <parentPackageName>_SUBPACKAGES
 #   <parentPackageName>_SUBPACKAGE_DIRS
@@ -711,117 +772,108 @@ endfunction()
 #   <subpackageFullName>_PARENT_PACKAGE
 #   <subpackageFullName>_PARENT_REPOSITORY
 #
-# And it appends for each subpackage to variable::
+# And it appends each subpackage to the list variable:
 #
-#   ${PROJECT_NAME}_SE_PACKAGES (old)
+#   * `${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES`_
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
-macro(tribits_parse_subpackages_append_se_packages_add_options
-  PACKAGE_NAME
-  )
+macro(tribits_parse_subpackages_append_packages_add_options  parentPackageName)
 
-  #message("TRIBITS_PARSE_SUBPACKAGES_APPEND_SE_PACKAGES_ADD_OPTIONS: ${PACKAGE_NAME}")
-
-  # Structure of SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+  # Fields in the list var SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   set(SPDC_SP_NAME_OFFSET 0)
   set(SPDC_SP_DIR_OFFSET 1)
   set(SPDC_SP_CLASSIFICATION_OFFSET 2)
   set(SPDC_SP_OPTREQ_OFFSET 3)
-  set(SPDC_NUM_FIELDS 4)
+  set(SPDC_NUM_FIELDS 4) # Number of the above files
 
-  set(${PACKAGE_NAME}_SUBPACKAGES "")
-  set(${PACKAGE_NAME}_SUBPACKAGE_DIRS "")
-  set(${PACKAGE_NAME}_SUBPACKAGE_OPTREQ "")
+  set(${parentPackageName}_SUBPACKAGES "")
+  set(${parentPackageName}_SUBPACKAGE_DIRS "")
+  set(${parentPackageName}_SUBPACKAGE_OPTREQ "")
 
   if (SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS)
 
-    list(LENGTH SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS SPDC_TOTAL_LENGTH)
-    math(EXPR NUM_SUBPACKAGES "${SPDC_TOTAL_LENGTH}/${SPDC_NUM_FIELDS}")
-    math(EXPR SUBPACKAGES_LAST_IDX "${NUM_SUBPACKAGES}-1")
+    list(LENGTH  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS  SPDC_TOTAL_LENGTH)
+    math(EXPR  numSubpackages  "${SPDC_TOTAL_LENGTH}/${SPDC_NUM_FIELDS}")
+    math(EXPR  subpackagesLastIdx  "${numSubpackages}-1")
 
-    foreach(SUBPACKAGE_IDX RANGE ${SUBPACKAGES_LAST_IDX})
+    foreach(SUBPACKAGE_IDX  RANGE  ${subpackagesLastIdx})
 
-      #message("")
-      #print_var(SUBPACKAGE_IDX)
-
-      # SUBPACKAGE_NAME
-      math(EXPR SUBPACKAGE_NAME_IDX
+      # subpkgName
+      math(EXPR  subpkgNameIdx
         "${SUBPACKAGE_IDX}*${SPDC_NUM_FIELDS}+${SPDC_SP_NAME_OFFSET}")
-      list(GET SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${SUBPACKAGE_NAME_IDX}
-        SUBPACKAGE_NAME )
+      list(GET  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${subpkgNameIdx} subpkgName)
 
-      set(SUBPACKAGE_FULLNAME ${PACKAGE_NAME}${SUBPACKAGE_NAME})
+      # subpkgFullname
+      set(subpkgFullname ${parentPackageName}${subpkgName})
 
-      # SUBPACKAGE_DIR
-      math(EXPR SUBPACKAGE_DIR_IDX
+      # subpkgDir
+      math(EXPR  subpkgDirIdx
         "${SUBPACKAGE_IDX}*${SPDC_NUM_FIELDS}+${SPDC_SP_DIR_OFFSET}")
-      list(GET SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${SUBPACKAGE_DIR_IDX}
-        SUBPACKAGE_DIR )
+      list(GET  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${subpkgDirIdx} subpkgDir)
 
-      # SUBPACKAGE_CLASSIFICATION
-      math(EXPR SUBPACKAGE_CLASSIFICATION_IDX
+      # subpkgClassification
+      math(EXPR  subpkgClassificationIdx
         "${SUBPACKAGE_IDX}*${SPDC_NUM_FIELDS}+${SPDC_SP_CLASSIFICATION_OFFSET}")
-      list(GET SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${SUBPACKAGE_CLASSIFICATION_IDX}
-        SUBPACKAGE_CLASSIFICATION )
+      list(GET  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${subpkgClassificationIdx}
+        subpkgClassification )
 
       # ToDo: Parse out TESTGROUP and MATURITYLEVEL (Trilinos #6042)
-      set(SUBPACKAGE_TESTGROUP ${SUBPACKAGE_CLASSIFICATION})
+      set(subpkgTestgroup ${subpkgClassification})
 
-      tribits_update_ps_pt_ss_st(Subpackage ${SUBPACKAGE_FULLNAME} SUBPACKAGE_TESTGROUP)
+      tribits_update_ps_pt_ss_st(Subpackage ${subpkgFullname} subpkgTestgroup)
 
-      # SUBPACKAGE_OPTREQ
-      math(EXPR SUBPACKAGE_OPTREQ_IDX
+      # subpkgOptreq
+      math(EXPR  subpkgOptreqIdx
         "${SUBPACKAGE_IDX}*${SPDC_NUM_FIELDS}+${SPDC_SP_OPTREQ_OFFSET}")
-      list(GET SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${SUBPACKAGE_OPTREQ_IDX}
-        SUBPACKAGE_OPTREQ )
+      list(GET  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS ${subpkgOptreqIdx}
+        subpkgOptreq )
 
       # Determine if this subpackage exists
-      set(SUBPACKAGE_FULL_SOURCE_DIR
-        ${PROJECT_SOURCE_DIR}/${${PACKAGE_NAME}_REL_SOURCE_DIR}/${SUBPACKAGE_DIR})
-      if (EXISTS ${SUBPACKAGE_FULL_SOURCE_DIR})
-         set(SUBPACKAGE_EXISTS TRUE)
+      set(subpkgFullSrcDir
+        "${PROJECT_SOURCE_DIR}/${${parentPackageName}_REL_SOURCE_DIR}/${subpkgDir}")
+      if (EXISTS "${subpkgFullSrcDir}")
+         set(subpkgExists TRUE)
       else()
-         set(SUBPACKAGE_EXISTS FALSE)
+         set(subpkgExists FALSE)
       endif()
 
-      if (NOT SUBPACKAGE_EXISTS AND ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
-         message(SEND_ERROR "ERROR: Subpackage dir '${SUBPACKAGE_FULL_SOURCE_DIR}'"
-           " is missing!")
+      if (NOT  subpkgExists  AND  ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  IN_LIST
+          ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_ERROR_VALUES_LIST
+         )
+         message(SEND_ERROR "ERROR: Subpackage dir '${subpkgFullSrcDir}' is missing!")
       endif()
 
       # Append to lists and global variables
 
-      if (SUBPACKAGE_EXISTS)
+      if (subpkgExists)
 
-        list(APPEND ${PACKAGE_NAME}_SUBPACKAGES ${SUBPACKAGE_NAME})
-        list(APPEND ${PACKAGE_NAME}_SUBPACKAGE_DIRS ${SUBPACKAGE_DIR})
-        list(APPEND ${PACKAGE_NAME}_SUBPACKAGE_OPTREQ ${SUBPACKAGE_OPTREQ})
-        list(APPEND ${PROJECT_NAME}_SE_PACKAGES ${SUBPACKAGE_FULLNAME})
-        set(${SUBPACKAGE_FULLNAME}_SOURCE_DIR "${SUBPACKAGE_FULL_SOURCE_DIR}")
-        set(${SUBPACKAGE_FULLNAME}_REL_SOURCE_DIR
-          "${${PACKAGE_NAME}_REL_SOURCE_DIR}/${SUBPACKAGE_DIR}")
-        set(${SUBPACKAGE_FULLNAME}_PARENT_PACKAGE ${PACKAGE_NAME})
-        set(${SUBPACKAGE_FULLNAME}_PARENT_REPOSITORY
-          ${${PACKAGE_NAME}_PARENT_REPOSITORY})
+        list(APPEND ${parentPackageName}_SUBPACKAGES ${subpkgName})
+        list(APPEND ${parentPackageName}_SUBPACKAGE_DIRS ${subpkgDir})
+        list(APPEND ${parentPackageName}_SUBPACKAGE_OPTREQ ${subpkgOptreq})
+        list(APPEND ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES ${subpkgFullname})
+        set(${subpkgFullname}_SOURCE_DIR "${subpkgFullSrcDir}")
+        set(${subpkgFullname}_REL_SOURCE_DIR
+          "${${parentPackageName}_REL_SOURCE_DIR}/${subpkgDir}")
+        set(${subpkgFullname}_PARENT_PACKAGE ${parentPackageName})
+        set(${subpkgFullname}_PARENT_REPOSITORY
+          ${${parentPackageName}_PARENT_REPOSITORY})
 
         if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-          print_var(${SUBPACKAGE_FULLNAME}_PARENT_PACKAGE)
-          print_var(${SUBPACKAGE_FULLNAME}_PARENT_REPOSITORY)
+          print_var(${subpkgFullname}_PARENT_PACKAGE)
+          print_var(${subpkgFullname}_PARENT_REPOSITORY)
         endif()
 
+        set(${subpkgFullname}_PACKAGE_BUILD_STATUS INTERNAL)
+
         # Set up the input options for this subpackage
-        tribits_insert_standard_package_options(${SUBPACKAGE_FULLNAME}
-          ${SUBPACKAGE_TESTGROUP})
+        tribits_insert_standard_package_options(${subpkgFullname} ${subpkgTestgroup})
 
       endif()
 
     endforeach()
 
   endif()
-
-  #print_var(${PACKAGE_NAME}_SUBPACKAGES)
-  #print_var(${PACKAGE_NAME}_SUBPACKAGE_OPTREQ)
 
 endmacro()
 
@@ -835,16 +887,12 @@ endmacro()
 # Read in subpackages dependencies files and add to dependencies graph
 # variables.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_read_package_subpackage_deps_files_add_to_graph  PACKAGE_NAME)
 
-  #message("TRIBITS_READ_PACKAGE_SUBPACKAGE_DEPS_FILES_ADD_TO_GRAPH: ${PACKAGE_NAME}")
-
-  #print_var(${PROJECT_NAME}_SE_PACKAGES)
-
   set(SUBPACKAGE_IDX 0)
-  foreach(TRIBITS_SUBPACKAGE ${${PACKAGE_NAME}_SUBPACKAGES})
+  foreach(TRIBITS_SUBPACKAGE  IN LISTS  ${PACKAGE_NAME}_SUBPACKAGES)
     list(GET ${PACKAGE_NAME}_SUBPACKAGE_DIRS ${SUBPACKAGE_IDX} SUBPACKAGE_DIR)
     tribits_read_subpackage_deps_file_add_to_graph(${TRIBITS_PACKAGE}
       ${TRIBITS_SUBPACKAGE}  ${SUBPACKAGE_DIR})
@@ -865,13 +913,11 @@ endmacro()
 # `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_ and sets up the
 # dependency structure for it.
 #
-# See `Function call tree for constructing package dependency graph`_
+# See `Function call tree for constructing package dependency graph`_.
 #
 macro(tribits_read_subpackage_deps_file_add_to_graph  PACKAGE_NAME
   SUBPACKAGE_NAME  SUBPACKAGE_DIR
   )
-
-  #message("TRIBITS_READ_SUBPACKAGE_DEPS_FILE_ADD_TO_GRAPH: ${PACKAGE_NAME} ${SUBPACKAGE_NAME} ${SUBPACKAGE_DIR}")
 
   set(SUBPACKAGE_FULLNAME ${PACKAGE_NAME}${SUBPACKAGE_NAME})
 
@@ -902,7 +948,9 @@ macro(tribits_read_subpackage_deps_file_add_to_graph  PACKAGE_NAME
     set(SUBPACKAGE_EXISTS FALSE)
   endif()
 
-  if (SUBPACKAGE_EXISTS OR ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
+  if (SUBPACKAGE_EXISTS  OR  ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  IN_LIST
+      ${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES_ERROR_VALUES_LIST
+    )
 
     tribits_trace_file_processing(PACKAGE  INCLUDE  "${SUBPAKCAGE_DEPENDENCIES_FILE}")
     include(${SUBPAKCAGE_DEPENDENCIES_FILE})
@@ -910,6 +958,8 @@ macro(tribits_read_subpackage_deps_file_add_to_graph  PACKAGE_NAME
     tribits_assert_read_dependency_vars(${SUBPACKAGE_FULLNAME})
 
     tribits_process_package_dependencies_lists(${SUBPACKAGE_FULLNAME})
+
+    set(${SUBPACKAGE_FULLNAME}_IS_TRIBITS_COMPLIANT TRUE)
 
     set(${SUBPACKAGE_FULLNAME}_REGRESSION_EMAIL_LIST
       ${${PACKAGE_NAME}_REGRESSION_EMAIL_LIST})

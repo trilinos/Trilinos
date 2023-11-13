@@ -49,17 +49,13 @@
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <vector>                       // for vector, etc
 
-
-
-
-using stk::mesh::MetaData;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::Entity;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityProc;
-using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::simple_fields::RingFixture;
 
 namespace {
 
@@ -96,7 +92,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
 
   Selector select_owned( meta.locally_owned_part() );
   Selector select_used = meta.locally_owned_part() |
-                         meta.globally_shared_part();
+      meta.globally_shared_part();
   Selector select_all(  meta.universal_part() );
 
   std::vector<size_t> local_count;
@@ -108,7 +104,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
   get_entities( bulk, NODE_RANK, all_nodes);
 
   unsigned num_selected_nodes =
-    count_selected_entities( select_used, bulk.buckets(NODE_RANK) );
+      count_selected_entities( select_used, bulk.buckets(NODE_RANK) );
   ASSERT_EQ( num_selected_nodes , local_count[NODE_RANK] );
 
   std::vector<Entity> universal_nodes;
@@ -197,7 +193,7 @@ void test_shift_ring( RingFixture& ring )
   const unsigned id_recv = ( id_begin + id_total - 2 ) % id_total ;
 
   Selector select_used = meta.locally_owned_part() |
-                         meta.globally_shared_part();
+      meta.globally_shared_part();
 
   std::vector<size_t> local_count ;
   std::vector<EntityProc> change ;

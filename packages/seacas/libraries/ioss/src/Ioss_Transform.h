@@ -1,23 +1,23 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Transform_h
-#define IOSS_Ioss_Transform_h
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
-#include <functional> // for less
-#include <map>        // for map, map<>::value_compare
-#include <string>     // for string
-#include <vector>     // for vector
+
+#include <string>
+#include <vector>
 
 namespace Ioss {
   class Field;
   class VariableType;
 
-  class Transform
+  class IOSS_EXPORT Transform
   {
   public:
     virtual ~Transform();
@@ -37,27 +37,3 @@ namespace Ioss {
     virtual bool internal_execute(const Ioss::Field &field, void *data) = 0;
   };
 } // namespace Ioss
-
-namespace Iotr {
-  class Factory;
-  using FactoryMap = std::map<std::string, Factory *, std::less<std::string>>;
-
-  class Factory
-  {
-  public:
-    virtual ~Factory() = default;
-    static Ioss::Transform *create(const std::string &type);
-
-    static int describe(Ioss::NameList *names);
-
-  protected:
-    explicit Factory(const std::string &type);
-    virtual Ioss::Transform *make(const std::string &) const = 0;
-    static void              alias(const std::string &base, const std::string &syn);
-
-  private:
-    static FactoryMap *registry();
-  };
-} // namespace Iotr
-
-#endif // IOSS_Ioss_Transform_h

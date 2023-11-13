@@ -54,30 +54,17 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
-//#include "Intrepid2_CubatureDirectLineGauss.hpp"
-//#include "Intrepid2_FunctionSpaceTools.hpp"
-
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+
 namespace Intrepid2 {
 
 namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
 
 template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
@@ -95,10 +82,10 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
 
   using DeviceSpaceType = typename DeviceType::execution_space;
   typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      Kokkos::DefaultHostExecutionSpace HostSpaceType ;
 
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
 
   *outStream
   << "===============================================================================\n"
@@ -125,8 +112,6 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;      
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;      
-
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
 
   const scalar_type tol = tolerence();
   int errorFlag = 0;
@@ -321,7 +306,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order, POINTTYPE_WARPBLEND);
     constexpr ordinal_type dim=3;
     const ordinal_type basisCardinality = hexBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, basisCardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, basisCardinality , dim);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, basisCardinality , dim);
 
     hexBasis.getDofCoords(lattice_scalar);
@@ -425,7 +410,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   // GRAD and D1 values are stored in (F,P,D) format in a data file. Read file and do the test
   std::vector<scalar_type> basisGrads;           // Flat array for the gradient values.
   {
-    fileName = "../testdata/HEX_C2_GradVals.dat";
+    fileName = "./testdata/HEX_C2_GradVals.dat";
     dataFile.open(fileName.c_str());
     INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
         ">>> ERROR (HGRAD_HEX_C2/test01): could not open GRAD values data file, test aborted.");
@@ -445,7 +430,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   //D2: flat array with the values of D2 applied to basis functions. Multi-index is (F,P,D2cardinality)
   std::vector<scalar_type> basisD2;
   {
-    fileName = "../testdata/HEX_C2_D2Vals.dat";
+    fileName = "./testdata/HEX_C2_D2Vals.dat";
     dataFile.open(fileName.c_str());
     INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
         ">>> ERROR (HGRAD_HEX_C2/test01): could not open D2 values data file, test aborted.");
@@ -465,7 +450,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   //D3: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D3cardinality)
   std::vector<scalar_type> basisD3;
   {
-    fileName = "../testdata/HEX_C2_D3Vals.dat";
+    fileName = "./testdata/HEX_C2_D3Vals.dat";
     dataFile.open(fileName.c_str());
     TEUCHOS_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
         ">>> ERROR (HGRAD_HEX_C2/test01): could not open D3 values data file, test aborted.");
@@ -486,7 +471,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   //D4: flat array with the values of D applied to basis functions. Multi-index is (F,P,D4cardinality)
   std::vector<scalar_type> basisD4;
   {
-    fileName = "../testdata/HEX_C2_D4Vals.dat";
+    fileName = "./testdata/HEX_C2_D4Vals.dat";
     dataFile.open(fileName.c_str());
     TEUCHOS_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
         ">>> ERROR (HGRAD_HEX_C2/test01): could not open D4 values data file, test aborted.");
@@ -509,7 +494,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     if(order < maxOrder) {
       HexBasisType hexBasis(order);
 
-      DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 27, 3);
+      DynRankViewHostScalarValueType ConstructWithLabel(hexNodesHost, 27, 3);
       DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 27, 3);
       
 

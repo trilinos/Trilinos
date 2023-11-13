@@ -135,6 +135,11 @@ struct RealT<double> {
   typedef double type;
 };
 
+template <>
+struct RealT<long double> {
+  typedef long double type;
+};
+
 // simd type from base type
 
 template <typename T>

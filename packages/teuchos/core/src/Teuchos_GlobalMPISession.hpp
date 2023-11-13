@@ -263,7 +263,7 @@ public:
    */
   static void allGather(int localVal, const ArrayView<int> &allVals);
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
   /// \brief Fetch a deep copy of the input arguments to \c main()
   ///   (that is, \c argv), as given to GlobalMPISession's
   ///   constructor.
@@ -272,7 +272,7 @@ public:
   ///   yet, return an empty vector.  Else, return the input
   ///   arguments.
   static std::vector<std::string> getArgv ();
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
   //@}
 
 private:
@@ -281,7 +281,7 @@ private:
   static bool mpiIsFinalized_;
   static int rank_;
   static int nProc_;
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
   /// \brief Deep copy of the input arguments.
   ///
   /// This is useful if we want to call Kokkos::initialize later with
@@ -290,7 +290,7 @@ private:
   /// after calling this object's constructor.  That could mess up
   /// indexing if we just keep a pointer to the original.
   static std::vector<std::string> argvCopy_;
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
   static void initialize( std::ostream *out );
 

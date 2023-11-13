@@ -51,6 +51,14 @@
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
+// This is not as general as possible, but should be good enough for most builds.
+#if((defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+    (!defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)) || \
+    (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)))
+# define MUELU_CAN_USE_MIXED_PRECISION
+#endif
+
+
 namespace Thyra {
 
   using Teuchos::RCP;
@@ -72,8 +80,10 @@ namespace Thyra {
   bool MueLuRefMaxwellPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isCompatible(const LinearOpSourceBase<Scalar>& fwdOpSrc) const {
     const RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc.getOp();
 
-#ifdef HAVE_MUELU_TPETRA
     if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isTpetra(fwdOp)) return true;
+
+#ifdef HAVE_MUELU_EPETRA
+    if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
 #endif
 
     return false;
@@ -92,15 +102,13 @@ namespace Thyra {
     // we are using typedefs here, since we are using objects from different packages (Xpetra, Thyra,...)
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
-    typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
     typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
     typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
     typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
     typedef Xpetra::TpetraHalfPrecisionOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpHalfPrecOp;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMV;
     typedef typename XpHalfPrecOp::HalfScalar                                     HalfScalar;
-    typedef Xpetra::Operator<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>          XpHalfOp;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType                 Magnitude;
     typedef typename Teuchos::ScalarTraits<Magnitude>::halfPrecision              HalfMagnitude;
     typedef Xpetra::MultiVector<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>       XphMV;
@@ -127,15 +135,9 @@ namespace Thyra {
     bool bIsTpetra  = XpThyUtils::isTpetra(fwdOp);
     TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == true  && bIsTpetra == true));
 
-    RCP<const XpCrsMat > xpetraFwdCrsMat = XpThyUtils::toXpetra(fwdOp);
-    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat));
-
-    // MueLu needs a non-const object as input
-    RCP<XpCrsMat> xpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<XpCrsMat>(xpetraFwdCrsMat);
-    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMatNonConst));
-
     // wrap the forward operator as an Xpetra::Matrix that MueLu can work with
-    RCP<XpMat> A = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xpetraFwdCrsMatNonConst));
+    // MueLu needs a non-const object as input
+    RCP<XpMat> A = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(fwdOp));
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A));
 
     // Retrieve concrete preconditioner object
@@ -156,13 +158,23 @@ namespace Thyra {
     if (startingOver == true) {
 
       // Convert to Xpetra
-      std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "M1", "Ms", "D0", "M0inv"};
+      std::list<std::string> convertMat = {
+        "Dk_1", "Dk_2", "D0",
+        "Mk_one", "Mk_1_one", "M1_beta", "M1_alpha",
+        "invMk_1_invBeta", "invMk_2_invAlpha",
+        // for backwards compatibility
+         "M1", "Ms", "M0inv"
+      };
+      std::list<std::string> convertMV = {"Coordinates", "Nullspace"};
+      std::list<std::string> convertXpetra;
+      convertXpetra.insert(convertXpetra.end(), convertMV.begin(), convertMV.end());
+      convertXpetra.insert(convertXpetra.end(), convertMat.begin(), convertMat.end());
       for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
-        replaceWithXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList,*it);
+        Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(paramList,*it);
 
       paramList.set<bool>("refmaxwell: use as preconditioner", true);
       if (useHalfPrecision) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
 
         // convert to half precision
         RCP<XphMat> halfA = Xpetra::convertToHalfPrecision(A);
@@ -178,7 +190,6 @@ namespace Thyra {
           RCP<XphMV> halfNullspace = Xpetra::convertToHalfPrecision(nullspace);
           paramList.set("Nullspace",halfNullspace);
         }
-        std::list<std::string> convertMat = {"M1", "Ms", "D0", "M0inv"};
         for (auto it = convertMat.begin(); it != convertMat.end(); ++it) {
           if (paramList.isType<RCP<XpMat> >(*it)) {
             RCP<XpMat> M = paramList.get<RCP<XpMat> >(*it);
@@ -205,7 +216,7 @@ namespace Thyra {
 
       RCP<ThyXpOp> thyXpOp = rcp_dynamic_cast<ThyXpOp>(thyra_precOp, true);
       RCP<XpOp>    xpOp    = thyXpOp->getXpetraOperator();
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(MUELU_CAN_USE_MIXED_PRECISION)
       RCP<XpHalfPrecOp> xpHalfPrecOp = rcp_dynamic_cast<XpHalfPrecOp>(xpOp);
       if (!xpHalfPrecOp.is_null()) {
         RCP<MueLu::RefMaxwell<HalfScalar,LocalOrdinal,GlobalOrdinal,Node> > preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>>(xpHalfPrecOp->GetHalfPrecisionOperator(), true);

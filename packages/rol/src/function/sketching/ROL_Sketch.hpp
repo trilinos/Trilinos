@@ -47,6 +47,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_LinearAlgebra.hpp"
 #include "ROL_LAPACK.hpp"
+#include "ROL_UpdateType.hpp"
 #include "ROL_Types.hpp"
 #include <random>
 #include <chrono>
@@ -63,8 +64,13 @@ namespace ROL {
 template <class Real>
 class Sketch {
 private:
-  std::vector<Ptr<Vector<Real>>> Upsilon_, Phi_, Y_;
-  LA::Matrix<Real> Omega_, Psi_, X_, Z_, C_;
+  // Sketch storage
+  std::vector<Ptr<Vector<Real>>> Y_;
+  LA::Matrix<Real> X_, Z_, C_;
+
+  // Random dimension reduction maps
+  std::vector<Ptr<Vector<Real>>> Upsilon_, Phi_;
+  LA::Matrix<Real> Omega_, Psi_;
 
   int maxRank_, ncol_, rank_, k_, s_;
 
@@ -83,39 +89,13 @@ private:
   Ptr<std::mt19937_64> gen_;
   Ptr<std::normal_distribution<Real>> dist_;
 
-  int computeP(void) {
-    int INFO(0);
-    if (!flagP_) {
-      // Solve least squares problem using LAPACK
-      int M      = ncol_;
-      int N      = k_;
-      int K      = std::min(M,N);
-      int LDA    = M;
-      std::vector<Real> TAU(K);
-      std::vector<Real> WORK(1);
-      int LWORK  = -1;
-      // Compute QR factorization of X
-      lapack_.GEQRF(M,N,X_.values(),LDA,&TAU[0],&WORK[0],LWORK,&INFO);
-      LWORK = static_cast<int>(WORK[0]);
-      WORK.resize(LWORK);
-      lapack_.GEQRF(M,N,X_.values(),LDA,&TAU[0],&WORK[0],LWORK,&INFO);
-      // Generate Q
-      LWORK = -1;
-      lapack_.ORGQR(M,N,K,X_.values(),LDA,&TAU[0],&WORK[0],LWORK,&INFO);
-      LWORK = static_cast<int>(WORK[0]);
-      WORK.resize(LWORK);
-      lapack_.ORGQR(M,N,K,X_.values(),LDA,&TAU[0],&WORK[0],LWORK,&INFO);
-      flagP_ = true;
-    }
-    return INFO;
-  }
-
   void mgs2(std::vector<Ptr<Vector<Real>>> &Y) const {
-    const Real one(1);
+    const int nvec(Y.size());
+    const Real zero(0), one(1);
     Real rjj(0), rij(0);
-    std::vector<Real> normQ(k_,0);
+    std::vector<Real> normQ(nvec,0);
     bool flag(true);
-    for (int j = 0; j < k_; ++j) {
+    for (int j = 0; j < nvec; ++j) {
       rjj = Y[j]->norm();
       if (rjj > ROL_EPSILON<Real>()) { // Ignore update if Y[i] is zero.
         for (int k = 0; k < orthIt_; ++k) {
@@ -132,25 +112,15 @@ private:
               break;
             }
           }
-          if (flag) {
-            break;
-          }
+          if (flag) break;
         }
       }
       rjj = normQ[j];
-      Y[j]->scale(one/rjj);
+      if (rjj > zero) Y[j]->scale(one/rjj);
     }
   }
 
-  int computeQ(void) {
-    if (!flagQ_) {
-      mgs2(Y_);
-      flagQ_ = true;
-    }
-    return 0;
-  }
-
-  int LSsolver(LA::Matrix<Real> &A, LA::Matrix<Real> &B, const bool trans = false) const {
+  int LSsolver(LA::Matrix<Real> &A, LA::Matrix<Real> &B, bool trans = false) const {
     int flag(0);
     char TRANS = (trans ? 'T' : 'N');
     int M      = A.numRows();
@@ -170,7 +140,7 @@ private:
     return flag;
   }
 
-  int lowRankApprox(LA::Matrix<Real> &A, const int r) const {
+  int lowRankApprox(LA::Matrix<Real> &A, int r) const {
     const Real zero(0);
     char JOBU  = 'S';
     char JOBVT = 'S';
@@ -201,6 +171,41 @@ private:
     return INFO;
   }
 
+  int computeP(void) {
+    int INFO(0);
+    if (!flagP_) {
+      // Solve least squares problem using LAPACK
+      int M      = ncol_;
+      int N      = k_;
+      int K      = std::min(M,N);
+      int LDA    = M;
+      std::vector<Real> TAU(K);
+      std::vector<Real> WORK(1);
+      int LWORK  = -1;
+      // Compute QR factorization of X
+      lapack_.GEQRF(M,N,X_.values(),LDA,&TAU[0],&WORK[0],LWORK,&INFO);
+      LWORK = static_cast<int>(WORK[0]);
+      WORK.resize(LWORK);
+      lapack_.GEQRF(M,N,X_.values(),LDA,&TAU[0],&WORK[0],LWORK,&INFO);
+      // Generate Q
+      LWORK = -1;
+      lapack_.ORGQR(M,N,K,X_.values(),LDA,&TAU[0],&WORK[0],LWORK,&INFO);
+      LWORK = static_cast<int>(WORK[0]);
+      WORK.resize(LWORK);
+      lapack_.ORGQR(M,N,K,X_.values(),LDA,&TAU[0],&WORK[0],LWORK,&INFO);
+      flagP_ = true;
+    }
+    return INFO;
+  }
+
+  int computeQ(void) {
+    if (!flagQ_) {
+      mgs2(Y_);
+      flagQ_ = true;
+    }
+    return 0;
+  }
+
   int computeC(void) {
     int infoP(0), infoQ(0), infoLS1(0), infoLS2(0), infoLRA(0);
     infoP = computeP();
@@ -212,29 +217,21 @@ private:
         for (int j = 0; j < k_; ++j) {
           L(i,j)  = Phi_[i]->dot(*Y_[j]);
           R(i,j)  = zero;
-          for (int k = 0; k < ncol_; ++k) {
-            R(i,j) += Psi_(k,i) * X_(k,j);
-          }
+          for (int k = 0; k < ncol_; ++k) R(i,j) += Psi_(k,i) * X_(k,j);
         }
       }
       // Solve least squares problems using LAPACK
       infoLS1 = LSsolver(L,Z_,false);
-      LA::Matrix<Real> Z(s_,k_);
+      LA::Matrix<Real> Zmat(s_,k_);
       for (int i = 0; i < k_; ++i) {
-        for (int j = 0; j < s_; ++j) {
-          Z(j,i) = Z_(i,j);
-        }
+        for (int j = 0; j < s_; ++j) Zmat(j,i) = Z_(i,j);
       }
-      infoLS2 = LSsolver(R,Z,false);
+      infoLS2 = LSsolver(R,Zmat,false);
       for (int i = 0; i < k_; ++i) {
-        for (int j = 0; j < k_; ++j) {
-          C_(j,i) = Z(i,j);
-        }
+        for (int j = 0; j < k_; ++j) C_(j,i) = Zmat(i,j);
       }
       // Compute best rank r approximation
-      if (truncate_) {
-        infoLRA = lowRankApprox(C_,rank_);
-      }
+      if (truncate_) infoLRA = lowRankApprox(C_,rank_);
       // Set flag
       flagC_ = true;
     }
@@ -242,90 +239,59 @@ private:
                           +std::abs(infoLS2)+std::abs(infoLRA);
   }
 
-  void reset(void) {
-    const Real zero(0);
-    // Randomize Upsilon, Omega, Psi and Phi, and zero X, Y and Z
-    X_.scale(zero); Z_.scale(zero); C_.scale(zero);
-    for (int i = 0; i < s_; ++i) {
-      Phi_[i]->applyUnary(*nrand_);
-      for (int j = 0; j < ncol_; ++j) {
-        Psi_(j,i) = (*dist_)(*gen_);
-      }
-    }
-    for (int i = 0; i < k_; ++i) {
-      Y_[i]->zero();
-      Upsilon_[i]->applyUnary(*nrand_);
-      for (int j = 0; j < ncol_; ++j) {
-        Omega_(j,i) = (*dist_)(*gen_);
-      }
-    }
-  }
-
-//  void reset(void) {
-//    const Real zero(0), one(1), a(2), b(-1);
-//    Real x(0);
-//    // Randomize Upsilon, Omega, Psi and Phi, and zero X, Y and Z
-//    X_.scale(zero); Z_.scale(zero); C_.scale(zero);
-//    for (int i = 0; i < s_; ++i) {
-//      Phi_[i]->randomize(-one,one);
-//      for (int j = 0; j < ncol_; ++j) {
-//        x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
-//        Psi_(j,i) = a*x + b; 
-//      }
-//    }
-//    for (int i = 0; i < k_; ++i) {
-//      Y_[i]->zero();
-//      Upsilon_[i]->randomize(-one,one);
-//      for (int j = 0; j < ncol_; ++j) {
-//        x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
-//        Omega_(j,i) = a*x + b;
-//      }
-//    }
-//  }
-
 public:
   virtual ~Sketch(void) {}
 
-  Sketch(const Vector<Real> &x, const int ncol, const int rank,
-         const Real orthTol = 1e-8, const int orthIt = 2,
-         const bool truncate = false,
-         const unsigned dom_seed = 0, const unsigned rng_seed = 0)
-    : ncol_(ncol), orthTol_(orthTol), orthIt_(orthIt),
-      truncate_(truncate), flagP_(false), flagQ_(false), flagC_(false),
+  Sketch(const Vector<Real> &x, int ncol, int rank,
+         Real orthTol = 1e-8, int orthIt = 2, bool truncate = false,
+         unsigned dom_seed = 0, unsigned rng_seed = 0)
+    : ncol_(ncol), orthTol_(orthTol), orthIt_(orthIt), truncate_(truncate),
+      flagP_(false), flagQ_(false), flagC_(false),
       out_(nullPtr) {
     Real mu(0), sig(1);
-    nrand_ = makePtr<Elementwise::NormalRandom<Real>>(mu,sig,dom_seed);
+    nrand_   = makePtr<Elementwise::NormalRandom<Real>>(mu,sig,dom_seed);
     unsigned seed = rng_seed;
-    if (seed == 0) {
-      seed = std::chrono::system_clock::now().time_since_epoch().count();
-    }
-    gen_  = makePtr<std::mt19937_64>(seed);
-    dist_ = makePtr<std::normal_distribution<Real>>(mu,sig);
+    if (seed == 0) seed = std::chrono::system_clock::now().time_since_epoch().count();
+    gen_     = makePtr<std::mt19937_64>(seed);
+    dist_    = makePtr<std::normal_distribution<Real>>(mu,sig);
     // Compute reduced dimensions
     maxRank_ = std::min(ncol_, x.dimension());
-    rank_ = std::min(rank, maxRank_);
-    k_    = std::min(2*rank_+1, maxRank_);
-    s_    = std::min(2*k_   +1, maxRank_);
+    rank_    = std::min(rank, maxRank_);
+    k_       = std::min(2*rank_+1, maxRank_);
+    s_       = std::min(2*k_   +1, maxRank_);
     // Initialize matrix storage
-    Upsilon_.clear(); Phi_.clear(); Y_.clear();
-    Omega_.reshape(ncol_,k_); Psi_.reshape(ncol_,s_);
-    X_.reshape(ncol_,k_); Z_.reshape(s_,s_); C_.reshape(k_,k_);
+    Upsilon_.resize(k_); Phi_.resize(s_); Omega_.reshape(ncol_,k_); Psi_.reshape(ncol_,s_);
+    X_.reshape(ncol_,k_); Y_.resize(k_); Z_.reshape(s_,s_); C_.reshape(k_,k_);
     for (int i = 0; i < k_; ++i) {
-      Y_.push_back(x.clone());
-      Upsilon_.push_back(x.clone());
+      Y_[i]       = x.clone();
+      Upsilon_[i] = x.clone();
     }
-    for (int i = 0; i < s_; ++i) {
-      Phi_.push_back(x.clone());
-    }
-    // Randomize Psi and Omega and zero W and Y
-    reset();
+    for (int i = 0; i < s_; ++i) Phi_[i] = x.clone();
+    reset(true);
   }
 
   void setStream(Ptr<std::ostream> &out) {
     out_ = out;
   }
 
-  void setRank(const int rank) {
+  void reset(bool randomize = true) {
+    const Real zero(0);
+    X_.putScalar(zero); Z_.putScalar(zero); C_.putScalar(zero);
+    for (int i = 0; i < k_; ++i) Y_[i]->zero();
+    flagP_ = false; flagQ_ = false; flagC_ = false;
+    if (randomize) {
+      for (int i = 0; i < s_; ++i) {
+        Phi_[i]->applyUnary(*nrand_);
+        for (int j = 0; j < ncol_; ++j) Psi_(j,i) = (*dist_)(*gen_);
+      }
+      for (int i = 0; i < k_; ++i) {
+        Upsilon_[i]->applyUnary(*nrand_);
+        for (int j = 0; j < ncol_; ++j) Omega_(j,i) = (*dist_)(*gen_);
+      }
+    }
+  }
+
+  void setRank(int rank) {
     rank_ = std::min(rank, maxRank_);
     // Compute reduced dimensions
     int sold = s_, kold = k_;
@@ -334,9 +300,7 @@ public:
     Omega_.reshape(ncol_,k_); Psi_.reshape(ncol_,s_);
     X_.reshape(ncol_,k_); Z_.reshape(s_,s_); C_.reshape(k_,k_);
     if (s_ > sold) {
-      for (int i = sold; i < s_; ++i) {
-        Phi_.push_back(Phi_[0]->clone());
-      }
+      for (int i = sold; i < s_; ++i) Phi_.push_back(Phi_[0]->clone());
     }
     if (k_ > kold) {
       for (int i = kold; i < k_; ++i) {
@@ -344,7 +308,7 @@ public:
         Upsilon_.push_back(Upsilon_[0]->clone());
       }
     }
-    update();
+    reset(true);
     if ( out_ != nullPtr ) {
       *out_ << std::string(80,'=')            << std::endl;
       *out_ << "  ROL::Sketch::setRank"       << std::endl;
@@ -356,25 +320,16 @@ public:
   }
 
   void update(void) {
-    flagP_ = false;
-    flagQ_ = false;
-    flagC_ = false;
-    // Randomize Psi and Omega and zero W and Y
-    reset();
+    reset(true);
   }
 
-  int advance(const Real nu, Vector<Real> &h, const int col, const Real eta = 1.0) {
+  int advance(Real nu, const Vector<Real> &h, int col, Real eta = 1.0) {
     // Check to see if col is less than ncol_
-    if ( col >= ncol_ || col < 0 ) {
-      // Input column index  out of range!
-      return 1;
-    }
+    if ( col >= ncol_ || col < 0 ) return 1; // Input column index out of range!
     if (!flagP_ && !flagQ_ && !flagC_) {
       for (int i = 0; i < k_; ++i) {
         // Update X
-        for (int j = 0; j < ncol_; ++j) {
-          X_(j,i) *= eta;
-        }
+        for (int j = 0; j < ncol_; ++j) X_(j,i) *= eta;
         X_(col,i) += nu*h.dot(*Upsilon_[i]);
         // Update Y
         Y_[i]->scale(eta);
@@ -406,35 +361,24 @@ public:
 
   int reconstruct(Vector<Real> &a, const int col) {
     // Check to see if col is less than ncol_
-    if ( col >= ncol_ || col < 0 ) {
-      // Input column index out of range!
-      return 2;
-    }
+    if ( col >= ncol_ || col < 0 ) return 2; // Input column index out of range!
     const Real zero(0);
     int flag(0);
     // Compute QR factorization of X store in X
     flag = computeP();
-    if (flag > 0 ) {
-      return 3;
-    }
+    if (flag > 0 ) return 3;
     // Compute QR factorization of Y store in Y
     flag = computeQ();
-    if (flag > 0 ) {
-      return 4;
-    }
+    if (flag > 0 ) return 4;
     // Compute (Phi Q)\Z/(Psi P)* store in C
     flag = computeC();
-    if (flag > 0 ) {
-      return 5;
-    }
+    if (flag > 0 ) return 5;
     // Recover sketch
     a.zero();
     Real coeff(0);
     for (int i = 0; i < k_; ++i) {
       coeff = zero;
-      for (int j = 0; j < k_; ++j) {
-        coeff += C_(i,j) * X_(col,j);
-      }
+      for (int j = 0; j < k_; ++j) coeff += C_(i,j) * X_(col,j);
       a.axpy(coeff,*Y_[i]);
     }
     if ( out_ != nullPtr ) {
@@ -449,15 +393,17 @@ public:
 
   bool test(const int rank, std::ostream &outStream = std::cout, const int verbosity = 0) {
     const Real one(1), tol(std::sqrt(ROL_EPSILON<Real>()));
+    using seed_type = std::mt19937_64::result_type;
+    seed_type const seed = 123;
+    std::mt19937_64 eng{seed};
+    std::uniform_real_distribution<Real> dist(static_cast<Real>(0),static_cast<Real>(1));
     // Initialize low rank factors
     std::vector<Ptr<Vector<Real>>> U(rank);
     LA::Matrix<Real> V(ncol_,rank);
     for (int i = 0; i < rank; ++i) {
       U[i] = Y_[0]->clone();
       U[i]->randomize(-one,one);
-      for (int j = 0; j < ncol_; ++j) {
-        V(j,i) = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
-      }
+      for (int j = 0; j < ncol_; ++j) V(j,i) = dist(eng);
     }
     // Initialize A and build sketch
     update();
@@ -501,9 +447,7 @@ private:
     computeQ();
     Real qij(0), err(0), maxerr(0);
     std::ios_base::fmtflags oflags(outStream.flags());
-    if (verbosity > 0) {
-      outStream << std::scientific << std::setprecision(3);
-    }
+    if (verbosity > 0) outStream << std::scientific << std::setprecision(3);
     if (verbosity > 1) {
       outStream << std::endl
                 << " Printing Q'Q...This should be approximately equal to I"
@@ -514,16 +458,10 @@ private:
         qij    = Y_[i]->dot(*Y_[j]);
         err    = (i==j ? std::abs(qij-one) : std::abs(qij));
         maxerr = (err > maxerr ? err : maxerr);
-        if (verbosity > 1) {
-          outStream << std::setw(12) << std::right << qij;
-        }
+        if (verbosity > 1) outStream << std::setw(12) << std::right << qij;
       }
-      if (verbosity > 1) {
-        outStream << std::endl;
-      }
-      if (maxerr > tol) {
-        break;
-      }
+      if (verbosity > 1) outStream << std::endl;
+      if (maxerr > tol) break;
     }
     if (verbosity > 0) {
       outStream << std::endl << " TEST ORTHOGONALIZATION: Max Error = "
@@ -539,9 +477,7 @@ private:
     computeP();
     Real qij(0), err(0), maxerr(0);
     std::ios_base::fmtflags oflags(outStream.flags());
-    if (verbosity > 0) {
-      outStream << std::scientific << std::setprecision(3);
-    }
+    if (verbosity > 0) outStream << std::scientific << std::setprecision(3);
     if (verbosity > 1) {
       outStream << std::endl
                 << " Printing P'P...This should be approximately equal to I"
@@ -549,22 +485,14 @@ private:
     }
     for (int i = 0; i < k_; ++i) {
       for (int j = 0; j < k_; ++j) {
-        qij    = zero;
-        for (int k = 0; k < ncol_; ++k) {
-          qij += X_(k,i) * X_(k,j);
-        }
-        err    = (i==j ? std::abs(qij-one) : std::abs(qij));
+        qij = zero;
+        for (int k = 0; k < ncol_; ++k) qij += X_(k,i) * X_(k,j);
+        err = (i==j ? std::abs(qij-one) : std::abs(qij));
         maxerr = (err > maxerr ? err : maxerr);
-        if (verbosity > 1) {
-          outStream << std::setw(12) << std::right << qij;
-        }
+        if (verbosity > 1) outStream << std::setw(12) << std::right << qij;
       }
-      if (verbosity > 1) {
-        outStream << std::endl;
-      }
-      if (maxerr > tol) {
-        break;
-      }
+      if (verbosity > 1) outStream << std::endl;
+      if (maxerr > tol) break;
     }
     if (verbosity > 0) {
       outStream << std::endl << " TEST ORTHOGONALIZATION: Max Error = "

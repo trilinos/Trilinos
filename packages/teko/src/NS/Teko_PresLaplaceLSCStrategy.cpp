@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -47,9 +47,6 @@
 #include "NS/Teko_PresLaplaceLSCStrategy.hpp"
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
 
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -191,12 +188,12 @@ void PresLaplaceLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecon
    //    otherwise, there is already an invMass_ matrix that is appropriate
    //       --> use that one
    if(massMatrix==Teuchos::null) {
-      Teko_DEBUG_MSG("PL-LSC::initializeState Build Scaling <F> type \"" 
+      Teko_DEBUG_MSG("PL-LSC::initializeState Build Scaling <F> type \""
                    << getDiagonalName(scaleType_) << "\"" ,1);
       state->invMass_ = getInvDiagonalOp(F,scaleType_);
    }
    else if(state->invMass_==Teuchos::null) {
-      Teko_DEBUG_MSG("PL-LSC::initializeState Build Scaling <mass> type \"" 
+      Teko_DEBUG_MSG("PL-LSC::initializeState Build Scaling <mass> type \""
                    << getDiagonalName(scaleType_) << "\"" ,1);
       state->invMass_ = getInvDiagonalOp(massMatrix,scaleType_);
    }
@@ -282,7 +279,7 @@ void PresLaplaceLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecon
 }
 
 //! Initialize from a parameter list
-void PresLaplaceLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib) 
+void PresLaplaceLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib)
 {
    // get string specifying inverse
    std::string invStr="Amesos", invVStr="", invPStr="";
@@ -294,7 +291,7 @@ void PresLaplaceLSCStrategy::initializeFromParameterList(const Teuchos::Paramete
       invStr = pl.get<std::string>("Inverse Type");
    if(pl.isParameter("Inverse Velocity Type"))
       invVStr = pl.get<std::string>("Inverse Velocity Type");
-   if(pl.isParameter("Inverse Pressure Type")) 
+   if(pl.isParameter("Inverse Pressure Type"))
       invPStr = pl.get<std::string>("Inverse Pressure Type");
    if(pl.isParameter("Use LDU"))
       useLDU = pl.get<bool>("Use LDU");
@@ -333,7 +330,7 @@ void PresLaplaceLSCStrategy::initializeFromParameterList(const Teuchos::Paramete
 }
 
 //! For assiting in construction of the preconditioner
-Teuchos::RCP<Teuchos::ParameterList> PresLaplaceLSCStrategy::getRequestedParameters() const 
+Teuchos::RCP<Teuchos::ParameterList> PresLaplaceLSCStrategy::getRequestedParameters() const
 {
    Teko_DEBUG_SCOPE("PresLaplaceLSCStrategy::getRequestedParameters",10);
    Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
@@ -363,11 +360,11 @@ Teuchos::RCP<Teuchos::ParameterList> PresLaplaceLSCStrategy::getRequestedParamet
 }
 
 //! For assiting in construction of the preconditioner
-bool PresLaplaceLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl) 
+bool PresLaplaceLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl)
 {
    Teko_DEBUG_SCOPE("PresLaplaceLSCStrategy::updateRequestedParameters",10);
    bool result = true;
- 
+
    // update requested parameters in solvers
    result &= invFactoryV_->updateRequestedParameters(pl);
    result &= invFactoryP_->updateRequestedParameters(pl);
@@ -376,7 +373,7 @@ bool PresLaplaceLSCStrategy::updateRequestedParameters(const Teuchos::ParameterL
 
    // get required operator acknowledgment...user must set these to true
    bool plo = hackList.get<bool>(getPressureLaplaceString(),false);
- 
+
    bool vmo = true;
    if(useMass_)
       vmo = hackList.get<bool>(getVelocityMassString(),false);

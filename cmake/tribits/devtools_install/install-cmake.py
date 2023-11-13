@@ -45,7 +45,7 @@
 #
 
 cmakeBaseName = "cmake"
-cmakeDefaultVersion = "3.17.4"
+cmakeDefaultVersion = "3.23.4"
 
 
 #
@@ -106,9 +106,23 @@ This build script sets the environment vars CXXFLAGS=-O3 AND CFLAGS=-O3
 when doing the configure.  Therefore, this builds and installs an optimized
 version of CMake by default.
 
-If CMake 3.17 is selected, a patch is applied which adds the CTEST_RESOURCE_SPEC_FILE
-variable.  (For versions 3.18+ this is not needed.)
-"""
+NOTE: To install CMake from the tip of a branch such as 'master', one must
+override the 'download' command and eliminate the 'untar' command.  One must
+stick with the directory structure that is assumed by the underlying code
+which creates temp directories based in the CMake version.  For example, to
+cone and install the tip of the CMake 'master' branch one can run:
+
+  install-cmake.py \\
+    --install-dir=<install-prefix./cmake-master-YYYYMMDD \\
+    --cmake-version=master \\
+    --download-cmnd="git clone git@github.com:kitware/cmake.git cmake-master" \\
+    --parallel=15 --download --configure --build --install
+
+What this does is to combine the 'download' and 'untar' commands together to
+produce the source dir 'cmake-master' in one shot.  Note that the 'master' in
+'cmake-master' in the git clone command must match the 'master' passed in the
+argument '--cmake-version=master'.
+ """
 
   def injectExtraCmndLineOptions(self, clp, version):
     setStdGithubDownloadCmndOption(self, "kitware", "cmake", clp, version)
@@ -166,9 +180,6 @@ variable.  (For versions 3.18+ this is not needed.)
     createDir(self.cmakeSrcDir, verbose=True)
     echoRunSysCmnd("tar -xzf "+self.cmakeTarball \
      +" -C "+self.cmakeSrcDir+" --strip-components 1")
-    if self.inOptions.version.startswith("3.17"):
-      echoRunSysCmnd("patch -d "+self.cmakeSrcDir+" -p1 -i " \
-       +os.path.join(devtools_install_dir, "0001-CTest-Add-CTEST_RESOURCE_SPEC_FILE-variable.patch"))
 
   def doConfigure(self):
     createDir(self.cmakeBuildBaseDir, True, True)

@@ -58,7 +58,6 @@
 //#include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
 
-#include "MueLu_Utilities.hpp"
 
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
@@ -67,7 +66,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include "MueLu_RepartitionHeuristicFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory_decl.hpp"
 
 namespace MueLu {
 
@@ -132,7 +131,7 @@ namespace MueLu {
 #if defined(KOKKOS_ENABLE_OPENMP)
     using execution_space = typename Node::device_type::execution_space;
     if (std::is_same<execution_space, Kokkos::OpenMP>::value)
-      thread_per_mpi_rank = execution_space::concurrency();
+      thread_per_mpi_rank = execution_space().concurrency();
 #endif
 
     if (minRowsPerThread > 0)
@@ -184,7 +183,7 @@ namespace MueLu {
     // a decision on whether to repartition. However, there is value in knowing how "close" we are to having to
     // rebalance an operator. So, it would probably be beneficial to do and report *all* tests.
 
-    // Test0: Should we do node repartitioning? 
+    // Test0: Should we do node repartitioning?
     if (currentLevel.GetLevelID() == nodeRepartLevel && map->getComm()->getSize() > 1) {
       RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<const Teuchos::Comm<int> > >(currentLevel, "Node Comm");
       TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): NodeComm is null.");
@@ -201,9 +200,9 @@ namespace MueLu {
         Set(currentLevel, "number of partitions", numNodes);
         return;
       }
-    }  
+    }
 
-    // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning     
+    // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
     if (currentLevel.GetLevelID() < startLevel) {
       GetOStream(Statistics1) << "Repartitioning?  NO:" <<
           "\n  current level = " << Teuchos::toString(currentLevel.GetLevelID()) <<
@@ -233,7 +232,7 @@ namespace MueLu {
       }
 
       int numActiveProcesses = 0;
-      MueLu_sumAll(comm, Teuchos::as<int>((map->getNodeNumElements() > 0) ? 1 : 0), numActiveProcesses);
+      MueLu_sumAll(comm, Teuchos::as<int>((map->getLocalNumElements() > 0) ? 1 : 0), numActiveProcesses);
 
       if (numActiveProcesses == 1) {
         GetOStream(Statistics1) << "Repartitioning?  NO:" <<
@@ -250,7 +249,7 @@ namespace MueLu {
     // Test3: check whether number of rows on any processor satisfies the minimum number of rows requirement
     // NOTE: Test2 ensures that repartitionning is not done when there is only one processor (it may or may not satisfy Test3)
     if (minRowsPerProcess > 0) {
-      LO numMyRows = Teuchos::as<LO>(map->getNodeNumElements()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
+      LO numMyRows = Teuchos::as<LO>(map->getLocalNumElements()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
       LO haveFewRows = (numMyRows < minRowsPerProcess ? 1 : 0), numWithFewRows = 0;
       MueLu_sumAll(comm, haveFewRows, numWithFewRows);
       MueLu_minAll(comm, (numMyRows > 0 ? numMyRows : LOMAX), minNumRows);
@@ -269,7 +268,7 @@ namespace MueLu {
       if (useMap)
         msg4 = "";
       else {
-        GO minNnz, maxNnz, numMyNnz = Teuchos::as<GO>(A->getNodeNumEntries());
+        GO minNnz, maxNnz, numMyNnz = Teuchos::as<GO>(A->getLocalNumEntries());
         MueLu_maxAll(comm, numMyNnz,                           maxNnz);
         MueLu_minAll(comm, (numMyNnz > 0 ? numMyNnz : maxNnz), minNnz); // min nnz over all active processors
         double imbalance = Teuchos::as<double>(maxNnz)/minNnz;

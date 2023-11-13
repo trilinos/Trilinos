@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,6 +10,10 @@
 #include "aprepro.h"        // for Aprepro, symrec, file_rec, etc
 #include "aprepro_parser.h" // for Parser, Parser::token, etc
 #include "terminal_color.h"
+#if defined(FMT_SUPPORT)
+#include <fmt/ostream.h>
+#endif
+#include <cstdio>
 #include <cstdlib>  // for exit, EXIT_SUCCESS, etc
 #include <cstring>  // for strcmp
 #include <fstream>  // for operator<<, basic_ostream, etc
@@ -17,7 +21,6 @@
 #include <iostream> // for left, cerr, cout, streampos
 #include <stack>    // for stack
 #include <stdexcept>
-#include <stdio.h>
 #include <string> // for string, operator==, etc
 #include <unistd.h>
 #include <vector> // for allocator, vector
@@ -32,7 +35,7 @@
 #endif
 
 namespace {
-  const char *version_string = "6.02 (2021/09/30)";
+  const std::string version_string{"6.17 (2023/07/20)"};
 
   void output_copyright();
 
@@ -57,8 +60,8 @@ namespace SEAMS {
     Symtable() = default;
     ~Symtable()
     {
-      for (auto &sym : sym_table) {
-        auto &ptr = sym.second;
+      for (const auto &sym : sym_table) {
+        const auto &ptr = sym.second;
         delete ptr;
       }
     }
@@ -88,7 +91,7 @@ namespace SEAMS {
 
   Aprepro::Aprepro() : sym_table(new Symtable())
   {
-    ap_file_list.push(file_rec());
+    ap_file_list.emplace(file_rec());
     init_table("$");
     aprepro = this;
   }
@@ -102,6 +105,9 @@ namespace SEAMS {
     // May need to delete this if set via --info=filename command.
     // May need a flag to determine this...
     infoStream->flush();
+    if (closeInfo) {
+      delete infoStream;
+    }
 
     if ((stringScanner != nullptr) && stringScanner != lexer) {
       delete stringScanner;
@@ -170,7 +176,7 @@ namespace SEAMS {
   bool Aprepro::parse_strings(const std::vector<std::string> &input, const std::string &sname)
   {
     std::stringstream iss;
-    for (auto &elem : input) {
+    for (const auto &elem : input) {
       iss << elem << '\n';
     }
     return parse_stream(iss, sname);
@@ -223,7 +229,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -254,7 +260,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -284,7 +290,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -293,17 +299,27 @@ namespace SEAMS {
   }
 
   void Aprepro::set_error_streams(std::ostream *c_error, std::ostream *c_warning,
-                                  std::ostream *c_info)
+                                  std::ostream *c_info, bool close_error, bool close_warning,
+                                  bool close_info)
   {
     if (c_error != nullptr) {
       errorStream = c_error;
+      closeError  = close_error;
     }
     if (c_warning != nullptr) {
       warningStream = c_warning;
+      closeWarning  = close_warning;
     }
     if (c_info != nullptr) {
       infoStream = c_info;
+      closeInfo  = close_info;
     }
+  }
+
+  void Aprepro::set_error_streams(std::ostream *c_error, std::ostream *c_warning,
+                                  std::ostream *c_info)
+  {
+    set_error_streams(c_error, c_warning, c_info, false, false, false);
   }
 
   /* Two methods for opening files:
@@ -323,8 +339,7 @@ namespace SEAMS {
 
     /* See if file exists in current directory (or as specified) */
     auto pointer = new std::fstream(file, smode);
-    if ((pointer == nullptr || pointer->bad() || !pointer->good()) &&
-        !ap_options.include_path.empty()) {
+    if ((pointer->bad() || !pointer->good()) && !ap_options.include_path.empty()) {
       /* If there is an include path specified, try opening file there */
       std::string file_path(ap_options.include_path);
       file_path += "/";
@@ -334,7 +349,7 @@ namespace SEAMS {
     }
 
     /* If pointer still null, print error message */
-    if (pointer == nullptr || pointer->fail() || pointer->bad() || !pointer->good()) {
+    if (pointer->fail() || pointer->bad() || !pointer->good()) {
       std::string err = "Can't open '" + file + "'. " + strerror(errno);
       error(err, false);
       delete pointer;
@@ -356,8 +371,7 @@ namespace SEAMS {
 
     auto pointer = new std::fstream(file, smode);
 
-    if ((pointer == nullptr || pointer->bad() || !pointer->good()) &&
-        !ap_options.include_path.empty()) {
+    if ((pointer->bad() || !pointer->good()) && !ap_options.include_path.empty()) {
       /* If there is an include path specified, try opening file there */
       std::string file_path(ap_options.include_path);
       file_path += "/";
@@ -428,6 +442,33 @@ namespace SEAMS {
     return ptr;
   }
 
+  namespace {
+    bool match_option(const std::string &option, const std::string &long_opt,
+                      const std::string &short_opt, size_t min_length)
+    {
+      // See if `option` starts with 1 or 2 leading `-`.
+      int number_dash = option[0] == '-' ? (option[1] == '-' ? 2 : 1) : 0;
+
+      // See if `option` contains a `=`, save position...
+      auto equals = option.find('=');
+      if (equals == std::string::npos) {
+        equals = option.size();
+      }
+      else {
+        equals = equals - number_dash;
+      }
+
+      // NOTE: `option` contains two leading `--` or `-` and a single character...
+      if (!short_opt.empty() && number_dash == 1 && option.substr(1, equals) == short_opt) {
+        return true;
+      }
+
+      // Now deal with long options...
+      auto len_option = std::max(equals - 2, min_length);
+      return option.substr(2, len_option) == long_opt.substr(0, len_option);
+    }
+  } // namespace
+
   int Aprepro::set_option(const std::string &option, const std::string &optional_value)
   {
     // Option should be of the form "--option" or "-O"
@@ -440,65 +481,70 @@ namespace SEAMS {
     // Some options (--include)
     int ret_value = 0;
 
-    if (option == "--debug" || option == "-d") {
+    if (match_option(option, "debug", "d", 3)) {
       ap_options.debugging = true;
     }
-    if (option == "--dumpvars" || option == "-D") {
-      ap_options.dumpvars = true;
-    }
-    else if (option == "--dumpvars_json" || option == "-J") {
+    else if (match_option(option, "dumpvars_json", "J", 13)) {
       ap_options.dumpvars_json = true;
     }
-    else if (option == "--version" || option == "-v") {
+    else if (match_option(option, "dumpvars", "D", 4)) {
+      ap_options.dumpvars = true;
+    }
+    else if (match_option(option, "version", "v", 3)) {
       std::cerr << "Algebraic Preprocessor (Aprepro) version " << version() << "\n";
       exit(EXIT_SUCCESS);
     }
-    else if (option == "--nowarning" || option == "-W") {
+    else if (match_option(option, "quiet", "q", 5)) {
+      // Do nothing, but don't report an error/warning.  Handled elsewhere.
+    }
+    else if (match_option(option, "nowarning", "W", 6)) {
       ap_options.warning_msg = false;
     }
-    else if (option == "--copyright" || option == "-C") {
+    else if (match_option(option, "copyright", "C", 4)) {
       output_copyright();
       exit(EXIT_SUCCESS);
     }
-    else if (option == "--message" || option == "-M") {
+    else if (match_option(option, "message", "M", 4)) {
       ap_options.info_msg = true;
     }
-    else if (option == "--immutable" || option == "-X") {
+    else if (match_option(option, "immutable", "X", 3)) {
       ap_options.immutable = true;
       stateImmutable       = true;
     }
-    else if (option == "--errors_fatal" || option == "-f") {
+    else if (match_option(option, "errors_fatal", "f", 8)) {
       ap_options.errors_fatal = true;
     }
-    else if (option == "--errors_and_warnings_fatal" || option == "-F") {
+    else if (match_option(option, "errors_and_warnings_fatal", "F", 9)) {
       ap_options.errors_and_warnings_fatal = true;
       ap_options.errors_fatal              = true;
     }
-    else if (option == "--require_defined" || option == "-R") {
+    else if (match_option(option, "require_defined", "R", 3)) {
       ap_options.require_defined = true;
     }
-    else if (option == "--trace" || option == "-t") {
+    else if (match_option(option, "trace", "t", 3)) {
       ap_options.trace_parsing = true;
     }
-    else if (option == "--interactive" || option == "-i") {
+    else if (match_option(option, "interactive", "i", 3)) {
       ap_options.interactive = true;
     }
-    else if (option == "--one_based_index" || option == "-1") {
+    else if (match_option(option, "one_based_index", "1", 3)) {
       ap_options.one_based_index = true;
     }
-    else if (option == "--exit_on" || option == "-e") {
+    else if (match_option(option, "exit_on", "e", 3)) {
       ap_options.end_on_exit = true;
     }
-    else if (option.find("--info") != std::string::npos) {
+    else if (match_option(option, "info", "", 4)) {
       std::string value = get_value(option, optional_value);
       ret_value         = value == optional_value ? 1 : 0;
 
-      auto info = open_file(value, "w");
-      if (info != nullptr) {
-        set_error_streams(nullptr, nullptr, info);
+      if (!value.empty()) {
+        auto do_info = open_file(value, "w");
+        if (do_info != nullptr) {
+          set_error_streams(nullptr, nullptr, do_info, false, false, true);
+        }
       }
     }
-    else if (option.find("--include") != std::string::npos || (option[1] == 'I')) {
+    else if (match_option(option, "include", "I", 3)) {
       std::string value = get_value(option, optional_value);
       ret_value         = value == optional_value ? 1 : 0;
 
@@ -509,11 +555,11 @@ namespace SEAMS {
         ap_options.include_file = value;
       }
     }
-    else if (option == "--keep_history" || option == "-k") {
+    else if (match_option(option, "keep_history", "k", 4)) {
       ap_options.keep_history = true;
     }
 
-    else if (option.find("--comment") != std::string::npos || (option[1] == 'c')) {
+    else if (match_option(option, "comment", "", 3) || (option[1] == 'c')) {
       std::string comment;
       // In short version, do not require equal sign (-c# -c// )
       if (option[1] == 'c' && option.length() > 2 && option[2] != '=') {
@@ -528,12 +574,19 @@ namespace SEAMS {
         ptr->value.svar = comment;
       }
     }
+    else if (match_option(option, "full_precision", "p", 3)) {
+      symrec *ptr = getsym("_FORMAT");
+      if (ptr != nullptr) {
+        ptr->value.svar = "";
+      }
+    }
 
-    else if (option == "--help" || option == "-h") {
+    else if (match_option(option, "help", "h", 3)) {
       std::cerr
           << "\nAprepro version " << version() << "\n"
           << "\nUsage: aprepro [options] [-I path] [-c char] [var=val] [filein] [fileout]\n"
-          << "          --debug or -d: Dump all variables, debug loops/if/endif\n"
+          << "          --debug or -d: Dump all variables, debug loops/if/endif and keep temporary "
+             "files\n"
           << "       --dumpvars or -D: Dump all variables at end of run        \n"
           << "  --dumpvars_json or -J: Dump all variables at end of run in json format\n"
           << "        --version or -v: Print version number to stderr          \n"
@@ -556,18 +609,30 @@ namespace SEAMS {
           << "            --info=file: Output INFO messages (e.g. DUMP() output) to file.\n"
           << "      --nowarning or -W: Do not print WARN messages              \n"
           << "  --comment=char or -c=char: Change comment character to 'char'  \n"
+#if defined(FMT_SUPPORT)
+          << "    --full_precision -p: Floating point output uses as many digits as needed.\n"
+#else
+          << "    --full_precision -p: (Not supported in this build) Floating point output uses as "
+             "many digits as needed.\n"
+#endif
           << "      --copyright or -C: Print copyright message                 \n"
           << "   --keep_history or -k: Keep a history of aprepro substitutions.\n"
           << "                         (not for general interactive use)       \n"
           << "          --quiet or -q: Do not print the header output line     \n"
           << "                var=val: Assign value 'val' to variable 'var'    \n"
-          << "                         Use var=\\\"sval\\\" for a string variable\n\n"
+          << "                         Use var=\\\"sval\\\" for a string variable. 'var' will be "
+             "immutable.\n\n"
           << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"
           << "\tEnter {DUMP()} for list of user-defined variables\n"
           << "\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n"
           << "\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n\n"
+          << "\tDocumentation: "
+             "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#aprepro\n\n"
           << "\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n";
       exit(EXIT_SUCCESS);
+    }
+    else {
+      warning("Unrecgonized option '" + option + "'.  This option will be ignored.\n", false);
     }
     return ret_value;
   }
@@ -584,6 +649,15 @@ namespace SEAMS {
     auto ptr = new array(from);
     array_allocations.push_back(ptr);
     return ptr;
+  }
+
+  void Aprepro::redefine_array(array *array)
+  {
+    // This data pointer from an array is being redefined.  Remove it
+    // from `array_allocations` to avoid double delete.
+    array_allocations.erase(std::remove(array_allocations.begin(), array_allocations.end(), array),
+                            array_allocations.end());
+    delete array;
   }
 
   void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value,
@@ -611,7 +685,7 @@ namespace SEAMS {
   {
     if (check_valid_var(sym_name.c_str())) {
       SYMBOL_TYPE type = immutable ? SYMBOL_TYPE::IMMUTABLE_VARIABLE : SYMBOL_TYPE::VARIABLE;
-      symrec *    var  = getsym(sym_name);
+      symrec     *var  = getsym(sym_name);
       if (var == nullptr) {
         var = putsym(sym_name, type, internal);
       }
@@ -629,7 +703,7 @@ namespace SEAMS {
   {
     if (check_valid_var(sym_name.c_str())) {
       SYMBOL_TYPE type = SYMBOL_TYPE::ARRAY_VARIABLE;
-      symrec *    var  = getsym(sym_name);
+      symrec     *var  = getsym(sym_name);
       if (var == nullptr) {
         var = putsym(sym_name, type, false);
       }
@@ -710,21 +784,26 @@ namespace SEAMS {
     (*infoStream) << "\n{\n";
     bool first = true;
 
-    for (const auto &sym : sym_table->get()) {
-      const auto &ptr = sym.second;
-
+    for (const auto &ptr : get_sorted_sym_table()) {
       if (!ptr->isInternal) {
-        if (first) {
+        if (ptr->type == Parser::token::VAR || ptr->type == Parser::token::IMMVAR) {
+#if defined(FMT_SUPPORT)
+          fmt::print((*infoStream), "{}{}\": {}", (first ? "\"" : ",\n\""), ptr->name,
+                     ptr->value.var);
+#else
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": " << std::setprecision(10)
+                        << ptr->value.var;
+#endif
           first = false;
         }
-        else {
-          (*infoStream) << ",\n";
-        }
-        if (ptr->type == Parser::token::VAR || ptr->type == Parser::token::IMMVAR) {
-          (*infoStream) << "\"" << ptr->name << "\": " << std::setprecision(10) << ptr->value.var;
+        else if (ptr->type == Parser::token::UNDVAR) {
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": null";
+          first = false;
         }
         else if (ptr->type == Parser::token::SVAR || ptr->type == Parser::token::IMMSVAR) {
-          (*infoStream) << "\"" << ptr->name << "\": \"" << ptr->value.svar << "\"";
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": \"" << ptr->value.svar
+                        << "\"";
+          first = false;
         }
       }
     }
@@ -744,18 +823,27 @@ namespace SEAMS {
       (*infoStream) << "\n" << comment << "   Variable    = Value" << '\n';
 
       int width = 10; // controls spacing/padding for the variable names
-      for (const auto &sym : sym_table->get()) {
-        const auto &ptr = sym.second;
-        if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
+      for (const auto &ptr : get_sorted_sym_table()) {
+        if (spre.empty() || ptr->name.find(spre) != std::string::npos) {
           if (doInternal == ptr->isInternal) {
             if (ptr->type == Parser::token::VAR) {
+#if defined(FMT_SUPPORT)
+              fmt::print((*infoStream), "{}  {{{:<{}}\t= {}}}\n", comment, ptr->name, width,
+                         ptr->value.var);
+#else
               (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
                             << "\t= " << std::setprecision(10) << ptr->value.var << "}" << '\n';
+#endif
             }
             else if (ptr->type == Parser::token::IMMVAR) {
+#if defined(FMT_SUPPORT)
+              fmt::print((*infoStream), "{}  {{{:<{}}\t= {}}} (immutable)\n", comment, ptr->name,
+                         width, ptr->value.var);
+#else
               (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
                             << "\t= " << std::setprecision(10) << ptr->value.var << "} (immutable)"
                             << '\n';
+#endif
             }
             else if (ptr->type == Parser::token::SVAR) {
               if (strchr(ptr->value.svar.c_str(), '\n') != nullptr ||
@@ -793,9 +881,8 @@ namespace SEAMS {
              type == Parser::token::AFNCT) {
       int fwidth = 20; // controls spacing/padding for the function names
       (*infoStream) << trmclr::blue << "\nFunctions returning double:" << trmclr::normal << '\n';
-      for (const auto &sym : sym_table->get()) {
-        const auto &ptr = sym.second;
-        if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
+      for (const auto &ptr : get_sorted_sym_table()) {
+        if (spre.empty() || ptr->name.find(spre) != std::string::npos) {
           if (ptr->type == Parser::token::FNCT) {
             (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
                           << trmclr::normal << ":  " << ptr->info << '\n';
@@ -805,9 +892,8 @@ namespace SEAMS {
 
       (*infoStream) << trmclr::blue << trmclr::blue
                     << "\nFunctions returning string:" << trmclr::normal << '\n';
-      for (const auto &sym : sym_table->get()) {
-        const auto &ptr = sym.second;
-        if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
+      for (const auto &ptr : get_sorted_sym_table()) {
+        if (spre.empty() || ptr->name.find(spre) != std::string::npos) {
           if (ptr->type == Parser::token::SFNCT) {
             (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
                           << trmclr::normal << ":  " << ptr->info << '\n';
@@ -816,9 +902,8 @@ namespace SEAMS {
       }
 
       (*infoStream) << trmclr::blue << "\nFunctions returning array:" << trmclr::normal << '\n';
-      for (const auto &sym : sym_table->get()) {
-        const auto &ptr = sym.second;
-        if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
+      for (const auto &ptr : get_sorted_sym_table()) {
+        if (spre.empty() || ptr->name.find(spre) != std::string::npos) {
           if (ptr->type == Parser::token::AFNCT) {
             (*infoStream) << std::left << trmclr::green << std::setw(fwidth) << ptr->syntax
                           << trmclr::normal << ":  " << ptr->info << '\n';
@@ -860,6 +945,22 @@ namespace SEAMS {
       history.clear();
     }
   }
+
+  std::vector<SEAMS::symrec *> Aprepro::get_sorted_sym_table() const
+  {
+    // We want the output to be sorted, so move all symbol pointers to a vector...
+    // Could pre-filter the vector, but for now, just copy all and filter afterwards...
+    std::vector<SEAMS::symrec *> vsym_table;
+    vsym_table.reserve(sym_table->get().size());
+    for (const auto &sym : sym_table->get()) {
+      vsym_table.push_back(sym.second);
+    }
+    std::sort(vsym_table.begin(), vsym_table.end(),
+              [](const auto &a, const auto &b) { return a->name < b->name; });
+
+    return vsym_table;
+  }
+
 } // namespace SEAMS
 
 namespace {

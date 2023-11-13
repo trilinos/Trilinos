@@ -74,13 +74,13 @@ ReorderFilter (const Teuchos::RCP<const row_matrix_type>& A,
     "Ifpack2::AdditiveSchwarz, and it is not meant to be used otherwise.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    A_->getNodeNumRows () != A_->getGlobalNumRows (),
+    A_->getLocalNumRows () != A_->getGlobalNumRows (),
     std::invalid_argument,
     "Ifpack2::ReorderFilter: The input matrix is not square.");
 
   // Temp arrays for apply
-  Kokkos::resize(Indices_,A_->getNodeMaxNumRowEntries ());
-  Kokkos::resize(Values_,A_->getNodeMaxNumRowEntries ());
+  Kokkos::resize(Indices_,A_->getLocalMaxNumRowEntries ());
+  Kokkos::resize(Values_,A_->getLocalMaxNumRowEntries ());
 }
 
 
@@ -170,16 +170,16 @@ global_size_t ReorderFilter<MatrixType>::getGlobalNumCols() const
 
 
 template<class MatrixType>
-size_t ReorderFilter<MatrixType>::getNodeNumRows() const
+size_t ReorderFilter<MatrixType>::getLocalNumRows() const
 {
-  return A_->getNodeNumRows();
+  return A_->getLocalNumRows();
 }
 
 
 template<class MatrixType>
-size_t ReorderFilter<MatrixType>::getNodeNumCols() const
+size_t ReorderFilter<MatrixType>::getLocalNumCols() const
 {
-  return A_->getNodeNumCols();
+  return A_->getLocalNumCols();
 }
 
 
@@ -198,11 +198,16 @@ global_size_t ReorderFilter<MatrixType>::getGlobalNumEntries() const
 
 
 template<class MatrixType>
-size_t ReorderFilter<MatrixType>::getNodeNumEntries() const
+size_t ReorderFilter<MatrixType>::getLocalNumEntries() const
 {
-  return A_->getNodeNumEntries();
+  return A_->getLocalNumEntries();
 }
 
+template<class MatrixType>
+typename MatrixType::local_ordinal_type ReorderFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
 
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::
@@ -223,7 +228,6 @@ getNumEntriesInGlobalRow (global_ordinal_type globalRow) const
     }
   }
 }
-
 
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::
@@ -250,9 +254,9 @@ size_t ReorderFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 
 
 template<class MatrixType>
-size_t ReorderFilter<MatrixType>::getNodeMaxNumRowEntries() const
+size_t ReorderFilter<MatrixType>::getLocalMaxNumRowEntries() const
 {
-  return A_->getNodeMaxNumRowEntries();
+  return A_->getLocalMaxNumRowEntries();
 }
 
 
@@ -295,7 +299,6 @@ void ReorderFilter<MatrixType>::
   using Teuchos::ArrayView;
   using Teuchos::av_reinterpret_cast;
   typedef local_ordinal_type LO;
-  typedef global_ordinal_type GO;
   typedef Teuchos::OrdinalTraits<LO> OTLO;
 
   const map_type& rowMap = * (A_->getRowMap ());
@@ -316,20 +319,6 @@ void ReorderFilter<MatrixType>::
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void ReorderFilter<MatrixType>::
-getGlobalRowCopy (global_ordinal_type globalRow,
-                  const Teuchos::ArrayView<global_ordinal_type>& Indices,
-                  const Teuchos::ArrayView<scalar_type>& Values,
-                  size_t& numEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
-}
-#endif
 
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
@@ -371,19 +360,6 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void ReorderFilter<MatrixType>::getLocalRowCopy (local_ordinal_type LocalRow,
-                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                 const Teuchos::ArrayView<scalar_type> &Values,
-                 size_t &NumEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
-}
-#endif
 
 template<class MatrixType>
 void ReorderFilter<MatrixType>::getGlobalRowView(global_ordinal_type /* GlobalRow */,
@@ -393,16 +369,6 @@ void ReorderFilter<MatrixType>::getGlobalRowView(global_ordinal_type /* GlobalRo
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void ReorderFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type /* GlobalRow */,
-                  Teuchos::ArrayView<const global_ordinal_type> &/* indices */,
-                  Teuchos::ArrayView<const scalar_type> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
-}
-#endif
 
 
 template<class MatrixType>
@@ -413,16 +379,6 @@ void ReorderFilter<MatrixType>::getLocalRowView(local_ordinal_type /* LocalRow *
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void ReorderFilter<MatrixType>::
-getLocalRowView (local_ordinal_type /* LocalRow */,
-                 Teuchos::ArrayView<const local_ordinal_type> &/* indices */,
-                 Teuchos::ArrayView<const scalar_type> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
-}
-#endif
 
 
 template<class MatrixType>
@@ -476,7 +432,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   Y.putScalar (zero);
   const size_t NumVectors = Y.getNumVectors ();
 
-  for (size_t i = 0; i < A_->getNodeNumRows (); ++i) {
+  for (size_t i = 0; i < A_->getLocalNumRows (); ++i) {
     size_t Nnz;
     // Use this class's getrow to make the below code simpler
     getLocalRowCopy (i, Indices_ , Values_ , Nnz);
@@ -548,9 +504,12 @@ void ReorderFilter<MatrixType>::permuteOriginalToReorderedTempl(const Tpetra::Mu
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = originalX.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = reorderedY.get2dViewNonConst();
 
+  const local_ordinal_type blockSize = getBlockSize();
+  const local_ordinal_type numRows = originalX.getLocalLength() / blockSize;
   for(size_t k=0; k < originalX.getNumVectors(); k++)
-    for(local_ordinal_type i=0; (size_t)i< originalX.getLocalLength(); i++)
-      y_ptr[k][perm_[i]] = (RangeScalar)x_ptr[k][i];
+    for(local_ordinal_type i=0; i< numRows; i++)
+      for(local_ordinal_type j=0; j< blockSize; ++j)
+        y_ptr[k][perm_[i]*blockSize + j] = (RangeScalar)x_ptr[k][i*blockSize + j];
 }
 
 
@@ -576,8 +535,6 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    typedef Teuchos::ScalarTraits<DomainScalar> STS;
-    typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms (reorderedX.getNumVectors ());
     reorderedX.norm2 (norms ());
@@ -599,16 +556,18 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = reorderedX.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = originalY.get2dViewNonConst();
 
+  const local_ordinal_type blockSize = getBlockSize();
+  const local_ordinal_type numRows = reorderedX.getLocalLength() / blockSize;
   for (size_t k = 0; k < reorderedX.getNumVectors (); ++k) {
-    for (local_ordinal_type i = 0; (size_t)i < reorderedX.getLocalLength (); ++i) {
-      y_ptr[k][reverseperm_[i]] = (RangeScalar) x_ptr[k][i];
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      for(local_ordinal_type j = 0; j < blockSize; ++j) {
+        y_ptr[k][reverseperm_[i]*blockSize + j] = (RangeScalar) x_ptr[k][i*blockSize + j];
+      }
     }
   }
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    typedef Teuchos::ScalarTraits<RangeScalar> STS;
-    typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms (originalY.getNumVectors ());
     originalY.norm2 (norms ());

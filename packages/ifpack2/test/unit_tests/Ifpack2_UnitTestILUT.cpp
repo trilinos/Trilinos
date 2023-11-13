@@ -48,16 +48,16 @@
 */
 
 
-#include <Teuchos_ConfigDefs.hpp>
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Ifpack2_Version.hpp>
 #include <iostream>
+#include <type_traits>
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Version.hpp>
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_ILUT.hpp>
 
-#include <type_traits>
 
 namespace {
 using Tpetra::global_size_t;
@@ -104,7 +104,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test0, Scalar, LocalOrdinal, Glob
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar(1);
 
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using STM = typename STS::magnitudeType;
+  Kokkos::View<STM*, Kokkos::HostSpace> norms("Initial norms", 1);
+  Kokkos::View<STM*, Kokkos::HostSpace> lastNorms("previous norms", 1);
+
+  x.norm2(norms);
+  std::cout << "||x_init||=" << norms[0] << std::endl;
+  y.norm2(norms);
+  std::cout << "||y||=" << norms[0] << std::endl;
+
   prec.apply(x, y);
+
+  y.norm2(norms);
+  std::cout << "||y_final||=" << norms[0] << std::endl;
 
   Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
@@ -185,20 +198,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test2, Scalar, LocalOrdinal, Glob
   TEST_NOTHROW(prec.setParameters(params));
   prec.initialize();
   prec.compute();
-  numFill0 = prec.getNodeNumEntries();
-  TEST_EQUALITY(numFill0, crsmatrix->getNodeNumEntries());
+  numFill0 = prec.getLocalNumEntries();
+  TEST_EQUALITY(numFill0, crsmatrix->getLocalNumEntries());
 
   params.set("fact: ilut level-of-fill", 1.5);
   TEST_NOTHROW(prec.setParameters(params));
   prec.initialize();
   prec.compute();
-  numFill1 = prec.getNodeNumEntries();
+  numFill1 = prec.getLocalNumEntries();
 
   params.set("fact: ilut level-of-fill", 2.0);
   TEST_NOTHROW(prec.setParameters(params));
   prec.initialize();
   prec.compute();
-  numFill2 = prec.getNodeNumEntries();
+  numFill2 = prec.getLocalNumEntries();
 
   TEST_ASSERT(numFill0 < numFill1);
   TEST_ASSERT(numFill1 < numFill2);
@@ -277,7 +290,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test3, Scalar, LocalOrdinal, Glob
     }
   }
 }
-
 
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \

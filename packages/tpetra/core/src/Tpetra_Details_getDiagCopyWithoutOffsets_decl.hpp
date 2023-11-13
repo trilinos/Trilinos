@@ -111,7 +111,7 @@ struct CrsMatrixGetDiagCopyFunctor {
   {
     const LO INV = Tpetra::Details::OrdinalTraits<LO>::invalid ();
     const scalar_type ZERO =
-      Kokkos::Details::ArithTraits<scalar_type>::zero ();
+      Kokkos::ArithTraits<scalar_type>::zero ();
 
     // If the row lacks a stored diagonal entry, then its value is zero.
     D_(lclRowInd) = ZERO;
@@ -184,11 +184,11 @@ getDiagCopyWithoutOffsets (const DiagType& D,
                            const LocalMapType& colMap,
                            const CrsMatrixType& A)
 {
-  static_assert (Kokkos::Impl::is_view<DiagType>::value,
+  static_assert (Kokkos::is_view<DiagType>::value,
                  "DiagType must be a Kokkos::View.");
   static_assert (static_cast<int> (DiagType::rank) == 1,
                  "DiagType must be a 1-D Kokkos::View.");
-  static_assert (std::is_same<DiagType, typename DiagType::non_const_type>::value,
+  static_assert (std::is_same<typename DiagType::value_type, typename DiagType::non_const_value_type>::value,
                  "DiagType must be a nonconst Kokkos::View.");
   typedef typename LocalMapType::local_ordinal_type LO;
   typedef typename CrsMatrixType::device_type device_type;

@@ -60,7 +60,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     nupda_(0), nvalu_(0), ngrad_(0), nhess_(0), nprec_(0),
     nstat_(0), nadjo_(0), nssen_(0), nasen_(0),
     updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
-    newUpdate_(false) {
+    newUpdate_(false), isUpdated_(true) {
   stateStore_   = makePtr<VectorController<Real>>();
   adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone(); state_->set(*state);
@@ -90,7 +90,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     nupda_(0), nvalu_(0), ngrad_(0), nhess_(0), nprec_(0),
     nstat_(0), nadjo_(0), nssen_(0), nasen_(0),
     updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
-    newUpdate_(false) {
+    newUpdate_(false), isUpdated_(true) {
   stateStore_   = makePtr<VectorController<Real>>();
   adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone(); state_->set(*state);
@@ -118,7 +118,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     nupda_(0), nvalu_(0), ngrad_(0), nhess_(0), nprec_(0),
     nstat_(0), nadjo_(0), nssen_(0), nasen_(0),
     updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
-    newUpdate_(false) {
+    newUpdate_(false), isUpdated_(true) {
   adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone(); state_->set(*state);
   adjoint_      = adjoint->clone();
@@ -148,7 +148,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     nupda_(0), nvalu_(0), ngrad_(0), nhess_(0), nprec_(0),
     nstat_(0), nadjo_(0), nssen_(0), nasen_(0),
     updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
-    newUpdate_(false) {
+    newUpdate_(false), isUpdated_(true) {
   adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone(); state_->set(*state);
   adjoint_      = adjoint->clone();
@@ -163,6 +163,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
 template<typename Real>
 void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, bool flag, int iter ) {
   nupda_++;
+  isUpdated_  = false;
   newUpdate_  = false;
   updateFlag_ = flag;
   updateIter_ = iter;
@@ -173,6 +174,7 @@ void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, bool flag, i
 template<typename Real>
 void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, UpdateType type, int iter ) {
   nupda_++;
+  isUpdated_  = false;
   newUpdate_  = true;
   updateType_ = type;
   updateIter_ = iter;
@@ -245,19 +247,47 @@ void Reduced_Objective_SimOpt<Real>::setParameter(const std::vector<Real> &param
 }
 
 template<typename Real>
-void Reduced_Objective_SimOpt<Real>::summarize(std::ostream &stream) const {
+void Reduced_Objective_SimOpt<Real>::summarize(std::ostream &stream, const Ptr<BatchManager<Real>> &bman) const {
+  int nupda(0), nvalu(0), ngrad(0), nhess(0), nprec(0), nstat(0), nadjo(0), nssen(0), nasen(0);
+  if (bman == nullPtr) {
+    nupda = nupda_;
+    nvalu = nvalu_;
+    ngrad = ngrad_;
+    nhess = nhess_;
+    nprec = nprec_;
+    nstat = nstat_;
+    nadjo = nadjo_;
+    nssen = nssen_;
+    nasen = nasen_;
+  }
+  else {
+    auto sumAll = [bman](int val) {
+      Real global(0), local(val);
+      bman->sumAll(&local,&global,1);
+      return static_cast<int>(global);
+    };
+    nupda = sumAll(nupda_);
+    nvalu = sumAll(nvalu_);
+    ngrad = sumAll(ngrad_);
+    nhess = sumAll(nhess_);
+    nprec = sumAll(nprec_);
+    nstat = sumAll(nstat_);
+    nadjo = sumAll(nadjo_);
+    nssen = sumAll(nssen_);
+    nasen = sumAll(nasen_);
+  }
   stream << std::endl;
   stream << std::string(80,'=') << std::endl;
   stream << "  ROL::Reduced_Objective_SimOpt::summarize" << std::endl;
-  stream << "    Number of calls to update:            " << nupda_ << std::endl;
-  stream << "    Number of calls to value:             " << nvalu_ << std::endl;
-  stream << "    Number of calls to gradient:          " << ngrad_ << std::endl;
-  stream << "    Number of calls to hessvec:           " << nhess_ << std::endl;
-  stream << "    Number of calls to precond:           " << nprec_ << std::endl;
-  stream << "    Number of state solves:               " << nstat_ << std::endl;
-  stream << "    Number of adjoint solves:             " << nadjo_ << std::endl;
-  stream << "    Number of state sensitivity solves:   " << nssen_ << std::endl;
-  stream << "    Number of adjoint sensitivity solves: " << nssen_ << std::endl;
+  stream << "    Number of calls to update:            " << nupda << std::endl;
+  stream << "    Number of calls to value:             " << nvalu << std::endl;
+  stream << "    Number of calls to gradient:          " << ngrad << std::endl;
+  stream << "    Number of calls to hessvec:           " << nhess << std::endl;
+  stream << "    Number of calls to precond:           " << nprec << std::endl;
+  stream << "    Number of state solves:               " << nstat << std::endl;
+  stream << "    Number of adjoint solves:             " << nadjo << std::endl;
+  stream << "    Number of state sensitivity solves:   " << nssen << std::endl;
+  stream << "    Number of adjoint sensitivity solves: " << nasen << std::endl;
   stream << std::string(80,'=') << std::endl;
   stream << std::endl;
 }
@@ -270,24 +300,29 @@ void Reduced_Objective_SimOpt<Real>::reset() {
 
 template<typename Real>
 void Reduced_Objective_SimOpt<Real>::solve_state_equation(const Vector<Real> &z, Real &tol) {
+  if (!isUpdated_) {
+    // Update equality constraint with new Opt variable.
+    if (newUpdate_) con_->update_2(z,updateType_,updateIter_);
+    else            con_->update_2(z,updateFlag_,updateIter_);
+  }
   // Check if state has been computed.
   bool isComputed = storage_ ? stateStore_->get(*state_,Objective<Real>::getParameter()) : false;
   // Solve state equation if not done already.
   if (!isComputed || !storage_) {
-    // Update equality constraint with new Opt variable.
-    if (newUpdate_) con_->update_2(z,updateType_,updateIter_);
-    else            con_->update_2(z,updateFlag_,updateIter_);
     // Solve state equation.
     con_->solve(*dualadjoint_,*state_,z,tol);
     nstat_++;
+    // Store state.
+    if (storage_)   stateStore_->set(*state_,Objective<Real>::getParameter());
+  }
+  if (!isUpdated_) {
     // Update equality constraint with new Sim variable.
     if (newUpdate_) con_->update_1(*state_,updateType_,updateIter_);
     else            con_->update_1(*state_,updateFlag_,updateIter_);
     // Update full objective function.
     if (newUpdate_) obj_->update(*state_,z,updateType_,updateIter_);
     else            obj_->update(*state_,z,updateFlag_,updateIter_);
-    // Store state.
-    if (storage_)   stateStore_->set(*state_,Objective<Real>::getParameter());
+    isUpdated_ = true;
   }
 }
 

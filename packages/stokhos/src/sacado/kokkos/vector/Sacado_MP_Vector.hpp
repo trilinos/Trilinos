@@ -59,6 +59,7 @@
 #include "Stokhos_mpl_for_each.hpp"
 #include "Stokhos_MemoryTraits.hpp"
 #include "Stokhos_Is_Constant.hpp"
+#include "Stokhos_ViewStorage.hpp"
 
 #include "Kokkos_View_Utils.hpp"
 
@@ -111,6 +112,12 @@ namespace Sacado {
       const volatile derived_type& derived() const volatile {
         return static_cast<const volatile derived_type&>(*this);
       }
+
+      // Allow explicit casting to integral types, since we don't have an
+      // integral ensemble type.
+      template <typename U, typename Enabled = typename std::enable_if<std::is_integral<U>::value>::type>
+      KOKKOS_INLINE_FUNCTION
+      explicit operator U() const { return static_cast<U>(derived().val()); }
 
     };
 
@@ -261,9 +268,27 @@ namespace Sacado {
 
       //! Intialize from initializer_list
       /*!
-       * No KOKKOS_INLINE_FUNCTION as it is not callable from the device
+       * When static fixed storage is used:
+       *    * passing an empty initializer list initializes all samples in the ensemble to zero;
+       *    * passing an initializer list of length 1 initializes all samples in the ensemble to the passed value;
+       *    * all other mismatches in size between the initializer list and the ensemble produce an abort.
        */
-      Vector(std::initializer_list<value_type> l) : s(l.size(), l.begin()) {}
+      KOKKOS_INLINE_FUNCTION
+      Vector(std::initializer_list<value_type> l) : s(l.size(), l.begin()) {
+        if constexpr (Storage::is_static) {
+          const auto         lsz = static_cast<ordinal_type>(l.size());
+          const ordinal_type  sz = this->size();
+          if (lsz < sz) {
+            if (lsz > 1) {
+                Kokkos::abort("Size mismatch in list initialization of MP Vector with static fixed storage.");
+            } 
+            else {
+              const value_type v = lsz > 0 ? *l.begin() : value_type(0);
+              s.init(v);
+            }
+          }
+        }
+      }
 
       //! Destructor
       KOKKOS_DEFAULTED_FUNCTION
@@ -2081,6 +2106,13 @@ struct reduction_identity< Sacado::MP::Vector<Storage> > {
     return Vector(RIS::min());
   }
 };
+
+namespace Impl {
+  template <typename Storage>
+  struct promote<Sacado::MP::Vector<Storage>,false> {
+    using type = typename Sacado::MP::Vector<Storage>;
+  };
+}
 
 }
 

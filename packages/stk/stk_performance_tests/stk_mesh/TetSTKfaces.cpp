@@ -44,7 +44,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
-#include <stk_mesh/base/MemoryUsage.hpp>
 
 namespace stk {
 namespace performance_tests {
@@ -75,7 +74,7 @@ TEST(tet_faces, tet_faces)
 
   double start_time = stk::cpu_time();
 
-  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, mesh_dims[0], mesh_dims[1], mesh_dims[2]);
+  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, mesh_dims[0], mesh_dims[1], mesh_dims[2]);
   fixture.m_meta.commit();
   fixture.generate_mesh();
 
@@ -141,7 +140,7 @@ TEST(tet_faces, minimal_tet_faces)
 
   double start_time = stk::cpu_time();
 
-  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, mesh_dims[0], mesh_dims[1], mesh_dims[2]);
+  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, mesh_dims[0], mesh_dims[1], mesh_dims[2]);
   fixture.m_meta.commit();
   fixture.generate_mesh();
 

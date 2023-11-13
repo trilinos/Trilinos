@@ -32,7 +32,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+if(HAVE_STK_Trilinos)
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
+endif()
 
 FILE(GLOB SOURCES *.cpp
                   command_line/*.cpp
@@ -43,30 +45,38 @@ FILE(GLOB SOURCES *.cpp
                   registry/*.cpp
                   util/*.cpp)
 
-IF (NOT TPL_ENABLE_MPI)
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/diag/UnitTestString.cpp")
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/diag/UnitTestTimer.cpp")
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/diag/UnitTestUsername.cpp")
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/diag/UnitTestWriter.cpp")
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/environment/UnitTestDemangle.cpp")
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/environment/UnitTestPrintTable.cpp")
+IF (NOT STK_HAS_MPI)
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestDistributedIndex.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestGenerateParallelConsistentIDs.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestGenerateUniqueConsistentIDs.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestIndexGapFinder.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestLoc.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestIreduceReplacement.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestMPIDatatypeGenerator.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestMPITagManager.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestParallelVectorConcat.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestImprobeAll.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestImprobeSelf.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestMPIFinalizationCallback.cpp")
 ENDIF()
 
-INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/stk_util)
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_util_unit_tests
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_util_unit_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NUM_MPI_PROCS 1-6
     NOEXEPREFIX
-    )
-
+  )
+else()
+  add_executable(stk_util_unit_tests ${SOURCES})
+  target_link_libraries(stk_util_unit_tests stk_unit_test_utils)
+  target_link_libraries(stk_util_unit_tests stk_util_registry)
+  target_link_libraries(stk_util_unit_tests stk_util_diag)
+  target_link_libraries(stk_util_unit_tests stk_util_env)
+  target_link_libraries(stk_util_unit_tests stk_util_parallel)
+  target_link_libraries(stk_util_unit_tests stk_util_command_line)
+  target_link_libraries(stk_util_unit_tests stk_unit_main)
+  add_test(NAME "stk_util_unit_tests" COMMAND stk_util_unit_tests)
+endif()
 

@@ -1,49 +1,20 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #include <cstdio>
-#include <stdexcept>
 #include <sstream>
 #include <iostream>
 
@@ -59,18 +30,6 @@ class MyArray {
   KOKKOS_INLINE_FUNCTION
   void operator+=(const MyArray& src) {
     for (int i = 0; i < N; i++) values[i] += src.values[i];
-  }
-  KOKKOS_INLINE_FUNCTION
-  void operator=(const MyArray& src) {
-    for (int i = 0; i < N; i++) values[i] = src.values[i];
-  }
-  KOKKOS_INLINE_FUNCTION
-  void operator+=(const volatile MyArray& src) volatile {
-    for (int i = 0; i < N; i++) values[i] += src.values[i];
-  }
-  KOKKOS_INLINE_FUNCTION
-  void operator=(const volatile MyArray& src) volatile {
-    for (int i = 0; i < N; i++) values[i] = src.values[i];
   }
 };
 
@@ -182,27 +141,22 @@ TEST(TEST_CATEGORY, team_policy_max_recommended) {
 }
 
 template <typename TeamHandleType, typename ReducerValueType>
-struct PrintFunctor1 {
-  KOKKOS_INLINE_FUNCTION void operator()(const TeamHandleType& team,
-                                         ReducerValueType&) const {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF("Test %i %i\n", int(team.league_rank()),
-                                  int(team.team_rank()));
+struct MinMaxTeamLeagueRank {
+  KOKKOS_FUNCTION void operator()(const TeamHandleType& team,
+                                  ReducerValueType& update) const {
+    int const x = team.league_rank();
+    if (x < update.min_val) {
+      update.min_val = x;
+    }
+    if (x > update.max_val) {
+      update.max_val = x;
+    }
   }
 };
 
-template <typename TeamHandleType, typename ReducerValueType>
-struct PrintFunctor2 {
-  KOKKOS_INLINE_FUNCTION void operator()(const TeamHandleType& team,
-                                         ReducerValueType& teamVal) const {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF("Test %i %i\n", int(team.league_rank()),
-                                  int(team.team_rank()));
-    teamVal += 1;
-  }
-};
-
-TEST(TEST_CATEGORY, team_policy_max_scalar_without_plus_equal_k) {
+TEST(TEST_CATEGORY, team_policy_minmax_scalar_without_plus_equal_k) {
   using ExecSpace           = TEST_EXECSPACE;
-  using ReducerType         = Kokkos::MinMax<double, Kokkos::HostSpace>;
+  using ReducerType         = Kokkos::MinMax<int, Kokkos::HostSpace>;
   using ReducerValueType    = typename ReducerType::value_type;
   using DynamicScheduleType = Kokkos::Schedule<Kokkos::Dynamic>;
   using TeamPolicyType = Kokkos::TeamPolicy<ExecSpace, DynamicScheduleType>;
@@ -213,21 +167,11 @@ TEST(TEST_CATEGORY, team_policy_max_scalar_without_plus_equal_k) {
   ReducerType reducer(val);
 
   TeamPolicyType p(num_teams, Kokkos::AUTO);
-  PrintFunctor1<TeamHandleType, ReducerValueType> f1;
-  const int max_team_size =
-      p.team_size_max(f1, reducer, Kokkos::ParallelReduceTag());
-
-  const int recommended_team_size =
-      p.team_size_recommended(f1, reducer, Kokkos::ParallelReduceTag());
-
-  printf("Max TeamSize: %i Recommended TeamSize: %i\n", max_team_size,
-         recommended_team_size);
+  MinMaxTeamLeagueRank<TeamHandleType, ReducerValueType> f1;
 
   Kokkos::parallel_reduce(p, f1, reducer);
-  double sum;
-  Kokkos::parallel_reduce(TeamPolicyType(num_teams, Kokkos::AUTO),
-                          PrintFunctor2<TeamHandleType, double>{}, sum);
-  printf("Sum: %lf\n", sum);
+  ASSERT_EQ(val.min_val, 0);
+  ASSERT_EQ(val.max_val, num_teams - 1);
 }
 
 }  // namespace Test

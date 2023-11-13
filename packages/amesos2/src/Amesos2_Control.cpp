@@ -94,6 +94,16 @@ void Control::setControlParameters(
     useTranspose_ = parameterList->get<bool>("Transpose");
   }
 
+  if( parameterList->isType<bool>("Iterative refinement") ){
+    useIterRefine_ = parameterList->get<bool>("Iterative refinement");
+  }
+  if( parameterList->isType<int>("Number of iterative refinements") ){
+    maxNumIterRefines_ = parameterList->get<int>("Number of iterative refinements");
+  }
+  if( parameterList->isType<bool>("Verboes for iterative refinement") ){
+    verboseIterRefine_ = parameterList->get<bool>("Verboes for iterative refinement");
+  }
+
   // Add this value to all diagonal elements which are structurally
   // non-zero. No change is made to non-zero structure of the matrix.
   if( parameterList->isParameter("AddToDiag") ){

@@ -339,9 +339,7 @@ MACRO(kokkoskernels_export_imported_tpl NAME)
       ENDIF()
 
       SET(TPL_LINK_OPTIONS)
-      IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
-        GET_TARGET_PROPERTY(TPL_LINK_OPTIONS ${TPL_IMPORTED_NAME} INTERFACE_LINK_OPTIONS)
-      ENDIF()
+      GET_TARGET_PROPERTY(TPL_LINK_OPTIONS ${TPL_IMPORTED_NAME} INTERFACE_LINK_OPTIONS)
       IF(TPL_LINK_OPTIONS)
         KOKKOSKERNELS_APPEND_CONFIG_LINE("INTERFACE_LINK_OPTIONS ${TPL_LINK_OPTIONS}")
       ENDIF()
@@ -371,9 +369,7 @@ MACRO(kokkoskernels_import_tpl NAME)
   # I have still been getting errors about ROOT variables being ignored
   # I'm not sure if this is a scope issue - but make sure
   # the policy is set before we do any find_package calls
-  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
-    CMAKE_POLICY(SET CMP0074 NEW)
-  ENDIF()
+  CMAKE_POLICY(SET CMP0074 NEW)
 
   IF (KOKKOSKERNELS_ENABLE_TPL_${NAME})
     #Tack on a TPL here to make sure we avoid using anyone else's find
@@ -390,16 +386,6 @@ MACRO(kokkoskernels_import_tpl NAME)
     ENDIF()
   ENDIF()
 ENDMACRO(kokkoskernels_import_tpl)
-
-FUNCTION(TARGET_LINK_FLAGS_PORTABLE LIBRARY)
-  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
-    #great, this works the "right" way
-    TARGET_LINK_OPTIONS(${LIBRARY} ${ARGN})
-  ELSE()
-    #bummer, this works the "hacky" way
-    TARGET_LINK_LIBRARIES(${LIBRARY} ${ARGN})
-  ENDIF()
-ENDFUNCTION(TARGET_LINK_FLAGS_PORTABLE)
 
 FUNCTION(kokkoskernels_link_tpl TARGET)
   CMAKE_PARSE_ARGUMENTS(TPL
@@ -466,6 +452,20 @@ KOKKOSKERNELS_ADD_TPL_OPTION(CUBLAS   ${CUBLAS_DEFAULT}     "Whether to enable C
 KOKKOSKERNELS_ADD_TPL_OPTION(CUSPARSE ${CUSPARSE_DEFAULT}   "Whether to enable CUSPARSE"
   DEFAULT_DOCSTRING "ON if CUDA-enabled Kokkos, otherwise OFF")
 
+KOKKOSKERNELS_ADD_OPTION(NO_DEFAULT_ROCM_TPLS OFF BOOL "Whether ROCM TPLs should be enabled by default. Default: OFF")
+# Unlike CUDA, ROCm does not automatically install these TPLs
+SET(ROCBLAS_DEFAULT   OFF)
+SET(ROCSPARSE_DEFAULT OFF)
+# Since the default is OFF we do not really need this piece of logic here.
+# IF(KOKKOSKERNELS_NO_DEFAULT_ROCM_TPLS)
+#   SET(ROCBLAS_DEFAULT   OFF)
+#   SET(ROCSPARSE_DEFAULT OFF)
+# ENDIF()
+KOKKOSKERNELS_ADD_TPL_OPTION(ROCBLAS   ${ROCBLAS_DEFAULT}     "Whether to enable ROCBLAS"
+  DEFAULT_DOCSTRING "ON if HIP-enabled Kokkos, otherwise OFF")
+KOKKOSKERNELS_ADD_TPL_OPTION(ROCSPARSE ${ROCSPARSE_DEFAULT}   "Whether to enable ROCSPARSE"
+  DEFAULT_DOCSTRING "ON if HIP-enabled Kokkos, otherwise OFF")
+
 IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
     IF (F77_BLAS_MANGLE STREQUAL "(name,NAME) name ## _")
       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DADD_ -fopenmp -lgfortran")
@@ -501,6 +501,8 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   KOKKOSKERNELS_IMPORT_TPL(METIS)
   KOKKOSKERNELS_IMPORT_TPL(ARMPL)
   KOKKOSKERNELS_IMPORT_TPL(MAGMA)
+  KOKKOSKERNELS_IMPORT_TPL(ROCBLAS)
+  KOKKOSKERNELS_IMPORT_TPL(ROCSPARSE)
 ELSE ()
   IF (Trilinos_ENABLE_SuperLU5_API)
     SET(HAVE_KOKKOSKERNELS_SUPERLU5_API TRUE)

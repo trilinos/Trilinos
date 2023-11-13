@@ -18,34 +18,6 @@
 namespace Tempus {
 
 
-template<class Scalar>
-class ImplicitODEParameters
-{
-  public:
-    /// Constructor
-    ImplicitODEParameters()
-      : timeDer_(Teuchos::null), timeStepSize_(Scalar(0.0)),
-        alpha_(Scalar(0.0)), beta_(Scalar(0.0)), evaluationType_(SOLVE_FOR_X),
-        stageNumber_(0)
-    {}
-    /// Constructor
-    ImplicitODEParameters(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
-                          Scalar timeStepSize, Scalar alpha, Scalar beta,
-                          EVALUATION_TYPE evaluationType = SOLVE_FOR_X,
-                          int stageNumber = 0)
-      : timeDer_(timeDer), timeStepSize_(timeStepSize),
-        alpha_(alpha), beta_(beta), evaluationType_(evaluationType),
-        stageNumber_(stageNumber)
-    {}
-
-    Teuchos::RCP<TimeDerivative<Scalar> > timeDer_;
-    Scalar                                timeStepSize_;
-    Scalar                                alpha_;
-    Scalar                                beta_;
-    EVALUATION_TYPE                       evaluationType_;
-    int                                   stageNumber_;
-};
-
 /** \brief Thyra Base interface for implicit time steppers.
  *
  *  For first-order ODEs, we can write the implicit ODE as
@@ -78,7 +50,6 @@ class ImplicitODEParameters
  *  with multiple variables, we can write
  *  \f[
  *    \left[
- *
  *    \frac{\partial \dot{x}_n(x_n) }{\partial x_n}
  *    \frac{\partial}{\partial \dot{x}_n}
  *    \left(
@@ -90,7 +61,6 @@ class ImplicitODEParameters
  *    \left(
  *      \mathcal{F}(\dot{x}_n,x_n,t_n)
  *    \right)
- *
  *    \right] \Delta x_n^\nu = - \mathcal{F}(\dot{x}_n^\nu,x_n^\nu,t_n)
  *  \f]
  *  Defining the iteration matrix, \f$W\f$, we have
@@ -264,16 +234,14 @@ public:
     /// Return beta  = d(x)/dx.
     virtual Scalar getBeta (const Scalar dt) const = 0;
 
-    /// Solve problem using x in-place.  (Needs to be deprecated!)
-    const Thyra::SolveStatus<Scalar> solveImplicitODE(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x);
-
     /// Solve implicit ODE, f(x, xDot, t, p) = 0.
     const Thyra::SolveStatus<Scalar> solveImplicitODE(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
       const Scalar time,
-      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p );
+      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y = Teuchos::null,
+      const int index = -1    /* index and y are for IMEX_RK_Partition */ );
 
     /// Evaluate implicit ODE residual, f(x, xDot, t, p).
     void evaluateImplicitODE(

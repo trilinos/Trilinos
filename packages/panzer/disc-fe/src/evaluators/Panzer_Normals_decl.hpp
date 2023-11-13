@@ -97,6 +97,7 @@ class Normals
   std::size_t num_qp, num_dim;
 
   PHX::MDField<ScalarT,Cell,Point,Dim> normals;
+  PHX::View<ScalarT*> scratch;
   bool normalize;
 
 public:

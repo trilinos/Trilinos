@@ -82,9 +82,9 @@ double CHOLMOD(rcond)	    /* return min(diag(L)) / max(diag(L)) */
     /* check inputs */
     /* ---------------------------------------------------------------------- */
 
-    RETURN_IF_NULL_COMMON (EMPTY) ;
-    RETURN_IF_NULL (L, EMPTY) ;
-    RETURN_IF_XTYPE_INVALID (L, CHOLMOD_REAL, CHOLMOD_ZOMPLEX, EMPTY) ;
+    RETURN_IF_NULL_COMMON (TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_NULL (L, TRILINOS_CHOLMOD_EMPTY) ;
+    RETURN_IF_XTYPE_INVALID (L, CHOLMOD_REAL, CHOLMOD_ZOMPLEX, TRILINOS_CHOLMOD_EMPTY) ;
     Common->status = CHOLMOD_OK ;
 
     /* ---------------------------------------------------------------------- */

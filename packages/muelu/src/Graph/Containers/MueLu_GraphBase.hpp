@@ -95,7 +95,7 @@ namespace MueLu {
 
     virtual void   SetBoundaryNodeMap(const ArrayRCP<const bool > & boundaryArray) = 0;
 
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
 
     virtual const ArrayRCP<const bool> GetBoundaryNodeMap() const = 0;
 

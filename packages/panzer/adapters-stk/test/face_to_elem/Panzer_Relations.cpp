@@ -121,7 +121,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
   graph_overlap.doImport(graph, imp, Tpetra::ADD);
 
 
-  face_to_elem_ = PHX::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getNodeNumElements());
+  face_to_elem_ = PHX::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getLocalNumElements());
   auto face_to_elem_h = Kokkos::create_mirror_view(face_to_elem_);
   num_boundary_faces_=0;
   for (int i(0); i < face_to_elem_.extent_int(0); ++i)
@@ -203,7 +203,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
 
   for (int nwkst=0; nwkst<num_worksets; ++nwkst){
     panzer::Workset &workset = (*worksets)[nwkst];
-    auto coords = workset.cell_vertex_coordinates;
+    auto coords = workset.cell_node_coordinates;
     auto coords_h = Kokkos::create_mirror_view(coords.get_static_view());
     Kokkos::deep_copy(coords_h, coords.get_static_view());
     int num_cells = workset.num_cells;

@@ -1,52 +1,29 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #ifndef KOKKOS_SYCL_INSTANCE_HPP_
 #define KOKKOS_SYCL_INSTANCE_HPP_
 
 #include <optional>
+// FIXME_SYCL
+#if __has_include(<sycl/sycl.hpp>)
+#include <sycl/sycl.hpp>
+#else
 #include <CL/sycl.hpp>
+#endif
 
 #include <impl/Kokkos_Error.hpp>
 #include <impl/Kokkos_Profiling.hpp>
@@ -66,26 +43,35 @@ class SYCLInternal {
   SYCLInternal& operator=(SYCLInternal&&) = delete;
   SYCLInternal(SYCLInternal&&)            = delete;
 
-  void* scratch_space(const size_type size);
-  void* scratch_flags(const size_type size);
-  void* resize_team_scratch_space(std::int64_t bytes,
-                                  bool force_shrink = false);
+  sycl::device_ptr<void> scratch_space(const std::size_t size);
+  sycl::device_ptr<void> scratch_flags(const std::size_t size);
+  int acquire_team_scratch_space();
+  sycl::device_ptr<void> resize_team_scratch_space(int scratch_pool_id,
+                                                   std::int64_t bytes,
+                                                   bool force_shrink = false);
+  void register_team_scratch_event(int scratch_pool_id, sycl::event event);
 
   uint32_t impl_get_instance_id() const;
-  int m_syclDev = -1;
+  static int m_syclDev;
 
   size_t m_maxWorkgroupSize   = 0;
   uint32_t m_maxConcurrency   = 0;
   uint64_t m_maxShmemPerBlock = 0;
 
-  uint32_t* m_scratchConcurrentBitset = nullptr;
-  size_type m_scratchSpaceCount       = 0;
-  size_type* m_scratchSpace           = nullptr;
-  size_type m_scratchFlagsCount       = 0;
-  size_type* m_scratchFlags           = nullptr;
+  std::size_t m_scratchSpaceCount            = 0;
+  sycl::device_ptr<size_type> m_scratchSpace = nullptr;
+  std::size_t m_scratchFlagsCount            = 0;
+  sycl::device_ptr<size_type> m_scratchFlags = nullptr;
+  // mutex to access shared memory
+  mutable std::mutex m_mutexScratchSpace;
 
-  int64_t m_team_scratch_current_size = 0;
-  void* m_team_scratch_ptr            = nullptr;
+  // Team Scratch Level 1 Space
+  static constexpr int m_n_team_scratch                               = 10;
+  mutable int64_t m_team_scratch_current_size[m_n_team_scratch]       = {};
+  mutable sycl::device_ptr<void> m_team_scratch_ptr[m_n_team_scratch] = {};
+  mutable int m_current_team_scratch                                  = 0;
+  mutable sycl::event m_team_scratch_event[m_n_team_scratch]          = {};
+  mutable std::mutex m_team_scratch_mutex;
 
   uint32_t m_instance_id = Kokkos::Tools::Experimental::Impl::idForInstance<
       Kokkos::Experimental::SYCL>(reinterpret_cast<uintptr_t>(this));
@@ -142,15 +128,13 @@ class SYCLInternal {
     // (otherwise) and returns a reference to the copied object.
     template <typename T>
     T& copy_from(const T& t) {
+      m_mutex.lock();
       fence();
       reserve(sizeof(T));
       if constexpr (sycl::usm::alloc::device == Kind) {
-        sycl::event memcopied =
-            m_q->memcpy(m_data, std::addressof(t), sizeof(T));
-        SYCLInternal::fence(
-            memcopied,
-            "Kokkos::Experimental::SYCLInternal::USMObject fence after copy",
-            m_instance_id);
+        std::memcpy(static_cast<void*>(m_staging.get()), std::addressof(t),
+                    sizeof(T));
+        m_copy_event = m_q->memcpy(m_data, m_staging.get(), sizeof(T));
       } else
         std::memcpy(m_data, std::addressof(t), sizeof(T));
       return *reinterpret_cast<T*>(m_data);
@@ -169,7 +153,10 @@ class SYCLInternal {
                  .get_info<sycl::info::event::command_execution_status>() ==
              sycl::info::event_command_status::complete);
       m_last_event = event;
+      m_mutex.unlock();
     }
+
+    sycl::event get_copy_event() const { return m_copy_event; }
 
    private:
     // USMObjectMem class invariants
@@ -182,22 +169,26 @@ class SYCLInternal {
     //  if m_data != nullptr then m_capacity != 0 && m_q != nullopt
     //  if m_data == nullptr then m_capacity == 0
 
+    sycl::event m_copy_event;
+
     std::optional<sycl::queue> m_q;
-    void* m_data      = nullptr;
+    void* m_data = nullptr;
+    std::unique_ptr<char[]> m_staging;
+
     size_t m_capacity = 0;
     sycl::event m_last_event;
 
     uint32_t m_instance_id;
+
+    // mutex to access the underlying memory
+    mutable std::mutex m_mutex;
   };
 
   // An indirect kernel is one where the functor to be executed is explicitly
   // copied to USM memory before being executed, to get around the
   // trivially copyable limitation of SYCL.
-  using IndirectKernelMem = USMObjectMem<sycl::usm::alloc::shared>;
-  IndirectKernelMem m_indirectKernelMem;
-
-  using IndirectReducerMem = USMObjectMem<sycl::usm::alloc::shared>;
-  IndirectReducerMem m_indirectReducerMem;
+  using IndirectKernelMem = USMObjectMem<sycl::usm::alloc::host>;
+  IndirectKernelMem& get_indirect_kernel_mem();
 
   bool was_finalized = false;
 
@@ -220,6 +211,11 @@ class SYCLInternal {
   static void fence_helper(WAT& wat, const std::string& name,
                            uint32_t instance_id);
 
+  const static size_t m_usm_pool_size = 4;
+  std::vector<IndirectKernelMem> m_indirectKernelMem{m_usm_pool_size};
+
+  size_t m_pool_next{0};
+
  public:
   static void fence(sycl::queue& q, const std::string& name,
                     uint32_t instance_id) {
@@ -231,36 +227,92 @@ class SYCLInternal {
   }
 };
 
+// FIXME_SYCL the limit is 2048 bytes for all arguments handed to a kernel,
+// assume for now that the rest doesn't need more than 248 bytes.
+#if defined(SYCL_DEVICE_COPYABLE) && defined(KOKKOS_ARCH_INTEL_GPU)
 template <typename Functor, typename Storage,
-          bool is_memcpyable = std::is_trivially_copyable_v<Functor>>
+          bool ManualCopy = (sizeof(Functor) >= 1800)>
 class SYCLFunctionWrapper;
+#else
+template <typename Functor, typename Storage,
+          bool ManualCopy = (sizeof(Functor) >= 1800 ||
+                             !std::is_trivially_copyable_v<Functor>)>
+class SYCLFunctionWrapper;
+#endif
 
+#if defined(SYCL_DEVICE_COPYABLE) && defined(KOKKOS_ARCH_INTEL_GPU)
 template <typename Functor, typename Storage>
-class SYCLFunctionWrapper<Functor, Storage, true> {
-  const Functor& m_functor;
+class SYCLFunctionWrapper<Functor, Storage, false> {
+  // We need a union here so that we can avoid calling a constructor for m_f
+  // and can controll all the special member functions.
+  union TrivialWrapper {
+    TrivialWrapper(){};
+
+    TrivialWrapper(const Functor& f) { std::memcpy(&m_f, &f, sizeof(m_f)); }
+
+    TrivialWrapper(const TrivialWrapper& other) {
+      std::memcpy(&m_f, &other.m_f, sizeof(m_f));
+    }
+    TrivialWrapper(TrivialWrapper&& other) {
+      std::memcpy(&m_f, &other.m_f, sizeof(m_f));
+    }
+    TrivialWrapper& operator=(const TrivialWrapper& other) {
+      std::memcpy(&m_f, &other.m_f, sizeof(m_f));
+      return *this;
+    }
+    TrivialWrapper& operator=(TrivialWrapper&& other) {
+      std::memcpy(&m_f, &other.m_f, sizeof(m_f));
+      return *this;
+    }
+    ~TrivialWrapper(){};
+
+    Functor m_f;
+  } m_functor;
+
+ public:
+  SYCLFunctionWrapper(const Functor& functor, Storage&) : m_functor(functor) {}
+
+  const Functor& get_functor() const { return m_functor.m_f; }
+
+  sycl::event get_copy_event() const { return {}; }
+
+  static void register_event(sycl::event) {}
+};
+#else
+template <typename Functor, typename Storage>
+class SYCLFunctionWrapper<Functor, Storage, false> {
+  const Functor m_functor;
 
  public:
   SYCLFunctionWrapper(const Functor& functor, Storage&) : m_functor(functor) {}
 
   const Functor& get_functor() const { return m_functor; }
 
-  static void register_event(Storage&, sycl::event){};
+  sycl::event get_copy_event() const { return {}; }
+
+  static void register_event(sycl::event) {}
 };
+#endif
 
 template <typename Functor, typename Storage>
-class SYCLFunctionWrapper<Functor, Storage, false> {
-  const Functor& m_kernelFunctor;
+class SYCLFunctionWrapper<Functor, Storage, true> {
+  std::reference_wrapper<const Functor> m_kernelFunctor;
+  std::reference_wrapper<Storage> m_storage;
 
  public:
   SYCLFunctionWrapper(const Functor& functor, Storage& storage)
-      : m_kernelFunctor(storage.copy_from(functor)) {}
+      : m_kernelFunctor(storage.copy_from(functor)), m_storage(storage) {}
 
   std::reference_wrapper<const Functor> get_functor() const {
-    return {m_kernelFunctor};
+    return m_kernelFunctor;
   }
 
-  static void register_event(Storage& storage, sycl::event event) {
-    storage.register_event(event);
+  sycl::event get_copy_event() const {
+    return m_storage.get().get_copy_event();
+  }
+
+  void register_event(sycl::event event) {
+    m_storage.get().register_event(event);
   }
 };
 
@@ -271,4 +323,36 @@ auto make_sycl_function_wrapper(const Functor& functor, Storage& storage) {
 }  // namespace Impl
 }  // namespace Experimental
 }  // namespace Kokkos
+
+#if defined(SYCL_DEVICE_COPYABLE) && defined(KOKKOS_ARCH_INTEL_GPU)
+template <typename Functor, typename Storage>
+struct sycl::is_device_copyable<
+    Kokkos::Experimental::Impl::SYCLFunctionWrapper<Functor, Storage, false>>
+    : std::true_type {};
+
+// FIXME_SYCL Remove when this specialization when specializations for
+// sycl::device_copyable also apply to const-qualified types.
+template <typename>
+struct NonTriviallyCopyableAndDeviceCopyable {
+  NonTriviallyCopyableAndDeviceCopyable(
+      const NonTriviallyCopyableAndDeviceCopyable&) {}
+};
+
+template <typename T>
+struct sycl::is_device_copyable<NonTriviallyCopyableAndDeviceCopyable<T>>
+    : std::true_type {};
+
+static_assert(
+    !std::is_trivially_copyable_v<
+        NonTriviallyCopyableAndDeviceCopyable<void>> &&
+    sycl::is_device_copyable_v<NonTriviallyCopyableAndDeviceCopyable<void>>);
+
+template <typename Functor, typename Storage>
+struct sycl::is_device_copyable<
+    const Kokkos::Experimental::Impl::SYCLFunctionWrapper<Functor, Storage,
+                                                          false>,
+    std::enable_if_t<!sycl::is_device_copyable_v<
+        const NonTriviallyCopyableAndDeviceCopyable<Functor>>>>
+    : std::true_type {};
+#endif
 #endif

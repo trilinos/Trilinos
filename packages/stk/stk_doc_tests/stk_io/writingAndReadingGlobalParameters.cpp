@@ -46,102 +46,104 @@
 
 namespace
 {
-  //-BEGIN
-  TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
+//-BEGIN
+TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
+{
+  // ============================================================
+  //+ INITIALIZATION
+  const std::string file_name = "GlobalParameters.e";
+  MPI_Comm communicator = MPI_COMM_WORLD;
+
+  // Add some parameters to write and read...
+  stk::util::ParameterList params;
+  params.set_param("PI", 3.14159);   // Double
+  params.set_param("Answer", 42);    // Integer
+
+  std::vector<double> my_vector = { 2.78, 5.30, 6.21 };
+  params.set_param("doubles", my_vector); // Vector of doubles...
+
+  std::vector<int> ages = { 55, 49, 21, 19};
+  params.set_param("Ages", ages);   // Vector of integers...
+
+  {
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
+    const std::string exodusFileName = "generated:1x1x8";
+    size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+    stkIo.set_active_mesh(index);
+    stkIo.create_input_mesh();
+    stkIo.populate_bulk_data();
+
+    // ============================================================
+    //+ EXAMPLE
+    //+ Write output file with all parameters in params list...
+    size_t idx = stkIo.create_output_mesh(file_name,
+                                          stk::io::WRITE_RESTART);
+
+    stk::util::ParameterMapType::const_iterator i  = params.begin();
+    stk::util::ParameterMapType::const_iterator ie = params.end();
+    for (; i != ie; ++i) {
+      const std::string parameterName = (*i).first;
+      stk::util::Parameter &param = params.get_param(parameterName);
+      stkIo.add_global(idx, parameterName, param);
+    }
+
+    stkIo.begin_output_step(idx, 0.0);/*@\label{io:global:write_begin}*/
+
+    for (i = params.begin(); i != ie; ++i) {
+      const std::string parameterName = (*i).first;
+      stk::util::Parameter &param = params.get_param(parameterName);
+      stkIo.write_global(idx, parameterName, param);
+    }
+
+    stkIo.end_output_step(idx);/*@\label{io:global:write_end}*/
+  }
+
   {
     // ============================================================
-    //+ INITIALIZATION
-    const std::string file_name = "GlobalParameters.e";
-    MPI_Comm communicator = MPI_COMM_WORLD;
+    //+ EXAMPLE
+    //+ Read parameters from file...
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
+    stkIo.add_mesh_database(file_name, stk::io::READ_MESH);
+    stkIo.create_input_mesh();
+    stkIo.populate_bulk_data();
 
-    // Add some parameters to write and read...
-    stk::util::ParameterList params;
-    params.set_param("PI", 3.14159);   // Double 
-    params.set_param("Answer", 42);    // Integer
+    stkIo.read_defined_input_fields(0.0);
 
-    std::vector<double> my_vector = { 2.78, 5.30, 6.21 };
-    params.set_param("doubles", my_vector); // Vector of doubles...
-
-    std::vector<int> ages = { 55, 49, 21, 19};
-    params.set_param("Ages", ages);   // Vector of integers...
-
-    {
-      stk::io::StkMeshIoBroker stkIo(communicator);
-      const std::string exodusFileName = "generated:1x1x8";
-      size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-      stkIo.set_active_mesh(index);
-      stkIo.create_input_mesh();
-      stkIo.populate_bulk_data();
-
-      // ============================================================
-      //+ EXAMPLE
-      //+ Write output file with all parameters in params list...
-      size_t idx = stkIo.create_output_mesh(file_name,
-					    stk::io::WRITE_RESTART);
-
-      stk::util::ParameterMapType::const_iterator i  = params.begin();
-      stk::util::ParameterMapType::const_iterator ie = params.end();
-      for (; i != ie; ++i) {
-          const std::string parameterName = (*i).first;
-          stk::util::Parameter &param = params.get_param(parameterName);
-          stkIo.add_global(idx, parameterName, param);
-      }
-
-      stkIo.begin_output_step(idx, 0.0);/*@\label{io:global:write_begin}*/
-
-      for (i = params.begin(); i != ie; ++i) {
-	const std::string parameterName = (*i).first;
-	stk::util::Parameter &param = params.get_param(parameterName);
-	stkIo.write_global(idx, parameterName, param);
-      }
-
-      stkIo.end_output_step(idx);/*@\label{io:global:write_end}*/
+    stk::util::ParameterMapType::const_iterator i = params.begin();
+    stk::util::ParameterMapType::const_iterator ie = params.end();
+    for (; i != ie; ++i) {
+      const std::string parameterName = (*i).first;
+      stk::util::Parameter &param = params.get_param(parameterName);
+      stkIo.get_global(parameterName, param);
     }
 
-    {
-      // ============================================================
-      //+ EXAMPLE
-      //+ Read parameters from file...
-      stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.add_mesh_database(file_name, stk::io::READ_MESH);
-      stkIo.create_input_mesh();
-      stkIo.populate_bulk_data();
-
-      stkIo.read_defined_input_fields(0.0);
-
-      stk::util::ParameterMapType::const_iterator i = params.begin();
-      stk::util::ParameterMapType::const_iterator ie = params.end();
-      for (; i != ie; ++i) {
-          const std::string parameterName = (*i).first;
-          stk::util::Parameter &param = params.get_param(parameterName);
-          stkIo.get_global(parameterName, param);
-      }
-
-      // ============================================================
-      //+ VALIDATION
-      stk::util::ParameterList gold_params; // To compare values read
-      gold_params.set_param("PI", 3.14159);        // Double 
-      gold_params.set_param("Answer", 42);         // Integer
-      gold_params.set_param("doubles", my_vector); // Vector of doubles
-      gold_params.set_param("Ages", ages);         // Vector of integers...
-
-      size_t param_count = 0;
-      for (i = params.begin(); i != ie; ++i) {
-	param_count++;
-	const std::string parameterName = (*i).first;
-	stk::util::Parameter &param = params.get_param(parameterName);
-	stk::util::Parameter &gold_parameter =
-	  gold_params.get_param(parameterName);
-	validate_parameters_equal_value(param, gold_parameter);
-      }
-
-      std::vector<std::string> globalNamesOnFile;
-      stkIo.get_global_variable_names(globalNamesOnFile);
-      ASSERT_EQ(param_count, globalNamesOnFile.size());
-    }
     // ============================================================
-    // CLEAN UP
-    unlink(file_name.c_str());
+    //+ VALIDATION
+    stk::util::ParameterList gold_params; // To compare values read
+    gold_params.set_param("PI", 3.14159);        // Double
+    gold_params.set_param("Answer", 42);         // Integer
+    gold_params.set_param("doubles", my_vector); // Vector of doubles
+    gold_params.set_param("Ages", ages);         // Vector of integers...
+
+    size_t param_count = 0;
+    for (i = params.begin(); i != ie; ++i) {
+      param_count++;
+      const std::string parameterName = (*i).first;
+      stk::util::Parameter &param = params.get_param(parameterName);
+      stk::util::Parameter &gold_parameter =
+          gold_params.get_param(parameterName);
+      validate_parameters_equal_value(param, gold_parameter);
+    }
+
+    std::vector<std::string> globalNamesOnFile;
+    stkIo.get_global_variable_names(globalNamesOnFile);
+    ASSERT_EQ(param_count, globalNamesOnFile.size());
   }
-  //-END
+  // ============================================================
+  // CLEAN UP
+  unlink(file_name.c_str());
+}
+//-END
 }

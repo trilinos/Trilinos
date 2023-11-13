@@ -184,11 +184,6 @@ private:
   //  enum RelationType {
   //    USES	= 0 ,
   //    USED_BY	= 1 ,
-  //    CHILD	= 2 ,
-  //    PARENT	= 3 ,
-  //    EMBEDDED	= 0x00ff , // 4
-  //    CONTACT	= 0x00ff , // 5
-  //    AUXILIARY   = 0x00ff ,
   //    INVALID     = 10
   //  };
 
@@ -244,7 +239,7 @@ private:
    */
   static bool compute_polarity(const stk::topology & topology, unsigned permutation)
   {
-    ThrowAssert(permutation < topology.num_permutations());
+    STK_ThrowAssert(permutation < topology.num_permutations());
     const bool polarity = permutation < topology.num_positive_permutations();
     return polarity;
   }
@@ -261,7 +256,7 @@ inline
 Relation::raw_relation_id_type
 Relation::raw_relation_id( EntityRank rank , unsigned id )
 {
-  ThrowAssertMsg( id <= id_mask,
+  STK_ThrowAssertMsg( id <= id_mask,
                   "For args rank " << rank << ", id " << id << ": " <<
                   "id " << " > id_mask=" << id_mask );
 
@@ -276,19 +271,9 @@ inline
 RelationIdentifier Relation::relation_ordinal() const
 { return static_cast<unsigned>( m_raw_relation.value & id_mask ); }
 
-
-//----------------------------------------------------------------------
-/** \brief  Query which mesh entities have a relation
- *          to all of the input mesh entities.
- */
-void get_entities_through_relations(
-  const BulkData& mesh,
-  const std::vector<Entity> & entities ,
-        std::vector<Entity> & entities_related );
-
-/** \brief  Query which mesh entities have a relation
- *          to all of the input mesh entities of the given
- *          mesh rank.
+/** \brief  Fill a vector with mesh entities of the given rank,
+ *          that are related (connected) to all of
+ *          the input mesh entities.
  */
 void get_entities_through_relations(
   const BulkData& mesh,
@@ -426,7 +411,7 @@ Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type
       m_attribute( (relation_type << fmwk_permutation_digits) | permut ),
       m_target_entity(obj)
 {
-  ThrowAssertMsg( permut <= fmwk_permutation_mask,
+  STK_ThrowAssertMsg( permut <= fmwk_permutation_mask,
       "permutation " << permut << " exceeds maximum allowed value");
 }
 

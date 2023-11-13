@@ -1,14 +1,12 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
-
-#ifndef _GetLongOption_h_
-#define _GetLongOption_h_
+#pragma once
 
 #include <cstdlib>
 #include <iostream>
@@ -39,10 +37,10 @@ private:
   };
 
 private:
-  Cell *      table{nullptr};        // option table
+  Cell       *table{nullptr};        // option table
   const char *ustring{nullptr};      // usage message
-  char *      pname{nullptr};        // program basename
-  Cell *      last{nullptr};         // last entry in option table
+  char       *pname{nullptr};        // program basename
+  Cell       *last{nullptr};         // last entry in option table
   char        optmarker;             // option marker
   bool        options_parsed{false}; // parsed options, cannot enroll anymore options
 
@@ -51,6 +49,9 @@ private:
 
 public:
   explicit GetLongOption(char optmark = '-');
+  GetLongOption(const GetLongOption &)            = delete;
+  GetLongOption &operator=(const GetLongOption &) = delete;
+
   ~GetLongOption();
 
   static char *basename(char *pathname);
@@ -107,4 +108,3 @@ public:
     return value;
   }
 };
-#endif /* _GetLongOption_h_ */

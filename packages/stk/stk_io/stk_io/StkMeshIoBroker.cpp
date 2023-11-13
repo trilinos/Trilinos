@@ -34,72 +34,61 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <stk_util/stk_config.h>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_util/environment/Env.hpp>
 #include <Ionit_Initializer.h>                       // for Initializer
-#include <assert.h>                                  // for assert
-#include <stdlib.h>                                  // for exit, etc
+#include <cassert>                                   // for assert
 #include <string.h>                                  // for memcpy
+#include <algorithm>                                 // for max, sort
 #include <cstdint>                                   // for int64_t
-#include <iostream>                                  // for operator<<, etc
-#include <iterator>
+#include <iostream>                                  // for operator<<, basi...
 #include <limits>                                    // for numeric_limits
-#include <map>
-#include <stdexcept>                                 // for runtime_error
-#include <stk_io/IOHelpers.hpp>
+#include <map>                                       // for _Rb_tree_iterator
+#include <memory>                                    // for make_shared, all...
+#include <set>                                       // for set
+#include <stk_io/IOHelpers.hpp>                      // for internal_read_gl...
 #include <stk_io/InputFile.hpp>                      // for InputFile
-#include <stk_io/OutputFile.hpp>                     // for InputFile
-#include <stk_io/IossBridge.hpp>                     // for FieldAndName, etc
-#include <stk_mesh/base/BulkData.hpp>                // for BulkData, etc
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>                   // for Field
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include <stk_mesh/base/SideSetUtil.hpp>
-#include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/util/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
-#include <utility>                                   // for pair, make_pair
-#include "Ioss_CodeTypes.h"                          // for NameList
-#include "Ioss_DBUsage.h"
+#include <stk_io/IossBridge.hpp>                     // for db_api_int_size
+#include <stk_io/OutputFile.hpp>                     // for OutputFile
+#include <stk_mesh/base/BulkData.hpp>                // for BulkData, BulkDa...
+#include <stk_mesh/base/Comm.hpp>                    // for comm_mesh_counts
+#include <stk_mesh/base/FEMHelpers.hpp>              // for get_max_id_on_lo...
+#include <stk_mesh/base/MetaData.hpp>                // for MetaData, entity...
+#include <stk_mesh/base/SideSetUtil.hpp>             // for toggle_sideset_u...
+#include <stk_util/environment/FileUtils.hpp>        // for filename_substit...
+#include <stk_util/util/ReportHandler.hpp>           // for ThrowErrorMsgIf
+#include <utility>                                   // for pair, move, make...
+#include "Ioss_DBUsage.h"                            // for DB_APPEND
 #include "Ioss_DatabaseIO.h"                         // for DatabaseIO
-#include "Ioss_ElementBlock.h"                       // for ElementBlock
-#include "Ioss_ElementTopology.h"                    // for ElementTopology
-#include "Ioss_EntityType.h"
-#include "Ioss_Field.h"
+#include "Ioss_EntityType.h"                         // for ELEMENTBLOCK
+#include "Ioss_Field.h"                              // for Field, Field::Ba...
 #include "Ioss_GroupingEntity.h"                     // for GroupingEntity
-#include "Ioss_IOFactory.h"                          // for IOFactory
-#include "Ioss_NodeBlock.h"                          // for NodeBlock
-#include "Ioss_NodeSet.h"                            // for NodeSet
+#include "Ioss_IOFactory.h"                          // for NameList
 #include "Ioss_ParallelUtils.h"                      // for ParallelUtils
 #include "Ioss_Property.h"                           // for Property
 #include "Ioss_PropertyManager.h"                    // for PropertyManager
-#include "Ioss_Region.h"                             // for Region, etc
-#include "Ioss_SideBlock.h"                          // for SideBlock
-#include "Ioss_SideSet.h"                            // for SideSet
-#include "Ioss_State.h"
+#include "Ioss_Region.h"                             // for Region, Coordina...
 #include "Ioss_VariableType.h"                       // for VariableType
-#include "ProcessSetsOrBlocks.hpp"
-#include "SidesetTranslator.hpp"
-#include "StkIoUtils.hpp"
-#include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
-#include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_mesh/base/SidesetUpdater.hpp"
+#include "ProcessSetsOrBlocks.hpp"                   // for process_edge_blocks
+#include "StkIoUtils.hpp"                            // for IossBlockMembership
+#include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose
+#include "stk_io/Heartbeat.hpp"                      // for Heartbeat, Heart...
+#include "stk_io/MeshField.hpp"                      // for MeshField, MeshF...
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
-#include "stk_mesh/base/FieldParallel.hpp"
+#include "stk_mesh/base/FieldParallel.hpp"           // for communicate_fiel...
 #include "stk_mesh/base/FieldState.hpp"              // for FieldState
 #include "stk_mesh/base/Part.hpp"                    // for Part
-#include "stk_mesh/base/Selector.hpp"                // for Selector, etc
-#include "stk_mesh/base/Types.hpp"                   // for FieldVector, etc
-#include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_util/parallel/Parallel.hpp"            // for ParallelMachine, etc
-#include "stk_util/parallel/ParallelReduceBool.hpp"
-#include "stk_util/util/ParameterList.hpp"           // for Type, etc
-#include "stk_util/diag/StringUtil.hpp"           // for Type, etc
-#include "stk_util/util/string_case_compare.hpp"
+#include "stk_mesh/base/Selector.hpp"                // for Selector
+#include "stk_mesh/base/SideSetEntry.hpp"            // for SideSet
+#include "stk_mesh/base/SidesetUpdater.hpp"          // for SidesetUpdater
+#include "stk_mesh/base/Types.hpp"                   // for FieldVector, Ent...
+#include "stk_mesh/base/MeshBuilder.hpp"
+#include "stk_topology/topology.hpp"                 // for operator++, topo...
+#include "stk_util/parallel/Parallel.hpp"            // for parallel_machine...
+#include "stk_util/parallel/ParallelReduce.hpp"      // for all_reduce_max
+#include "stk_util/parallel/ParallelReduceBool.hpp"  // for is_true_on_any_proc
+#include "stk_util/util/ParameterList.hpp"           // for Parameter
+namespace stk { namespace mesh { class FieldDataManager; } }
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -112,7 +101,7 @@ bool is_index_valid(const std::vector<T> &file_vector, size_t input_file_index)
 {
     bool invalid = file_vector.empty() ||
             input_file_index >= file_vector.size() ||
-            Teuchos::is_null(file_vector[input_file_index]);
+            (file_vector[input_file_index].get()) == nullptr;
     return !invalid;
 }
 
@@ -147,29 +136,35 @@ stk::mesh::FieldVector get_fields_by_name(const stk::mesh::MetaData &meta, const
     for(size_t i=0;i<attrFields.size();++i)
     {
         attrFields[i] = meta.get_field(stk::topology::ELEM_RANK, names[i]);
-        ThrowRequireMsg(attrFields[i] != nullptr, "Can't find field named " << names[i]);
+        STK_ThrowRequireMsg(attrFields[i] != nullptr, "Can't find field named " << names[i]);
     }
     return attrFields;
 }
 
 StkMeshIoBroker::StkMeshIoBroker()
 : m_communicator(MPI_COMM_NULL),
+  m_meshBuilder(std::make_shared<stk::mesh::MeshBuilder>()),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
   m_autoLoadDistributionFactorPerNodeSet(true),
-  m_enableEdgeIO(false)
+  m_enableEdgeIO(false),
+  m_cacheEntityListForTransientSteps(false),
+  m_useSimpleFields(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
 
 StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
 : m_communicator(comm),
+  m_meshBuilder(std::make_shared<stk::mesh::MeshBuilder>(comm)),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
   m_autoLoadDistributionFactorPerNodeSet(true),
-  m_enableEdgeIO(false)
+  m_enableEdgeIO(false),
+  m_cacheEntityListForTransientSteps(false),
+  m_useSimpleFields(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -182,11 +177,11 @@ void StkMeshIoBroker::property_add(const Ioss::Property &property)
 {
     m_propertyManager.add(property);
     //In case there are already input/output files, put the property on them too.
-    if (get_input_io_region().get() != nullptr) {
-        get_input_io_region()->property_add(property);
+    if (get_input_ioss_region().get() != nullptr) {
+        get_input_ioss_region()->property_add(property);
     }
     for (size_t i=0; i<m_outputFiles.size(); ++i) {
-        get_output_io_region(i)->property_add(property);
+        get_output_ioss_region(i)->property_add(property);
     }
 }
 
@@ -220,9 +215,25 @@ stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field() const
     return * coord_field;
 }
 
-size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_region)
+bool StkMeshIoBroker::get_filter_empty_input_entity_blocks() const
 {
-    auto input_file = Teuchos::rcp(new InputFile(ioss_input_region));
+  return get_filter_empty_input_entity_blocks(m_activeMeshIndex);
+}
+
+bool StkMeshIoBroker::get_filter_empty_input_entity_blocks(size_t input_file_index) const
+{
+  validate_input_file_index(input_file_index);
+  auto ioss_input_region = m_inputFiles[input_file_index]->get_input_ioss_region();
+
+  bool retainEmptyBlocks = (ioss_input_region->get_assemblies().size() > 0);
+  const Ioss::PropertyManager &properties = ioss_input_region->get_database()->get_property_manager();
+  Ioss::Utils::check_set_bool_property(properties, "RETAIN_EMPTY_BLOCKS", retainEmptyBlocks);
+  return !retainEmptyBlocks;
+}
+
+size_t StkMeshIoBroker::add_mesh_database(std::shared_ptr<Ioss::Region> ioss_input_region)
+{
+    auto input_file = std::make_shared<InputFile>(ioss_input_region);
     m_inputFiles.push_back(input_file);
 
     size_t index_of_input_file = m_inputFiles.size()-1;
@@ -231,7 +242,7 @@ size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_
 
 void StkMeshIoBroker::create_sideset_observer()
 {
-    ThrowRequireMsg( !Teuchos::is_null(m_bulkData), "Bulk data not initialized");
+    STK_ThrowRequireMsg( !is_bulk_data_null(), "Bulk data not initialized");
     if (!bulk_data().has_observer_type<stk::mesh::SidesetUpdater>()) {
         stk::mesh::Selector activeSelector = get_active_selector();
         if (activeSelector == stk::mesh::Selector()) {
@@ -246,32 +257,45 @@ void StkMeshIoBroker::create_sideset_observer()
     }
 }
 
-void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+void StkMeshIoBroker::set_mesh_builder(std::shared_ptr<stk::mesh::MeshBuilder> meshBuilder)
 {
-    ThrowErrorMsgIf( !Teuchos::is_null(m_bulkData),
-                     "Bulk data already initialized" );
+  STK_ThrowErrorMsgIf(m_metaData || m_bulkData,
+                      "Setting a MeshBuilder after as mesh has already been built has no effect.");
+  m_meshBuilder = meshBuilder;
+}
+
+void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
+{
+    STK_ThrowErrorMsgIf(m_bulkData, "BulkData already initialized.");
     m_bulkData = arg_bulk_data;
 
-    if (Teuchos::is_null(m_metaData)) {
-        m_metaData = Teuchos::rcpFromRef(bulk_data().mesh_meta_data());
+    if (m_metaData == nullptr) {
+        m_metaData = std::shared_ptr<stk::mesh::MetaData>(&(bulk_data().mesh_meta_data()), [](auto pointerWeWontDelete){});
+    }
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
     }
 
     m_communicator = m_bulkData->parallel();
     create_sideset_observer();
 }
 
-void StkMeshIoBroker::replace_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+void StkMeshIoBroker::replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
-    ThrowErrorMsgIf( Teuchos::is_null(m_bulkData),
-                     "There is  no bulk data to replace." );
-    ThrowErrorMsgIf( Teuchos::is_null(m_metaData),
-                     "Meta data must be non-null when calling StkMeshIoBroker::replace_bulk_data." );
+    STK_ThrowRequireMsg(m_bulkData, "There is  no BulkData to replace.");
+    STK_ThrowRequireMsg(m_metaData, "MetaData must be non-null when calling StkMeshIoBroker::replace_bulk_data.");
 
-    stk::mesh::MetaData &new_meta_data = arg_bulk_data->mesh_meta_data();
-    ThrowErrorMsgIf( &(*m_metaData) != &new_meta_data,
-                     "Meta data for both new and old bulk data must be the same." );
+    std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto pointerWeWontDelete){});
+    STK_ThrowErrorMsgIf(m_metaData.get() != new_meta_data.get(),
+                        "MetaData for both new and old BulkData must be the same.");
 
     m_bulkData = arg_bulk_data;
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
+    }
+
     create_sideset_observer();
 }
 
@@ -298,7 +322,7 @@ size_t StkMeshIoBroker::add_mesh_database(const std::string &filename,
                                           const std::string &type,
                                           DatabasePurpose purpose)
 {
-    auto input_file = Teuchos::rcp(new InputFile(filename, m_communicator, type, purpose, m_propertyManager));
+    auto input_file = std::shared_ptr<InputFile>(new InputFile(filename, m_communicator, type, purpose, m_propertyManager));
     m_inputFiles.push_back(input_file);
 
     size_t index_of_input_file = m_inputFiles.size()-1;
@@ -323,12 +347,12 @@ size_t StkMeshIoBroker::add_mesh_database(const std::string &filename,
     return add_mesh_database(filename, type,purpose);
 }
 
-Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_input_io_region() const
+std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_input_ioss_region() const
 {
     if (is_index_valid(m_inputFiles, m_activeMeshIndex)) {
-        return m_inputFiles[m_activeMeshIndex]->get_input_io_region();
+        return m_inputFiles[m_activeMeshIndex]->get_input_ioss_region();
     } else {
-        return Teuchos::RCP<Ioss::Region>();
+        return std::shared_ptr<Ioss::Region>();
     }
 }
 
@@ -350,10 +374,10 @@ void StkMeshIoBroker::remove_mesh_database(size_t input_file_index)
     // we add an empty InputFile to the end of 'm_input_files' and then swap it with
     // this one--That way the 'input_file_index' points to an invalid InputFile class as
     // it should.
-    m_inputFiles[input_file_index]->get_input_io_region()->get_database()->closeDatabase();
+    m_inputFiles[input_file_index]->get_input_ioss_region()->get_database()->closeDatabase();
     m_inputFiles.push_back(m_inputFiles[input_file_index]);
-    m_inputFiles[input_file_index] = Teuchos::RCP<InputFile>();
-    assert(Teuchos::is_null(m_inputFiles[input_file_index]));
+    m_inputFiles[input_file_index] = std::shared_ptr<InputFile>();
+    assert((m_inputFiles[input_file_index].get()) == nullptr);
 }
 
 size_t StkMeshIoBroker::set_active_mesh(size_t input_file_index)
@@ -373,7 +397,7 @@ void StkMeshIoBroker::create_ioss_region()
 
 void StkMeshIoBroker::set_rank_name_vector(const std::vector<std::string> &rank_names)
 {
-    ThrowErrorMsgIf(!Teuchos::is_null(m_metaData),
+    STK_ThrowErrorMsgIf(!is_meta_data_null(),
                     "There meta data associated with this StkMeshIoBroker has already been created. "
                     "It is not permissible to set the rank_name_vector() at this time.");
 
@@ -396,7 +420,7 @@ std::string StkMeshIoBroker::get_output_filename(size_t outputIndex) const
     if (!is_output_index_valid(outputIndex)) {
         return "";
     }
-    Teuchos::RCP<Ioss::Region> outputRegion = m_outputFiles[outputIndex]->get_output_io_region();
+    std::shared_ptr<Ioss::Region> outputRegion = m_outputFiles[outputIndex]->get_output_ioss_region();
     Ioss::DatabaseIO* outputDatabase = outputRegion->get_database();
     return outputDatabase->get_filename();
 }
@@ -407,7 +431,7 @@ void StkMeshIoBroker::store_attribute_field_ordering()
     attributeFieldOrderingByPartOrdinal.clear();
     attributeFieldOrderingByPartOrdinal.resize(parts.size());
     for(stk::mesh::Part* part : parts)  {
-        auto ioss_region = get_input_io_region().get();
+        auto ioss_region = get_input_ioss_region().get();
         if(ioss_region == nullptr) {
             continue;
         }
@@ -450,17 +474,21 @@ void StkMeshIoBroker::create_surface_to_block_mapping()
 void StkMeshIoBroker::create_input_mesh()
 {
     validate_input_file_index(m_activeMeshIndex);
-    if (Teuchos::is_null(m_inputFiles[m_activeMeshIndex]->get_input_io_region())) {
+    if ((m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get()) == nullptr) {
         m_inputFiles[m_activeMeshIndex]->create_ioss_region();
     }
 
-    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
-    ThrowErrorMsgIf (region==nullptr,
+    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get();
+    STK_ThrowErrorMsgIf(region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
 
     // See if meta data is null, if so, create a new one...
-    if (Teuchos::is_null(m_metaData)) {
-        m_metaData = Teuchos::rcp(new stk::mesh::MetaData());
+    if (is_meta_data_null()) {
+        m_metaData = m_meshBuilder->create_meta_data();
+    }
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
     }
 
     size_t spatial_dimension = region->get_property("spatial_dimension").get_int();
@@ -470,11 +498,22 @@ void StkMeshIoBroker::create_input_mesh()
         initialize_spatial_dimension(meta_data(), spatial_dimension, m_rankNames);
     }
 
+    TopologyErrorHandler handler;
+    if(get_filter_empty_input_entity_blocks()) {
+      handler = [](stk::mesh::Part &part) {
+        std::ostringstream msg ;
+        msg << "\n\nERROR: Entity Block " << part.name() << " has invalid topology\n\n";
+        throw std::runtime_error( msg.str() );
+      };
+    } else {
+      handler = [](stk::mesh::Part &part) { };
+    }
+
     process_nodeblocks(*region,    meta_data());
-    process_elementblocks(*region, meta_data());
+    process_elementblocks(*region, meta_data(), handler);
     process_sidesets(*region,      meta_data());
-    process_face_blocks(*region,   meta_data());
-    process_edge_blocks(*region,   meta_data());
+    process_face_blocks(*region,   meta_data(), handler);
+    process_edge_blocks(*region,   meta_data(), handler);
 
     if(m_autoLoadDistributionFactorPerNodeSet) {
         process_nodesets(*region,  meta_data());
@@ -529,7 +568,7 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
     stk::util::filename_substitution(out_filename);
     Ioss::Region *input_region = nullptr;
     if (is_index_valid(m_inputFiles, m_activeMeshIndex)) {
-        input_region = get_input_io_region().get();
+        input_region = get_input_ioss_region().get();
     }
 
     // Determine whether 64-bit integers are required for the output mesh...
@@ -540,19 +579,24 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
             properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
         }
     }
-
-    auto output_file = Teuchos::rcp(new impl::OutputFile(out_filename, m_communicator, db_type,
+    auto output_file = std::shared_ptr<impl::OutputFile>(new impl::OutputFile(out_filename, 
+                                                         m_communicator, db_type,
                                                          properties, input_region, type, openFileImmediately));
     m_outputFiles.push_back(output_file);
-
     size_t index_of_output_file = m_outputFiles.size()-1;
     return index_of_output_file;
+}
+
+void StkMeshIoBroker::close_output_mesh(size_t output_file_index) {
+    if(!is_index_valid(m_outputFiles, output_file_index)) return;
+    m_outputFiles[output_file_index]->flush_output();
+    m_outputFiles[output_file_index].reset();
 }
 
 void StkMeshIoBroker::update_sidesets() {
     if (m_bulkData->was_mesh_modified_since_sideset_creation()) {
         std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = m_bulkData->get_observer_type<stk::mesh::SidesetUpdater>();
-        ThrowRequireMsg(!updaters.empty(), "ERROR, no stk::mesh::SidesetUpdater found on stk::mesh::BulkData");
+        STK_ThrowRequireMsg(!updaters.empty(), "ERROR, no stk::mesh::SidesetUpdater found on stk::mesh::BulkData");
         updaters[0]->set_output_stream(std::cerr);
         std::vector<size_t> values;
         updaters[0]->fill_values_to_reduce(values);
@@ -577,7 +621,7 @@ void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
 void StkMeshIoBroker::flush_output() const
 {
     for (const auto& out_file : m_outputFiles) {
-        out_file->flush_output();
+      if(out_file) out_file->flush_output();
     }
     for (const auto& hb : m_heartbeat) {
         hb->flush_output();
@@ -656,11 +700,11 @@ bool StkMeshIoBroker::populate_mesh_elements_and_nodes(bool delay_field_data_all
 
     bool i_started_modification_cycle = bulk_data().modification_begin("Mesh Read");
 
-    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
+    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get();
     bool ints64bit = db_api_int_size(region) == 8;
     bool processAllInputNodes = true;
-    if(region->property_exists(stk::io::s_process_all_input_nodes)) {
-        processAllInputNodes = region->get_property(stk::io::s_process_all_input_nodes).get_int();
+    if(region->property_exists(stk::io::s_processAllInputNodes)) {
+        processAllInputNodes = region->get_property(stk::io::s_processAllInputNodes).get_int();
     }
 
     if (ints64bit) {
@@ -706,7 +750,7 @@ void StkMeshIoBroker::populate_mesh_entitysets(bool i_started_modification_cycle
 
     stk::mesh::toggle_sideset_updaters(bulk_data(), false);
 
-    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
+    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get();
     stk::mesh::EntityIdProcMap elemIdMovedToProc;
 
     std::vector< std::pair<stk::mesh::SideSet*, bool>> cachedStates;
@@ -761,8 +805,8 @@ void StkMeshIoBroker::populate_field_data()
     //is a harmless no-op.
     bulk_data().allocate_field_data();
 
-    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
-    ThrowErrorMsgIf (region==nullptr,
+    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get();
+    STK_ThrowErrorMsgIf(region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_field_data.");
 
     bool ints64bit = db_api_int_size(region) == 8;
@@ -780,23 +824,17 @@ void StkMeshIoBroker::create_bulk_data()
     }
 
     validate_input_file_index(m_activeMeshIndex);
-    ThrowErrorMsgIf (Teuchos::is_null(m_inputFiles[m_activeMeshIndex]->get_input_io_region()),
+    STK_ThrowErrorMsgIf ((m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get()) == nullptr,
                      "There is no Input mesh region associated with this Mesh Data.");
 
-    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
-    ThrowErrorMsgIf (region==nullptr,
+    Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region().get();
+    STK_ThrowErrorMsgIf(region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
-    // Check if bulk_data is null; if so, create a new one...
-    if (Teuchos::is_null(m_bulkData)) {
-        stk::mesh::FieldDataManager* fieldDataManager = nullptr;
-        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
-                                                               , region->get_database()->util().communicator()
-                                                               , stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-                                                               , false
-#endif
-       , fieldDataManager)));
+    if (is_bulk_data_null()) {
+        set_bulk_data(m_meshBuilder->set_communicator(region->get_database()->util().communicator())
+                                   .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
+                                   .create(meta_data_ptr()));
     }
 }
 
@@ -839,27 +877,27 @@ void StkMeshIoBroker::add_input_field(size_t mesh_index, const stk::io::MeshFiel
 
 void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const
 {
-    ThrowErrorMsgIf(!is_index_valid(m_outputFiles, output_file_index),
+    STK_ThrowErrorMsgIf(!is_index_valid(m_outputFiles, output_file_index),
                     "StkMeshIoBroker::validate_output_file_index: invalid output file index of "
                     << output_file_index << ".");
 
-    ThrowErrorMsgIf (Teuchos::is_null(m_outputFiles[output_file_index]->get_output_io_region()),
+    STK_ThrowErrorMsgIf ((m_outputFiles[output_file_index]->get_output_ioss_region().get()) == nullptr,
                      "StkMeshIoBroker::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
 }
 
 void StkMeshIoBroker::validate_heartbeat_file_index(size_t heartbeat_file_index) const
 {
-    ThrowErrorMsgIf(!is_index_valid(m_heartbeat, heartbeat_file_index),
+    STK_ThrowErrorMsgIf(!is_index_valid(m_heartbeat, heartbeat_file_index),
                     "StkMeshIoBroker::validate_heartbeat_file_index: invalid heartbeat file index of "
                     << heartbeat_file_index << ".");
 
-    ThrowErrorMsgIf (Teuchos::is_null(m_heartbeat[heartbeat_file_index]->get_heartbeat_io_region()),
+    STK_ThrowErrorMsgIf ((m_heartbeat[heartbeat_file_index]->get_heartbeat_ioss_region().get()) == nullptr,
                      "StkMeshIoBroker::validate_heartbeat_file_index: There is no heartbeat mesh region associated with this heartbeat file index: " << heartbeat_file_index << ".");
 }
 
 void StkMeshIoBroker::validate_input_file_index(size_t input_file_index) const
 {
-    ThrowErrorMsgIf(!is_index_valid(m_inputFiles, input_file_index),
+    STK_ThrowErrorMsgIf(!is_index_valid(m_inputFiles, input_file_index),
                     "StkMeshIoBroker::validate_input_file_index: invalid input file index of "
                     << input_file_index << ".");
 }
@@ -902,8 +940,8 @@ void StkMeshIoBroker::add_user_data(size_t output_file_index, const std::vector<
 bool StkMeshIoBroker::has_input_global(const std::string &globalVarName) const
 {
     validate_input_file_index(m_activeMeshIndex);
-    auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
-    return internal_has_global(region, globalVarName);
+    auto region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region();
+    return impl::has_global(region, globalVarName);
 }
 
 void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names) const
@@ -917,14 +955,14 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName,
                                  bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
-    auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
-    return internal_read_parameter(region, globalVarName, param.value, param.type, abort_if_not_found);
+    auto region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region();
+    return impl::read_parameter(region, globalVarName, param.value, param.type, abort_if_not_found);
 }
 
 size_t StkMeshIoBroker::get_global_variable_length(const std::string& globalVarName) const
 {
     validate_input_file_index(m_activeMeshIndex);
-    auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
+    auto region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region();
 
     size_t length = 0;
     if (region->field_exists(globalVarName)) {
@@ -938,8 +976,8 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<d
                                  bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
-    auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
-    return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
+    auto region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region();
+    return impl::read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
                                 abort_if_not_found);
 }
 
@@ -947,8 +985,8 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<i
                                  bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
-    auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
-    return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
+    auto region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region();
+    return impl::read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
                                 abort_if_not_found);
 }
 
@@ -956,8 +994,8 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName, int &globalVa
                                  bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
-    auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
-    return internal_read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
+    auto region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region();
+    return impl::read_global(region, globalVarName, globalVar, Ioss::Field::INTEGER,
                                 abort_if_not_found);
 }
 
@@ -965,8 +1003,8 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName, double &globa
                                  bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
-    auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
-    return internal_read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
+    auto region = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region();
+    return impl::read_global(region, globalVarName, globalVar, Ioss::Field::REAL,
                                 abort_if_not_found);
 }
 
@@ -1102,7 +1140,9 @@ double StkMeshIoBroker::read_defined_input_fields_at_step(int step,
     }
 
     validate_input_file_index(m_activeMeshIndex);
-    return m_inputFiles[m_activeMeshIndex]->read_defined_input_fields_at_step(step, missing, bulk_data());
+
+    return m_inputFiles[m_activeMeshIndex]->read_defined_input_fields_at_step(step, missing, bulk_data(),
+                                                                              m_cacheEntityListForTransientSteps);
 }
 
 bool StkMeshIoBroker::use_nodeset_for_block_nodes_fields(size_t output_file_index) const
@@ -1177,7 +1217,7 @@ void StkMeshIoBroker::set_option_to_not_collapse_sequenced_fields()
 int StkMeshIoBroker::get_num_time_steps() const
 {
     int numTimeSteps = 0;
-    Ioss::Region *ioRegion = get_input_io_region().get();
+    Ioss::Region *ioRegion = get_input_ioss_region().get();
     if(ioRegion != nullptr) {
         Ioss::Property stateCount = ioRegion->get_implicit_property("state_count");
         numTimeSteps = stateCount.get_int();
@@ -1190,7 +1230,7 @@ std::vector<double> StkMeshIoBroker::get_time_steps() const
     int numTimeSteps = get_num_time_steps();
     std::vector<double> timeSteps;
 
-    Ioss::Region *ioRegion = get_input_io_region().get();
+    Ioss::Region *ioRegion = get_input_ioss_region().get();
     if(ioRegion != nullptr)  {
         for(int istep = 0; istep < numTimeSteps; istep++) {
             double state_time = ioRegion->get_state_time(istep + 1);
@@ -1202,12 +1242,12 @@ std::vector<double> StkMeshIoBroker::get_time_steps() const
 
 double StkMeshIoBroker::get_max_time() const
 {
-    return get_input_io_region()->get_max_time().second;
+    return get_input_ioss_region()->get_max_time().second;
 }
 
 void StkMeshIoBroker::set_max_num_steps_before_overwrite(size_t outputFileIndex, int maxNumStepsInFile)
 {
-    get_output_io_region(outputFileIndex)->get_database()->set_cycle_count(maxNumStepsInFile);
+    get_output_ioss_region(outputFileIndex)->get_database()->set_cycle_count(maxNumStepsInFile);
 }
 
 size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
@@ -1215,8 +1255,7 @@ size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, Heartb
 {
     std::string out_filename = filename;
     stk::util::filename_substitution(out_filename);
-    auto heartbeat = Teuchos::rcp(new impl::Heartbeat(out_filename, hb_type,
-                                                      properties, m_communicator, openFileImmediately));
+    auto heartbeat = std::make_shared<impl::Heartbeat>(out_filename, hb_type, properties, m_communicator, openFileImmediately);
     m_heartbeat.push_back(heartbeat);
     return m_heartbeat.size()-1;
 }
@@ -1236,7 +1275,7 @@ int StkMeshIoBroker::check_integer_size_requirements_serial() const
     //    use those also.
     Ioss::Region *input_region = nullptr;
     if (is_index_valid(m_inputFiles, m_activeMeshIndex)) {
-        input_region = get_input_io_region().get();
+        input_region = get_input_ioss_region().get();
     }
     if (input_region != nullptr) {
         // Get the integer size setting for the database associated with the region.
@@ -1246,7 +1285,7 @@ int StkMeshIoBroker::check_integer_size_requirements_serial() const
         }
     }
 
-    if (!Teuchos::is_null(m_bulkData) && m_bulkData->supports_large_ids()) {
+    if (!is_bulk_data_null() && m_bulkData->supports_large_ids()) {
         return 8;
     }
 
@@ -1257,7 +1296,7 @@ int StkMeshIoBroker::check_integer_size_requirements_serial() const
 int StkMeshIoBroker::check_integer_size_requirements_parallel() const
 {
     // 3. If any entity count exceeds INT_MAX, then use 64-bit integers.
-    if ( !Teuchos::is_null(m_bulkData) ) {
+    if ( !is_bulk_data_null() ) {
         std::vector<size_t> entityCounts;
         stk::mesh::comm_mesh_counts(*m_bulkData, entityCounts);
         for (size_t i=0; i < entityCounts.size(); i++) {
@@ -1268,7 +1307,7 @@ int StkMeshIoBroker::check_integer_size_requirements_parallel() const
     }
 
     // 4. check if the maximum id exceeds INT_MAX.
-    if ( !Teuchos::is_null(m_bulkData) ) {
+    if ( !is_bulk_data_null() ) {
         const stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(m_bulkData->mesh_meta_data().entity_rank_count());
         bool foundLargeId = false;
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<numRanks; rank++) {
@@ -1300,28 +1339,28 @@ int StkMeshIoBroker::check_integer_size_requirements() const
 
 void StkMeshIoBroker::set_name_and_version_for_qa_record(size_t outputFileIndex, const std::string &codeName, const std::string &codeVersion)
 {
-    Ioss::Region *region = get_output_io_region(outputFileIndex).get();
+    Ioss::Region *region = get_output_ioss_region(outputFileIndex).get();
     region->property_add(Ioss::Property(std::string("code_name"), codeName));
     region->property_add(Ioss::Property(std::string("code_version"), codeVersion));
 }
 
 void StkMeshIoBroker::add_qa_records(size_t outputFileIndex, const std::vector<QaRecord> &qaRecords)
 {
-    Ioss::Region *region = get_output_io_region(outputFileIndex).get();
+    Ioss::Region *region = get_output_ioss_region(outputFileIndex).get();
     for(const QaRecord &qaRec : qaRecords)
         region->add_qa_record(qaRec.name, qaRec.version, qaRec.date, qaRec.time);
 }
 
 void StkMeshIoBroker::add_info_records(size_t outputFileIndex, const std::vector<std::string> &infoRecords)
 {
-    Ioss::Region *region = get_output_io_region(outputFileIndex).get();
+    Ioss::Region *region = get_output_ioss_region(outputFileIndex).get();
     region->add_information_records(infoRecords);
 }
 
 std::vector<QaRecord> StkMeshIoBroker::get_qa_records() const
 {
     std::vector<QaRecord> qaRecords;
-    Ioss::Region *region = get_input_io_region().get();
+    Ioss::Region *region = get_input_ioss_region().get();
     const std::vector<std::string> &qa = region->get_qa_records();
     for (size_t i = 0; i < qa.size(); i += 4)
         qaRecords.push_back({qa[i + 0], qa[i + 1], qa[i + 2], qa[i + 3]});
@@ -1330,7 +1369,7 @@ std::vector<QaRecord> StkMeshIoBroker::get_qa_records() const
 
 std::vector<std::string> StkMeshIoBroker::get_info_records() const
 {
-    Ioss::Region *region = get_input_io_region().get();
+    Ioss::Region *region = get_input_ioss_region().get();
     return region->get_information_records();
 }
 
@@ -1360,7 +1399,7 @@ void StkMeshIoBroker::set_attribute_field_ordering_stored_by_part_ordinal(const 
 
 void StkMeshIoBroker::fill_coordinate_frames(std::vector<int>& ids, std::vector<double>& coords, std::vector<char>& tags) const
 {
-    Ioss::Region *ioregion = get_input_io_region().get();
+    Ioss::Region *ioregion = get_input_ioss_region().get();
     const Ioss::CoordinateFrameContainer& coordFrames = ioregion->get_coordinate_frames();
 
     size_t nFrames = coordFrames.size();
@@ -1380,7 +1419,7 @@ void StkMeshIoBroker::fill_coordinate_frames(std::vector<int>& ids, std::vector<
 Ioss::DatabaseIO *StkMeshIoBroker::get_input_database(size_t input_index) const
 {
     if(is_input_index_valid(input_index)) {
-        return m_inputFiles[input_index]->get_input_database().get();
+        return m_inputFiles[input_index]->get_ioss_input_database().get();
     }
 
     return nullptr;
@@ -1417,7 +1456,7 @@ void StkMeshIoBroker::set_reference_input_region(size_t outputIndex, const StkMe
 {
     validate_output_file_index(outputIndex);
 
-    const Ioss::Region *input_region = inputBroker.get_input_io_region().get();
+    const Ioss::Region *input_region = inputBroker.get_input_ioss_region().get();
     m_outputFiles[outputIndex]->set_input_region(input_region);
 }
 
@@ -1443,9 +1482,9 @@ size_t StkMeshIoBroker::get_heartbeat_global_component_count(size_t heartbeat_fi
 
     size_t comp_count = 0;
     if(has_heartbeat_global(heartbeat_file_index, globalVarName)) {
-        Teuchos::RCP<Ioss::Region> hbRegion = m_heartbeat[heartbeat_file_index]->get_heartbeat_io_region();
+        std::shared_ptr<Ioss::Region> hbRegion = m_heartbeat[heartbeat_file_index]->get_heartbeat_ioss_region();
 
-        if(!hbRegion.is_null()) {
+        if(hbRegion.get() != nullptr) {
             comp_count = hbRegion->get_fieldref(globalVarName).raw_storage()->component_count();
         }
     }

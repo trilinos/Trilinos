@@ -57,13 +57,11 @@ public:
   /** \brief  Query the upper bound on the number of mesh entities
     *         that may be associated with a single bucket.
     */
-  static const unsigned max_bucket_capacity = 1024;
-  static const unsigned default_bucket_capacity = 512;
-
   BucketRepository(
       BulkData & mesh,
       unsigned entity_rank_count,
-      unsigned bucket_capacity = default_bucket_capacity
+      unsigned initialBucketCapacity = get_default_initial_bucket_capacity(),
+      unsigned maximumBucketCapacity = get_default_maximum_bucket_capacity()
       );
 
   ~BucketRepository();
@@ -146,7 +144,9 @@ public:
 
   bool being_destroyed() const { return m_being_destroyed; }
 
-  unsigned get_bucket_capacity() const { return m_bucket_capacity; }
+  unsigned get_bucket_capacity() const { return m_maximumBucketCapacity; }
+  unsigned get_initial_bucket_capacity() const { return m_initialBucketCapacity; }
+  unsigned get_maximum_bucket_capacity() const { return m_maximumBucketCapacity; }
 
   void delete_bucket(Bucket * bucket);
 
@@ -155,9 +155,10 @@ public:
 private:
   BucketRepository();
 
-  Bucket *allocate_bucket(EntityRank arg_entity_rank,
-                          const std::vector<unsigned> & arg_key,
-                          size_t arg_capacity);
+  Bucket *allocate_bucket(EntityRank entityRank,
+                          const std::vector<unsigned> & key,
+                          unsigned initialCapacity,
+                          unsigned maximumCapacity);
 
   void deallocate_bucket(Bucket *bucket);
 
@@ -178,7 +179,8 @@ private:
   std::vector<std::vector<Partition *> > m_partitions;
   std::vector<bool> m_need_sync_from_partitions;
 
-  unsigned m_bucket_capacity;
+  unsigned m_initialBucketCapacity;
+  unsigned m_maximumBucketCapacity;
   bool m_being_destroyed;
 };
 
@@ -186,7 +188,7 @@ inline
 Bucket *BucketRepository::get_bucket(EntityRank entity_rank, int bucket_id) const
 {
   const BucketVector & all_buckets_for_rank = m_buckets[entity_rank];
-  ThrowAssert(static_cast<size_t>(bucket_id) < all_buckets_for_rank.size());
+  STK_ThrowAssert(static_cast<size_t>(bucket_id) < all_buckets_for_rank.size());
   return all_buckets_for_rank[bucket_id];
 }
 

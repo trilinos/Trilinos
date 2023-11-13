@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iocgns_DatabaseIO_h
-#define IOSS_Iocgns_DatabaseIO_h
+#pragma once
+
+#include "iocgns_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
@@ -49,13 +50,13 @@ namespace Ioss {
  */
 namespace Iocgns {
 
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOCGNS_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     enum class entity_type { NODE, ELEM };
 
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -68,7 +69,7 @@ namespace Iocgns {
 
     ~DatabaseIO() override;
 
-    const std::string get_format() const override { return "CGNS"; }
+    std::string get_format() const override { return "CGNS"; }
 
     // This isn't quite true since a CGNS library with cgsize_t == 64-bits can read
     // a file with 32-bit ints. However,...
@@ -214,4 +215,3 @@ namespace Iocgns {
     mutable std::map<std::string, Ioss::FaceUnorderedSet> m_boundaryFaces;
   };
 } // namespace Iocgns
-#endif

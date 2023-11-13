@@ -44,6 +44,7 @@
 
 //#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Access.hpp>
 
 #include<KokkosKernels_Utils.hpp>
 
@@ -58,7 +59,7 @@ namespace FROSch {
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,
-              class NO = KokkosClassic::DefaultNode::DefaultNodeType>
+              class NO = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
     class CoarseSpace {
 
     protected:

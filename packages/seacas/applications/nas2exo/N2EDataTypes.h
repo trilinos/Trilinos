@@ -4,11 +4,9 @@
  *  Created on: Oct 10, 2020
  *      Author: Ramon J. Moral(Contractor, STRA LLC)
  * 		John Niederhouse(ORG 1443, SNL, Coordinator)
- *  Copyright: Sandia National Labs, 2020, 2021
+ *  Copyright: Sandia National Labs, 2020, 2021, 2022, 2023
  */
-
-#ifndef INCLUDE_N2EDATATYPES_H_
-#define INCLUDE_N2EDATATYPES_H_
+#pragma once
 
 #include <cstring>
 #include <exodusII.h>
@@ -24,15 +22,15 @@ namespace N2EModules {
   struct supportedElements
   {
 
-    ex_entity_type elementType;
+    ex_entity_type elementType{};
     char           elemDesc[MAX_STR_LENGTH]{'\0'};
-    int64_t        numNodesPerElem;
-    int64_t        numEdgesPerElem;
-    int64_t        numFacesPerElem;
-    int64_t        numAttrPerElem;
+    int64_t        numNodesPerElem{};
+    int64_t        numEdgesPerElem{};
+    int64_t        numFacesPerElem{};
+    int64_t        numAttrPerElem{};
 
-    supportedElements(ex_entity_type elType, std::string elDesc, int64_t nodesPer, int64_t edgesPer,
-                      int64_t facesPer, int64_t attrPer)
+    supportedElements(ex_entity_type elType, const std::string &elDesc, int64_t nodesPer,
+                      int64_t edgesPer, int64_t facesPer, int64_t attrPer)
     {
 
       elementType = elType;
@@ -55,7 +53,7 @@ namespace N2EModules {
   };
   struct N2EGridPtList
   {
-    double v[8];
+    int v[8];
   };
   using sectionType = std::tuple<unsigned /*propID*/, unsigned /*MATID*/>;
   using gridType    = std::tuple<unsigned /*GRIDID*/, N2EPoint3D>;
@@ -63,4 +61,3 @@ namespace N2EModules {
                                  N2EGridPtList /*nodes*/>;
 
 } // namespace N2EModules
-#endif /* INCLUDE_N2EDATATYPES_H_ */

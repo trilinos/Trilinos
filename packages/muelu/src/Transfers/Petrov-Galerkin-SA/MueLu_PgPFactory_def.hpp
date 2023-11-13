@@ -62,9 +62,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_PgPFactory_decl.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -151,7 +148,7 @@ namespace MueLu {
 
     doFillComplete=true;
     optimizeStorage=false;
-    Teuchos::ArrayRCP<Scalar> diag = Utilities::GetMatrixDiagonal(*A);
+    Teuchos::ArrayRCP<Scalar> diag = Utilities::GetMatrixDiagonal_arcp(*A);
     Utilities::MyOldScaleMatrix(*DinvAP0, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     /////////////////// calculate local damping factors omega
@@ -213,6 +210,14 @@ namespace MueLu {
     if (!restrictionMode_) {
       // prolongation factory is in prolongation mode
       Set(coarseLevel, "P", P_smoothed);
+
+      // RfromPFactory used to indicate to TogglePFactory that a factory
+      // capable  or producing R can be invoked later. TogglePFactory
+      // replaces dummy value with an index into it's array of prolongators
+      // pointing to the correct prolongator factory. This is later used by
+      // RfromP_Or_TransP to invoke the prolongatorfactory in RestrictionMode
+      int dummy = 7;
+      Set(coarseLevel,"RfromPfactory", dummy);
 
       if (IsPrint(Statistics1))
         GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P_smoothed, "P", params);
@@ -304,7 +309,7 @@ namespace MueLu {
         // compute D^{-1} * A * D^{-1} * A * P0
         bool doFillComplete=true;
         bool optimizeStorage=true;
-        Teuchos::ArrayRCP<Scalar> diagA = Utilities::GetMatrixDiagonal(*A);
+        Teuchos::ArrayRCP<Scalar> diagA = Utilities::GetMatrixDiagonal_arcp(*A);
         RCP<Matrix> DinvADinvAP0 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *DinvAP0, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
         Utilities::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 	diagA = Teuchos::ArrayRCP<Scalar>();
@@ -398,7 +403,7 @@ namespace MueLu {
 
     bool bAtLeastOneDefined = false;
     Teuchos::ArrayRCP< Scalar > RowBasedOmega_local = RowBasedOmega->getDataNonConst(0);
-    for(LocalOrdinal row = 0; row<Teuchos::as<LocalOrdinal>(A->getNodeNumRows()); row++) {
+    for(LocalOrdinal row = 0; row<Teuchos::as<LocalOrdinal>(A->getLocalNumRows()); row++) {
       Teuchos::ArrayView<const LocalOrdinal> lindices;
       Teuchos::ArrayView<const Scalar> lvals;
       DinvAP0->getLocalRowView(row, lindices, lvals);
@@ -433,7 +438,7 @@ namespace MueLu {
     Teuchos::ArrayView<const LocalOrdinal> lindices;
     Teuchos::ArrayView<const Scalar> lvals;
 
-    for(size_t n=0; n<Op->getNodeNumRows(); n++) {
+    for(size_t n=0; n<Op->getLocalNumRows(); n++) {
       Op->getLocalRowView(n, lindices, lvals);
       for(size_t i=0; i<Teuchos::as<size_t>(lindices.size()); i++) {
         InnerProd_local[lindices[i]] += lvals[i]*lvals[i];
@@ -470,12 +475,12 @@ namespace MueLu {
 #if 0 // not necessary - remove me
     if(InnerProdVec->getMap()->isSameAs(*left->getColMap())) {
       // initialize NewRightLocal vector and assign all entries to
-      // left->getColMap()->getNodeNumElements() + 1
-      std::vector<LocalOrdinal> NewRightLocal(right->getColMap()->getNodeNumElements(), Teuchos::as<LocalOrdinal>(left->getColMap()->getNodeNumElements()+1));
+      // left->getColMap()->getLocalNumElements() + 1
+      std::vector<LocalOrdinal> NewRightLocal(right->getColMap()->getLocalNumElements(), Teuchos::as<LocalOrdinal>(left->getColMap()->getLocalNumElements()+1));
 
       LocalOrdinal i = 0;
-      for (size_t j=0; j < right->getColMap()->getNodeNumElements(); j++) {
-        while ( (i < Teuchos::as<LocalOrdinal>(left->getColMap()->getNodeNumElements())) &&
+      for (size_t j=0; j < right->getColMap()->getLocalNumElements(); j++) {
+        while ( (i < Teuchos::as<LocalOrdinal>(left->getColMap()->getLocalNumElements())) &&
                 (left->getColMap()->getGlobalElement(i) < right->getColMap()->getGlobalElement(j)) ) i++;
         if (left->getColMap()->getGlobalElement(i) == right->getColMap()->getGlobalElement(j)) {
           NewRightLocal[j] = i;
@@ -483,9 +488,9 @@ namespace MueLu {
       }
 
       Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
-      std::vector<Scalar> temp_array(left->getColMap()->getNodeNumElements()+1, 0.0);
+      std::vector<Scalar> temp_array(left->getColMap()->getLocalNumElements()+1, 0.0);
 
-      for(size_t n=0; n<right->getNodeNumRows(); n++) {
+      for(size_t n=0; n<right->getLocalNumRows(); n++) {
         Teuchos::ArrayView<const LocalOrdinal> lindices_left;
         Teuchos::ArrayView<const Scalar> lvals_left;
         Teuchos::ArrayView<const LocalOrdinal> lindices_right;
@@ -526,26 +531,26 @@ namespace MueLu {
     } else
 #endif // end remove me
       if(InnerProdVec->getMap()->isSameAs(*right->getColMap())) {
-        size_t szNewLeftLocal = TEUCHOS_MAX(left->getColMap()->getNodeNumElements(), right->getColMap()->getNodeNumElements());
+        size_t szNewLeftLocal = TEUCHOS_MAX(left->getColMap()->getLocalNumElements(), right->getColMap()->getLocalNumElements());
         Teuchos::RCP<std::vector<LocalOrdinal> > NewLeftLocal = Teuchos::rcp(new std::vector<LocalOrdinal>(szNewLeftLocal, Teuchos::as<LocalOrdinal>(right->getColMap()->getMaxLocalIndex()+1)));
 
         LocalOrdinal j = 0;
-        for (size_t i=0; i < left->getColMap()->getNodeNumElements(); i++) {
-          while ( (j < Teuchos::as<LocalOrdinal>(right->getColMap()->getNodeNumElements())) &&
+        for (size_t i=0; i < left->getColMap()->getLocalNumElements(); i++) {
+          while ( (j < Teuchos::as<LocalOrdinal>(right->getColMap()->getLocalNumElements())) &&
                   (right->getColMap()->getGlobalElement(j) < left->getColMap()->getGlobalElement(i)) ) j++;
           if (right->getColMap()->getGlobalElement(j) == left->getColMap()->getGlobalElement(i)) {
             (*NewLeftLocal)[i] = j;
           }
         }
 
-        /*for (size_t i=0; i < right->getColMap()->getNodeNumElements(); i++) {
+        /*for (size_t i=0; i < right->getColMap()->getLocalNumElements(); i++) {
           std::cout << "left col map: " << (*NewLeftLocal)[i] << " GID: " << left->getColMap()->getGlobalElement((*NewLeftLocal)[i]) << " GID: " << right->getColMap()->getGlobalElement(i) << " right col map: " << i << std::endl;
           }*/
 
         Teuchos::ArrayRCP< Scalar > InnerProd_local = InnerProdVec->getDataNonConst(0);
         Teuchos::RCP<std::vector<Scalar> > temp_array = Teuchos::rcp(new std::vector<Scalar>(right->getColMap()->getMaxLocalIndex()+2, 0.0));
 
-        for(size_t n=0; n<left->getNodeNumRows(); n++) {
+        for(size_t n=0; n<left->getLocalNumRows(); n++) {
           Teuchos::ArrayView<const LocalOrdinal> lindices_left;
           Teuchos::ArrayView<const Scalar> lvals_left;
           Teuchos::ArrayView<const LocalOrdinal> lindices_right;
@@ -596,7 +601,7 @@ namespace MueLu {
       Teuchos::ArrayView<const LocalOrdinal> lindices_right;
       Teuchos::ArrayView<const Scalar> lvals_right;
 
-      for(size_t n=0; n<left->getNodeNumRows(); n++)
+      for(size_t n=0; n<left->getLocalNumRows(); n++)
         {
 
           left->getLocalRowView (n, lindices_left,  lvals_left);
@@ -643,7 +648,7 @@ namespace MueLu {
       Teuchos::ArrayView<const LocalOrdinal> lindices_right;
       Teuchos::ArrayView<const Scalar> lvals_right;
 
-      for(size_t n=0; n<left->getNodeNumRows(); n++)
+      for(size_t n=0; n<left->getLocalNumRows(); n++)
         {
           left->getLocalRowView(n, lindices_left, lvals_left);
           right->getLocalRowView(n, lindices_right, lvals_right);

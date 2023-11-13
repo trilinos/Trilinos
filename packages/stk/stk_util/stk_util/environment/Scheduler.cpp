@@ -30,20 +30,23 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "stk_util/environment/Scheduler.hpp"
+
+#include <float.h>  // for DBL_MAX, FLT_MAX
+
+#include <cassert>  // for assert
+#include <cmath>    // for ceil
+#include <iomanip>
+#include <iostream>  // for operator<<, basic_ostream::operator<<
+#include <limits>    // for numeric_limits
+#include <utility>   // for pair, swap
+
 #include "stk_util/environment/EnvData.hpp"      // for EnvData
 #include "stk_util/parallel/ParallelReduce.hpp"  // for all_reduce_max
 #include "stk_util/util/Callback.hpp"            // for create_callback
 #include "stk_util/util/SignalHandler.hpp"       // for SignalHandler
-#include <cassert>                               // for assert
-#include <float.h>                               // for DBL_MAX, FLT_MAX
-#include <cmath>                                 // for ceil
-#include <iostream>                              // for operator<<, basic_ostream::operator<<
-#include <limits>                                // for numeric_limits
-#include <utility>                               // for pair, swap
-
 
 #ifndef TIME_MAX
 #define TIME_MAX DBL_MAX
@@ -476,19 +479,12 @@ double Scheduler::adjust_dt(double dt, double time)
   // Some codes call this routine prior to outputting the current step
   // In that case, we have already hit the desired output time and
   // don't need to adjust the dt
-  if (delta <= 0.0)
-  {
+  if (delta < tolerance_ * time) {
     return dt;
   }
 
   TolerancedTime delta_range = get_toleranced_time_range(delta);
-  double steps;
-  if (dt >= delta_range.min && dt <= delta_range.max) {
-    steps = 1.0;
-  }
-  else {
-    steps = ceil(delta / dt);
-  }
+  const double steps = (dt >= delta_range.min) ? 1.0 : ceil(delta / dt);
   assert(steps > 0);
 
   // If 'steps' is less than 'lookAhead', then calculate
@@ -581,7 +577,11 @@ Time Scheduler::next_implicit_output_time(Time time) const
     begin = next++;
   }
 
-  assert( (*begin).first <= time);
+#ifndef NDEBUG
+  static constexpr double eps = std::numeric_limits<double>::epsilon();
+  STK_ThrowAssertMsg( (*begin).first <= (time + eps), "begin.first="<<(*begin).first<<", time="<<time<<" diff "<<((*begin).first-time)<<" eps "<<std::numeric_limits<double>::epsilon());
+#endif
+
   assert(next == end || (*next).first > delta.min);
 
   // At this point, have the correct time interval which specifies start and frequency

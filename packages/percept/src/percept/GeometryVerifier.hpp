@@ -19,7 +19,6 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>

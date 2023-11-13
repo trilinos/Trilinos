@@ -1,14 +1,15 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
+
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -31,6 +32,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -42,6 +45,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation
@@ -56,10 +60,10 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
+
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -82,6 +86,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -93,6 +99,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+Only one partition: Skip call to the repartitioner.
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation
@@ -108,7 +115,7 @@ Replacing maps with a subcommunicator
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.45
-Smoother complexity = 1.78
+Smoother complexity = 1.93
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
@@ -124,12 +131,15 @@ Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
+
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
@@ -169,10 +179,10 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
+
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -195,6 +205,8 @@ matrixmatrix: kernel params ->
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -206,6 +218,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+Only one partition: Skip call to the repartitioner.
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation
@@ -221,7 +234,7 @@ Replacing maps with a subcommunicator
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.45
-Smoother complexity = 1.78
+Smoother complexity = 1.93
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
@@ -238,15 +251,17 @@ Smoother (level 2) post : no smoother
 
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]
 Build (MueLu::RebalanceTransferFactory)
-Build (MueLu::RepartitionFactory)
-Computing Ac (MueLu::RAPFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::TentativePFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
+Build (MueLu::RepartitionFactory)
+Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -258,6 +273,7 @@ matrixmatrix: kernel params ->
 Build (MueLu::RepartitionHeuristicFactory)
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
+Only one partition: Skip call to the repartitioner.
 Using original prolongator
 repartition: rebalance P and R = 0
 type = Interpolation
@@ -269,3 +285,5 @@ Computing Ac (MueLu::RebalanceAcFactory)
 Replacing maps with a subcommunicator
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
+ Amesos2 -> 
+  [empty list]

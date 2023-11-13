@@ -45,7 +45,7 @@ namespace mesh {
 
 void create_adjacent_entities( BulkData & mesh, PartVector & /*arg_add_parts*/)
 {
-  ThrowErrorMsgIf( mesh.in_modifiable_state(), "Mesh is not SYNCHRONIZED");
+  STK_ThrowErrorMsgIf( mesh.in_modifiable_state(), "Mesh is not SYNCHRONIZED");
 
   create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), {}, false);
   if (mesh.mesh_meta_data().spatial_dimension() == 3)

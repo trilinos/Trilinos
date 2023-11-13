@@ -10,6 +10,8 @@
 #include <Akri_AdaptivityInterface.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_AuxMetaData.hpp>
+#include <Akri_RefinementInterface.hpp>
 
 #ifdef __INTEL_COMPILER
 #include <adapt/ElementRefinePredicate.hpp> // for ElementRefinePredicate
@@ -41,7 +43,6 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -64,6 +65,34 @@
 
 namespace krino
 {
+
+PerceptRefinement & create_percept_refinement(stk::mesh::MetaData & meta, stk::diag::Timer & parentTimer)
+{
+  auto & active_part = AuxMetaData::get(meta).active_part();
+  HAdapt::setup(meta, active_part, parentTimer);
+  PerceptRefinement & percepRefinement = PerceptRefinement::create(meta);
+  auto adaptiveRefinement = [&meta](const std::string & markerFieldName, int debug_level)
+    {
+      HAdapt::do_adaptive_refinement(meta, markerFieldName);
+    };
+  percepRefinement.set_adaptive_refinement_function(adaptiveRefinement);
+  auto uniformRefinement = [&meta](const int uniformRefinementLevels)
+  {
+    HAdapt::do_uniform_refinement(meta, uniformRefinementLevels);
+  };
+  percepRefinement.set_uniform_refinement_function(uniformRefinement);
+  return percepRefinement;
+}
+
+RefinementInterface & create_refinement(stk::mesh::MetaData & meta, const bool usePercept, stk::diag::Timer & parentTimer)
+{
+  if (usePercept)
+  {
+    return create_percept_refinement(meta, parentTimer);
+  }
+
+  return KrinoRefinement::create(meta);
+}
 
 namespace
 {
@@ -124,7 +153,7 @@ void HAdaptImpl::check_supported_element_types() const
       {
         continue;
       }
-      ThrowErrorMsg("Elements in block "
+      STK_ThrowErrorMsg("Elements in block "
           << part.name() << " have topology " << part.topology().name()
           << " which is currently not supported for adaptive refinement.");
     }
@@ -191,11 +220,7 @@ void HAdaptImpl::setup(stk::mesh::Part & active_part, stk::diag::Timer & root_ti
 
   my_pMesh = std::make_unique<percept::PerceptMesh>(&my_meta, nullptr, false);
 
-  typedef stk::mesh::Field<double, stk::mesh::Cartesian> PerceptVector;
-  const stk::mesh::FieldBase & coordinates_base = *my_meta.coordinate_field();
-  PerceptVector & typed_coordinates =
-      reinterpret_cast<PerceptVector &>(const_cast<stk::mesh::FieldBase &>(coordinates_base));
-  my_pMesh->setCoordinatesField(&typed_coordinates);
+  my_pMesh->setCoordinatesField(const_cast<stk::mesh::FieldBase*>(my_meta.coordinate_field()));
 
   my_pMesh->register_and_set_refine_fields();
   my_pMesh->add_field_int("refine_field", stk::topology::NODE_RANK, 0);
@@ -222,6 +247,7 @@ void limit_coarsening_to_child_elements_with_all_siblings_marked_for_coarsening_
   const stk::mesh::BulkData & mesh = *eMesh.get_bulk_data();
   const auto & local_buckets =
       mesh.get_buckets(stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part());
+  stk::mesh::Part &child_part = *mesh.mesh_meta_data().get_part("refine_active_elements_part_3");
 
   std::vector<stk::mesh::Entity> children;
   std::vector<stk::mesh::Entity> childrenOfChild;
@@ -229,10 +255,22 @@ void limit_coarsening_to_child_elements_with_all_siblings_marked_for_coarsening_
   // Only mark element for COARSEN if all children are marked COARSEN
   for (auto && b_ptr : local_buckets)
   {
+    const bool is_child = b_ptr->member(child_part);
     for (auto && elem : *b_ptr)
     {
       eMesh.getChildren(elem, children, false, false);
-      if (!children.empty())
+      if (children.empty())
+      {
+        if (!is_child)
+        {
+          int & marker = (*((int *)stk::mesh::field_data( marker_field, elem )));
+          if (marker == -1)
+          {
+            marker = 0;
+          }
+        }
+      }
+      else
       {
         bool all_children_marked_COARSEN = true;
         for (auto && child : children)
@@ -281,7 +319,7 @@ void fill_percept_refine_field(percept::PerceptMesh & eMesh,
     const bool is_parent = b.member(parent_part);
     const int length = b.size();
     const unsigned marker_field_length = stk::mesh::field_scalars_per_entity(marker_field, b);
-    ThrowRequire(1 == stk::mesh::field_scalars_per_entity(refine_field, b));
+    STK_ThrowRequire(1 == stk::mesh::field_scalars_per_entity(refine_field, b));
 
     int * marker = (int *)stk::mesh::field_data(marker_field, b);
     int * refine = (int *)stk::mesh::field_data(refine_field, b);
@@ -341,18 +379,26 @@ void delete_partless_faces_and_edges(stk::mesh::BulkData & mesh)
 
           for (size_t irel = 0; irel < relatives.size(); ++irel)
           {
-            ThrowRequireMsg(mesh.destroy_relation(relatives[irel], entity, relative_ordinals[irel]),
+            STK_ThrowRequireMsg(mesh.destroy_relation(relatives[irel], entity, relative_ordinals[irel]),
                 "Could not destroy relation between " << mesh.entity_key(relatives[irel]) << " and "
                                                       << mesh.entity_key(entity));
           }
         }
-        ThrowRequireMsg(
+        STK_ThrowRequireMsg(
             mesh.destroy_entity(entity), "Could not destroy entity " << mesh.entity_key(entity));
       }
     }
   }
 
   mesh.modification_end();
+}
+
+stk::mesh::Part & get_refinement_active_part(const stk::mesh::MetaData & meta, stk::mesh::EntityRank rank)
+{
+  const std::string active_part_name = "refine_active_elements_part_"+std::to_string((int)rank);
+  stk::mesh::Part* active_part = meta.get_part(active_part_name);
+  STK_ThrowRequireMsg(nullptr != active_part, "Active part not found: " << active_part_name);
+  return *active_part;
 }
 
 void update_active_inactive_entities(stk::mesh::BulkData & mesh,
@@ -414,7 +460,7 @@ void HAdaptImpl::do_adaptive_refinement(const std::string & marker_field_name)
   /* %TRACE[ON]% */ Trace trace__(
       "void HAdapt::do_adaptive_refinement(const std::string &marker_field)"); /* %TRACE% */
 
-  ThrowAssertMsg(my_root_timer != nullptr, "HAdapt::setup() not called.");
+  STK_ThrowAssertMsg(my_root_timer != nullptr, "HAdapt::setup() not called.");
   static stk::diag::Timer timerAdapt_("Adapt", *my_root_timer);
   static stk::diag::Timer timerSetup_("Setup", timerAdapt_);
   static stk::diag::Timer timerFmwkUpdating_("Update Active Part", timerAdapt_);
@@ -435,7 +481,7 @@ void HAdaptImpl::do_adaptive_refinement(const std::string & marker_field_name)
 
   const stk::mesh::FieldBase * element_marker_field =
       my_meta.get_field(stk::topology::ELEMENT_RANK, marker_field_name);
-  ThrowRequire(element_marker_field);
+  STK_ThrowRequire(element_marker_field);
   my_selector = stk::mesh::selectField(*element_marker_field);
 
   if (!my_breaker)
@@ -471,6 +517,7 @@ void HAdaptImpl::do_adaptive_refinement(const std::string & marker_field_name)
 
   delete_partless_faces_and_edges(bulk);
 
+  if (refinement_count > 0)
   {
     stk::diag::TimeBlock tbTimerRefine_(timerRefine_);
     my_breaker->setAlternateRootTimer(&timerRefine_);
@@ -496,6 +543,7 @@ void HAdaptImpl::do_adaptive_refinement(const std::string & marker_field_name)
   // update refine field to include newly created children
   fill_percept_refine_field(*my_pMesh, *element_marker_field);
 
+  if (unrefinement_count > 0)
   {
     stk::diag::TimeBlock tbTimerUnrefine_(timerUnrefine_);
     my_breaker->setAlternateRootTimer(&timerUnrefine_);
@@ -509,7 +557,7 @@ void HAdaptImpl::do_adaptive_refinement(const std::string & marker_field_name)
     stk::diag::TimeBlock tbTimerRebuilding_(timerFmwkUpdating_);
     // The Encore-Percept interface also called induce_nodal_unranked_superset_parts
     // and topology nodeset inducer but I don't believe those are needed here.
-    ThrowRequireMsg(my_active_part != nullptr, "Active part not set for krino::HAdapt");
+    STK_ThrowRequireMsg(my_active_part != nullptr, "Active part not set for krino::HAdapt");
     update_active_inactive_entities(bulk, *my_active_part);
     fixup_side_permutation(bulk);
   }
@@ -520,7 +568,7 @@ void HAdaptImpl::do_initial_uniform_refinement(const int num_levels)
   /* %TRACE[ON]% */ Trace trace__(
       "void HAdapt::do_uniform_refinement()"); /* %TRACE% */
 
-  ThrowAssertMsg(my_root_timer != nullptr, "HAdapt::setup() not called.");
+  STK_ThrowAssertMsg(my_root_timer != nullptr, "HAdapt::setup() not called.");
   static stk::diag::Timer timerAdapt_("Adapt", *my_root_timer);
   static stk::diag::Timer timerSetup_("Setup", timerAdapt_);
   static stk::diag::Timer timerFmwkUpdating_("Update Active Part", timerAdapt_);
@@ -563,7 +611,7 @@ void HAdaptImpl::do_initial_uniform_refinement(const int num_levels)
     stk::diag::TimeBlock tbTimerRebuilding_(timerFmwkUpdating_);
     // The Encore-Percept interface also called induce_nodal_unranked_superset_parts
     // and topology nodeset inducer but I don't believe those are needed here.
-    ThrowRequireMsg(my_active_part != nullptr, "Active part not set for krino::HAdapt");
+    STK_ThrowRequireMsg(my_active_part != nullptr, "Active part not set for krino::HAdapt");
     update_active_inactive_entities(bulk, *my_active_part);
     fixup_side_permutation(bulk);
   }
@@ -587,92 +635,6 @@ void do_adaptive_refinement(stk::mesh::MetaData & meta, const std::string & mark
 void do_uniform_refinement(stk::mesh::MetaData & meta, const int num_levels)
 {
   get(meta).do_initial_uniform_refinement(num_levels);
-}
-
-
-void mark_based_on_indicator_field(const stk::mesh::BulkData & bulk,
-    const std::string & marker_field_name,
-    const std::string & indicator_field_name,
-    const int max_refinement_level,
-    const int current_refinement_level,
-    const uint64_t target_elem_count)
-{
-  int num_initial_elements = 0;
-  if(num_initial_elements ==0)
-  {
-    std::vector<size_t> counts;
-    stk::mesh::comm_mesh_counts(bulk, counts);
-    num_initial_elements = counts[3];
-  }
-
-  const auto & meta = bulk.mesh_meta_data();
-  percept::MarkerInfo markerInfo;
-  markerInfo.errorIndicator_ = meta.get_field<percept::ErrorFieldType>(stk::topology::ELEMENT_RANK, indicator_field_name);
-  markerInfo.refineField_ = meta.get_field<percept::RefineFieldType>(stk::topology::ELEMENT_RANK, marker_field_name);
-  markerInfo.refineFieldOrig_ = meta.get_field<percept::RefineFieldType>(stk::topology::ELEMENT_RANK, "refine_field_orig");
-  markerInfo.refineLevelField_ = meta.get_field<percept::RefineLevelType>(stk::topology::ELEMENT_RANK, "refine_level");
-  /*
-  markerInfo.useMarker_ = true;
-
-  markerInfo.numInitialElements_ = num_initial_elements;
-  markerInfo.maxRefinementLevel_ = max_refinement_level;
-  markerInfo.maxRefinementNumberOfElementsFraction_ = max_element_growth_factor;
-  markerInfo.debug_ = false;
-
-  markerInfo.refineFraction_ = refine_fraction;
-  markerInfo.unrefineFraction_ = unrefine_fraction;
-
-  percept::MarkerUsingErrIndFraction marker(const_cast<stk::mesh::BulkData &>(bulk), markerInfo);
-  marker.mark();*/
-
-  const auto & percept_parent_part = get_refinement_inactive_part(meta, stk::topology::ELEMENT_RANK);
-  const auto & active_buckets =
-      bulk.get_buckets(stk::topology::ELEMENT_RANK,
-          stk::mesh::selectField(*markerInfo.errorIndicator_) &
-          !percept_parent_part &
-          meta.locally_owned_part());
-  const int buckets_to_sample = std::min(1000ul, active_buckets.size());
-  std::vector<double> sample_values;
-  sample_values.reserve(512*buckets_to_sample);
-  int j=0;
-  for(int i=0; i < buckets_to_sample; ++i)
-  {
-    const double * ind_data = field_data<double>(*markerInfo.errorIndicator_, *active_buckets[i]);
-    const int size = active_buckets[i]->size();
-    j += size;
-    sample_values.insert(sample_values.end(), ind_data, ind_data + size);
-  }
-
-  // This is not scalable
-  std::vector<double> global_vals;
-  stk::parallel_vector_concat(bulk.parallel(), sample_values, global_vals);
-  std::sort(global_vals.begin(), global_vals.end());
-
-  const auto current_active_elements = global_vals.size();
-
-  const double remaining_levels = max_refinement_level - current_refinement_level;
-  const double fraction_to_refine =
-      current_active_elements >= target_elem_count ? 0:
-          1./12. * (
-              std::pow(
-                  static_cast<double>(target_elem_count) / static_cast<double>(current_active_elements),
-                  1./remaining_levels)
-              - 1.);
-
-  const int global_fraction_index = (1.-fraction_to_refine) * current_active_elements;
-  const double threshold_val = global_vals[global_fraction_index];
-
-  for(auto && b_ptr : active_buckets)
-  {
-    const auto & bucket = *b_ptr;
-    const double * ind_data = field_data<double>(*markerInfo.errorIndicator_, bucket);
-    int * marker_data = field_data<int>(*markerInfo.refineField_, bucket);
-    const int size = bucket.size();
-    for(int i=0; i < size; ++i)
-    {
-      marker_data[i] = ind_data[i] > threshold_val ? 1 : 0;
-    }
-  }
 }
 
 }

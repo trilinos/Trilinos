@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,7 +33,7 @@
 #include <string.h>
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
@@ -57,10 +57,10 @@ int main(int argc, char **argv)
   int   IO_word_size  = 0; /* use what is stored in file */
   float version;
   int   exoid = ex_open("test-assembly.exo", /* filename path */
-                      EX_READ,             /* access mode = READ */
-                      &CPU_word_size,      /* CPU word size */
-                      &IO_word_size,       /* IO word size */
-                      &version);           /* ExodusII library version */
+                        EX_READ,             /* access mode = READ */
+                        &CPU_word_size,      /* CPU word size */
+                        &IO_word_size,       /* IO word size */
+                        &version);           /* ExodusII library version */
 
   printf("\nafter ex_open\n");
   if (exoid < 0) {
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
       for (int j = 0; j < att_count; j++) {
         printf("\tName: '%s', Type = %d, Value Count = %d\n\t", attr[j].name, attr[j].type,
                (int)attr[j].value_count);
-        for (int k = 0; k < attr[j].value_count; k++) {
+        for (size_t k = 0; k < attr[j].value_count; k++) {
           if (attr[j].type == EX_INTEGER) {
             int *vals = attr[j].values;
             printf("\t%d", vals[k]);
@@ -256,8 +256,7 @@ int main(int argc, char **argv)
     }
 
     { /* Global attributes (includes exodus-internal attributes) */
-      ex_attribute attr[10];
-      int          att_count = ex_get_attribute_count(exoid, EX_GLOBAL, 0);
+      int att_count = ex_get_attribute_count(exoid, EX_GLOBAL, 0);
       printf("GLOBAL contains %d attributes:\n", att_count);
       for (int j = 0; j < att_count; j++) {
         ex_get_attribute_param(exoid, EX_GLOBAL, 0, attr);
@@ -296,8 +295,11 @@ int main(int argc, char **argv)
         for (int k = 0; k < num_assembly; k++) {
           EXCHECK(ex_get_reduction_vars(exoid, i + 1, EX_ASSEMBLY, assmbly[k].id, num_assembly_vars,
                                         var_values));
-          printf("Values for Assembly %" PRId64 " at step %d: %f\t%f\t%f\t%f\n", assmbly[k].id,
-                 i + 1, var_values[0], var_values[1], var_values[2], var_values[3]);
+          printf("Values for Assembly %" PRId64 " at step %d:", assmbly[k].id, i + 1);
+          for (int kk = 0; kk < num_assembly_vars; kk++) {
+            printf("\t%f", var_values[kk]);
+          }
+          printf("\n");
         }
       }
       free(var_values);

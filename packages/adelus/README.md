@@ -98,6 +98,8 @@ We organize the directories as follows:
 * ```Adelus::GetDistribution()```: gives the distribution information that is required
 by the dense solver to the user that defines the matrix block and right hand side information.
 
+* ```Adelus::AdelusHandle<...>```: an application must create a handle to the Adelus communicator and necessary metadata (the handle is passed to every subsequent Adelus function call)
+
 * ```Adelus::FactorSolve()```: factors and solves the dense matrix in which the matrix
 and rhs are packed in Kokkos View
 
@@ -105,10 +107,14 @@ and rhs are packed in Kokkos View
 
 * ```Adelus::FactorSolve_hostPtr()```: matrix and rhs are packed and passed as host pointer
 
+* ```Adelus::Factor()```: factors the dense matrix for later solve
+
+* ```Adelus::Solve()```: solves the previously factored dense matrix for provided RHS
+
 2. Implementations of the phases of the solver (i.e. factor, solve, permutation)  
 and other utility functions also locate in the ```src/``` subdirectory.
 
-3. A correctness test is in the ```test/``` subdirectory.
+3. Correctness tests is in the ```test/``` subdirectory.
 
 4. A simple example that generates a random matrix and a right-hand-side to
     exercise the solver is in the ```example/``` subdirectory.
@@ -143,8 +149,8 @@ options can be found below.
 * ```Adelus_ENABLE_TIMING```
   * Whether to enable internal solver timing
   * ```BOOL``` Default: OFF
-* ```Adelus_ENABLE_CUDAHOSTPINNED```
-  * Whether to use Cuda Host Pinned memory for MPI
+* ```Adelus_ENABLE_HOSTPINNEDMEM```
+  * Whether to use Cuda/HIP Host Pinned memory for MPI
   * ```BOOL``` Default: OFF
 * ```Adelus_ENABLE_USEDEEPCOPY```
   * Whether to Use Kokkos::deep_copy for BLAS copy
@@ -207,7 +213,7 @@ cmake \
 \
 -D Kokkos_ENABLE_SERIAL:BOOL=OFF \
 -D Kokkos_ENABLE_OPENMP:BOOL=ON \
--D Kokkos_ENABLE_PTHREAD:BOOL=OFF \
+-D Kokkos_ENABLE_THREADS:BOOL=OFF \
 -D Kokkos_ENABLE_CUDA:BOOL=ON \
 -D Kokkos_ENABLE_CUDA_UVM:BOOL=OFF \
 -D Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON \
@@ -218,7 +224,7 @@ cmake \
 \
 -D Adelus_ENABLE_ZCPLX:BOOL=ON \
 -D Adelus_ENABLE_TIMING:BOOL=ON \
--D Adelus_ENABLE_CUDAHOSTPINNED:BOOL=OFF \
+-D Adelus_ENABLE_HOSTPINNEDMEM:BOOL=OFF \
 -D Adelus_ENABLE_PRINTSTATUS:BOOL=ON \
 \
 ${TRILINOS_HOME}/Trilinos
@@ -249,12 +255,14 @@ the solver can be called. In this example, the portion of matrix on each MPI
 process and the reference solution vector are randomly generated. Then, the
 assigned RHS vectors on MPI processes can be computed.
 
-3. Launch Adelus using ```Adelus::FactorSolve```, or ```Adelus::FactorSolve_devPtr```,
+3. Create a handle to the Adelus communicator and necessary metadata
+
+4. Launch Adelus using ```Adelus::FactorSolve```, or ```Adelus::FactorSolve_devPtr```,
 or ```Adelus::FactorSolve_hostPtr```.
 
-4. Gather results.
+5. Gather results.
 
-5. Compare the returned solution vector with the reference vector.
+6. Compare the returned solution vector with the reference vector.
 
 ### Compile with Makefile
 

@@ -58,11 +58,8 @@
 #include "MueLu_CreateEpetraPreconditioner.hpp"
 #endif // HAVE_MUELU_EPETRA
 
-// Tpetra is not a required dependency of MueLu.
-#ifdef HAVE_MUELU_TPETRA
 #  include "Tpetra_Operator.hpp"
 #  include "MueLu_CreateTpetraPreconditioner.hpp"
-#endif // HAVE_MUELU_TPETRA
 
 namespace MueLu {
 namespace Details {
@@ -268,13 +265,12 @@ private:
 };
 #endif // HAVE_MUELU_EPETRA
 
-#ifdef HAVE_MUELU_TPETRA
 template<class Scalar, class LO, class GO, class Node>
-class LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>, 
+class LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>,
                    Tpetra::Operator<Scalar,LO,GO,Node>,
                    typename Teuchos::ScalarTraits<Scalar>::magnitudeType> :
-    public Trilinos::Details::LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>, 
-                                           Tpetra::Operator<Scalar,LO,GO,Node>, 
+    public Trilinos::Details::LinearSolver<Tpetra::MultiVector<Scalar,LO,GO,Node>,
+                                           Tpetra::Operator<Scalar,LO,GO,Node>,
                                            typename Teuchos::ScalarTraits<Scalar>::magnitudeType>,
     virtual public Teuchos::Describable
 {
@@ -432,7 +428,6 @@ private:
   bool changedA_;
   bool changedParams_;
 };
-#endif // HAVE_MUELU_TPETRA
 
 template<class MV, class OP, class NormType>
 Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, NormType> >

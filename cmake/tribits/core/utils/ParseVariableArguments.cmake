@@ -37,14 +37,12 @@
 # ************************************************************************
 # @HEADER
 
-# Set up to use cmake_parse_arguments() function!
-include(CMakeParseArguments)
-# NOTE: For CMake versions 3.5.0 and above, this module is empty so the
-# natively implemented function cmake_parse_arguments() will get used!
+include(TribitsDeprecatedHelpers)
+
 
 macro(parse_arguments_deprecated_warning)
-  message(WARNING "parse_arguments() is deprecated and should not be used."
-     " Instead use cmake_parse_arguments()")
+  tribits_deprecated_command(parse_arguments
+    MESSAGE "Use cmake_parse_arguments() instead.")
 endmacro()
 
 parse_arguments_deprecated_warning()
@@ -57,7 +55,7 @@ function(parse_arguments_dump_output  OUTPUT_STR)
   endif()
 endfunction()
 
-#
+
 # @MACRO: parse_arguments()
 #
 # Parse a set of macro/function input arguments into different lists.  This
@@ -248,12 +246,12 @@ endmacro()
 
 # NOTE: If the above function turns out to be a performance bottle neck, there
 # are a few things that could be done to improve performance.  One thing you
-# could do is repalce the o(len(arg_names)) and o(len(option_names)) lookups
+# could do is replace the o(len(arg_names)) and o(len(option_names)) lookup
 # with o(1) lookups by creating CMake variables of the name
 # ${OUTER_FUNC_NAME}_arg_<argNamei> and then just look of that variable exists
 # or not.  That should use a hash function.  That might actually slow things
 # down for short lists however so we would have to measure, measure,
-# measure. I would have to pass in the function/macro name to disabiguate
-# the variable names.  It would really be better if cmake would provide a
+# measure. I would have to pass in the function/macro name to disambiguate
+# the variable names.  It would really be better if CMake would provide a
 # sorted list find operation.  That would make this much faster for large
 # numbers of argument and option names.

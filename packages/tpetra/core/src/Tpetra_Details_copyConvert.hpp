@@ -130,7 +130,7 @@ namespace { // (anonymous)
   /// \tparam InputViewType Type of the input Kokkos::View.
   template<class OutputViewType,
            class InputViewType,
-           const int rank = static_cast<int> (OutputViewType::Rank)>
+           const int rank = static_cast<int> (OutputViewType::rank)>
   class CopyConvertFunctor {};
 
   template<class OutputViewType,
@@ -138,8 +138,8 @@ namespace { // (anonymous)
   class CopyConvertFunctor<OutputViewType, InputViewType, 1> {
   private:
     static_assert
-    (static_cast<int> (OutputViewType::Rank) == 1 &&
-     static_cast<int> (InputViewType::Rank) == 1,
+    (static_cast<int> (OutputViewType::rank) == 1 &&
+     static_cast<int> (InputViewType::rank) == 1,
      "CopyConvertFunctor (implements Tpetra::Details::copyConvert): "
      "OutputViewType and InputViewType must both have rank 1.");
     OutputViewType dst_;
@@ -168,8 +168,8 @@ namespace { // (anonymous)
 
   private:
     static_assert
-    (static_cast<int> (OutputViewType::Rank) == 2 &&
-     static_cast<int> (InputViewType::Rank) == 2,
+    (static_cast<int> (OutputViewType::rank) == 2 &&
+     static_cast<int> (InputViewType::rank) == 2,
      "CopyConvertFunctor (implements Tpetra::Details::copyConvert): "
      "OutputViewType and InputViewType must both have rank 2.");
     OutputViewType dst_;
@@ -235,7 +235,7 @@ namespace { // (anonymous)
            const bool canUseKokkosDeepCopy =
              CanUseKokkosDeepCopy<OutputViewType, InputViewType>::value,
            const bool outputExecSpaceCanAccessInputMemSpace =
-             Kokkos::Impl::SpaceAccessibility<
+             Kokkos::SpaceAccessibility<
                typename OutputViewType::memory_space,
                typename InputViewType::memory_space>::accessible>
   struct CopyConvertImpl {
@@ -276,11 +276,15 @@ namespace { // (anonymous)
         // it's cheaper to allocate.  Hopefully users aren't doing
         // aliased copies in a tight loop.
         auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (src_copy, src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (dst, src_copy);
       }
       else { // no aliasing
-        Kokkos::deep_copy (dst, src);
+        // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+        using execution_space = typename OutputViewType::execution_space;
+        Kokkos::deep_copy (execution_space(), dst, src);
       }
     }
   };
@@ -323,9 +327,11 @@ namespace { // (anonymous)
          const InputViewType& src)
     {
       using output_memory_space = typename OutputViewType::memory_space;
+      using output_execution_space = typename OutputViewType::execution_space;
       auto src_outputSpaceCopy =
         Kokkos::create_mirror_view (output_memory_space (), src);
-      Kokkos::deep_copy (src_outputSpaceCopy, src);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+      Kokkos::deep_copy (output_execution_space(), src_outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.
@@ -356,15 +362,15 @@ void
 copyConvert (const OutputViewType& dst,
              const InputViewType& src)
 {
-  static_assert (Kokkos::Impl::is_view<OutputViewType>::value,
+  static_assert (Kokkos::is_view<OutputViewType>::value,
                  "OutputViewType must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<InputViewType>::value,
+  static_assert (Kokkos::is_view<InputViewType>::value,
                  "InputViewType must be a Kokkos::View.");
   static_assert (std::is_same<typename OutputViewType::value_type,
                    typename OutputViewType::non_const_value_type>::value,
                  "OutputViewType must be a nonconst Kokkos::View.");
-  static_assert (static_cast<int> (OutputViewType::Rank) ==
-                 static_cast<int> (InputViewType::Rank),
+  static_assert (static_cast<int> (OutputViewType::rank) ==
+                 static_cast<int> (InputViewType::rank),
                  "src and dst must have the same rank.");
 
   if (dst.extent (0) != src.extent (0)) {
@@ -375,7 +381,7 @@ copyConvert (const OutputViewType& dst,
        << ".";
     throw std::invalid_argument (os.str ());
   }
-  if (static_cast<int> (OutputViewType::Rank) > 1 &&
+  if (static_cast<int> (OutputViewType::rank) > 1 &&
       dst.extent (1) != src.extent (1)) {
     std::ostringstream os;
     os << "Tpetra::Details::copyConvert: "

@@ -211,7 +211,7 @@ ArrayToFieldVector::getDataVector(const std::string & fieldName,const std::map<s
          = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(destMap,sourceVec->getNumVectors()));
    
    // do import
-   Tpetra::Import<int,panzer::GlobalOrdinal> importer(sourceVec->getMap(),destMap);
+   Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> importer(sourceVec->getMap(),destMap);
    destVec->doImport(*sourceVec,importer,Tpetra::INSERT); 
    PHX::Device::execution_space().fence();
 

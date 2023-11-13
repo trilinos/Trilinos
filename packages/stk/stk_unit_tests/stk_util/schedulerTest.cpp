@@ -164,6 +164,23 @@ TEST(SchedulerTest, emptyScheduler)
     EXPECT_FALSE(scheduler.is_it_time(terminationTime+0.5, 2));
 }
 
+TEST(SchedulerTest, stepIntervalWithTerminationTime)
+{
+  using stk::util::Step;
+
+  stk::util::Scheduler scheduler;
+  const stk::util::Time terminationTime = 4.5;
+  scheduler.set_termination_time(terminationTime);
+  scheduler.add_interval(Step(0), Step(2));
+  EXPECT_TRUE(scheduler.is_it_time(0.0, 0));
+  EXPECT_FALSE(scheduler.is_it_time(0.5, 1));
+  EXPECT_TRUE(scheduler.is_it_time(2.0, 2));
+  EXPECT_FALSE(scheduler.is_it_time(3.5, 3));
+  EXPECT_TRUE(scheduler.is_it_time(4.0, 4));
+  EXPECT_TRUE(scheduler.is_it_time(terminationTime, 5));
+  EXPECT_FALSE(scheduler.is_it_time(terminationTime+0.5, 6));
+}
+
 TEST(SchedulerTest, largeStartingTimeFollowedBySmallStep)
 {
     stk::util::Scheduler scheduler;

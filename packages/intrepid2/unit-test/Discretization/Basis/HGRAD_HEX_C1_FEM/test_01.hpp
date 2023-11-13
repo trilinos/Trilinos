@@ -55,21 +55,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+
 namespace Intrepid2 {
 
   namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
 
     template<typename ValueType, typename DeviceType>
     int HGRAD_HEX_C1_FEM_Test01(const bool verbose) {
@@ -77,7 +67,7 @@ namespace Intrepid2 {
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
 
-      if (1)//(verbose)
+      if (verbose)
         outStream = Teuchos::rcp(&std::cout, false);
       else
         outStream = Teuchos::rcp(&bhs,       false);
@@ -87,10 +77,10 @@ namespace Intrepid2 {
 
       using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
+      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
 
       *outStream
         << "===============================================================================\n"
@@ -111,7 +101,6 @@ namespace Intrepid2 {
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
       int errorFlag = 0;

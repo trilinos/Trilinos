@@ -54,7 +54,6 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 
 
 namespace MueLu {
@@ -134,7 +133,7 @@ namespace MueLu {
 
     // plausibility check!
     size_t inLocalLength  = decomposition->getLocalLength();
-    size_t outLocalLength = A->getRowMap()->getNodeNumElements();
+    size_t outLocalLength = A->getRowMap()->getLocalNumElements();
 
     // only for non-strided maps
     size_t numLocalNodes = outLocalLength / blkSize;

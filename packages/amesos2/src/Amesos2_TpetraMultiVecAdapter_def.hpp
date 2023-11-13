@@ -71,6 +71,23 @@ namespace Amesos2 {
   : mv_(m)
   {}
 
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
+  Teuchos::RCP<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::clone() const
+  {
+      using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+      Teuchos::RCP<MV> Y (new MV (mv_->getMap(), mv_->getNumVectors(), false));
+      Y->setCopyOrView (Teuchos::View);
+      return Y;
+  }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   typename MultiVecAdapter<
@@ -132,7 +149,7 @@ namespace Amesos2 {
       "Amesos2::MultiVecAdapter::get1dCopy: this->getMap() returns null.");
 
 #ifdef HAVE_AMESOS2_DEBUG
-    const size_t requested_vector_length = distribution_map->getNodeNumElements ();
+    const size_t requested_vector_length = distribution_map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       lda < requested_vector_length, std::invalid_argument,
       "Amesos2::MultiVecAdapter::get1dCopy: On process " <<
@@ -218,19 +235,14 @@ namespace Amesos2 {
   template <typename KV>
   bool
   MultiVecAdapter<
-    MultiVector<Scalar,
-                LocalOrdinal,
-                GlobalOrdinal,
-                Node> >::get1dCopy_kokkos_view(
-                                   bool bInitialize,
-                                   KV& kokkos_view,
-                                   size_t lda,
-                                   Teuchos::Ptr<
-                                     const Tpetra::Map<LocalOrdinal,
-                                                       GlobalOrdinal,
-                                                       Node> > distribution_map,
-                                                       EDistribution distribution) const
-  {
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+  >::get1dCopy_kokkos_view(
+    bool bInitialize,
+    KV& kokkos_view,
+    [[maybe_unused]] size_t lda,
+    Teuchos::Ptr<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > distribution_map,
+    EDistribution distribution
+  ) const {
     using Teuchos::as;
     using Teuchos::RCP;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
@@ -248,7 +260,7 @@ namespace Amesos2 {
       "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: this->getMap() returns null.");
 
 #ifdef HAVE_AMESOS2_DEBUG
-    const size_t requested_vector_length = distribution_map->getNodeNumElements ();
+    const size_t requested_vector_length = distribution_map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       lda < requested_vector_length, std::invalid_argument,
       "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: On process " <<
@@ -338,12 +350,12 @@ namespace Amesos2 {
     // if( local ){
     //   this->localize();
     //   /* Use the global element list returned by
-    //    * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
+    //    * mv_->getMap()->getLocalElementList() to get a subCopy of mv_ which we
     //    * assign to l_l_mv_, then return get1dViewNonConst() of l_l_mv_
     //    */
     //   if(l_l_mv_.is_null() ){
     //  Teuchos::ArrayView<const GlobalOrdinal> nodeElements_go
-    //    = mv_->getMap()->getNodeElementList();
+    //    = mv_->getMap()->getLocalElementList();
     //  Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
 
     //  // Convert the node element to a list of size_t type objects
@@ -362,7 +374,7 @@ namespace Amesos2 {
     //  // made to the global structure that are not reflected in the local
     //  // view.
     //  Teuchos::ArrayView<const GlobalOrdinal> nodeElements_go
-    //    = mv_->getMap()->getNodeElementList();
+    //    = mv_->getMap()->getLocalElementList();
     //  Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
 
     //  // Convert the node element to a list of size_t type objects

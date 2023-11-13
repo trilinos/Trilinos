@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_VariableType_h
-#define IOSS_Ioss_VariableType_h
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
@@ -20,10 +21,10 @@ namespace Ioss {
 } // namespace Ioss
 
 namespace Ioss {
-  using VariableTypeMap = std::map<std::string, VariableType *, std::less<std::string>>;
+  using VariableTypeMap = std::map<std::string, VariableType *, std::less<>>;
   using VTM_ValuePair   = VariableTypeMap::value_type;
 
-  class Registry
+  class IOSS_EXPORT Registry
   {
   public:
     void                      insert(const Ioss::VTM_ValuePair &value, bool delete_me);
@@ -39,28 +40,31 @@ namespace Ioss {
     std::vector<Ioss::VariableType *> m_deleteThese;
   };
 
-  struct Suffix
+  struct IOSS_EXPORT Suffix
   {
     explicit Suffix(const char *new_data) : m_data(new_data) {}
     explicit Suffix(const std::string &new_data) : m_data(new_data) {}
-    bool        operator==(const std::string &str) const { return Utils::str_equal(m_data, str); }
-    bool        operator!=(const std::string &str) const { return !Utils::str_equal(m_data, str); }
+    bool operator==(const std::string &str) const { return Utils::str_equal(m_data, str); }
+    bool operator!=(const std::string &str) const { return !Utils::str_equal(m_data, str); }
+    bool is_uppercase() const { return isalpha(m_data[0]) && isupper(m_data[0]); }
+
     std::string m_data{};
   };
 
   /** \brief A generic variable type
    */
-  class VariableType
+  class IOSS_EXPORT VariableType
   {
   public:
-    static void alias(const std::string &base, const std::string &syn);
-    static int  describe(NameList *names);
-    static bool create_named_suffix_field_type(const std::string &             type_name,
-                                               const std::vector<std::string> &suffices);
-    static bool get_field_type_mapping(const std::string &field, std::string *type);
+    static void     alias(const std::string &base, const std::string &syn);
+    static int      describe(NameList *names);
+    static NameList describe();
+    static bool     create_named_suffix_field_type(const std::string              &type_name,
+                                                   const std::vector<std::string> &suffices);
+    static bool     get_field_type_mapping(const std::string &field, std::string *type);
     static bool add_field_type_mapping(const std::string &raw_field, const std::string &raw_type);
 
-    VariableType(const VariableType &) = delete;
+    VariableType(const VariableType &)            = delete;
     VariableType &operator=(const VariableType &) = delete;
     virtual ~VariableType();
 
@@ -74,11 +78,13 @@ namespace Ioss {
 
     static std::string  numeric_label(int which, int ncomp, const std::string &name);
     virtual std::string label(int which, char suffix_sep = '_') const = 0;
-    virtual std::string label_name(const std::string &base, int which, char suffix_sep = '_') const;
+    virtual std::string label_name(const std::string &base, int which, char suffix_sep = '_',
+                                   bool suffices_uppercase = false) const;
     virtual bool        match(const std::vector<Suffix> &suffices) const;
 
     static const VariableType *factory(const std::string &raw_name, int copies = 1);
-    static const VariableType *factory(const std::vector<Suffix> &suffices);
+    static const VariableType *factory(const std::vector<Suffix> &suffices,
+                                       bool                       ignore_realn_fields = false);
 
   protected:
     VariableType(const std::string &type, int comp_count, bool delete_me = false);
@@ -96,4 +102,3 @@ inline std::string Ioss::VariableType::name() const { return name_; }
 inline int Ioss::VariableType::component_count() const { return componentCount; }
 
 inline int Ioss::VariableType::suffix_count() const { return componentCount; }
-#endif

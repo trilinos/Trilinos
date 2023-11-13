@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,18 +15,18 @@
 
 #include "exodusII.h"
 
-#define DEFAULT_FILE_NAME "mesh"
-#define DEFAULT_MAP_ORIGIN 1
-#define DEFAULT_NUM_DOMAINS 1
-#define DEFAULT_NUM_ELEMENTS 1000000
-#define DEFAULT_NUM_FIELDS 0
+#define DEFAULT_FILE_NAME     "mesh"
+#define DEFAULT_MAP_ORIGIN    1
+#define DEFAULT_NUM_DOMAINS   1
+#define DEFAULT_NUM_ELEMENTS  1000000
+#define DEFAULT_NUM_FIELDS    0
 #define DEFAULT_NUM_TIMESTEPS 1
 
-#define MAX_STRING_LEN 128
-#define NUM_BYTES_PER_INT 4
+#define MAX_STRING_LEN     128
+#define NUM_BYTES_PER_INT  4
 #define NUM_NODES_PER_ELEM 8
 
-#define EBLK_ID 100000
+#define EBLK_ID            100000
 #define EXODUSII_FILE_TYPE ".e"
 
 typedef double realtyp;
@@ -194,12 +194,12 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
   while (++arg < argc) {
     if (strcmp("-c", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_nodal_fields = atoi(argv[arg]);
+        *num_nodal_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-compress", argv[arg]) == 0) {
       if (++arg < argc) {
-        *compression_level = atoi(argv[arg]);
+        *compression_level = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-shuffle", argv[arg]) == 0) {
@@ -210,22 +210,22 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
     }
     else if (strcmp("-nv", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_nodal_fields = atoi(argv[arg]);
+        *num_nodal_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-gv", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_global_fields = atoi(argv[arg]);
+        *num_global_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-ev", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_element_fields = atoi(argv[arg]);
+        *num_element_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-t", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_timesteps = atoi(argv[arg]);
+        *num_timesteps = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-d", argv[arg]) == 0) {
@@ -238,7 +238,7 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
     }
     else if (strcmp("-m", argv[arg]) == 0) {
       if (++arg < argc) {
-        *map_origin = atoi(argv[arg]);
+        *map_origin = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-n", argv[arg]) == 0) {
@@ -248,7 +248,7 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
     }
     else if (strcmp("-p", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_domains = atoi(argv[arg]);
+        *num_domains = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-x", argv[arg]) == 0) {
@@ -634,7 +634,7 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
       var_name = malloc(num_nodal_fields * sizeof(char *));
       for (INT j = 0; j < num_nodal_fields; j++) {
         var_name[j] = malloc((MAX_STRING_LEN + 1) * sizeof(char));
-        sprintf(var_name[j], "node_field_%" PRId64, j + 1);
+        snprintf(var_name[j], MAX_STRING_LEN + 1, "node_field_%" PRId64, j + 1);
       }
       err = ex_put_variable_names(exoid, EX_NODAL, num_nodal_fields, var_name);
       if (err) {
@@ -653,7 +653,7 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
       var_name = malloc(num_global_fields * sizeof(char *));
       for (INT j = 0; j < num_global_fields; j++) {
         var_name[j] = malloc((MAX_STRING_LEN + 1) * sizeof(char));
-        sprintf(var_name[j], "global_field_%" PRId64, j + 1);
+        snprintf(var_name[j], MAX_STRING_LEN + 1, "global_field_%" PRId64, j + 1);
         globals[j] = j;
       }
       err = ex_put_variable_names(exoid, EX_GLOBAL, num_global_fields, var_name);
@@ -673,7 +673,7 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
       var_name = malloc(num_element_fields * sizeof(char *));
       for (INT j = 0; j < num_element_fields; j++) {
         var_name[j] = malloc((MAX_STRING_LEN + 1) * sizeof(char));
-        sprintf(var_name[j], "element_field_%" PRId64, j + 1);
+        snprintf(var_name[j], MAX_STRING_LEN + 1, "element_field_%" PRId64, j + 1);
       }
       err = ex_put_variable_names(exoid, EX_ELEM_BLOCK, num_element_fields, var_name);
       if (err) {
@@ -912,7 +912,7 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
     } while (iTemp1 >= 1);
 
     char cTemp[128];
-    sprintf(cTemp, "%d", nprocs);
+    snprintf(cTemp, 128, "%d", nprocs);
 
     strcat(output, ".");
     strcat(output, cTemp);
@@ -925,7 +925,7 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
       strcat(output, "0");
     }
 
-    sprintf(cTemp, "%d", rank);
+    snprintf(cTemp, 128, "%d", rank);
     strcat(output, cTemp);
   }
 }

@@ -4,23 +4,27 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
    ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Tpetra )
 
-  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/sol)
+  TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/sol)
 
   # Need ROL_TpetraMultiVector.hpp
-  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
-  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/sol)
+  TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
+  TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/sol)
 
   # Need for parallel-in-time.
-  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/function)
-  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/vector)
-  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/mpi)
+  TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/function)
+  TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/vector)
+  TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/mpi)
 
   TRIBITS_ADD_EXECUTABLE(
     example_01
     SOURCES example_01.cpp
     ADD_DIR_TO_NAME
   )
-
+  TRIBITS_ADD_EXECUTABLE(
+    example_02
+    SOURCES example_02.cpp
+    ADD_DIR_TO_NAME
+  )
   IF(TPL_ENABLE_MPI)
     TRIBITS_ADD_EXECUTABLE(
       AugmentedSystem
@@ -33,6 +37,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     DynamicNavierStokesDataCopy
     SOURCE_FILES
       input.xml
+      input_02.xml
       plotControl.m
       plotFlow.m
       plotInitialFlow.m

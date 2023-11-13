@@ -219,7 +219,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   ZOLTAN_GNO_TYPE *perm_y = NULL;
   float *wgtarray = NULL;
   float *tmpwgtarray = NULL;
-  int msg_tag = 1021982;
+  int msg_tag = 17164;
   ZOLTAN_COMM_OBJ *plan = NULL;
   MPI_Comm communicator = MPI_COMM_NULL;
   ZOLTAN_GNO_TYPE *yGNO = NULL;

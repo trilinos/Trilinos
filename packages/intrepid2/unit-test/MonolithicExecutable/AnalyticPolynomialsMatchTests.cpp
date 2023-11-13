@@ -67,9 +67,9 @@ namespace
   Scalar integratedJacobi(Scalar x, Scalar t, double alpha, const int n, const int derivativeOrder = 0)
   {
     // ideally, we would have closed-form expressions somewhere in here, as we do for integrated Legendre below
-    // for now, though, this is just a thin wrapper around the call to Intrepid2::Polynomials::integratedJacobiValues()
+    // for now, though, this is just a thin wrapper around the call to Intrepid2::Polynomials::shiftedScaledIntegratedJacobiValues()
     auto values = getView<Scalar,Kokkos::HostSpace>("integrated Jacobi values", n+1);
-    Polynomials::integratedJacobiValues(values, alpha, n, x, t);
+    Polynomials::shiftedScaledIntegratedJacobiValues(values, alpha, n, x, t);
     return values(n);
   }
   

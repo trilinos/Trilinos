@@ -53,23 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-# Check for CUDA support
-
-IF (NOT TPL_ENABLE_CUDA OR CUDA_VERSION VERSION_LESS "4.1")
-  MESSAGE(FATAL_ERROR "\nCUSPARSE: did not find acceptable version of CUDA libraries (4.1 or greater)")
-ELSE()
-  IF(CMAKE_VERSION VERSION_LESS "2.8.8")
-    # FindCUDA before CMake 2.8.8 does not find cusparse library; therefore, we must
-    find_library(CUDA_cusparse_LIBRARY
-      cusparse
-      HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib
-      )
-    IF(CUDA_cusparse_LIBRARY STREQUAL "CUDA_cusparse_LIBRARY-NOTFOUND") 
-      MESSAGE(FATAL_ERROR "\nCUSPARSE: could not find cuspasre library.")
-    ENDIF()
-  ENDIF(CMAKE_VERSION VERSION_LESS "2.8.8")
-  GLOBAL_SET(TPL_CUSPARSE_LIBRARY_DIRS)
-  GLOBAL_SET(TPL_CUSPARSE_INCLUDE_DIRS ${TPL_CUDA_INCLUDE_DIRS})
-  GLOBAL_SET(TPL_CUSPARSE_LIBRARIES    ${CUDA_cusparse_LIBRARY})
-ENDIF()
-
+tribits_extpkg_create_imported_all_libs_target_and_config_file( CUSPARSE
+  INNER_FIND_PACKAGE_NAME  CUDAToolkit
+  IMPORTED_TARGETS_FOR_ALL_LIBS  CUDA::cusparse )
+# Above, the CUDA TPL should have already found CUDAToolkit so we just need to
+# grab the target from it to form the CUSPARSE::all_libs target.

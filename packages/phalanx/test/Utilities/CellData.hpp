@@ -47,7 +47,6 @@
 
 #include <vector>
 #include "Phalanx_config.hpp"
-#include "Kokkos_View.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include <vector>
 

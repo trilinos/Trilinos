@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define EX_TEST_GOLD_FILENAME "edge-face-gold.exo"
-#define EX_TEST_NO_DIFF_FILENAME "edge-face-no-diff.exo"
+#define EX_TEST_GOLD_FILENAME      "edge-face-gold.exo"
+#define EX_TEST_NO_DIFF_FILENAME   "edge-face-no-diff.exo"
 #define EX_TEST_EDGE_DIFF_FILENAME "edge-diff.exo"
 #define EX_TEST_FACE_DIFF_FILENAME "face-diff.exo"
 
@@ -136,14 +136,16 @@ double vals_elem_var1eb1[2][2] = {{8, 8}, {0, -8}};
 double vals_fset_var1fs1[2][2] = {{1., 3.}, {9., 27.}};
 
 #define EXCHECK(funcall, errmsg)                                                                   \
-  if ((funcall) < 0) {                                                                             \
-    fprintf(stderr, errmsg);                                                                       \
-    free(varParams.edge_var_tab);                                                                  \
-    free(varParams.face_var_tab);                                                                  \
-    free(varParams.elem_var_tab);                                                                  \
-    free(varParams.fset_var_tab);                                                                  \
-    return 1;                                                                                      \
-  }
+  do {                                                                                             \
+    if ((funcall) < 0) {                                                                           \
+      fprintf(stderr, errmsg);                                                                     \
+      free(varParams.edge_var_tab);                                                                \
+      free(varParams.face_var_tab);                                                                \
+      free(varParams.elem_var_tab);                                                                \
+      free(varParams.fset_var_tab);                                                                \
+      return 1;                                                                                    \
+    }                                                                                              \
+  } while (0)
 
 int ex_have_arg(int argc, char *argv[], const char *aname)
 {
@@ -250,11 +252,11 @@ int create_gold_file(int argc, char *argv[])
   varParams.edge_var_tab  = (int *)malloc(2 * sizeof(int));
   varParams.face_var_tab  = (int *)malloc(3 * sizeof(int));
   varParams.elem_var_tab  = (int *)malloc(2 * sizeof(int));
-  varParams.nset_var_tab  = (int *)0;
-  varParams.eset_var_tab  = (int *)0;
+  varParams.nset_var_tab  = NULL;
+  varParams.eset_var_tab  = NULL;
   varParams.fset_var_tab  = (int *)malloc(1 * sizeof(int));
-  varParams.sset_var_tab  = (int *)0;
-  varParams.elset_var_tab = (int *)0;
+  varParams.sset_var_tab  = NULL;
+  varParams.elset_var_tab = NULL;
 
   varParams.num_glob        = 2;
   varParams.num_node        = 1;
@@ -270,7 +272,7 @@ int create_gold_file(int argc, char *argv[])
   varParams.elem_var_tab[1] = 0;
   varParams.num_nset        = 0;
   varParams.num_eset        = 0;
-  ;
+
   varParams.num_fset        = 1;
   varParams.fset_var_tab[0] = 1;
   varParams.num_sset        = 0;
@@ -647,11 +649,11 @@ int create_no_diff_file(int argc, char *argv[])
   varParams.edge_var_tab  = (int *)malloc(2 * sizeof(int));
   varParams.face_var_tab  = (int *)malloc(3 * sizeof(int));
   varParams.elem_var_tab  = (int *)malloc(2 * sizeof(int));
-  varParams.nset_var_tab  = (int *)0;
-  varParams.eset_var_tab  = (int *)0;
+  varParams.nset_var_tab  = NULL;
+  varParams.eset_var_tab  = NULL;
   varParams.fset_var_tab  = (int *)malloc(1 * sizeof(int));
-  varParams.sset_var_tab  = (int *)0;
-  varParams.elset_var_tab = (int *)0;
+  varParams.sset_var_tab  = NULL;
+  varParams.elset_var_tab = NULL;
 
   varParams.num_glob        = 2;
   varParams.num_node        = 1;
@@ -667,7 +669,7 @@ int create_no_diff_file(int argc, char *argv[])
   varParams.elem_var_tab[1] = 0;
   varParams.num_nset        = 0;
   varParams.num_eset        = 0;
-  ;
+
   varParams.num_fset        = 1;
   varParams.fset_var_tab[0] = 1;
   varParams.num_sset        = 0;
@@ -1044,11 +1046,11 @@ int create_edge_block_diff_file(int argc, char *argv[])
   varParams.edge_var_tab  = (int *)malloc(2 * sizeof(int));
   varParams.face_var_tab  = (int *)malloc(3 * sizeof(int));
   varParams.elem_var_tab  = (int *)malloc(2 * sizeof(int));
-  varParams.nset_var_tab  = (int *)0;
-  varParams.eset_var_tab  = (int *)0;
+  varParams.nset_var_tab  = NULL;
+  varParams.eset_var_tab  = NULL;
   varParams.fset_var_tab  = (int *)malloc(1 * sizeof(int));
-  varParams.sset_var_tab  = (int *)0;
-  varParams.elset_var_tab = (int *)0;
+  varParams.sset_var_tab  = NULL;
+  varParams.elset_var_tab = NULL;
 
   varParams.num_glob        = 2;
   varParams.num_node        = 1;
@@ -1064,7 +1066,7 @@ int create_edge_block_diff_file(int argc, char *argv[])
   varParams.elem_var_tab[1] = 0;
   varParams.num_nset        = 0;
   varParams.num_eset        = 0;
-  ;
+
   varParams.num_fset        = 1;
   varParams.fset_var_tab[0] = 1;
   varParams.num_sset        = 0;
@@ -1441,11 +1443,11 @@ int create_face_block_diff_file(int argc, char *argv[])
   varParams.edge_var_tab  = (int *)malloc(2 * sizeof(int));
   varParams.face_var_tab  = (int *)malloc(3 * sizeof(int));
   varParams.elem_var_tab  = (int *)malloc(2 * sizeof(int));
-  varParams.nset_var_tab  = (int *)0;
-  varParams.eset_var_tab  = (int *)0;
+  varParams.nset_var_tab  = NULL;
+  varParams.eset_var_tab  = NULL;
   varParams.fset_var_tab  = (int *)malloc(1 * sizeof(int));
-  varParams.sset_var_tab  = (int *)0;
-  varParams.elset_var_tab = (int *)0;
+  varParams.sset_var_tab  = NULL;
+  varParams.elset_var_tab = NULL;
 
   varParams.num_glob        = 2;
   varParams.num_node        = 1;
@@ -1461,7 +1463,7 @@ int create_face_block_diff_file(int argc, char *argv[])
   varParams.elem_var_tab[1] = 0;
   varParams.num_nset        = 0;
   varParams.num_eset        = 0;
-  ;
+
   varParams.num_fset        = 1;
   varParams.fset_var_tab[0] = 1;
   varParams.num_sset        = 0;

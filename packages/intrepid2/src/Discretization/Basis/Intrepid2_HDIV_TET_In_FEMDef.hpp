@@ -207,6 +207,9 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   const ordinal_type  cardVecPnm1 = spaceDim*cardPnm1;   // dim of (P_{n-1})^3 -- smaller space
   const ordinal_type  dim_PkH = cardPnm1 - cardPnm2;
 
+  // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
+  // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
+  INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
 
   // Basis-dependent initializations
   constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag

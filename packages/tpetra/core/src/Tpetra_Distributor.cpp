@@ -60,9 +60,12 @@ namespace Tpetra {
   {
     Teuchos::Array<std::string> sendTypes;
     sendTypes.push_back ("Isend");
-    sendTypes.push_back ("Rsend");
     sendTypes.push_back ("Send");
-    sendTypes.push_back ("Ssend");
+    sendTypes.push_back ("Alltoall");
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+    sendTypes.push_back ("MpiAdvanceAlltoall");
+    sendTypes.push_back ("MpiAdvanceNbralltoallv");
+#endif
     return sendTypes;
   }
 
@@ -71,8 +74,6 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
                const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : plan_(comm)
-    , lastRoundBytesSend_ (0)
-    , lastRoundBytesRecv_ (0)
   {
     this->setParameterList(plist);
   }
@@ -100,8 +101,6 @@ namespace Tpetra {
     , actor_(distributor.actor_)
     , verbose_ (distributor.verbose_)
     , reverseDistributor_ (distributor.reverseDistributor_)
-    , lastRoundBytesSend_ (distributor.lastRoundBytesSend_)
-    , lastRoundBytesRecv_ (distributor.lastRoundBytesRecv_)
   {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -122,8 +121,6 @@ namespace Tpetra {
     std::swap (actor_, rhs.actor_);
     std::swap (verbose_, rhs.verbose_);
     std::swap (reverseDistributor_, rhs.reverseDistributor_);
-    std::swap (lastRoundBytesSend_, rhs.lastRoundBytesSend_);
-    std::swap (lastRoundBytesRecv_, rhs.lastRoundBytesRecv_);
 
     // Swap parameter lists.  If they are the same object, make a deep
     // copy first, so that modifying one won't modify the other one.
@@ -195,38 +192,26 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
-    const bool barrierBetween = Details::barrierBetween_default;
-    const bool useDistinctTags = Details::useDistinctTags_default;
     const bool debug = tpetraDistributorDebugDefault;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
     Array<Details::EDistributorSendType> sendTypeEnums;
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
-    sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
-    sendTypeEnums.push_back (Details::DISTRIBUTOR_SSEND);
+    sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+    sendTypeEnums.push_back(Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
+    sendTypeEnums.push_back(Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
+#endif
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
-    plist->set ("Barrier between receives and sends", barrierBetween,
-                "Whether to execute a barrier between receives and sends in do"
-                "[Reverse]Posts().  Required for correctness when \"Send type\""
-                "=\"Rsend\", otherwise correct but not recommended.");
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
-    plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
-                "MPI message tags for different code paths.  Highly recommended"
-                " to avoid message collisions.");
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
     plist->set ("Timer Label","","Label for Time Monitor output");
-    plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
-                "tell whether a pointer points to host memory or CUDA device "
-                "memory.  You don't need to specify this option any more; "
-                "Tpetra assumes it is always true.  This is a very light "
-                "assumption on the MPI implementation, and in fact does not "
-                "actually involve hardware or system RDMA support.");
 
     // mfh 24 Dec 2015: Tpetra no longer inherits from
     // Teuchos::VerboseObject, so it doesn't need the "VerboseObject"
@@ -289,13 +274,6 @@ namespace Tpetra {
     // requests_: Allocated on demand.
     // reverseDistributor_: See note below
 
-    // mfh 31 Mar 2016: These are statistics, kept on calls to
-    // doPostsAndWaits or doReversePostsAndWaits.  They weren't here
-    // when I started, and I didn't add them, so I don't know if they
-    // are accurate.
-    reverseDistributor_->lastRoundBytesSend_ = 0;
-    reverseDistributor_->lastRoundBytesRecv_ = 0;
-
     // I am my reverse Distributor's reverse Distributor.
     // Thus, it would be legit to do the following:
     //
@@ -336,10 +314,6 @@ namespace Tpetra {
         << ", Parameters: {"
         << "Send type: "
         << DistributorSendTypeEnumToString (plan_.getSendType())
-        << ", Barrier between receives and sends: "
-        << (plan_.barrierBetweenRecvSend() ? "true" : "false")
-        << ", Use distinct tags: "
-        << (plan_.useDistinctTags() ? "true" : "false")
         << ", Debug: " << (verbose_ ? "true" : "false")
         << "}}";
     return out.str ();
@@ -451,10 +425,6 @@ namespace Tpetra {
         Teuchos::OSTab tab2 (out);
         out << "\"Send type\": "
             << DistributorSendTypeEnumToString (plan_.getSendType()) << endl
-            << "\"Barrier between receives and sends\": "
-            << (plan_.barrierBetweenRecvSend() ? "true" : "false") << endl
-            << "\"Use distinct tags\": "
-            << (plan_.useDistinctTags() ? "true" : "false") << endl
             << "\"Debug\": " << (verbose_ ? "true" : "false") << endl;
       }
     } // if myRank == 0

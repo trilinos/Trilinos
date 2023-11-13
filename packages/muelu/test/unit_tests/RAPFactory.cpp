@@ -61,7 +61,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 
 namespace MueLuTests {
@@ -187,7 +187,7 @@ namespace MueLuTests {
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-    defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
+    defManager->SetFactory("Aggregates", rcp(new UncoupledAggregationFactory()));   // real aggregation factory for Ptent
 
     Level fineLevel, coarseLevel;
     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -287,7 +287,7 @@ namespace MueLuTests {
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-    defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
+    defManager->SetFactory("Aggregates", rcp(new UncoupledAggregationFactory()));   // real aggregation factory for Ptent
     defManager->SetFactory("P", rcp(MueLu::NoFactory::get(),false));         // dummy factory for P
     defManager->SetFactory("R", rcp(MueLu::NoFactory::get(),false));         // dummy factory for R
 
@@ -308,7 +308,7 @@ namespace MueLuTests {
     Teuchos::Array<SC> valout(1);
     RCP<Matrix> diagMat = MatrixFactory::Build(rowMap, 1);
     RCP<Matrix> zdiagMat = MatrixFactory::Build(rowMap, 1);
-    for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
+    for (size_t r = 0; r < rowMap->getLocalNumElements(); r++) {
       GO grid = rowMap->getGlobalElement(r);
       indout[0] = grid;
       (r == 0) ?  valout[0] = TST::zero() : valout[0] = TST::one();
@@ -386,7 +386,7 @@ namespace MueLuTests {
     defManager->SetFactory("A", rcp(MueLu::NoFactory::get(),false));         // dummy factory for A
     defManager->SetFactory("Nullspace", rcp(new NullspaceFactory()));        // real null space factory for Ptent
     defManager->SetFactory("Graph", rcp(new CoalesceDropFactory()));         // real graph factory for Ptent
-    defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
+    defManager->SetFactory("Aggregates", rcp(new UncoupledAggregationFactory()));   // real aggregation factory for Ptent
     defManager->SetFactory("P", rcp(MueLu::NoFactory::get(),false));         // dummy factory for P
     defManager->SetFactory("R", rcp(MueLu::NoFactory::get(),false));         // dummy factory for R
 
@@ -407,7 +407,7 @@ namespace MueLuTests {
     Teuchos::Array<SC> valout(1);
     RCP<Matrix> diagMat = MatrixFactory::Build(rowMap, 1);
     RCP<Matrix> zdiagMat = MatrixFactory::Build(rowMap, 1);
-    for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
+    for (size_t r = 0; r < rowMap->getLocalNumElements(); r++) {
       GO grid = rowMap->getGlobalElement(r);
       indout[0] = grid;
       (r == 0) ?  valout[0] = TST::zero() : valout[0] = TST::one();

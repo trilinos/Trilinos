@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -78,7 +78,7 @@ namespace Iotr {
     size_t components = field.transformed_storage()->component_count();
     size_t n          = count * components;
     if (field.get_type() == Ioss::Field::REAL) {
-      auto * rdata = static_cast<double *>(data);
+      auto  *rdata = static_cast<double *>(data);
       double value;
       if (doMin) {
         if (doAbs) {
@@ -126,8 +126,8 @@ namespace Iotr {
       idata[0] = value;
     }
     else if (field.get_type() == Ioss::Field::INT64) {
-      int64_t *idata = static_cast<int64_t *>(data);
-      int64_t  value;
+      auto   *idata = static_cast<int64_t *>(data);
+      int64_t value;
       if (doMin) {
         if (doAbs) {
           value = *std::min_element(&idata[0], &idata[n], [](int64_t p1, int64_t p2) {

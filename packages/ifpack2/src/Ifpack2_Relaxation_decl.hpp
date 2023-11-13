@@ -801,6 +801,8 @@ private:
   int clusterSize_ = 1;
   //! For MTSGS, the threshold for long/bulk rows (rows with at least this many nonzeros)
   int longRowThreshold_ = 0;
+  //! For MTSGS, the coloring algorithm to use (as a string)
+  KokkosGraph::ColoringAlgorithm mtColoringAlgorithm_ = KokkosGraph::COLORING_DEFAULT;
 
   //! Number of outer-sweeps for the two-stage Gauss Seidel
   int NumOuterSweeps_ = 1;
@@ -828,6 +830,8 @@ private:
   int NumInitialize_ = 0;
   //! the number of successful calls to compute().
   int NumCompute_ = 0;
+  //! Whether apply should register and use a timer
+  bool TimerForApply_ = true;
   //! The number of successful calls to apply().
   mutable int NumApply_ = 0;
   //! Total time in seconds for all successful calls to initialize().

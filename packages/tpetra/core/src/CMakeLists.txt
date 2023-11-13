@@ -77,18 +77,21 @@ ENDFUNCTION()
 # Function that turns a valid Node template parameter into a macro
 # name (all caps, with no white space and no punctuation other than
 # underscore).
+# Upper-cases the Kokkos execution space name, except for Threads,
+# which is turned into PTHREAD (cwp: for unclear reasons)
 #
 # NAME_OUT [out] The mangled type name.
 #
 # NAME_IN [in] The type to mangle.
 FUNCTION(TPETRA_NODE_MACRO_NAME NAME_OUT NAME_IN)
-  STRING(REGEX MATCH "Kokkos::Compat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
+  STRING(REGEX MATCH "Tpetra::KokkosCompat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
   STRING(COMPARE EQUAL "${TMP0}" "" DOES_NOT_MATCH)
+
   IF(DOES_NOT_MATCH)
     MESSAGE(FATAL_ERROR "Tpetra: Node $NAME_IN is not a supported Node type.")
   ELSE()
     # Extract the Kokkos execution space (KOKKOS_EXEC_SPACE) from the Node name.
-    STRING(REGEX REPLACE "Kokkos::Compat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
+    STRING(REGEX REPLACE "Tpetra::KokkosCompat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
 
     # Special case: Threads.  The macro name unfortunately differs
     # from the execution space name in a way that doesn't fit the
@@ -640,20 +643,20 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(SOURCES "")
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.h)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Pull in the Kokkos refactor code.
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/kokkos_refactor)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/kokkos_refactor)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Must glob the binary dir last to get all of the auto-generated headers
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_ETIHelperMacros.h)
@@ -706,23 +709,23 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   LIST(APPEND SOURCES ${CRSGRAPHTRANSPOSER_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::BlockCrsMatrix.
-  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "BlockCrsMatrix" "BLOCKCRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "BlockCrsMatrix" "BLOCKCRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::BlockMultiVector.
-  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "BlockMultiVector" "BLOCKMULTIVECTOR" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "BlockMultiVector" "BLOCKMULTIVECTOR" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE )
   LIST(APPEND SOURCES ${BLOCKMULTIVECTOR_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::BlockVector.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKVECTOR_OUTPUT_FILES
     "Tpetra_ETI_SC_LO_GO_NT.tmpl" "BlockVector" "BLOCKVECTOR"
-    "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}"
-    "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+    "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${BLOCKVECTOR_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::BlockCrsMatrix helpers.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_HELPER_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl"
-  "BlockCrsMatrix_Helpers" "BLOCKCRSMATRIX_HELPERS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  "BlockCrsMatrix_Helpers" "BLOCKCRSMATRIX_HELPERS" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_HELPER_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::Details::getDiagCopyWithoutOffsets.
@@ -780,43 +783,34 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_CONVERT_TEMPLATES(MULTIVECTOR_CONVERT_OUTPUT_FILES "Tpetra_ETI_SOUT_SIN_LO_GO_NT.tmpl" "MultiVector" "MULTIVECTOR_CONVERT" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${MULTIVECTOR_CONVERT_OUTPUT_FILES})
 
-  IF (Tpetra_ENABLE_DEPRECATED_CODE)
-
-    # Generate ETI .cpp files for Tpetra::Details::localDeepCopy*RowMatrix.
-    # Do so for the same set of Scalar types as CrsMatrix (see above),
-    # because this function is an implementation detail of CrsMatrix.
-    TPETRA_PROCESS_ALL_SLGN_TEMPLATES(LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES
-      "Tpetra_ETI_SC_LO_GO_NT.tmpl"
-      "Details_localDeepCopyRowMatrix"
-      "DETAILS_LOCALDEEPCOPYROWMATRIX"
-      "${CrsMatrix_ETI_SCALARS}"
-      "${TpetraCore_ETI_LORDS}"
-      "${TpetraCore_ETI_GORDS}"
-      "${TpetraCore_ETI_NODES}"
-      TRUE)
-    LIST(APPEND SOURCES ${LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES})
-
-    # Generate ETI .cpp files for the RowMatrix -> CrsMatrix overload of
-    # Tpetra::createDeepCopy.  Do this only for non-integer Scalar
-    # types, since we really only need this function for linear solvers.
-    TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES
-      "Tpetra_ETI_SC_LO_GO_NT.tmpl"
-      "createDeepCopy_CrsMatrix"
-      "CREATEDEEPCOPY_CRSMATRIX"
-      "${TpetraCore_ETI_SCALARS_NO_ORDS}"
-      "${TpetraCore_ETI_LORDS}"
-      "${TpetraCore_ETI_GORDS}"
-      "${TpetraCore_ETI_NODES}"
-      FALSE)
-    LIST(APPEND SOURCES ${CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES})
-  ENDIF ()
-
   # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator.
   TPETRA_PROCESS_ALL_SN_TEMPLATES(LOCALCRSMATRIXOPERATOR_OUTPUT_FILES
     "Tpetra_ETI_SC_NT.tmpl" "LocalCrsMatrixOperator"
     "LOCALCRSMATRIXOPERATOR" "${CrsMatrix_ETI_SCALARS}"
     "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE TRUE)
   LIST(APPEND SOURCES ${LOCALCRSMATRIXOPERATOR_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator with mixed Scalars.
+  ASSERT_DEFINED (Tpetra_INST_DOUBLE)
+  ASSERT_DEFINED (Tpetra_INST_FLOAT)
+  IF (Tpetra_INST_DOUBLE AND Tpetra_INST_FLOAT)
+    TPETRA_PROCESS_ALL_CONVERT_TEMPLATES(LOCALCRSMATRIXOPERATOR_MIXED_OUTPUT_FILES
+      "Tpetra_ETI_SOUT_SIN_LO_GO_NT.tmpl" "LocalCrsMatrixOperator"
+      "LOCALCRSMATRIXOPERATOR_MIXED"
+      "double" "float"
+      "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" True True)
+    LIST(APPEND SOURCES ${LOCALCRSMATRIXOPERATOR_MIXED_OUTPUT_FILES})
+  ENDIF()
+  ASSERT_DEFINED (Tpetra_INST_COMPLEX_DOUBLE)
+  ASSERT_DEFINED (Tpetra_INST_COMPLEX_FLOAT)
+  IF (Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_COMPLEX_FLOAT)
+    TPETRA_PROCESS_ALL_CONVERT_TEMPLATES(LOCALCRSMATRIXOPERATOR_MIXED_OUTPUT_FILES
+      "Tpetra_ETI_SOUT_SIN_LO_GO_NT.tmpl" "LocalCrsMatrixOperator"
+      "LOCALCRSMATRIXOPERATOR_MIXED"
+      "std::complex<double>" "std::complex<float>"
+      "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" True True)
+    LIST(APPEND SOURCES ${LOCALCRSMATRIXOPERATOR_MIXED_OUTPUT_FILES})
+  ENDIF()
 
   # Generate ETI .cpp files for Tpetra::CrsGraph.
   TPETRA_PROCESS_ALL_LGN_TEMPLATES(CRSGRAPH_OUTPUT_FILES
@@ -918,16 +912,6 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "${TpetraCore_ETI_NODES}")
   LIST(APPEND SOURCES ${UNPACKCRSGRAPHANDCOMBINE_OUTPUT_FILES})
 
-  # Generate ETI .cpp files for Tpetra::Details::localRowOffsets.
-  TPETRA_PROCESS_ALL_LGN_TEMPLATES(LOCALROWOFFSETS_OUTPUT_FILES
-    "Tpetra_ETI_LO_GO_NT.tmpl"
-    "Details_localRowOffsets"
-    "DETAILS_LOCALROWOFFSETS"
-    "${TpetraCore_ETI_LORDS}"
-    "${TpetraCore_ETI_GORDS}"
-    "${TpetraCore_ETI_NODES}")
-  LIST(APPEND SOURCES ${LOCALROWOFFSETS_OUTPUT_FILES})
-
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
 
@@ -953,5 +937,5 @@ SET_PROPERTY(
 # / from this directory, or to / from the 'impl' subdirectory.  That ensures
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
-# Here's another change, another, and another and yet another.
-#
+# Here's another change.  Again.
+

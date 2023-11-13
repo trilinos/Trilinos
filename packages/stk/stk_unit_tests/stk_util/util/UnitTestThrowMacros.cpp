@@ -35,6 +35,7 @@
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for set_assert_handler, ThrowRequireMsg, set_erro...
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include <iostream>                         // for basic_ostream::operator<<, operator<<, ostrin...
 #include <stdexcept>                        // for logic_error, runtime_error, invalid_argument
 #include <string>                           // for string
@@ -73,30 +74,30 @@ test_invarg_handler(const char* expr,
 void force_throw_require_trigger(bool msg = true)
 {
   if (msg) {
-    ThrowRequireMsg(false, "Will always fail, this is for testing");
+    STK_ThrowRequireMsg(false, "Will always fail, this is for testing");
   }
   else {
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
   }
 }
 
 void force_throw_error_trigger(bool msg = true)
 {
   if (msg) {
-    ThrowErrorMsgIf(true, "Will always fail, this is for testing");
+    STK_ThrowErrorMsgIf(true, "Will always fail, this is for testing");
   }
   else {
-    ThrowErrorIf(true);
+    STK_ThrowErrorIf(true);
   }
 }
 
 void force_throw_invarg_trigger(bool msg = true)
 {
   if (msg) {
-    ThrowInvalidArgMsgIf(true, "Will always fail, this is for testing");
+    STK_ThrowInvalidArgMsgIf(true, "Will always fail, this is for testing");
   }
   else {
-    ThrowInvalidArgIf(true);
+    STK_ThrowInvalidArgIf(true);
   }
 }
 
@@ -104,22 +105,22 @@ void check_interaction_with_if(bool msg = true)
 {
   if (msg) {
     if (true)
-      ThrowRequireMsg(false, "Will always fail, this is for testing");
+      STK_ThrowRequireMsg(false, "Will always fail, this is for testing");
   }
   else {
     if (true)
-      ThrowRequire(false);
+      STK_ThrowRequire(false);
   }
 }
 
 void force_throw_assert()
 {
-  ThrowAssert(false);
+  STK_ThrowAssert(false);
 }
 
 void test_no_expr_error()
 {
-  ThrowErrorMsg("message");
+  STK_ThrowErrorMsg("message");
 }
 
 } // namespace <empty>
@@ -149,21 +150,21 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   bool expected_execution_path = false;
   if (false)
-    ThrowRequireMsg(false, "test");
+    STK_ThrowRequireMsg(false, "test");
   else
     expected_execution_path = true;
   ASSERT_TRUE(expected_execution_path);
 
   expected_execution_path = false;
   if (false)
-    ThrowAssertMsg(false, "test");
+    STK_ThrowAssertMsg(false, "test");
   else
     expected_execution_path = true;
   ASSERT_TRUE(expected_execution_path);
 
   expected_execution_path = false;
   if (false)
-    ThrowErrorMsg("test");
+    STK_ThrowErrorMsg("test");
   else
     expected_execution_path = true;
   ASSERT_TRUE(expected_execution_path);
@@ -171,31 +172,31 @@ TEST(UnitTestingOfThrowMacros, testUnit)
   // These next four statements are to check compilation success
 
   if (false)
-    ThrowRequireMsg(false, "test");
+    STK_ThrowRequireMsg(false, "test");
 
   if (false)
-    ThrowAssertMsg(false, "test");
+    STK_ThrowAssertMsg(false, "test");
 
   if (false)
-    ThrowRequire(false);
+    STK_ThrowRequire(false);
 
   if (false)
-    ThrowAssert(false);
+    STK_ThrowAssert(false);
 
   // Check that do-while still works, again, we are mostly checking compilation
   // success here.
 
-  do ThrowRequireMsg(true, "test");
+  do STK_ThrowRequireMsg(true, "test");
   while (false);
 
-  do ThrowAssertMsg(true, "test");
+  do STK_ThrowAssertMsg(true, "test");
   while (false);
 
   // Check that message with put-tos compiles
 
   int temp = 0;
-  ThrowRequireMsg(true, "test: " << temp << " blah");
-  ThrowAssertMsg(true, "test: " << temp << " blah");
+  STK_ThrowRequireMsg(true, "test: " << temp << " blah");
+  STK_ThrowAssertMsg(true, "test: " << temp << " blah");
 
   // Check that assert behaves as expected (throws in debug, not in opt)
 #ifdef NDEBUG
@@ -212,7 +213,7 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   stk::ErrorHandler orig = stk::set_assert_handler(test_assert_handler);
 
-  ThrowRequireMsg(false, "test");
+  STK_ThrowRequireMsg(false, "test");
 
   ASSERT_TRUE(test_assert_handler_called);
 
@@ -224,7 +225,7 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   orig = stk::set_error_handler(test_error_handler);
 
-  ThrowErrorMsgIf(true, "test");
+  STK_ThrowErrorMsgIf(true, "test");
 
   ASSERT_TRUE(test_error_handler_called);
 
@@ -236,7 +237,7 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   orig = stk::set_invalid_arg_handler(test_invarg_handler);
 
-  ThrowInvalidArgMsgIf(true, "test");
+  STK_ThrowInvalidArgMsgIf(true, "test");
 
   ASSERT_TRUE(test_invarg_handler_called);
 
@@ -247,9 +248,9 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
 void testNGPThrowRequireMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
-    NGP_ThrowRequireMsg(test == true, "Error testing whatever");
+    STK_NGP_ThrowRequireMsg(test == true, "Error testing whatever");
   });
 }
 
@@ -261,12 +262,14 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   // Also, OpenMP seems to produce an abort (in adddition to a throw?).
   //
   // testNGPThrowRequireMsg();
+  std::cout<<"NGP_ThrowRequireMsg: #if cuda, openmp or hip"<<std::endl;
 #else
 #ifdef NEW_ENOUGH_GCC
+  std::cout<<"NGP_ThrowRequireMsg: #ifdef new-enough-gcc"<<std::endl;
 //For now, only test this on gcc compilers more recent than major version 4.
 //A Trilinos pre-push test platform, 4.8.4 seems to produce an abort instead
 //of a throw for this test.
@@ -279,6 +282,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
                                "Error occurred at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
     std::string expectedMsg2 = "Error: Error testing whatever\n";
     std::string message = ex.what();
+  std::cout<<"NGP_ThrowRequireMsg: caught, comparing strings"<<std::endl;
     EXPECT_NE(message.find(expectedMsg1), std::string::npos);
     EXPECT_NE(message.find(expectedMsg2), std::string::npos);
   }
@@ -291,9 +295,9 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
 
 void testNGPThrowRequire()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
-    NGP_ThrowRequire(test == true);
+    STK_NGP_ThrowRequire(test == true);
   });
 }
 
@@ -301,11 +305,13 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowRequire();
+  std::cout<<"NGP_ThrowRequire: #if cuda, openmp or hip"<<std::endl;
 #else
 #ifdef NEW_ENOUGH_GCC
+  std::cout<<"NGP_ThrowRequire: #ifdef new-enough-gcc"<<std::endl;
   try {
     testNGPThrowRequire();
   }
@@ -313,6 +319,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
                                "Error occurred at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
     std::string message = ex.what();
+  std::cout<<"NGP_ThrowRequire: caught, comparing strings"<<std::endl;
     EXPECT_NE(message.find(expectedMsg), std::string::npos);
   }
 #endif
@@ -323,9 +330,9 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
 #ifndef NDEBUG
 void testNGPThrowAssertMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = false;
-    NGP_ThrowAssertMsg(test == true, "Error testing whatever");
+    STK_NGP_ThrowAssertMsg(test == true, "Error testing whatever");
   });
 }
 
@@ -333,7 +340,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowAssertMsg();
 #else
@@ -358,8 +365,8 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
 #ifdef NDEBUG
 void testNGPThrowAssertMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
-    NGP_ThrowAssertMsg(false, "Error testing whatever");
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
+    STK_NGP_ThrowAssertMsg(false, "Error testing whatever");
   });
 }
 
@@ -367,7 +374,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowAssertMsg();
 #else
@@ -380,9 +387,9 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
 
 void testNGPThrowErrorMsgIf()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = true;
-    NGP_ThrowErrorMsgIf(test == true, "Error testing whatever");
+    STK_NGP_ThrowErrorMsgIf(test == true, "Error testing whatever");
   });
 }
 
@@ -390,7 +397,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowErrorMsgIf();
 #else
@@ -412,9 +419,9 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
 
 void testNGPThrowErrorIf()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
     bool test = true;
-    NGP_ThrowErrorIf(test == true);
+    STK_NGP_ThrowErrorIf(test == true);
   });
 }
 
@@ -422,7 +429,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowErrorIf();
 #else
@@ -442,8 +449,8 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
 
 void testNGPThrowErrorMsg()
 {
-  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
-    NGP_ThrowErrorMsg("Error testing whatever");
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
+    STK_NGP_ThrowErrorMsg("Error testing whatever");
   });
 }
 
@@ -451,7 +458,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   // Unable to test a device-side abort, as this eventually results in a throw
-  // inside Kokkos::finalize_all().
+  // inside Kokkos::finalize().
   //
   // testNGPThrowErrorMsg();
 #else
@@ -470,3 +477,93 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
 #endif
 }
 
+#if !defined(NDEBUG)
+// clang-format off
+#define TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, cond) \
+{                                                        \
+  for (int i = 0; i < 1; ++i) {                          \
+    testThrow(++i == -1 || cond);                        \
+  }                                                      \
+  for (int i = 0; i < 1; ++i)                            \
+    testThrow(++i == -1 || cond);                        \
+  if (int i = 1) {                                       \
+    testThrow(++i == -1 || cond);                        \
+  }                                                      \
+  if (int i = 1)                                         \
+    testThrow(++i == -1 || cond);                        \
+}
+
+#define TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrowMsg, cond) \
+{                                                               \
+  for (int i = 0; i < 1; ++i) {                                 \
+    testThrowMsg(++i == -1 || cond, "");                        \
+  }                                                             \
+  for (int i = 0; i < 1; ++i)                                   \
+    testThrowMsg(++i == -1 || cond, "");                        \
+  if (int i = 1) {                                              \
+    testThrowMsg(++i == -1 || cond, "");                        \
+  }                                                             \
+  if (int i = 1)                                                \
+    testThrowMsg(++i == -1 || cond, "");                        \
+}
+// clang-format on
+
+#define TEST_THROW_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, false)
+#define TEST_THROW_IF_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, true)
+#define TEST_THROW_MSG_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrow, false)
+#define TEST_THROW_MSG_IF_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrow, true)
+
+#define TEST_NGP_THROW_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, true)
+#define TEST_NGP_THROW_IF_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MACROS_IN_BLOCKS_ARG(testThrow, false)
+#define TEST_NGP_THROW_MSG_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrow, true)
+#define TEST_NGP_THROW_MSG_IF_MACROS_IN_BLOCKS(testThrow)  TEST_THROW_MSG_MACROS_IN_BLOCKS_ARG(testThrow, false)
+
+TEST(UnitTestingOfThrowMacros, STK_ThrowsInSingleStatementBlock)
+{
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(STK_ThrowRequireWithSierraHelpMsg));
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(STK_ThrowRequire));
+  EXPECT_ANY_THROW(TEST_THROW_IF_MACROS_IN_BLOCKS(STK_ThrowErrorIf));
+  EXPECT_ANY_THROW(TEST_THROW_IF_MACROS_IN_BLOCKS(STK_ThrowInvalidArgIf));
+
+  EXPECT_ANY_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(STK_ThrowRequireMsg));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_IF_MACROS_IN_BLOCKS(STK_ThrowErrorMsgIf));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_IF_MACROS_IN_BLOCKS(STK_ThrowInvalidArgMsgIf));
+
+#ifdef NDEBUG
+  EXPECT_NO_THROW(TEST_THROW_MACROS_IN_BLOCKS(STK_ThrowAssert));
+  EXPECT_NO_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(STK_ThrowAssertMsg));
+#else
+  EXPECT_ANY_THROW(TEST_THROW_MACROS_IN_BLOCKS(STK_ThrowAssert));
+  EXPECT_ANY_THROW(TEST_THROW_MSG_MACROS_IN_BLOCKS(STK_ThrowAssertMsg));
+#endif
+}
+
+template <typename Lambda>
+void run_ngp_macros_test(Lambda lambda) {
+  EXPECT_NO_THROW( Kokkos::parallel_for(1, lambda) );
+}
+
+template <typename... Lambdas>
+void run_ngp_macros_in_single_statement_block(Lambdas... lambdas) {
+  (run_ngp_macros_test(lambdas), ...);
+}
+
+void test_stk_ngp_macros_in_single_statement_block() {
+  auto ngpThrowRequire = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MACROS_IN_BLOCKS(STK_NGP_ThrowRequire); };
+  auto ngpThrowAssert = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MACROS_IN_BLOCKS(STK_NGP_ThrowAssert); };
+  auto ngpThrowErrorIf = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_IF_MACROS_IN_BLOCKS(STK_NGP_ThrowErrorIf); };
+
+  auto ngpThrowRequireMsg = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_MACROS_IN_BLOCKS(STK_NGP_ThrowRequireMsg); };
+  auto ngpThrowAssertMsg = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_MACROS_IN_BLOCKS(STK_NGP_ThrowAssertMsg); };
+  auto ngpThrowErrorMsgIf = KOKKOS_LAMBDA(const int) { TEST_NGP_THROW_MSG_IF_MACROS_IN_BLOCKS(STK_NGP_ThrowErrorMsgIf); };
+
+  run_ngp_macros_in_single_statement_block(ngpThrowRequire, ngpThrowAssert, ngpThrowErrorIf, ngpThrowRequireMsg,
+                                           ngpThrowRequire, ngpThrowAssertMsg,  ngpThrowErrorMsgIf);
+}
+
+TEST(UnitTestingOfThrowMacros, STK_NGPThrowsInSingleStatementBlock)
+{
+  test_stk_ngp_macros_in_single_statement_block();
+}
+
+#endif

@@ -55,12 +55,14 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix_fwd.hpp"
 #include "Xpetra_Map.hpp"
+#include "Xpetra_BlockedMap.hpp"
 #include "Xpetra_Vector.hpp"
+#include "Xpetra_BlockedVector.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -250,7 +252,6 @@ namespace Xpetra {
       return rcp(new CrsMatrixWrap(rowMap, colMap, NumEntriesPerRowToAlloc));
     }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     //! Constructor providing a local Kokkos::CrsMatrix together with a row and column map
     static RCP<Matrix> Build (
         const Teuchos::RCP<const Map>& rowMap,
@@ -271,7 +272,6 @@ namespace Xpetra {
       XPETRA_MONITOR("MatrixFactory::Build");
       return rcp(new CrsMatrixWrap(lclMatrix, rowMap, colMap, domainMap, rangeMap, params));
     }
-#endif
 
     //! Constructor specifying (possibly different) number of entries in each row.
     static RCP<Matrix> Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc) {
@@ -283,20 +283,48 @@ namespace Xpetra {
       return rcp(new CrsMatrixWrap(graph, paramList));
     }
 
+    //! Constructor specifying graph and values array
+    static RCP<Matrix> Build(const RCP<const CrsGraph>& graph, 
+                             typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values, 
+                             const RCP<ParameterList>& paramList = Teuchos::null) {
+      return rcp(new CrsMatrixWrap(graph, values, paramList));
+    }
+
     //! Constructor for creating a diagonal Xpetra::Matrix using the entries of a given vector for the diagonal
     static RCP<Matrix> Build(const RCP<const Vector>& diagonal) {
-      Teuchos::ArrayRCP<const Scalar>         vals             = diagonal->getData(0);
-      LocalOrdinal                            NumMyElements    = diagonal->getMap()->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = diagonal->getMap()->getNodeElementList();
 
-      Teuchos::RCP<CrsMatrixWrap> mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1));
+      RCP<const BlockedVector> bdiagonal = Teuchos::rcp_dynamic_cast<const BlockedVector>(diagonal);
+      Teuchos::RCP<Matrix> mtx = Teuchos::null;
 
-      for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
-          mtx->insertGlobalValues(MyGlobalElements[i],
-                                  Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
-                                  Teuchos::tuple<Scalar>(vals[i]) );
+      if(bdiagonal == Teuchos::null)
+      {
+        Teuchos::ArrayRCP<const Scalar> vals = diagonal->getData(0);
+        LocalOrdinal numMyElements = diagonal->getMap()->getLocalNumElements();
+        Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = diagonal->getMap()->getLocalElementList();
+
+        mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1));
+
+        for (LocalOrdinal i = 0; i < numMyElements; ++i) {
+          mtx->insertGlobalValues(myGlobalElements[i],
+                                  Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i]),
+                                  Teuchos::tuple<Scalar>(vals[i]));
+        }
+        mtx->fillComplete();
       }
-      mtx->fillComplete();
+      else
+      {
+        RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(bdiagonal->getBlockedMap(), bdiagonal->getBlockedMap(), 1));
+
+        for (size_t r = 0; r < bdiagonal->getBlockedMap()->getNumMaps(); ++r) {
+          if (!bdiagonal->getMultiVector(r).is_null()) {
+            const RCP<MultiVector> subvec = bdiagonal->getMultiVector(r);
+            bop->setMatrix(r, r, Build(subvec->getVector(0)));
+          }
+        }
+        bop->fillComplete();
+        mtx = BuildCopy(bop);
+      }
+
       return mtx;
     }
 
@@ -365,7 +393,7 @@ namespace Xpetra {
       RCP<const MapExtractor> doMapExt = Teuchos::rcp(new MapExtractor(*(input->getDomainMapExtractor())));
 
       // create new BlockedCrsMatrix object
-      RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExt, doMapExt, input->getNodeMaxNumRowEntries()));
+      RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExt, doMapExt, input->getLocalMaxNumRowEntries()));
 
       for (size_t r = 0; r < input->Rows(); ++r) {
         for (size_t c = 0; c < input->Cols(); ++c)

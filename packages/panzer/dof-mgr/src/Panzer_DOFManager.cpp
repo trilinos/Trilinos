@@ -408,6 +408,38 @@ DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+const PHX::ViewOfViews3<1,PHX::View<const int*>>
+DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, const std::vector<int> & fieldNums) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before "
+                                                                      "buildGlobalUnknowns has been called");
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockID);
+  if(bitr==blockNameToID_.end()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  }
+
+  PHX::ViewOfViews3<1,PHX::View<const int*>> vov("panzer::getGIDFieldOffsetsKokkos vector version",fieldNums.size());
+  vov.disableSafetyCheck(); // Its going to be moved/copied
+
+  int bid=bitr->second;
+
+  for (size_t i=0; i < fieldNums.size(); ++i) {
+    if(fa_fps_[bid]!=Teuchos::null) {
+      vov.addView(fa_fps_[bid]->localOffsetsKokkos(fieldNums[i]),i);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"panzer::DOFManager::getGIDFieldOffsets() - no field pattern exists in block " 
+                                 << blockID << "for field number " << fieldNums[i] << " exists!");
+      // vov.addView(PHX::View<int*>("panzer::DOFManager::getGIDFieldOffsetsKokkos() empty",0),i);
+    }
+  }
+
+  vov.syncHostToDevice();
+
+  return vov;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 void DOFManager::getElementGIDs(panzer::LocalOrdinal localElementID, std::vector<panzer::GlobalOrdinal>& gids, const std::string& /* blockIdHint */) const
 {
   gids = elementGIDs_[localElementID];
@@ -434,7 +466,7 @@ void DOFManager::buildGlobalUnknowns()
   connMngr_->buildConnectivity(*aggFieldPattern);
 
   // using new geometric pattern, build global unknowns
-  buildGlobalUnknowns(aggFieldPattern);
+  this->buildGlobalUnknowns(aggFieldPattern);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -480,13 +512,13 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
   ElementBlockAccess ownedAccess(true,connMngr_);
 
   // INPUT: To the algorithm in the GUN paper
-  RCP<MultiVector> tagged_overlap_mv = buildTaggedMultiVector(ownedAccess);
+  RCP<MultiVector> tagged_overlap_mv = this->buildTaggedMultiVector(ownedAccess);
   RCP<const Map> overlap_map   = tagged_overlap_mv->getMap();
 
   RCP<MultiVector> overlap_mv = Tpetra::createMultiVector<panzer::GlobalOrdinal>(overlap_map,(size_t)numFields_);
 
   // call the GUN paper algorithm
-  auto non_overlap_pair = buildGlobalUnknowns_GUN(*tagged_overlap_mv,*overlap_mv);
+  auto non_overlap_pair = this->buildGlobalUnknowns_GUN(*tagged_overlap_mv,*overlap_mv);
   RCP<MultiVector> non_overlap_mv = non_overlap_pair.first;
   RCP<MultiVector> tagged_non_overlap_mv = non_overlap_pair.second;
   RCP<const Map> non_overlap_map = non_overlap_mv->getMap();
@@ -497,7 +529,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
 
   // this bit of code takes the uniquely assigned GIDs and spreads them
   // out for processing by local element ID
-  fillGIDsFromOverlappedMV(ownedAccess,elementGIDs_,*overlap_map,*overlap_mv);
+  this->fillGIDsFromOverlappedMV(ownedAccess,elementGIDs_,*overlap_map,*overlap_mv);
 
   // if neighbor unknowns are required, then make sure they are included
   // in the elementGIDs_
@@ -505,7 +537,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
                        // neighbor processors
     ElementBlockAccess neighborAccess(false,connMngr_);
     RCP<const Map> overlap_map_neighbor =
-      buildOverlapMapFromElements(neighborAccess);
+      this->buildOverlapMapFromElements(neighborAccess);
 
     // Export e(overlap_map_neighbor,non_overlap_map);
     Import imp_neighbor(non_overlap_map,overlap_map_neighbor);
@@ -517,7 +549,7 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
     overlap_mv_neighbor->doImport(*non_overlap_mv, imp_neighbor,
       Tpetra::REPLACE);
 
-    fillGIDsFromOverlappedMV(neighborAccess, elementGIDs_,
+    this->fillGIDsFromOverlappedMV(neighborAccess, elementGIDs_,
       *overlap_map_neighbor, *overlap_mv_neighbor);
   }
 
@@ -762,8 +794,7 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN::line_07-09 local_count",GUN07_09);
     auto values = non_overlap_mv->getLocalViewDevice(Tpetra::Access::ReadOnly);
-    auto mv_size = values.extent(0);
-    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<panzer::GlobalOrdinal,decltype(values)>(values),localsum);
+    panzer::dof_functors::SumRank2<panzer::GlobalOrdinal, decltype(values)>{values}.apply(localsum);
   }
 
  /* 11. Create a map using local sums to generate final GIDs.
@@ -874,7 +905,7 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
     }
   }
 
-  RCP<const Map> overlapmap       = buildOverlapMapFromElements(ownedAccess);
+  RCP<const Map> overlapmap       = this->buildOverlapMapFromElements(ownedAccess);
 
   // LINE 22: In the GUN paper...the overlap_mv is reused for the tagged multivector.
   //          This is a bit of a practical abuse of the algorithm presented in the paper.
@@ -911,7 +942,6 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
         int offset=0;
         for (int c = 0; c < connSize; ++c) {
           size_t lid = overlapmap->getLocalElement(elmtConn[c]);
-
           for(std::size_t i=0;i<working.size();i++)
             working[i] = 0;
           for (int n = 0; n < numFields[c]; ++n) {
@@ -1253,7 +1283,7 @@ DOFManager::buildOverlapMapFromElements(const ElementBlockAccess & access) const
 
   /* 3.  Construct an overlap map from this structure.
    */
-  return Tpetra::createNonContigMap<panzer::LocalOrdinal,panzer::GlobalOrdinal>(overlapVector,getComm());
+  return Tpetra::createNonContigMapWithNode<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>(overlapVector,getComm());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1370,7 +1400,7 @@ DOFManager<panzer::LocalOrdinal,panzer::GlobalOrdinal>::runLocalRCMReordering(co
 
   graph->fillComplete();
 
-  std::vector<panzer::GlobalOrdinal> newOrder(map->getNodeNumElements());
+  std::vector<panzer::GlobalOrdinal> newOrder(map->getLocalNumElements());
   {
     // graph is constructed, now run RCM using zoltan2
     typedef Zoltan2::XpetraCrsGraphInput<Graph> SparseGraphAdapter;
@@ -1389,7 +1419,7 @@ DOFManager<panzer::LocalOrdinal,panzer::GlobalOrdinal>::runLocalRCMReordering(co
     size_t checkLength = soln->getPermutationSize();
     panzer::LocalOrdinal * checkPerm = soln->getPermutation(&dummy);
 
-    Teuchos::ArrayView<const panzer::GlobalOrdinal > oldOrder = map->getNodeElementList();
+    Teuchos::ArrayView<const panzer::GlobalOrdinal > oldOrder = map->getLocalElementList();
     TEUCHOS_ASSERT(checkLength==oldOrder.size());
     TEUCHOS_ASSERT(checkLength==newOrder.size());
 

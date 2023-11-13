@@ -52,9 +52,9 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_MultiVector_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
+#include "Tpetra_Access.hpp"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_BufferMacros.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
 
@@ -67,8 +67,8 @@ namespace Kokkos {
     Kokkos::View<Sacado::UQ::PCE<S>*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView< Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
-      typedef typename Kokkos::Impl::if_c<
-        ::Kokkos::Impl::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
+      typedef typename std::conditional<
+        ::Kokkos::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
@@ -85,8 +85,8 @@ namespace Kokkos {
     Kokkos::View<const Sacado::UQ::PCE<S>*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
-      typedef typename Kokkos::Impl::if_c<
-        ::Kokkos::Impl::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
+      typedef typename std::conditional<
+        ::Kokkos::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
@@ -128,7 +128,7 @@ struct DeviceForNode2 {
 };
 
 template <typename Device>
-struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
+struct DeviceForNode2< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;
 };
 
@@ -329,9 +329,9 @@ namespace Kokkos {
       // be the host View?  However, this is what I found when I
       // changed these lines not to call deprecated code, so I'm
       // leaving it.
-      return dimension_scalar(mv.getLocalViewDevice());
+      return dimension_scalar(mv.getLocalViewHost(Tpetra::Access::ReadOnly));
     }
-    return dimension_scalar(mv.getLocalViewHost());
+    return dimension_scalar(mv.getLocalViewDevice(Tpetra::Access::ReadOnly));
   }
 
   template <class S, class L, class G, class N>
@@ -342,9 +342,9 @@ namespace Kokkos {
       // be the host View?  However, this is what I found when I
       // changed these lines not to call deprecated code, so I'm
       // leaving it.
-      return dimension_scalar(v.getLocalViewDevice());
+      return dimension_scalar(v.getLocalViewHost(Tpetra::Access::ReadOnly));
     }
-    return dimension_scalar(v.getLocalViewHost());
+    return dimension_scalar(v.getLocalViewDevice(Tpetra::Access::ReadOnly));
   }
 }
 

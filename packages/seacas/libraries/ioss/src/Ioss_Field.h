@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Field_h
-#define IOSS_Ioss_Field_h
+#pragma once
+
+#include "ioss_export.h"
 
 #include <Ioss_CodeTypes.h>
 #include <cstddef> // for size_t
@@ -18,7 +19,7 @@ namespace Ioss {
 
   /** \brief Holds metadata for bulk data associated with a GroupingEntity.
    */
-  class Field
+  class IOSS_EXPORT Field
   {
   public:
     /** \brief The basic data type held in the field.
@@ -34,6 +35,8 @@ namespace Ioss {
       STRING,
       CHARACTER
     };
+
+    enum class InOut { INPUT, OUTPUT };
 
     static Ioss::Field::BasicType get_field_type(char /*dummy*/) { return CHARACTER; }
     static Ioss::Field::BasicType get_field_type(double /*dummy*/) { return DOUBLE; }
@@ -56,6 +59,7 @@ namespace Ioss {
                       EntityBlock derived class. Examples would be thickness
                       of the elements in a shell element block or the radius
                       of particles in a particle element block. */
+      MAP,
       COMMUNICATION,
       MESH_REDUCTION, /**< A field which summarizes some non-transient data
                          about an entity (\sa REDUCTION). This could be an
@@ -90,9 +94,9 @@ namespace Ioss {
     Field(std::string name, BasicType type, const VariableType *storage, RoleType role,
           size_t value_count = 0, size_t index = 0);
 
-    // Create a field from another field.
-    Field(const Field & /*from*/);
-    Field &operator=(const Field & /*from*/);
+    Field(const Ioss::Field &from)      = default;
+    Field &operator=(const Field &from) = default;
+    ~Field()                            = default;
 
     // Compare two fields (used for STL container)
     bool operator<(const Field &other) const;
@@ -101,12 +105,38 @@ namespace Ioss {
     bool operator!=(const Ioss::Field &rhs) const;
     bool equal(const Ioss::Field &rhs) const;
 
-    ~Field();
-
     bool is_valid() const { return type_ != INVALID; }
     bool is_invalid() const { return type_ == INVALID; }
 
     const std::string &get_name() const { return name_; }
+    std::string       &get_name() { return name_; }
+
+    /** \brief Get name of the 'component_indexth` component (1-based)
+     *
+     * \param[in] component_index 1-based index of the component to be named
+     * \param[in] in_out Is the field being read or written
+     * \param[in] suffix optional suffix separator to be used if the separator
+     *            on the field is set to '1' which means 'unset'
+     * \returns name of the specified component
+     */
+    std::string get_component_name(int component_index, InOut in_out, char suffix = 1) const;
+    int         get_component_count(InOut in_out) const;
+
+    Field &set_suffix_separator(char suffix_separator)
+    {
+      suffixSeparator_ = suffix_separator;
+      return *this;
+    }
+    char   get_suffix_separator() const { return suffixSeparator_; }
+    Field &set_suffices_uppercase(bool true_false)
+    {
+      sufficesUppercase_ = true_false;
+      return *this;
+    }
+    bool get_suffices_uppercase() const { return sufficesUppercase_; }
+
+    const Field &set_zero_copy_enabled(bool true_false = true) const;
+    bool         zero_copy_enabled() const { return zeroCopyable_; }
 
     /** \brief Get the basic data type of the data held in the field.
      *
@@ -120,7 +150,8 @@ namespace Ioss {
     size_t raw_count() const { return rawCount_; }           // Number of items in field
     size_t transformed_count() const { return transCount_; } // Number of items in field
 
-    size_t get_size() const; // data size (in bytes) required to hold entire field
+    size_t get_size() const;       // data size (in bytes) required to hold entire field
+    size_t get_basic_size() const; // data size (in bytes) of the basic type
 
     /** \brief Get the role (MESH, ATTRIBUTE, TRANSIENT, REDUCTION, etc.) of the data in the field.
      *
@@ -128,8 +159,17 @@ namespace Ioss {
      */
     RoleType get_role() const { return role_; }
 
-    size_t get_index() const { return index_; }
-    void   set_index(size_t index) const { index_ = index; }
+    size_t       get_index() const { return index_; }
+    const Field &set_index(size_t index) const
+    {
+      index_ = index;
+      return *this;
+    }
+    Field &set_index(size_t index)
+    {
+      index_ = index;
+      return *this;
+    }
 
     void reset_count(size_t new_count);  // new number of items in field
     void reset_type(BasicType new_type); // new type of items in field.
@@ -143,30 +183,38 @@ namespace Ioss {
     // throws exception if the types don't match.
     void check_type(BasicType the_type) const;
 
-    bool               is_type(BasicType the_type) const { return the_type == type_; }
+    bool is_type(BasicType the_type) const { return the_type == type_; }
+
     std::string        type_string() const;
     static std::string type_string(BasicType type);
+
+    std::string        role_string() const;
+    static std::string role_string(RoleType role);
 
     bool add_transform(Transform *my_transform);
     bool transform(void *data);
     bool has_transform() const { return !transforms_.empty(); }
 
   private:
-    std::string name_;
+    std::string name_{};
 
-    size_t         rawCount_{};   // Count of items in field before transformation
-    size_t         transCount_{}; // Count of items in field after transformed
-    size_t         size_{};       // maximum data size (in bytes) required to hold entire field
-    mutable size_t index_{}; // Optional flag that can be used by a client to indicate an ordering.
-                             // Unused by field itself.
+    size_t rawCount_{};   // Count of items in field before transformation
+    size_t transCount_{}; // Count of items in field after transformed
+    size_t size_{};       // maximum data size (in bytes) required to hold entire field
+    mutable size_t
+        index_{}; // Optional flag that can be used by a client to indicate an ordering.
+                  // Unused by field itself.  Used by some DatabaeIO objects to set ordering.
     BasicType type_{INVALID};
     RoleType  role_{INTERNAL};
 
-    const VariableType *rawStorage_{};   // Storage type of raw field
-    const VariableType *transStorage_{}; // Storage type after transformation
+    const VariableType *rawStorage_{nullptr};   // Storage type of raw field
+    const VariableType *transStorage_{nullptr}; // Storage type after transformation
 
-    std::vector<Transform *> transforms_;
-    bool                     equal_(const Ioss::Field &rhs, bool quiet) const;
+    std::vector<Transform *> transforms_{};
+    char                     suffixSeparator_{1}; // Value = 1 means unset; use database default.
+    bool         sufficesUppercase_{false}; // True if the suffices are uppercase on database...
+    mutable bool zeroCopyable_{false};      // True if the field is zero-copyable.
+
+    bool equal_(const Ioss::Field &rhs, bool quiet) const;
   };
 } // namespace Ioss
-#endif

@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iocatalyst_DatabaseIO_h
-#define IOSS_Iocatalyst_DatabaseIO_h
+#pragma once
+
+#include "iocatalyst_export.h"
 
 #include "Ioss_EntitySet.h"
 #include "Ioss_Region.h"  // for Region, SideSetContainer, etc
@@ -20,13 +21,13 @@
 /** \brief A namespace for the Catalyst 2.0 database format.
  */
 namespace Iocatalyst {
-  class DatabaseIO : public Ioss::DatabaseIO
+  class IOCATALYST_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
     using Superclass = Ioss::DatabaseIO;
 
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     ~DatabaseIO() override;
 
     // Check capabilities of input/output database...  Returns an
@@ -167,4 +168,3 @@ namespace Iocatalyst {
     bool                             useDeepCopy;
   };
 } // namespace Iocatalyst
-#endif

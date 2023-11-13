@@ -66,12 +66,12 @@ class STK_Interface;
  *
  * \param[in] meshStr Filename containing the mesh string, or the mesh string itself.
  * \param[in] parallelMach Descriptor for machine to build this mesh on.
- * \param[in] isExodus Set to true for Exodus mesh, set to false for Pamgen mesh.
  *
  * \returns Integer indicating the spatial dimension of the mesh.
  */
-  int getMeshDimension(const std::string & meshStr,stk::ParallelMachine parallelMach,
-                       const bool isExodus = true);
+  int getMeshDimension(const std::string & meshStr,stk::ParallelMachine parallelMach, const std::string & typeStr = "Exodus");
+
+  std::string fileTypeToIOSSType(const std::string & fileType);
 
 /** Concrete mesh factory instantiation. This reads
   * a mesh from an exodus file and builds a STK_Interface object.
@@ -93,9 +93,8 @@ public:
    *
    * \param[in] fileName Name of the input file.
    * \param[in] restartIndex Index used for restarts.
-   * \param[in] isExodus If true, the input file is in exodus format. If false, it assumes Pamgen format.
    */
-  STK_ExodusReaderFactory(const std::string & fileName, const int restartIndex=0, const bool isExodus = true);
+  STK_ExodusReaderFactory(const std::string & fileName, const int restartIndex=0);
 
    /** Construct a STK_Inteface object described
      * by this factory.
@@ -144,9 +143,11 @@ protected:
 
    void buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const;
 
+   bool doPerceptRefinement() const;
+
    std::string fileName_;
+   std::string fileType_;
    int restartIndex_;
-   bool isExodus_;
 
    /* The ExodusReaderFactory creates one edge/face block for each
     * unique edge/face topology in the mesh.  There are a few
@@ -184,6 +185,8 @@ private:
 
   //! Did the user request to create missing face blocks
   bool createFaceBlocks_;
+
+  std::string geometryName_;
 };
 
 }

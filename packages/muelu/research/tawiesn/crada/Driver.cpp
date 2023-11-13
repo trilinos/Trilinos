@@ -314,12 +314,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     RCP<RealValuedMultiVector> coordinates = Teuchos::null; //MultiVectorFactory::Build(A->getDomainMap(),1);
     if (cooFileName != "") {
-      TEUCHOS_TEST_FOR_EXCEPTION(map->getNodeNumElements() % A->GetFixedBlockSize() != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs on proc " << comm->getRank() << " is " << map->getNodeNumElements() << " and not divisible by 3.");
+      TEUCHOS_TEST_FOR_EXCEPTION(map->getLocalNumElements() % A->GetFixedBlockSize() != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs on proc " << comm->getRank() << " is " << map->getLocalNumElements() << " and not divisible by 3.");
 
-      Teuchos::ArrayView<const GO> dofGidList   = map->getNodeElementList();
+      Teuchos::ArrayView<const GO> dofGidList   = map->getLocalElementList();
       GlobalOrdinal                indexBase    = map->getIndexBase();
       LocalOrdinal                 blkSize      = A->GetFixedBlockSize();
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dofGidList.size()) != Teuchos::as<size_t>(map->getNodeNumElements()), MueLu::Exceptions::RuntimeError, "Driver: Number of local DOFs inconsistent.");
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dofGidList.size()) != Teuchos::as<size_t>(map->getLocalNumElements()), MueLu::Exceptions::RuntimeError, "Driver: Number of local DOFs inconsistent.");
 
       size_t              numNodes  = dofGidList.size() / blkSize;
       Teuchos::Array<GO>  nodeList(numNodes);
@@ -396,7 +396,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // empty processors
       std::vector<size_t> lelePerProc(comm->getSize(),0);
       std::vector<size_t> gelePerProc(comm->getSize(),0);
-      lelePerProc[comm->getRank()] = mySpecialMap->getNodeNumElements();
+      lelePerProc[comm->getRank()] = mySpecialMap->getLocalNumElements();
       Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,comm->getSize(),&lelePerProc[0],&gelePerProc[0]);
       if(comm->getRank() == 0) {
         fancyout << "Distribution of " << cnt << " special dofs over processors:" << std::endl;
@@ -463,7 +463,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // create map extractor
       Teuchos::Array<GlobalOrdinal> nonSpecialGids;
       Teuchos::Array<GlobalOrdinal> specialGids;
-      for (size_t i = 0; i < map->getNodeNumElements(); i++) {
+      for (size_t i = 0; i < map->getLocalNumElements(); i++) {
         GlobalOrdinal gid = map->getGlobalElement(i);
         if (mySpecialMap->isNodeGlobalElement(gid) == false) {
           nonSpecialGids.push_back(gid);
@@ -486,7 +486,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
 
       // We always build an Xpetra style map extractor with unique global ids
-      TEUCHOS_TEST_FOR_EXCEPTION(map->getNodeNumElements() != myStridedNonSpecialMap->getNodeNumElements() + myStridedSpecialMap->getNodeNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs on proc " << comm->getRank() << " is " << map->getNodeNumElements() << " and does not match the sum of the partial maps of size " << myStridedNonSpecialMap->getNodeNumElements() << " and " << myStridedSpecialMap->getNodeNumElements());
+      TEUCHOS_TEST_FOR_EXCEPTION(map->getLocalNumElements() != myStridedNonSpecialMap->getLocalNumElements() + myStridedSpecialMap->getLocalNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs on proc " << comm->getRank() << " is " << map->getLocalNumElements() << " and does not match the sum of the partial maps of size " << myStridedNonSpecialMap->getLocalNumElements() << " and " << myStridedSpecialMap->getLocalNumElements());
 
       std::vector<Teuchos::RCP<const Map> > xmaps;
       xmaps.push_back(myStridedNonSpecialMap);
@@ -513,12 +513,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<RealValuedMultiVector> coordinates1 = Teuchos::null;
       RCP<RealValuedMultiVector> coordinates2 = Teuchos::null;
       if (coordinates != Teuchos::null) {
-        TEUCHOS_TEST_FOR_EXCEPTION( myStridedNonSpecialMap->getNodeNumElements() % 3 != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs of non-special map on proc " << comm->getRank() << " is " << myStridedNonSpecialMap->getNodeNumElements() << " and cannot divided by 3");
-        TEUCHOS_TEST_FOR_EXCEPTION( myStridedSpecialMap->getNodeNumElements() % 3 != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs of special map on proc " << comm->getRank() << " is " << myStridedSpecialMap->getNodeNumElements() << " and cannot divided by 3");
+        TEUCHOS_TEST_FOR_EXCEPTION( myStridedNonSpecialMap->getLocalNumElements() % 3 != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs of non-special map on proc " << comm->getRank() << " is " << myStridedNonSpecialMap->getLocalNumElements() << " and cannot divided by 3");
+        TEUCHOS_TEST_FOR_EXCEPTION( myStridedSpecialMap->getLocalNumElements() % 3 != 0, MueLu::Exceptions::RuntimeError, "Driver: Number of DOFs of special map on proc " << comm->getRank() << " is " << myStridedSpecialMap->getLocalNumElements() << " and cannot divided by 3");
 
         Teuchos::Array<GlobalOrdinal> nonSpecialCoordGids;
         Teuchos::Array<GlobalOrdinal> SpecialCoordGids;
-        for (size_t i = 0; i < coordinates->getMap()->getNodeNumElements(); i++) {
+        for (size_t i = 0; i < coordinates->getMap()->getLocalNumElements(); i++) {
           GlobalOrdinal gid = coordinates->getMap()->getGlobalElement(i);
 
           for (size_t j = 0; j < Teuchos::as<size_t>(3); j++) {
@@ -535,10 +535,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         }
 
         RCP<const Map> myNonSpecialCoordsMap = MapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialCoordGids(),0,comm);
-        TEUCHOS_TEST_FOR_EXCEPTION( myStridedNonSpecialMap->getNodeNumElements() / 3 != myNonSpecialCoordsMap->getNodeNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of entries in non-special node map is inconsistent");
+        TEUCHOS_TEST_FOR_EXCEPTION( myStridedNonSpecialMap->getLocalNumElements() / 3 != myNonSpecialCoordsMap->getLocalNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of entries in non-special node map is inconsistent");
 
         RCP<const Map> mySpecialCoordsMap = MapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),SpecialCoordGids(),0,comm);
-        TEUCHOS_TEST_FOR_EXCEPTION( myStridedSpecialMap->getNodeNumElements() / 3 != mySpecialCoordsMap->getNodeNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of entries in non-special node map is inconsistent");
+        TEUCHOS_TEST_FOR_EXCEPTION( myStridedSpecialMap->getLocalNumElements() / 3 != mySpecialCoordsMap->getLocalNumElements(), MueLu::Exceptions::RuntimeError, "Driver: Number of entries in non-special node map is inconsistent");
 
         std::vector<Teuchos::RCP<const Map> > nodexmaps;
         nodexmaps.push_back(myNonSpecialCoordsMap);

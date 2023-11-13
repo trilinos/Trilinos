@@ -45,48 +45,12 @@
 
 namespace stk {
 
-//-----------------------------------------------------------------------
-
 #if defined( STK_HAS_MPI )
 
 enum { STK_MPI_TAG_SIZING = 0 , STK_MPI_TAG_DATA = 1 };
 
 #endif
 
-//----------------------------------------------------------------------
-
-void CommBuffer::pack_overflow() const
-{
-#ifndef NDEBUG
-  std::ostringstream os ;
-  os << "stk::CommBuffer::pack<T>(...){ overflow by " ;
-  os << remaining() ;
-  os << " bytes. }" ;
-  throw std::overflow_error( os.str() );
-#endif
-}
-
-void CommBuffer::unpack_overflow() const
-{
-#ifndef NDEBUG
-  std::ostringstream os ;
-  os << "stk::CommBuffer::unpack<T>(...){ overflow by " ;
-  os << remaining();
-  os << " bytes. }" ;
-  throw std::overflow_error( os.str() );
-#endif
-}
-
-//----------------------------------------------------------------------
-
-void CommBuffer::set_buffer_ptrs(unsigned char* begin, unsigned char* ptr, unsigned char* end)
-{
-  m_beg = begin;
-  m_ptr = ptr;
-  m_end = end;
-}
-
-//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
 CommBroadcast::CommBroadcast( ParallelMachine comm , int root_rank )
@@ -111,7 +75,7 @@ bool CommBroadcast::allocate_buffer( const bool local_flag )
                        ReduceMax<1>( & root_send_size ) &
                        ReduceBitOr<1>( & flag ) );
 
-  ThrowRequireMsg(root_rank_min == root_rank_max, method << " FAILED: inconsistent root processor");
+  STK_ThrowRequireMsg(root_rank_min == root_rank_max, method << " FAILED: inconsistent root processor");
 
   unsigned char* ptr = static_cast<CommBuffer::ucharp>( malloc( root_send_size ) );
   m_buffer.set_buffer_ptrs(ptr, ptr, ptr + root_send_size);
@@ -136,7 +100,7 @@ CommBuffer & CommBroadcast::send_buffer()
 {
   static const char method[] = "stk::CommBroadcast::send_buffer" ;
 
-  ThrowRequireMsg(m_root_rank == m_rank, method << " FAILED: is not root processor");
+  STK_ThrowRequireMsg(m_root_rank == m_rank, method << " FAILED: is not root processor");
 
   return m_buffer ;
 }
@@ -150,12 +114,13 @@ void CommBroadcast::communicate()
 
     const int result = MPI_Bcast( buf, count, MPI_BYTE, m_root_rank, m_comm);
 
-    ThrowRequireMsg(MPI_SUCCESS == result, "stk::CommBroadcast::communicate ERROR: " << result << " from MPI_Bcast");
+    STK_ThrowRequireMsg(MPI_SUCCESS == result, "stk::CommBroadcast::communicate ERROR: " << result << " from MPI_Bcast");
   }
 #endif
 
   m_buffer.reset();
 }
+
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -168,7 +133,10 @@ void CommBroadcast::communicate()
 //  Determine the number of items each other process will send to the current processor
 //
 std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator) {
-  const int msg_tag = 10240;
+
+  stk::util::print_unsupported_version_warning(3, __LINE__, __FILE__);
+
+  auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10240);
   int num_procs = sendSizeArray.size();
   int my_proc;
   MPI_Comm_rank(mpi_communicator, &my_proc);

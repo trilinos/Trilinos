@@ -146,7 +146,7 @@ inline ROL::Ptr<const ROL::ParameterList> getValidROLParameters() {
 
     /* ===== TRUST REGION ================================================== */
     PL &trustregion = step.sublist("Trust Region");
-      trustregion.set("Subproblem Solver",                    "Truncation CG");
+      trustregion.set("Subproblem Solver",                    "Truncated CG" );
       trustregion.set("Subproblem Model",                     "Kelley-Sachs" );
       trustregion.set("Initial Radius",                       10.0           );
       trustregion.set("Maximum Radius",                       5.e3           );

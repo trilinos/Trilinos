@@ -266,7 +266,7 @@ namespace Intrepid2 {
     const auto cardLine = lineBasis.getCardinality();
 
     this->pointType_         = pointType;
-    this->vinv_ = Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>("HVOL::HEX::Cn::vinv", cardLine, cardLine);
+    this->vinv_ = Kokkos::DynRankView<typename ScalarViewType::value_type,DT>("HVOL::HEX::Cn::vinv", cardLine, cardLine);
     lineBasis.getVandermondeInverse(this->vinv_);
     
     this->basisCardinality_  = cardLine*cardLine*cardLine;
@@ -325,7 +325,7 @@ namespace Intrepid2 {
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,DT>
       dofCoordsLine("dofCoordsLine", cardLine, 1);
 
     lineBasis.getDofCoords(dofCoordsLine);

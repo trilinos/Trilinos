@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,7 +10,7 @@
 #include "exodusII_int.h" // for ex__get_counter_list, etc
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   if ((funcall) != NC_NOERR) {                                                                     \
@@ -134,6 +134,7 @@ static int ex_copy_internal(int in_exoid, int out_exoid, int mesh_only)
 
   EX_FUNC_LEAVE(EX_NOERR);
 }
+/*! \endcond */
 
 /*!
   \ingroup Utilities
@@ -249,6 +250,7 @@ int cpy_variables(int in_exoid, int out_exoid, int in_large, int mesh_only)
   }
   return EX_NOERR;
 }
+/*! \endcond */
 
 /*! \cond INTERNAL */
 int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
@@ -260,7 +262,7 @@ int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
   EXCHECKI(nc_inq(in_exoid, &ndims, NULL, NULL, &recdimid));
   for (int dimid = 0; dimid < ndims; dimid++) {
 
-    char   dim_nm[NC_MAX_NAME];
+    char   dim_nm[NC_MAX_NAME + 1];
     size_t dim_sz;
     EXCHECK(nc_inq_dim(in_exoid, dimid, dim_nm, &dim_sz));
 
@@ -339,14 +341,13 @@ int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
 /*! \cond INTERNAL */
 int cpy_global_att(int in_exoid, int out_exoid)
 {
-  int          status;
   struct ncatt att; /* attribute */
 
   int ngatts;
   EXCHECKI(nc_inq(in_exoid, NULL, NULL, &ngatts, NULL));
 
   /* copy global attributes */
-  for (size_t i = 0; i < (size_t)ngatts; i++) {
+  for (int i = 0; i < ngatts; i++) {
 
     EXCHECKI(nc_inq_attname(in_exoid, NC_GLOBAL, i, att.name));
 
@@ -354,7 +355,7 @@ int cpy_global_att(int in_exoid, int out_exoid)
      * word size, I/O word size etc. are global attributes stored when
      * file is created with ex_create;  we don't want to overwrite those
      */
-    if ((status = nc_inq_att(out_exoid, NC_GLOBAL, att.name, &att.type, &att.len)) != NC_NOERR) {
+    if (nc_inq_att(out_exoid, NC_GLOBAL, att.name, &att.type, &att.len) != NC_NOERR) {
 
       /* The "last_written_time" attribute is a special attribute used
          by the IOSS library to determine whether a timestep has been
@@ -377,7 +378,7 @@ int cpy_global_att(int in_exoid, int out_exoid)
   {
     nc_type att_type = NC_NAT;
     size_t  att_len  = 0;
-    status           = nc_inq_att(in_exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
+    int     status   = nc_inq_att(in_exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
     if (status == NC_NOERR) {
       EXCHECKI(nc_copy_att(in_exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, out_exoid, NC_GLOBAL));
     }
@@ -385,6 +386,7 @@ int cpy_global_att(int in_exoid, int out_exoid)
 
   return EX_NOERR;
 }
+/*! \endcond */
 
 /*! \cond INTERNAL */
 int cpy_att(int in_id, int out_id, int var_in_id, int var_out_id)
@@ -413,6 +415,7 @@ int cpy_att(int in_id, int out_id, int var_in_id, int var_out_id)
 
   return (EX_NOERR);
 }
+/*! \endcond */
 
 /*! \internal */
 int cpy_coord_def(int in_id, int out_id, int rec_dim_id, char *var_nm, int in_large)
@@ -470,6 +473,7 @@ int cpy_coord_def(int in_id, int out_id, int rec_dim_id, char *var_nm, int in_la
 
   return var_out_id; /* OK */
 }
+/*! \endcond */
 
 /*! \internal */
 int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
@@ -506,7 +510,7 @@ int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
   /* Get the dimension sizes and names */
   int dim_out_id[NC_MAX_VAR_DIMS];
   for (int idx = 0; idx < nbr_dim; idx++) {
-    char   dim_nm[NC_MAX_NAME];
+    char   dim_nm[NC_MAX_NAME + 1];
     size_t dim_sz;
 
     EXCHECKI(nc_inq_dim(in_id, dim_in_id[idx], dim_nm, &dim_sz));
@@ -574,7 +578,9 @@ int cpy_var_val(int in_id, int out_id, char *var_nm)
   /* Get the dimension sizes and names from the input file */
   size_t dim_str[NC_MAX_VAR_DIMS];
   size_t dim_cnt[NC_MAX_VAR_DIMS];
-  size_t var_sz = 1L;
+  size_t var_sz          = 1L;
+  bool   string_len_same = true;
+
   for (int idx = 0; idx < nbr_dim; idx++) {
     /* NB: For the unlimited dimension, ncdiminq() returns the maximum
        value used so far in writing data for that dimension.
@@ -593,6 +599,11 @@ int cpy_var_val(int in_id, int out_id, char *var_nm)
 
     /* Initialize the indicial offset and stride arrays */
     size_t dim_max = dim_in > dim_out ? dim_in : dim_out;
+
+    /* Need to know if input and output have different size strings. */
+    if (var_type_in == NC_CHAR && idx == 1 && dim_in != dim_out) {
+      string_len_same = false;
+    }
     var_sz *= dim_max;
 
     /* Handle case where output variable is smaller than input (rare, but happens) */
@@ -664,8 +675,39 @@ int cpy_var_val(int in_id, int out_id, char *var_nm)
     }
 
     else if (var_type_in == NC_CHAR) {
-      EXCHECKF(nc_get_var_text(in_id, var_in_id, void_ptr));
-      EXCHECKF(nc_put_vara_text(out_id, var_out_id, dim_str, dim_cnt, void_ptr));
+
+      if (string_len_same) {
+        EXCHECKF(nc_get_var_text(in_id, var_in_id, void_ptr));
+        EXCHECKF(nc_put_vara_text(out_id, var_out_id, dim_str, dim_cnt, void_ptr));
+      }
+      else {
+        /* Use void_ptr for the input read; alloc new space for output... */
+        EXCHECKF(nc_get_var_text(in_id, var_in_id, void_ptr));
+
+        if (void_ptr != NULL) {
+          size_t num_string = 0;
+          size_t in_size    = 0;
+          size_t out_size   = 0;
+          EXCHECKF(nc_inq_dimlen(in_id, dim_id_in[0], &num_string));
+          EXCHECKF(nc_inq_dimlen(in_id, dim_id_in[1], &in_size));
+          EXCHECKF(nc_inq_dimlen(out_id, dim_id_out[1], &out_size));
+          size_t min_size    = in_size < out_size ? in_size : out_size;
+          char  *out_strings = calloc(num_string * out_size, 1);
+          /* Read the input strings...*/
+
+          /* Copy to the output strings...*/
+          const char *in_strings = void_ptr;
+          for (size_t i = 0; i < num_string; i++) {
+            size_t in_off  = i * in_size;
+            size_t out_off = i * out_size;
+            ex_copy_string(&out_strings[out_off], &in_strings[in_off], min_size);
+            out_strings[out_off + out_size - 1] = '\0';
+          }
+          dim_cnt[1] = out_size;
+          EXCHECKF(nc_put_vara_text(out_id, var_out_id, dim_str, dim_cnt, out_strings));
+          free(out_strings);
+        }
+      }
     }
 
     else {

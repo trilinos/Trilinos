@@ -58,6 +58,27 @@
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_IntegrationTools.hpp"
+#include "Intrepid2_TestUtils.hpp"
+
+#include "GRADGRADStandardAssembly.hpp"
+#include "GRADGRADStructuredAssembly.hpp"
+#include "H1StandardAssembly.hpp"
+#include "H1StructuredAssembly.hpp"
+#include "HDIVStandardAssembly.hpp"
+#include "HDIVStructuredAssembly.hpp"
+#include "HCURLStandardAssembly.hpp"
+#include "HCURLStructuredAssembly.hpp"
+#include "HVOLStandardAssembly.hpp"
+#include "HVOLStructuredAssembly.hpp"
+
+enum FormulationChoice
+{
+  Poisson, // (grad, grad)
+  Hgrad,   // (grad, grad) + (value, value)
+  Hdiv,    // (div, div)   + (value, value)
+  Hcurl,   // (curl, curl) + (value, value)
+  L2       // (value, value)
+};
 
 enum AlgorithmChoice
 {
@@ -67,6 +88,13 @@ enum AlgorithmChoice
   AffineTensor,
   DiagonalJacobian,
   Uniform
+};
+
+enum BasisFamilyChoice
+{
+  Nodal,
+  Hierarchical,
+  Serendipity
 };
 
 std::string to_string(AlgorithmChoice choice)
@@ -83,20 +111,31 @@ std::string to_string(AlgorithmChoice choice)
   }
 }
 
+std::string to_string(FormulationChoice choice)
+{
+  switch (choice) {
+    case Poisson: return "Poisson";
+    case Hgrad:   return "Hgrad";
+    case Hdiv:    return "Hdiv";
+    case Hcurl:   return "Hcurl";
+    case L2:      return "L2";
+    
+    default:      return "Unknown FormulationChoice";
+  }
+}
+
 using namespace Intrepid2;
 
-template< typename PointScalar, int spaceDim, typename ExecutionSpace >
+template< typename PointScalar, int spaceDim, typename DeviceType >
 inline
-CellGeometry<PointScalar, spaceDim, ExecutionSpace> getMesh(AlgorithmChoice algorithmChoice, const int &meshWidth)
+CellGeometry<PointScalar, spaceDim, DeviceType> getMesh(AlgorithmChoice algorithmChoice, const Kokkos::Array<int,spaceDim> &gridCellCounts)
 {
   Kokkos::Array<PointScalar,spaceDim> domainExtents;
-  Kokkos::Array<int,spaceDim> gridCellCounts;
   for (int d=0; d<spaceDim; d++)
   {
-    domainExtents[d]  = 0.0;
-    gridCellCounts[d] = meshWidth;
+    domainExtents[d]  = 1.0;
   }
-  auto uniformTensorGeometry = uniformCartesianMesh<PointScalar,spaceDim,ExecutionSpace>(domainExtents, gridCellCounts);
+  auto uniformTensorGeometry = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(domainExtents, gridCellCounts);
   
   switch (algorithmChoice)
   {
@@ -125,352 +164,138 @@ CellGeometry<PointScalar, spaceDim, ExecutionSpace> getMesh(AlgorithmChoice algo
   return uniformTensorGeometry; // this line should be unreachable; included to avoid compiler warnings from nvcc
 }
 
-double flopsPerJacobian(const int &spaceDim, const int &numPoints, const int &numGeometryNodes)
+template< typename PointScalar, int spaceDim, typename DeviceType >
+inline
+CellGeometry<PointScalar, spaceDim, DeviceType> getMesh(AlgorithmChoice algorithmChoice, const int &meshWidth)
 {
-  // implementation looks like:
-//  for (ordinal_type i=0;i<dim;++i)
-//  for (ordinal_type j=0;j<dim;++j) {
-//    _jacobian(cell, point, i, j) = 0;
-//    for (ordinal_type bf=0;bf<cardinality;++bf)
-//      _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(bf, point, j); // 2 flops: one multiply, one add
-//  }
-  return 2.0 * spaceDim * spaceDim * numPoints * numGeometryNodes;
-}
-
-double flopsPerJacobianDet(const int &spaceDim, const int &numPoints)
-{
-  //implementation in RealSpaceTools:
-  /*value_type r_val = 0.0;
-  switch (dim) {
-  case 3:
-    r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) + // 3 flops: 2 mults, 1 add
-              inMat(1,0) * inMat(2,1) * inMat(0,2) + // 3 flops: 2 mults, 1 add
-              inMat(2,0) * inMat(0,1) * inMat(1,2) - // 3 flops: 2 mults, 1 subtract
-              inMat(2,0) * inMat(1,1) * inMat(0,2) - // 3 flops: 2 mults, 1 subtract
-              inMat(0,0) * inMat(2,1) * inMat(1,2) - // 3 flops: 2 mults, 1 subtract
-              inMat(1,0) * inMat(0,1) * inMat(2,2) ); // 2 flops: 2 mults
-    break;
-  case 2:
-    r_val = ( inMat(0,0) * inMat(1,1) -
-              inMat(0,1) * inMat(1,0) );
-    break;
-  case 1:
-    r_val = ( inMat(0,0) );
-    break;
-  }
-  return r_val;*/
-  int r_val;
-  switch (spaceDim) {
-    case 3: r_val = 17.0 * numPoints; break;
-    case 2: r_val = 3.0 * numPoints; break;
-    case 1: r_val = 0.0; break;
-    default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unhandled spaceDim");
-  }
-  return r_val;
-}
-
-double flopsPerJacobianInverse(const int &spaceDim, const int &numPoints)
-{
-  // implementation looks like:
-  // const value_type val = RealSpaceTools<>::Serial::det(mat);
-  double totalFlops = flopsPerJacobianDet(spaceDim, numPoints);
-  
-  if (spaceDim == 3)
-  {
-  //  val0 =   mat(1,1)*mat(2,2) - mat(2,1)*mat(1,2); // 3 flops: 2 mults, 1 subtraction
-  //  val1 = - mat(1,0)*mat(2,2) + mat(2,0)*mat(1,2); // 4 flops: 2 mults, 1 negation, 1 add
-  //  val2 =   mat(1,0)*mat(2,1) - mat(2,0)*mat(1,1); // 3 flops: 2 mults, 1 subtraction
-  //
-  //  inv(0,0) = val0/val; // 1 flop
-  //  inv(1,0) = val1/val; // 1 flop
-  //  inv(2,0) = val2/val; // 1 flop
-  //
-  //  val0 =   mat(2,1)*mat(0,2) - mat(0,1)*mat(2,2); // 3
-  //  val1 =   mat(0,0)*mat(2,2) - mat(2,0)*mat(0,2); // 3
-  //  val2 = - mat(0,0)*mat(2,1) + mat(2,0)*mat(0,1); // 4
-  //
-  //  inv(0,1) = val0/val; // 1
-  //  inv(1,1) = val1/val; // 1
-  //  inv(2,1) = val2/val; // 1
-  //
-  //  val0 =   mat(0,1)*mat(1,2) - mat(1,1)*mat(0,2); // 3
-  //  val1 = - mat(0,0)*mat(1,2) + mat(1,0)*mat(0,2); // 4
-  //  val2 =   mat(0,0)*mat(1,1) - mat(1,0)*mat(0,1); // 3
-  //
-  //  inv(0,2) = val0/val; // 1
-  //  inv(1,2) = val1/val; // 1
-  //  inv(2,2) = val2/val; // 1
-    totalFlops += 36.0 * numPoints;
-  }
-  else
-  {
-    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unhandled spaceDim");
-  }
-  
-  return totalFlops;
-}
-
-//! version that uses the classic, generic Intrepid2 paths
-template<class Scalar, class PointScalar, int spaceDim, typename ExecSpaceType>
-ScalarView<Scalar,ExecSpaceType> performStandardQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spaceDim, ExecSpaceType> &geometry,
-                                                                            const int &polyOrder, int worksetSize,
-                                                                            double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
-{
-  int numVertices = 1;
+  Kokkos::Array<int,spaceDim> gridCellCounts;
   for (int d=0; d<spaceDim; d++)
   {
-    numVertices *= 2;
+    gridCellCounts[d] = meshWidth;
   }
-  
-  auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
-  auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
-  auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
-  initialSetupTimer->start();
-  
-  using CellTools = Intrepid2::CellTools<Kokkos::DefaultExecutionSpace>;
-  using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<Kokkos::DefaultExecutionSpace>;
-  
-  using namespace std;
-  // dimensions of the returned view are (C,F,F)
-  auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
-
-  shards::CellTopology cellTopo = geometry.cellTopology();
-  
-  auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<Kokkos::DefaultExecutionSpace> >(cellTopo, fs, polyOrder);
-  
-  int numFields = basis->getCardinality();
-  int numCells = geometry.numCells();
-  
-  if (worksetSize > numCells) worksetSize = numCells;
-  
-  // local stiffness matrices:
-  ScalarView<Scalar,ExecSpaceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
-  
-  using Kokkos::DefaultExecutionSpace;
-  auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecSpaceType>(cellTopo,polyOrder*2);
-  int numPoints = cubature->getNumPoints();
-  ScalarView<PointScalar,ExecSpaceType> cubaturePoints("cubature points",numPoints,spaceDim);
-  ScalarView<double,ExecSpaceType> cubatureWeights("cubature weights", numPoints);
-  
-  cubature->getCubature(cubaturePoints, cubatureWeights);
-  
-  const double flopsPerJacobianPerCell    = flopsPerJacobian(spaceDim, numPoints, numVertices);
-  const double flopsPerJacobianDetPerCell = flopsPerJacobianDet(spaceDim, numPoints);
-  const double flopsPerJacobianInvPerCell = flopsPerJacobianInverse(spaceDim, numPoints);
-  
-  // Allocate some intermediate containers
-  ScalarView<Scalar,ExecSpaceType> basisValues    ("basis values", numFields, numPoints );
-  ScalarView<Scalar,ExecSpaceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
-
-  ScalarView<Scalar,ExecSpaceType> transformedGradValues("transformed grad values", worksetSize, numFields, numPoints, spaceDim);
-  ScalarView<Scalar,ExecSpaceType> transformedWeightedGradValues("transformed weighted grad values", worksetSize, numFields, numPoints, spaceDim);
-  
-  basis->getValues(basisValues,     cubaturePoints, Intrepid2::OPERATOR_VALUE );
-  basis->getValues(basisGradValues, cubaturePoints, Intrepid2::OPERATOR_GRAD  );
-  
-  const int numNodesPerCell = geometry.numNodesPerCell();
-  ScalarView<PointScalar,ExecSpaceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
-  Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
-  KOKKOS_LAMBDA (const int &cellOrdinal) {
-    for (int nodeOrdinal=0; nodeOrdinal<numNodesPerCell; nodeOrdinal++)
-    {
-      for (int d=0; d<spaceDim; d++)
-      {
-        expandedCellNodes(cellOrdinal,nodeOrdinal,d) = geometry(cellOrdinal,nodeOrdinal,d);
-      }
-    }
-  });
-  
-  ScalarView<Scalar,ExecSpaceType> cellMeasures("cell measures", worksetSize, numPoints);
-  ScalarView<Scalar,ExecSpaceType> jacobianDeterminant("jacobian determinant", worksetSize, numPoints);
-  ScalarView<Scalar,ExecSpaceType> jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
-  ScalarView<Scalar,ExecSpaceType> jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
-
-  initialSetupTimer->stop();
-  
-  transformIntegrateFlopCount  = 0;
-  jacobianCellMeasureFlopCount  = numCells * flopsPerJacobianPerCell;    // jacobian itself
-  jacobianCellMeasureFlopCount += numCells * flopsPerJacobianInvPerCell; // inverse
-  jacobianCellMeasureFlopCount += numCells * flopsPerJacobianDetPerCell; // determinant
-  jacobianCellMeasureFlopCount += numCells * numPoints; // cell measure: (C,P) gets weighted with cubature weights of shape (P)
-  
-  int cellOffset = 0;
-  while (cellOffset < numCells)
-  {
-    int startCell         = cellOffset;
-    int numCellsInWorkset = (cellOffset + worksetSize - 1 < numCells) ? worksetSize : numCells - startCell;
-    
-    std::pair<int,int> cellRange = {startCell, startCell+numCellsInWorkset};
-    auto cellWorkset = Kokkos::subview(expandedCellNodes, cellRange, Kokkos::ALL(), Kokkos::ALL());
-    
-    if (numCellsInWorkset != worksetSize)
-    {
-      Kokkos::resize(jacobian,                      numCellsInWorkset, numPoints, spaceDim, spaceDim);
-      Kokkos::resize(jacobianInverse,               numCellsInWorkset, numPoints, spaceDim, spaceDim);
-      Kokkos::resize(jacobianDeterminant,           numCellsInWorkset, numPoints);
-      Kokkos::resize(cellMeasures,                  numCellsInWorkset, numPoints);
-      Kokkos::resize(transformedGradValues,         numCellsInWorkset, numFields, numPoints, spaceDim);
-      Kokkos::resize(transformedWeightedGradValues, numCellsInWorkset, numFields, numPoints, spaceDim);
-    }
-    jacobianAndCellMeasureTimer->start();
-    CellTools::setJacobian(jacobian, cubaturePoints, cellWorkset, cellTopo); // accounted for outside loop, as numCells * flopsPerJacobianPerCell.
-    CellTools::setJacobianInv(jacobianInverse, jacobian);
-    CellTools::setJacobianDet(jacobianDeterminant, jacobian);
-    
-    FunctionSpaceTools::computeCellMeasure(cellMeasures, jacobianDeterminant, cubatureWeights);
-    ExecSpaceType().fence();
-    jacobianAndCellMeasureTimer->stop();
-    
-    // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
-    fstIntegrateCall->start();
-    FunctionSpaceTools::HGRADtransformGRAD(transformedGradValues, jacobianInverse, basisGradValues);
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
-    FunctionSpaceTools::multiplyMeasure(transformedWeightedGradValues, cellMeasures, transformedGradValues);
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim); // multiply each entry of transformedGradValues: one flop for each.
-        
-    auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
-    
-    FunctionSpaceTools::integrate(cellStiffnessSubview, transformedGradValues, transformedWeightedGradValues);
-    ExecSpaceType().fence();
-    fstIntegrateCall->stop();
-    
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numFields) * double(numPoints * spaceDim * 2 - 1); // 2: one multiply, one add per (P,D) entry in the contraction.
-    
-    cellOffset += worksetSize;
-  }
-//  std::cout << "standard integration, approximateFlopCount: " << approximateFlopCount << std::endl;
-  return cellStiffness;
+  return getMesh<PointScalar, spaceDim, DeviceType>(algorithmChoice, gridCellCounts);
 }
 
-//! returns an estimated count of the floating point operations performed.
-template<class Scalar, class PointScalar, int spaceDim, typename ExecSpaceType>
-void performStructuredQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spaceDim, ExecSpaceType> &geometry, const int &polyOrder, const int &worksetSize,
-                                                  double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+//! Returns an Array of roughly isotropic grid dimensions for which (C,F,F) stifness matrix will have at most maxStiffnessEntryCount entries, and at most maxElements total cells.
+template<int spaceDim>
+Kokkos::Array<int,spaceDim>
+getMeshWidths(int basisCardinality, int maxStiffnessEntryCount, int maxElements)
 {
-  int numVertices = 1;
+  Kokkos::Array<int,spaceDim> meshWidths;
+  const int entriesPerElement = basisCardinality * basisCardinality;
+  const int maxElementCount   = std::min(maxStiffnessEntryCount / entriesPerElement, maxElements);
+  
+  // initialize meshWidths:
   for (int d=0; d<spaceDim; d++)
   {
-    numVertices *= 2;
+    meshWidths[d] = 1;
   }
   
-  auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
-  initialSetupTimer->start();
-  using namespace std;
-  using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<ExecSpaceType>;
-  using IntegrationTools   = Intrepid2::IntegrationTools<ExecSpaceType>;
-  // dimensions of the returned view are (C,F,F)
-  auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
-  
-  shards::CellTopology cellTopo = geometry.cellTopology();
-  
-  auto basis = Intrepid2::getBasis< Intrepid2::DerivedNodalBasisFamily<Kokkos::DefaultExecutionSpace> >(cellTopo, fs, polyOrder);
-  
-  int numFields = basis->getCardinality();
-  int numCells = geometry.numCells();
-    
-  // local stiffness matrix:
-  ScalarView<Scalar,ExecSpaceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
-  
-  auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecSpaceType>(cellTopo,polyOrder*2);
-  auto tensorCubatureWeights = cubature->allocateCubatureWeights();
-  TensorPoints<PointScalar,ExecSpaceType> tensorCubaturePoints  = cubature->allocateCubaturePoints();
-  
-  cubature->getCubature(tensorCubaturePoints, tensorCubatureWeights);
-  
-  EOperator op = OPERATOR_GRAD;
-  BasisValues<Scalar,ExecSpaceType> gradientValues = basis->allocateBasisValues(tensorCubaturePoints, op);
-  basis->getValues(gradientValues, tensorCubaturePoints, op);
-  
-  // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
-    
-  int cellOffset = 0;
-  
-  auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
-  auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
-  
-  Data<PointScalar,ExecSpaceType> jacobian = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize);
-  Data<PointScalar,ExecSpaceType> jacobianDet = CellTools<ExecSpaceType>::allocateJacobianDet(jacobian);
-  Data<PointScalar,ExecSpaceType> jacobianInv = CellTools<ExecSpaceType>::allocateJacobianInv(jacobian);
-  TensorData<PointScalar,ExecSpaceType> cellMeasures = geometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
-  
-  // lazily-evaluated transformed gradient values (temporary to allow integralData allocation)
-  auto transformedGradientValuesTemp = FunctionSpaceTools::getHGRADtransformGRAD(jacobianInv, gradientValues.vectorData());
-  auto integralData = IntegrationTools::allocateIntegralData(transformedGradientValuesTemp, cellMeasures, transformedGradientValuesTemp);
-  
-  const int numPoints = jacobian.getDataExtent(1); // data extent will be 1 for affine, numPoints for other cases
-  
-  // TODO: make the below determination accurate for diagonal/block-diagonal cases… (right now, will overcount)
-  const double flopsPerJacobianPerCell    = flopsPerJacobian(spaceDim, numPoints, numVertices);
-  const double flopsPerJacobianDetPerCell = flopsPerJacobianDet(spaceDim, numPoints);
-  const double flopsPerJacobianInvPerCell = flopsPerJacobianInverse(spaceDim, numPoints);
-  
-  transformIntegrateFlopCount = 0;
-  jacobianCellMeasureFlopCount  = numCells * flopsPerJacobianPerCell;    // jacobian itself
-  jacobianCellMeasureFlopCount += numCells * flopsPerJacobianInvPerCell; // inverse
-  jacobianCellMeasureFlopCount += numCells * flopsPerJacobianDetPerCell; // determinant
-  jacobianCellMeasureFlopCount += numCells * numPoints; // cell measure: (C,P) gets weighted with cubature weights of shape (P)
-  
-  auto refData = geometry.getJacobianRefData(tensorCubaturePoints);
-  
-  initialSetupTimer->stop();
-  while (cellOffset < numCells)
+  // double in each dimension until doing so would make the number of elements would exceed maxElementCount:
+  int numElements = 1;
+  int d = 0;
+  while (numElements * 2 <= maxElementCount)
   {
-    int startCell         = cellOffset;
-    int numCellsInWorkset = (cellOffset + worksetSize - 1 < numCells) ? worksetSize : numCells - startCell;
-    int endCell           = numCellsInWorkset + startCell;
-    
-    jacobianAndCellMeasureTimer->start();
-    if (numCellsInWorkset != worksetSize)
-    {
-      const int CELL_DIM = 0; // first dimension corresponds to cell
-      jacobian.setExtent(    CELL_DIM, numCellsInWorkset);
-      jacobianDet.setExtent( CELL_DIM, numCellsInWorkset);
-      jacobianInv.setExtent( CELL_DIM, numCellsInWorkset);
-      integralData.setExtent(CELL_DIM, numCellsInWorkset);
-      
-      // cellMeasures is a TensorData object with separateFirstComponent_ = true; the below sets the cell dimension…
-      cellMeasures.setFirstComponentExtentInDimension0(numCellsInWorkset);
-    }
-    
-    geometry.setJacobian(jacobian, tensorCubaturePoints, refData, startCell, endCell);
-    CellTools<ExecSpaceType>::setJacobianDet(jacobianDet, jacobian);
-    CellTools<ExecSpaceType>::setJacobianInv(jacobianInv, jacobian);
-    
-    // lazily-evaluated transformed gradient values:
-    auto transformedGradientValues = FunctionSpaceTools::getHGRADtransformGRAD(jacobianInv, gradientValues.vectorData());
-    
-    geometry.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);
-    ExecSpaceType().fence();
-    jacobianAndCellMeasureTimer->stop();
-    
-    bool sumInto = false;
-    double approximateFlopCountIntegrateWorkset = 0;
-    fstIntegrateCall->start();
-    IntegrationTools::integrate(integralData, transformedGradientValues, cellMeasures, transformedGradientValues, sumInto, &approximateFlopCountIntegrateWorkset);
-    ExecSpaceType().fence();
-    fstIntegrateCall->stop();
-    
-    // copy into cellStiffness container.  (Alternately, do something like allocateIntegralData, but outside this loop, and take a subview to construct the workset integralData.)
-    if (integralData.getUnderlyingViewRank() == 3)
-    {
-      std::pair<int,int> cellRange = {startCell, endCell};
-      auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
-      Kokkos::deep_copy(cellStiffnessSubview, integralData.getUnderlyingView3());
-    }
-    else // underlying view rank is 2; copy to each cell in destination stiffness matrix
-    {
-      auto integralView2 = integralData.getUnderlyingView2();
-      auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{numCellsInWorkset,numFields,numFields});
-      Kokkos::parallel_for("copy uniform data to expanded container", policy,
-                       KOKKOS_LAMBDA (const int &cellOrdinal, const int &leftFieldOrdinal, const int &rightFieldOrdinal) {
-        cellStiffness(startCell + cellOrdinal, leftFieldOrdinal, rightFieldOrdinal) = integralView2(leftFieldOrdinal,rightFieldOrdinal);
-      });
-    }
-    
-    transformIntegrateFlopCount  += approximateFlopCountIntegrateWorkset;
-    
-    cellOffset += worksetSize;
+    meshWidths[d] *= 2;
+    d = (d + 1) % spaceDim;
+    numElements *= 2;
   }
+  return meshWidths;
+}
+
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationChoice formulation,
+                                        Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                        double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+{
+  switch (formulation)
+  {
+    case Poisson:
+      return performStandardQuadratureGRADGRAD<Scalar,BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case Hgrad:
+      return performStandardQuadratureH1<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case Hdiv:
+      return performStandardQuadratureHDIV<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case Hcurl:
+      return performStandardQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case L2:
+      return performStandardQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    default:
+      return Intrepid2::ScalarView<Scalar,DeviceType>();
+  }
+}
+
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(FormulationChoice formulation,
+                                          Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                          double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+{
+  switch (formulation)
+  {
+    case Poisson:
+      return performStructuredQuadratureGRADGRAD<Scalar,BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case Hgrad:
+      return performStructuredQuadratureH1<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case Hdiv:
+      return performStructuredQuadratureHDIV<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case Hcurl:
+      return performStructuredQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case L2:
+      return performStructuredQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    default:
+      return Intrepid2::ScalarView<Scalar,DeviceType>();
+  }
+}
+
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim>
+typename BasisFamily::BasisPtr getBasisForFormulation(FormulationChoice formulation, shards::CellTopology &cellTopo, const int polyOrder)
+{
+  Intrepid2::EFunctionSpace fs;
+  switch (formulation)
+  {
+    case Poisson: fs = FUNCTION_SPACE_HGRAD; break;
+    case Hgrad:   fs = FUNCTION_SPACE_HGRAD; break;
+    case Hdiv:    fs = FUNCTION_SPACE_HDIV;  break;
+    case Hcurl:   fs = FUNCTION_SPACE_HCURL; break;
+    case L2:      fs = FUNCTION_SPACE_HVOL;  break;
+  }
+  
+  auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
+  return basis;
+}
+
+template<class Scalar, class PointScalar, class DeviceType, int spaceDim>
+BasisPtr<DeviceType,Scalar,Scalar> getHypercubeBasisForFormulation(FormulationChoice formulation, BasisFamilyChoice basisFamilyChoice, const int polyOrder)
+{
+  shards::CellTopology cellTopo;
+  switch (spaceDim)
+  {
+    case 1: cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >());          break;
+    case 2: cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >()); break;
+    case 3: cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >());    break;
+    default:
+      INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported spaceDim");
+  }
+  
+  switch (basisFamilyChoice)
+  {
+    case Nodal:
+    {
+      using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+      return getBasisForFormulation<Scalar, BasisFamily, Scalar, spaceDim>(formulation, cellTopo, polyOrder);
+    }
+      break;
+    case Hierarchical:
+    {
+      using BasisFamily = HierarchicalBasisFamily<DeviceType>;
+      return getBasisForFormulation<Scalar, BasisFamily, Scalar, spaceDim>(formulation, cellTopo, polyOrder);
+    }
+      break;
+    case Serendipity:
+      INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "basis family choice not yet implemented");
+  }
+  
+  return Teuchos::null;
 }
 
 int main( int argc, char* argv[] )
@@ -485,9 +310,13 @@ int main( int argc, char* argv[] )
   using std::vector;
   
   {
-    // For now, we focus on 3D Poisson test.
-    // The non-affine tensor case is one that, like the Standard case, does *not* make any algorithmic assumptions about the geometry.
-    // This should be a good proxy for Poisson with unstructured material data on a curvilinear hexahedral mesh.
+    // Here, we support various 3D "formulations": Poisson, H^1, H(div), H(curl), and L^2 norms.  (Poisson is the default.)
+    // The geometry we use is an axis-aligned, uniform hypercube mesh, but in the non-affine tensor case, the CellGeometry object does
+    // not express the axis-aligned or uniform structure, and the computations are as they would be in a more general hypercube mesh.
+    // Similarly, the Affine case only assumes an affine mesh; it need not be uniform or axis-aligned.
+   
+    string timingsFilePath;
+    
     const int spaceDim = 3;
     
     enum Mode
@@ -501,10 +330,13 @@ int main( int argc, char* argv[] )
     Mode mode;
     
     vector<AlgorithmChoice> allAlgorithmChoices {Standard, NonAffineTensor, AffineTensor, Uniform};
+    vector<FormulationChoice> allFormulationChoices {Poisson, Hgrad, Hdiv, Hcurl, L2};
     
     Teuchos::CommandLineProcessor cmdp(false,true); // false: don't throw exceptions; true: do return errors for unrecognized options
     
     string algorithmChoiceString = "All"; // alternatives: Standard, NonAffineTensor, AffineTensor, Uniform
+    string formulationChoiceString = "Poisson";
+    string basisFamilyChoiceString = "Nodal";
     
     int polyOrderFixed = -1;
     int polyOrderMin = 1;
@@ -512,11 +344,22 @@ int main( int argc, char* argv[] )
     
     string modeChoiceString = "Test"; // alternatives: Calibration, BestSerial, BestCuda
     
+    bool saveTimingsToFile = false;
+    string outputDir = ".";
+    
     cmdp.setOption("algorithm", &algorithmChoiceString, "Options: All, Standard, NonAffineTensor, AffineTensor, Uniform");
+    cmdp.setOption("formulation", &formulationChoiceString, "Options: Poisson, Hgrad, Hdiv, Hcurl, L2");
     cmdp.setOption("polyOrder", &polyOrderFixed, "Single polynomial degree to run at");
     cmdp.setOption("minPolyOrder", &polyOrderMin, "Starting polynomial degree to run at");
     cmdp.setOption("maxPolyOrder", &polyOrderMax, "Maximum polynomial degree to run at");
     cmdp.setOption("mode", &modeChoiceString);
+    cmdp.setOption("basisFamily", &basisFamilyChoiceString, "Options: Nodal, Hierarchical, Serendipity");
+    cmdp.setOption("saveTimings", "dontSaveTimings", &saveTimingsToFile, "Save timings to a file in outputDir.");
+    cmdp.setOption("outputDir", &outputDir, "Directory for saving timings file");
+    
+    Teuchos::RCP<std::ofstream> timingsFileStream;
+    
+    bool success = true;
     
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL)
     {
@@ -524,6 +367,48 @@ int main( int argc, char* argv[] )
       MPI_Finalize();
   #endif
       return -1;
+    }
+    
+    if (saveTimingsToFile)
+    {
+      std::ostringstream fileNameStream;
+      fileNameStream << outputDir << "/";
+      fileNameStream << "timings_" << algorithmChoiceString << "_";
+      fileNameStream << formulationChoiceString << "_";
+      if (polyOrderFixed != -1)
+      {
+        fileNameStream << "p" << polyOrderFixed;
+      }
+      else
+      {
+        fileNameStream << "p" << polyOrderMin << "_to_p" << polyOrderMax << "_";
+      }
+      fileNameStream << modeChoiceString << "_";
+      fileNameStream << basisFamilyChoiceString;
+      fileNameStream << ".dat";
+      
+      timingsFilePath = fileNameStream.str();
+      
+      timingsFileStream = Teuchos::rcp( new std::ofstream(timingsFilePath, std::ios::out) );
+      
+      *timingsFileStream << "Algorithm\t";
+      *timingsFileStream << "p\t";
+      *timingsFileStream << "Element Count\t";
+      *timingsFileStream << "Workset Size\t";
+      *timingsFileStream << "mode\t";
+      *timingsFileStream << "Basis Family\t";
+      *timingsFileStream << "Core Integration Timing\t";
+      *timingsFileStream << "Core Integration Flops\t";
+      *timingsFileStream << "Core Integration Throughput\t";
+      *timingsFileStream << "Jac. Timing\t";
+      *timingsFileStream << "Jac. Flops\t";
+      *timingsFileStream << "Jac. Throughput\t";
+      *timingsFileStream << "Initialization Timing\t";
+      *timingsFileStream << "Other Timing\t";
+      *timingsFileStream << "Total Time\t";
+      *timingsFileStream << "Total Flops\t";
+      *timingsFileStream << "Total Throughput";
+      *timingsFileStream << std::endl;
     }
 
     vector<AlgorithmChoice> algorithmChoices;
@@ -550,6 +435,62 @@ int main( int argc, char* argv[] )
     else
     {
       cout << "Unrecognized algorithm choice: " << algorithmChoiceString << endl;
+#ifdef HAVE_MPI
+      MPI_Finalize();
+#endif
+      return -1;
+    }
+    
+    vector<FormulationChoice> formulationChoices;
+    if (formulationChoiceString == "All")
+    {
+      formulationChoices = allFormulationChoices;
+    }
+    else if (formulationChoiceString == "Poisson")
+    {
+      formulationChoices = vector<FormulationChoice>{Poisson};
+    }
+    else if (formulationChoiceString == "Hgrad")
+    {
+      formulationChoices = vector<FormulationChoice>{Hgrad};
+    }
+    else if (formulationChoiceString == "Hdiv")
+    {
+      formulationChoices = vector<FormulationChoice>{Hdiv};
+    }
+    else if (formulationChoiceString == "Hcurl")
+    {
+      formulationChoices = vector<FormulationChoice>{Hcurl};
+    }
+    else if (formulationChoiceString == "L2")
+    {
+      formulationChoices = vector<FormulationChoice>{L2};
+    }
+    else
+    {
+      cout << "Unrecognized formulation choice: " << formulationChoiceString << endl;
+#ifdef HAVE_MPI
+      MPI_Finalize();
+#endif
+      return -1;
+    }
+    
+    vector<BasisFamilyChoice> basisFamilyChoices;
+    if (basisFamilyChoiceString == "Nodal")
+    {
+      basisFamilyChoices = vector<BasisFamilyChoice>{Nodal};
+    }
+    else if (basisFamilyChoiceString == "Hierarchical")
+    {
+      basisFamilyChoices = vector<BasisFamilyChoice>{Hierarchical};
+    }
+    else if (basisFamilyChoiceString == "Serendipity")
+    {
+      basisFamilyChoices = vector<BasisFamilyChoice>{Serendipity};
+    }
+    else
+    {
+      cout << "Unrecognized basis family choice: " << basisFamilyChoiceString << endl;
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
@@ -593,6 +534,7 @@ int main( int argc, char* argv[] )
     
     using Scalar = double;
     using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
     
     using std::vector;
     using std::map;
@@ -605,27 +547,45 @@ int main( int argc, char* argv[] )
     
     using WorksetForAlgorithmChoice = map<AlgorithmChoice, int>;
     
-    vector< tuple<int,int,WorksetForAlgorithmChoice> > polyOrderMeshWidthWorksetTestCases;
+    vector< tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice> > polyOrderGridDimsWorksetTestCases;
     
-    const int meshWidth = 16;
-    vector<int> worksetSizes {1,2,4,8,16,32,64,128,256,512,1024,2048,4096};
+    const int maxStiffnessGB = 2;
+    const int maxEntryCount = maxStiffnessGB * 1024 * (1024 * 1024 / sizeof(Scalar));
     
-    // due to memory constraints, restrict the workset size for higher orders
-    map<int,int> maxWorksetSizeForPolyOrder;
-    maxWorksetSizeForPolyOrder[1] = 4096;
-    maxWorksetSizeForPolyOrder[2] = 4096;
-    maxWorksetSizeForPolyOrder[3] = 4096;
-    maxWorksetSizeForPolyOrder[4] = 4096;
-    maxWorksetSizeForPolyOrder[5] = 4096;
-    maxWorksetSizeForPolyOrder[6] = 2048;
-    maxWorksetSizeForPolyOrder[7] = 1024;
-    maxWorksetSizeForPolyOrder[8] = 512;
+    const int maxCellCount = 32768;
+    
+    map<int,int> cellCountForPolyOrder;
+    
+    map<int, Kokkos::Array<int,spaceDim> > gridCellCountsForPolyOrder;
+    for (int p=polyOrderMin; p<=polyOrderMax; p++)
+    {
+      int maxBasisCardinality = 1;
+      for (auto formulationChoice : formulationChoices)
+      {
+        for (auto basisFamilyChoice : basisFamilyChoices)
+        {
+          auto basis = getHypercubeBasisForFormulation<Scalar, Scalar, DeviceType, spaceDim>(formulationChoice, basisFamilyChoice, p);
+          maxBasisCardinality = std::max(basis->getCardinality(), maxBasisCardinality);
+        }
+      }
+      gridCellCountsForPolyOrder[p] = getMeshWidths<spaceDim>(maxBasisCardinality, maxEntryCount, maxCellCount);
+      
+      int cellCount = 1;
+      for (int d=0; d<spaceDim; d++)
+      {
+        cellCount *= gridCellCountsForPolyOrder[p][d];
+      }
+      
+      cellCountForPolyOrder[p] = cellCount;
+    }
+    
+    vector<int> worksetSizes {1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768};
     
     map<int,int> minWorksetSizeForPolyOrder;
-    minWorksetSizeForPolyOrder[1] = 1;
-    minWorksetSizeForPolyOrder[2] = 1;
-    minWorksetSizeForPolyOrder[3] = 1;
-    minWorksetSizeForPolyOrder[4] = 1;
+    minWorksetSizeForPolyOrder[1] = 256;
+    minWorksetSizeForPolyOrder[2] = 64;
+    minWorksetSizeForPolyOrder[3] = 16;
+    minWorksetSizeForPolyOrder[4] = 4;
     minWorksetSizeForPolyOrder[5] = 1;
     minWorksetSizeForPolyOrder[6] = 1;
     minWorksetSizeForPolyOrder[7] = 1;
@@ -638,7 +598,7 @@ int main( int argc, char* argv[] )
         {
           for (int worksetSize : worksetSizes)
           {
-            if (worksetSize > maxWorksetSizeForPolyOrder[polyOrder])
+            if (worksetSize > cellCountForPolyOrder[polyOrder])
             {
               continue;
             }
@@ -652,13 +612,16 @@ int main( int argc, char* argv[] )
             {
               worksetForAlgorithmChoice[algorithmChoice] = worksetSize;
             }
-            polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
+            auto gridDims = gridCellCountsForPolyOrder[polyOrder];
+            polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
           }
         }
       }
       break;
       case Test:
       {
+        // DEBUGGING -- for ease of debugging, a single test case.
+//        vector< tuple<int,int,int> > testCases { tuple<int,int,int> {1,1,1} };
         // for test run, use the same modestly-sized tuples for each AlgorithmChoice
         // (note that meshWidth varies here)
         vector< tuple<int,int,int> > testCases { tuple<int,int,int> {1,8,512},
@@ -684,45 +647,189 @@ int main( int argc, char* argv[] )
             worksetForAlgorithmChoice[algorithmChoice] = std::get<2>(testCase);
           }
           worksetForAlgorithmChoice[Uniform] = numCells;
-          polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
+          Kokkos::Array<int,spaceDim> gridDims;
+          for (int d=0; d<spaceDim; d++)
+          {
+            gridDims[d] = meshWidth;
+          }
+          polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
         }
       }
       break;
       case BestSerial:
       {
-        // manually calibrated workset sizes on iMac Pro (2.3 GHz Xeon W, 18-core, running in serial)
-        // (these were calibrated without much tuning for the affine tensor case; if/when that happens, will want to recalibrate.)
+        if (formulationChoices.size() != 1)
+        {
+          std::cout << "BestSerial mode is not supported when running multiple formulations.\n";
+          exit(-1);
+        }
+        
+        auto formulationChoice = formulationChoices[0];
+        
+        // manually calibrated workset sizes on Mac Pro (2.5 GHz Xeon W, 28-core, running in serial)
         
         map<int,int> standardWorksetForPolyOrder;
-        standardWorksetForPolyOrder[1] = 64;
-        standardWorksetForPolyOrder[2] = 64;
-        standardWorksetForPolyOrder[3] = 128;
-        standardWorksetForPolyOrder[4] = 64;
-        standardWorksetForPolyOrder[5] = 16;
-        standardWorksetForPolyOrder[6] = 2;
-        standardWorksetForPolyOrder[7] = 2;
-        standardWorksetForPolyOrder[8] = 1;
-        
-        // Non-Affine Tensor
         map<int,int> nonAffineTensorWorksetForPolyOrder;
-        nonAffineTensorWorksetForPolyOrder[1] = 256;
-        nonAffineTensorWorksetForPolyOrder[2] = 256;
-        nonAffineTensorWorksetForPolyOrder[3] = 128;
-        nonAffineTensorWorksetForPolyOrder[4] = 64;
-        nonAffineTensorWorksetForPolyOrder[5] = 16;
-        nonAffineTensorWorksetForPolyOrder[6] = 8;
-        nonAffineTensorWorksetForPolyOrder[7] = 2;
-        nonAffineTensorWorksetForPolyOrder[8] = 2;
-        
         map<int,int> affineTensorWorksetForPolyOrder;
-        affineTensorWorksetForPolyOrder[1] = 256;
-        affineTensorWorksetForPolyOrder[2] = 128;
-        affineTensorWorksetForPolyOrder[3] = 16;
-        affineTensorWorksetForPolyOrder[4] = 4;
-        affineTensorWorksetForPolyOrder[5] = 2;
-        affineTensorWorksetForPolyOrder[6] = 1;
-        affineTensorWorksetForPolyOrder[7] = 1;
-        affineTensorWorksetForPolyOrder[8] = 1;
+        
+        switch(formulationChoice)
+        {
+          case Poisson:
+          {
+            // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
+            standardWorksetForPolyOrder[1] = 8192;
+            standardWorksetForPolyOrder[2] = 4096;
+            standardWorksetForPolyOrder[3] =   64;
+            standardWorksetForPolyOrder[4] =   16;
+            standardWorksetForPolyOrder[5] =   16;
+            standardWorksetForPolyOrder[6] =    1;
+            standardWorksetForPolyOrder[7] =    1;
+            standardWorksetForPolyOrder[8] =    1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 2048;
+            nonAffineTensorWorksetForPolyOrder[2] =  256;
+            nonAffineTensorWorksetForPolyOrder[3] =  128;
+            nonAffineTensorWorksetForPolyOrder[4] =   16;
+            nonAffineTensorWorksetForPolyOrder[5] =    2;
+            nonAffineTensorWorksetForPolyOrder[6] =    1;
+            nonAffineTensorWorksetForPolyOrder[7] =    1;
+            nonAffineTensorWorksetForPolyOrder[8] =    1;
+            
+            affineTensorWorksetForPolyOrder[1] = 4096;
+            affineTensorWorksetForPolyOrder[2] =   64;
+            affineTensorWorksetForPolyOrder[3] =   32;
+            affineTensorWorksetForPolyOrder[4] =    4;
+            affineTensorWorksetForPolyOrder[5] =    2;
+            affineTensorWorksetForPolyOrder[6] =    1;
+            affineTensorWorksetForPolyOrder[7] =    1;
+            affineTensorWorksetForPolyOrder[8] =    1;
+          }
+            break;
+          case Hgrad:
+          {
+            // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
+            standardWorksetForPolyOrder[1] = 32768;
+            standardWorksetForPolyOrder[2] = 16384;
+            standardWorksetForPolyOrder[3] =   512;
+            standardWorksetForPolyOrder[4] =   512;
+            standardWorksetForPolyOrder[5] =   512;
+            standardWorksetForPolyOrder[6] =     2;
+            standardWorksetForPolyOrder[7] =     1;
+            standardWorksetForPolyOrder[8] =     1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 4096;
+            nonAffineTensorWorksetForPolyOrder[2] =  512;
+            nonAffineTensorWorksetForPolyOrder[3] =  128;
+            nonAffineTensorWorksetForPolyOrder[4] =   32;
+            nonAffineTensorWorksetForPolyOrder[5] =   16;
+            nonAffineTensorWorksetForPolyOrder[6] =    1;
+            nonAffineTensorWorksetForPolyOrder[7] =    1;
+            nonAffineTensorWorksetForPolyOrder[8] =    1;
+            
+            affineTensorWorksetForPolyOrder[1] = 8192;
+            affineTensorWorksetForPolyOrder[2] =  512;
+            affineTensorWorksetForPolyOrder[3] =  128;
+            affineTensorWorksetForPolyOrder[4] =   64;
+            affineTensorWorksetForPolyOrder[5] =   16;
+            affineTensorWorksetForPolyOrder[6] =    1;
+            affineTensorWorksetForPolyOrder[7] =    1;
+            affineTensorWorksetForPolyOrder[8] =    1;
+          }
+            break;
+          case Hdiv:
+          {
+            // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
+            standardWorksetForPolyOrder[1] = 256;
+            standardWorksetForPolyOrder[2] =  64;
+            standardWorksetForPolyOrder[3] =  64;
+            standardWorksetForPolyOrder[4] =  16;
+            standardWorksetForPolyOrder[5] =   4;
+            standardWorksetForPolyOrder[6] =   1;
+            standardWorksetForPolyOrder[7] =   1;
+            standardWorksetForPolyOrder[8] =   1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 4096;
+            nonAffineTensorWorksetForPolyOrder[2] =  256;
+            nonAffineTensorWorksetForPolyOrder[3] =   64;
+            nonAffineTensorWorksetForPolyOrder[4] =   16;
+            nonAffineTensorWorksetForPolyOrder[5] =    4;
+            nonAffineTensorWorksetForPolyOrder[6] =    1;
+            nonAffineTensorWorksetForPolyOrder[7] =    1;
+            nonAffineTensorWorksetForPolyOrder[8] =    1;
+            
+            affineTensorWorksetForPolyOrder[1] = 8192;
+            affineTensorWorksetForPolyOrder[2] =  512;
+            affineTensorWorksetForPolyOrder[3] =   64;
+            affineTensorWorksetForPolyOrder[4] =   16;
+            affineTensorWorksetForPolyOrder[5] =    8;
+            affineTensorWorksetForPolyOrder[6] =    1;
+            affineTensorWorksetForPolyOrder[7] =    1;
+            affineTensorWorksetForPolyOrder[8] =    1;
+          }
+            break;
+          case Hcurl:
+          {
+            // best for Hcurl - these are for meshes that range from 32768 for p=1 to 64 for p=8
+            standardWorksetForPolyOrder[1] = 1024;
+            standardWorksetForPolyOrder[2] =  512;
+            standardWorksetForPolyOrder[3] =  256;
+            standardWorksetForPolyOrder[4] =    4;
+            standardWorksetForPolyOrder[5] =    1;
+            standardWorksetForPolyOrder[6] =    1;
+            standardWorksetForPolyOrder[7] =    1;
+            standardWorksetForPolyOrder[8] =    1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 512;
+            nonAffineTensorWorksetForPolyOrder[2] =  64;
+            nonAffineTensorWorksetForPolyOrder[3] =  16;
+            nonAffineTensorWorksetForPolyOrder[4] =   4;
+            nonAffineTensorWorksetForPolyOrder[5] =   1;
+            nonAffineTensorWorksetForPolyOrder[6] =   1;
+            nonAffineTensorWorksetForPolyOrder[7] =   1;
+            nonAffineTensorWorksetForPolyOrder[8] =   1;
+            
+            affineTensorWorksetForPolyOrder[1] = 1024;
+            affineTensorWorksetForPolyOrder[2] =  128;
+            affineTensorWorksetForPolyOrder[3] =   16;
+            affineTensorWorksetForPolyOrder[4] =    4;
+            affineTensorWorksetForPolyOrder[5] =    1;
+            affineTensorWorksetForPolyOrder[6] =    1;
+            affineTensorWorksetForPolyOrder[7] =    1;
+            affineTensorWorksetForPolyOrder[8] =    1;
+          }
+            break;
+          case L2:
+          {
+            // best for L^2 - these are for meshes that range from 32768 for p=1 to 256 for p=8
+            standardWorksetForPolyOrder[1] = 1024;
+            standardWorksetForPolyOrder[2] =  256;
+            standardWorksetForPolyOrder[3] =   64;
+            standardWorksetForPolyOrder[4] =   16;
+            standardWorksetForPolyOrder[5] =   16;
+            standardWorksetForPolyOrder[6] =   16;
+            standardWorksetForPolyOrder[7] =    1;
+            standardWorksetForPolyOrder[8] =    1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 16384;
+            nonAffineTensorWorksetForPolyOrder[2] =   512;
+            nonAffineTensorWorksetForPolyOrder[3] =   256;
+            nonAffineTensorWorksetForPolyOrder[4] =    64;
+            nonAffineTensorWorksetForPolyOrder[5] =    16;
+            nonAffineTensorWorksetForPolyOrder[6] =     8;
+            nonAffineTensorWorksetForPolyOrder[7] =     2;
+            nonAffineTensorWorksetForPolyOrder[8] =     1;
+            
+            affineTensorWorksetForPolyOrder[1] = 32768;
+            affineTensorWorksetForPolyOrder[2] =  1024;
+            affineTensorWorksetForPolyOrder[3] =   256;
+            affineTensorWorksetForPolyOrder[4] =   128;
+            affineTensorWorksetForPolyOrder[5] =    16;
+            affineTensorWorksetForPolyOrder[6] =     8;
+            affineTensorWorksetForPolyOrder[7] =     1;
+            affineTensorWorksetForPolyOrder[8] =     1;
+          }
+            break;
+        }
         
         // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
         // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
@@ -734,76 +841,207 @@ int main( int argc, char* argv[] )
           standardWorksetForPolyOrder[polyOrder]        = worksetSize;
         }
         
-        int numCells = 1;
-        for (int d=0; d<spaceDim; d++)
-        {
-          numCells *= meshWidth;
-        }
-        
         for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
         {
           WorksetForAlgorithmChoice worksetForAlgorithmChoice;
           worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
           worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[Uniform]         = numCells;
+          worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
+          worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
           
-          polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
+          const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];
+          
+          polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
         }
       }
         break;
       
       case BestOpenMP_16:
       {
-        // manually calibrated workset sizes on iMac Pro (2.3 GHz Xeon W, 18-core, running with OpenMP, OMP_NUM_THREADS=16)
-        // Calibration for sum factorization cases was run while usePointCacheForRank3Tensor = true.
-        // (these were calibrated without much tuning for the affine tensor case; if/when that happens, will want to recalibrate.)
-        
-        map<int,int> standardWorksetForPolyOrder;
-        standardWorksetForPolyOrder[1] = 1024;
-        standardWorksetForPolyOrder[2] =  128;
-        standardWorksetForPolyOrder[3] =  128;
-        standardWorksetForPolyOrder[4] =  256;
-        standardWorksetForPolyOrder[5] =    8;
-        standardWorksetForPolyOrder[6] =    2;
-        standardWorksetForPolyOrder[7] =    2;
-        standardWorksetForPolyOrder[8] =    1;
-        
-        // Non-Affine Tensor
-        map<int,int> nonAffineTensorWorksetForPolyOrder;
-        nonAffineTensorWorksetForPolyOrder[1] = 512;
-        nonAffineTensorWorksetForPolyOrder[2] = 128;
-        nonAffineTensorWorksetForPolyOrder[3] = 256;
-        nonAffineTensorWorksetForPolyOrder[4] = 128;
-        nonAffineTensorWorksetForPolyOrder[5] =  32;
-        nonAffineTensorWorksetForPolyOrder[6] =  16;
-        nonAffineTensorWorksetForPolyOrder[7] =  16;
-        nonAffineTensorWorksetForPolyOrder[8] =  16;
-        
-        map<int,int> affineTensorWorksetForPolyOrder;
-        affineTensorWorksetForPolyOrder[1] =  4096;
-        affineTensorWorksetForPolyOrder[2] =   256;
-        affineTensorWorksetForPolyOrder[3] =   512;
-        affineTensorWorksetForPolyOrder[4] =   128;
-        affineTensorWorksetForPolyOrder[5] =    64;
-        affineTensorWorksetForPolyOrder[6] =    32;
-        affineTensorWorksetForPolyOrder[7] =    16;
-        affineTensorWorksetForPolyOrder[8] =    64;
-        
-        // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
-        // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
-        int worksetSize = 1;
-        for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
+        if (formulationChoices.size() != 1)
         {
-          nonAffineTensorWorksetForPolyOrder[polyOrder] = worksetSize;
-          affineTensorWorksetForPolyOrder[polyOrder]    = worksetSize;
-          standardWorksetForPolyOrder[polyOrder]        = worksetSize;
+          std::cout << "BestOpenMP_16 mode is not supported when running multiple formulations.\n";
+          exit(-1);
         }
         
-        int numCells = 1;
-        for (int d=0; d<spaceDim; d++)
+        auto formulationChoice = formulationChoices[0];
+        
+        // manually calibrated workset sizes on Mac Pro (2.5 GHz Xeon W, 28-core, running with OpenMP, OMP_NUM_THREADS=16)
+        // Calibration for sum factorization cases was run while usePointCacheForRank3Tensor = true.
+        
+        map<int,int> standardWorksetForPolyOrder;
+        map<int,int> nonAffineTensorWorksetForPolyOrder;
+        map<int,int> affineTensorWorksetForPolyOrder;
+        
+        switch(formulationChoice)
         {
-          numCells *= meshWidth;
+          case Poisson:
+          {
+            // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
+            standardWorksetForPolyOrder[1] = 4096;
+            standardWorksetForPolyOrder[2] = 2048;
+            standardWorksetForPolyOrder[3] = 2048;
+            standardWorksetForPolyOrder[4] = 2048;
+            standardWorksetForPolyOrder[5] = 2048;
+            standardWorksetForPolyOrder[6] = 2048;
+            standardWorksetForPolyOrder[7] =    4;
+            standardWorksetForPolyOrder[8] =    2;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 2048;
+            nonAffineTensorWorksetForPolyOrder[2] =  512;
+            nonAffineTensorWorksetForPolyOrder[3] =  256;
+            nonAffineTensorWorksetForPolyOrder[4] =  128;
+            nonAffineTensorWorksetForPolyOrder[5] =   64;
+            nonAffineTensorWorksetForPolyOrder[6] =   32;
+            nonAffineTensorWorksetForPolyOrder[7] =   16;
+            nonAffineTensorWorksetForPolyOrder[8] =   16;
+            
+            affineTensorWorksetForPolyOrder[1] = 8192;
+            affineTensorWorksetForPolyOrder[2] = 4096;
+            affineTensorWorksetForPolyOrder[3] = 1024;
+            affineTensorWorksetForPolyOrder[4] =  256;
+            affineTensorWorksetForPolyOrder[5] =   64;
+            affineTensorWorksetForPolyOrder[6] =   32;
+            affineTensorWorksetForPolyOrder[7] =   16;
+            affineTensorWorksetForPolyOrder[8] =   16;
+          }
+            break;
+          case Hgrad:
+          {
+            // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
+            standardWorksetForPolyOrder[1] = 16384;
+            standardWorksetForPolyOrder[2] =  8192;
+            standardWorksetForPolyOrder[3] =  8192;
+            standardWorksetForPolyOrder[4] =  2048;
+            standardWorksetForPolyOrder[5] =   512;
+            standardWorksetForPolyOrder[6] =   512;
+            standardWorksetForPolyOrder[7] =   512;
+            standardWorksetForPolyOrder[8] =     1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 16384;
+            nonAffineTensorWorksetForPolyOrder[2] =  8192;
+            nonAffineTensorWorksetForPolyOrder[3] =   256;
+            nonAffineTensorWorksetForPolyOrder[4] =   256;
+            nonAffineTensorWorksetForPolyOrder[5] =    64;
+            nonAffineTensorWorksetForPolyOrder[6] =    32;
+            nonAffineTensorWorksetForPolyOrder[7] =    16;
+            nonAffineTensorWorksetForPolyOrder[8] =    16;
+            
+            affineTensorWorksetForPolyOrder[1] =  8192;
+            affineTensorWorksetForPolyOrder[2] =  4096;
+            affineTensorWorksetForPolyOrder[3] =  1024;
+            affineTensorWorksetForPolyOrder[4] =   256;
+            affineTensorWorksetForPolyOrder[5] =    64;
+            affineTensorWorksetForPolyOrder[6] =    32;
+            affineTensorWorksetForPolyOrder[7] =    16;
+            affineTensorWorksetForPolyOrder[8] =    16;
+          }
+            break;
+          case Hdiv:
+          {
+            // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
+            standardWorksetForPolyOrder[1] = 32768;
+            standardWorksetForPolyOrder[2] = 32768;
+            standardWorksetForPolyOrder[3] =   512;
+            standardWorksetForPolyOrder[4] =   256;
+            standardWorksetForPolyOrder[5] =    64;
+            standardWorksetForPolyOrder[6] =     2;
+            standardWorksetForPolyOrder[7] =     2;
+            standardWorksetForPolyOrder[8] =     1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 32768;
+            nonAffineTensorWorksetForPolyOrder[2] = 16384;
+            nonAffineTensorWorksetForPolyOrder[3] =  8192;
+            nonAffineTensorWorksetForPolyOrder[4] =    64;
+            nonAffineTensorWorksetForPolyOrder[5] =    16;
+            nonAffineTensorWorksetForPolyOrder[6] =    16;
+            nonAffineTensorWorksetForPolyOrder[7] =    16;
+            nonAffineTensorWorksetForPolyOrder[8] =    16;
+            
+            affineTensorWorksetForPolyOrder[1] = 16384;
+            affineTensorWorksetForPolyOrder[2] =  4096;
+            affineTensorWorksetForPolyOrder[3] =   256;
+            affineTensorWorksetForPolyOrder[4] =   128;
+            affineTensorWorksetForPolyOrder[5] =    64;
+            affineTensorWorksetForPolyOrder[6] =    16;
+            affineTensorWorksetForPolyOrder[7] =    16;
+            affineTensorWorksetForPolyOrder[8] =    16;
+          }
+            break;
+          case Hcurl:
+          {
+            // best for Hcurl - these are for meshes that range from 32768 for p=1 to 64 for p=8
+            standardWorksetForPolyOrder[1] = 4096;
+            standardWorksetForPolyOrder[2] =  128;
+            standardWorksetForPolyOrder[3] =  128;
+            standardWorksetForPolyOrder[4] =   32;
+            standardWorksetForPolyOrder[5] =    4;
+            standardWorksetForPolyOrder[6] =    1;
+            standardWorksetForPolyOrder[7] =    1;
+            standardWorksetForPolyOrder[8] =    1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 16384;
+            nonAffineTensorWorksetForPolyOrder[2] =   512;
+            nonAffineTensorWorksetForPolyOrder[3] =   128;
+            nonAffineTensorWorksetForPolyOrder[4] =    64;
+            nonAffineTensorWorksetForPolyOrder[5] =    32;
+            nonAffineTensorWorksetForPolyOrder[6] =    16;
+            nonAffineTensorWorksetForPolyOrder[7] =    16;
+            nonAffineTensorWorksetForPolyOrder[8] =    16;
+            
+            affineTensorWorksetForPolyOrder[1] = 32768;
+            affineTensorWorksetForPolyOrder[2] =  4096;
+            affineTensorWorksetForPolyOrder[3] =   128;
+            affineTensorWorksetForPolyOrder[4] =    64;
+            affineTensorWorksetForPolyOrder[5] =    16;
+            affineTensorWorksetForPolyOrder[6] =    16;
+            affineTensorWorksetForPolyOrder[7] =    16;
+            affineTensorWorksetForPolyOrder[8] =    16;
+          }
+            break;
+          case L2:
+          {
+            // best for L^2 - these are for meshes that range from 32768 for p=1 to 256 for p=8
+            standardWorksetForPolyOrder[1] = 8192;
+            standardWorksetForPolyOrder[2] =  512;
+            standardWorksetForPolyOrder[3] =   32;
+            standardWorksetForPolyOrder[4] =   32;
+            standardWorksetForPolyOrder[5] =   32;
+            standardWorksetForPolyOrder[6] =    1;
+            standardWorksetForPolyOrder[7] =    1;
+            standardWorksetForPolyOrder[8] =    1;
+            
+            nonAffineTensorWorksetForPolyOrder[1] = 16384;
+            nonAffineTensorWorksetForPolyOrder[2] =  4096;
+            nonAffineTensorWorksetForPolyOrder[3] =  1024;
+            nonAffineTensorWorksetForPolyOrder[4] =   256;
+            nonAffineTensorWorksetForPolyOrder[5] =    64;
+            nonAffineTensorWorksetForPolyOrder[6] =    32;
+            nonAffineTensorWorksetForPolyOrder[7] =    16;
+            nonAffineTensorWorksetForPolyOrder[8] =    16;
+            
+            affineTensorWorksetForPolyOrder[1] = 32768;
+            affineTensorWorksetForPolyOrder[2] =  4096;
+            affineTensorWorksetForPolyOrder[3] =  1024;
+            affineTensorWorksetForPolyOrder[4] =   256;
+            affineTensorWorksetForPolyOrder[5] =   128;
+            affineTensorWorksetForPolyOrder[6] =    32;
+            affineTensorWorksetForPolyOrder[7] =    16;
+            affineTensorWorksetForPolyOrder[8] =    16;
+          }
+            break;
+        }
+        
+        // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
+        // Standard: 1 is best for polyOrder 8, so it'll be the best for the rest.
+        // NonAffineTensor, AffineTensor: we seem to bottom out at the number of OpenMP threads: here, 16.
+        int standardWorksetSize = 1;
+        int tensorWorksetSize = 16;
+        for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
+        {
+          nonAffineTensorWorksetForPolyOrder[polyOrder] = tensorWorksetSize;
+          affineTensorWorksetForPolyOrder[polyOrder]    = tensorWorksetSize;
+          standardWorksetForPolyOrder[polyOrder]        = standardWorksetSize;
         }
         
         for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
@@ -811,56 +1049,196 @@ int main( int argc, char* argv[] )
           WorksetForAlgorithmChoice worksetForAlgorithmChoice;
           worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
           worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[Uniform]         = numCells;
+          worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
+          worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
+          const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];
           
-          polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
+          polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
         }
       }
         break;
       case BestCuda:
       {
         {
-          // STANDARD
-          // manually calibrated workset size on P100 (ride) - best for Standard
-          // these are for 4096-element meshes
-          map<int,int> standardWorksetForPolyOrder;
-          standardWorksetForPolyOrder[1] = 4096;
-          standardWorksetForPolyOrder[2] = 1024;
-          standardWorksetForPolyOrder[3] = 128;
-          standardWorksetForPolyOrder[4] = 64;
-          standardWorksetForPolyOrder[5] = 8;
-          standardWorksetForPolyOrder[6] = 4;
-          standardWorksetForPolyOrder[7] = 2;
-          standardWorksetForPolyOrder[8] = 1;
-          
-          // Non-Affine Tensor
-          // For CUDA, 4096 is the best choice for the PointValueCache algorithm for any polyOrder from 1 to 5.
-          // This likely means we're not exposing enough parallelism within the cell.
-          map<int,int> nonAffineTensorWorksetForPolyOrder;
-          nonAffineTensorWorksetForPolyOrder[1] = 4096;
-          nonAffineTensorWorksetForPolyOrder[2] = 4096;
-          nonAffineTensorWorksetForPolyOrder[3] = 4096;
-          nonAffineTensorWorksetForPolyOrder[4] = 4096;
-          nonAffineTensorWorksetForPolyOrder[5] = 4096;
-          nonAffineTensorWorksetForPolyOrder[6] = 2048;
-          nonAffineTensorWorksetForPolyOrder[7] = 512;
-          nonAffineTensorWorksetForPolyOrder[8] = 512;
-          
-          // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
-          int nonAffineWorksetSize = 256; // divide by 2 for each polyOrder beyond 8
-          int standardWorksetSize  = 1;  // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
-          for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
+          if (formulationChoices.size() != 1)
           {
-            nonAffineTensorWorksetForPolyOrder[polyOrder] = nonAffineWorksetSize;
-            nonAffineWorksetSize = (nonAffineWorksetSize > 1) ? nonAffineWorksetSize / 2 : 1;
-            standardWorksetForPolyOrder[polyOrder] = standardWorksetSize;
+            std::cout << "BestCuda mode is not supported when running multiple formulations.\n";
+            exit(-1);
           }
           
-          int numCells = 1;
-          for (int d=0; d<spaceDim; d++)
+          auto formulationChoice = formulationChoices[0];
+          
+          // STANDARD
+          // manually calibrated workset size on P100 (weaver)
+          map<int,int> standardWorksetForPolyOrder;
+          map<int,int> nonAffineTensorWorksetForPolyOrder;
+          map<int,int> affineTensorWorksetForPolyOrder;
+          
+          switch(formulationChoice)
           {
-            numCells *= meshWidth;
+            case Poisson:
+            {
+              // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
+              standardWorksetForPolyOrder[1] = 16384;
+              standardWorksetForPolyOrder[2] =   512;
+              standardWorksetForPolyOrder[3] =   128;
+              standardWorksetForPolyOrder[4] =     8;
+              standardWorksetForPolyOrder[5] =     4;
+              standardWorksetForPolyOrder[6] =     1;
+              standardWorksetForPolyOrder[7] =     1;
+              standardWorksetForPolyOrder[8] =     1;
+              
+              nonAffineTensorWorksetForPolyOrder[1] = 32768;
+              nonAffineTensorWorksetForPolyOrder[2] = 32768;
+              nonAffineTensorWorksetForPolyOrder[3] = 16384;
+              nonAffineTensorWorksetForPolyOrder[4] =  8192;
+              nonAffineTensorWorksetForPolyOrder[5] =  4096;
+              nonAffineTensorWorksetForPolyOrder[6] =  2048;
+              nonAffineTensorWorksetForPolyOrder[7] =   256;
+              nonAffineTensorWorksetForPolyOrder[8] =   256;
+              
+              affineTensorWorksetForPolyOrder[1] = 8192;
+              affineTensorWorksetForPolyOrder[2] = 8192;
+              affineTensorWorksetForPolyOrder[3] = 8192;
+              affineTensorWorksetForPolyOrder[4] = 8192;
+              affineTensorWorksetForPolyOrder[5] = 4096;
+              affineTensorWorksetForPolyOrder[6] = 2048;
+              affineTensorWorksetForPolyOrder[7] =  256;
+              affineTensorWorksetForPolyOrder[8] =  128;
+            }
+              break;
+            case Hgrad:
+            {
+              // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
+              standardWorksetForPolyOrder[1] = 32768;
+              standardWorksetForPolyOrder[2] =   512;
+              standardWorksetForPolyOrder[3] =   128;
+              standardWorksetForPolyOrder[4] =    16;
+              standardWorksetForPolyOrder[5] =     4;
+              standardWorksetForPolyOrder[6] =     1;
+              standardWorksetForPolyOrder[7] =     1;
+              standardWorksetForPolyOrder[8] =     1;
+              
+              nonAffineTensorWorksetForPolyOrder[1] = 32768;
+              nonAffineTensorWorksetForPolyOrder[2] = 32768;
+              nonAffineTensorWorksetForPolyOrder[3] = 16384;
+              nonAffineTensorWorksetForPolyOrder[4] =  8192;
+              nonAffineTensorWorksetForPolyOrder[5] =  4096;
+              nonAffineTensorWorksetForPolyOrder[6] =  2048;
+              nonAffineTensorWorksetForPolyOrder[7] =   256;
+              nonAffineTensorWorksetForPolyOrder[8] =   256;
+              
+              affineTensorWorksetForPolyOrder[1] = 32768;
+              affineTensorWorksetForPolyOrder[2] = 32768;
+              affineTensorWorksetForPolyOrder[3] =  8192;
+              affineTensorWorksetForPolyOrder[4] =  8192;
+              affineTensorWorksetForPolyOrder[5] =  4096;
+              affineTensorWorksetForPolyOrder[6] =  2048;
+              affineTensorWorksetForPolyOrder[7] =   256;
+              affineTensorWorksetForPolyOrder[8] =   256;
+            }
+              break;
+            case Hdiv:
+            {
+              // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
+              standardWorksetForPolyOrder[1] = 32768;
+              standardWorksetForPolyOrder[2] =   512;
+              standardWorksetForPolyOrder[3] =    32;
+              standardWorksetForPolyOrder[4] =     4;
+              standardWorksetForPolyOrder[5] =     1;
+              standardWorksetForPolyOrder[6] =     1;
+              standardWorksetForPolyOrder[7] =     1;
+              standardWorksetForPolyOrder[8] =     1;
+              
+              nonAffineTensorWorksetForPolyOrder[1] = 32768;
+              nonAffineTensorWorksetForPolyOrder[2] = 32768;
+              nonAffineTensorWorksetForPolyOrder[3] = 16384;
+              nonAffineTensorWorksetForPolyOrder[4] =  4096;
+              nonAffineTensorWorksetForPolyOrder[5] =  1024;
+              nonAffineTensorWorksetForPolyOrder[6] =   256;
+              nonAffineTensorWorksetForPolyOrder[7] =   128;
+              nonAffineTensorWorksetForPolyOrder[8] =    64;
+              
+              affineTensorWorksetForPolyOrder[1] = 32768;
+              affineTensorWorksetForPolyOrder[2] = 32768;
+              affineTensorWorksetForPolyOrder[3] = 16384;
+              affineTensorWorksetForPolyOrder[4] =  4096;
+              affineTensorWorksetForPolyOrder[5] =  1024;
+              affineTensorWorksetForPolyOrder[6] =   256;
+              affineTensorWorksetForPolyOrder[7] =   128;
+              affineTensorWorksetForPolyOrder[8] =    64;
+            }
+              break;
+            case Hcurl:
+            {
+              standardWorksetForPolyOrder[1] = 1024;
+              standardWorksetForPolyOrder[2] =  128;
+              standardWorksetForPolyOrder[3] =   16;
+              standardWorksetForPolyOrder[4] =    4;
+              standardWorksetForPolyOrder[5] =    1;
+              standardWorksetForPolyOrder[6] =    1;
+              standardWorksetForPolyOrder[7] =    1;
+              standardWorksetForPolyOrder[8] =    1;
+              
+              nonAffineTensorWorksetForPolyOrder[1] = 32768;
+              nonAffineTensorWorksetForPolyOrder[2] = 32768;
+              nonAffineTensorWorksetForPolyOrder[3] =  8192;
+              nonAffineTensorWorksetForPolyOrder[4] =  2048;
+              nonAffineTensorWorksetForPolyOrder[5] =   512;
+              nonAffineTensorWorksetForPolyOrder[6] =   256;
+              nonAffineTensorWorksetForPolyOrder[7] =   128;
+              nonAffineTensorWorksetForPolyOrder[8] =    64;
+              
+              affineTensorWorksetForPolyOrder[1] = 32768;
+              affineTensorWorksetForPolyOrder[2] = 32768;
+              affineTensorWorksetForPolyOrder[3] =  8192;
+              affineTensorWorksetForPolyOrder[4] =  2048;
+              affineTensorWorksetForPolyOrder[5] =   512;
+              affineTensorWorksetForPolyOrder[6] =   256;
+              affineTensorWorksetForPolyOrder[7] =   128;
+              affineTensorWorksetForPolyOrder[8] =    64;
+            }
+              break;
+            case L2:
+            {
+              standardWorksetForPolyOrder[1] = 32768;
+              standardWorksetForPolyOrder[2] =  1024;
+              standardWorksetForPolyOrder[3] =   128;
+              standardWorksetForPolyOrder[4] =    16;
+              standardWorksetForPolyOrder[5] =     4;
+              standardWorksetForPolyOrder[6] =     1;
+              standardWorksetForPolyOrder[7] =     1;
+              standardWorksetForPolyOrder[8] =     1;
+              
+              nonAffineTensorWorksetForPolyOrder[1] = 32768;
+              nonAffineTensorWorksetForPolyOrder[2] = 32768;
+              nonAffineTensorWorksetForPolyOrder[3] = 16384;
+              nonAffineTensorWorksetForPolyOrder[4] =  8192;
+              nonAffineTensorWorksetForPolyOrder[5] =  4096;
+              nonAffineTensorWorksetForPolyOrder[6] =  2048;
+              nonAffineTensorWorksetForPolyOrder[7] =   256;
+              nonAffineTensorWorksetForPolyOrder[8] =   128;
+              
+              affineTensorWorksetForPolyOrder[1] = 8192;
+              affineTensorWorksetForPolyOrder[2] = 8192;
+              affineTensorWorksetForPolyOrder[3] = 8192;
+              affineTensorWorksetForPolyOrder[4] = 8192;
+              affineTensorWorksetForPolyOrder[5] = 4096;
+              affineTensorWorksetForPolyOrder[6] = 2048;
+              affineTensorWorksetForPolyOrder[7] =  256;
+              affineTensorWorksetForPolyOrder[8] =  128;
+            }
+              break;
+          }
+          
+          // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
+          int standardWorksetSize  = 1;  // 1 is best for polyOrder 8, so it'll be the best for the rest.
+          // for the rest under CUDA, we observe that in most cases, the optimal workset size for non-affine tensor is the cell count.  For affine, it's lower by a factor of 2 or 4 in most cases.
+          for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
+          {
+            nonAffineTensorWorksetForPolyOrder[polyOrder] = cellCountForPolyOrder[polyOrder];
+            affineTensorWorksetForPolyOrder[polyOrder]    = cellCountForPolyOrder[polyOrder] / 2;
+            standardWorksetForPolyOrder[polyOrder] = standardWorksetSize;
           }
           
           for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
@@ -868,10 +1246,12 @@ int main( int argc, char* argv[] )
             WorksetForAlgorithmChoice worksetForAlgorithmChoice;
             worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
             worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-            worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
-            worksetForAlgorithmChoice[Uniform]         = numCells;
+            worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
+            worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
             
-            polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
+            const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];
+            
+            polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
           }
         }
         break;
@@ -883,139 +1263,292 @@ int main( int argc, char* argv[] )
     
     cout << std::setprecision(2) << std::scientific;
     
-    map< AlgorithmChoice, map<int, pair<double,int> > > maxAlgorithmThroughputForPolyOrder; // values are (throughput in GFlops/sec, worksetSize)
+    map< AlgorithmChoice, map<int, pair<double,int> > > maxAlgorithmThroughputForPolyOrderCore;  // values are (throughput in GFlops/sec, worksetSize)
+    map< AlgorithmChoice, map<int, pair<double,int> > > maxAlgorithmThroughputForPolyOrderTotal; // values are (throughput in GFlops/sec, worksetSize)
     
     const int charWidth = 15;
     
-    for (auto & testCase : polyOrderMeshWidthWorksetTestCases)
+    for (auto basisFamilyChoice : basisFamilyChoices)
     {
-      int polyOrder       = std::get<0>(testCase);
-      int meshWidth       = std::get<1>(testCase);
-      auto worksetSizeMap = std::get<2>(testCase);
-      std::cout << "\n\n";
-      std::cout << "Running with polyOrder = " << polyOrder << ", meshWidth = " << meshWidth << std::endl;
-      for (auto algorithmChoice : algorithmChoices)
+      for (auto formulation : formulationChoices)
       {
-        int worksetSize = worksetSizeMap[algorithmChoice];
-        auto geometry = getMesh<Scalar, spaceDim, ExecutionSpace>(algorithmChoice, meshWidth);
-        
-        // timers recorded in performStructuredQuadratureHypercubeGRADGRAD, performStandardQuadratureHypercubeGRADGRAD
-        auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
-        auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
-        auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
-
-        jacobianAndCellMeasureTimer->reset();
-        fstIntegrateCall->reset();
-        initialSetupTimer->reset();
-        
-        double elapsedTimeSeconds = 0;
-        double jacobianCellMeasureFlopCount = 0;
-        double transformIntegrateFlopCount = 0;
-        
-        if (algorithmChoice == Standard)
+        std::cout << "\n\n***** Formulation: " << to_string(formulation) << " *******\n";
+        for (auto & testCase : polyOrderGridDimsWorksetTestCases)
         {
-          // each cell needs on the order of polyOrder^N quadrature points, each of which has a Jacobian of size N * N.
-          auto timer = Teuchos::TimeMonitor::getNewTimer("Standard Integration");
-          timer->start();
-          performStandardQuadratureHypercubeGRADGRAD<Scalar,Scalar,spaceDim,ExecutionSpace>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
-          timer->stop();
-          elapsedTimeSeconds = timer->totalElapsedTime();
-          
-          cout << "Standard, workset size:          " << setw(charWidth) << worksetSize << endl;
-          
-          timer->reset();
-        }
-        else if (algorithmChoice == AffineTensor)
-        {
-          auto timer = Teuchos::TimeMonitor::getNewTimer("Affine tensor Integration");
-          timer->start();
-          performStructuredQuadratureHypercubeGRADGRAD<Scalar>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
-          timer->stop();
-          
-          elapsedTimeSeconds = timer->totalElapsedTime();
-          
-          cout << "Affine Tensor, workset size:     " << setw(charWidth) << worksetSize << endl;
-                    
-          timer->reset();
-        }
-        else if (algorithmChoice == NonAffineTensor)
-        {
-          auto timer = Teuchos::TimeMonitor::getNewTimer("Non-affine tensor Integration");
-          timer->start();
-          performStructuredQuadratureHypercubeGRADGRAD<Scalar>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
-          timer->stop();
-          
-          elapsedTimeSeconds = timer->totalElapsedTime();
-          
-          cout << "Non-Affine Tensor, workset size: " << setw(charWidth) << worksetSize << endl;
-          
-          timer->reset();
-        }
-        else if (algorithmChoice == Uniform)
-        {
-          // for uniform, override worksetSize: no loss in taking maximal worksetSize
-          int numCells = 1;
+          int polyOrder       = std::get<0>(testCase);
+          auto gridDims       = std::get<1>(testCase);
+          auto worksetSizeMap = std::get<2>(testCase);
+          std::cout << "\n\n";
+          std::cout << "Running with polyOrder = " << polyOrder << ", mesh dims = ";
           for (int d=0; d<spaceDim; d++)
           {
-            numCells *= meshWidth;
+            std::cout << gridDims[d];
+            if (d < spaceDim - 1) std::cout << " x ";
+            else                  std::cout << std::endl;
           }
-          auto timer = Teuchos::TimeMonitor::getNewTimer("Uniform Integration");
-          timer->start();
-          performStructuredQuadratureHypercubeGRADGRAD<Scalar>(geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
-          timer->stop();
           
-          elapsedTimeSeconds = timer->totalElapsedTime();
+          std::map<AlgorithmChoice, Intrepid2::ScalarView<Scalar,DeviceType> > assembledMatrices;
+          for (auto algorithmChoice : algorithmChoices)
+          {
+            int worksetSize = worksetSizeMap[algorithmChoice];
+            if (mode == Calibration)
+            {
+              // if this workset size is bigger than the optimal for p-1, skip it -- it's highly
+              // unlikely that for a larger p, the optimal workset size will be *larger*.
+              const auto & bestThroughputs = maxAlgorithmThroughputForPolyOrderCore[algorithmChoice];
+              if (bestThroughputs.find(polyOrder-1) != bestThroughputs.end() )
+              {
+                int bestWorksetSize = bestThroughputs.find(polyOrder-1)->second.second;
+                if (bestWorksetSize < worksetSize)
+                {
+                  continue;
+                }
+              }
+            }
+            auto geometry = getMesh<Scalar, spaceDim, ExecutionSpace>(algorithmChoice, gridDims);
+            
+            // timers recorded in performStructuredQuadratureGRADGRAD, performStandardQuadratureGRADGRAD
+            auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
+            auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
+            auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
+
+            jacobianAndCellMeasureTimer->reset();
+            fstIntegrateCall->reset();
+            initialSetupTimer->reset();
+            
+            double elapsedTimeSeconds = 0;
+            double jacobianCellMeasureFlopCount = 0;
+            double transformIntegrateFlopCount = 0;
+            
+            Intrepid2::ScalarView<Scalar,DeviceType> assembledMatrix;
+            if (algorithmChoice == Standard)
+            {
+              // each cell needs on the order of polyOrder^N quadrature points, each of which has a Jacobian of size N * N.
+              auto timer = Teuchos::TimeMonitor::getNewTimer("Standard Integration");
+              timer->start();
+              switch (basisFamilyChoice)
+              {
+                case Nodal:
+                {
+                  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                }
+                  break;
+                case Hierarchical:
+                {
+                  using BasisFamily = HierarchicalBasisFamily<DeviceType>;
+                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                }
+                  break;
+                case Serendipity:
+                  INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "basis family choice not yet implemented");
+              }
+              timer->stop();
+              elapsedTimeSeconds = timer->totalElapsedTime();
+              
+              cout << "Standard, workset size:          " << setw(charWidth) << worksetSize << endl;
+              
+              timer->reset();
+            }
+            else if (algorithmChoice == AffineTensor)
+            {
+              auto timer = Teuchos::TimeMonitor::getNewTimer("Affine tensor Integration");
+              timer->start();
+              switch (basisFamilyChoice)
+              {
+                case Nodal:
+                {
+                  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                }
+                  break;
+                case Hierarchical:
+                {
+                  using BasisFamily = HierarchicalBasisFamily<DeviceType>;
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                }
+                  break;
+                case Serendipity:
+                  INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "basis family choice not yet implemented");
+              }
+              timer->stop();
+              
+              elapsedTimeSeconds = timer->totalElapsedTime();
+              
+              cout << "Affine Tensor, workset size:     " << setw(charWidth) << worksetSize << endl;
+                        
+              timer->reset();
+            }
+            else if (algorithmChoice == NonAffineTensor)
+            {
+              auto timer = Teuchos::TimeMonitor::getNewTimer("Non-affine tensor Integration");
+              timer->start();
+              switch (basisFamilyChoice)
+              {
+                case Nodal:
+                {
+                  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                }
+                  break;
+                case Hierarchical:
+                {
+                  using BasisFamily = HierarchicalBasisFamily<DeviceType>;
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                }
+                  break;
+                case Serendipity:
+                  INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "basis family choice not yet implemented");
+              }
+              timer->stop();
+              
+              elapsedTimeSeconds = timer->totalElapsedTime();
+              
+              cout << "Non-Affine Tensor, workset size: " << setw(charWidth) << worksetSize << endl;
+              
+              timer->reset();
+            }
+            else if (algorithmChoice == Uniform)
+            {
+              // for uniform, override worksetSize: no loss in taking maximal worksetSize
+              int numCells = 1;
+              for (int d=0; d<spaceDim; d++)
+              {
+                numCells *= gridDims[d];
+              }
+              auto timer = Teuchos::TimeMonitor::getNewTimer("Uniform Integration");
+              timer->start();
+              switch (basisFamilyChoice)
+              {
+                case Nodal:
+                {
+                  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                }
+                  break;
+                case Hierarchical:
+                {
+                  using BasisFamily = HierarchicalBasisFamily<DeviceType>;
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                }
+                  break;
+                case Serendipity:
+                  INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "basis family choice not yet implemented");
+              }
+              timer->stop();
+              
+              elapsedTimeSeconds = timer->totalElapsedTime();
+              
+              cout << "Uniform, workset size:           " << setw(charWidth) << worksetSize << endl;
+              
+              timer->reset();
+            }
+            
+            assembledMatrices[algorithmChoice] = assembledMatrix;
+            
+            const double approximateFlopCountTotal = transformIntegrateFlopCount + jacobianCellMeasureFlopCount;
+            const double overallThroughputInGFlops = approximateFlopCountTotal / elapsedTimeSeconds / 1.0e9;
+            
+            const double previousMaxThroughput = maxAlgorithmThroughputForPolyOrderTotal[algorithmChoice][polyOrder].first;
+            if (overallThroughputInGFlops > previousMaxThroughput)
+            {
+              maxAlgorithmThroughputForPolyOrderTotal[algorithmChoice][polyOrder] = make_pair(overallThroughputInGFlops,worksetSize);
+            }
+            
+            // timing details
+            double integrateCallTime       = fstIntegrateCall->totalElapsedTime();
+            double integrateCallPercentage = integrateCallTime / elapsedTimeSeconds * 100.0;
+            double jacobianTime            = jacobianAndCellMeasureTimer->totalElapsedTime();
+            double jacobianPercentage      = jacobianTime / elapsedTimeSeconds * 100.0;
+            double initialSetupTime        = initialSetupTimer->totalElapsedTime();
+            double initialSetupPercentage  = initialSetupTime / elapsedTimeSeconds * 100.0;
+            double remainingTime           = elapsedTimeSeconds - (integrateCallTime + jacobianTime + initialSetupTime);
+            double remainingPercentage     = remainingTime / elapsedTimeSeconds * 100.0;
+            
+            const double transformIntegrateThroughputInGFlops = transformIntegrateFlopCount  / integrateCallTime / 1.0e9;
+            const double jacobiansThroughputInGFlops          = jacobianCellMeasureFlopCount / jacobianTime      / 1.0e9;
+            
+            const double previousMaxThroughputCore = maxAlgorithmThroughputForPolyOrderCore[algorithmChoice][polyOrder].first;
+            if (transformIntegrateThroughputInGFlops > previousMaxThroughputCore)
+            {
+              maxAlgorithmThroughputForPolyOrderCore[algorithmChoice][polyOrder] = make_pair(transformIntegrateThroughputInGFlops,worksetSize);
+            }
+            
+            cout << "Time (core integration)      " << setw(charWidth) << std::scientific << integrateCallTime << " seconds (" << std::fixed << integrateCallPercentage << "%)." << endl;
+            cout << "flop estimate (core):        " << setw(charWidth) << std::scientific << transformIntegrateFlopCount << endl;
+            cout << "estimated throughput (core): " << setw(charWidth) << std::scientific << transformIntegrateThroughputInGFlops << " GFlops" << endl;
+            cout << "************************************************" << endl;
+            cout << std::fixed;
+            cout << "Time (Jacobians)                 " << setw(charWidth) << std::scientific << jacobianTime      << " seconds (" << std::fixed << jacobianPercentage      << "%)." << endl;
+            cout << "flop estimate (Jacobians):       " << setw(charWidth) << std::scientific << jacobianCellMeasureFlopCount << endl;
+            cout << "estimated throughput (Jac.):     " << setw(charWidth) << std::scientific << jacobiansThroughputInGFlops << " GFlops" << endl;
+            cout << "Time (initial setup)             " << setw(charWidth) << std::scientific << initialSetupTime  << " seconds (" << std::fixed << initialSetupPercentage  << "%)." << endl;
+            cout << "Time (other)                     " << setw(charWidth) << std::scientific << remainingTime     << " seconds (" << std::fixed << remainingPercentage     << "%)." << endl;
+            cout << "Time (total):                    " << setw(charWidth) << std::scientific << elapsedTimeSeconds   << " seconds.\n";
+            cout << "flop estimate (total):           " << setw(charWidth) << std::scientific << approximateFlopCountTotal << endl;
+            cout << "estimated throughput (total):    " << setw(charWidth) << std::scientific << overallThroughputInGFlops << " GFlops" << endl;
+            
+            cout << endl;
+            
+            if (saveTimingsToFile)
+            {
+              *timingsFileStream << std::scientific;
+              
+              *timingsFileStream << to_string(algorithmChoice) << "\t";
+              *timingsFileStream << polyOrder << "\t";
+              *timingsFileStream << geometry.numCells() << "\t";
+              *timingsFileStream << worksetSize << "\t";
+              *timingsFileStream << modeChoiceString << "\t";
+              *timingsFileStream << basisFamilyChoiceString << "\t";
+              *timingsFileStream << integrateCallTime << "\t";
+              *timingsFileStream << transformIntegrateFlopCount << "\t";
+              *timingsFileStream << transformIntegrateThroughputInGFlops << "\t";
+              *timingsFileStream << jacobianTime << "\t";
+              *timingsFileStream << jacobianCellMeasureFlopCount << "\t";
+              *timingsFileStream << jacobiansThroughputInGFlops << "\t";
+              *timingsFileStream << initialSetupTime << "\t";
+              *timingsFileStream << remainingTime << "\t";
+              *timingsFileStream << elapsedTimeSeconds << "\t";
+              *timingsFileStream << approximateFlopCountTotal << "\t";
+              *timingsFileStream << overallThroughputInGFlops;
+              *timingsFileStream << std::endl;
+            }
+          }
           
-          cout << "Uniform, workset size:           " << setw(charWidth) << worksetSize << endl;
-          
-          timer->reset();
+          if (assembledMatrices.size() > 1)
+          {
+            // if we have multiple, then let's compare values to make sure they agree.
+            Teuchos::basic_FancyOStream<char> out(Teuchos::rcp(&std::cout,false));
+            const double relTol = 1e-10; // pretty loose tolerances are required, especially for higher-order hierarchical comparisons to Standard
+            const double absTol = 1e-8;
+            auto firstAlgorithm = assembledMatrices.begin()->first;
+            auto firstMatrix = assembledMatrices.begin()->second;
+            std::string algorithmName1 = to_string(firstAlgorithm);
+            
+            for (const auto &entry : assembledMatrices)
+            {
+              auto secondAlgorithm = entry.first;
+              auto secondMatrix    = entry.second;
+              std::string algorithmName2 = to_string(secondAlgorithm);
+              testViewFloatingEquality(firstMatrix, secondMatrix, relTol, absTol, out, success, algorithmName1, algorithmName2);
+//              printFunctor3(firstMatrix, std::cout, algorithmName1);
+//              printFunctor3(secondMatrix, std::cout, algorithmName2);
+            }
+          }
         }
-        
-        const double approximateFlopCountTotal = transformIntegrateFlopCount + jacobianCellMeasureFlopCount;
-        const double overallThroughputInGFlops = approximateFlopCountTotal / elapsedTimeSeconds / 1.0e9;
-        
-        const double previousMaxThroughput = maxAlgorithmThroughputForPolyOrder[algorithmChoice][polyOrder].first;
-        if (overallThroughputInGFlops > previousMaxThroughput)
-        {
-          maxAlgorithmThroughputForPolyOrder[algorithmChoice][polyOrder] = make_pair(overallThroughputInGFlops,worksetSize);
-        }
-        
-        // timing details
-        double integrateCallTime       = fstIntegrateCall->totalElapsedTime();
-        double integrateCallPercentage = integrateCallTime / elapsedTimeSeconds * 100.0;
-        double jacobianTime            = jacobianAndCellMeasureTimer->totalElapsedTime();
-        double jacobianPercentage      = jacobianTime / elapsedTimeSeconds * 100.0;
-        double initialSetupTime        = initialSetupTimer->totalElapsedTime();
-        double initialSetupPercentage  = initialSetupTime / elapsedTimeSeconds * 100.0;
-        double remainingTime           = elapsedTimeSeconds - (integrateCallTime + jacobianTime + initialSetupTime);
-        double remainingPercentage     = remainingTime / elapsedTimeSeconds * 100.0;
-        
-        const double transformIntegrateThroughputInGFlops = transformIntegrateFlopCount  / integrateCallTime / 1.0e9;
-        const double jacobiansThroughputInGFlops          = jacobianCellMeasureFlopCount / jacobianTime      / 1.0e9;
-        cout << "Time (core integration)          " << setw(charWidth) << std::scientific << integrateCallTime << " seconds (" << std::fixed << integrateCallPercentage << "%)." << endl;
-        cout << "flop estimate (core):            " << setw(charWidth) << std::scientific << transformIntegrateFlopCount << endl;
-        cout << "estimated throughput (core):     " << setw(charWidth) << std::scientific << transformIntegrateThroughputInGFlops << " GFlops" << endl;
-        cout << std::fixed;
-        cout << "Time (Jacobians)                 " << setw(charWidth) << std::scientific << jacobianTime      << " seconds (" << std::fixed << jacobianPercentage      << "%)." << endl;
-        cout << "flop estimate (Jacobians):       " << setw(charWidth) << std::scientific << jacobianCellMeasureFlopCount << endl;
-        cout << "estimated throughput (Jac.):     " << setw(charWidth) << std::scientific << jacobiansThroughputInGFlops << " GFlops" << endl;
-        cout << "Time (initial setup)             " << setw(charWidth) << std::scientific << initialSetupTime  << " seconds (" << std::fixed << initialSetupPercentage  << "%)." << endl;
-        cout << "Time (other)                     " << setw(charWidth) << std::scientific << remainingTime     << " seconds (" << std::fixed << remainingPercentage     << "%)." << endl;
-        cout << "Time (total):                    " << setw(charWidth) << std::scientific << elapsedTimeSeconds   << " seconds.\n";
-        cout << "flop estimate (total):           " << setw(charWidth) << std::scientific << approximateFlopCountTotal << endl;
-        cout << "estimated throughput (total):    " << setw(charWidth) << std::scientific << overallThroughputInGFlops << " GFlops" << endl;
-        
-        cout << endl;
       }
-    }
+    } // basisFamilyChoices
     
     if (mode == Calibration)
     {
+      cout << "Best workset sizes (as determined by 'core integration' throughput, which includes basis transforms, but not setup and/or Jacobian computations):\n";
       for (auto & algorithmChoice : algorithmChoices)
       {
+        if (algorithmChoice == Uniform) continue; // workset size is not meaningful for uniform (workset is always effectively one cell, or all cells, depending on how you choose to frame it).
+        
         cout << "Best workset sizes for " << to_string(algorithmChoice) << ":" << endl;
         
-        for (auto & maxThroughputEntry : maxAlgorithmThroughputForPolyOrder[algorithmChoice])
+        for (auto & maxThroughputEntry : maxAlgorithmThroughputForPolyOrderCore[algorithmChoice])
         {
           int polyOrder   = maxThroughputEntry.first;
           int worksetSize = maxThroughputEntry.second.second;
@@ -1024,7 +1557,14 @@ int main( int argc, char* argv[] )
         }
       }
     }
+    if (success)
+    {
+      return 0;
+    }
+    else
+    {
+      std::cout << "ERROR: Assembled matrices did *NOT* match across algorithms.\n";
+      return -1;
+    }
   }
-  
-  return 0;
 }

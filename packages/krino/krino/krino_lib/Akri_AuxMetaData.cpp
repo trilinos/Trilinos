@@ -9,7 +9,6 @@
 #include <Akri_AuxMetaData.hpp>
 #include "Akri_FieldRef.hpp"              // for FieldRef
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldState
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -33,15 +32,21 @@ AuxMetaData &
 AuxMetaData::get(const stk::mesh::MetaData & stk_meta)
 {
   AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
-  ThrowRequireMsg(nullptr != aux_meta, "AuxMetaData not found on MetaData.");
+  STK_ThrowRequireMsg(nullptr != aux_meta, "AuxMetaData not found on MetaData.");
   return *aux_meta;
+}
+
+bool AuxMetaData::has(const stk::mesh::MetaData & stk_meta)
+{
+  AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
+  return aux_meta != nullptr;
 }
 
 AuxMetaData &
 AuxMetaData::create(stk::mesh::MetaData & stk_meta)
 {
   AuxMetaData * aux_meta = const_cast<AuxMetaData*>(stk_meta.get_attribute<AuxMetaData>());
-  ThrowRequireMsg(nullptr == aux_meta, "AuxMetaData::create should be caled only once per MetaData.");
+  STK_ThrowRequireMsg(nullptr == aux_meta, "AuxMetaData::create should be caled only once per MetaData.");
   if (nullptr == aux_meta)
   {
     aux_meta = new AuxMetaData(stk_meta);
@@ -68,8 +73,8 @@ AuxMetaData::AuxMetaData(stk::mesh::MetaData & stk_meta)
   }
   else
   {
-    ThrowRequireMsg(my_meta.spatial_dimension() > 0, "For non-Fmwk usage, AuxMetaData cannot be created until after the spatial_dimension is set on the stk::mesh::MetaData.");
-    ThrowRequireMsg(!my_meta.is_commit(), "For non-Fmwk usage, AuxMetaData must be created before the stk::mesh::MetaData is committed.");
+    STK_ThrowRequireMsg(my_meta.spatial_dimension() > 0, "For non-Fmwk usage, AuxMetaData cannot be created until after the spatial_dimension is set on the stk::mesh::MetaData.");
+    STK_ThrowRequireMsg(!my_meta.is_commit(), "For non-Fmwk usage, AuxMetaData must be created before the stk::mesh::MetaData is committed.");
     my_active_part           = &my_meta.declare_part("ACTIVE_CONTEXT_BIT");
     my_exposed_boundary_part = &my_meta.declare_part("EXPOSED_BOUNDARY_CONTEXT_BIT", my_meta.side_rank());
     my_block_boundary_part   = &my_meta.declare_part("BLOCK_BOUNDARY_CONTEXT_BIT", my_meta.side_rank());
@@ -121,12 +126,12 @@ AuxMetaData::set_inducer_functions(
 
 stk::mesh::Part & AuxMetaData::block_boundary_part() const
 {
-  ThrowAssert(nullptr != my_block_boundary_part); return *my_block_boundary_part;
+  STK_ThrowAssert(nullptr != my_block_boundary_part); return *my_block_boundary_part;
 }
 
 stk::mesh::Part & AuxMetaData::exposed_boundary_part() const
 {
-  ThrowAssert(nullptr != my_exposed_boundary_part); return *my_exposed_boundary_part;
+  STK_ThrowAssert(nullptr != my_exposed_boundary_part); return *my_exposed_boundary_part;
 }
 
 bool
@@ -147,7 +152,7 @@ FieldRef
 AuxMetaData::get_field( const stk::mesh::EntityRank obj_type, const std::string& name ) const
 {
   stk::mesh::FieldBase* field_ptr = my_meta.get_field(obj_type, name);
-  ThrowRequireMsg(NULL != field_ptr, "Field \"" << name << "\" not found.");
+  STK_ThrowRequireMsg(NULL != field_ptr, "Field \"" << name << "\" not found.");
   return FieldRef(field_ptr);
 }
 
@@ -185,7 +190,7 @@ AuxMetaData::get_part( const std::string& name ) const
   stk::mesh::Part * part = my_meta.get_part(name);
   // If the part is not found see if the name is actually a Fmwk alias
   if (!part && is_fmwk) part = fmwk_get_iopart(name);
-  ThrowRequireMsg(part, "Could not find part " << name;);
+  STK_ThrowRequireMsg(part, "Could not find part " << name;);
   return *part;
 }
 
@@ -297,17 +302,17 @@ AuxMetaData::declare_field(
   stk::mesh::FieldBase * field = NULL;
   const std::type_info & value_type = field_type.type_info();
   if (value_type == typeid(int))
-    field = &my_meta.declare_field< stk::mesh::Field<int, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<int>(entity_rank, fld_name, num_states);
   else if (value_type == typeid(double))
-    field = &my_meta.declare_field< stk::mesh::Field<double, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<double>(entity_rank, fld_name, num_states);
   else if (value_type == typeid(unsigned))
-    field = &my_meta.declare_field< stk::mesh::Field<unsigned, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<unsigned>(entity_rank, fld_name, num_states);
   else if (value_type == typeid(int64_t))
-    field = &my_meta.declare_field< stk::mesh::Field<int64_t, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<int64_t>(entity_rank, fld_name, num_states);
   else if (value_type == typeid(uint64_t))
-    field = &my_meta.declare_field< stk::mesh::Field<uint64_t, stk::mesh::SimpleArrayTag> >(entity_rank, fld_name, num_states);
+    field = &my_meta.declare_field<uint64_t>(entity_rank, fld_name, num_states);
   else {
-    ThrowRequireMsg(false, "Unhandled primitive type " << value_type.name());
+    STK_ThrowRequireMsg(false, "Unhandled primitive type " << value_type.name());
   }
 
   return FieldRef(field);
@@ -332,22 +337,23 @@ AuxMetaData::register_field(
     return FieldRef(fmwk_register_field(fld_name, field_type.name(), field_type.type_info(), field_type.dimension(), entity_rank, num_states, dimension, part, value_type_init));
   }
 
-  const unsigned field_length = field_type.dimension()*dimension;
   if (field_type.name() == FieldType::VECTOR_2D.name())
   {
-    auto & field = my_meta.declare_field< stk::mesh::Field<double, stk::mesh::Cartesian2d> >(entity_rank, fld_name, num_states);
-    stk::mesh::put_field_on_mesh(field, part, field_length, nullptr);
+    auto & field = my_meta.declare_field<double>(entity_rank, fld_name, num_states);
+    stk::mesh::put_field_on_mesh(field, part, field_type.dimension(), dimension, nullptr);
+    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_2D);
     return FieldRef(field);
   }
   else if (field_type.name() == FieldType::VECTOR_3D.name())
   {
-    auto & field = my_meta.declare_field< stk::mesh::Field<double, stk::mesh::Cartesian3d> >(entity_rank, fld_name, num_states);
-    stk::mesh::put_field_on_mesh(field, part, field_length, nullptr);
+    auto & field = my_meta.declare_field<double>(entity_rank, fld_name, num_states);
+    stk::mesh::put_field_on_mesh(field, part, field_type.dimension(), dimension, nullptr);
+    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_3D);
     return FieldRef(field);
   }
 
   FieldRef field = declare_field(fld_name, field_type, entity_rank, num_states);
-  stk::mesh::put_field_on_mesh(field.field(), part, field_length, value_type_init);
+  stk::mesh::put_field_on_mesh(field.field(), part, field_type.dimension(), dimension, value_type_init);
   return field;
 }
 
@@ -389,6 +395,17 @@ stk::mesh::Selector AuxMetaData::selectField( const stk::mesh::FieldBase & field
   }
   // return stk::mesh::selectField if inducer is not set
   return stk::mesh::selectField(field);
+}
+
+FieldRef AuxMetaData::get_current_coordinates() const
+{
+  if (!my_current_coordinates.valid())
+  {
+    const stk::mesh::FieldBase * meta_coords = my_meta.coordinate_field();
+    STK_ThrowRequireMsg(nullptr != meta_coords, "Coordinates must be defined before calling AuxMetaData::get_current_coordinates().");
+    my_current_coordinates = FieldRef(meta_coords);
+  }
+  return my_current_coordinates;
 }
 
 //----------------------------------------------------------------------

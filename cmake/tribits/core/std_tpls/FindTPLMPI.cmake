@@ -39,9 +39,9 @@
 
 # Either the MPI compiler wrappers take care of these or the user has to set
 # the explicitly using basic compile flags and ${PROJECT_NAME}_EXTRA_LINK_FLAGS.
-global_set(TPL_MPI_INCLUDE_DIRS)
-global_set(TPL_MPI_LIBRARIES)
-global_set(TPL_MPI_LIBRARY_DIRS)
+global_set(TPL_MPI_INCLUDE_DIRS "")
+global_set(TPL_MPI_LIBRARIES "")
+global_set(TPL_MPI_LIBRARY_DIRS "")
 
 if(WIN32 AND TPL_ENABLE_MPI)
   find_package(MPI)
@@ -50,3 +50,7 @@ if(WIN32 AND TPL_ENABLE_MPI)
   global_set(TPL_MPI_LIBRARIES ${MPI_LIBRARIES})
 endif()
 
+tribits_tpl_find_include_dirs_and_libraries(MPI)
+
+# NOTE: Above, we need to generate the MPI::all_libs target and the
+# MPIConfig.cmake file that will also provide the MPI::all_libs target.

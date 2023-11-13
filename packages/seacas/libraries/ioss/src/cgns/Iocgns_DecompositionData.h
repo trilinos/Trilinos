@@ -1,12 +1,16 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef IOCGNS_DECOMPOSITONDATA_H
-#define IOCGNS_DECOMPOSITONDATA_H
+#pragma once
+
+#include "iocgns_export.h"
+
+#include <cgnsconfig.h>
+#if CG_BUILD_PARALLEL
 
 #include <string>
 #include <vector>
@@ -51,7 +55,7 @@ namespace Ioss {
 
 namespace Iocgns {
 
-  class ZoneData
+  class IOCGNS_EXPORT ZoneData
   {
   public:
     std::string m_name;
@@ -60,7 +64,7 @@ namespace Iocgns {
     size_t      m_elementOffset;
   };
 
-  class DecompositionDataBase
+  class IOCGNS_EXPORT DecompositionDataBase
   {
   public:
     DecompositionDataBase() = default;
@@ -127,7 +131,7 @@ namespace Iocgns {
   template <typename INT> class DecompositionData : public DecompositionDataBase
   {
   public:
-    DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator);
+    DecompositionData(const Ioss::PropertyManager &props, Ioss_MPI_Comm communicator);
     ~DecompositionData() override = default;
 
     int int_size() const override { return sizeof(INT); }

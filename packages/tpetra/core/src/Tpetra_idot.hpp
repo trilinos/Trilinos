@@ -155,6 +155,7 @@ void idotLocal(const ResultView& localResult,
       Yj = Y.isConstantStride() ? Yj : YWhichVectors[Yj];
       auto Xcol = Kokkos::subview(X_lcl, rowRange, Xj);
       auto Ycol = Kokkos::subview(Y_lcl, rowRange, Yj);
+
       //Compute the rank-1 dot product, and place the result in an element of localResult
       KokkosBlas::dot(Kokkos::subview(localResultUnmanaged, vec), Xcol, Ycol);
     }
@@ -172,6 +173,7 @@ struct IdotHelper
   static std::shared_ptr< ::Tpetra::Details::CommRequest> run(
       const ResultView& globalResult, const MV& X, const MV& Y,
       typename std::enable_if<Kokkos::SpaceAccessibility<exec_space, typename ResultView::memory_space>::accessible>::type* = nullptr)
+
   {
     constexpr bool runOnDevice = std::is_same<exec_space, typename MV::execution_space>::value;
     idotLocal<MV, ResultView, runOnDevice>(globalResult, X, Y);
@@ -197,7 +199,9 @@ struct IdotHelper
     auto comm = X.getMap()->getComm();
     return iallreduce(localResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
   }
+
 };
+
 
 /// \brief Internal (common) version of idot, a global dot product
 /// that uses a non-blocking MPI reduction.

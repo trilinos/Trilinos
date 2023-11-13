@@ -107,7 +107,7 @@ namespace MueLu {
     if(!matlabFunction.length())
       throw std::runtime_error("Invalid matlab function name");
     vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction, numProvides, InputArgs);
-    // Set output in level 
+    // Set output in level
     processProvides<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mexOutput, this, providesList, currentLevel);
   }
   

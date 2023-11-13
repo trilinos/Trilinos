@@ -54,18 +54,16 @@ class BatchManager {
 public:
   virtual ~BatchManager() {}
 
-  virtual int batchID(void) {
+  virtual int batchID() {
     return 0;
   }
 
-  virtual int numBatches(void) {
+  virtual int numBatches() {
     return 1;
   }
 
   virtual void sumAll(Real* input, Real* output, int dim) {
-    for (int i=0; i<dim; ++i) {
-      output[i] = input[i];
-    }
+    for (int i=0; i<dim; ++i) output[i] = input[i];
   }
 
   virtual void sumAll(Vector<Real> &input, Vector<Real> &output) {
@@ -74,20 +72,16 @@ public:
 
   virtual void reduceAll(Real *input, Real* output, int dim,
                          const Elementwise::ReductionOp<Real> &r) {
-    for (int i=0; i<dim; ++i) {
-      output[i] = input[i];
-    }
+    for (int i = 0; i < dim; ++i) output[i] = input[i];
   }
 
   virtual void gatherAll(const Real *send, const int ssize, Real *receive, int const rsize) const {
-    for (int i = 0; i < rsize; ++i) {
-      receive[i] = send[i];
-    }
+    for (int i = 0; i < rsize; ++i) receive[i] = send[i];
   }
 
   virtual void broadcast(Real *input, int cnt, int root) {}
 
-  virtual void barrier(void) {}
+  virtual void barrier() {}
 };
 
 }

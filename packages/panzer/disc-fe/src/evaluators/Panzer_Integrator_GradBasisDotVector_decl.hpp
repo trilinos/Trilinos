@@ -338,7 +338,7 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-    PHX::View<PHX::View<const ScalarT**>* > kokkosFieldMults_;
+    PHX::View<PHX::UnmanagedView<const ScalarT**>* > kokkosFieldMults_;
 
       /**
        *  \brief The name of the basis we're using.
@@ -357,6 +357,9 @@ namespace panzer
        */
       PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,
         panzer::Dim> basis_;
+
+    /// Temporary used when shared memory is disabled
+    PHX::View<ScalarT*> tmp_;
 
   }; // end of class Integrator_GradBasisDotVector
 

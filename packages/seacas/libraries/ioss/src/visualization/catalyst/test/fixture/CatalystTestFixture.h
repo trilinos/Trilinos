@@ -11,34 +11,59 @@
 #include "vtk_jsoncpp.h"
 #include <map>
 
-class CatalystTestFixture {
+class CatalystTestFixture
+{
 public:
-    CatalystTestFixture();
-    ~CatalystTestFixture();
+  typedef std::vector<std::pair<std::string, int>> VarAndCompCountVec;
+  typedef std::vector<std::string>                 StringVec;
 
-    void checkPhactoriStringValidParse(const std::string& phactoriSyntax,
-        const Json::Value& parsedJSONResult);
+  CatalystTestFixture();
+  ~CatalystTestFixture();
 
-    void checkPhactoriStringInvalidParse(const std::string& phactoriSyntax);
-   
-    void runPhactoriJSONTest(const std::string& jsonFile,
-        const std::string& inputFile);
+  void checkPhactoriStringValidParse(const std::string &phactoriSyntax,
+                                     const Json::Value &parsedJSONResult);
 
-    void runPhactoriJSONTestTwoGrid(const std::string& jsonFile,
-        const std::string& inputFileA, const std::string& inputFileB);
+  void checkPhactoriStringInvalidParse(const std::string &phactoriSyntax);
 
-    void runParaViewGuiScriptTest(const std::string& pythonScript,
-        const std::string& inputFile);
+  void runPhactoriJSONTest(const std::string &jsonFile, const std::string &inputFile);
 
-    void checkTestOutputFileExists(const char *fileName);
+  void runPhactoriJSONTestTwoGrid(const std::string &jsonFile, const std::string &inputFileA,
+                                  const std::string &inputFileB);
 
-    Json::Value getDefaultPhactoriJSON();
+  void runPhactoriJSONTestTwoGridTwoPipe(const std::string &jsonFileA,
+                                         const std::string &inputFileA,
+                                         const std::string &jsonFileB,
+                                         const std::string &inputFileB);
 
-    Json::Value getDefaultCameraJSON();
-    Json::Value getDefaultCameraParallelProjectionJSON();
+  void runParaViewGuiScriptTest(const std::string &pythonScript, const std::string &inputFile);
+
+  void runCatalystLoggingTest(Ioss::PropertyManager *logging_properties,
+                              const std::string &jsonFile, const std::string &inputFile);
+
+  void runCatalystMultiBlockMeshTest(const std::string &inputFile);
+
+  void checkMeshOutputVariables(const std::string &inputFile, const VarAndCompCountVec &cellVars,
+                                const VarAndCompCountVec &pointVars,
+                                const VarAndCompCountVec &globalVars, const std::string &blockPath);
+
+  void checkPartitionedDataSetCollectionStructure(const std::string &inputFile,
+                                                  const StringVec &partitions, int numCells,
+                                                  const StringVec &searchQueries);
+
+  static bool isFileExists(const char *fileName);
+  static void checkTestOutputFileExists(const char *fileName);
+  static void checkTestOutputFileDoesNotExist(const char *fileName);
+
+  Json::Value getDefaultPhactoriJSON();
+
+  Json::Value getDefaultCameraJSON();
+  Json::Value getDefaultImageSetJSON();
+  Json::Value getDefaultImageSetWithCameraJSON();
+  Json::Value getDefaultCameraParallelProjectionJSON();
+  Json::Value getDefaultOperationsJSON();
 
 private:
-    IossApplication ioapp;
+  IossApplication ioapp;
 };
 
 #endif

@@ -303,8 +303,8 @@ template <class LO, class GO, class NT>
 bool
 Transfer<LO, GO, NT>::
 isLocallyFitted () const {
-  return (getNumSameIDs() == std::min(getSourceMap()->getNodeNumElements(),
-                                      getTargetMap()->getNodeNumElements()));
+  return (getNumSameIDs() == std::min(getSourceMap()->getLocalNumElements(),
+                                      getTargetMap()->getLocalNumElements()));
 }
 
 template <class LO, class GO, class NT>
@@ -315,9 +315,9 @@ detectRemoteExportLIDsContiguous () const {
   // Check that maps are locally fitted
   // TODO: We really want to check here that remote LIDs are sorted last.
   //       The current check is too restrictive in special cases.
-  bool ordered = (getNumSameIDs() == std::min(getSourceMap()->getNodeNumElements(),
-                                              getTargetMap()->getNodeNumElements()));
-  ordered &= (getTargetMap()->getNodeNumElements() == getNumSameIDs() + getNumRemoteIDs());
+  bool ordered = (getNumSameIDs() == std::min(getSourceMap()->getLocalNumElements(),
+                                              getTargetMap()->getLocalNumElements()));
+  ordered &= (getTargetMap()->getLocalNumElements() == getNumSameIDs() + getNumRemoteIDs());
   if (ordered) {
     const auto& dv = TransferData_->remoteLIDs_;
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -329,9 +329,9 @@ detectRemoteExportLIDsContiguous () const {
   }
   TransferData_->remoteLIDsContiguous_ = ordered;
 
-  ordered = (getNumSameIDs() == std::min(getSourceMap()->getNodeNumElements(),
-                                         getTargetMap()->getNodeNumElements()));
-  ordered &= (getSourceMap()->getNodeNumElements() == getNumSameIDs() + getNumExportIDs());
+  ordered = (getNumSameIDs() == std::min(getSourceMap()->getLocalNumElements(),
+                                         getTargetMap()->getLocalNumElements()));
+  ordered &= (getSourceMap()->getLocalNumElements() == getNumSameIDs() + getNumExportIDs());
   if (ordered) {
     const auto& dv = TransferData_->exportLIDs_;
     TEUCHOS_TEST_FOR_EXCEPTION

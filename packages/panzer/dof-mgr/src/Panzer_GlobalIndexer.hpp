@@ -133,7 +133,7 @@ public:
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                               int subcellDim,int subcellId) const = 0;
 
-   /** \brief How any GIDs are associate with a particular element block.
+   /** \brief How any GIDs are associate with each element in a particular element block.
      *
      * This is a per-element count. If you have a quad element with two
      * piecewise bi-linear fields this method returns 8.
@@ -260,19 +260,41 @@ public:
 
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
+     * 
+     * @param cellIds [in] The list of cells we require LIDs for
+     * @param lids [in/out] View to fill with LIDs. extent(1) MUST be sized correctly if num_dofs is not provided.
+     * @param num_dofs [in] (optional) Number of DOFs in the current element block.
+     *
+     * NOTE: The internal array (global_lids/localIDs_k_) is sized for
+     * the max dofs across all element blocks in the dof manager. The
+     * copy needs the actual number of dofs in the particular element
+     * block to fill correctly. Either the caller must supply
+     * <code>num_dofs</code> or the <code>lids.extent(1)</code> must
+     * be sized correctly for the number of DOFs in the element
+     * block. We don't want to search on the element internally to
+     * find the element block as this will impact performance.
      */
    template <typename ArrayT>
-   void getElementLIDs(PHX::View<const int*> cellIds, ArrayT lids) const
+   void getElementLIDs(PHX::View<const int*> cellIds, ArrayT lids, const int num_dofs = 0) const
    { 
      CopyCellLIDsFunctor<ArrayT> functor;
      functor.cellIds = cellIds;
      functor.global_lids = localIDs_k_;
-     functor.local_lids = lids; // we assume this array is sized correctly!
+     functor.local_lids = lids; // we assume this array is sized correctly if num_dofs not specified!
+     if (num_dofs > 0)
+       functor.num_dofs = num_dofs;
+     else
+       functor.num_dofs = lids.extent(1);
+
+#ifdef PANZER_DEBUG
+     TEUCHOS_ASSERT(functor.local_lids.extent(1) >= num_dofs);
+     TEUCHOS_ASSERT(functor.global_lids.extent(1) >= num_dofs);
+#endif
 
      Kokkos::parallel_for(cellIds.extent(0),functor);
    }
 
-   /** \brief How many GIDs are associate with a particular element block
+   /** \brief How many GIDs are associated with each element in a particular element block
      *
      * This is a per-element count. If you have a quad element with two
      * piecewise bi-linear fields this method returns 8.
@@ -291,11 +313,12 @@ public:
      PHX::View<const int*> cellIds;
      Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> global_lids;
      ArrayT local_lids;
+     int num_dofs;
 
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<static_cast<int>(local_lids.extent(1));i++) 
+       for(int i=0;i<num_dofs;i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      

@@ -66,10 +66,12 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: use subcommunicators");
+    SET_VALID_ENTRY("repartition: use subcommunicators in place");
 #undef SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",        Teuchos::null, "Generating factory of the matrix A for rebalancing");
     validParamList->set< RCP<const FactoryBase> >("Importer", Teuchos::null, "Generating factory of the importer");
+    validParamList->set< RCP<const FactoryBase> >("InPlaceMap", Teuchos::null, "Generating factory of the InPlaceMap");
 
     return validParamList;
   }
@@ -77,14 +79,38 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &/* fineLevel */, Level &coarseLevel) const {
     Input(coarseLevel, "A");
-    Input(coarseLevel, "Importer");
+    const Teuchos::ParameterList & pL = GetParameterList();
+    if(pL.isParameter("repartition: use subcommunicators in place") && pL.get<bool>("repartition: use subcommunicators in place")==true) {
+      Input(coarseLevel,"InPlaceMap");
+    }
+    else
+      Input(coarseLevel, "Importer");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &/* fineLevel */, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
     
+    const Teuchos::ParameterList & pL = GetParameterList();
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
+
+    // This is a short-circuit for if we want to leave A where it is, but restrict its communicator
+    // to something corresponding to a given map.  Maxwell1 is the prime customer for this.
+    bool inPlace = pL.get<bool>("repartition: use subcommunicators in place");
+    if(inPlace) {
+      SubFactoryMonitor subM(*this, "Rebalancing existing Ac in-place", coarseLevel);
+      RCP<const Map> newMap = Get< RCP<const Map> >(coarseLevel, "InPlaceMap");
+
+      originalAc->removeEmptyProcessesInPlace(newMap);
+
+      // The "in place" still leaves a dummy matrix here.  That needs to go
+      if(newMap.is_null()) originalAc = Teuchos::null;
+
+      Set(coarseLevel, "A", originalAc);
+      return;
+    }
+
+
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
     if (rebalanceImporter != Teuchos::null) {
@@ -93,8 +119,6 @@ namespace MueLu {
         SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
         RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
 
-        const ParameterList & pL = GetParameterList();
-
         ParameterList XpetraList;
         if (pL.get<bool>("repartition: use subcommunicators") == true) {
           GetOStream(Runtime0) << "Replacing maps with a subcommunicator" << std::endl;
@@ -102,7 +126,10 @@ namespace MueLu {
         }
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
         XpetraList.set("Timer Label","MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
-	rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+        {
+          SubFactoryMonitor subM2(*this, "Rebalancing existing Ac: MatrixFactory::Build", coarseLevel);
+          rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+        }
 
         if (!rebalancedAc.is_null()) {
           rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());

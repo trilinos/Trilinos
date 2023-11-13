@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,19 +10,14 @@
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include <stdbool.h>
 
-/* An assembly attribute is similar to an IOSS property consisting of
+/* An entity attribute is similar to an IOSS property consisting of
    a name, a type, and a value or values. It is not a value per entity
-   in the assembly, but a value for the assembly. For now, they types
+   in the entity, but a value for the entity. For now, the types
    will be limited to text, integer, and double to provide capability
    without the complexity of supporting the many types available in
    NetCDF-4 including user-defined types. Note that an attribute can
    have multiple values, for example if the attribute is a range, it
    could have the value {1.0, 100.0}
-
-   NOTE: This type of attribute (value on entity instead of value per
-   entities members, for example nodes in a nodeset) will also be added
-   to the other entity types (blocks and sets) when implemented for
-   assemblies.
 
    NOTE: Need a better name or way of distinguishing from the
    attributes which are currently supported in Exodus.
@@ -164,7 +159,7 @@ int ex_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id)
   /* Get names of each attribute and see if it is an 'internal' name */
   int count = att_count;
   for (int i = 0; i < count; i++) {
-    char name[NC_MAX_NAME];
+    char name[NC_MAX_NAME + 1];
     int  status;
     if ((status = nc_inq_attname(exoid, varid, i, name)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
@@ -213,7 +208,7 @@ int ex_get_attribute_param(int exoid, ex_entity_type obj_type, ex_entity_id id, 
   */
   count = 0;
   for (int i = 0; i < att_count; i++) {
-    char name[NC_MAX_NAME];
+    char name[NC_MAX_NAME + 1];
     int  status;
     if ((status = nc_inq_attname(exoid, varid, i, name)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,

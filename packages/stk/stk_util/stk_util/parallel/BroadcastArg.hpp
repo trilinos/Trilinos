@@ -35,6 +35,8 @@
 #ifndef STK_UTIL_PARALLEL_BROADCASTARG_HPP
 #define STK_UTIL_PARALLEL_BROADCASTARG_HPP
 
+#include <string>
+#include <vector>
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 
 namespace stk {
@@ -59,18 +61,22 @@ struct BroadcastArg
    */
   BroadcastArg(ParallelMachine parallel_machine, int argc, char **argv);
 
-  /**
-   * Destroys a <b>BroadcastArg</b> instance.
-   *
-   */
-  ~BroadcastArg();
-
   int           m_argc;                         ///< The broadcasted argc
   char **       m_argv;                         ///< The broadcasted argv
 
 private:
   BroadcastArg(const BroadcastArg &argv);
   BroadcastArg &operator=(const BroadcastArg &argv);
+
+  void pack_strings_on_root(int argc, char** argv, ParallelMachine parallel_machine, int root_rank);
+
+  void broadcast_strings(int argc, ParallelMachine parallel_machine, int root_rank);
+
+  void split_strings();
+
+
+  std::vector<char*> m_argv_storage;
+  std::string m_string_storage;
 };
 
 } // namespace stk

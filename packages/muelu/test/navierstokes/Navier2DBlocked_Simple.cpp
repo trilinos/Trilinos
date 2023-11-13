@@ -108,6 +108,7 @@
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 #include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_SimpleSmoother.hpp"
+#include "MueLu_InverseApproximationFactory.hpp"
 
 #include "MueLu_CoarseMapFactory.hpp"
 
@@ -292,7 +293,6 @@ int main(int argc, char *argv[]) {
     CoupledAggFact11->SetMinNodesPerAggregate(9);
     CoupledAggFact11->SetMaxNeighAlreadySelected(2);
     CoupledAggFact11->SetOrdering("natural");
-    //CoupledAggFact11->SetPhase3AggCreation(0.5);
 
     ///////////////////////////////////////// define transfer ops for A11
 #if 0
@@ -446,12 +446,17 @@ int main(int argc, char *argv[]) {
     MPredict->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 
     ////////////////////////////////////////////////
+    // InverseApproximation
+    Teuchos::RCP<InverseApproximationFactory> AinvFact = Teuchos::rcp(new InverseApproximationFactory());
+    AinvFact->SetFactory("A", A11Fact);
+    AinvFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("lumping")));
+
     // SchurComp
     // create SchurComp factory (SchurComplement smoother is provided by local FactoryManager)
     Teuchos::RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
     SFact->SetParameter("omega", Teuchos::ParameterEntry(0.8));
-    SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
     SFact->SetFactory("A", MueLu::NoFactory::getRCP()); // 2x2 blocked operator
+    SFact->SetFactory("Ainv", AinvFact);
 
     // define SchurComplement solver
     std::string ifpackTypeSchurSmoother;

@@ -133,7 +133,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTpetraAdapter.hpp"
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef HAVE_INTREPID_KOKKOS
 #include "Sacado.hpp"
 #else
 // Sacado includes
@@ -281,6 +281,7 @@ int main(int argc, char *argv[]) {
   const int numProcs = CommT->getSize();
 
   int MyPID = CommT->getRank();
+  Tpetra::global_size_t INVALID_GO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
 
   //Check number of arguments
@@ -716,7 +717,7 @@ int main(int argc, char *argv[]) {
     {
     TimeMonitor timerBuildGlobalMaps1L(*timerBuildGlobalMaps1);
     //Generate Tpetra map for nodes
-    globalMapGT = rcp(new Map(-1, ownedGIDs(), 0, CommT));
+    globalMapGT = rcp(new Map(INVALID_GO, ownedGIDs(), 0, CommT));
     }
     }
 
@@ -742,7 +743,7 @@ int main(int argc, char *argv[]) {
     {
     TimeMonitor timerBuildOverlapMaps1L(*timerBuildOverlapMaps1);
     //Generate Tpetra map for nodes
-    overlappedMapGT = rcp(new Map(-1, overlappedGIDs(), 0, CommT));
+    overlappedMapGT = rcp(new Map(INVALID_GO, overlappedGIDs(), 0, CommT));
     }
     //build Tpetra Export/Import
     RCP<Teuchos::Time> timerBuildOverlapMaps2 = TimeMonitor::getNewTimer("Build overlapped maps: exporterT");
@@ -1248,16 +1249,16 @@ int main(int argc, char *argv[]) {
     /* Zero the columns */
     typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", 1);
     typename sparse_matrix_type::nonconst_values_host_view_type values("values", 1);
-    for (size_t i=0; i < gl_StiffMatrixT->getNodeNumRows(); i++) {
+    for (size_t i=0; i < gl_StiffMatrixT->getLocalNumRows(); i++) {
       NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(i);
       Kokkos::resize(indices, NumEntries);
       Kokkos::resize(values, NumEntries);
       gl_StiffMatrixT->getLocalRowCopy(i, indices, values, NumEntries);
       //Matrix.ExtractMyRowView(i,numEntries,vals,cols);
       for (size_t j=0; j < NumEntries; j++){
-	//Teuchos::ArrayRCP<const int> myColsToZeroj = myColsToZeroT->getData();
-	if (myColsToZeroArrayRCP[indices(j)] == 1)
-	  values(j) = 0.0;
+        //Teuchos::ArrayRCP<const int> myColsToZeroj = myColsToZeroT->getData();
+        if (myColsToZeroArrayRCP[indices(j)] == 1)
+          values(j) = 0.0;
       }
       gl_StiffMatrixT->replaceLocalValues(i, indices, values);
     }/*end for*/
@@ -1271,9 +1272,9 @@ int main(int argc, char *argv[]) {
       int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
       int localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
       for (size_t j = 0; j<NumEntries; j++){
-	values(j) = 0.0;
-	if (indices(j) == localCol)
-	  values(j) = 1.0;
+        values(j) = 0.0;
+        if (indices(j) == localCol)
+          values(j) = 1.0;
       }
       gl_StiffMatrixT->replaceLocalValues(BCNodes[i], indices, values);
    }

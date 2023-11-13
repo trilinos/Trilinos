@@ -84,7 +84,6 @@
 
 
 // Conditional Tpetra stuff
-#ifdef HAVE_MUELU_TPETRA
 #include <TpetraCore_config.h>
 #include <Xpetra_TpetraCrsGraph.hpp>
 #include <Xpetra_TpetraRowMatrix.hpp>
@@ -92,7 +91,6 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_BlockCrsMatrix.hpp>
-#endif
 
 #include <MueLu_TestHelpers_Common_kokkos.hpp>
 
@@ -224,7 +222,7 @@ namespace MueLuTests {
 
         RCP<Matrix> mtx = MatrixFactory::Build(rowMap, 3);
 
-        ArrayView<const GO> MyGlobalElements = rowMap->getNodeElementList();
+        ArrayView<const GO> MyGlobalElements = rowMap->getLocalElementList();
         GO indexBase = rowMap->getIndexBase();
 
         GO NumEntries;
@@ -256,7 +254,7 @@ namespace MueLuTests {
         GO rrmax = (rowMap->getMaxAllGlobalIndex()-offset-indexBase) / blockSize;
 
         // loop over all rows
-        LO numMyElements = rowMap->getNodeNumElements();
+        LO numMyElements = rowMap->getLocalNumElements();
         for (LO i = 0; i < numMyElements; i++) {
           GO rr = (MyGlobalElements[i]-offset-indexBase) / blockSize + indexBase;  // node index
 
@@ -607,7 +605,6 @@ namespace MueLuTests {
          // This only works for Tpetra
          if (lib!=Xpetra::UseTpetra) return Op;
 
-#if defined(HAVE_MUELU_TPETRA)
          // Thanks for the code, Travis!
 
          // Make the graph
@@ -641,7 +638,7 @@ namespace MueLuTests {
 
          RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));
          Op = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(temp));
-#endif
+
          return Op;
       } // BuildBlockMatrix()
 

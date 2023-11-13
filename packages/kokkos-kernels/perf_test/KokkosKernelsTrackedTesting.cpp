@@ -1,3 +1,18 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 //
 // Created by Poliakoff, David Zoeller on 4/26/21.
 //
@@ -9,6 +24,7 @@
 // For RPS version of BLAS Level-1 Tests
 #include "blas/blas1/tracked_testing.hpp"
 #include "blas/blas2/tracked_testing.hpp"
+#include "blas/blas3/tracked_testing.hpp"
 int main(int argc, char* argv[]) {
   {
     // argument parsing for setting input data at runtime
@@ -54,6 +70,8 @@ int main(int argc, char* argv[]) {
     test::blas::build_blas_executor(exec, argc, argv, run_params);
 
     test::blas2::build_blas2_executor(exec, argc, argv, run_params);
+
+    test::blas3::build_blas3_executor(exec, argc, argv, run_params);
 
     exec.setupSuite();
 

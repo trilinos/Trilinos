@@ -36,6 +36,8 @@
 #include "stk_balance/internal/privateDeclarations.hpp"
 #include "stk_balance/internal/balanceCoincidentElements.hpp"
 #include "stk_balance/internal/DetectAndFixMechanisms.hpp"
+#include "stk_balance/internal/Diagnostics.hpp"
+#include "stk_balance/internal/DiagnosticsPrinter.hpp"
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <limits>
 
@@ -53,61 +55,60 @@ void verify_mesh_ids_are_not_too_large(const stk::mesh::BulkData& bulk)
   bool localMeshIdTooLarge = maxMeshId > maxAllowableId;
   bool globalMeshIdTooLarge = stk::is_true_on_any_proc(bulk.parallel(), localMeshIdTooLarge);
 
-  ThrowRequireMsg(!globalMeshIdTooLarge, "Mesh has global-ids too large to represent in the index type that was configured for Trilinos ("<<sizeof(BalanceGlobalNumber)<<" bytes).");
+  STK_ThrowRequireMsg(!globalMeshIdTooLarge, "Mesh has global-ids too large to represent in the index type that was configured for Trilinos ("<<sizeof(BalanceGlobalNumber)<<" bytes).");
 }
 
 bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, unsigned numSubdomainsToCreate, const std::vector<stk::mesh::Selector>& selectors)
 {
-    internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition");
+  internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition using '" +
+                       balanceSettings.getDecompMethod() + "' method");
 
-    if (sizeof(BalanceGlobalNumber) < sizeof(stk::mesh::EntityId)) {
-      verify_mesh_ids_are_not_too_large(stkMeshBulkData);
-    }
+  internal::EnableAura enableAura(stkMeshBulkData);
 
-    stk::mesh::EntityProcVec decomp;
-    internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
-                                                   stkMeshBulkData.parallel(), numSubdomainsToCreate,
-                                                   balanceSettings, decomp);
+  if (sizeof(BalanceGlobalNumber) < sizeof(stk::mesh::EntityId)) {
+    verify_mesh_ids_are_not_too_large(stkMeshBulkData);
+  }
 
-    DecompositionChangeList changeList(stkMeshBulkData, decomp);
-    balanceSettings.modifyDecomposition(changeList);
+  stk::mesh::EntityProcVec decomp;
+  internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
+                                                 stkMeshBulkData.parallel(), numSubdomainsToCreate,
+                                                 balanceSettings, decomp);
 
+  DecompositionChangeList changeList(stkMeshBulkData, decomp);
+  balanceSettings.modifyDecomposition(changeList);
+
+  if (balanceSettings.shouldFixCoincidentElements()) {
     internal::logMessage(stkMeshBulkData.parallel(), "Moving coincident elements to the same processor");
     keep_coincident_elements_together(stkMeshBulkData, changeList);
+  }
 
-    if (balanceSettings.shouldFixSpiders()) {
-        internal::logMessage(stkMeshBulkData.parallel(), "Preventing unnecessary movement of spider elements");
-        internal::keep_spiders_on_original_proc(stkMeshBulkData, balanceSettings, changeList);
+  if (balanceSettings.shouldFixSpiders()) {
+    internal::logMessage(stkMeshBulkData.parallel(), "Fixing spider elements");
+    stk::balance::internal::fix_spider_elements(balanceSettings, stkMeshBulkData, changeList);
+  }
+
+  const size_t num_global_entity_migrations = changeList.get_num_global_entity_migrations();
+  const size_t max_global_entity_migrations = changeList.get_max_global_entity_migrations();
+
+  if (num_global_entity_migrations > 0) {
+    internal::logMessage(stkMeshBulkData.parallel(), "Moving elements to new processors");
+    internal::rebalance(changeList);
+
+    if (balanceSettings.shouldFixMechanisms()) {
+      internal::logMessage(stkMeshBulkData.parallel(), "Fixing mechanisms found during decomposition");
+      stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
     }
 
-    const size_t num_global_entity_migrations = changeList.get_num_global_entity_migrations();
-    const size_t max_global_entity_migrations = changeList.get_max_global_entity_migrations();
-
-    if (num_global_entity_migrations > 0)
-    {
-        internal::logMessage(stkMeshBulkData.parallel(), "Moving elements to new processors");
-        internal::rebalance(changeList);
-
-        if (balanceSettings.shouldFixMechanisms())
-        {
-            internal::logMessage(stkMeshBulkData.parallel(), "Fixing mechanisms found during decomposition");
-            stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
-        }
-
-        if (balanceSettings.shouldFixSpiders())
-        {
-            internal::logMessage(stkMeshBulkData.parallel(), "Fixing spider elements");
-            stk::balance::internal::fix_spider_elements(balanceSettings, stkMeshBulkData);
-        }
-
-        if (balanceSettings.shouldPrintMetrics())
-            internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
+    if (balanceSettings.shouldPrintMetrics()) {
+      internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
     }
+  }
 
-    internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
+  internal::compute_balance_diagnostics(stkMeshBulkData, balanceSettings);
 
+  internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
 
-    return (num_global_entity_migrations > 0);
+  return (num_global_entity_migrations > 0);
 }
 
 Balancer::Balancer(const BalanceSettings& settings)

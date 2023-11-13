@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -806,8 +806,8 @@ C  COUNT THE CARDS FOR NEEDED DIMENSIONING
 C  GET THE LARGEST RATIO OF NEEDED/CURRENT
 
   340 CONTINUE
-      RATIO = AMAX1(FLOAT(NEWMP)/FLOAT(MP), FLOAT(NEWML)/FLOAT(ML),
-     &   FLOAT(NEWMS)/FLOAT(MS), FLOAT(NEWMR)/FLOAT(MR), 1.5000001)*1.1
+      RATIO = AMAX1(DBLE(NEWMP)/DBLE(MP), DBLE(NEWML)/DBLE(ML),
+     &   DBLE(NEWMS)/DBLE(MS), DBLE(NEWMR)/DBLE(MR), 1.5000001)*1.1
       RETURN
 
 10000 FORMAT (' A POINT NO. OF:', I7, ' IS NOT ALLOWED', /,

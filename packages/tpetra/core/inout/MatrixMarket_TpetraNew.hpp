@@ -581,8 +581,10 @@ readBinary(
       // The header in the binary file contains only numVertices and numEdges
       unsigned int nv = 0;
       unsigned long long ne = 0;
-      fread(&nv, sizeof(unsigned int), 1, fp);
-      fread(&ne, sizeof(unsigned long long), 1, fp);
+      if (fread(&nv, sizeof(unsigned int), 1, fp) != 1)
+           throw std::runtime_error("Error: bad number of read values.");
+      if (fread(&ne, sizeof(unsigned long long), 1, fp) != 1)
+           throw std::runtime_error("Error: bad number of read values.");
       dim[0] = nv;
       dim[1] = dim[0];
       dim[2] = ne;
@@ -812,9 +814,12 @@ readPerProcessBinary(
   // The header in each per-process file:  globalNumRows globalNumCols localNumNonzeros
   unsigned int globalNumRows = 0, globalNumCols = 0;
   unsigned long long localNumNonzeros = 0;
-  fread(&globalNumRows, sizeof(unsigned int), 1, fp);
-  fread(&globalNumCols, sizeof(unsigned int), 1, fp);
-  fread(&localNumNonzeros, sizeof(unsigned long long), 1, fp);
+  if (fread(&globalNumRows, sizeof(unsigned int), 1, fp) != 1)
+    throw std::runtime_error("Error: bad number of read values.");
+  if (fread(&globalNumCols, sizeof(unsigned int), 1, fp) != 1)
+    throw std::runtime_error("Error: bad number of read values.");
+  if (fread(&localNumNonzeros, sizeof(unsigned long long), 1, fp) != 1)
+    throw std::runtime_error("Error: bad number of read values.");
  
   nRow = static_cast<size_t>(globalNumRows);
   nCol = static_cast<size_t>(globalNumCols);
@@ -936,7 +941,7 @@ readSparseFile(
   
   // Read nonzeros from the given file(s)
   size_t nRow = 0, nCol = 0;
-  unsigned int *buffer; size_t nNz = 0;
+  unsigned int *buffer=0; size_t nNz = 0;
   if(binary){
     if(readPerProcess)
       readPerProcessBinary(filename, comm, params, nRow, nCol, localNZ, dist, buffer, nNz);
@@ -1116,29 +1121,31 @@ readSparseFile(
 
     if (verbose) {
       std::cout << "\nRank " << A->getComm()->getRank() 
-                << "  nRows " << A->getNodeNumRows()
+                << "  nRows " << A->getLocalNumRows()
                 << "  minRow " << A->getRowMap()->getMinGlobalIndex()
                 << "  maxRow " << A->getRowMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nCols " << A->getNodeNumCols()
+                << "  nCols " << A->getLocalNumCols()
                 << "  minCol " << A->getColMap()->getMinGlobalIndex()
                 << "  maxCol " << A->getColMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nDomain " << A->getDomainMap()->getNodeNumElements()
+                << "  nDomain " << A->getDomainMap()->getLocalNumElements()
                 << "  minDomain " << A->getDomainMap()->getMinGlobalIndex()
                 << "  maxDomain " << A->getDomainMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nRange " << A->getRangeMap()->getNodeNumElements()
+                << "  nRange " << A->getRangeMap()->getLocalNumElements()
                 << "  minRange " << A->getRangeMap()->getMinGlobalIndex()
                 << "  maxRange " << A->getRangeMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nEntries " << A->getNodeNumEntries()
+                << "  nEntries " << A->getLocalNumEntries()
                 << std::endl;
     }
   }
 
   return A;
 }
+
+
 
 #endif
 

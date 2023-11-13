@@ -127,19 +127,19 @@
 
       if (eMesh.m_parent_element_field)
         {
-          ParentElementType_type *fdata_new = NULL;
+          ParentElementType::value_type *fdata_new = NULL;
 
           if (is_matching_rank(*eMesh.m_parent_element_field, newElement))
             {
               fdata_new = stk::mesh::field_data( *eMesh.m_parent_element_field , newElement );
               if (fdata_new)
-                fdata_new[0] = static_cast<ParentElementType_type>(eMesh.identifier(parent_elem));
+                fdata_new[0] = static_cast<ParentElementType::value_type>(eMesh.identifier(parent_elem));
               if (debug && fdata_new)
                 {
                   std::cout << "1URP fdata= for entity= " << eMesh.identifier(newElement) << " fdata_new = " << fdata_new[0] << " parent= " << eMesh.identifier(parent_elem) << std::endl;
                 }
               if (fdata_new)
-                VERIFY_OP_ON(fdata_new[0], ==, static_cast<ParentElementType_type>(eMesh.identifier(parent_elem)), "bad parent_field");
+                VERIFY_OP_ON(fdata_new[0], ==, static_cast<ParentElementType::value_type>(eMesh.identifier(parent_elem)), "bad parent_field");
 
             }
           else if (eMesh.m_parent_element_field_side && is_matching_rank(*eMesh.m_parent_element_field_side, newElement))
@@ -157,7 +157,7 @@
                   predicted_parent_id = eMesh.exodus_side_id(eMesh.identifier(parent_to_element_relations[which_relation].entity()), parent_ord_conn);
 
                   if (fdata_new)
-                    fdata_new[0] = static_cast<ParentElementType_type>(predicted_parent_id);
+                    fdata_new[0] = static_cast<ParentElementType::value_type>(predicted_parent_id);
 
                   if (debug && fdata_new)
                     {
@@ -183,13 +183,13 @@
       if (!eMesh.m_refine_level_field_set)
         {
           eMesh.m_refine_level_field_set = true;
-          eMesh.m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType>(stk::topology::ELEMENT_RANK, "refine_level");
+          eMesh.m_refine_level_field = eMesh.get_fem_meta_data()->get_field<RefineLevelType::value_type>(stk::topology::ELEMENT_RANK, "refine_level");
         }
 
       if (eMesh.m_refine_level_field)
         {
-          RefineLevelType_type *fdata_new = NULL;
-          RefineLevelType_type *fdata     = NULL;
+          RefineLevelType::value_type *fdata_new = NULL;
+          RefineLevelType::value_type *fdata     = NULL;
 
           if(is_matching_rank(*eMesh.m_refine_level_field, newElement)) {
             fdata_new = stk::mesh::field_data( *eMesh.m_refine_level_field , newElement );
@@ -644,18 +644,13 @@
 
     void addDistributionFactorToNewPart(stk::mesh::MetaData & meta, stk::mesh::Part * old_part, stk::mesh::Part * new_part)
     {
-      const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*old_part);
+      stk::mesh::FieldBase *df_field = const_cast<stk::mesh::FieldBase*>(stk::io::get_distribution_factor_field(*old_part));
       if (df_field) {
-    	  const std::string field_name = df_field->name();
-          stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field =
-            &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(new_part->primary_entity_rank(), field_name);
-          stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
-          stk::io::set_distribution_factor_field(*new_part, *distribution_factors_field);
+          stk::io::set_field_role(*df_field, Ioss::Field::MESH);
+          stk::io::set_distribution_factor_field(*new_part, *df_field);
           int side_node_count = new_part->topology().num_nodes();
-          stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type* init_np = nullptr; // gcc 4.8 hack
-          stk::mesh::put_field_on_mesh(*distribution_factors_field,
-                               *new_part, side_node_count, init_np);
-        }
+          stk::mesh::put_field_on_mesh(*df_field, *new_part, side_node_count, nullptr);
+      }
     }
 
     void UniformRefinerPatternBase::setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology, bool skipConvertedParts)

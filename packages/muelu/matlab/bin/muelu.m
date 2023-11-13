@@ -41,19 +41,26 @@ function varargout = muelu(varargin)
 %  In this case the original 'A' matrix with which this was
 %  constructed is now the iteration matrix.
 %
-% (4) muelu('cleanup'[, h]) - frees allocated memory
+% (4) x = muelu('apply', h, r)
+%  Input:
+%  h               - The MueMex handle for the system to solve (int)
+%  r               - The residual/RHS vector to solve with (vector or multivector)
+%  Output:
+%  x               - M*r, where M is the preconditioner operator
+%
+% (5) muelu('cleanup'[, h]) - frees allocated memory
 %  Input:
 %  h               - The MueMex handle for the system to clean up.
 %                   Calling 'cleanup' with no handle cleans up all
 %                   the systems.
 %
-% (5) muelu('status'[, h]) - prints out status information
+% (6) muelu('status'[, h]) - prints out status information
 %  Input:
 %  h               - The MueMex handle for the system to print status for.
 %                   Calling 'status' with no handle prints status
 %                   for all the systems.
 %
-% (6) data = muelu('get', h, levelID, dataName[, typeHint])
+% (7) data = muelu('get', h, levelID, dataName[, typeHint])
 % - get hierarchy data
 % Input:
 % h                - MueMex handle for problem with the hierarchy
@@ -89,13 +96,17 @@ elseif(nargin>=1 && strcmp(varargin{1}, 'status')),
 elseif(strcmp(varargin{1}, 'get')),
     % Get mode = 5
     varargout{1} = muemex(5, varargin{2:nargin});
+elseif(strcmp(varargin{1}, 'apply')),
+    % Apply mode = 8
+    varargout{1} = muemex(8, varargin{2:nargin});
 else
     fprintf('\nUsage:\n');
     fprintf('[h, oc] = muelu(''setup'', A) to setup a problem\n');
     fprintf('muelu(''status''[, probID]) to get status of all problems, or a specific problem.\n');
     fprintf('[x, its] = muelu(h, A, b[, paramName, paramValue, ...]) to solve problem #h\n');
     fprintf('[x, its] = muelu(h, b[, paramName, paramValue, ...]) to solve problem #h with loaded matrix\n');
+    fprintf('x = muelu(''apply'', h, r) to apply preconditioner of problem #h to vector r\n');
     fprintf('muelu(''cleanup''[, id]) to free memory associated with all problems, or a specific one.\n');
-    fprintf('muelu(''get'', probID, levelID, dataName[, typeHint]) to get data from a level.\n');
+    fprintf('muelu(''get'', h, levelID, dataName[, typeHint]) to get data from a level of problem #h.\n');
 end
 end

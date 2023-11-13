@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -20,9 +20,8 @@
 #include <iomanip>
 #include <iostream>
 #include <mpi.h>
-#include <unistd.h>
-
 #include <random>
+#include <unistd.h>
 std::random_device myrd9;        // only used once to initialise (seed) engine
 std::mt19937       rng(myrd9()); // random-number engine used (Mersenne-Twister in this case)
 std::uniform_int_distribution<int> myuni9(0, 1000000000); // guaranteed unbiased
@@ -46,30 +45,29 @@ IossApplication::IossApplication(int argc, char **argv)
 
 void IossApplication::initialize()
 {
-  myRank                       = 0;
-  numRanks                     = 1;
-  printIOSSReport              = false;
-  copyDatabase                 = false;
-  writeCatalystMeshOneFile     = false;
-  writeCatalystMeshFilePerProc = false;
-  // fileName = "";
-  // inputIOSSRegion = nullptr;
-  usePhactoriInputScript         = false;
-  usePhactoriInputJSON           = false;
-  useParaViewExportedScript      = false;
-  phactoriInputScriptFilePath    = "";
-  phactoriInputJSONFilePath      = "";
-  paraViewExportedScriptFilePath = "";
-  catalystStartTimeStep          = 0;
-  useCatalystStartTimeStep       = false;
-  catalystStopTimeStep           = 0;
-  useCatalystStopTimeStep        = false;
-  forceCGNSOutput                = false;
-  forceExodusOutput              = false;
-  useIOSSInputDBType             = false;
-  // iossInputDBType = "";
-  hasCommandLineArguments = false;
-  applicationExitCode     = EXIT_SUCCESS;
+  myRank                             = 0;
+  numRanks                           = 1;
+  printIOSSReport                    = false;
+  copyDatabase                       = false;
+  writeCatalystMeshOneFile           = false;
+  writeCatalystMeshFilePerProc       = false;
+  usePhactoriInputScript             = false;
+  usePhactoriInputJSON               = false;
+  useParaViewExportedScript          = false;
+  phactoriInputScriptFilePath        = "";
+  phactoriInputJSONFilePath          = "";
+  paraViewExportedScriptFilePath     = "";
+  catalystStartTimeStep              = 0;
+  useCatalystStartTimeStep           = false;
+  catalystStopTimeStep               = 0;
+  useCatalystStopTimeStep            = false;
+  forceCGNSOutput                    = false;
+  forceExodusOutput                  = false;
+  useIOSSInputDBType                 = false;
+  hasCommandLineArguments            = false;
+  applicationExitCode                = EXIT_SUCCESS;
+  additionalProperties               = nullptr;
+  sendMultipleGridsToTheSamePipeline = true;
   initMPIRankAndSize();
 }
 
@@ -101,6 +99,7 @@ void IossApplication::runApplication()
   }
 
   callCatalystIOSSDatabaseOnRank();
+  sync();
 
   exitApplicationSuccess();
 }
@@ -119,8 +118,9 @@ void IossApplication::initializeMPI(int argc, char **argv) { MPI_Init(&argc, &ar
 
 void IossApplication::initMPIRankAndSize()
 {
-  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
+  Ioss::ParallelUtils pu{};
+  myRank   = pu.parallel_rank();
+  numRanks = pu.parallel_size();
 }
 
 void IossApplication::finalizeMPI() { MPI_Finalize(); }
@@ -159,7 +159,7 @@ void IossApplication::processCommandLine(int argc, char **argv)
       break;
     case 'i':
       cvalue = optarg;
-      setPhactoriInputJSON(cvalue);
+      addPhactoriInputJSON(cvalue);
       break;
     case 'm': setOutputCatalystMeshOneFile(true); break;
     case 'n': setOutputCatalystMeshFilePerProc(true); break;
@@ -298,14 +298,14 @@ void IossApplication::setOutputCopyOfInputDatabase(bool status) { copyDatabase =
 
 bool IossApplication::outputCatalystMeshOneFileON() { return writeCatalystMeshOneFile; }
 
-bool IossApplication::setOutputCatalystMeshOneFile(bool status)
+void IossApplication::setOutputCatalystMeshOneFile(bool status)
 {
   writeCatalystMeshOneFile = status;
 }
 
 bool IossApplication::outputCatalystMeshFilePerProcON() { return writeCatalystMeshFilePerProc; }
 
-bool IossApplication::setOutputCatalystMeshFilePerProc(bool status)
+void IossApplication::setOutputCatalystMeshFilePerProc(bool status)
 {
   writeCatalystMeshFilePerProc = status;
 }
@@ -322,12 +322,22 @@ void IossApplication::setPhactoriInputScript(const std::string &scriptFilePath)
 
 bool IossApplication::usePhactoriInputJSONON() { return usePhactoriInputJSON; }
 
-std::string IossApplication::getPhactoriInputJSON() { return phactoriInputJSONFilePath; }
+int IossApplication::getNumberOfPhactoriInputJSONs() { return phctriInptJSONFilePathList.size(); }
 
-void IossApplication::setPhactoriInputJSON(const std::string &jsonFilePath)
+std::string IossApplication::getPhactoriInputJSON(int ndx)
 {
-  phactoriInputJSONFilePath = jsonFilePath;
-  usePhactoriInputJSON      = true;
+  if (ndx >= phctriInptJSONFilePathList.size()) {
+    printErrorMessage("phctriInptJSONFilePathList called with ndx too large.");
+    printUsageMessage();
+    exitApplicationFailure();
+  }
+  return phctriInptJSONFilePathList[ndx];
+}
+
+void IossApplication::addPhactoriInputJSON(const std::string &jsonFilePath)
+{
+  phctriInptJSONFilePathList.push_back(jsonFilePath);
+  usePhactoriInputJSON = true;
 }
 
 bool IossApplication::useParaViewExportedScriptON() { return useParaViewExportedScript; }
@@ -362,15 +372,25 @@ void IossApplication::setCatalystStopTimeStep(int timeStep)
 
 bool IossApplication::forceCGNSOutputON() { return forceCGNSOutput; }
 
-bool IossApplication::setForceCGNSOutput(bool status) { forceCGNSOutput = status; }
+void IossApplication::setForceCGNSOutput(bool status) { forceCGNSOutput = status; }
 
 bool IossApplication::forceExodusOutputON() { return forceExodusOutput; }
 
-bool IossApplication::setForceExodusOutput(bool status) { forceExodusOutput = status; }
+void IossApplication::setForceExodusOutput(bool status) { forceExodusOutput = status; }
 
 bool IossApplication::useIOSSInputDBTypeON() { return useIOSSInputDBType; }
 
 std::string IossApplication::getIOSSInputDBType() { return iossInputDBType; }
+
+bool IossApplication::sendMultipleGridsToTheSamePipelineON()
+{
+  return sendMultipleGridsToTheSamePipeline;
+}
+
+void IossApplication::setSendMultipleGridsToTheSamePipeline(bool onOffFlag)
+{
+  sendMultipleGridsToTheSamePipeline = onOffFlag;
+}
 
 void IossApplication::setIOSSInputDBType(const std::string &dbType)
 {
@@ -557,7 +577,8 @@ bool IossApplication::decomposedMeshExists(int ndx)
       fstream.close();
     }
   }
-  MPI_Bcast(&status, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  Ioss::ParallelUtils pu{};
+  pu.broadcast(status);
   return status == 1;
 }
 
@@ -584,7 +605,7 @@ void IossApplication::openInputIOSSDatabase(int ndx)
 
   Ioss::DatabaseIO *dbi =
       Ioss::IOFactory::create(getIOSSDatabaseType(ndx), getFileName(ndx), Ioss::READ_RESTART,
-                              (MPI_Comm)MPI_COMM_WORLD, inputProperties);
+                              Ioss::ParallelUtils::comm_world(), inputProperties);
   if (dbi == nullptr || !dbi->ok(true)) {
     printErrorMessage("Unable to open input file(s) " + getFileName(ndx));
     exitApplicationFailure();
@@ -620,8 +641,9 @@ void IossApplication::copyInputIOSSDatabaseOnRank()
   std::string           fn = copyOutputDatabaseName + "." + getFileSuffix(0);
   Ioss::PropertyManager outputProperties;
   outputProperties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
-  Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(getIOSSDatabaseType(0), fn, Ioss::WRITE_RESULTS,
-                                                  (MPI_Comm)MPI_COMM_WORLD, outputProperties);
+  Ioss::DatabaseIO *dbo =
+      Ioss::IOFactory::create(getIOSSDatabaseType(0), fn, Ioss::WRITE_RESULTS,
+                              Ioss::ParallelUtils::comm_world(), outputProperties);
   if (dbo == nullptr || !dbo->ok(true)) {
     printErrorMessage("Unable to open output file(s) " + fn);
     exitApplicationFailure();
@@ -648,13 +670,18 @@ void IossApplication::callCatalystIOSSDatabaseOnRank()
     callCatalystIOSSDatabaseOnRankOneGrid();
   }
   else {
-    callCatalystIOSSDatabaseOnRankMultiGrid();
+    if (this->sendMultipleGridsToTheSamePipelineON()) {
+      callCatalystIOSSDatabaseOnRankMultiGrid(true);
+    }
+    else {
+      callCatalystIOSSDatabaseOnRankMultiGrid(false);
+    }
   }
 }
 
 const char *gGridInputNames[5] = {"input", "inputB", "inputC", "inputD", "inputE"};
 
-void IossApplication::callCatalystIOSSDatabaseOnRankMultiGrid()
+void IossApplication::callCatalystIOSSDatabaseOnRankMultiGrid(bool sendAllGridsToOnePipeline)
 {
   // create all the ioss database instances
   // create the output region for each grid (one on each database)
@@ -668,6 +695,8 @@ void IossApplication::callCatalystIOSSDatabaseOnRankMultiGrid()
   std::vector<Ioss::Region *>          outputRegions;
   int                                  ii;
 
+  printMessage("IossApplication::callCatalystIOSSDatabaseOnRankMultiGrid entered\n");
+  std::cerr << "IossApplication::callCatalystIOSSDatabaseOnRankMultiGrid entered2\n";
   // create a Ioss::DatabaseIO instance for each grid
   char mytmpnm[256];
   int  imyRandomInt = myuni9(rng);
@@ -676,12 +705,19 @@ void IossApplication::callCatalystIOSSDatabaseOnRankMultiGrid()
   for (ii = 0; ii < numInputRegions; ii++) {
     Ioss::PropertyManager *newProps = new (Ioss::PropertyManager);
     SetUpDefaultProperties(newProps);
-    newProps->add(Ioss::Property("CATALYST_MULTI_INPUT_PIPELINE_NAME", "multipipe1"));
+    if (sendAllGridsToOnePipeline) {
+      newProps->add(Ioss::Property("CATALYST_MULTI_INPUT_PIPELINE_NAME", "multipipe1"));
+    }
     newProps->add(Ioss::Property("CATALYST_INPUT_NAME", gGridInputNames[ii % 5]));
+    if (getNumberOfPhactoriInputJSONs() > 1) {
+      printMessage("getNumberOfPhactoriInputJSONs() > 1\n");
+      printMessage(getPhactoriInputJSON(ii) + "\n");
+      newProps->add(Ioss::Property("PHACTORI_JSON_SCRIPT", getPhactoriInputJSON(ii)));
+    }
     outputProps.push_back(newProps);
     Ioss::DatabaseIO *newDbo =
         Ioss::IOFactory::create(getCatalystDatabaseType(ii), mytmpnm, Ioss::WRITE_RESULTS,
-                                (MPI_Comm)MPI_COMM_WORLD, *newProps);
+                                Ioss::ParallelUtils::comm_world(), *newProps);
     outputDbs.push_back(newDbo);
   }
   // create an output Ioss::Region instance for each grid
@@ -754,7 +790,11 @@ void IossApplication::SetUpDefaultProperties(Ioss::PropertyManager *outputProper
     outputProperties->add(Ioss::Property("PHACTORI_INPUT_SYNTAX_SCRIPT", getPhactoriInputScript()));
   }
   else if (usePhactoriInputJSONON()) {
-    outputProperties->add(Ioss::Property("PHACTORI_JSON_SCRIPT", getPhactoriInputJSON()));
+    printMessage("SetUpDefaultProperties, usePhactoriInputJSONON true\n");
+    if (getNumberOfPhactoriInputJSONs() == 1) {
+      printMessage("1 entry: " + getPhactoriInputJSON(0) + "\n");
+      outputProperties->add(Ioss::Property("PHACTORI_JSON_SCRIPT", getPhactoriInputJSON(0)));
+    }
   }
   else if (useParaViewExportedScriptON()) {
     outputProperties->add(Ioss::Property("CATALYST_SCRIPT", getParaViewExportedScript()));
@@ -773,6 +813,7 @@ void IossApplication::SetUpDefaultProperties(Ioss::PropertyManager *outputProper
   }
 
   outputProperties->add(Ioss::Property("CATALYST_BLOCK_PARSE_INPUT_DECK_NAME", applicationName));
+  addAdditionalProperties(outputProperties);
 }
 
 void IossApplication::callCatalystIOSSDatabaseOnRankOneGrid()
@@ -783,7 +824,7 @@ void IossApplication::callCatalystIOSSDatabaseOnRankOneGrid()
 
   Ioss::DatabaseIO *dbo =
       Ioss::IOFactory::create(getCatalystDatabaseType(0), "catalyst", Ioss::WRITE_RESULTS,
-                              (MPI_Comm)MPI_COMM_WORLD, outputProperties);
+                              Ioss::ParallelUtils::comm_world(), outputProperties);
   if (dbo == nullptr || !dbo->ok(true)) {
     printErrorMessage("Unable to open catalyst database");
     exitApplicationFailure();
@@ -865,4 +906,23 @@ std::string IossApplication::getCatalystDatabaseType(int ndx)
     }
   }
   return retVal;
+}
+
+void IossApplication::setAdditionalProperties(Ioss::PropertyManager *additionalProperties)
+{
+  this->additionalProperties = additionalProperties;
+}
+
+Ioss::PropertyManager *IossApplication::getAdditionalProperties() { return additionalProperties; }
+
+void IossApplication::addAdditionalProperties(Ioss::PropertyManager *outputProperties)
+{
+  if (additionalProperties) {
+
+    Ioss::NameList nlist;
+    additionalProperties->describe(&nlist);
+    for (auto &name : nlist) {
+      outputProperties->add(additionalProperties->get(name));
+    }
+  }
 }

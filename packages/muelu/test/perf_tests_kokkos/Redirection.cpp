@@ -124,7 +124,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
   RCP<Matrix> A = Pr->BuildMatrix();
 
-  LO numRows = A->getNodeNumRows();
+  LO numRows = A->getLocalNumRows();
 
   RCP<TimeMonitor> tm;
 
@@ -154,7 +154,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     GO validation = 0;
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
       typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tCrsMatrix;
       RCP<const tCrsMatrix> tA = Utilities::Op2TpetraCrs(A);
       TEUCHOS_TEST_FOR_EXCEPTION(tA.is_null(), MueLu::Exceptions::RuntimeError,
@@ -172,10 +171,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
       tm = Teuchos::null;
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
-                                 "Tpetra is not available");
-#endif
     }
     if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA

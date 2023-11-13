@@ -43,7 +43,6 @@
 #define KOKKOS_VIEW_UQ_PCE_UTILS_HPP
 
 #include "Kokkos_View_Utils.hpp"
-#include "Kokkos_View.hpp"
 
 namespace Sacado {
   namespace UQ {
@@ -57,7 +56,7 @@ namespace Kokkos {
 // Type name for a local, unmanaged view with possibly a different static size
 template <typename ViewType,
           unsigned LocalSize,
-          unsigned Rank = ViewType::Rank,
+          unsigned Rank = ViewType::rank,
           bool isStatic = ViewType::is_static>
 struct LocalUQPCEView {};
 

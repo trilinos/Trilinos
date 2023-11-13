@@ -45,6 +45,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCPStdSharedPtrConversions.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -58,15 +59,11 @@
 #include "percept/PerceptMesh.hpp"
 #endif
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/CreateAdjacentEntities.hpp"
+#include "stk_mesh/base/DumpMeshInfo.hpp"
 
 namespace panzer_stk {
 
@@ -92,17 +89,19 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
   {
     out << "\nCreating pamgen mesh." << std::endl;
     RCP<stk::io::StkMeshIoBroker> broker = rcp(new stk::io::StkMeshIoBroker(MPI_COMM_WORLD));
+    broker->use_simple_fields();
     broker->add_mesh_database("pamgen_test.gen", "pamgen", stk::io::READ_MESH);
     broker->create_input_mesh();
-    metaData = broker->meta_data_rcp();
-    bulkData = Teuchos::rcp(new stk::mesh::BulkData(*metaData,MPI_COMM_WORLD));
-    broker->set_bulk_data(bulkData);
+    metaData = Teuchos::rcp(broker->meta_data_ptr());
+    std::unique_ptr<stk::mesh::BulkData> bulkUPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create(Teuchos::get_shared_ptr(metaData));
+    bulkData = Teuchos::rcp(bulkUPtr.release());
+    broker->set_bulk_data(Teuchos::get_shared_ptr(bulkData));
     broker->add_all_mesh_fields_as_input_fields();
     broker->populate_bulk_data();
 
     if (verbose) {
-      metaData->dump_all_meta_info(out);
-      bulkData->dump_all_mesh_info(out);
+      stk::mesh::impl::dump_all_meta_info(*metaData, out);
+      stk::mesh::impl::dump_all_mesh_info(*bulkData, out);
     }
   }
 
@@ -141,7 +140,7 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
   {
     out << "\nWriting output file." << std::endl;
     RCP<stk::io::StkMeshIoBroker> broker = rcp(new stk::io::StkMeshIoBroker(MPI_COMM_WORLD));
-    broker->set_bulk_data(bulkData);
+    broker->set_bulk_data(Teuchos::get_shared_ptr(bulkData));
     auto meshIndex_ = broker->create_output_mesh(output_exodus_file_name,stk::io::PURPOSE_UNKNOWN);
 
     const stk::mesh::FieldVector& fields = metaData->get_fields();
@@ -174,17 +173,19 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, acceptance)
   {
     out << "\nReading Exodus file." << std::endl;
     RCP<stk::io::StkMeshIoBroker> broker = rcp(new stk::io::StkMeshIoBroker(MPI_COMM_WORLD));
+    broker->use_simple_fields();
     broker->add_mesh_database(output_exodus_file_name, "exodus", stk::io::READ_MESH);
     broker->create_input_mesh();
-    metaData = broker->meta_data_rcp();
-    bulkData = Teuchos::rcp(new stk::mesh::BulkData(*metaData,MPI_COMM_WORLD));
-    broker->set_bulk_data(bulkData);
+    metaData = Teuchos::rcp(broker->meta_data_ptr());
+    std::unique_ptr<stk::mesh::BulkData> bulkUPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create(Teuchos::get_shared_ptr(metaData));
+    bulkData = Teuchos::rcp(bulkUPtr.release());
+    broker->set_bulk_data(Teuchos::get_shared_ptr(bulkData));
     broker->add_all_mesh_fields_as_input_fields();
     broker->populate_bulk_data();
 
     if (verbose) {
-      metaData->dump_all_meta_info(out);
-      bulkData->dump_all_mesh_info(out);
+      stk::mesh::impl::dump_all_meta_info(*metaData, out);
+      stk::mesh::impl::dump_all_mesh_info(*bulkData, out);
     }
   }
 
@@ -268,8 +269,8 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, basic)
     mesh->writeToExodus(output_file_name);
 
     if (false) {
-      metaData->dump_all_meta_info(out);
-      bulkData->dump_all_mesh_info(out);
+      stk::mesh::impl::dump_all_meta_info(*metaData, out);
+      stk::mesh::impl::dump_all_mesh_info(*bulkData, out);
     }
   }
 
@@ -322,7 +323,7 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, basic)
 
 TEUCHOS_UNIT_TEST(tPamgenFactory, getMeshDimension)
 {
-  TEST_EQUALITY(panzer_stk::getMeshDimension("pamgen_test.gen",MPI_COMM_WORLD,false),3);
+  TEST_EQUALITY(panzer_stk::getMeshDimension("pamgen_test.gen",MPI_COMM_WORLD,"Pamgen"),3);
 }
 
 
@@ -411,7 +412,7 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, keepPerceptData)
     TEST_ASSERT(nonnull(refinedMesh));
     TEST_ASSERT(refinedMesh->get_number_elements()>0);
 
-    // check if the parent information is stored 
+    // check if the parent information is stored
     std::vector<stk::mesh::EntityRank> ranks_to_be_deleted;
     ranks_to_be_deleted.push_back(stk::topology::ELEMENT_RANK);
     ranks_to_be_deleted.push_back(refinedMesh->side_rank());

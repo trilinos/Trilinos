@@ -60,17 +60,6 @@
 
 #define IBM_MPI_WRKAROUND
 
-extern int me;	               // processor id information
-extern int nprocs_row;         // num of procs to which a row is assigned
-extern int nprocs_col;         // num of procs to which a col is assigned
-extern int nrows_matrix;       // number of rows in the matrix
-extern int ncols_matrix;       // number of cols in the matrix
-extern int my_rows;            // num of rows I own
-extern int my_cols;            // num of cols I own
-extern int myrow;
-extern int mycol;
-extern MPI_Comm col_comm;
-
 namespace Adelus {
 
 #ifndef IBM_MPI_WRKAROUND
@@ -101,14 +90,23 @@ namespace Adelus {
   
   //  Permutes -- unwraps the torus-wrap for the solution
   //              using the communication buffer
-  template<class ZDView>
+  template<class HandleType, class ZDView>
   inline
-  void perm1_(ZDView& ZV, int *num_my_rhs) {
-  
+  void perm1_(HandleType& ahandle, ZDView& ZV) {
+
+    MPI_Comm comm     = ahandle.get_comm();
+    int me            = ahandle.get_myrank();
+    int my_rhs_       = ahandle.get_my_rhs();
+    int my_rows       = ahandle.get_my_rows();
+    int nprocs_row    = ahandle.get_nprocs_row();
+    int nprocs_col    = ahandle.get_nprocs_col();
+    int nrows_matrix  = ahandle.get_nrows_matrix();
+    int ncols_matrix  = ahandle.get_ncols_matrix();
+    int my_first_row  = ahandle.get_my_first_row();
+    int my_first_col  = ahandle.get_my_first_col();
+
     int i;
-    int my_rhs_;
-  
-  
+
     int bytes;
     int dest;
     int type;
@@ -139,8 +137,6 @@ namespace Adelus {
   #ifdef GET_TIMING
     t2 = MPI_Wtime();
   #endif
-  
-    my_rhs_=*num_my_rhs;
 
     typedef typename ZDView::value_type value_type;
     typedef typename ZDView::device_type::execution_space execution_space;
@@ -217,19 +213,19 @@ namespace Adelus {
   
           }
   
-          if( dest !=me ) {
+          if( dest != me ) {
   
             bytes = (my_rhs_ + 1)*sizeof(ADELUS_DATA_TYPE);
   
             MPI_Irecv( (char *)(reinterpret_cast<ADELUS_DATA_TYPE *>(rhs_temp.data())+next_s),bytes,MPI_CHAR,MPI_ANY_SOURCE,
-                  MPI_ANY_TAG,MPI_COMM_WORLD,&msgrequest);
+                  MPI_ANY_TAG,comm,&msgrequest);
 
            auto sub_ZV = subview(ZV, ptr1_idx, Kokkos::ALL());     				
            zcopy_wr_local_index(my_rhs_, sub_ZV, temp_s, local_index);
   
            type = PERMTYPE+change_send;
            MPI_Send((char *)(reinterpret_cast<ADELUS_DATA_TYPE *>(temp_s.data())),bytes,MPI_CHAR,dest,
-                   type,MPI_COMM_WORLD);
+                   type,comm);
            change_send++;
   
            next_s = change_send * (my_rhs_+1);
@@ -270,7 +266,7 @@ namespace Adelus {
     totalpermtime = MPI_Wtime() - t2;
   #endif
   #ifdef GET_TIMING
-    showtime("Total time in perm",&totalpermtime);
+    showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Total time in perm", &totalpermtime);
   #endif
   }
 
@@ -286,21 +282,30 @@ namespace Adelus {
   
   //  Permutes -- unwraps the torus-wrap for the solution
   //              using the communication buffer
-  template<class ZDView>
+  template<class HandleType, class ZDView>
   inline
-  void perm1_(ZDView& ZV, int *num_my_rhs) {
-  
+  void perm1_(HandleType& ahandle, ZDView& ZV) {
+
+    MPI_Comm col_comm = ahandle.get_col_comm();
+    int myrow         = ahandle.get_myrow();   
+    int my_rhs_       = ahandle.get_my_rhs();
+    int my_rows       = ahandle.get_my_rows();
+    int nprocs_row    = ahandle.get_nprocs_row();
+    int nprocs_col    = ahandle.get_nprocs_col();
+    int nrows_matrix  = ahandle.get_nrows_matrix();
+    int ncols_matrix  = ahandle.get_ncols_matrix();
+    int my_first_row  = ahandle.get_my_first_row();
+
     int i;
-    int my_rhs_;
   
     int dest, global_index, local_index;
-  
+
     int row_offset;
     int ncols_proc1, ncols_proc2, nprocs_row1;
     int ptr1_idx, myfirstrow;
   
   #ifdef GET_TIMING
-  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
     double t1, copyhostpinnedtime;
   #endif
     double t2;
@@ -310,8 +315,6 @@ namespace Adelus {
   #ifdef GET_TIMING
     t2 = MPI_Wtime();
   #endif
-  
-    my_rhs_=*num_my_rhs;
 
     typedef typename ZDView::value_type value_type;
   #ifdef PRINT_STATUS
@@ -320,14 +323,18 @@ namespace Adelus {
     typedef typename ZDView::device_type::memory_space memory_space;
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewMatrixType;
 
-  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+  #ifdef ADELUS_HOST_PINNED_MEM_MPI
+  #if defined(KOKKOS_ENABLE_CUDA)
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
+  #elif defined(KOKKOS_ENABLE_HIP)
+    typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
+  #endif
   #endif
 
     if (my_rhs_ > 0) {
   
       ViewMatrixType rhs_temp ( "rhs_temp", nrows_matrix, my_rhs_ );//allocate full-size RHS vectors
-  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
       View2DHostPinnType h_rhs_temp( "h_rhs_temp", nrows_matrix, my_rhs_ );
   #endif
 
@@ -342,11 +349,11 @@ namespace Adelus {
       myfirstrow = myrow * (nrows_matrix / nprocs_col) + 1;
       myfirstrow = ( myrow > (nrows_matrix%nprocs_col) ) ? myfirstrow + (nrows_matrix%nprocs_col) :
                                                            myfirstrow + myrow;
-  														 
+ 
       ptr1_idx = 0;
   
   #ifdef PRINT_STATUS
-      printf("Rank %i -- perm1_() Begin permutation, execution_space %s, memory_space %s\n",me,typeid(execution_space).name(),typeid(memory_space).name());
+      printf("Rank %i -- perm1_() Begin permutation, execution_space %s, memory_space %s\n",ahandle.get_myrank(),typeid(execution_space).name(),typeid(memory_space).name());
   #endif
   
       for (i=0; i<my_rows; i++) {
@@ -368,7 +375,14 @@ namespace Adelus {
   
         ptr1_idx++;
       }
-  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+
+  //Workaround for GPU-aware MPI issue on HIP: fence here to make sure "zcopy_wr_global_index"
+  //                                           completes before MPI_Allreduce
+  #if defined(KOKKOS_ENABLE_HIP) && !defined(ADELUS_HOST_PINNED_MEM_MPI)
+      Kokkos::fence();
+  #endif
+
+  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   #ifdef GET_TIMING
       t1 = MPI_Wtime();
   #endif
@@ -381,9 +395,9 @@ namespace Adelus {
   
       Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)), 
                          subview(h_rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
-  #else //CUDA-aware MPI
+  #else //GPU-aware MPI
       MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
-  
+
       Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)), 
                          subview(rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
   #endif  
@@ -394,10 +408,12 @@ namespace Adelus {
   #endif
 
   #ifdef GET_TIMING
-  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-    showtime("Time to copy dev mem --> host pinned mem",&copyhostpinnedtime);   
+  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+    showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+             "Time to copy dev mem --> host pinned mem", &copyhostpinnedtime);   
   #endif
-    showtime("Total time in perm",&totalpermtime);
+    showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+             "Total time in perm", &totalpermtime);
   #endif
   }
 

@@ -130,9 +130,9 @@ twoD_diffusion_problem(
   }
 
   // Build Jacobian graph
-  size_t NumMyElements = x_map->getNodeNumElements();
+  size_t NumMyElements = x_map->getLocalNumElements();
   ArrayView<const GlobalOrdinal> MyGlobalElements = 
-    x_map->getNodeElementList ();
+    x_map->getLocalElementList ();
   graph = rcp(new Tpetra_CrsGraph(x_map, 5));
   for (size_t i=0; i<NumMyElements; ++i ) {
 
@@ -375,9 +375,9 @@ computeA(const FuncT& func, const Tpetra_Vector& p, Tpetra_CrsMatrix& jac)
 
   Teuchos::ArrayRCP<const Scalar> p_view = p.get1dView();
   Teuchos::Array<Scalar> rv(p_view());
-  size_t NumMyElements = x_map->getNodeNumElements();
+  size_t NumMyElements = x_map->getLocalNumElements();
   ArrayView<const GlobalOrdinal> MyGlobalElements = 
-    x_map->getNodeElementList ();
+    x_map->getLocalElementList ();
   MeshScalar h2 = h*h;
   Scalar val;
 

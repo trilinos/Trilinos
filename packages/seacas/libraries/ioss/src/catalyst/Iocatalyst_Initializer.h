@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iocatalyst_Initializer_h
-#define IOSS_Iocatalyst_Initializer_h
+#pragma once
+
+#include "iocatalyst_export.h"
 
 namespace Iocatalyst {
   /** \brief Initialization of the Catalyst database parts of the Ioss library.
@@ -14,7 +15,7 @@ namespace Iocatalyst {
    *  then an object of this type must be created before using any other functions
    *  or methods in the Ioss library except Ioss::Init::Initializer().
    */
-  class Initializer
+  class IOCATALYST_EXPORT Initializer
   {
   public:
     Initializer();
@@ -25,4 +26,3 @@ namespace Iocatalyst {
     static int useCount;
   };
 } // namespace Iocatalyst
-#endif

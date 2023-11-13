@@ -909,7 +909,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm, FadFad_SendReceive ) {                   \
     success = true;                                                     \
 }
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM)
+#if defined(HAVE_SACADO_KOKKOS) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM)
 
 #include "Kokkos_Core.hpp"
 
@@ -1195,6 +1195,14 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
   FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, Cuda)
 #else
 #define FAD_KOKKOS_COMM_TESTS_CUDA(FadType, FAD)
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+#define FAD_KOKKOS_COMM_TESTS_HIP(FadType, FAD)                          \
+  using Kokkos::HIP;					\
+  FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, HIP)
+#else
+#define FAD_KOKKOS_COMM_TESTS_HIP(FadType, FAD)
 #endif
 
 #ifdef KOKKOS_ENABLE_SERIAL

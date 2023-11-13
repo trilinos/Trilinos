@@ -41,7 +41,6 @@
 #ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 #define TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 
-#include "Kokkos_View.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -55,6 +54,7 @@
 namespace TpetraExamples {
 
 using deviceType = Tpetra::Map<>::device_type;
+using hostType = typename Kokkos::DualView<int *,deviceType>::t_host::device_type;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 using execution_space = deviceType::execution_space;

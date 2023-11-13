@@ -218,3 +218,14 @@ NOX::Abstract::Group::getNormLastLinearSolveResidual(double& /* residual */) con
   return NOX::Abstract::Group::NotDefined;
 }
 
+Teuchos::RCP<const NOX::Abstract::Group>
+NOX::Abstract::Group::getNestedGroup() const
+{
+  return Teuchos::null;
+}
+
+Teuchos::RCP<NOX::Abstract::Group>
+NOX::Abstract::Group::getNestedGroup()
+{
+  return Teuchos::null;
+}

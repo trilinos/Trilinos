@@ -1,51 +1,24 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 #include "KokkosBlas3_common.hpp"
 #include "KokkosBlas3_trmm_perf_test.hpp"
 #include "KokkosBlas3_gemm_perf_test.hpp"
 
 #include <cstdlib>
+#include <memory>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -71,6 +44,7 @@ static struct option long_options[] = {
     {"routines", required_argument, 0, 'r'},
     {"verify", required_argument, 0, 'v'},
     {"ninter", required_argument, 0, 'j'},
+    {"use_simd", required_argument, 0, 'f'},
     {0, 0, 0, 0}};
 
 static void __print_help_blas3_perf_test() {
@@ -224,10 +198,18 @@ static void __print_help_blas3_perf_test() {
   printf("\t-j, --ninter=NINTER\n");
   printf("\t\tInterleaving size for armpl. (untimed)\n");
   printf(
-    "\t\t\tValid values for NINTER is any positive integer "
-    "that evenly divides the batch size. "
-    "(default: %d)\n",
-    DEFAULT_NINTER);
+      "\t\t\tValid values for NINTER is any positive integer "
+      "that evenly divides the batch size. "
+      "(default: %d)\n",
+      DEFAULT_NINTER);
+
+  printf("\t-u, --use_simd=SIMD\n");
+  printf("\t\tWhether to use SIMD views.\n");
+  printf(
+      "\t\t\tValid values for SIMD are 1 to use SIMD views and 0 to use "
+      "non-SIMD"
+      "views instead. (default: %d)\n",
+      DEFAULT_USE_SIMD);
 }
 
 static void __blas3_perf_test_input_error(char ** /*argv*/, char short_opt,
@@ -242,6 +224,7 @@ int main(int argc, char **argv) {
   int option_idx = 0, ret, i;
   char *n_str = nullptr, *adim = nullptr, *bdim = nullptr, *cdim = nullptr;
   std::filebuf fb;
+  std::ostream out(&fb);
   char *out_file                          = nullptr;
   using rt_type                           = decltype(do_trmm_invoke);
   rt_type *routine_table[BLAS_ROUTINES_N] = {
@@ -281,6 +264,7 @@ int main(int argc, char **argv) {
   options.blas_args.batch_size_last_dim = DEFAULT_BATCH_SIZE_LAST_DIM;
   options.verify                        = DEFAULT_VERIFY;
   options.ninter                        = DEFAULT_NINTER;
+  options.use_simd                      = DEFAULT_USE_SIMD;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
   options.blas_args.trmm.alpha     = DEFAULT_TRMM_ALPHA;
@@ -289,9 +273,9 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.alpha     = DEFAULT_GEMM_ALPHA;
   options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
-  while (
-      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:",
-                         long_options, &option_idx)) != -1) {
+  while ((ret = getopt_long(argc, argv,
+                            "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:f:",
+                            long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
       case 't':
@@ -417,6 +401,7 @@ int main(int argc, char **argv) {
       case 'z': options.blas_args.team_size = atoi(optarg); break;
       case 'n': options.blas_args.vector_len = atoi(optarg); break;
       case 'u': options.blas_args.use_auto = atoi(optarg); break;
+      case 'f': options.use_simd = atoi(optarg); break;
       case 'c':
         out_file         = optarg;
         options.out_file = std::string(out_file);
@@ -429,7 +414,6 @@ int main(int argc, char **argv) {
 
   if (out_file != nullptr) {
     fb.open(out_file, std::ios::out);
-    std::ostream out(&fb);
     options.out = &out;
   }
 

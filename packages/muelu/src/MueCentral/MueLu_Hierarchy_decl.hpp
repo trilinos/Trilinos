@@ -64,18 +64,14 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManager.hpp" // no fwd declaration because constructor of FactoryManager is used as a default parameter of Setup()
-#include "MueLu_HierarchyUtils_fwd.hpp"
 #include "MueLu_KeepType.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory_fwd.hpp"
-#include "MueLu_RFactory_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SmootherFactoryBase_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_TwoLevelFactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
@@ -157,6 +153,7 @@ namespace MueLu {
 
     void                         SetMaxCoarseSize(Xpetra::global_size_t maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
     void                         SetPRrebalance(bool doPRrebalance)                    { doPRrebalance_ = doPRrebalance; }
+    void                         SetPRViaCopyrebalance(bool doPRViaCopyrebalance)      { doPRViaCopyrebalance_ = doPRViaCopyrebalance; }
     void                         SetImplicitTranspose(const bool& implicit)            { implicitTranspose_ = implicit; }
     void                         SetFuseProlongationAndUpdate(const bool& fuse)        { fuseProlongationAndUpdate_ = fuse; }
 
@@ -401,6 +398,7 @@ namespace MueLu {
     //! Potential speed up of the setup by skipping rebalancing of P and R, and
     //! doing extra import during solve
     bool doPRrebalance_;
+    bool doPRViaCopyrebalance_;   // fully explicit, needed for CombinePFactory
 
     //! Hierarchy may be used in a standalone mode, or as a preconditioner
     bool isPreconditioner_;

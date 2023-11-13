@@ -119,12 +119,6 @@ public:
     //! The part of the sparse matrix's graph on each MPI process.
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type local_graph_device_type;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    /// \brief The specialization of Kokkos::CrsMatrix that represents
-    ///        the part of the sparse matrix on each MPI process.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
-#endif
-
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///        the part of the sparse matrix for each MPI process on device.
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type local_matrix_device_type;
@@ -158,6 +152,12 @@ public:
     /// you had previously called fillComplete() on the graph.  In
     /// that case, you must call fillComplete() on the graph again
     /// before invoking this CrsMatrix constructor.
+    ///
+    /// The matrix is constructed in "closed" fill state and, if the the
+    /// optional "start owned" parameter is set to true, "owned" state. You must
+    /// first call beginAssembly or beginModify if you wish to change its
+    /// entries (the difference between these two can be found elsewhere in the
+    /// documentation).
     ///
     /// This constructor is marked \c explicit so that you can't
     /// create a FECrsMatrix by accident when passing a FECrsGraph into a

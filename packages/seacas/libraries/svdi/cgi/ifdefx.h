@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,18 +19,16 @@
  *
  * This include file is used by MDCGI.C and all CGISxxx.C files.
  */
-
-#ifndef IFDEFX_H
-#define IFDEFX_H
+#pragma once
 
 #if defined(ADDC_)
 #endif
 #if !defined(CRA) && !defined(ADDC_) && !defined(COUGAR)
-#define xcoon_ xcoon
+#define xcoon_  xcoon
 #define xcooff_ xcooff
-#define xcact_ xcact
+#define xcact_  xcact
 #define xcdact_ xcdact
-#define xcsol_ xcsol
+#define xcsol_  xcsol
 #define cgia60_ cgia60
 #define cgi16c_ cgi16c
 #define cgi35c_ cgi35c
@@ -54,11 +52,11 @@
 #define cgifsq_ cgifsq
 #endif
 #if defined(CRA)
-#define xcoon_ XCOON
+#define xcoon_  XCOON
 #define xcooff_ XCOOFF
-#define xcact_ XCACT
+#define xcact_  XCACT
 #define xcdact_ XCDACT
-#define xcsol_ XCSOL
+#define xcsol_  XCSOL
 #define cgi16c_ CGI16C
 #define cgi35c_ CGI35C
 #define cgi48l_ CGI48L
@@ -80,6 +78,4 @@
 #define cgif8t_ CGIF8T
 #define cgif3c_ CGIF3C
 #define cgifsq_ CGIFSQ
-#endif
-
 #endif

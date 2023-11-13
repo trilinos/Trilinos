@@ -52,8 +52,7 @@
 
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_UserPFactory.hpp"
-#include "MueLu_Utilities.hpp"
+#include "MueLu_UserPFactory_decl.hpp"
 
 namespace MueLu {
 
@@ -117,7 +116,7 @@ namespace MueLu {
 
     RCP<MultiVector> coarseCoords = MultiVectorFactory::Build(coarseMap, 2);
     ArrayRCP<Scalar> x = coarseCoords->getDataNonConst(0), y = coarseCoords->getDataNonConst(1);
-    for (size_t LID = 0; LID < coarseMap->getNodeNumElements(); ++LID) {
+    for (size_t LID = 0; LID < coarseMap->getLocalNumElements(); ++LID) {
       GlobalOrdinal GID = coarseMap->getGlobalElement(LID) - coarseMap->getIndexBase();
       GlobalOrdinal i = GID % n, j = GID/n;
       x[LID] = i;

@@ -1,3 +1,15 @@
+TRIBITS_ADD_EXECUTABLE(
+    Sphynx_Research_Driver
+    SOURCES Sphynx_Research_Driver.cpp
+    COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE(
+    Largest_Comp_To_Binary
+    SOURCES largestComponent2Binary.cpp
+    COMM serial mpi
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Sphynx
   SOURCES Test_Sphynx.cpp
@@ -127,7 +139,6 @@ IF(Trilinos_ENABLE_MueLu)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 ENDIF()
-
 
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_sphynx_tests

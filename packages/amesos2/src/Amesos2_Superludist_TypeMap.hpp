@@ -111,23 +111,29 @@ extern "C" {
 
 } // end extern "C"
 
+// multiplication of SLUD types
+template <typename slu_scalar_t, typename slu_mag_t>
+struct slu_dist_mult {};
+
+// This specialization handles the generic case were the scalar and
+// magnitude types are double or float.
+template <typename T>
+struct slu_dist_mult<T,T> : std::multiplies<T> {};
+
+// For namespace/macro reasons, we prefix our variables with amesos_*
+template <>
+struct slu_dist_mult<double,double>
+{
+  double operator()(double a, double b) {
+    return( a*b );
+  }
+};
 
 #if defined(HAVE_TEUCHOS_COMPLEX)  && !defined(__clang__)
 
-  // Declare and specialize a std::binary_funtion class for
-  // multiplication of SLUD types
-  template <typename slu_scalar_t, typename slu_mag_t>
-  struct slu_mt_mult {};
-
-  // This specialization handles the generic case were the scalar and
-  // magnitude types are double or float.
-  template <typename T>
-  struct slu_mt_mult<T,T> : std::multiplies<T> {};
-
-  // For namespace/macro reasons, we prefix our variables with amesos_*
   template <>
-  struct slu_mt_mult<Z::doublecomplex,double>
-    : std::binary_function<Z::doublecomplex,double,Z::doublecomplex> {
+  struct slu_dist_mult<Z::doublecomplex,double>
+  {
     Z::doublecomplex operator()(Z::doublecomplex amesos_z, double amesos_d) {
       Z::doublecomplex amesos_zr;
       zd_mult(&amesos_zr, &amesos_z, amesos_d);	// zd_mult is a macro, so no namespacing
@@ -136,8 +142,8 @@ extern "C" {
   };
 
   template <>
-  struct slu_mt_mult<Z::doublecomplex,Z::doublecomplex>
-    : std::binary_function<Z::doublecomplex,Z::doublecomplex,Z::doublecomplex> {
+  struct slu_dist_mult<Z::doublecomplex,Z::doublecomplex>
+  {
     Z::doublecomplex operator()(Z::doublecomplex amesos_z1, Z::doublecomplex amesos_z2) {
       Z::doublecomplex amesos_zr;
       zz_mult(&amesos_zr, &amesos_z1, &amesos_z2);    // zz_mult is a macro, so no namespacing

@@ -126,7 +126,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
                                                    side_effect=mock_subprocess_check_output)
         self.mock_subprocess_check_output = self.patch_subprocess_check_output.start()
 
-        self.patch_modulehelper_module = patch('LoadEnv.setenvironment.ModuleHelper.module',
+        self.patch_modulehelper_module = patch('setenvironment.ModuleHelper.module',
                                                side_effect=mock_module_apply)
         self.mock_modulehelper_module  = self.patch_modulehelper_module.start()
 
@@ -148,7 +148,6 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         """
         output = argparse.Namespace(
             source_repo_url="https://github.com/trilinos/Trilinos",
-            source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
@@ -169,7 +168,9 @@ class TrilinosPRConfigurationStandardTest(TestCase):
             req_mem_per_core=3.0,
             max_cores_allowed=12,
             num_concurrent_tests=-1,
-            dry_run = False
+            ccache_enable=False,
+            dry_run = False,
+            use_explicit_cachefile = False
         )
         return output
 
@@ -236,7 +237,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         - Change args to enable dry_run mode.
         """
         args = self.dummy_args()
-        args.pullrequest_build_name = "python-3"
+        args.pullrequest_build_name = "Trilinos_PR_python3"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
 
         # prepare step

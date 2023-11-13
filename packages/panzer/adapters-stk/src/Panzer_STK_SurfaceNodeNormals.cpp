@@ -91,9 +91,16 @@ namespace panzer_stk {
     std::vector<stk::mesh::Entity> sides;
     stk::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
 
+    std::vector<std::size_t> missingElementIndices;
     std::vector<std::size_t> localSideTopoIDs;
     std::vector<stk::mesh::Entity> parentElements;
-    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
+    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements,missingElementIndices);
+
+    // Delete all sides whose neighboring element in elementBlockName is not in the current process
+    std::vector<std::size_t>::reverse_iterator index;
+    for(index=missingElementIndices.rbegin(); index != missingElementIndices.rend(); ++index) {
+      sides.erase(sides.begin()+*index);
+    }
 
     if (pout != NULL) {
       for (std::size_t i=0; i < localSideTopoIDs.size(); ++i) {
@@ -129,17 +136,17 @@ namespace panzer_stk {
     
       std::vector<stk::mesh::Entity> elementEntities;
       elementEntities.push_back(*parentElement); // notice this is size 1!
-      PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> vertices 
-          = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getVertexCount(), mesh->getDimension());
-      auto vert_view = vertices.get_view();
-      mesh->getElementVerticesNoResize(elementEntities,elementBlockName,vert_view);
+      PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> nodes 
+          = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getNodeCount(), mesh->getDimension());
+      auto node_view = nodes.get_view();
+      mesh->getElementNodesNoResize(elementEntities,elementBlockName,node_view);
       
       panzer::CellData sideCellData(1,*sideID,parentTopology); // this is size 1 because elementEntties is size 1!
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));
 
       panzer::IntegrationValues2<double> iv("",true);
       iv.setupArrays(ir);
-      iv.evaluateValues(vertices);
+      iv.evaluateValues(nodes);
       
       // KK: use serial interface; jac_at_point (D,D) from (C,P,D,D)
       {
@@ -258,9 +265,16 @@ namespace panzer_stk {
 
     RCP<const shards::CellTopology> parentTopology = mesh->getCellTopology(elementBlockName);
 
+    std::vector<std::size_t> missingElementIndices;
     std::vector<std::size_t> localSideTopoIDs;
     std::vector<stk::mesh::Entity> parentElements;
-    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
+    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements,missingElementIndices);
+
+    // Delete all sides whose neighboring element in elementBlockName is not in the current process
+    std::vector<std::size_t>::reverse_iterator index;
+    for(index=missingElementIndices.rbegin(); index != missingElementIndices.rend(); ++index) {
+      sides.erase(sides.begin()+*index);
+    }
     
     std::vector<stk::mesh::Entity>::const_iterator side = sides.begin();
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();

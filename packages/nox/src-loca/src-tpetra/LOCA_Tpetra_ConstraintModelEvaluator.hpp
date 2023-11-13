@@ -47,8 +47,10 @@ namespace LOCA {
 
       void setX(const NOX::Abstract::Vector& x);
 
+      /// Set parameter value given a parameter indices corresponding to the LOCA::ParameterVector.
       void setParam(int paramID, double val);
 
+      /// Set parameter value given a parameter indices corresponding to the LOCA::ParameterVector.
       void setParams(const std::vector<int>& paramIDs,
                      const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
@@ -71,6 +73,9 @@ namespace LOCA {
       bool isDXZero() const;
 
       NOX::Abstract::MultiVector * getDX () const;
+
+      // Convenience method for unit testing
+      const LOCA::ParameterVector getParams() const;
 
     private:
 

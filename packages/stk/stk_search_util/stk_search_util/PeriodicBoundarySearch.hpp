@@ -53,20 +53,20 @@ class matrix3x3
 
         void setData(const int index, const double data)
         {
-            ThrowErrorIf(index<0 or index>8);
+            STK_ThrowErrorIf(index<0 or index>8);
             m_data[index] = data;
         }
 
         double getData(const int index) const
         {
-            ThrowErrorIf(index<0 or index>8);
+            STK_ThrowErrorIf(index<0 or index>8);
             return m_data[index];
         }
 
         double getData(const int row, const int col) const
         {
-            ThrowErrorIf(row<0 or row >2);
-            ThrowErrorIf(col<0 or col>2);
+            STK_ThrowErrorIf(row<0 or row >2);
+            STK_ThrowErrorIf(col<0 or col>2);
             int index = row*3 + col;
             return m_data[index];
         }
@@ -98,7 +98,7 @@ class matrix3x3
 inline void fillRotationMatrix(const double angleInRadians,  double axisX,  double axisY,  double axisZ, matrix3x3 &rotationMatrix)
 {
     double magnitude = sqrt(axisX*axisX + axisY*axisY + axisZ*axisZ);
-    ThrowErrorIf(magnitude == 0);
+    STK_ThrowErrorIf(magnitude == 0);
 
     axisX /= magnitude;
     axisY /= magnitude;
@@ -286,7 +286,7 @@ public:
                                 const stk::mesh::Selector & range,
                                 const double search_tol = 1.e-10)
   {
-    ThrowErrorIf(m_hasRotationalPeriodicity);
+    STK_ThrowErrorIf(m_hasRotationalPeriodicity);
     m_periodic_mappings.emplace_back(domain, range);
     m_transforms.push_back( TransformHelper() );
     m_search_tolerances.push_back(search_tol);
@@ -303,7 +303,7 @@ public:
     m_search_tolerances.push_back(search_tol);
 
     //only one periodic BC can exist with rotational periodicity
-    ThrowRequire(m_periodic_mappings.size() == 1);
+    STK_ThrowRequire(m_periodic_mappings.size() == 1);
 
     m_hasRotationalPeriodicity = true;
 
@@ -316,7 +316,7 @@ public:
 
   const stk::mesh::Ghosting & get_ghosting() const
   {
-    ThrowRequire(m_periodic_ghosts);
+    STK_ThrowRequire(m_periodic_ghosts);
     return *m_periodic_ghosts;
   }
 
@@ -326,7 +326,7 @@ public:
    */
   void create_ghosting(const std::string & name)
   {
-    ThrowRequire(m_bulk_data.in_modifiable_state());
+    STK_ThrowRequire(m_bulk_data.in_modifiable_state());
     const int parallel_rank = m_bulk_data.parallel_rank();
     std::vector<stk::mesh::EntityProc> send_nodes;
     for (size_t i=0; i<m_search_results.size(); ++i) {
@@ -344,7 +344,7 @@ public:
         {
           if (range_proc == parallel_rank) continue;
 
-          ThrowRequire(m_bulk_data.parallel_owner_rank(domain_node) == domain_proc);
+          STK_ThrowRequire(m_bulk_data.parallel_owner_rank(domain_node) == domain_proc);
 
           send_nodes.emplace_back(domain_node, range_proc);
 //          std::cout << "On proc " << m_bulk_data.parallel_rank() << " we are sending domain node to range node "
@@ -355,7 +355,7 @@ public:
         {
           if (domain_proc == parallel_rank) continue;
 
-          ThrowRequire(m_bulk_data.parallel_owner_rank(range_node) == range_proc);
+          STK_ThrowRequire(m_bulk_data.parallel_owner_rank(range_node) == range_proc);
 
           send_nodes.emplace_back(range_node, domain_proc);
 //          std::cout << "On proc " << m_bulk_data.parallel_rank() << " we are sending range node to domain node "
@@ -399,7 +399,7 @@ private:
       {
         if ((m_transforms[0].m_transform_type != TRANSLATION)
             || (m_transforms[1].m_transform_type != TRANSLATION)) {
-          ThrowErrorMsg("Rotation not supported when there are 2 periodic conditions.");
+          STK_ThrowErrorMsg("Rotation not supported when there are 2 periodic conditions.");
         }
         const stk::mesh::Selector & domainA = m_periodic_mappings[0].m_domain;
         const stk::mesh::Selector & domainB = m_periodic_mappings[1].m_domain;
@@ -426,7 +426,7 @@ private:
             || (m_transforms[1].m_transform_type != TRANSLATION)
             || (m_transforms[2].m_transform_type != TRANSLATION)
             ) {
-          ThrowErrorMsg("Rotation not supported when there are 3 periodic conditions.");
+          STK_ThrowErrorMsg("Rotation not supported when there are 3 periodic conditions.");
         }
         const stk::mesh::Selector & domainA = m_periodic_mappings[0].m_domain;
         const stk::mesh::Selector & domainB = m_periodic_mappings[1].m_domain;
@@ -472,7 +472,7 @@ private:
         break;
       }
       default:
-        ThrowErrorMsg("Cannot handle more than 3 periodic pairs");
+        STK_ThrowErrorMsg("Cannot handle more than 3 periodic pairs");
         break;
     }
   }
@@ -506,7 +506,7 @@ private:
                                     transform.m_rotation, transform.m_translation);
         break;
       default:
-        ThrowErrorMsg("Periodic transform method doesn't exist");
+        STK_ThrowErrorMsg("Periodic transform method doesn't exist");
         break;
     }
 
@@ -567,7 +567,7 @@ private:
         break;
       }
       default:
-        ThrowErrorMsg("Unknown transform type.");
+        STK_ThrowErrorMsg("Unknown transform type.");
         break;
     }
 

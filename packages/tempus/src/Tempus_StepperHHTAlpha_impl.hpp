@@ -409,7 +409,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
         Thyra::put_scalar(0.0, a_init.ptr());
       }
       wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
-      const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
+      const Thyra::SolveStatus<Scalar> sStatus=(*(this->solver_)).solve(&*a_init);
 
       workingState->setSolutionStatus(sStatus);  // Converged --> pass.
       Thyra::copy(*a_init, a_old.ptr());
@@ -439,7 +439,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
       StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
     //Solve for new acceleration
-    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
+    const Thyra::SolveStatus<Scalar> sStatus = (*(this->solver_)).solve(&*a_new);
 
     stepperHHTAlphaAppAction_->execute(solutionHistory, thisStepper,
       StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);

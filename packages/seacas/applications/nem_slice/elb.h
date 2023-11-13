@@ -1,13 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-
-#ifndef _EXOIILB_CONST_H_
-#define _EXOIILB_CONST_H_
+#pragma once
 
 #include "elb_elem.h"
 #include <cstdio>
@@ -16,9 +14,9 @@
 #include <vector>
 
 #define ELB_VERSION "4.19"
-#define UTIL_NAME "nem_slice"
-#define ELB_FALSE 0
-#define ELB_TRUE 1
+#define UTIL_NAME   "nem_slice"
+#define ELB_FALSE   0
+#define ELB_TRUE    1
 
 /* Macro for maximum value */
 #ifndef MAX
@@ -30,14 +28,16 @@
  * values, the more memory-efficient the code will be. Larger values
  * will likely speed execution and prevent swap thrashing.
  */
-#define SURND_ALLOC 8
-#define ADJ_ALLOC 8
+#define SURND_ALLOC    8
+#define ADJ_ALLOC      8
 #define MEM_CHUNK_SIZE 16 /* Value MUST be >= 2 */
-#define MEM_GROWTH 1.5
+#define MEM_GROWTH     1.5
 
 #define MAX_INP_LINE 10240
 
-#if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
+#if (__cplusplus >= 201703L)
+#define FALL_THROUGH [[fallthrough]]
+#elif defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
 #define FALL_THROUGH [[gnu::fallthrough]]
 #else
 #define FALL_THROUGH ((void)0)
@@ -83,19 +83,19 @@ template <typename INT> struct LB_Description
   int *vertex2proc{nullptr};
 
   /* Nodal */
-  std::vector<std::vector<INT>> int_nodes;
-  std::vector<std::vector<INT>> bor_nodes;
-  std::vector<std::vector<INT>> ext_nodes;
-  std::vector<std::vector<INT>> ext_procs;
+  std::vector<std::vector<INT>> int_nodes{};
+  std::vector<std::vector<INT>> bor_nodes{};
+  std::vector<std::vector<INT>> ext_nodes{};
+  std::vector<std::vector<INT>> ext_procs{};
 
   /* Elemental */
   std::vector<std::vector<std::vector<INT>>> born_procs{};
-  std::vector<std::vector<INT>>              int_elems;
-  std::vector<std::vector<INT>>              bor_elems;
-  std::vector<std::vector<INT>>              e_cmap_elems;
-  std::vector<std::vector<INT>>              e_cmap_sides;
-  std::vector<std::vector<INT>>              e_cmap_procs;
-  std::vector<std::vector<INT>>              e_cmap_neigh;
+  std::vector<std::vector<INT>>              int_elems{};
+  std::vector<std::vector<INT>>              bor_elems{};
+  std::vector<std::vector<INT>>              e_cmap_elems{};
+  std::vector<std::vector<INT>>              e_cmap_sides{};
+  std::vector<std::vector<INT>>              e_cmap_procs{};
+  std::vector<std::vector<INT>>              e_cmap_neigh{};
 
   LB_Description() = default;
 };
@@ -119,12 +119,12 @@ struct Problem_Description
   int   mech_add_procs{-1};   /* adds processors in cases of mechanisms       */
   int   dsd_add_procs{-1};    /* adds processors in cases of disconnected subdomains */
   int   no_sph{-1};
-  int   fix_columns{0}; /* detect, fix vertical column partitioning */
+  int   fix_columns{0};       /* detect, fix vertical column partitioning */
   char *groups{nullptr};
-  int * group_no{nullptr};
-  int   num_groups{-1};
-  int   int64db{0};  /* integer types for output mesh database */
-  int   int64api{0}; /* integer types for exodus api calls */
+  std::vector<int> group_no{};
+  int              num_groups{-1};
+  int              int64db{0};  /* integer types for output mesh database */
+  int              int64api{0}; /* integer types for exodus api calls */
 
   Problem_Description() = default;
 };
@@ -184,9 +184,9 @@ template <typename INT> struct Mesh_Description
   size_t              max_np_elem{0};
   size_t              ns_list_len{0};
   char                title[MAX_LINE_LENGTH + 1]{};
-  float *             coords{nullptr};
-  E_Type *            elem_type{nullptr};
-  INT **              connect;
+  std::vector<float>  coords{};
+  std::vector<E_Type> elem_type{};
+  INT               **connect;
 
   Mesh_Description() : connect(nullptr) {}
 };
@@ -194,10 +194,10 @@ template <typename INT> struct Mesh_Description
 /* Structure for handling meshes with spheres */
 struct Sphere_Info
 {
-  size_t num{0};
-  int *  adjust{nullptr};
-  int *  begin{nullptr};
-  int *  end{nullptr};
+  size_t           num{0};
+  std::vector<int> adjust{};
+  std::vector<int> begin{};
+  std::vector<int> end{};
 
   Sphere_Info() = default;
 };
@@ -214,45 +214,45 @@ template <typename INT> struct Graph_Description
 };
 
 /* Various constants */
-#define NODAL 0
+#define NODAL     0
 #define ELEMENTAL 1
 
 #define UTIL_NAME "nem_slice"
 
 /* Load balance types */
-#define MULTIKL 0
-#define SPECTRAL 1
-#define INERTIAL 2
-#define LINEAR 3
-#define RANDOM 4
-#define SCATTERED 5
-#define INFILE 6
-#define KL_REFINE 7
-#define NO_REFINE 8
-#define NUM_SECTS 9
-#define CNCT_DOM 10
-#define OUTFILE 11
-#define ZPINCH 12
-#define BRICK 13
-#define ZOLTAN_RCB 14
-#define ZOLTAN_RIB 15
+#define MULTIKL     0
+#define SPECTRAL    1
+#define INERTIAL    2
+#define LINEAR      3
+#define RANDOM      4
+#define SCATTERED   5
+#define INFILE      6
+#define KL_REFINE   7
+#define NO_REFINE   8
+#define NUM_SECTS   9
+#define CNCT_DOM    10
+#define OUTFILE     11
+#define ZPINCH      12
+#define BRICK       13
+#define ZOLTAN_RCB  14
+#define ZOLTAN_RIB  15
 #define ZOLTAN_HSFC 16
-#define IGNORE_Z 17
+#define IGNORE_Z    17
 
 /* Machine types */
-#define MESH 0
-#define HCUBE 1
+#define MESH      0
+#define HCUBE     1
 #define HYPERCUBE 2
-#define CLUSTER 3
+#define CLUSTER   3
 
 /* Solver options */
-#define TOLER 0
+#define TOLER   0
 #define USE_RQI 1
-#define VMAX 2
+#define VMAX    2
 
 /* ISSUES options */
 
-#define LOCAL_ISSUES 0
+#define LOCAL_ISSUES  0
 #define GLOBAL_ISSUES 1
 
 /* Weighting options */
@@ -265,11 +265,9 @@ template <typename INT> struct Graph_Description
  * on the command line.
  */
 #define NO_WEIGHT 0
-#define READ_EXO 1
-#define EL_BLK 2
-#define VAR_INDX 3
-#define EDGE_WGT 4
+#define READ_EXO  1
+#define EL_BLK    2
+#define VAR_INDX  3
+#define EDGE_WGT  4
 #define TIME_INDX 5
-#define VAR_NAME 6
-
-#endif /* _EXOIILB_CONST_H_ */
+#define VAR_NAME  6

@@ -72,8 +72,9 @@ namespace fixtures {
 // |----------|--|-------|--|----------|    |-------------|
 //
 
-class SelectorFixture {
- public:
+class SelectorFixture
+{
+public:
   SelectorFixture();
   ~SelectorFixture();
 
@@ -83,7 +84,8 @@ class SelectorFixture {
   const stk::unit_test_util::BulkDataTester& get_BulkData() const { return m_bulk_data ; }
   stk::unit_test_util::BulkDataTester& get_NonconstBulkData() { return m_bulk_data ; }
 
-  stk::mesh::MetaData m_meta_data ;
+  std::shared_ptr<stk::mesh::MetaData> m_meta_data_ptr ;
+  stk::mesh::MetaData& m_meta_data;
   stk::unit_test_util::BulkDataTester m_bulk_data ;
 
   stk::mesh::Part & m_partA ;
@@ -102,26 +104,89 @@ class SelectorFixture {
 
   void generate_mesh();
 
- private:
+private:
   SelectorFixture( const SelectorFixture & );
   SelectorFixture & operator = ( const SelectorFixture & );
 };
 
-class VariableSelectorFixture {
- public:
+class VariableSelectorFixture
+{
+public:
   VariableSelectorFixture(int NumParts);
   ~VariableSelectorFixture();
 
-  stk::mesh::MetaData m_MetaData ;
-  stk::mesh::BulkData m_BulkData ;
+  std::shared_ptr<stk::mesh::MetaData> m_MetaDataPtr;
+  stk::mesh::MetaData& m_MetaData ;
+  std::shared_ptr<stk::mesh::BulkData> m_BulkDataPtr;
+  stk::mesh::BulkData& m_BulkData ;
 
   stk::mesh::PartVector m_declared_part_vector;
   std::vector<stk::mesh::Entity> m_entities ;
 
- private:
+private:
   VariableSelectorFixture( const VariableSelectorFixture & );
   VariableSelectorFixture & operator = ( const VariableSelectorFixture & );
 };
+
+namespace simple_fields {
+
+class SelectorFixture
+{
+public:
+  SelectorFixture();
+  ~SelectorFixture();
+
+  const stk::mesh::MetaData & get_MetaData() const { return m_meta_data ; }
+  stk::mesh::MetaData       & get_NonconstMetaData() { return m_meta_data ; }
+
+  const stk::unit_test_util::BulkDataTester& get_BulkData() const { return m_bulk_data ; }
+  stk::unit_test_util::BulkDataTester& get_NonconstBulkData() { return m_bulk_data ; }
+
+  std::shared_ptr<stk::mesh::MetaData> m_meta_data_ptr ;
+  stk::mesh::MetaData& m_meta_data;
+  stk::unit_test_util::BulkDataTester m_bulk_data ;
+
+  stk::mesh::Part & m_partA ;
+  stk::mesh::Part & m_partB ;
+  stk::mesh::Part & m_partC ;
+  stk::mesh::Part & m_partD ;
+
+  stk::mesh::Entity m_entity1 ;
+  stk::mesh::Entity m_entity2 ;
+  stk::mesh::Entity m_entity3 ;
+  stk::mesh::Entity m_entity4 ;
+  stk::mesh::Entity m_entity5 ;
+
+  stk::mesh::Field<double>* m_fieldA;
+  stk::mesh::Field<double>* m_fieldABC;
+
+  void generate_mesh();
+
+private:
+  SelectorFixture( const SelectorFixture & );
+  SelectorFixture & operator = ( const SelectorFixture & );
+};
+
+class VariableSelectorFixture
+{
+public:
+  VariableSelectorFixture(int NumParts);
+  ~VariableSelectorFixture();
+
+  std::shared_ptr<stk::mesh::MetaData> m_MetaDataPtr;
+  stk::mesh::MetaData& m_MetaData ;
+  std::shared_ptr<stk::mesh::BulkData> m_BulkDataPtr;
+  stk::mesh::BulkData& m_BulkData ;
+
+  stk::mesh::PartVector m_declared_part_vector;
+  std::vector<stk::mesh::Entity> m_entities ;
+
+private:
+  VariableSelectorFixture( const VariableSelectorFixture & );
+  VariableSelectorFixture & operator = ( const VariableSelectorFixture & );
+};
+
+} // namespace simple_fields
 
 } // fixtures
 } // mesh

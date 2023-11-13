@@ -52,14 +52,12 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_Core.hpp"
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
-#include "Kokkos_BufferMacros.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include "KokkosCompat_View.hpp"
 #include "KokkosCompat_View_def.hpp"
 #endif
 
 // Kokkos-Linalg
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_MP_Vector.hpp"
 #include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
 #include "Kokkos_MV_MP_Vector.hpp"
@@ -74,7 +72,6 @@
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy_MP_Vector.hpp"
 #include "Tpetra_Details_fill_MP_Vector.hpp"
 #include "Kokkos_Random_MP_Vector.hpp"
-#endif
 
 #include "KokkosBlas_MP_Vector.hpp"
 
@@ -105,7 +102,7 @@ struct DeviceForNode {
 ///   "wrapper" Node types.
 /// \tparam Device (New) Kokkos execution space type.
 template <typename Device>
-struct DeviceForNode< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
+struct DeviceForNode< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;
 };
 #endif

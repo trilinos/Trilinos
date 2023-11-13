@@ -7,6 +7,8 @@
 # the output (and does not send it to CDash).
 #
 
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
+
 message("\ncmake -P tribits_ctest_update_commands_wrapper.cmake:")
 message("-- OUTPUT_FILE=${OUTPUT_FILE}\n")
 

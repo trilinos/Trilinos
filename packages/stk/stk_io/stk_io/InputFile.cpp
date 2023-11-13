@@ -34,45 +34,43 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <stk_util/stk_config.h>
 #include <stk_io/InputFile.hpp>
-#include <math.h>                                  // for fmod
-#include <stddef.h>                                // for size_t
-#include <algorithm>                               // for sort, swap
-#include <limits>                                  // for numeric_limits
-#include <ostream>                                 // for operator<<, etc
-#include <stdexcept>                               // for runtime_error
-#include <stk_io/DbStepTimeInterval.hpp>
-#include <stk_io/IossBridge.hpp>                   // for get_field_role, etc
-#include <stk_io/MeshField.hpp>                    // for MeshField, etc
-#include <stk_mesh/base/FieldBase.hpp>             // for FieldBase, etc
-#include <stk_mesh/base/FindRestriction.hpp>       // for find_restriction
-#include <stk_mesh/base/MetaData.hpp>              // for MetaData
-#include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
-#include <utility>                                 // for pair
-#include "Ioss_DBUsage.h"                          // for DatabaseUsage, etc
-#include "Ioss_DatabaseIO.h"                       // for DatabaseIO
-#include "Ioss_EntityType.h"                       // for EntityType, etc
-#include "Ioss_Field.h"                            // for Field, etc
-#include "Ioss_GroupingEntity.h"                   // for GroupingEntity
-#include "Ioss_IOFactory.h"                        // for IOFactory
-#include "Ioss_MeshType.h"                         // for MeshType, etc
-#include "Ioss_NodeBlock.h"                        // for NodeBlock
-#include "Ioss_NodeSet.h"                          // for NodeSet
-#include "Ioss_SideBlock.h"                          // for NodeSet
-#include "Ioss_SideSet.h"                          // for NodeSet
-#include "Ioss_Property.h"                         // for Property
-#include "Ioss_Region.h"                           // for Region, etc
-#include "StkIoUtils.hpp"
-#include "Teuchos_Ptr.hpp"                         // for Ptr::get
-#include "Teuchos_PtrDecl.hpp"                     // for Ptr
-#include "Teuchos_RCP.hpp"                         // for RCP::operator->, etc
-#include "stk_io/DatabasePurpose.hpp"
-#include "stk_mesh/base/FieldState.hpp"            // for FieldState
-#include "stk_mesh/base/Part.hpp"                  // for Part
-#include "stk_mesh/base/Types.hpp"                 // for FieldVector, etc
-#include "stk_topology/topology.hpp"               // for topology, etc
+#include <exception>                    // for exception
+#include <algorithm>                           // for copy, sort, max, find
+#include <cmath>                               // for fmod
+#include <cstddef>                             // for size_t
+#include <iostream>                            // for operator<<, basic_ostream
+#include <limits>                              // for numeric_limits
+#include <stdexcept>                           // for runtime_error
+#include <stk_io/DbStepTimeInterval.hpp>       // for DBStepTimeInterval
+#include <stk_io/IossBridge.hpp>               // for is_part_io_part, all_f...
+#include <stk_io/MeshField.hpp>                // for MeshField, MeshField::...
+#include <stk_mesh/base/FieldBase.hpp>         // for FieldBase, FieldBase::...
+#include <stk_mesh/base/FindRestriction.hpp>   // for find_restriction
+#include <stk_mesh/base/MetaData.hpp>          // for MetaData
+#include <stk_util/environment/FileUtils.hpp>  // for filename_substitution
+#include <stk_util/util/ReportHandler.hpp>     // for ThrowErrorMsgIf, Throw...
+#include <utility>                             // for move, pair
+#include "Ioss_DBUsage.h"                      // for DatabaseUsage, READ_MODEL
+#include "Ioss_DatabaseIO.h"                   // for DatabaseIO
+#include "Ioss_EntityType.h"                   // for SIDESET, EntityType
+#include "Ioss_Field.h"                        // for Field, Field::TRANSIENT
+#include "Ioss_GroupingEntity.h"               // for GroupingEntity
+#include "Ioss_IOFactory.h"                    // for IOFactory
+#include "Ioss_MeshType.h"                     // for MeshType, MeshType::UN...
+#include "Ioss_NodeBlock.h"                    // for NodeBlock
+#include "Ioss_NodeSet.h"                      // for NodeSet
+#include "Ioss_Property.h"                     // for Property
+#include "Ioss_Region.h"                       // for Region, NodeBlockConta...
+#include "Ioss_SideBlock.h"                    // for SideBlock
+#include "Ioss_SideSet.h"                      // for SideSet
+#include "StkIoUtils.hpp"                      // for part_primary_entity_rank
+#include "stk_io/DatabasePurpose.hpp"          // for READ_RESTART, Database...
+#include "stk_mesh/base/BulkData.hpp"          // for BulkData
+#include "stk_mesh/base/FieldState.hpp"        // for FieldState
+#include "stk_mesh/base/Part.hpp"              // for Part
+#include "stk_mesh/base/Types.hpp"             // for PartVector, EntityRank
+#include "stk_topology/topology.hpp"           // for topology, topology::NO...
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -113,87 +111,97 @@ namespace {
 }
 
 namespace stk {
-  namespace io {
+namespace io {
 
-    InputFile::InputFile(std::string mesh_filename,
-			 MPI_Comm communicator, 
-			 const std::string &mesh_type,
-			 DatabasePurpose purpose,
-			 Ioss::PropertyManager &properties)
-      : m_db_purpose(purpose), m_region(nullptr),
-	m_startupTime(0.0),
-	m_periodLength(0.0),
-	m_scaleTime(1.0),
-	m_offsetTime(0.0),
-	m_startTime(-std::numeric_limits<double>::max()),
-	m_stopTime(std::numeric_limits<double>::max()),
-	m_periodType(CYCLIC),
-	m_fieldsInitialized(false),
-	m_multiStateSuffixes(nullptr)
-    {
-      Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
-      if (m_db_purpose == stk::io::READ_RESTART)
-        db_usage = Ioss::READ_RESTART;
+  InputFile::InputFile(std::string mesh_filename,
+			                 MPI_Comm communicator, 
+			                 const std::string &mesh_type,
+			                 DatabasePurpose purpose,
+			                 Ioss::PropertyManager &properties)
+    : m_db_purpose(purpose), m_region(nullptr),
+	    m_startupTime(0.0),
+	    m_periodLength(0.0),
+	    m_scaleTime(1.0),
+	    m_offsetTime(0.0),
+	    m_startTime(-std::numeric_limits<double>::max()),
+	    m_stopTime(std::numeric_limits<double>::max()),
+	    m_periodType(CYCLIC),
+	    m_fieldsInitialized(false),
+        m_haveCachedEntityList(false),
+	    m_multiStateSuffixes(nullptr)
+  {
+    Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
+    if (m_db_purpose == stk::io::READ_RESTART)
+      db_usage = Ioss::READ_RESTART;
 
-      stk::util::filename_substitution(mesh_filename);
-      m_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
-							db_usage, communicator,
-							properties));
-      ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true), 
-		      "ERROR: Could not open database '" << mesh_filename
-		      << "' of type '" << mesh_type << "'");
+    stk::util::filename_substitution(mesh_filename);
+    m_database = std::shared_ptr<Ioss::DatabaseIO>(Ioss::IOFactory::create(mesh_type, mesh_filename,
+ 	    				                                                             db_usage, communicator,
+      	    				                                                       properties), [](auto pointerWeWontDelete){});
+
+    if (m_database.get() == nullptr || !m_database->ok(true)) {
+      delete m_database.get();
+      STK_ThrowErrorMsg("ERROR: Could not open database '" << mesh_filename
+                        << "' of type '" << mesh_type << "'");
+    }
+  }
+
+  InputFile::InputFile(std::shared_ptr<Ioss::Region> ioss_input_region)
+    : m_database(ioss_input_region->get_database(), [](auto pointerWeWontDelete){}), m_region(ioss_input_region),
+	    m_startupTime(0.0),
+	    m_periodLength(0.0),
+	    m_scaleTime(1.0),
+	    m_offsetTime(0.0),
+	    m_startTime(-std::numeric_limits<double>::max()),
+	    m_stopTime(std::numeric_limits<double>::max()),
+	    m_periodType(CYCLIC),
+	    m_fieldsInitialized(false),
+        m_haveCachedEntityList(false),
+      m_multiStateSuffixes(nullptr)
+  {
+    STK_ThrowErrorMsgIf(m_database == nullptr || !m_database->ok(true), 
+		                "ERROR: Invalid Ioss region detected in add_mesh_database");
+
+    Ioss::DatabaseUsage db_usage = m_database->usage();
+    if (db_usage == Ioss::READ_RESTART) {
+      m_db_purpose = stk::io::READ_RESTART;
+    }
+    else if (db_usage == Ioss::READ_MODEL) {
+      m_db_purpose = stk::io::READ_MESH;
+    }
+    else {
+      std::ostringstream msg;
+      msg << "ERROR: Unrecognized database usage for Ioss region named "
+          << ioss_input_region->name()
+          << ". Must be READ_RESTART or READ_MODEL";
+      throw std::runtime_error( msg.str() );
     }
 
+    STK_ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+                    "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
+                                                                        "Only 'Unstructured' mesh is currently supported.");
 
-    InputFile::InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region)
-      : m_database(ioss_input_region->get_database()), m_region(ioss_input_region),
-	m_startupTime(0.0),
-	m_periodLength(0.0),
-	m_scaleTime(1.0),
-	m_offsetTime(0.0),
-	m_startTime(-std::numeric_limits<double>::max()),
-	m_stopTime(std::numeric_limits<double>::max()),
-	m_periodType(CYCLIC),
-	m_fieldsInitialized(false),
-        m_multiStateSuffixes(nullptr)
-    {
-      ThrowErrorMsgIf(Teuchos::is_null(m_database) || !m_database->ok(true), 
-		      "ERROR: Invalid Ioss region detected in add_mesh_database");
-
-      Ioss::DatabaseUsage db_usage = m_database->usage();
-      if (db_usage == Ioss::READ_RESTART) {
-	m_db_purpose = stk::io::READ_RESTART;
-      }
-      else if (db_usage == Ioss::READ_MODEL) {
-	m_db_purpose = stk::io::READ_MESH;
-      }
-      else {
-        std::ostringstream msg;
-        msg << "ERROR: Unrecognized database usage for Ioss region named "
-	    << ioss_input_region->name()
-	    << ". Must be READ_RESTART or READ_MODEL";
-        throw std::runtime_error( msg.str() );
-      }
-
-      ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
-		      "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
-		      "Only 'Unstructured' mesh is currently supported.");
-
-      m_database.release(); // The m_region will delete the m_database pointer.
-    }
+  }
 
     void InputFile::create_ioss_region()
     {
       // If the m_region is null, try to create it from
       // the m_input_database. If that is null, throw an error.
-      if (Teuchos::is_null(m_region)) {
-        ThrowErrorMsgIf(Teuchos::is_null(m_database),
+      if (m_region == nullptr) {
+        STK_ThrowErrorMsgIf(m_database.get() == nullptr,
                         "There is no input mesh database associated with this StkMeshIoBroker. Please call open_mesh_database() first.");
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
-        m_region = Teuchos::rcp(new Ioss::Region(m_database.release().get(), "input_model"));
+        Ioss::Region *region = nullptr;
+        try {
+          region = new Ioss::Region(m_database.get(), "input_model");
+        } catch (...) {
+          m_database.reset();
+          throw;
+        }
+        m_region = std::shared_ptr<Ioss::Region>(region);
 
-	ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+        STK_ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
 			"Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
 			"Only 'Unstructured' mesh is currently supported.");
       }
@@ -251,7 +259,7 @@ namespace stk {
 
     void InputFile::get_global_variable_names(std::vector<std::string> &names)
     {
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf (m_region.get() == nullptr,
 		       "Attempt to read global variables before restart initialized.");
       m_region->field_describe(Ioss::Field::REDUCTION, &names);
     }
@@ -291,7 +299,7 @@ namespace stk {
 
                 if(entity->type() == Ioss::SIDESET) {
                     auto io_side_set = dynamic_cast<Ioss::SideSet*>(entity);
-                    ThrowRequire(io_side_set != nullptr);
+                    STK_ThrowRequire(io_side_set != nullptr);
                     auto fbs = io_side_set->get_side_blocks();
 
                     for(auto& io_fblock : fbs) {
@@ -326,7 +334,7 @@ namespace stk {
 
     bool InputFile::read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk)
     {
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf (m_region == nullptr,
                        "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
@@ -341,7 +349,7 @@ namespace stk {
       // Get struct containing interval of database time(s) containing 'time'
       DBStepTimeInterval sti(region, db_time);
 
-      ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
+      STK_ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
                       "ERROR: Input database '" << region->get_database()->get_filename()
                       << "' has no transient data.");
 
@@ -398,21 +406,21 @@ namespace stk {
 						std::vector<stk::io::MeshField> *missingFields,
 						stk::mesh::BulkData &bulk)
     {
-      ThrowErrorMsgIf(step <= 0, 
+      STK_ThrowErrorMsgIf(step <= 0, 
 		      "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
 
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf (m_region.get() == nullptr,
                        "There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
 
       int step_count = region->get_property("state_count").get_int();
 
-      ThrowErrorMsgIf(step_count == 0, 
+      STK_ThrowErrorMsgIf(step_count == 0, 
 		      "ERROR: Input database '" << region->get_database()->get_filename()
 		      << "' has no transient data.");
 
-      ThrowErrorMsgIf(step > step_count,
+      STK_ThrowErrorMsgIf(step > step_count,
 		      "ERROR: Input database '" << region->get_database()->get_filename()
 		      << "'. Step " << step << " was specified, but database only has "
 		      << step_count << " steps.");
@@ -479,7 +487,7 @@ namespace stk {
                                                        std::map<stk::mesh::FieldBase *,
                                                        const stk::io::MeshField *> *missing_fields_collector_ptr)
     {
-        ThrowRequireMsg(io_entity != nullptr, "Null IO entity");
+        STK_ThrowRequireMsg(io_entity != nullptr, "Null IO entity");
 
         bool doesFieldExist = false;
 
@@ -628,7 +636,7 @@ namespace stk {
                     bool field_is_missing = false;
                     if (f->entity_rank() == rank) {
                         Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
-                        ThrowErrorMsgIf( io_entity == nullptr,
+                        STK_ThrowErrorMsgIf( io_entity == nullptr,
                                 "ERROR: For field '" << (*I).field()->name()
                                 << "' Could not find database entity corresponding to the part named '"
                                 << part->name() << "'.");
@@ -782,7 +790,7 @@ namespace stk {
       // See details in header file.
       double db_time = map_analysis_to_db_time(time);
 	
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+      STK_ThrowErrorMsgIf (m_region.get() == nullptr,
 		       "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_region.get();
@@ -790,7 +798,7 @@ namespace stk {
       // Get struct containing interval of database time(s) containing 'time'
       DBStepTimeInterval sti(region, db_time);
 
-      ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
+      STK_ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
 		      "ERROR: Input database '" << region->get_database()->get_filename()
 		      << "' has no transient data.");
 
@@ -821,70 +829,75 @@ namespace stk {
 
 
     double InputFile::read_defined_input_fields_at_step(int step,
-                                                std::vector<stk::io::MeshField> *missingFields,
-                                                stk::mesh::BulkData &bulk)
+                                                        std::vector<stk::io::MeshField> *missingFields,
+                                                        stk::mesh::BulkData &bulk, bool useEntityListCache)
     {
-        ThrowErrorMsgIf(step <= 0,
-                        "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
+      STK_ThrowErrorMsgIf(step <= 0,
+                      "ERROR: Invalid step (" << step << ") requested. Value must be greater than zero.");
 
-        ThrowErrorMsgIf (Teuchos::is_null(m_region),
+        STK_ThrowErrorMsgIf (m_region.get() == nullptr,
                          "There is no Input mesh/restart region associated with this Mesh Data.");
 
-        Ioss::Region *region = m_region.get();
+      Ioss::Region *region = m_region.get();
 
-        int step_count = region->get_property("state_count").get_int();
+      int step_count = region->get_property("state_count").get_int();
 
-        ThrowErrorMsgIf(step_count == 0,
-                        "ERROR: Input database '" << region->get_database()->get_filename()
-                        << "' has no transient data.");
+      STK_ThrowErrorMsgIf(step_count == 0,
+                      "ERROR: Input database '" << region->get_database()->get_filename()
+                      << "' has no transient data.");
 
-        ThrowErrorMsgIf(step > step_count,
-                        "ERROR: Input database '" << region->get_database()->get_filename()
-                        << "'. Step " << step << " was specified, but database only has "
-                        << step_count << " steps.");
+      STK_ThrowErrorMsgIf(step > step_count,
+                      "ERROR: Input database '" << region->get_database()->get_filename()
+                      << "'. Step " << step << " was specified, but database only has "
+                      << step_count << " steps.");
 
-        // Sort fields to ensure they are iterated in the same order on all processors.
-        std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
+      // Sort fields to ensure they are iterated in the same order on all processors.
+      std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
 
-        bool ignore_missing_fields = (missingFields != nullptr);
+      bool ignore_missing_fields = (missingFields != nullptr);
 
-        if (!m_fieldsInitialized) {
-            std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-            while (I != m_fields.end()) {
-                (*I).set_inactive(); ++I;
-            }
-
-            build_field_part_associations(bulk, missingFields);
-
-            m_fieldsInitialized = true;
+      if (!m_fieldsInitialized) {
+        for (auto & meshField : m_fields) {
+          meshField.set_inactive();
         }
 
-        double time  = region->get_state_time(step);
-        if (time < m_startTime || time > m_stopTime)
-            return 0.0;
+        build_field_part_associations(bulk, missingFields);
 
-        std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-        double time_read = -1.0;
-        while (I != m_fields.end()) {
-            // NOTE: If the fields being restored have different settings, the time
-            // value can be different for each field and this will return the value
-            // of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
-            // and one is TIME_INTERPOLATION, then the time value to return is
-            // ambiguous.  Also an issue if some of the fields are inactive.
-            double time_t = (*I).restore_field_data_at_step(region, bulk, step, ignore_missing_fields, m_multiStateSuffixes);
-            if ((*I).is_active()) {
-                time_read = time_t > time_read ? time_t : time_read;
-            }
-            ++I;
+        m_fieldsInitialized = true;
+      }
+
+      double time  = region->get_state_time(step);
+      if (time < m_startTime || time > m_stopTime)
+        return 0.0;
+
+      if (useEntityListCache && not m_haveCachedEntityList) {
+        for (auto & meshField : m_fields) {
+          meshField.fill_entity_list_cache(bulk);
         }
+        m_haveCachedEntityList = true;
+      }
 
-        int current_step = region->get_current_state();
-        if (current_step != -1 && current_step != static_cast<int>(step))
-            region->end_state(current_step);
-        if (current_step != static_cast<int>(step))
-            region->begin_state(step);
+      double time_read = -1.0;
+      for (auto & meshField : m_fields) {
+        // NOTE: If the fields being restored have different settings, the time
+        // value can be different for each field and this will return the value
+        // of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
+        // and one is TIME_INTERPOLATION, then the time value to return is
+        // ambiguous.  Also an issue if some of the fields are inactive.
+        double time_t = meshField.restore_field_data_at_step(region, bulk, step, ignore_missing_fields,
+                                                             m_multiStateSuffixes, useEntityListCache);
+        if (meshField.is_active()) {
+          time_read = time_t > time_read ? time_t : time_read;
+        }
+      }
 
-        return time_read;
+      int current_step = region->get_current_state();
+      if (current_step != -1 && current_step != static_cast<int>(step))
+        region->end_state(current_step);
+      if (current_step != static_cast<int>(step))
+        region->begin_state(step);
+
+      return time_read;
     }
 
   }

@@ -71,15 +71,15 @@ template<class WVector,
          bool use_beta,
          bool do_X_update>
 struct ChebyshevKernelVectorFunctor {
-  static_assert (static_cast<int> (WVector::Rank) == 1,
+  static_assert (static_cast<int> (WVector::rank) == 1,
                  "WVector must be a rank 1 View.");
-  static_assert (static_cast<int> (DVector::Rank) == 1,
+  static_assert (static_cast<int> (DVector::rank) == 1,
                  "DVector must be a rank 1 View.");
-  static_assert (static_cast<int> (BVector::Rank) == 1,
+  static_assert (static_cast<int> (BVector::rank) == 1,
                  "BVector must be a rank 1 View.");
-  static_assert (static_cast<int> (XVector_colMap::Rank) == 1,
+  static_assert (static_cast<int> (XVector_colMap::rank) == 1,
                  "XVector_colMap must be a rank 1 View.");
-  static_assert (static_cast<int> (XVector_domMap::Rank) == 1,
+  static_assert (static_cast<int> (XVector_domMap::rank) == 1,
                  "XVector_domMap must be a rank 1 View.");
 
   using execution_space = typename AMatrix::execution_space;
@@ -300,7 +300,9 @@ chebyshev_kernel_vector
 
 template<class TpetraOperatorType>
 ChebyshevKernel<TpetraOperatorType>::
-ChebyshevKernel (const Teuchos::RCP<const operator_type>& A)
+ChebyshevKernel (const Teuchos::RCP<const operator_type>& A,
+                   const bool useNativeSpMV):
+  useNativeSpMV_(useNativeSpMV)
 {
   setMatrix (A);
 }
@@ -388,6 +390,11 @@ bool
 ChebyshevKernel<TpetraOperatorType>::
 canFuse (const multivector_type& B) const
 {
+  // If override is enabled
+  if(useNativeSpMV_)
+    return false;
+
+  // Some criteria must be met for fused kernel
   return B.getNumVectors () == size_t (1) &&
     ! A_crs_.is_null () &&
     exp_.is_null ();

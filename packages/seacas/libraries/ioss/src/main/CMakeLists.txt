@@ -1,14 +1,17 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.h)
 APPEND_GLOB(SOURCES ${DIR}/*.C)
 
-INCLUDE_DIRECTORIES(
+TRIBITS_INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/../"
   "${CMAKE_CURRENT_BINARY_DIR}/../"
 )
+
+list(APPEND HEADERS
+  "${CMAKE_CURRENT_BINARY_DIR}/io_info_lib_export.h")
 
 TRIBITS_ADD_LIBRARY(
   io_info_lib
@@ -16,6 +19,11 @@ TRIBITS_ADD_LIBRARY(
   SOURCES io_info.C volume.C info_interface.C
   DEPLIBS Ioss
   )
+
+generate_export_header(io_info_lib)
+target_include_directories(io_info_lib
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
 ASSERT_DEFINED(TPL_ENABLE_CGNS)
 IF (TPL_ENABLE_CGNS)
@@ -270,6 +278,54 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   )
 endif()
 
+IF (NOT TPL_ENABLE_MPI OR TPL_Netcdf_Enables_PNetcdf)
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g"
+  NAME io_shell_compare_same_database
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+ENDIF()
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns"
+  NAME io_shell_compare_same_database_cgns
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_null
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_exonull
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+if (TPL_ENABLE_MPI)
+  set(EXTERNAL "--compose=external")
+endif()
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_null_fpp
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
+TRIBITS_ADD_TEST(
+  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  NAME generated_to_exonull_fpp
+  NOEXEPREFIX NOEXESUFFIX
+  COMM mpi serial
+ )
+
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.cgns
@@ -518,6 +574,15 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_embedded_nodeblock_fields
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
    TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/structured_with_nodeblock_fields.cgns structured_with_nodeblock_fields_out.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(unstructured_2d_cgns
+   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/circle-square-2d.cgns 2d-out.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/circle-square-2d.cgns 2d-out.cgns
      NUM_MPI_PROCS 1
   COMM mpi serial
   )

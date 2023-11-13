@@ -73,7 +73,7 @@ namespace MueLuTests {
     int rank = comm->getRank();
     int numproc = comm->getSize();
     RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16*comm->getSize());
-    const int numRows = static_cast<int>(A->getNodeNumRows());
+    const int numRows = static_cast<int>(A->getLocalNumRows());
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
     std::vector<unsigned> aggStat(numRows, MueLu::READY);
@@ -90,12 +90,12 @@ namespace MueLuTests {
                                 Teuchos::ScalarTraits<SC>::magnitude(10.0),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
-    auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
     std::cout << "p=" << rank << " | aggregate sizes="
               << sizes.view(0, sizes.size()) << std::endl;
 
 #if 0
+    auto v2a = aggregates->GetVertex2AggId()->getData(0);
     printf("[%d] Aggregates: ",rank);
     for(int i=0; i<(int)v2a.size(); i++)
       printf("%d(%d) ",i,v2a[i]);
@@ -153,7 +153,7 @@ namespace MueLuTests {
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
     RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
-    const int numRows = static_cast<int>(A->getNodeNumRows());
+    const int numRows = static_cast<int>(A->getLocalNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
@@ -171,8 +171,7 @@ namespace MueLuTests {
                                 Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
-    auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
 
@@ -195,6 +194,7 @@ namespace MueLuTests {
     }
 
 #if 0
+    auto v2a = aggregates->GetVertex2AggId()->getData(0);
     printf("[%d] Aggregates: ",rank);
     for(int i=0; i<(int)v2a.size(); i++)
       printf("%d(%d) ",i,v2a[i]);
@@ -232,7 +232,7 @@ namespace MueLuTests {
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
     RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
-    const int numRows = static_cast<int>(A->getNodeNumRows());
+    const int numRows = static_cast<int>(A->getLocalNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
@@ -253,14 +253,14 @@ namespace MueLuTests {
 
     out << "numDirichletNodes=" << numDirichletNodes << std::endl;
 
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
 
-    NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
+    NAF->BuildIntermediateProlongator(A->getLocalNumRows(), numDirichletNodes,
                                       aggregates->GetNumAggregates(),
-                                      v2a.view(0, A->getNodeNumRows()),
+                                      v2a.view(0, A->getLocalNumRows()),
                                       intermediateP);
 
   } // IntermediateProlongator2D
@@ -289,7 +289,7 @@ namespace MueLuTests {
     mp.set("d", -1.0); mp.set("e", -1.0);
     mp.set("z1", 0.0); mp.set("z2", 0.0);  mp.set("z3", 0.0);  mp.set("z4", 0.0);
     RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
-    const int numRows = static_cast<int>(A->getNodeNumRows());
+    const int numRows = static_cast<int>(A->getLocalNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
@@ -308,16 +308,16 @@ namespace MueLuTests {
                                 Teuchos::ScalarTraits<SC>::magnitude(4.1),
                                 *aggregates, aggStat, numUnaggregatedNodes, numDirichletNodes);
 
+    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
     auto v2a = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
 
     typename Matrix::local_matrix_type coarseA = A->getLocalMatrixDevice();
     NAF->BuildOnRankLocalMatrix(A->getLocalMatrixDevice(), coarseA);
-    NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
+    NAF->BuildIntermediateProlongator(A->getLocalNumRows(), numDirichletNodes,
                                       aggregates->GetNumAggregates(),
-                                      v2a.view(0, A->getNodeNumRows()),
+                                      v2a.view(0, A->getLocalNumRows()),
                                       intermediateP);
     NAF->BuildCoarseLocalMatrix(intermediateP, coarseA);
 
@@ -376,7 +376,7 @@ namespace MueLuTests {
       std::cout << "Testing pairwise aggregates" << std::endl;
       
       auto v2a = aggregates->GetVertex2AggId()->getData(0);
-      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
       
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }
@@ -410,12 +410,11 @@ namespace MueLuTests {
       std::cout << "Testing pairwise aggregates" << std::endl;
       
       auto v2a = aggregates->GetVertex2AggId()->getData(0);
-      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
       
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }
 
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
     // Use Cuthill-McKee if we have it (requires Kokkos refactor)
    {
       MueLu::Level currentLevel;
@@ -445,12 +444,10 @@ namespace MueLuTests {
       std::cout << "Testing pairwise aggregates" << std::endl;
       
       auto v2a = aggregates->GetVertex2AggId()->getData(0);
-      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizes();
+      Teuchos::ArrayRCP<LO> sizes = aggregates->ComputeAggregateSizesArrayRCP();
       
       TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
     }
-
-#endif 
 
   } // BuildNotayAggregates2D
 

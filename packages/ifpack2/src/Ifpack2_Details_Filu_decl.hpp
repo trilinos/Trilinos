@@ -48,7 +48,7 @@
 #include <Ifpack2_Details_FastILU_Base.hpp>
 
 //forward-declare the local preconditioner type
-template<typename LocalOrdinal, typename Scalar, typename execution_space>
+template<typename LocalOrdinal, typename Scalar, typename execution_space, bool BlockCrsEnabled>
 class FastILUPrec;
 
 namespace Ifpack2
@@ -58,20 +58,24 @@ namespace Details
 
 /// \class Filu
 /// \brief The Ifpack2 wrapper to the ILU preconditioner of ShyLU FastILU.
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, bool BlockCrsEnabled>
 class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
   public:
     typedef FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node> Base;
     typedef typename Base::TRowMatrix TRowMatrix;
-    typedef typename Base::ScalarArray ScalarArray;
-    typedef FastILUPrec<LocalOrdinal, Scalar, typename Base::execution_space> LocalFILU;
+    typedef typename Base::ImplScalar ImplScalar;
+    typedef typename Base::ImplScalarArray ImplScalarArray;
+    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, BlockCrsEnabled> LocalFILU;
 
     //! Constructor
     Filu(Teuchos::RCP<const TRowMatrix> mat_);
 
     //! Get the sweeps (\"nFact\") from localPrec_
     int getSweeps() const;
+
+    //! Get the name of triangular solve algorithm
+    std::string getSpTrsvType() const;
 
     //! Get the number of triangular solves (\"nTrisol\") from localPrec_
     int getNTrisol() const;
@@ -88,7 +92,7 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     void initLocalPrec();
     //compute() takes A's local values
     void computeLocalPrec();
-    void applyLocalPrec(ScalarArray x, ScalarArray y) const;
+    void applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const;
     std::string getName() const;
 };
 

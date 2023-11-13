@@ -32,9 +32,7 @@ SET(Tpetra_MACHINE_XML_FILE_DIR
 # Set variables which were implicitly set when the Kokkos packages were optional dependencies
 GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT ON)
 GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM ON)
-GLOBAL_SET(HAVE_TPETRACORE_KOKKOSCORE ON)
-GLOBAL_SET(HAVE_TPETRACORE_KOKKOSALGORITHMS ON)
-GLOBAL_SET(HAVE_TPETRACORE_KOKKOSCONTAINERS ON)
+GLOBAL_SET(HAVE_TPETRACORE_KOKKOS ON)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SS_TESTING
@@ -131,13 +129,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_THROW_Efficiency_Warnings
-  HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-  "Enable exception throwing for Tpetra efficiency warnings."
-  ${Tpetra_THROW_Warnings}
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_PRINT_Efficiency_Warnings
   HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
   "Enable printing of Tpetra efficiency warnings."
@@ -171,19 +162,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_DistObject
-  TPETRA_ENABLE_KOKKOS_DISTOBJECT
-  "Experimental option to access alternate DistObject interface, DistObjectKA.  This option has been DEPRECATED and must no longer be set.  See Github Issue #387.  Do NOT set this option."
-  OFF
-  )
-IF (DEFINED Tpetra_ENABLE_Kokkos_DistObject)
-  IF (Tpetra_ENABLE_Kokkos_DistObject)
-    MESSAGE(FATAL_ERROR "The Tpetra_ENABLE_Kokkos_DistObject option has been DEPRECATED and must no longer be set.  See Github Issue #387.")
-  ENDIF ()
-ENDIF ()
-
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_MMM_Timings
   HAVE_TPETRA_MMM_TIMINGS
   "Enable the timings for the MMM kernels"
@@ -204,31 +182,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
 )
 
-# The "Kokkos refactor" version of Tpetra currently requires that
-# several Kokkos subpackages be enabled.  These subpackages should be
-# enabled by default (as of 08 Jan 2015).  The following test checks
-# that the subpackages have been enabled.
-
-ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
-IF (Tpetra_ENABLE_Kokkos_Refactor)
-  SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
-ELSE()
-  SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")
-ENDIF()
-# Set corresponding value of CPP macro
-GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
-
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_Refactor_Map
-  TPETRA_USE_KOKKOS_REFACTOR_MAP
-  "This option has been DEPRECATED and its value will be IGNORED.  We keep it only for backwards compatibility."
-  OFF
-  )
-IF (Tpetra_ENABLE_Kokkos_Refactor_Map)
-  MESSAGE(FATAL_ERROR "The Tpetra_ENABLE_Kokkos_Refactor_Map option has been DEPRECATED and must no longer be set.  It turns out that we took a different path with the refactor of Tpetra::Map, that didn't require two separate versions of the class.  Thus, there is no need to ask for the Kokkos refactor version of Map; there was only ever one version of Map.")
-ENDIF ()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_BCRS_Point_Import
   HAVE_TPETRA_BCRS_DO_POINT_IMPORT
@@ -236,10 +189,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_KokkosIntegrationTest
+  HAVE_TPETRA_KOKKOSINTEGRATION_TEST
+  "Enable the KokkosIntegrationTest"
+  ON
+  )
+
+
+
+
 #
 # Add libraries, tests, and examples
 #
 
+ADD_SUBDIRECTORY(compat)
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(inout)
 ADD_SUBDIRECTORY(ext)

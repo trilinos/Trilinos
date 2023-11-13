@@ -661,3 +661,382 @@
    fun:orterun
    ...
 }
+
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepvn
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepv
+   fun:Perl_new_collate
+   fun:Perl_init_i18nl10n
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepv
+   fun:Perl_new_numeric
+   fun:Perl_init_i18nl10n
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_sv_grow
+   fun:Perl_sv_setpv
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_sv_grow
+   fun:Perl_sv_setpv
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_sv_grow
+   fun:Perl_sv_setpvn
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_sv_grow
+   fun:Perl_sv_setpvn
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_sv_grow
+   fun:Perl_sv_setpvn
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepv
+   fun:Perl_find_script
+   fun:perl_parse
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_sv_vcatpvfn
+   fun:Perl_vnewSVpvf
+   fun:Perl_newSVpvf
+   fun:Perl_pp_gmtime
+   fun:Perl_runops_standard
+   fun:perl_run
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:Perl_newSVOP
+   fun:Perl_yylex
+   fun:Perl_yyparse
+   fun:perl_parse
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   fun:Perl_safesysrealloc
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_regexec_flags
+   fun:Perl_pp_match
+   fun:Perl_runops_standard
+   fun:perl_run
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_init_stacks
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_my_cxt_init
+   fun:boot_DynaLoader
+   fun:Perl_pp_entersub
+   fun:Perl_runops_standard
+   fun:Perl_call_sv
+   fun:Perl_call_list
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_newATTRSUB_flags
+   fun:Perl_newATTRSUB
+   fun:Perl_utilize
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepv
+   fun:Perl_gv_init_pvn
+   fun:Perl_gv_fetchpvn_flags
+   fun:Perl_gv_fetchsv
+   fun:Perl_sv_2cv
+   fun:Perl_pp_rv2cv
+   fun:Perl_runops_standard
+   fun:Perl_call_sv
+   fun:Perl_call_list
+   obj:/usr/lib64/perl5/CORE/libperl.so
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepv
+   fun:Perl_gv_init_pvn
+   fun:Perl_gv_fetchpvn_flags
+   fun:Perl_gv_fetchsv
+   fun:Perl_ck_rvconst
+   fun:Perl_newUNOP
+   fun:Perl_yylex
+   fun:Perl_yyparse
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_pp_require
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepv
+   fun:Perl_gv_init_pvn
+   fun:Perl_gv_fetchpvn_flags
+   fun:Perl_gv_fetchsv
+   fun:Perl_newATTRSUB_flags
+   fun:Perl_newATTRSUB
+   fun:Perl_yyparse
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_pp_require
+   fun:Perl_runops_standard
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   fun:Perl_safesysrealloc
+   fun:Perl_push_scope
+   fun:Perl_pp_entersub
+   fun:Perl_runops_standard
+   fun:Perl_call_sv
+   fun:Perl_call_list
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_newATTRSUB_flags
+   fun:Perl_newATTRSUB
+   fun:Perl_utilize
+   fun:Perl_yyparse
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:Perl_safesyscalloc
+   fun:Perl_gv_fetchpvn_flags
+   fun:Perl_yylex
+   fun:Perl_yyparse
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_pp_require
+   fun:Perl_runops_standard
+   fun:Perl_call_sv
+   fun:Perl_call_list
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_newATTRSUB_flags
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:Perl_newSVOP
+   fun:Perl_yylex
+   fun:Perl_yyparse
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_pp_require
+   fun:Perl_runops_standard
+   fun:Perl_call_sv
+   fun:Perl_call_list
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_newATTRSUB_flags
+   fun:Perl_newATTRSUB
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_init_stacks
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:Perl_safesyscalloc
+   fun:Perl_gv_fetchpvn_flags
+   fun:Perl_yylex
+   fun:Perl_yyparse
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_pp_require
+   fun:Perl_runops_standard
+   fun:Perl_call_sv
+   fun:Perl_call_list
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_newATTRSUB_flags
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepv
+   fun:Perl_newXS_len_flags
+   fun:Perl_newCONSTSUB_flags
+   fun:Perl_gv_init_pvn
+   fun:Perl_gv_fetchpvn_flags
+   fun:Perl_gv_fetchsv
+   fun:Perl_ck_rvconst
+   fun:Perl_newUNOP
+   fun:Perl_yylex
+   fun:Perl_yyparse
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   fun:Perl_safesysrealloc
+   fun:Perl_savestack_grow
+   fun:Perl_save_pushptrptr
+   fun:Perl_yylex
+   fun:Perl_yyparse
+   obj:/usr/lib64/perl5/CORE/libperl.so
+   fun:Perl_pp_require
+   fun:Perl_runops_standard
+   fun:Perl_call_sv
+   fun:Perl_call_list
+   obj:/usr/lib64/perl5/CORE/libperl.so
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_new_stackinfo
+   fun:Perl_init_stacks
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_reentrant_init
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}
+{
+   
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:Perl_safesyscalloc
+   fun:Perl_more_bodies
+   fun:Perl_sv_upgrade
+   fun:Perl_sv_setpv
+   fun:perl_construct
+   obj:/usr/bin/perl
+   fun:(below main)
+}

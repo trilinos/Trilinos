@@ -44,10 +44,6 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/SortAndUnique.hpp"  // for sort_and_unique
 
-
-
-
-
 using stk::mesh::MetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
@@ -59,6 +55,7 @@ TEST(UnitTestPart, testUnit)
 {
   const int spatial_dimension = 3;
   MetaData m(spatial_dimension);
+  m.use_simple_fields();
   PartRepository partRepo(&m);
   PartRepository partRepo2(&m);
   PartRepository partRepo3(&m);
@@ -132,6 +129,7 @@ TEST(UnitTestPart, testPartVector)
 {
   const int spatial_dimension = 3;
   MetaData m(spatial_dimension);
+  m.use_simple_fields();
   PartRepository partRepo(&m);
 
   Part * const pa =  partRepo.declare_part( std::string("a") , stk::topology::NODE_RANK );

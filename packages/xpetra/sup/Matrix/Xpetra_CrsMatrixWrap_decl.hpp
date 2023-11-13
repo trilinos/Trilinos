@@ -49,7 +49,7 @@
 #ifndef XPETRA_CRSMATRIXWRAP_DECL_HPP
 #define XPETRA_CRSMATRIXWRAP_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -79,7 +79,7 @@ namespace Xpetra {
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
-          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class CrsMatrixWrap :
   public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 {
@@ -92,10 +92,8 @@ class CrsMatrixWrap :
 #endif
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
   typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
-#endif
 #endif
 
 public:
@@ -119,7 +117,6 @@ public:
   //! Constructor specifying fixed number of entries for each row and column map
   CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc);
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying fixed number of entries for each row and column map
   CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params = null);
@@ -133,11 +130,14 @@ public:
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
 #endif
 #endif
-#endif
 
   CrsMatrixWrap(RCP<CrsMatrix> matrix);
 
   CrsMatrixWrap(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null);
+
+  CrsMatrixWrap(const RCP<const CrsGraph>& graph, 
+                typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values, 
+                const RCP<ParameterList>& paramList = Teuchos::null);
 
   //! Destructor
   virtual ~CrsMatrixWrap();
@@ -253,13 +253,13 @@ public:
   global_size_t getGlobalNumCols() const;
 
   //! Returns the number of matrix rows owned on the calling node.
-  size_t getNodeNumRows() const;
+  size_t getLocalNumRows() const;
 
   //! Returns the global number of entries in this matrix.
   global_size_t getGlobalNumEntries() const;
 
   //! Returns the local number of entries in this matrix.
-  size_t getNodeNumEntries() const;
+  size_t getLocalNumEntries() const;
 
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
@@ -277,7 +277,7 @@ public:
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   /** Undefined if isFillActive().
    */
-  size_t getNodeMaxNumRowEntries() const;
+  size_t getLocalMaxNumRowEntries() const;
 
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
   bool isLocallyIndexed() const;
@@ -459,18 +459,12 @@ public:
 
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual local_matrix_type getLocalMatrix () const;
-#endif
-
   virtual local_matrix_type getLocalMatrixDevice () const;
   virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 
@@ -484,11 +478,17 @@ public:
   RCP<CrsMatrix> getCrsMatrix() const;
 
 
+  //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
+  LocalOrdinal GetStorageBlockSize() const;
+
   //! Compute a residual R = B - (*this) * X
   void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
                 const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
                 MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
   
+
+  //! Expert only
+  void replaceCrsMatrix(RCP<CrsMatrix> & M);
 
   //@}
 private:

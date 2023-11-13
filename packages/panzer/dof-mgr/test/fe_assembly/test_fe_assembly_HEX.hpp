@@ -176,28 +176,76 @@ namespace Example {
 template<typename ValueType, typename DeviceSpaceType>
 int feAssemblyHex(int argc, char *argv[]) {
 
-  typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+  // host_memory/execution/mirror_space deprecated for kokkos@3.7.00, removed after release
+  // see https://github.com/kokkos/kokkos/pull/3973
+  using exec_space = typename Kokkos::is_space<DeviceSpaceType>::execution_space;
+  using mem_space = typename Kokkos::is_space<DeviceSpaceType>::memory_space;
+  using do_not_use_host_memory_space = std::conditional_t<
+      std::is_same<mem_space, Kokkos::HostSpace>::value
+#if defined(KOKKOS_ENABLE_CUDA)
+          || std::is_same<mem_space, Kokkos::CudaUVMSpace>::value ||
+          std::is_same<mem_space, Kokkos::CudaHostPinnedSpace>::value
+#elif defined(KOKKOS_ENABLE_HIP)
+          || std::is_same<mem_space,
+                          Kokkos::HIPHostPinnedSpace>::value ||
+          std::is_same<mem_space,
+                       Kokkos::HIPManagedSpace>::value
+#elif defined(KOKKOS_ENABLE_SYCL)
+          || std::is_same<mem_space,
+                          Kokkos::Experimental::SYCLSharedUSMSpace>::value ||
+          std::is_same<mem_space,
+                       Kokkos::Experimental::SYCLHostUSMSpace>::value
+#endif
+      ,
+      mem_space, Kokkos::HostSpace>;
 
-  typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal> map_t;
+  using do_not_use_host_execution_space = std::conditional_t<
+#if defined(KOKKOS_ENABLE_CUDA)
+      std::is_same<exec_space, Kokkos::Cuda>::value ||
+#elif defined(KOKKOS_ENABLE_HIP)
+      std::is_same<exec_space, Kokkos::HIP>::value ||
+#elif defined(KOKKOS_ENABLE_SYCL)
+      std::is_same<exec_space, Kokkos::Experimental::SYCL>::value ||
+#elif defined(KOKKOS_ENABLE_OPENMPTARGET)
+      std::is_same<exec_space,
+                   Kokkos::Experimental::OpenMPTarget>::value ||
+#endif
+          false,
+      Kokkos::DefaultHostExecutionSpace, exec_space>;
 
-  typedef typename map_t::local_ordinal_type  local_ordinal_t;
-  typedef typename map_t::global_ordinal_type global_ordinal_t;
-  typedef typename map_t::node_type           node_t;
-  typedef Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>      fe_graph_t;
-  typedef ValueType scalar_t;
-  typedef Tpetra::FECrsMatrix<scalar_t, local_ordinal_t, global_ordinal_t> fe_matrix_t;
-  typedef Tpetra::FEMultiVector<scalar_t, local_ordinal_t, global_ordinal_t> fe_multivector_t;
-  typedef Tpetra::Vector<scalar_t, local_ordinal_t, global_ordinal_t> vector_t;
+  using host_mirror_space = std::conditional_t<
+      std::is_same<exec_space, do_not_use_host_execution_space>::value &&
+          std::is_same<mem_space, do_not_use_host_memory_space>::value,
+      DeviceSpaceType,
+      Kokkos::Device<do_not_use_host_execution_space,
+                     do_not_use_host_memory_space>>;
 
-  typedef Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType> DynRankViewGId;
+  using HostSpaceType = typename host_mirror_space::execution_space;
 
-  typedef Intrepid2::CellTools<DeviceSpaceType> ct;
-  typedef Intrepid2::OrientationTools<DeviceSpaceType> ots;
-  typedef Intrepid2::RealSpaceTools<DeviceSpaceType> rst;
-  typedef Intrepid2::FunctionSpaceTools<DeviceSpaceType> fst;
-  typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpaceType> li;
+  using DynRankView = Kokkos::DynRankView<ValueType,DeviceSpaceType>;
+
+  using map_t = Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal>;
+
+  using local_ordinal_t = typename map_t::local_ordinal_type;
+  using global_ordinal_t = typename map_t::global_ordinal_type;
+  using node_t = typename map_t::node_type;
+  using fe_graph_t = Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>;
+  using scalar_t = ValueType;
+  using fe_matrix_t = Tpetra::FECrsMatrix<scalar_t, local_ordinal_t, global_ordinal_t>;
+  using fe_multivector_t = Tpetra::FEMultiVector<scalar_t, local_ordinal_t, global_ordinal_t>;
+  using vector_t = Tpetra::Vector<scalar_t, local_ordinal_t, global_ordinal_t>;
+
+  using DynRankViewGId = Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType>;
+
+  using ct = Intrepid2::CellTools<DeviceSpaceType>;
+  using ots = Intrepid2::OrientationTools<DeviceSpaceType>;
+  using rst = Intrepid2::RealSpaceTools<DeviceSpaceType>;
+  using fst = Intrepid2::FunctionSpaceTools<DeviceSpaceType>;
+#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
+  using li = Intrepid2::Experimental::LagrangianInterpolation<DeviceSpaceType>;
+#else
+  using li = Intrepid2::LagrangianInterpolation<DeviceSpaceType>;
+#endif
 
   int errorFlag = 0;
 
@@ -251,8 +299,8 @@ int feAssemblyHex(int argc, char *argv[]) {
       getFancyOStream(Teuchos::rcpFromRef (std::cout)) :
       getFancyOStream(Teuchos::rcp (new Teuchos::oblackholestream ()));
 
-    *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-    *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+    *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
+    *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
     *outStream << "\n";
 
 
@@ -465,7 +513,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     globalIndexer->getOwnedAndGhostedIndices(ownedAndGhostedIndices);
     Teuchos::RCP<const map_t> ownedAndGhostedMap = Teuchos::rcp(new const map_t(Teuchos::OrdinalTraits<global_ordinal_t>::invalid(),ownedAndGhostedIndices,0,Teuchos::rcpFromRef(comm)));
 
-     *outStream << "Total number of DoFs: " << ownedMap->getGlobalNumElements() << ", number of owned DoFs: " << ownedMap->getNodeNumElements() << "\n";
+     *outStream << "Total number of DoFs: " << ownedMap->getGlobalNumElements() << ", number of owned DoFs: " << ownedMap->getLocalNumElements() << "\n";
 
     mapsTimer = Teuchos::null;
     auto graphGenerationTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Graph Generation")));
@@ -579,15 +627,14 @@ int feAssemblyHex(int argc, char *argv[]) {
     DynRankView ConstructWithLabel(basisCoeffsLI, numOwnedElems, basisCardinality);
     {
       Teuchos::TimeMonitor liTimer =  *Teuchos::TimeMonitor::getNewTimer("Verification, locally interpolate analytic solution");
-      DynRankView ConstructWithLabel(dofCoordsOriented, numOwnedElems, basisCardinality, dim);
-      DynRankView ConstructWithLabel(dofCoeffsPhys, numOwnedElems, basisCardinality);
+      DynRankView ConstructWithLabel(dofCoords, basisCardinality, dim);
 
-      li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basis.getRawPtr(), elemOrts);
+      basis->getDofCoords(dofCoords);
 
       DynRankView ConstructWithLabel(funAtDofPoints, numOwnedElems, basisCardinality);
       {
         DynRankView ConstructWithLabel(physDofPoints, numOwnedElems, basisCardinality, dim);
-        ct::mapToPhysicalFrame(physDofPoints,dofCoordsOriented,physVertexes,basis->getBaseCellTopology());
+        ct::mapToPhysicalFrame(physDofPoints,dofCoords,physVertexes,basis->getBaseCellTopology());
         EvalSolFunctor<DynRankView> functor;
         functor.funAtPoints = funAtDofPoints;
         functor.points = physDofPoints;
@@ -595,7 +642,7 @@ int feAssemblyHex(int argc, char *argv[]) {
         Kokkos::fence(); //make sure that funAtDofPoints has been evaluated
       }
 
-      li::getBasisCoeffs(basisCoeffsLI, funAtDofPoints, dofCoeffsPhys);
+      li::getBasisCoeffs(basisCoeffsLI, funAtDofPoints, basis.getRawPtr(), elemOrts);
     }
 
     {

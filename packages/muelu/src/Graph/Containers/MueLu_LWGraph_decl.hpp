@@ -47,8 +47,7 @@
 #define MUELU_LWGRAPH_DECL_HPP
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
-#include <Xpetra_CrsGraph.hpp>     // inline functions requires class declaration
-#include <Xpetra_CrsGraphFactory.hpp>
+#include <Xpetra_CrsGraph_fwd.hpp>     // inline functions requires class declaration
 #include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -131,7 +130,7 @@ namespace MueLu {
     void SetBoundaryNodeMap(const ArrayRCP<const bool>& bndry)   { dirichletBoundaries_ = bndry; }
 
     //! Returns the maximum number of entries across all rows/columns on this node
-    size_t getNodeMaxNumRowEntries () const                      { return maxNumRowEntries_; }
+    size_t getLocalMaxNumRowEntries () const                      { return maxNumRowEntries_; }
 
     //! Returns map with global ids of boundary nodes.
     const ArrayRCP<const bool> GetBoundaryNodeMap() const        { return dirichletBoundaries_; }
@@ -156,15 +155,7 @@ namespace MueLu {
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
 
-    RCP<CrsGraph> GetCrsGraph() const {
-      ArrayRCP<size_t> rowPtrs;
-      rowPtrs.resize(rows_.size());
-      for (size_t i=0; i<Teuchos::as<size_t>(rows_.size()); i++)
-        rowPtrs[i] = rows_[i];
-      auto graph =  Xpetra::CrsGraphFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(GetDomainMap(), GetImportMap(), rowPtrs, Teuchos::arcp_const_cast<LO>(getEntries()));
-      graph->fillComplete();
-      return graph;
-    }
+    RCP<CrsGraph> GetCrsGraph() const;
 
   private:
 
@@ -176,7 +167,7 @@ namespace MueLu {
     const RCP<const Map> domainMap_, importMap_;
     const Map& domainMapRef_;
     //! Name of this graph.
-    const std::string & objectLabel_;
+    const std::string objectLabel_;
     //! Boolean array marking Dirichlet rows.
     ArrayRCP<const bool> dirichletBoundaries_;
 

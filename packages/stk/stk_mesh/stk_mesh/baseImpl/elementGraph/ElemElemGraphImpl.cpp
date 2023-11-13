@@ -52,33 +52,32 @@ bool fill_topologies(stk::mesh::ElemElemGraph& eeGraph,
   return areAnyElementsShells;
 }
 
-ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,
-                                                           const stk::mesh::EntityVector &elements_to_communicate)
+ElemSideProcVector build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,
+                                                            const stk::mesh::EntityVector &elements_to_communicate)
 {
-    ElemSideToProcAndFaceId elem_side_comm;
+    ElemSideProcVector elem_side_comm;
+    elem_side_comm.reserve(elements_to_communicate.size());
     stk::mesh::EntityVector side_nodes;
     std::vector<int> sharing_procs;
     for(stk::mesh::Entity elem : elements_to_communicate)
     {
-        stk::topology elem_top = bulkData.bucket(elem).topology();
-        unsigned num_sides = elem_top.num_sides();
+        stk::topology elemTop = bulkData.bucket(elem).topology();
+        const stk::mesh::Entity* elemNodes = bulkData.begin_nodes(elem);
+        unsigned num_sides = elemTop.num_sides();
         for(unsigned side=0;side<num_sides;++side)
         {
-            fill_element_side_nodes_from_topology(bulkData, elem, side, side_nodes);
+            fill_element_side_nodes_from_topology(elemTop, elemNodes, side, side_nodes);
             bulkData.shared_procs_intersection(side_nodes, sharing_procs);
             for (int proc: sharing_procs) {
-                elem_side_comm.insert(std::pair<EntitySidePair, ProcFaceIdPair>(EntitySidePair(elem, side), ProcFaceIdPair(proc,0)));
+                elem_side_comm.push_back(ElemSideProc(elem, side, proc));
             }
         }
     }
     return elem_side_comm;
 }
 
-void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index, stk::mesh::EntityVector& localElemSideNodes)
+void fill_element_side_nodes_from_topology(stk::topology localElemTopology, const stk::mesh::Entity* localElemNodes, unsigned side_index, stk::mesh::EntityVector& localElemSideNodes)
 {
-    stk::topology localElemTopology = bulkData.bucket(element).topology();
-    const stk::mesh::Entity* localElemNodes = bulkData.begin_nodes(element);
-
     unsigned num_nodes_this_side = localElemTopology.side_topology(side_index).num_nodes();
     if(num_nodes_this_side == 0) {
       localElemSideNodes.clear();
@@ -278,7 +277,7 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
     if(!bulkData.is_valid(side))
     {
         stk::mesh::PartVector side_parts = get_parts_for_creating_side(bulkData, parts_for_creating_side, local_element, side_id);
-//        ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id));
+//        STK_ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id));
 //        side = connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, side_parts);
         side = bulkData.declare_element_side(local_element, side_ord, side_parts);
         shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
@@ -327,9 +326,11 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     bulkData.declare_relation(element, side, side_ordinal, side_permutation);
 
     // connect side to nodes
-    stk::topology side_top = bulkData.bucket(element).topology().side_topology(side_ordinal);
+    stk::topology elem_top = bulkData.bucket(element).topology();
+    stk::topology side_top = elem_top.side_topology(side_ordinal);
+    const stk::mesh::Entity* elemNodes = bulkData.begin_nodes(element);
     stk::mesh::EntityVector side_nodes;
-    fill_element_side_nodes_from_topology(bulkData, element, side_ordinal, side_nodes);
+    fill_element_side_nodes_from_topology(elem_top, elemNodes, side_ordinal, side_nodes);
     stk::mesh::EntityVector permuted_side_nodes(side_top.num_nodes());
     side_top.permutation_nodes(side_nodes.data(), side_permutation, permuted_side_nodes.data());
     for(size_t i=0;i<permuted_side_nodes.size();++i)
@@ -384,7 +385,7 @@ void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
                       const stk::mesh::Graph &graph, std::vector<int> &element_side_pairs)
 {
     constexpr int MAX_SIDES_PER_ELEM = 12;
-    ThrowRequireMsg(maxSidesThisElement <= MAX_SIDES_PER_ELEM, "STK Error, violated assumption that max sides per element is "<<MAX_SIDES_PER_ELEM<<", trying to use value of " << maxSidesThisElement);
+    STK_ThrowRequireMsg(maxSidesThisElement <= MAX_SIDES_PER_ELEM, "STK Error, violated assumption that max sides per element is "<<MAX_SIDES_PER_ELEM<<", trying to use value of " << maxSidesThisElement);
     int elemSides[MAX_SIDES_PER_ELEM] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
     for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)

@@ -58,7 +58,6 @@
 #include "MueLu_InterfaceAggregationAlgorithm.hpp"
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 
 #include "MueLu_AggregationPhase1Algorithm.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm.hpp"
@@ -77,8 +76,6 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
 
 
 namespace MueLu {
@@ -109,7 +106,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
-    SET_VALID_ENTRY("aggregation: phase2a include root");
+    SET_VALID_ENTRY("aggregation: match ML phase2a");
     SET_VALID_ENTRY("aggregation: phase2a agg factor");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
 
@@ -348,7 +345,7 @@ namespace MueLu {
                                                                lFineNodesPerDir,
                                                                coarseRate, false));
 
-      TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
+      TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getLocalNumElements()
                                  != static_cast<size_t>(geoData->getNumLocalFineNodes()),
                                  Exceptions::RuntimeError,
                                  "The local number of elements in the graph's map is not equal to "

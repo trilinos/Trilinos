@@ -9,7 +9,7 @@
 #ifndef TEMPUS_UNIT_TEST_MAIN_UTILS_HPP
 #define TEMPUS_UNIT_TEST_MAIN_UTILS_HPP
 
-#if defined(__linux__) && defined(__GNUC__)
+#if defined(__linux__) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
   #include <fenv.h>
 #elif defined(__APPLE__) && defined(__GNUC__) && defined(__SSE__)
   #include <xmmintrin.h>
@@ -33,7 +33,7 @@ void enableFPE(bool enableFPE)
 #endif
 
   if (enableFPE) {
-#if defined(__linux__) && defined(__GNUC__)
+#if defined(__linux__) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
     feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
 #elif defined(__APPLE__) && defined(__GNUC__) && defined(__SSE__)
     eMask = _MM_GET_EXCEPTION_MASK();  // Save current eMask so we can disable.
@@ -42,7 +42,7 @@ void enableFPE(bool enableFPE)
                                  & ~_MM_MASK_INVALID);
 #endif
   } else {
-#if defined(__linux__) && defined(__GNUC__)
+#if defined(__linux__) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
     fedisableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
 #elif defined(__APPLE__) && defined(__GNUC__) && defined(__SSE__)
     _MM_SET_EXCEPTION_MASK(eMask);

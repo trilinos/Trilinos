@@ -232,7 +232,9 @@ void zeroMultiVectorRowIndices(Epetra_MultiVector & mv,const std::vector<int> & 
 ZeroedOperator::ZeroedOperator(const std::vector<int> & zeroIndices,
                                const Teuchos::RCP<const Epetra_Operator> & op)
    : zeroIndices_(zeroIndices), epetraOp_(op)
-{ }
+{
+   label_ = "zeroed( "+std::string(epetraOp_->Label())+" )";
+}
 
 //! Perform a matrix-vector product with certain rows zeroed out
 int ZeroedOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const

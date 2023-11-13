@@ -92,10 +92,11 @@ namespace Intrepid2 {
     getCubatureImpl( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                      Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
 
-    typedef typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewType  PointViewType;
-    typedef typename Cubature<DeviceType,pointValueType,weightValueType>::weightViewType weightViewType;
+    using typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewType;
+    using typename Cubature<DeviceType,pointValueType,weightValueType>::weightViewType;
 
     using CubatureTensor<DeviceType,pointValueType,weightValueType>::getCubature;
+    using typename CubatureTensor<DeviceType,pointValueType,weightValueType>::ExecSpaceType;
 
     virtual
     void

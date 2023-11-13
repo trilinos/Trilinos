@@ -454,7 +454,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     // TODO zero in the above Tpetra::Map constructor.  Github #1024
     oneToOneMap = Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
 
-    numOwnedVertices_=oneToOneMap->getNodeNumElements();
+    numOwnedVertices_=oneToOneMap->getLocalNumElements();
     for (size_t i=0;i<numLocalVertices_;i++) {
       isOwner_[i] = oneToOneMap->isNodeGlobalElement(gids_[i]);
     }

@@ -45,7 +45,7 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#include "Tempus_IntegratorBasicOld.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_IntegratorForwardSensitivity.hpp"
 #include "Tempus_IntegratorAdjointSensitivity.hpp"
 #include "Piro_Helpers.hpp"
@@ -115,7 +115,7 @@ public:
 
 private:
 
-  Teuchos::RCP<Tempus::IntegratorBasicOld<Scalar> > basicIntegrator_;
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > basicIntegrator_;
   Teuchos::RCP<Tempus::IntegratorForwardSensitivity<Scalar> > fwdSensIntegrator_;
   Teuchos::RCP<Tempus::IntegratorAdjointSensitivity<Scalar> > adjSensIntegrator_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;

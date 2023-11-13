@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -16,7 +16,7 @@ int lanpause(int      j,         /* current step */
              int      interval,  /* interval between pauses */
              double **q,         /* the Lanczos vectors */
              int      n,         /* length of Lanczos vectors */
-             int *    pausemode, /* which pausing criterion to use */
+             int     *pausemode, /* which pausing criterion to use */
              int      version,   /* which version of sel. orth. we are using */
              double   beta       /* current off-diagonal value */
 )
@@ -25,8 +25,6 @@ int lanpause(int      j,         /* current step */
   extern double DOUBLE_EPSILON; /* machine precision */
   double        paige_dot;      /* q[j]^T q[1] */
   double        paigetol;       /* pause if paigedot > paigetol */
-  double        dot();          /* standard dot product */
-  void          checkorth();
 
   /* Check orthogonality of last Lanczos vector against previous ones */
   if (DEBUG_EVECS > 3) {
@@ -76,7 +74,7 @@ int lanpause_float(int     j,         /* current step */
                    int     interval,  /* interval between pauses */
                    float **q,         /* the Lanczos vectors */
                    int     n,         /* length of Lanczos vectors */
-                   int *   pausemode, /* which pausing criterion to use */
+                   int    *pausemode, /* which pausing criterion to use */
                    int     version,   /* which version of sel. orth. we are using */
                    double  beta       /* current off-diagonal value */
 )
@@ -85,8 +83,6 @@ int lanpause_float(int     j,         /* current step */
   extern double DOUBLE_EPSILON; /* machine precision */
   double        paige_dot;      /* q[j]^T q[1] */
   double        paigetol;       /* pause if paigedot > paigetol */
-  double        dot_float();    /* standard dot product */
-  void          checkorth_float();
 
   /* Check orthogonality of last Lanczos vector against previous ones */
   if (DEBUG_EVECS > 3) {

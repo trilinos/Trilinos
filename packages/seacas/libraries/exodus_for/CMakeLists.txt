@@ -6,13 +6,13 @@ endif()
 
 TRIBITS_SUBPACKAGE(Exodus_for)
 
-INCLUDE_DIRECTORIES(
+TRIBITS_INCLUDE_DIRECTORIES(
    "${CMAKE_CURRENT_SOURCE_DIR}/include"
    "${CMAKE_CURRENT_SOURCE_DIR}/test"
    )
 
 SET(SOURCES "")
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_GLOB(SOURCES ${DIR}/src/*.c ${DIR}/src/*.F)
 LIST(REMOVE_ITEM SOURCES "${DIR}/src/exo_jack-windows.c")
@@ -32,7 +32,11 @@ if (SEACASExodus_ENABLE_STATIC)
            STATIC
            ${SOURCES}
    )
+   target_link_libraries(exodus_for_static PUBLIC Netcdf::all_libs)
+   target_link_libraries(exodus_for_static PRIVATE SEACASExodus::all_libs)
    set_target_properties(exodus_for_static PROPERTIES OUTPUT_NAME exodus_for)
+   # This keeps the library out of the `all_libs` targets...
+   set_target_properties(exodus_for_static PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
    INSTALL(TARGETS exodus_for_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
    # For backwards compatibility, the Fortran exodus library was called libexoIIv2for.a

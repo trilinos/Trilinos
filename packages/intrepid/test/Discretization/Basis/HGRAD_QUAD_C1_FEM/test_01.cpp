@@ -121,10 +121,11 @@ int main(int argc, char *argv[]) {
   quadNodes(3,0) = -1.0;  quadNodes(3,1) =  1.0;
   quadNodes(4,0) =  0.0;  quadNodes(4,1) =  0.0;
   
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
 
   try{
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    FieldContainer<double> vals;
+   
     // exception #1: DIV cannot be applied to scalar functions
     // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
     vals.resize(quadBasis.getCardinality(), quadNodes.dimension(0));

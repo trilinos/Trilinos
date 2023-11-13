@@ -52,16 +52,16 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 void testNodesAreSelected(stk::mesh::BulkData &stkMeshBulkData,
-                     const stk::mesh::EntityVector &nodes,
-                     stk::mesh::Selector part1Selector)
+                          const stk::mesh::EntityVector &nodes,
+                          stk::mesh::Selector part1Selector)
 {
-    stk::mesh::EntityVector selectedNodes;
-    stk::mesh::get_selected_entities(part1Selector, stkMeshBulkData.buckets(stk::topology::NODE_RANK), selectedNodes);
-    ASSERT_EQ(selectedNodes.size(), nodes.size());
-    for(size_t i = 0; i < nodes.size(); i++)
-    {
-        EXPECT_EQ(nodes[i], selectedNodes[i]);
-    }
+  stk::mesh::EntityVector selectedNodes;
+  stk::mesh::get_selected_entities(part1Selector, stkMeshBulkData.buckets(stk::topology::NODE_RANK), selectedNodes);
+  ASSERT_EQ(selectedNodes.size(), nodes.size());
+  for(size_t i = 0; i < nodes.size(); i++)
+  {
+    EXPECT_EQ(nodes[i], selectedNodes[i]);
+  }
 }
 
 void testFieldOnNodes(stk::mesh::BulkData &stkMeshBulkData,
@@ -69,12 +69,12 @@ void testFieldOnNodes(stk::mesh::BulkData &stkMeshBulkData,
                       stk::mesh::Part &nodePart,
                       stk::mesh::Field<double> &nodeField1)
 {
-    for(size_t i = 0; i < nodes.size(); ++i)
-    {
-        EXPECT_TRUE(stkMeshBulkData.bucket(nodes[i]).member(nodePart));
-        double* fieldPtr = stk::mesh::field_data(nodeField1, nodes[i]);
-        EXPECT_EQ(*static_cast<double*>(nodeField1.get_initial_value()), *fieldPtr);
-    }
+  for(size_t i = 0; i < nodes.size(); ++i)
+  {
+    EXPECT_TRUE(stkMeshBulkData.bucket(nodes[i]).member(nodePart));
+    double* fieldPtr = stk::mesh::field_data(nodeField1, nodes[i]);
+    EXPECT_EQ(*static_cast<double*>(nodeField1.get_initial_value()), *fieldPtr);
+  }
 }
 
 void testAddingNodesToPart(stk::mesh::BulkData &stkMeshBulkData,
@@ -83,20 +83,20 @@ void testAddingNodesToPart(stk::mesh::BulkData &stkMeshBulkData,
                            stk::mesh::Selector part1Selector,
                            stk::mesh::Field<double> &nodeField1)
 {
-    stkMeshBulkData.modification_begin();
-    stk::mesh::PartVector addParts(1, &nodePart);
-    for(size_t i = 0; i < nodes.size(); ++i)
+  stkMeshBulkData.modification_begin();
+  stk::mesh::PartVector addParts(1, &nodePart);
+  for(size_t i = 0; i < nodes.size(); ++i)
+  {
+    if(stkMeshBulkData.parallel_owner_rank(nodes[i]) == stkMeshBulkData.parallel_rank())
     {
-        if(stkMeshBulkData.parallel_owner_rank(nodes[i]) == stkMeshBulkData.parallel_rank())
-        {
-            stkMeshBulkData.change_entity_parts(nodes[i], addParts);
-        }
+      stkMeshBulkData.change_entity_parts(nodes[i], addParts);
     }
-    stkMeshBulkData.modification_end();
+  }
+  stkMeshBulkData.modification_end();
 
-    testFieldOnNodes(stkMeshBulkData, nodes, nodePart, nodeField1);
+  testFieldOnNodes(stkMeshBulkData, nodes, nodePart, nodeField1);
 
-    testNodesAreSelected(stkMeshBulkData, nodes, part1Selector);
+  testNodesAreSelected(stkMeshBulkData, nodes, part1Selector);
 }
 
 void testRemovingNodesFromPart(stk::mesh::BulkData &stkMeshBulkData,
@@ -105,26 +105,26 @@ void testRemovingNodesFromPart(stk::mesh::BulkData &stkMeshBulkData,
                                stk::mesh::Selector partSelector,
                                stk::mesh::Field<double> &nodeField1)
 {
-    stkMeshBulkData.modification_begin();
-    stk::mesh::PartVector emptyAddParts;
-    stk::mesh::PartVector removeParts(1, &nodePart);
-    for(size_t i = 0; i < nodes.size(); ++i)
+  stkMeshBulkData.modification_begin();
+  stk::mesh::PartVector emptyAddParts;
+  stk::mesh::PartVector removeParts(1, &nodePart);
+  for(size_t i = 0; i < nodes.size(); ++i)
+  {
+    if(stkMeshBulkData.parallel_owner_rank(nodes[i]) == stkMeshBulkData.parallel_rank())
     {
-        if(stkMeshBulkData.parallel_owner_rank(nodes[i]) == stkMeshBulkData.parallel_rank())
-        {
-            stkMeshBulkData.change_entity_parts(nodes[i], emptyAddParts, removeParts);
-        }
+      stkMeshBulkData.change_entity_parts(nodes[i], emptyAddParts, removeParts);
     }
-    stkMeshBulkData.modification_end();
+  }
+  stkMeshBulkData.modification_end();
 
-    for(size_t i = 0; i < nodes.size(); ++i)
-    {
-        EXPECT_FALSE(stkMeshBulkData.bucket(nodes[i]).member(nodePart));
-    }
+  for(size_t i = 0; i < nodes.size(); ++i)
+  {
+    EXPECT_FALSE(stkMeshBulkData.bucket(nodes[i]).member(nodePart));
+  }
 
-    stk::mesh::EntityVector selectedNodes;
-    stk::mesh::get_selected_entities(partSelector, stkMeshBulkData.buckets(stk::topology::NODE_RANK), selectedNodes);
-    EXPECT_EQ(0u, selectedNodes.size());
+  stk::mesh::EntityVector selectedNodes;
+  stk::mesh::get_selected_entities(partSelector, stkMeshBulkData.buckets(stk::topology::NODE_RANK), selectedNodes);
+  EXPECT_EQ(0u, selectedNodes.size());
 }
 
 TEST(UnitTestPartsAfterCommit, FieldsAndSelectors)
@@ -132,13 +132,14 @@ TEST(UnitTestPartsAfterCommit, FieldsAndSelectors)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
 
   stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
   stk::mesh::Part& nodePart1 = stkMeshMetaData.declare_part("nodePart1");
-  stk::mesh::Field<double>& nodeField1 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodeField1");
+  stk::mesh::Field<double>& nodeField1 = stkMeshMetaData.declare_field<double>(stk::topology::NODE_RANK, "nodeField1");
   const double initialValue = 3.14;
   stk::mesh::put_field_on_mesh(nodeField1, nodePart1, &initialValue);
   stkMeshIoBroker.populate_bulk_data();
@@ -168,6 +169,7 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -175,7 +177,7 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
   stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
   stk::mesh::Part& firstPart = stkMeshMetaData.declare_part("firstPart", stk::topology::ELEMENT_RANK);
 
-  stk::mesh::Field<double>& nodeField1 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodeField1");
+  stk::mesh::Field<double>& nodeField1 = stkMeshMetaData.declare_field<double>(stk::topology::NODE_RANK, "nodeField1");
   const double initialValue = 3.14;
   stk::mesh::put_field_on_mesh(nodeField1, firstPart, &initialValue);
   stkMeshIoBroker.populate_bulk_data();
@@ -196,8 +198,8 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
 
   for(size_t i=0; i<nodesInFirstPart.size(); i++)
   {
-      double* fieldPtr = stk::mesh::field_data(nodeField1, nodesInFirstPart[i]);
-      *fieldPtr = stkMeshBulkData.identifier(nodesInFirstPart[i]);
+    double* fieldPtr = stk::mesh::field_data(nodeField1, nodesInFirstPart[i]);
+    *fieldPtr = stkMeshBulkData.identifier(nodesInFirstPart[i]);
   }
 
   stk::mesh::Part& partAfterCommit = stkMeshMetaData.declare_part("partAfterCommit", stk::topology::ELEMENT_RANK);
@@ -224,58 +226,59 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
 
 TEST(UnitTestPartsAfterCommit, SelectorOps)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if(numProcs == 1)
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs == 1)
+  {
+    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+    stkMeshIoBroker.use_simple_fields();
+    const std::string generatedMeshSpecification = "generated:1x1x1";
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+
+    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+    stk::mesh::Part& partA = stkMeshMetaData.declare_part("partA", stk::topology::NODE_RANK);
+
+    stkMeshIoBroker.populate_bulk_data();
+
+    stk::mesh::BulkData& stkMeshBulkData = stkMeshIoBroker.bulk_data();
+    stk::mesh::EntityVector nodes;
+    stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
+    ASSERT_EQ(8u, nodes.size());
+
+    stkMeshBulkData.modification_begin();
+    stk::mesh::PartVector addParts(1, &partA);
+    for(size_t i = 0; i < 4; i++)
     {
-        stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-        const std::string generatedMeshSpecification = "generated:1x1x1";
-        stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-        stkMeshIoBroker.create_input_mesh();
-
-        stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-        stk::mesh::Part& partA = stkMeshMetaData.declare_part("partA", stk::topology::NODE_RANK);
-
-        stkMeshIoBroker.populate_bulk_data();
-
-        stk::mesh::BulkData& stkMeshBulkData = stkMeshIoBroker.bulk_data();
-        stk::mesh::EntityVector nodes;
-        stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
-        ASSERT_EQ(8u, nodes.size());
-
-        stkMeshBulkData.modification_begin();
-        stk::mesh::PartVector addParts(1, &partA);
-        for(size_t i = 0; i < 4; i++)
-        {
-            stkMeshBulkData.change_entity_parts(nodes[i], addParts);
-        }
-        stkMeshBulkData.modification_end();
-
-        stk::mesh::Selector selectNodesNotInPartA = stkMeshMetaData.universal_part() - partA;
-        stk::mesh::EntityVector nodesNotInPartA;
-        stk::mesh::get_selected_entities(selectNodesNotInPartA,
-                                         stkMeshBulkData.buckets(stk::topology::NODE_RANK),
-                                         nodesNotInPartA);
-        ASSERT_EQ(4u, nodesNotInPartA.size());
-
-        stk::mesh::Part& partB = stkMeshMetaData.declare_part("partB", stk::topology::ELEMENT_RANK);
-
-        stkMeshBulkData.modification_begin();
-        addParts[0] = &partB;
-        for(size_t i = 2; i < 6; i++)
-        {
-            stkMeshBulkData.change_entity_parts(nodes[i], addParts);
-        }
-        stkMeshBulkData.modification_end();
-
-        stk::mesh::EntityVector nodesStillNotInPartA;
-        stk::mesh::get_selected_entities(selectNodesNotInPartA,
-                                         stkMeshBulkData.buckets(stk::topology::NODE_RANK),
-                                         nodesStillNotInPartA);
-        ASSERT_EQ(4u, nodesStillNotInPartA.size());
-        for(size_t i = 0; i < nodesNotInPartA.size(); i++)
-        {
-            EXPECT_EQ(nodesNotInPartA[i], nodesStillNotInPartA[i]);
-        }
+      stkMeshBulkData.change_entity_parts(nodes[i], addParts);
     }
+    stkMeshBulkData.modification_end();
+
+    stk::mesh::Selector selectNodesNotInPartA = stkMeshMetaData.universal_part() - partA;
+    stk::mesh::EntityVector nodesNotInPartA;
+    stk::mesh::get_selected_entities(selectNodesNotInPartA,
+                                     stkMeshBulkData.buckets(stk::topology::NODE_RANK),
+                                     nodesNotInPartA);
+    ASSERT_EQ(4u, nodesNotInPartA.size());
+
+    stk::mesh::Part& partB = stkMeshMetaData.declare_part("partB", stk::topology::ELEMENT_RANK);
+
+    stkMeshBulkData.modification_begin();
+    addParts[0] = &partB;
+    for(size_t i = 2; i < 6; i++)
+    {
+      stkMeshBulkData.change_entity_parts(nodes[i], addParts);
+    }
+    stkMeshBulkData.modification_end();
+
+    stk::mesh::EntityVector nodesStillNotInPartA;
+    stk::mesh::get_selected_entities(selectNodesNotInPartA,
+                                     stkMeshBulkData.buckets(stk::topology::NODE_RANK),
+                                     nodesStillNotInPartA);
+    ASSERT_EQ(4u, nodesStillNotInPartA.size());
+    for(size_t i = 0; i < nodesNotInPartA.size(); i++)
+    {
+      EXPECT_EQ(nodesNotInPartA[i], nodesStillNotInPartA[i]);
+    }
+  }
 }

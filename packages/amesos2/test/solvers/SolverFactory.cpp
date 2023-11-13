@@ -126,7 +126,7 @@ namespace {
     const SC minusOne = static_cast<SC> (-1.0);
     RCP<MAT> A (new MAT (rowMap, maxNumEntPerRow));
 
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement(lclRow);

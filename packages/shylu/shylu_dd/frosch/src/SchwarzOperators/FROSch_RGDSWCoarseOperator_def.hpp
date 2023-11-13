@@ -150,11 +150,11 @@ namespace FROSch {
                 << " | " << setw(41) << blockId
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Spatial dimensions" << right
                 << " | " << setw(41) << dimension
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Number of degrees of freedom per node" << right
                 << " | " << setw(41) << dofsPerNode
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
@@ -318,7 +318,6 @@ namespace FROSch {
         switch (dimension) {
             case 1:
                 return null;
-                break;
             case 2:
                 rotationsPerEntity = 1;
                 break;
@@ -327,7 +326,6 @@ namespace FROSch {
                 break;
             default:
                 FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
-                break;
         }
 
         XMultiVectorPtrVecPtr rotations(rotationsPerEntity);

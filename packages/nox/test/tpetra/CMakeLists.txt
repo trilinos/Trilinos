@@ -1,5 +1,5 @@
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 ASSERT_DEFINED(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA
   NOX_ENABLE_Tpetra
@@ -48,6 +48,11 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Tpetra_HouseholderBorderedSolve
       SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp tTpetra_HouseholderBorderedSolve.cpp
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tpetra_HouseholderBorderedSolve_Continuation
+      SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp tTpetra_HouseholderBorderedSolve_Continuation.cpp
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(

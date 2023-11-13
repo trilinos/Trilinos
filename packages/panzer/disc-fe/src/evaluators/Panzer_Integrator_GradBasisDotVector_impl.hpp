@@ -125,14 +125,14 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(fmNames.size());
-    kokkosFieldMults_ = View<View<const ScalarT**>*>("GradBasisDotVector::KokkosFieldMultipliers",
+    kokkosFieldMults_ = PHX::View<PHX::UnmanagedView<const ScalarT**>*>("GradBasisDotVector::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
       fieldMults_[i++] = MDField<const ScalarT, Cell, IP>(name, ir.dl_scalar);
       this->addDependentField(fieldMults_[i - 1]);
     } // end loop over the field multipliers
-
+    
     // Set the name of this object.
     string n("Integrator_GradBasisDotVector (");
     if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
@@ -192,11 +192,24 @@ namespace panzer
     using std::size_t;
 
     // Get the PHX::Views of the field multipliers.
+    auto field_mults_host_mirror = Kokkos::create_mirror_view(kokkosFieldMults_);
     for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+      field_mults_host_mirror(i) = fieldMults_[i].get_static_view();
+    Kokkos::deep_copy(kokkosFieldMults_,field_mults_host_mirror);
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
+
+    // Allocate temporary if not using shared memory
+    bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
+    if (!use_shared_memory) {
+      if (Sacado::IsADType<ScalarT>::value) {
+	const auto fadSize = Kokkos::dimension_scalar(field_.get_view());
+	tmp_ = PHX::View<ScalarT*>("GradBasisDotVector::tmp_",field_.extent(0),fadSize);
+      } else {
+	tmp_ = PHX::View<ScalarT*>("GradBasisDotVector::tmp_",field_.extent(0));
+      }
+    }
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -220,13 +233,12 @@ namespace panzer
     const int numQP(vector_.extent(1)), numDim(vector_.extent(2)),
               numBases(basis_.extent(1));
     if (evalStyle_ == EvaluatorStyle::EVALUATES)
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
         field_(cell, basis) = 0.0;
       });
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.
-    ScalarT tmp;
     if (NUM_FIELD_MULT == 0)
     {
       // Loop over the quadrature points and dimensions of our vector fields,
@@ -236,9 +248,8 @@ namespace panzer
       {
         for (int dim(0); dim < numDim; ++dim)
         {
-          tmp = multiplier_ * vector_(cell, qp, dim);
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
-            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+	    field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim);
 	  });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
@@ -252,10 +263,8 @@ namespace panzer
       {
         for (int dim(0); dim < numDim; ++dim)
         {
-          tmp = multiplier_ * vector_(cell, qp, dim) *
-            kokkosFieldMults_(0)(cell, qp);
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
-            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+	    field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim) * kokkosFieldMults_(0)(cell, qp);
 	  });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
@@ -270,14 +279,14 @@ namespace panzer
       const int numFieldMults(kokkosFieldMults_.extent(0));
       for (int qp(0); qp < numQP; ++qp)
       {
-        ScalarT fieldMultsTotal(1);
+	team.team_barrier();
+	tmp_(cell) = 1.0;
         for (int fm(0); fm < numFieldMults; ++fm)
-          fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
+          tmp_(cell) *= kokkosFieldMults_(fm)(cell, qp);
         for (int dim(0); dim < numDim; ++dim)
         {
-          tmp = multiplier_ * vector_(cell, qp, dim) * fieldMultsTotal;
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
-            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+	    field_(cell, basis) += basis_(cell, basis, qp, dim) *  multiplier_ * vector_(cell, qp, dim) * tmp_(cell);
 	  });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
@@ -317,7 +326,7 @@ namespace panzer
     }
 
     // Initialize the evaluated field.
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
       tmp_field(basis) = 0.0;
     });
 
@@ -332,10 +341,8 @@ namespace panzer
       {
         for (int dim(0); dim < numDim; ++dim)
         {
-	  team.team_barrier();
-          tmp(0) = multiplier_ * vector_(cell, qp, dim);
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
-	    tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp(0);
+	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+	    tmp_field(basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim);
 	  });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
@@ -349,11 +356,8 @@ namespace panzer
       {
         for (int dim(0); dim < numDim; ++dim)
         {
-	  team.team_barrier();
-          tmp(0) = multiplier_ * vector_(cell, qp, dim) *
-            kokkosFieldMults_(0)(cell, qp);
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
-	      tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp(0);
+	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+	    tmp_field(basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim) * kokkosFieldMults_(0)(cell, qp);
 	  });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
@@ -375,7 +379,7 @@ namespace panzer
         {
 	  team.team_barrier();
           tmp(0) = multiplier_ * vector_(cell, qp, dim) * fieldMultsTotal;
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
 	    tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp(0);
 	  });
         } // end loop over the dimensions of the vector field
@@ -384,12 +388,12 @@ namespace panzer
 
     // Put final values into target field
     if (evalStyle_ == EvaluatorStyle::EVALUATES) {
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int basis) {
 	field_(cell,basis) = tmp_field(basis);
       });
     }
     else { // Contributed
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int basis) {
 	field_(cell,basis) += tmp_field(basis);
       });
     }
@@ -428,13 +432,13 @@ namespace panzer
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-        parallel_for(policy, *this, this->getName());
+        parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-        parallel_for(policy, *this, this->getName());
+        parallel_for(this->getName(), policy, *this);
       } else {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
-        parallel_for(policy, *this, this->getName());
+        parallel_for(this->getName(), policy, *this);
       }
     }
     else {
@@ -443,13 +447,13 @@ namespace panzer
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
-        parallel_for(policy, *this, this->getName());
+        parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
-        parallel_for(policy, *this, this->getName());
+        parallel_for(this->getName(), policy, *this);
       } else {
 	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.num_cells);
-        parallel_for(policy, *this, this->getName());
+        parallel_for(this->getName(), policy, *this);
       }
     }
   } // end of evaluateFields()

@@ -47,7 +47,7 @@
 #define MUELU_GRAPH_DECL_HPP
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
-#include <Xpetra_CrsGraph.hpp>     // inline functions requires class declaration
+#include <Xpetra_CrsGraph_fwd.hpp>     // inline functions requires class declaration
 #include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -76,16 +76,13 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
-    Graph(const RCP<const CrsGraph> & graph, const std::string & /* objectLabel */="") : graph_(graph) {
-      minLocalIndex_ = graph_->getDomainMap()->getMinLocalIndex();
-      maxLocalIndex_ = graph_->getDomainMap()->getMaxLocalIndex();
-    }
+    Graph(const RCP<const CrsGraph> & graph, const std::string & /* objectLabel */="");
 
     virtual ~Graph() {}
     //@}
 
-    size_t GetNodeNumVertices() const                                        { return graph_->getNodeNumRows(); }
-    size_t GetNodeNumEdges()    const                                        { return graph_->getNodeNumEntries(); }
+    size_t GetNodeNumVertices() const                                        { return graph_->getLocalNumRows(); }
+    size_t GetNodeNumEdges()    const                                        { return graph_->getLocalNumEntries(); }
 
     Xpetra::global_size_t GetGlobalNumEdges() const                          { return graph_->getGlobalNumEntries(); }
 
@@ -103,7 +100,7 @@ namespace MueLu {
     const ArrayRCP<const bool> GetBoundaryNodeMap() const                    { return localDirichletNodes_; }
 
     //! Returns the maximum number of entries across all rows/columns on this node
-    size_t getNodeMaxNumRowEntries () const                                  { return graph_->getNodeMaxNumRowEntries(); }
+    size_t getLocalMaxNumRowEntries () const                                  { return graph_->getLocalMaxNumRowEntries(); }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
     ArrayView<const LO> getNeighborVertices(LO i) const {

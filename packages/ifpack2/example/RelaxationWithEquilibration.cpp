@@ -90,7 +90,7 @@ tpetraToEpetraMap (const Tpetra::Map<LO, GO, NT>& map_t,
                    const Epetra_Comm& comm_e)
 {
   const int gblNumInds = static_cast<int> (map_t.getGlobalNumElements ());
-  const int lclNumInds = static_cast<int> (map_t.getNodeNumElements ());
+  const int lclNumInds = static_cast<int> (map_t.getLocalNumElements ());
   const int indexBase = static_cast<int> (map_t.getIndexBase ());
 
   if (map_t.isContiguous ()) {
@@ -383,9 +383,9 @@ tpetraToEpetraCrsMatrix (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
   using tmatrix_t = Tpetra::CrsMatrix<double, LO, GO, NT>;
 
   typename tmatrix_t::nonconst_local_inds_host_view_type 
-           lclColInds ("ifpack2::lclColInds", A_t.getNodeMaxNumRowEntries());
+           lclColInds ("ifpack2::lclColInds", A_t.getLocalMaxNumRowEntries());
   typename tmatrix_t::nonconst_values_host_view_type 
-           vals ("ifpack2::vals", A_t.getNodeMaxNumRowEntries());
+           vals ("ifpack2::vals", A_t.getLocalMaxNumRowEntries());
 
   int lclErrCode = 0;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -913,8 +913,8 @@ densifyGatheredCrsMatrix (LO& errCode,
                           const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                           const std::string& label)
 {
-  const LO numRows = LO (A.getRangeMap ()->getNodeNumElements ());
-  const LO numCols = LO (A.getDomainMap ()->getNodeNumElements ());
+  const LO numRows = LO (A.getRangeMap ()->getLocalNumElements ());
+  const LO numCols = LO (A.getDomainMap ()->getLocalNumElements ());
   using lids_type = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::local_inds_host_view_type;
   using vals_type = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::values_host_view_type;
 
@@ -1142,7 +1142,7 @@ template<class ViewType1,
                >::mag_type,
                typename ViewType2::non_const_value_type
              >::value,
-         const int rank = ViewType1::Rank>
+         const int rank = ViewType1::rank>
 class ElementWiseMultiply {};
 
 template<class ViewType1,
@@ -1157,7 +1157,7 @@ class ElementWiseMultiply<ViewType1,
                           takeAbsoluteValueOfScalingFactors,
                           1> {
 public:
-  static_assert (ViewType1::Rank == 1, "ViewType1 must be a rank-1 "
+  static_assert (ViewType1::rank == 1, "ViewType1 must be a rank-1 "
                  "Kokkos::View in order to use this specialization.");
 
   ElementWiseMultiply (const ViewType1& X,
@@ -1203,7 +1203,7 @@ class ElementWiseMultiply<ViewType1,
                           takeAbsoluteValueOfScalingFactors,
                           2> {
 public:
-  static_assert (ViewType1::Rank == 2, "ViewType1 must be a rank-2 "
+  static_assert (ViewType1::rank == 2, "ViewType1 must be a rank-2 "
                  "Kokkos::View in order to use this specialization.");
 
   ElementWiseMultiply (const ViewType1& X,
@@ -1340,7 +1340,7 @@ template<class ViewType1,
                >::mag_type,
                typename ViewType2::non_const_value_type
              >::value,
-         const int rank = ViewType1::Rank>
+         const int rank = ViewType1::rank>
 class ElementWiseDivide {};
 
 template<class ViewType1,
@@ -1355,7 +1355,7 @@ class ElementWiseDivide<ViewType1,
                         takeAbsoluteValueOfScalingFactors,
                         1> {
 public:
-  static_assert (ViewType1::Rank == 1, "ViewType1 must be a rank-1 "
+  static_assert (ViewType1::rank == 1, "ViewType1 must be a rank-1 "
                  "Kokkos::View in order to use this specialization.");
 
   ElementWiseDivide (const ViewType1& X,
@@ -1401,7 +1401,7 @@ class ElementWiseDivide<ViewType1,
                         takeAbsoluteValueOfScalingFactors,
                         2> {
 public:
-  static_assert (ViewType1::Rank == 2, "ViewType1 must be a rank-2 "
+  static_assert (ViewType1::rank == 2, "ViewType1 must be a rank-2 "
                  "Kokkos::View in order to use this specialization.");
 
   ElementWiseDivide (const ViewType1& X,

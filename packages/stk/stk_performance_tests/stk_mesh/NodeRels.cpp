@@ -62,12 +62,9 @@ size_t do_stk_node_rel_test(stk::mesh::BulkData& bulk)
   BucketVector const& buckets = bulk.get_buckets(stk::topology::ELEMENT_RANK, local);
 
   size_t nodes_visited = 0;
-  unsigned owner_rank = 0;
 
-  size_t num_elems = 0;
   for(size_t ib=0; ib<buckets.size(); ++ib) {
     const Bucket& b = *buckets[ib];
-    num_elems += b.size();
 
     for(size_t i=0; i<b.size(); ++i) {
       Entity const *node_itr = b.begin_nodes(i);
@@ -76,7 +73,7 @@ size_t do_stk_node_rel_test(stk::mesh::BulkData& bulk)
       for (; node_itr != nodes_end; ++node_itr)
       {
         Entity node = *node_itr;
-        owner_rank += bulk.parallel_owner_rank(node);
+        EXPECT_TRUE(bulk.is_valid(node));
         ++nodes_visited;
       }
     }

@@ -410,7 +410,7 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRowStatImpl(
     TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tCrsMatrix->getRangeMap()));
     TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tRowSumVec->getMap()));
 
-    size_t numMyRows = tCrsMatrix->getNodeNumRows();
+    size_t numMyRows = tCrsMatrix->getLocalNumRows();
 
     using crs_t = Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     typename crs_t::local_inds_host_view_type indices;

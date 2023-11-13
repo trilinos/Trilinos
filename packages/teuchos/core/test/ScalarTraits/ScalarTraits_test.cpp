@@ -46,7 +46,6 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#include "Teuchos_TypeTraits.hpp"
 #include "Teuchos_Version.hpp"
 
 #include "Teuchos_TestingHelpers.hpp"
@@ -81,13 +80,12 @@ int outputOrdinal(const char& t)
 
 template <class T>
 void TYPE_CHAIN_A(Teuchos::FancyOStream &out) {
-  using Teuchos::TypeTraits::is_same;
   typedef typename Teuchos::ScalarTraits<T>::doublePrecision double_type;
 
   T b;
   // double_type d; // unused
   out << Teuchos::typeName (b);
-  if (! is_same<T, double_type>::value) {
+  if (! std::is_same_v<T, double_type>) {
     out << " -> ";
     TYPE_CHAIN_A<double_type>(out);
   }
@@ -95,14 +93,13 @@ void TYPE_CHAIN_A(Teuchos::FancyOStream &out) {
 
 template <class T>
 void TYPE_CHAIN_D(Teuchos::FancyOStream &out) {
-  using Teuchos::TypeTraits::is_same;
   typedef typename Teuchos::ScalarTraits<T>::halfPrecision half_type;
 
   T b;
   // half_type d; // unused
   out << Teuchos::typeName (b);
 
-  if (! is_same<T, half_type>::value) {
+  if (! std::is_same_v<T, half_type>) {
     out << " -> ";
     TYPE_CHAIN_D<half_type>(out);
   }
@@ -347,13 +344,13 @@ int main( int argc, char* argv[] ) {
     if(!result) success = false;
 #endif // HAVE_TEUCHOS_COMPLEX
 
-#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
     result = testScalarTraits<Kokkos::complex<double> >(*out);
     if(!result) success = false;
 
     result = testScalarTraits<Kokkos::complex<float> >(*out);
     if(!result) success = false;
-#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
     result = testScalarTraits<__float128>(*out);

@@ -47,6 +47,8 @@
 #include <iomanip>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
+#include <sys/resource.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
@@ -76,6 +78,7 @@
 #include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
+#include <MueLu_PerfModelReporter.hpp>
 #include <MatrixLoad.hpp>
 #include <DriverCore.hpp>
 
@@ -88,9 +91,7 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
-#endif
 #ifdef HAVE_MUELU_EPETRA
 #include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
 #endif
@@ -105,7 +106,6 @@
 #include <MueLu_AMGXOperator.hpp>
 #include <MueLu_AMGX_Setup.hpp>
 #endif
-#ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <Xpetra_TpetraOperator.hpp>
@@ -113,7 +113,6 @@
 #include <KokkosBlas1_abs.hpp>
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
-#endif
 
 #ifdef HAVE_MUELU_EPETRA
 #include "Xpetra_EpetraMultiVector.hpp"
@@ -122,7 +121,6 @@
 
 /*********************************************************************/
 
-#ifdef HAVE_MUELU_TPETRA
 #include "KokkosBlas1_abs_impl.hpp"
 template<class RV, class XV, class SizeType>
 void Temporary_Replacement_For_Kokkos_abs(const RV& R, const XV& X) {
@@ -183,8 +181,29 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
        throw std::runtime_error("Invalid 'equilibrate' option '"+equilibrate+"'");
   }
 }
-#endif
 
+
+/*********************************************************************/
+// Gets current memory usage in kilobytes
+size_t get_current_memory_usage()
+{
+  size_t memory = 0; 
+  
+  // darwin reports rusage.ru_maxrss in bytes
+#if defined(__APPLE__) || defined(__MACH__)
+  const size_t RU_MAXRSS_UNITS=1024;
+#else
+  const size_t RU_MAXRSS_UNITS=1;
+#endif
+  
+  struct rusage sys_resources;
+  getrusage(RUSAGE_SELF, &sys_resources);
+  memory = (unsigned long)sys_resources.ru_maxrss / RU_MAXRSS_UNITS;
+  
+  /* Success */
+  return memory;
+}
+/*********************************************************************/
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
@@ -235,6 +254,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string coordMapFile;                           clp.setOption("coordsmap",             &coordMapFile,      "coordinates map data file");
   std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
   std::string materialFile;                           clp.setOption("material",              &materialFile,      "material data file");
+  bool        setNullSpace      = true;               clp.setOption("driver-nullspace","muelu-computed-nullspace", &setNullSpace, "driver sets nullspace");
   int         numRebuilds       = 0;                  clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
   int         numResolves       = 0;                  clp.setOption("resolve",               &numResolves,       "#times to redo solve");
   int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
@@ -243,9 +263,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
   bool        useStackedTimer   = false;              clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
 
-#ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                    clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
-#endif
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                          clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                          clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
@@ -257,8 +275,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef HAVE_MPI
   int provideNodeComm = 0;                            clp.setOption("nodecomm",          &provideNodeComm,  "make the nodal communicator available w/ reduction factor X");
 #endif
-
+  std::string userBlkFileName = "";                   clp.setOption("userBlks",              &userBlkFileName,   "read user smoother blocks from MatrixMarket matrix file. nnz (i,j) ==> jth dof in ith block");
+  int numReruns = 1;                                  clp.setOption("reruns",                &numReruns,  "number of reruns");
+  std::string rerunFilePrefix;                             clp.setOption("fileprefix",              &rerunFilePrefix,      "if doing reruns, optional prefix to prepend to output files");
+  std::string rerunFileSuffix;                             clp.setOption("filesuffix",              &rerunFileSuffix,      "if doing reruns, optional suffix to append to output files");
+  std::string  levelPerformanceModel  = "no";          clp.setOption("performance-model", &levelPerformanceModel,  "runs the level-by-level performance mode options- 'no', 'yes' or 'verbose'");
   clp.recogniseAllOptions(true);
+
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -372,13 +395,11 @@ MueLu::MueLu_AMGX_initialize_plugins();
   tm = Teuchos::null;
 
   // Do equilibration if requested
-#ifdef HAVE_MUELU_TPETRA
   if(lib == Xpetra::UseTpetra) {
     equilibrateMatrix(A,equilibrate);
   }
-#endif
 
-  int numReruns = 1;
+  bool resetStackedTimer = false;
   if (paramList.isParameter("number of reruns"))
     numReruns = paramList.get<int>("number of reruns");
 
@@ -422,6 +443,11 @@ MueLu::MueLu_AMGX_initialize_plugins();
       }
     }
 
+    // If doing user based block smoothing, read block information from file.
+    // Must do this for both smoothers and coarse solvers
+
+    readUserBlks<SC,LO,GO,NO> ( userBlkFileName, "coarse", mueluList, A);
+    readUserBlks<SC,LO,GO,NO> ( userBlkFileName, "smoother", mueluList, A);
 
     int runCount = 1;
     int   savedOut  = -1;
@@ -437,6 +463,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
           // including printf's, therefore we cannot simply replace C++ cout
           // buffers, and have to use heavy machinary (dup2)
           std::string filename = runList.get<std::string>("filename");
+          if (rerunFilePrefix != "")
+            filename = rerunFilePrefix + "_" + filename;
+          if (rerunFileSuffix != "")
+            filename += "_" + rerunFileSuffix;
           if (numReruns > 1)
             filename += "_run" + MueLu::toString(rerunCount);
           filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
@@ -447,6 +477,11 @@ MueLu::MueLu_AMGX_initialize_plugins();
         }
         if (runList.isParameter("solver")) solveType = runList.get<std::string>("solver");
         if (runList.isParameter("tol"))    tol       = runList.get<double>     ("tol");
+
+        if (resetStackedTimer) {
+          stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+          Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+        }
       }
 
       RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -471,50 +506,67 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
       RCP<Hierarchy> H;
       RCP<Operator> Prec;
-      bool preconditionerOK = true;
-      try {
-        comm->barrier();
-        // Build the preconditioner numRebuilds+1 times
-        MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
-        PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
+      // Build the preconditioner numRebuilds+1 times
+      MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
+      PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,setNullSpace,numRebuilds,H,Prec);
 
-        comm->barrier();
-        tm = Teuchos::null;
-      }
-      catch(const std::exception& e) {
-        out2<<"MueLu_Driver: preconditioner setup crashed w/ message:"<<e.what()<<std::endl;
-        H=Teuchos::null; Prec=Teuchos::null;
-        preconditionerOK = false;
-      }
+      comm->barrier();
+      tm = Teuchos::null;
+
+
+      size_t mem = get_current_memory_usage();
+      out2<<"Memory use after preconditioner setup (GB): " << (mem/1024.0/1024.0)<<std::endl;
 
       // =========================================================================
       // System solution (Ax = b)
       // =========================================================================
-      if(preconditionerOK) {
-        try {
-          comm->barrier();
-          if (writeMatricesOPT > -2) {
-            tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
-            H->Write(writeMatricesOPT, writeMatricesOPT);
-            tm = Teuchos::null;
+      try {
+        comm->barrier();
+        if (writeMatricesOPT > -2) {
+          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
+          H->Write(writeMatricesOPT, writeMatricesOPT);
+          if(writeMatricesOPT == 0 || writeMatricesOPT == -1) {
+            Xpetra::IO<SC,LO,GO,NO>::Write("b_0.m",*B);
           }
-
-          // Solve the system numResolves+1 times
-          SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
-
-          comm->barrier();
+          tm = Teuchos::null;
         }
-        catch(const std::exception& e) {
-          out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
-        }
+
+        // Solve the system numResolves+1 times
+        SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
+
+        comm->barrier();
       }
-      else {
-        out2<<"MueLu_Driver: Not solving system due to crash in preconditioner setup"<<std::endl;
+      catch(const std::exception& e) {
+        if (isDriver)
+          out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
+        else
+          throw;
       }
 
 
       tm = Teuchos::null;
+
+
+      // If we want Level-specific performance model diagnostics, now is the time!
+      if( (levelPerformanceModel=="yes" || levelPerformanceModel=="verbose")
+          && !H.is_null()) {
+        for(int i=0; i < H->GetNumLevels(); i++) {
+          RCP<Level> level = H->GetLevel(i);
+          try {
+            RCP<Matrix> A_level = level->Get<RCP<Matrix> >("A");            
+            std::string level_name = std::string("Level-") + std::to_string(i) + std::string(": ");
+            std::vector<const char *> timers;//MueLu: Laplace2D: Hierarchy: Solve (level=0)  
+            MueLu::report_spmv_performance_models<Matrix>(A_level,100,timers,globalTimeMonitor,level_name,levelPerformanceModel=="verbose");
+          }
+          catch(...) {;}
+        }        
+      }
+     
+
+
       globalTimeMonitor = Teuchos::null;
+      if (useStackedTimer)
+        resetStackedTimer = true;
 
       if (printTimings) {
         RCP<ParameterList> reportParams = rcp(new ParameterList);
@@ -555,7 +607,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
         try {
           runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
           mueluList = runList  .sublist("MueLu", mustAlreadyExist);
-        } catch (Teuchos::Exceptions::InvalidParameterName& e) {
+        } catch (Teuchos::Exceptions::InvalidParameterName&) {
           stop = true;
         }
       }

@@ -49,17 +49,15 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DistObject.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 #include "Xpetra_Map.hpp"
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 #include <Kokkos_StaticCrsGraph.hpp>
-#endif
 #endif
 
 namespace Xpetra {
@@ -80,7 +78,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal,
             class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
   class CrsGraph
     : /*public RowGraph<>,*/ public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>
   {
@@ -171,10 +169,10 @@ namespace Xpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! Returns the number of graph rows owned on the calling node.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
-    virtual size_t getNodeNumCols() const = 0;
+    virtual size_t getLocalNumCols() const = 0;
 
     //! Returns the index base for global indices for this graph.
     virtual GlobalOrdinal getIndexBase() const = 0;
@@ -183,7 +181,7 @@ namespace Xpetra {
     virtual global_size_t getGlobalNumEntries() const = 0;
 
     //! Returns the local number of entries in the graph.
-    virtual size_t getNodeNumEntries() const = 0;
+    virtual size_t getLocalNumEntries() const = 0;
 
     //! Returns the current number of entries on this node in the specified global row.
     virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const = 0;
@@ -201,7 +199,7 @@ namespace Xpetra {
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
     //! Maximum number of entries in all rows owned by the calling process.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
 
     //! Whether the graph has a column Map.
     virtual bool hasColMap() const = 0;
@@ -231,7 +229,6 @@ namespace Xpetra {
 
     //! @name Tpetra-specific routines
     //@{
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename node_type::execution_space execution_space;
     typedef typename node_type::device_type device_type;
@@ -246,16 +243,10 @@ namespace Xpetra {
     /// (global) graph is fill complete.
     virtual typename local_graph_type::HostMirror getLocalGraphHost () const = 0;
     virtual local_graph_type getLocalGraphDevice () const = 0;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    virtual typename local_graph_type::HostMirror getLocalGraph () const {
-      return getLocalGraphHost();
-    }
-#endif
 
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
 #endif
 #endif
 

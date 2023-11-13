@@ -152,7 +152,7 @@ private:
 #pragma warning(push)
 #pragma warning(disable: 444)
 #endif
-  class finder : private std::unary_function<Timer, bool>
+  class finder
   {
   public:
     explicit finder(const std::string &name)

@@ -47,6 +47,13 @@
 namespace ROL {
 
 template<typename Real>
+Real BoundConstraint<Real>::computeInf(const Vector<Real> &x) const {
+  int dim = x.dimension();
+  Real denom = (dim > 0 ? static_cast<Real>(dim) : 1e15);
+  return std::sqrt(ROL_INF<Real>() / denom);
+}
+
+template<typename Real>
 BoundConstraint<Real>::BoundConstraint(void)
   : Lactivated_(true), Uactivated_(true) {}
 
@@ -54,8 +61,8 @@ template<typename Real>
 BoundConstraint<Real>::BoundConstraint(const Vector<Real> &x)
   : Lactivated_(false), Uactivated_(false) {
   try {
-    lower_ = x.clone(); lower_->setScalar(ROL_NINF<Real>());
-    upper_ = x.clone(); upper_->setScalar(ROL_INF<Real>());
+    lower_ = x.clone(); lower_->setScalar(-computeInf(x));
+    upper_ = x.clone(); upper_->setScalar( computeInf(x));
   }
   catch(std::exception &e) {
     // Do nothing.  If someone calls getLowerBound or getUpperBound,
@@ -124,14 +131,25 @@ const Ptr<const Vector<Real>> BoundConstraint<Real>::getUpperBound( void ) const
 template<typename Real>
 bool BoundConstraint<Real>::isFeasible( const Vector<Real> &v ) { 
   if (isActivated()) {
+    const Real tol(static_cast<Real>(1e-2)*std::sqrt(ROL_EPSILON<Real>()));
     Ptr<Vector<Real>> Pv = v.clone();
     Pv->set(v);
     project(*Pv);
     Pv->axpy(static_cast<Real>(-1),v);
     Real diff = Pv->norm();
-    return (diff <= ROL_EPSILON<Real>());
+    return (diff <= tol);
   }
   return true;
+}
+
+template<typename Real>
+void BoundConstraint<Real>::applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+  throw Exception::NotImplemented(">>> BoundConstraint::applyInverseScalingFunction : This function has not been implemeted!");
+}
+
+template<typename Real>
+void BoundConstraint<Real>::applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+  throw Exception::NotImplemented(">>> BoundConstraint::applyScalingFunctionJacobian : This function has not been implemeted!");
 }
 
 template<typename Real>

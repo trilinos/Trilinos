@@ -41,23 +41,16 @@
 namespace stk {
 namespace mesh {
 
-void FieldRestriction::print(
-  std::ostream & os,
-  const Selector & s,
-  FieldArrayRank field_rank
-  ) const
+void FieldRestriction::print(std::ostream & os, const Selector & s) const
 {
-  os << "FieldRestriction[ selector: \"" << s << "\", dimension: " << m_dimension << ", scalars per entity: " << m_num_scalars_per_entity << " ]" ;
+  os << "FieldRestriction[ selector: \"" << s << "\", dimension: " << m_dimension
+     << ", scalars per entity: " << m_num_scalars_per_entity << " ]";
 }
 
-std::string print_restriction(
-  const FieldRestriction & restr,
-  const Selector& s,
-  FieldArrayRank field_rank
-                              )
+std::string print_restriction(const FieldRestriction & restr, const Selector& s)
 {
   std::ostringstream oss;
-  restr.print(oss, s, field_rank);
+  restr.print(oss, s);
   return oss.str();
 }
 

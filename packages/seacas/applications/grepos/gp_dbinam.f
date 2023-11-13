@@ -202,4 +202,3 @@ C ... Initialize in case there is error
       call pckstr(nvar, varnam)
       return
       end
-

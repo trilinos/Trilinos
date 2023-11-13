@@ -82,7 +82,7 @@ namespace {
     reduceAll<int, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
-    TEST_EQUALITY(map.getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map.getLocalNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
     TEST_EQUALITY(map.getMinGlobalIndex(), myMinGID);
     TEST_EQUALITY(map.getMaxGlobalIndex(), myMaxGID );
@@ -133,14 +133,14 @@ namespace {
     reduceAll<int, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
-    TEST_EQUALITY(map.getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map.getLocalNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
     TEST_EQUALITY(map.getMinGlobalIndex(), myMinGID);
     TEST_EQUALITY(map.getMaxGlobalIndex(), myMaxGID );
     TEST_EQUALITY(map.getMinAllGlobalIndex(), minAllGIDs);
     TEST_EQUALITY(map.getMaxAllGlobalIndex(), maxAllGIDs);
-    Teuchos::ArrayView<const GO> glist = map.getNodeElementList();
-    TEST_COMPARE_ARRAYS( map.getNodeElementList(), GIDs);
+    Teuchos::ArrayView<const GO> glist = map.getLocalElementList();
+    TEST_COMPARE_ARRAYS( map.getLocalElementList(), GIDs);
     // All procs fail if any proc fails
     int gblSuccess = -1;
     reduceAll (*comm, Teuchos::REDUCE_SUM, success ? 0 : 1,

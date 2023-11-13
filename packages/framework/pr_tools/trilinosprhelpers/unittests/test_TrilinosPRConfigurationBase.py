@@ -41,7 +41,7 @@ import argparse
 import multiprocessing
 import subprocess
 
-from LoadEnv import setenvironment
+import setenvironment
 import trilinosprhelpers
 
 
@@ -165,7 +165,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     Test TrilinsoPRConfigurationBase class
     """
     def setUp(self):
-        #os.environ["TRILINOS_SOURCE_BRANCH"]  = "trilinos_source_branch_value"
         #os.environ["TRILINOS_SOURCE_REPO"]    = "trilinos_source_repo_value"
         #os.environ["TRILINOS_SOURCE_SHA"]     = "trilinos_source_sha_value"
         #os.environ["TRILINOS_TARGET_BRANCH"]  = "trilinos_target_branch_value"
@@ -209,7 +208,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         output = argparse.Namespace(
             source_repo_url="https://github.com/trilinos/Trilinos",
-            source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
@@ -230,6 +228,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             req_mem_per_core=3.0,
             max_cores_allowed=12,
             num_concurrent_tests=-1,
+            ccache_enable=False,
             dry_run=False
         )
         return output
@@ -250,14 +249,20 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         Generate dummy command line arguments
         """
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "python-3"
-        args.genconfig_build_name = "python-3"
+        args.pullrequest_build_name = "Trilinos_PR_python3"
+        args.genconfig_build_name = "Trilinos_PR_python3"
         return args
 
 
     def dummy_args_gcc_720(self):
         args = copy.deepcopy(self.dummy_args())
         args.pullrequest_build_name = "Trilinos-pullrequest-gcc-7.2.0"
+        return args
+
+
+    def dummy_args_non_pr_track(self):
+        args = copy.deepcopy(self.dummy_args())
+        args.pullrequest_cdash_track = "some_random_track"
         return args
 
 
@@ -268,7 +273,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.target_branch_name = "master"
-        args.source_branch_name = "master_merge_20200101_000000"
         return args
 
 
@@ -279,7 +283,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.target_branch_name = "master"
-        args.source_branch_name = "invalid_source_branch_name"
         return args
 
 
@@ -319,28 +322,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(pr_config.concurrency_test, 3)
 
 
-    def test_TrilinosPRConfigurationValidateBranchNameDevelop(self):
-        args = self.dummy_args()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        pr_config.validate_branch_constraints()
-
-
-    def test_TrilinosPRConfigurationValidateBranchNameMasterPASS(self):
-        args = self.dummy_args_master_pass()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        pr_config.validate_branch_constraints()
-
-
-    def test_TrilinosPRConfigurationValidateBranchNameMasterFAIL(self):
-        args = self.dummy_args_master_fail()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            with patch('sys.exit', side_effect=mock_early_return) as m:
-                pr_config.validate_branch_constraints()
-                m.assert_called_once()
-                self.assertTrue( "ERROR:" in fake_out.getvalue())
-
-
     def test_TrilinosPRConfigurationCDashTrack(self):
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
@@ -361,10 +342,37 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     def test_TrilinosPRConfigurationBaseBuildNameGCC720(self):
         args = self.dummy_args_gcc_720()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        build_name = pr_config. pullrequest_build_name
+        build_name = pr_config.pullrequest_build_name
         print("--- build_name = {}".format(build_name))
         expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
         self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseBuildNameNonPRTrack(self):
+        args = self.dummy_args_non_pr_track()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        build_name = pr_config.pullrequest_build_name
+        print("--- build_name = {}".format(build_name))
+        expected_build_name = args.genconfig_build_name
+        self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseDashboardModelPRTrack(self):
+        args = self.dummy_args()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        dashboard_model = pr_config.dashboard_model
+        print("--- dashboard_model = {}".format(dashboard_model))
+        expected_dashboard_model = "Experimental"
+        self.assertEqual(dashboard_model, expected_dashboard_model)
+
+
+    def test_TrilinosPRConfigurationBaseDashboardModelNonPRTrack(self):
+        args = self.dummy_args_non_pr_track()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        dashboard_model = pr_config.dashboard_model
+        print("--- dashboard_model = {}".format(dashboard_model))
+        expected_dashboard_model = "Nightly"
+        self.assertEqual(dashboard_model, expected_dashboard_model)
 
 
     def test_TrilinosPRConfigurationBasePackageEnablesPython3(self):

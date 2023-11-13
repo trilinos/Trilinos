@@ -1,3 +1,18 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 //
 // Created by Poliakoff, David Zoeller on 4/27/21.
 //
@@ -46,8 +61,9 @@ inline std::vector<std::string> get_directories(std::string path) {
     while ((dir = readdir(d)) != NULL) {
       std::string nname = std::string(dir->d_name);
       // Check to see if item is a directory
-      //if (isDirectory(path + '/' + nname))
-      if(nname != "." && nname != ".." && isDirectory(path + '/' + dir->d_name))
+      // if (isDirectory(path + '/' + nname))
+      if (nname != "." && nname != ".." &&
+          isDirectory(path + '/' + dir->d_name))
         // std::vector::emplace_back: insert a new element to the end of vector
         paths.emplace_back(dir->d_name);
     }

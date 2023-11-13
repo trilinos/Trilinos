@@ -95,7 +95,8 @@ void TrustRegionBased::init()
   nIter = 0;
   dx = 0;
   status = StatusTest::Unconverged;
-
+  radius = 0.;
+  
   // Print out initialization information
   if (utilsPtr->isPrintType(NOX::Utils::Parameters)) {
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
@@ -170,7 +171,7 @@ invalid(const std::string& name, double value) const
   utilsPtr->err() << "NOX::Solver::TrustRegionBased::init - "
        << "Invalid \"" << name << "\" (" << value << ")"
        << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 void TrustRegionBased::
@@ -334,14 +335,14 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
       double tmp = (cta * cta) - ((ctc - (radius * radius)) * ata);
       if (tmp < 0) {
 	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid computation" << std::endl;
-	throw "NOX Error";
+	throw std::runtime_error("NOX Error");
       }
 
       // final soln to quadratic equation
       double gamma = (sqrt(tmp) - cta) / ata;
       if ((gamma < 0) || (gamma > 1)) {
 	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid trust region step" << std::endl;
-	throw "NOX Error";
+	throw std::runtime_error("NOX Error");
       }
 
       // final direction computation
@@ -369,7 +370,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
     if (rtype != NOX::Abstract::Group::Ok)
     {
       utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Compute ratio of actual to predicted reduction
@@ -383,7 +384,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
       {
 	utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - "
 	     << "unable to compute F" << std::endl;
-	throw "NOX Error";
+	throw std::runtime_error("NOX Error");
       }
       bVecPtr->update(1.0, oldSolnPtr->getF(), step);
 

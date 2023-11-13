@@ -2,14 +2,16 @@
 # We need to do LD_PRELOAD as MATLAB carries its own set of few key libraries
 # We find libraries from the executable using current LD_LIBRARY_PATH
 
-if [ ! -f muemex.mexa64 ]; then
+muemexLibrary=@CMAKE_CURRENT_BINARY_DIR@/muemex.mexa64
+
+if [ ! -f $muemexLibrary ]; then
   echo "File \"muemex.mexa64\" not found, exiting...\n"
   exit 1
 fi
 
 lfind() {
 local lib=${1:-1};
-echo `ldd muemex.mexa64 | grep $lib | rev | cut -f 2 -d ' ' | rev`
+echo `ldd $muemexLibrary | grep $lib | rev | cut -f 2 -d ' ' | rev`
 }
 
 LIBBLAS=`lfind libblas`
@@ -21,6 +23,6 @@ LIBGFORTRAN=`lfind libgfortran`
 PRELOAD="$LIBSTDCPP $LIBGCC_S $LIBGFORTRAN $LIBLAPACK $LIBBLAS"
 
 echo "Setting LD_PRELOAD to \"$PRELOAD\""
-LD_PRELOAD="$PRELOAD" matlab -nosplash -nodisplay
+LD_PRELOAD="$PRELOAD" matlab -nosplash -nodisplay "$@"
 #LD_PRELOAD="$PRELOAD" matlab -nojvm -nosplash -r "evoEasyDriver" -D"valgrind --error-limit=no --tool=memcheck -v --log-file=/home/jhu/valMatlabLog"
 #LD_PRELOAD="$PRELOAD" matlab -nosplash -nodisplay -Dgdb

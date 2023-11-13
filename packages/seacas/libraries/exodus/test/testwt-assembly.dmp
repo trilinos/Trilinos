@@ -83,9 +83,7 @@ variables:
 	double vals_red_var_assembly400(time_step, num_assembly_red_var) ;
 
 // global attributes:
-		:floating_point_word_size = 8 ;
 		:file_size = 1 ;
-		:int64_status = 0 ;
 		:title = "This is a test" ;
 		:SOLID_MODEL = "STEP-X-43-1547836-Rev 0" ;
 data:

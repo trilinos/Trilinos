@@ -7,6 +7,8 @@
 #ifndef Iovs_cgns_IOFactory_h
 #define Iovs_cgns_IOFactory_h
 
+#include "iovs_export.h"
+
 #include "Ioss_DatabaseIO.h" // for DatabaseIO
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>   // for DatabaseUsage
@@ -18,7 +20,7 @@ namespace Ioss {
 
 namespace Iovs_cgns {
 
-  class IOFactory : public Ioss::IOFactory
+  class IOVS_EXPORT IOFactory : public Ioss::IOFactory
   {
   public:
     static const IOFactory *factory();
@@ -26,7 +28,7 @@ namespace Iovs_cgns {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm                     communicator,
+                              Ioss_MPI_Comm                communicator,
                               const Ioss::PropertyManager &properties) const override;
   };
 } // namespace Iovs_cgns

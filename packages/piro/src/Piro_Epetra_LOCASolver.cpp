@@ -325,9 +325,8 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
   // Parse InArgs
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
   if (!p_in.get()) std::cout << "ERROR: Piro::Epetra::LOCASolver requires p as inargs" << std::endl;
-  int numParameters = p_in->GlobalLength();
 
-  for (int i=0; i< numParameters; i++) pVector->setValue(i, (*p_in)[i]);
+  for (int i=0; i< p_in->GlobalLength(); i++) pVector->setValue(i, (*p_in)[i]);
   utils.out() << "eval pVector   " << std::setprecision(10) << *pVector << std::endl;
   interface->setParameters(*pVector);
 

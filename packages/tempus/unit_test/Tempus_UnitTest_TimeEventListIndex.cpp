@@ -265,9 +265,7 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, createTimeEventListIndex)
   // Construct TimeEventListIndex from ParameterList.
   auto teli = Tempus::createTimeEventListIndex<double>(pl);
 
-  //Teuchos::RCP<Teuchos::FancyOStream> my_out =
-  //  Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //teli->describe(*my_out, Teuchos::VERB_EXTREME);
+  teli->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE( teli->getName()         , ==, "Unit Test Time Event List Index");
   TEST_COMPARE( teli->getType()         , ==, "List Index");
@@ -279,4 +277,4 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, createTimeEventListIndex)
 }
 
 
-} // namespace Tempus_Test
+} // namespace Tempus_Unit_Test

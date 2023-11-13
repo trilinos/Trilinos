@@ -29,7 +29,6 @@
 
 namespace percept {
   template class ReferenceMeshSmootherConjugateGradientImpl<STKMesh>;
-  template class ReferenceMeshSmootherConjugateGradientImpl<StructuredGrid>;
 }
 
 #endif
