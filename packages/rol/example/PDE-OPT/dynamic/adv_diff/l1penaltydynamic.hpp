@@ -81,7 +81,7 @@ private:
     ) : Nt_(timeStamp.size()), ts_(timeStamp), zl_(zl), zu_(zu)
 	    {
       theta_  = parlist.sublist("Reduced Dynamic Objective").sublist("Time Discretization").get("Theta",    1.0);
-	    beta_   = parlist.sublist("Problem").get("L1 Control Cost", 1.e-2);
+	    beta_   = parlist.sublist("Problem").get("Control Cost", 1.e0);
 
 	  }
   

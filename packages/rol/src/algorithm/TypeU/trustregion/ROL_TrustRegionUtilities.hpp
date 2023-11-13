@@ -103,6 +103,7 @@ inline Real initialRadius(int &nfval,
                           Vector<Real> &Bg,
                           const Real fx,
                           const Real gnorm,
+                          const Real gtol,
                           Objective<Real> &obj,
                           TrustRegionModel_U<Real> &model,
                           const Real delMax,
@@ -111,15 +112,12 @@ inline Real initialRadius(int &nfval,
   const Real zero(0), half(0.5), one(1), two(2), three(3), six(6);
   const Real eps(ROL_EPSILON<Real>());
   Real del(ROL_INF<Real>());
+  Real htol = gtol;
   Ptr<Vector<Real>> xcp = x.clone();
-  model.setData(obj,x,g);
-  Real htol = std::sqrt(eps);
+  model.setData(obj,x,g,htol);
   model.hessVec(Bg,g.dual(),x,htol);
   Real gBg = Bg.dot(g);
-  Real alpha = one;
-  if ( gBg > eps ) {
-    alpha = gnorm*gnorm/gBg;
-  }
+  Real alpha = (gBg > eps ? gnorm*gnorm/gBg : one);
   // Evaluate the objective function at the Cauchy point
   xcp->set(g.dual());
   xcp->scale(-alpha);

@@ -74,6 +74,7 @@
 #include "l1penaltydynamic.hpp"
 
 #include "ROL_TypeP_TrustRegionAlgorithm.hpp"
+#include "ROL_TypeP_ProxGradientAlgorithm.hpp"
 
 template<class Real>
 void computeInitialCondition(const ROL::Ptr<ROL::Vector<Real>>       &u0,
@@ -105,18 +106,18 @@ int main(int argc, char *argv[]) {
   try {
 
     /*** Read in XML input ***/
-    ROL::Ptr<ROL::ParameterList> parlist = ROL::getParametersFromXmlFile("input.xml");
+    ROL::Ptr<ROL::ParameterList> parlist = ROL::getParametersFromXmlFile("input_02.xml");
     int nt           = parlist->sublist("Time Discretization").get("Number of Time Steps", 100);
     RealT T          = parlist->sublist("Time Discretization").get("End Time",             1.0);
     RealT dt         = T/static_cast<RealT>(nt);
     bool useParametricControl = parlist->sublist("Problem").get("Use Parametric Control", true);
-    int verbosity    = parlist->sublist("General").get("Print Verbosity", 0);
+    int verbosity    = parlist->sublist("General").get("Output Level", 1);
     verbosity        = (myRank==0 ? verbosity : 0);
-    parlist->sublist("General").set("Print Verbosity", verbosity);
-    bool solveOutput = parlist->sublist("Dynamic Constraint").sublist("Solve").get("Output Iteration History", false);
+    parlist->sublist("General").set("Output Level", verbosity);
+    bool solveOutput = parlist->sublist("Dynamic Constraint").sublist("Solve").get("Output Iteration History", true);
     solveOutput      = (myRank==0 ? solveOutput : false);
     parlist->sublist("Dynamic Constraint").sublist("Solve").set("Output Iteration History", solveOutput);
-    solveOutput      = parlist->sublist("SimOpt").sublist("Solve").get("Output Iteration History", false);
+    solveOutput      = parlist->sublist("SimOpt").sublist("Solve").get("Output Iteration History", true);
     solveOutput      = (myRank==0 ? solveOutput : false);
     parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History", solveOutput);
     RealT Re         = parlist->sublist("Problem").get("Reynolds Number",200.0);
@@ -178,14 +179,14 @@ int main(int argc, char *argv[]) {
     std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(3,ROL::nullPtr), qoi_T(1,ROL::nullPtr);
     RealT w1 = parlist->sublist("Problem").get("State Cost",1.0);
     RealT w2 = parlist->sublist("Problem").get("State Boundary Cost",1.0);
-    RealT w3 = parlist->sublist("Problem").get("Control Cost",0.0);
+    RealT w3 = parlist->sublist("Problem").get("L2 Control Cost",0.0);
     RealT wT = parlist->sublist("Problem").get("Final Time State Cost",1.0);
 
     std::vector<RealT> wts = {w1, w2, w3}, wts_T = {wT};
     std::string intObj = parlist->sublist("Problem").get("Integrated Objective Type", "Dissipation");
     std::string ftObj  = parlist->sublist("Problem").get("Final Time Objective Type", "Tracking");
     
-		qoi_vec[0] = ROL::makePtr<QoI_State_NavierStokes<RealT>>(intObj,
+    qoi_vec[0] = ROL::makePtr<QoI_State_NavierStokes<RealT>>(intObj,
                                                              *parlist,
                                                              pde->getVelocityFE(),
                                                              pde->getPressureFE(),
@@ -253,13 +254,17 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
       = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl, outStream);// summing over 
     // create l1 dynamic objective for nobj, pass to TRnonsmooth
+    ROL::Ptr<ROL::PartitionedVector<RealT>> zlo = ROL::PartitionedVector<RealT>::create(*zk, nt);
+    ROL::Ptr<ROL::PartitionedVector<RealT>> zhi = ROL::PartitionedVector<RealT>::create(*zk, nt);
+    zlo->setScalar(parlist->sublist("Problem").get("Lower Control Bound", -1.e0));
+    zhi->setScalar(parlist->sublist("Problem").get("Upper Control Bound", 1.e0));
     ROL::Ptr<L1_Dyn_Objective<RealT>> nobj
-			= ROL::makePtr<L1_Dyn_Objective<RealT>>(rpl,timeStamp); 
+			= ROL::makePtr<L1_Dyn_Objective<RealT>>(*parlist,timeStamp, zlo, zhi); 
 		
-		//Algo pointer
-		ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
-    
-		/*************************************************************************/
+    //Algo pointer
+    ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
+    //ROL::Ptr<ROL::TypeP::ProxGradientAlgorithm<RealT>> algo;
+    /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
     /*************************************************************************/
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
@@ -324,14 +329,26 @@ int main(int argc, char *argv[]) {
         (*zn)[0] = -amp * std::sin(2.0 * M_PI * Se * timeStamp[k].t[0] + ph);
       }
     }
-		parlist->sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG"); 
-		algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(*parlist); 
-		
+    //parlist->sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG"); 
+    algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(*parlist); 
+    //algo = ROL::makePtr<ROL::TypeP::ProxGradientAlgorithm<RealT>>(*parlist); 	
+    ROL::Ptr<ROL::Vector<RealT>> ztemp = z->clone(); 
+    ztemp->randomize(); 
+    ROL::Ptr<ROL::Vector<RealT>> pztemp = z->clone(); 
+
+//    RealT ptol = 1.0; 
+//    nobj->prox(*pztemp, *ztemp, 1.0, ptol); 
+//
+//    pztemp->axpy(-1.0, *ztemp); 
+//
+//    *outStream << "Error = "
+//               << pztemp->norm() << std::endl; 
+//
     //ROL::OptimizationProblem<RealT> problem(obj,z);// need to change this
     //ROL::OptimizationSolver<RealT> solver(problem,*parlist);// need to change this
     std::clock_t timer = std::clock();
     //solver.solve(*outStream);
-		algo->run(*un, *obj, *nobj, *outStream); 
+    algo->run(*z, *obj, *nobj, *outStream); 
     *outStream << "Optimization time: "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;

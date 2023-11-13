@@ -177,6 +177,7 @@ private:
   Real force_;
   int updateIter_;
   Real forceFactor_;
+  Real gtol_;
 
   bool initProx_;
   Real t0_; 
@@ -225,7 +226,7 @@ private:
                     const Vector<Real> &xold,
                     Objective<Real> &obj);
 
-  Real computeGradient(const Vector<Real> &x,
+  void computeGradient(const Vector<Real> &x,
                        Vector<Real> &g,
                        Vector<Real> &px,
                        Vector<Real> &dg,
@@ -233,6 +234,9 @@ private:
                        Real del,
                        Objective<Real> &sobj,
                        Objective<Real> &nobj,
+                       bool accept,
+                       Real &gtol,
+                       Real &gnorm,
                        std::ostream &outStream = std::cout) const;
 
   // Compute the projected step s = P(x + alpha*w) - x
@@ -270,19 +274,19 @@ private:
                std::ostream             &outStream = std::cout);
 
   void dspg2(Vector<Real> &y, 
-                   Real &sval,
-                   Real &nval,
-                   Real &pRed,
-                   Vector<Real> &gmod, 
-                   const Vector<Real> &x,
-                   Real del, 
-                   TrustRegionModel_U<Real> &model, 
-                   Objective<Real> &nobj,
-                   Vector<Real> &pwa,
-                   Vector<Real> &pwa1, 
-                   Vector<Real> &pwa2, 
-                   Vector<Real> &dwa, 
-                   std::ostream &outStream = std::cout);
+             Real &sval,
+             Real &nval,
+             Real &pRed,
+             Vector<Real> &gmod, 
+             const Vector<Real> &x,
+             Real del, 
+             TrustRegionModel_U<Real> &model, 
+             Objective<Real> &nobj,
+             Vector<Real> &pwa,
+             Vector<Real> &pwa1, 
+             Vector<Real> &pwa2, 
+             Vector<Real> &dwa, 
+             std::ostream &outStream = std::cout);
 
   void dspg(Vector<Real> &y, 
             Real &sval,
@@ -330,6 +334,14 @@ private:
              Vector<Real> &yc,
              Vector<Real> &pwa, 
              std::ostream &outStream = std::cout) const;
+
+  void dbls(Real &alpha, Real &nval, Real &pred,
+            const Vector<Real> &y,
+            const Vector<Real> &s,
+            Real lambda, Real tmax,
+            Real kappa, Real gs,
+            Objective<Real> &nobj,
+            Vector<Real> &pwa);
   
 }; // class ROL::TypeP::TrustRegionAlgorithm
 

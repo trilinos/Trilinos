@@ -240,85 +240,85 @@ void iPianoAlgorithm<Real>::run( Vector<Real>       &x,
 
 template<typename Real>
 void iPianoAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
+  std::ios_base::fmtflags osFlags(os.flags());
   if (verbosity_ > 1) {
-    hist << std::string(109,'-') << std::endl;
-    hist << "iPiano: Inertial proximal algorithm for nonconvex optimization";
-    hist << " status output definitions" << std::endl << std::endl;
-    hist << "  iter     - Number of iterates (steps taken)" << std::endl;
-    hist << "  value    - Objective function value" << std::endl;
-    hist << "  gnorm    - Norm of the proximal gradient with parameter lambda" << std::endl;
-    hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  alpha    - Inertial gradient parameter" << std::endl;
-    hist << "  beta     - Inertial step parameter" << std::endl;
-    hist << "  L        - Lipschitz constant estimate" << std::endl;
-    hist << "  #sval    - Cumulative number of times the smooth objective function was evaluated" << std::endl;
-    hist << "  #nval    - Cumulative number of times the nonsmooth objective function was evaluated" << std::endl;
-    hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
-    hist << "  #prox    - Cumulative number of times the proximal operator was computed" << std::endl; 
-    hist << std::string(109,'-') << std::endl;
+    os << std::string(109,'-') << std::endl;
+    os << "iPiano: Inertial proximal algorithm for nonconvex optimization";
+    os << " status output definitions" << std::endl << std::endl;
+    os << "  iter     - Number of iterates (steps taken)" << std::endl;
+    os << "  value    - Objective function value" << std::endl;
+    os << "  gnorm    - Norm of the proximal gradient with parameter lambda" << std::endl;
+    os << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
+    os << "  alpha    - Inertial gradient parameter" << std::endl;
+    os << "  beta     - Inertial step parameter" << std::endl;
+    os << "  L        - Lipschitz constant estimate" << std::endl;
+    os << "  #sval    - Cumulative number of times the smooth objective function was evaluated" << std::endl;
+    os << "  #nval    - Cumulative number of times the nonsmooth objective function was evaluated" << std::endl;
+    os << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
+    os << "  #prox    - Cumulative number of times the proximal operator was computed" << std::endl; 
+    os << std::string(109,'-') << std::endl;
   }
 
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(15) << std::left << "alpha";
-  hist << std::setw(15) << std::left << "beta";
-  hist << std::setw(15) << std::left << "L";
-  hist << std::setw(10) << std::left << "#sval";
-  hist << std::setw(10) << std::left << "#nval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(10) << std::left << "#nprox"; 
-  hist << std::endl;
-  os << hist.str();
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(15) << std::left << "alpha";
+  os << std::setw(15) << std::left << "beta";
+  os << std::setw(15) << std::left << "L";
+  os << std::setw(10) << std::left << "#sval";
+  os << std::setw(10) << std::left << "#nval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(10) << std::left << "#nprox"; 
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void iPianoAlgorithm<Real>::writeName( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << std::endl << "iPiano: Inertial Proximal Algorithm for Nonconvex Optimization (Type P)" << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::endl << "iPiano: Inertial Proximal Algorithm for Nonconvex Optimization (Type P)" << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void iPianoAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << L_;
-    hist << std::setw(10) << std::left << state_->nsval;
-    hist << std::setw(10) << std::left << state_->nnval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << state_->nprox; 
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << L_;
+    os << std::setw(10) << std::left << state_->nsval;
+    os << std::setw(10) << std::left << state_->nnval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << state_->nprox; 
+    os << std::endl;
   }
   else {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << state_->snorm;
-    hist << std::setw(15) << std::left << alpha_;
-    hist << std::setw(15) << std::left << beta_;
-    hist << std::setw(15) << std::left << L_;
-    hist << std::setw(10) << std::left << state_->nsval;
-    hist << std::setw(10) << std::left << state_->nnval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << state_->nprox; 
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << alpha_;
+    os << std::setw(15) << std::left << beta_;
+    os << std::setw(15) << std::left << L_;
+    os << std::setw(10) << std::left << state_->nsval;
+    os << std::setw(10) << std::left << state_->nnval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << state_->nprox; 
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 
 } // namespace TypeP
