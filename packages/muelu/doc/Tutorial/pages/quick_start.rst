@@ -24,11 +24,10 @@ The problem domain is the unit square with a Cartesian (uniform) mesh.
 User interface
 ====================
 
-For this tutorial there is an easy-to-use user interface to perform some experiments with multigrid methods for the given problem as described in :ref:`quick_start/example problem`. To use the user-interface run **./hands-on.py** in a terminal in the **../../../test/tutorial** folder.
-First one has to choose a problem. For this tutorial the right choice is the option 0 for the Laplace 2D problem on a :math:`50 \times 50` mesh.
+For this tutorial there is an easy-to-use user interface to perform some experiments with multigrid methods for the given problem as described in :ref:`quick_start/example problem`. To use the user-interface run **./hands-on.py** in a terminal in the Trilinos build directory's **packages/muelu/test/tutorial** folder. From this point forward, we will provide all paths relative to that folder in the build directory.
+First one has to choose a problem. For this tutorial, select option 0 for the Laplace 2D problem on a :math:`50 \times 50` mesh.
 
-.. image:: pics/tut1_1.png
-  :width: 10cm
+.. literalinclude:: output/quick_start_1.txt
 
 Next one has to choose a xml file with the multigrid parameters. Choose option 2 and put in **s1_easy.xml** as filename for the xml file containing the xml parameters that are used for the multigrid method.
 
