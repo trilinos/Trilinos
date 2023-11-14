@@ -84,22 +84,14 @@ public:
 
   /** \brief Compute value.
   */
-#ifdef ENABLE_PYBIND11_PYROL
-  virtual Real value_uz( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
-
-  virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
-    return value_uz(u, z, tol);
-  }
-#else  // Default build
   virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
-
-#endif // ENABLE_PYBIND11_PYROL
 
   Real value( const Vector<Real> &x, Real &tol ) {
     const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
       dynamic_cast<const ROL::Vector<Real>&>(x));
     return this->value(*(xs.get_1()),*(xs.get_2()),tol);
   }
+
 
   /** \brief Compute gradient with respect to first component.
   */
