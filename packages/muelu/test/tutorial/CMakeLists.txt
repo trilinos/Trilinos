@@ -50,6 +50,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlFiles
     s5b.xml
     s6_dep.xml
     s6_export.xml
+    hands-on.py
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)

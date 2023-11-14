@@ -90,13 +90,13 @@ class ProblemHandler():
   def __init__(self):
     self.problem    = "Laplace 2D"
     self.solver     = "cg"
-    self.executable = "MueLu_tutorial_laplace2d.exe"
+    self.executable = "MueLu_Tutorial_laplace2d.exe"
     self.bcolors    = usecolors()
     self.meshx      = 50
     self.meshy      = 50
     self.mgsweeps   = 1
     self.numprocs   = 2
-    self.xmlFileName = "xml/s2a.xml"
+    self.xmlFileName = "s2a.xml"
 
     self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
     self.proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
@@ -127,7 +127,7 @@ class ProblemHandler():
 
   def doLaplace2Dn(self):
     self.problem    = "Laplace 2D"
-    self.executable = "MueLu_tutorial_laplace2d.exe"
+    self.executable = "MueLu_Tutorial_laplace2d.exe"
     self.solver     = "cg"
     self.meshx      = input("Mesh: Elements in x direction = ")
     self.meshy      = input("Mesh: Elements in y direction = ")
@@ -135,7 +135,7 @@ class ProblemHandler():
 
   def doLaplace2D50(self):
     self.problem    = "Laplace 2D"
-    self.executable = "MueLu_tutorial_laplace2d.exe"
+    self.executable = "MueLu_Tutorial_laplace2d.exe"
     self.solver     = "cg"
     self.meshx      = 50
     self.meshy      = 50
@@ -143,7 +143,7 @@ class ProblemHandler():
 
   def doRecirc2Dn(self):
     self.problem    = "Recirc 2D"
-    self.executable = "MueLu_tutorial_recirc2d.exe"
+    self.executable = "MueLu_Tutorial_recirc2d.exe"
     self.solver     = "gmres"
     self.meshx      = input("Mesh: Elements in x direction = ")
     self.meshy      = input("Mesh: Elements in y direction = ")
@@ -151,7 +151,7 @@ class ProblemHandler():
 
   def doRecirc2D50(self):
     self.problem    = "Recirc 2D"
-    self.executable = "MueLu_tutorial_recirc2d.exe"
+    self.executable = "MueLu_Tutorial_recirc2d.exe"
     self.solver     = "gmres"
     self.meshx      = 50
     self.meshy      = 50
