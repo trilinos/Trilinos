@@ -102,7 +102,7 @@ TEST(StkFieldCopier, MiddleMeshToStk)
 
   std::string meshFileName1 = "generated:3x3x1|sideset:Z|bbox:0,0,0,1,1,1";
   std::string partName1 = "surface_1";
-  stk_interface::StkMeshCreator creator1(meshFileName1, MPI_COMM_WORLD);
+  stk_interface::StkMeshCreator creator1(meshFileName1, "NONE", MPI_COMM_WORLD);
   stk_interface::MeshPart meshPart = creator1.create_mesh_from_part(partName1);
 
   mesh::FieldPtr<double> meshField = mesh::create_field<double>(meshPart.mesh, mesh::FieldShape(2, 0, 0), 3);
@@ -123,7 +123,7 @@ TEST(StkFieldCopier, StkToMiddleMesh)
 
   std::string meshFileName1 = "generated:3x3x1|sideset:Z|bbox:0,0,0,1,1,1";
   std::string partName1 = "surface_1";
-  stk_interface::StkMeshCreator creator1(meshFileName1, MPI_COMM_WORLD);
+  stk_interface::StkMeshCreator creator1(meshFileName1, "NONE", MPI_COMM_WORLD);
   stk_interface::MeshPart meshPart = creator1.create_mesh_from_part(partName1);
 
   stk::mesh::Field<double>* stkField = &(creator1.get_meta_data_ptr()->declare_field<double>(stk::topology::NODE_RANK, "stkfield"));

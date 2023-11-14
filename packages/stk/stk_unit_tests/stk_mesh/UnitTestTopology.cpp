@@ -216,8 +216,8 @@ TEST( testTopologyHelpers, declare_element_side_full )
   Entity face2 = fix.bulk.declare_element_side(element, zero_side_count, stk::mesh::PartVector{&fix.face_tri_part});
   fix.bulk.modification_end();
 
-  stk::mesh::Entity const *rel2_nodes = fix.bulk.begin_nodes(face2);
-  ASSERT_TRUE(rel2_nodes != 0);
+  const stk::mesh::ConnectedEntities rel2_nodes = fix.bulk.get_connected_entities(face2, stk::topology::NODE_RANK);
+  ASSERT_TRUE(rel2_nodes.size() != 0u);
 
   ASSERT_TRUE( true );  // This test is to check compilation.
 }
@@ -454,7 +454,8 @@ int check_permutation_given(stk::mesh::BulkData& mesh, stk::mesh::Entity elem, u
   face_topo.permutation_nodes(face_nodes_buff, face_perm, mapped_face_nodes_buff);
 
   // Another way to get to face's nodes.
-  stk::mesh::Entity const *face_nodes = mesh.begin_nodes(elem_face);
+  const stk::mesh::ConnectedEntities face_nodes = mesh.get_connected_entities(elem_face, stk::topology::NODE_RANK);
+  STK_ThrowAssert(face_nodes.size() == face_topo.num_nodes());
 
   int innermost_hits = 0;
   for (unsigned ni = 0; ni < face_topo.num_nodes(); ++ni)
@@ -464,7 +465,7 @@ int check_permutation_given(stk::mesh::BulkData& mesh, stk::mesh::Entity elem, u
   }
 
   // Indeed, find_permutation computes what was stored!
-  stk::mesh::Permutation perm = mesh.find_permutation(elem_topo, elem_nodes, face_topo, face_nodes, face_ord);
+  stk::mesh::Permutation perm = mesh.find_permutation(elem_topo, elem_nodes, face_topo, face_nodes.data(), face_ord);
   EXPECT_EQ(perm, claimed_permutation);
   return innermost_hits;
 }

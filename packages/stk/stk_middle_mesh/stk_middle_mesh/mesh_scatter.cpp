@@ -1,6 +1,11 @@
 #include "mesh_scatter.hpp"
 #include "mesh_entity.hpp"
 #include "variable_size_field.hpp"
+#include "destination_field_synchronizer.hpp"
+#include "stk_util/util/SortAndUnique.hpp"
+#include "create_sharing_from_verts.hpp"
+
+
 
 namespace stk {
 namespace middle_mesh {
@@ -22,9 +27,8 @@ MeshScatter::MeshScatter(std::shared_ptr<impl::MeshScatterSpec> scatterSpec,
   }
   check_mesh_comm_is_subset_of_union_comm();
 
-  int dest_comm_size = compute_dest_comm_size();
-  m_vertsBySrcMeshOwner = std::make_shared<EntitySortedByOwner>(dest_comm_size);
-  m_edgesBySrcMeshOwner = std::make_shared<EntitySortedByOwner>(dest_comm_size);
+  m_vertsBySrcMeshOwner = std::make_shared<EntitySortedByOwner>(utils::impl::comm_size(m_unionComm));
+  m_edgesBySrcMeshOwner = std::make_shared<EntitySortedByOwner>(utils::impl::comm_size(m_unionComm));
 
   if (m_computeEntityCorrespondence)
   {
@@ -41,8 +45,8 @@ std::shared_ptr<mesh::Mesh> MeshScatter::scatter()
   VariableSizeFieldPtr<int> destRanksOnUnionComm;
   if (m_inputMesh)
   {
-    DestinationFieldGatherer gatherer(m_inputMesh, m_scatterSpec);
-    destRanksOnUnionComm = gatherer.gather_vert_and_edge_destinations_on_owner();
+    DestinationFieldSynchronizer gatherer(m_inputMesh, m_scatterSpec);
+    destRanksOnUnionComm = gatherer.synchronize();
   }
 
   //TODO: possible performance improvement: change the order:
@@ -56,11 +60,16 @@ std::shared_ptr<mesh::Mesh> MeshScatter::scatter()
   send_edges(destRanksOnUnionComm);
   send_elements();  
 
+
   if (m_outputMesh)
   {
-    EdgeSharingCreatorFromVerts edgeSharingCreator(m_outputMesh);
-    edgeSharingCreator.create_sharing_from_verts();
-  }        
+    for (int dim=1; dim <= 2; ++dim)
+    {
+      CreateSharingFromVert edgeSharingCreator(m_outputMesh, dim);
+      edgeSharingCreator.create_sharing_from_verts();
+    }
+  }
+        
 
   return m_outputMesh;
 }
@@ -102,19 +111,6 @@ void MeshScatter::check_mesh_comm_is_subset_of_union_comm()
       if (unionCommRanks[i] == MPI_UNDEFINED)
         throw std::runtime_error("outputMeshComm is not a subset of unionComm");
   }
-}
-
-
-int MeshScatter::compute_dest_comm_size()
-{
-  int destCommSize = 0;
-  if (m_outputMesh && utils::impl::comm_rank(m_outputMesh->get_comm()) == 0)
-    destCommSize = utils::impl::comm_size(m_outputMesh->get_comm());
-
-  int destCommSizeRecv;
-  MPI_Allreduce(&destCommSize, &destCommSizeRecv, 1, MPI_INT, MPI_SUM, m_unionComm);
-
-  return destCommSizeRecv;
 }
 
 
@@ -325,7 +321,6 @@ void MeshScatter::send_edges(VariableSizeFieldPtr<int> destRanksOnUnionCommPtr)
 void MeshScatter::pack_edges(VariableSizeFieldPtr<int> destRanksOnUnionCommPtr, EntityExchanger& entityExchanger,
                              EntityIdExchanger& entityCorrespondenceExchanger)
 {
-  std::vector<int> destRanks;
   auto& destRanksOnUnionComm = *destRanksOnUnionCommPtr;
   if (m_inputMesh)
   {
@@ -368,10 +363,10 @@ void MeshScatter::unpack_edges(EntityExchanger& entityExchanger, EntityIdExchang
   entityExchanger.post_nonblocking_receives();
   entityExchanger.complete_receives(f);
 
-  for (int rank=0; rank < utils::impl::comm_size(m_unionComm); ++rank)
-  {
-    unpack_edge_buffer(rank, entityExchanger.get_recv_buf(rank), entityCorrespondenceExchanger);
-  }      
+    for (int rank=0; rank < utils::impl::comm_size(m_unionComm); ++rank)
+    {
+      unpack_edge_buffer(rank, entityExchanger.get_recv_buf(rank), entityCorrespondenceExchanger);
+    }
 }
 
 void MeshScatter::unpack_edge_buffer(int rank, stk::CommBuffer& buf, EntityIdExchanger& entityCorrespondenceExchanger)
@@ -391,7 +386,7 @@ void MeshScatter::unpack_edge_buffer(int rank, stk::CommBuffer& buf, EntityIdExc
     if (!edge)
     {
       edge = m_outputMesh->create_edge(v1, v2);
-      m_edgesBySrcMeshOwner->insert(edgeOwnerOnSrcMesh, edge);
+      m_edgesBySrcMeshOwner->insert(edgeOwnerOnSrcMesh, edge);    
     }
 
     if (m_computeEntityCorrespondence)
@@ -401,6 +396,7 @@ void MeshScatter::unpack_edge_buffer(int rank, stk::CommBuffer& buf, EntityIdExc
     }
   }
 }
+
 
 void MeshScatter::send_elements()
 {
@@ -432,7 +428,6 @@ void MeshScatter::pack_elements(EntityExchanger& entityExchanger, EntityIdExchan
 
           EntityOrientation edge1Orient = el->get_down_orientation(0);
 
-          destRanksOnUnionComm.clear();
           m_scatterSpec->get_destinations(el, destRanksOnUnionComm);
           for (auto& destRank : destRanksOnUnionComm)
           {

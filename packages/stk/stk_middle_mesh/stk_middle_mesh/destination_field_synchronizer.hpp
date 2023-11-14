@@ -12,14 +12,14 @@ namespace mesh {
 namespace impl {
 
 
-class DestinationFieldGatherer
+class DestinationFieldSynchronizer
 {
   using Exchanger = stk::DataExchangeUnknownPatternNonBlockingCommBuffer;
 
   public:
-    DestinationFieldGatherer(std::shared_ptr<Mesh> mesh, std::shared_ptr<MeshScatterSpec> scatterSpec);
+    DestinationFieldSynchronizer(std::shared_ptr<Mesh> mesh, std::shared_ptr<MeshScatterSpec> scatterSpec);
 
-    VariableSizeFieldPtr<int> gather_vert_and_edge_destinations_on_owner();
+    VariableSizeFieldPtr<int> synchronize();
 
   private:
 

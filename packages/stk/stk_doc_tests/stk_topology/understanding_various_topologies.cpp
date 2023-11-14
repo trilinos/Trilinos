@@ -39,7 +39,7 @@
 #include "gtest/gtest.h"
 #include "Ioss_ElementTopology.h"
 #include "Ioss_Utils.h"
-#include "init/Ionit_Initializer.h"
+#include "Ionit_Initializer.h"
 #include "stk_io/IossBridge.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_topology/topology.hpp"

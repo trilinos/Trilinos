@@ -15,7 +15,7 @@ namespace stk {
 namespace middle_mesh {
 
 namespace impl::testing {
-class EdgeTracerTester;
+class EdgeTracerTesterBase;
 }
 
 namespace nonconformal4 {
@@ -178,7 +178,7 @@ class EdgeTracer
     // EdgeIntersectionCalculator m_edge_intersector;
     ::stk::middle_mesh::impl::EdgeTracerTolerances m_tolerances;
 
-    friend class stk::middle_mesh::impl::testing::EdgeTracerTester;
+    friend class stk::middle_mesh::impl::testing::EdgeTracerTesterBase;
 };
 
 } // namespace impl

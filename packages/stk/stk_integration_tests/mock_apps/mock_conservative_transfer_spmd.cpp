@@ -120,10 +120,10 @@ int main(int argc, char* argv[])
   int numIters = stk::get_command_line_option(argc, argv, "num-iters", defaultNumIters);
 
   {
-    stk_interface::StkMeshCreator creator1(meshFileName1, MPI_COMM_WORLD);
+    stk_interface::StkMeshCreator creator1(meshFileName1, "NONE", MPI_COMM_WORLD);
     std::shared_ptr<mesh::Mesh> inputMesh1 = creator1.create_mesh_from_part(partName1).mesh;
 
-    stk_interface::StkMeshCreator creator2(meshFileName2, MPI_COMM_WORLD);
+    stk_interface::StkMeshCreator creator2(meshFileName2, "NONE", MPI_COMM_WORLD);
     std::shared_ptr<mesh::Mesh> inputMesh2 = creator2.create_mesh_from_part(partName2).mesh;
 
     auto transferCallback1 = std::make_shared<ConservativeTransferUserForTest>(inputMesh1);

@@ -43,6 +43,7 @@
 #define RESTRICT_ALIAS
 #endif
 
+// needs to be reassessed with OneAPI?
 #if defined(__INTEL_COMPILER)
 #define STK_PRAGMA_IVDEP _Pragma("ivdep")
 #elif defined(__GNUC__)
@@ -51,6 +52,7 @@
 #define STK_PRAGMA_IVDEP
 #endif
 
+// needs to be reassessed with OneAPI?
 #if defined(__INTEL_COMPILER)
 #define STK_PRAGMA_VECTOR_ALWAYS_ASSERT_IVDEP _Pragma("vector always assert") \
                                               _Pragma("ivdep")

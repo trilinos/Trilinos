@@ -104,6 +104,8 @@ class ActiveVertData
         return m_remoteVertOwners[vertIdx - m_localVertsUnique.size()];
     }
 
+    void add_local_vert(mesh::MeshEntityPtr vert);
+
     void add_remote_vert(const mesh::RemoteSharedEntity& owner);
 
     void add_remote_element(const std::array<int, 3>& triVertIndices);

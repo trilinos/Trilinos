@@ -55,8 +55,22 @@ void ActiveVertContainer::set_patch_destinations(const opt::impl::ActiveVertData
 
 void ActiveVertContainer::get_remote_patch_contributions(Exchanger& exchanger)
 {
-  std::map<int, int> vertexToPatchIdx;
+  std::map<int, int> vertexToPatchIdx;  //TODO: consider using a Field for this?
   compute_vertex_to_patch_map(vertexToPatchIdx);
+
+  for (int rank=0; rank < utils::impl::comm_size(m_mesh->get_comm()); ++rank)
+  {
+    auto& buf = exchanger.get_recv_buf(rank);
+    while (buf.remaining() > 0)
+    {
+      RemoteActiveVertData remoteData = unpack(exchanger, rank);
+      int patchIdx = vertexToPatchIdx[remoteData.vertIds[0].remoteId];
+      create_local_verts_used_by_remote_patches(patchIdx, remoteData);
+    }
+
+    buf.reset();
+  }
+
   for (int rank=0; rank < utils::impl::comm_size(m_mesh->get_comm()); ++rank)
   {
     while (exchanger.get_recv_buf(rank).remaining() > 0)
@@ -91,7 +105,35 @@ ActiveVertContainer::RemoteActiveVertData ActiveVertContainer::unpack(Exchanger&
   buf.unpack(remoteData.triVertIndices);
 
   return remoteData;
-}    
+} 
+
+void ActiveVertContainer::create_local_verts_used_by_remote_patches(int patchIdx, RemoteActiveVertData& remoteData)
+{
+  int myrank = utils::impl::comm_rank(m_mesh->get_comm());
+  opt::impl::ActiveVertData& patch = m_activeVerts[patchIdx];
+  for (size_t i=0; i < remoteData.vertIds.size(); ++i)
+  {
+    RemoteSharedEntity owner = remoteData.vertIds[i];
+    if (owner.remoteRank == myrank)
+    {
+      bool foundExistingVert = false;
+      for (int j=0; j < patch.get_num_local_verts(); ++j)
+      {
+        if (patch.get_vert_owner(j) == owner)
+        {
+          foundExistingVert = true;
+          break;
+        }
+      }
+
+      if (!foundExistingVert)
+      {
+        patch.add_local_vert(m_mesh->get_vertices()[owner.remoteId]);
+      }
+    }
+  }
+
+}
 
 void ActiveVertContainer::merge_patches(int patchIdx, int senderRank, RemoteActiveVertData& remoteData)
 {    

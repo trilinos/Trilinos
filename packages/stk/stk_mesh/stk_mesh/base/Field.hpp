@@ -197,7 +197,17 @@ public:
 
     out << "{";
     for (unsigned i = 0; i < num_scalar_values; ++i) {
-      out << std::setprecision(thisPrecision) << casted_data[i] << " ";
+      if constexpr (sizeof(Scalar) == 1) {
+        if constexpr (std::is_signed_v<Scalar>) {
+          out << std::setprecision(thisPrecision) << static_cast<int>(casted_data[i]) << " ";
+        }
+        else {
+          out << std::setprecision(thisPrecision) << static_cast<unsigned>(casted_data[i]) << " ";
+        }
+      }
+      else {
+        out << std::setprecision(thisPrecision) << casted_data[i] << " ";
+      }
     }
     out << "}";
 
