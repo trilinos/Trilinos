@@ -1,0 +1,22 @@
+***************************   PROBLEM   ****************************
+Problem type:          Laplace 2D
+Mesh:                  50x50
+
+Solver xml parameters:              s2a.xml
+Number of processors:               2
+Number of Multigrid solving sweeps: 1
+***************************   PROBLEM   ****************************
+
+DO NOT FORGET TO RUN THE EXAMPLE (option 0)
+
+0. Rerun simulation
+1. Show screen output
+2. Change solver
+3. Open xml file
+4. Change procs
+5. Change MG sweeps
+6. Plot solution
+7. Plot residual norm over cg solver iterations
+8. Postprocess aggregates
+9. Exit
+your choice?

@@ -35,8 +35,7 @@ Next one has to choose a xml file with the multigrid parameters. Choose option 2
 
   Please make sure that you enter a filename that actually exists on your hard disk!
 
-.. image:: pics/tut1_2.png
-  :width: 10cm
+.. literalinclude:: output/quick_start_2.txt
 
 The s1_easy.xml file has the following content
 
@@ -47,14 +46,12 @@ The s1_easy.xml file has the following content
 As one can easily find from the xml parameters, a multigrid method with not more than 3 levels and a damped Jacobi method for level smoothing shall be used.
 Next, choose option 0 and run the example. That is, the linear system is created and iteratively solved both by a preconditioned CG method with a MueLu multigrid preconditioner and a standalone multigrid solver (again using MueLu) with the given multigrid parameters.
 
-.. image:: pics/tut1_3.png
-  :width: 10cm
+.. literalinclude:: output/quick_start_3.txt
 
 Note that the line **mpirun -np 2 MueLu_tutorial_laplace2d.exe -nx ...** is the command that is executed in the background. The default is 2 processors used.
 After pressing a key we are ready for a first analysis as it is stated by the green letters **Results up to date!**
 
-.. image:: pics/tut1_4.png
-  :width: 10cm
+.. literalinclude:: output/quick_start_4.txt
 
 .. note::
 
@@ -62,9 +59,7 @@ After pressing a key we are ready for a first analysis as it is stated by the gr
 
 To check the output select option 1. This should produce the following output on screen.
 
-.. warning::
-
-  Insert output
+.. program-output:: mpiexec -n 2 ../../../test/tutorial/MueLu_Tutorial_laplace2d.exe --nx=50 --ny=50 --mgridSweeps=1 --xml=../../../test/tutorial/s1_easy.xml
 
 .. note::
 
