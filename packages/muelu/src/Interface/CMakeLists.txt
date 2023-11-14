@@ -82,9 +82,12 @@ IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
   APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FacadeSimple)
   APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::BGS2x2)
   APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::ParameterListInterpreter)
-  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::MLParameterListInterpreter)
   APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FactoryFactory)
   APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::AdaptiveSaMLParameterListInterpreter)
+
+  IF( HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE )
+    APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::MLParameterListInterpreter)  
+  ENDIF()
 
   MUELU_PROCESS_ETI_TEMPLATE(
     "../Utils/ExplicitInstantiation"
@@ -105,9 +108,13 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_FacadeSimple.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_FacadeBGS2x2.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_ParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_MLParameterListInterpreter.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_FactoryFactory.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+
+  IF( HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE )
+    APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/ETI_MueLu_MLParameterListInterpreter.cpp)
+  ENDIF()
+
 ENDIF()
 
 ENDIF() # split cpp files
