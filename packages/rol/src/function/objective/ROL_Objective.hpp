@@ -78,13 +78,13 @@ template<typename Real>
 class Objective {
 private:
   // Vector storage used for FD approximations (default are null pointers)
-  Ptr<Vector<Real>> prim_, prim2_, dual_, basis_;
+  Ptr<Vector<Real>> prim_, dual_, basis_;
 
 public:
 
   virtual ~Objective() {}
 
-  Objective() : prim_(nullPtr), prim2_(nullPtr), dual_(nullPtr), basis_(nullPtr) {}
+  Objective() : prim_(nullPtr), dual_(nullPtr), basis_(nullPtr) {}
 
   /** \brief Update objective function. 
 

@@ -99,16 +99,16 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
     hv.zero();
   }
   else {
-    if (prim2_ == nullPtr) prim2_ = x.clone();
+    if (prim_ == nullPtr) prim_ = x.clone();
     if (dual_ == nullPtr) dual_ = hv.clone();
 
     //Real h = 2.0/(v.norm()*v.norm())*tol;
     const Real one(1), h(std::max(one,x.norm()/vnorm)*tol);
 
     gradient(*dual_,x,tol);           // Compute gradient at x
-    prim2_->set(x); prim2_->axpy(h,v);  // Set prim2 = x + hv
-    update(*prim2_,UpdateType::Temp);       // Temporarily update objective at x + hv
-    gradient(hv,*prim2_,tol);          // Compute gradient at x + hv
+    prim_->set(x); prim_->axpy(h,v);  // Set prim = x + hv
+    update(*prim_,UpdateType::Temp);       // Temporarily update objective at x + hv
+    gradient(hv,*prim_,tol);          // Compute gradient at x + hv
     hv.axpy(-one,*dual_);             // Compute difference (f'(x+hv)-f'(x))
     hv.scale(one/h);                  // Compute Newton quotient (f'(x+hv)-f'(x))/h
     update(x,UpdateType::Revert);          // Reset objective to x
