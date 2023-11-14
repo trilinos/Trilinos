@@ -41,7 +41,7 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
-#include "MueLu_MLParameterListInterpreter.hpp"
+#include "MueLu_ParameterListInterpreter.hpp"
 
 //#include "MueLu_Utilities.hpp"
 
@@ -63,6 +63,15 @@
   else outParamList.set<varType>(outParamStr, defaultValue);            \
 
 namespace MueLu {
+
+  namespace AdaptiveDetails {
+    template <class SC, class LO, class GO, class NO>
+    Teuchos::RCP<MueLu::SmootherFactory<SC, LO, GO, NO> > getSmoother(Teuchos::ParameterList & list) {
+      using SF = MueLu::SmootherFactory<SC, LO, GO, NO>;
+      ParameterListInterpreter interpreter(list);
+      return Teuchos::rcp_const_cast<SF>(Teuchos::rcp_dynamic_cast<const SF>(interpreter.GetFactoryManager(0)->GetFactory("Smoother")));
+    }
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   AdaptiveSaMLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AdaptiveSaMLParameterListInterpreter(Teuchos::ParameterList & paramList, std::vector<RCP<FactoryBase> > factoryList) : TransferFacts_(factoryList), blksize_(1) {
@@ -208,7 +217,7 @@ namespace MueLu {
     RCP<SmootherFactory> initSmootherFact = Teuchos::null;
     if(paramList.isSublist("init smoother")) {
       ParameterList& initList = paramList.sublist("init smoother"); // TODO move this before for loop
-      initSmootherFact = MLParameterListInterpreter::GetSmootherFactory(initList); // TODO: missing AFact input arg.
+      initSmootherFact = AdaptiveDetails::getSmoother<SC,LO,GO,NO>(initList);
     } else {
       std::string ifpackType = "RELAXATION";
       Teuchos::ParameterList smootherParamList;
@@ -226,8 +235,7 @@ namespace MueLu {
     //
     ParameterList& coarseList = paramList.sublist("coarse: list");
     //    coarseList.get("smoother: type", "Amesos-KLU"); // set default
-    //RCP<SmootherFactory> coarseFact = this->GetSmootherFactory(coarseList);
-    RCP<SmootherFactory> coarseFact = MLParameterListInterpreter::GetSmootherFactory(coarseList);
+    RCP<SmootherFactory> coarseFact = AdaptiveDetails::getSmoother<SC,LO,GO,NO>(coarseList);
 
     // Smoothers Top Level Parameters
 
@@ -263,7 +271,7 @@ namespace MueLu {
         // std::cout << levelSmootherParam << std::endl;
 
         //RCP<SmootherFactory> smootherFact = this->GetSmootherFactory(levelSmootherParam); // TODO: missing AFact input arg.
-        RCP<SmootherFactory> smootherFact = MLParameterListInterpreter::GetSmootherFactory(levelSmootherParam); // TODO: missing AFact input arg.
+        RCP<SmootherFactory> smootherFact = AdaptiveDetails::getSmoother<SC,LO,GO,NO>(levelSmootherParam);
         manager->SetFactory("Smoother", smootherFact);
         smootherFact->DisableMultipleCallCheck();
 
