@@ -363,7 +363,7 @@ int main(int argc, char* argv[]) {
   bool verbose = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-
+  Kokkos::initialize(argc,argv);
   try {
     const bool throwExceptions     = false;
     const bool recogniseAllOptions = false;
@@ -390,10 +390,11 @@ int main(int argc, char* argv[]) {
 #endif
     }
     if (lib == Xpetra::UseTpetra) {
-      std::cout << "Skipt tests for Tpetra. We officially only support the MLParameterListInterpreter for Epetra. It is supposed to be a transition from ML with Epetra to MueLu. Furthermore, there is only support for Epetra and not for Epetra64. That is, only GO=int allowed." << std::endl;
+      std::cout << "Skipped tests for Tpetra. We officially only support the MLParameterListInterpreter for Epetra. It is supposed to be a transition from ML with Epetra to MueLu. Furthermore, there is only support for Epetra and not for Epetra64. That is, only GO=int allowed." << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  Kokkos::finalize();
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
