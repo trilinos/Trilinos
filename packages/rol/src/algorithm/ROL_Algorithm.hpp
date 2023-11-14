@@ -99,15 +99,6 @@ public:
   /** \brief Run algorithm on unconstrained problems (Type-U).
              This is the primary Type-U interface.
   */
-  virtual void run_void( Vector<Real> &x, Objective<Real> &obj) {
-    BoundConstraint<Real> bnd;
-    bnd.deactivate();
-    run(x,x.dual(),obj,bnd,false);
-  }
-
-  /** \brief Run algorithm on unconstrained problems (Type-U).
-             This is the primary Type-U interface.
-  */
   virtual std::vector<std::string> run( Vector<Real>      &x,
                                         Objective<Real>   &obj,
                                         bool              print = false,

@@ -72,8 +72,6 @@ public:
   virtual void reduce( const volatile Real &input, volatile Real &output ) const = 0; 
   virtual Real initialValue() const = 0;
   virtual EReductionType reductionType() const = 0;
-  Real returnReduce( const Real &input, Real &output ) const {this->reduce(input, output); return output;};
-  Real returnReduce( const volatile Real &input, volatile Real &output ) const {this->reduce(input, output); return output;};
 };
 
 template<class Real> 
