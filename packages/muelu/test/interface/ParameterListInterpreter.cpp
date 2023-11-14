@@ -63,7 +63,6 @@
 #include <MueLu_TestHelpers.hpp>
 
 #include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
@@ -264,7 +263,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           paramList.set("null space: dimension", Teuchos::as<int>(nullspace->getNumVectors()));
           paramList.set("null space: vectors", nullspace->getDataNonConst(0).get());
 
-          mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
+          paramList.remove("parameter list: syntax");
+          std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
+          paramList = *Teuchos::getParametersFromXmlString(paramXML);
+          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter2/") {
           RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));

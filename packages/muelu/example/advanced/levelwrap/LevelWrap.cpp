@@ -64,7 +64,8 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
-#include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_ML2MueLuParameterTranslator.hpp>
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
 // Belos
@@ -93,6 +94,15 @@ const std::string thinSeparator  = "--------------------------------------------
 const std::string prefSeparator = "=====================================";
 
 namespace MueLuExamples {
+
+  template<class SC, class LO, class GO, class NO>
+  MueLu::ParameterListInterpreter<SC,LO,GO,NO> makeFactory(Teuchos::ParameterList & paramList) {
+    std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
+    paramList = *Teuchos::getParametersFromXmlString(paramXML);
+    return MueLu::ParameterListInterpreter<SC,LO,GO,NO>(paramList);
+  }
+
+
 
 #ifdef HAVE_MUELU_BELOS
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -289,7 +299,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
 #endif
-      MLParameterListInterpreter mueLuFactory(MLList);
+      MueLu::ParameterListInterpreter<SC,LO,GO,NO> mueLuFactory = MueLuExamples::makeFactory<SC,LO,GO,NO>(MLList);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
       Teuchos::RCP<FactoryManagerBase> LevelFactory = mueLuFactory.GetFactoryManager(1);
       H->setlib(lib);
@@ -333,7 +343,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
 
-      MLParameterListInterpreter mueLuFactory(MLList);
+      MueLu::ParameterListInterpreter<SC,LO,GO,NO> mueLuFactory = MueLuExamples::makeFactory<SC,LO,GO,NO>(MLList);
       mueLuFactory.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
       H->setlib(lib);
@@ -373,7 +383,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
 
-      MLParameterListInterpreter mueLuFactory(MLList);
+      MueLu::ParameterListInterpreter<SC,LO,GO,NO> mueLuFactory = MueLuExamples::makeFactory<SC,LO,GO,NO>(MLList);
       mueLuFactory.AddFactoryManager(1, 1, Teuchos::rcpFromRef(M1));
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
       H->setlib(lib);
