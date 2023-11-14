@@ -263,7 +263,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           paramList.set("null space: dimension", Teuchos::as<int>(nullspace->getNumVectors()));
           paramList.set("null space: vectors", nullspace->getDataNonConst(0).get());
 
-          paramList.remove("parameter list: syntax");
+          if(paramList.isParameter("parameter list: syntax"))
+            paramList.remove("parameter list: syntax");
           std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
           paramList = *Teuchos::getParametersFromXmlString(paramXML);
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
