@@ -64,6 +64,16 @@ Belos
   - Improved testing with Tpetra
 
 
+Domi
+
+  - Package has been deprecated and removed from Trilinos
+
+
+FEI
+
+  - Package has been deprecated and removed from Trilinos
+
+
 Ifpack2
 
   - 4th kind Chebyshev smoother
@@ -71,6 +81,16 @@ Ifpack2
   - Stream based RILU(k) and triangular solves
   - Optimize Kokkos Kernels MDF ILU(0) solver and expose it in Ifpack2
   - Patch solver with data compression
+
+
+Komplex
+
+  - Package has been deprecated and removed from Trilinos
+
+
+Moertel
+
+  - Package has been deprecated and removed from Trilinos
 
 
 MueLu
@@ -91,6 +111,16 @@ NOX
     Tempus transient problem (Tpetra version)
 
 
+Pike
+
+  - Package has been deprecated and removed from Trilinos
+
+
+Rythmos
+
+  - Package has been deprecated and removed from Trilinos
+
+
 ShyLU
 
   - FastILU algorithmic improvements and testing, new block version
@@ -109,6 +139,11 @@ Stratimikos
 Teko
 
   - Epetra dependency is now optional
+
+
+TriKota
+
+  - Package has been deprecated and removed from Trilinos
 
 
 ###############################################################################
