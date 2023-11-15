@@ -684,6 +684,7 @@ namespace MueLu {
         level.SetFactoryManager(null);
         level.SetLevelID(0);
         level.Set("A",coarseA11_);
+        level.SetProcRankVerbose(GetProcRankVerbose());
 
         auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
         ParameterList repartheurParams;
@@ -696,6 +697,7 @@ namespace MueLu {
         repartheurParams.set("repartition: target rows per thread", precList11_.get<int>("repartition: target rows per thread", defaultTargetRows));
         repartheurParams.set("repartition: max imbalance",          precList11_.get<double>("repartition: max imbalance", 1.1));
         repartheurFactory->SetParameterList(repartheurParams);
+        repartheurFactory->SetProcRankVerbose(GetProcRankVerbose());
 
         level.Request("number of partitions", repartheurFactory.get());
         repartheurFactory->Build(level);
@@ -709,10 +711,12 @@ namespace MueLu {
         Level level;
         level.SetFactoryManager(null);
         level.SetLevelID(0);
+        level.SetProcRankVerbose(GetProcRankVerbose());
 
         level.Set("Map",Dk_1_->getDomainMap());
 
         auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
+        repartheurFactory->SetProcRankVerbose(GetProcRankVerbose());
         ParameterList repartheurParams;
         repartheurParams.set("repartition: start level",            0);
         repartheurParams.set("repartition: use map",                true);
@@ -937,6 +941,8 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tm = getTimer("Rebalance coarseA11");
 
     Level fineLevel, coarseLevel;
+    fineLevel.SetProcRankVerbose(GetProcRankVerbose());
+    coarseLevel.SetProcRankVerbose(GetProcRankVerbose());
     fineLevel.SetFactoryManager(null);
     coarseLevel.SetFactoryManager(null);
     coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
@@ -977,8 +983,10 @@ namespace MueLu {
       throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif
     }
+    partitioner->SetProcRankVerbose(GetProcRankVerbose());
 
     auto repartFactory = rcp(new RepartitionFactory());
+    repartFactory->SetProcRankVerbose(GetProcRankVerbose());
     ParameterList repartParams;
     repartParams.set("repartition: print partition distribution", precList11_.get<bool>("repartition: print partition distribution", false));
     repartParams.set("repartition: remap parts", precList11_.get<bool>("repartition: remap parts", true));
@@ -993,6 +1001,7 @@ namespace MueLu {
     repartFactory->SetFactory("Partition", partitioner);
 
     auto newP = rcp(new RebalanceTransferFactory());
+    newP->SetProcRankVerbose(GetProcRankVerbose());
     ParameterList newPparams;
     newPparams.set("type", "Interpolation");
     newPparams.set("repartition: rebalance P and R", precList11_.get<bool>("repartition: rebalance P and R", false));
@@ -1005,6 +1014,7 @@ namespace MueLu {
     newP->SetFactory("Importer", repartFactory);
 
     auto newA = rcp(new RebalanceAcFactory());
+    newA->SetProcRankVerbose(GetProcRankVerbose());
     ParameterList rebAcParams;
     rebAcParams.set("repartition: use subcommunicators", true);
     newA->SetParameterList(rebAcParams);
@@ -1056,6 +1066,8 @@ namespace MueLu {
       RCP<Teuchos::TimeMonitor> tm = getTimer("Build A22");
 
       Level fineLevel, coarseLevel;
+      fineLevel.SetProcRankVerbose(GetProcRankVerbose());
+      coarseLevel.SetProcRankVerbose(GetProcRankVerbose());
       fineLevel.SetFactoryManager(null);
       coarseLevel.SetFactoryManager(null);
       coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
@@ -1071,12 +1083,14 @@ namespace MueLu {
       fineLevel.setObjectLabel(solverName_+" (2,2)");
 
       RCP<RAPFactory> rapFact = rcp(new RAPFactory());
+
       ParameterList rapList = *(rapFact->GetValidParameterList());
       rapList.set("transpose: use implicit", true);
       rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
       rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
       rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
       rapFact->SetParameterList(rapList);
+      rapFact->SetProcRankVerbose(GetProcRankVerbose());
 
       if (!A22_AP_reuse_data_.is_null()) {
         coarseLevel.AddKeepFlag("AP reuse data", rapFact.get());
@@ -1117,6 +1131,7 @@ namespace MueLu {
           throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif
         }
+        partitioner->SetProcRankVerbose(GetProcRankVerbose());
 
         auto repartFactory = rcp(new RepartitionFactory());
         ParameterList repartParams;
@@ -1137,6 +1152,7 @@ namespace MueLu {
         repartFactory->SetFactory("Partition", partitioner);
 
         auto newP = rcp(new RebalanceTransferFactory());
+        newP->SetProcRankVerbose(GetProcRankVerbose());
         ParameterList newPparams;
         newPparams.set("type", "Interpolation");
         newPparams.set("repartition: rebalance P and R", precList22_.get<bool>("repartition: rebalance P and R", false));
@@ -1147,6 +1163,7 @@ namespace MueLu {
         newP->SetFactory("Importer", repartFactory);
 
         auto newA = rcp(new RebalanceAcFactory());
+        newA->SetProcRankVerbose(GetProcRankVerbose());
         ParameterList rebAcParams;
         rebAcParams.set("repartition: use subcommunicators", true);
         newA->SetParameterList(rebAcParams);
@@ -1157,7 +1174,9 @@ namespace MueLu {
         coarseLevel.Request("Importer", repartFactory.get());
         coarseLevel.Request("A", newA.get());
         coarseLevel.Request("Coordinates", newP.get());
+        rapFact->SetProcRankVerbose(GetProcRankVerbose());
         rapFact->Build(fineLevel,coarseLevel);
+        repartFactory->SetProcRankVerbose(GetProcRankVerbose());
         repartFactory->Build(coarseLevel);
 
         if (!precList22_.get<bool>("repartition: rebalance P and R", false))
@@ -1763,6 +1782,10 @@ namespace MueLu {
 
     {
       Level fineLevel, coarseLevel;
+      fineLevel.SetProcRankVerbose(GetProcRankVerbose());
+      fineLevel.SetComm(A_nodal->getDomainMap()->getComm());
+      coarseLevel.SetProcRankVerbose(GetProcRankVerbose());
+      coarseLevel.SetComm(A_nodal->getDomainMap()->getComm());
       fineLevel.SetFactoryManager(null);
       coarseLevel.SetFactoryManager(null);
       coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
@@ -1800,6 +1823,16 @@ namespace MueLu {
         if (algo == "sa")
           SaPFact = rcp(new SaPFactory());
       }
+
+      amalgFact->SetProcRankVerbose(GetProcRankVerbose());
+      dropFact->SetProcRankVerbose(GetProcRankVerbose());
+      UncoupledAggFact->SetProcRankVerbose(GetProcRankVerbose());
+      coarseMapFact->SetProcRankVerbose(GetProcRankVerbose());
+      TentativePFact->SetProcRankVerbose(GetProcRankVerbose());
+      if(!SaPFact.is_null())
+        SaPFact->SetProcRankVerbose(GetProcRankVerbose());
+      Tfact->SetProcRankVerbose(GetProcRankVerbose());
+
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
       double dropTol = parameterList_.get<double>("aggregation: drop tol");
