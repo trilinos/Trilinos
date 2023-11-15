@@ -392,6 +392,10 @@ namespace MueLu {
       std::string valueInterpreterStr = "\"" + valuestr + "\"";
       std::string ret = MasterList::interpretParameterName(MasterList::ML2MueLu(pname),valueInterpreterStr);
 
+      if (pname == "aggregation: aux: enable") {
+        mueluss << "<Parameter name=\"aggregation: drop scheme\" type=\"string\"     value=\"" << "distance laplacian" << "\"/>" << std::endl;
+      }
+
       // special handling for verbosity level
       if (pname == "ML output") {
         // Translate verbosity parameter
