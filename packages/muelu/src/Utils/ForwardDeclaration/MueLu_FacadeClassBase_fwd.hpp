@@ -39,18 +39,25 @@
 //                    Jonathan Hu       (jhu@sandia.gov)
 //                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
-//                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_FACADECLASSBASE_FWD_HPP
+#define MUELU_FACADECLASSBASE_FWD_HPP
 
 
 
-#include "MueLu_Facade_Simple_def.hpp"
 
-#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
-  template class MueLu::FacadeSimple<SC,LO,GO,NO>;
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class FacadeClassBase;
+}
 
-#include "MueLu_ETI_4arg.hpp"
+#ifndef MUELU_FACADECLASSBASE_SHORT
+#define MUELU_FACADECLASSBASE_SHORT
+#endif
 
+
+
+#endif // MUELU_FACADECLASSBASE_FWD_HPP
