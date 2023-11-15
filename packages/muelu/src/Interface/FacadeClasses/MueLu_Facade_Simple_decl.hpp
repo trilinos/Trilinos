@@ -49,7 +49,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include "MueLu_FacadeClassBase_decl.hpp"
+#include "MueLu_FacadeClassBase.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 
