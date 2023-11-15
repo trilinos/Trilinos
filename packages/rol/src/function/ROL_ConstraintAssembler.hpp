@@ -59,10 +59,10 @@ namespace ROL {
 
 template<typename Real>
 struct ConstraintData {
-  const Ptr<Constraint<Real>>      constraint;
-  const Ptr<Vector<Real>>          multiplier;
-  const Ptr<Vector<Real>>          residual;
-  const Ptr<BoundConstraint<Real>> bounds;
+  Ptr<Constraint<Real>>      constraint;
+  Ptr<Vector<Real>>          multiplier;
+  Ptr<Vector<Real>>          residual;
+  Ptr<BoundConstraint<Real>> bounds;
 
   ConstraintData(const Ptr<Constraint<Real>>      &con,
                  const Ptr<Vector<Real>>          &mul,

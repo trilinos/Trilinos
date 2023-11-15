@@ -49,6 +49,7 @@
 #include "ROL_NonlinearCG_U.hpp"
 #include "ROL_Newton_U.hpp"
 #include "ROL_NewtonKrylov_U.hpp"
+#include "ROL_LineSearch_U_Types.hpp"
 
 namespace ROL {
 template<typename Real>

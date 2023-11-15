@@ -45,6 +45,7 @@
 #define ROL_UPDATE_TYPE_HPP
 
 #include <cstdint>
+#include <string>
 
 namespace ROL {
 

@@ -141,12 +141,6 @@ public:
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    const PV &xpv = dynamic_cast<const PV&>(x);
-    for( uint k=0; k<dim_; ++k ) {
-      if( bnd_[k]->isActivated() ) {
-        bnd_[k]->update(*(xpv.get(k)),flag,iter);
-      }
-    }
   }
 
   void project( Vector<Real> &x ) {
