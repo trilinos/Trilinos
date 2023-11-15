@@ -248,8 +248,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList,comm));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter/") {
-          paramList.set("use kokkos refactor", useKokkos);
-
           paramList.set("x-coordinates",coordinates->getDataNonConst(0).get());
           if (coordinates->getNumVectors() > 1)
             paramList.set("y-coordinates",coordinates->getDataNonConst(1).get());
@@ -267,6 +265,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             paramList.remove("parameter list: syntax");
           std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
           paramList = *Teuchos::getParametersFromXmlString(paramXML);
+          paramList.set("use kokkos refactor", useKokkos);
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter2/") {
