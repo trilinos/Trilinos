@@ -57,14 +57,14 @@ TEST(ElementXiClassifier, TriangleInterior)
   double eps = 0.1; // make this large so testing is easier
   predicates::impl::ElementXiClassifier classifier(eps);
 
-  test_record(classifier.classify_triangle(Point(2 * eps, 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_triangle(Point(1 - 4 * eps, 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_triangle(Point(2 * eps, 1 - 4 * eps)), PointClassification::Interior, -1);
+  test_record(classifier.classify_triangle(Point(2 * eps, 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_triangle(Point(1 - 4 * eps, 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_triangle(Point(2 * eps, 1 - 4 * eps)), PointClassification::Interior, 0);
 
-  test_record(classifier.classify_triangle(Point(0.5, 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_triangle(Point(0.5, 0.5 - 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_triangle(Point(0.5 - 2 * eps, 0.5)), PointClassification::Interior, -1);
-  test_record(classifier.classify_triangle(Point(0 + 2 * eps, 0.5)), PointClassification::Interior, -1);
+  test_record(classifier.classify_triangle(Point(0.5, 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_triangle(Point(0.5, 0.5 - 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_triangle(Point(0.5 - 2 * eps, 0.5)), PointClassification::Interior, 0);
+  test_record(classifier.classify_triangle(Point(0 + 2 * eps, 0.5)), PointClassification::Interior, 0);
 }
 
 TEST(ElementXiClassifier, TriangleExterior)
@@ -147,15 +147,15 @@ TEST(ElementXiClassifier, QuadInterior)
   double eps = 0.1; // make this large so testing is easier
   predicates::impl::ElementXiClassifier classifier(eps);
 
-  test_record(classifier.classify_quad(Point(2 * eps, 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_quad(Point(1 - 2 * eps, 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_quad(Point(1 - 2 * eps, 1 - 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_quad(Point(2 * eps, 1 - 2 * eps)), PointClassification::Interior, -1);
+  test_record(classifier.classify_quad(Point(2 * eps, 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_quad(Point(1 - 2 * eps, 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_quad(Point(1 - 2 * eps, 1 - 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_quad(Point(2 * eps, 1 - 2 * eps)), PointClassification::Interior, 0);
 
-  test_record(classifier.classify_quad(Point(0.5, 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_quad(Point(1 - 2 * eps, 0.5)), PointClassification::Interior, -1);
-  test_record(classifier.classify_quad(Point(0.5, 1 - 2 * eps)), PointClassification::Interior, -1);
-  test_record(classifier.classify_quad(Point(2 * eps, 0.5)), PointClassification::Interior, -1);
+  test_record(classifier.classify_quad(Point(0.5, 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_quad(Point(1 - 2 * eps, 0.5)), PointClassification::Interior, 0);
+  test_record(classifier.classify_quad(Point(0.5, 1 - 2 * eps)), PointClassification::Interior, 0);
+  test_record(classifier.classify_quad(Point(2 * eps, 0.5)), PointClassification::Interior, 0);
 }
 
 TEST(ElementXiClassifier, QuadExterior)

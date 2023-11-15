@@ -36,11 +36,7 @@ void EdgeTracer::trace_edge(const utils::Point& ptStart, const utils::Point& nor
 
   intersections.clear();
   bool atEndOfLine = false;
-  // std::cout << "\ncomputing first intersection" << std::endl;
 
-  // std::cout << "tracing edge from " << pt_start << " to " << pt_end << std::endl;
-  // std::cout << "start_record = " << record_start << ", el = " << record_start.el << std::endl;
-  // std::cout << "end_record = " << record_end << ", el = " << record_end.el << std::endl;
   EdgeIntersection currentIntersection = compute_next_intersection(
       predicates::impl::PointRecord(), recordStart, recordEnd, ptStart, ptEnd, normalStart, normalEnd, atEndOfLine);
   predicates::impl::PointRecord prevRecord    = recordStart;
@@ -74,23 +70,12 @@ EdgeIntersection EdgeTracer::compute_next_intersection(const predicates::impl::P
            currentIntersection.type == PointClassification::Edge);
   }
 
-  // std::cout << "current intersection = " << current_intersection << ", el = " << current_intersection.el <<
-  // std::endl;
-
   mesh::MeshEntityPtr entity = get_entity(currentIntersection);
-  // std::cout << "current intersection is on " << entity << std::endl;
   // TODO: in most cases there is only 1 excluded element, the current_intersection.el.  For
   //       performance, it might be worthwhile to special case it
   std::vector<mesh::MeshEntityPtr> includedElements =
       get_included_elements(entity, prevIntersection, currentIntersection);
 
-  // std::cout << "all elements = " << std::endl;
-  // for (auto& el : all_elements)
-  //   std::cout << el << std::endl;
-  //
-  // std::cout << "excluded elements = " << std::endl;
-  // for (auto& el : excluded_elements)
-  //  std::cout << el << std::endl;
 
   if (at_end_of_line(includedElements, endVert))
   {
@@ -101,36 +86,11 @@ EdgeIntersection EdgeTracer::compute_next_intersection(const predicates::impl::P
   atEndOfLine = false;
 
   std::vector<mesh::MeshEntityPtr> includedEdges = get_included_edges(includedElements, currentIntersection);
-  // std::cout << "initially, included_edges.size = " << included_edges.size() << std::endl;
-  // std::cout << "\nincluded edges: " << std::endl;
-  // for (auto& included_edge : included_edges)
-  //   std::cout << included_edge << std::endl;
 
-  /*
-    // get included entities for other end of the edge
-    // TODO: when traversing an edge, the included_edges_endpoint gets recomputed several times.  Consider caching it
-    std::vector<mesh::MeshEntityPtr> included_elements_endpoint = getIncludedElements(get_entity(end_vert),
-    predicates::impl::PointRecord(), end_vert); std::vector<mesh::MeshEntityPtr> included_edges_endpoint =
-    getIncludedEdges(included_elements_endpoint, end_vert); std::vector<mesh::MeshEntityPtr> common_edges =
-    get_commonEntities(included_edges, included_edges_endpoint);
-
-    std::cout << "\nendpoint included edges: " << std::endl;
-    for (auto& included_edge : included_edges_endpoint)
-      std::cout << included_edge << std::endl;
-
-    std::cout << "\ncommon edges: " << std::endl;
-    for (auto& common_edge : common_edges)
-      std::cout << common_edge << std::endl;
-
-    std::cout << "common_edges.size = " << common_edges.size() << ", included_edges.size = " << included_edges.size() <<
-    std::endl; std::vector<mesh::MeshEntityPtr>& edges_to_intersect = common_edges.size() > 0 ? common_edges :
-    included_edges;
-  */
   int edgeIdx;
   double alpha, beta;
   edgeIdx = compute_best_intersection(ptStart, ptEnd, normalStart, normalEnd, includedEdges, alpha, beta);
-  // std::cout << "found intersection on edge " << edge_idx << ", alpha = " << alpha << ", beta = " << beta <<
-  // std::endl;
+
   return create_edge_intersection(includedEdges[edgeIdx], includedElements, alpha, beta);
 }
 
@@ -197,18 +157,12 @@ std::vector<mesh::MeshEntityPtr> EdgeTracer::get_common_elements(mesh::MeshEntit
   assert(entity2->get_type() == stk::middle_mesh::mesh::MeshEntityType::Vertex ||
          entity2->get_type() == stk::middle_mesh::mesh::MeshEntityType::Edge);
 
-  std::vector<mesh::MeshEntityPtr> els1, els2, elsCommon;
+  std::vector<mesh::MeshEntityPtr> els1, els2;
   get_upward(entity1, 2, els1);
   get_upward(entity2, 2, els2);
 
   return get_common_entities(els1, els2);
-  /*
-  std::sort(els1.begin(), els1.end(), mesh::is_less);
-  std::sort(els2.begin(), els2.end(), mesh::is_less);
-  std::set_intersection(els1.begin(), els1.end(), els2.begin(), els2.end(), std::back_inserter(els_common),
-  mesh::is_less);
-  */
-  return elsCommon;
+
 }
 
 std::vector<mesh::MeshEntityPtr> EdgeTracer::get_common_entities(std::vector<mesh::MeshEntityPtr>& entities1,
@@ -305,28 +259,20 @@ int EdgeTracer::compute_best_intersection(const utils::Point& startPt, const uti
                                           const utils::Point& startNormal, const utils::Point& endNormal,
                                           const std::vector<mesh::MeshEntityPtr>& edges, double& alpha, double& beta)
 {
-  // std::cout << "\nEntered computeBestIntersection" << std::endl;
-  // std::cout << "input edge = " << start_pt << " to " << end_pt << std::endl;
-  // std::cout << "normal vectors = " << start_normal << " and " << end_normal << std::endl;
-  // std::cout << "second point on normal vectors = " << start_pt + start_normal << ", " << end_pt + end_normal <<
-  // std::endl;
   assert(edges.size() > 0);
   // alphas are for the line (start_pt, end_pt), betas are for the edges
   std::vector<double> alphas, betas;
   std::vector<int> intersectionIdxToEdgeIdx;
   for (size_t i = 0; i < edges.size(); ++i)
   {
-    // std::cout << "\ncomputing intersection with " << edges[i]->get_down(0)->get_point_orig(0) << " to " <<
-    // edges[i]->get_down(1)->get_point_orig(0) << std::endl;
     predicates::impl::EdgeIntersectionResult result = predicates::impl::compute_edge_intersection(
         edges[i]->get_down(0)->get_point_orig(0), edges[i]->get_down(1)->get_point_orig(0), startPt, endPt, startNormal,
         endNormal, m_tolerances.edgeIntersectionPrimitiveZeroTol, m_tolerances.edgeIntersectionPrimitiveErrorTol);
 
     if (result.intersection1_found())
     {
-      // std::cout << std::boolalpha << "found first intersection: " << result.intersection1_found() << std::endl;
-      //  the edge intersection primitive defines alpha and beta backwards compared to
-      //  what this class expects
+      // the edge intersection primitive defines alpha and beta backwards compared to
+      // what this class expects
       alphas.push_back(result.get_beta1());
       betas.push_back(result.get_alpha1());
       // std::cout << "alpha = " << alphas.back() << ", beta = " << betas.back() << std::endl;
@@ -335,28 +281,20 @@ int EdgeTracer::compute_best_intersection(const utils::Point& startPt, const uti
 
     if (result.intersection2_found())
     {
-      // std::cout << std::boolalpha << "found second intersection: " << result.intersection2_found() << std::endl;
-      //  the edge intersection primitive defines alpha and beta backwards compared to
-      //  what this class expects
+      // the edge intersection primitive defines alpha and beta backwards compared to
+      // what this class expects
       alphas.push_back(result.get_beta2());
       betas.push_back(result.get_alpha2());
-      // std::cout << "alpha = " << alphas.back() << ", beta = " << betas.back() << std::endl;
       intersectionIdxToEdgeIdx.push_back(i);
     }
   }
 
-  // for (size_t i=0; i < alphas.size(); ++i)
-  //   std::cout << "possible intersection " << i << ", alpha = " << alphas[i] << ", beta = " << betas[i] << std::endl;
-
-  // std::cout << "alphas.size = " << alphas.size() << std::endl;
   assert(alphas.size() > 0);
 
   int intersection = choose_best_intersection(alphas, betas, edges, intersectionIdxToEdgeIdx, startPt, endPt);
-  // std::cout << "chose intersection " << intersection << " on edge " << intersection_idx_to_edge_idx[intersection] <<
-  // std::endl;
+
   alpha = alphas[intersection];
   beta  = betas[intersection];
-  // std::cout << "chosen alpha, beta = " << alpha << ", " << beta << std::endl;
   return intersectionIdxToEdgeIdx[intersection];
 }
 

@@ -7,6 +7,24 @@
 namespace stk {
 namespace middle_mesh {
 namespace mesh {
+
+struct StorageUsage
+{
+  size_t numUsed = 0;
+  size_t numAllocated = 0;
+};
+
+inline StorageUsage operator+(const StorageUsage& lhs, const StorageUsage& rhs)
+{
+  return {lhs.numUsed + rhs.numUsed, lhs.numAllocated + rhs.numAllocated};
+}
+
+inline std::ostream& operator<<(std::ostream& os, const StorageUsage& usage)
+{
+  os << "used: " << usage.numUsed << ", allocated: " << usage.numAllocated;
+  return os;
+}
+
 namespace impl {
 
 template <typename T>
@@ -105,21 +123,38 @@ class VariableSizeFieldForDimension
         m_freeIndices.push_back(false);
         idxs.start         = m_values.size() - 1;
         idxs.onePastTheEnd = m_values.size();
-
       } else
       {
-        int candidateIdx = get_value_idx(entity, node, ncomp - 1) + 1;
-        if (size_t(candidateIdx) < m_values.size() && m_freeIndices[candidateIdx])
+        size_t candidateIdx = get_value_idx(entity, node, ncomp - 1) + 1;
+        bool segmentIsAtTheEnd = candidateIdx == m_values.size();
+        bool nextIndexFree     = candidateIdx < m_values.size() && m_freeIndices[candidateIdx];
+        if (segmentIsAtTheEnd)
+        {
+          m_values.push_back(val);
+          m_freeIndices.push_back(false);
+          idxs.onePastTheEnd++;
+        } else if (nextIndexFree)
         {
           m_values[candidateIdx]      = val;
           m_freeIndices[candidateIdx] = false;
           idxs.onePastTheEnd++;
         } else
         {
-          move_values_to_end(idxs);
-          m_values.push_back(val);
-          m_freeIndices.push_back(false);
-          idxs.onePastTheEnd++;
+          int moveTowardsFrontDistance = compute_max_move_towards_front(idxs, std::max(ncomp, 4));
+          if (moveTowardsFrontDistance > 0)
+          {
+            move_values_towards_front(idxs, moveTowardsFrontDistance);
+            assert(m_freeIndices[idxs.onePastTheEnd]);
+            m_values[idxs.onePastTheEnd]      = val;
+            m_freeIndices[idxs.onePastTheEnd] = false;
+            idxs.onePastTheEnd++;
+          } else
+          {
+            move_values_to_end(idxs);
+            m_values.push_back(val);
+            m_freeIndices.push_back(false);
+            idxs.onePastTheEnd++;
+          }
         }
       }
     }
@@ -193,6 +228,17 @@ class VariableSizeFieldForDimension
       // TODO: maybe squeeze out empty space in m_values here
     }
 
+    StorageUsage get_storage_usage() const
+    {
+      size_t numUsed = 0;
+      for (const Indices& idxs : m_indices)
+      {
+        numUsed += idxs.onePastTheEnd - idxs.start;
+      }
+
+      return {numUsed, m_values.size()};
+    }
+
   private:
     struct Indices
     {
@@ -226,12 +272,44 @@ class VariableSizeFieldForDimension
       for (int i = idxs.start; i < idxs.onePastTheEnd; ++i)
       {
         m_values.push_back(m_values[i]);
-        m_freeIndices[i] = false;
+        m_freeIndices[i] = true;
         m_freeIndices.push_back(false);
       }
 
       idxs.start         = newStart;
       idxs.onePastTheEnd = m_values.size();
+    }
+
+    int compute_max_move_towards_front(const Indices& idxs, int maxDist)
+    {
+      maxDist = std::min(maxDist, idxs.start);
+      int endIdx = idxs.start - maxDist;
+      for (int i=idxs.start-1; i >= endIdx; --i)
+      {
+        if (!m_freeIndices[i])
+        {
+          return idxs.start - i - 1;
+        }
+      }
+
+      return maxDist;
+    }
+
+    void move_values_towards_front(Indices& idxs, int n)
+    {
+      assert(idxs.start >= n);
+      for (int srcIdx = idxs.start; srcIdx < idxs.onePastTheEnd; ++srcIdx)
+      {
+        int destIdx = srcIdx - n;
+        assert(m_freeIndices[destIdx]);
+
+        m_values[destIdx]      = m_values[srcIdx];
+        m_freeIndices[destIdx] = false;
+        m_freeIndices[srcIdx]  = true;
+      }
+
+      idxs.start         -= n;
+      idxs.onePastTheEnd -= n;
     }
 
     int m_entityDimension;

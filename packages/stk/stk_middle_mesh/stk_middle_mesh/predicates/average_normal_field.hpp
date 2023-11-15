@@ -58,6 +58,7 @@ class AveragedNormalField
 
       std::vector<mesh::MeshEntityPtr> elements;
       std::array<mesh::MeshEntityPtr, 4> verts;
+      int myrank = utils::impl::comm_rank(m_mesh->get_comm());
       for (auto& vert : m_mesh->get_vertices())
       {
         if (vert)
@@ -67,22 +68,25 @@ class AveragedNormalField
 
           for (auto el : elements)
           {
-            // get index of vert
-            int nverts  = get_downward(el, 0, verts.data());
-            int vertIdx = get_vert_idx(verts, nverts, vert);
-            assert(vertIdx >= 0 && vertIdx < nverts);
+            if (mesh::get_owner(m_mesh, el) == myrank)
+            {
+              // get index of vert
+              int nverts  = get_downward(el, 0, verts.data());
+              int vertIdx = get_vert_idx(verts, nverts, vert);
+              assert(vertIdx >= 0 && vertIdx < nverts);
 
-            // get two adjacent vertices
-            mesh::MeshEntityPtr vertNext = verts[(vertIdx + 1) % nverts];
-            mesh::MeshEntityPtr vertPrev = verts[(vertIdx - 1 + nverts) % nverts];
+              // get two adjacent vertices
+              mesh::MeshEntityPtr vertNext = verts[(vertIdx + 1) % nverts];
+              mesh::MeshEntityPtr vertPrev = verts[(vertIdx - 1 + nverts) % nverts];
 
-            // form form vector v_i+1 - v_i and v_i-1 - v_i
-            utils::Point b1 = vertNext->get_point_orig(0) - vert->get_point_orig(0);
-            utils::Point b2 = vertPrev->get_point_orig(0) - vert->get_point_orig(0);
+              // form form vector v_i+1 - v_i and v_i-1 - v_i
+              utils::Point b1 = vertNext->get_point_orig(0) - vert->get_point_orig(0);
+              utils::Point b2 = vertPrev->get_point_orig(0) - vert->get_point_orig(0);
 
-            // compute normal
-            utils::Point normal = cross(b1, b2);
-            edgeInfoField(vert, 0, 0).normal += normal;
+              // compute normal
+              utils::Point normal = cross(b1, b2);
+              edgeInfoField(vert, 0, 0).normal += normal;
+            }
           }
         }
       }

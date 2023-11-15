@@ -54,8 +54,8 @@ TEST(StkMeshHowTo, betterUnderstandSelectorConstruction)
   if (stk::parallel_machine_size(communicator) != 1) { return; }
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
   stkMeshIoBroker.use_simple_fields();
-  const std::string generatedMeshSpecification = "generated:1x1x1"; // syntax creates a 1x1x1 cube
-  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  const std::string generatedCubeMeshSpecification = "generated:1x1x1";
+  stkMeshIoBroker.add_mesh_database(generatedCubeMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
   stkMeshIoBroker.populate_bulk_data();
 
@@ -83,8 +83,8 @@ TEST(StkMeshHowTo, makeSureYouAreNotIntersectingNothingSelector)
   // syntax creates faces for surface on the positive: 'x-side', 'y-side', and 'z-side'
   // of a 1x1x1 cube, these parts are given the names: 'surface_1', 'surface_2', and 'surface_3'
   // automagically when it is created [create_input_mesh()]
-  const std::string generatedMeshSpecification = "generated:1x1x1|sideset:XYZ";
-  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  const std::string generatedCubeMeshSpecification = "generated:1x1x1|sideset:XYZ";
+  stkMeshIoBroker.add_mesh_database(generatedCubeMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
   stkMeshIoBroker.populate_bulk_data();
 

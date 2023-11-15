@@ -540,7 +540,9 @@ using RDGeomTransfer = stk::transfer::ReducedDependencyGeometricTransfer<INTERPO
 
 using TransferType = RDGeomTransfer<Interpolate<StkSendAdapter, StkRecvAdapter>>;
 
-std::shared_ptr<TransferType> setup_transfer(MPI_Comm globalComm, BulkDataPtr & sendBulk, BulkDataPtr & recvBulk,
+std::shared_ptr<TransferType> setup_transfer(MPI_Comm globalComm,
+                                             BulkDataPtr & sendBulk,
+                                             BulkDataPtr & recvBulk,
                                              const FieldConfig & sendFieldConfig,
                                              const FieldConfig & recvFieldConfig)
 {

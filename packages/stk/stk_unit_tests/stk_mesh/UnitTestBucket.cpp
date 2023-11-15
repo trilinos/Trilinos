@@ -362,9 +362,8 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
     stk::mesh::Permutation new_permutation = ordinalAndPermutation.second;
 
     unsigned faces_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-    unsigned num_elems = bulk.num_elements(side);
-    const stk::mesh::Entity *elements = bulk.begin_elements(side);
-    for (unsigned i=0;i<num_elems;++i)
+    const stk::mesh::ConnectedEntities elements = bulk.get_connected_entities(side, stk::topology::ELEM_RANK);
+    for (unsigned i=0;i<elements.size();++i)
     {
       if (elements[i]==elem)
       {
@@ -374,9 +373,8 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
     }
 
     unsigned elements_face_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-    unsigned num_faces = bulk.num_faces(elem);
-    const stk::mesh::Entity *faces = bulk.begin_faces(elem);
-    for (unsigned i=0;i<num_faces;++i)
+    const stk::mesh::ConnectedEntities faces = bulk.get_connected_entities(elem, stk::topology::FACE_RANK);
+    for (unsigned i=0;i<faces.size();++i)
     {
       if (faces[i]==side)
       {

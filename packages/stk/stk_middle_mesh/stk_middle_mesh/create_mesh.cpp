@@ -469,7 +469,7 @@ void MeshGenerator::set_corner_adjacent_block_shared_entities(std::shared_ptr<Me
       MPI_Wait(&(sendReqs[i]), MPI_STATUS_IGNORE);
 }
 
-std::shared_ptr<Mesh> create_eigth_sphere(int numelR, int numelTheta, double rInner, double rOuter)
+std::shared_ptr<Mesh> create_eigth_sphere(int numelR, int numelTheta, double rInner, double rOuter, MPI_Comm comm, bool createTriangles)
 {
   double pi = std::atan(1) * 4;
 
@@ -496,7 +496,7 @@ std::shared_ptr<Mesh> create_eigth_sphere(int numelR, int numelTheta, double rIn
     return pt2;
   };
 
-  return create_mesh(spec, func);
+  return create_mesh(spec, func, comm, createTriangles);
 }
 
 } // namespace impl

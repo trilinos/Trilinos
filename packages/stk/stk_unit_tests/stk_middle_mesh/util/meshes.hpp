@@ -15,7 +15,8 @@ extern const double PI;
 // func2: is a function z = f(x, y) that determines the z coordinate
 template <typename T>
 std::shared_ptr<mesh::Mesh> make_annulus_mesh(const int nelemR, const int nelemTheta, const double rIn,
-                                              const double rOut, double dtheta, MPI_Comm comm, T func2)
+                                              const double rOut, double dtheta, MPI_Comm comm, bool createTriangles,
+                                              T func2)
 {
   assert(rIn > 0);
   assert(rOut > rIn);
@@ -43,11 +44,11 @@ std::shared_ptr<mesh::Mesh> make_annulus_mesh(const int nelemR, const int nelemT
     return pt2;
   };
 
-  return mesh::impl::create_mesh(spec, func, comm);
+  return mesh::impl::create_mesh(spec, func, comm, createTriangles);
 }
 
 std::shared_ptr<mesh::Mesh> make_annulus_mesh(const int elemR, const int nelemTheta, const double rIn,
-                                              const double rOut, double dtheta, MPI_Comm comm = MPI_COMM_WORLD);
+                                              const double rOut, double dtheta, MPI_Comm comm = MPI_COMM_WORLD, bool createTriangles=false);
 
 } // namespace impl
 } // namespace middle_mesh

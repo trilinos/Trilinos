@@ -1,4 +1,4 @@
-#include "destination_field_gatherer.hpp"
+#include "destination_field_synchronizer.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 
 
@@ -7,17 +7,16 @@ namespace middle_mesh {
 namespace mesh {
 namespace impl {
 
-DestinationFieldGatherer::DestinationFieldGatherer(std::shared_ptr<Mesh> mesh, std::shared_ptr<MeshScatterSpec> scatterSpec) :
+DestinationFieldSynchronizer::DestinationFieldSynchronizer(std::shared_ptr<Mesh> mesh, std::shared_ptr<MeshScatterSpec> scatterSpec) :
   m_mesh(mesh),
   m_scatterSpec(scatterSpec)
 {}
 
-VariableSizeFieldPtr<int> DestinationFieldGatherer::gather_vert_and_edge_destinations_on_owner()
+VariableSizeFieldPtr<int> DestinationFieldSynchronizer::synchronize()
 {
   Exchanger vertExchanger(m_mesh->get_comm()), edgeExchanger(m_mesh->get_comm());
   auto fieldPtr = create_variable_size_field<int>(m_mesh, FieldShape(1, 1, 0));
 
-  //TODO: start vert sends, then gather edges
   get_local_destinations_and_pack_buffers(vertExchanger, 0, nullptr);
   vertExchanger.allocate_send_buffers();
   get_local_destinations_and_pack_buffers(vertExchanger, 0, fieldPtr);
@@ -37,7 +36,7 @@ VariableSizeFieldPtr<int> DestinationFieldGatherer::gather_vert_and_edge_destina
   return fieldPtr;
 }
 
-void DestinationFieldGatherer::get_local_destinations_and_pack_buffers(Exchanger& exchanger,
+void DestinationFieldSynchronizer::get_local_destinations_and_pack_buffers(Exchanger& exchanger,
                                                                        int dim, VariableSizeFieldPtr<int> fieldPtr)
 {
   std::vector<int> destRanks;
@@ -57,24 +56,29 @@ void DestinationFieldGatherer::get_local_destinations_and_pack_buffers(Exchanger
       if (fieldPtr)
       {
         for (auto& destRank : destRanks)
+        {
           fieldPtr->insert(entity, 0, destRank);
+        }
       }
     }
 }
 
-void DestinationFieldGatherer::get_destinations_from_scatterspec(MeshEntityPtr vert, std::vector<int>& destRanks)
+void DestinationFieldSynchronizer::get_destinations_from_scatterspec(MeshEntityPtr vert, std::vector<int>& destRanks)
 {
+  std::vector<int> destRanksForEl;
   destRanks.clear();
   std::vector<MeshEntityPtr> els;
   get_upward(vert, 2, els);
   for (auto& el : els)
   {
-    m_scatterSpec->get_destinations(el, destRanks);
+    m_scatterSpec->get_destinations(el, destRanksForEl);
+    for (int destRank : destRanksForEl)
+      destRanks.push_back(destRank);
   }
   stk::util::sort_and_unique(destRanks); 
 }
 
-void DestinationFieldGatherer::unpack_remote_element_destinations(Exchanger& exchanger, int dim, VariableSizeFieldPtr<int> fieldPtr)
+void DestinationFieldSynchronizer::unpack_remote_element_destinations(Exchanger& exchanger, int dim, VariableSizeFieldPtr<int> fieldPtr)
 {
   auto f = [&](int rank, stk::CommBuffer& buf)
   {
@@ -84,7 +88,7 @@ void DestinationFieldGatherer::unpack_remote_element_destinations(Exchanger& exc
   exchanger.complete_receives(f);
 }
 
-void DestinationFieldGatherer::unpack_buffer(int rank, int dim, stk::CommBuffer& buf, VariableSizeFieldPtr<int> fieldPtr)
+void DestinationFieldSynchronizer::unpack_buffer(int rank, int dim, stk::CommBuffer& buf, VariableSizeFieldPtr<int> fieldPtr)
 {
   auto& field = *fieldPtr;
   std::vector<int> destRanks;
@@ -97,13 +101,13 @@ void DestinationFieldGatherer::unpack_buffer(int rank, int dim, stk::CommBuffer&
 
     MeshEntityPtr entity = m_mesh->get_mesh_entities(dim)[localId];
     for (auto& destRank : destRanks)
-    {
+    {  
       field.insert(entity, 0, destRank);
     }
   }
 }
 
-void DestinationFieldGatherer::sort_and_unique(VariableSizeFieldPtr<int> fieldPtr)
+void DestinationFieldSynchronizer::sort_and_unique(VariableSizeFieldPtr<int> fieldPtr)
 {
   auto& field = *fieldPtr;
   for (int dim=0; dim < 2; ++dim)

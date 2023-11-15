@@ -59,7 +59,7 @@
 #include <Ioss_SideSet.h>
 #include <Ioss_SideBlock.h>
 #include <Ioss_ConcreteVariableType.h>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_IOFactory.h>
 #include <Ioss_DBUsage.h>
 #include <stk_unit_test_utils/TextMesh.hpp>

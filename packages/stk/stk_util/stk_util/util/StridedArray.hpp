@@ -34,7 +34,8 @@
 #ifndef STK_UTIL_UTIL_STRIDEDARRAY_HPP
 #define STK_UTIL_UTIL_STRIDEDARRAY_HPP
 
-#include "stk_util/stk_config.h"
+#include <stk_util/stk_config.h>
+#include <stk_util/util/PairIter.hpp>
 #include <Kokkos_Core.hpp>
 
 namespace stk
@@ -48,13 +49,41 @@ class StridedArray
 {
 public:
   KOKKOS_FUNCTION 
-  StridedArray() : dataPointer(nullptr), length(0), stride(defaultStride)
+  StridedArray()
+  : dataPointer(nullptr),
+    length(0)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    , stride(defaultStride)
+#endif
   {
   }
+
   KOKKOS_FUNCTION
-  StridedArray(T* e, unsigned n, int stride_in=defaultStride) : dataPointer(e), length(n), stride(stride_in)
+  StridedArray(T* e,
+               unsigned n,
+               int stride_in=defaultStride)
+  : dataPointer(e),
+    length(n)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    , stride(stride_in)
+#endif
   {
   }
+
+  KOKKOS_FUNCTION
+  StridedArray(PairIter<T*> data
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+               , int stride_in=defaultStride
+#endif
+              )
+  : dataPointer(data.begin()),
+    length(data.size())
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    , stride(stride_in)
+#endif
+  {
+  }
+
   KOKKOS_FUNCTION
   T operator[](unsigned i) const
   {
@@ -64,15 +93,24 @@ public:
     return dataPointer[i];
 #endif
   }
+
+  KOKKOS_FUNCTION
+  T* data() { return dataPointer; }
+  KOKKOS_FUNCTION
+  const T* data() const { return dataPointer; }
+
   KOKKOS_FUNCTION
   unsigned size() const
   { 
     return length;
   }
+
 private:
   T* dataPointer;
   unsigned length;
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   int stride;
+#endif
 };
 
 } //namespace util

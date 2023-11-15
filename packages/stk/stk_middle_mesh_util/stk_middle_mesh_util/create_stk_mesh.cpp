@@ -1,3 +1,4 @@
+#include "stk_io/WriteMesh.hpp"
 #ifdef STK_BUILT_IN_SIERRA
 
 #include "create_stk_mesh.hpp"
@@ -11,6 +12,8 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include "Ioss_Property.h"
+
 
 namespace stk {
 namespace middle_mesh {
@@ -30,6 +33,10 @@ void StkMeshCreator::declare_stk_vert_field()
 void StkMeshCreator::load_mesh(const std::string& fname)
 {
   stk::io::StkMeshIoBroker reader(m_bulkDataPtr->parallel());
+  if (m_autodecompMethod != "NONE")
+  {
+    reader.property_add(Ioss::Property("DECOMPOSITION_METHOD", m_autodecompMethod));
+  }
   reader.set_bulk_data(*m_bulkDataPtr);
   reader.add_mesh_database(fname, stk::io::READ_MESH);
   reader.create_input_mesh();
@@ -342,8 +349,10 @@ void StkMeshCreator::setup_edge_sharing(std::shared_ptr<mesh::Mesh> mesh, MeshFi
       buf.unpack<int>(remoteEdge);
 
       mesh::MeshEntityPtr edge = mesh::get_common_edge(verts[vert1], verts[vert2]);
-      STK_ThrowRequireMsg(edge, "StkMeshCreator::setup_edge_sharing failed to find common edge for verts from P"<<p);
-      edge->add_remote_shared_entity({p, remoteEdge});
+      if (edge)
+      {
+        edge->add_remote_shared_entity({p, remoteEdge});
+      }
     }
   }
 }

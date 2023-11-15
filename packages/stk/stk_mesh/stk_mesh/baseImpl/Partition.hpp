@@ -56,6 +56,8 @@ namespace impl {
 class Partition
 {
 public:
+  enum RemoveMode {FILL_HOLE_THEN_SORT, TRACK_THEN_SLIDE};
+
   Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
             const PartOrdinal* keyBegin, const PartOrdinal* keyEnd);
 
@@ -139,6 +141,9 @@ public:
 
   void reset_partition_key(const std::vector<unsigned>& newKey);
 
+  void set_remove_mode(RemoveMode removeMode) { m_removeMode = removeMode; }
+  RemoveMode get_remove_mode() const { return m_removeMode; }
+
 private:
   BulkData& m_mesh;
   BucketRepository *m_repository;
@@ -156,11 +161,18 @@ private:
 
   bool m_updated_since_sort;
 
+  RemoveMode m_removeMode;
+
+  std::vector<FastMeshIndex> m_removedEntities;
   //
   // Internal methods
   //
 
+  void remove_internal(Bucket& bucket, unsigned bucketOrd);
   void remove_impl();
+
+  void clear_pending_removes_by_filling_from_end();
+  void finalize_pending_removes_by_sliding_memory();
 
   // The partition has no buckets, not even an empty one left after removing all its
   // entities.
