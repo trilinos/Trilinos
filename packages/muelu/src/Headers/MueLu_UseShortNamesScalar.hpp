@@ -110,6 +110,9 @@ using EminPFactory [[maybe_unused]] = MueLu::EminPFactory<Scalar,LocalOrdinal,Gl
 #ifdef MUELU_FACADEBGS2X2_SHORT
 using FacadeBGS2x2 [[maybe_unused]] = MueLu::FacadeBGS2x2<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
+#ifdef MUELU_FACADECLASSBASE_SHORT
+using FacadeClassBase [[maybe_unused]] = MueLu::FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#endif
 #ifdef MUELU_FACADECLASSFACTORY_SHORT
 using FacadeClassFactory [[maybe_unused]] = MueLu::FacadeClassFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif

@@ -34,6 +34,7 @@ DirectSolver
 DropNegativeEntriesFactory
 EminPFactory
 FacadeBGS2x2
+FacadeClassBase
 FacadeClassFactory
 FacadeSimple
 FactoryFactory
