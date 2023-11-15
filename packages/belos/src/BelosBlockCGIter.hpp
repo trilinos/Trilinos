@@ -474,8 +474,7 @@ public:
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( blockSize_, blockSize_ );
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( blockSize_, blockSize_ );
-    Teuchos::SerialDenseMatrix<int,ScalarType> rHz( blockSize_, blockSize_ ),
-      rHz_old( blockSize_, blockSize_ ), pAp( blockSize_, blockSize_ );
+    Teuchos::SerialDenseMatrix<int,ScalarType> pAp( blockSize_, blockSize_ );
     Teuchos::SerialSymDenseMatrix<int,ScalarType> pApHerm(Teuchos::View, uplo, pAp.values(), blockSize_, blockSize_);
 
     // Create dense spd solver.
