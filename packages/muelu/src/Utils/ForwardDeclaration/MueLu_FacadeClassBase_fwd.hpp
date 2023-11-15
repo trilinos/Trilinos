@@ -39,68 +39,25 @@
 //                    Jonathan Hu       (jhu@sandia.gov)
 //                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
-//                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
-#ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_MUELU_FACADECLASSFACTORY_DECL_HPP_
-#define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_MUELU_FACADECLASSFACTORY_DECL_HPP_
+#ifndef MUELU_FACADECLASSBASE_FWD_HPP
+#define MUELU_FACADECLASSBASE_FWD_HPP
 
-#include <Teuchos_ParameterList.hpp>
 
-#include "MueLu_BaseClass.hpp"
-#include "MueLu_FacadeClassBase.hpp"
 
-#include "MueLu_ConfigDefs.hpp"
 
 namespace MueLu {
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class FacadeClassFactory
-  : public virtual BaseClass{
-#undef MUELU_FACADECLASSFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
+  class FacadeClassBase;
+}
 
-  public:
-    //! @name Constructors/Destructors
-    //@{
-
-    //! Constructor.
-    FacadeClassFactory();
-
-    //! Destructor.
-    virtual ~FacadeClassFactory() { }
-
-    //@}
-
-    /*! @brief Set parameter list for FacadeClassFactory interpreter.
-
-       @param[in] paramList: ParameterList containing the MueLu parameters.
-    */
-    Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
-
-    /*! @brief Register new facade class
-     *
-     * Register new externally provided facade class in FacadeClassFactory
-     *
-     * @param[in] name: name that is used to access Facade class
-     * @param[in] facadeclass: RCP pointer to facade class instance
-     */
-    void RegisterFacadeClass(std::string name, Teuchos::RCP<FacadeClassBase> facadeclass) {
-      facadeClasses_[name] = facadeclass;
-    }
-
-  private:
-
-    std::map<std::string, Teuchos::RCP<FacadeClassBase> > facadeClasses_;
-
-  };
-
-} // namespace MueLu
-
-#define MUELU_FACADECLASSFACTORY_SHORT
+#ifndef MUELU_FACADECLASSBASE_SHORT
+#define MUELU_FACADECLASSBASE_SHORT
+#endif
 
 
 
-#endif /* PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_MUELU_FACADECLASSFACTORY_DECL_HPP_ */
+#endif // MUELU_FACADECLASSBASE_FWD_HPP
