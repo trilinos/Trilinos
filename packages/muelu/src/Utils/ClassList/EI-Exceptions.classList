@@ -1,5 +1,6 @@
 # List of classes that do not need to be instantiated (ex: Interfaces)
 FakeSmootherPrototype
+FacadeClassBase
 GraphBase
 HierarchyFactory
 HierarchyManager

@@ -113,9 +113,6 @@ using FacadeBGS2x2 [[maybe_unused]] = MueLu::FacadeBGS2x2<Scalar,LocalOrdinal,Gl
 #ifdef MUELU_FACADECLASSFACTORY_SHORT
 using FacadeClassFactory [[maybe_unused]] = MueLu::FacadeClassFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_FACADECLASSBASE_SHORT
-using FacadeClassBase [[maybe_unused]] = MueLu::FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-#endif
 #ifdef MUELU_FACADECLASSSIMPLE_SHORT
 using FacadeClassSimple [[maybe_unused]] = MueLu::FacadeClassSimple<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
@@ -451,18 +448,6 @@ using MultiPhys [[maybe_unused]] = MueLu::MultiPhys<Scalar,LocalOrdinal,GlobalOr
 #endif
 #ifdef MUELU_MAXWELL_UTILS_SHORT
 using Maxwell_Utils [[maybe_unused]] = MueLu::Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
-#endif
-#ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
-typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;
-#endif
-#ifdef MUELU_FACTORYFACTORY_SHORT
-typedef MueLu::FactoryFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> FactoryFactory;
-#endif
-#ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
-typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
-#endif
-#ifdef MUELU_PARAMETERLISTINTERPRETER_SHORT
-typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
 #endif
 #ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
 typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;

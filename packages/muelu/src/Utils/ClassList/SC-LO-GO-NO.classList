@@ -35,7 +35,6 @@ DropNegativeEntriesFactory
 EminPFactory
 FacadeBGS2x2
 FacadeClassFactory
-FacadeClassBase
 FacadeClassSimple
 FactoryFactory
 FactoryManager
