@@ -113,19 +113,23 @@ namespace { // (anonymous)
     }
   }
 
+
+
+
   template <class LocalOrdinal, class GlobalOrdinal, class ViewType>
   void computeConstantsOnDevice(const ViewType& entryList, GlobalOrdinal & minMyGID, GlobalOrdinal & maxMyGID, GlobalOrdinal &firstContiguousGID, GlobalOrdinal &lastContiguousGID_val, LocalOrdinal &lastContiguousGID_loc) {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
-    using range_policy = Kokkos::RangePolicy<typename ViewType::device_type::execution_space, Kokkos::IndexType<LO> >;
+    using exec_space = typename ViewType::device_type::execution_space;
+    using range_policy = Kokkos::RangePolicy<exec_space, Kokkos::IndexType<LO> >;
     const LO numLocalElements(entryList.size());
     
     typedef typename Kokkos::MinLoc<GO,LO>::value_type minloc_type;
     minloc_type myMinLoc;
     
     // Find the initial sequence of parallel gids
-    // To find the lastContiguousGID_, we find the first guy where
-    // entryList[i] - entryList[0] != i-0
+    // To find the lastContiguousGID_, we find the first guy where entryList[i] - entryList[0] != i-0.  That's the first non-contiguous guy.
+    // We want the one *before* that guy.
     Kokkos::parallel_reduce(range_policy(0,numLocalElements),KOKKOS_LAMBDA(const LO & i, GO &l_myMin, GO&l_myMax, GO& l_firstCont, minloc_type & l_lastCont){
         auto entry_0 = entryList[0];
         auto entry_i = entryList[i];
@@ -136,21 +140,22 @@ namespace { // (anonymous)
         l_firstCont = entry_0;
 
 
-        if(entry_i - entry_0 != i  && l_lastCont.loc > i) {
-            l_lastCont.loc = i;
-            l_lastCont.val = entry_i;
-          }
+        if(entry_i - entry_0 != i  && l_lastCont.loc >= i) {
+          l_lastCont.loc = i-1;
+          l_lastCont.val = entryList[i-1];
+        }
         else if(i == numLocalElements-1) {
-          // If we're last we need to enter a fake "N+1" element if we're not noncontiguous
-          l_lastCont.loc = i + 1;
-          l_lastCont.val = entry_i + 1;
+          // If last and we're still contiguous, we can enter our information here.
+          l_lastCont.loc = i;
+          l_lastCont.val = entry_i;
         }
         
       },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<GO,LO>(myMinLoc));
 
-    // We got the first non-contiguous GID out of this guy.  If everyone is contiguous the fake "N+1" guy will allow us to get the right thing here.
-    lastContiguousGID_val = myMinLoc.val-1;
-    lastContiguousGID_loc = myMinLoc.loc-1;
+
+    lastContiguousGID_val = myMinLoc.val;
+    lastContiguousGID_loc = myMinLoc.loc;
+    printf("\nlastCont loc = %d val = %d\n", lastContiguousGID_loc, lastContiguousGID_val);
   }
 
 
@@ -1069,7 +1074,12 @@ namespace Tpetra {
     // we could just expose this case explicitly as yet another Map
     // constructor, and avoid the trouble of detecting it.
     if (numLocalElements_ > 0) {
-      //      #define THE_NEW_HOTNESS
+
+      //#define CMS_DEBUG
+
+      #define COMPARATOR
+      //#define OLD_AND_BUSTED
+      //#define THE_NEW_HOTNESS
 #ifdef THE_NEW_HOTNESS
 
 
@@ -1084,12 +1094,23 @@ namespace Tpetra {
       using array_layout =
         typename View<const GO*, device_type>::array_layout;
 
+
+      {
+        auto entryList_host =
+          Kokkos::create_mirror_view (Kokkos::HostSpace (), entryList);
+        Kokkos::deep_copy (entryList_host, entryList);
+        printf("[%d] entryList(%d) = ",getComm()->getRank(),entryList_host.extent(0));
+        for(int i=0; i<entryList_host.extent(0); i++)
+          printf("%d, ",entryList_host[i]);
+        printf("\n");    
+        fflush(stdout);
+        //        comm->barrier();
+      }
+
       // Because you can't use lambdas in constructors on CUDA.  Or using private/protected data.
       Kokkos::deep_copy(typename device_type::execution_space(),lgMap,entryList);//FIXME: Puth into the computeConstantsOnDevice
       LO lastContiguousGID_loc;
       computeConstantsOnDevice(entryList,minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,lastContiguousGID_loc);
-
-
       lastContiguousGID_loc++;//CMS HAQ?
       printf("[%d] CMS: min/max GID = %d/%d first/last contig = %d/%d (%d)\n",getComm()->getRank(),minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,lastContiguousGID_loc);
 
@@ -1100,16 +1121,20 @@ namespace Tpetra {
       // DEEP_COPY REVIEW - DEVICE-TO_HOST
       Kokkos::deep_copy (lgMap_host, lgMap);
 
-      
+#ifdef CMS_DEBUG      
       printf("[%d] lgMap(%d) = ",getComm()->getRank(),lgMap_host.extent(0));
       for(int i=0; i<lgMap_host.extent(0); i++)
-        printf("%d(%d) ",lgMap_host[i],-1);
+        printf("%d, ",lgMap_host[i]);
       printf(" nonContigGids.size() = %d\n",nonContigGids.extent(0));    
-      
+      fflush(stdout);
+      //      comm->barrier();
+#endif
+
       glMap_ = global_to_local_table_type(nonContigGids,
                                           firstContiguousGID_,
                                           lastContiguousGID_,
                                           lastContiguousGID_loc);// FIXME: Does this need +/- 1?
+
 
 
       // FIXME: A bunch of this stuff needs to be lazy
@@ -1119,13 +1144,14 @@ namespace Tpetra {
 
 
 
+
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
       // We've already created this, so use it.
       lgMapHost_ = lgMap_host;
         
-#else
-
+#elif defined(OLD_AND_BUSTED)
+      //OLD_AND_BUSTED
 
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
@@ -1134,6 +1160,21 @@ namespace Tpetra {
         (view_alloc ("lgMap", WithoutInitializing), numLocalElements_);
       auto lgMap_host =
         Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
+      
+      {
+        auto entryList_host =
+          Kokkos::create_mirror_view (Kokkos::HostSpace (), entryList);
+        Kokkos::deep_copy (entryList_host, entryList);
+        printf("[%d] entryList(%d) = ",getComm()->getRank(),entryList_host.extent(0));
+        for(int i=0; i<entryList_host.extent(0); i++)
+          printf("%d, ",entryList_host[i]);
+        printf("\n");    
+        fflush(stdout);
+        //        comm->barrier();
+      }
+
+
+
 
       using array_layout =
         typename View<const GO*, device_type>::array_layout;
@@ -1184,38 +1225,42 @@ namespace Tpetra {
 
       // Compute the GID -> LID lookup table, _not_ including the
       // initial sequence of contiguous GIDs.
-      {
-        const std::pair<size_t, size_t> ncRange (i, entryList.extent (0));
-        auto nonContigGids = subview (entryList, ncRange);
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (static_cast<size_t> (nonContigGids.extent (0)) !=
-           static_cast<size_t> (entryList.extent (0) - i),
-           std::logic_error, "Tpetra::Map noncontiguous constructor: "
-           "nonContigGids.extent(0) = "
-           << nonContigGids.extent (0)
-           << " != entryList.extent(0) - i = "
-           << (entryList.extent (0) - i) << " = "
-           << entryList.extent (0) << " - " << i
-           << ".  Please report this bug to the Tpetra developers.");
+      const std::pair<size_t, size_t> ncRange (i, entryList.extent (0));
+      auto nonContigGids = subview (entryList, ncRange);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (nonContigGids.extent (0)) !=
+         static_cast<size_t> (entryList.extent (0) - i),
+         std::logic_error, "Tpetra::Map noncontiguous constructor: "
+         "nonContigGids.extent(0) = "
+         << nonContigGids.extent (0)
+         << " != entryList.extent(0) - i = "
+         << (entryList.extent (0) - i) << " = "
+         << entryList.extent (0) << " - " << i
+         << ".  Please report this bug to the Tpetra developers.");
 
+#ifdef CMS_DEBUG      
       printf("[%d] lgMap(%d) = ",getComm()->getRank(),lgMap_host.extent(0));
       for(int i=0; i<lgMap_host.extent(0); i++)
-        printf("%d(%d) ",lgMap_host[i],-1);
+        printf("%d, ",lgMap_host[i]);
       printf(" nonContigGids.size() = %d\n",nonContigGids.extent(0));    
+      fflush(stdout);
+      //      comm->barrier();
+#endif
+      
 
-
-
+      
       printf("[%d] CMS: min/max GID = %d/%d first/last contig = %d/%d (%d)\n",getComm()->getRank(),minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,i);
+      
+      
+      
+      glMap_ = global_to_local_table_type(nonContigGids,
+                                          firstContiguousGID_,
+                                          lastContiguousGID_,
+                                          static_cast<LO> (i));
 
-
-
-        glMap_ = global_to_local_table_type(nonContigGids,
-                                            firstContiguousGID_,
-                                            lastContiguousGID_,
-                                            static_cast<LO> (i));
-        // Make host version - when memory spaces match these just do trivial assignment
-        glMapHost_ = global_to_local_table_host_type(glMap_);
-      }
+      // Make host version - when memory spaces match these just do trivial assignment
+      glMapHost_ = global_to_local_table_host_type(glMap_);
+        
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
       // table above, we have to look at all the (noncontiguous) input
@@ -1245,6 +1290,159 @@ namespace Tpetra {
       lgMap_ = lgMap;
       // We've already created this, so use it.
       lgMapHost_ = lgMap_host;
+#elif defined(COMPARATOR)
+      GO minMyGID_k, maxMyGID_k, firstContiguousGID_k, lastContiguousGID_k;
+      LO lastContiguousGID_loc_k, input_for_table_k;
+      GO minMyGID_t, maxMyGID_t, firstContiguousGID_t, lastContiguousGID_t;
+      LO input_for_table_t;
+      {
+        // Find contiguous GID range, with the restriction that the
+        // beginning of the range starts with the first entry.  While
+        // doing so, fill in the LID -> GID table.
+        typename decltype (lgMap_)::non_const_type lgMap
+          (view_alloc ("lgMap", WithoutInitializing), numLocalElements_);
+        auto lgMap_host =
+          Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
+        
+        using array_layout =
+          typename View<const GO*, device_type>::array_layout;
+        
+        // Because you can't use lambdas in constructors on CUDA.  Or using private/protected data.
+        Kokkos::deep_copy(typename device_type::execution_space(),lgMap,entryList);//FIXME: Puth into the computeConstantsOnDevice
+
+        //LO lastContiguousGID_loc;
+        computeConstantsOnDevice(entryList,minMyGID_k,maxMyGID_k,firstContiguousGID_k,lastContiguousGID_k,lastContiguousGID_loc_k);
+        lastContiguousGID_loc_k++;//CMS HAQ?
+
+        input_for_table_k = lastContiguousGID_loc_k;
+
+      }
+      {
+        // Find contiguous GID range, with the restriction that the
+        // beginning of the range starts with the first entry.  While
+        // doing so, fill in the LID -> GID table.
+        typename decltype (lgMap_)::non_const_type lgMap
+          (view_alloc ("lgMap", WithoutInitializing), numLocalElements_);
+        auto lgMap_host =
+          Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
+        
+        using array_layout =
+          typename View<const GO*, device_type>::array_layout;
+        View<GO*, array_layout, Kokkos::HostSpace> entryList_host
+          (view_alloc ("entryList_host", WithoutInitializing),
+           entryList.extent(0));
+        // DEEP_COPY REVIEW - DEVICE-TO-HOST
+        Kokkos::deep_copy (execution_space(), entryList_host, entryList);
+        Kokkos::fence("Map::Map"); // UVM follows
+        firstContiguousGID_t = entryList_host[0];
+        lastContiguousGID_t = firstContiguousGID_t+1;
+        
+        
+        firstContiguousGID_t = entryList_host[0];
+        lastContiguousGID_t = firstContiguousGID_t+1;
+        
+        // FIXME (mfh 23 Sep 2015) We need to copy the input GIDs
+        // anyway, so we have to look at them all.  The logical way to
+        // find the first noncontiguous entry would thus be to "reduce,"
+        // where the local reduction result is whether entryList[i] + 1
+        // == entryList[i+1].
+        
+        lgMap_host[0] = firstContiguousGID_t;
+        size_t i = 1;
+        for ( ; i < numLocalElements_; ++i) {
+          const GO curGid = entryList_host[i];
+          const LO curLid = as<LO> (i);
+          
+          if (lastContiguousGID_t != curGid) break;
+          
+          // Add the entry to the LID->GID table only after we know that
+          // the current GID is in the initial contiguous sequence, so
+          // that we don't repeat adding it in the first iteration of
+          // the loop below over the remaining noncontiguous GIDs.
+          lgMap_host[curLid] = curGid;
+          ++lastContiguousGID_t;
+        }
+        --lastContiguousGID_t;
+        
+        // [firstContiguousGID_, lastContigousGID_] is the initial
+        // sequence of contiguous GIDs.  We can start the min and max
+        // GID using this range.
+        minMyGID_t = firstContiguousGID_t;
+        maxMyGID_t = lastContiguousGID_t;
+
+
+        // Compute the GID -> LID lookup table, _not_ including the
+        // initial sequence of contiguous GIDs.
+        const std::pair<size_t, size_t> ncRange (i, entryList.extent (0));
+        auto nonContigGids = subview (entryList, ncRange);
+
+        input_for_table_t = i;
+        glMap_ = global_to_local_table_type(nonContigGids,
+                                          firstContiguousGID_t,
+                                          lastContiguousGID_t,
+                                          static_cast<LO> (i));
+
+        
+        // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
+        // table above, we have to look at all the (noncontiguous) input
+        // indices anyway.  Thus, why not have the constructor compute
+        // and return the min and max?
+        
+        for ( ; i < numLocalElements_; ++i) {
+          const GO curGid = entryList_host[i];
+          const LO curLid = static_cast<LO> (i);
+          lgMap_host[curLid] = curGid; // LID -> GID table
+          
+          // While iterating through entryList, we compute its
+          // (process-local) min and max elements.
+          if (curGid < minMyGID_t) {
+            minMyGID_t = curGid;
+          }
+          if (curGid > maxMyGID_) {
+            maxMyGID_t = curGid;
+          }
+        }
+      
+
+        // Make host version - when memory spaces match these just do trivial assignment
+        glMapHost_ = global_to_local_table_host_type(glMap_);
+
+        // We filled lgMap on host above; now sync back to device.
+        // DEEP_COPY REVIEW - HOST-TO-DEVICE
+        Kokkos::deep_copy (execution_space(), lgMap, lgMap_host);
+        
+        // "Commit" the local-to-global lookup table we filled in above.
+        lgMap_ = lgMap;
+        // We've already created this, so use it.
+        lgMapHost_ = lgMap_host;
+        
+      }
+
+      minMyGID_ =  minMyGID_t;
+      maxMyGID_ =  maxMyGID_t;
+      firstContiguousGID_ = firstContiguousGID_t;
+      lastContiguousGID_ = lastContiguousGID_t;
+
+      printf("[%d] kokkos/teuchos minGID = %d/%d maxGID = %d/%d firstCont = %d/%d lastCont = %d/%d table=%d/%d\n",
+             getComm()->getRank(),
+             minMyGID_k, minMyGID_t, 
+             maxMyGID_k, maxMyGID_t, 
+             firstContiguousGID_k, firstContiguousGID_t,
+             lastContiguousGID_k, lastContiguousGID_t,
+             input_for_table_k, input_for_table_t);
+      fflush(stdout);
+
+      if( minMyGID_k != minMyGID_t ||
+          maxMyGID_k != maxMyGID_t ||
+          firstContiguousGID_k != firstContiguousGID_t || 
+          lastContiguousGID_k != lastContiguousGID_t ||
+          input_for_table_k != input_for_table_t)
+        throw std::runtime_error("ERROR: Mismatch in map");
+
+
+#else
+#error "You need to define at least one mode for Tpetra Map"
+
 
 #endif
 
@@ -1261,12 +1459,18 @@ namespace Tpetra {
     }
 
 
-   
+    {
+      Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      glMapHost_.describe(*fos,Teuchos::VERB_EXTREME);
+    }
+
+
+#ifdef CMS_DEBUG   
     printf("[%d] lgMap = ",getComm()->getRank());
     for(int i=0; i<lgMapHost_.extent(0); i++)
       printf("%d(%d) ",lgMapHost_[i],glMapHost_.get(lgMapHost_[i]));
     printf("\n");
-    
+#endif
 
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
