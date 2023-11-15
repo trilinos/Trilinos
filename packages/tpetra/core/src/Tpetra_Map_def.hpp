@@ -1077,9 +1077,9 @@ namespace Tpetra {
 
       //#define CMS_DEBUG
 
-      #define COMPARATOR
+      //#define COMPARATOR
       //#define OLD_AND_BUSTED
-      //#define THE_NEW_HOTNESS
+      #define THE_NEW_HOTNESS
 #ifdef THE_NEW_HOTNESS
 
 
