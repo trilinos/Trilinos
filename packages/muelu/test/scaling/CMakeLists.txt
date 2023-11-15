@@ -137,6 +137,7 @@ TRIBITS_ADD_TEST(
   ARGS "--xml=anisotropic.xml --tol=1e-6"
   NUM_MPI_PROCS 4
   COMM mpi # HAVE_MPI required
+  PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
 # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
@@ -288,6 +289,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     ARGS "--linAlgebra=Tpetra --nx=30 --ny=30"
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
+    #do not check for convergence
   )
 
   TRIBITS_ADD_TEST(
@@ -296,6 +298,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     ARGS "--linAlgebra=Tpetra"
     NUM_MPI_PROCS  4
     COMM mpi
+    PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
 ENDIF()
@@ -308,14 +311,16 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     ARGS "--linAlgebra=Tpetra --xml=generalBlkSmoothing.xml --belosType=\"Fixed\ Point\" --rowmap=GblkMap.dat --matrix=GblkAmat.dat --rhs=GblkRhs.dat --its=2 --userBlks=Gblks.dat --notimings --tol=.976"
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
   )
   TRIBITS_ADD_TEST(
     Driver
     NAME "SerialGeneralBlockSmoothing"
     ARGS "--linAlgebra=Tpetra --xml=generalBlkSmoothing.xml --belosType=\"Fixed\ Point\" --matrix=GblkAmat.dat --rhs=GblkRhs.dat --its=2 --userBlks=Gblks.dat --notimings --tol=.976"
-     NUM_MPI_PROCS 1
-     COMM mpi # HAVE_MPI required
-     RUN_SERIAL
+    NUM_MPI_PROCS 1
+    COMM mpi # HAVE_MPI required
+    RUN_SERIAL
+    PASS_REGULAR_EXPRESSION "Belos converged"
    )
 
    TRIBITS_ADD_TEST(
@@ -324,6 +329,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
      ARGS "--linAlgebra=Tpetra --xml=zeroAggTest.xml --belosType=\"Block GMRES\" --matrix=blkDiag3x3And6x6.mat --its=20 --notimings --coords=coords2.mm"
      NUM_MPI_PROCS 2
      COMM mpi # HAVE_MPI required
+     PASS_REGULAR_EXPRESSION "Belos converged"
    )
    TRIBITS_ADD_TEST(
      Driver
@@ -332,6 +338,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     NUM_MPI_PROCS 1
     COMM mpi # HAVE_MPI required
     RUN_SERIAL
+    PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
   TRIBITS_ADD_TEST(
@@ -340,6 +347,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     ARGS "--linAlgebra=Tpetra --xml=blkSmooEquivOlapSchwarz.xml --belosType=\"Fixed\ Point\" --rowmap=GblkMap.dat --matrix=GblkAmat.dat --rhs=GblkRhs.dat --tol=.1 --userBlks=regularOverLap.dat"
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
   TRIBITS_ADD_TEST(
@@ -348,6 +356,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     ARGS "--linAlgebra=Tpetra --xml=oLapSchwarzEquivBlkSmoo.xml --belosType=\"Fixed\ Point\" --rowmap=GblkMap.dat --matrix=GblkAmat.dat --rhs=GblkRhs.dat --tol=.1"
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
 ENDIF()
@@ -386,6 +395,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         ARGS "--linAlgebra=Tpetra --xml=scaling.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
+        PASS_REGULAR_EXPRESSION "Belos converged"
         )
 
       TRIBITS_ADD_TEST(
@@ -394,6 +404,8 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         ARGS "--linAlgebra=Tpetra --xml=scaling.xml --belosType=\"TPETRA CG SINGLE REDUCE\""
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
+        # FIXME 2023-11-15 JHU: this test does not converge
+        # PASS_REGULAR_EXPRESSION "Belos converged"
         )
 
       TRIBITS_ADD_TEST(
@@ -402,6 +414,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         ARGS "--linAlgebra=Tpetra --yaml=scaling.yaml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
+        PASS_REGULAR_EXPRESSION "Belos converged"
         )
 
       TRIBITS_ADD_TEST(
@@ -410,15 +423,17 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         ARGS "--linAlgebra=Tpetra --xml=scaling-withglobalconstants.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
+        PASS_REGULAR_EXPRESSION "Belos converged"
         )
 
       TRIBITS_ADD_TEST(
         Driver
-        NAME "DriverEnforceConstaints"
+        NAME "DriverEnforceConstraints"
         ARGS "--xml=sa_enforce_constraints.xml --stretchx=3. --matrixType=Laplace2D --nx=43 --ny=40"
         NUM_MPI_PROCS 1
         COMM mpi # HAVE_MPI required
         RUN_SERIAL
+        PASS_REGULAR_EXPRESSION "Belos converged"
         )
 
       TRIBITS_ADD_TEST(
@@ -428,6 +443,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 1
         COMM mpi # HAVE_MPI required
         RUN_SERIAL
+        PASS_REGULAR_EXPRESSION "Belos converged"
         )
 
       TRIBITS_COPY_FILES_TO_BINARY_DIR(DriverDiagonalModifications_cp
@@ -440,6 +456,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         ARGS "--linAlgebra=Tpetra --xml=scaling_distance2_agg.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
+        PASS_REGULAR_EXPRESSION "Belos converged"
       )
 
     ENDIF() # INST_COMPLEX_INT_INT
@@ -450,6 +467,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       ARGS "--linAlgebra=Tpetra --xml=tripleMatrixProduct.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
+      PASS_REGULAR_EXPRESSION "Belos converged"
       )
 
     TRIBITS_ADD_TEST(
@@ -458,6 +476,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       ARGS "--linAlgebra=Tpetra --xml=sa_with_ilu.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
+      PASS_REGULAR_EXPRESSION "Belos converged"
       )
 
     TRIBITS_ADD_TEST(
@@ -466,6 +485,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       ARGS "--linAlgebra=Tpetra --xml=sa_with_Ifpack2_line_detection.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
+      PASS_REGULAR_EXPRESSION "Belos converged"
       )
 
   ENDIF() # ENABLE_ZOLTAN
@@ -488,6 +508,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         ARGS "--linAlgebra=Tpetra --xml=conchas_milestone_zoltan2.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
+        PASS_REGULAR_EXPRESSION "Belos converged"
         )
     ENDIF()
   ENDIF()
@@ -498,6 +519,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     ARGS "--linAlgebra=Tpetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
     NUM_MPI_PROCS 4
     COMM serial mpi
+    #do not check for convergence
     )
   MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
@@ -505,6 +527,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=100 --belosType=gmres --tol=1.0e-8  --muelu-computed-nullspace"
       NUM_MPI_PROCS 4
       COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Belos converged"
       )
 
   IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
@@ -514,6 +537,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       ARGS "--linAlgebra=Tpetra --xml=smoother_complex.xml --nx=10 --ny=10 --solver=none"
       NUM_MPI_PROCS 4
       COMM serial mpi
+      #do not check for convergence
       )
   ELSE()
     MUELU_ADD_SERIAL_AND_MPI_TEST(
@@ -522,6 +546,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       ARGS "--linAlgebra=Tpetra --xml=smoother.xml --nx=10 --ny=10 --solver=none"
       NUM_MPI_PROCS 4
       COMM serial mpi
+      #do not check for convergence
       )
   ENDIF()
 
@@ -533,6 +558,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       ARGS "--linAlgebra=Tpetra --xml=simple.xml"
       NUM_MPI_PROCS 4
       COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Belos converged"
       )
     TRIBITS_ADD_TEST(
       ReadMatrix
@@ -540,6 +566,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       ARGS "--linAlgebra=Tpetra --matrixfile=smooVec.mm --xml=smooVecCoalesce.xml --numpdes=3"
       NUM_MPI_PROCS 3
       COMM mpi
+      PASS_REGULAR_EXPRESSION "Belos converged"
       )
     IF ( MUELU_RECURMG )
       MUELU_ADD_SERIAL_AND_MPI_TEST(
