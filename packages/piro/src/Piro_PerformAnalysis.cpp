@@ -896,6 +896,26 @@ Piro::PerformROLTransientAnalysis(
               "Parameter Initial Guess Type \"" << init_guess_type << "\" is not Known.\nValid options are: \"Parameter Scalar Guess\", \"Uniform Vector\" and \"Random Vector\""<<std::endl);
   }
 
+  // Three options are curently used to determine how Piro
+  // should solve a transient optimization problem and not all of
+  // the possible combinations are implemented at this time.
+  //
+  // 1. The first option is whether a full space or reduced space approach
+  // should be used. Currently, Piro only supports reduced space 
+  // approaches for transient problem. The option is kept just to be consistent
+  // with steady state optimization problems.
+  //
+  // 2. The second option is whether we use Tempus to compute the response and its
+  // total derivatives with respect to the parameters or if we use ROL to compute the
+  // response and the derivative.
+  // In the first approach ROL is not aware that we solve a transient problem.
+  //
+  // 3. The third option is whether the response depends only on the final time step or
+  // if it is integrated over time.
+  // Currently, both cases of the option 2 support a response that depends only on 
+  // the final time step. However, only the "Tempus Driver" set to false support the 
+  // time integrated response for now.
+  //
   bool useFullSpace = rolParams.get("Full Space",false);
   bool useTempusDriver = rolParams.get("Tempus Driver",false);
   bool useFinalTimeStepResponse = rolParams.get<bool>("Response Depends Only On Final Time");

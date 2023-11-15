@@ -74,6 +74,31 @@ template <typename Real>
     return u_dot;
   }
 
+/** \brief ThyraProductME_ROL_DynamicObjective
+ * 
+ * This class is used to be able to call Tempus from ROL in the context
+ * of time integrated responses.
+ * 
+ * ROL needs to compute derivative with respect to u_old, u_new, and z.
+ * However, Tempus allows to compute derivative with respect to x, x_dot, and p.
+ * 
+ * In this class member functions, we used the approximation:
+ * \f[
+ *      \dot{x} = \frac{u_{new}-u_{old}}{dt}
+ * \f]
+ * to evaluate the response value (if it depends on x_dot) and the derivatives.  
+ *
+ * The time integration over a ROL time stamp is done here using a trapezoidal
+ * approach if the response does not depend only on the final time step.
+ * 
+ * The implemented trapezoidal approach visits both the first and the last time steps
+ * of the ROL time stamp and evaluates the time integrand for both of these time values.
+ * For the first one, x is set to u_old, x_dot is computed as above, and the time t of 
+ * the first time step of the time stamp is used.
+ * For the last one, x is set to u_new, x_dot is computed as above, and the time t of 
+ * the last time step of the time stamp is used.
+*/
+
 template <typename Real>
 class ThyraProductME_ROL_DynamicObjective : public virtual ROL::DynamicObjective<Real> {
 public:

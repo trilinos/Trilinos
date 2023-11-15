@@ -493,7 +493,8 @@ void MassSpringDamperModel::evalModelImpl(
       Teuchos::rcp_dynamic_cast<MatrixBased_LOWS>(outArgs.get_hess_g_pp(0,0,0)):
       Teuchos::null;
 
-  // Response:  g = ( x - target_x )^2 + scaling ( x_dot - target_x_dot )^2
+  // Response:  g = scaling_g_x * (( x - target_x )^2 + scaling ( x_dot - target_x_dot )^2) 
+  //                 + scaling_g_p * (( k - target_k )^2 + ( m - target_m )^2)
 
   double diff_x = (x[0] - target_x_);
   double diff_x_dot;
@@ -512,10 +513,10 @@ void MassSpringDamperModel::evalModelImpl(
     H_pp_out_crs->setAllToScalar(0.0);
     H_pp_out_crs->fillComplete();
 
-      if(probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").isSublist("H_pp Solver")) {
-        auto pl = probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").sublist("H_pp Solver");
-        H_pp_out->initializeSolver(Teuchos::rcpFromRef(pl));
-      }
+    if(probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").isSublist("H_pp Solver")) {
+      auto pl = probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").sublist("H_pp Solver");
+      H_pp_out->initializeSolver(Teuchos::rcpFromRef(pl));
+    }
   }
 
   if (Teuchos::nonnull(dfdp_out)) {
