@@ -113,8 +113,8 @@ using FacadeBGS2x2 [[maybe_unused]] = MueLu::FacadeBGS2x2<Scalar,LocalOrdinal,Gl
 #ifdef MUELU_FACADECLASSFACTORY_SHORT
 using FacadeClassFactory [[maybe_unused]] = MueLu::FacadeClassFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_FACADECLASSSIMPLE_SHORT
-using FacadeClassSimple [[maybe_unused]] = MueLu::FacadeClassSimple<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#ifdef MUELU_FACADESIMPLE_SHORT
+using FacadeSimple [[maybe_unused]] = MueLu::FacadeSimple<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_FACTORYFACTORY_SHORT
 using FactoryFactory [[maybe_unused]] = MueLu::FactoryFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -197,8 +197,8 @@ using MergedBlockedMatrixFactory [[maybe_unused]] = MueLu::MergedBlockedMatrixFa
 #ifdef MUELU_MERGEDSMOOTHER_SHORT
 using MergedSmoother [[maybe_unused]] = MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_MLPARAMETERLISTINTEPRETER_SHORT
-using MLParameterListIntepreter [[maybe_unused]] = MueLu::MLParameterListIntepreter<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#ifdef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
+using MLParameterListInterpreter [[maybe_unused]] = MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 using MultiVectorTransferFactory [[maybe_unused]] = MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -215,8 +215,8 @@ using NullspaceFactory_kokkos [[maybe_unused]] = MueLu::NullspaceFactory_kokkos<
 #ifdef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 using NullspacePresmoothFactory [[maybe_unused]] = MueLu::NullspacePresmoothFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
-#ifdef MUELU_PARAMETERLISTINTEPRETER_SHORT
-using ParameterListIntepreter [[maybe_unused]] = MueLu::ParameterListIntepreter<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+#ifdef MUELU_PARAMETERLISTINTERPRETER_SHORT
+using ParameterListInterpreter [[maybe_unused]] = MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 #endif
 #ifdef MUELU_PATTERNFACTORY_SHORT
 using PatternFactory [[maybe_unused]] = MueLu::PatternFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>;

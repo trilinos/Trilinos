@@ -35,7 +35,7 @@ DropNegativeEntriesFactory
 EminPFactory
 FacadeBGS2x2
 FacadeClassFactory
-FacadeClassSimple
+FacadeSimple
 FactoryFactory
 FactoryManager
 FakeSmootherPrototype
@@ -63,13 +63,13 @@ MapTransferFactory
 MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
-MLParameterListIntepreter - #if defined(HAVE_MUELU_DEPRECATED_CODE)
+MLParameterListInterpreter - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 MultiVectorTransferFactory
 NotayAggregationFactory
 NullspaceFactory
 NullspaceFactory_kokkos
 NullspacePresmoothFactory
-ParameterListIntepreter
+ParameterListInterpreter
 PatternFactory
 PerfUtils
 PerfModels
