@@ -122,17 +122,19 @@ namespace { // (anonymous)
     using GO = GlobalOrdinal;
     using exec_space = typename ViewType::device_type::execution_space;
     using range_policy = Kokkos::RangePolicy<exec_space, Kokkos::IndexType<LO> >;
-    const LO numLocalElements(entryList.size());
+    const LO numLocalElements = entryList.extent(0);
     
-    typedef typename Kokkos::MinLoc<GO,LO>::value_type minloc_type;
+    // We're going to use the minloc backwards because we need to have it sort on the "location" and have the "value" along for the
+    // ride, rather than the other way around
+    typedef typename Kokkos::MinLoc<LO,GO>::value_type minloc_type;
     minloc_type myMinLoc;
     
     // Find the initial sequence of parallel gids
     // To find the lastContiguousGID_, we find the first guy where entryList[i] - entryList[0] != i-0.  That's the first non-contiguous guy.
     // We want the one *before* that guy.
     Kokkos::parallel_reduce(range_policy(0,numLocalElements),KOKKOS_LAMBDA(const LO & i, GO &l_myMin, GO&l_myMax, GO& l_firstCont, minloc_type & l_lastCont){
-        auto entry_0 = entryList[0];
-        auto entry_i = entryList[i];
+        GO entry_0 = entryList[0];
+        GO entry_i = entryList[i];
         
         // Easy stuff
         l_myMin = (l_myMin < entry_i) ? l_myMin : entry_i;
@@ -140,22 +142,22 @@ namespace { // (anonymous)
         l_firstCont = entry_0;
 
 
-        if(entry_i - entry_0 != i  && l_lastCont.loc >= i) {
-          l_lastCont.loc = i-1;
-          l_lastCont.val = entryList[i-1];
-        }
-        else if(i == numLocalElements-1) {
-          // If last and we're still contiguous, we can enter our information here.
-          l_lastCont.loc = i;
-          l_lastCont.val = entry_i;
-        }
         
-      },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<GO,LO>(myMinLoc));
+        if(entry_i - entry_0 != i  && l_lastCont.loc >= i) {
+          l_lastCont.val = i-1;
+          l_lastCont.loc = entryList[i-1];
+        }
+        else if (i == numLocalElements-1) {
+          // If we're last, we always think we're the first non-contiguous guy
+          l_lastCont.val = i;
+          l_lastCont.loc = entry_i;
+        }
+                
+      },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<LO,GO>(myMinLoc));
 
-
-    lastContiguousGID_val = myMinLoc.val;
-    lastContiguousGID_loc = myMinLoc.loc;
-    printf("\nlastCont loc = %d val = %d\n", lastContiguousGID_loc, lastContiguousGID_val);
+    // This switch is intentional, since we're using MinLoc backwards
+    lastContiguousGID_val = myMinLoc.loc;
+    lastContiguousGID_loc = myMinLoc.val;
   }
 
 
@@ -1077,9 +1079,9 @@ namespace Tpetra {
 
       //#define CMS_DEBUG
 
-      //#define COMPARATOR
+      #define COMPARATOR
       //#define OLD_AND_BUSTED
-      #define THE_NEW_HOTNESS
+      //#define THE_NEW_HOTNESS
 #ifdef THE_NEW_HOTNESS
 
 
@@ -1398,7 +1400,7 @@ namespace Tpetra {
           if (curGid < minMyGID_t) {
             minMyGID_t = curGid;
           }
-          if (curGid > maxMyGID_) {
+          if (curGid > maxMyGID_t) {
             maxMyGID_t = curGid;
           }
         }
@@ -1422,6 +1424,11 @@ namespace Tpetra {
       maxMyGID_ =  maxMyGID_t;
       firstContiguousGID_ = firstContiguousGID_t;
       lastContiguousGID_ = lastContiguousGID_t;
+
+    printf("[%d] lgMap = ",getComm()->getRank());
+    for(int i=0; i<lgMapHost_.extent(0); i++)
+      printf("%d(%d) ",lgMapHost_[i],glMapHost_.get(lgMapHost_[i]));
+    printf("\n");fflush(stdout);
 
       printf("[%d] kokkos/teuchos minGID = %d/%d maxGID = %d/%d firstCont = %d/%d lastCont = %d/%d table=%d/%d\n",
              getComm()->getRank(),
@@ -1459,11 +1466,12 @@ namespace Tpetra {
     }
 
 
+    /*
     {
       Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       glMapHost_.describe(*fos,Teuchos::VERB_EXTREME);
     }
-
+    */
 
 #ifdef CMS_DEBUG   
     printf("[%d] lgMap = ",getComm()->getRank());
