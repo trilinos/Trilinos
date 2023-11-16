@@ -546,9 +546,9 @@ namespace {
    using Teuchos::ArrayView;
    GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
 
-   out << "Test: Map, KokkosViewConstructor" << std::endl;
+   out << "Test: Map, KokkosViewConstructor2" << std::endl;
 
-   // create a comm                                                                                                                                                                                                                                                          
+   // create a comm
    auto comm = Tpetra::getDefaultComm();
    const int rank = comm->getRank();
 
@@ -557,8 +557,8 @@ namespace {
      M dummy(10,0,comm);
    }
 
-
-   // View in default space
+   // View in default space.  Here we make sure we have a value *below* the 
+   // value in entry zero.  
    int N = 3;
    Kokkos::View<GO*> myview("DeviceView",N);
    auto myview_h = Kokkos::create_mirror_view(myview);

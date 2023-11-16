@@ -140,8 +140,6 @@ namespace { // (anonymous)
         l_myMin = (l_myMin < entry_i) ? l_myMin : entry_i;
         l_myMax = (l_myMax > entry_i) ? l_myMax : entry_i;
         l_firstCont = entry_0;
-
-
         
         if(entry_i - entry_0 != i  && l_lastCont.loc >= i) {
           l_lastCont.val = i-1;
@@ -1081,14 +1079,9 @@ namespace Tpetra {
       // doing so, fill in the LID -> GID table.
       typename decltype (lgMap_)::non_const_type lgMap
         (view_alloc ("lgMap", WithoutInitializing), numLocalElements_);
-      auto lgMap_host =
-        Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
-
-      using array_layout =
-        typename View<const GO*, device_type>::array_layout;
 
       // Because you can't use lambdas in constructors on CUDA.  Or using private/protected data.
-      //FIXME: Put into the computeConstantsOnDevice
+      // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
       Kokkos::deep_copy(typename device_type::execution_space(),lgMap,entryList);
       LO lastContiguousGID_loc;
       computeConstantsOnDevice(entryList,minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,lastContiguousGID_loc);
@@ -1097,21 +1090,14 @@ namespace Tpetra {
 
 
       // We filled lgMap on host above; now sync back to device.
-      // DEEP_COPY REVIEW - DEVICE-TO_HOST
-      Kokkos::deep_copy (lgMap_host, lgMap);
       glMap_ = global_to_local_table_type(nonContigGids,
                                           firstContiguousGID_,
                                           lastContiguousGID_,
                                           lastContiguousGID_loc);
-      // FIXME: A bunch of this stuff needs to be lazy
-
-      // Make host version - when memory spaces match these just do trivial assignment
-      glMapHost_ = global_to_local_table_host_type(glMap_);
-
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
-      // We've already created this, so use it.
-      lgMapHost_ = lgMap_host;
+
+      // NOTE: We do not fill the glMapHost_ and lgMapHost_ views here.  They will be filled lazily later
     }
     else {
       minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
@@ -1124,20 +1110,6 @@ namespace Tpetra {
       // glMap_ was default constructed, so it's already empty.
     }
 
-
-    /*
-    {
-      Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      glMapHost_.describe(*fos,Teuchos::VERB_EXTREME);
-    }
-    */
-
-#ifdef CMS_DEBUG   
-    printf("[%d] lgMap = ",getComm()->getRank());
-    for(int i=0; i<lgMapHost_.extent(0); i++)
-      printf("%d(%d) ",lgMapHost_[i],glMapHost_.get(lgMapHost_[i]));
-    printf("\n");
-#endif
 
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
@@ -1291,6 +1263,7 @@ namespace Tpetra {
       // If the given global index is not in the table, this returns
       // the same value as OrdinalTraits<LocalOrdinal>::invalid().
       // glMapHost_ is Host and does not assume UVM
+      lazyPushToHost();
       return glMapHost_.get (globalIndex);
     }
   }
@@ -1311,6 +1284,7 @@ namespace Tpetra {
       // involvement.  As a result, it is thread safe.
       //
       // lgMapHost_ is a host pointer; this does NOT assume UVM.
+      lazyPushToHost();
       return lgMapHost_[localIndex];
     }
   }
@@ -1716,9 +1690,8 @@ namespace Tpetra {
         os << *prefix << "Copy lgMap to lgMapHost" << endl;
         std::cerr << os.str();
       }
-
-      auto lgMapHost =
-        Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
+      
+      auto lgMapHost = Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
       auto exec_instance = execution_space();
       Kokkos::deep_copy (exec_instance, lgMapHost, lgMap);
@@ -1730,6 +1703,9 @@ namespace Tpetra {
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
       lgMapHost_ = lgMapHost;
+    }
+    else {
+      lazyPushToHost();
     }
 
     if (verbose) {
@@ -1752,6 +1728,7 @@ namespace Tpetra {
     (void) this->getMyGlobalIndices ();
 
     // This does NOT assume UVM; lgMapHost_ is a host pointer.
+    lazyPushToHost();
     const GO* lgMapHostRawPtr = lgMapHost_.data ();
     // The third argument forces ArrayView not to try to track memory
     // in a debug build.  We have to use it because the memory does
@@ -1934,6 +1911,8 @@ namespace Tpetra {
       return Teuchos::null; // my process does not participate in the new Map
     }
     else if (newComm->getSize () == 1) {
+      lazyPushToHost();
+
       // The case where the new communicator has only one process is
       // easy.  We don't have to communicate to get all the
       // information we need.  Use the default comm to create the new
@@ -2297,6 +2276,25 @@ namespace Tpetra {
     }
     return retVal;
   }
+
+   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+   void
+   Map<LocalOrdinal,GlobalOrdinal,Node>::lazyPushToHost() const{
+     using exec_space = typename Node::device_type::execution_space;
+     if(lgMap_.extent(0) != lgMapHost_.extent(0)) {
+       auto lgMap_host = Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap_);       
+       // Since this was computed on the default stream, we can copy on the stream and then fence
+       // the stream
+       Kokkos::deep_copy(exec_space(),lgMap_host,lgMap_);
+       exec_space().fence();
+       lgMapHost_ = lgMap_host;
+     }
+     if(glMap_.numPairs() != glMapHost_.numPairs()) {
+       // Make host version - when memory spaces match these just do trivial assignment
+       glMapHost_ = global_to_local_table_host_type(glMap_);
+     }
+   }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::Comm<int> >
