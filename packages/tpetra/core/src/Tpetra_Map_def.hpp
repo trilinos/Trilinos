@@ -142,11 +142,12 @@ namespace { // (anonymous)
         l_firstCont = entry_0;
         
         if(entry_i - entry_0 != i  && l_lastCont.loc >= i) {
+          // We're non-contiguous, so the guy before us could be the last contiguous guy
           l_lastCont.val = i-1;
           l_lastCont.loc = entryList[i-1];
         }
         else if (i == numLocalElements-1) {
-          // If we're last, we always think we're the first non-contiguous guy
+          // If we're last, we always think we're the last contiguous guy
           l_lastCont.val = i;
           l_lastCont.loc = entry_i;
         }
