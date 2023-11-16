@@ -224,6 +224,13 @@ public:
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations
   );
 };
+
+// temporary fix to allow applications keep using the Experimental namespace. It will be removed soon.
+namespace Experimental {
+template<typename DeviceType>
+class LagrangianInterpolation: public Intrepid2::LagrangianInterpolation<DeviceType>{};
+}
+
 }
 
 // include templated function definitions
