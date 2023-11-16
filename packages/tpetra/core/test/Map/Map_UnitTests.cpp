@@ -596,8 +596,6 @@ namespace {
      TEST_EQUALITY(lo_k,lo_t);
    }     
 
-   // FIXME: Start asking getLocalElement about stuff that isn't on this rank's map and make sure it gets that right
-   
    map_teuchos.describe(out,Teuchos::VERB_EXTREME);
    map_kokkos.describe(out,Teuchos::VERB_EXTREME);
 
