@@ -11,17 +11,17 @@ class RosenbrockObjective(Objective):
         super().__init__()
         
     def value(self, x, tol):
-        v = self.alpha*(x.values[0]**2 - x.values[1])**2 + (x.values[0] - 1)**2
+        v = self.alpha*(x[0]**2 - x[1])**2 + (x[0] - 1)**2
         return v
     
     def gradient(self, g, x, tol):
-        g[0]  =  2*self.alpha*(x.values[0]**2 - x.values[1])*2*x.values[0] 
-        g[0] +=  2*(x.values[0] - 1)
-        g[1]  = -2*self.alpha*(x.values[0]**2 - x.values[1])
+        g[0]  =  2*self.alpha*(x[0]**2 - x[1])*2*x[0] 
+        g[0] +=  2*(x.array[0] - 1)
+        g[1]  = -2*self.alpha*(x[0]**2 - x[1])
         
     def hessVec(self, hv, v, x, tol):
-        h11 = 12*self.alpha*x.values[0]**2 - 4*self.alpha*x.values[1] + 2
-        h12 = -4*self.alpha*x.values[0]
+        h11 = 12*self.alpha*x[0]**2 - 4*self.alpha*x[1] + 2
+        h12 = -4*self.alpha*x[0]
         h22 = 2*self.alpha
         hv[0] = h11*v[0] + h12*v[1]
         hv[1] = h12*v[0] + h22*v[1]
@@ -55,7 +55,7 @@ def main():
     
     # Check the solution.  ######################
     target = np.array([1., 1.])
-    np.testing.assert_allclose(x.values, target)
+    np.testing.assert_allclose(x.array, target)
     print('Test passed: Correctly optimized!')
 
 
