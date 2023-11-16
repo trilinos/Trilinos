@@ -128,15 +128,15 @@ void ParameterList::setModifier(
 
 ParameterList& ParameterList::setParameters(const ParameterList& source)
 {
-  for( ConstIterator i = source.begin(); i != source.end(); ++i ) {
+  for (ConstIterator i = source.begin(); i != source.end(); ++i) {
     const std::string &name_i = this->name(i);
     const ParameterEntry &entry_i = this->entry(i);
-    if(entry_i.isList()) {
-      this->sublist(name_i,false,entry_i.docString()).setParameters(
-        getValue<ParameterList>(entry_i) );
-    }
-    else {
-      this->setEntry(name_i,entry_i);
+    if (entry_i.isList()) {
+      ParameterList pl = getValue<ParameterList>(entry_i);
+      this->sublist(name_i, pl.getModifier(), entry_i.docString())
+          .setParameters(pl);
+    } else {
+      this->setEntry(name_i, entry_i);
     }
   }
   this->updateSubListNames();
@@ -148,20 +148,23 @@ ParameterList& ParameterList::setParametersNotAlreadySet(
   const ParameterList& source
   )
 {
-  for( ConstIterator i = source.begin(); i != source.end(); ++i ) {
+  for (ConstIterator i = source.begin(); i != source.end(); ++i) {
     const std::string &name_i = this->name(i);
     const ParameterEntry &entry_i = this->entry(i);
-    if(entry_i.isList()) {
-      this->sublist(name_i,false,entry_i.docString()).setParametersNotAlreadySet(
-        getValue<ParameterList>(entry_i) );
-    }
-    else {
-      const ParameterEntry
-        *thisEntryPtr = this->getEntryPtr(name_i);
+    if (entry_i.isList()) {
+      ParameterList pl = getValue<ParameterList>(entry_i);
+      if (this->isSublist(name_i)){
+        this->sublist(name_i, true).setParametersNotAlreadySet(pl);
+      } else{
+        this->sublist(name_i, pl.getModifier(), entry_i.docString())
+            .setParametersNotAlreadySet(pl);
+      }
+    } else {
+      const ParameterEntry *thisEntryPtr = this->getEntryPtr(name_i);
       // If the entry does not already exist, then set it.  Otherwise, leave the
-      // existing intery allow
-      if(!thisEntryPtr)
-        this->setEntry(name_i,entry_i);
+      // existing entry alone.
+      if (!thisEntryPtr)
+        this->setEntry(name_i, entry_i);
     }
   }
   this->updateSubListNames();

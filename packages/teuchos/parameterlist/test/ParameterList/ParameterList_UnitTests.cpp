@@ -297,6 +297,28 @@ TEUCHOS_UNIT_TEST( ParameterList, set_get_int )
 }
 
 
+TEUCHOS_UNIT_TEST( ParameterList, setParametersWithModifier )
+{
+  RCP<SimpleModifier> modifier = rcp(new SimpleModifier());
+  ParameterList pl("pl");
+  //pl:
+  //  A: 1.0
+  //  SubA:
+  //    B: 2
+  pl.set("A", 1.0);
+  pl.sublist("SubA", modifier).set("B", 2);
+  ParameterList new_pl("pl");
+  new_pl.setParameters(pl);
+  TEST_ASSERT( pl == new_pl );
+  new_pl.sublist("SubA").setModifier(Teuchos::null);
+  TEST_ASSERT( pl != new_pl );
+  // Test setParametersNotAlreadySet
+  pl.sublist("SubB", modifier).set("C", 3);
+  new_pl.setParametersNotAlreadySet(pl);
+  TEST_ASSERT( haveSameValuesSorted(pl, new_pl) );
+}
+
+
 TEUCHOS_UNIT_TEST( ParameterList, param_isParameter_isSublist_isType )
 {
   ParameterList pl;
