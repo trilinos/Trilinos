@@ -63,8 +63,8 @@ AffineTransformObjective<Real>::AffineTransformObjective(const Ptr<Objective<Rea
                                                          const Ptr<LinearConstraint<Real>> &acon,
                                                          const Ptr<VectorController<Real>> &storage)
   : obj_(obj), acon_(acon), storage_(storage) {
-  primal_ = acon_->createRangeSpaceVector();
-  Av_     = acon_->createRangeSpaceVector();
+  primal_ = acon->createRangeSpaceVector();
+  Av_     = acon->createRangeSpaceVector();
   dual_   = primal_->dual().clone();
   if (storage == nullPtr) storage_ = makePtr<VectorController<Real>>();
 }
