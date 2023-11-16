@@ -92,7 +92,8 @@ totalTestRuntime  2            SKIP  SKIP          SKIP  SKIP          SKIP  SKI
 Took SKIP seconds to generate the table above.                                            \
                     ";
 std::cerr<<expectedOutput<<" : "<<outputStream.str()<<std::endl;
-      EXPECT_TRUE(stk::unit_test_util::simple_fields::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
+      using stk::unit_test_util::simple_fields::areStringsEqualWithToleranceForNumbers;
+      EXPECT_TRUE(areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
     }
 
     stk::diag::deleteRootTimer(rootTimer);

@@ -145,6 +145,7 @@ public:
    *          field for the given entity rank.
    */
   unsigned max_size() const;
+  unsigned max_extent(unsigned dimension) const;
 
   //----------------------------------------
 

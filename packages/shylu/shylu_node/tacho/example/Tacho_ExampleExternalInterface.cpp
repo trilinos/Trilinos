@@ -68,11 +68,7 @@ void testTachoSolver(int nSolvers, int numRows, int *rowBegin, int *columns, dou
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_SOLVE_THRES] = 128;
   tachoParams[tacho::LEVELSET_OPTION_NSTREAMS] = 8;
 #else
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = std::max(tacho::host_space::thread_pool_size(0) / 2, 1);
-#else
-  tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = std::max(tacho::host_space::impl_thread_pool_size(0) / 2, 1);
-#endif
+  tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = std::max(tacho::host_space().concurrency() / 2, 1);
   tachoParams[tacho::TASKING_OPTION_BLOCKSIZE] = 256;
   tachoParams[tacho::TASKING_OPTION_PANELSIZE] = 128;
 

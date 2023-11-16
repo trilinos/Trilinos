@@ -101,7 +101,7 @@ void add_to_sharing_lookup(const stk::mesh::BulkData& bulk, stk::mesh::Entity no
   auto iter = info.find(id);
   if(iter == info.end()) {
     std::vector<int> commSharedProcs;
-    bulk.comm_shared_procs(bulk.entity_key(node), commSharedProcs);
+    bulk.comm_shared_procs(node, commSharedProcs);
     info.insert(std::make_pair(id, commSharedProcs));
   }
 }
@@ -189,7 +189,7 @@ void pack_shared_node_information(stk::mesh::BulkData& bulk, stk::CommSparse& co
 
     if (needToCommunicate) {
       std::vector<int> sharingProcs;
-      bulk.comm_shared_procs(bulk.entity_key(node), sharingProcs);
+      bulk.comm_shared_procs(node, sharingProcs);
       for (const int proc : sharingProcs) {
         stk::CommBuffer& procBuff = commSparse.send_buffer(proc);
         group.pack_group_info(procBuff, newNodeId, proc);

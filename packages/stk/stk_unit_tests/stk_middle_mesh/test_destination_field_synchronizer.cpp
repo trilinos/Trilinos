@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "stk_middle_mesh/destination_field_gatherer.hpp"
+#include "stk_middle_mesh/destination_field_synchronizer.hpp"
 #include "stk_middle_mesh/create_mesh.hpp"
 #include "stk_middle_mesh/utils.hpp"
 
@@ -41,7 +41,7 @@ void expect_eq(const std::vector<int>& lhs, const std::vector<int>& rhs)
 
 }
 
-TEST(DestinationFieldGatherer, 2Procs)
+TEST(DestinationFieldSynchronizer, 2Procs)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
     GTEST_SKIP();
@@ -70,8 +70,8 @@ TEST(DestinationFieldGatherer, 2Procs)
     scatterSpec->add_destination(el2, 3);    
   }
 
-  mesh::impl::DestinationFieldGatherer gatherer(mesh, scatterSpec);
-  auto gatheredDestField = gatherer.gather_vert_and_edge_destinations_on_owner();
+  mesh::impl::DestinationFieldSynchronizer gatherer(mesh, scatterSpec);
+  auto gatheredDestField = gatherer.synchronize();
 
   if (myrank == 0)
   {
@@ -130,7 +130,7 @@ TEST(DestinationFieldGatherer, 2Procs)
   }
 }
 
-TEST(DestinationFieldGatherer, 4ProcsMultipleDestinations)
+TEST(DestinationFieldSynchronizer, 4ProcsMultipleDestinations)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 4)
     GTEST_SKIP();
@@ -167,8 +167,8 @@ TEST(DestinationFieldGatherer, 4ProcsMultipleDestinations)
     scatterSpec->add_destination(el1, 1);      
   }
 
-  mesh::impl::DestinationFieldGatherer gatherer(mesh, scatterSpec);
-  auto gatheredDestField = gatherer.gather_vert_and_edge_destinations_on_owner();
+  mesh::impl::DestinationFieldSynchronizer gatherer(mesh, scatterSpec);
+  auto gatheredDestField = gatherer.synchronize();
 
   if (myrank == 0)
   {

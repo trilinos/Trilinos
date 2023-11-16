@@ -565,6 +565,34 @@ TEST( UnitTestEvaluator, testEvaluateEmptyString)
     EXPECT_EQ(0.0, result);
 }
 
+TEST(UnitTestEvaluator, test_copy_constructor)
+{
+  double a = 1.0;
+  double b = 2.0;
+  double res = a + b;
+  std::string expression = "a + b";
+
+  stk::expreval::Eval eval1;
+  eval1.parse(expression);
+
+  eval1.bindVariable("a", a);
+  eval1.bindVariable("b", b);
+
+  stk::expreval::Eval eval2(eval1);
+
+  EXPECT_EQ(eval1.getParseStatus(), eval2.getParseStatus());
+  EXPECT_EQ(eval1.getSyntaxStatus(), eval2.getSyntaxStatus());
+  EXPECT_EQ(eval1.get_variable_names(), eval2.get_variable_names());
+
+  EXPECT_EQ(eval1.get_first_node_index(), eval2.get_first_node_index());
+  EXPECT_EQ(eval1.get_last_node_index(), eval2.get_last_node_index());
+  EXPECT_EQ(eval1.get_head_node_index(), eval2.get_head_node_index());
+  EXPECT_EQ(eval1.get_result_buffer_size(), eval2.get_result_buffer_size());
+
+  EXPECT_DOUBLE_EQ(eval1.evaluate(), res);
+  EXPECT_DOUBLE_EQ(eval2.evaluate(), res);
+}
+
 bool
 isValidParse(const char *expr)
 {
@@ -622,6 +650,39 @@ TEST(UnitTestEvaluator, testParsedEval_withInvalidParse)
 {
   stk::expreval::Eval eval;
   EXPECT_ANY_THROW(eval.get_parsed_eval());
+}
+
+TEST(UnitTestEvaluator, testStandaloneParsedEval_withInvalidParse)
+{
+  const stk::expreval::Eval eval;
+  EXPECT_ANY_THROW(eval.get_standalone_parsed_eval());
+
+  double x = 2.0;
+  double y = 7.0;
+  stk::expreval::Eval eval2("x+y");
+  eval2.parse();
+  int x_ind = eval2.get_variable_index("x");
+  int y_ind = eval2.get_variable_index("y");
+
+  auto parsedEval2 = eval2.get_parsed_eval();
+  stk::expreval::DeviceVariableMap<2> deviceVariableMap2(parsedEval2);
+  deviceVariableMap2.bind(x_ind, x);
+  deviceVariableMap2.bind(y_ind, y);
+
+  auto standaloneParsedEval2 = eval2.get_standalone_parsed_eval();
+  stk::expreval::DeviceVariableMap<2> deviceVariableMap2Standalone(standaloneParsedEval2);
+  deviceVariableMap2Standalone.bind(x_ind, x);
+  deviceVariableMap2Standalone.bind(y_ind, y);
+
+  EXPECT_EQ(parsedEval2.evaluate(deviceVariableMap2), 9.0);
+  EXPECT_EQ(standaloneParsedEval2.evaluate(deviceVariableMap2Standalone), 9.0);
+
+  int x_new = 8.0;
+  int y_new = 3.0;
+  deviceVariableMap2.bind(x_ind, x_new);
+  deviceVariableMap2.bind(y_ind, y_new);
+  EXPECT_EQ(parsedEval2.evaluate(deviceVariableMap2), 11.0);
+  EXPECT_EQ(standaloneParsedEval2.evaluate(deviceVariableMap2Standalone), 9.0);
 }
 
 bool

@@ -158,7 +158,9 @@ void print_entity_offset_and_state(const BulkData & mesh, const MeshIndex & mesh
 {
   Entity entity = (*meshIndex.bucket)[meshIndex.bucket_ordinal];
   out << "      " << print_entity_key(mesh.mesh_meta_data(), mesh.entity_key(entity)) << "(offset: "
-      << entity.local_offset() << "), state = " << mesh.state(entity) << std::endl;
+      << entity.local_offset() << ", local_id: " << mesh.local_id(entity) << "), state = "
+      << mesh.state(entity) << std::endl;
+
 }
 
 void print_connectivity_of_rank(const BulkData & bulk, const Entity & targetEntity, EntityRank connectedRank,

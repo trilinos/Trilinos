@@ -132,7 +132,7 @@ double PointClassifierNormalWrapper::compute_orthogonal_dist(const PointRecord& 
     mesh::MeshEntityPtr triEl = triId == 0 ? m_quadToTriangles.el1 : m_quadToTriangles.el2;
     int triEdgeId             = m_quadToTriangles.EDGEMAP_QUAD_TO_TRI[id].second;
 
-    const PointRecordForTriangle& r = record1.el == triEl ? record1.m_r1 : record1.m_r2;
+    const PointRecordForTriangle& r = record1.m_r1.el == triEl ? record1.m_r1 : record1.m_r2;
     return m_triangleCoordUtils.compute_orthogonal_dist(r, triEdgeId);
   }
 }

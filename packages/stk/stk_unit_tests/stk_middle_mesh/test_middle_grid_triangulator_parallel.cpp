@@ -30,18 +30,18 @@ class MiddleGridTriangulatorParallelTester : public ::testing::Test
 
     using BoundingBoxSearch = search::ElementToElementBoundingBoxSearch;
 
-    void setup_spmd(const mesh::impl::MeshSpec& spec1, const mesh::impl::MeshSpec& spec2)
+    void setup_spmd(const mesh::impl::MeshSpec& spec1, const mesh::impl::MeshSpec& spec2, bool createTriangles=false)
     {
       auto f = [](const utils::Point& pt) { return pt; };
 
-      auto mesh1 = mesh::impl::create_mesh(spec1, f);
-      auto mesh2 = mesh::impl::create_mesh(spec1, f);
+      auto mesh1 = mesh::impl::create_mesh(spec1, f, MPI_COMM_WORLD, createTriangles);
+      auto mesh2 = mesh::impl::create_mesh(spec1, f, MPI_COMM_WORLD, createTriangles);
 
       setup(mesh1, mesh2);
     }
 
     void setup_mpmd(const mesh::impl::MeshSpec& spec1, const mesh::impl::MeshSpec& spec2,
-                    const SplitCommTestUtil& splitter)
+                    const SplitCommTestUtil& splitter, bool createTriangles=false)
     {
       auto f = [](const utils::Point& pt) { return pt; };
 
@@ -49,12 +49,12 @@ class MiddleGridTriangulatorParallelTester : public ::testing::Test
 
       if (splitter.get_color() == SplitCommColor::SEND)
       {
-        mesh1 = mesh::impl::create_mesh(spec1, f, splitter.get_comm());
+        mesh1 = mesh::impl::create_mesh(spec1, f, splitter.get_comm(), createTriangles);
       }
 
       if (splitter.get_color() == SplitCommColor::RECV)
       {
-        mesh2 = mesh::impl::create_mesh(spec2, f, splitter.get_comm());
+        mesh2 = mesh::impl::create_mesh(spec2, f, splitter.get_comm(), createTriangles);
       }
 
       setup(mesh1, mesh2);      
@@ -151,6 +151,7 @@ class MiddleGridTriangulatorParallelTester : public ::testing::Test
       auto scatterSpec = std::make_shared<mesh::impl::MeshScatterSpec>(MPI_COMM_WORLD, sendMesh);
       if (sendMesh)
       {
+
         const std::vector<BoundingBoxSearch::BoundingBoxB>&unpairedEntities = search->get_unpaired_recv_entities();
         BoundingBoxSearch::EntityProcRelationVec& mesh2To1Relations = search->get_range_to_domain();
 
@@ -366,7 +367,6 @@ class MiddleGridTriangulatorParallelTester : public ::testing::Test
     mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> m_mesh2ScatteredToMesh1InverseClassification;
 };
 
-//TODO: for serial tests, do them in parallel in MPMD
 
 }  // namespace
 
@@ -397,6 +397,30 @@ TEST_F(MiddleGridTriangulatorParallelTester, SingleEdgeOverlap)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 8);
 }
 
+TEST_F(MiddleGridTriangulatorParallelTester, SingleEdgeOverlapTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // The left edge of el1 overlaps with the top edge of el2.  No other
+  // edges itnersect
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),    utils::Point(1, 0), utils::Point(0, 1),    
+                                              utils::Point(0.25, 0.25)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 3, 2, -1}, {0, 1, 3, -1}, {3, 1, 2, -1}};
+
+  std::vector<utils::Point> mesh2Verts = {mesh1Verts[0], mesh1Verts[1], mesh1Verts[2]};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 2, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 3);
+}
+
 TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapBisection)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
@@ -420,6 +444,28 @@ TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapBisection)
 
   if (m_meshInOnMesh1Procs)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 16);
+}
+
+TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapBisectionTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }  
+
+  // One edge of mesh2 cuts el1 in half.
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0), utils::Point(1, 0), utils::Point(0, 1)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, -1}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, 0), utils::Point(1, 0), utils::Point(0, 1), utils::Point(0.5, 0.5)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 3, -1}, {0, 3, 2, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 2);
 }
 
 TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapSharedCorner)
@@ -448,6 +494,7 @@ TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapSharedCorner)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 8);
 }
 
+
 TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapCutCorner)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
@@ -472,6 +519,30 @@ TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapCutCorner)
 
   if (m_meshInOnMesh1Procs)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 16);
+}
+
+TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapCutCornerTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // An edge of the first element on mesh2 cuts off the top left corner of el1.
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),    utils::Point(1, 0),     utils::Point(0, 1),
+                                              utils::Point(0.75, 0.75),  utils::Point(-0.25, 0.75)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, -1},  {1, 3, 2, -1},  {0, 2, 4, -1}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, 0),    utils::Point(1, 0),     utils::Point(0, 1),
+                                              utils::Point(0.75, 0.75),  utils::Point(-0.25, 0.75)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 3, -1}, {0, 3, 4, -1}, {4, 3, 2, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 9);
 }
 
 TEST_F(MiddleGridTriangulatorParallelTester, ThreeEdgeOverlapCutCorners)
@@ -501,6 +572,31 @@ TEST_F(MiddleGridTriangulatorParallelTester, ThreeEdgeOverlapCutCorners)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 22);
 }
 
+TEST_F(MiddleGridTriangulatorParallelTester, ThreeEdgeOverlapCutCornersTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // edges of an element on mesh2 cut off the top left and top right corners
+  // of el1.  No other edges are intersected
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),     utils::Point(1, 0),     utils::Point(0, 1),
+                                              utils::Point(0.2, 0.9), utils::Point(0.9, 0.2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, -1}, {1, 4, 2, -1}, {4, 3, 2, -1}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, 0),     utils::Point(1, 0),     utils::Point(0, 1),
+                                              utils::Point(0.2, 0.9), utils::Point(0.9, 0.2)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 4, -1}, {0, 4, 3, -1}, {0, 3, 2, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 9);
+}
+
 TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapBisection2)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
@@ -525,6 +621,31 @@ TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapBisection2)
 
   if (m_meshInOnMesh1Procs)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 8);
+}
+
+TEST_F(MiddleGridTriangulatorParallelTester, TwoEdgeOverlapBisection2Tri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // One edge of mesh2 cuts el1 in half.  The top edges of mesh2 elements overlap
+  // the top edge of el1, and similarly for the bottom edges
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0), utils::Point(1, 0),  utils::Point(1, 1),
+                                              utils::Point(0, 1)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, 0), utils::Point(1, 0),  utils::Point(1, 1),
+                                              utils::Point(0, 1), utils::Point(0.5, 0), utils::Point(0.5, 1)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 4, 3, -1}, {4, 5, 3, -1}, {4, 2, 5, -1}, {4, 1, 2, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 4);
 }
 
 TEST_F(MiddleGridTriangulatorParallelTester, TwoVertexOverlapDiagonal)
@@ -552,6 +673,32 @@ TEST_F(MiddleGridTriangulatorParallelTester, TwoVertexOverlapDiagonal)
 
   if (m_meshInOnMesh1Procs)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 12);
+}
+
+TEST_F(MiddleGridTriangulatorParallelTester, TwoVertexOverlapDiagonalTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // One edge of mesh2 cuts el1 in half.  The top edges of mesh2 elements overlap
+  // the top edge of el1, and similarly for the bottom edges
+  std::vector<utils::Point> mesh1Verts = {
+      utils::Point(0, 0),   utils::Point(1, 0),  utils::Point(1, 1), utils::Point(0, 1),
+      utils::Point(-1, -1), utils::Point(2, -1), utils::Point(2, 2), utils::Point(-1, 2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 6, 2}, {3, 2, 6, 7},
+                                              {4, 0, 3, 7}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(-1, -1), utils::Point(2, -1), utils::Point(2, 2), utils::Point(-1, 2)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 3, -1}, {1, 2, 3, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 10);
 }
 
 TEST_F(MiddleGridTriangulatorParallelTester, FourVertexOverlapDiagonals)
@@ -583,6 +730,32 @@ TEST_F(MiddleGridTriangulatorParallelTester, FourVertexOverlapDiagonals)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 16);
 }
 
+TEST_F(MiddleGridTriangulatorParallelTester, FourVertexOverlapDiagonalsTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // mesh2 edges cross both diagonals of element 1, dividing it into 4 triangles
+  std::vector<utils::Point> mesh1Verts = {
+      utils::Point(0, 0),   utils::Point(1, 0),  utils::Point(1, 1), utils::Point(0, 1),
+      utils::Point(-1, -1), utils::Point(2, -1), utils::Point(2, 2), utils::Point(-1, 2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 6, 2}, {3, 2, 6, 7},
+                                              {4, 0, 3, 7}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(-1, -1), utils::Point(2, -1), utils::Point(2, 2), utils::Point(-1, 2),
+                                              utils::Point(0.5, 0.5)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 4, 3, -1}, {0, 1, 4, -1}, {1, 2, 4, -1}, {2, 3, 4, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 12);
+}
+
 TEST_F(MiddleGridTriangulatorParallelTester, ThreeVertexOverlapDiagonals)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
@@ -610,6 +783,32 @@ TEST_F(MiddleGridTriangulatorParallelTester, ThreeVertexOverlapDiagonals)
 
   if (m_meshInOnMesh1Procs)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 18);
+}
+
+TEST_F(MiddleGridTriangulatorParallelTester, ThreeVertexOverlapDiagonalsTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // mesh2 edges cross 3 vertices and one edge of el1
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),   utils::Point(1, 0),    utils::Point(1, 1),
+                                              utils::Point(0, 1),   utils::Point(-1, -1), utils::Point(2, -1),
+                                              utils::Point(-1, 2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 2, -1},
+                                              {3, 2, 6, -1}, {4, 0, 3, 6}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(-1, -1), utils::Point(2, -1), utils::Point(1, 1),
+                                              utils::Point(-1, 2),  utils::Point(0.5, 0.5)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 4, -1}, {1, 2, 4, -1}, {4, 2, 3, -1}, {0, 4, 3, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 10);
 }
 
 TEST_F(MiddleGridTriangulatorParallelTester, ThreeVertexNonCentroid)
@@ -643,6 +842,32 @@ TEST_F(MiddleGridTriangulatorParallelTester, ThreeVertexNonCentroid)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 18);
 }
 
+TEST_F(MiddleGridTriangulatorParallelTester, ThreeVertexNonCentroidTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // mesh2 edges cross 3 vertices and one edge of el1
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),   utils::Point(1, 0),    utils::Point(1, 1),
+                                              utils::Point(0, 1),   utils::Point(-1, -1), utils::Point(1.75, -0.25),
+                                              utils::Point(-0.25, 1.75)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 2, -1},
+                                              {3, 2, 6, -1}, {4, 0, 3, 6}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(-1, -1), utils::Point(1.75, -0.25), utils::Point(1, 1),
+                                              utils::Point(-0.25, 1.75),  utils::Point(0.25, 0.25)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 4, -1}, {1, 2, 4, -1}, {4, 2, 3, -1}, {0, 4, 3, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 10);
+}
+
 TEST_F(MiddleGridTriangulatorParallelTester, DoubleEdgeIntersection)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
@@ -674,6 +899,31 @@ TEST_F(MiddleGridTriangulatorParallelTester, DoubleEdgeIntersection)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 30);
 }
 
+TEST_F(MiddleGridTriangulatorParallelTester, DoubleEdgeIntersectionTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // Two edges of a mesh2 element intersect the same edge of the mesh1 element
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),     utils::Point(1, 0),         utils::Point(1, 1),
+                                              utils::Point(0, 1),     utils::Point(-0.25, 0.25),  utils::Point(-0.25, 0.75)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3},   {4, 0, 3, 5}};
+
+  std::vector<utils::Point> mesh2Verts = {utils::Point(0, 0),     utils::Point(1, 0),         utils::Point(1, 1),
+                                          utils::Point(0, 1),     utils::Point(-0.25, 0.25),  utils::Point(-0.25, 0.75),
+                                          utils::Point(0.5, 0.5)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 6, 4, -1}, {0, 1, 6, -1}, {1, 2, 6, -1}, {6, 2, 3, -1}, {5, 6, 3, -1}, {4, 6, 5, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 10);
+}
+
 TEST_F(MiddleGridTriangulatorParallelTester, EdgeCrossThroughCornerVertex)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
@@ -699,6 +949,31 @@ TEST_F(MiddleGridTriangulatorParallelTester, EdgeCrossThroughCornerVertex)
 
   if (m_meshInOnMesh1Procs)
     stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 11);
+}
+
+TEST_F(MiddleGridTriangulatorParallelTester, EdgeCrossThroughCornerVertexTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }  
+  // Edge starts on midpoint of one edge of el1 and passes through a vertex that
+  // is not adjacent to the edge
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),  utils::Point(1, 0),  utils::Point(1, 1),
+                                              utils::Point(0, 1),  utils::Point(0, -1), utils::Point(1.5, -1),
+                                              utils::Point(1.5, 2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 6, -1}, {1, 6, 2, -1}, {3, 2, 6, -1}};
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, -1), utils::Point(1.5, -1), utils::Point(1.5, 2),
+                                              utils::Point(0, 1),  utils::Point(0.5, 1)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 4, 3}, {1, 2, 4, -1}, {3, 4, 2, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 9);
 }
 
 TEST_F(MiddleGridTriangulatorParallelTester, ThreeElementsWithCutCorner)
@@ -730,6 +1005,32 @@ TEST_F(MiddleGridTriangulatorParallelTester, ThreeElementsWithCutCorner)
 }
 
 
+TEST_F(MiddleGridTriangulatorParallelTester, ThreeElementsWithCutCornerTri)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  // two elements cover most of el1, but a third element cuts off a corner
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),       utils::Point(1, 0),      utils::Point(1, 1),
+                                              utils::Point(0, 1),       utils::Point(-1, -1),    utils::Point(0.75, -0.5),
+                                              utils::Point(-0.5, 0.75)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0},  {4, 0, 3, 6}};
+
+  std::vector<utils::Point> mesh2Verts = {utils::Point(0.75, -0.5), utils::Point(1, 0),   utils::Point(0, 1),
+                                          utils::Point(-0.5, 0.75), utils::Point(-1, -1), utils::Point(1, 1)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 2, 3}, {1, 5, 2, -1}, {4, 0, 3, -1}};
+
+  setup_mpmd(mesh1Verts, mesh1Els, mesh2Verts, mesh2Els);
+
+  run_tests();
+
+  if (m_meshInOnMesh1Procs)
+    stk::middle_mesh::test_util::test_number_of_elements(m_meshInOnMesh1Procs, 10);
+}
+
+
 TEST_F(MiddleGridTriangulatorParallelTester, 2x2IdenticalSPMD)
 {
   int commSize = utils::impl::comm_size(MPI_COMM_WORLD);
@@ -745,7 +1046,26 @@ TEST_F(MiddleGridTriangulatorParallelTester, 2x2IdenticalSPMD)
   spec1.numelX = 2; spec2.numelX = 2;
   spec1.numelY = 2; spec2.numelY = 2;
 
-  setup_spmd(spec1, spec2);
+  setup_spmd(spec1, spec2, false);
+  run_tests();
+}
+
+TEST_F(MiddleGridTriangulatorParallelTester, 2x2IdenticalSPMDTri)
+{
+  int commSize = utils::impl::comm_size(MPI_COMM_WORLD);
+  if (!(commSize == 1 || commSize == 2 || commSize == 4))
+    GTEST_SKIP();
+
+
+  mesh::impl::MeshSpec spec1, spec2;
+  spec1.xmin = 0; spec2.xmin = 0;
+  spec1.xmax = 1; spec2.xmax = 1;
+  spec1.ymin = 0; spec2.ymin = 0;
+  spec1.ymax = 1; spec2.ymax = 1;
+  spec1.numelX = 2; spec2.numelX = 2;
+  spec1.numelY = 2; spec2.numelY = 2;
+
+  setup_spmd(spec1, spec2, true);
   run_tests();
 }
 
@@ -770,6 +1090,27 @@ TEST_F(MiddleGridTriangulatorParallelTester, 2x3MPMD)
   run_tests();
 }
 
+TEST_F(MiddleGridTriangulatorParallelTester, 2x3MPMDTri)
+{
+  int commSize = utils::impl::comm_size(MPI_COMM_WORLD);
+  if (!(commSize == 4 || commSize == 8))
+    GTEST_SKIP();
+
+
+  mesh::impl::MeshSpec spec1, spec2;
+  spec1.xmin = 0; spec2.xmin = 0;
+  spec1.xmax = 1; spec2.xmax = 1;
+  spec1.ymin = 0; spec2.ymin = 0;
+  spec1.ymax = 1; spec2.ymax = 1;
+  spec1.numelX = 2; spec2.numelX = 3;
+  spec1.numelY = 2; spec2.numelY = 3;
+
+  SplitCommTestUtil splitter(commSize/2, commSize/2);
+
+  setup_mpmd(spec1, spec2, splitter, true);
+  run_tests();
+}
+
 
 TEST_F(MiddleGridTriangulatorParallelTester, 2x4MPMD)
 {
@@ -789,5 +1130,26 @@ TEST_F(MiddleGridTriangulatorParallelTester, 2x4MPMD)
   SplitCommTestUtil splitter(commSize/2, commSize/2);
 
   setup_mpmd(spec1, spec2, splitter);
+  run_tests();
+}
+
+TEST_F(MiddleGridTriangulatorParallelTester, 2x4MPMDTri)
+{
+  int commSize = utils::impl::comm_size(MPI_COMM_WORLD);
+  if (!(commSize == 4 || commSize == 8))
+    GTEST_SKIP();
+
+
+  mesh::impl::MeshSpec spec1, spec2;
+  spec1.xmin = 0; spec2.xmin = 0;
+  spec1.xmax = 1; spec2.xmax = 1;
+  spec1.ymin = 0; spec2.ymin = 0;
+  spec1.ymax = 1; spec2.ymax = 1;
+  spec1.numelX = 2; spec2.numelX = 4;
+  spec1.numelY = 2; spec2.numelY = 4;
+
+  SplitCommTestUtil splitter(commSize/2, commSize/2);
+
+  setup_mpmd(spec1, spec2, splitter, true);
   run_tests();
 }

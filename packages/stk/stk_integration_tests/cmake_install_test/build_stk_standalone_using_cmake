@@ -25,6 +25,13 @@ exe mkdir -p $stk_build_dir
 stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
 
 printf "\nUsing sierra project: ${sierra_proj}\n";
+if [ ! -d ${sierra_proj}/stk ] ; then
+  echo "${sierra_proj} doesn't appear to be a SIERRA code project. (Doesn't contain a stk dir.)";
+  exit 1;
+fi
+
+stk_src_dir=${sierra_proj}/stk
+printf "Using STK_SRC_DIR: ${stk_src_dir}\n";
 printf "Using build-type: ${build_type}\n";
 printf "Putting output and logs here: ${output_dir}\n";
 
@@ -37,10 +44,12 @@ stk_ctest_log=${output_dir}/stk-standalone-ctest.out.$date_suffix
 
 exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk_standalone ${stk_build_dir}
 exe cd ${stk_build_dir}
-exe source ${stk_cmake_testing_source_dir}/load_gcc_modules_no_boost
+printf "source'ing load_gcc_modules...\n"
+exe source ${stk_cmake_testing_source_dir}/load_gcc_modules
 
 printf "Configuring stk (running cmake)...\n";
-exe "STK_INSTALL_DIR=${output_dir}/install_stk \
+exe "STK_SRC_DIR=${stk_src_dir} \
+     STK_INSTALL_DIR=${output_dir}/install_stk \
      BUILD_DIR=${stk_build_dir} \
      CMAKE_BUILD_TYPE=${build_type} \
      CLEAR_CACHE=${clear_cache} \
