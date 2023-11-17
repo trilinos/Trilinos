@@ -346,7 +346,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // Tpetra produces different eigenvalues in Chebyshev due to using
         // std::rand() for generating random vectors, which may be initialized
         // using different seed, and may have different algorithm from one
-        // gcc version to another, or to anogther compiler (like clang)
+        // gcc version to another, or to another compiler (like clang)
         // This leads to us always failing this test.
         // NOTE1 : Epetra, on the other hand, rolls out its out random number
         // generator, which always produces same results
@@ -374,7 +374,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
 
         // The smoother complexity depends on the coarse solver.
-        run_sed("'s/Smoother complexity = [0-9]*.[0-9]*/Smoother complexity = <ignored>/'", baseFile);
+        run_sed("'s/Smoother complexity = [0-9][0-9]*.[0-9]*/Smoother complexity = <ignored>/'", baseFile);
 
         // Strip template args for some classes
         std::vector<std::string> classes;
