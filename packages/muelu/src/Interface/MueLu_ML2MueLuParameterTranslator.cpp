@@ -373,6 +373,19 @@ namespace MueLu {
     // create surrounding MueLu parameter list
     mueluss << "<ParameterList name=\"MueLu\">" << std::endl;
 
+    // make sure that MueLu's phase1 matches ML's
+    mueluss << "<Parameter name=\"aggregation: match ML phase1\"       type=\"bool\"     value=\"true\"/>" << std::endl;
+
+    // make sure that MueLu's phase2a matches ML's
+    mueluss << "<Parameter name=\"aggregation: match ML phase2a\"      type=\"bool\"     value=\"true\"/>" << std::endl;
+
+    // make sure that MueLu's phase2b matches ML's
+    mueluss << "<Parameter name=\"aggregation: match ML phase2b\"      type=\"bool\"     value=\"true\"/>" << std::endl;
+
+    // make sure that MueLu's drop tol matches ML's
+    mueluss << "<Parameter name=\"aggregation: use ml scaling of drop tol\"      type=\"bool\"     value=\"true\"/>" << std::endl;
+
+
     // loop over all ML parameters in provided parameter list
     for (ParameterList::ConstIterator param = paramListWithSubList.begin(); param != paramListWithSubList.end(); ++param) {
 
@@ -419,18 +432,6 @@ namespace MueLu {
         // remove parameter from ML parameter list
         adaptingParamList.remove(pname,false);
       }
-
-      // make sure that MueLu's phase1 matches ML's
-      mueluss << "<Parameter name=\"aggregation: match ML phase1\"       type=\"bool\"     value=\"true\"/>" << std::endl;
-
-      // make sure that MueLu's phase2a matches ML's
-      mueluss << "<Parameter name=\"aggregation: match ML phase2a\"      type=\"bool\"     value=\"true\"/>" << std::endl;
-
-      // make sure that MueLu's phase2b matches ML's
-      mueluss << "<Parameter name=\"aggregation: match ML phase2b\"      type=\"bool\"     value=\"true\"/>" << std::endl;
-
-      // make sure that MueLu's drop tol matches ML's
-      mueluss << "<Parameter name=\"aggregation: use ml scaling of drop tol\"      type=\"bool\"     value=\"true\"/>" << std::endl;
 
       // special handling for energy minimization
       // TAW: this is not optimal for symmetric problems but at least works.
