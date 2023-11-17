@@ -1089,12 +1089,10 @@ namespace Tpetra {
       lastContiguousGID_loc++;
       auto nonContigGids = Kokkos::subview(entryList,std::pair<size_t,size_t>(lastContiguousGID_loc,entryList.extent(0)));
 
-
-      // We filled lgMap on host above; now sync back to device.
+      // Build the global-to-local map for the nonContig part on device
       glMap_ = global_to_local_table_type(nonContigGids,
-                                          firstContiguousGID_,
-                                          lastContiguousGID_,
                                           lastContiguousGID_loc);
+
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
 
