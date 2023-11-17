@@ -132,7 +132,7 @@ ParameterList& ParameterList::setParameters(const ParameterList& source)
     const std::string &name_i = this->name(i);
     const ParameterEntry &entry_i = this->entry(i);
     if (entry_i.isList()) {
-      ParameterList pl = getValue<ParameterList>(entry_i);
+      ParameterList &pl = getValue<ParameterList>(entry_i);
       this->sublist(name_i, pl.getModifier(), entry_i.docString())
           .setParameters(pl);
     } else {
