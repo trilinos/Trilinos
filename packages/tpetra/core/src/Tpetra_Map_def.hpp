@@ -123,7 +123,7 @@ namespace { // (anonymous)
     using exec_space = typename ViewType::device_type::execution_space;
     using range_policy = Kokkos::RangePolicy<exec_space, Kokkos::IndexType<LO> >;
     const LO numLocalElements = entryList.extent(0);
-    
+
     // We're going to use the minloc backwards because we need to have it sort on the "location" and have the "value" along for the
     // ride, rather than the other way around
     typedef typename Kokkos::MinLoc<LO,GO>::value_type minloc_type;
@@ -146,17 +146,17 @@ namespace { // (anonymous)
           l_lastCont.val = i-1;
           l_lastCont.loc = entryList[i-1];
         }
-        else if (i == numLocalElements-1) {
-          // If we're last, we always think we're the last contiguous guy
+        else if (i == numLocalElements-1 && i < l_lastCont.val) {
+          // If we're last, we always think we're the last contiguous guy, unless someone non-contiguous is already here
           l_lastCont.val = i;
           l_lastCont.loc = entry_i;
         }
-                
+        
       },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<LO,GO>(myMinLoc));
-
+    
     // This switch is intentional, since we're using MinLoc backwards
     lastContiguousGID_val = myMinLoc.loc;
-    lastContiguousGID_loc = myMinLoc.val;
+    lastContiguousGID_loc = myMinLoc.val; 
   }
 
 
@@ -1087,14 +1087,14 @@ namespace Tpetra {
       lastContiguousGID_loc++;
       auto nonContigGids = Kokkos::subview(entryList,std::pair<size_t,size_t>(lastContiguousGID_loc,entryList.extent(0)));
 
-      // Build the global-to-local map for the nonContig part on device
+      // NOTE: We do not fill the glMapHost_ and lgMapHost_ views here.  They will be filled lazily later
       glMap_ = global_to_local_table_type(nonContigGids,
                                           lastContiguousGID_loc);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
+     
 
-      // NOTE: We do not fill the glMapHost_ and lgMapHost_ views here.  They will be filled lazily later
     }
     else {
       minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
