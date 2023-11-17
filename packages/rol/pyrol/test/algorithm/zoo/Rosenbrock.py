@@ -47,11 +47,11 @@ class Rosenbrock(TestProblem):
         return ObjectiveRosenbrock()
     
     def getInitialGuess(self):
-        xnp = np.empty(self.n)
+        xnp = np.empty(self.n, dtype='float64')
         xnp[::2]  = -1.2
         xnp[1::2] =  1.0
         return NumPyVector(xnp)
 
     def getSolution(self, i = 0):
-        xnp = np.ones(self.n)
+        xnp = np.ones(self.n, dtype='float64')
         return NumPyVector(xnp)

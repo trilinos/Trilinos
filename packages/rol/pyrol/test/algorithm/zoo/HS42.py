@@ -65,28 +65,25 @@ class HS42(TestProblem):
         return ObjectiveHS42()
     
     def getInitialGuess(self):
-        xnp = np.ones(self.n)
+        xnp = np.ones(self.n, dtype='float64')
         return NumPyVector(xnp)
     
     def getSolution(self, i = 0):
-        xnp = np.array([2, 2, 0.6*(2**0.5), 0.8*(2**0.5)])
+        xnp = np.array([2, 2, 0.6*(2**0.5), 0.8*(2**0.5)], dtype='float64')
         return NumPyVector(xnp)
     
     def getLinearEqualityConstraint(self):
-        b = NumPyVector(-np.full(1, 2))
-        a = LinearEqualityOperatorHS42()
-        a.apply(NumPyVector(np.zeros(1)), NumPyVector(np.zeros(4)), 0)
-        linearConstraint = LinearConstraint(a, b)
-        linearConstraint.op = a
-        return linearConstraint
-
+        A = LinearEqualityOperatorHS42()
+        b = NumPyVector(np.full(1, -2, dtype='float64'))
+        return LinearConstraint(A, b)
+        
     def getLinearEqualityMultiplier(self):
-        lnp = NumPyVector(np.zeros(1))
+        lnp = NumPyVector(np.zeros(1, dtype='float64'))
         return lnp
 
     def getEqualityConstraint(self):
         return EqualityConstraintHS42()
 
     def getEqualityMultiplier(self):
-        lnp = NumPyVector(np.zeros(1))
+        lnp = NumPyVector(np.zeros(1, dtype='float64'))
         return lnp
