@@ -2635,6 +2635,8 @@ namespace MueLu {
     disable_addon_22_     = true;
     mode_                 = "additive";
 
+    SetProcRankVerbose(D0->getRowMap()->getComm()->getRank());
+
     // set parameters
     setParameters(List);
 
