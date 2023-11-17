@@ -753,8 +753,6 @@ namespace Tpetra {
         Kokkos::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         glMap_ = global_to_local_table_type(nonContigGids,
-                                            firstContiguousGID_,
-                                            lastContiguousGID_,
                                             static_cast<LO> (i));
         // Make host version - when memory spaces match these just do trivial assignment
         glMapHost_ = global_to_local_table_host_type(glMap_);
