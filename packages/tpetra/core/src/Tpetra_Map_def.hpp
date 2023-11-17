@@ -2279,7 +2279,9 @@ namespace Tpetra {
    Map<LocalOrdinal,GlobalOrdinal,Node>::lazyPushToHost() const{
      using exec_space = typename Node::device_type::execution_space;
      if(lgMap_.extent(0) != lgMapHost_.extent(0)) {
-       auto lgMap_host = Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap_);       
+       // create_mirror_view preserves const-ness.  create_mirror does not
+       auto lgMap_host = Kokkos::create_mirror(Kokkos::HostSpace (), lgMap_);       
+
        // Since this was computed on the default stream, we can copy on the stream and then fence
        // the stream
        Kokkos::deep_copy(exec_space(),lgMap_host,lgMap_);
