@@ -545,7 +545,6 @@ namespace {
 
    // create a comm
    auto comm = Tpetra::getDefaultComm();
-   const int rank = comm->getRank();
 
    // Create a dummy map to force Kokkos to initialize
    {
