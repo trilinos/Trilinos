@@ -1,7 +1,4 @@
 <ParameterList>
-  <ParameterList name="Problem">
-    <Parameter name="Response Depends On Solution Time Derivative" type="bool" value="false" />
-  </ParameterList>
   <ParameterList name="Piro">
     <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
     <Parameter name="Explicit Adjoint Model Evaluator" type="bool" value="true" />
@@ -21,7 +18,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="Demo Stepper">
-        <Parameter name="Stepper Type" type="string" value="Backward Euler" />
+        <Parameter name="Stepper Type" type="string" value="RK Crank-Nicolson" />
         <Parameter name="Zero Initial Guess" type="bool" value="false" />
         <Parameter name="Solver Name" type="string" value="Demo Solver" />
         <ParameterList name="Demo Solver">
@@ -183,6 +180,7 @@
       <ParameterList name="ROL">
         <Parameter name="Response Vector Index" type="int" value="0" />
         <Parameter name="Parameter Vector Index 0" type="int" value="0" />
+        <Parameter name="Response Depends Only On Final Time" type="bool" value="true" />
 
         <Parameter name="Seed For Thyra Randomize" type="int" value="42" />
 
@@ -198,8 +196,7 @@
         <Parameter name="Bound Constrained" type="bool" value="true" />
 
         <Parameter name="Full Space" type="bool" value="false" />
-        <Parameter name="Tempus Driver" type="bool" value="false" />
-        <Parameter name="Response Depends Only On Final Time" type="bool" value="true" />
+        <Parameter name="Tempus Driver" type="bool" value="true" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
         <ParameterList name="ROL Options">

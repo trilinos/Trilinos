@@ -1,6 +1,6 @@
 <ParameterList>
   <ParameterList name="Problem">
-    <Parameter name="Response Depends On Solution Time Derivative" type="bool" value="false" />
+    <Parameter name="Response Depends On Solution Time Derivative" type="bool" value="true" />
   </ParameterList>
   <ParameterList name="Piro">
     <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
@@ -191,6 +191,7 @@
         <!--Parameter name="Min And Max Of Random Parameter Guess" type="Array(double)" value="{1.0, 3.0}"/ -->
 
         <Parameter name="Check Derivatives" type="bool" value="false" />
+        <Parameter name="Perform Optimization" type="bool" value="true" />
 
         <Parameter name="Test Vector" type="bool" value="false" />
         <Parameter name="Number Of Vector Tests" type="int" value="1" />
@@ -199,7 +200,7 @@
 
         <Parameter name="Full Space" type="bool" value="false" />
         <Parameter name="Tempus Driver" type="bool" value="false" />
-        <Parameter name="Response Depends Only On Final Time" type="bool" value="true" />
+        <Parameter name="Response Depends Only On Final Time" type="bool" value="false" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
         <ParameterList name="ROL Options">
