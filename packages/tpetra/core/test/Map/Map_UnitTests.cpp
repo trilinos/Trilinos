@@ -534,11 +534,6 @@ namespace {
      TEST_EQUALITY(lo_k,lo_t);
    }     
 
-   // FIXME: Start asking getLocalElement about stuff that isn't on this rank's map and make sure it gets that right
-   
-   map_teuchos.describe(out,Teuchos::VERB_EXTREME);
-   map_kokkos.describe(out,Teuchos::VERB_EXTREME);
-
  }
  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, KokkosViewConstructor2, LO, GO )
  {
@@ -595,9 +590,6 @@ namespace {
      LO lo_t = map_teuchos.getLocalElement(map_teuchos.getGlobalElement(i));
      TEST_EQUALITY(lo_k,lo_t);
    }     
-
-   map_teuchos.describe(out,Teuchos::VERB_EXTREME);
-   map_kokkos.describe(out,Teuchos::VERB_EXTREME);
 
  }
 
