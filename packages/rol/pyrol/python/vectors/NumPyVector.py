@@ -32,7 +32,7 @@ class NumPyVector(getTypeName('Vector')):
         self.setScalar(0.)
 
     def clone(self):
-        tmp = type(self)(np.full(self.array.shape, fill_value=np.nan))
+        tmp = type(self)(np.full(self.array.shape, fill_value=0.))
         return tmp
 
     def axpy(self, scale_factor, x):
