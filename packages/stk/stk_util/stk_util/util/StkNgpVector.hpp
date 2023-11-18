@@ -112,7 +112,7 @@ protected:
 #ifdef KOKKOS_ENABLE_CUDA
   using DeviceSpace = Kokkos::CudaSpace;
 #elif defined(KOKKOS_ENABLE_HIP)
-  using DeviceSpace = Kokkos::Experimental::HIPSpace;
+  using DeviceSpace = Kokkos::HIPSpace;
 #else
   using DeviceSpace = Kokkos::HostSpace;
 #endif

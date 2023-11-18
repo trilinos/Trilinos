@@ -103,14 +103,18 @@ TEST_F(PointClassifierNormalWrapperTester, Triangle)
   pt = utils::Point(0.25, 0.25);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
+
 
   pt = utils::Point(0.5, 0.25);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.25, 0.5);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   // exterior
   pt = utils::Point(1.5, 0);
@@ -148,6 +152,161 @@ TEST_F(PointClassifierNormalWrapperTester, Triangle)
   pt = utils::Point(1.25, 0.25);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Exterior);
+}
+
+TEST_F(PointClassifierNormalWrapperTester, TriangleComputeXyzCoords)
+{
+  auto mesh = mesh::make_empty_mesh();
+  auto v1   = mesh->create_vertex(0, 0);
+  auto v2   = mesh->create_vertex(1, 0);
+  auto v3   = mesh->create_vertex(0, 1);
+  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+
+  auto meshSrc = mesh::make_empty_mesh();
+  auto v5      = meshSrc->create_vertex(0, 0);
+  auto v6      = meshSrc->create_vertex(1, 0);
+  auto v7      = meshSrc->create_vertex(0, 1);
+  auto elSrc   = meshSrc->create_triangle_from_verts(v5, v6, v7);
+
+  predicates::impl::PointClassifierNormalWrapper c(meshSrc);
+  utils::Point pt;
+  predicates::impl::PointRecord r;
+
+  // verts
+  pt = utils::Point(0, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);
+
+  pt = utils::Point(1, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt); 
+
+  pt = utils::Point(0, 1);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);   
+
+  pt = utils::Point(0.5, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt); 
+
+  pt = utils::Point(0.5, 0.5);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);
+
+  pt = utils::Point(0, 0.5);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt); 
+
+  pt = utils::Point(0.25, 0.25);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);
+}
+
+TEST_F(PointClassifierNormalWrapperTester, TriangleComputeXiCoords)
+{
+  auto mesh = mesh::make_empty_mesh();
+  auto v1   = mesh->create_vertex(0, 0);
+  auto v2   = mesh->create_vertex(1, 0);
+  auto v3   = mesh->create_vertex(0, 1);
+  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+
+  auto meshSrc = mesh::make_empty_mesh();
+  auto v5      = meshSrc->create_vertex(0, 0);
+  auto v6      = meshSrc->create_vertex(1, 0);
+  auto v7      = meshSrc->create_vertex(0, 1);
+  auto elSrc   = meshSrc->create_triangle_from_verts(v5, v6, v7);
+
+  predicates::impl::PointClassifierNormalWrapper c(meshSrc);
+  utils::Point pt;
+  predicates::impl::PointRecord r;
+
+  // verts
+  pt = utils::Point(0, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), {0, 0});
+
+  pt = utils::Point(1, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), {1, 0});   
+
+  pt = utils::Point(0, 1);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), {0, 1});  
+
+  pt = utils::Point(0.5, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), {0.5, 0});
+  EXPECT_FLOAT_EQ(c.get_edge_xi(r), 0.5);
+
+  pt = utils::Point(0.5, 0.5);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), {0.5, 0.5}); 
+  EXPECT_FLOAT_EQ(c.get_edge_xi(r), 0.5);
+
+  pt = utils::Point(0, 0.5);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), {0, 0.5}); 
+  EXPECT_FLOAT_EQ(c.get_edge_xi(r), 0.5);
+
+  pt = utils::Point(0.25, 0.25);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), {0.25, 0.25});   
+}
+
+TEST_F(PointClassifierNormalWrapperTester, TriangleComputeOrthogonalDist)
+{
+  auto mesh = mesh::make_empty_mesh();
+  auto v1   = mesh->create_vertex(0, 0);
+  auto v2   = mesh->create_vertex(1, 0);
+  auto v3   = mesh->create_vertex(0, 1);
+  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+
+  auto meshSrc = mesh::make_empty_mesh();
+  auto v5      = meshSrc->create_vertex(0, 0);
+  auto v6      = meshSrc->create_vertex(1, 0);
+  auto v7      = meshSrc->create_vertex(0, 1);
+  auto elSrc   = meshSrc->create_triangle_from_verts(v5, v6, v7);
+
+  predicates::impl::PointClassifierNormalWrapper c(meshSrc);
+  utils::Point pt;
+  predicates::impl::PointRecord r;
+
+  pt = utils::Point(0.25, 0.25);
+  r  = c.classify(el, elSrc, pt);
+  EXPECT_FLOAT_EQ(c.compute_orthogonal_dist(r, 0), 0.25);
+  EXPECT_FLOAT_EQ(c.compute_orthogonal_dist(r, 1), std::sqrt(2)/4);
+  EXPECT_FLOAT_EQ(c.compute_orthogonal_dist(r, 2), 0.25);
+}
+
+TEST_F(PointClassifierNormalWrapperTester, TriangleCreateRecord)
+{
+  auto mesh = mesh::make_empty_mesh();
+  auto v1   = mesh->create_vertex(0, 0);
+  auto v2   = mesh->create_vertex(1, 0);
+  auto v3   = mesh->create_vertex(0, 1);
+  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+
+  auto meshSrc = mesh::make_empty_mesh();
+  predicates::impl::PointClassifierNormalWrapper c(meshSrc);
+  predicates::impl::PointRecord r;
+
+  r  = c.create_vert_record(el, 0);
+  expect_near(c.compute_xyz_coords(r), {0, 0});
+
+  r  = c.create_vert_record(el, 1);
+  expect_near(c.compute_xyz_coords(r), {1, 0});
+
+  r  = c.create_vert_record(el, 2);
+  expect_near(c.compute_xyz_coords(r), {0, 1});
+
+  r  = c.create_edge_record(el, 0, 0.3);
+  expect_near(c.compute_xyz_coords(r), {0.3, 0});
+
+  r  = c.create_edge_record(el, 1, 0.3);
+  expect_near(c.compute_xyz_coords(r), {0.7, 0.3}); 
+
+  r  = c.create_edge_record(el, 2, 0.3);
+  expect_near(c.compute_xyz_coords(r), {0, 0.7});      
 }
 
 TEST_F(PointClassifierNormalWrapperTester, Quad)
@@ -214,18 +373,22 @@ TEST_F(PointClassifierNormalWrapperTester, Quad)
   pt = utils::Point(0.25, 0.25);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.75, 0.25);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.75, 0.75);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.25, 0.75);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   // exterior
   pt = utils::Point(1.5, 0);
@@ -259,6 +422,189 @@ TEST_F(PointClassifierNormalWrapperTester, Quad)
   pt = utils::Point(1, -0.5);
   r  = c.classify(el, elSrc, pt);
   EXPECT_EQ(r.type, PointClassification::Exterior);
+}
+
+TEST_F(PointClassifierNormalWrapperTester, QuadComputeXyzCoords)
+{
+  auto v1 = mesh->create_vertex(0, 0);
+  auto v2 = mesh->create_vertex(1, 0);
+  auto v3 = mesh->create_vertex(1, 1);
+  auto v4 = mesh->create_vertex(0, 1);
+  auto el = mesh->create_quad_from_verts(v1, v2, v3, v4);
+
+  auto meshSrc = mesh::make_empty_mesh();
+  auto v5      = meshSrc->create_vertex(0, 0);
+  auto v6      = meshSrc->create_vertex(1, 0);
+  auto v7      = meshSrc->create_vertex(0, 1);
+  auto elSrc   = meshSrc->create_triangle_from_verts(v5, v6, v7);
+
+  predicates::impl::PointClassifierNormalWrapper c(meshSrc);
+  utils::Point pt;
+  predicates::impl::PointRecord r;
+
+  // verts
+  pt = utils::Point(0, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);
+
+  pt = utils::Point(1, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);  
+
+  pt = utils::Point(1, 1);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);  
+
+  pt = utils::Point(1, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);  
+
+  pt = utils::Point(0.5, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);  
+
+  pt = utils::Point(1, 0.5);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt); 
+
+  pt = utils::Point(0.5, 1);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);   
+
+  pt = utils::Point(0, 0.5);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);
+
+  pt = utils::Point(0.25, 0.25);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xyz_coords(r), pt);    
+}
+
+TEST_F(PointClassifierNormalWrapperTester, QuadComputeXiCoords)
+{
+  auto v1 = mesh->create_vertex(0, 0);
+  auto v2 = mesh->create_vertex(1, 0);
+  auto v3 = mesh->create_vertex(1, 1);
+  auto v4 = mesh->create_vertex(0, 1);
+  auto el = mesh->create_quad_from_verts(v1, v2, v3, v4);
+
+  auto meshSrc = mesh::make_empty_mesh();
+  auto v5      = meshSrc->create_vertex(0, 0);
+  auto v6      = meshSrc->create_vertex(1, 0);
+  auto v7      = meshSrc->create_vertex(0, 1);
+  auto elSrc   = meshSrc->create_triangle_from_verts(v5, v6, v7);
+
+  predicates::impl::PointClassifierNormalWrapper c(meshSrc);
+  utils::Point pt;
+  predicates::impl::PointRecord r;
+
+  // verts
+  pt = utils::Point(0, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt);
+
+  pt = utils::Point(1, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt); 
+
+  pt = utils::Point(1, 1);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt);  
+
+  pt = utils::Point(0, 1);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt); 
+
+  pt = utils::Point(0.5, 0);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt);
+  EXPECT_FLOAT_EQ(c.get_edge_xi(r), 0.5);
+
+  pt = utils::Point(1, 0.5);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt);
+  EXPECT_FLOAT_EQ(c.get_edge_xi(r), 0.5);    
+
+  pt = utils::Point(0.5, 1);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt); 
+  EXPECT_FLOAT_EQ(c.get_edge_xi(r), 0.5);
+
+  pt = utils::Point(0, 0.5);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt);
+  EXPECT_FLOAT_EQ(c.get_edge_xi(r), 0.5);   
+
+  pt = utils::Point(0.25, 0.25);
+  r  = c.classify(el, elSrc, pt);
+  expect_near(c.compute_xi_coords(r), pt);    
+}
+
+TEST_F(PointClassifierNormalWrapperTester, QuadComputeOrthogonalDist)
+{
+  auto v1 = mesh->create_vertex(0, 0);
+  auto v2 = mesh->create_vertex(1, 0);
+  auto v3 = mesh->create_vertex(1, 1);
+  auto v4 = mesh->create_vertex(0, 1);
+  auto el = mesh->create_quad_from_verts(v1, v2, v3, v4);
+
+  auto meshSrc = mesh::make_empty_mesh();
+  auto v5      = meshSrc->create_vertex(0, 0);
+  auto v6      = meshSrc->create_vertex(1, 0);
+  auto v7      = meshSrc->create_vertex(0, 1);
+  auto elSrc   = meshSrc->create_triangle_from_verts(v5, v6, v7);
+
+  predicates::impl::PointClassifierNormalWrapper c(meshSrc);
+  utils::Point pt;
+  predicates::impl::PointRecord r;
+
+  pt = utils::Point(0.25, 0.25);
+  r  = c.classify(el, elSrc, pt);
+  EXPECT_FLOAT_EQ(c.compute_orthogonal_dist(r, 0), 0.25);
+  EXPECT_FLOAT_EQ(c.compute_orthogonal_dist(r, 1), 0.75);
+  EXPECT_FLOAT_EQ(c.compute_orthogonal_dist(r, 2), 0.75);
+  EXPECT_FLOAT_EQ(c.compute_orthogonal_dist(r, 3), 0.25);
+}
+
+TEST_F(PointClassifierNormalWrapperTester, QuadCreateRecord)
+{
+  auto v1 = mesh->create_vertex(0, 0);
+  auto v2 = mesh->create_vertex(1, 0);
+  auto v3 = mesh->create_vertex(1, 1);
+  auto v4 = mesh->create_vertex(0, 1);
+  auto el = mesh->create_quad_from_verts(v1, v2, v3, v4);
+
+  auto meshSrc = mesh::make_empty_mesh();
+
+  predicates::impl::PointClassifierNormalWrapper c(meshSrc);
+  //utils::Point pt;
+  predicates::impl::PointRecord r;
+
+  // verts
+  //pt = utils::Point(0, 0);
+  r = c.create_vert_record(el, 0);
+  expect_near(c.compute_xyz_coords(r), {0, 0});
+
+  r = c.create_vert_record(el, 1);
+  expect_near(c.compute_xyz_coords(r), {1, 0});
+
+  r = c.create_vert_record(el, 2);
+  expect_near(c.compute_xyz_coords(r), {1, 1});  
+
+  r = c.create_vert_record(el, 3);
+  expect_near(c.compute_xyz_coords(r), {0, 1});  
+
+  r = c.create_edge_record(el, 0, 0.3);
+  expect_near(c.compute_xyz_coords(r), {0.3, 0});  
+
+  r = c.create_edge_record(el, 1, 0.3);
+  expect_near(c.compute_xyz_coords(r), {1, 0.3}); 
+
+  r = c.create_edge_record(el, 2, 0.3);
+  expect_near(c.compute_xyz_coords(r), {0.7, 1}); 
+
+  r = c.create_edge_record(el, 3, 0.3);
+  expect_near(c.compute_xyz_coords(r), {0, 0.7}); 
 }
 
 TEST_F(PointClassifierNormalWrapperTester, TriangleReverse)
@@ -309,14 +655,17 @@ TEST_F(PointClassifierNormalWrapperTester, TriangleReverse)
   pt = utils::Point(0.25, 0.25);
   r  = c.classify_reverse(el, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.5, 0.25);
   r  = c.classify_reverse(el, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.25, 0.5);
   r  = c.classify_reverse(el, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   // exterior
   pt = utils::Point(1.5, 0);
@@ -414,18 +763,22 @@ TEST_F(PointClassifierNormalWrapperTester, QuadReverse)
   pt = utils::Point(0.25, 0.25);
   r  = c.classify_reverse(el, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.75, 0.25);
   r  = c.classify_reverse(el, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.75, 0.75);
   r  = c.classify_reverse(el, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   pt = utils::Point(0.25, 0.75);
   r  = c.classify_reverse(el, pt);
   EXPECT_EQ(r.type, PointClassification::Interior);
+  EXPECT_EQ(r.id, 0);
 
   // exterior
   pt = utils::Point(1.5, 0);

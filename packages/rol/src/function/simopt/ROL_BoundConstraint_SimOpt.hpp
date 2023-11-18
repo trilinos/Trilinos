@@ -72,8 +72,7 @@ namespace ROL {
 template <class Real>
 class BoundConstraint_SimOpt : public BoundConstraint<Real> {
 private:
-  Ptr<BoundConstraint<Real>> bnd1_;
-  Ptr<BoundConstraint<Real>> bnd2_;
+  const Ptr<BoundConstraint<Real>> bnd1_, bnd2_;
 
 public:
   ~BoundConstraint_SimOpt() {}
@@ -85,12 +84,46 @@ public:
   BoundConstraint_SimOpt(const Ptr<BoundConstraint<Real>> &bnd1,
                          const Ptr<BoundConstraint<Real>> &bnd2)
     : bnd1_(bnd1), bnd2_(bnd2) {
-    if ( bnd1_->isActivated() || bnd2_->isActivated() ) {
+    if ( bnd1_->isActivated() || bnd2_->isActivated() )
       BoundConstraint<Real>::activate();
-    }
-    else {
+    else
       BoundConstraint<Real>::deactivate();
-    }
+  }
+
+  /** \brief Constructor for single bound constraint.
+
+      Construct a SimOpt bound constraint with either a bound on
+      the Sim or Opt variables.
+      @param[in]     bnd is the bound constraint.
+      @param[in]     optBnd is true if the bound is on the Opt variable.
+  */
+  BoundConstraint_SimOpt(const Ptr<BoundConstraint<Real>> &bnd,
+                         bool optBnd = true)
+    : bnd1_(optBnd ? makePtr<BoundConstraint<Real>>() : bnd),
+      bnd2_(optBnd ? bnd : makePtr<BoundConstraint<Real>>()) {
+    if ( bnd1_->isActivated() || bnd2_->isActivated() )
+      BoundConstraint<Real>::activate();
+    else
+      BoundConstraint<Real>::deactivate();
+  }
+
+  /** \brief Constructor for single bound constraint.
+
+      Construct a SimOpt bound constraint with either a bound on
+      the Sim or Opt variables.
+      @param[in]     bnd is the bound constraint.
+      @param[in]     x is a Sim variable if optBnd, an Opt variable otherwise.
+      @param[in]     optBnd is true if the bound is on the Opt variable.
+  */
+  BoundConstraint_SimOpt(const Ptr<BoundConstraint<Real>> &bnd,
+                         const Vector<Real> &x,
+                         bool optBnd = true)
+    : bnd1_(optBnd ? makePtr<BoundConstraint<Real>>(x) : bnd),
+      bnd2_(optBnd ? bnd : makePtr<BoundConstraint<Real>>(x)) {
+    if ( bnd1_->isActivated() || bnd2_->isActivated() )
+      BoundConstraint<Real>::activate();
+    else
+      BoundConstraint<Real>::deactivate();
   }
 
   /** \brief Project optimization variables onto the bounds.
@@ -102,14 +135,9 @@ public:
        @param[in,out]      x is the optimization variable.
   */
   void project( Vector<Real> &x ) {
-    Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(
-      dynamic_cast<Vector<Real>&>(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->project(*(xs.get_1()));
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->project(*(xs.get_2()));
-    }
+    Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(x);
+    if (bnd1_->isActivated()) bnd1_->project(*(xs.get_1()));
+    if (bnd2_->isActivated()) bnd2_->project(*(xs.get_2()));
   }
 
   /** \brief Project optimization variables into the interior of the feasible set.
@@ -123,14 +151,9 @@ public:
        @param[in,out]      x is the optimization variable.
   */
   void projectInterior( Vector<Real> &x ) {
-    Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(
-      dynamic_cast<Vector<Real>&>(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->projectInterior(*(xs.get_1()));
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->projectInterior(*(xs.get_2()));
-    }
+    Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(x);
+    if (bnd1_->isActivated()) bnd1_->projectInterior(*(xs.get_1()));
+    if (bnd2_->isActivated()) bnd2_->projectInterior(*(xs.get_2()));
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
@@ -145,16 +168,10 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
-    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
-      dynamic_cast<Vector<Real>&>(v));
-    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->pruneUpperActive(*(vs.get_1()),*(xs.get_1()),eps);
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->pruneUpperActive(*(vs.get_2()),*(xs.get_2()),eps);
-    }
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    if (bnd1_->isActivated()) bnd1_->pruneUpperActive(*(vs.get_1()),*(xs.get_1()),eps);
+    if (bnd2_->isActivated()) bnd2_->pruneUpperActive(*(vs.get_2()),*(xs.get_2()),eps);
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
@@ -171,18 +188,11 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
-    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
-      dynamic_cast<Vector<Real>&>(v));
-    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(g));
-    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->pruneUpperActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->pruneUpperActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
-    }
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    if (bnd1_->isActivated()) bnd1_->pruneUpperActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
+    if (bnd2_->isActivated()) bnd2_->pruneUpperActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
   }
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-active set.
@@ -197,16 +207,10 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
-    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
-      dynamic_cast<Vector<Real>&>(v));
-    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->pruneLowerActive(*(vs.get_1()),*(xs.get_1()),eps);
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->pruneLowerActive(*(vs.get_2()),*(xs.get_2()),eps);
-    }
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    if (bnd1_->isActivated()) bnd1_->pruneLowerActive(*(vs.get_1()),*(xs.get_1()),eps);
+    if (bnd2_->isActivated()) bnd2_->pruneLowerActive(*(vs.get_2()),*(xs.get_2()),eps);
   }
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-binding set.
@@ -223,32 +227,25 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
-    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
-      dynamic_cast<Vector<Real>&>(v));
-    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(g));
-    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->pruneLowerActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->pruneLowerActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
-    }
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    if (bnd1_->isActivated()) bnd1_->pruneLowerActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
+    if (bnd2_->isActivated()) bnd2_->pruneLowerActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
   }
 
   const Ptr<const Vector<Real>> getLowerBound( void ) const {
     const Ptr<const Vector<Real>> l1 = bnd1_->getLowerBound();
     const Ptr<const Vector<Real>> l2 = bnd2_->getLowerBound();
     return makePtr<Vector_SimOpt<Real>>( constPtrCast<Vector<Real>>(l1),
-                                                 constPtrCast<Vector<Real>>(l2) );
+                                         constPtrCast<Vector<Real>>(l2) );
   }
 
   const Ptr<const Vector<Real>> getUpperBound(void) const {
     const Ptr<const Vector<Real>> u1 = bnd1_->getUpperBound();
     const Ptr<const Vector<Real>> u2 = bnd2_->getUpperBound();
     return makePtr<Vector_SimOpt<Real>>( constPtrCast<Vector<Real>>(u1),
-                                                 constPtrCast<Vector<Real>>(u2) );
+                                         constPtrCast<Vector<Real>>(u2) );
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.
@@ -263,16 +260,10 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
-    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
-      dynamic_cast<Vector<Real>&>(v));
-    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
-      dynamic_cast<const Vector<Real>&>(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->pruneActive(*(vs.get_1()),*(xs.get_1()),eps);
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->pruneActive(*(vs.get_2()),*(xs.get_2()),eps);
-    }
+    Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(v);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
+    if (bnd1_->isActivated()) bnd1_->pruneActive(*(vs.get_1()),*(xs.get_1()),eps);
+    if (bnd2_->isActivated()) bnd2_->pruneActive(*(vs.get_2()),*(xs.get_2()),eps);
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
@@ -291,12 +282,8 @@ public:
     Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(v);
     const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    if ( bnd1_->isActivated() ) {
-      bnd1_->pruneActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->pruneActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
-    }
+    if (bnd1_->isActivated()) bnd1_->pruneActive(*(vs.get_1()),*(gs.get_1()),*(xs.get_1()),xeps,geps);
+    if (bnd2_->isActivated()) bnd2_->pruneActive(*(vs.get_2()),*(gs.get_2()),*(xs.get_2()),xeps,geps);
   }
 
   /** \brief Check if the vector, v, is feasible.
@@ -327,12 +314,8 @@ public:
     const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
     const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
-    if ( bnd1_->isActivated() ) {
-      bnd1_->applyInverseScalingFunction(*(dvs.get_1()),*(vs.get_1()),*(xs.get_1()),*(gs.get_1()));
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->applyInverseScalingFunction(*(dvs.get_2()),*(vs.get_2()),*(xs.get_2()),*(gs.get_2()));
-    }
+    if (bnd1_->isActivated()) bnd1_->applyInverseScalingFunction(*(dvs.get_1()),*(vs.get_1()),*(xs.get_1()),*(gs.get_1()));
+    if (bnd2_->isActivated()) bnd2_->applyInverseScalingFunction(*(dvs.get_2()),*(vs.get_2()),*(xs.get_2()),*(gs.get_2()));
   }
 
   /** \brief Apply scaling function Jacobian.
@@ -353,15 +336,11 @@ public:
     const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
     const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
-    if ( bnd1_->isActivated() ) {
-      bnd1_->applyScalingFunctionJacobian(*(dvs.get_1()),*(vs.get_1()),*(xs.get_1()),*(gs.get_1()));
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->applyScalingFunctionJacobian(*(dvs.get_2()),*(vs.get_2()),*(xs.get_2()),*(gs.get_2()));
-    }
+    if (bnd1_->isActivated()) bnd1_->applyScalingFunctionJacobian(*(dvs.get_1()),*(vs.get_1()),*(xs.get_1()),*(gs.get_1()));
+    if (bnd2_->isActivated()) bnd2_->applyScalingFunctionJacobian(*(dvs.get_2()),*(vs.get_2()),*(xs.get_2()),*(gs.get_2()));
   }
 
-}; // class BoundConstraint
+}; // class BoundConstraint_SimOpt
 
 } // namespace ROL
 

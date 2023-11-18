@@ -53,12 +53,11 @@ MeshProjectionCalculator::compute_mesh2_to_mesh1_element_maps()
   using CoarseSearch = search::ElementToVertBoundingBoxSearch;
   auto mesh2VertsToMesh1Els = mesh::create_variable_size_field<mesh::MeshEntityPtr>(m_mesh2, mesh::FieldShape(1, 0, 0));
 
-
   auto searchMesh1 = std::make_shared<SearchMesh1>(m_mesh1, MPI_COMM_SELF);
-  auto searchMesh2 = std::make_shared<SearchMesh2>(m_mesh2, MPI_COMM_SELF);
+  auto searchMesh2 = std::make_shared<SearchMesh2>(m_mesh2, MPI_COMM_SELF, m_searchOpts.normalDirectionFactor);
 
   bool doParallelSearch = false;
-  CoarseSearch coarseSearch(searchMesh1, searchMesh2, "local_coarse_search", MPI_COMM_SELF, doParallelSearch);
+  CoarseSearch coarseSearch(searchMesh1, searchMesh2, "local_coarse_search", MPI_COMM_SELF, doParallelSearch, m_searchOpts);
   coarseSearch.coarse_search();
 
   if (coarseSearch.get_unpaired_recv_entities().size() > 0)
@@ -76,9 +75,7 @@ MeshProjectionCalculator::compute_mesh2_to_mesh1_element_maps()
     mesh2VertsToMesh1Els->insert(mesh2Vert, 0, mesh1El);
   }
 
-
   return mesh2VertsToMesh1Els;
-
 }
 
 void MeshProjectionCalculator::project_mesh2_vertices_onto_mesh1()

@@ -235,10 +235,10 @@ void do_reverse_communication(const ReducedDependencyCommData & comm_data, MeshA
   }
 
   std::vector<MPI_Status> receiveStati(receiveRequests.size());
-  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0] );
+  MPI_Waitall(receiveRequests.size(), receiveRequests.data(), receiveStati.data());
 
   std::vector<MPI_Status> sendStati(sendRequests.size());
-  MPI_Waitall(sendRequests.size(), &sendRequests[0], &sendStati[0] );
+  MPI_Waitall(sendRequests.size(), sendRequests.data(), sendStati.data());
 }
 
 
@@ -283,10 +283,10 @@ void do_communication(const ReducedDependencyCommData & comm_data, const MeshAVe
   }
 
   std::vector<MPI_Status> receiveStati(receiveRequests.size());
-  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], MPI_STATUSES_IGNORE);
+  MPI_Waitall(receiveRequests.size(), receiveRequests.data(), MPI_STATUSES_IGNORE);
 
   std::vector<MPI_Status> sendStati(sendRequests.size());
-  MPI_Waitall(sendRequests.size(), &sendRequests[0], &sendStati[0] );
+  MPI_Waitall(sendRequests.size(), sendRequests.data(), sendStati.data());
 }
 
 
@@ -501,11 +501,11 @@ ReducedDependencyGeometricTransfer<INTERPOLATE>::buildExchangeLists(typename Mes
 
   std::vector<MPI_Status> receiveStati;
   receiveStati.resize(receiveRequests.size());
-  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0]);
+  MPI_Waitall(receiveRequests.size(), receiveRequests.data(), receiveStati.data());
 
   std::vector<MPI_Status> sendStati;
   sendStati.resize(sendRequests.size());
-  MPI_Waitall(sendRequests.size(), &sendRequests[0], &sendStati[0]);
+  MPI_Waitall(sendRequests.size(), sendRequests.data(), sendStati.data());
 
   //communicate coordinates
   int numRecvPoints = 0;

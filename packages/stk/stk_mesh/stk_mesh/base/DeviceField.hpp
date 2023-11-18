@@ -57,6 +57,8 @@ namespace mesh {
 
 constexpr unsigned INVALID_ORDINAL = 9999999;
 
+template<typename T, template <typename> class NgpDebugger> class DeviceField;
+
 namespace impl {
   constexpr double OVERALLOCATION_FACTOR = 1.1;
 
@@ -64,6 +66,8 @@ namespace impl {
   {
     return std::lround(size_requested*OVERALLOCATION_FACTOR);
   }
+
+  template <typename T> FieldDataDeviceViewType<T> get_device_data(DeviceField<T>&);
 }
 
 template<typename T, template <typename> class NgpDebugger>
@@ -312,6 +316,7 @@ private:
                const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER)
   {
     fieldSyncDebugger.device_stale_access_check(this, fileName, lineNumber);
+    clear_sync_state();
     Kokkos::deep_copy(deviceData, value);
     modify_on_device();
     fieldSyncDebugger.set_any_potential_device_field_modification(true);
@@ -714,6 +719,7 @@ private:
   }
 
   friend NgpDebugger<T>;
+  friend FieldDataDeviceViewType<T> impl::get_device_data<T>(DeviceField<T>&);
 
   FieldDataDeviceViewType<T> deviceData;
 
@@ -744,6 +750,17 @@ private:
 
   NgpDebugger<T> fieldSyncDebugger;
 };
+
+namespace impl {
+
+//not for public consumption. calling this will void your warranty.
+template<typename T>
+FieldDataDeviceViewType<T> get_device_data(DeviceField<T>& deviceField)
+{
+  return deviceField.deviceData;
+}
+
+} //namespace impl
 
 }
 }

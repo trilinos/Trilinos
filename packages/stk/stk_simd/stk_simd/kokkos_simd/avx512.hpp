@@ -197,7 +197,7 @@ SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> sqrt(simd<float, simd_ab
   return simd<float, simd_abi::avx512>(_mm512_sqrt_ps(a.get()));
 }
 
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 SIMD_ALWAYS_INLINE inline simd<float, simd_abi::avx512> cbrt(simd<float, simd_abi::avx512> const& a) {
   return simd<float, simd_abi::avx512>(_mm512_cbrt_ps(a.get()));
 }
@@ -384,7 +384,7 @@ SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> sqrt(simd<double, simd_
   return simd<double, simd_abi::avx512>(_mm512_sqrt_pd(a.get()));
 }
 
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 SIMD_ALWAYS_INLINE inline simd<double, simd_abi::avx512> cbrt(simd<double, simd_abi::avx512> const& a) {
   return simd<double, simd_abi::avx512>(_mm512_cbrt_pd(a.get()));
 }

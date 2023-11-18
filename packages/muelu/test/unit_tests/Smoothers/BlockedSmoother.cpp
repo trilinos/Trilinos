@@ -6618,8 +6618,8 @@ namespace MueLuTests {
 
       TEST_EQUALITY(reorderedbA->getRangeMapExtractor()->getFullMap()->isSameAs(*(A->getRowMap())),false);
       TEST_EQUALITY(reorderedbA->getDomainMapExtractor()->getFullMap()->isSameAs(*(A->getDomainMap())),false);
-      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedA->getFrobeniusNorm()), <, 1e-12, out, success);
-      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedbA->getFrobeniusNorm()), <, 1e-12, out, success);
+      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedA->getFrobeniusNorm()), <, 1e4 * Teuchos::ScalarTraits<Scalar>::eps(), out, success);
+      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedbA->getFrobeniusNorm()), <, 1e4 * Teuchos::ScalarTraits<Scalar>::eps(), out, success);
     } // end UseTpetra
   }
 

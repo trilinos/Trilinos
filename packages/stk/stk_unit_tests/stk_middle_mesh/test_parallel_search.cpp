@@ -37,6 +37,7 @@
 #include "util/parallel_search_test_util.hpp"
 #include "stk_middle_mesh/mesh_scatter_spec.hpp"
 #include "stk_middle_mesh/bounding_box_search.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
 
 
 namespace {
@@ -335,6 +336,35 @@ TEST_F(ParallelSearch, two_by_two_to_two_by_two)
 
   stk::middle_mesh::mesh::impl::MeshScatterSpec sendMeshSpec(MPI_COMM_WORLD, m_mesh);
   fill_mesh_scatter(sendMeshSpec);
+}
+
+TEST(SearchBoundingBox, Regression)
+{
+  if (stk::middle_mesh::utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+  {
+    GTEST_SKIP();
+  }
+
+  auto mesh1 = stk::middle_mesh::mesh::make_empty_mesh();
+  auto v1 = mesh1->create_vertex(1.051722092687432, 0.7641208279802152, 0.7483314773547881);
+  auto v2 = mesh1->create_vertex(0.8816778784387097, 1.213525491562421, 0);
+  auto v3 = mesh1->create_vertex(0.764120827980215, 1.051722092687432, 0.748331477354788);
+  mesh1->create_triangle_from_verts(v1, v2, v3);
+
+  auto mesh2 = stk::middle_mesh::mesh::make_empty_mesh();
+  auto v4 = mesh2->create_vertex(0.8032742580699905, 1.105558767447774, 0.6184579612837334);
+  auto v5 = mesh2->create_vertex(0.6833453909022464, 1.183422925761223, 0.6185056386059162);
+  auto v6 = mesh2->create_vertex(0.7166834109365785, 1.241075309649816, 0.4428266523506837);
+  mesh2->create_triangle_from_verts(v4, v5, v6);
+
+  std::vector<stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox::BoundingBox> boundingBoxVec1, boundingBoxVec2;
+  stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox searchMesh1(mesh1, MPI_COMM_WORLD);
+  searchMesh1.fill_bounding_boxes(boundingBoxVec1);  
+
+  stk::middle_mesh::mesh::impl::SearchMeshElementBoundingBox searchMesh2(mesh2, MPI_COMM_WORLD);
+  searchMesh2.fill_bounding_boxes(boundingBoxVec2);
+
+  EXPECT_TRUE(stk::search::intersects(boundingBoxVec1[0].first, boundingBoxVec2[0].first)); 
 }
 
 }

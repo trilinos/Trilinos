@@ -1,6 +1,7 @@
 #ifndef STK_TRANSFER_CONSERVATIVE_TRANSFER
 #define STK_TRANSFER_CONSERVATIVE_TRANSFER
 
+#include "stk_middle_mesh/application_interface.hpp"
 #include "stk_middle_mesh/communication_api.hpp"
 #include "stk_transfer/ConservativeTransferUser.hpp"
 
@@ -12,6 +13,13 @@ class ConservativeTransfer
   public:
     ConservativeTransfer(MPI_Comm unionComm, std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh1,
                          std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh2,
+                         std::shared_ptr<ConservativeTransferUser> transferCallback1,
+                         std::shared_ptr<ConservativeTransferUser> transferCallback2,
+                         stk::middle_mesh::ApplicationInterfaceType interfaceType = stk::middle_mesh::ApplicationInterfaceType::FakeParallel);
+
+    ConservativeTransfer(MPI_Comm unionComm, std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh1,
+                         std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh2,
+                         std::shared_ptr<stk::middle_mesh::ApplicationInterface> interface,
                          std::shared_ptr<ConservativeTransferUser> transferCallback1,
                          std::shared_ptr<ConservativeTransferUser> transferCallback2);
 
@@ -28,6 +36,7 @@ class ConservativeTransfer
 
     void setup_for_transfer(std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh1,
                             std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh2,
+                            std::shared_ptr<stk::middle_mesh::ApplicationInterface> interface,                           
                             std::shared_ptr<ConservativeTransferUser> transferCallback1,
                             std::shared_ptr<ConservativeTransferUser> transferCallback2);
 
@@ -47,7 +56,8 @@ class ConservativeTransfer
 
     MeshData get_mesh_data(stk::middle_mesh::mesh::FieldPtr<double> functionValsSend);
 
-    void check_xi_coords_same_on_all_procs_debug_only(std::shared_ptr<stk::middle_mesh::XiCoordinates> xiCoords);
+    void check_xi_coords_same_on_all_procs_debug_only(std::shared_ptr<ConservativeTransferUser> transferCallback1,
+                                                      std::shared_ptr<ConservativeTransferUser> transferCallback2);
 
     int check_number_of_points(std::shared_ptr<stk::middle_mesh::XiCoordinates> xiCoords, middle_mesh::mesh::MeshEntityType type);
 

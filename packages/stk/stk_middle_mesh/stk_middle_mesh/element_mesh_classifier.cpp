@@ -22,9 +22,10 @@ void ElementMeshClassifier::get_mesh2_element_classification(int numConstraintEd
 {
   if (M_OUTPUT)
   {
-    mesh::impl::print_vert_edges("mesh1_el", {m_elementMeshData.el1});
-    mesh::impl::print_vert_edges("mesh2_els", m_mesh2Els);
-    std::cout << "\nclassifying mesh" << std::endl;
+    int myrank = utils::impl::comm_rank(MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
+    mesh::impl::print_vert_edges(std::string("mesh1_el_") + std::to_string(myrank) , {m_elementMeshData.el1});
+    mesh::impl::print_vert_edges(std::string("mesh2_els_") + std::to_string(myrank), m_mesh2Els);
+    mesh::impl::print_vert_edges(std::string("meshIn_els_") + std::to_string(myrank), m_elementMeshData.elementMeshIn);
   }
 
   // printTIN("mesh_class", class_i.mesh_in);
@@ -217,9 +218,9 @@ mesh::MeshEntityPtr ElementMeshClassifier::classification_pass1(const std::vecto
       std::cout << "el2 = " << el2->get_id() << ", " << el2 << std::endl;
 
       std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> el2Verts;
-      mesh::get_downward(el2, 0, el2Verts.data());
+      int ndown = mesh::get_downward(el2, 0, el2Verts.data());
       std::cout << "  el2 vert ids = ";
-      for (int i=0; i < 4; ++i)
+      for (int i=0; i < ndown; ++i)
         std::cout << el2Verts[i]->get_id() << ", ";
       std::cout << std::endl;
     }
@@ -266,7 +267,7 @@ mesh::MeshEntityPtr ElementMeshClassifier::classification_pass1(const std::vecto
       std::cout << std::endl;
     }
     assert(idxs.size() == 1);
-
+    
     // std::cout << "classifying group " << idxs[0] << std::endl;
 
     for (auto& elIn : agg.get_group_elements(idxs[0]))

@@ -357,7 +357,9 @@ void MiddleGridConstraintGenerator::create_internal_edges()
         }
 
         if (v1In && v2In && !get_common_edge(v1In, v2In))
+        {
           m_meshIn->create_edge(v1In, v2In);
+        }
       }
     }
 }

@@ -142,6 +142,8 @@ class ActiveVertContainer
 
     RemoteActiveVertData unpack(Exchanger& exchanger, int sendRank); 
 
+    void create_local_verts_used_by_remote_patches(int patchIdx, RemoteActiveVertData& remoteData);
+
     void merge_patches(int patchIdx, int senderRank, RemoteActiveVertData& remoteData);
 
     void collect_remote_vertices();

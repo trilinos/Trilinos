@@ -36,7 +36,6 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-
 FILE(GLOB MESH_CLONE_HEADERS mesh_clone/*.hpp)
 FILE(GLOB MESH_CLONE_SOURCES mesh_clone/*.cpp)
 FILE(GLOB MESH_TOOLS_HEADERS mesh_tools/*.hpp)
@@ -51,17 +50,36 @@ LIST(REMOVE_ITEM BLOCK_EXTRACTOR_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extra
 # C) Define the targets for package's library(s)
 #
 
-TRIBITS_ADD_LIBRARY(
-  stk_transfer_utils_lib
-  NOINSTALLHEADERS ${TRANSFER_UTILS_HEADERS}
-  SOURCES ${TRANSFER_UTILS_SOURCES}
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_transfer_utils_lib
+    NOINSTALLHEADERS ${TRANSFER_UTILS_HEADERS}
+    SOURCES ${TRANSFER_UTILS_SOURCES}
   )
 
-TRIBITS_ADD_LIBRARY(
-  stk_tools_lib
-  NOINSTALLHEADERS ${MESH_CLONE_HEADERS} ${MESH_TOOLS_HEADERS} ${BLOCK_EXTRACTOR_HEADERS}
-  SOURCES ${MESH_CLONE_SOURCES} ${MESH_TOOLS_SOURCES} ${BLOCK_EXTRACTOR_SOURCES}
+  TRIBITS_ADD_LIBRARY(stk_tools_lib
+    NOINSTALLHEADERS ${MESH_CLONE_HEADERS} ${MESH_TOOLS_HEADERS} ${BLOCK_EXTRACTOR_HEADERS}
+    SOURCES ${MESH_CLONE_SOURCES} ${MESH_TOOLS_SOURCES} ${BLOCK_EXTRACTOR_SOURCES}
   )
+
+  TRIBITS_ADD_EXECUTABLE(stk_block_extractor
+    NOEXEPREFIX
+    NOEXESUFFIX
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp
+    COMM serial mpi
+  )
+else()
+  add_library(stk_transfer_utils_lib ${TRANSFER_UTILS_SOURCES})
+  target_link_libraries(stk_transfer_utils_lib PUBLIC stk_io)
+  target_link_libraries(stk_transfer_utils_lib PUBLIC stk_transfer)
+
+  add_library(stk_tools_lib ${MESH_CLONE_SOURCES} ${MESH_TOOLS_SOURCES} ${BLOCK_EXTRACTOR_SOURCES})
+  target_link_libraries(stk_tools_lib PUBLIC stk_io)
+  target_link_libraries(stk_tools_lib PUBLIC stk_transfer_utils_lib)
+
+  add_executable(stk_block_extractor ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp)
+  target_link_libraries(stk_block_extractor PUBLIC stk_tools_lib)
+  target_link_libraries(stk_block_extractor PUBLIC stk_util_command_line)
+endif()
 
 target_include_directories(stk_transfer_utils_lib PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_tools>
@@ -84,12 +102,11 @@ INSTALL(FILES ${BLOCK_EXTRACTOR_HEADERS} DESTINATION
 INSTALL(FILES ${TRANSFER_UTILS_HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_tools/transfer_utils)
 
-TRIBITS_ADD_EXECUTABLE(
-  stk_block_extractor
-  NOEXEPREFIX
-  NOEXESUFFIX
-  SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp
-  COMM serial mpi
-  )
-
 INSTALL(TARGETS stk_block_extractor COMPONENT ${PACKAGE_NAME} RUNTIME DESTINATION ${${PROJECT_NAME}_INSTALL_RUNTIME_DIR})
+
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_transfer_utils_lib DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_tools_lib DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_block_extractor DESTINATION ${STK_INSTALL_BINDIR})
+endif()
+

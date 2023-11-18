@@ -725,18 +725,6 @@ void convertCharArrayToStringVector(int numArgs, const char** charArray, std::ve
 namespace stk {
 namespace util {
 
-template<typename DATA, typename SEPARATOR>
-std::string join(const std::vector<DATA>& data, const SEPARATOR& sep)
-{
-    std::ostringstream os;
-    for(size_t i = 0; i < data.size()-1; ++i)
-    {
-        os << data[i] << sep;
-    }
-    os << data.back();
-    return os.str();
-}
-
 template<typename ITERATOR, typename SEPARATOR>
 std::string join(const ITERATOR& start, const ITERATOR& finish, const SEPARATOR& sep)
 {
@@ -753,6 +741,11 @@ std::string join(const ITERATOR& start, const ITERATOR& finish, const SEPARATOR&
     return os.str();
 }
 
+template <typename CONTAINER, typename SEPARATOR>
+std::string join(const CONTAINER &data, const SEPARATOR &sep)
+{
+  return join(std::begin(data), std::end(data), sep);
+}
 
 } // namespace util
 } // namespace stk

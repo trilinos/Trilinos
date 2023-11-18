@@ -382,6 +382,35 @@ unsigned FieldBase::max_size() const
   return max ;
 }
 
+unsigned FieldBase::max_extent(unsigned dimension) const
+{
+  if (dimension == 0) {
+    FieldRestriction::size_type max = 0;
+    for (const FieldRestriction& restriction : restrictions()) {
+      max = std::max(max, restriction.dimension());
+    }
+    return max;
+  }
+  else if (dimension == 1) {
+    FieldRestriction::size_type max = 0;
+    for (const FieldRestriction& restriction : restrictions()) {
+      if (restriction.dimension() != 0) {
+        max = std::max(max, restriction.num_scalars_per_entity() / restriction.dimension());
+      }
+    }
+    return max;
+
+  }
+  else {
+    for (const FieldRestriction& restriction : restrictions()) {
+      if (restriction.num_scalars_per_entity() > 0) {
+        return 1;
+      }
+    }
+    return 0;
+  }
+}
+
 void FieldBase::rotate_multistate_data()
 {
   const unsigned numStates = number_of_states();

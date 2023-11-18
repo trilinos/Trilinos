@@ -67,8 +67,8 @@ using Teuchos::rcpFromRef;
 
 namespace Ifpack2 {
 
-template<class MatrixType>
-Hypre<MatrixType>::
+template<class LocalOrdinal, class Node>
+Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::
 Hypre(const Teuchos::RCP<const row_matrix_type>& A):
   A_(A),
   IsInitialized_(false),
@@ -117,8 +117,8 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
     }
   }
   // Next create vectors that will be used when ApplyInverse() is called
-  global_ordinal_type ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
-  global_ordinal_type iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+  HYPRE_Int ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
+  HYPRE_Int iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
   // X in AX = Y
   IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
   IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR));
@@ -140,14 +140,14 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
 } //Constructor
 
 //==============================================================================
-template<class MatrixType>
-Hypre<MatrixType>::~Hypre() {
+template<class LocalOrdinal, class Node>
+Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::~Hypre() {
   Destroy();
 }
 
 //==============================================================================
-template<class MatrixType>
-void Hypre<MatrixType>::Destroy(){
+template<class LocalOrdinal, class Node>
+void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Destroy(){
   if(isInitialized()){
     IFPACK2_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreA_));
   }
@@ -176,8 +176,8 @@ void Hypre<MatrixType>::Destroy(){
 } //Destroy()
 
 //==============================================================================
-template<class MatrixType>
-void Hypre<MatrixType>::initialize(){
+template<class LocalOrdinal, class Node>
+void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::initialize(){
   const std::string timerName ("Ifpack2::Hypre::initialize");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
@@ -195,8 +195,8 @@ void Hypre<MatrixType>::initialize(){
 } //Initialize()
 
 //==============================================================================
-template<class MatrixType>
-void Hypre<MatrixType>::setParameters(const Teuchos::ParameterList& list){
+template<class LocalOrdinal, class Node>
+void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::setParameters(const Teuchos::ParameterList& list){
 
   std::map<std::string, Hypre_Solver> solverMap;
   solverMap["BoomerAMG"] = BoomerAMG;
@@ -258,9 +258,9 @@ void Hypre<MatrixType>::setParameters(const Teuchos::ParameterList& list){
       if (it->second.isType<HYPRE_Int>()) {
         IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::getValue<HYPRE_Int>(it->second)))));
       } else if (!std::is_same<HYPRE_Int,int>::value && it->second.isType<int>()) {
-        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::as<global_ordinal_type>(Teuchos::getValue<int>(it->second))))));
-      } else if (it->second.isType<double>()) {
-        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::getValue<double>(it->second)))));
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::as<HYPRE_Int>(Teuchos::getValue<int>(it->second))))));
+      } else if (it->second.isType<HYPRE_Real>()) {
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::getValue<HYPRE_Real>(it->second)))));
       } else {
         IFPACK2_CHK_ERR(-1);
       }
@@ -274,28 +274,28 @@ void Hypre<MatrixType>::setParameters(const Teuchos::ParameterList& list){
       if (it->second.isType<HYPRE_Int>()) {
         IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::getValue<HYPRE_Int>(it->second)))));
       } else if (!std::is_same<HYPRE_Int,int>::value && it->second.isType<int>()) {
-        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name ,  Teuchos::as<global_ordinal_type>(Teuchos::getValue<int>(it->second)))))); 
-      } else if (it->second.isType<double>()) {
-        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::getValue<double>(it->second)))));
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::as<HYPRE_Int>(Teuchos::getValue<int>(it->second))))));
+      } else if (it->second.isType<HYPRE_Real>()) {
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::getValue<HYPRE_Real>(it->second)))));
       } else if (it->second.isList()) {
         Teuchos::ParameterList pl = Teuchos::getValue<Teuchos::ParameterList>(it->second);
         if (FunctionParameter::isFuncIntInt(funct_name)) {
-          HYPRE_Int arg0 = pl.get<int>("arg 0");
-          HYPRE_Int arg1 = pl.get<int>("arg 1");
+          HYPRE_Int arg0 = pl.get<HYPRE_Int>("arg 0");
+          HYPRE_Int arg1 = pl.get<HYPRE_Int>("arg 1");
           IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , arg0, arg1))));
         } else if (FunctionParameter::isFuncIntIntDoubleDouble(funct_name)) {
-          HYPRE_Int arg0 = pl.get<int>("arg 0");
-          HYPRE_Int arg1 = pl.get<int>("arg 1");
-          double arg2 = pl.get<double>("arg 2");
-          double arg3 = pl.get<double>("arg 3");
+          HYPRE_Int arg0 = pl.get<HYPRE_Int>("arg 0");
+          HYPRE_Int arg1 = pl.get<HYPRE_Int>("arg 1");
+          HYPRE_Real arg2 = pl.get<HYPRE_Real>("arg 2");
+          HYPRE_Real arg3 = pl.get<HYPRE_Real>("arg 3");
           IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , arg0, arg1, arg2, arg3))));
         } else if (FunctionParameter::isFuncIntIntIntDoubleIntInt(funct_name)) {
-          HYPRE_Int arg0 = pl.get<int>("arg 0");
-          HYPRE_Int arg1 = pl.get<int>("arg 1");
-          HYPRE_Int arg2 = pl.get<int>("arg 2");
-          double arg3 = pl.get<double>("arg 3");
-          HYPRE_Int arg4 = pl.get<int>("arg 4");
-          HYPRE_Int arg5 = pl.get<int>("arg 5");
+          HYPRE_Int arg0 = pl.get<HYPRE_Int>("arg 0");
+          HYPRE_Int arg1 = pl.get<HYPRE_Int>("arg 1");
+          HYPRE_Int arg2 = pl.get<HYPRE_Int>("arg 2");
+          HYPRE_Real arg3 = pl.get<HYPRE_Real>("arg 3");
+          HYPRE_Int arg4 = pl.get<HYPRE_Int>("arg 4");
+          HYPRE_Int arg5 = pl.get<HYPRE_Int>("arg 5");
           IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , arg0, arg1, arg2, arg3, arg4, arg5))));
         } else {
           IFPACK2_CHK_ERR(-1);
@@ -313,8 +313,8 @@ void Hypre<MatrixType>::setParameters(const Teuchos::ParameterList& list){
 } //setParameters()
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::AddFunToList(RCP<FunctionParameter> NewFun){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::AddFunToList(RCP<FunctionParameter> NewFun){
   NumFunsToCall_ = NumFunsToCall_+1;
   FunsToCall_.resize(NumFunsToCall_);
   FunsToCall_[NumFunsToCall_-1] = NewFun;
@@ -322,72 +322,72 @@ int Hypre<MatrixType>::AddFunToList(RCP<FunctionParameter> NewFun){
 } //AddFunToList()
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type), global_ordinal_type parameter){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int), HYPRE_Int parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() - int function pointer
 
 //=============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type  (*pt2Func)(HYPRE_Solver, double), double parameter){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser, HYPRE_Int  (*pt2Func)(HYPRE_Solver, HYPRE_Real), HYPRE_Real parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() - double function pointer
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double, global_ordinal_type), double parameter1, global_ordinal_type parameter2){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Real, HYPRE_Int), HYPRE_Real parameter1, HYPRE_Int parameter2){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() - double,int function pointer
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, double), global_ordinal_type parameter1, double parameter2){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int, HYPRE_Real), HYPRE_Int parameter1, HYPRE_Real parameter2){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() - int,double function pointer
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, global_ordinal_type), global_ordinal_type parameter1, global_ordinal_type parameter2){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int), HYPRE_Int parameter1, HYPRE_Int parameter2){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() int,int function pointer
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double*), double* parameter){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Real*), HYPRE_Real* parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() - double* function pointer
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type*), global_ordinal_type* parameter){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int*), HYPRE_Int* parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() - int* function pointer
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser,  global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type**), global_ordinal_type** parameter){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser,  HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int**), HYPRE_Int** parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
 } //SetParameter() - int** function pointer
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
   if(chooser == Hypre_Is_Solver){
     SolverType_ = solver;
   } else {
@@ -397,15 +397,15 @@ int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
 } //SetParameter() - set type of solver
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetDiscreteGradient(Teuchos::RCP<const crs_matrix_type> G){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetDiscreteGradient(Teuchos::RCP<const crs_matrix_type> G){
   using LO = local_ordinal_type;
   using GO = global_ordinal_type;
   // using SC = scalar_type;
 
   // Sanity check
   if(!A_->getRowMap()->isSameAs(*G->getRowMap()))
-    throw std::runtime_error("Hypre<MatrixType>: Edge map mismatch: A and discrete gradient");
+    throw std::runtime_error("Hypre<Tpetra::RowMatrix<double, HYPRE_Int, long long, Node>: Edge map mismatch: A and discrete gradient");
 
   // Get the maps for the nodes (assuming the edge map from A is OK);
   GloballyContiguousNodeRowMap_ = rcp(new map_type(G->getDomainMap()->getGlobalNumElements(),
@@ -449,11 +449,11 @@ int Hypre<MatrixType>::SetDiscreteGradient(Teuchos::RCP<const crs_matrix_type> G
 } //SetDiscreteGradient()
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetCoordinates(Teuchos::RCP<multivector_type> coords) {
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetCoordinates(Teuchos::RCP<multivector_type> coords) {
 
   if(!G_.is_null() && !G_->getDomainMap()->isSameAs(*coords->getMap()))
-    throw std::runtime_error("Hypre<MatrixType>: Node map mismatch: G->DomainMap() and coords");
+    throw std::runtime_error("Hypre<Tpetra::RowMatrix<double, HYPRE_Int, long long, Node>: Node map mismatch: G->DomainMap() and coords");
 
   if(SolverType_ != AMS && PrecondType_ != AMS)
     return 0;
@@ -471,7 +471,7 @@ int Hypre<MatrixType>::SetCoordinates(Teuchos::RCP<multivector_type> coords) {
 
   if( NumEntries != iupper-ilower+1) {
     std::cout<<"Ifpack2::Hypre::SetCoordinates(): Error on rank "<<A_->getRowMap()->getComm()->getRank()<<": MyLength = "<<coords->getLocalLength()<<" GID range = ["<<ilower<<","<<iupper<<"]"<<std::endl;
-    throw std::runtime_error("Hypre<MatrixType>: SetCoordinates: Length mismatch");
+    throw std::runtime_error("Hypre<Tpetra::RowMatrix<double, HYPRE_Int, long long, Node>: SetCoordinates: Length mismatch");
   }
 
   IFPACK2_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &xHypre_));
@@ -511,8 +511,8 @@ int Hypre<MatrixType>::SetCoordinates(Teuchos::RCP<multivector_type> coords) {
 } //SetCoordinates
 
 //==============================================================================
-template<class MatrixType>
-void Hypre<MatrixType>::compute(){
+template<class LocalOrdinal, class Node>
+void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::compute(){
   const std::string timerName ("Ifpack2::Hypre::compute");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
@@ -575,8 +575,8 @@ void Hypre<MatrixType>::compute(){
 } //Compute()
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::CallFunctions() const{
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::CallFunctions() const{
   for(int i = 0; i < NumFunsToCall_; i++){
     IFPACK2_CHK_ERR(FunsToCall_[i]->CallFunction(Solver_, Preconditioner_));
   }
@@ -584,8 +584,8 @@ int Hypre<MatrixType>::CallFunctions() const{
 } //CallFunctions()
 
 //==============================================================================
-template<class MatrixType>
-void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+template<class LocalOrdinal, class Node>
+void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                                Teuchos::ETransp mode,
                                scalar_type alpha,
@@ -605,14 +605,13 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
     }
     hypre_Vector *XLocal_ = hypre_ParVectorLocalVector(XVec_);
     hypre_Vector *YLocal_ = hypre_ParVectorLocalVector(YVec_);
-    
     bool SameVectors = false;
     size_t NumVectors = X.getNumVectors();
     if (NumVectors != Y.getNumVectors()) IFPACK2_CHK_ERR(-1);  // X and Y must have same number of vectors
     if(&X == &Y) { //FIXME: Maybe not the right way to check this
       SameVectors = true;
     }
-    
+
     // NOTE: Here were assuming that the local ordering of Epetra's X/Y-vectors and 
     // Hypre's X/Y-vectors are the same.  Seeing as as this is more or less how we constructed
     // the Hypre matrices, this seems pretty reasoanble.
@@ -659,16 +658,16 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
 
 
 //==============================================================================
-template<class MatrixType>
-void Hypre<MatrixType>::applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+template<class LocalOrdinal, class Node>
+void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                                   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                                   Teuchos::ETransp mode) const {
   A_->apply(X,Y,mode);
 } //applyMat()
 
 //==============================================================================
-template<class MatrixType>
-std::string Hypre<MatrixType>::description() const {
+template<class LocalOrdinal, class Node>
+std::string Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::description() const {
   std::ostringstream out;
 
   // Output is a valid YAML dictionary in flow style.  If you don't
@@ -693,8 +692,8 @@ std::string Hypre<MatrixType>::description() const {
 } //description()
 
 //==============================================================================
-template<class MatrixType>
-void Hypre<MatrixType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const {
+template<class LocalOrdinal, class Node>
+void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const {
   using std::endl;
   os << endl;
   os << "================================================================================" << endl;
@@ -717,15 +716,15 @@ void Hypre<MatrixType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerb
 } //description
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetSolverType(Hypre_Solver Solver){
   switch(Solver) {
     case BoomerAMG:
       if(IsSolverCreated_){
         SolverDestroyPtr_(Solver_);
         IsSolverCreated_ = false;
       }
-      SolverCreatePtr_ = &Hypre<MatrixType>::Hypre_BoomerAMGCreate;
+      SolverCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_BoomerAMGCreate;
       SolverDestroyPtr_ = &HYPRE_BoomerAMGDestroy;
       SolverSetupPtr_ = &HYPRE_BoomerAMGSetup;
       SolverPrecondPtr_ = NULL;
@@ -736,7 +735,7 @@ int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
         SolverDestroyPtr_(Solver_);
         IsSolverCreated_ = false;
       }
-      SolverCreatePtr_ = &Hypre<MatrixType>::Hypre_AMSCreate;
+      SolverCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_AMSCreate;
       SolverDestroyPtr_ = &HYPRE_AMSDestroy;
       SolverSetupPtr_ = &HYPRE_AMSSetup;
       SolverSolvePtr_ = &HYPRE_AMSSolve;
@@ -747,7 +746,7 @@ int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
         SolverDestroyPtr_(Solver_);
         IsSolverCreated_ = false;
       }
-      SolverCreatePtr_ = &Hypre<MatrixType>::Hypre_ParCSRHybridCreate;
+      SolverCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRHybridCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRHybridDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRHybridSetup;
       SolverSolvePtr_ = &HYPRE_ParCSRHybridSolve;
@@ -758,7 +757,7 @@ int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
         SolverDestroyPtr_(Solver_);
         IsSolverCreated_ = false;
       }
-      SolverCreatePtr_ = &Hypre<MatrixType>::Hypre_ParCSRPCGCreate;
+      SolverCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRPCGCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRPCGDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRPCGSetup;
       SolverSolvePtr_ = &HYPRE_ParCSRPCGSolve;
@@ -769,7 +768,7 @@ int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
         SolverDestroyPtr_(Solver_);
         IsSolverCreated_ = false;
       }
-      SolverCreatePtr_ = &Hypre<MatrixType>::Hypre_ParCSRGMRESCreate;
+      SolverCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRGMRESDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRGMRESSetup;
       SolverPrecondPtr_ = &HYPRE_ParCSRGMRESSetPrecond;
@@ -779,7 +778,7 @@ int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
         SolverDestroyPtr_(Solver_);
         IsSolverCreated_ = false;
       }
-      SolverCreatePtr_ = &Hypre<MatrixType>::Hypre_ParCSRFlexGMRESCreate;
+      SolverCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRFlexGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRFlexGMRESDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRFlexGMRESSetup;
       SolverSolvePtr_ = &HYPRE_ParCSRFlexGMRESSolve;
@@ -790,7 +789,7 @@ int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
         SolverDestroyPtr_(Solver_);
         IsSolverCreated_ = false;
       }
-      SolverCreatePtr_ = &Hypre<MatrixType>::Hypre_ParCSRLGMRESCreate;
+      SolverCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRLGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRLGMRESDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRLGMRESSetup;
       SolverSolvePtr_ = &HYPRE_ParCSRLGMRESSolve;
@@ -801,7 +800,7 @@ int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
         SolverDestroyPtr_(Solver_);
         IsSolverCreated_ = false;
       }
-      SolverCreatePtr_ = &Hypre<MatrixType>::Hypre_ParCSRBiCGSTABCreate;
+      SolverCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRBiCGSTABCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRBiCGSTABDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRBiCGSTABSetup;
       SolverSolvePtr_ = &HYPRE_ParCSRBiCGSTABSolve;
@@ -815,15 +814,15 @@ int Hypre<MatrixType>::SetSolverType(Hypre_Solver Solver){
 } //SetSolverType()
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::SetPrecondType(Hypre_Solver Precond){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::SetPrecondType(Hypre_Solver Precond){
   switch(Precond) {
     case BoomerAMG:
       if(IsPrecondCreated_){
         PrecondDestroyPtr_(Preconditioner_);
         IsPrecondCreated_ = false;
       }
-      PrecondCreatePtr_ = &Hypre<MatrixType>::Hypre_BoomerAMGCreate;
+      PrecondCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_BoomerAMGCreate;
       PrecondDestroyPtr_ = &HYPRE_BoomerAMGDestroy;
       PrecondSetupPtr_ = &HYPRE_BoomerAMGSetup;
       PrecondSolvePtr_ = &HYPRE_BoomerAMGSolve;
@@ -833,7 +832,7 @@ int Hypre<MatrixType>::SetPrecondType(Hypre_Solver Precond){
         PrecondDestroyPtr_(Preconditioner_);
         IsPrecondCreated_ = false;
       }
-      PrecondCreatePtr_ = &Hypre<MatrixType>::Hypre_ParaSailsCreate;
+      PrecondCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParaSailsCreate;
       PrecondDestroyPtr_ = &HYPRE_ParaSailsDestroy;
       PrecondSetupPtr_ = &HYPRE_ParaSailsSetup;
       PrecondSolvePtr_ = &HYPRE_ParaSailsSolve;
@@ -843,7 +842,7 @@ int Hypre<MatrixType>::SetPrecondType(Hypre_Solver Precond){
         PrecondDestroyPtr_(Preconditioner_);
         IsPrecondCreated_ = false;
       }
-      PrecondCreatePtr_ = &Hypre<MatrixType>::Hypre_EuclidCreate;
+      PrecondCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_EuclidCreate;
       PrecondDestroyPtr_ = &HYPRE_EuclidDestroy;
       PrecondSetupPtr_ = &HYPRE_EuclidSetup;
       PrecondSolvePtr_ = &HYPRE_EuclidSolve;
@@ -853,7 +852,7 @@ int Hypre<MatrixType>::SetPrecondType(Hypre_Solver Precond){
         PrecondDestroyPtr_(Preconditioner_);
         IsPrecondCreated_ = false;
       }
-      PrecondCreatePtr_ = &Hypre<MatrixType>::Hypre_AMSCreate;
+      PrecondCreatePtr_ = &Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_AMSCreate;
       PrecondDestroyPtr_ = &HYPRE_AMSDestroy;
       PrecondSetupPtr_ = &HYPRE_AMSSetup;
       PrecondSolvePtr_ = &HYPRE_AMSSolve;
@@ -867,8 +866,8 @@ int Hypre<MatrixType>::SetPrecondType(Hypre_Solver Precond){
 } //SetPrecondType()
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::CreateSolver(){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::CreateSolver(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   int ierr = (this->*SolverCreatePtr_)(comm, &Solver_);
@@ -877,8 +876,8 @@ int Hypre<MatrixType>::CreateSolver(){
 } //CreateSolver()
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::CreatePrecond(){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::CreatePrecond(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   int ierr = (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
@@ -888,17 +887,17 @@ int Hypre<MatrixType>::CreatePrecond(){
 
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::CopyTpetraToHypre(){
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::CopyTpetraToHypre(){
   using LO = local_ordinal_type;
   using GO = global_ordinal_type;
   // using SC = scalar_type;
 
   Teuchos::RCP<const crs_matrix_type> Matrix = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
   if(Matrix.is_null()) 
-    throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
+    throw std::runtime_error("Hypre<Tpetra::RowMatrix<double, LocalOrdinal, HYPRE_Int, Node>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
 
-  std::vector<GO> new_indices(Matrix->getLocalMaxNumRowEntries());
+  std::vector<HYPRE_Int> new_indices(Matrix->getLocalMaxNumRowEntries());
   for(LO i = 0; i < (LO) Matrix->getLocalNumRows(); i++){
     typename crs_matrix_type::values_host_view_type     values;
     typename crs_matrix_type::local_inds_host_view_type indices;
@@ -906,8 +905,8 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
     for(LO j = 0; j < (LO)indices.extent(0); j++){
       new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices(j));
     }
-    GO GlobalRow[1];
-    GO numEntries = (GO) indices.extent(0);
+    HYPRE_Int GlobalRow[1];
+    HYPRE_Int numEntries = (GO) indices.extent(0);
     GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
     IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.data()));
   }
@@ -919,59 +918,59 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
 } //CopyTpetraToHypre()
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_BoomerAMGCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_BoomerAMGCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
     { return HYPRE_BoomerAMGCreate(solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
     { return HYPRE_ParaSailsCreate(comm, solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver)
     { return HYPRE_EuclidCreate(comm, solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_AMSCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_AMSCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
     { return HYPRE_AMSCreate(solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_ParCSRHybridCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRHybridCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
     { return HYPRE_ParCSRHybridCreate(solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver)
     { return HYPRE_ParCSRPCGCreate(comm, solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
     { return HYPRE_ParCSRGMRESCreate(comm, solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
     { return HYPRE_ParCSRFlexGMRESCreate(comm, solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
     { return HYPRE_ParCSRLGMRESCreate(comm, solver);}
 
 //==============================================================================
-template<class MatrixType>
-int Hypre<MatrixType>::Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver)
+template<class LocalOrdinal, class Node>
+HYPRE_Int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver)
     { return HYPRE_ParCSRBiCGSTABCreate(comm, solver);}
 
 //==============================================================================
-template<class MatrixType>
-  Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > 
-Hypre<MatrixType>::MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &Matrix) const{
+template<class LocalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal, HYPRE_Int, Node> >
+Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &Matrix) const{
   using import_type     = Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type>;
   using go_vector_type  = Tpetra::Vector<global_ordinal_type,local_ordinal_type,global_ordinal_type,node_type>;
 
@@ -980,7 +979,7 @@ Hypre<MatrixType>::MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &
   //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
   //           via DomainMap.LID()       via GloballyContiguousDomainMap.GID()
   if(Matrix.is_null()) 
-    throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
+    throw std::runtime_error("Hypre<Tpetra::RowMatrix<HYPRE_Real, HYPRE_Int, long long, Node>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
   RCP<const map_type> DomainMap = Matrix->getDomainMap();
   RCP<const map_type> ColumnMap = Matrix->getColMap();
   RCP<const import_type> importer = Matrix->getGraph()->getImporter();
@@ -1013,44 +1012,44 @@ Hypre<MatrixType>::MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &
 
 
 
-template<class MatrixType>
-int Hypre<MatrixType>::getNumInitialize() const {
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::getNumInitialize() const {
   return NumInitialize_;
 }
 
 
-template<class MatrixType>
-int Hypre<MatrixType>::getNumCompute() const {
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::getNumCompute() const {
   return NumCompute_;
 }
 
 
-template<class MatrixType>
-int Hypre<MatrixType>::getNumApply() const {
+template<class LocalOrdinal, class Node>
+int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::getNumApply() const {
   return NumApply_;
 }
 
 
-template<class MatrixType>
-double Hypre<MatrixType>::getInitializeTime() const {
+template<class LocalOrdinal, class Node>
+double Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::getInitializeTime() const {
   return InitializeTime_;
 }
 
 
-template<class MatrixType>
-double Hypre<MatrixType>::getComputeTime() const {
+template<class LocalOrdinal, class Node>
+double Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::getComputeTime() const {
   return ComputeTime_;
 }
 
 
-template<class MatrixType>
-double Hypre<MatrixType>::getApplyTime() const {
+template<class LocalOrdinal, class Node>
+double Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::getApplyTime() const {
   return ApplyTime_;
 }
 
-template<class MatrixType>
-Teuchos::RCP<const typename Hypre<MatrixType>::map_type>
-Hypre<MatrixType>::
+template<class LocalOrdinal, class Node>
+Teuchos::RCP<const typename Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::map_type>
+Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::
 getDomainMap () const
 {
   Teuchos::RCP<const row_matrix_type> A = getMatrix();
@@ -1062,9 +1061,9 @@ getDomainMap () const
 }
 
 
-template<class MatrixType>
-Teuchos::RCP<const typename Hypre<MatrixType>::map_type>
-Hypre<MatrixType>::
+template<class LocalOrdinal, class Node>
+Teuchos::RCP<const typename Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::map_type>
+Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::
 getRangeMap () const
 {
   Teuchos::RCP<const row_matrix_type> A = getMatrix();
@@ -1076,8 +1075,8 @@ getRangeMap () const
 }
 
 
-template<class MatrixType>
-void Hypre<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+template<class LocalOrdinal, class Node>
+void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
   if (A.getRawPtr () != getMatrix().getRawPtr ()) {
     IsInitialized_ = false;
@@ -1087,16 +1086,16 @@ void Hypre<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 }
 
 
-template<class MatrixType>
-Teuchos::RCP<const typename Hypre<MatrixType>::row_matrix_type>
-Hypre<MatrixType>::
+template<class LocalOrdinal, class Node>
+Teuchos::RCP<const typename Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::row_matrix_type>
+Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::
 getMatrix() const {
   return A_;
 }
 
 
-template<class MatrixType>
-bool Hypre<MatrixType>::hasTransposeApply() const {
+template<class LocalOrdinal, class Node>
+bool Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::hasTransposeApply() const {
   return false;
 }
 

@@ -248,7 +248,6 @@ void findGhostingRegionResidentsDDEfficient(const SuperTile3D &tilingPattern, MP
 
   stk::CommSparse commsparse(comm);
 
-  int sendCount = 0;
   for(int phase = 0; phase < 2; ++phase) {
     for (const BoxedTilingIndices &tileId : tilesOccupied) {
       int proc = getGhostingRegionRank(tileId, tilingPattern, mpiSize);
@@ -261,10 +260,6 @@ void findGhostingRegionResidentsDDEfficient(const SuperTile3D &tilingPattern, MP
         msg.pRank = mpiRank;
         msg.box = tileId.box;
         procBuff.pack<BoxedTilingIndicesMsg>(msg);
-
-        if (phase != 0) {
-          ++sendCount;
-        }
       }
       else if (phase == 1){
         residencyMap[tileId].push_back(OwnedBox3D{mpiRank,tileId.box});
@@ -277,9 +272,6 @@ void findGhostingRegionResidentsDDEfficient(const SuperTile3D &tilingPattern, MP
       commsparse.communicate();
     }
   }
-  // std::cout  << "p_" << mpiRank << ": (domain) sent " << sendCount << " boxes" << std::endl;
-
-  int recvCount = 0;
   for(int proc=0; proc < mpiSize; ++proc) {
     if (proc == mpiRank) {
       continue;
@@ -292,10 +284,8 @@ void findGhostingRegionResidentsDDEfficient(const SuperTile3D &tilingPattern, MP
       TilingIndices tileId{msg.xIdx, msg.yIdx, msg.zIdx};
       residencyMap[tileId].push_back(OwnedBox3D{msg.pRank, msg.box});
 
-      ++recvCount;
     }
   }
-  // std::cout  << "p_" << mpiRank << ": (ghosting region) received " << recvCount << " boxes" << std::endl;
 }
 
 

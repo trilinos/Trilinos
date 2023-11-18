@@ -52,7 +52,7 @@ class ParsedEval : public ParsedEvalBase
 public:
   ParsedEval() = default;
 
-  ParsedEval(Eval& eval)
+  ParsedEval(const Eval& eval)
     : ParsedEvalBase(),
       m_numVariables(eval.get_variable_count()),
       m_requiredResultBufferSize(eval.get_result_buffer_size()),
@@ -63,6 +63,7 @@ public:
       m_hostNodes(Kokkos::view_alloc(Kokkos::WithoutInitializing, "hostNodeTree"), eval.get_node_count())
   {
     STK_ThrowRequireMsg(eval.getParseStatus(), "Expression '" << eval.getExpression() << "' did not parse successfully");
+
     STK_ThrowRequireMsg(RESULT_BUFFER_SIZE >= eval.get_result_buffer_size(), "ParsedEval result buffer size ("
                     << RESULT_BUFFER_SIZE << ") must be at least " << eval.get_result_buffer_size()
                     << " to support expression");

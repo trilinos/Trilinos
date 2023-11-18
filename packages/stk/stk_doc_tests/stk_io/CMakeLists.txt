@@ -40,15 +40,25 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/howToWriteMeshWithInternal
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/QueryExoVars.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/RenamedInputFields.cpp")
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_io_doc_tests
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_io_doc_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
     NOEXEPREFIX
-    )
+  )
+else()
+  add_executable(stk_io_doc_tests ${SOURCES})
+  target_link_libraries(stk_io_doc_tests PUBLIC stk_io_util)
+  target_link_libraries(stk_io_doc_tests PUBLIC stk_io)
+  target_link_libraries(stk_io_doc_tests PUBLIC stk_unit_test_utils)
+  target_link_libraries(stk_io_doc_tests PUBLIC stk_mesh_fixtures)
+  target_link_libraries(stk_io_doc_tests PUBLIC stk_unit_main)
+
+  add_test(NAME "stk_io_doc_tests" COMMAND stk_io_doc_tests)
+endif()
 
 target_include_directories(stk_io_doc_tests PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
