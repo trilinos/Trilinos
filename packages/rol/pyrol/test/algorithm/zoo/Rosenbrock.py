@@ -11,8 +11,6 @@ class ObjectiveRosenbrock(Objective):
    
     def __init__(self, alpha = 100.0):
         self.alpha = alpha
-        self.const1 = 100.0
-        self.const2 =  20.0
         super().__init__()
 
     def value(self, x, tol):

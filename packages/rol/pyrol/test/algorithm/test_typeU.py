@@ -88,7 +88,7 @@ class TestLineSearch(TestTypeU):
         self.assertTrue(e < self.tol)  # 25 iterations
 
     def test_NewtonKrylov(self):
-        d = "Newton Krylov"
+        d = "Newton-Krylov"
         self.parameterList.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", d)
         e = harness(self.testProblem, self.parameterList)
         self.assertTrue(e < self.tol)  # 25 iterations

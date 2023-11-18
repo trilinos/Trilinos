@@ -32,7 +32,6 @@ class LinearEqualityOperatorHS41(LinearOperator):
         super().__init__()
 
     def apply(self, hv, v, tol):
-        print(v.array)
         hv[0] = v[0] + 2*v[1] + 2*v[2] - v[3]
         
     def applyAdjoint(self, hv, v, tol):
@@ -40,6 +39,7 @@ class LinearEqualityOperatorHS41(LinearOperator):
         hv[1] = 2*v[0]
         hv[2] = 2*v[0]
         hv[3] = - v[0]
+
 
 class HS41(TestProblem):
 
