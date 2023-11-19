@@ -28,9 +28,6 @@ class ObjectiveHS42(Objective):
 
 class LinearEqualityOperatorHS42(LinearOperator):
 
-    def __init__(self):
-        super().__init__()
-
     def apply(self, hv, v, tol):
         hv[0] = v[0]
         

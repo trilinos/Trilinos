@@ -44,7 +44,7 @@ class TestProblem(ABC):
 
     def getLinearInequalityMultiplier(self):
        return None
-    
+
     def getInequalityConstraint(self):
        return None
 
@@ -61,7 +61,7 @@ class TestProblem(ABC):
         bcon = self.getBoundConstraint()
         if bcon is not None:
             problem.addBoundConstraint(bcon)
-        
+
         econ = self.getEqualityConstraint()
         if econ is not None:
             emul = self.getEqualityMultiplier()
@@ -91,5 +91,5 @@ class TestProblem(ABC):
             bcon = Bounds(b, True)
             problem.addLinearConstraint("linear inquality constraint", 
                                         linear_icon, linear_imul, bcon)
-        
+
         return problem, x0, x

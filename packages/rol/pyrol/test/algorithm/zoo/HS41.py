@@ -28,9 +28,6 @@ class ObjectiveHS41(Objective):
 
 class LinearEqualityOperatorHS41(LinearOperator):
 
-    def __init__(self):
-        super().__init__()
-
     def apply(self, hv, v, tol):
         hv[0] = v[0] + 2*v[1] + 2*v[2] - v[3]
         
