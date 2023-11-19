@@ -8,15 +8,14 @@ from zoo import HS42
 
 class TestTypeE(unittest.TestCase):
 
-    def _createMasterList(self, iprint = 1):
-        p = getParametersFromXmlFile("typeE_params.xml")
-        p.sublist("General").set("Output Level", iprint)
-        return p
-
     def setUp(self):
-        self.tol = 1e-8
         self.testProblem = HS42()
-        self.parameterList = self._createMasterList(1)
+        self.tol = 1e-8
+        # Set up a parameter list.
+        p = getParametersFromXmlFile("empty.xml")
+        p.sublist("General").set("Output Level", 1)
+        self.parameterList = p
+        self.parameterList.sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Truncated CG")
 
 
 class TestAugmentedLagrangian(TestTypeE):
@@ -26,6 +25,8 @@ class TestAugmentedLagrangian(TestTypeE):
         self.parameterList.sublist("Step").set("Type", "Augmented Lagrangian")
 
     def test_AugmentedLagrangian(self):
+        self.parameterList.sublist("Step").sublist("Augmented Lagrangian").set("Use Default Initial Penalty Parameter", False)
+        self.parameterList.sublist("Step").sublist("Augmented Lagrangian").set("Initial Penalty Parameter", 5e2)
         e = harness(self.testProblem, self.parameterList)
         self.assertTrue(abs(e) < self.tol)  # 3 iterations
 
@@ -48,6 +49,7 @@ class TestFletcher(TestTypeE):
         self.parameterList.sublist("Step").set("Type", "Fletcher")
 
     def test_Fletcher(self):
+        self.parameterList.sublist("Step").sublist("Fletcher").set("Penalty Parameter", 1e2)
         e = harness(self.testProblem, self.parameterList)
         self.assertTrue(abs(e) < self.tol)  # 1 iteration
 
@@ -59,5 +61,7 @@ class TestStabilizedLCL(TestTypeE):
         self.parameterList.sublist("Step").set("Type", "Stabilized LCL")
 
     def test_StabilizedLCL(self):
+        self.parameterList.sublist("Step").sublist("Stabilized LCL").set("Use Default Initial Penalty Parameter", False)
+        self.parameterList.sublist("Step").sublist("Stabilized LCL").set("Use Default Problem Scaling", False)
         e = harness(self.testProblem, self.parameterList)
         self.assertTrue(abs(e) < self.tol)  # 5 iterations
