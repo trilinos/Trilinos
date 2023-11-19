@@ -29,6 +29,7 @@ class TestAugmentedLagrangian(TestTypeE):
         self.parameterList.sublist("Step").sublist("Augmented Lagrangian").set("Initial Penalty Parameter", 5e2)
         e = harness(self.testProblem, self.parameterList)
         self.assertTrue(abs(e) < self.tol)  # 3 iterations
+        # test01
 
 
 class TestCompositeStep(TestTypeE):
@@ -40,6 +41,7 @@ class TestCompositeStep(TestTypeE):
     def test_CompositeStep(self):
         e = harness(self.testProblem, self.parameterList)
         self.assertTrue(abs(e) < self.tol)  # 3 iterations
+        # test03
 
 
 class TestFletcher(TestTypeE):
@@ -52,6 +54,7 @@ class TestFletcher(TestTypeE):
         self.parameterList.sublist("Step").sublist("Fletcher").set("Penalty Parameter", 1e2)
         e = harness(self.testProblem, self.parameterList)
         self.assertTrue(abs(e) < self.tol)  # 1 iteration
+        # test02
 
 
 class TestStabilizedLCL(TestTypeE):
@@ -65,3 +68,4 @@ class TestStabilizedLCL(TestTypeE):
         self.parameterList.sublist("Step").sublist("Stabilized LCL").set("Use Default Problem Scaling", False)
         e = harness(self.testProblem, self.parameterList)
         self.assertTrue(abs(e) < self.tol)  # 5 iterations
+        # test04

@@ -24,6 +24,8 @@
         </ParameterList>
 
         <ParameterList name="Interior Point">
+            <ParameterList name="Subproblem">
+            </ParameterList>
         </ParameterList>
 
         <ParameterList name="Line Search">
@@ -32,7 +34,7 @@
             <ParameterList name="Quasi-Newton">
             </ParameterList>
         </ParameterList>
-
+        
         <ParameterList name="Stabilized LCL">
         </ParameterList>
 
