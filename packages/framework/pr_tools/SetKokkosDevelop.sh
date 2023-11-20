@@ -18,3 +18,15 @@ message_std "SetKokkosDevelop> INFO: updated kokkos and kokkos-kernels packages 
 
 # Returns to previous path from before running this script
 cd -
+
+ln -s "$PACKAGESPATH/kokkos" "${WORKSPACE:?}/Trilinos/packages/kokkos"
+
+cmake ${WORKSPACE:?}/Trilinos -DKokkos_SOURCE_DIR_OVERRIDE:STRING=kokkos
+
+ln -s "$PACKAGESPATH/kokkos-kernels" "${WORKSPACE:?}/Trilinos/packages/kokkos-kernels"
+
+cmake ${WORKSPACE:?}/Trilinos -DKokkos_SOURCE_DIR_OVERRIDE:STRING=kokkos-kernels
+
+export CXX=$PACKAGESPATH/kokkos/bin/nvcc_wrapper
+
+export OMPI_CXX=$PACKAGESPATH/kokkos-kernels/bin/nvcc_wrapper
