@@ -248,28 +248,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList,comm));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter/") {
-          paramList.set("x-coordinates",coordinates->getDataNonConst(0).get());
-          if (coordinates->getNumVectors() > 1)
-            paramList.set("y-coordinates",coordinates->getDataNonConst(1).get());
-          if (coordinates->getNumVectors() > 2)
-            paramList.set("z-coordinates",coordinates->getDataNonConst(2).get());
-          coordsSet = true;
-
-          // MLParameterInterpreter needs the nullspace information if rebalancing is active!
-          // add default constant null space vector
-          paramList.set("null space: type", "pre-computed");
-          paramList.set("null space: dimension", Teuchos::as<int>(nullspace->getNumVectors()));
-          paramList.set("null space: vectors", nullspace->getDataNonConst(0).get());
-
           if(paramList.isParameter("parameter list: syntax"))
             paramList.remove("parameter list: syntax");
-          std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
-          paramList = *Teuchos::getParametersFromXmlString(paramXML);
-          paramList.set("use kokkos refactor", useKokkos);
-          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
+          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+          mueluParamList->set("multigrid algorithm","sa");
+          mueluParamList->set("use kokkos refactor", useKokkos);
+
+          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter2/") {
           RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+
+          mueluParamList->set("multigrid algorithm","sa");
           mueluParamList->set("use kokkos refactor", useKokkos);
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
         } else
