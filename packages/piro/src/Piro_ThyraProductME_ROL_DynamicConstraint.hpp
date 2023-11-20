@@ -41,8 +41,8 @@
 // @HEADER
 
 
-#ifndef PIRO_TEMPUS_DYNAMIC_CONSTRAINT_HPP
-#define PIRO_TEMPUS_DYNAMIC_CONSTRAINT_HPP
+#ifndef PIRO_THYRAPRODUCTME_ROL_DYNAMICCONSTRAINT_HPP
+#define PIRO_THYRAPRODUCTME_ROL_DYNAMICCONSTRAINT_HPP
 
 
 #include "Thyra_ModelEvaluator.hpp"
@@ -61,7 +61,7 @@ namespace Piro{
 
 
 template<class Real>
-class ThyraProductME_TempusDynamicConstraint : public ROL::DynamicConstraint<Real> {
+class ThyraProductME_ROL_DynamicConstraint : public ROL::DynamicConstraint<Real> {
 private:
   Teuchos::RCP<Tempus::Integrator<Real>> integrator_;
   int num_responses_;
@@ -91,7 +91,7 @@ private:
 
 public:
 
-  ThyraProductME_TempusDynamicConstraint(const Teuchos::RCP<Tempus::Integrator<Real>> & integrator,
+  ThyraProductME_ROL_DynamicConstraint(const Teuchos::RCP<Tempus::Integrator<Real>> & integrator,
     Teuchos::ParameterList& piroParams,
     Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
     Teuchos::RCP<ROL_ObserverBase<Real>> observer = Teuchos::null);
@@ -99,14 +99,14 @@ public:
   // The convention is that the adjoint model provides the application of
   // the adjoint Jacobian and its inverse.  All other operations are
   // provided by the forward model.
-  ThyraProductME_TempusDynamicConstraint(const Teuchos::RCP<Tempus::Integrator<Real>> & forward_integrator,
+  ThyraProductME_ROL_DynamicConstraint(const Teuchos::RCP<Tempus::Integrator<Real>> & forward_integrator,
     const Teuchos::RCP<Tempus::Integrator<Real>> & adjoint_integrator,
     const Teuchos::RCP<Thyra::ModelEvaluator<Real>> & modelAdjoin,
     Teuchos::ParameterList& piroParams,
     Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
     Teuchos::RCP<ROL_ObserverBase<Real>> observer = Teuchos::null);
 
-  virtual ~ThyraProductME_TempusDynamicConstraint() {}
+  virtual ~ThyraProductME_ROL_DynamicConstraint() {}
 
   void setNumResponses(int num_responses) {
     num_responses_ = num_responses;
@@ -181,7 +181,7 @@ public:
 // Constructor with a single model.
 
 template<class Real>
-ThyraProductME_TempusDynamicConstraint<Real>::ThyraProductME_TempusDynamicConstraint(
+ThyraProductME_ROL_DynamicConstraint<Real>::ThyraProductME_ROL_DynamicConstraint(
   const Teuchos::RCP<Tempus::Integrator<Real>>& integrator,
   Teuchos::ParameterList& piroParams,
   Teuchos::EVerbosityLevel verbLevel,
@@ -211,7 +211,7 @@ ThyraProductME_TempusDynamicConstraint<Real>::ThyraProductME_TempusDynamicConstr
 // Constructor with forward and adjoint models.
 
 template<class Real>
-ThyraProductME_TempusDynamicConstraint<Real>::ThyraProductME_TempusDynamicConstraint(
+ThyraProductME_ROL_DynamicConstraint<Real>::ThyraProductME_ROL_DynamicConstraint(
   const Teuchos::RCP<Tempus::Integrator<Real>>& forward_integrator,
   const Teuchos::RCP<Tempus::Integrator<Real>>& adjoint_integrator,
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>>& modelAdjoint,
@@ -239,7 +239,7 @@ ThyraProductME_TempusDynamicConstraint<Real>::ThyraProductME_TempusDynamicConstr
 // Value
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::value(ROL::Vector<Real> &c,
+void ThyraProductME_ROL_DynamicConstraint<Real>::value(ROL::Vector<Real> &c,
                                           const ROL::Vector<Real> &uold,
                                           const ROL::Vector<Real> &unew,
                                           const ROL::Vector<Real> &z,
@@ -262,7 +262,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::value(ROL::Vector<Real> &c,
 // Partial Jacobians
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_uo(ROL::Vector<Real> &jv,
+void ThyraProductME_ROL_DynamicConstraint<Real>::applyJacobian_uo(ROL::Vector<Real> &jv,
                                                      const ROL::Vector<Real> &v,
                                                      const ROL::Vector<Real> &uold,
                                                      const ROL::Vector<Real> &unew,
@@ -275,7 +275,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_uo(ROL::Vector<
   const ROL::ThyraVector<Real>&    rtv_z = dynamic_cast<const ROL::ThyraVector<Real>& >(z);
 
   TEUCHOS_TEST_FOR_EXCEPTION( SMT::isnaninf(rtv_v.getVector()->norm_2()), std::logic_error, 
-    "ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_uo, the norm of rtv_v is not a number." << std::endl);
+    "ThyraProductME_ROL_DynamicConstraint<Real>::applyJacobian_uo, the norm of rtv_v is not a number." << std::endl);
 
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> x(2);
   Teuchos::Array<Real> t(2);
@@ -288,7 +288,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_uo(ROL::Vector<
 } // applyJacobian_uo
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_un(ROL::Vector<Real> &jv,
+void ThyraProductME_ROL_DynamicConstraint<Real>::applyJacobian_un(ROL::Vector<Real> &jv,
                                                      const ROL::Vector<Real> &v,
                                                      const ROL::Vector<Real> &uold,
                                                      const ROL::Vector<Real> &unew,
@@ -301,7 +301,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_un(ROL::Vector<
   const ROL::ThyraVector<Real>&    rtv_z = dynamic_cast<const ROL::ThyraVector<Real>& >(z);
 
   TEUCHOS_TEST_FOR_EXCEPTION( SMT::isnaninf(rtv_v.getVector()->norm_2()), std::logic_error, 
-    "ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_un, the norm of rtv_v is not a number." << std::endl);
+    "ThyraProductME_ROL_DynamicConstraint<Real>::applyJacobian_un, the norm of rtv_v is not a number." << std::endl);
 
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> x(2);
   Teuchos::Array<Real> t(2);
@@ -314,7 +314,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_un(ROL::Vector<
 } // applyJacobian_un
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_z(ROL::Vector<Real> &jv,
+void ThyraProductME_ROL_DynamicConstraint<Real>::applyJacobian_z(ROL::Vector<Real> &jv,
                                                     const ROL::Vector<Real> &v,
                                                     const ROL::Vector<Real> &uold,
                                                     const ROL::Vector<Real> &unew,
@@ -327,7 +327,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_z(ROL::Vector<R
   const ROL::ThyraVector<Real>&    rtv_z = dynamic_cast<const ROL::ThyraVector<Real>& >(z);
 
   TEUCHOS_TEST_FOR_EXCEPTION( SMT::isnaninf(rtv_v.getVector()->norm_2()), std::logic_error, 
-    "ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_z, the norm of rtv_v is not a number." << std::endl);
+    "ThyraProductME_ROL_DynamicConstraint<Real>::applyJacobian_z, the norm of rtv_v is not a number." << std::endl);
 
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> x(2);
   Teuchos::Array<Real> t(2);
@@ -345,7 +345,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyJacobian_z(ROL::Vector<R
 // Adjoint partial Jacobians
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_uo(ROL::Vector<Real> &jv,
+void ThyraProductME_ROL_DynamicConstraint<Real>::applyAdjointJacobian_uo(ROL::Vector<Real> &jv,
                                                             const ROL::Vector<Real> &v,
                                                             const ROL::Vector<Real> &uold,
                                                             const ROL::Vector<Real> &unew,
@@ -358,7 +358,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_uo(ROL::
   const ROL::ThyraVector<Real>&    rtv_z = dynamic_cast<const ROL::ThyraVector<Real>& >(z);
 
   TEUCHOS_TEST_FOR_EXCEPTION( SMT::isnaninf(rtv_v.getVector()->norm_2()), std::logic_error, 
-    "ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_uo, the norm of rtv_v is not a number." << std::endl);
+    "ThyraProductME_ROL_DynamicConstraint<Real>::applyAdjointJacobian_uo, the norm of rtv_v is not a number." << std::endl);
 
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> x(2);
   Teuchos::Array<Real> t(2);
@@ -380,7 +380,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_uo(ROL::
 } // applyAdjointJacobian_uo
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_un(ROL::Vector<Real> &jv,
+void ThyraProductME_ROL_DynamicConstraint<Real>::applyAdjointJacobian_un(ROL::Vector<Real> &jv,
                                                             const ROL::Vector<Real> &v,
                                                             const ROL::Vector<Real> &uold,
                                                             const ROL::Vector<Real> &unew,
@@ -393,7 +393,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_un(ROL::
   const ROL::ThyraVector<Real>&    rtv_z = dynamic_cast<const ROL::ThyraVector<Real>& >(z);
 
   TEUCHOS_TEST_FOR_EXCEPTION( SMT::isnaninf(rtv_v.getVector()->norm_2()), std::logic_error, 
-    "ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_un, the norm of rtv_v is not a number." << std::endl);
+    "ThyraProductME_ROL_DynamicConstraint<Real>::applyAdjointJacobian_un, the norm of rtv_v is not a number." << std::endl);
 
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> x(2);
   Teuchos::Array<Real> t(2);
@@ -414,7 +414,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_un(ROL::
 } // applyAdjointJacobian_un
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_z(ROL::Vector<Real> &jv,
+void ThyraProductME_ROL_DynamicConstraint<Real>::applyAdjointJacobian_z(ROL::Vector<Real> &jv,
                                                            const ROL::Vector<Real> &v,
                                                            const ROL::Vector<Real> &uold,
                                                            const ROL::Vector<Real> &unew,
@@ -427,7 +427,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_z(ROL::V
   const ROL::ThyraVector<Real>&    rtv_z = dynamic_cast<const ROL::ThyraVector<Real>& >(z);
 
   TEUCHOS_TEST_FOR_EXCEPTION( SMT::isnaninf(rtv_v.getVector()->norm_2()), std::logic_error, 
-    "ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_z, the norm of rtv_v is not a number." << std::endl);
+    "ThyraProductME_ROL_DynamicConstraint<Real>::applyAdjointJacobian_z, the norm of rtv_v is not a number." << std::endl);
 
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> x(2);
   Teuchos::Array<Real> t(2);
@@ -443,7 +443,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyAdjointJacobian_z(ROL::V
 // Inverses
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::applyInverseJacobian_un(ROL::Vector<Real> &jv,
+void ThyraProductME_ROL_DynamicConstraint<Real>::applyInverseJacobian_un(ROL::Vector<Real> &jv,
                                                             const ROL::Vector<Real> &v,
                                                             const ROL::Vector<Real> &uold,
                                                             const ROL::Vector<Real> &unew,
@@ -456,7 +456,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyInverseJacobian_un(ROL::
   const ROL::ThyraVector<Real>&    rtv_z = dynamic_cast<const ROL::ThyraVector<Real>& >(z);
 
   TEUCHOS_TEST_FOR_EXCEPTION( SMT::isnaninf(rtv_v.getVector()->norm_2()), std::logic_error, 
-    "ThyraProductME_TempusDynamicConstraint<Real>::applyInverseJacobian_un, the norm of rtv_v is not a number." << std::endl);
+    "ThyraProductME_ROL_DynamicConstraint<Real>::applyInverseJacobian_un, the norm of rtv_v is not a number." << std::endl);
 
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> x(2);
   Teuchos::Array<Real> t(2);
@@ -470,7 +470,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyInverseJacobian_un(ROL::
 } // applyInverseJacobian_un
 
 template<class Real>
-void ThyraProductME_TempusDynamicConstraint<Real>::applyInverseAdjointJacobian_un(ROL::Vector<Real> &jv,
+void ThyraProductME_ROL_DynamicConstraint<Real>::applyInverseAdjointJacobian_un(ROL::Vector<Real> &jv,
                                                                    const ROL::Vector<Real> &v,
                                                                    const ROL::Vector<Real> &uold,
                                                                    const ROL::Vector<Real> &unew,
@@ -483,7 +483,7 @@ void ThyraProductME_TempusDynamicConstraint<Real>::applyInverseAdjointJacobian_u
   const ROL::ThyraVector<Real>&    rtv_z = dynamic_cast<const ROL::ThyraVector<Real>& >(z);
 
   TEUCHOS_TEST_FOR_EXCEPTION( SMT::isnaninf(rtv_v.getVector()->norm_2()), std::logic_error, 
-    "ThyraProductME_TempusDynamicConstraint<Real>::applyInverseAdjointJacobian_un, the norm of rtv_v is not a number." << std::endl);
+    "ThyraProductME_ROL_DynamicConstraint<Real>::applyInverseAdjointJacobian_un, the norm of rtv_v is not a number." << std::endl);
 
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> x(2);
   Teuchos::Array<Real> t(2);

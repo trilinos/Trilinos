@@ -21,7 +21,7 @@ IF (Piro_ENABLE_NOX)
   IF (Piro_ENABLE_Tempus)
     #IF (TPL_ENABLE_MPI)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        AnalysisDriverTempus_MSD
+        AnalysisDriverTranstientROL_MSD
         EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
         EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
         EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
@@ -41,7 +41,53 @@ IF (Piro_ENABLE_NOX)
         NUM_MPI_PROCS 1
         ARGS input_Analysis_ROL_ReducedSpace_Transient_MSD.xml
         PASS_REGULAR_EXPRESSION "TEST PASSED"
-        ADDED_TESTS_NAMES_OUT AnalysisDriverTempus_MSD_NAME 
+        ADDED_TESTS_NAMES_OUT AnalysisDriverTranstientROL_MSD_NAME 
+      )
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        AnalysisDriverTranstient_IR_ROL_MSD
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        SOURCES
+        Main_AnalysisDriver_Tempus.cpp
+        MockModelEval_A_Tpetra.cpp
+        MockModelEval_A_Tpetra.hpp
+        MockModelEval_B_Tpetra.cpp
+        MockModelEval_B_Tpetra.hpp
+        MockModelEval_B_Tpetra_2_parameters.cpp
+        MockModelEval_B_Tpetra_2_parameters.hpp
+        MatrixBased_LOWS.cpp
+        MatrixBased_LOWS.hpp
+        MassSpringDamperModel.cpp
+        MassSpringDamperModel.hpp
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_ReducedSpace_Transient_Integrated_Response_MSD.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+        ADDED_TESTS_NAMES_OUT AnalysisDriverTranstient_IR_ROL_MSD_NAME 
+      )
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        AnalysisDriverTranstientTempus_MSD
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        SOURCES
+        Main_AnalysisDriver_Tempus.cpp
+        MockModelEval_A_Tpetra.cpp
+        MockModelEval_A_Tpetra.hpp
+        MockModelEval_B_Tpetra.cpp
+        MockModelEval_B_Tpetra.hpp
+        MockModelEval_B_Tpetra_2_parameters.cpp
+        MockModelEval_B_Tpetra_2_parameters.hpp
+        MatrixBased_LOWS.cpp
+        MatrixBased_LOWS.hpp
+        MassSpringDamperModel.cpp
+        MassSpringDamperModel.hpp
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_Tempus_Transient_MSD.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+        ADDED_TESTS_NAMES_OUT AnalysisDriverTranstientTempus_MSD_NAME 
       )
     #ENDIF()
     #TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -191,12 +237,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Solve_NOX_ForwardSensitivities_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml
+        input_Analysis_ROL_Tempus_Transient_MSD.xml
         input_Analysis_ROL_ReducedSpace_LineSearch.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml
         input_Analysis_ROL_ReducedSpace_Transient.xml
         input_Analysis_ROL_ReducedSpace_Transient_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_Transient_MSD.xml
+        input_Analysis_ROL_ReducedSpace_Transient_Integrated_Response_MSD.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml
