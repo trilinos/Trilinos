@@ -1355,9 +1355,10 @@ namespace MueLu {
       DresTmp_ = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
       DresTmp_->setObjectLabel("DresTmp");
       Dx_      = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
-    } else
+    } else if (!onlyBoundary22_)
       Dx_      = MultiVectorFactory::Build(A22_->getDomainMap(), numVectors);
-    Dx_->setObjectLabel("Dx");
+    if (!Dx_.is_null())
+      Dx_->setObjectLabel("Dx");
 
     if (!coarseA11_.is_null()) {
       if (!ImporterCoarse11_.is_null() && !implicitTranspose_)
