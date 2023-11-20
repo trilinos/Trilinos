@@ -37,21 +37,38 @@ struct BsrMatrixSpMVTensorCoreFunctorParams {
   int leagueDim_y;
 };
 
-template <typename T>
-struct is_scalar {
-  const static bool value =
-      std::is_same_v<std::remove_cv_t<T>, double> ||
-      std::is_same_v<std::remove_cv_t<T>, float> ||
-      std::is_same_v<std::remove_cv_t<T>, Kokkos::Experimental::half_t>;
-};
-
-/* True if types are all scalar. This excludes complex types and Sacado Vectors
-
+/*! \brief Can the tensor core impl be used in ExecutionSpace to operate on
+    AMatrix, XMatrix, and YMatrix?
 */
-template <typename T1, typename T2, typename T3>
-struct all_scalar {
-  const static bool value =
-      is_scalar<T1>::value && is_scalar<T2>::value && is_scalar<T3>::value;
+template <typename ExecutionSpace, typename AMatrix, typename XMatrix,
+          typename YMatrix>
+class TensorCoresAvailable {
+#if defined(KOKKOS_ENABLE_CUDA)
+  using AScalar = typename AMatrix::non_const_value_type;
+  using YScalar = typename YMatrix::non_const_value_type;
+  using XScalar = typename XMatrix::non_const_value_type;
+
+  using a_mem_space = typename AMatrix::memory_space;
+  using x_mem_space = typename XMatrix::memory_space;
+  using y_mem_space = typename YMatrix::memory_space;
+
+  template <typename T>
+  constexpr static bool is_scalar() {
+    return std::is_scalar_v<T> ||
+           std::is_same_v<std::remove_cv_t<T>, Kokkos::Experimental::half_t>;
+  }
+
+ public:
+  constexpr static inline bool value =
+      Kokkos::SpaceAccessibility<ExecutionSpace, a_mem_space>::accessible &&
+      Kokkos::SpaceAccessibility<ExecutionSpace, x_mem_space>::accessible &&
+      Kokkos::SpaceAccessibility<ExecutionSpace, y_mem_space>::accessible &&
+      is_scalar<AScalar>() && is_scalar<XScalar>() && is_scalar<YScalar>() &&
+      std::is_same_v<ExecutionSpace, Kokkos::Cuda>;
+#else
+ public:
+  constexpr static inline bool value = false;
+#endif
 };
 
 /// \brief Functor for the BsrMatrix SpMV multivector implementation utilizing
@@ -65,7 +82,7 @@ struct all_scalar {
 /// TEAMS_PER_BLOCK_M and TEAMS_PER_BLOCK_N) if non-zero, statically-known
 /// launch parameters to reduce the cost of divmod operations on the GPU. If 0,
 /// provided runtime values will be used instead.
-template <typename AMatrix,
+template <typename execution_space, typename AMatrix,
           typename AFragScalar,  // input matrix type and fragment scalar type
           typename XMatrix, typename XFragScalar, typename YMatrix,
           typename YFragScalar, unsigned FRAG_M, unsigned FRAG_N,
@@ -86,7 +103,7 @@ struct BsrMatrixSpMVTensorCoreFunctor {
       nvcuda::wmma::fragment<accumulator, FRAG_M, FRAG_N, FRAG_K, YFragScalar>;
 
   typedef typename AMatrix::device_type Device;
-  typedef Kokkos::TeamPolicy<typename Device::execution_space> team_policy;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
   typedef typename AMatrix::value_type AScalar;
   typedef typename YMatrix::value_type YScalar;
@@ -198,12 +215,13 @@ struct BsrMatrixSpMVTensorCoreFunctor {
   }
 
   // execute the functor with provided launch parameters
-  void dispatch() {
-    typename BsrMatrixSpMVTensorCoreFunctor::team_policy policy(league_size(),
-                                                                team_size());
+  void dispatch(const execution_space &exec) {
+    typename BsrMatrixSpMVTensorCoreFunctor::team_policy policy(
+        exec, league_size(), team_size());
     policy.set_scratch_size(0, Kokkos::PerTeam(team_scratch_size()));
-    Kokkos::parallel_for("KokkosSparse::BsrMatrixSpMVTensorCoreFunctor", policy,
-                         *this);
+    Kokkos::parallel_for(
+        "KokkosSparse::Experimental::BsrMatrixSpMVTensorCoreFunctor", policy,
+        *this);
   }
 
   /*
@@ -429,7 +447,7 @@ struct BsrMatrixSpMVTensorCoreFunctor {
 /// This is a struct instead of a function for template...using shorthand
 /// Discriminates between non-complex/on-GPU (supported) and otherwise
 /// (unsupported) scalar types, and throws a runtime error for unsupported types
-template <typename AMatrix,
+template <typename execution_space, typename AMatrix,
           typename AFragScalar,  // input matrix type and fragment scalar type
           typename XMatrix, typename XFragScalar, typename YMatrix,
           typename YFragScalar, unsigned FRAG_M, unsigned FRAG_N,
@@ -440,12 +458,14 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   typedef typename XMatrix::value_type XScalar;
 
   template <unsigned X, unsigned Y, unsigned Z>
-  using Dyn = BsrMatrixSpMVTensorCoreFunctor<AMatrix, AFragScalar, XMatrix,
-                                             XFragScalar, YMatrix, YFragScalar,
-                                             FRAG_M, FRAG_N, FRAG_K, X, Y, Z>;
+  using Dyn =
+      BsrMatrixSpMVTensorCoreFunctor<execution_space, AMatrix, AFragScalar,
+                                     XMatrix, XFragScalar, YMatrix, YFragScalar,
+                                     FRAG_M, FRAG_N, FRAG_K, X, Y, Z>;
 
   // to be used when the various matrix types are supported
-  static void tag_dispatch(std::true_type, YScalar alpha, AMatrix a, XMatrix x,
+  static void tag_dispatch(std::true_type, const execution_space &exec,
+                           const YScalar alpha, AMatrix a, XMatrix x,
                            YScalar beta, YMatrix y) {
     BsrMatrixSpMVTensorCoreFunctorParams params =
         Dyn<0, 0, 0>::launch_parameters(alpha, a, x, beta, y);
@@ -453,68 +473,48 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
     if (false) {  // consistency of formatting for next sections
     } else if (1 == params.leagueDim_x && 1 == params.teamsPerBlockM &&
                1 == params.teamsPerBlockN) {
-      Dyn<1, 1, 1>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<1, 1, 1>(alpha, a, x, beta, y, params).dispatch(exec);
     } else if (1 == params.leagueDim_x && 2 == params.teamsPerBlockM &&
                2 == params.teamsPerBlockN) {
-      Dyn<1, 2, 2>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<1, 2, 2>(alpha, a, x, beta, y, params).dispatch(exec);
     } else if (1 == params.leagueDim_x && 4 == params.teamsPerBlockM &&
                4 == params.teamsPerBlockN) {
-      Dyn<1, 4, 4>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<1, 4, 4>(alpha, a, x, beta, y, params).dispatch(exec);
     } else if (1 == params.leagueDim_x && 8 == params.teamsPerBlockM &&
                8 == params.teamsPerBlockN) {
-      Dyn<1, 8, 8>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<1, 8, 8>(alpha, a, x, beta, y, params).dispatch(exec);
     } else if (2 == params.leagueDim_x && 1 == params.teamsPerBlockM &&
                1 == params.teamsPerBlockN) {
-      Dyn<2, 1, 1>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<2, 1, 1>(alpha, a, x, beta, y, params).dispatch(exec);
     } else if (2 == params.leagueDim_x && 2 == params.teamsPerBlockM &&
                2 == params.teamsPerBlockN) {
-      Dyn<2, 2, 2>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<2, 2, 2>(alpha, a, x, beta, y, params).dispatch(exec);
     } else if (2 == params.leagueDim_x && 4 == params.teamsPerBlockM &&
                4 == params.teamsPerBlockN) {
-      Dyn<2, 4, 4>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<2, 4, 4>(alpha, a, x, beta, y, params).dispatch(exec);
     } else if (2 == params.leagueDim_x && 8 == params.teamsPerBlockM &&
                8 == params.teamsPerBlockN) {
-      Dyn<2, 8, 8>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<2, 8, 8>(alpha, a, x, beta, y, params).dispatch(exec);
     } else {
-      Dyn<0, 0, 0>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<0, 0, 0>(alpha, a, x, beta, y, params).dispatch(exec);
     }
   }
 
   // to be used to avoid instantiating on unsupported types
-  static void tag_dispatch(std::false_type, YScalar, AMatrix, XMatrix, YScalar,
-                           YMatrix) {
-    const std::type_info &tia = typeid(AScalar);
-    const std::type_info &tix = typeid(XScalar);
-    const std::type_info &tiy = typeid(YScalar);
-
-    std::stringstream ss;
-
-    ss << "Tensor core SpMV is only supported for scalar types in GPU "
-          "execution spaces.";
-    ss << " AScalar was " << tia.name() << ".";
-    ss << " XScalar was " << tix.name() << ".";
-    ss << " YScalar was " << tiy.name() << ".";
-
-    KokkosKernels::Impl::throw_runtime_exception(ss.str());
+  static void tag_dispatch(std::false_type, const execution_space &, YScalar,
+                           AMatrix, XMatrix, YScalar, YMatrix) {
+    KokkosKernels::Impl::throw_runtime_exception(
+        "Tensor core SpMV is only supported for non-complex types in GPU "
+        "execution spaces");
   }
-
-  /*true if T1::execution_space, T2, or T3 are all GPU exec space*/
-  template <typename T1, typename T2, typename T3>
-  struct all_gpu {
-    const static bool value = KokkosKernels::Impl::kk_is_gpu_exec_space<T1>() &&
-                              KokkosKernels::Impl::kk_is_gpu_exec_space<T2>() &&
-                              KokkosKernels::Impl::kk_is_gpu_exec_space<T3>();
-  };
-
-  static void dispatch(YScalar alpha, AMatrix a, XMatrix x, YScalar beta,
-                       YMatrix y) {
+  static void dispatch(const execution_space &exec, YScalar alpha, AMatrix a,
+                       XMatrix x, YScalar beta, YMatrix y) {
     // tag will be false unless all conditions are met
-    using tag = std::integral_constant<
-        bool, all_scalar<AScalar, XScalar, YScalar>::value &&
-                  all_gpu<typename AMatrix::execution_space,
-                          typename XMatrix::execution_space,
-                          typename YMatrix::execution_space>::value>;
-    tag_dispatch(tag{}, alpha, a, x, beta, y);
+    using tag =
+        std::integral_constant<bool,
+                               TensorCoresAvailable<execution_space, AMatrix,
+                                                    XMatrix, YMatrix>::value>;
+    tag_dispatch(tag{}, exec, alpha, a, x, beta, y);
   }
 };
 
@@ -682,6 +682,7 @@ template <class AT, class AO, class AD, class AS, class AlphaType,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatVec_no_transpose(
+    const typename AD::execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
@@ -691,9 +692,9 @@ void spMatVec_no_transpose(
   // if y contains NaN but beta = 0, the result y should be filled with 0.
   // For example, this is useful for passing in uninitialized y and beta=0.
   if (beta == Kokkos::ArithTraits<BetaType>::zero())
-    Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
-  else
-    KokkosBlas::scal(y, beta, y);
+    Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
+  else if (beta != Kokkos::ArithTraits<BetaType>::one())
+    KokkosBlas::scal(exec, y, beta, y);
 
   //
   // Treat the case y <- alpha * A * x + beta * y
@@ -720,14 +721,14 @@ void spMatVec_no_transpose(
         "KokkosSparse::bspmv<NoTranspose,Dynamic>",
         Kokkos::RangePolicy<
             typename AMatrix_Internal::device_type::execution_space,
-            Kokkos::Schedule<Kokkos::Dynamic>>(0, A.numRows()),
+            Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, A.numRows()),
         func);
   } else {
     Kokkos::parallel_for(
         "KokkosSparse::bspmv<NoTranspose,Static>",
         Kokkos::RangePolicy<
             typename AMatrix_Internal::device_type::execution_space,
-            Kokkos::Schedule<Kokkos::Static>>(0, A.numRows()),
+            Kokkos::Schedule<Kokkos::Static>>(exec, 0, A.numRows()),
         func);
   }
 }
@@ -742,6 +743,7 @@ template <class AT, class AO, class AD, class AS, class AlphaType,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatVec_no_transpose(
+    const typename AD::execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
@@ -804,11 +806,11 @@ void spMatVec_no_transpose(
     if (team_size < 0)
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-          worksets, Kokkos::AUTO, vector_length);
+          exec, worksets, Kokkos::AUTO, vector_length);
     else
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-          worksets, team_size, vector_length);
+          exec, worksets, team_size, vector_length);
     Kokkos::parallel_for("KokkosSparse::bspmv<NoTranspose,Dynamic>", policy,
                          func);
   } else {
@@ -817,11 +819,11 @@ void spMatVec_no_transpose(
     if (team_size < 0)
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, Kokkos::AUTO, vector_length);
+              exec, worksets, Kokkos::AUTO, vector_length);
     else
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, team_size, vector_length);
+              exec, worksets, team_size, vector_length);
     Kokkos::parallel_for("KokkosSparse::bspmv<NoTranspose, Static>", policy,
                          func);
   }
@@ -993,6 +995,7 @@ template <class AT, class AO, class AD, class AS, class AlphaType,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatVec_transpose(
+    const typename AD::execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
@@ -1002,9 +1005,9 @@ void spMatVec_transpose(
   // if y contains NaN but beta = 0, the result y should be filled with 0.
   // For example, this is useful for passing in uninitialized y and beta=0.
   if (beta == Kokkos::ArithTraits<BetaType>::zero())
-    Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
-  else
-    KokkosBlas::scal(y, beta, y);
+    Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
+  else if (beta != Kokkos::ArithTraits<BetaType>::one())
+    KokkosBlas::scal(exec, y, beta, y);
 
   if (alpha == Kokkos::ArithTraits<AlphaType>::zero()) return;
 
@@ -1052,7 +1055,8 @@ template <class AMatrix, class AlphaType, class XVector, class BetaType,
           class YVector,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
-void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
+void spMatVec_transpose(const typename AMatrix::execution_space &exec,
+                        const KokkosKernels::Experimental::Controls &controls,
                         const AlphaType &alpha, const AMatrix &A,
                         const XVector &x, const BetaType &beta, YVector &y,
                         bool useConjugate) {
@@ -1064,7 +1068,10 @@ void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
 
   const auto block_dim = A.blockDim();
 
-  KokkosBlas::scal(y, beta, y);
+  if (beta == Kokkos::ArithTraits<BetaType>::zero())
+    Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
+  else if (beta != Kokkos::ArithTraits<BetaType>::one())
+    KokkosBlas::scal(exec, y, beta, y);
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
   bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -1111,11 +1118,11 @@ void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
 
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
-        policy(1, 1);
+        policy(exec, 1, 1);
     if (team_size < 0)
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-                   worksets, Kokkos::AUTO, vector_length)
+                   exec, worksets, Kokkos::AUTO, vector_length)
                    .set_scratch_size(
                        0, Kokkos::PerTeam(
                               block_dim *
@@ -1123,7 +1130,7 @@ void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
     else
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-                   worksets, team_size, vector_length)
+                   exec, worksets, team_size, vector_length)
                    .set_scratch_size(
                        0, Kokkos::PerTeam(
                               block_dim *
@@ -1132,11 +1139,11 @@ void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
                          func);
   } else {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>
-        policy(1, 1);
+        policy(exec, 1, 1);
     if (team_size < 0)
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, Kokkos::AUTO, vector_length)
+              exec, worksets, Kokkos::AUTO, vector_length)
               .set_scratch_size(
                   0, Kokkos::PerTeam(
                          block_dim *
@@ -1144,7 +1151,7 @@ void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
     else
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, team_size, vector_length)
+              exec, worksets, team_size, vector_length)
               .set_scratch_size(
                   0, Kokkos::PerTeam(
                          block_dim *
@@ -1317,6 +1324,7 @@ template <class AT, class AO, class AD, class AS, class AlphaType,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatMultiVec_no_transpose(
+    const typename AD::execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
@@ -1326,9 +1334,9 @@ void spMatMultiVec_no_transpose(
   // if y contains NaN but beta = 0, the result y should be filled with 0.
   // For example, this is useful for passing in uninitialized y and beta=0.
   if (beta == Kokkos::ArithTraits<BetaType>::zero())
-    Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
-  else
-    KokkosBlas::scal(y, beta, y);
+    Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
+  else if (beta != Kokkos::ArithTraits<BetaType>::one())
+    KokkosBlas::scal(exec, y, beta, y);
   //
   // Treat the case y <- alpha * A * x + beta * y
   //
@@ -1376,6 +1384,7 @@ template <class AT, class AO, class AD, class AS, class AlphaType,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatMultiVec_no_transpose(
+    const typename AD::execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
@@ -1434,15 +1443,15 @@ void spMatMultiVec_no_transpose(
 
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
-        policy(1, 1);
+        policy(exec, 1, 1);
     if (team_size < 0)
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-          worksets, Kokkos::AUTO, vector_length);
+          exec, worksets, Kokkos::AUTO, vector_length);
     else
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-          worksets, team_size, vector_length);
+          exec, worksets, team_size, vector_length);
     Kokkos::parallel_for("KokkosSparse::bsr_spm_mv<NoTranspose,Dynamic>",
                          policy, func);
   } else {
@@ -1451,20 +1460,19 @@ void spMatMultiVec_no_transpose(
     if (team_size < 0)
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, Kokkos::AUTO, vector_length);
+              exec, worksets, Kokkos::AUTO, vector_length);
     else
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, team_size, vector_length);
+              exec, worksets, team_size, vector_length);
     Kokkos::parallel_for("KokkosSparse::bsr_spm_mv<NoTranspose, Static>",
                          policy, func);
   }
 }
 
 /* ******************* */
-template <class AMatrix, class XVector, class YVector>
+template <class execution_space, class AMatrix, class XVector, class YVector>
 struct BSR_GEMM_Transpose_Functor {
-  typedef typename AMatrix::execution_space execution_space;
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
@@ -1641,11 +1649,12 @@ struct BSR_GEMM_Transpose_Functor {
 
 /// \brief  spMatMultiVec_transpose: version for CPU execution spaces
 /// (RangePolicy or trivial serial impl used)
-template <class AT, class AO, class AD, class AS, class AlphaType,
-          class XVector, class BetaType, class YVector,
+template <class execution_space, class AT, class AO, class AD, class AS,
+          class AlphaType, class XVector, class BetaType, class YVector,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatMultiVec_transpose(
+    const execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
@@ -1655,16 +1664,15 @@ void spMatMultiVec_transpose(
   // if y contains NaN but beta = 0, the result y should be filled with 0.
   // For example, this is useful for passing in uninitialized y and beta=0.
   if (beta == Kokkos::ArithTraits<BetaType>::zero())
-    Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
-  else
-    KokkosBlas::scal(y, beta, y);
+    Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
+  else if (beta != Kokkos::ArithTraits<BetaType>::one())
+    KokkosBlas::scal(exec, y, beta, y);
   //
   // Treat the case y <- alpha * A^T * x + beta * y
   //
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
-  typedef typename AMatrix_Internal::execution_space execution_space;
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
   bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -1676,19 +1684,20 @@ void spMatMultiVec_transpose(
     }
   }
 
-  BSR_GEMM_Transpose_Functor<AMatrix_Internal, XVector, YVector> func(
-      alpha, A, x, y, useConjugate);
+  BSR_GEMM_Transpose_Functor<execution_space, AMatrix_Internal, XVector,
+                             YVector>
+      func(alpha, A, x, y, useConjugate);
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::parallel_for(
         "KokkosSparse::bsr_spm_mv<Transpose,Dynamic>",
         Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(
-            0, A.numRows()),
+            exec, 0, A.numRows()),
         func);
   } else {
     Kokkos::parallel_for(
         "KokkosSparse::bsr_spm_mv<Transpose,Static>",
         Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-            0, A.numRows()),
+            exec, 0, A.numRows()),
         func);
   }
 }
@@ -1696,11 +1705,12 @@ void spMatMultiVec_transpose(
 //
 // spMatMultiVec_transpose: version for GPU execution spaces (TeamPolicy used)
 //
-template <class AMatrix, class AlphaType, class XVector, class BetaType,
-          class YVector,
+template <class execution_space, class AMatrix, class AlphaType, class XVector,
+          class BetaType, class YVector,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename YVector::execution_space>()>::type * = nullptr>
+              execution_space>()>::type * = nullptr>
 void spMatMultiVec_transpose(
+    const execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha, const AMatrix &A, const XVector &x,
     const BetaType &beta, YVector &y, bool useConjugate) {
@@ -1708,9 +1718,10 @@ void spMatMultiVec_transpose(
     return;
   }
 
-  KokkosBlas::scal(y, beta, y);
-
-  typedef typename AMatrix::execution_space execution_space;
+  if (beta == Kokkos::ArithTraits<BetaType>::zero())
+    Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
+  else if (beta != Kokkos::ArithTraits<BetaType>::one())
+    KokkosBlas::scal(exec, y, beta, y);
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
   bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -1751,16 +1762,16 @@ void spMatMultiVec_transpose(
     vector_length = std::stoi(controls.getParameter("vector length"));
   }
 
-  BSR_GEMM_Transpose_Functor<AMatrix, XVector, YVector> func(alpha, A, x, y,
-                                                             useConjugate);
+  BSR_GEMM_Transpose_Functor<execution_space, AMatrix, XVector, YVector> func(
+      alpha, A, x, y, useConjugate);
 
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
-        policy(1, 1);
+        policy(exec, 1, 1);
     if (team_size < 0)
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-                   worksets, Kokkos::AUTO, vector_length)
+                   exec, worksets, Kokkos::AUTO, vector_length)
                    .set_scratch_size(
                        0, Kokkos::PerTeam(
                               block_dim * x.extent(1) *
@@ -1768,7 +1779,7 @@ void spMatMultiVec_transpose(
     else
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-                   worksets, team_size, vector_length)
+                   exec, worksets, team_size, vector_length)
                    .set_scratch_size(
                        0, Kokkos::PerTeam(
                               block_dim * x.extent(1) *
@@ -1777,11 +1788,11 @@ void spMatMultiVec_transpose(
                          func);
   } else {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>
-        policy(1, 1);
+        policy(exec, 1, 1);
     if (team_size < 0)
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, Kokkos::AUTO, vector_length)
+              exec, worksets, Kokkos::AUTO, vector_length)
               .set_scratch_size(
                   0, Kokkos::PerTeam(
                          block_dim * x.extent(1) *
@@ -1789,7 +1800,7 @@ void spMatMultiVec_transpose(
     else
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, team_size, vector_length)
+              exec, worksets, team_size, vector_length)
               .set_scratch_size(
                   0, Kokkos::PerTeam(
                          block_dim * x.extent(1) *

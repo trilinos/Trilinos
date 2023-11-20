@@ -18,10 +18,10 @@ TEST_F(TestCategory, batched_scalar_team_gemm_nt_nt_bhalf_bhalf) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
       param_tag_type;
 
-  test_batched_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType,
                         ::Test::bhalfScalarType, param_tag_type,
                         Algo::Gemm::Blocked>();
-  test_batched_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType,
                         ::Test::bhalfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
@@ -29,10 +29,10 @@ TEST_F(TestCategory, batched_scalar_team_gemm_t_nt_bhalf_bhalf) {
   typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
       param_tag_type;
 
-  test_batched_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType,
                         ::Test::bhalfScalarType, param_tag_type,
                         Algo::Gemm::Blocked>();
-  test_batched_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType,
                         ::Test::bhalfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
@@ -40,10 +40,10 @@ TEST_F(TestCategory, batched_scalar_team_gemm_nt_t_bhalf_bhalf) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
       param_tag_type;
 
-  test_batched_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType,
                         ::Test::bhalfScalarType, param_tag_type,
                         Algo::Gemm::Blocked>();
-  test_batched_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType,
                         ::Test::bhalfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
@@ -51,10 +51,10 @@ TEST_F(TestCategory, batched_scalar_team_gemm_t_t_bhalf_bhalf) {
   typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
       param_tag_type;
 
-  test_batched_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType,
                         ::Test::bhalfScalarType, param_tag_type,
                         Algo::Gemm::Blocked>();
-  test_batched_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::bhalfScalarType,
                         ::Test::bhalfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
@@ -65,10 +65,10 @@ TEST_F(TestCategory, batched_scalar_team_gemm_nt_nt_half_half) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
       param_tag_type;
 
-  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::halfScalarType,
                         ::Test::halfScalarType, param_tag_type,
                         Algo::Gemm::Blocked>();
-  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::halfScalarType,
                         ::Test::halfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
@@ -76,10 +76,10 @@ TEST_F(TestCategory, batched_scalar_team_gemm_t_nt_half_half) {
   typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
       param_tag_type;
 
-  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::halfScalarType,
                         ::Test::halfScalarType, param_tag_type,
                         Algo::Gemm::Blocked>();
-  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::halfScalarType,
                         ::Test::halfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
@@ -87,10 +87,10 @@ TEST_F(TestCategory, batched_scalar_team_gemm_nt_t_half_half) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
       param_tag_type;
 
-  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::halfScalarType,
                         ::Test::halfScalarType, param_tag_type,
                         Algo::Gemm::Blocked>();
-  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::halfScalarType,
                         ::Test::halfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
@@ -98,10 +98,10 @@ TEST_F(TestCategory, batched_scalar_team_gemm_t_t_half_half) {
   typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
       param_tag_type;
 
-  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::halfScalarType,
                         ::Test::halfScalarType, param_tag_type,
                         Algo::Gemm::Blocked>();
-  test_batched_teamgemm<TestExecSpace, ::Test::halfScalarType,
+  test_batched_teamgemm<TestDevice, ::Test::halfScalarType,
                         ::Test::halfScalarType, param_tag_type,
                         Algo::Gemm::Unblocked>();
 }
@@ -112,28 +112,28 @@ TEST_F(TestCategory, batched_scalar_team_gemm_nt_nt_float_float) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-  test_batched_teamgemm<TestExecSpace, float, float, param_tag_type,
+  test_batched_teamgemm<TestDevice, float, float, param_tag_type,
                         algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_gemm_t_nt_float_float) {
   typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-  test_batched_teamgemm<TestExecSpace, float, float, param_tag_type,
+  test_batched_teamgemm<TestDevice, float, float, param_tag_type,
                         algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_gemm_nt_t_float_float) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-  test_batched_teamgemm<TestExecSpace, float, float, param_tag_type,
+  test_batched_teamgemm<TestDevice, float, float, param_tag_type,
                         algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_gemm_t_t_float_float) {
   typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-  test_batched_teamgemm<TestExecSpace, float, float, param_tag_type,
+  test_batched_teamgemm<TestDevice, float, float, param_tag_type,
                         algo_tag_type>();
 }
 #endif
@@ -143,28 +143,28 @@ TEST_F(TestCategory, batched_scalar_team_gemm_nt_nt_double_double) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-  test_batched_teamgemm<TestExecSpace, double, double, param_tag_type,
+  test_batched_teamgemm<TestDevice, double, double, param_tag_type,
                         algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_gemm_t_nt_double_double) {
   typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-  test_batched_teamgemm<TestExecSpace, double, double, param_tag_type,
+  test_batched_teamgemm<TestDevice, double, double, param_tag_type,
                         algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_gemm_nt_t_double_double) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-  test_batched_teamgemm<TestExecSpace, double, double, param_tag_type,
+  test_batched_teamgemm<TestDevice, double, double, param_tag_type,
                         algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_gemm_t_t_double_double) {
   typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
-  test_batched_teamgemm<TestExecSpace, double, double, param_tag_type,
+  test_batched_teamgemm<TestDevice, double, double, param_tag_type,
                         algo_tag_type>();
 }
 #endif

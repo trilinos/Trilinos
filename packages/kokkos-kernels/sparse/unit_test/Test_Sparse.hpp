@@ -20,23 +20,20 @@
 #include "Test_Sparse_coo2crs.hpp"
 #endif  // KOKKOS_VERSION >= 40099
 #include "Test_Sparse_crs2coo.hpp"
-#include "Test_Sparse_block_gauss_seidel.hpp"
 #include "Test_Sparse_Controls.hpp"
 #include "Test_Sparse_CrsMatrix.hpp"
-#include "Test_Sparse_BsrMatrix.hpp"
 #include "Test_Sparse_mdf.hpp"
 #include "Test_Sparse_findRelOffset.hpp"
 #include "Test_Sparse_gauss_seidel.hpp"
+#include "Test_Sparse_MergeMatrix.hpp"
 #include "Test_Sparse_replaceSumInto.hpp"
 #include "Test_Sparse_replaceSumIntoLonger.hpp"
 #include "Test_Sparse_spadd.hpp"
 #include "Test_Sparse_spgemm_jacobi.hpp"
 #include "Test_Sparse_spgemm.hpp"
-#include "Test_Sparse_bspgemm.hpp"
 #include "Test_Sparse_SortCrs.hpp"
 #include "Test_Sparse_spiluk.hpp"
 #include "Test_Sparse_spmv.hpp"
-#include "Test_Sparse_spmv_bsr.hpp"
 #include "Test_Sparse_sptrsv.hpp"
 #include "Test_Sparse_trsv.hpp"
 #include "Test_Sparse_par_ilut.hpp"
@@ -53,7 +50,6 @@
 // to actually define tests.
 
 #include "Test_Sparse_Utils_cusparse.hpp"
-
 #include "Test_Sparse_rocsparse.hpp"
 
 #endif  // TEST_SPARSE_HPP

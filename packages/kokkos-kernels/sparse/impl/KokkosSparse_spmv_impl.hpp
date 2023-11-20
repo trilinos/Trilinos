@@ -17,43 +17,26 @@
 #ifndef KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 
+#include <sstream>
+
 #include "KokkosKernels_Controls.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv_impl_omp.hpp"
+#include "KokkosSparse_spmv_impl_merge.hpp"
 #include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
 
-template <class InputType, class DeviceType>
-struct GetCoeffView {
-  typedef Kokkos::View<InputType*, Kokkos::LayoutLeft, DeviceType> view_type;
-  typedef Kokkos::View<typename view_type::non_const_value_type*,
-                       Kokkos::LayoutLeft, DeviceType>
-      non_const_view_type;
-  static non_const_view_type get_view(const InputType in, const int size) {
-    non_const_view_type aview("CoeffView", size);
-    if (size > 0) Kokkos::deep_copy(aview, in);
-    return aview;
-  }
-};
-
-template <class IT, class IL, class ID, class IM, class IS, class DeviceType>
-struct GetCoeffView<Kokkos::View<IT*, IL, ID, IM, IS>, DeviceType> {
-  typedef Kokkos::View<IT*, IL, ID, IM, IS> view_type;
-  static Kokkos::View<IT*, IL, ID, IM, IS> get_view(
-      const Kokkos::View<IT*, IL, ID, IM, IS>& in, int /*size*/) {
-    return in;
-  }
-};
+constexpr const char* KOKKOSSPARSE_ALG_NATIVE_MERGE = "native-merge";
 
 // This TransposeFunctor is functional, but not necessarily performant.
-template <class AMatrix, class XVector, class YVector, bool conjugate>
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          bool conjugate>
 struct SPMV_Transpose_Functor {
-  typedef typename AMatrix::execution_space execution_space;
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
@@ -110,10 +93,9 @@ struct SPMV_Transpose_Functor {
   }
 };
 
-template <class AMatrix, class XVector, class YVector, int dobeta,
-          bool conjugate>
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int dobeta, bool conjugate>
 struct SPMV_Functor {
-  typedef typename AMatrix::execution_space execution_space;
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
@@ -223,8 +205,7 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz,
     max_vector_length = 32;
 #endif
 #ifdef KOKKOS_ENABLE_HIP
-  if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
-    max_vector_length = 64;
+  if (std::is_same<execution_space, Kokkos::HIP>::value) max_vector_length = 64;
 #endif
 
   if (vector_length < 1) {
@@ -268,17 +249,17 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz,
 
 // spmv_beta_no_transpose: version for CPU execution spaces (RangePolicy or
 // trivial serial impl used)
-template <class AMatrix, class XVector, class YVector, int dobeta,
-          bool conjugate,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int dobeta, bool conjugate,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AMatrix::execution_space>()>::type* = nullptr>
+              execution_space>()>::type* = nullptr>
 static void spmv_beta_no_transpose(
+    const execution_space& exec,
     const KokkosKernels::Experimental::Controls& controls,
     typename YVector::const_value_type& alpha, const AMatrix& A,
     const XVector& x, typename YVector::const_value_type& beta,
     const YVector& y) {
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
-  typedef typename AMatrix::execution_space execution_space;
 
   if (A.numRows() <= static_cast<ordinal_type>(0)) {
     return;
@@ -375,6 +356,7 @@ static void spmv_beta_no_transpose(
       (((uintptr_t)(const void*)(y.data()) % 64) == 0) && !conjugate) {
     // Note BMK: this case is typically not called in practice even for OpenMP,
     // since it requires row_block_offsets to have been computed in the graph.
+    // Also, as this is raw OpenMP the execution space instance is not used
     spmv_raw_openmp_no_transpose<AMatrix, XVector, YVector>(alpha, A, x, beta,
                                                             y);
     return;
@@ -390,34 +372,34 @@ static void spmv_beta_no_transpose(
       use_static_schedule = true;
     }
   }
-  SPMV_Functor<AMatrix, XVector, YVector, dobeta, conjugate> func(alpha, A, x,
-                                                                  beta, y, 1);
+  SPMV_Functor<execution_space, AMatrix, XVector, YVector, dobeta, conjugate>
+      func(alpha, A, x, beta, y, 1);
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule)
     Kokkos::parallel_for(
         "KokkosSparse::spmv<NoTranspose,Dynamic>",
         Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(
-            0, A.numRows()),
+            exec, 0, A.numRows()),
         func);
   else
     Kokkos::parallel_for(
         "KokkosSparse::spmv<NoTranspose,Static>",
         Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-            0, A.numRows()),
+            exec, 0, A.numRows()),
         func);
 }
 
 // spmv_beta_no_transpose: version for GPU execution spaces (TeamPolicy used)
-template <class AMatrix, class XVector, class YVector, int dobeta,
-          bool conjugate,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int dobeta, bool conjugate,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AMatrix::execution_space>()>::type* = nullptr>
+              execution_space>()>::type* = nullptr>
 static void spmv_beta_no_transpose(
+    const execution_space& exec,
     const KokkosKernels::Experimental::Controls& controls,
     typename YVector::const_value_type& alpha, const AMatrix& A,
     const XVector& x, typename YVector::const_value_type& beta,
     const YVector& y) {
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
-  typedef typename AMatrix::execution_space execution_space;
 
   if (A.numRows() <= static_cast<ordinal_type>(0)) {
     return;
@@ -453,8 +435,8 @@ static void spmv_beta_no_transpose(
       A.numRows(), A.nnz(), rows_per_thread, team_size, vector_length);
   int64_t worksets = (y.extent(0) + rows_per_team - 1) / rows_per_team;
 
-  SPMV_Functor<AMatrix, XVector, YVector, dobeta, conjugate> func(
-      alpha, A, x, beta, y, rows_per_team);
+  SPMV_Functor<execution_space, AMatrix, XVector, YVector, dobeta, conjugate>
+      func(alpha, A, x, beta, y, rows_per_team);
 
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
@@ -462,11 +444,11 @@ static void spmv_beta_no_transpose(
     if (team_size < 0)
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-          worksets, Kokkos::AUTO, vector_length);
+          exec, worksets, Kokkos::AUTO, vector_length);
     else
       policy = Kokkos::TeamPolicy<execution_space,
                                   Kokkos::Schedule<Kokkos::Dynamic>>(
-          worksets, team_size, vector_length);
+          exec, worksets, team_size, vector_length);
     Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>", policy,
                          func);
   } else {
@@ -475,11 +457,11 @@ static void spmv_beta_no_transpose(
     if (team_size < 0)
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, Kokkos::AUTO, vector_length);
+              exec, worksets, Kokkos::AUTO, vector_length);
     else
       policy =
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
-              worksets, team_size, vector_length);
+              exec, worksets, team_size, vector_length);
     Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>", policy,
                          func);
   }
@@ -487,17 +469,17 @@ static void spmv_beta_no_transpose(
 
 // spmv_beta_transpose: version for CPU execution spaces (RangePolicy or trivial
 // serial impl used)
-template <class AMatrix, class XVector, class YVector, int dobeta,
-          bool conjugate,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int dobeta, bool conjugate,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AMatrix::execution_space>()>::type* = nullptr>
-static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
+              execution_space>()>::type* = nullptr>
+static void spmv_beta_transpose(const execution_space& exec,
+                                typename YVector::const_value_type& alpha,
                                 const AMatrix& A, const XVector& x,
                                 typename YVector::const_value_type& beta,
                                 const YVector& y) {
-  using ordinal_type    = typename AMatrix::non_const_ordinal_type;
-  using size_type       = typename AMatrix::non_const_size_type;
-  using execution_space = typename AMatrix::execution_space;
+  using ordinal_type = typename AMatrix::non_const_ordinal_type;
+  using size_type    = typename AMatrix::non_const_size_type;
 
   if (A.numRows() <= static_cast<ordinal_type>(0)) {
     return;
@@ -506,13 +488,13 @@ static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
   // We need to scale y first ("scaling" by zero just means filling
   // with zeros), since the functor works by atomic-adding into y.
   if (dobeta != 1) {
-    KokkosBlas::scal(y, beta, y);
+    KokkosBlas::scal(exec, y, beta, y);
   }
 
 #if defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) || \
     defined(KOKKOS_ENABLE_THREADS)
   {
-    if (execution_space().concurrency() == 1) {
+    if (exec.concurrency() == 1) {
       /// serial impl
       typedef typename AMatrix::non_const_value_type value_type;
       typedef Kokkos::ArithTraits<value_type> ATV;
@@ -567,25 +549,27 @@ static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
   }
 #endif
 
-  typedef SPMV_Transpose_Functor<AMatrix, XVector, YVector, conjugate> OpType;
+  typedef SPMV_Transpose_Functor<execution_space, AMatrix, XVector, YVector,
+                                 conjugate>
+      OpType;
   typename AMatrix::const_ordinal_type nrow = A.numRows();
   Kokkos::parallel_for("KokkosSparse::spmv<Transpose>",
-                       Kokkos::RangePolicy<execution_space>(0, nrow),
+                       Kokkos::RangePolicy<execution_space>(exec, 0, nrow),
                        OpType(alpha, A, x, y));
 }
 
 // spmv_beta_transpose: version for GPU execution spaces (TeamPolicy used)
-template <class AMatrix, class XVector, class YVector, int dobeta,
-          bool conjugate,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int dobeta, bool conjugate,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AMatrix::execution_space>()>::type* = nullptr>
-static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
+              execution_space>()>::type* = nullptr>
+static void spmv_beta_transpose(const execution_space& exec,
+                                typename YVector::const_value_type& alpha,
                                 const AMatrix& A, const XVector& x,
                                 typename YVector::const_value_type& beta,
                                 const YVector& y) {
-  using ordinal_type    = typename AMatrix::non_const_ordinal_type;
-  using size_type       = typename AMatrix::non_const_size_type;
-  using execution_space = typename AMatrix::execution_space;
+  using ordinal_type = typename AMatrix::non_const_ordinal_type;
+  using size_type    = typename AMatrix::non_const_size_type;
 
   if (A.numRows() <= static_cast<ordinal_type>(0)) {
     return;
@@ -594,7 +578,7 @@ static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
   // We need to scale y first ("scaling" by zero just means filling
   // with zeros), since the functor works by atomic-adding into y.
   if (dobeta != 1) {
-    KokkosBlas::scal(y, beta, y);
+    KokkosBlas::scal(exec, y, beta, y);
   }
 
   // Assuming that no row contains duplicate entries, NNZPerRow
@@ -609,14 +593,15 @@ static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
     max_vector_length = 32;
 #endif
 #ifdef KOKKOS_ENABLE_HIP
-  if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
-    max_vector_length = 64;
+  if (std::is_same<execution_space, Kokkos::HIP>::value) max_vector_length = 64;
 #endif
   while ((vector_length * 2 * 3 <= NNZPerRow) &&
          (vector_length < max_vector_length))
     vector_length *= 2;
 
-  typedef SPMV_Transpose_Functor<AMatrix, XVector, YVector, conjugate> OpType;
+  typedef SPMV_Transpose_Functor<execution_space, AMatrix, XVector, YVector,
+                                 conjugate>
+      OpType;
 
   typename AMatrix::const_ordinal_type nrow = A.numRows();
 
@@ -625,50 +610,63 @@ static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
   const ordinal_type rows_per_thread =
       RowsPerThread<execution_space>(NNZPerRow);
   const ordinal_type team_size =
-      Kokkos::TeamPolicy<execution_space>(rows_per_thread, Kokkos::AUTO,
+      Kokkos::TeamPolicy<execution_space>(exec, rows_per_thread, Kokkos::AUTO,
                                           vector_length)
           .team_size_recommended(op, Kokkos::ParallelForTag());
   const ordinal_type rows_per_team = rows_per_thread * team_size;
   op.rows_per_team                 = rows_per_team;
   const size_type nteams           = (nrow + rows_per_team - 1) / rows_per_team;
-  Kokkos::parallel_for(
-      "KokkosSparse::spmv<Transpose>",
-      Kokkos::TeamPolicy<execution_space>(nteams, team_size, vector_length),
-      op);
+  Kokkos::parallel_for("KokkosSparse::spmv<Transpose>",
+                       Kokkos::TeamPolicy<execution_space>(
+                           exec, nteams, team_size, vector_length),
+                       op);
 }
 
-template <class AMatrix, class XVector, class YVector, int dobeta>
-static void spmv_beta(const KokkosKernels::Experimental::Controls& controls,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int dobeta>
+static void spmv_beta(const execution_space& exec,
+                      const KokkosKernels::Experimental::Controls& controls,
                       const char mode[],
                       typename YVector::const_value_type& alpha,
                       const AMatrix& A, const XVector& x,
                       typename YVector::const_value_type& beta,
                       const YVector& y) {
   if (mode[0] == NoTranspose[0]) {
-    spmv_beta_no_transpose<AMatrix, XVector, YVector, dobeta, false>(
-        controls, alpha, A, x, beta, y);
+    if (controls.getParameter("algorithm") == KOKKOSSPARSE_ALG_NATIVE_MERGE) {
+      SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
+          exec, mode, alpha, A, x, beta, y);
+    } else {
+      spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+                             false>(exec, controls, alpha, A, x, beta, y);
+    }
   } else if (mode[0] == Conjugate[0]) {
-    spmv_beta_no_transpose<AMatrix, XVector, YVector, dobeta, true>(
-        controls, alpha, A, x, beta, y);
+    if (controls.getParameter("algorithm") == KOKKOSSPARSE_ALG_NATIVE_MERGE) {
+      SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
+          exec, mode, alpha, A, x, beta, y);
+    } else {
+      spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+                             true>(exec, controls, alpha, A, x, beta, y);
+    }
   } else if (mode[0] == Transpose[0]) {
-    spmv_beta_transpose<AMatrix, XVector, YVector, dobeta, false>(alpha, A, x,
-                                                                  beta, y);
+    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+                        false>(exec, alpha, A, x, beta, y);
   } else if (mode[0] == ConjugateTranspose[0]) {
-    spmv_beta_transpose<AMatrix, XVector, YVector, dobeta, true>(alpha, A, x,
-                                                                 beta, y);
+    spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+                        true>(exec, alpha, A, x, beta, y);
   } else {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "Invalid Transpose Mode for KokkosSparse::spmv()");
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " Invalid transpose mode " << mode
+       << " for KokkosSparse::spmv()";
+    KokkosKernels::Impl::throw_runtime_exception(ss.str());
   }
 }
 
 // Functor for implementing transpose and conjugate transpose sparse
 // matrix-vector multiply with multivector (2-D View) input and
 // output.  This functor works, but is not necessarily performant.
-template <class AMatrix, class XVector, class YVector, int doalpha, int dobeta,
-          bool conjugate>
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int doalpha, int dobeta, bool conjugate>
 struct SPMV_MV_Transpose_Functor {
-  typedef typename AMatrix::execution_space execution_space;
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix::non_const_value_type A_value_type;
   typedef typename YVector::non_const_value_type y_value_type;
@@ -771,10 +769,9 @@ struct SPMV_MV_Transpose_Functor {
   }
 };
 
-template <class AMatrix, class XVector, class YVector, int doalpha, int dobeta,
-          bool conjugate>
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int doalpha, int dobeta, bool conjugate>
 struct SPMV_MV_LayoutLeft_Functor {
-  typedef typename AMatrix::execution_space execution_space;
   typedef typename AMatrix::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix::non_const_value_type A_value_type;
   typedef typename YVector::non_const_value_type y_value_type;
@@ -1172,11 +1169,12 @@ struct SPMV_MV_LayoutLeft_Functor {
 
 // spmv_alpha_beta_mv_no_transpose: version for CPU execution spaces
 // (RangePolicy)
-template <class AMatrix, class XVector, class YVector, int doalpha, int dobeta,
-          bool conjugate,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int doalpha, int dobeta, bool conjugate,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AMatrix::execution_space>()>::type* = nullptr>
+              execution_space>()>::type* = nullptr>
 static void spmv_alpha_beta_mv_no_transpose(
+    const execution_space& exec,
     const typename YVector::non_const_value_type& alpha, const AMatrix& A,
     const XVector& x, const typename YVector::non_const_value_type& beta,
     const YVector& y) {
@@ -1187,7 +1185,7 @@ static void spmv_alpha_beta_mv_no_transpose(
   }
   if (doalpha == 0) {
     if (dobeta != 1) {
-      KokkosBlas::scal(y, beta, y);
+      KokkosBlas::scal(exec, y, beta, y);
     }
     return;
   } else {
@@ -1200,46 +1198,45 @@ static void spmv_alpha_beta_mv_no_transpose(
 #ifndef KOKKOS_FAST_COMPILE  // This uses templated functions on doalpha and
                              // dobeta and will produce 16 kernels
 
-    typedef SPMV_MV_LayoutLeft_Functor<AMatrix, XVector, YVector, doalpha,
-                                       dobeta, conjugate>
+    typedef SPMV_MV_LayoutLeft_Functor<execution_space, AMatrix, XVector,
+                                       YVector, doalpha, dobeta, conjugate>
         OpType;
-    OpType op(alpha, A, x, beta, y,
-              RowsPerThread<typename AMatrix::execution_space>(NNZPerRow),
+    OpType op(alpha, A, x, beta, y, RowsPerThread<execution_space>(NNZPerRow),
               vector_length);
 
     typename AMatrix::const_ordinal_type nrow = A.numRows();
 
-    Kokkos::parallel_for(
-        "KokkosSparse::spmv<MV,NoTranspose>",
-        Kokkos::RangePolicy<typename AMatrix::execution_space>(0, nrow), op);
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",
+                         Kokkos::RangePolicy<execution_space>(exec, 0, nrow),
+                         op);
 
 #else   // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for
         // alpha/beta
 
-    typedef SPMV_MV_LayoutLeft_Functor<AMatrix, XVector, YVector, 2, 2,
-                                       conjugate>
+    typedef SPMV_MV_LayoutLeft_Functor<execution_space, AMatrix, XVector,
+                                       YVector, 2, 2, conjugate>
         OpType;
 
     typename AMatrix::const_ordinal_type nrow = A.numRows();
 
-    OpType op(alpha, A, x, beta, y,
-              RowsPerThread<typename AMatrix::execution_space>(NNZPerRow),
+    OpType op(alpha, A, x, beta, y, RowsPerThread<execution_space>(NNZPerRow),
               vector_length);
 
-    Kokkos::parallel_for(
-        "KokkosSparse::spmv<MV,NoTranspose>",
-        Kokkos::RangePolicy<typename AMatrix::execution_space>(0, nrow), op);
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",
+                         Kokkos::RangePolicy<execution_space>(exec, 0, nrow),
+                         op);
 #endif  // KOKKOS_FAST_COMPILE
   }
 }
 
 // spmv_alpha_beta_mv_no_transpose: version for GPU execution spaces
 // (TeamPolicy)
-template <class AMatrix, class XVector, class YVector, int doalpha, int dobeta,
-          bool conjugate,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int doalpha, int dobeta, bool conjugate,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AMatrix::execution_space>()>::type* = nullptr>
+              execution_space>()>::type* = nullptr>
 static void spmv_alpha_beta_mv_no_transpose(
+    const execution_space& exec,
     const typename YVector::non_const_value_type& alpha, const AMatrix& A,
     const XVector& x, const typename YVector::non_const_value_type& beta,
     const YVector& y) {
@@ -1251,7 +1248,7 @@ static void spmv_alpha_beta_mv_no_transpose(
   }
   if (doalpha == 0) {
     if (dobeta != 1) {
-      KokkosBlas::scal(y, beta, y);
+      KokkosBlas::scal(exec, y, beta, y);
     }
     return;
   } else {
@@ -1267,63 +1264,62 @@ static void spmv_alpha_beta_mv_no_transpose(
 #ifndef KOKKOS_FAST_COMPILE  // This uses templated functions on doalpha and
                              // dobeta and will produce 16 kernels
 
-    typedef SPMV_MV_LayoutLeft_Functor<AMatrix, XVector, YVector, doalpha,
-                                       dobeta, conjugate>
+    typedef SPMV_MV_LayoutLeft_Functor<execution_space, AMatrix, XVector,
+                                       YVector, doalpha, dobeta, conjugate>
         OpType;
-    OpType op(alpha, A, x, beta, y,
-              RowsPerThread<typename AMatrix::execution_space>(NNZPerRow),
+    OpType op(alpha, A, x, beta, y, RowsPerThread<execution_space>(NNZPerRow),
               vector_length);
 
     typename AMatrix::const_ordinal_type nrow = A.numRows();
 
     const ordinal_type rows_per_thread =
-        RowsPerThread<typename AMatrix::execution_space>(NNZPerRow);
+        RowsPerThread<execution_space>(NNZPerRow);
     const ordinal_type team_size =
-        Kokkos::TeamPolicy<typename AMatrix::execution_space>(
-            rows_per_thread, Kokkos::AUTO, vector_length)
+        Kokkos::TeamPolicy<execution_space>(exec, rows_per_thread, Kokkos::AUTO,
+                                            vector_length)
             .team_size_recommended(op, Kokkos::ParallelForTag());
     const ordinal_type rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow + rows_per_team - 1) / rows_per_team;
     Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",
-                         Kokkos::TeamPolicy<typename AMatrix::execution_space>(
-                             nteams, team_size, vector_length),
+                         Kokkos::TeamPolicy<execution_space>(
+                             exec, nteams, team_size, vector_length),
                          op);
 
 #else   // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for
         // alpha/beta
 
-    typedef SPMV_MV_LayoutLeft_Functor<AMatrix, XVector, YVector, 2, 2,
-                                       conjugate>
+    typedef SPMV_MV_LayoutLeft_Functor<execution_space, AMatrix, XVector,
+                                       YVector, 2, 2, conjugate>
         OpType;
 
     typename AMatrix::const_ordinal_type nrow = A.numRows();
 
-    OpType op(alpha, A, x, beta, y,
-              RowsPerThread<typename AMatrix::execution_space>(NNZPerRow),
+    OpType op(alpha, A, x, beta, y, RowsPerThread<execution_space>(NNZPerRow),
               vector_length);
 
     const ordinal_type rows_per_thread =
-        RowsPerThread<typename AMatrix::execution_space>(NNZPerRow);
+        RowsPerThread<execution_space>(NNZPerRow);
     const ordinal_type team_size =
-        Kokkos::TeamPolicy<typename AMatrix::execution_space>(
-            rows_per_thread, Kokkos::AUTO, vector_length)
+        Kokkos::TeamPolicy<execution_space>(exec, rows_per_thread, Kokkos::AUTO,
+                                            vector_length)
             .team_size_recommended(op, Kokkos::ParallelForTag());
     const ordinal_type rows_per_team = rows_per_thread * team_size;
     const size_type nteams = (nrow + rows_per_team - 1) / rows_per_team;
     Kokkos::parallel_for("KokkosSparse::spmv<MV,NoTranspose>",
-                         Kokkos::TeamPolicy<typename AMatrix::execution_space>(
-                             nteams, team_size, vector_length),
+                         Kokkos::TeamPolicy<execution_space>(
+                             exec, nteams, team_size, vector_length),
                          op);
 #endif  // KOKKOS_FAST_COMPILE
   }
 }
 
 // spmv_alpha_beta_mv_transpose: version for CPU execution spaces (RangePolicy)
-template <class AMatrix, class XVector, class YVector, int doalpha, int dobeta,
-          bool conjugate,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int doalpha, int dobeta, bool conjugate,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AMatrix::execution_space>()>::type* = nullptr>
+              execution_space>()>::type* = nullptr>
 static void spmv_alpha_beta_mv_transpose(
+    const execution_space& exec,
     const typename YVector::non_const_value_type& alpha, const AMatrix& A,
     const XVector& x, const typename YVector::non_const_value_type& beta,
     const YVector& y) {
@@ -1336,45 +1332,46 @@ static void spmv_alpha_beta_mv_transpose(
   // We need to scale y first ("scaling" by zero just means filling
   // with zeros), since the functor works by atomic-adding into y.
   if (dobeta != 1) {
-    KokkosBlas::scal(y, beta, y);
+    KokkosBlas::scal(exec, y, beta, y);
   }
 
   if (doalpha != 0) {
 #ifndef KOKKOS_FAST_COMPILE  // This uses templated functions on doalpha and
                              // dobeta and will produce 16 kernels
 
-    typedef SPMV_MV_Transpose_Functor<AMatrix, XVector, YVector, doalpha,
-                                      dobeta, conjugate>
+    typedef SPMV_MV_Transpose_Functor<execution_space, AMatrix, XVector,
+                                      YVector, doalpha, dobeta, conjugate>
         OpType;
     OpType op(alpha, A, x, beta, y);
 
     const ordinal_type nrow = A.numRows();
-    Kokkos::parallel_for(
-        "KokkosSparse::spmv<MV,Transpose>",
-        Kokkos::RangePolicy<typename AMatrix::execution_space>(0, nrow), op);
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,Transpose>",
+                         Kokkos::RangePolicy<execution_space>(exec, 0, nrow),
+                         op);
 
 #else  // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for
        // alpha/beta
 
-    typedef SPMV_MV_Transpose_Functor<AMatrix, XVector, YVector, 2, 2,
-                                      conjugate, SizeType>
+    typedef SPMV_MV_Transpose_Functor<execution_space, AMatrix, XVector,
+                                      YVector, 2, 2, conjugate, SizeType>
         OpType;
 
     typename AMatrix::const_ordinal_type nrow = A.numRows();
-    Kokkos::parallel_for(
-        "KokkosSparse::spmv<MV,Transpose>",
-        Kokkos::RangePolicy<typename AMatrix::execution_space>(0, nrow), op);
+    Kokkos::parallel_for("KokkosSparse::spmv<MV,Transpose>",
+                         Kokkos::RangePolicy<execution_space>(exec, 0, nrow),
+                         op);
 
 #endif  // KOKKOS_FAST_COMPILE
   }
 }
 
 // spmv_alpha_beta_mv_transpose: version for GPU execution spaces (TeamPolicy)
-template <class AMatrix, class XVector, class YVector, int doalpha, int dobeta,
-          bool conjugate,
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int doalpha, int dobeta, bool conjugate,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AMatrix::execution_space>()>::type* = nullptr>
+              execution_space>()>::type* = nullptr>
 static void spmv_alpha_beta_mv_transpose(
+    const execution_space& exec,
     const typename YVector::non_const_value_type& alpha, const AMatrix& A,
     const XVector& x, const typename YVector::non_const_value_type& beta,
     const YVector& y) {
@@ -1388,7 +1385,7 @@ static void spmv_alpha_beta_mv_transpose(
   // We need to scale y first ("scaling" by zero just means filling
   // with zeros), since the functor works by atomic-adding into y.
   if (dobeta != 1) {
-    KokkosBlas::scal(y, beta, y);
+    KokkosBlas::scal(exec, y, beta, y);
   }
 
   if (doalpha != 0) {
@@ -1406,79 +1403,88 @@ static void spmv_alpha_beta_mv_transpose(
 #ifndef KOKKOS_FAST_COMPILE  // This uses templated functions on doalpha and
                              // dobeta and will produce 16 kernels
 
-    typedef SPMV_MV_Transpose_Functor<AMatrix, XVector, YVector, doalpha,
-                                      dobeta, conjugate>
+    typedef SPMV_MV_Transpose_Functor<execution_space, AMatrix, XVector,
+                                      YVector, doalpha, dobeta, conjugate>
         OpType;
     OpType op(alpha, A, x, beta, y);
 
     const ordinal_type nrow = A.numRows();
     const ordinal_type rows_per_thread =
-        RowsPerThread<typename AMatrix::execution_space>(NNZPerRow);
+        RowsPerThread<execution_space>(NNZPerRow);
     const ordinal_type team_size =
-        Kokkos::TeamPolicy<typename AMatrix::execution_space>(
-            rows_per_thread, Kokkos::AUTO, vector_length)
+        Kokkos::TeamPolicy<execution_space>(exec, rows_per_thread, Kokkos::AUTO,
+                                            vector_length)
             .team_size_recommended(op, Kokkos::ParallelForTag());
     const ordinal_type rows_per_team = rows_per_thread * team_size;
     op.rows_per_team                 = rows_per_team;
     const size_type nteams = (nrow + rows_per_team - 1) / rows_per_team;
     Kokkos::parallel_for("KokkosSparse::spmv<MV,Transpose>",
-                         Kokkos::TeamPolicy<typename AMatrix::execution_space>(
-                             nteams, team_size, vector_length),
+                         Kokkos::TeamPolicy<execution_space>(
+                             exec, nteams, team_size, vector_length),
                          op);
 
 #else  // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for
        // alpha/beta
 
-    typedef SPMV_MV_Transpose_Functor<AMatrix, XVector, YVector, 2, 2,
-                                      conjugate, SizeType>
+    typedef SPMV_MV_Transpose_Functor<execution_space, AMatrix, XVector,
+                                      YVector, 2, 2, conjugate, SizeType>
         OpType;
 
     typename AMatrix::const_ordinal_type nrow = A.numRows();
     OpType op(alpha, A, x, beta, y);
 
     const ordinal_type rows_per_thread =
-        RowsPerThread<typename AMatrix::execution_space>(NNZPerRow);
+        RowsPerThread<execution_space>(NNZPerRow);
     const ordinal_type team_size =
-        Kokkos::TeamPolicy<typename AMatrix::execution_space>(
-            rows_per_thread, Kokkos::AUTO, vector_length)
+        Kokkos::TeamPolicy<execution_space>(exec, rows_per_thread, Kokkos::AUTO,
+                                            vector_length)
             .team_size_recommended(op, Kokkos::ParallelForTag());
     const ordinal_type rows_per_team = rows_per_thread * team_size;
     op.rows_per_team                 = rows_per_team;
     const size_type nteams = (nrow + rows_per_team - 1) / rows_per_team;
     Kokkos::parallel_for("KokkosSparse::spmv<MV,Transpose>",
-                         Kokkos::TeamPolicy<typename AMatrix::execution_space>(
-                             nteams, team_size, vector_length),
+                         Kokkos::TeamPolicy<execution_space>(
+                             exec, nteams, team_size, vector_length),
                          op);
 
 #endif  // KOKKOS_FAST_COMPILE
   }
 }
 
-template <class AMatrix, class XVector, class YVector, int doalpha, int dobeta>
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int doalpha, int dobeta>
 static void spmv_alpha_beta_mv(
-    const char mode[], const typename YVector::non_const_value_type& alpha,
-    const AMatrix& A, const XVector& x,
-    const typename YVector::non_const_value_type& beta, const YVector& y) {
+    const execution_space& exec, const char mode[],
+    const typename YVector::non_const_value_type& alpha, const AMatrix& A,
+    const XVector& x, const typename YVector::non_const_value_type& beta,
+    const YVector& y) {
   if (mode[0] == NoTranspose[0]) {
-    spmv_alpha_beta_mv_no_transpose<AMatrix, XVector, YVector, doalpha, dobeta,
-                                    false>(alpha, A, x, beta, y);
+    spmv_alpha_beta_mv_no_transpose<execution_space, AMatrix, XVector, YVector,
+                                    doalpha, dobeta, false>(exec, alpha, A, x,
+                                                            beta, y);
   } else if (mode[0] == Conjugate[0]) {
-    spmv_alpha_beta_mv_no_transpose<AMatrix, XVector, YVector, doalpha, dobeta,
-                                    true>(alpha, A, x, beta, y);
+    spmv_alpha_beta_mv_no_transpose<execution_space, AMatrix, XVector, YVector,
+                                    doalpha, dobeta, true>(exec, alpha, A, x,
+                                                           beta, y);
   } else if (mode[0] == Transpose[0]) {
-    spmv_alpha_beta_mv_transpose<AMatrix, XVector, YVector, doalpha, dobeta,
-                                 false>(alpha, A, x, beta, y);
+    spmv_alpha_beta_mv_transpose<execution_space, AMatrix, XVector, YVector,
+                                 doalpha, dobeta, false>(exec, alpha, A, x,
+                                                         beta, y);
   } else if (mode[0] == ConjugateTranspose[0]) {
-    spmv_alpha_beta_mv_transpose<AMatrix, XVector, YVector, doalpha, dobeta,
-                                 true>(alpha, A, x, beta, y);
+    spmv_alpha_beta_mv_transpose<execution_space, AMatrix, XVector, YVector,
+                                 doalpha, dobeta, true>(exec, alpha, A, x, beta,
+                                                        y);
   } else {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "Invalid Transpose Mode for KokkosSparse::spmv()");
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " Invalid transpose mode " << mode
+       << " for KokkosSparse::spmv()";
+    KokkosKernels::Impl::throw_runtime_exception(ss.str());
   }
 }
 
-template <class AMatrix, class XVector, class YVector, int doalpha>
-void spmv_alpha_mv(const char mode[],
+template <class execution_space, class AMatrix, class XVector, class YVector,
+          int doalpha>
+void spmv_alpha_mv(const execution_space& exec, const char mode[],
                    const typename YVector::non_const_value_type& alpha,
                    const AMatrix& A, const XVector& x,
                    const typename YVector::non_const_value_type& beta,
@@ -1487,17 +1493,17 @@ void spmv_alpha_mv(const char mode[],
   typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
   if (beta == KAT::zero()) {
-    spmv_alpha_beta_mv<AMatrix, XVector, YVector, doalpha, 0>(mode, alpha, A, x,
-                                                              beta, y);
+    spmv_alpha_beta_mv<execution_space, AMatrix, XVector, YVector, doalpha, 0>(
+        exec, mode, alpha, A, x, beta, y);
   } else if (beta == KAT::one()) {
-    spmv_alpha_beta_mv<AMatrix, XVector, YVector, doalpha, 1>(mode, alpha, A, x,
-                                                              beta, y);
+    spmv_alpha_beta_mv<execution_space, AMatrix, XVector, YVector, doalpha, 1>(
+        exec, mode, alpha, A, x, beta, y);
   } else if (beta == -KAT::one()) {
-    spmv_alpha_beta_mv<AMatrix, XVector, YVector, doalpha, -1>(mode, alpha, A,
-                                                               x, beta, y);
+    spmv_alpha_beta_mv<execution_space, AMatrix, XVector, YVector, doalpha, -1>(
+        exec, mode, alpha, A, x, beta, y);
   } else {
-    spmv_alpha_beta_mv<AMatrix, XVector, YVector, doalpha, 2>(mode, alpha, A, x,
-                                                              beta, y);
+    spmv_alpha_beta_mv<execution_space, AMatrix, XVector, YVector, doalpha, 2>(
+        exec, mode, alpha, A, x, beta, y);
   }
 }
 

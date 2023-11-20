@@ -36,14 +36,17 @@ namespace KokkosBatched {
 ///        C = alpha * op(A) * op(B) + beta * C
 ///
 /// \tparam ArgTransA      Specifies what op does to A:
+///
 ///                        Trans::NoTranspose   for non-transpose
 ///                        Trans::Transpose     for transpose
 ///                        Trans::ConjTranspose for conjugate transpose
 /// \tparam ArgTransB      Specifies what op does to B:
+///
 ///                        Trans::NoTranspose   for non-transpose
 ///                        Trans::Transpose     for transpose
 ///                        Trans::ConjTranspose for conjugate transpose
 /// \tparam ArgBatchSzDim  Specifies where the batch dimension is allocated in
+///
 ///                        AViewType, BViewType, and CViewType:
 ///                        BatchLayout::Left  Batch dimension is leftmost
 ///                        BatchLayout::Right Batch dimension is rightmost
@@ -61,13 +64,16 @@ namespace KokkosBatched {
 ///                        See struct BatchedGemmHandle for details.
 /// \param alpha [in]      Input coefficient used for multiplication with A
 /// \param A [in]          Input matrix, as a 3-rank Kokkos::View
+///
 ///                        If ArgBatchSzDim == "BatchLayout::Right", matrix A is MxKxB
 ///                        If ArgBatchSzDim == "BatchLayout::Left",  matrix A is BxMxK
 /// \param B [in]          Input matrix, as a 3-rank Kokkos::View
+///
 ///                        If ArgBatchSzDim == "BatchLayout::Right", matrix B is KxNxB
 ///                        If ArgBatchSzDim == "BatchLayout::Left",  matrix B is BxKxN
 /// \param beta [in]       Input coefficient used for multiplication with C
 /// \param C [in/out]      Input/Output matrix, as a 3-rank Kokkos::View
+///
 ///                        If ArgBatchSzDim == "BatchLayout::Right", matrix C is MxNxB
 ///                        If ArgBatchSzDim == "BatchLayout::Left",  matrix C is BxMxN
 /// \return 0 upon success, non-zero otherwise

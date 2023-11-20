@@ -70,7 +70,7 @@ struct Functor_TestBlasSerialNrm2 {
     std::string name =
         name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, AlgoTagType> policy(0, _x.extent(0));
+    Kokkos::RangePolicy<execution_space, AlgoTagType> policy(0, _x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
     return;
@@ -125,7 +125,7 @@ struct Functor_TestBlasSerialNrm2MV {
     std::string name =
         name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, AlgoTagType> policy(0, _x.extent(0));
+    Kokkos::RangePolicy<execution_space, AlgoTagType> policy(0, _x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
     return;
@@ -263,25 +263,25 @@ int test_blas_serial_nrm2() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, serial_nrm2_float_float) {
-  test_blas_serial_nrm2<TestExecSpace, float>();
+  test_blas_serial_nrm2<TestDevice, float>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, serial_nrm2_double_double) {
-  test_blas_serial_nrm2<TestExecSpace, double>();
+  test_blas_serial_nrm2<TestDevice, double>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, serial_nrm2_fcomplex_float) {
-  test_blas_serial_nrm2<TestExecSpace, Kokkos::complex<float> >();
+  test_blas_serial_nrm2<TestDevice, Kokkos::complex<float> >();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, serial_nrm2_dcomplex_dcomplex) {
-  test_blas_serial_nrm2<TestExecSpace, Kokkos::complex<double> >();
+  test_blas_serial_nrm2<TestDevice, Kokkos::complex<double> >();
 }
 #endif
 

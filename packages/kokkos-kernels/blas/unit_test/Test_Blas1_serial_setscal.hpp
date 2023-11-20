@@ -87,7 +87,8 @@ struct Functor_TestBlasSerialMatUtil {
     std::string name =
         name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, AlgoTagType> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<typename DeviceType::execution_space, AlgoTagType>
+        policy(0, _a.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
     return 0;
@@ -180,19 +181,19 @@ int test_blas_matutil() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, blas_scalar_serial_set_float_float) {
-  test_blas_matutil<TestExecSpace, float, float, ::Test::BlasSet>();
+  test_blas_matutil<TestDevice, float, float, ::Test::BlasSet>();
 }
 TEST_F(TestCategory, blas_scalar_serial_scale_float_float) {
-  test_blas_matutil<TestExecSpace, float, float, ::Test::BlasScale>();
+  test_blas_matutil<TestDevice, float, float, ::Test::BlasScale>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, blas_scalar_serial_set_double_double) {
-  test_blas_matutil<TestExecSpace, double, double, ::Test::BlasSet>();
+  test_blas_matutil<TestDevice, double, double, ::Test::BlasSet>();
 }
 TEST_F(TestCategory, blas_scalar_serial_scale_double_double) {
-  test_blas_matutil<TestExecSpace, double, double, ::Test::BlasScale>();
+  test_blas_matutil<TestDevice, double, double, ::Test::BlasScale>();
 }
 #endif
 
@@ -200,19 +201,19 @@ TEST_F(TestCategory, blas_scalar_serial_scale_double_double) {
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, blas_scalar_serial_set_dcomplex_dcomplex) {
-  test_blas_matutil<TestExecSpace, Kokkos::complex<double>,
+  test_blas_matutil<TestDevice, Kokkos::complex<double>,
                     Kokkos::complex<double>, ::Test::BlasSet>();
 }
 TEST_F(TestCategory, blas_scalar_serial_scale_dcomplex_dcomplex) {
-  test_blas_matutil<TestExecSpace, Kokkos::complex<double>,
+  test_blas_matutil<TestDevice, Kokkos::complex<double>,
                     Kokkos::complex<double>, ::Test::BlasScale>();
 }
 TEST_F(TestCategory, blas_scalar_serial_set_dcomplex_double) {
-  test_blas_matutil<TestExecSpace, Kokkos::complex<double>, double,
+  test_blas_matutil<TestDevice, Kokkos::complex<double>, double,
                     ::Test::BlasSet>();
 }
 TEST_F(TestCategory, blas_scalar_serial_scale_dcomplex_double) {
-  test_blas_matutil<TestExecSpace, Kokkos::complex<double>, double,
+  test_blas_matutil<TestDevice, Kokkos::complex<double>, double,
                     ::Test::BlasScale>();
 }
 #endif

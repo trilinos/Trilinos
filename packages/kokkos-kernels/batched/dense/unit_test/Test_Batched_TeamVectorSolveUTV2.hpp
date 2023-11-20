@@ -35,6 +35,7 @@ namespace Test {
 template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
           typename PivViewType, typename WorkViewType, typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorSolveUTV2 {
+  using execution_space = typename DeviceType::execution_space;
   MatrixViewType _r, _a, _acopy, _u, _v;
   PivViewType _p;
   VectorViewType _x, _b;
@@ -125,7 +126,7 @@ struct Functor_TestBatchedTeamVectorSolveUTV2 {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);
-    Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space> policy(league_size, Kokkos::AUTO);
 
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();

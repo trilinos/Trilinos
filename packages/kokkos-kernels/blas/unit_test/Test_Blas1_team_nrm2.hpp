@@ -28,7 +28,8 @@
 namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_team_nrm2(int N, int K) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch K teams of the maximum number of threads per team
@@ -39,8 +40,7 @@ void impl_test_team_nrm2(int N, int K) {
 
   view_stride_adapter<ViewTypeA> a("A", N, K);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   Kokkos::fill_random(a.d_view, rand_pool, ScalarA(10));
 
@@ -130,31 +130,27 @@ int test_team_nrm2() {
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_float) {
-  test_team_nrm2<float, TestExecSpace>();
-}
+TEST_F(TestCategory, team_nrm2_float) { test_team_nrm2<float, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_double) {
-  test_team_nrm2<double, TestExecSpace>();
-}
+TEST_F(TestCategory, team_nrm2_double) { test_team_nrm2<double, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_nrm2_complex_double) {
-  test_team_nrm2<Kokkos::complex<double>, TestExecSpace>();
+  test_team_nrm2<Kokkos::complex<double>, TestDevice>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) ||   \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_int) { test_team_nrm2<int, TestExecSpace>(); }
+TEST_F(TestCategory, team_nrm2_int) { test_team_nrm2<int, TestDevice>(); }
 #endif
 
 #endif  // Check for lambda availability in CUDA backend

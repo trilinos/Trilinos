@@ -40,8 +40,6 @@ namespace KokkosBlas {
 /// \param alpha [in] The scalar to apply to A.
 /// \param A [in]     The vector to apply to X.
 /// \param X [in]     The X vector.
-///
-/// \return Y = gamma * Y + alpha * A * X.
 template <class execution_space, class YMV, class AV, class XMV>
 void mult(const execution_space& space, typename YMV::const_value_type& gamma,
           const YMV& Y, typename AV::const_value_type& alpha, const AV& A,
@@ -139,8 +137,6 @@ void mult(const execution_space& space, typename YMV::const_value_type& gamma,
 /// \param alpha [in] The scalar to apply to A.
 /// \param A [in]     The vector to apply to X.
 /// \param X [in]     The X vector.
-///
-/// \return Y = gamma * Y + alpha * A * X.
 template <class YMV, class AV, class XMV>
 void mult(typename YMV::const_value_type& gamma, const YMV& Y,
           typename AV::const_value_type& alpha, const AV& A, const XMV& X) {

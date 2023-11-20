@@ -117,8 +117,7 @@ struct FactorizeModeAndAlgo<Kokkos::Cuda> : FactorizeModeAndAlgoDeviceImpl {};
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct FactorizeModeAndAlgo<Kokkos::Experimental::HIP>
-    : FactorizeModeAndAlgoDeviceImpl {};
+struct FactorizeModeAndAlgo<Kokkos::HIP> : FactorizeModeAndAlgoDeviceImpl {};
 #endif
 
 template <typename ExecutionSpace>
@@ -156,8 +155,7 @@ struct SolveModeAndAlgo<Kokkos::Cuda> : SolveModeAndAlgoDeviceImpl {};
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct SolveModeAndAlgo<Kokkos::Experimental::HIP>
-    : SolveModeAndAlgoDeviceImpl {};
+struct SolveModeAndAlgo<Kokkos::HIP> : SolveModeAndAlgoDeviceImpl {};
 #endif
 
 template <class VT>

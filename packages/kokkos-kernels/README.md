@@ -133,7 +133,7 @@ For a complete list of tunable Kokkos options, run
 spack info kokkos
 ````
 
-#### Settuping a development environment with Spack
+#### Setting up a development environment with Spack
 Spack is generally most useful for installng packages to use.
 If you want to install all *dependencies* of Kokkos Kernels first so that you can actively develop a given Kokkos Kernels source this can still be done. Go to the Kokkos Kernels source code folder and run:
 ````

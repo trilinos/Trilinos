@@ -303,8 +303,10 @@ int main(int argc, char** argv) {
         for (int iterIdx = 0; iterIdx < loop; ++iterIdx) {
           Kokkos::Timer timer;
           // KokkosSparse::spmv(controls, "N", alpha, test_matrix, x, beta, y);
-          KokkosSparse::Impl::spmv_beta<matrix_type, values_type, values_type,
-                                        1>(controls, "N", alpha, test_matrix, x,
+          KokkosSparse::Impl::spmv_beta<Kokkos::DefaultExecutionSpace,
+                                        matrix_type, values_type, values_type,
+                                        1>(Kokkos::DefaultExecutionSpace{},
+                                           controls, "N", alpha, test_matrix, x,
                                            beta, y);
           Kokkos::fence();
           double time = timer.seconds();

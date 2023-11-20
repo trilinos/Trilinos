@@ -27,7 +27,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class XMV, class YMV, class ZMV>
+template <class ExecutionSpace, class XMV, class YMV, class ZMV>
 struct gemv_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -44,6 +44,7 @@ struct gemv_eti_spec_avail {
 #define KOKKOSBLAS2_GEMV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template <>                                                                  \
   struct gemv_eti_spec_avail<                                                  \
+      EXEC_SPACE,                                                              \
       Kokkos::View<const SCALAR**, LAYOUT,                                     \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
@@ -67,14 +68,14 @@ namespace Impl {
 //
 
 // Implementation of KokkosBlas::gemv.
-template <class AViewType, class XViewType, class YViewType,
-          bool tpl_spec_avail =
-              gemv_tpl_spec_avail<AViewType, XViewType, YViewType>::value,
-          bool eti_spec_avail =
-              gemv_eti_spec_avail<AViewType, XViewType, YViewType>::value>
+template <
+    class ExecutionSpace, class AViewType, class XViewType, class YViewType,
+    bool tpl_spec_avail = gemv_tpl_spec_avail<ExecutionSpace, AViewType,
+                                              XViewType, YViewType>::value,
+    bool eti_spec_avail = gemv_eti_spec_avail<ExecutionSpace, AViewType,
+                                              XViewType, YViewType>::value>
 struct GEMV {
-  static void gemv(const typename AViewType::execution_space& space,
-                   const char trans[],
+  static void gemv(const ExecutionSpace& space, const char trans[],
                    typename AViewType::const_value_type& alpha,
                    const AViewType& A, const XViewType& x,
                    typename YViewType::const_value_type& beta,
@@ -130,6 +131,7 @@ struct GEMV {
 
 #define KOKKOSBLAS2_GEMV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   extern template struct GEMV<                                                \
+      EXEC_SPACE,                                                             \
       Kokkos::View<const SCALAR**, LAYOUT,                                    \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
@@ -142,6 +144,7 @@ struct GEMV {
 
 #define KOKKOSBLAS2_GEMV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template struct GEMV<                                                       \
+      EXEC_SPACE,                                                             \
       Kokkos::View<const SCALAR**, LAYOUT,                                    \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \

@@ -356,31 +356,31 @@ int test_batched_vector_view() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, batched_vector_view_simd_float8) {
-  test_batched_vector_view<TestExecSpace, SIMD<float>, 8>();
+  test_batched_vector_view<TestDevice, SIMD<float>, 8>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, batched_vector_view_simd_double4) {
-  test_batched_vector_view<TestExecSpace, SIMD<double>, 4>();
+  test_batched_vector_view<TestDevice, SIMD<double>, 4>();
 }
 TEST_F(TestCategory, batched_vector_view_simd_double8) {
-  test_batched_vector_view<TestExecSpace, SIMD<double>, 8>();
+  test_batched_vector_view<TestDevice, SIMD<double>, 8>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, batched_vector_view_simd_scomplex4) {
-  test_batched_vector_view<TestExecSpace, SIMD<Kokkos::complex<float> >, 4>();
+  test_batched_vector_view<TestDevice, SIMD<Kokkos::complex<float> >, 4>();
 }
 TEST_F(TestCategory, batched_vector_view_simd_scomplex8) {
-  test_batched_vector_view<TestExecSpace, SIMD<Kokkos::complex<float> >, 8>();
+  test_batched_vector_view<TestDevice, SIMD<Kokkos::complex<float> >, 8>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, batched_vector_view_simd_dcomplex2) {
-  test_batched_vector_view<TestExecSpace, SIMD<Kokkos::complex<double> >, 2>();
+  test_batched_vector_view<TestDevice, SIMD<Kokkos::complex<double> >, 2>();
 }
 
 #if defined(KOKKOS_COMPILER_INTEL) && \
@@ -392,7 +392,7 @@ TEST_F(TestCategory, batched_vector_view_simd_dcomplex4) {
 }
 #else
 TEST_F(TestCategory, batched_vector_view_simd_dcomplex4) {
-  test_batched_vector_view<TestExecSpace, SIMD<Kokkos::complex<double> >, 4>();
+  test_batched_vector_view<TestDevice, SIMD<Kokkos::complex<double> >, 4>();
 }
 #endif  // KOKKOS_COMPILER_INTEL
 #endif  // KOKKOSKERNELS_INST_COMPLEX_DOUBLE

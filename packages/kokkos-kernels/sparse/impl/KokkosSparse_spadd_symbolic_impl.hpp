@@ -523,8 +523,7 @@ void spadd_symbolic_impl(
     runSortedCountEntries<KernelHandle, alno_row_view_t_, alno_nnz_view_t_,
                           blno_row_view_t_, blno_nnz_view_t_, clno_row_view_t_>(
         a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
-    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<clno_row_view_t_,
-                                                          execution_space>(
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(
         nrows + 1, c_rowmap);
   } else {
     // note: scoping individual parts of the process to free views sooner,
@@ -542,8 +541,7 @@ void spadd_symbolic_impl(
       Kokkos::parallel_for(
           "KokkosSparse::SpAdd:Symbolic::InputNotSorted::CountEntries",
           range_type(0, nrows), countEntries);
-      KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<offset_view_t,
-                                                            execution_space>(
+      KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(
           nrows + 1, c_rowmap_upperbound);
       Kokkos::deep_copy(c_nnz_upperbound,
                         Kokkos::subview(c_rowmap_upperbound, nrows));
@@ -585,8 +583,7 @@ void spadd_symbolic_impl(
           "KokkosSparse::SpAdd:Symbolic::InputNotSorted::MergeEntries",
           range_type(0, nrows), mergeEntries);
       // compute actual c_rowmap
-      KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<clno_row_view_t_,
-                                                            execution_space>(
+      KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(
           nrows + 1, c_rowmap);
     }
     addHandle->set_a_b_pos(a_pos, b_pos);
