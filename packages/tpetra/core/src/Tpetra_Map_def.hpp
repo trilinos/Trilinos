@@ -140,8 +140,8 @@ namespace { // (anonymous)
         l_myMin = (l_myMin < entry_i) ? l_myMin : entry_i;
         l_myMax = (l_myMax > entry_i) ? l_myMax : entry_i;
         l_firstCont = entry_0;
-        
-        if(entry_i - entry_0 != i  && l_lastCont.loc >= i) {
+
+        if(entry_i - entry_0 != i  && l_lastCont.val >= i) {
           // We're non-contiguous, so the guy before us could be the last contiguous guy
           l_lastCont.val = i-1;
           l_lastCont.loc = entryList[i-1];
@@ -151,7 +151,7 @@ namespace { // (anonymous)
           l_lastCont.val = i;
           l_lastCont.loc = entry_i;
         }
-        
+
       },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<LO,GO>(myMinLoc));
     
     // This switch is intentional, since we're using MinLoc backwards
@@ -720,6 +720,7 @@ namespace Tpetra {
         ++lastContiguousGID_;
       }
       --lastContiguousGID_;
+      // NOTE: i is the first non-contiguous index.
 
       // [firstContiguousGID_, lastContigousGID_] is the initial
       // sequence of contiguous GIDs.  We can start the min and max
@@ -729,7 +730,9 @@ namespace Tpetra {
 
       // Compute the GID -> LID lookup table, _not_ including the
       // initial sequence of contiguous GIDs.
+      LO firstNonContiguous_loc=i;
       {
+        
         const std::pair<size_t, size_t> ncRange (i, entryList_host.extent (0));
         auto nonContigGids_host = subview (entryList_host, ncRange);
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -748,12 +751,14 @@ namespace Tpetra {
         View<GO*, LayoutLeft, device_type>
           nonContigGids (view_alloc ("nonContigGids", WithoutInitializing),
                          nonContigGids_host.size ());
+
+
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
         Kokkos::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
         Kokkos::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         glMap_ = global_to_local_table_type(nonContigGids,
-                                            static_cast<LO> (i));
+                                            firstNonContiguous_loc);
         // Make host version - when memory spaces match these just do trivial assignment
         glMapHost_ = global_to_local_table_host_type(glMap_);
       }
@@ -786,6 +791,8 @@ namespace Tpetra {
       lgMap_ = lgMap;
       // We've already created this, so use it.
       lgMapHost_ = lgMap_host;
+
+
     }
     else {
       minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
@@ -796,7 +803,11 @@ namespace Tpetra {
       firstContiguousGID_ = indexBase_+1;
       lastContiguousGID_ = indexBase_;
       // glMap_ was default constructed, so it's already empty.
+
     }
+
+
+
 
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
@@ -1084,12 +1095,12 @@ namespace Tpetra {
       Kokkos::deep_copy(typename device_type::execution_space(),lgMap,entryList);
       LO lastContiguousGID_loc;
       computeConstantsOnDevice(entryList,minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,lastContiguousGID_loc);
-      lastContiguousGID_loc++;
-      auto nonContigGids = Kokkos::subview(entryList,std::pair<size_t,size_t>(lastContiguousGID_loc,entryList.extent(0)));
+      LO firstNonContiguous_loc = lastContiguousGID_loc+1;
+      auto nonContigGids = Kokkos::subview(entryList,std::pair<size_t,size_t>(firstNonContiguous_loc,entryList.extent(0)));
 
       // NOTE: We do not fill the glMapHost_ and lgMapHost_ views here.  They will be filled lazily later
       glMap_ = global_to_local_table_type(nonContigGids,
-                                          lastContiguousGID_loc);
+                                          firstNonContiguous_loc);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
