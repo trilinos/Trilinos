@@ -601,7 +601,6 @@ namespace Tpetra {
     using GO = global_ordinal_type;
     using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
-
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
       (! Kokkos::is_initialized (), std::runtime_error,
@@ -1046,6 +1045,7 @@ namespace Tpetra {
                 outArg(numGlobalElements_));
     }
 
+
     // mfh 20 Feb 2013: We've never quite done the right thing for
     // duplicate GIDs here.  Duplicate GIDs have always been counted
     // distinctly in numLocalElements_, and thus should get a
@@ -1105,7 +1105,6 @@ namespace Tpetra {
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
      
-
     }
     else {
       minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
@@ -2290,6 +2289,9 @@ namespace Tpetra {
    Map<LocalOrdinal,GlobalOrdinal,Node>::lazyPushToHost() const{
      using exec_space = typename Node::device_type::execution_space;
      if(lgMap_.extent(0) != lgMapHost_.extent(0)) {
+       // NOTE: We check lgMap_ and not glMap_, since the latter can
+       // be somewhat error prone for contiguous maps
+
        // create_mirror_view preserves const-ness.  create_mirror does not
        auto lgMap_host = Kokkos::create_mirror(Kokkos::HostSpace (), lgMap_);       
 
@@ -2298,8 +2300,7 @@ namespace Tpetra {
        Kokkos::deep_copy(exec_space(),lgMap_host,lgMap_);
        exec_space().fence();
        lgMapHost_ = lgMap_host;
-     }
-     if(glMap_.numPairs() != glMapHost_.numPairs()) {
+
        // Make host version - when memory spaces match these just do trivial assignment
        glMapHost_ = global_to_local_table_host_type(glMap_);
      }
