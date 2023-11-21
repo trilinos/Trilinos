@@ -78,9 +78,6 @@ fi
 sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
 atdm_config_load_sparc_dev_module ${sparc_module_name}
 
-module unload cmake
-module load cmake/3.18.0
-
 # Set up stuff related the the host compiler
 
 if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then

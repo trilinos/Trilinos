@@ -719,16 +719,11 @@ struct MPVectorAllocation<ValueType, false> {
       m_space(space), m_p(p), m_sp(sp), m_span(span), m_vector_size(vector_size) {}
 
     inline void execute() {
-      if ( ! m_space.in_parallel() ) {
-        typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
-        const Kokkos::Impl::ParallelFor< VectorConstruct , PolicyType >
-          closure( *this , PolicyType( 0 , m_span ) );
-        closure.execute();
-        m_space.fence();
-      }
-      else {
-        for ( size_t i = 0 ; i < m_span ; ++i ) operator()(i);
-      }
+      typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
+      const Kokkos::Impl::ParallelFor< VectorConstruct , PolicyType >
+        closure( *this , PolicyType( 0 , m_span ) );
+      closure.execute();
+      m_space.fence();
     }
 
     KOKKOS_INLINE_FUNCTION

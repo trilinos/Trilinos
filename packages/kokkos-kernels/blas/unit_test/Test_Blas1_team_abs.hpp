@@ -29,7 +29,8 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_team_abs(int N) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch M teams of the maximum number of threads per team
@@ -109,7 +110,8 @@ void impl_test_team_abs(int N) {
 
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_team_abs_mv(int N, int K) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch K teams of the maximum number of threads per team
@@ -122,8 +124,7 @@ void impl_test_team_abs_mv(int N, int K) {
   view_stride_adapter<ViewTypeA> x("X", N, K);
   view_stride_adapter<ViewTypeB> y("Y", N, K);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(1));
   Kokkos::fill_random(y.d_view, rand_pool, ScalarB(1));
@@ -288,10 +289,10 @@ int test_team_abs_mv() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_abs_float) {
-  test_team_abs<float, float, TestExecSpace>();
+  test_team_abs<float, float, TestDevice>();
 }
 TEST_F(TestCategory, team_abs_mv_float) {
-  test_team_abs_mv<float, float, TestExecSpace>();
+  test_team_abs_mv<float, float, TestDevice>();
 }
 #endif
 
@@ -299,10 +300,10 @@ TEST_F(TestCategory, team_abs_mv_float) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_abs_double) {
-  test_team_abs<double, double, TestExecSpace>();
+  test_team_abs<double, double, TestDevice>();
 }
 TEST_F(TestCategory, team_abs_mv_double) {
-  test_team_abs_mv<double, double, TestExecSpace>();
+  test_team_abs_mv<double, double, TestDevice>();
 }
 #endif
 
@@ -310,30 +311,29 @@ TEST_F(TestCategory, team_abs_mv_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_abs_complex_double) {
-  test_team_abs<Kokkos::complex<double>, Kokkos::complex<double>,
-                TestExecSpace>();
+  test_team_abs<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>();
 }
 TEST_F(TestCategory, team_abs_mv_complex_double) {
   test_team_abs_mv<Kokkos::complex<double>, Kokkos::complex<double>,
-                   TestExecSpace>();
+                   TestDevice>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) ||   \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_abs_int) { test_team_abs<int, int, TestExecSpace>(); }
+TEST_F(TestCategory, team_abs_int) { test_team_abs<int, int, TestDevice>(); }
 TEST_F(TestCategory, team_abs_mv_int) {
-  test_team_abs_mv<int, int, TestExecSpace>();
+  test_team_abs_mv<int, int, TestDevice>();
 }
 #endif
 
 /*#if !defined(KOKKOSKERNELS_ETI_ONLY) &&
 !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) TEST_F( TestCategory,
-team_abs_double_int ) { test_team_abs<double,int,TestExecSpace> ();
+team_abs_double_int ) { test_team_abs<double,int,TestDevice> ();
 }
 TEST_F( TestCategory, team_abs_double_mv_int ) {
-    test_team_abs_mv<double,int,TestExecSpace> ();
+    test_team_abs_mv<double,int,TestDevice> ();
 }
 #endif*/
 

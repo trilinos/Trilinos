@@ -77,8 +77,8 @@ namespace Impl {
 
 /*! \brief Single-thread sequential lower-bound search
 
-    \tparam ViewLike A Kokkos::View or KokkosKernels::Impl::Iota
-    \tparam Pred a binary predicate function
+    \tparam ViewLike A Kokkos::View, KokkosKernels::Impl::Iota, or
+   KokkosSparse::MergeMatrixDiagonal \tparam Pred a binary predicate function
     \param view the view to search
     \param value the value to search for
     \param pred a binary predicate function
@@ -96,9 +96,6 @@ lower_bound_sequential_thread(
   using size_type = typename ViewLike::size_type;
   static_assert(1 == ViewLike::rank,
                 "lower_bound_sequential_thread requires rank-1 views");
-  static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
-                "lower_bound_sequential_thread requires a "
-                "KokkosKernels::Impl::Iota or a Kokkos::View");
 
   size_type i = 0;
   while (i < view.size() && pred(view(i), value)) {
@@ -109,8 +106,8 @@ lower_bound_sequential_thread(
 
 /*! \brief Single-thread binary lower-bound search
 
-    \tparam ViewLike A Kokkos::View or KokkosKernels::Impl::Iota
-    \tparam Pred a binary predicate function
+    \tparam ViewLike A Kokkos::View, KokkosKernels::Impl::Iota, or
+   KokkosSparse::MergeMatrixDiagonal \tparam Pred a binary predicate function
     \param view the view to search
     \param value the value to search for
     \param pred a binary predicate function
@@ -127,9 +124,6 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_binary_thread(
   using size_type = typename ViewLike::size_type;
   static_assert(1 == ViewLike::rank,
                 "lower_bound_binary_thread requires rank-1 views");
-  static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
-                "lower_bound_binary_thread requires a "
-                "KokkosKernels::Impl::Iota or a Kokkos::View");
 
   size_type lo = 0;
   size_type hi = view.size();
@@ -150,8 +144,8 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_binary_thread(
 
 /*! \brief single-thread lower-bound search
 
-    \tparam ViewLike A Kokkos::View or KokkosKernels::Impl::Iota
-    \tparam Pred a binary predicate function
+    \tparam ViewLike A Kokkos::View, KokkosKernels::Impl::Iota, or
+   KokkosSparse::MergeMatrixDiagonal \tparam Pred a binary predicate function
     \param view the view to search
     \param value the value to search for
     \param pred a binary predicate function
@@ -168,9 +162,6 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_thread(
     Pred pred = Pred()) {
   static_assert(1 == ViewLike::rank,
                 "lower_bound_thread requires rank-1 views");
-  static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
-                "lower_bound_thread requires a "
-                "KokkosKernels::Impl::Iota or a Kokkos::View");
   /*
      sequential search makes on average 0.5 * view.size memory accesses
      binary search makes log2(view.size)+1 accesses
@@ -448,7 +439,8 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_team(
     const TeamMember &handle, const ViewLike &view,
     const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
   static_assert(1 == ViewLike::rank, "lower_bound_team requires rank-1 views");
-  static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
+  static_assert(KokkosKernels::Impl::is_iota_v<ViewLike> ||
+                    Kokkos::is_view<ViewLike>::value,
                 "lower_bound_team requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
 

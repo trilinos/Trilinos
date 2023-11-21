@@ -369,11 +369,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
         const int numBasisE = static_cast<int>(offsetsE.extent(0));
         const int numBasisB = static_cast<int>(offsetsB.extent(0));
-  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-        using li = Intrepid2::Experimental::LagrangianInterpolation<PHX::Device>;
-  #else
         using li = Intrepid2::LagrangianInterpolation<PHX::Device>;
-  #endif
 
         //Computing HGRAD coefficients for PHI to interpolate function f(x,y,z) = 1+x+2y+3z
         DynRankView basisCoeffsPHI("basisCoeffsPHI", workset.numOwnedCells(), numBasisPHI);

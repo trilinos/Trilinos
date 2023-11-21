@@ -371,6 +371,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
         run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
 
+        // The smoother complexity depends on the coarse solver.
+        run_sed("'s/Smoother complexity = [0-9]*.[0-9]*/Smoother complexity = <ignored>/'", baseFile);
+
         // Strip template args for some classes
         std::vector<std::string> classes;
         classes.push_back("Xpetra::Matrix");

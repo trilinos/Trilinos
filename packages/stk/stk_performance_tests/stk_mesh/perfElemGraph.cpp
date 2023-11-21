@@ -262,8 +262,8 @@ bool will_deleting_element_create_orphaned_nodes(const stk::mesh::BulkData &bulk
                                                  stk::mesh::Entity localElement,
                                                  const NodeConnectivityInfo &nodeConnInfo)
 {
-  unsigned numNodes = bulkData.num_nodes(localElement);
-  const stk::mesh::Entity * nodes = bulkData.begin(localElement, stk::topology::NODE_RANK);
+  const stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(localElement, stk::topology::NODE_RANK);
+  const unsigned numNodes = nodes.size();
 
   for(unsigned i=0; i<numNodes; ++i)
   {
@@ -285,8 +285,8 @@ void decrement_node_connectivity(const stk::mesh::BulkData &bulkData,
                                  stk::mesh::Entity localElement,
                                  NodeConnectivityInfo &nodeConnInfo)
 {
-  unsigned numNodes = bulkData.num_nodes(localElement);
-  const stk::mesh::Entity * nodes = bulkData.begin(localElement, stk::topology::NODE_RANK);
+  const stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(localElement, stk::topology::NODE_RANK);
+  const unsigned numNodes = nodes.size();
 
   for(unsigned i=0; i<numNodes; ++i)
   {
@@ -301,9 +301,9 @@ void decrement_node_connectivity(const stk::mesh::BulkData &bulkData,
 
 int num_local_elements(const stk::mesh::BulkData &bulkData, stk::mesh::Entity node)
 {
-  int numElems = bulkData.num_elements(node);
+  const stk::mesh::ConnectedEntities elements = bulkData.get_connected_entities(node, stk::topology::ELEM_RANK);
+  int numElems = elements.size();
   int numLocalElems = numElems;
-  const stk::mesh::Entity * elements = bulkData.begin(node, stk::topology::ELEM_RANK);
 
   for(int i=0; i<numElems; ++i)
   {

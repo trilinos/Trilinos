@@ -58,7 +58,7 @@ struct MDF_handle {
   // elimination during the factorization.
   col_ind_type permutation, permutation_inv;
 
-  int verbosity;
+  int verbosity = 0;
 
   crs_matrix_type L, U;
 

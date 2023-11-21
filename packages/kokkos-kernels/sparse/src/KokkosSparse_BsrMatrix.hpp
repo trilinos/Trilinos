@@ -463,7 +463,8 @@ class BsrMatrix {
         blockDim_(blockDimIn) {
     if (blockDim_ < 1) {
       std::ostringstream os;
-      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      os << "KokkosSparse::Experimental::BsrMatrix: Inappropriate block size: "
+         << blockDim_;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
@@ -499,7 +500,8 @@ class BsrMatrix {
 
     if (blockDim_ < 1) {
       std::ostringstream os;
-      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      os << "KokkosSparse::Experimental::BsrMatrix: Inappropriate block size: "
+         << blockDim_;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
@@ -661,7 +663,8 @@ class BsrMatrix {
         blockDim_(blockDimIn) {
     if (blockDim_ < 1) {
       std::ostringstream os;
-      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      os << "KokkosSparse::Experimental::BsrMatrix: Inappropriate block size: "
+         << blockDim_;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
@@ -703,7 +706,8 @@ class BsrMatrix {
       : graph(graph_), values(vals), numCols_(ncols), blockDim_(blockDimIn) {
     if (blockDim_ < 1) {
       std::ostringstream os;
-      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      os << "KokkosSparse::Experimental::BsrMatrix: Inappropriate block size: "
+         << blockDim_;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
@@ -724,7 +728,8 @@ class BsrMatrix {
     blockDim_ = blockDimIn;
     if (blockDim_ < 1) {
       std::ostringstream os;
-      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      os << "KokkosSparse::Experimental::BsrMatrix: Inappropriate block size: "
+         << blockDim_;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 

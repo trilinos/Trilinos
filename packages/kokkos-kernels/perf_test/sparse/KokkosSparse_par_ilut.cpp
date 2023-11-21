@@ -71,9 +71,6 @@ using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
     size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
 using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
-static constexpr bool IS_GPU =
-    KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>();
-
 ///////////////////////////////////////////////////////////////////////////////
 void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
                        const sp_matrix_type& A, int& num_iters)
@@ -132,6 +129,9 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
 
 #ifdef USE_GINKGO
 ///////////////////////////////////////////////////////////////////////////////
+static constexpr bool IS_GPU =
+    KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>();
+
 using ginkgo_exec =
     std::conditional_t<IS_GPU, gko::CudaExecutor, gko::OmpExecutor>;
 

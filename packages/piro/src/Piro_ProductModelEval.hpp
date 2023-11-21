@@ -803,6 +803,7 @@ ProductModelEvaluator<Real>::fromInternalOutArgs(const Thyra::ModelEvaluatorBase
 
     for (auto g_index = 0; g_index < outArgs1.Ng(); ++g_index) {
         outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx, g_index, outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx, g_index));
+        outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx_dot, g_index, outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx_dot, g_index));
         Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
         for (std::size_t i = 0; i < p_indices_.size(); ++i) {
             if (!outArgs1.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index, p_indices_[i]).none()) {
@@ -871,6 +872,7 @@ ProductModelEvaluator<Real>::toInternalOutArgs(const Thyra::ModelEvaluatorBase::
 
     for (auto g_index = 0; g_index < outArgs1.Ng(); ++g_index) {
         outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx, g_index, outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx, g_index));
+        outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx_dot, g_index, outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx_dot, g_index));
         outArgs2.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xx, g_index, outArgs1.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xx, g_index));
         for (std::size_t i = 0; i < p_indices_.size(); ++i) {
             outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDp, g_index, p_indices_[i], outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDp, g_index, 0));

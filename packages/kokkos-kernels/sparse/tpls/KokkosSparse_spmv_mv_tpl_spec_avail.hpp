@@ -21,25 +21,27 @@ namespace KokkosSparse {
 namespace Impl {
 
 // Specialization struct which defines whether a specialization exists
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM,
+template <class ExecutionSpace, class AMatrix, class XVector, class YVector,
           const bool integerScalarType =
-              std::is_integral<typename std::decay<AT>::type>::value>
+              std::is_integral_v<typename AMatrix::non_const_value_type>>
 struct spmv_mv_tpl_spec_avail {
   enum : bool { value = false };
 };
 
-#define KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_CUSPARSE(SCALAR, ORDINAL, OFFSET, \
-                                                     XL, YL, MEMSPACE)        \
-  template <>                                                                 \
-  struct spmv_mv_tpl_spec_avail<                                              \
-      const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, const SCALAR**,  \
-      XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                             \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,         \
-      SCALAR**, YL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                   \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> > {                             \
-    enum : bool { value = true };                                             \
+#define KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_CUSPARSE(SCALAR, ORDINAL, OFFSET,  \
+                                                     XL, YL, MEMSPACE)         \
+  template <>                                                                  \
+  struct spmv_mv_tpl_spec_avail<                                               \
+      Kokkos::Cuda,                                                            \
+      KokkosSparse::CrsMatrix<                                                 \
+          const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET>,              \
+      Kokkos::View<                                                            \
+          const SCALAR**, XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,          \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,     \
+      Kokkos::View<SCALAR**, YL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                 \
+    enum : bool { value = true };                                              \
   };
 
 /* CUSPARSE_VERSION 10300 and lower seem to have a bug in cusparseSpMM

@@ -209,15 +209,17 @@ public:
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const override
   {
+    const int i = this->getStageNumber();
     const int numStages = this->tableau_->numStages();
-    const Teuchos::SerialDenseMatrix<int,Scalar> & A=this->tableau_->A();
-    Scalar aii = A(0,0);
-    for (int i=0; i<numStages; ++i) {
-      if (A(i,i) != 0.0) aii = A(i,i);
-      break;
-    }
-    return (aii == 0.0) ? std::numeric_limits<Scalar>::infinity() : Scalar(1.0)/(dt*aii);
+    TEUCHOS_TEST_FOR_EXCEPTION( (i < 0 || i > numStages-1), std::logic_error,
+         "Invalid stage number, " << i << ".  Valid range is 0 to "
+      << (numStages-1) << "\n"
+      << "(-1 indicates not currently in the stage loop).  Try calling\n"
+      << "getAlpha(dt, i) directly with a valid stage number.\n");
+
+    return getAlpha(dt, i);
   }
+
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const override { return Scalar(1.0); }
 

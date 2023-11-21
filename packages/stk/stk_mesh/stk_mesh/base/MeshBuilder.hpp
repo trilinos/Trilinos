@@ -55,7 +55,7 @@ public:
 
   MeshBuilder& set_communicator(ParallelMachine comm);
   MeshBuilder& set_aura_option(BulkData::AutomaticAuraOption auraOption);
-  MeshBuilder& set_add_fmwk_data(bool addFmwkData);
+  virtual MeshBuilder& set_add_fmwk_data(bool addFmwkData);
 #ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2023-09-27
   // This deprecated function now claims ownership of the argument
   STK_DEPRECATED MeshBuilder& set_field_data_manager(FieldDataManager* fieldDataManager);

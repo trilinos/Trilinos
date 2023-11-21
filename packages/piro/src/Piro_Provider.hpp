@@ -82,12 +82,7 @@ ProviderImpl<T, Functor>::getInstance(const Teuchos::RCP<Teuchos::ParameterList>
 }
 
 template <typename T>
-struct ProviderFunctorBase :
-  public std::unary_function<const Teuchos::RCP<Teuchos::ParameterList> &, Teuchos::RCP<T> > {};
-
-
-template <typename T>
-struct NullProviderFunctor : public ProviderFunctorBase<T> {
+struct NullProviderFunctor {
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const
   {
     return Teuchos::null;
@@ -96,7 +91,7 @@ struct NullProviderFunctor : public ProviderFunctorBase<T> {
 
 
 template <typename T>
-class SharingProviderFunctor : public ProviderFunctorBase<T> {
+class SharingProviderFunctor {
 public:
   SharingProviderFunctor() :
     instance_(Teuchos::null)
@@ -141,7 +136,7 @@ makeSharingProviderFunctor(const Teuchos::RCP<T> &instance)
  *  as sources of auxiliary objects for the different %Piro solvers.
  */
 template <typename T>
-class Provider : public ProviderFunctorBase<T> {
+class Provider {
 public:
   //! \name Constructors
   //@{

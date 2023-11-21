@@ -70,6 +70,6 @@ void testPrintView() {
             "[2x2 multi-vector]\n");
 }
 
-TEST_F(TestCategory, common_print_view) { testPrintView<TestExecSpace>(); }
+TEST_F(TestCategory, common_print_view) { testPrintView<TestDevice>(); }
 
 #endif  // KOKKOSKERNELS_IOTEST_HPP

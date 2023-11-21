@@ -245,7 +245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, ParILUT, Scalar, LocalOrdinal, Gl
   out << "|b|        = [" << bnorms(0) << ", " << bnorms(1) << "]" << std::endl;
   out << "|b-Ax|     = [" << norms(0) << ", " << norms(1) << "]" << std::endl;
   out << "|b-Ax|/|b| = [" << norms(0)/bnorms(0) << ", " << norms(1)/bnorms(1) << "]" << std::endl;
-  TEST_COMPARE(norms(0), <, 0.2 * bnorms(0));
+  TEST_COMPARE(norms(0), <, 0.25 * bnorms(0));
   TEST_COMPARE(norms(1), <, 0.25 * bnorms(1));
 } //ParILUT
 

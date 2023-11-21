@@ -627,9 +627,14 @@ void sort_and_merge_matrix(const exec_space& exec,
     values_out  = values_in;
     return;
   }
+  // Have to do the compression. Create a _shallow_ copy of the input
+  // to preserve it, in case the input and output views are identical
+  // references.
+  auto rowmap_orig  = rowmap_in;
+  auto entries_orig = entries_in;
+  auto values_orig  = values_in;
   // Prefix sum to get rowmap
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<nc_rowmap_t,
-                                                        exec_space>(
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<exec_space>(
       exec, numRows + 1, nc_rowmap_out);
   rowmap_out  = nc_rowmap_out;
   entries_out = entries_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
@@ -642,7 +647,7 @@ void sort_and_merge_matrix(const exec_space& exec,
   Kokkos::parallel_for(
       range_t(exec, 0, numRows),
       Impl::MatrixMergedEntriesFunctor<rowmap_t, entries_t, values_t>(
-          rowmap_in, entries_in, values_in, rowmap_out, entries_out,
+          rowmap_orig, entries_orig, values_orig, rowmap_out, entries_out,
           values_out));
 }
 
@@ -746,12 +751,16 @@ void sort_and_merge_graph(const exec_space& exec,
     entries_out = entries_in;
     return;
   }
+  // Have to do the compression. Create a _shallow_ copy of the input
+  // to preserve it, in case the input and output views are identical
+  // references.
+  auto rowmap_orig  = rowmap_in;
+  auto entries_orig = entries_in;
   // Prefix sum to get rowmap.
   // In the case where the output rowmap is the same as the input, we could just
   // assign "rowmap_out = rowmap_in" except that would break const-correctness.
   // Can skip filling the entries, however.
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<nc_rowmap_t,
-                                                        exec_space>(
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<exec_space>(
       exec, numRows + 1, nc_rowmap_out);
   rowmap_out  = nc_rowmap_out;
   entries_out = entries_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
@@ -760,7 +769,7 @@ void sort_and_merge_graph(const exec_space& exec,
   // Compute merged entries and values
   Kokkos::parallel_for(range_t(exec, 0, numRows),
                        Impl::GraphMergedEntriesFunctor<rowmap_t, entries_t>(
-                           rowmap_in, entries_in, rowmap_out, entries_out));
+                           rowmap_orig, entries_orig, rowmap_out, entries_out));
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t>

@@ -40,14 +40,13 @@ struct ExactCompare {
   V v2;
 };
 
-template <typename exec_space>
+template <typename device_t>
 void testTranspose(int numRows, int numCols, bool doValues) {
+  using exec_space = typename device_t::execution_space;
   using range_pol  = Kokkos::RangePolicy<exec_space>;
   using scalar_t   = default_scalar;
   using lno_t      = default_lno_t;
   using size_type  = default_size_type;
-  using mem_space  = typename exec_space::memory_space;
-  using device_t   = Kokkos::Device<exec_space, mem_space>;
   using crsMat_t   = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t,
                                                     void, size_type>;
   using c_rowmap_t = typename crsMat_t::row_map_type;
@@ -158,13 +157,11 @@ void CompareBsrMatrices(bsrMat_t& A, bsrMat_t& B) {
   EXPECT_EQ(size_type(0), valuesDiffs);
 }
 
-template <typename exec_space>
+template <typename device_t>
 void testTransposeBsrRef() {
   using scalar_t  = default_scalar;
   using lno_t     = default_lno_t;
   using size_type = default_size_type;
-  using mem_space = typename exec_space::memory_space;
-  using device_t  = Kokkos::Device<exec_space, mem_space>;
   using bsrMat_t =
       typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device_t,
                                                      void, size_type>;
@@ -236,13 +233,12 @@ void testTransposeBsrRef() {
   CompareBsrMatrices(At, At_ref);
 }
 
-template <typename exec_space>
+template <typename device_t>
 void testTransposeBsr(int numRows, int numCols, int blockSize) {
-  using scalar_t  = default_scalar;
-  using lno_t     = default_lno_t;
-  using size_type = default_size_type;
-  using mem_space = typename exec_space::memory_space;
-  using device_t  = Kokkos::Device<exec_space, mem_space>;
+  using scalar_t   = default_scalar;
+  using lno_t      = default_lno_t;
+  using size_type  = default_size_type;
+  using exec_space = typename device_t::execution_space;
   using bsrMat_t =
       typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device_t,
                                                      void, size_type>;
@@ -298,32 +294,32 @@ void testTransposeBsr(int numRows, int numCols, int blockSize) {
 
 TEST_F(TestCategory, sparse_transpose_matrix) {
   // Test both matrix and graph transpose with various sizes
-  testTranspose<TestExecSpace>(100, 100, true);
-  testTranspose<TestExecSpace>(500, 50, true);
-  testTranspose<TestExecSpace>(50, 500, true);
-  testTranspose<TestExecSpace>(4000, 2000, true);
-  testTranspose<TestExecSpace>(2000, 4000, true);
-  testTranspose<TestExecSpace>(2000, 2000, true);
+  testTranspose<TestDevice>(100, 100, true);
+  testTranspose<TestDevice>(500, 50, true);
+  testTranspose<TestDevice>(50, 500, true);
+  testTranspose<TestDevice>(4000, 2000, true);
+  testTranspose<TestDevice>(2000, 4000, true);
+  testTranspose<TestDevice>(2000, 2000, true);
 }
 
 TEST_F(TestCategory, sparse_transpose_graph) {
-  testTranspose<TestExecSpace>(100, 100, false);
-  testTranspose<TestExecSpace>(500, 50, false);
-  testTranspose<TestExecSpace>(50, 500, false);
-  testTranspose<TestExecSpace>(4000, 2000, false);
-  testTranspose<TestExecSpace>(2000, 4000, false);
-  testTranspose<TestExecSpace>(2000, 2000, false);
+  testTranspose<TestDevice>(100, 100, false);
+  testTranspose<TestDevice>(500, 50, false);
+  testTranspose<TestDevice>(50, 500, false);
+  testTranspose<TestDevice>(4000, 2000, false);
+  testTranspose<TestDevice>(2000, 4000, false);
+  testTranspose<TestDevice>(2000, 2000, false);
 }
 
 TEST_F(TestCategory, sparse_transpose_bsr_matrix) {
-  testTransposeBsrRef<TestExecSpace>();
+  testTransposeBsrRef<TestDevice>();
   // Test bsrMatrix transpose with various sizes
-  testTransposeBsr<TestExecSpace>(100, 100, 3);
-  testTransposeBsr<TestExecSpace>(500, 50, 5);
-  testTransposeBsr<TestExecSpace>(50, 500, 16);
-  testTransposeBsr<TestExecSpace>(4000, 2000, 3);
-  testTransposeBsr<TestExecSpace>(2000, 4000, 3);
-  testTransposeBsr<TestExecSpace>(2000, 2000, 5);
+  testTransposeBsr<TestDevice>(100, 100, 3);
+  testTransposeBsr<TestDevice>(500, 50, 5);
+  testTransposeBsr<TestDevice>(50, 500, 16);
+  testTransposeBsr<TestDevice>(4000, 2000, 3);
+  testTransposeBsr<TestDevice>(2000, 4000, 3);
+  testTransposeBsr<TestDevice>(2000, 2000, 5);
 }
 
 #endif

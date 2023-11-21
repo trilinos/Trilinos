@@ -132,8 +132,8 @@ struct RKSolve_wrapper {
     auto local_y_new =
         Kokkos::subview(y_new, Kokkos::pair(2 * idx, 2 * idx + 1));
     auto local_tmp = Kokkos::subview(tmp, Kokkos::pair(2 * idx, 2 * idx + 1));
-    auto local_kstack = Kokkos::subview(
-        kstack, Kokkos::pair(2 * idx, 2 * idx + 1), Kokkos::ALL());
+    auto local_kstack = Kokkos::subview(kstack, Kokkos::ALL(),
+                                        Kokkos::pair(2 * idx, 2 * idx + 1));
 
     // Run Runge-Kutta time integrator
     KokkosODE::Impl::RKSolve<ode_type, table_type, vec_type, mv_type, double>(
@@ -178,7 +178,7 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
       table_type table;
       ode_params params(num_steps);
       vec_type tmp("tmp vector", neqs * num_odes);
-      mv_type kstack("k stack", neqs * num_odes, table.nstages);
+      mv_type kstack("k stack", table.nstages, neqs * num_odes);
 
       // Set initial conditions
       vec_type y_new("solution", neqs * num_odes);
@@ -230,7 +230,7 @@ void run_ode_chem(benchmark::State& state, const rk_input_parameters& inputs) {
       table_type table;
       ode_params params(num_steps);
       vec_type tmp("tmp vector", neqs * num_odes);
-      mv_type kstack("k stack", neqs * num_odes, table.nstages);
+      mv_type kstack("k stack", table.nstages, neqs * num_odes);
 
       // Set initial conditions
       vec_type y_new("solution", neqs * num_odes);

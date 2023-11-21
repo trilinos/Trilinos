@@ -183,7 +183,10 @@ public:
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
-  // TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_MEMBER;
+  #define TACHO_LEVELSET_ON_HOST
+  #if defined TACHO_LEVELSET_ON_HOST
+  TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_MEMBER;
+  #endif
 
   void setBaseMember(const ordinal_type method,
                      // input matrix A
@@ -204,12 +207,34 @@ public:
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
                          const ordinal_type nstreams) {
-    // TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
+    #if defined TACHO_LEVELSET_ON_HOST
+    TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
+    #endif
   }
 
   void createObject(numeric_tools_base_type *&object) {
 #if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+    #if defined TACHO_LEVELSET_ON_HOST
+    switch (_variant) {
+    case 0: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var0_type);
+      break;
+    }
+    case 1: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var1_type);
+      break;
+    }
+    case 2: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var2_type);
+      break;
+    }
+    default: {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
+    }
+    }
+    #else
     TACHO_NUMERIC_TOOLS_FACTORY_SERIAL_BODY;
+    #endif
 #endif
   }
 };

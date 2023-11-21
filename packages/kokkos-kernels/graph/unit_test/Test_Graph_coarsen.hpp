@@ -422,7 +422,7 @@ void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, int, TestExecSpace)
+EXECUTE_TEST(double, int, int, TestDevice)
 #endif
 #endif
 
@@ -430,21 +430,21 @@ EXECUTE_TEST(double, int, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, int, TestExecSpace)
+EXECUTE_TEST(double, int64_t, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, size_t, TestExecSpace)
+EXECUTE_TEST(double, int, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
+EXECUTE_TEST(double, int64_t, size_t, TestDevice)
 #endif
 #endif
 

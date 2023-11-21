@@ -123,6 +123,18 @@ if(HAVE_STK_Trilinos)
 else()
   add_library(stk_unit_test_utils ${SOURCES})
 
+  if(STK_ENABLE_STKMesh)
+    target_link_libraries(stk_unit_test_utils PUBLIC stk_mesh_base)
+  endif()
+
+  if(STK_ENABLE_STKIO)
+    target_link_libraries(stk_unit_test_utils PUBLIC stk_io)
+    if(NOT STK_ENABLE_STKNGP_TEST)
+      message(FATAL_ERROR "stk_unit_test_utils requires that STKNGP_TEST is enabled if STKIO is enabled.")
+    endif()
+    target_link_libraries(stk_unit_test_utils PUBLIC stk_ngp_test)
+  endif()
+
   target_link_libraries(stk_unit_test_utils PUBLIC stk_util_parallel)
 
   find_package(GTest REQUIRED)

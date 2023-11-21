@@ -89,7 +89,7 @@ TEST(StkMeshCreator, create_mesh_from_sideset_part)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
 
-  stk_interface::StkMeshCreator stkMeshCreator("generated:1x2x2|sideset:x", MPI_COMM_WORLD);
+  stk_interface::StkMeshCreator stkMeshCreator("generated:1x2x2|sideset:x", "NONE", MPI_COMM_WORLD);
   const std::string surfacePartName = "surface_1";
   stk::mesh::Part* surfacePart = stkMeshCreator.get_meta_data().get_part(surfacePartName);
   EXPECT_TRUE((surfacePart != nullptr));
@@ -110,7 +110,7 @@ TEST(StkMeshCreator, create_mesh_from_shell_part)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
 
-  stk_interface::StkMeshCreator stkMeshCreator("generated:1x2x2|shell:x", MPI_COMM_WORLD);
+  stk_interface::StkMeshCreator stkMeshCreator("generated:1x2x2|shell:x", "NONE", MPI_COMM_WORLD);
   const std::string surfacePartName = "block_2";
   stk::mesh::Part* surfacePart = stkMeshCreator.get_meta_data().get_part(surfacePartName);
   EXPECT_TRUE((surfacePart != nullptr));

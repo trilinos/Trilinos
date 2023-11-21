@@ -57,6 +57,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_Exceptions.hpp"
 
 #include "Ifpack2_Hypre_FunctionParameters.hpp"
 
@@ -104,14 +105,19 @@ namespace Ifpack2 {
 #endif //HYPRE_ENUMS
 
 
-//! Ifpack2::Hypre: A class for constructing and using an ILU factorization of a given Tpetra::RowMatrix, using the Hypre library by Lawrence Livermore National Laboratories.
+class NotImplemented : public Teuchos::ExceptionBase {
+public:
+  NotImplemented(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
+};
+
+//! Ifpack2::Hypre: A class for constructing and using an AMG preconditioner for a given Tpetra::RowMatrix, using the Hypre library by Lawrence Livermore National Laboratory.
 
 /*!
 Class Ifpack2::Hypre: A class for using methods of Hypre with Tpetra objects.
 */
 
 template<class MatrixType>
-class Hypre: 
+class Hypre:
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
@@ -122,12 +128,218 @@ class Hypre:
                                                                        typename MatrixType::node_type> >
 {
 public:
+
+  //! The type of the entries of the input MatrixType.
+  typedef typename MatrixType::scalar_type scalar_type;
+
+  //! The type of local indices in the input MatrixType.
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+
+  //! The type of global indices in the input MatrixType.
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+
+  //! The Kokkos::Device specialization used by the input MatrixType.
+  typedef typename MatrixType::node_type::device_type device_type;
+
+  //! The Node type used by the input MatrixType.
+  typedef typename MatrixType::node_type node_type;
+
+  //! The type of the magnitude (absolute value) of a matrix entry.
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+  /// \brief The Tpetra::RowMatrix specialization matching MatrixType.
+  ///
+  /// MatrixType must be a Tpetra::RowMatrix specialization.  This
+  /// typedef will always be a Tpetra::RowMatrix specialization.
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> row_matrix_type;
+
+  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
+                 "Ifpack2::Hypre: MatrixType must be a Tpetra::RowMatrix "
+                 "specialization.  Don't use Tpetra::CrsMatrix here.");
+
+
+  //! Tpetra::CrsMatrix specialization matching MatrixType
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> crs_matrix_type;
+
+  //! The Tpetra::Map specialization matching MatrixType.
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+
+  /// \brief The Tpetra::Vector specialization matching MatrixType.
+  ///
+  /// If you wish to supply setParameters() a precomputed vector of
+  /// diagonal entries of the matrix, use a pointer to an object of
+  /// this type.
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> vector_type;
+
+  /// \brief The Tpetra::MultiVector specialization matching MatrixType.
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> multivector_type;
+
+
+  explicit Hypre(const Teuchos::RCP<const row_matrix_type>& A) { throw NotImplemented("Ifpack2::Hypre only works when instantiated on <HYPRE_REAL, LocalOrdinal, HYPRE_Int, Node>"); }
+
+  // @}
+  // @{ Construction methods
+  //! Initialize the preconditioner, does not touch matrix values.
+  void initialize() {}
+
+  //! Returns \c true if the preconditioner has been successfully initialized.
+  bool isInitialized() const{ return false;}
+
+  //! Compute ILU factors L and U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
+  /*! This function computes the ILU(k) factors.
+   */
+  void compute() {}
+
+  //! If factor is completed, this query returns true, otherwise it returns false.
+  bool isComputed() const{ return false;}
+
+  void setParameters(const Teuchos::ParameterList& parameterlist) {}
+
+
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
+  //@{
+
+  /// \brief Change the matrix to be preconditioned.
+  ///
+  /// \param[in] A The new matrix.
+  ///
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
+  ///
+  /// Calling this method resets the preconditioner's state.  After
+  /// calling this method with a nonnull input, you must first call
+  /// initialize() and compute() (in that order) before you may call
+  /// apply().
+  ///
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
+  ///
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A) {}
+  //@}
+
+  /// \brief Apply the preconditioner to X, returning the result in Y.
+  ///
+  /// This method actually computes Y = beta*Y + alpha*(M*X), where
+  /// M*X represents the result of Chebyshev iteration on X, using the
+  /// matrix Op(A).  Op(A) is either A itself, its transpose
+  /// \f$A^T\f$, or its Hermitian transpose \f$A^H\f$, depending on
+  /// the <tt>mode</tt> argument.  Since this class currently requires
+  /// A to be real and symmetric positive definite, it should always
+  /// be the case that \f$A = A^T = A^H\f$, but we will still respect
+  /// the <tt>mode</tt> argument.
+  ///
+  /// \warning If you did not set the "chebyshev: zero starting
+  ///   solution" parameter to true, then this method will use X as
+  ///   the starting guess for Chebyshev iteration.  If you did not
+  ///   initialize X before calling this method, then the resulting
+  ///   solution will be undefined, since it will be computed using
+  ///   uninitialized data.
+  ///
+  /// \param[in] X  A (multi)vector to which to apply the preconditioner.
+  /// \param[in,out] Y A (multi)vector containing the result of
+  ///   applying the preconditioner to X.
+  /// \param[in] mode  If <tt>Teuchos::NO_TRANS</tt>, apply the matrix
+  ///   A.  If <tt>mode</tt> is <tt>Teuchos::NO_TRANS</tt>, apply its
+  ///   transpose \f$A^T\f$.  If <tt>Teuchos::CONJ_TRANS</tt>, apply
+  ///   its Hermitian transpose \f$A^H\f$.
+  /// \param[in] alpha  Scaling factor for the result of Chebyshev
+  ///   iteration.  The default is 1.
+  /// \param[in] beta  Scaling factor for Y.  The default is 0.
+  void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const {}
+
+  //! The Tpetra::Map representing the domain of this operator.
+  Teuchos::RCP<const map_type> getDomainMap() const { return Teuchos::null; }
+
+  //! The Tpetra::Map representing the range of this operator.
+  Teuchos::RCP<const map_type> getRangeMap() const { return Teuchos::null; }
+
+  //! Whether it's possible to apply the transpose of this operator.
+  bool hasTransposeApply() const { return false; }
+
+  /// \brief Compute Y = Op(A)*X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
+  ///
+  /// \param[in] X  Input (multi)vector of sparse matrix-vector
+  ///   multiply.  If mode == Teuchos::NO_TRANS, X must be in the
+  ///   domain Map of the matrix A.  Otherwise, X must be in the range
+  ///   Map of A.
+  /// \param[out] Y  Output (multi)vector of sparse matrix-vector
+  ///   multiply.  If mode == Teuchos::NO_TRANS, Y must be in the
+  ///   range Map of the matrix A.  Otherwise, Y must be in the domain
+  ///   Map of A.
+  /// \param[in] mode  Whether to apply the matrix A, its transpose
+  ///   \f$A^T\f$, or its conjugate transpose \f$A^H\f$.  This method
+  ///   applies A if <tt>mode</tt> is <tt>Teuchos::NO_TRANS</tt>,
+  ///   \f$A^T\f$ if <tt>mode</tt> is <tt>Teuchos::TRANS</tt>, and
+  ///   \f$A^H\f$ (the Hermitian transpose) if <tt>mode</tt> is
+  ///   <tt>Teuchos::CONJ_TRANS</tt>.
+  ///
+  /// Since this class currently requires A to be real and symmetric
+  /// positive definite, setting <tt>mode</tt> should not affect the
+  /// result.
+  void
+  applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+            Teuchos::ETransp mode = Teuchos::NO_TRANS) const {}
+
+  Teuchos::RCP<const row_matrix_type> getMatrix() const { return Teuchos::null; }
+
+  //@}
+
+  //! The number of calls to initialize().
+  int getNumInitialize() const { return 0; }
+
+  //! The number of calls to compute().
+  int getNumCompute() const { return 0; }
+
+  //! The number of calls to apply().
+  int getNumApply() const { return 0; }
+
+  //! The time (in seconds) spent in initialize().
+  double getInitializeTime() const { return 0.0; }
+
+  //! The time (in seconds) spent in compute().
+  double getComputeTime() const { return 0.0; }
+
+  //! The time (in seconds) spent in apply().
+  double getApplyTime() const { return 0.0; }
+
+
+};
+
+template<class LocalOrdinal, class Node>
+class Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >:
+    virtual public Ifpack2::Preconditioner<HYPRE_Real,
+                                           LocalOrdinal,
+                                           HYPRE_Int,
+                                           Node>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<HYPRE_Real,
+                                                                       LocalOrdinal,
+                                                                       HYPRE_Int,
+                                                                       Node> >
+{
 public:
   //! \name Typedefs
   //@{
 
   //! The template parameter of this class.
-  typedef MatrixType matrix_type;
+  typedef Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> MatrixType;
 
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
@@ -270,7 +482,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type), global_ordinal_type parameter);
+    int SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int), HYPRE_Int parameter);
 
     //! Set a parameter that takes a single double.
     /*!
@@ -281,7 +493,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double), double parameter);
+    int SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Real), HYPRE_Real parameter);
 
     //! Set a parameter that takes a double then an int.
     /*!
@@ -293,7 +505,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double, global_ordinal_type), double parameter1, global_ordinal_type parameter2);
+    int SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Real, HYPRE_Int), HYPRE_Real parameter1, HYPRE_Int parameter2);
 
     //! Set a parameter that takes an int then a double.
     /*!
@@ -305,7 +517,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, double), global_ordinal_type parameter1, double parameter2);
+    int SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int, HYPRE_Real), HYPRE_Int parameter1, HYPRE_Real parameter2);
 
     //! Set a parameter that takes two int parameters.
     /*!
@@ -317,7 +529,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, global_ordinal_type), global_ordinal_type parameter1, global_ordinal_type parameter2);
+    int SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int), HYPRE_Int parameter1, HYPRE_Int parameter2);
 
     //! Set a parameter that takes a double*.
     /*!
@@ -328,7 +540,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double*), double* parameter);
+    int SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Real*), HYPRE_Real* parameter);
 
     //! Set a parameter that takes an int*.
     /*!
@@ -339,7 +551,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type*), global_ordinal_type* parameter);
+    int SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int*), HYPRE_Int* parameter);
 
     //! Set a parameter that takes an int**.
     /*!
@@ -351,7 +563,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type**), global_ordinal_type** parameter);
+    int SetParameter(Hypre_Chooser chooser, HYPRE_Int (*pt2Func)(HYPRE_Solver, HYPRE_Int**), HYPRE_Int** parameter);
 
     //! Sets the solver that is used by the Solve() and ApplyInverse() methods. Until this is called, the default solver is PCG.
     /*!
@@ -574,37 +786,37 @@ private:
   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
 
   //! Create a BoomerAMG solver.
-  int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a ParaSails solver.
-  int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a Euclid solver.
-  int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create an AMS solver.
-  int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a Hybrid solver.
-  int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a PCG solver.
-  int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a GMRES solver.
-  int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a FlexGMRES solver.
-  int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a LGMRES solver.
-  int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a BiCGSTAB solver.
-  int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  HYPRE_Int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
   
   //! Map generation function
-  Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > 
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, HYPRE_Int, Node> >
   MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &Matrix) const;
 
   //! Destroy
@@ -682,15 +894,15 @@ private:
   //! The Hypre Solver if applying preconditioner
   mutable HYPRE_Solver Preconditioner_;
   //  The following are pointers to functions to use the solver and preconditioner.
-  int (Hypre::*SolverCreatePtr_)(MPI_Comm, HYPRE_Solver*);
-  global_ordinal_type (*SolverDestroyPtr_)(HYPRE_Solver);
-  global_ordinal_type (*SolverSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
-  global_ordinal_type (*SolverSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
-  global_ordinal_type (*SolverPrecondPtr_)(HYPRE_Solver, HYPRE_PtrToParSolverFcn, HYPRE_PtrToParSolverFcn, HYPRE_Solver);
-  int (Hypre::*PrecondCreatePtr_)(MPI_Comm, HYPRE_Solver*);
-  global_ordinal_type (*PrecondDestroyPtr_)(HYPRE_Solver);
-  global_ordinal_type (*PrecondSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
-  global_ordinal_type (*PrecondSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  HYPRE_Int (Hypre::*SolverCreatePtr_)(MPI_Comm, HYPRE_Solver*);
+  HYPRE_Int (*SolverDestroyPtr_)(HYPRE_Solver);
+  HYPRE_Int (*SolverSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  HYPRE_Int (*SolverSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  HYPRE_Int (*SolverPrecondPtr_)(HYPRE_Solver, HYPRE_PtrToParSolverFcn, HYPRE_PtrToParSolverFcn, HYPRE_Solver);
+  HYPRE_Int (Hypre::*PrecondCreatePtr_)(MPI_Comm, HYPRE_Solver*);
+  HYPRE_Int (*PrecondDestroyPtr_)(HYPRE_Solver);
+  HYPRE_Int (*PrecondSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  HYPRE_Int (*PrecondSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
 
   bool IsSolverCreated_;
   bool IsPrecondCreated_;
@@ -714,7 +926,7 @@ private:
   //! Should information be dumped to files
   bool Dump_;
   //! Dummy vector for caching
-  mutable Teuchos::ArrayRCP<double> VectorCache_;
+  mutable Teuchos::ArrayRCP<scalar_type> VectorCache_;
 
 };
 

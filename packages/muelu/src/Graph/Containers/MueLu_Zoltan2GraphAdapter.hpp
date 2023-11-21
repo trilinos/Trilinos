@@ -454,6 +454,6 @@ template <typename User, typename UserCoord>
 }  //namespace MueLu
 
 
-#endif// MUELU_HAVE_ZOLTAN2
+#endif// HAVE_MUELU_ZOLTAN2
   
 #endif

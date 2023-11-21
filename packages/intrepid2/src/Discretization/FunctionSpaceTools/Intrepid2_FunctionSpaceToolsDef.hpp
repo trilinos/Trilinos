@@ -624,7 +624,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Input Jacobian container must have rank 4.");
     INTREPID2_TEST_FOR_EXCEPTION( scratch.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch view imust have rank 1.");
-    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() < inputJac.span(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.size() < inputJac.size(), std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch storage must be greater than or equal to inputJac's one.");
 #endif
 
@@ -671,7 +671,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Input Jacobian container must have rank 4.");
     INTREPID2_TEST_FOR_EXCEPTION( scratch.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch view must have a rank 1.");
-    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() < inputJac.span(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.size() < inputJac.size(), std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch storage must be greater than or equal to inputJac'one.");
 #endif
 

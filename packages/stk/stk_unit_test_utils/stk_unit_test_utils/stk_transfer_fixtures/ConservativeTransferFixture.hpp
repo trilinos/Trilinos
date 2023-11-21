@@ -85,7 +85,8 @@ class ConservativeTransferTests
    ConservativeTransferTests(std::shared_ptr<stk::middle_mesh::mesh::Mesh> mesh1,
        std::shared_ptr<stk::middle_mesh::mesh::Mesh> mesh2,
        std::shared_ptr<ConservativeTransferUser> transferCallback1,
-       std::shared_ptr<ConservativeTransferUser> transferCallback2);
+       std::shared_ptr<ConservativeTransferUser> transferCallback2,
+       stk::middle_mesh::ApplicationInterfaceType type = stk::middle_mesh::ApplicationInterfaceType::FakeParallel);
 
    void test_exactness(std::function<double(const utils::Point&)> func);
 

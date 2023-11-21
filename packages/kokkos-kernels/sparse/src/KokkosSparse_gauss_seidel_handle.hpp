@@ -84,6 +84,9 @@ class GaussSeidelHandle {
       nnz_lno_persistent_work_host_view_t;  // Host view type
 
  protected:
+  HandleExecSpace execution_space;
+  int num_streams;
+
   GSAlgorithm algorithm_type;
 
   nnz_lno_persistent_work_host_view_t color_xadj;
@@ -101,7 +104,22 @@ class GaussSeidelHandle {
    * \brief Default constructor.
    */
   GaussSeidelHandle(GSAlgorithm gs)
-      : algorithm_type(gs),
+      : execution_space(HandleExecSpace()),
+        num_streams(1),
+        algorithm_type(gs),
+        color_xadj(),
+        color_adj(),
+        numColors(0),
+        called_symbolic(false),
+        called_numeric(false),
+        suggested_vector_size(0),
+        suggested_team_size(0) {}
+
+  GaussSeidelHandle(HandleExecSpace handle_exec_space, int n_streams,
+                    GSAlgorithm gs)
+      : execution_space(handle_exec_space),
+        num_streams(n_streams),
+        algorithm_type(gs),
         color_xadj(),
         color_adj(),
         numColors(0),
@@ -113,6 +131,10 @@ class GaussSeidelHandle {
   virtual ~GaussSeidelHandle() = default;
 
   // getters
+  int get_num_streams() const { return num_streams; }
+
+  HandleExecSpace get_execution_space() const { return this->execution_space; }
+
   GSAlgorithm get_algorithm_type() const { return this->algorithm_type; }
 
   nnz_lno_persistent_work_host_view_t get_color_xadj() const {
@@ -126,7 +148,24 @@ class GaussSeidelHandle {
   bool is_symbolic_called() const { return this->called_symbolic; }
   bool is_numeric_called() const { return this->called_numeric; }
 
-  // setters
+  template <class ExecSpaceIn>
+  void set_execution_space(const ExecSpaceIn exec_space_in) {
+    static bool is_set = false;
+    if (!is_set) {
+      static_assert(std::is_same<ExecSpaceIn, HandleExecSpace>::value,
+                    "The type of exec_space_in should be the same as "
+                    "GaussSeidelHandle::HandleExecSpace");
+      this->execution_space = exec_space_in;
+    } else {
+      if (exec_space_in != this->execution_space)
+        throw std::runtime_error(
+            "Gauss Seidel cannot be called on different execution spaces "
+            "without multiple handles. Please create a new handle via "
+            "create_gs_handle.\n");
+    }
+    is_set = true;
+  }
+
   void set_algorithm_type(const GSAlgorithm sgs_algo) {
     this->algorithm_type  = sgs_algo;
     this->called_symbolic = false;
@@ -244,10 +283,10 @@ class PointGaussSeidelHandle
   /**
    * \brief Default constructor.
    */
-  PointGaussSeidelHandle(GSAlgorithm gs = GS_DEFAULT,
+  PointGaussSeidelHandle(GSHandle gs_handle,
                          KokkosGraph::ColoringAlgorithm coloring_algo_ =
                              KokkosGraph::COLORING_DEFAULT)
-      : GSHandle(gs),
+      : GSHandle(gs_handle),
         permuted_xadj(),
         permuted_adj(),
         permuted_adj_vals(),
@@ -263,8 +302,21 @@ class PointGaussSeidelHandle
         level_2_mem(0),
         long_row_threshold(0),
         coloring_algo(coloring_algo_) {
-    if (gs == GS_DEFAULT) this->choose_default_algorithm();
+    if (gs_handle.get_algorithm_type() == GS_DEFAULT)
+      this->choose_default_algorithm();
   }
+
+  PointGaussSeidelHandle(GSAlgorithm gs = GS_DEFAULT,
+                         KokkosGraph::ColoringAlgorithm coloring_algo_ =
+                             KokkosGraph::COLORING_DEFAULT)
+      : PointGaussSeidelHandle(GSHandle(gs), coloring_algo_) {}
+
+  PointGaussSeidelHandle(HandleExecSpace handle_exec_space, int n_streams,
+                         GSAlgorithm gs = GS_DEFAULT,
+                         KokkosGraph::ColoringAlgorithm coloring_algo_ =
+                             KokkosGraph::COLORING_DEFAULT)
+      : PointGaussSeidelHandle(GSHandle(handle_exec_space, n_streams, gs),
+                               coloring_algo_) {}
 
   void set_block_size(nnz_lno_t bs) { this->block_size = bs; }
   nnz_lno_t get_block_size() const { return this->block_size; }
@@ -613,8 +665,15 @@ class TwoStageGaussSeidelHandle
                         ExecutionSpace, TemporaryMemorySpace,
                         PersistentMemorySpace>;
 
-  TwoStageGaussSeidelHandle()
-      : GSHandle(GS_TWOSTAGE),
+  using HandleExecSpace = typename GSHandle::HandleExecSpace;
+
+  /**
+   * @brief Construct a new Two Stage Gauss Seidel Handle object
+   *
+   * @param gs_handle The GaussSeidel handle.
+   */
+  TwoStageGaussSeidelHandle(GSHandle gs_handle)
+      : GSHandle(gs_handle),
         nrows(0),
         nrhs(1),
         direction(GS_SYMMETRIC),
@@ -625,6 +684,23 @@ class TwoStageGaussSeidelHandle
     const scalar_t one(1.0);
     inner_omega = one;
   }
+
+  /**
+   * @brief Construct a new Two Stage Gauss Seidel Handle object
+   *
+   */
+  TwoStageGaussSeidelHandle()
+      : TwoStageGaussSeidelHandle(GSHandle(GS_TWOSTAGE)) {}
+
+  /**
+   * @brief Construct a new Two Stage Gauss Seidel Handle object
+   *
+   * @param handle_exec_space The execution space instance
+   * @param n_streams the number of streams
+   */
+  TwoStageGaussSeidelHandle(HandleExecSpace handle_exec_space, int n_streams)
+      : TwoStageGaussSeidelHandle(
+            GSHandle(handle_exec_space, n_streams, GS_TWOSTAGE)) {}
 
   // Sweep direction
   void setSweepDirection(GSDirection direction_) {

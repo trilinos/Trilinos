@@ -44,6 +44,7 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #include "Tacho_SymbolicTools.hpp"
 
 #include "Tacho_Lapack_External.hpp"
+#include "Tacho_Lapack_Serial.hpp"
 #include "Tacho_Lapack_Team.hpp"
 
 #include "Tacho_Blas_External.hpp"
@@ -68,45 +69,54 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #include "Tacho_Scale2x2_BlockInverseDiagonals_Internal.hpp"
 
 #include "Tacho_Chol.hpp"
+#include "Tacho_Chol_Serial.hpp"
 #include "Tacho_Chol_External.hpp"
 #include "Tacho_Chol_Internal.hpp"
 // #include "Tacho_Chol_ByBlocks.hpp"
 
 #include "Tacho_LDL.hpp"
+#include "Tacho_LDL_Serial.hpp"
 #include "Tacho_LDL_External.hpp"
 #include "Tacho_LDL_Internal.hpp"
 //#include "Tacho_LDL_ByBlocks.hpp"
 
 #include "Tacho_LU.hpp"
+#include "Tacho_LU_Serial.hpp"
 #include "Tacho_LU_External.hpp"
 #include "Tacho_LU_Internal.hpp"
 //#include "Tacho_LU_ByBlocks.hpp"
 
 #include "Tacho_Trsm.hpp"
+#include "Tacho_Trsm_Serial.hpp"
 #include "Tacho_Trsm_External.hpp"
 #include "Tacho_Trsm_Internal.hpp"
 // #include "Tacho_Trsm_ByBlocks.hpp"
 
 #include "Tacho_Herk.hpp"
+#include "Tacho_Herk_Serial.hpp"
 #include "Tacho_Herk_External.hpp"
 #include "Tacho_Herk_Internal.hpp"
 // #include "Tacho_Herk_ByBlocks.hpp"
 
 #include "Tacho_Gemm.hpp"
+#include "Tacho_Gemm_Serial.hpp"
 #include "Tacho_Gemm_External.hpp"
 #include "Tacho_Gemm_Internal.hpp"
 // #include "Tacho_Gemm_ByBlocks.hpp"
 
 #include "Tacho_GemmTriangular.hpp"
+#include "Tacho_GemmTriangular_Serial.hpp"
 #include "Tacho_GemmTriangular_External.hpp"
 #include "Tacho_GemmTriangular_Internal.hpp"
 //#include "Tacho_GemmTriangular_OnDevice.hpp"
 
 #include "Tacho_Trsv.hpp"
+#include "Tacho_Trsv_Serial.hpp"
 #include "Tacho_Trsv_External.hpp"
 #include "Tacho_Trsv_Internal.hpp"
 
 #include "Tacho_Gemv.hpp"
+#include "Tacho_Gemv_Serial.hpp"
 #include "Tacho_Gemv_External.hpp"
 #include "Tacho_Gemv_Internal.hpp"
 

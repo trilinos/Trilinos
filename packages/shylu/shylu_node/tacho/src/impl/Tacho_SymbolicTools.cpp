@@ -33,6 +33,53 @@ using size_type_array = SymbolicTools::size_type_array;
 /// supernode tools
 ///
 
+// 1   3 6   10
+//   2 4 
+// 3 4 5 o 8 o 
+// 6   o 7 x o
+//     8 x 9 x
+// 10  o o x 11
+//
+// i = 0 []
+//  ancestor(0) = -1
+//    parent(0) = -1
+// i = 1 []
+//  ancestor(1) = -1
+//    parent(1) = -1
+// i = 2 [0,1]
+//  ancestor(2) = -1
+//    parent(2) = -1
+//
+//  ancestor(0) = -1 -> 2
+//    parent(0) = -1 -> 2
+//  ancestor(1) = -1 -> 2
+//    parent(1) = -1 -> 2
+// i = 3 [0]
+//  ancestor(3) = -1
+//    parent(3) = -1
+//
+//  ancestor(0) =  2 -> 3
+//  ancestor(2) = -1 -> 3
+//    parent(2) = 3
+// i = 4 [2]
+//  ancestor(4) = -1
+//    parent(4) = -1
+//
+//  ancestor(2) =  3 -> 4
+//  ancestor(3) = -1 -> 4
+//    parent(3) = 4
+// i = 5 [0]
+//  ancestor(5) = -1
+//    parent(5) = -1
+//
+//  ancestor(0) =  3 -> 5
+//  ancestor(3) =  4 -> 5
+//  ancestor(4) = -1 -> 5
+//    parent(4) = 2
+//
+// Note: "parent" form e-tree
+// 5 <- 4 <- 3 <- 2 <- 0
+//                   \ 1
 void SymbolicTools::computeEliminationTree(const ordinal_type m, const size_type_array &ap,
                                            const ordinal_type_array &aj, const ordinal_type_array &perm,
                                            const ordinal_type_array &peri, const ordinal_type_array &parent,
@@ -200,15 +247,28 @@ void SymbolicTools::computeSupernodes(const ordinal_type m, const size_type_arra
     ordinal_type k = 0;
     flag(k) = true; // supernodes begin
 
+    ordinal_type supernode_size = 0;
+    ordinal_type supernode_size_threshold = m; // max supernode threshold (todo: not used, but could pass in as arg)
     for (ordinal_type i = 0; i < m; ++i)
-      k += flag(i);
+    {
+      supernode_size ++;
+      if (flag(i) || supernode_size >= supernode_size_threshold) {
+        supernode_size = 0;
+        k ++;
+      }
+    }
     supernodes = ordinal_type_array(do_not_initialize_tag("supernodes"), k + 1);
 
     // record supernodes
     k = 0;
-    for (ordinal_type i = 0; i < m; ++i)
-      if (flag(i))
+    supernode_size = 0;
+    for (ordinal_type i = 0; i < m; ++i) {
+      supernode_size ++;
+      if (flag(i) || supernode_size >= supernode_size_threshold) {
+        supernode_size = 0;
         supernodes(k++) = i;
+      }
+    }
     supernodes(k) = m; // supernodes end
   }
 }

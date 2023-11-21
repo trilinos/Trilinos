@@ -182,12 +182,12 @@ int test_nrm2_squared_mv() {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrm2_squared_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_float");
-  test_nrm2_squared<float, TestExecSpace>();
+  test_nrm2_squared<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrm2_squared_mv_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_mv_float");
-  test_nrm2_squared_mv<float, TestExecSpace>();
+  test_nrm2_squared_mv<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -197,12 +197,12 @@ TEST_F(TestCategory, nrm2_squared_mv_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrm2_squared_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_double");
-  test_nrm2_squared<double, TestExecSpace>();
+  test_nrm2_squared<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrm2_squared_mv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_mv_double");
-  test_nrm2_squared_mv<double, TestExecSpace>();
+  test_nrm2_squared_mv<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -213,13 +213,13 @@ TEST_F(TestCategory, nrm2_squared_mv_double) {
 TEST_F(TestCategory, nrm2_squared_complex_double) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::nrm2_squared_complex_double");
-  test_nrm2_squared<Kokkos::complex<double>, TestExecSpace>();
+  test_nrm2_squared<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrm2_squared_mv_complex_double) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::nrm2_squared_mv_complex_double");
-  test_nrm2_squared_mv<Kokkos::complex<double>, TestExecSpace>();
+  test_nrm2_squared_mv<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -229,12 +229,12 @@ TEST_F(TestCategory, nrm2_squared_mv_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, nrm2_squared_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_int");
-  test_nrm2_squared<int, TestExecSpace>();
+  test_nrm2_squared<int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, nrm2_squared_mv_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_mv_int");
-  test_nrm2_squared_mv<int, TestExecSpace>();
+  test_nrm2_squared_mv<int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif

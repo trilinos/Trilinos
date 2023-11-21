@@ -33,20 +33,56 @@ struct CommonInputParams {
   int use_openmp  = 0;
   int use_threads = 0;
 
-  int repeat = 0;
+  int repeat      = 0;
+  bool print_help = false;
 };
 
 std::string list_common_options() {
   std::ostringstream common_options;
   common_options
-      << "\t[Required] BACKEND:\n"
-      << "\t\t'--threads [numThreads]' |\n"
-      << "\t\t'--openmp [numThreads]' |\n"
-      << "\t\t'--cuda [deviceIndex]' |\n"
-      << "\t\t'--hip [deviceIndex]' |\n"
-      << "\t\t'--sycl [deviceIndex]'\n\n"
-      << "\tIf no parallel backend is requested, Serial will be used "
-         "(if enabled)\n\n";
+      << "\t[Required] Backend: the available backends are:\n"
+#ifdef KOKKOS_ENABLE_THREADS
+      << "\t\t'--threads [numThreads]'\n"
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
+      << "\t\t'--openmp [numThreads]'\n"
+#endif
+#ifdef KOKKOS_ENABLE_CUDA
+      << "\t\t'--cuda [deviceIndex]'\n"
+#endif
+#ifdef KOKKOS_ENABLE_HIP
+      << "\t\t'--hip [deviceIndex]'\n"
+#endif
+#ifdef KOKKOS_ENABLE_SYCL
+      << "\t\t'--sycl [deviceIndex]'\n"
+#endif
+#ifdef KOKKOS_ENABLE_SERIAL
+      << "\t\tIf no parallel backend is requested, Serial will be used.\n"
+#endif
+      << "\n"
+      << "\t The following backends are not available because Kokkos was not "
+         "configured with them:\n"
+#ifndef KOKKOS_ENABLE_THREADS
+      << "\t\t'--threads [numThreads]'\n"
+#endif
+#ifndef KOKKOS_ENABLE_OPENMP
+      << "\t\t'--openmp [numThreads]'\n"
+#endif
+#ifndef KOKKOS_ENABLE_CUDA
+      << "\t\t'--cuda [deviceIndex]'\n"
+#endif
+#ifndef KOKKOS_ENABLE_HIP
+      << "\t\t'--hip [deviceIndex]'\n"
+#endif
+#ifndef KOKKOS_ENABLE_SYCL
+      << "\t\t'--sycl [deviceIndex]'\n"
+#endif
+#ifndef KOKKOS_ENABLE_SERIAL
+      << "\t\tSerial is not enabled so a parallel backend must be selected.\n"
+#endif
+      << "\n"
+      << "\t[Optional]:\n"
+      << "\t\t'-h', '--help': show available options\n\n";
 
   return common_options.str();
 }
@@ -155,34 +191,42 @@ void parse_common_options(int& argc, char** argv, CommonInputParams& params) {
   // If e.g. params.use_cuda is 0, that means CUDA will not be used at all.
   // But if it's N, then it means run on CUDA device N-1.
   while (argIdx < argc) {
-    bool remove_flag = false;
+    // How many flags to delete from argc/argv
+    // 0: not a common option, so leave it
+    // 1: a bool parameter like '-h'
+    // 2: a parameter followed by a value, like "--cuda 0"
+    int remove_flags = 0;
     if (check_arg_int(argIdx, argc, argv, "--threads", params.use_threads)) {
-      remove_flag = true;
+      remove_flags = 2;
     } else if (check_arg_int(argIdx, argc, argv, "--openmp",
                              params.use_openmp)) {
-      remove_flag = true;
+      remove_flags = 2;
     } else if (check_arg_int(argIdx, argc, argv, "--cuda", params.use_cuda)) {
       params.use_cuda++;
-      remove_flag = true;
+      remove_flags = 2;
     } else if (check_arg_int(argIdx, argc, argv, "--hip", params.use_hip)) {
       params.use_hip++;
-      remove_flag = true;
+      remove_flags = 2;
     } else if (check_arg_int(argIdx, argc, argv, "--sycl", params.use_sycl)) {
       params.use_sycl++;
-      remove_flag = true;
+      remove_flags = 2;
     } else if (check_arg_int(argIdx, argc, argv, "--repeat", params.repeat)) {
-      remove_flag = true;
+      remove_flags = 2;
+    } else if (check_arg_bool(argIdx, argc, argv, "-h", params.print_help) ||
+               check_arg_bool(argIdx, argc, argv, "--help",
+                              params.print_help)) {
+      remove_flags = 1;
     }
 
-    if (remove_flag) {
-      // Shift the remainder of the argv list by one.  Note that argv has
-      // (argc + 1) arguments, the last one always being nullptr.  The following
-      // loop moves the trailing nullptr element as well
-      for (int k = argIdx; k < argc - 1; ++k) {
-        argv[k]     = argv[k + 2];
-        argv[k + 1] = argv[k + 3];
+    if (remove_flags) {
+      // Shift the remainder of the argv list left by the number of flags
+      // removed. Note that argv has (argc + 1) arguments, the last one always
+      // being nullptr.  The following loop moves the trailing nullptr element
+      // as well
+      for (int k = argIdx + remove_flags; k <= argc; ++k) {
+        argv[k - remove_flags] = argv[k];
       }
-      argc = argc - 2;
+      argc -= remove_flags;
     } else {
       ++argIdx;
     }

@@ -50,6 +50,8 @@
 #include "ROL_l1Objective.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include <random>
+#include <chrono>
 
 template<typename Real>
 class QuadraticTypeP_Test01 : public ROL::StdObjective<Real> {
@@ -59,11 +61,15 @@ private:
 
 public:
   QuadraticTypeP_Test01(int dim) : dim_(dim) {
+    using seed_type = std::mt19937_64::result_type;
+    seed_type const seed = 123;
+    std::mt19937_64 eng{seed};
+    std::uniform_real_distribution<Real> distA(0.0,5.0), distB(-10.0,10.0);
     a_.resize(dim);
     b_.resize(dim);
     for (int i = 0; i < dim; ++i) {
-      a_[i] = static_cast<Real>(5)*static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
-      b_[i] = static_cast<Real>(20)*static_cast<Real>(rand())/static_cast<Real>(RAND_MAX) - static_cast<Real>(10);
+      a_[i] = distA(eng);
+      b_[i] = distB(eng);
     }
   }
 
@@ -114,10 +120,10 @@ int main(int argc, char *argv[]) {
     ROL::ParameterList list;
     list.sublist("General").set("Output Level",iprint);
     list.sublist("Step").set("Type","Trust Region");
-    list.sublist("Status Test").set("Gradient Tolerance",1e-7);
-    list.sublist("Status Test").set("Constraint Tolerance",1e-8);
-    list.sublist("Status Test").set("Step Tolerance",1e-12);
-    list.sublist("Status Test").set("Iteration Limit", 10);
+    list.sublist("Status Test").set("Gradient Tolerance",1e-1*tol);
+    list.sublist("Status Test").set("Constraint Tolerance",1e-1*tol);
+    list.sublist("Status Test").set("Step Tolerance",1e-3*tol);
+    list.sublist("Status Test").set("Iteration Limit", 50);
     int dim = 5;
     ROL::Ptr<ROL::StdVector<RealT>>        sol, wts, y;
     ROL::Ptr<QuadraticTypeP_Test01<RealT>> sobj;
@@ -129,8 +135,8 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl << "Random Diagonal LASSO Test Problem" << std::endl << std::endl;
     ROL::Ptr<std::vector<RealT>> wtsP = ROL::makePtr<std::vector<RealT>>(dim);
     ROL::Ptr<std::vector<RealT>> yP   = ROL::makePtr<std::vector<RealT>>(dim);
-    wts = ROL::makePtr<ROL::StdVector<RealT>>(wtsP);
-    y   = ROL::makePtr<ROL::StdVector<RealT>>(yP);
+    wts = ROL::makePtr<ROL::StdVector<RealT>>(wtsP);// wts->setSeed(234);
+    y   = ROL::makePtr<ROL::StdVector<RealT>>(yP);  // y->setSeed(345);
     sol = ROL::makePtr<ROL::StdVector<RealT>>(dim);
     wts->randomize(static_cast<RealT>(0),static_cast<RealT>(1));
     y->randomize(static_cast<RealT>(-5),static_cast<RealT>(5));
@@ -158,8 +164,12 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "SPG");  
     sol->zero();
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
+    auto begin = std::chrono::high_resolution_clock::now();
     algo->run(*sol,*sobj,*nobj,*outStream);
+    auto end   = std::chrono::high_resolution_clock::now();
+    *outStream << "  Optimization Time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " microseconds" << std::endl;
 
+    err = static_cast<RealT>(0);
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:   ";
     for (int i = 0; i < dim; ++i) {
@@ -178,8 +188,12 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "Simplified SPG");  
     sol->zero();
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
+    begin = std::chrono::high_resolution_clock::now();
     algo->run(*sol,*sobj,*nobj,*outStream);
+    end   = std::chrono::high_resolution_clock::now();
+    *outStream << "  Optimization Time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " microseconds" << std::endl;
 
+    err = static_cast<RealT>(0);
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:   ";
     for (int i = 0; i < dim; ++i) {
@@ -198,8 +212,12 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG");  
     sol->zero();
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(list);
+    begin = std::chrono::high_resolution_clock::now();
     algo->run(*sol,*sobj,*nobj,*outStream);
+    end   = std::chrono::high_resolution_clock::now();
+    *outStream << "  Optimization Time: " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " microseconds" << std::endl;
 
+    err = static_cast<RealT>(0);
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
     *outStream << "  Result:   ";
     for (int i = 0; i < dim; ++i) {

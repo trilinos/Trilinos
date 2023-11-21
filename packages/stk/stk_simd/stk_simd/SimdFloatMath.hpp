@@ -51,7 +51,7 @@ STK_MATH_FORCE_INLINE simd::Float sqrt(const simd::Float& x) {
 }
   
 STK_MATH_FORCE_INLINE simd::Float cbrt(const simd::Float& x) {
-#if defined(__INTEL_COMPILER) && !defined(USE_STK_SIMD_NONE)
+#if (defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)) && !defined(USE_STK_SIMD_NONE)
   return simd::Float(SIMD_NAMESPACE::cbrt(x._data));
 #else
   simd::Float tmp;
@@ -63,7 +63,7 @@ STK_MATH_FORCE_INLINE simd::Float cbrt(const simd::Float& x) {
 }
 
 STK_MATH_FORCE_INLINE simd::Float log(const simd::Float& x) {
-#if defined(__INTEL_COMPILER) && !defined(USE_STK_SIMD_NONE)
+#if (defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)) && !defined(USE_STK_SIMD_NONE)
   return simd::Float(SIMD_NAMESPACE::log(x._data));
 #else
   simd::Float tmp;
@@ -83,7 +83,7 @@ STK_MATH_FORCE_INLINE simd::Float log10(const simd::Float& x) {
 }
 
 STK_MATH_FORCE_INLINE simd::Float exp(const simd::Float& x) {
-#if defined(__INTEL_COMPILER) && !defined(USE_STK_SIMD_NONE)
+#if (defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)) && !defined(USE_STK_SIMD_NONE)
   return simd::Float(SIMD_NAMESPACE::exp(x._data));
 #else
   simd::Float tmp;

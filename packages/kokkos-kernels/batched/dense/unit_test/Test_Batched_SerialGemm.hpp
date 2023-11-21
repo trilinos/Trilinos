@@ -40,6 +40,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedSerialGemm {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b, _c;
 
   ScalarType _alpha, _beta;
@@ -66,7 +67,7 @@ struct Functor_TestBatchedSerialGemm {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, ParamTagType> policy(0, _c.extent(0));
+    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _c.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }

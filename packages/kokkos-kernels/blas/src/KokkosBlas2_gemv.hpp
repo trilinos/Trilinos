@@ -49,14 +49,14 @@ namespace KokkosBlas {
 /// \param x [in] Input vector, as a 1-D Kokkos::View
 /// \param beta [in] Input coefficient of y
 /// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
-template <class execution_space, class AViewType, class XViewType,
+template <class ExecutionSpace, class AViewType, class XViewType,
           class YViewType>
-void gemv(const execution_space& space, const char trans[],
+void gemv(const ExecutionSpace& space, const char trans[],
           typename AViewType::const_value_type& alpha, const AViewType& A,
           const XViewType& x, typename YViewType::const_value_type& beta,
           const YViewType& y) {
-  static_assert(Kokkos::is_execution_space_v<execution_space>,
-                "KokkosBlas::gemv: execution_space must be a valid Kokkos "
+  static_assert(Kokkos::is_execution_space_v<ExecutionSpace>,
+                "KokkosBlas::gemv: ExecutionSpace must be a valid Kokkos "
                 "execution space.");
   static_assert(Kokkos::is_view<AViewType>::value,
                 "KokkosBlas::gemv: AViewType must be a Kokkos::View.");
@@ -71,17 +71,17 @@ void gemv(const execution_space& space, const char trans[],
   static_assert(static_cast<int>(YViewType::rank) == 1,
                 "KokkosBlas::gemv: YViewType must have rank 1.");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AViewType::memory_space>::accessible,
-      "KokkosBlas::gemv: AViewType must be accessible from execution_space");
+      "KokkosBlas::gemv: AViewType must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XViewType::memory_space>::accessible,
-      "KokkosBlas::gemv: XViewType must be accessible from execution_space");
+      "KokkosBlas::gemv: XViewType must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YViewType::memory_space>::accessible,
-      "KokkosBlas::gemv: YViewType must be accessible from execution_space");
+      "KokkosBlas::gemv: YViewType must be accessible from ExecutionSpace");
 
   // Check compatibility of dimensions at run time.
   if (trans[0] == 'N' || trans[0] == 'n') {
@@ -147,11 +147,11 @@ void gemv(const execution_space& space, const char trans[],
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
   useFallback =
-      useFallback || (tolower(*trans) == 'c' &&
-                      std::is_same<typename AViewType::array_layout,
-                                   Kokkos::LayoutRight>::value &&
-                      std::is_same<typename AViewType::memory_space,
-                                   Kokkos::Experimental::HIPSpace>::value);
+      useFallback ||
+      (tolower(*trans) == 'c' &&
+       std::is_same<typename AViewType::array_layout,
+                    Kokkos::LayoutRight>::value &&
+       std::is_same<typename AViewType::memory_space, Kokkos::HIPSpace>::value);
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   useFallback = useFallback || (tolower(*trans) == 'c' &&
@@ -160,13 +160,24 @@ void gemv(const execution_space& space, const char trans[],
                                 std::is_same<typename AViewType::memory_space,
                                              Kokkos::HostSpace>::value);
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#ifdef KOKKOS_ENABLE_SYCL
+  // oneMKL supports both row-major and column-major of A
+  useFallback =
+      useFallback || !std::is_same_v<typename AViewType::memory_space,
+                                     Kokkos::Experimental::SYCLDeviceUSMSpace>;
+#endif
+#endif
+
   if (useFallback) {
     const bool eti_spec_avail =
-        KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
-    typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
+        KokkosBlas::Impl::gemv_eti_spec_avail<ExecutionSpace, AVT, XVT,
+                                              YVT>::value;
+    typedef Impl::GEMV<ExecutionSpace, AVT, XVT, YVT, false, eti_spec_avail>
+        fallback_impl_type;
     fallback_impl_type::gemv(space, trans, alpha, A, x, beta, y);
   } else {
-    typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
+    typedef Impl::GEMV<ExecutionSpace, AVT, XVT, YVT> impl_type;
     impl_type::gemv(space, trans, alpha, A, x, beta, y);
   }
 }

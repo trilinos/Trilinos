@@ -167,7 +167,7 @@ void ColemanLiAlgorithm<Real>::run(Vector<Real>          &x,
 
   while (status_->check(*state_)) {
     // Build trust-region model (use only to encapsulate Hessian/secant)
-    model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
+    model_->setData(obj,*state_->iterateVec,*state_->gradientVec,tol0);
 
     // Run Truncated CG
     // TODO: Model is: 1/2 (x-xk)' (B + Einv(D)) + g'(x-xk)

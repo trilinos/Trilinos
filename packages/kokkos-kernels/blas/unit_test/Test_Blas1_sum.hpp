@@ -167,12 +167,12 @@ int test_sum_mv() {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, sum_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_float");
-  test_sum<float, TestExecSpace>();
+  test_sum<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, sum_mv_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_float");
-  test_sum_mv<float, TestExecSpace>();
+  test_sum_mv<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -182,12 +182,12 @@ TEST_F(TestCategory, sum_mv_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, sum_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_double");
-  test_sum<double, TestExecSpace>();
+  test_sum<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, sum_mv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_double");
-  test_sum_mv<double, TestExecSpace>();
+  test_sum_mv<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -197,12 +197,12 @@ TEST_F(TestCategory, sum_mv_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, sum_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_complex_double");
-  test_sum<Kokkos::complex<double>, TestExecSpace>();
+  test_sum<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, sum_mv_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_complex_double");
-  test_sum_mv<Kokkos::complex<double>, TestExecSpace>();
+  test_sum_mv<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -212,12 +212,12 @@ TEST_F(TestCategory, sum_mv_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, sum_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_int");
-  test_sum<int, TestExecSpace>();
+  test_sum<int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, sum_mv_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_int");
-  test_sum_mv<int, TestExecSpace>();
+  test_sum_mv<int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
