@@ -246,7 +246,7 @@ public:
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
-        (*minU_eval)(i,j) = std::max(static_cast<Real>(0),(*ubnd_)(i,j) - (*valU_eval)(i,j));
+        (*minU_eval)(i,j) = std::max(static_cast<Real>(0),(*valU_eval)(i,j)-(*ubnd_)(i,j));
       }
     }
     // Compute squared L2-norm of diff
@@ -275,7 +275,7 @@ public:
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
-        (*minU_eval)(i,j) = -std::max(static_cast<Real>(0),(*ubnd_)(i,j)-(*valU_eval)(i,j));
+        (*minU_eval)(i,j) = std::max(static_cast<Real>(0),(*valU_eval)(i,j)-(*ubnd_)(i,j));
       }
     }
     // Compute gradient of squared L2-norm of diff
@@ -319,7 +319,7 @@ public:
       ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
-        if ( (*valU_eval)(i,j) <= (*ubnd_)(i,j) ) {
+        if ( (*valU_eval)(i,j) > (*ubnd_)(i,j) ) {
           (*minV_eval)(i,j) = (*valV_eval)(i,j);
         }
         else {
