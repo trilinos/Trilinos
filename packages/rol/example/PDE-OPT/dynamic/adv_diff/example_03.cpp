@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(2,ROL::nullPtr);
     qoi_vec[0] = ROL::makePtr<QoI_State_Cost_adv_diff<RealT>>(pde->getFE());
     qoi_vec[1] = ROL::makePtr<QoI_State_MY_adv_diff<RealT>>(pde->getFE());
-    RealT stateCost   = parlist->sublist("Problem").get("State Cost",1.e5);
+    RealT stateCost   = parlist->sublist("Problem").get("State Cost",1e5);
     RealT myCost      = 1e0;
     std::vector<RealT> wts = {stateCost, myCost};
     ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_k
@@ -196,6 +196,7 @@ int main(int argc, char *argv[]) {
     z->zero();
     ROL::Ptr<ROL::Vector<RealT>> zprev = z->clone(), zdiff = z->clone();
     ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
+    parlist->sublist("Status Test").set("Use Relative Tolerances",false);
     for (unsigned i = 0; i < 20; ++i) {
       *outStream << std::endl << "Moreau-Yosida Parameter: "
                  << myCost << std::endl
@@ -216,7 +217,7 @@ int main(int argc, char *argv[]) {
       zerr = zdiff->norm();
       *outStream << std::endl << "Control Difference: "
                  << zerr << std::endl << std::endl;
-      if (zerr < ztol) break;
+      if (zerr < ztol && algo->getState()->gnorm < static_cast<RealT>(1e-10)) break;
 
       myCost *= static_cast<RealT>(1e1);
       gtol   *= static_cast<RealT>(1e-1); gtol = std::max(gtol,static_cast<RealT>(1e-12));

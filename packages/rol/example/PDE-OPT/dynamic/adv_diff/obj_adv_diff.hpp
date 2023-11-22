@@ -208,7 +208,7 @@ private:
   ROL::Ptr<Intrepid::FieldContainer<Real>> ubnd_;
 
   Real computeUpperBound(const std::vector<Real> &x) const {
-    return static_cast<Real>(1);
+    return static_cast<Real>(0.04);
   }
 
 public:
