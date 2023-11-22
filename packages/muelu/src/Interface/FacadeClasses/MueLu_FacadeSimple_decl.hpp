@@ -39,18 +39,53 @@
 //                    Jonathan Hu       (jhu@sandia.gov)
 //                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
+//                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
+#ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_
+#define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_
+
+#include <Teuchos_ParameterList.hpp>
+
+#include "MueLu_FacadeClassBase.hpp"
+
+#include "MueLu_ConfigDefs.hpp"
+
+namespace MueLu {
+
+  template <class Scalar = DefaultScalar,
+            class LocalOrdinal = DefaultLocalOrdinal,
+            class GlobalOrdinal = DefaultGlobalOrdinal,
+            class Node = DefaultNode>
+  class FacadeSimple : public FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+#include "MueLu_UseShortNames.hpp"
+
+  public:
+    //! @name Constructors/Destructors
+    //@{
+
+    //! Constructor.
+    FacadeSimple();
+
+    //! Destructor.
+    virtual ~FacadeSimple() { }
+
+    //@}
+
+    /*! @brief Set parameter list for FacadeClass interpreter.
+
+        @param[in] paramList: ParameterList containing the MueLu parameters for chosen facade class.
+    */
+    Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
+
+  private:
+
+  };
+
+} // namespace MueLu
 
 
 
-#include "MueLu_ParameterListInterpreter_def.hpp"
-
-#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
-  template class MueLu::ParameterListInterpreter<SC,LO,GO,NO>;
-
-#include "MueLu_ETI_4arg.hpp"
-
-
+#endif /* PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_ */

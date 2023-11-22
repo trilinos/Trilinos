@@ -39,53 +39,25 @@
 //                    Jonathan Hu       (jhu@sandia.gov)
 //                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
-//                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
-#ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_
-#define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_
+#ifndef MUELU_FACADECLASSBASE_FWD_HPP
+#define MUELU_FACADECLASSBASE_FWD_HPP
 
-#include <Teuchos_ParameterList.hpp>
-
-#include "MueLu_FacadeClassBase_decl.hpp"
-
-#include "MueLu_ConfigDefs.hpp"
-
-namespace MueLu {
-
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class FacadeSimple : public FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-#include "MueLu_UseShortNames.hpp"
-
-  public:
-    //! @name Constructors/Destructors
-    //@{
-
-    //! Constructor.
-    FacadeSimple();
-
-    //! Destructor.
-    virtual ~FacadeSimple() { }
-
-    //@}
-
-    /*! @brief Set parameter list for FacadeClass interpreter.
-
-        @param[in] paramList: ParameterList containing the MueLu parameters for chosen facade class.
-    */
-    Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
-
-  private:
-
-  };
-
-} // namespace MueLu
 
 
 
-#endif /* PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_ */
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class FacadeClassBase;
+}
+
+#ifndef MUELU_FACADECLASSBASE_SHORT
+#define MUELU_FACADECLASSBASE_SHORT
+#endif
+
+
+
+#endif // MUELU_FACADECLASSBASE_FWD_HPP

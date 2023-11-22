@@ -43,14 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_MLPARAMETERLISTINTEPRETER_FWD_HPP
+#define MUELU_MLPARAMETERLISTINTEPRETER_FWD_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_DEPRECATED_CODE)
 
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class MLParameterListIntepreter;
+}
 
-#include "MueLu_FacadeClassFactory_def.hpp"
+#ifndef MUELU_MLPARAMETERLISTINTEPRETER_SHORT
+#define MUELU_MLPARAMETERLISTINTEPRETER_SHORT
+#endif
 
-#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
-  template class MueLu::FacadeClassFactory<SC,LO,GO,NO>;
+#endif
 
-#include "MueLu_ETI_4arg.hpp"
-
-
+#endif // MUELU_MLPARAMETERLISTINTEPRETER_FWD_HPP

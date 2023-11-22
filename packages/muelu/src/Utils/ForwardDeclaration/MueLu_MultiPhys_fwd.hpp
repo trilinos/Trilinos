@@ -43,14 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_MULTIPHYS_FWD_HPP
+#define MUELU_MULTIPHYS_FWD_HPP
 
 
 
-#include "MueLu_AdaptiveSaMLParameterListInterpreter_def.hpp"
 
-#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
-  template class MueLu::AdaptiveSaMLParameterListInterpreter<SC,LO,GO,NO>;
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class MultiPhys;
+}
 
-#include "MueLu_ETI_4arg.hpp"
+#ifndef MUELU_MULTIPHYS_SHORT
+#define MUELU_MULTIPHYS_SHORT
+#endif
 
 
+
+#endif // MUELU_MULTIPHYS_FWD_HPP

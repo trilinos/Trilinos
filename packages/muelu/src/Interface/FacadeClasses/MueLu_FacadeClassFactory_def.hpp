@@ -54,8 +54,8 @@
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_FacadeClassBase.hpp"
-#include "MueLu_Facade_Simple_def.hpp"
-#include "MueLu_Facade_BGS2x2_def.hpp"
+#include "MueLu_FacadeSimple_def.hpp"
+#include "MueLu_FacadeBGS2x2_def.hpp"
 
 #include "MueLu_FacadeClassFactory_decl.hpp"
 
@@ -80,7 +80,7 @@ namespace MueLu {
     if(facadeClasses_.find(precMueLu) == facadeClasses_.end()) {
       GetOStream(Errors) << "FacadeClassFactory: Could not find facade class \"" << precMueLu << "\"!" << std::endl;
       GetOStream(Errors) << "The available facade classes are:" << std::endl;
-      for(typename std::map<std::string, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >::const_iterator it =facadeClasses_.begin(); it != facadeClasses_.end(); it++){
+      for(typename std::map<std::string, Teuchos::RCP<FacadeClassBase> >::const_iterator it =facadeClasses_.begin(); it != facadeClasses_.end(); it++){
         GetOStream(Errors) << "   " << it->first << std::endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "FacadeClassFactory: Could not find facade class \"" << precMueLu << "\".");

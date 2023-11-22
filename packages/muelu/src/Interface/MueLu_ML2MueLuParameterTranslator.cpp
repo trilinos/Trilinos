@@ -482,7 +482,6 @@ namespace MueLu {
         // Note, that we inspect the "coarse: list" sublist to define the "coarse" smoother/solver
         // Be aware, that MueLu::CreateSublists renames the prefix of the parameters in the "coarse: list" from "coarse" to "smoother".
         // Therefore, we have to check the values of the "smoother" parameters
-        TEUCHOS_TEST_FOR_EXCEPTION(!paramList.sublist("coarse: list").isParameter("smoother: type"), Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): no coarse grid solver defined.");
         mueluss << GetSmootherFactory(paramList.sublist("coarse: list"), adaptingParamList.sublist("coarse: list"), "coarse: type", paramList.sublist("coarse: list").get<std::string>("smoother: type"));
 
 

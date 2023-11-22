@@ -87,13 +87,13 @@ namespace MueLu {
      * @param[in] name: name that is used to access Facade class
      * @param[in] facadeclass: RCP pointer to facade class instance
      */
-    void RegisterFacadeClass(std::string name, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > facadeclass) {
+    void RegisterFacadeClass(std::string name, Teuchos::RCP<FacadeClassBase> facadeclass) {
       facadeClasses_[name] = facadeclass;
     }
 
   private:
 
-    std::map<std::string, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > facadeClasses_;
+    std::map<std::string, Teuchos::RCP<FacadeClassBase> > facadeClasses_;
 
   };
 

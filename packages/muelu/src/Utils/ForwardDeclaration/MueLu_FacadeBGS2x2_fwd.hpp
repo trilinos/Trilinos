@@ -43,14 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_FACADEBGS2X2_FWD_HPP
+#define MUELU_FACADEBGS2X2_FWD_HPP
 
 
 
-#include "MueLu_MLParameterListInterpreter_def.hpp"
 
-#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
-  template class MueLu::MLParameterListInterpreter<SC,LO,GO,NO>;
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class FacadeBGS2x2;
+}
 
-#include "MueLu_ETI_4arg.hpp"
+#ifndef MUELU_FACADEBGS2X2_SHORT
+#define MUELU_FACADEBGS2X2_SHORT
+#endif
 
 
+
+#endif // MUELU_FACADEBGS2X2_FWD_HPP
