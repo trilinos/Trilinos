@@ -13,29 +13,23 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOSLAPACK_CUDA_TPL_HPP_
-#define KOKKOSLAPACK_CUDA_TPL_HPP_
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-#include <KokkosLapack_magma.hpp>
+#ifndef KOKKOSLAPACK_MAGMA_HPP_
+#define KOKKOSLAPACK_MAGMA_HPP_
+// If LAPACK TPL is enabled, it is preferred over magma's LAPACK
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+#include "magma_v2.h"
 
 namespace KokkosLapack {
 namespace Impl {
 
-MagmaSingleton::MagmaSingleton() {
-  magma_int_t stat = magma_init();
-  if (stat != MAGMA_SUCCESS) Kokkos::abort("MAGMA initialization failed\n");
+struct MagmaSingleton {
+  MagmaSingleton();
 
-  Kokkos::push_finalize_hook([&]() { magma_finalize(); });
-}
-
-MagmaSingleton& MagmaSingleton::singleton() {
-  static MagmaSingleton s;
-  return s;
-}
+  static MagmaSingleton& singleton();
+};
 
 }  // namespace Impl
-}  // namespace KokkosLapack
-#endif  // defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-
-#endif  // KOKKOSLAPACK_CUDA_TPL_HPP_
+}  // namespace KokkosBlas
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
+#endif // KOKKOSLAPACK_MAGMA_HPP_

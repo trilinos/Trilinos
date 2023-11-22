@@ -18,7 +18,9 @@
 #define KOKKOSLAPACK_TRTRI_TPL_SPEC_DECL_HPP_
 
 #include "KokkosLapack_Host_tpl.hpp"  // trtri prototype
-//#include "KokkosLapack_tpl_spec.hpp"
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
+#include "KokkosLapack_magma.hpp"
+#endif
 
 namespace KokkosLapack {
 namespace Impl {
