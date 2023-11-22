@@ -253,6 +253,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
           mueluParamList->set("multigrid algorithm","sa");
           mueluParamList->set("use kokkos refactor", useKokkos);
+          
+          // If we are using Kokkos refactor, we need to strip off the options that Kokkos doesn't support
+          if(useKokkos) {
+            if (mueluParamList->isParameter("aggregation: match ML phase1"))
+              mueluParamList->remove("aggregation: match ML phase1");
+            if (mueluParamList->isParameter("aggregation: match ML phase2b"))
+              mueluParamList->remove("aggregation: match ML phase2b");
+            if (mueluParamList->isParameter("aggregation: use ml scaling of drop tol"))
+              mueluParamList->remove("aggregation: use ml scaling of drop tol");
+          }
 
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
 
