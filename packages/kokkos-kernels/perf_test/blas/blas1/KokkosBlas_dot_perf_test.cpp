@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
 
   if (useHIP) {
 #if defined(KOKKOS_ENABLE_HIP)
-    run<Kokkos::Experimental::HIP>(params.m, params.repeat);
+    run<Kokkos::HIP>(params.m, params.repeat);
 #else
     std::cout << "ERROR: HIP requested, but not available.\n";
     return 1;

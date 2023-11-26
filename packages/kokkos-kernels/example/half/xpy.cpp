@@ -17,6 +17,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 #include "KokkosKernels_default_types.hpp"
+#include <iostream>
 
 template <class ViewType>
 struct Functor_xpy {

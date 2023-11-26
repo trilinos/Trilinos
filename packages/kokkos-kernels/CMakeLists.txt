@@ -10,7 +10,7 @@ SET(KOKKOSKERNELS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(KokkosKernels_VERSION_MAJOR 4)
-SET(KokkosKernels_VERSION_MINOR 1)
+SET(KokkosKernels_VERSION_MINOR 2)
 SET(KokkosKernels_VERSION_PATCH 00)
 SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
@@ -115,6 +115,7 @@ IF (KokkosKernels_INSTALL_TESTING)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/dense/unit_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/sparse/unit_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(blas/unit_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(lapack/unit_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(graph/unit_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(sparse/unit_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(ode/unit_test)
@@ -124,9 +125,16 @@ ELSE()
   # Regular build, not install testing
   # Do all the regular option processing
   IF (NOT KOKKOSKERNELS_HAS_TRILINOS AND NOT KOKKOSKERNELS_HAS_PARENT)
-   # This is a standalone build
-   FIND_PACKAGE(Kokkos REQUIRED)
-   MESSAGE(STATUS "Found Kokkos at ${Kokkos_DIR}")
+    # This is a standalone build
+    FIND_PACKAGE(Kokkos REQUIRED)
+    IF((${Kokkos_VERSION} VERSION_EQUAL "4.1.00") OR (${Kokkos_VERSION} VERSION_GREATER_EQUAL "4.2.00"))
+      MESSAGE(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
+      IF((${Kokkos_VERSION} VERSION_GREATER "4.2.99"))
+        MESSAGE(WARNING "Configuring with Kokkos ${Kokkos_VERSION} which is newer than the expected develop branch - version check may need update")
+      ENDIF()
+    ELSE()
+      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires 4.1.00, 4.2.00 or develop")
+    ENDIF()
   ENDIF()
 
   INCLUDE(cmake/kokkos_backends.cmake)
@@ -185,7 +193,7 @@ ELSE()
     "ALL"
     STRING
     "A list of components to enable in testing and building"
-    VALID_ENTRIES BATCHED BLAS GRAPH SPARSE ALL
+    VALID_ENTRIES BATCHED BLAS LAPACK GRAPH SPARSE ALL
   )
 
   # ==================================================================
@@ -236,6 +244,7 @@ ELSE()
   MESSAGE("   COMMON:    ON")
   MESSAGE("   BATCHED:   ${KokkosKernels_ENABLE_COMPONENT_BATCHED}")
   MESSAGE("   BLAS:      ${KokkosKernels_ENABLE_COMPONENT_BLAS}")
+  MESSAGE("   LAPACK:    ${KokkosKernels_ENABLE_COMPONENT_LAPACK}")
   MESSAGE("   GRAPH:     ${KokkosKernels_ENABLE_COMPONENT_GRAPH}")
   MESSAGE("   SPARSE:    ${KokkosKernels_ENABLE_COMPONENT_SPARSE}")
   MESSAGE("   ODE:       ${KokkosKernels_ENABLE_COMPONENT_ODE}")
@@ -279,6 +288,9 @@ ELSE()
   ENDIF()
   IF (KokkosKernels_ENABLE_COMPONENT_BLAS)
     INCLUDE(blas/CMakeLists.txt)
+  ENDIF()
+  IF (KokkosKernels_ENABLE_COMPONENT_LAPACK)
+    INCLUDE(lapack/CMakeLists.txt)
   ENDIF()
   IF (KokkosKernels_ENABLE_COMPONENT_GRAPH)
     INCLUDE(graph/CMakeLists.txt)
@@ -397,6 +409,9 @@ ELSE()
   ENDIF()
   IF (KokkosKernels_ENABLE_COMPONENT_BLAS)
     KOKKOSKERNELS_ADD_TEST_DIRECTORIES(blas/unit_test)
+  ENDIF()
+  IF (KokkosKernels_ENABLE_COMPONENT_LAPACK)
+    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(lapack/unit_test)
   ENDIF()
   IF (KokkosKernels_ENABLE_COMPONENT_GRAPH)
     KOKKOSKERNELS_ADD_TEST_DIRECTORIES(graph/unit_test)

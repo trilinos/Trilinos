@@ -75,12 +75,12 @@ void doAllCsMat(size_t m, size_t n) {
 // Test randomly generated Cs matrices
 TEST_F(TestCategory, sparse_randcsmat) {
   // Square cases
-  for (int dim = 1; dim < 1024; dim *= 4) doAllCsMat<TestExecSpace>(dim, dim);
+  for (int dim = 1; dim < 1024; dim *= 4) doAllCsMat<TestDevice>(dim, dim);
 
   // Non-square cases
   for (int dim = 1; dim < 1024; dim *= 4) {
-    doAllCsMat<TestExecSpace>(dim * 3, dim);
-    doAllCsMat<TestExecSpace>(dim, dim * 3);
+    doAllCsMat<TestDevice>(dim * 3, dim);
+    doAllCsMat<TestDevice>(dim, dim * 3);
   }
 }
 }  // namespace Test

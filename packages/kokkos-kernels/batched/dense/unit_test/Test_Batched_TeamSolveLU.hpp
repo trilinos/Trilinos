@@ -44,6 +44,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 struct Functor_BatchedTeamGemm {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b, _c;
 
   ScalarType _alpha, _beta;
@@ -81,14 +82,15 @@ struct Functor_BatchedTeamGemm {
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = _c.extent(0);
-    Kokkos::TeamPolicy<DeviceType, ParamTagType> policy(league_size,
-                                                        Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size,
+                                                             Kokkos::AUTO);
     Kokkos::parallel_for((name + "::GemmFunctor").c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
 };
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 struct Functor_BatchedTeamLU {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a;
 
   KOKKOS_INLINE_FUNCTION
@@ -113,7 +115,7 @@ struct Functor_BatchedTeamLU {
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = _a.extent(0);
-    Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space> policy(league_size, Kokkos::AUTO);
     Kokkos::parallel_for((name + "::LUFunctor").c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -121,6 +123,7 @@ struct Functor_BatchedTeamLU {
 template <typename DeviceType, typename ViewType, typename TransType,
           typename AlgoTagType>
 struct Functor_TestBatchedTeamSolveLU {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a;
   ViewType _b;
 
@@ -146,7 +149,7 @@ struct Functor_TestBatchedTeamSolveLU {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);
-    Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space> policy(league_size, Kokkos::AUTO);
     Kokkos::parallel_for((name + "::SolveLU").c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }

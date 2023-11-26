@@ -411,6 +411,7 @@ class epsilon {
   constexpr static double value = std::numeric_limits<T>::epsilon();
 };
 
+#if KOKKOS_VERSION < 40199
 // explicit epsilon specializations
 #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template <>
@@ -428,6 +429,7 @@ class epsilon<Kokkos::Experimental::bhalf_t> {
   constexpr static double value = 0.0078125F;
 };
 #endif  // KOKKOS_HALF_T_IS_FLOAT
+#endif  // KOKKOS_VERSION < 40199
 
 using KokkosKernels::Impl::getRandomBounds;
 
@@ -574,13 +576,14 @@ int string_compare_no_case(const std::string& str1, const std::string& str2) {
 /// /brief Coo matrix class for testing purposes.
 /// \tparam ScalarType
 /// \tparam LayoutType
-/// \tparam ExeSpaceType
-template <class ScalarType, class LayoutType, class ExeSpaceType>
+/// \tparam Device
+template <class ScalarType, class LayoutType, class Device>
 class RandCooMat {
  private:
-  using RowViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  using ColViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  using DataViewTypeD = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
+  using ExeSpaceType  = typename Device::execution_space;
+  using RowViewTypeD  = Kokkos::View<int64_t*, LayoutType, Device>;
+  using ColViewTypeD  = Kokkos::View<int64_t*, LayoutType, Device>;
+  using DataViewTypeD = Kokkos::View<ScalarType*, LayoutType, Device>;
   RowViewTypeD __row_d;
   ColViewTypeD __col_d;
   DataViewTypeD __data_d;

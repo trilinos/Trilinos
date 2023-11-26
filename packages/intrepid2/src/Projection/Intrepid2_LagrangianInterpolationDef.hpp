@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_LagrangianInterpolationDef.hpp
-    \brief  Header file for the Intrepid2::Experimental::LagrangianInterpolation containing definitions.
+    \brief  Header file for the Intrepid2::LagrangianInterpolation containing definitions.
     \author Created by Mauro Perego
  */
 
@@ -333,40 +333,6 @@ LagrangianTools<DeviceType>::getOrientedDofCoeffs(
 }
 
 
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-#endif
-
-
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-template<typename DeviceType>
-template<typename BasisType,
-class ...coordsProperties, class ...coeffsProperties,
-typename ortValueType, class ...ortProperties>
-void
-LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
-    Kokkos::DynRankView<typename BasisType::scalarType, coordsProperties...> dofCoords,
-    Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
-    const BasisType* basis,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
-  LagrangianTools<DeviceType>::getOrientedDofCoords(dofCoords, basis, orts);
-  LagrangianTools<DeviceType>::getOrientedDofCoeffs(dofCoeffs, basis, orts);
-}
-
-
-template<typename DeviceType>
-template<typename basisCoeffsViewType,
-typename funcViewType,
-typename dofCoeffViewType>
-void
-LagrangianInterpolation<DeviceType>::getBasisCoeffs(basisCoeffsViewType basisCoeffs,
-    const funcViewType functionValsAtDofCoords,
-    const dofCoeffViewType dofCoeffs){
-  ArrayTools<DeviceType>::dotMultiplyDataData(basisCoeffs,functionValsAtDofCoords,dofCoeffs);
-}
-#endif
-
-
 template<typename DeviceType>
 template<typename basisCoeffsViewType,
 typename funcViewType,
@@ -390,9 +356,6 @@ LagrangianInterpolation<DeviceType>::getBasisCoeffs(basisCoeffsViewType basisCoe
   OrientationTools<DeviceType>::modifyBasisByOrientationInverse(basisCoeffs, basisCoeffsRef, orts, cellBasis, true);
 }
 
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
 } // Intrepid2 namespace
 
 #endif

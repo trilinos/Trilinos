@@ -63,7 +63,7 @@ inline int RowsPerThread<Kokkos::Cuda>(const int /*NNZPerRow*/) {
 #endif
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-inline int RowsPerThread<Kokkos::Experimental::HIP>(const int /*NNZPerRow*/) {
+inline int RowsPerThread<Kokkos::HIP>(const int /*NNZPerRow*/) {
   return 1;
 }
 #endif

@@ -108,6 +108,20 @@ template <typename T> struct UseThisFuture<T, Kokkos::HIP> {
   using future_type = type;
 };
 #endif
+#if defined(KOKKOS_ENABLE_SYCL)
+template <> struct UseThisDevice<Kokkos::Experimental::SYCL> {
+  using type = Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>;
+  using device_type = type;
+};
+template <> struct UseThisScheduler<Kokkos::Experimental::SYCL> {
+  using type = DummyTaskScheduler<Kokkos::Experimental::SYCL>;
+  using scheduler_type = type;
+};
+template <typename T> struct UseThisFuture<T, Kokkos::Experimental::SYCL> {
+  using type = DummyFuture<T, Kokkos::Experimental::SYCL>;
+  using future_type = type;
+};
+#endif
 #if defined(KOKKOS_ENABLE_OPENMP)
 template <> struct UseThisDevice<Kokkos::OpenMP> {
   using type = Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>;

@@ -167,7 +167,7 @@ template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
 void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
                           const BMatrix& B, const bool Bmode, CMatrix& C) {
   auto blockDim = A.blockDim();
-  if (blockDim != B.blockDim() or blockDim != C.blockDim()) {
+  if (blockDim != B.blockDim() || blockDim != C.blockDim()) {
     throw std::invalid_argument(
         "Block SpGEMM must be called for matrices with the same block size");
   }

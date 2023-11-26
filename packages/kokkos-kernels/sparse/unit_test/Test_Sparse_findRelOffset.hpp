@@ -430,13 +430,13 @@ void test_findRelOffset() {
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, int, TestExecSpace)
+EXECUTE_TEST(double, int, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&             \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, int, TestExecSpace)
+EXECUTE_TEST(double, int64_t, int, TestDevice)
 #endif
 
 #undef EXECUTE_TEST

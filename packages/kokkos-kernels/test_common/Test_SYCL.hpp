@@ -29,4 +29,4 @@ class sycl_test : public ::testing::Test {
 };
 
 #define TestCategory sycl_test
-#define TestExecSpace Kokkos::Experimental::SYCL
+#define TestDevice Kokkos::Experimental::SYCL

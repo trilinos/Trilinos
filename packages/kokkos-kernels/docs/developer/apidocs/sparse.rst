@@ -38,10 +38,10 @@ crs2coo
 
 spmv
 ----
-.. doxygenfunction:: KokkosSparse::spmv(KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y, const RANK_ONE)
-.. doxygenfunction:: KokkosSparse::spmv(KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y, const RANK_TWO)
+.. doxygenfunction:: KokkosSparse::spmv(const ExecutionSpace& space, KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
+.. doxygenfunction:: KokkosSparse::spmv(KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
+.. doxygenfunction:: KokkosSparse::spmv(const ExecutionSpace& space, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
 .. doxygenfunction:: KokkosSparse::spmv(const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
-
 
 trsv
 ----
@@ -60,11 +60,20 @@ block_spgemm
 
 gauss_seidel
 ------------
+.. doxygenfunction:: create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm, KokkosGraph::ColoringAlgorithm coloring_algorithm)
+.. doxygenfunction:: create_gs_handle(const HandleExecSpace&, int, KokkosSparse::GSAlgorithm gs_algorithm, KokkosGraph::ColoringAlgorithm coloring_algorithm)
+.. doxygenfunction:: create_gs_handle(KokkosSparse::ClusteringAlgorithm, nnz_lno_t, KokkosGraph::ColoringAlgorithm)
+.. doxygenfunction:: gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, bool is_graph_symmetric)
 .. doxygenfunction:: gauss_seidel_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, bool is_graph_symmetric)
+.. doxygenfunction:: gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, bool is_graph_symmetric)
 .. doxygenfunction:: gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, bool is_graph_symmetric)
+.. doxygenfunction:: gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, scalar_nnz_view_t_ given_inverse_diagonal, bool is_graph_symmetric)
 .. doxygenfunction:: gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, scalar_nnz_view_t_ given_inverse_diagonal, bool is_graph_symmetric)
+.. doxygenfunction:: symmetric_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector, typename KernelHandle::nnz_scalar_t omega, int numIter)
 .. doxygenfunction:: symmetric_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector, typename KernelHandle::nnz_scalar_t omega, int numIter)
+.. doxygenfunction:: forward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector, typename KernelHandle::nnz_scalar_t omega, int numIter)
 .. doxygenfunction:: forward_sweep_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector, typename KernelHandle::nnz_scalar_t omega, int numIter)
+.. doxygenfunction:: backward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector, typename KernelHandle::nnz_scalar_t omega, int numIter)
 .. doxygenfunction:: backward_sweep_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector, typename KernelHandle::nnz_scalar_t omega, int numIter)
 
 block_gauss_seidel

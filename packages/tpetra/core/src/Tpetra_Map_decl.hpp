@@ -1128,6 +1128,9 @@ namespace Tpetra {
       const global_ordinal_type indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 
+    /// \brief Push the device data to host, if needed
+    void lazyPushToHost() const;
+
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
@@ -1272,7 +1275,7 @@ namespace Tpetra {
     /// Used by getLocalElement() (which is a host method, and therefore
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).
-    global_to_local_table_host_type glMapHost_;
+    mutable global_to_local_table_host_type glMapHost_;
 
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.

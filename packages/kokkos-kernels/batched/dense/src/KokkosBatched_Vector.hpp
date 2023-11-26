@@ -120,21 +120,19 @@ struct DefaultVectorLength<Kokkos::complex<double>, Kokkos::CudaUVMSpace> {
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct DefaultVectorLength<float, Kokkos::Experimental::HIPSpace> {
+struct DefaultVectorLength<float, Kokkos::HIPSpace> {
   enum : int { value = 16 };
 };
 template <>
-struct DefaultVectorLength<double, Kokkos::Experimental::HIPSpace> {
+struct DefaultVectorLength<double, Kokkos::HIPSpace> {
   enum : int { value = 16 };
 };
 template <>
-struct DefaultVectorLength<Kokkos::complex<float>,
-                           Kokkos::Experimental::HIPSpace> {
+struct DefaultVectorLength<Kokkos::complex<float>, Kokkos::HIPSpace> {
   enum : int { value = 16 };
 };
 template <>
-struct DefaultVectorLength<Kokkos::complex<double>,
-                           Kokkos::Experimental::HIPSpace> {
+struct DefaultVectorLength<Kokkos::complex<double>, Kokkos::HIPSpace> {
   enum : int { value = 16 };
 };
 #endif
@@ -189,21 +187,19 @@ struct DefaultInternalVectorLength<Kokkos::complex<double>,
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct DefaultInternalVectorLength<float, Kokkos::Experimental::HIPSpace> {
+struct DefaultInternalVectorLength<float, Kokkos::HIPSpace> {
   enum : int { value = 8 };
 };
 template <>
-struct DefaultInternalVectorLength<double, Kokkos::Experimental::HIPSpace> {
+struct DefaultInternalVectorLength<double, Kokkos::HIPSpace> {
   enum : int { value = 4 };
 };
 template <>
-struct DefaultInternalVectorLength<Kokkos::complex<float>,
-                                   Kokkos::Experimental::HIPSpace> {
+struct DefaultInternalVectorLength<Kokkos::complex<float>, Kokkos::HIPSpace> {
   enum : int { value = 4 };
 };
 template <>
-struct DefaultInternalVectorLength<Kokkos::complex<double>,
-                                   Kokkos::Experimental::HIPSpace> {
+struct DefaultInternalVectorLength<Kokkos::complex<double>, Kokkos::HIPSpace> {
   enum : int { value = 2 };
 };
 #endif

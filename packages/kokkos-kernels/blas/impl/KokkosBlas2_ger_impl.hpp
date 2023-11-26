@@ -25,17 +25,17 @@
 namespace KokkosBlas {
 namespace Impl {
 
-// Functor for a single-level parallel_for version of nontranspose GER.
-// The functor parallelizes over rows of the input matrix A.
+// Functor for the thread parallel version of GER.
+// This functor parallelizes over rows of the input matrix A.
 template <class XViewType, class YViewType, class AViewType, class IndexType>
-struct SingleLevelGER {
+struct ThreadParallelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using XComponentType = typename XViewType::non_const_value_type;
   using YComponentType = typename YViewType::non_const_value_type;
   using AComponentType = typename AViewType::non_const_value_type;
 
-  SingleLevelGER(const bool justTranspose, const AlphaCoeffType& alpha,
-                 const XViewType& x, const YViewType& y, const AViewType& A)
+  ThreadParallelGER(const bool justTranspose, const AlphaCoeffType& alpha,
+                    const XViewType& x, const YViewType& y, const AViewType& A)
       : justTranspose_(justTranspose), alpha_(alpha), x_(x), y_(y), A_(A) {
     // Nothing to do
   }
@@ -69,13 +69,13 @@ struct SingleLevelGER {
   AViewType A_;
 };
 
-// Single-level parallel version of GER.
+// Thread parallel version of GER.
 template <class ExecutionSpace, class XViewType, class YViewType,
           class AViewType, class IndexType = typename AViewType::size_type>
-void singleLevelGer(const ExecutionSpace& space, const char trans[],
-                    const typename AViewType::const_value_type& alpha,
-                    const XViewType& x, const YViewType& y,
-                    const AViewType& A) {
+void threadParallelGer(const ExecutionSpace& space, const char trans[],
+                       const typename AViewType::const_value_type& alpha,
+                       const XViewType& x, const YViewType& y,
+                       const AViewType& A) {
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
@@ -90,22 +90,23 @@ void singleLevelGer(const ExecutionSpace& space, const char trans[],
   } else {
     Kokkos::RangePolicy<ExecutionSpace, IndexType> rangePolicy(space, 0,
                                                                A.extent(0));
-    SingleLevelGER<XViewType, YViewType, AViewType, IndexType> functor(
+    ThreadParallelGER<XViewType, YViewType, AViewType, IndexType> functor(
         (trans[0] == 'T') || (trans[0] == 't'), alpha, x, y, A);
-    Kokkos::parallel_for("KokkosBlas::ger[SingleLevel]", rangePolicy, functor);
+    Kokkos::parallel_for("KokkosBlas::ger[threadParallel]", rangePolicy,
+                         functor);
   }
 }
 
-struct TwoLevelGER_LayoutLeftTag {};
-struct TwoLevelGER_LayoutRightTag {};
+struct TeamParallelGER_LayoutLeftTag {};
+struct TeamParallelGER_LayoutRightTag {};
 
 // ---------------------------------------------------------------------------------------------
 
-// Functor for a two-level parallel_reduce version of GER, designed for
-// performance on GPU. Kernel depends on the layout of A.
+// Functor for the team parallel version of GER, designed for
+// performance on GPU. The kernel depends on the layout of A.
 template <class ExecutionSpace, class XViewType, class YViewType,
           class AViewType, class IndexType>
-struct TwoLevelGER {
+struct TeamParallelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using XComponentType = typename XViewType::non_const_value_type;
   using YComponentType = typename YViewType::non_const_value_type;
@@ -114,15 +115,15 @@ struct TwoLevelGER {
   using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
   using member_type = typename policy_type::member_type;
 
-  TwoLevelGER(const bool justTranspose, const AlphaCoeffType& alpha,
-              const XViewType& x, const YViewType& y, const AViewType& A)
+  TeamParallelGER(const bool justTranspose, const AlphaCoeffType& alpha,
+                  const XViewType& x, const YViewType& y, const AViewType& A)
       : justTranspose_(justTranspose), alpha_(alpha), x_(x), y_(y), A_(A) {
     // Nothing to do
   }
 
  public:
   // LayoutLeft version: one team per column
-  KOKKOS_INLINE_FUNCTION void operator()(TwoLevelGER_LayoutLeftTag,
+  KOKKOS_INLINE_FUNCTION void operator()(TeamParallelGER_LayoutLeftTag,
                                          const member_type& team) const {
     if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
@@ -147,7 +148,7 @@ struct TwoLevelGER {
   }
 
   // LayoutRight version: one team per row
-  KOKKOS_INLINE_FUNCTION void operator()(TwoLevelGER_LayoutRightTag,
+  KOKKOS_INLINE_FUNCTION void operator()(TeamParallelGER_LayoutRightTag,
                                          const member_type& team) const {
     if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
@@ -169,7 +170,6 @@ struct TwoLevelGER {
             });
       }
     }
-    team.team_barrier();
   }
 
  private:
@@ -180,12 +180,13 @@ struct TwoLevelGER {
   AViewType A_;
 };
 
-// Two-level parallel version of GER.
+// Team parallel version of GER.
 template <class ExecutionSpace, class XViewType, class YViewType,
           class AViewType, class IndexType = typename AViewType::size_type>
-void twoLevelGer(const ExecutionSpace& space, const char trans[],
-                 const typename AViewType::const_value_type& alpha,
-                 const XViewType& x, const YViewType& y, const AViewType& A) {
+void teamParallelGer(const ExecutionSpace& space, const char trans[],
+                     const typename AViewType::const_value_type& alpha,
+                     const XViewType& x, const YViewType& y,
+                     const AViewType& A) {
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
@@ -205,8 +206,8 @@ void twoLevelGer(const ExecutionSpace& space, const char trans[],
   constexpr bool isLayoutLeft =
       std::is_same<typename AViewType::array_layout, Kokkos::LayoutLeft>::value;
   using layout_tag =
-      typename std::conditional<isLayoutLeft, TwoLevelGER_LayoutLeftTag,
-                                TwoLevelGER_LayoutRightTag>::type;
+      typename std::conditional<isLayoutLeft, TeamParallelGER_LayoutLeftTag,
+                                TeamParallelGER_LayoutRightTag>::type;
   using TeamPolicyType = Kokkos::TeamPolicy<ExecutionSpace, layout_tag>;
   TeamPolicyType teamPolicy;
   if (isLayoutLeft) {
@@ -217,15 +218,17 @@ void twoLevelGer(const ExecutionSpace& space, const char trans[],
     teamPolicy = TeamPolicyType(space, A.extent(0), Kokkos::AUTO);
   }
 
-  TwoLevelGER<ExecutionSpace, XViewType, YViewType, AViewType, IndexType>
+  TeamParallelGER<ExecutionSpace, XViewType, YViewType, AViewType, IndexType>
       functor((trans[0] == 'T') || (trans[0] == 't'), alpha, x, y, A);
-  Kokkos::parallel_for("KokkosBlas::ger[twoLevel]", teamPolicy, functor);
+  Kokkos::parallel_for("KokkosBlas::ger[teamParallel]", teamPolicy, functor);
 }
 
 // ---------------------------------------------------------------------------------------------
 
-// generalGer: use 1 level (Range) or 2 level (Team) implementation,
-// depending on whether execution space is CPU or GPU.
+// generalGerImpl():
+// - use thread parallel code (rangePolicy) if execution space is CPU;
+// - use team parallel code (teamPolicy) if execution space is GPU.
+//
 // The 'enable_if' makes sure unused kernels are not instantiated.
 
 template <class ExecutionSpace, class XViewType, class YViewType,
@@ -236,7 +239,7 @@ void generalGerImpl(const ExecutionSpace& space, const char trans[],
                     const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const YViewType& y,
                     const AViewType& A) {
-  singleLevelGer(space, trans, alpha, x, y, A);
+  threadParallelGer(space, trans, alpha, x, y, A);
 }
 
 template <class ExecutionSpace, class XViewType, class YViewType,
@@ -247,7 +250,7 @@ void generalGerImpl(const ExecutionSpace& space, const char trans[],
                     const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const YViewType& y,
                     const AViewType& A) {
-  twoLevelGer(space, trans, alpha, x, y, A);
+  teamParallelGer(space, trans, alpha, x, y, A);
 }
 
 }  // namespace Impl

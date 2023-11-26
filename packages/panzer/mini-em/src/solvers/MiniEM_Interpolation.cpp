@@ -26,12 +26,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   typedef PHX::Device DeviceSpace;
   typedef Kokkos::HostSpace HostSpace;
   typedef Intrepid2::OrientationTools<DeviceSpace> ots;
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
-#else
   typedef Intrepid2::LagrangianInterpolation<DeviceSpace> li;
-#endif
-
   typedef Kokkos::DynRankView<double,DeviceSpace> DynRankDeviceView;
 
   // must be able to cast to a block linear object factory

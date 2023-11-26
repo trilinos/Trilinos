@@ -139,7 +139,7 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)
+  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestDevice)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
@@ -152,7 +152,7 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace)
+  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutRight, TestDevice)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 

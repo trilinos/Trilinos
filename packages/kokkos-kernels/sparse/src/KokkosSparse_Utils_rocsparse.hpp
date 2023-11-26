@@ -18,6 +18,7 @@
 #define _KOKKOSKERNELS_SPARSEUTILS_ROCSPARSE_HPP
 
 #include <type_traits>
+#include <sstream>
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 #include <rocm_version.h>
@@ -101,8 +102,9 @@ inline rocsparse_operation mode_kk_to_rocsparse(const char kk_mode[]) {
       myRocsparseOperation = rocsparse_operation_conjugate_transpose;
       break;
     default: {
-      std::cerr << "Mode " << kk_mode[0] << " invalid for rocSPARSE SpMV.\n";
-      throw std::invalid_argument("Invalid mode");
+      std::ostringstream out;
+      out << "Mode " << kk_mode[0] << " invalid for rocSPARSE SpMV.\n";
+      throw std::invalid_argument(out.str());
     }
   }
   return myRocsparseOperation;
@@ -177,6 +179,24 @@ struct kokkos_to_rocsparse_type<Kokkos::complex<double>> {
 // e.g. 5.4 -> 50400
 #define KOKKOSSPARSE_IMPL_ROCM_VERSION \
   ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
+
+// Set the stream on the given rocSPARSE handle when this object
+// is constructed, and reset to the default stream when this object is
+// destructed.
+struct TemporarySetRocsparseStream {
+  TemporarySetRocsparseStream(rocsparse_handle handle_,
+                              const Kokkos::HIP& exec_)
+      : handle(handle_) {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+        rocsparse_set_stream(handle, exec_.hip_stream()));
+  }
+
+  ~TemporarySetRocsparseStream() {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_stream(handle, NULL));
+  }
+
+  rocsparse_handle handle;
+};
 
 }  // namespace Impl
 

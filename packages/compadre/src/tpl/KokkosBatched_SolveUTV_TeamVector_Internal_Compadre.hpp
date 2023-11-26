@@ -251,7 +251,7 @@ namespace KokkosBatched {
             if (do_print) {
                 Kokkos::single(Kokkos::PerTeam(member), [&] () {
 #if KOKKOS_VERSION >= 40200
-                    using Kokkos:::printf;
+                    using Kokkos::printf;
 #endif
                     printf("x=zeros(%d,%d);\n", n, nrhs);
                     for (int i=0; i<n; ++i) {
