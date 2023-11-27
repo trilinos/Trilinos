@@ -184,6 +184,55 @@ TEUCHOS_UNIT_TEST( ParameterListModifier, setDefaultsInSublists ) {
 }
 
 
+class SimpleModifier : public Teuchos::ParameterListModifier
+{
+public:
+
+  SimpleModifier(const std::string &name) : Teuchos::ParameterListModifier(name){}
+};
+
+
+TEUCHOS_UNIT_TEST( ParameterListModifier, haveSameModifiers ) {
+  using Teuchos::ParameterListModifier;
+  RCP<ParameterListModifier> modifier1 = rcp(new ParameterListModifier("Modifier 1"));
+  RCP<ParameterListModifier> modifier2 = rcp(new ParameterListModifier("Modifier 2"));
+  RCP<ParameterListModifier> modifier3 = rcp(new ParameterListModifier("Modifier 1"));
+  RCP<SimpleModifier> modifier4 = rcp(new SimpleModifier("Modifier 1"));
+  
+  // These modifiers have the same type but different names
+  TEST_INEQUALITY(*modifier1, *modifier2);
+  // These modifiers have the same type and name
+  TEST_EQUALITY(*modifier1, *modifier3);
+  // These modifiers have different types but the same name
+  TEST_INEQUALITY(*modifier1, *modifier4);
+  // Test the `haveSameModifiers` function
+  {
+    ParameterList pl = ParameterList("pl", modifier1);
+    ParameterList expected_pl = ParameterList("expected_pl", modifier1);
+    TEST_ASSERT(haveSameModifiers(expected_pl, pl));
+  }
+  {
+    ParameterList pl = ParameterList("pl");
+    pl.sublist("Asub", modifier1);
+    ParameterList expected_pl = ParameterList("expected_pl");
+    expected_pl.sublist("Asub", modifier1);
+    TEST_ASSERT(haveSameModifiers(expected_pl, pl));
+    pl.sublist("Asub").setModifier(modifier2);
+    TEST_ASSERT(!haveSameModifiers(expected_pl, pl));
+  }
+  // const int a_val = 2;
+  // pl.sublist("AA");
+  // pl.sublist("AB").set("A", 3);
+  // ParameterList expected_pl(pl);
+  // pl.set("A", a_val);
+  // expected_pl.sublist("AA").set("A", a_val);
+  // empty_modifier->setDefaultsInSublists("A", pl, tuple<std::string>("AA", "AB"));
+  // // The AA sublist should change and the "A" parameter should be deleted
+  // // but the AB sublist should remain the same
+  // TEST_ASSERT(haveSameValuesSorted(expected_pl, pl, true));
+}
+
+
 } // namespace Teuchos
 
 

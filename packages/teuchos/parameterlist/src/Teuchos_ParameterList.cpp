@@ -808,7 +808,7 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
     else if( entry1 != entry2 ) {
       return false;
     }
-    // Note that the above statement automatically recursively compare the
+    // Note that the above statement automatically recursively compares the
     // sublists since ParameterList objects are stored in the 'any' variable
     // held by the ParameterEntry object and this same comparison operator will
     // be used.
@@ -823,6 +823,19 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
 
 bool Teuchos::haveSameModifiers(const ParameterList &list1, const ParameterList &list2) {
   // Check that the modifiers are the same
+  const RCP<const ParameterListModifier> &modifier1 = list1.getModifier();
+  const RCP<const ParameterListModifier> &modifier2 = list2.getModifier();
+  // Compare the modifiers.
+  const bool modifier1_is_null = is_null(modifier1);
+  const bool modifier2_is_null = is_null(modifier2);
+  if( modifier1_is_null || modifier2_is_null ){
+    if ( modifier1_is_null != modifier2_is_null ){
+      return false;
+    }
+  } else if ( *modifier1 != *modifier2 ){
+    return false;
+  }
+  // Now look for more sublists
   ParameterList::ConstIterator itr1, itr2;
   for(
     itr1 = list1.begin(), itr2 = list2.begin();
@@ -830,13 +843,9 @@ bool Teuchos::haveSameModifiers(const ParameterList &list1, const ParameterList 
     ++itr1, ++itr2
     )
   {
-    const Teuchos::RCP<const ParameterListModifier> &modifier1 = list1.getModifier();
-    const Teuchos::RCP<const ParameterListModifier> &modifier2 = list2.getModifier();
-    if( modifier1 != modifier2 ) {
-      return false;
-    }
-    const Teuchos::ParameterEntry &entry1 = itr1->second;
-    const Teuchos::ParameterEntry &entry2 = itr2->second;
+    // Check the modifiers in each sublist.
+    const ParameterEntry &entry1 = itr1->second;
+    const ParameterEntry &entry2 = itr2->second;
     if (entry1.isList() && entry2.isList()){
       if ( !haveSameModifiers( Teuchos::getValue<ParameterList>(entry1),
                                Teuchos::getValue<ParameterList>(entry2) ) ){

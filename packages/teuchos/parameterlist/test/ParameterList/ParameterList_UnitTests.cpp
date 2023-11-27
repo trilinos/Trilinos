@@ -302,11 +302,11 @@ TEUCHOS_UNIT_TEST( ParameterList, setParametersWithModifier )
   using Teuchos::ParameterListModifier;
   RCP<ParameterListModifier> modifier1 = rcp(new ParameterListModifier("Modifier 1"));
   RCP<ParameterListModifier> modifier2 = rcp(new ParameterListModifier("Modifier 2"));
-  ParameterList pl1("pl");
   //pl1:
   //  A: 1.0
   //  SubA: # with `modifier1`
   //    B: 2
+  ParameterList pl1("pl");
   pl1.set("A", 1.0);
   pl1.sublist("SubA", modifier1).set("B", 2);
   ParameterList pl2("pl");
