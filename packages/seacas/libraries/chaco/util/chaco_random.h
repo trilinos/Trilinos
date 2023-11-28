@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -11,11 +11,11 @@
 extern "C" {
 #endif
 
-long   init_rand_port(long seed);
-long   get_init_rand_port(void);
-long   genr_rand_port(long init_rand);
-long   rand_port(void);
-double rand_rect_port(void);
+unsigned long init_rand_port(unsigned long seed);
+unsigned long get_init_rand_port(void);
+unsigned long genr_rand_port(unsigned long init_rand);
+unsigned long rand_port(void);
+double        rand_rect_port(void);
 
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */
