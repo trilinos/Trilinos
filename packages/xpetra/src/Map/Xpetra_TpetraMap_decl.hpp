@@ -69,6 +69,7 @@ namespace Xpetra {
     : public virtual Map<LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
+    typedef typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type global_indices_array_device_type;
 
     //! @name Constructors and destructor
     //@{
@@ -158,6 +159,9 @@ namespace Xpetra {
     //! Return a view of the global indices owned by this node.
     Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const;
 
+    //! Return a view of the global indices owned by this process.
+    global_indices_array_device_type getMyGlobalIndicesDevice() const;
+    
     //@}
 
     //! @name Boolean tests
