@@ -307,8 +307,8 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   Array<GlobalOrdinal> local_dualNodeId2primalNodeId(gMaxDualNodeId - gMinDualNodeId + 1, -GO_ONE);
 
   // Generate locally replicated vector for mapping dual node IDs to primal aggregate ID
-  Array<LocalOrdinal> dualNodeId2primalAggId(gMaxDualNodeId - gMinDualNodeId + 1, -GO_ONE);
-  Array<LocalOrdinal> local_dualNodeId2primalAggId(gMaxDualNodeId - gMinDualNodeId + 1, -GO_ONE);
+  Array<GlobalOrdinal> dualNodeId2primalAggId(gMaxDualNodeId - gMinDualNodeId + 1, -GO_ONE);
+  Array<GlobalOrdinal> local_dualNodeId2primalAggId(gMaxDualNodeId - gMinDualNodeId + 1, -GO_ONE);
 
   Array<GlobalOrdinal> dualDofId2primalDofId(primalInterfaceDofRowMap->getGlobalNumElements(), -GO_ONE);
   Array<GlobalOrdinal> local_dualDofId2primalDofId(primalInterfaceDofRowMap->getGlobalNumElements(), -GO_ONE);
@@ -327,14 +327,17 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
       const GlobalOrdinal gDualDofId    = A01->getDomainMap()->getGlobalElement(r);
       const GlobalOrdinal gDualNodeId   = AmalgamationFactory::DOFGid2NodeId(gDualDofId, dualBlockDim, dualDofOffset, 0);
 
-      if (local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId] == -GO_ONE) {
-        local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId] = gPrimalNodeId;
-        local_dualNodeId2primalAggId[gDualNodeId - gMinDualNodeId]  = primalAggId;
-      } else {
-        GetOStream(Warnings) << "PROC: " << myRank << " gDualNodeId " << gDualNodeId << " is already connected to primal nodeId "
-                             << local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId]
-                             << ". Ignore new dispNodeId: " << gPrimalNodeId << std::endl;
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION(local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId] != -GO_ONE,
+                                 MueLu::Exceptions::RuntimeError,
+                                 "PROC: " << myRank << " gDualNodeId " << gDualNodeId
+                                 << " is already connected to primal nodeId "
+                                 << local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId]
+                                 << ". This shouldn't be. A possible reason might be: "
+                                    "Check if parallel dist. of primalInterfaceDofRowMap corresponds "
+                                    "to the parallel dist. of subblock matrix A01.");
+
+      local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId] = gPrimalNodeId;
+      local_dualNodeId2primalAggId[gDualNodeId - gMinDualNodeId] = primalAggId;
     }
   }
   const int dualNodeId2primalNodeIdSize = Teuchos::as<int>(local_dualNodeId2primalNodeId.size());
@@ -376,7 +379,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   std::map<GlobalOrdinal, LocalOrdinal> primalAggId2localDualAggId;
   for (size_t lDualNodeID = 0; lDualNodeID < dualNodeMap->getLocalNumElements(); ++lDualNodeID) {
     const GlobalOrdinal gDualNodeId = dualNodeMap->getGlobalElement(lDualNodeID);
-    const LocalOrdinal primalAggId = dualNodeId2primalAggId[gDualNodeId - gMinDualNodeId];
+    const GlobalOrdinal primalAggId = dualNodeId2primalAggId[gDualNodeId - gMinDualNodeId];
     if (primalAggId2localDualAggId.count(primalAggId) == 0)
       primalAggId2localDualAggId[primalAggId] = nLocalAggregates++;
     dualVertex2AggId[lDualNodeID] = primalAggId2localDualAggId[primalAggId];

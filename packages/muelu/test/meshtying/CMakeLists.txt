@@ -25,7 +25,8 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
       meshtying2D_small_matrix.mm
       meshtying2D_small_rhs.mm
       meshtying2D_small_nullspace1.mm
-      meshtying2D_small_interface_dof_map.mm
+      meshtying2D_small_interface_dof_map_MPI1.mm
+      meshtying2D_small_interface_dof_map_MPI4.mm
       meshtying2D_small_simple.xml
     )
 
@@ -34,16 +35,17 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
       meshtying2D_medium_matrix.mm
       meshtying2D_medium_rhs.mm
       meshtying2D_medium_nullspace1.mm
-      meshtying2D_medium_interface_dof_map.mm
+      meshtying2D_medium_interface_dof_map_MPI1.mm
+      meshtying2D_medium_interface_dof_map_MPI4.mm
       meshtying2D_medium_simple.xml
       meshtying2D_medium_simple_spai.xml
     )
 
   TRIBITS_ADD_EXECUTABLE(
-      MeshTyingBlocked_NodeBased
-      SOURCES MeshTyingBlocked_NodeBased.cpp
-      COMM serial mpi
-  )
+    MeshTyingBlocked_NodeBased
+    SOURCES MeshTyingBlocked_NodeBased.cpp
+    COMM serial mpi
+    )
 
   TRIBITS_ADD_EXECUTABLE(
     MortarSurfaceCoupling_DofBased
@@ -84,7 +86,7 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
     TRIBITS_ADD_TEST(
       MortarSurfaceCoupling_DofBased
       NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_medium"
-      ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=11 --instantiation=${MortarSurfaceCoupling_Instatiation}"
+      ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=12 --instantiation=${MortarSurfaceCoupling_Instatiation}"
       COMM serial mpi
       NUM_MPI_PROCS 4
       )

@@ -49,6 +49,7 @@
 
 // MueLu
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_SegregatedAFactory.hpp"
 
 // Xpetra
 #include <Xpetra_MatrixUtils.hpp>
@@ -57,6 +58,34 @@
 
 
 namespace MueLuTests {
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> createRedundantMaps(
+        Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> localDropMap) {
+#include "MueLu_UseShortNames.hpp"
+
+  Teuchos::RCP<const Teuchos::Comm<int>> comm = localDropMap->getComm();
+
+  Teuchos::Array<GO> localDropMapGIDList = localDropMap->getLocalElementList();
+  const int GIDListSize = localDropMap->getMaxAllGlobalIndex()+1;
+
+  //  Create a list of GID with only an incomplete/partial set of GIDs, which can then be completed by reduceAll
+  Teuchos::Array<GO> partialDropMapGIDList(GIDListSize, -Teuchos::ScalarTraits<GlobalOrdinal>::one());
+  Teuchos::Array<GO> redundantDropMapGIDList(GIDListSize, -Teuchos::ScalarTraits<GlobalOrdinal>::one());
+
+  for(GO gid : localDropMapGIDList){
+    partialDropMapGIDList[gid] = gid;
+  }
+
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, GIDListSize, &partialDropMapGIDList[0],
+                     &redundantDropMapGIDList[0]);
+  redundantDropMapGIDList.erase(std::remove(redundantDropMapGIDList.begin(), redundantDropMapGIDList.end(), -1),
+                                redundantDropMapGIDList.end());
+  Teuchos::RCP<const Map> redundantDropMap = MapFactory::Build(
+          localDropMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), redundantDropMapGIDList, 0, comm);
+
+  return redundantDropMap;
+}
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node>> aggregates,
@@ -73,6 +102,10 @@ void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, Global
 
   aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
 
+  // Create redundant maps to be absolutely sure no entry is missed during the check
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> blockmap_final;
+  blockmap_final = MueLuTests::createRedundantMaps<SC,LO,GO,NO>(blockmap);
+
   // Loop over all aggregates
   for (size_t aggregate = 0; aggregate < aggPtr.extent(0) - 1; aggregate++) {
     bool aggContainsNodesInBlockmap = false;
@@ -83,7 +116,7 @@ void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, Global
       // Loop over all node dofs
       for (size_t i = 0; i < stridingInfo[0]; i++) {
         // Check if dof is contained in rowmap (inner + interface dofs) of one of the bodies in contact
-        if (blockmap->isNodeGlobalElement(node * stridingInfo[0] + i)) {
+        if (blockmap_final->isNodeGlobalElement(node * stridingInfo[0] + i)) {
           aggContainsNodesInBlockmap = true;
         } else {
           aggContainsNodesNotInBlockmap = true;
@@ -94,8 +127,7 @@ void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, Global
     TEUCHOS_TEST_FOR_EXCEPTION(aggContainsNodesInBlockmap == aggContainsNodesNotInBlockmap,
                                MueLu::Exceptions::RuntimeError,
                                "Aggregate " << aggregate <<
-                                            " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n"
-                                            "Remark: This may be expected behaviour in some tests.")
+                                            " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n")
   }
 }
 
@@ -107,14 +139,18 @@ void checkAggregatesMapPair(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalO
                             Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mastermap) {
 #include "MueLu_UseShortNames.hpp"
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-
   // Check if Graph filtering worked
   typename Aggregates::LO_view aggPtr;
   typename Aggregates::LO_view aggNodes;
   typename Aggregates::LO_view unaggregated;
 
   aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
+
+  // Create redundant maps to be absolutely sure no entry is missed during the check
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> slavemap_final;
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mastermap_final;
+  slavemap_final = MueLuTests::createRedundantMaps<SC,LO,GO,NO>(slavemap);
+  mastermap_final = MueLuTests::createRedundantMaps<SC,LO,GO,NO>(mastermap);
 
   // Loop over all aggregates
   for (size_t aggregate = 0; aggregate < aggPtr.extent(0) - 1; aggregate++) {
@@ -126,11 +162,11 @@ void checkAggregatesMapPair(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalO
       // Loop over all node dofs
       for (size_t i = 0; i < stridingInfo[0]; i++) {
         // Check if dof is contained in interface mapping of one of the bodies in contact
-        if (slavemap->isNodeGlobalElement(node * stridingInfo[0] + i)) {
+        if (slavemap_final->isNodeGlobalElement(node * stridingInfo[0] + i)) {
           aggContainsNodesInSlavemap = true;
-        } else if (mastermap->isNodeGlobalElement(node * stridingInfo[0] + i)) {
+        }
+        if (mastermap_final->isNodeGlobalElement(node * stridingInfo[0] + i)) {
           aggContainsNodesInMastermap = true;
-        } else {
         }
       }
     }
@@ -138,8 +174,7 @@ void checkAggregatesMapPair(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalO
     TEUCHOS_TEST_FOR_EXCEPTION((aggContainsNodesInSlavemap == true) && (aggContainsNodesInMastermap == true),
                                MueLu::Exceptions::RuntimeError,
                                "Aggregate " << aggregate <<
-                                            " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n"
-                                            "Remark: This may be expected behaviour in some tests.")
+                               " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n")
   }
 }
 }

@@ -12,6 +12,8 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
       segregatedAgg_filtered_matrix.mm
       segregatedAgg_matrix.mm
       segregatedAgg_nullspace.mm
+      segregatedAgg_interface_dof_map_MPI1.mm
+      segregatedAgg_interface_dof_map_MPI3.mm
   )
 
   TRIBITS_ADD_EXECUTABLE(

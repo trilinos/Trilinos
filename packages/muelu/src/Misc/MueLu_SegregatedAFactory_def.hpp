@@ -279,9 +279,6 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
   }
 
   Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
-  // copy block size information
-  Aout->SetFixedBlockSize(Ain->GetFixedBlockSize());
-  Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
 
   // copy block size information
   Aout->SetFixedBlockSize(Ain->GetFixedBlockSize());
@@ -301,7 +298,7 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
   Array<GO> localDropMapGIDList = localDropMap->getLocalElementList();
   const int GIDListSize = localDropMap->getMaxAllGlobalIndex()+1;
 
-//  Create a list of GID with only an incomplete/partial set of GIDs, which can then be completed by reduceAll
+  //  Create a list of GID with only an incomplete/partial set of GIDs, which can then be completed by reduceAll
   Array<GO> partialDropMapGIDList(GIDListSize, -Teuchos::ScalarTraits<GlobalOrdinal>::one());
   Array<GO> redundantDropMapGIDList(GIDListSize, -Teuchos::ScalarTraits<GlobalOrdinal>::one());
 
