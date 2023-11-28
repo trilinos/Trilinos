@@ -1,4 +1,4 @@
-ame: PR-gcc-openmpi
+name: PR-gcc-openmpi
 
 on:
   pull_request:
