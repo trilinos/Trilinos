@@ -584,6 +584,8 @@ namespace Tpetra {
     const global_ordinal_type indexBase,
     const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
   {
+    Tpetra::Details::ProfilingRegion pr("Map::initWithNonownedHostIndexList()");
+
     using Kokkos::LayoutLeft;
     using Kokkos::subview;
     using Kokkos::View;
@@ -1723,6 +1725,76 @@ namespace Tpetra {
     return lgMapHost_;
   }
 
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getMyGlobalIndicesDevice () const
+  {
+    using std::endl;
+    using LO = local_ordinal_type;
+    using GO = global_ordinal_type;
+    using const_lg_view_type = decltype(lgMap_);
+    using lg_view_type = typename const_lg_view_type::non_const_type;
+    const bool debug = Details::Behavior::debug("Map");
+    const bool verbose = Details::Behavior::verbose("Map");
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = Details::createPrefix(
+        comm_.getRawPtr(), "Map", "getMyGlobalIndicesDevice");
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str();
+    }
+
+    // If the local-to-global mapping doesn't exist yet, and if we
+    // have local entries, then create and fill the local-to-global
+    // mapping.
+    const bool needToCreateLocalToGlobalMapping =
+      lgMap_.extent (0) == 0 && numLocalElements_ > 0;
+
+    if (needToCreateLocalToGlobalMapping) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Need to create lgMap" << endl;
+        std::cerr << os.str();
+      }
+      if (debug) {
+        // The local-to-global mapping should have been set up already
+        // for a noncontiguous map.
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! isContiguous(), std::logic_error,
+           "Tpetra::Map::getMyGlobalIndices: The local-to-global "
+           "mapping (lgMap_) should have been set up already for a "
+           "noncontiguous Map.  Please report this bug to the Tpetra "
+           "developers.");
+      }
+      const LO numElts = static_cast<LO> (getLocalNumElements ());
+
+      using Kokkos::view_alloc;
+      using Kokkos::WithoutInitializing;
+      lg_view_type lgMap ("lgMap", numElts);
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Fill lgMap" << endl;
+        std::cerr << os.str();
+      }
+      FillLgMap<LO, GO, no_uvm_device_type> fillIt (lgMap, minMyGID_);
+
+      // "Commit" the local-to-global lookup table we filled in above.
+      lgMap_ = lgMap;
+    }
+    
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str();
+    }
+    return lgMap_;
+  }
+
+
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalElementList () const
@@ -2289,6 +2361,7 @@ namespace Tpetra {
    Map<LocalOrdinal,GlobalOrdinal,Node>::lazyPushToHost() const{
      using exec_space = typename Node::device_type::execution_space;
      if(lgMap_.extent(0) != lgMapHost_.extent(0)) {
+       Tpetra::Details::ProfilingRegion pr("Map::lazyPushToHost() - pushing data");
        // NOTE: We check lgMap_ and not glMap_, since the latter can
        // be somewhat error prone for contiguous maps
 
