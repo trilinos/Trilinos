@@ -412,7 +412,7 @@ namespace Iotm {
       std::pair<bool, PermutationType> get_permutation(const Topology              &topology,
                                                        const std::vector<EntityId> &controlNodes,
                                                        const std::vector<EntityId> &permutedNodes,
-                                                       unsigned                     numPermutations)
+                                                       PermutationType              numPermutations)
       {
         PermutationType permutation = Topology::InvalidPermutation;
         bool            equivalent  = false;
