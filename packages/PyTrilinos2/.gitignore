@@ -1,0 +1,11 @@
+.DS_Store
+Makefile
+TAGS
+config.log
+config.status
+*~
+build
+dist
+*.err
+examples/*.png
+python/getTpetraTypeName.py
