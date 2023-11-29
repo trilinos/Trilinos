@@ -465,8 +465,6 @@ namespace MueLu {
     if(bTransferCoordinates_) {
       RCP<const Map> coarseCoordMap;
       using array_type = typename Map::global_indices_array_device_type;
-      array_type elementAList = coarseMap->getMyGlobalIndicesDevice();
-      GO indexBase = coarseMap->getIndexBase();
 
       LO blkSize = 1;
       if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
@@ -477,7 +475,13 @@ namespace MueLu {
         // No amalgamation required, we can use the coarseMap
         coarseCoordMap = coarseMap;
       } else {
+        // Vector system
+        // NOTE: There could be further optimizations here where we detect contiguous maps and then
+        // create a contiguous amalgamated maps, which bypasses the expense of the getMyGlobalIndicesDevice() 
+        // call (which is free for non-contiguous maps, but costs something if the map is contiguous).
         using range_policy = Kokkos::RangePolicy<typename Node::execution_space>;         
+        array_type elementAList = coarseMap->getMyGlobalIndicesDevice();
+        GO indexBase = coarseMap->getIndexBase();        
         auto numElements = elementAList.size() / blkSize;
         typename array_type::non_const_type elementList_nc("elementList",numElements);
 
