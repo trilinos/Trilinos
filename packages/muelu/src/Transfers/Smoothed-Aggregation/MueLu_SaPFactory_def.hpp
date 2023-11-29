@@ -50,6 +50,7 @@
 #include <Xpetra_IteratorOps.hpp> // containing routines to generate Jacobi iterator
 #include <Xpetra_IO.hpp>
 #include <sstream>
+#include <iomanip>
 
 #include "MueLu_SaPFactory_decl.hpp"
 
@@ -230,7 +231,7 @@ namespace MueLu {
           A->SetMaxEigenvalueEstimate(lambdaMax);
       }
       GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
-      std::cout<<"CMS: lambdaMax = "<<lambdaMax<<std::endl;
+      std::cout<<"CMS: lambdaMax = "<<std::setprecision(20)<<lambdaMax<<std::endl;
       A->getMap()->getComm()->barrier();
 
       {
@@ -250,6 +251,7 @@ namespace MueLu {
 	
 	      SC omega = dampingFactor / lambdaMax;
 	      TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+      std::cout<<"CMS: omega = "<<std::setprecision(20)<<omega<<std::endl;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,

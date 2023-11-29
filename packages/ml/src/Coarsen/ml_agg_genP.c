@@ -583,6 +583,7 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
 
 
      widget.omega  = ag->smoothP_damping_factor / max_eigen;
+     printf("CMS: omega = %22.16e\n",widget.omega);
      ml->spectral_radius[level] = max_eigen;
 
      if ( ml->comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel())
@@ -658,7 +659,7 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
      {
        /* Set the appropriate prolongator smoother damping factor. */
        widget.omega  = dampingFactors[ii] / max_eigen;
-
+       printf("CMS: omega = %22.16e\n",widget.omega);
        if (ii < numSmSweeps-1) {
          tmpmat1 = tmpmat2;
          tmpmat2 = ML_Operator_Create(Amat->comm);
