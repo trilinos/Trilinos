@@ -6,7 +6,7 @@
  *    L'Ecuyer and Cote, ACM Transactions on Mathematical
  *       Software, March 1991
  *    Russian peasant algorithm -- Knuth, vol. II, pp. 442-43
- *  Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ *  Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  *  of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  *  NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,27 +20,25 @@
 
 #include "chaco_random.h"
 
-#define MOD 2147483647L /* modulus for generator  */
-#define MULT 41358L     /* multiplier             */
-                        /* modulus = mult*quotient  + remainder  */
-#define Q 51924L        /* int(modulus / multiplier) */
-#define R 10855L        /* remainder                 */
+#define MOD  2147483647L /* modulus for generator  */
+#define MULT 41358L      /* multiplier             */
+                         /* modulus = mult*quotient  + remainder  */
+#define Q         51924L /* int(modulus / multiplier) */
+#define R         10855L /* remainder                 */
 #define MAX_VALUE (MOD - 1)
-
-#define EXP_VAL 1285562981L /* value for 10,000th draw */
 
 #define IMPOSSIBLE_RAND (-1)
 #define STARTUP_RANDS                                                                              \
   16 /* throw away this number of                                                                  \
    initial random numbers */
 
-static long rand_num = IMPOSSIBLE_RAND;
+static unsigned long rand_num = IMPOSSIBLE_RAND;
 
 /* initialize random number generator with seed */
-long init_rand_port(long seed)
+unsigned long init_rand_port(unsigned long seed)
 {
-  extern long rand_num;
-  int         i;
+  extern unsigned long rand_num;
+  int                  i;
 
   if (seed < 1 || seed > MAX_VALUE) { /* if seed out of range */
     seed = get_init_rand_port();      /* get seed */
@@ -57,14 +55,14 @@ long init_rand_port(long seed)
 
 /* get a long initial seed for gererator
   assumes that rand returns a short integer */
-long get_init_rand_port(void)
+unsigned long get_init_rand_port(void)
 {
-  long seed;
+  unsigned long seed;
 
   srand((unsigned int)time(NULL)); /* initialize system generator */
   do {
-    seed = ((long)rand()) * rand();
-    seed += ((long)rand()) * rand();
+    seed = ((unsigned long)rand()) * rand();
+    seed += ((unsigned long)rand()) * rand();
   } while (seed > MAX_VALUE);
 
   assert(seed > 0);
@@ -92,9 +90,9 @@ long get_init_rand_port(void)
         a * a <= modulus
         [a*x/a*q]-[a*x/modulus] <= 1
             (for only one addition of modulus below) */
-long genr_rand_port(long init_rand)
+unsigned long genr_rand_port(unsigned long init_rand)
 {
-  long k, residue;
+  unsigned long k, residue;
 
   k       = init_rand / Q;
   residue = MULT * (init_rand - Q * k) - R * k;
@@ -107,9 +105,9 @@ long genr_rand_port(long init_rand)
 }
 
 /* get a random number */
-long rand_port(void)
+unsigned long rand_port(void)
 {
-  extern long rand_num;
+  extern unsigned long rand_num;
   if (rand_num == IMPOSSIBLE_RAND) {
     /* if not initialized, do it now */
     rand_num = 1;
@@ -135,12 +133,15 @@ double rand_rect_port(void) { return (double)rand_port() / (double)(MAX_VALUE + 
   use Russian peasant algorithm followed by approximate factoring */
 
 #if defined(TESTING)
+
+#define EXP_VAL 1285562981L /* value for 10,000th draw */
+
 /* Test the generator */
 #include <stdio.h>
 int main(void)
 {
-  long seed;
-  int  i;
+  unsigned long seed;
+  int           i;
   seed = init_rand_port(1);
   printf("Seed for random number generator is %ld\n", seed);
   i = STARTUP_RANDS; /* threw away STARTUP_RANDS */
