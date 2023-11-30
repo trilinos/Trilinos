@@ -169,8 +169,8 @@ namespace {
     DeepCopyCounter::stop();
 
 
-    if (numRanks ==1 || Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
-      // No H2D/D2H if MPI is GPU aware or if there's no MPI
+    if (numRanks ==1 || Node::is_cpu || Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+      // No H2D/D2H if MPI is GPU aware, not a CPU, or if there's no MPI
       TEST_EQUALITY(DeepCopyCounter::get_count_different_space(),0);
     }
     else {
