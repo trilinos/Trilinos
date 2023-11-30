@@ -66,6 +66,8 @@ struct topology
     , BEAM_3
     , SHELL_LINE_2
     , SHELL_LINE_3
+    , SHELL_SIDE_BEAM_2
+    , SHELL_SIDE_BEAM_3
     , SPRING_2
     , SPRING_3
     , TRI_3_2D, TRIANGLE_3_2D = TRI_3_2D
@@ -127,6 +129,12 @@ struct topology
   STK_INLINE_FUNCTION
   bool is_shell() const;
 
+  STK_INLINE_FUNCTION
+  bool is_shell_side_ordinal(unsigned ord) const;
+
+  STK_INLINE_FUNCTION
+  bool is_shell_with_face_sides() const;
+
   /// what is the rank of this topology
   STK_INLINE_FUNCTION
   rank_t rank() const;
@@ -185,6 +193,9 @@ struct topology
   /// what is the topology of the given face
   STK_INLINE_FUNCTION
   topology face_topology(unsigned face_ordinal) const;
+
+  STK_INLINE_FUNCTION
+  topology shell_side_topology(unsigned shell_side_ordinal = 0) const;
 
   /// fill the output ordinals with the ordinals that make up the given edge
   template <typename OrdinalOutputIterator>

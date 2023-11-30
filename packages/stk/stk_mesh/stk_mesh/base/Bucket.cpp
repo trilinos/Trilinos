@@ -619,6 +619,22 @@ void Bucket::initialize_ngp_field_bucket_ids()
   }
 }
 
+void Bucket::grow_ngp_field_bucket_ids()
+{
+  const MetaData& meta = mesh().mesh_meta_data();
+  const FieldVector& allFields = meta.get_fields();
+
+  const unsigned oldNumFields = m_ngp_field_bucket_id.size();
+  const unsigned newNumFields = allFields.size();
+  STK_ThrowRequire(newNumFields >= oldNumFields);
+
+  const unsigned numNewFields = newNumFields - oldNumFields;
+  for (unsigned i = 0; i < numNewFields; ++i) {
+    m_ngp_field_bucket_id.push_back(INVALID_BUCKET_ID);
+    m_ngp_field_is_modified.push_back(false);
+  }
+}
+
 void Bucket::set_ngp_field_bucket_id(unsigned fieldOrdinal, unsigned ngpFieldBucketId)
 {
   STK_ThrowRequire(fieldOrdinal < m_ngp_field_bucket_id.size());

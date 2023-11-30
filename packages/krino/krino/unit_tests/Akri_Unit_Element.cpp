@@ -38,7 +38,7 @@ public:
     Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
     const NodeToCapturedDomainsMap nodesToCapturedDomains;
     interfaceGeometry = std::make_unique<LevelSetInterfaceGeometry>(AuxMetaData::get(stk_meta()).active_part(), CDFEM_Support::get(stk_meta()), Phase_Support::get(stk_meta()));
-    interfaceGeometry->prepare_to_process_elements(krino_mesh.stk_bulk(), nodesToCapturedDomains);
+    interfaceGeometry->prepare_to_decompose_elements(krino_mesh.stk_bulk(), nodesToCapturedDomains);
   }
   virtual ~Mesh_Element_Fixture() {};
   void check_entity_counts()

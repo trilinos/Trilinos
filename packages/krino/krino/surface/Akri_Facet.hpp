@@ -54,7 +54,8 @@ public:
 
   virtual double point_distance_squared( const stk::math::Vector3d & x ) const = 0;
   virtual void closest_point( const stk::math::Vector3d & queryPt, stk::math::Vector3d & closestPt, stk::math::Vector2d & paramAtClosestPt ) const = 0;
-  virtual int point_distance_sign( const stk::math::Vector3d & x ) const = 0;
+  virtual double facet_plane_signed_distance( const stk::math::Vector3d & x ) const = 0;
+  virtual int point_distance_sign( const stk::math::Vector3d & x ) const { return (facet_plane_signed_distance(x) < 0.0) ? -1 : 1; }
   virtual stk::math::Vector3d weights(const stk::math::Vector2d & parametric_coords) const = 0;
   virtual stk::math::Vector3d centroid() const = 0;
 
@@ -91,9 +92,9 @@ public:
   virtual double point_distance_squared( const stk::math::Vector3d & x ) const override
     { return Calc::distance_squared( myCoords, x ); }
   virtual void closest_point( const stk::math::Vector3d & queryPt, stk::math::Vector3d & closestPt, stk::math::Vector2d & paramAtClosestPt ) const override
-    { Calc::closest_point( myCoords, queryPt, closestPt, paramAtClosestPt.data() ); }
-  virtual int point_distance_sign( const stk::math::Vector3d & x ) const override
-    { return (Dot(Calc::normal_dir(myCoords),x-facet_vertex(0)) < 0.0) ? -1 : 1; }
+    { Calc::closest_point_and_parametric_coords( myCoords, queryPt, closestPt, paramAtClosestPt ); }
+  virtual double facet_plane_signed_distance( const stk::math::Vector3d & x ) const override
+    { return Dot(Calc::normal_dir(myCoords),x-facet_vertex(0)); }
   virtual stk::math::Vector3d weights(const stk::math::Vector2d & parametric_coords) const override
     { return stk::math::Vector3d(1.0-parametric_coords[0]-parametric_coords[1],parametric_coords[0],parametric_coords[1]); }
   virtual stk::math::Vector3d centroid() const override
@@ -133,8 +134,8 @@ public:
     { return Calc::distance_squared(myCoords, x); }
   virtual void closest_point( const stk::math::Vector3d & queryPt, stk::math::Vector3d & closestPt, stk::math::Vector2d & paramAtClosestPt ) const override
     { Calc::closest_point(myCoords, queryPt, closestPt, paramAtClosestPt[0]); }
-  virtual int point_distance_sign( const stk::math::Vector3d & x ) const override
-    { return (Dot(crossZ(facet_vertex(1)-facet_vertex(0)), x-facet_vertex(0)) < 0.0) ? -1 : 1; }
+  virtual double facet_plane_signed_distance( const stk::math::Vector3d & x ) const override
+    { return Dot(crossZ(facet_vertex(1)-facet_vertex(0)), x-facet_vertex(0)); }
   virtual stk::math::Vector3d weights(const stk::math::Vector2d & parametric_coords) const override
     { return stk::math::Vector3d(1.0-parametric_coords[0],parametric_coords[0],0.0); }
   virtual stk::math::Vector3d centroid() const override

@@ -11,6 +11,7 @@
 #include <Akri_DiagWriter.hpp>
 #include <stk_math/StkVector.hpp>
 #include <Akri_Facet.hpp>
+#include <Akri_Sign.hpp>
 
 namespace krino {
 
@@ -52,6 +53,18 @@ std::vector<BoundingBox> fill_processor_bounding_boxes(const BoundingBox & local
   return procPaddedQueryBboxes;
 }
 
+static double compute_point_distance_squared(const stk::math::Vector3d &x, const FacetVec & nearestFacets)
+{
+  double minSqrDist = std::numeric_limits<double>::max();
+  for ( auto&& facet : nearestFacets )
+  {
+    const double sqrDist = facet->point_distance_squared(x);
+    if (sqrDist < minSqrDist)
+      minSqrDist = sqrDist;
+  }
+  return minSqrDist;
+}
+
 double
 point_distance_given_nearest_facets(const stk::math::Vector3d &x, const FacetVec & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance)
 {
@@ -71,22 +84,14 @@ point_distance_given_nearest_facets(const stk::math::Vector3d &x, const FacetVec
   }
   else
   {
-    double min_sqr_dist = std::numeric_limits<double>::max();
-    for ( auto&& facet : nearestFacets )
-    {
-      const double sqr_dist = facet->point_distance_squared(x);
-      if (sqr_dist < min_sqr_dist)
-      {
-        min_sqr_dist = sqr_dist;
-      }
-    }
-    if (0.0 != narrow_band_size && min_sqr_dist > narrow_band_size*narrow_band_size)
+    const double minSqrDist = compute_point_distance_squared(x, nearestFacets);
+    if (0.0 != narrow_band_size && minSqrDist > narrow_band_size*narrow_band_size)
     {
       dist = far_field_value;
     }
     else
     {
-      dist = std::sqrt(min_sqr_dist);
+      dist = std::sqrt(minSqrDist);
     }
   }
 
@@ -140,7 +145,10 @@ compute_point_to_facets_distance_by_average_normal(const stk::math::Vector3d &x,
     }
   }
 
-  if (!closest_point_on_edge) return facet_queries[nearest].signed_distance(x);
+  if (!closest_point_on_edge)
+  {
+    return facet_queries[nearest].signed_distance(x);
+  }
 
   const double min_sqr_dist = facet_queries[nearest].distance_squared();
   const stk::math::Vector3d pseudo_normal = compute_pseudo_normal(dim, facet_queries, nearest);
@@ -206,6 +214,98 @@ compute_pseudo_normal(const unsigned dim, const std::vector<FacetDistanceQuery> 
   return (3 == dim && close_count > 2) ? pseudo_normal : average_normal;
 }
 
+bool is_projection_of_point_inside_enlarged_triangle(const stk::math::Vector3d & triPt0, const stk::math::Vector3d & triPt1, const stk::math::Vector3d & triPt2, const stk::math::Vector3d& p)
+{
+  constexpr double expand {1e-10};
+  const stk::math::Vector3d centroid = 1./3.*(triPt0+triPt1+triPt2);
+  const stk::math::Vector3d p0 = triPt0 + expand*(triPt0-centroid);
+  const stk::math::Vector3d p1 = triPt1 + expand*(triPt1-centroid);
+  const stk::math::Vector3d p2 = triPt2 + expand*(triPt2-centroid);
+  return Facet3d::Calc::is_projection_of_point_inside_triangle(p0, p1, p2, p);
 }
 
+bool is_projection_of_point_inside_enlarged_segment(const stk::math::Vector3d & segPt0, const stk::math::Vector3d & segPt1, const stk::math::Vector3d& p)
+{
+  constexpr double expand {1e-10};
+  const stk::math::Vector3d p0 = segPt0 + expand*(segPt0-segPt1);
+  const stk::math::Vector3d p1 = segPt1 + expand*(segPt1-segPt0);
 
+  return Facet2d::Calc::is_projection_of_point_inside_segment(p0, p1, p);
+}
+
+bool is_projection_of_point_inside_enlarged_facet(const Facet & facet, const stk::math::Vector3d& p)
+{
+  const int dim = (dynamic_cast<const krino::Facet3d *>(&facet)) ? 3 : 2;
+
+  if (3 == dim)
+    return is_projection_of_point_inside_enlarged_triangle(facet.facet_vertex(0), facet.facet_vertex(1), facet.facet_vertex(2), p);
+  return is_projection_of_point_inside_enlarged_segment(facet.facet_vertex(0), facet.facet_vertex(1), p);
+}
+
+std::pair<int, double> compute_facet_edge_intersection(const Facet & facet,
+  const stk::math::Vector3d& edgePt0,
+  const stk::math::Vector3d& edgePt1)
+{
+  const double dist0 = facet.facet_plane_signed_distance(edgePt0);
+  const double dist1 = facet.facet_plane_signed_distance(edgePt1);
+
+  if (sign_change(dist0, dist1))
+  {
+    const double loc = dist0 / (dist0-dist1);
+    const stk::math::Vector3d ptLoc = (1.-loc)*edgePt0 + loc*edgePt1;
+    if (is_projection_of_point_inside_enlarged_facet(facet, ptLoc))
+      return {sign(dist1), loc};
+  }
+  return {0, -1.};
+}
+
+std::pair<int, double> compute_intersection_between_and_surface_facets_and_edge(const std::vector<Facet*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1)
+{
+  if (candidates.empty())
+    return {0, -1.};
+
+  const double dist0 = compute_point_to_facets_distance_by_average_normal(edgePt0, candidates);
+  const double dist1 = compute_point_to_facets_distance_by_average_normal(edgePt1, candidates);
+
+  if (!sign_change(dist0, dist1))
+    return {0, -1.};
+
+  if (0. == dist0)
+    return {-1, 0.};
+  if (0. == dist1)
+    return {1, 1.};
+
+  bool haveCrossing = false;
+  double intersectionLoc = -1.;
+
+  for (const Facet * surfFacet : candidates)
+  {
+    const auto [facetCrossingSign, facetIntersectionLoc] = compute_facet_edge_intersection(*surfFacet, edgePt0, edgePt1);
+    if (facetCrossingSign != 0)
+    {
+      if (!haveCrossing || std::abs(facetIntersectionLoc-0.5) < std::abs(intersectionLoc-0.5)) // pick intersection closest to middle of edge
+        intersectionLoc = facetIntersectionLoc;
+      haveCrossing = true;
+    }
+  }
+
+  if (haveCrossing)
+    return {sign(dist1), intersectionLoc};
+
+  // Sign change, but no crossing. This could be because there is a small gap in the facets, or there could be
+  // an unterminated surface far away.  Decide based on magnitude of the distance at the linear crossing location.
+
+  const double linearCrossingLoc = dist0 / (dist0 - dist1);
+
+  const stk::math::Vector3d linearCrossingPt = (1.-linearCrossingLoc) * edgePt0 + linearCrossingLoc * edgePt1;
+  const double minSqrDist = compute_point_distance_squared(linearCrossingPt, candidates);
+  const double edgeSqrLen = (edgePt1 - edgePt0).length_squared();
+
+  constexpr double sqrTol = 1.e-4; // Large tol here is fine, right?
+  if (minSqrDist < sqrTol*edgeSqrLen)
+    return {sign(dist1), linearCrossingLoc};
+
+  return {0, -1.};
+}
+
+}

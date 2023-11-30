@@ -100,7 +100,7 @@ void perform_multilevel_adaptivity(RefinementInterface & refinement,
     }
     else
     {
-      krinolog << "Skipping/Terminating refinement becuase no elements are marked for refinement.\n";
+      krinolog << "Skipping/Terminating refinement because no elements are marked for refinement.\n";
       done = true;
     }
   }

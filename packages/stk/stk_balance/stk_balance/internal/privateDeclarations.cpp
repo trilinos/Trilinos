@@ -401,6 +401,9 @@ std::vector<SideInfo> getElementExposedFaceInfo(const stk::mesh::BulkData & bulk
   std::vector<SideInfo> sideInfoVec;
 
   for (unsigned ord : sideOrdinals) {
+    // FIXME SHELL_SIDE_TOPO
+    if (elemTopology.is_shell_side_ordinal(ord)) { continue; }
+
     const stk::topology sideTopology = elemTopology.side_topology(ord);
     stk::mesh::get_subcell_nodes(bulk, element, bulk.mesh_meta_data().side_rank(), ord, sideNodes);
     const double tol = balanceSettings.getToleranceForFaceSearch(bulk, coords,

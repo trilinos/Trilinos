@@ -34,6 +34,8 @@
 #include <Akri_CDMesh_Debug.hpp>
 #include <Akri_CDMesh_Refinement.hpp>
 #include <Akri_CDMesh_Utils.hpp>
+#include <Akri_ChildNodeStencil.hpp>
+#include <Akri_ConformingPhaseParts.hpp>
 #include <Akri_ReportHandler.hpp>
 #include <Akri_SubElement.hpp>
 #include <Akri_SubElementNodeAncestry.hpp>
@@ -213,49 +215,6 @@ static bool any_node_was_snapped(const std::vector<stk::mesh::Entity> & nodes,
   return false;
 }
 
-static void build_node_stencil(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & childNodeSelector,
-    const FieldRef & parentIdsField,
-    const FieldRef & parentWtsField,
-    stk::mesh::Entity node,
-    const double selfWeight,
-    std::vector<stk::mesh::Entity> & parentNodes,
-    std::vector<double> & parentWeights)
-{
-  if (!childNodeSelector(mesh.bucket(node)))
-  {
-    parentNodes.push_back(node);
-    parentWeights.push_back(selfWeight);
-    return;
-  }
-
-  const std::vector<std::pair<stk::mesh::Entity, double>> nodeParentsAndWeights = get_child_node_parents_and_weights(mesh, parentIdsField, parentWtsField, node);
-  for (auto & [parent, parentWeight] : nodeParentsAndWeights)
-    build_node_stencil(mesh, childNodeSelector, parentIdsField, parentWtsField, parent, selfWeight*parentWeight, parentNodes, parentWeights);
-}
-
-struct ChildNodeStencil
-{
-  ChildNodeStencil(const stk::mesh::Entity child, const std::vector<stk::mesh::Entity> & parents, const std::vector<double> & parentWts)
-  : childNode(child), parentNodes(parents), parentWeights(parentWts) {}
-  stk::mesh::Entity childNode;
-  std::vector<stk::mesh::Entity> parentNodes;
-  std::vector<double> parentWeights;
-};
-
-static void build_child_node_stencil(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & childNodeSelector,
-    const FieldRef & parentIdsField,
-    const FieldRef & parentWtsField,
-    const stk::mesh::Entity childNode,
-    std::vector<stk::mesh::Entity> & workParentNodes,
-    std::vector<double> & workParentWeights)
-{
-  workParentNodes.clear();
-  workParentWeights.clear();
-  build_node_stencil(mesh, childNodeSelector, parentIdsField, parentWtsField, childNode, 1.0, workParentNodes, workParentWeights);
-}
-
 const SubElementNode *
 CDMesh::find_new_node_with_common_ancestry_as_existing_node_with_given_id(const stk::mesh::EntityId nodeId) const
 {
@@ -289,27 +248,6 @@ CDMesh::find_new_node_with_common_ancestry_as_existing_child_node(const stk::mes
   return SubElementNode::common_child(parents);
 }
 
-static void fill_child_node_stencils(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Part & childNodePart,
-    const FieldRef & parentIdsField,
-    const FieldRef & parentWtsField,
-    std::vector<ChildNodeStencil> & childNodeStencils)
-{
-  std::vector<stk::mesh::Entity> workParentNodes;
-  std::vector<double> workParentWeights;
-
-  const stk::mesh::Selector childNodeSelector = childNodePart;
-  const stk::mesh::Selector ownedOrSharedChildNodeSelector = childNodePart & (mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part());
-  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::NODE_RANK, ownedOrSharedChildNodeSelector))
-  {
-    for(const auto childNode : *bucketPtr)
-    {
-      build_child_node_stencil(mesh, childNodeSelector, parentIdsField, parentWtsField, childNode, workParentNodes, workParentWeights);
-      childNodeStencils.emplace_back(childNode, workParentNodes, workParentWeights);
-    }
-  }
-}
-
 static void apply_snapping_to_children_of_snapped_nodes(const std::vector<ChildNodeStencil> & childNodeStencils,
     const FieldSet & snapFields,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains)
@@ -320,15 +258,42 @@ static void apply_snapping_to_children_of_snapped_nodes(const std::vector<ChildN
         interpolate_nodal_field(field, childNodeStencil.childNode, childNodeStencil.parentNodes, childNodeStencil.parentWeights);
 }
 
-void CDMesh::undo_previous_snapping_using_interpolation(const stk::mesh::BulkData & mesh)
+static void undo_previous_snaps_without_interpolation(const stk::mesh::BulkData & mesh, const FieldRef coordsField, FieldRef cdfemSnapField)
+{
+  FieldRef oldSnapDisplacements = cdfemSnapField.field_state(stk::mesh::StateOld);
+  stk::mesh::field_axpby(-1.0, oldSnapDisplacements, +1.0, coordsField);
+  FieldRef modelCoords(mesh.mesh_meta_data().coordinate_field());
+  if (modelCoords != coordsField)
+    stk::mesh::field_axpby(-1.0, oldSnapDisplacements, +1.0, modelCoords);
+}
+
+void CDMesh::prepare_for_resnapping(const stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry)
 {
   const CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
-  const AuxMetaData & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
-
   FieldRef cdfemSnapField = cdfemSupport.get_cdfem_snap_displacements_field();
 
   if (cdfemSnapField.valid())
-    undo_previous_snaps_using_interpolation(mesh, auxMeta.active_part(), cdfemSupport.get_coords_field(), cdfemSnapField, cdfemSupport.get_snap_fields());
+  {
+    const AuxMetaData & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
+
+    if (cdfemSupport.get_resnap_method() == krino::RESNAP_AFTER_USING_INTERPOLATION_TO_UNSNAP)
+    {
+      undo_previous_snaps_using_interpolation(mesh, auxMeta.active_part(), cdfemSupport.get_coords_field(), cdfemSnapField, cdfemSupport.get_snap_fields());
+    }
+    else if (cdfemSupport.get_resnap_method() == krino::RESNAP_USING_INTERFACE_ON_PREVIOUS_SNAPPED_MESH ||
+        cdfemSupport.get_resnap_method() == RESNAP_USING_INTERPOLATION)
+    {
+      if (cdfemSupport.get_resnap_method() == krino::RESNAP_USING_INTERFACE_ON_PREVIOUS_SNAPPED_MESH)
+        cdfemSnapField.field().rotate_multistate_data();
+
+      interfaceGeometry.set_do_update_geometry_when_mesh_changes(true);
+      krino::NodeToCapturedDomainsMap nodesToCapturedDomains;
+      interfaceGeometry.prepare_to_intersect_elements(mesh, nodesToCapturedDomains);
+      interfaceGeometry.set_do_update_geometry_when_mesh_changes(false);
+
+      undo_previous_snaps_without_interpolation(mesh, cdfemSupport.get_coords_field(), cdfemSnapField);
+    }
+  }
 }
 
 void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
@@ -364,6 +329,13 @@ void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry
     apply_snapping_to_children_of_snapped_nodes(childNodeStencils, snapFields, nodesToCapturedDomains);
     stk::mesh::field_axpby(+1.0, my_cdfem_support.get_coords_field(), -1.0, cdfemSnapField);
   }
+
+  if (cdfemSnapField.valid() && my_cdfem_support.get_resnap_method() == krino::RESNAP_USING_INTERPOLATION)
+  {
+    const FieldSet & postSnapInterpFields = my_cdfem_support.get_interpolation_fields();
+    snap_fields_using_interpolation(stk_bulk(), my_aux_meta.active_part(), my_cdfem_support.get_coords_field(), cdfemSnapField, postSnapInterpFields);
+    apply_snapping_to_children_of_snapped_nodes(childNodeStencils, postSnapInterpFields, nodesToCapturedDomains);
+  }
 }
 
 int
@@ -371,7 +343,7 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
       const InterfaceGeometry & interfaceGeometry,
       const int stepCount,
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs)
-{ /* %TRACE[ON]% */ Trace trace__("krino::Mesh::decompose_mesh()"); /* %TRACE% */
+{
   stk::diag::TimeBlock root_timer__(CDFEM_Support::get(mesh.mesh_meta_data()).get_timer_cdfem());
 
   stk::log_with_time_and_memory(mesh.parallel(), "Begin Mesh Decomposition.");
@@ -407,7 +379,7 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
       the_new_mesh->snap_and_update_fields_and_captured_domains(interfaceGeometry, nodesToCapturedDomains);
 
-    interfaceGeometry.prepare_to_process_elements(the_new_mesh->stk_bulk(), nodesToCapturedDomains);
+    interfaceGeometry.prepare_to_decompose_elements(the_new_mesh->stk_bulk(), nodesToCapturedDomains);
   }
 
   {
@@ -507,10 +479,8 @@ CDMesh::modify_mesh()
     batch_create_sides(stk_bulk(), side_requests);
 
     stk::mesh::toggle_sideset_updaters(stk_bulk(), true);
-    stk_bulk().modification_begin();
-    update_node_activation(stk_bulk(), aux_meta().active_part()); // we should be able to skip this step if there are no higher order elements
+    activate_selected_entities_touching_active_elements(stk_bulk(), stk::topology::NODE_RANK, stk_meta().universal_part(), aux_meta().active_part()); // we should be able to skip this step if there are no higher order elements
     update_element_side_parts();
-    stk_bulk().modification_end();
 
     ParallelThrowAssert(stk_bulk().parallel(), check_element_side_connectivity(stk_bulk(), aux_meta().exposed_boundary_part(), aux_meta().active_part()));
     ParallelThrowAssert(stk_bulk().parallel(), check_element_side_parts());
@@ -728,11 +698,8 @@ CDMesh::rebuild_from_restart_mesh(stk::mesh::BulkData & mesh)
   the_new_mesh->generate_nonconformal_elements();
   the_new_mesh->restore_subelements();
 
-  // rebuild conformal side parts
-  the_new_mesh->stk_bulk().modification_begin();
-  update_node_activation(the_new_mesh->stk_bulk(), the_new_mesh->aux_meta().active_part()); // we should be able to skip this step if there are no higher order elements
-  the_new_mesh->update_element_side_parts();
-  the_new_mesh->stk_bulk().modification_end();
+  activate_selected_entities_touching_active_elements(the_new_mesh->stk_bulk(), stk::topology::NODE_RANK, the_new_mesh->stk_meta().universal_part(), the_new_mesh->aux_meta().active_part()); // we should be able to skip this step if there are no higher order elements
+  the_new_mesh->update_element_side_parts(); // rebuild conformal side parts
 
   delete_extraneous_inactive_sides(mesh, the_new_mesh->myRefinementSupport, the_new_mesh->get_parent_part(), the_new_mesh->get_active_part());
 
@@ -750,15 +717,12 @@ static bool is_child_elem(const stk::mesh::BulkData & mesh, const stk::mesh::Par
 
 static void batch_change_entity_parts(stk::mesh::BulkData & mesh, 
     const stk::mesh::EntityVector & entitiesWithWrongParts,
-    const stk::mesh::ConstPartVector & addParts,
-    const stk::mesh::ConstPartVector & removeParts)
+    const stk::mesh::PartVector & addParts,
+    const stk::mesh::PartVector & removeParts)
 {
   if (stk::is_true_on_any_proc(mesh.parallel(), !entitiesWithWrongParts.empty()))
   {
-    mesh.modification_begin();
-    for (auto && entityWithWrongParts : entitiesWithWrongParts)
-      mesh.change_entity_parts(entityWithWrongParts, addParts, removeParts);
-    mesh.modification_end();
+    mesh.batch_change_entity_parts(entitiesWithWrongParts, addParts, removeParts);
   }
 }
 
@@ -781,7 +745,7 @@ CDMesh::rebuild_child_part()
       if(is_child_elem(mesh, childEdgeNodePart, elem))
         entitiesWithWrongParts.push_back(elem);
 
-  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::ConstPartVector{&child_part}, stk::mesh::ConstPartVector{});
+  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::PartVector{&child_part}, stk::mesh::PartVector{});
 }
 
 void
@@ -806,7 +770,7 @@ CDMesh::rebuild_parent_and_active_parts_using_nonconformal_and_child_parts()
   }
   stk::util::sort_and_unique(entitiesWithWrongParts);
   
-  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::ConstPartVector{&parent_part}, stk::mesh::ConstPartVector{&get_active_part()});
+  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::PartVector{&parent_part}, stk::mesh::PartVector{&get_active_part()});
 
   // Also remove active part from nonconformal sides
   entitiesWithWrongParts.clear();
@@ -817,7 +781,7 @@ CDMesh::rebuild_parent_and_active_parts_using_nonconformal_and_child_parts()
     for (auto && side : *bucketPtr)
       entitiesWithWrongParts.push_back(side);
       
-  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&get_active_part()});
+  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::PartVector{}, stk::mesh::PartVector{&get_active_part()});
 }
 
 const SubElementNode *
@@ -1022,14 +986,7 @@ CDMesh::fixup_adapted_element_parts(stk::mesh::BulkData & mesh)
   stk::mesh::PartVector empty;
   std::vector<stk::mesh::PartVector> add_parts(entities.size(), empty);
 
-  // This seems like a bug.  For some reason batch_change_entity_parts does not work the same as calling change_entity_parts within a full modification cycle.
-  //mesh.bulk().batch_change_entity_parts(entities, add_parts, remove_parts);
-  mesh.modification_begin();
-  for(size_t i=0; i<entities.size(); ++i)
-  {
-    mesh.change_entity_parts(entities[i], add_parts[i], remove_parts[i]);
-  }
-  mesh.modification_end();
+  mesh.batch_change_entity_parts(entities, add_parts, remove_parts);
 }
 
 //--------------------------------------------------------------------------------
@@ -1642,23 +1599,37 @@ static bool entity_has_any_node_in_selector(const stk::mesh::BulkData & mesh, st
 
 //--------------------------------------------------------------------------------
 
+static std::vector<stk::mesh::Entity> get_elements_that_might_get_decomposed(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & ownedPossibleParentElementSelector,
+    const stk::mesh::Selector & allDecomposedBlocksSelector)
+{
+  std::vector<stk::mesh::Entity> elems;
+  for (auto&& bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, ownedPossibleParentElementSelector))
+  {
+    if (Mesh_Element::is_supported_topology(bucket->topology()))
+    {
+      if (allDecomposedBlocksSelector(bucket))
+      {
+        elems.insert(elems.end(), bucket->begin(), bucket->end());
+      }
+      else
+      {
+        for (auto&& elem : *bucket)
+          if (entity_has_any_node_in_selector(mesh, elem, allDecomposedBlocksSelector))
+            elems.push_back(elem);
+      }
+    }
+  }
+
+  return elems;
+}
+
 std::vector<stk::mesh::Entity>
 CDMesh::get_nonconformal_elements() const
 {
-  std::vector<stk::mesh::Entity> elems;
-  const auto & all_decomposed_blocks_selector = my_phase_support.get_all_decomposed_blocks_selector();
-  stk::mesh::Selector selector = get_locally_owned_part() & (get_parent_part() | (get_active_part() & !get_child_part()));
-  stk::mesh::BucketVector const& buckets = stk_bulk().get_buckets(stk::topology::ELEMENT_RANK, selector);
+  stk::mesh::Selector possibleParentElementSelector = get_locally_owned_part() & (get_parent_part() | (get_active_part() & !get_child_part()));
 
-  for (auto&& bucket : buckets)
-  {
-    const stk::topology topology = bucket->topology();
-    if (Mesh_Element::is_supported_topology(topology))
-      for (auto&& elem : *bucket)
-        if (entity_has_any_node_in_selector(stk_bulk(), elem, all_decomposed_blocks_selector))
-          elems.push_back(elem);
-  }
-
+  std::vector<stk::mesh::Entity> elems = get_elements_that_might_get_decomposed(stk_bulk(), possibleParentElementSelector, my_phase_support.get_all_decomposed_blocks_selector());
   std::sort(elems.begin(), elems.end(), stk::mesh::EntityLess(stk_bulk()));
 
   return elems;
@@ -2832,27 +2803,28 @@ CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nod
 
 void
 CDMesh::update_element_side_parts()
-{ /* %TRACE[ON]% */ Trace trace__("krino::Mesh::update_element_side_parts()"); /* %TRACE% */
-
+{
   // This method makes sure the correct conformal side parts are on the element sides
   stk::mesh::Selector locally_owned = get_locally_owned_part();
 
   std::vector< stk::mesh::Entity> sides;
   stk::mesh::get_selected_entities( locally_owned, stk_bulk().buckets( stk_bulk().mesh_meta_data().side_rank() ), sides );
 
-  stk::mesh::PartVector add_parts;
-  stk::mesh::PartVector remove_parts;
+  stk::mesh::PartVector addParts;
+  stk::mesh::PartVector removeParts;
+  std::vector<stk::mesh::PartVector> batchAddParts;
+  std::vector<stk::mesh::PartVector> batchRemoveParts;
+  batchAddParts.reserve(sides.size());
+  batchRemoveParts.reserve(sides.size());
 
   for (auto && side : sides)
   {
-    determine_element_side_parts(side, add_parts, remove_parts);
-    stk_bulk().change_entity_parts(side, add_parts, remove_parts);
-
-    if (krinolog.shouldPrint(LOG_DEBUG))
-    {
-      krinolog << "After changes: " << debug_entity_1line(stk_bulk(), side) << "\n";
-    }
+    determine_element_side_parts(side, addParts, removeParts);
+    batchAddParts.push_back(addParts);
+    batchRemoveParts.push_back(removeParts);
   }
+
+  stk_bulk().batch_change_entity_parts(sides, batchAddParts, batchRemoveParts);
 }
 
 void
@@ -3553,6 +3525,64 @@ CDMesh::create_element_and_side_entities(std::vector<SideDescription> & side_req
   }
 
   update_adaptivity_parent_entities();
+}
+
+static void delete_all_child_elements(stk::mesh::BulkData & mesh)
+{
+  const CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
+
+  stk::mesh::Selector childSelector = cdfemSupport.get_child_part() & !cdfemSupport.get_parent_part();
+  std::vector<stk::mesh::Entity> childElems;
+  stk::mesh::get_selected_entities( childSelector, mesh.buckets( stk::topology::ELEMENT_RANK ), childElems );
+
+  stk::mesh::destroy_elements(mesh, childElems, mesh.mesh_meta_data().universal_part());
+}
+
+void append_part_changes_to_reset_entities_to_original_undecomposed_state(const stk::mesh::BulkData & mesh,
+  const stk::mesh::EntityRank entityRank,
+  const Phase_Support & phaseSupport,
+  stk::mesh::Part & childPart,
+  stk::mesh::Part & parentPart,
+  stk::mesh::Part & activePart,
+  std::vector<stk::mesh::Entity> & batchEntities,
+  std::vector<stk::mesh::PartVector> & batchAddParts,
+  std::vector<stk::mesh::PartVector> & batchRemoveParts)
+{
+  stk::mesh::PartVector bucketAddParts;
+  stk::mesh::PartVector bucketRemoveParts;
+
+  for (auto * bucketPtr : mesh.get_buckets(entityRank, mesh.mesh_meta_data().locally_owned_part()))
+  {
+    determine_original_undecomposed_part_changes_for_entities(mesh, *bucketPtr, phaseSupport, childPart, parentPart, activePart, bucketAddParts, bucketRemoveParts);
+    if (!bucketAddParts.empty() || !bucketRemoveParts.empty())
+    {
+      batchEntities.insert(batchEntities.end(), bucketPtr->begin(), bucketPtr->end());
+      batchAddParts.insert(batchAddParts.end(), bucketPtr->size(), bucketAddParts);
+      batchRemoveParts.insert(batchRemoveParts.end(), bucketPtr->size(), bucketRemoveParts);
+    }
+  }
+}
+
+void
+CDMesh::reset_mesh_to_original_undecomposed_state(stk::mesh::BulkData & mesh)
+{
+  delete_all_child_elements(mesh);
+
+  const CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
+  const Phase_Support & phaseSupport = Phase_Support::get(mesh.mesh_meta_data());
+  const AuxMetaData & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
+
+  std::vector<stk::mesh::Entity> batchEntities;
+  std::vector<stk::mesh::PartVector> batchAddParts;
+  std::vector<stk::mesh::PartVector> batchRemoveParts;
+
+  append_part_changes_to_reset_entities_to_original_undecomposed_state(mesh, stk::topology::ELEMENT_RANK, phaseSupport, cdfemSupport.get_child_part(), cdfemSupport.get_parent_part(), auxMeta.active_part(), batchEntities, batchAddParts, batchRemoveParts);
+  append_part_changes_to_reset_entities_to_original_undecomposed_state(mesh, mesh.mesh_meta_data().side_rank(), phaseSupport, cdfemSupport.get_child_part(), cdfemSupport.get_parent_part(), auxMeta.active_part(), batchEntities, batchAddParts, batchRemoveParts);
+
+  mesh.batch_change_entity_parts(batchEntities, batchAddParts, batchRemoveParts);
+
+  if (the_new_mesh)
+    the_new_mesh.reset();
 }
 
 void CDMesh::determine_processor_prolongation_bounding_box(const bool guessAndCheckProcPadding, const double maxCFLGuess, BoundingBox & procBbox) const

@@ -206,13 +206,13 @@ Node Node::get_type_if_present(const std::string& key, YAML::NodeType::value typ
 static Node parse_yaml_file(const std::string & inputFileName) { throw std::runtime_error("YAML parser not enabled in krino build."); }
 #endif
 
-void parse()
+void parse(Simulation & simulation)
 {/* %TRACE% */ Trace trace__("krino::YAML_Parser::parse()"); /* %TRACE% */
   const std::string inputFileName = stk::EnvData::getInputFileName();
   const Node doc = parse_yaml_file(inputFileName);
 
   MeshInput_Parser::parse(doc);
-  Simulation_Parser::parse(doc);
+  Simulation_Parser::parse(simulation, doc);
 
   int local_num_doomed = stk::get_doomed_count();
   int num_doomed = 0;

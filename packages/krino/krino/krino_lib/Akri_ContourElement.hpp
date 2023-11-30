@@ -119,7 +119,6 @@ public:
 
   double volume() const;
   double elem_size() const;
-  double average_edge_length() const;
 
   void compute_subelement_decomposition(const double length_scale, const double edge_linear_tolerance = 1.e-4, const double edge_nonlinear_tolerance = 1.0e-2);
 

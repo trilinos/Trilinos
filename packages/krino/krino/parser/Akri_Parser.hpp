@@ -13,6 +13,8 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <string>
 
+namespace krino { class Simulation; }
+
 namespace krino {
 namespace Parser {
 
@@ -38,7 +40,7 @@ public:
   Node() : mNode(YAML::Node()) {}
   Node(const YAML::Node & node) : mNode(node) {}
 
-  operator bool() const { return mNode; }
+  operator bool() const { return bool(mNode); }
   bool is_scalar() const;
 
   Node get_if_present(const std::string& key) const;
@@ -113,7 +115,7 @@ public:
 
 #endif
 
-void parse();
+void parse(Simulation & simulation);
 
 }
 }

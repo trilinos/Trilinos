@@ -624,8 +624,12 @@ class SideAdjacencyGraph
     initialize_side_connectivity_graph(elementIndices);
 
     for (size_t elementIndex : elementIndices) {
-      int numSides = get_element_topology(elementIndex).num_sides();
+      auto& topo = get_element_topology(elementIndex);
+      int numSides = topo.num_sides();
       for (int side = 1; side <= numSides; ++side) {
+
+        if (topo.topology.is_shell_side_ordinal(static_cast<unsigned>(side))) { continue; }
+
         if (m_indexGraph[elementIndex].sideReference[side - 1] == 0) {
           CurrentAdjacency adjacency(elementIndex, side);
           process_side_connectivity(adjacency, elementsForNode);

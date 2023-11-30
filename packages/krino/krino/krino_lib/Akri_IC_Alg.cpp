@@ -26,6 +26,7 @@
 #include <Akri_RefinementSupport.hpp>
 #include <Akri_BoundingBox.hpp>
 #include <Akri_Composite_Surface.hpp>
+#include <Akri_NodalSurfaceDistance.hpp>
 
 namespace krino{
 
@@ -54,42 +55,15 @@ void IC_Alg::execute(const double time)
   }
 
   const stk::mesh::BulkData& mesh = levelSet.mesh();
-  const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-  const FieldRef xField = levelSet.get_coordinates_field();
   const FieldRef dField = levelSet.get_distance_field();
-  const int spatial_dim = meta.spatial_dimension();
-
-  BoundingBox node_bbox;
-  levelSet.compute_nodal_bbox( mesh.mesh_meta_data().universal_part(), node_bbox );
-  surface_list.prepare_to_compute(time, node_bbox, levelSet.narrow_band_size());
-
-  stk::mesh::BucketVector const& buckets = mesh.get_buckets( stk::topology::NODE_RANK, stk::mesh::selectField(dField) );
-
-  for ( auto && bucket_ptr : buckets )
-  {
-    const stk::mesh::Bucket & b = *bucket_ptr;
-    const int length = b.size();
-    double *dist = field_data<double>(dField, b);
-    double * coord = field_data<double>(xField, b);
-
-    for (int n = 0; n < length; ++n)
-    {
-      STK_ThrowAssert(&(dist[n]) != NULL);
-
-      const stk::math::Vector3d x(&coord[spatial_dim*n], spatial_dim);
-
-      dist[n] = surface_list.point_signed_distance_with_narrow_band(x, levelSet.narrow_band_size());
-    }
-  }
-
-  stk::mesh::communicate_field_data(mesh, {&dField.field()});
+  compute_nodal_surface_distance(mesh, levelSet.get_coordinates_field(), dField, surface_list, time, levelSet.narrow_band_size());
 
   if (levelSet.narrow_band_size() > 0. && surface_list.truncated_distance_may_have_wrong_sign())
   {
     DistanceSweeper::fix_sign_by_sweeping(mesh, dField, surface_list.get_signed_narrow_band_size(levelSet.narrow_band_size()));
   }
 
-  if(RefinementSupport::get(meta).get_nonconformal_adapt_target_count() > 0)
+  if(RefinementSupport::get(levelSet.meta()).get_nonconformal_adapt_target_count() > 0)
   {
     compute_IC_error_indicator();
   }

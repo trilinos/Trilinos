@@ -79,8 +79,8 @@ public:
 
 protected:
   std::vector<int> get_edges_with_children(const InterfaceID & interface) const;
-  void determine_node_signs_on_edge( const CDMesh & mesh, const InterfaceID interface_key, const int i0, const int i1 );
-  void determine_node_scores_on_edge( const CDMesh & mesh, const InterfaceID interface_key, const int i0, const int i1 );
+  bool determine_node_signs_on_edge( const CDMesh & mesh, const InterfaceID interface_key, const int i0, const int i1 );
+  void set_node_signs_on_uncrossed_subelement( const InterfaceID interface );
   void process_edge( CDMesh & mesh, const InterfaceID interface_key, const int i0, const int i1 );
   void find_refined_edges(std::vector<unsigned> & refined_edges) const;
   int find_longest_bad_edge(std::vector<unsigned> & bad_edges) const;

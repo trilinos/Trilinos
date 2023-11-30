@@ -14,6 +14,8 @@
 #include <vector>
 namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Selector; } }
+namespace stk { class topology; }
 
 namespace krino {
 struct Edge
@@ -50,10 +52,14 @@ std::array<stk::mesh::Entity,2> get_edge_nodes(const Edge edge);
 void fill_edge_nodes(const Edge edge, std::vector<stk::mesh::Entity> & edgeNodes);
 
 void fill_entity_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, std::vector<Edge> & entityEdges);
+void append_entity_edges(const stk::mesh::BulkData & mesh, const stk::topology entityTopology, const stk::mesh::Entity entity, std::vector<Edge> & entityEdges);
+void append_entity_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, std::vector<Edge> & entityEdges);
 
 int get_edge_parallel_owner_rank(const stk::mesh::BulkData & mesh, const Edge edge);
 
 std::string debug_edge(const stk::mesh::BulkData & mesh, const Edge edge);
+
+std::vector<Edge> get_edges_of_selected_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
 
 }
 

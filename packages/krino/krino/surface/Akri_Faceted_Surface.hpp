@@ -27,6 +27,7 @@ public:
   {
     return point_distance(x, narrow_band_size, far_field_value, true);
   }
+  virtual std::pair<int, double> compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double edgeCrossingTol) const override;
   
   // query/modify facets
   void add( std::unique_ptr<Facet> facet ) { my_local_facets.emplace_back(std::move(facet)); }
