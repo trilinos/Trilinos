@@ -1,0 +1,13 @@
+<ParameterList name="Inputs">
+  <ParameterList name="General">
+    <Parameter name="Output Level" type="int" value="1"/>
+    <ParameterList name="Secant">
+      <Parameter name="Use as Hessian" type="bool" value="false" />
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Step">
+    <ParameterList name="Trust Region">
+      <Parameter name="Subproblem Solver" type="string" value="Truncated CG" />
+    </ParameterList>
+  </ParameterList> 
+</ParameterList>

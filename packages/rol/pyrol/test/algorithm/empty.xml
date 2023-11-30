@@ -1,0 +1,50 @@
+<ParameterList name="Inputs">
+
+    <ParameterList name="General">
+
+        <Parameter name="Output Level" type="int" value=""/>
+
+        <ParameterList name="Polyhedral Projection">
+        </ParameterList>
+
+        <ParameterList name="Secant">
+        </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="Status Test">
+    </ParameterList>
+  
+    <ParameterList name="Step">
+
+        <ParameterList name="Augmented Lagrangian">
+        </ParameterList>
+
+        <ParameterList name="Fletcher">
+        </ParameterList>
+
+        <ParameterList name="Interior Point">
+            <ParameterList name="Subproblem">
+            </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="Line Search">
+            <ParameterList name="Descent Method">
+            </ParameterList>
+            <ParameterList name="Quasi-Newton">
+            </ParameterList>
+        </ParameterList>
+        
+        <ParameterList name="Stabilized LCL">
+        </ParameterList>
+
+        <ParameterList name="Trust Region">
+            <ParameterList name="SPG">
+                <ParameterList name="Solver">
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+
+</ParameterList>
