@@ -39,6 +39,7 @@ void UniformEdgeMarker::locally_mark_edges_of_non_parent_elements(NodeRefiner & 
 
 void UniformEdgeMarker::mark_edges_to_be_refined(NodeRefiner & nodeRefiner) const
 {
+  nodeRefiner.clear_edges_to_refine();
   locally_mark_edges_of_non_parent_elements(nodeRefiner);
   nodeRefiner.sync_shared_edges_from_other_procs_to_refine(myMesh);
 }

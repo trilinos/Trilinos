@@ -9,11 +9,11 @@ FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_LIBRARY(
-  krino_adaptivity_interface_lib
+  krino_math_utils_lib
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS krino_lib)
+  )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_adaptivity_interface_lib)
-   
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_math_utils_lib)
+    

@@ -37,6 +37,8 @@
 
 #if defined(__INTEL_COMPILER)
 #define RESTRICT_ALIAS restrict
+#elif defined(__INTEL_LLVM_COMPILER)
+#define RESTRICT_ALIAS __restrict
 #elif defined(__GNUC__)
 #define RESTRICT_ALIAS __restrict__
 #else
@@ -44,7 +46,7 @@
 #endif
 
 // needs to be reassessed with OneAPI?
-#if defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 #define STK_PRAGMA_IVDEP _Pragma("ivdep")
 #elif defined(__GNUC__)
 #define STK_PRAGMA_IVDEP
@@ -53,7 +55,7 @@
 #endif
 
 // needs to be reassessed with OneAPI?
-#if defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 #define STK_PRAGMA_VECTOR_ALWAYS_ASSERT_IVDEP _Pragma("vector always assert") \
                                               _Pragma("ivdep")
 #elif defined(__GNUC__)

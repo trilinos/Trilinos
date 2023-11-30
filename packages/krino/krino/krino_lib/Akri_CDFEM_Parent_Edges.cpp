@@ -160,20 +160,14 @@ static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
 {
   STK_ThrowAssert(is_cdfem_use_case(phaseSupport));
 
-  for(auto && part_ptr : mesh.bucket(node_or_elem).supersets())
+  for(auto * partPtr : mesh.bucket(node_or_elem).supersets())
   {
-    if (!(stk::io::is_part_io_part(*part_ptr) || phaseSupport.is_nonconformal(part_ptr))) continue;
-    // limit ourselves to volume parts
-    if (part_ptr->primary_entity_rank() != stk::topology::ELEMENT_RANK) continue;
-
-    const stk::mesh::Part * nonconformal_node_iopart = phaseSupport.find_nonconformal_part(*part_ptr);
-
-    if (phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, nonconformal_node_iopart))
-    {
+    if (partPtr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
+      stk::io::is_part_io_part(*partPtr) &&
+      !phaseSupport.is_nonconformal(partPtr) &&
+      phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, phaseSupport.find_nonconformal_part(*partPtr)))
       return true;
-    }
   }
-
   return false;
 }
 

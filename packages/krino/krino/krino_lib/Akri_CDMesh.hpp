@@ -32,8 +32,6 @@
 
 namespace krino {
 
-template <class MESH_FIXTURE, class LS_FIELD_POLICY>
-class CompleteDecompositionFixture;
 class SubElement;
 class ElementObj;
 class Mesh_Element;
@@ -76,13 +74,14 @@ public:
   static void handle_possible_failed_time_step( stk::mesh::BulkData & mesh, const int step_count );
   static int decompose_mesh( stk::mesh::BulkData & mesh,
       const InterfaceGeometry & interfaceGeometry,
-      const int step_count,
-      const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs );
+      const int step_count = 0,
+      const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs = {} );
+  static void reset_mesh_to_original_undecomposed_state(stk::mesh::BulkData & mesh);
   static void nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const InterfaceGeometry & interfaceGeometry);
   static void mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const RefinementSupport & refinementSupport, const InterfaceGeometry & interfaceGeometry, const int num_refinements);
   static void fixup_adapted_element_parts(stk::mesh::BulkData & mesh);
   static void rebuild_from_restart_mesh(stk::mesh::BulkData & mesh);
-  static void undo_previous_snapping_using_interpolation(const stk::mesh::BulkData & mesh);
+  static void prepare_for_resnapping(const stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry);
   void rebuild_after_rebalance_or_failed_step();
 
   static CDMesh* get_new_mesh() { return the_new_mesh.get(); }
@@ -216,13 +215,13 @@ private:
   //: Default constructor not allowed
   CDMesh();
 
-  template <class MESH_FIXTURE, class LS_FIELD_POLICY>
+  template <class MESH_FIXTURE, class LS_FIELD_POLICY, unsigned NUM_LS>
   friend class CompleteDecompositionFixture;
 
   template <class MESH_FIXTURE>
   friend class AnalyticDecompositionFixture;
 
-  template <class MESH_FIXTURE, class LS_FIELD_POLICY>
+  template <class MESH_FIXTURE, class LS_FIELD_POLICY, unsigned NUM_LS>
   friend class DecompositionFixture;
 
   void build_parallel_hanging_edge_nodes();

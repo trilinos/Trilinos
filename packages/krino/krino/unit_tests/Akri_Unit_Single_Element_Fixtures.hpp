@@ -18,20 +18,12 @@
 
 namespace krino {
 
-inline std::vector<std::string> entity_rank_names_with_ft()
-{
-  auto entity_rank_names = stk::mesh::entity_rank_names();
-  entity_rank_names.push_back("FAMILY_TREE");
-  return entity_rank_names;
-}
-
 class SimpleStkFixture
 {
 public:
   SimpleStkFixture(unsigned dimension, MPI_Comm comm = MPI_COMM_WORLD) {
     bulk = stk::mesh::MeshBuilder(comm)
                .set_spatial_dimension(dimension)
-               .set_entity_rank_names(entity_rank_names_with_ft())
                .create();
     
     meta = bulk->mesh_meta_data_ptr();

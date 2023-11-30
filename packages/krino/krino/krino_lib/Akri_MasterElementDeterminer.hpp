@@ -23,6 +23,9 @@ public:
   static const MasterElement& getMasterElement(stk::mesh::Bucket & bucket, FieldRef field);
   static const MasterElement& getMasterElement(stk::topology topology);
   static stk::topology get_field_topology(const stk::mesh::Bucket & b, const FieldRef field);
+  static void clear_master_elements();
+private:
+  static std::vector<std::unique_ptr<MasterElement>> theMasterElements;
 };
 
 }  // end namespace krino

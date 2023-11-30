@@ -46,15 +46,15 @@ public:
     std::vector<ElementIntersection> & intersections) const override
     { myElementInterfaceCutter->fill_tetrahedron_face_interior_intersections(faceNodes, interface1, interface2, intersectionPointFilter, intersections); }
   virtual std::string visualize(const stk::mesh::BulkData & mesh) const override;
-  virtual bool have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override
-    { return myElementInterfaceCutter->have_crossing(interface, edgeNodeCoords); }
-  virtual double interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override
-    { return myElementInterfaceCutter->interface_crossing_position(interface, edgeNodeCoords); }
-  virtual int sign_at_position(const InterfaceID interface, const stk::math::Vector3d & paramCoords) const override
-    { return myElementInterfaceCutter->sign_at_position(interface, paramCoords); }
+  virtual int interface_sign_for_uncrossed_element(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodesCoords) const override;
+  virtual std::pair<int, double> interface_edge_crossing_sign_and_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
   virtual int get_starting_phase_for_cutting_surfaces() const override
     { return myElementInterfaceCutter->get_starting_phase_for_cutting_surfaces(); }
 
+  bool have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
+    { return myElementInterfaceCutter->have_crossing(interface, edgeNodeCoords); }
+  int sign_at_position(const InterfaceID interface, const stk::math::Vector3d & paramCoords) const
+    { return myElementInterfaceCutter->sign_at_position(interface, paramCoords); }
   PhaseTag get_starting_phase(const Phase_Support & phaseSupport, const std::vector<LS_Field> & LSFields) const;
   void update_edge_crossings(const unsigned iEdge, const std::vector<std::vector<double>> & nodesIsovar);
   void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & elemNodesCoords,
@@ -88,9 +88,11 @@ public:
 
   virtual bool might_have_interior_or_face_intersections() const override { return mySurfaceIdentifiers.size() > 1; }
 
-  virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
+  virtual void prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
-  virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
 
@@ -124,10 +126,17 @@ public:
   virtual PhaseTag get_starting_phase(const ElementCutter * cutter) const override;
 
   const std::vector<Surface_Identifier> & get_surface_identifiers() const override { return mySurfaceIdentifiers; }
+  static std::vector<stk::mesh::Entity> get_active_elements_that_may_be_cut_by_levelsets(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const std::vector<LS_Field> & LSFields);
+  static std::vector<stk::mesh::Entity> get_active_elements_that_intersect_levelset_interval(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const std::vector<LS_Field> & LSFields, const std::array<double,2> loAndHi);
 
 private:
   void set_parent_element_selector();
   bool have_enough_levelsets_to_have_interior_intersections_or_multiple_crossings() const;
+    void build_parent_edges_for_mesh(const stk::mesh::BulkData & mesh,
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
+  void build_parent_edges_for_elements(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Entity> & elementsToIntersect,
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;

@@ -61,7 +61,6 @@ else()
   target_link_libraries(stk_transfer_utest stk_util_parallel)
   target_link_libraries(stk_transfer_utest stk_unit_main)
 
-  add_test(NAME "stk_transfer_utest" COMMAND stk_transfer_utest)
   add_test("stk_transfer_utest" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_transfer_utest --gtest_filter=GeomXferImpl.coarseSearchImpl_emptyDomain")
 endif()
 

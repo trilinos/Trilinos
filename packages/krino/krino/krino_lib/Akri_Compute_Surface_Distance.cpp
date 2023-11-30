@@ -10,7 +10,9 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Compute_Surface_Distance.hpp>
+#include <Akri_FieldRef.hpp>
 #include <Akri_MeshSurface.hpp>
+#include <Akri_NodalBoundingBox.hpp>
 #include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -28,27 +30,6 @@ Compute_Surface_Distance::calculate(
   const double farFieldValue)
 {
   calculate(mesh, parent_timer, coordinates, distance, mesh.mesh_meta_data().universal_part(), surface_selector, narrowBandSize, farFieldValue);
-}
-
-static BoundingBox compute_nodal_bounding_box(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Field<double>& coordinates,
-    const stk::mesh::Field<double>& distance,
-    const stk::mesh::Selector & volume_selector)
-{
-  const int spatial_dimension = mesh.mesh_meta_data().spatial_dimension();
-
-  // The bounding box for that contains all the nodes on that proc
-  BoundingBox nodeBbox;
-  for ( auto && bucket : mesh.get_buckets(stk::topology::NODE_RANK, volume_selector & stk::mesh::selectField(distance)) )
-  {
-    const size_t length = bucket->size();
-    double *coord = stk::mesh::field_data(coordinates, *bucket);
-
-    for (size_t n = 0; n < length; ++n)
-      nodeBbox.accommodate( stk::math::Vector3d(coord+n*spatial_dimension, spatial_dimension) );
-  }
-
-  return nodeBbox;
 }
 
 static void compute_distance_to_facets(const stk::mesh::BulkData & mesh,
@@ -111,7 +92,8 @@ Compute_Surface_Distance::calculate(
   stk::diag::TimeBlock timer_(timer);
 
   MeshSurface facet_list(mesh.mesh_meta_data(), coordinates, surface_selector, +1);
-  const BoundingBox nodeBbox = compute_nodal_bounding_box(mesh, coordinates, distance, volume_selector);
+  FieldRef coordsField(coordinates);
+  const BoundingBox nodeBbox = compute_nodal_bbox(mesh, volume_selector & stk::mesh::selectField(distance), coordsField);
   facet_list.prepare_to_compute(0.0, nodeBbox, narrowBandSize); // Setup including communication of facets that are within this processors narrow band
 
   print_facet_info(facet_list, mesh.parallel());

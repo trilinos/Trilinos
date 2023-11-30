@@ -180,274 +180,6 @@ void fill_all_children(const RefinementInterface & refinement, const stk::mesh::
   fill_all_children(refinement, children, all_children);
 }
 
-PerceptRefinement &
-PerceptRefinement::get(const stk::mesh::MetaData & meta)
-{
-  PerceptRefinement * refinement = const_cast<PerceptRefinement*>(meta.get_attribute<PerceptRefinement>());
-  STK_ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
-  return *refinement;
-}
-
-bool
-PerceptRefinement::is_created(const stk::mesh::MetaData & meta)
-{
-  PerceptRefinement * refinement = const_cast<PerceptRefinement*>(meta.get_attribute<PerceptRefinement>());
-  return refinement != nullptr;
-}
-
-PerceptRefinement &
-PerceptRefinement::create(stk::mesh::MetaData & meta)
-{
-  PerceptRefinement * refinement = const_cast<PerceptRefinement*>(meta.get_attribute<PerceptRefinement>());
-  STK_ThrowRequireMsg(nullptr == refinement, "PerceptRefinement::create should be called only once per MetaData.");
-  if (nullptr == refinement)
-  {
-    refinement = new PerceptRefinement(meta);
-    meta.declare_attribute_with_delete<PerceptRefinement>(refinement);
-  }
-  return *refinement;
-}
-
-PerceptRefinement::PerceptRefinement(stk::mesh::MetaData & meta) :
-    myMeta(meta)
-{
-  AuxMetaData & auxMeta = AuxMetaData::get(meta);
-  if (auxMeta.has_field(stk::topology::ELEMENT_RANK, "refine_level"))
-    myRefinementLevelField = auxMeta.get_field(stk::topology::ELEMENT_RANK, "refine_level");
-  const std::string transitionElementFieldName = (myMeta.spatial_dimension() == 2) ?
-    "transition_element" : "transition_element_3";
-  if (auxMeta.has_field(stk::topology::ELEMENT_RANK, transitionElementFieldName))
-    myTransitionElementField = auxMeta.get_field(stk::topology::ELEMENT_RANK, transitionElementFieldName);
-
-  myElementMarkerField = meta.declare_field<int>(stk::topology::ELEMENT_RANK, "REFINEMENT_ELEMENT_MARKER", 1);
-  stk::mesh::put_field_on_mesh(myElementMarkerField.field(), meta.universal_part(), 1, 1, nullptr);
-}
-
-bool PerceptRefinement::is_child(const stk::mesh::Entity entity) const
-{
-  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  const stk::mesh::EntityRank entity_rank = mesh.entity_rank(entity);
-  const unsigned num_family_trees = mesh.num_connectivity(entity, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = mesh.begin(entity, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity ft = family_trees[ifamily];
-    const stk::mesh::Entity* family_tree_entities = mesh.begin(ft, entity_rank);
-    if(family_tree_entities[0] != entity) return true;
-  }
-  return false;
-}
-
-bool PerceptRefinement::is_parent(const stk::mesh::Entity parent) const
-{
-  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  stk::mesh::EntityRank entity_rank = mesh.entity_rank(parent);
-  const unsigned num_family_trees = mesh.num_connectivity(parent, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = mesh.begin(parent, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity* family_tree_entities = mesh.begin(family_trees[ifamily], entity_rank);
-    const stk::mesh::Entity tree_parent = family_tree_entities[0]; // 0th entry in the family_tree is the parent
-    if (parent == tree_parent) // I am the parent
-    {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool PerceptRefinement::is_parent_side(const stk::mesh::Entity side) const
-{
-  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  return mesh.num_connectivity(side, stk::topology::CONSTRAINT_RANK) > 0; // Not a great answer but was working before and this is temporary
-}
-
-stk::mesh::Entity PerceptRefinement::get_parent(const stk::mesh::Entity entity) const
-{
-  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  const stk::mesh::EntityRank entity_rank = mesh.entity_rank(entity);
-  const unsigned num_family_trees = mesh.num_connectivity(entity, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = mesh.begin(entity, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity ft = family_trees[ifamily];
-    const stk::mesh::Entity* family_tree_entities = mesh.begin(ft, entity_rank);
-    if(family_tree_entities[0] != entity) return family_tree_entities[0];
-  }
-  return stk::mesh::Entity();
-}
-
-std::pair<stk::mesh::EntityId,int> PerceptRefinement::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
-{
-  stk::mesh::Entity parent = get_parent(child);
-  STK_ThrowAssert(myMeta.mesh_bulk_data().is_valid(parent));
-  return {myMeta.mesh_bulk_data().identifier(parent), myMeta.mesh_bulk_data().parallel_owner_rank(parent)};
-}
-
-static stk::mesh::Part & get_percept_refinement_inactive_part(const stk::mesh::MetaData & meta, stk::mesh::EntityRank rank)
-{
-  const std::string inactive_part_name = "refine_inactive_elements_part_"+std::to_string((int)rank);
-  stk::mesh::Part* inactive_part = meta.get_part(inactive_part_name);
-  STK_ThrowRequireMsg(nullptr != inactive_part, "Inactive (parent) part not found: " << inactive_part_name);
-  return *inactive_part;
-}
-
-static stk::mesh::Part & get_percept_refinement_active_part(const stk::mesh::MetaData & meta, stk::mesh::EntityRank rank)
-{
-  const std::string active_part_name = "refine_active_elements_part_"+std::to_string((int)rank);
-  stk::mesh::Part* active_part = meta.get_part(active_part_name);
-  STK_ThrowRequireMsg(nullptr != active_part, "Active (child) part not found: " << active_part_name);
-  return *active_part;
-}
-
-stk::mesh::Part & PerceptRefinement::parent_part() const
-{
-  return get_percept_refinement_inactive_part(myMeta, stk::topology::ELEMENT_RANK);
-}
-
-stk::mesh::Part & PerceptRefinement::child_part() const
-{
-  return get_percept_refinement_active_part(myMeta, stk::topology::ELEMENT_RANK);
-}
-
-unsigned PerceptRefinement::get_num_children(const stk::mesh::Entity parent) const
-{
-  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  stk::mesh::EntityRank entity_rank = mesh.entity_rank(parent);
-  const unsigned num_family_trees = mesh.num_connectivity(parent, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = mesh.begin(parent, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity* family_tree_entities = mesh.begin(family_trees[ifamily], entity_rank);
-    const stk::mesh::Entity tree_parent = family_tree_entities[0]; // 0th entry in the family_tree is the parent
-    if (parent == tree_parent) // I am the parent
-    {
-      const unsigned num_family_tree_entities = mesh.num_connectivity(family_trees[ifamily], entity_rank);
-      return num_family_tree_entities-1;
-    }
-  }
-  return 0;
-}
-
-void PerceptRefinement::fill_children(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children) const
-{
-  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  children.clear();
-  stk::mesh::EntityRank entity_rank = mesh.entity_rank(parent);
-  const unsigned num_family_trees = mesh.num_connectivity(parent, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = mesh.begin(parent, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity* family_tree_entities = mesh.begin(family_trees[ifamily], entity_rank);
-    const stk::mesh::Entity tree_parent = family_tree_entities[0]; // 0th entry in the family_tree is the parent
-    if (parent == tree_parent) // I am the parent
-    {
-      const unsigned num_family_tree_entities = mesh.num_connectivity(family_trees[ifamily], entity_rank);
-      for (unsigned ichild=1; ichild < num_family_tree_entities; ++ichild)
-      {
-        children.push_back(family_tree_entities[ichild]);
-      }
-    }
-  }
-}
-
-void PerceptRefinement::fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElementIds) const
-{
-  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  childElementIds.clear();
-  const unsigned num_family_trees = mesh.num_connectivity(parent, stk::topology::CONSTRAINT_RANK);
-  const stk::mesh::Entity* family_trees = mesh.begin(parent, stk::topology::CONSTRAINT_RANK);
-  for (unsigned ifamily=0; ifamily < num_family_trees; ++ifamily)
-  {
-    const stk::mesh::Entity* family_tree_entities = mesh.begin_elements(family_trees[ifamily]);
-    const stk::mesh::Entity tree_parent = family_tree_entities[0]; // 0th entry in the family_tree is the parent
-    if (parent == tree_parent) // I am the parent
-    {
-      const unsigned num_family_tree_entities = mesh.num_elements(family_trees[ifamily]);
-      for (unsigned ichild=1; ichild < num_family_tree_entities; ++ichild)
-      {
-        childElementIds.push_back(mesh.identifier(family_tree_entities[ichild]));
-      }
-    }
-  }
-}
-
-void PerceptRefinement::fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
-{
-  dependents.clear();
-  if(is_child(parent)) return;
-  fill_all_children(*this, parent, dependents);
-}
-
-bool PerceptRefinement::has_rebalance_constraint(const stk::mesh::Entity entity) const
-{
-  return is_child(entity);
-}
-
-int PerceptRefinement::fully_refined_level(const stk::mesh::Entity elem) const
-{
-  const int refineLevel = *field_data<int>(myRefinementLevelField, elem);
-  const int transitionElement = *field_data<int>(myTransitionElementField, elem);
-  return refineLevel-transitionElement;
-}
-
-FieldRef PerceptRefinement::get_marker_field() const
-{
-  STK_ThrowRequireMsg(myElementMarkerField.valid(), "PerceptRefinement created without setting the hadapt function, which is needed in get_marker_field().  Is this a unit test?");
-  return myElementMarkerField;
-}
-
-bool PerceptRefinement::is_transition(const stk::mesh::Entity elem) const
-{
-  const int isTransitionElement = *field_data<int>(myTransitionElementField, elem);
-  return isTransitionElement;
-}
-
-void PerceptRefinement::set_adaptive_refinement_function(const std::function<void(const std::string &, int)> & adaptiveRefinement)
-{
-  myAdaptiveRefinement = adaptiveRefinement;
-}
-
-void PerceptRefinement::set_uniform_refinement_function(const std::function<void(int)> & uniformRefinement)
-{
-  myUniformRefinement = uniformRefinement;
-}
-
-void PerceptRefinement::do_refinement(const int debugLevel)
-{
-  STK_ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_adaptive_refinement_function, which is needed in do_adaptive_refinement().");
-  myAdaptiveRefinement(myElementMarkerField.name(), debugLevel);
-}
-
-void PerceptRefinement::do_uniform_refinement(const int numUniformRefinementLevels)
-{
-  STK_ThrowRequireMsg(myAdaptiveRefinement && myElementMarkerField.valid(), "PerceptRefinement created without calling set_uniform_refinement_function, which is needed in do_uniform_refinement().");
-  myUniformRefinement(numUniformRefinementLevels);
-}
-
-std::string PerceptRefinement::locally_check_leaf_children_have_parents_on_same_proc() const
-{
-  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
-  std::ostringstream localErrorMsg;
-  auto buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part());
-  for(auto bucket : buckets)
-  {
-    for(auto && elem : *bucket)
-    {
-      if(is_child(elem) && !is_parent(elem))
-      {
-        auto parent = get_parent(elem);
-        if(!mesh.is_valid(parent) || !mesh.bucket(parent).owned())
-        {
-          localErrorMsg << debug_entity_1line(mesh, elem) << "\n";
-          return localErrorMsg.str();
-        }
-      }
-    }
-  }
-  return localErrorMsg.str();
-}
-
 KrinoRefinement &
 KrinoRefinement::get(const stk::mesh::MetaData & meta)
 {
@@ -570,38 +302,17 @@ std::string KrinoRefinement::locally_check_leaf_children_have_parents_on_same_pr
 
 void KrinoRefinement::fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
 {
-  dependents.clear();
-  std::vector<stk::mesh::Entity> children;
-  fill_children(parent, children);
-  for(auto && child : children)
-  {
-    if(child == stk::mesh::Entity()) continue;
-    if(is_parent(child)) continue;
-    dependents.push_back(child);
-  }
+  myRefinement.fill_child_elements_that_must_stay_on_same_proc_as_parent(parent, dependents);
 }
 
 bool KrinoRefinement::has_rebalance_constraint(const stk::mesh::Entity entity) const
 {
-  if(!is_parent(entity))
-  {
-    //if not a parent but is a child, must be leaf element, constrained
-    if(is_child(entity)) return true;
-    //if not a parent or child, must be completed unadapted element. No constraint
-    else return false;
-  }
-  //if a parent, check if any children are parents or invalid elements (already moved)
-  //if so, constrained. If not, not constrained
-  std::vector<stk::mesh::Entity> children;
-  fill_children(entity, children);
-  for(auto && child : children)
-  {
-    if(child == stk::mesh::Entity())
-      return true;
-    if(is_parent(child))
-      return true;
-  }
-  return false;
+  return myRefinement.has_parallel_owner_rebalance_constraint(entity);
+}
+
+void KrinoRefinement::update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const
+{
+  return myRefinement.update_element_rebalance_weights_incorporating_parallel_owner_constraints(elemWtField);
 }
 
 TransitionElementEdgeMarker & KrinoRefinement::setup_marker() const
@@ -681,7 +392,7 @@ std::pair<unsigned,unsigned> KrinoRefinement::get_marked_element_counts() const
   return std::make_pair(globalNum[0], globalNum[1]);
 }
 
-void KrinoRefinement::do_refinement(const int debugLevel)
+bool KrinoRefinement::do_refinement(const int debugLevel)
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
@@ -697,7 +408,7 @@ void KrinoRefinement::do_refinement(const int debugLevel)
   krinolog << "Adapt: before refine, mesh has  " << counts[0] << " nodes, " << counts[1]
            << " edges, " << counts[2] << " faces, " << counts[3] << " elements" << stk::diag::dendl;
 
-  myRefinement.do_refinement(get_marker());
+  const bool didMakeAnyChanges = myRefinement.do_refinement(get_marker());
 
   stk::mesh::comm_mesh_counts(mesh, counts);
 
@@ -707,6 +418,7 @@ void KrinoRefinement::do_refinement(const int debugLevel)
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_ownership(mesh));
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_relations(mesh));
 
+  return didMakeAnyChanges;
 }
 
 void KrinoRefinement::do_uniform_refinement(const int numUniformRefinementLevels)

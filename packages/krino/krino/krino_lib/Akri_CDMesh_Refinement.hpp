@@ -17,6 +17,14 @@ class InterfaceGeometry;
 class CDFEM_Support;
 class CDFEM_Snapper;
 class RefinementSupport;
+class Phase_Support;
+
+void
+mark_given_elements(const stk::mesh::BulkData& mesh,
+      const RefinementInterface & refinement,
+      const RefinementSupport & refinementSupport,
+      const std::vector<stk::mesh::Entity> elementsToMark,
+      const int refinementIterCount);
 
 void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,

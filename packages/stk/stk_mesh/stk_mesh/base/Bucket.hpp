@@ -424,6 +424,7 @@ private:
   }
 
   void initialize_ngp_field_bucket_ids();
+  void grow_ngp_field_bucket_ids();
 
   Bucket();
 

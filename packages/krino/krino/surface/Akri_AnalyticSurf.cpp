@@ -13,8 +13,7 @@
 
 namespace krino{
 
-Cylinder::Cylinder(const std::string & n,  // surface name
-                   const double e1[3],  // first endpoint of axis
+Cylinder::Cylinder(const double e1[3],  // first endpoint of axis
                    const double e2[3],  // second endpoint of axis
                    const double r,      // radius of cylinder
                    const int sign)
@@ -124,8 +123,7 @@ Cylinder::point_signed_distance(const stk::math::Vector3d &x) const
   return dist_sign*D;
 }
 
-Point::Point(const std::string & n,  // surface name
-             const stk::math::Vector3d & coords)
+Point::Point(const stk::math::Vector3d & coords)
     : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign(),
       my_coords(coords)
 {
@@ -147,8 +145,7 @@ bool Point::does_intersect(const BoundingBox & bbox) const
   return bbox.contains(my_coords);
 }
 
-Sphere::Sphere(const std::string & n,  // surface name
-               const stk::math::Vector3d & center,
+Sphere::Sphere(const stk::math::Vector3d & center,
                const double radius,
                const int sign)
     : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign(),
@@ -193,7 +190,6 @@ Sphere::point_signed_distance(const stk::math::Vector3d &x) const
 }
 
 Ellipsoid::Ellipsoid(
-      const std::string & name,  // surface name
       const std::vector<double> & center,
       const std::vector<double> & semiAxes,
       const std::vector<double> & rotationVec,
@@ -259,10 +255,9 @@ Ellipsoid::point_signed_distance(const stk::math::Vector3d &x) const
   return mySign*(mySemiAxesNorm*std::sqrt(dx*dx+dy*dy+dz*dz)-mySemiAxesNorm);
 }
 
-Plane::Plane(const std::string & n,  // surface name
-               const double normal[3],
-               const double offset,
-               const double multiplier)
+Plane::Plane(const double normal[3],
+    const double offset,
+    const double multiplier)
     : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign(),
       myMultiplier(multiplier),
       myNormal(normal),

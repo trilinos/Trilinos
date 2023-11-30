@@ -188,7 +188,7 @@ TEST(stk_topology_understanding, sides)
   EXPECT_EQ(6u, hex20.num_sides());
 
   stk::topology quad8 = stk::topology::SHELL_QUADRILATERAL_8;
-  EXPECT_EQ(2u, quad8.num_sides());
+  EXPECT_EQ(6u, quad8.num_sides());
 
   stk::topology wedge = stk::topology::WEDGE_15;
   EXPECT_EQ(5u, wedge.num_sides());

@@ -142,10 +142,7 @@ int testElement(const std::string &name, unsigned spatialDim)
                       "edge count");
 
   // NOTE: Ioss counts edges and faces as boundaries for shell elements
-  int add_boundary = 0;
-  if (add_to == 1 && element->spatial_dimension() == 3 && element->parametric_dimension() == 2)
-    add_boundary = cell.num_edges();
-  errors += my_assert(static_cast<int>(cell.num_sides()) + add_boundary,
+  errors += my_assert(static_cast<int>(cell.num_sides()),
                       element->number_boundaries(),
                       "boundary count");
 

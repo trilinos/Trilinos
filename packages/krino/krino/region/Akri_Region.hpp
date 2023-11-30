@@ -17,15 +17,13 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace io { class StkMeshIoBroker; } }
-namespace krino { class BoundingBoxMesh; }
+namespace krino { class MeshInterface; }
 namespace krino { class RegionForwarder; }
 namespace krino { class ResultsOutputOptions; }
 namespace krino { class Simulation; }
 namespace Ioss { class Region; }
 
 namespace krino{
-
-class RefinementInterface;
 
 class Region {
 public:
@@ -39,17 +37,15 @@ public:
   double time_step() const;
   const std::string & name() const { return my_name; }
   unsigned spatial_dimension() const;
-  const stk::mesh::BulkData& get_stk_mesh_bulk_data() const;
-  stk::mesh::BulkData& get_stk_mesh_bulk_data();
-  const stk::mesh::MetaData& get_stk_mesh_meta_data() const;
-  stk::mesh::MetaData& get_stk_mesh_meta_data();
+  const stk::mesh::BulkData& mesh_bulk_data() const;
+  stk::mesh::BulkData& mesh_bulk_data();
+  const stk::mesh::MetaData& mesh_meta_data() const;
+  stk::mesh::MetaData& mesh_meta_data();
   stk::diag::Timer & getRegionTimer() const { return my_timerRegion; }
   stk::diag::Timer & getMeshInputTimer() const { return my_timerMeshInput; }
   stk::diag::Timer & getMeshOutputTimer() const { return my_timerMeshOutput; }
 
-  stk::io::StkMeshIoBroker & stk_IO();
-  std::string name_of_input_mesh() const;
-  Ioss::Region * get_input_io_region();
+  stk::io::StkMeshIoBroker & stkOutput();
   void associate_input_mesh(const std::string & model_name, bool assert_32bit_ids, bool force_64bit_ids);
   void set_generated_mesh_domain();
   void create_output_mesh();
@@ -59,10 +55,8 @@ public:
 
 private:
   Simulation & my_simulation;
-  stk::mesh::MetaData * my_meta;
-  stk::mesh::BulkData * my_bulk;
-  std::unique_ptr<stk::io::StkMeshIoBroker> myIOBroker;
-  std::unique_ptr<BoundingBoxMesh> my_generated_mesh;
+  std::unique_ptr<MeshInterface> myMesh;
+  std::unique_ptr<stk::io::StkMeshIoBroker> myOutputBroker;
   std::unique_ptr<ResultsOutputOptions> my_results_options;
   std::string my_name;
   std::string my_input_model_name;
