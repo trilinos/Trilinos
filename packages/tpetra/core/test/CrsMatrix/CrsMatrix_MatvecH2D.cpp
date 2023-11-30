@@ -48,6 +48,8 @@
 #include "Tpetra_Apply_Helpers.hpp"
 #include "TpetraUtils_MatrixGenerator.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_KokkosCounter.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include <type_traits> // std::is_same
 
 #include <Teuchos_StackedTimer.hpp>
@@ -175,7 +177,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TransferPerf, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, MatvecH2D, LO, GO, Scalar, Node )
   {
 
     // Test inspired by the reproduce in this issue: https://github.com/trilinos/Trilinos/issues/12560
@@ -187,9 +189,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
 
+    // This code is left in in case people want to debug future issues using the Kokkos profiling 
+    // hooks in Tpetra
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = rcp(new Teuchos::StackedTimer("TransferPerf"));
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+    int numRanks = comm->getSize();
+
     const size_t nsize=3;
 
    /* Create the identity matrix, three rows per proc */
@@ -210,26 +216,42 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       Tpetra::Details::ProfilingRegion r ("Sacrificial Matvec");
       A1->apply(*X,*Y,Teuchos::NO_TRANS, alpha, beta);
     }
+    
 
-
+    // Check to make sure we have the right number of H2D/D2H transfers
+    using namespace Tpetra::Details;
+    DeepCopyCounter::reset();
+    DeepCopyCounter::start();
+    size_t iter_num = 10;
+      
     {
       Tpetra::Details::ProfilingRegion r ("Matvec Loop");
-      int iter_num = 10;
       
-      for (int i = 0; i < iter_num; i ++) {
+      for (size_t i = 0; i < iter_num; i ++) {
         A1->apply(*X,*Y,Teuchos::NO_TRANS, alpha, beta);
         X->update(-1.0, *Y, 1.0); 
         X->norm2(normX());
       }
     }
+    DeepCopyCounter::stop();
+    printf("Different count = %d\n",DeepCopyCounter::get_count_different_space());
+
+
+    if (numRanks ==1 || Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+      // No H2D/D2H if MPI is GPU aware or if there's no MPI
+      TEST_EQUALITY(DeepCopyCounter::get_count_different_space(),0);
+    }
+    else {
+      // If there are multiple ranks w/o GPU-aware MPI, we currently have 3 copies per iter
+      TEST_EQUALITY(DeepCopyCounter::get_count_different_space(),3*iter_num);
+    }
+      
 
     stacked_timer->stopBaseTimer();
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(out, comm, options);
-    
 
-    TEST_EQUALITY(true,true);
   }
 
 
@@ -238,7 +260,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TransferPerf, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MatvecH2D, LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
