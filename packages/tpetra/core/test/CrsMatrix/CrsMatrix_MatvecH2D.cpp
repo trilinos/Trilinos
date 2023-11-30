@@ -58,26 +58,6 @@ namespace {
 
   // no ScalarTraits<>::eps() for integer types
 
-  template <class Scalar, bool hasMachineParameters> struct TestingTolGuts {};
-
-  template <class Scalar>
-  struct TestingTolGuts<Scalar, true> {
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol()
-      { return Teuchos::ScalarTraits<Scalar>::eps(); }
-  };
-
-  template <class Scalar>
-  struct TestingTolGuts<Scalar, false> {
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol()
-      { return 0; }
-  };
-
-  template <class Scalar>
-  static typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol()
-  {
-    return TestingTolGuts<Scalar, Teuchos::ScalarTraits<Scalar>::hasMachineParameters>::
-      testingTol();
-  }
 
   using std::endl;
 
@@ -124,53 +104,6 @@ namespace {
   using Tpetra::Import;
   using Tpetra::global_size_t;
   using Tpetra::createContigMapWithNode;
-
-  double errorTolSlack = 1e+1;
-  std::string filedir;
-
-template <class tuple, class T>
-inline void tupleToArray(Array<T> &arr, const tuple &tup)
-{
-  arr.assign(tup.begin(), tup.end());
-}
-
-#define STD_TESTS(matrix) \
-  { \
-    using Teuchos::outArg; \
-    RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getLocalElementList(); \
-    ArrayView<const LO> loview; \
-    ArrayView<const Scalar> sview; \
-    size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
-      const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
-      TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
-      matrix.getLocalRowView(STR,loview,sview); \
-      TEST_EQUALITY( static_cast<size_t>(loview.size()), numEntries ); \
-      TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
-      STMAX = std::max( STMAX, numEntries ); \
-    } \
-    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
-    global_size_t STGMAX; \
-    Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
-    TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
-  }
-
-
-  TEUCHOS_STATIC_SETUP()
-  {
-    Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
-    clp.setOption(
-        "filedir",&filedir,"Directory of expected matrix files.");
-    clp.addOutputSetupOptions(true);
-    clp.setOption(
-        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
-        "Test MPI (if available) or force test of serial.  In a serial build,"
-        " this option is ignored and a serial comm is always used." );
-    clp.setOption(
-        "error-tol-slack", &errorTolSlack,
-        "Slack off of machine epsilon used to check test results" );
-  }
 
 
   //
@@ -234,7 +167,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       }
     }
     DeepCopyCounter::stop();
-    printf("Different count = %d\n",DeepCopyCounter::get_count_different_space());
 
 
     if (numRanks ==1 || Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
