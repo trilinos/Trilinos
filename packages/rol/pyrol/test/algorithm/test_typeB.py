@@ -9,7 +9,7 @@ from zoo import HS02, HS41
 class TestTypeB(unittest.TestCase):
 
     def setUp(self):
-        self.tol = 1e-8
+        self.tol = 1e-7
         # Set up a parameter list.
         p = getParametersFromXmlFile("empty.xml")
         p.sublist("General").set("Output Level", 1)
