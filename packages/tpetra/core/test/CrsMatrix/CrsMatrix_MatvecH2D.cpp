@@ -131,7 +131,6 @@ namespace {
 
     const size_t nsize=3;
 
-   /* Create the identity matrix, three rows per proc */
     RCP<MAT> A1 = Tpetra::Utils::MatrixGenerator<MAT>::generate_miniFE_matrix(nsize, comm);
     if(!A1->isFillComplete()) A1->fillComplete();
     auto map = A1->getRowMap();
