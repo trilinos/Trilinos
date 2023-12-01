@@ -239,6 +239,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
           RCP<Matrix> Ap = Plevel->Get<RCP<Matrix> >("A");
           RCP<Matrix> Ab = Blevel->Get<RCP<Matrix> >("A");
           MT norm = compare_matrices<Matrix,MT>(Ap,Ab);
+// TODO BMK: compare_matrices uses MatrixMatrix::Add. This was broken before
+// (see #12565), producing a matrix of all zeros if C is fill-complete on input, like
+// compare_matrices does in this test.
+//
+// After fixing Tpetra::MatrixMatrix::Add, it shows that these pairs of matrices (Ap and Ab, etc.)
+// are actually different so this test is not passing. When this is fixed, uncomment these TEUCHOS_TEST_COMPARE
+// lines.
+
 //          TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
 
           // Compare P, R
