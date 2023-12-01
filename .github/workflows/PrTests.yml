@@ -53,7 +53,7 @@ jobs:
       - name: Generate PR cmake fragment
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
+          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --force --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
       - name: Generate enable packages cmake fragment
         working-directory: /home/Trilinos/build
         run: |
