@@ -227,6 +227,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
         // Check to see that we get the same matrices in both hierarchies
         TEST_EQUALITY(PointH->GetNumLevels(),BlockH->GetNumLevels());
 
+// TODO BMK: compare_matrices uses MatrixMatrix::Add. This was broken before
+// (see #12565), producing a matrix of all zeros if C is fill-complete on input, like
+// compare_matrices does in this test.
+//
+// After fixing Tpetra::MatrixMatrix::Add, it shows that these pairs of matrices (Ap and Ab, etc.)
+// are actually different so this test is not passing. When this is fixed, uncomment this block.
+
+/*
         for(int j=0; j<PointH->GetNumLevels(); j++) {
           using CRS=Tpetra::CrsMatrix<SC,LO,GO,NO>;
           using MT  = typename Teuchos::ScalarTraits<SC>::magnitudeType;
@@ -239,29 +247,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
           RCP<Matrix> Ap = Plevel->Get<RCP<Matrix> >("A");
           RCP<Matrix> Ab = Blevel->Get<RCP<Matrix> >("A");
           MT norm = compare_matrices<Matrix,MT>(Ap,Ab);
-// TODO BMK: compare_matrices uses MatrixMatrix::Add. This was broken before
-// (see #12565), producing a matrix of all zeros if C is fill-complete on input, like
-// compare_matrices does in this test.
-//
-// After fixing Tpetra::MatrixMatrix::Add, it shows that these pairs of matrices (Ap and Ab, etc.)
-// are actually different so this test is not passing. When this is fixed, uncomment these TEUCHOS_TEST_COMPARE
-// lines.
 
-//          TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
+          TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
 
           // Compare P, R
           if(j>0) {
             RCP<Matrix> Pp = Plevel->Get<RCP<Matrix> >("P");
             RCP<Matrix> Pb = Blevel->Get<RCP<Matrix> >("P");
             norm = compare_matrices<Matrix,MT>(Pp,Pb);
-//            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
+            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
 
             RCP<Matrix> Rp = Plevel->Get<RCP<Matrix> >("R");
             RCP<Matrix> Rb = Blevel->Get<RCP<Matrix> >("R");
             norm = compare_matrices<Matrix,MT>(Rp,Rb);
-//            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
+            TEUCHOS_TEST_COMPARE(norm,<,tol,out,success);
           }
         }
+*/
 
         //TODO: check no unused parameters
         //TODO: check results of Iterate()
