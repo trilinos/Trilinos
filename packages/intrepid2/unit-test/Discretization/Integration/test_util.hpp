@@ -55,6 +55,8 @@
 #include "Intrepid2_Utils.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
+#include <cmath>
+
 namespace Intrepid2 {
 
   namespace Test {
@@ -165,8 +167,18 @@ namespace Intrepid2 {
       return value/++k;
     }
 
+    // beta implemented here because apparently Apple clang does not define it.
+    template<typename ArithmeticType>
+    double beta(const ArithmeticType &x, const ArithmeticType &y)
+    {
+      auto Gamma_x   = std::tgamma(x);
+      auto Gamma_y   = std::tgamma(y);
+      auto Gamma_xpy = std::tgamma(x+y);
+      return Gamma_x * Gamma_y / Gamma_xpy;
+    }
+  
     /* 
-      Integral of monomial over unit pyramid from initial implemetation by John Burkardt
+      Integral of monomial over unit pyramid from initial implementation by John Burkardt
         Integral ( over unit pyramid ) x^m y^n z^p dx dy dz
     */
     template<typename ValueType>
@@ -176,7 +188,7 @@ namespace Intrepid2 {
         int degCoeff = 2 + xDeg + yDeg;
         ValueType sign = 1.0;
         for (int i=0; i <= degCoeff; ++i) {
-          auto comb = std::round(sign / ((degCoeff+1) * std::beta(degCoeff-i+1,i+1)));   // sign * nCr(degCoeff,i)
+          auto comb = std::round(sign / ((degCoeff+1) * beta(degCoeff-i+1,i+1)));   // sign * nCr(degCoeff,i)
           value += comb / ( i + zDeg + 1.0 );
           sign = -sign;
         }
