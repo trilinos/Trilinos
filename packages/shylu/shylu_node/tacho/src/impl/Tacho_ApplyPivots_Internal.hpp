@@ -51,14 +51,14 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Al
         }
       }
     } else {
-      printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
+      Kokkos::printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
     }
     return 0;
   }
 
   template <typename MemberType, typename ViewTypeP, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeP &P, const ViewTypeA &A) {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+    KOKKOS_IF_ON_DEVICE((
     typedef typename ViewTypeA::non_const_value_type value_type;
 
     if (A.extent(0) == P.extent(0)) {
@@ -80,11 +80,9 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Al
         });
       }
     } else {
-      printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
-    }
-#else
-    invoke(P, A);
-#endif
+      Kokkos::printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
+    }))
+    KOKKOS_IF_ON_HOST((invoke(P, A);))
     return 0;
   }
 };
@@ -115,14 +113,14 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, A
         }
       }
     } else {
-      printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
+      Kokkos::printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
     }
     return 0;
   }
 
   template <typename MemberType, typename ViewTypeP, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeP &P, const ViewTypeA &A) {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+    KOKKOS_IF_ON_DEVICE((
     typedef typename ViewTypeA::non_const_value_type value_type;
 
     if (A.extent(0) == P.extent(0)) {
@@ -144,11 +142,9 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, A
         });
       }
     } else {
-      printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
-    }
-#else
-    invoke(P, A);
-#endif
+      Kokkos::printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
+    }))
+    KOKKOS_IF_ON_HOST((invoke(P, A);))
     return 0;
   }
 };
@@ -192,7 +188,7 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, A
 //           }
 //         }
 //       } else {
-//         printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
+//         Kokkos::printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
 //       }
 //       return 0;
 //     }
@@ -205,7 +201,7 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, A
 //     invoke(MemberType &member,
 //            const ViewTypeP &P,
 //            const ViewTypeA &A) {
-// #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+//       KOKKOS_IF_ON_DEVICE((
 //       typedef typename ViewTypeA::non_const_value_type value_type;
 
 //       if (A.extent(0) == P.extent(0)) {
@@ -237,11 +233,9 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, A
 //             });
 //         }
 //       } else {
-//         printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
-//       }
-// #else
-//       invoke(P, A);
-// #endif
+//         Kokkos::printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
+//       }))
+//       KOKKOS_IF_ON_HOST((invoke(P, A);))
 //       return 0;
 //     }
 //   };

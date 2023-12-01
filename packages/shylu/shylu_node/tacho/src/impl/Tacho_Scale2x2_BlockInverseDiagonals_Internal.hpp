@@ -77,7 +77,7 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> {
         }
       }
     } else {
-      printf("Error: Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> A is not square\n");
+      Kokkos::printf("Error: Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> A is not square\n");
     }
     return 0;
   }
@@ -85,7 +85,7 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> {
   template <typename MemberType, typename ViewTypeP, typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeP &P, const ViewTypeD &D,
                                            const ViewTypeA &A) {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+    KOKKOS_IF_ON_DEVICE((
     typedef typename ViewTypeA::non_const_value_type value_type;
     if (A.extent(0) == D.extent(0)) {
       if (A.span() > 0) {
@@ -130,11 +130,9 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> {
         }
       }
     } else {
-      printf("Error: Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> A is not square\n");
-    }
-#else
-    invoke(P, D, A);
-#endif
+      Kokkos::printf("Error: Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> A is not square\n");
+    }))
+    KOKKOS_IF_ON_HOST((invoke(P, D, A);))
     return 0;
   }
 };

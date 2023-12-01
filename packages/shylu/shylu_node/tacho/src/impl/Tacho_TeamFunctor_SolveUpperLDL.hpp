@@ -295,7 +295,7 @@ public:
         solve_var2(member, s, bptr);
       }
     } else if (mode == -1) {
-      printf("Error: TeamFunctorSolveUpperChol::SolveTag, computing mode is not determined\n");
+      Kokkos::printf("Error: TeamFunctorSolveUpperChol::SolveTag, computing mode is not determined\n");
     } else {
       // skip
     }
