@@ -735,6 +735,136 @@ namespace Intrepid2 {
         }
       }
       
+      //! the following implementations apply_matvec_product_ab correspond to input ranks of a on the left, b on the right.  These work *without* taking subviews.
+      //!
+      //!
+      /*
+       //
+       //          const auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
+       //                              leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
+       //                                              Kokkos::subview(_leftInput, cl, lpt));
+       //
+       //          const auto right = ( rightRank == 3 ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL()) :
+       //                                                Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL()));
+       //
+       //          apply_matvec_product( result, left, right, _isTranspose );
+      */
+      template<typename resultViewType,
+               typename leftViewType,
+               typename rightViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      apply_matvec_product_23(      resultViewType &result,
+                              const leftViewType   &left,
+                              const rightViewType  &right,
+                              const ordinal_type   &cl,
+                              const ordinal_type   &bf,
+                              const ordinal_type   &lpt,
+                              const ordinal_type   &pt) {
+        const ordinal_type iend = result.extent(3);
+        
+        using value_type = typename resultViewType::value_type;
+        
+        //matrix is a scaled identity
+        const value_type val = left(cl,lpt);
+        for (ordinal_type i=0;i<iend;++i) {
+          result(cl,bf,pt, i) = val*right(bf,pt, i);
+        }
+      }
+      template<typename resultViewType,
+               typename leftViewType,
+               typename rightViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      apply_matvec_product_24(      resultViewType &result,
+                              const leftViewType   &left,
+                              const rightViewType  &right,
+                              const ordinal_type   &cl,
+                              const ordinal_type   &bf,
+                              const ordinal_type   &lpt,
+                              const ordinal_type   &pt) {
+        const ordinal_type iend = result.extent(3);
+        
+        using value_type = typename resultViewType::value_type;
+        
+        //matrix is a scaled identity
+        const value_type val = left(cl,lpt);
+        for (ordinal_type i=0;i<iend;++i) {
+          result(cl,bf,pt, i) = val*right(cl,bf,pt, i);
+        }
+      }
+      
+      template<typename resultViewType,
+               typename leftViewType,
+               typename rightViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      apply_matvec_product_33(      resultViewType &result,
+                              const leftViewType   &left,
+                              const rightViewType  &right,
+                              const ordinal_type   &cl,
+                              const ordinal_type   &bf,
+                              const ordinal_type   &lpt,
+                              const ordinal_type   &pt) {
+        const ordinal_type iend = result.extent(3);
+
+        for (ordinal_type i=0;i<iend;++i)
+          result(cl,bf,pt, i) = left(cl,lpt, i)*right(bf,pt, i);
+      }
+      
+      template<typename resultViewType,
+               typename leftViewType,
+               typename rightViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      apply_matvec_product_34(      resultViewType &result,
+                              const leftViewType   &left,
+                              const rightViewType  &right,
+                              const ordinal_type   &cl,
+                              const ordinal_type   &bf,
+                              const ordinal_type   &lpt,
+                              const ordinal_type   &pt) {
+        const ordinal_type iend = result.extent(3);
+
+        for (ordinal_type i=0;i<iend;++i)
+          result(cl,bf,pt, i) = left(cl,lpt, i)*right(cl,bf,pt, i);
+      }
+      
+      template<typename resultViewType,
+               typename leftViewType,
+               typename rightViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      apply_matvec_product_43(      resultViewType &result,
+                              const leftViewType   &left,
+                              const rightViewType  &right,
+                              const ordinal_type   &cl,
+                              const ordinal_type   &bf,
+                              const ordinal_type   &lpt,
+                              const ordinal_type   &pt,
+                              const bool isTranspose) {
+        const ordinal_type iend = result.extent(3);
+        const ordinal_type jend = right.extent(2);
+
+        typedef typename resultViewType::value_type value_type;
+
+        if (isTranspose) {
+          for (ordinal_type i=0;i<iend;++i) {
+            value_type tmp(0);
+            for (ordinal_type j=0;j<jend;++j)
+              tmp += left(cl,lpt, j,i)*right(bf,pt, j);
+            result(cl,bf,pt, i) = tmp;
+          }
+        } else {
+          for (ordinal_type i=0;i<iend;++i) {
+            value_type tmp(0);
+            for (ordinal_type j=0;j<jend;++j)
+              tmp += left(cl,lpt, i,j)*right(bf,pt, j);
+            result(cl,bf,pt, i) = tmp;
+          }
+        }
+      }
+      
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl,
                       const ordinal_type pt) const {
@@ -760,17 +890,93 @@ namespace Intrepid2 {
         const auto rightRank = _rightInput.rank();
         const auto leftRank  = _leftInput.rank();
 
-        auto result = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL());
-
         const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
-        const auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
-                            leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
-                                            Kokkos::subview(_leftInput, cl, lpt));
         
-        const auto right = ( rightRank == 3 ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL()) :
-                                              Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL())); 
-        
-        apply_matvec_product( result, left, right, _isTranspose );
+        switch (leftRank)
+        {
+          case 4:
+            switch (rightRank)
+            {
+              case 3:  apply_matvec_product_43(_output, _leftInput, _rightInput, cl, bf, lpt, pt, _isTranspose); break;
+              default:
+                if (_isTranspose)
+                {
+                  using value_type = typename OutputViewType::value_type;
+                  ordinal_type iend = _output.extent_int(3);
+                  ordinal_type jend = _rightInput.extent_int(3);
+                  for (ordinal_type i=0;i<iend;++i) {
+                    value_type tmp(0);
+                    for (ordinal_type j=0;j<jend;++j)
+                      tmp += _leftInput(cl,lpt, j,i)*_rightInput(cl,bf,pt, j);
+                    _output(cl,bf,pt, i) = tmp;
+                  }
+                }
+                else
+                {
+                  using value_type = typename OutputViewType::value_type;
+                  ordinal_type iend = _output.extent_int(3);
+                  ordinal_type jend = _rightInput.extent_int(3);
+                  for (ordinal_type i=0;i<iend;++i) {
+                    value_type tmp(0);
+                    for (ordinal_type j=0;j<jend;++j)
+                      tmp += _leftInput(cl,lpt, i,j)*_rightInput(cl,bf,pt, j);
+                    _output(cl,bf,pt, i) = tmp;
+                  }
+                }
+            }
+            break;
+          case 3:
+            switch (rightRank)
+            {
+              case 3:  apply_matvec_product_33(_output, _leftInput, _rightInput, cl, bf, lpt, pt); break;
+              default: apply_matvec_product_34(_output, _leftInput, _rightInput, cl, bf, lpt, pt);
+            }
+            break;
+          default: // leftRank == 2
+            switch (rightRank)
+            {
+              case 3:  apply_matvec_product_23(_output, _leftInput, _rightInput, cl, bf, lpt, pt); break;
+              default: apply_matvec_product_24(_output, _leftInput, _rightInput, cl, bf, lpt, pt);
+            }
+            break;
+        }
+//        if (leftRank == 4)
+//        {
+//          // special case code for now, to see how much we gain by eliminating subviews
+//          if (rightRank == 3)
+//          {
+//            apply_matvec_product_43(_output, _leftInput, _rightInput, cl, bf, lpt, pt);
+//          }
+//          else
+//          {
+//            apply_matvec_product_44(_output, _leftInput, _rightInput, cl, bf, lpt, pt);
+//          }
+//        }
+//        else if (leftRank == 3)
+//        {
+//          if (rightRank == 3)
+//          {
+//            apply_matvec_product_43(_output, _leftInput, _rightInput, cl, bf, lpt, pt);
+//          }
+//          else
+//          {
+//            apply_matvec_product_44(_output, _leftInput, _rightInput, cl, bf, lpt, pt);
+//          }
+//        }
+//        else // leftRank == 2
+//        {
+//          std::cout << "hit subview path.\n";
+//          auto result = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL());
+//
+//          const auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
+//                              leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
+//                                              Kokkos::subview(_leftInput, cl, lpt));
+//
+//          const auto right = ( rightRank == 3 ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL()) :
+//                                                Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL()));
+//
+//          apply_matvec_product( result, left, right, _isTranspose );
+//        }
       }
     };
   } //namespace
