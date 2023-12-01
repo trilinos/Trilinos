@@ -1096,7 +1096,7 @@ void Add(
       C = rcp (new crs_matrix_type (Aprime->getRowMap (), CmaxEntriesPerRow()));
     }
     else {
-      // Make sure Aprime and Bprime have global constants, before we ask for max entries per row.
+      // Note: above we checked that Aprime and Bprime have global constants, so it's safe to ask for max entries per row.
       C = rcp (new crs_matrix_type (Aprime->getRowMap (), Aprime->getGlobalMaxNumRowEntries() + Bprime->getGlobalMaxNumRowEntries()));
     }
   }
