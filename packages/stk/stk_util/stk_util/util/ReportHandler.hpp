@@ -432,7 +432,7 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 #define STK_ThrowInvalidArgIf(expr)
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowRequireMsg(expr, message)               \
   do {                                                       \
     const bool __stk_expr_res = bool(expr);                  \
@@ -450,7 +450,7 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
   } while (false);
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowRequire(expr)                              \
   do {                                                          \
     const bool __stk_expr_res = bool(expr);                     \
@@ -476,7 +476,7 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 #  define STK_NGP_ThrowAssertMsg(expr,message)                                       STK_NGP_ThrowRequireMsg(expr, message)
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowErrorMsgIf(expr, message)                                        STK_NGP_ThrowRequireMsg(!(expr), message);
 #else
 #define STK_NGP_ThrowErrorMsgIf(expr, message)                              \
@@ -488,7 +488,7 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
   } while (false);
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowErrorIf(expr)                                     STK_NGP_ThrowRequireMsg(!(expr), "!(" #expr ")");
 #else
 #define STK_NGP_ThrowErrorIf(expr)                              \
@@ -500,7 +500,7 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
   } while (false);
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowErrorMsg(message)                                      ThrowErrorMsgDevice(message ": " __FILE__ ":" LINE_STRING);
 #else
 #define STK_NGP_ThrowErrorMsg(message)                                      ThrowErrorMsgHost(message, STK_STR_TRACE);
