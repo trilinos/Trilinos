@@ -1171,8 +1171,7 @@ void Add(
   }
 }
 
-// This version of Add takes C as const RCP&, so C must not be null on input (in this case,
-// it is allocated and constructed in this function). Otherwise, its behavior is identical
+// This version of Add takes C as const RCP&, so C must not be null on input. Otherwise, its behavior is identical
 // to the above version where C is RCP&.
 template <class Scalar,
           class LocalOrdinal,
