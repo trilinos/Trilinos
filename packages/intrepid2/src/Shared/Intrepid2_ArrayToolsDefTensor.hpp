@@ -678,6 +678,13 @@ namespace Intrepid2 {
       /**/  OutputViewType     _output;
       const leftInputViewType  _leftInput;
       const rightInputViewType _rightInput;
+      const ordinal_type _outputRank;
+      const ordinal_type _leftInputRank;
+      const ordinal_type _rightInputRank;
+      const ordinal_type _iend;
+      const ordinal_type _jend;
+      
+      using value_type = typename OutputViewType::value_type;
 
       const bool _isTranspose;
       
@@ -686,7 +693,10 @@ namespace Intrepid2 {
                       leftInputViewType  leftInput_,
                       rightInputViewType rightInput_,
                       const bool isTranspose_)
-        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), _isTranspose(isTranspose_) {}
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), _isTranspose(isTranspose_),
+          _outputRank(output_.rank()),_leftInputRank(leftInput_.rank()), _rightInputRank(rightInput_.rank()),
+          _iend(output_.extent_int(_outputRank-1)), _jend(rightInput_.extent_int(_rightInputRank-1))
+      {}
 
       template<typename resultViewType,
                typename leftViewType,
@@ -749,118 +759,94 @@ namespace Intrepid2 {
        //
        //          apply_matvec_product( result, left, right, _isTranspose );
       */
-      template<typename resultViewType,
-               typename leftViewType,
-               typename rightViewType>
       KOKKOS_FORCEINLINE_FUNCTION
-      static void
-      apply_matvec_product_23(      resultViewType &result,
-                              const leftViewType   &left,
-                              const rightViewType  &right,
-                              const ordinal_type   &cl,
-                              const ordinal_type   &bf,
-                              const ordinal_type   &lpt,
-                              const ordinal_type   &pt) {
-        const ordinal_type iend = result.extent(3);
-        
-        using value_type = typename resultViewType::value_type;
-        
+      void
+      apply_matvec_product_scaled_identity_34(const ordinal_type   &cl,
+                                              const ordinal_type   &bf,
+                                              const ordinal_type   &lpt,
+                                              const ordinal_type   &pt) const {
         //matrix is a scaled identity
-        const value_type val = left(cl,lpt);
-        for (ordinal_type i=0;i<iend;++i) {
-          result(cl,bf,pt, i) = val*right(bf,pt, i);
-        }
-      }
-      template<typename resultViewType,
-               typename leftViewType,
-               typename rightViewType>
-      KOKKOS_FORCEINLINE_FUNCTION
-      static void
-      apply_matvec_product_24(      resultViewType &result,
-                              const leftViewType   &left,
-                              const rightViewType  &right,
-                              const ordinal_type   &cl,
-                              const ordinal_type   &bf,
-                              const ordinal_type   &lpt,
-                              const ordinal_type   &pt) {
-        const ordinal_type iend = result.extent(3);
-        
-        using value_type = typename resultViewType::value_type;
-        
-        //matrix is a scaled identity
-        const value_type val = left(cl,lpt);
-        for (ordinal_type i=0;i<iend;++i) {
-          result(cl,bf,pt, i) = val*right(cl,bf,pt, i);
+        const value_type & val = _leftInput(cl,lpt);
+        for (ordinal_type i=0;i<_iend;++i) {
+          _output(cl,bf,pt, i) = val*_rightInput(bf,pt, i);
         }
       }
       
-      template<typename resultViewType,
-               typename leftViewType,
-               typename rightViewType>
       KOKKOS_FORCEINLINE_FUNCTION
-      static void
-      apply_matvec_product_33(      resultViewType &result,
-                              const leftViewType   &left,
-                              const rightViewType  &right,
-                              const ordinal_type   &cl,
-                              const ordinal_type   &bf,
-                              const ordinal_type   &lpt,
-                              const ordinal_type   &pt) {
-        const ordinal_type iend = result.extent(3);
-
-        for (ordinal_type i=0;i<iend;++i)
-          result(cl,bf,pt, i) = left(cl,lpt, i)*right(bf,pt, i);
+      void
+      apply_matvec_product_scaled_identity_44(const ordinal_type   &cl,
+                                              const ordinal_type   &bf,
+                                              const ordinal_type   &lpt,
+                                              const ordinal_type   &pt) const {
+        //matrix is a scaled identity
+        const value_type & val = _leftInput(cl,lpt);
+        for (ordinal_type i=0;i<_iend;++i) {
+          _output(cl,bf,pt, i) = val*_rightInput(cl,bf,pt, i);
+        }
       }
       
-      template<typename resultViewType,
-               typename leftViewType,
-               typename rightViewType>
       KOKKOS_FORCEINLINE_FUNCTION
-      static void
-      apply_matvec_product_34(      resultViewType &result,
-                              const leftViewType   &left,
-                              const rightViewType  &right,
-                              const ordinal_type   &cl,
+      void
+      apply_matvec_product_33(const ordinal_type   &cl,
                               const ordinal_type   &bf,
                               const ordinal_type   &lpt,
-                              const ordinal_type   &pt) {
-        const ordinal_type iend = result.extent(3);
-
-        for (ordinal_type i=0;i<iend;++i)
-          result(cl,bf,pt, i) = left(cl,lpt, i)*right(cl,bf,pt, i);
+                              const ordinal_type   &pt) const {
+        for (ordinal_type i=0;i<_iend;++i)
+          _output(cl,bf,pt, i) = _leftInput(cl,lpt, i)*_rightInput(bf,pt, i);
       }
       
-      template<typename resultViewType,
-               typename leftViewType,
-               typename rightViewType>
       KOKKOS_FORCEINLINE_FUNCTION
-      static void
-      apply_matvec_product_43(      resultViewType &result,
-                              const leftViewType   &left,
-                              const rightViewType  &right,
-                              const ordinal_type   &cl,
+      void
+      apply_matvec_product_34(const ordinal_type   &cl,
                               const ordinal_type   &bf,
                               const ordinal_type   &lpt,
-                              const ordinal_type   &pt,
-                              const bool isTranspose) {
-        const ordinal_type iend = result.extent(3);
-        const ordinal_type jend = right.extent(2);
-
-        typedef typename resultViewType::value_type value_type;
-
-        if (isTranspose) {
-          for (ordinal_type i=0;i<iend;++i) {
+                              const ordinal_type   &pt) const {
+        for (ordinal_type i=0;i<_iend;++i)
+          _output(cl,bf,pt, i) = _leftInput(cl,lpt, i)*_rightInput(cl,bf,pt, i);
+      }
+      
+      KOKKOS_FORCEINLINE_FUNCTION
+      void
+      apply_matvec_product_43(const ordinal_type   &cl,
+                              const ordinal_type   &bf,
+                              const ordinal_type   &lpt,
+                              const ordinal_type   &pt) const {
+        if (_isTranspose) {
+          for (ordinal_type i=0;i<_iend;++i) {
             value_type tmp(0);
-            for (ordinal_type j=0;j<jend;++j)
-              tmp += left(cl,lpt, j,i)*right(bf,pt, j);
-            result(cl,bf,pt, i) = tmp;
+            for (ordinal_type j=0;j<_jend;++j)
+              tmp += _leftInput(cl,lpt, j,i)*_rightInput(bf,pt, j);
+            _output(cl,bf,pt, i) = tmp;
           }
         } else {
-          for (ordinal_type i=0;i<iend;++i) {
+          for (ordinal_type i=0;i<_iend;++i) {
             value_type tmp(0);
-            for (ordinal_type j=0;j<jend;++j)
-              tmp += left(cl,lpt, i,j)*right(bf,pt, j);
-            result(cl,bf,pt, i) = tmp;
+            for (ordinal_type j=0;j<_jend;++j)
+              tmp += _leftInput(cl,lpt, i,j)*_rightInput(bf,pt, j);
+            _output(cl,bf,pt, i) = tmp;
+          }
+        }
+      }
+      
+      KOKKOS_FORCEINLINE_FUNCTION
+      void
+      apply_matvec_product_44(const ordinal_type   &cl,
+                              const ordinal_type   &bf,
+                              const ordinal_type   &lpt,
+                              const ordinal_type   &pt) const {
+        if (_isTranspose) {
+          for (ordinal_type i=0;i<_iend;++i) {
+            value_type tmp(0);
+            for (ordinal_type j=0;j<_jend;++j)
+              tmp += _leftInput(cl,lpt, j,i)*_rightInput(cl,bf,pt, j);
+            _output(cl,bf,pt, i) = tmp;
+          }
+        } else {
+          for (ordinal_type i=0;i<_iend;++i) {
+            value_type tmp(0);
+            for (ordinal_type j=0;j<_jend;++j)
+              tmp += _leftInput(cl,lpt, i,j)*_rightInput(cl,bf,pt, j);
+            _output(cl,bf,pt, i) = tmp;
           }
         }
       }
@@ -887,56 +873,53 @@ namespace Intrepid2 {
       void operator()(const ordinal_type cl,
                       const ordinal_type bf,
                       const ordinal_type pt) const {
-        const auto rightRank = _rightInput.rank();
-        const auto leftRank  = _leftInput.rank();
-
         const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
         
-        switch (leftRank)
+        switch (_leftInputRank)
         {
           case 4:
-            switch (rightRank)
+            switch (_rightInputRank)
             {
-              case 3:  apply_matvec_product_43(_output, _leftInput, _rightInput, cl, bf, lpt, pt, _isTranspose); break;
-              default:
-                if (_isTranspose)
-                {
-                  using value_type = typename OutputViewType::value_type;
-                  ordinal_type iend = _output.extent_int(3);
-                  ordinal_type jend = _rightInput.extent_int(3);
-                  for (ordinal_type i=0;i<iend;++i) {
-                    value_type tmp(0);
-                    for (ordinal_type j=0;j<jend;++j)
-                      tmp += _leftInput(cl,lpt, j,i)*_rightInput(cl,bf,pt, j);
-                    _output(cl,bf,pt, i) = tmp;
-                  }
-                }
-                else
-                {
-                  using value_type = typename OutputViewType::value_type;
-                  ordinal_type iend = _output.extent_int(3);
-                  ordinal_type jend = _rightInput.extent_int(3);
-                  for (ordinal_type i=0;i<iend;++i) {
-                    value_type tmp(0);
-                    for (ordinal_type j=0;j<jend;++j)
-                      tmp += _leftInput(cl,lpt, i,j)*_rightInput(cl,bf,pt, j);
-                    _output(cl,bf,pt, i) = tmp;
-                  }
-                }
+              case 3:  apply_matvec_product_43(cl, bf, lpt, pt); break;
+              default: apply_matvec_product_44(cl, bf, lpt, pt);
+//                if (_isTranspose)
+//                {
+//                  using value_type = typename OutputViewType::value_type;
+//                  ordinal_type iend = _output.extent_int(3);
+//                  ordinal_type jend = _rightInput.extent_int(3);
+//                  for (ordinal_type i=0;i<iend;++i) {
+//                    value_type tmp(0);
+//                    for (ordinal_type j=0;j<jend;++j)
+//                      tmp += _leftInput(cl,lpt, j,i)*_rightInput(cl,bf,pt, j);
+//                    _output(cl,bf,pt, i) = tmp;
+//                  }
+//                }
+//                else
+//                {
+//                  using value_type = typename OutputViewType::value_type;
+//                  ordinal_type iend = _output.extent_int(3);
+//                  ordinal_type jend = _rightInput.extent_int(3);
+//                  for (ordinal_type i=0;i<iend;++i) {
+//                    value_type tmp(0);
+//                    for (ordinal_type j=0;j<jend;++j)
+//                      tmp += _leftInput(cl,lpt, i,j)*_rightInput(cl,bf,pt, j);
+//                    _output(cl,bf,pt, i) = tmp;
+//                  }
+//                }
             }
             break;
           case 3:
-            switch (rightRank)
+            switch (_rightInputRank)
             {
-              case 3:  apply_matvec_product_33(_output, _leftInput, _rightInput, cl, bf, lpt, pt); break;
-              default: apply_matvec_product_34(_output, _leftInput, _rightInput, cl, bf, lpt, pt);
+              case 3:  apply_matvec_product_33(cl, bf, lpt, pt); break;
+              default: apply_matvec_product_34(cl, bf, lpt, pt);
             }
             break;
           default: // leftRank == 2
-            switch (rightRank)
+            switch (_rightInputRank)
             {
-              case 3:  apply_matvec_product_23(_output, _leftInput, _rightInput, cl, bf, lpt, pt); break;
-              default: apply_matvec_product_24(_output, _leftInput, _rightInput, cl, bf, lpt, pt);
+              case 3:  apply_matvec_product_scaled_identity_34(cl, bf, lpt, pt); break;
+              default: apply_matvec_product_scaled_identity_44(cl, bf, lpt, pt);
             }
             break;
         }
@@ -998,18 +981,52 @@ namespace Intrepid2 {
     typedef const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
     typedef FunctorArrayTools::F_matvecProduct<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
 
-    if (hasField) {
+    FunctorType functor(output, leftInput, rightInput, isTranspose);
+    
+    // TODO: consider checking to see if we are running in serial on host.  If so, use for loops instead of parallel_for.
+    const bool TRY_SERIAL_FOR = false;
+    
+    if (TRY_SERIAL_FOR)
+    {
+      const int iend = output.extent_int(0);
+      const int jend = output.extent_int(1);
+      if (hasField)
+      {
+        const int kend = output.extent_int(2);
+        for (ordinal_type i=0; i<iend; i++)
+        {
+          for (ordinal_type j=0; j<jend; j++)
+          {
+            for (ordinal_type k=0; k<kend; k++)
+            {
+              functor(i,j,k);
+            }
+          }
+        }
+      }
+      else
+      {
+        for (ordinal_type i=0; i<iend; i++)
+        {
+          for (ordinal_type j=0; j<jend; j++)
+          {
+            functor(i,j);
+          }
+        }
+      }
+    }
+    else if (hasField) {
       using range_policy_type = Kokkos::MDRangePolicy
         < ExecSpaceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0, 0 },
                                 { output.extent(0), output.extent(1), output.extent(2) } );
-      Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
+      Kokkos::parallel_for( policy, functor );
     } else {
       using range_policy_type = Kokkos::MDRangePolicy
         < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },
                                 { output.extent(0), output.extent(1) } );
-      Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
+      Kokkos::parallel_for( policy, functor );
     }
   }
 
