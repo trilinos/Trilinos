@@ -678,6 +678,8 @@ namespace Intrepid2 {
       /**/  OutputViewType     _output;
       const leftInputViewType  _leftInput;
       const rightInputViewType _rightInput;
+      
+      // TODO: make leftInputRank, rightInputRank, isTranspose template arguments -- this will allow us to eliminate all runtime branching
       const ordinal_type _outputRank;
       const ordinal_type _leftInputRank;
       const ordinal_type _rightInputRank;
@@ -875,6 +877,18 @@ namespace Intrepid2 {
                       const ordinal_type pt) const {
         const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
         
+        // NOTE THAT HAVING THIS "true" assumes _leftInputRank = 4, _rightInputRank = 4, _isTranspose = true.  This is ONLY for evaluating whether it's worth it to move all the branching to compile time.
+        const bool DEBUG_TEST_NON_BRANCHING_IMPLEMENTATION = true;
+        if (DEBUG_TEST_NON_BRANCHING_IMPLEMENTATION)
+        {
+          for (ordinal_type i=0;i<_iend;++i) {
+            value_type tmp(0);
+            for (ordinal_type j=0;j<_jend;++j)
+              tmp += _leftInput(cl,lpt, j,i)*_rightInput(cl,bf,pt, j);
+            _output(cl,bf,pt, i) = tmp;
+          }
+        }
+        else
         switch (_leftInputRank)
         {
           case 4:
