@@ -63,6 +63,8 @@ def get_angular_include(line, remove_subfolder=False):
     for i in range(len(newline)):
         if newline[i] == '"':
             if first:
+                if newline[i+1] == '.':
+                    return line
                 newline = newline[:i] + '<' + newline[i+1:]
                 first = False
                 i0 = i+1
