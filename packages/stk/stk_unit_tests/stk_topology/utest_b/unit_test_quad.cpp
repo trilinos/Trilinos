@@ -273,7 +273,7 @@ void check_quad_6_on_device()
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
-    printf("Reminder: we still need to enable permutation for QUAD_6\n");
+    Kokkos::printf("Reminder: we still need to enable permutation for QUAD_6\n");
     const bool enabledPermutation = false;
     if (enabledPermutation) {
       check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
