@@ -1784,8 +1784,6 @@ namespace Ifpack2 {
 
           const local_ordinal_type nparts = partptr.extent(0) - 1;
 
-          // Loop over the lines:
-          // - part2rowidx0 stores the 
           {
             const Kokkos::RangePolicy<host_execution_space> policy(0, nparts);
             Kokkos::parallel_for
@@ -1824,9 +1822,11 @@ namespace Ifpack2 {
             const auto num_packed_blocks = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pack_td_ptr_last);
             btdm.values = vector_type_3d_view("btdm.values", num_packed_blocks(), blocksize, blocksize);
 
-            const auto pack_td_ptr_schur_last = Kokkos::subview(btdm.pack_td_ptr_schur, btdm.pack_td_ptr_schur.extent(0)-1, btdm.pack_td_ptr_schur.extent(1)-1);
-            const auto num_packed_blocks_schur = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pack_td_ptr_schur_last);
-            btdm.values_schur = vector_type_3d_view("btdm.values_schur", num_packed_blocks_schur(), blocksize, blocksize);
+            if (interf.n_subparts_per_part > 1) {
+              const auto pack_td_ptr_schur_last = Kokkos::subview(btdm.pack_td_ptr_schur, btdm.pack_td_ptr_schur.extent(0)-1, btdm.pack_td_ptr_schur.extent(1)-1);
+              const auto num_packed_blocks_schur = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pack_td_ptr_schur_last);
+              btdm.values_schur = vector_type_3d_view("btdm.values_schur", num_packed_blocks_schur(), blocksize, blocksize);
+            }
 
             if (vector_length > 1) setTridiagsToIdentity(btdm, interf.packptr);
           }
@@ -1937,8 +1937,8 @@ namespace Ifpack2 {
 
         // Allocate view for E and initialize the values with B:
         
-        //btdm.e_values = vector_type_4d_view("btdm.e_values", 2, (interf.n_subparts_per_part-1)*interf.max_subpartsz*interf.nparts, blocksize, blocksize);
-        btdm.e_values = vector_type_4d_view("btdm.e_values", 2, interf.part2packrowidx0_back, blocksize, blocksize);
+        if (interf.n_subparts_per_part > 1)
+          btdm.e_values = vector_type_4d_view("btdm.e_values", 2, interf.part2packrowidx0_back, blocksize, blocksize);
       }
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
