@@ -8,7 +8,7 @@
 namespace Compadre {
 
     //! Available target functionals
-    enum TargetOperation {
+    enum TargetOperation : int {
         //! Point evaluation of a scalar
         ScalarPointEvaluation,
         //! Point evaluation of a vector (reconstructs entire vector at once, requiring a 
