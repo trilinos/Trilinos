@@ -213,9 +213,9 @@ int main(int argc, char *argv[]) {
       *outStream << "Optimization time: "
                  << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                  << " seconds." << std::endl << std::endl;
-      parlist->sublist("Reduced Dynamic Objective").set("State Rank", obj->getStateRank());
-      parlist->sublist("Reduced Dynamic Objective").set("Adjoint Rank", obj->getAdjointRank());
-      parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Rank", obj->getStateSensitivityRank());
+      parlist->sublist("Reduced Dynamic Objective").set("State Rank", static_cast<int>(obj->getStateRank()));
+      parlist->sublist("Reduced Dynamic Objective").set("Adjoint Rank", static_cast<int>(obj->getAdjointRank()));
+      parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Rank", static_cast<int>(obj->getStateSensitivityRank()));
 
       zdiff->set(*z); zdiff->axpy(static_cast<RealT>(-1),*zprev);
       zerr = zdiff->norm();
