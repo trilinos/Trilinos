@@ -32,13 +32,13 @@
   16 /* throw away this number of                                                                  \
    initial random numbers */
 
-static unsigned long rand_num = IMPOSSIBLE_RAND;
+static long rand_num = IMPOSSIBLE_RAND;
 
 /* initialize random number generator with seed */
-unsigned long init_rand_port(unsigned long seed)
+long init_rand_port(long seed)
 {
-  extern unsigned long rand_num;
-  int                  i;
+  extern long rand_num;
+  int         i;
 
   if (seed < 1 || seed > MAX_VALUE) { /* if seed out of range */
     seed = get_init_rand_port();      /* get seed */
@@ -55,14 +55,14 @@ unsigned long init_rand_port(unsigned long seed)
 
 /* get a long initial seed for gererator
   assumes that rand returns a short integer */
-unsigned long get_init_rand_port(void)
+long get_init_rand_port(void)
 {
-  unsigned long seed;
+  long seed;
 
-  srand((unsigned int)time(NULL)); /* initialize system generator */
+  srand((int)time(NULL)); /* initialize system generator */
   do {
-    seed = ((unsigned long)rand()) * rand();
-    seed += ((unsigned long)rand()) * rand();
+    seed = ((long)rand()) * rand();
+    seed += ((long)rand()) * rand();
   } while (seed > MAX_VALUE);
 
   assert(seed > 0);
@@ -90,9 +90,9 @@ unsigned long get_init_rand_port(void)
         a * a <= modulus
         [a*x/a*q]-[a*x/modulus] <= 1
             (for only one addition of modulus below) */
-unsigned long genr_rand_port(unsigned long init_rand)
+long genr_rand_port(long init_rand)
 {
-  unsigned long k, residue;
+  long k, residue;
 
   k       = init_rand / Q;
   residue = MULT * (init_rand - Q * k) - R * k;
@@ -105,9 +105,9 @@ unsigned long genr_rand_port(unsigned long init_rand)
 }
 
 /* get a random number */
-unsigned long rand_port(void)
+long rand_port(void)
 {
-  extern unsigned long rand_num;
+  extern long rand_num;
   if (rand_num == IMPOSSIBLE_RAND) {
     /* if not initialized, do it now */
     rand_num = 1;
@@ -140,8 +140,8 @@ double rand_rect_port(void) { return (double)rand_port() / (double)(MAX_VALUE + 
 #include <stdio.h>
 int main(void)
 {
-  unsigned long seed;
-  int           i;
+  long seed;
+  int  i;
   seed = init_rand_port(1);
   printf("Seed for random number generator is %ld\n", seed);
   i = STARTUP_RANDS; /* threw away STARTUP_RANDS */
