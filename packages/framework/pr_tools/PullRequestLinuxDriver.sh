@@ -212,6 +212,11 @@ test_cmd_options=(
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
 )
 
+if [[ ${on_kokkos_develop} == "1" ]]
+then
+    test_cmd_options+=( "--extra-configure-args=\"-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels\" ")
+fi
+
 if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
 then
     test_cmd_options+=( "--use-explicit-cachefile ")

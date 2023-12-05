@@ -79,6 +79,21 @@ class TrilinosPRConfigurationBase(object):
     # --------------------
 
     @property
+    def arg_extra_configure_args(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores the location of the CTest driver script that gets
+        loaded by the -S argument.
+
+        Returns:
+            self.args.extra_configure_args
+        """
+        return self.args.extra_configure_args
+
+    @property
     def arg_ctest_driver(self):
         """
         Argument Wrapper: This property wraps the value provided in self.args

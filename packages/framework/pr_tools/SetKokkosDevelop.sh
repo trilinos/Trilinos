@@ -17,12 +17,7 @@ git clone --depth=1 --single-branch --branch=develop --shallow-submodules https:
 message_std "SetKokkosDevelop> INFO: updated kokkos and kokkos-kernels packages with current develop"
 
 ln -s "${DIR_CONTAINING_TRILINOS}/kokkos" "$TRILINOS_SRC/kokkos"
-
-# cmake ${WORKSPACE:?}/Trilinos -DKokkos_SOURCE_DIR_OVERRIDE:STRING=kokkos
-
 ln -s "${DIR_CONTAINING_TRILINOS}/kokkos-kernels" "$TRILINOS_SRC/kokkos-kernels"
-
-# cmake ${WORKSPACE:?}/Trilinos -DKokkos_SOURCE_DIR_OVERRIDE:STRING=kokkos-kernels
 
 # export CXX=$PACKAGESPATH/kokkos/bin/nvcc_wrapper
 
