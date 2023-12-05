@@ -2,7 +2,8 @@
 SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/packages/framework/pr_tools/SetKokkosDevelop.sh)
 SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
-PACKAGESPATH=$(realpath ${WORKSPACE:?}/Trilinos/packages)
+DIR_CONTAINING_TRILINOS=$(realpath ${WORKSPACE:?})
+TRILINOS_SRC=${DIR_CONTAINING_TRILINOS}/Trilinos
 
 # Ensures git is loaded properly
 if ! command -v git &> /dev/null; then
@@ -10,23 +11,19 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
-cd $PACKAGESPATH
-rm -rf kokkos kokkos-kernels
-git clone --depth=1 --single-branch --branch=develop --shallow-submodules https://github.com/kokkos/kokkos.git
-git clone --depth=1 --single-branch --branch=develop --shallow-submodules https://github.com/kokkos/kokkos-kernels.git
+cd $DIR_CONTAINING_TRILINOS
+git clone --depth=1 --single-branch --branch=develop --shallow-submodules https://github.com/kokkos/kokkos.git kokkos
+git clone --depth=1 --single-branch --branch=develop --shallow-submodules https://github.com/kokkos/kokkos-kernels.git kokkos-kernels
 message_std "SetKokkosDevelop> INFO: updated kokkos and kokkos-kernels packages with current develop"
 
-# Returns to previous path from before running this script
-cd -
+ln -s "${DIR_CONTAINING_TRILINOS}/kokkos" "$TRILINOS_SRC/kokkos"
 
-ln -s "$PACKAGESPATH/kokkos" "${WORKSPACE:?}/Trilinos/packages/kokkos"
+# cmake ${WORKSPACE:?}/Trilinos -DKokkos_SOURCE_DIR_OVERRIDE:STRING=kokkos
 
-cmake ${WORKSPACE:?}/Trilinos -DKokkos_SOURCE_DIR_OVERRIDE:STRING=kokkos
+ln -s "${DIR_CONTAINING_TRILINOS}/kokkos-kernels" "$TRILINOS_SRC/kokkos-kernels"
 
-ln -s "$PACKAGESPATH/kokkos-kernels" "${WORKSPACE:?}/Trilinos/packages/kokkos-kernels"
+# cmake ${WORKSPACE:?}/Trilinos -DKokkos_SOURCE_DIR_OVERRIDE:STRING=kokkos-kernels
 
-cmake ${WORKSPACE:?}/Trilinos -DKokkos_SOURCE_DIR_OVERRIDE:STRING=kokkos-kernels
+# export CXX=$PACKAGESPATH/kokkos/bin/nvcc_wrapper
 
-export CXX=$PACKAGESPATH/kokkos/bin/nvcc_wrapper
-
-export OMPI_CXX=$PACKAGESPATH/kokkos-kernels/bin/nvcc_wrapper
+# export OMPI_CXX=$PACKAGESPATH/kokkos-kernels/bin/nvcc_wrapper

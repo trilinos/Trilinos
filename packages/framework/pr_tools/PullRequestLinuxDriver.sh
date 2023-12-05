@@ -107,7 +107,7 @@ sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReques
 
 if [[ ${on_kokkos_develop} == "1" ]]; then
     message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop"
-    "$SCRIPTPATH"/SetKokkosDevelop.sh
+    "${SCRIPTPATH}"/SetKokkosDevelop.sh
 else
     print_banner "Merge Source into Target"
     message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
