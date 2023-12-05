@@ -140,6 +140,8 @@ foreach(all_include_dir IN LISTS all_include_dirs)
   IF(${IS_KOKKOS_ALGORITHMS_SRC} GREATER -1)
     list(APPEND all_include_dirs "${all_include_dir}/std_algorithms")
     list(APPEND all_include_dirs "${all_include_dir}/std_algorithms/impl")
+    list(APPEND all_include_dirs "${all_include_dir}/sorting")
+    list(APPEND all_include_dirs "${all_include_dir}/sorting/impl")
   ENDIF()
 endforeach()
 
