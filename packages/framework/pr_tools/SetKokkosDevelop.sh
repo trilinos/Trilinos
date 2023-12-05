@@ -18,7 +18,3 @@ message_std "SetKokkosDevelop> INFO: updated kokkos and kokkos-kernels packages 
 
 ln -s "${DIR_CONTAINING_TRILINOS}/kokkos" "$TRILINOS_SRC/kokkos"
 ln -s "${DIR_CONTAINING_TRILINOS}/kokkos-kernels" "$TRILINOS_SRC/kokkos-kernels"
-
-# export CXX=$PACKAGESPATH/kokkos/bin/nvcc_wrapper
-
-# export OMPI_CXX=$PACKAGESPATH/kokkos-kernels/bin/nvcc_wrapper
