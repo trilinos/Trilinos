@@ -85,8 +85,8 @@ class TrilinosPRConfigurationBase(object):
         to provide a convenient way to override this value if needed for some
         specialty reason or for a customized test.
 
-        This parameter stores the location of the CTest driver script that gets
-        loaded by the -S argument.
+        This parameter stores extra configure arguments that will be passed
+        to the cmake call when configuring Trilinos.
 
         Returns:
             self.args.extra_configure_args
