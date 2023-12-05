@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    RealT gtol(1e-2), zerr(0), ztol(1e-8);
+    RealT gtol(1e-2), zerr(0), ztol0(1e-6), ztol(1);
     z->zero();
     ROL::Ptr<ROL::Vector<RealT>> zprev = z->clone(), zdiff = z->clone();
     ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
@@ -203,6 +203,7 @@ int main(int argc, char *argv[]) {
                  << "Gradient Tolerance: "
                  << gtol << std::endl << std::endl;
 
+      ztol = ztol0 / std::max(static_cast<RealT>(1),z->norm());
       zprev->set(*z);
       parlist->sublist("Status Test").set("Gradient Tolerance",gtol);
       parlist->sublist("Status Test").set("Step Tolerance",static_cast<RealT>(1e-4)*gtol);
@@ -212,15 +213,18 @@ int main(int argc, char *argv[]) {
       *outStream << "Optimization time: "
                  << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                  << " seconds." << std::endl << std::endl;
+      parlist->sublist("Reduced Dynamic Objective").set("State Rank", obj->getStateRank());
+      parlist->sublist("Reduced Dynamic Objective").set("Adjoint Rank", obj->getAdjointRank());
+      parlist->sublist("Reduced Dynamic Objective").set("State Sensitivity Rank", obj->getStateSensitivityRank());
 
       zdiff->set(*z); zdiff->axpy(static_cast<RealT>(-1),*zprev);
       zerr = zdiff->norm();
       *outStream << std::endl << "Control Difference: "
                  << zerr << std::endl << std::endl;
-      if (zerr < ztol && algo->getState()->gnorm < static_cast<RealT>(1e-10)) break;
+      if (zerr < ztol && algo->getState()->gnorm < static_cast<RealT>(1e-8)) break;
 
-      myCost *= static_cast<RealT>(1e1);
-      gtol   *= static_cast<RealT>(1e-1); gtol = std::max(gtol,static_cast<RealT>(1e-12));
+      myCost *= static_cast<RealT>(2e0);
+      gtol   *= static_cast<RealT>(1e-1); gtol = std::max(gtol,static_cast<RealT>(1e-10));
       wts     = {stateCost, myCost};
       obj_k   = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wts,dyn_con->getAssembler());
       dyn_obj = ROL::makePtr<LTI_Objective<RealT>>(*parlist,obj_k,false);
