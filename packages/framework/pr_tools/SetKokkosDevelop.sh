@@ -18,3 +18,5 @@ message_std "SetKokkosDevelop> INFO: updated kokkos and kokkos-kernels packages 
 
 ln -s "${DIR_CONTAINING_TRILINOS}/kokkos" "$TRILINOS_SRC/kokkos"
 ln -s "${DIR_CONTAINING_TRILINOS}/kokkos-kernels" "$TRILINOS_SRC/kokkos-kernels"
+
+cd -
