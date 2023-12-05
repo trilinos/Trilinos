@@ -40,18 +40,18 @@ template <> struct Copy<Algo::Internal> {
         /// contiguous array
         value_type *ptrA(A.data());
         const value_type *ptrB(B.data());
-	KOKKOS_IF_ON_DEVICE((
+        KOKKOS_IF_ON_DEVICE((
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member, sA),
                              [ptrA, ptrB](const ordinal_type &ij) { ptrA[ij] = ptrB[ij]; });
-	))
-	KOKKOS_IF_ON_HOST((memcpy((void *)ptrA, (const void *)ptrB, sA * sizeof(value_type));))
+        ))
+        KOKKOS_IF_ON_HOST((memcpy((void *)ptrA, (const void *)ptrB, sA * sizeof(value_type));))
       } else {
         KOKKOS_IF_ON_DEVICE((
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member, mA * nA), [A, B, mA](const ordinal_type &ij) {
           const ordinal_type i = ij % mA, j = ij / mA;
           A(i, j) = B(i, j);
         });))
-	KOKKOS_IF_ON_HOST((
+        KOKKOS_IF_ON_HOST((
         for (ordinal_type j = 0; j < nA; ++j)
           for (ordinal_type i = 0; i < mA; ++i)
             A(i, j) = B(i, j);))
@@ -81,7 +81,7 @@ template <> struct Copy<Algo::Internal> {
                                [&](const ordinal_type &i) { A(i, j) = B(i, j); });
         });))
         KOKKOS_IF_ON_HOST((
-	for (ordinal_type j = 0, jend = A.extent(1); j < jend; ++j) {
+          for (ordinal_type j = 0, jend = A.extent(1); j < jend; ++j) {
           const ordinal_type tmp = diagB.param == 'U' ? j : j + 1;
           const ordinal_type iend = tmp < A.extent(0) ? tmp : A.extent(0);
           for (ordinal_type i = 0; i < iend; ++i)

@@ -211,8 +211,8 @@ public:
   }
 
   void createObject(numeric_tools_base_type *&object) {
+#if defined TACHO_LEVELSET_ON_HOST
     KOKKOS_IF_ON_HOST((
-    #if defined TACHO_LEVELSET_ON_HOST
     switch (_variant) {
     case 0: {
       TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var0_type);
@@ -229,11 +229,10 @@ public:
     default: {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
     }
-    }
-    #else
-    TACHO_NUMERIC_TOOLS_FACTORY_SERIAL_BODY;
-    #endif
-    ))
+    }))
+#else
+    KOKKOS_IF_ON_HOST((TACHO_NUMERIC_TOOLS_FACTORY_SERIAL_BODY;))
+#endif
   }
 };
 #endif
