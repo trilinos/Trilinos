@@ -36,7 +36,6 @@ endif()
 list(APPEND CTEST_CONFIGURE_COMMAND_ARGS
     "-C \"${package_enables_file}\""
     "-G \"${CTEST_CMAKE_GENERATOR}\""
-    "${CTEST_SOURCE_DIRECTORY}"
 )
 
 if(EXTRA_CONFIGURE_ARGS)
@@ -44,6 +43,9 @@ if(EXTRA_CONFIGURE_ARGS)
 endif()
 
 list(APPEND CTEST_CONFIGURE_COMMAND_ARGS
+    "${CTEST_SOURCE_DIRECTORY}"
+)
+
 list(JOIN CTEST_CONFIGURE_COMMAND_ARGS " " CTEST_CONFIGURE_COMMAND)
 
 banner("CMake Configuration Command")
