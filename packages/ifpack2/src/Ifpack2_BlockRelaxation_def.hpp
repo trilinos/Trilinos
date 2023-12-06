@@ -171,7 +171,7 @@ getValidParameters () const
                                    typename MatrixType::node_type> > dummy;
   validParams->set("partitioner: coordinates",dummy);
   validParams->set("timer for apply", true);
-  validParams->set("Number of subparts per part", 1);
+  validParams->set("partitioner: subparts per part", 1);
 
   return validParams;
 }

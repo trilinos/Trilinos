@@ -171,7 +171,7 @@ struct BlockTriDiContainerTester {
       make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
       p.set<LO>("partitioner: local parts", parts.size());
       p.set("partitioner: parts", parts);
-      p.set("Number of subparts per part", 1);
+      p.set("partitioner: subparts per part", 1);
       T->setParameters(p);
     }
     return T;

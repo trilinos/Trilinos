@@ -217,8 +217,8 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::setParameters (const Teuchos::ParameterList& List)
   {
-    if (List.isType<int>("Number of subparts per part"))
-      n_subparts_per_part_ = List.get<int>("Number of subparts per part");
+    if (List.isType<int>("partitioner: subparts per part"))
+      n_subparts_per_part_ = List.get<int>("partitioner: subparts per part");
   }
 
   template <typename MatrixType>
