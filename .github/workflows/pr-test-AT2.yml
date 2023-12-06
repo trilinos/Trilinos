@@ -1,4 +1,4 @@
-name: PR-gcc-openmpi
+name: pr-test-AT2
 
 on:
   pull_request:
@@ -12,11 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  trilogpu02-gcc:
-    runs-on: [self-hosted, trilogpu02]
-    container:
-      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/rhel8/trilinos-pr-env:gcc-8.5.0
-      options: --hostname trilinos-container-gcc-8
+  triloamd01-gcc:
+    runs-on: [self-hosted, triloamd01]
     steps:
       - name: env
         env:
@@ -56,7 +53,7 @@ jobs:
       - name: Generate PR cmake fragment
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
+          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --force --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
       - name: Generate enable packages cmake fragment
         working-directory: /home/Trilinos/build
         run: |
@@ -65,11 +62,6 @@ jobs:
         working-directory: /home/Trilinos/build
         run: |
           bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
-      - name: CMakeCache.txt
-        if: always()
-        working-directory: /home/Trilinos/build
-        run: |
-          bash -l -c "cat CMakeCache.txt"
       - name: build trilinos
         working-directory: /home/Trilinos/build
         run: bash -l -c "ninja"
