@@ -435,7 +435,7 @@ public:
         factorize_var2(member, s, P, T, ABR);
       }
     } else if (mode == -1) {
-      printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
+      Kokkos::printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
     } else {
       // skip
     }
