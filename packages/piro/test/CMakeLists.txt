@@ -151,6 +151,24 @@ IF (Piro_ENABLE_NOX)
     ADDED_TESTS_NAMES_OUT AnalysisDriverTpetra_NAME 
   )
   
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    AnalysisDriverHDSA
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+    EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+    SOURCES
+    Main_AnalysisDriver_HDSA.cpp
+    MockModelEval_H_Tpetra.cpp
+    MockModelEval_H_Tpetra.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
+    NUM_MPI_PROCS 1-4
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADDED_TESTS_NAMES_OUT AnalysisDriverHDSA_NAME 
+  )
+
   IF (ThyraSolverTpetra_NAME)
     SET(ThyraSolverTpetra_EXENAME ThyraSolverTpetra)
   ELSE()
@@ -161,6 +179,12 @@ IF (Piro_ENABLE_NOX)
     SET(AnalysisDriverTpetra_EXENAME AnalysisDriverTpetra)
   ELSE()
     SET(AnalysisDriverTpetra_EXENAME)
+  ENDIF()
+
+  IF (AnalysisDriverHDASA_NAME)
+    SET(AnalysisDriverHDSA_EXENAME AnalysisDriverHDSA)
+  ELSE()
+    SET(AnalysisDriverHDSA_EXENAME)
   ENDIF()
 
 ENDIF(Piro_ENABLE_NOX)
@@ -283,6 +307,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Solve_NOX_ForwardSensitivities_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml
+        input_Analysis_HDSA.xml
         input_Analysis_ROL_Tempus_Transient_MSD.xml
         input_Analysis_ROL_ReducedSpace_LineSearch.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml
