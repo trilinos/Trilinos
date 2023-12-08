@@ -199,7 +199,7 @@ test_cmd_options=(
     --pullrequest-gen-config-file=${GENCONFIG_CONFIG_FILE:?}
     --pullrequest-number=${PULLREQUESTNUM:?}
     --jenkins-job-number=${BUILD_NUMBER:?}
-    --req-mem-per-core=3.0
+    --req-mem-per-core=4.0
     --max-cores-allowed=${TRILINOS_MAX_CORES:=29}
     --num-concurrent-tests=4
     --test-mode=${mode}
