@@ -69,10 +69,13 @@
 
 #include "Amesos2_TypeMap.hpp"
 
+#ifdef KOKKOS_ENABLE_CUDA
+  #include <cublas_v2.h>
+  #include <cuda_runtime_api.h>
+#endif
+
 
 namespace SLUD {
-
-extern "C" {
 
 #if SUPERLU_DIST_MAJOR_VERSION > 4
 // SuperLU_Dist before major version 5 does not contain the config file
@@ -107,9 +110,6 @@ extern "C" {
 #include "superlu_zdefs.h"     // double-precision complex definitions
   }
 #endif  // HAVE_TEUCHOS_COMPLEX
-
-
-} // end extern "C"
 
 // multiplication of SLUD types
 template <typename slu_scalar_t, typename slu_mag_t>
