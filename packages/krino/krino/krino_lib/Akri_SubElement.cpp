@@ -1347,9 +1347,14 @@ void SubElement_Tri_3::cut_interior_intersection_point(CDMesh & mesh, const stk:
 void
 SubElement_Tri_3::determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key)
 {
-  determine_node_signs_on_edge( mesh, interface_key, 0,1 );
-  determine_node_signs_on_edge( mesh, interface_key, 1,2 );
-  determine_node_signs_on_edge( mesh, interface_key, 2,0 );
+  bool setSignOnEdge = false;
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 0,1 );
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 1,2 );
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 2,0 );
+
+  if (!setSignOnEdge && myInterfaceSigns[my_owner->get_interface_index(interface_key)]==0)
+    set_node_signs_on_uncrossed_subelement(interface_key);
+
 }
 
 void
@@ -1967,12 +1972,17 @@ void
 SubElement_Tet_4::determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key)
 {
   STK_ThrowAssert(!have_subelements());
-  determine_node_signs_on_edge( mesh, interface_key, 0,1 );
-  determine_node_signs_on_edge( mesh, interface_key, 1,2 );
-  determine_node_signs_on_edge( mesh, interface_key, 0,2 );
-  determine_node_signs_on_edge( mesh, interface_key, 0,3 );
-  determine_node_signs_on_edge( mesh, interface_key, 1,3 );
-  determine_node_signs_on_edge( mesh, interface_key, 2,3 );
+
+  bool setSignOnEdge = false;
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 0,1 );
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 1,2 );
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 0,2 );
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 0,3 );
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 1,3 );
+  setSignOnEdge |= determine_node_signs_on_edge( mesh, interface_key, 2,3 );
+
+  if (!setSignOnEdge && myInterfaceSigns[my_owner->get_interface_index(interface_key)]==0)
+    set_node_signs_on_uncrossed_subelement(interface_key);
 }
 
 void
@@ -2620,10 +2630,10 @@ void set_node_signs_for_edge(const InterfaceID interface, const SubElementNode *
   node2->set_node_sign(node2Sign);
 }
 
-void
+bool
 SubElement::determine_node_signs_on_edge( const CDMesh & mesh, const InterfaceID interface, const int i0, const int i1 )
 {
-
+  bool setSignOnEdge = false;
   if (my_owner->have_interface(interface))
   {
     const SubElementNode * parent1 = my_nodes[i0];
@@ -2637,33 +2647,24 @@ SubElement::determine_node_signs_on_edge( const CDMesh & mesh, const InterfaceID
     const int sign = myInterfaceSigns[my_owner->get_interface_index(interface)];
     if (sign == 0)
     {
-      const int sign1 = my_owner->interface_node_sign(interface, parent1);
-      const int sign2 = my_owner->interface_node_sign(interface, parent2);
-
-      const double position = (sign1 == sign2) ? (-1.0) : my_owner->interface_crossing_position(interface, parent1, parent2);
-      set_node_signs_for_edge(interface, parent1, parent2, sign1, sign2, position, mesh.get_snapper());
+      const auto [crossingSign, position] = my_owner->interface_edge_crossing_sign_and_position(interface, parent1, parent2);
+      if (crossingSign != 0)
+      {
+        set_node_signs_for_edge(interface, parent1, parent2, -crossingSign, crossingSign, position, mesh.get_snapper());
+        setSignOnEdge = true;
+      }
     }
   }
+  return setSignOnEdge;
 }
 
-void
-SubElement::determine_node_scores_on_edge( const CDMesh & mesh, const InterfaceID interface, const int i0, const int i1 )
+void SubElement::set_node_signs_on_uncrossed_subelement( const InterfaceID interface )
 {
-
-  const SubElementNode * parent1 = my_nodes[i0];
-  const SubElementNode * parent2 = my_nodes[i1];
-
-  if (parent1->get_node_on_interface() || parent2->get_node_on_interface()) return;
-
-  const SubElementNode * child = SubElementNode::common_child({parent1, parent2});
-
-  if (child)
-  {
-    const NodeVec & parents = child->get_parents();
-    const std::vector<double> parent_weights = child->get_parent_weights();
-    for (size_t i=0; i<parents.size(); ++i)
-      parents[i]->set_node_score(1.-parent_weights[i]);
-  }
+  std::vector<stk::math::Vector3d> nodeOwnerCoords;
+  fill_node_owner_coords(my_owner, nodeOwnerCoords);
+  const int interfaceSign = my_owner->get_interface_sign_for_uncrossed_subelement(interface, nodeOwnerCoords);
+  for (auto && node : my_nodes)
+    node->set_node_sign(interfaceSign);
 }
 
 void
@@ -2682,8 +2683,8 @@ SubElement::process_edge( CDMesh & mesh, const InterfaceID interface, const int 
       parent1->get_node_sign() == -parent2->get_node_sign() &&
       have_interface(interface))
   {
-    const double position = my_owner->interface_crossing_position(interface, parent1, parent2);
-    STK_ThrowRequireMsg(position > 0. && position < 1., "Error process_edge " << position << " " << parent1->get_node_sign() << " " << parent2->get_node_sign());
+    const auto [crossingSign, position] = my_owner->interface_edge_crossing_sign_and_position(interface, parent1, parent2);
+    STK_ThrowRequireMsg(crossingSign!=0 && position > 0. && position < 1., "Error process_edge " << crossingSign << " " << position << " " << parent1->get_node_sign() << " " << parent2->get_node_sign() << " " << parent1->get_ancestry() << " " << parent2->get_ancestry());
 
     std::unique_ptr<SubElementNode> newNode = std::make_unique<SubElementEdgeNode>(my_owner, position, parent1, parent2);
     subnode = mesh.add_managed_node(std::move(newNode));

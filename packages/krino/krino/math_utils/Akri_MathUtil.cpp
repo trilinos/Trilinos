@@ -72,6 +72,27 @@ get_parametric_coordinates_of_point(const std::vector<stk::math::Vector3d> & nod
   }
 }
 
+double compute_linear_root(const std::function<double(const double)> & f,
+    const double xa,
+    const double xb)
+{
+  // Does not check assumptions that xb >= xa and that root is bracketed (f(x)=0 for some x, xa <= x <= xb)
+  const double xDiff = xb - xa;
+  if (xDiff == 0.)
+    return xa;
+
+  const double fa = f(xa);
+  if (fa == 0.)
+    return xa;
+
+  const double fb = f(xb);
+  const double fDiff = fb - fa;
+  if (fDiff == 0.)
+    return xa;
+
+  return xa - xDiff*fa/fDiff;
+}
+
 std::pair<bool, double> find_root( const std::function<double(const double)> & f,
     const double xa,
     const double xb,
@@ -80,11 +101,12 @@ std::pair<bool, double> find_root( const std::function<double(const double)> & f
     const unsigned maxIters,
     const double xTol)
 {
+  // Note:  Seems pretty strange, but the boost::toms748_solve appears to do better on the interval -1->1 than from 0->1
   boost::uintmax_t iterCount = maxIters;
   auto tol_function = [&xTol](const double a, const double b) { return std::abs(b-a) <= xTol; };
   auto result = boost::math::tools::toms748_solve(f, xa, xb, fa, fb, tol_function, iterCount);
   const bool success = iterCount < maxIters;
-  return {success, 0.5*(result.first+result.second)};
+  return {success, compute_linear_root(f, result.first, result.second)};
 }
 
 std::pair<bool, double> find_bracketed_root_newton_raphson( const std::function<std::pair<double,double>(const double)> & f,
@@ -128,7 +150,7 @@ std::pair<bool, double> find_bracketed_root_newton_raphson( const std::function<
       fb = fx;
     }
 
-    const double xTol = 4*std::numeric_limits<double>::epsilon()*(fabs(xa)+fabs(xb));
+    const double xTol = 4*std::numeric_limits<double>::epsilon()*(std::abs(xa)+std::abs(xb));
     if (xb-xa < xTol)
       return {false, x};
   }

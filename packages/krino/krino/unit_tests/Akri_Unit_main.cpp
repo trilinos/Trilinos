@@ -15,18 +15,12 @@
 #include <Akri_RegisterProduct.hpp>
 #include <Akri_Startup.hpp>
 
-#include <Kokkos_Core.hpp>
-
 int main(int argc, char **argv) {
   sierra::Env::set_input_file_required(false);
 
   testing::InitGoogleTest(&argc, argv);
 
   krino::Startup startup__(argc, argv);
-
-  std::unique_ptr<Kokkos::ScopeGuard> guard =
-    !Kokkos::is_initialized() && !Kokkos::is_finalized()?
-    std::make_unique<Kokkos::ScopeGuard>(argc,argv) : nullptr;
     
   stk::unit_test_util::simple_fields::create_parallel_output(sierra::Env::parallel_rank());
 

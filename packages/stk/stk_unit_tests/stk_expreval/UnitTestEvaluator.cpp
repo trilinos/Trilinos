@@ -727,7 +727,7 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isInvalidFunction("gamma(1)"));
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
 TEST(UnitTestEvaluator, deviceVariableMap_too_small)
 {
   stk::expreval::Eval eval("x+y+z");
@@ -1298,7 +1298,7 @@ TEST(UnitTestEvaluator, defaultVector)
 TEST(UnitTestEvaluator, Ngp_defaultVector)
 {
   EXPECT_DOUBLE_EQ(device_evaluate("x[0]",                       {}, {}),                     0);
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMP)
+  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
   EXPECT_ANY_THROW(device_evaluate("x[0]+x[1]+x[2]",             {}, {}));
   #endif
 }
@@ -1338,7 +1338,7 @@ TEST(UnitTestEvaluator, Ngp_bindVector)
                             {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}),                   6);
   EXPECT_DOUBLE_EQ(device_evaluate("a[0]=(1) ? 2 : 3",         {},         {{"a", {0, 0, 0}}}), 2);
 
-  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMP)
+  #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
   EXPECT_ANY_THROW(device_evaluate("a[0]+a[1]+a[3]",           {},         {{"a", {1, 2, 3}}}));
   EXPECT_ANY_THROW(device_evaluate("a[0]+a[1]+a[2]",           {},         {{"a", {1, 2, 3}}}, stk::expreval::Variable::ONE_BASED_INDEX));
   EXPECT_ANY_THROW(device_evaluate("a",                        {},         {{"a", {1, 2, 3}}}));
@@ -2761,7 +2761,7 @@ void Ngp_testRandom(const char * expression)
   checkUniformDist(results);
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
 TEST(UnitTestEvaluator, Ngp_testFunction_rand)
 {
   Ngp_testRandom("rand()");
@@ -2782,7 +2782,7 @@ TEST(UnitTestEvaluator, testFunction_srand_repeatability)
   }
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
 TEST(UnitTestEvaluator, Ngp_testFunction_srand_repeatability)
 {
   std::vector<double> result(10);
@@ -2803,7 +2803,7 @@ TEST(UnitTestEvaluator, testFunction_random)
   testRandom("random()");
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
 TEST(UnitTestEvaluator, Ngp_testFunction_random)
 {
   Ngp_testRandom("random()");
@@ -2824,7 +2824,7 @@ TEST(UnitTestEvaluator, testFunction_random1_repeatability)
   }
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
 TEST(UnitTestEvaluator, Ngp_testFunction_random1_repeatability)
 {
   std::vector<double> result(10);
@@ -2989,7 +2989,7 @@ TEST(UnitTestEvaluator, testFunction_time)
   EXPECT_NEAR(evaluate("time()"), std::time(nullptr), 1.1);
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
 TEST(UnitTestEvaluator, Ngp_testFunction_time)
 {
   EXPECT_NEAR(device_evaluate("time()"), std::time(nullptr), 1.1);

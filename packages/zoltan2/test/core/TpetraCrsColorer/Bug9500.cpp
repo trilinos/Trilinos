@@ -172,7 +172,7 @@ public:
       Kokkos::RangePolicy<execution_space_t>(0, num_local_nz),
       KOKKOS_LAMBDA(const size_t nz, int &errorcnt) {
         if (J_local_matrix.values(nz) != Jp_local_matrix.values(nz)) {
-          printf("Error in nonzero comparison %zu:  %g != %g", 
+          Kokkos::printf("Error in nonzero comparison %zu:  %g != %g",
                   nz, J_local_matrix.values(nz), Jp_local_matrix.values(nz));
           errorcnt++;
         }

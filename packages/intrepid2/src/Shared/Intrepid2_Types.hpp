@@ -272,7 +272,7 @@ namespace Intrepid2 {
       reconstructed functions or basis functions. Pairs of primitive operators are used to
       specify what kind of local weak operator should be constructed.
   */
-  enum EOperator{
+  enum EOperator : int {
     OPERATOR_VALUE = 0,
     OPERATOR_GRAD,      // 1
     OPERATOR_CURL,      // 2

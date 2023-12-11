@@ -86,6 +86,7 @@ namespace Xpetra {
     typedef int local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
+    typedef typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type global_indices_array_device_type;
 
     //! @name Constructors and destructor
     //@{
@@ -157,9 +158,12 @@ namespace Xpetra {
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */) const { return Xpetra::IDNotPresent; }
 
     //! Return a view of the global indices owned by this process.
-    //Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const;
-
     Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const { return ArrayView< const GlobalOrdinal >(); }
+
+    //! Return a view of the global indices owned by this process.
+    global_indices_array_device_type getMyGlobalIndicesDevice() const { return global_indices_array_device_type(); }
+    
+
     //@}
 
     //! @name Boolean tests
@@ -273,6 +277,7 @@ namespace Xpetra {
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
+    typedef typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type global_indices_array_device_type;
 
     //! @name Constructors and destructor
     //@{
@@ -502,6 +507,18 @@ namespace Xpetra {
 
     //! Return a view of the global indices owned by this process.
     Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const { XPETRA_MONITOR("EpetraMapT::getLocalElementList"); return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements());  }
+
+
+    //! Return a view of the global indices owned by this process.
+    global_indices_array_device_type getMyGlobalIndicesDevice() const {  
+      XPETRA_MONITOR("EpetraMapT::getMyGlobalIndicesDevice"); 
+      Teuchos::ArrayView< const GlobalOrdinal > view = getLocalElementList();
+      if(view.size() == 0) 
+        return global_indices_array_device_type();
+      else 
+        return Kokkos::View<const global_ordinal_type*,typename Node::device_type,Kokkos::MemoryUnmanaged>(view.data(),view.size());
+    }
+
     //@}
 
     //! @name Boolean tests
@@ -726,6 +743,8 @@ namespace Xpetra {
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
+    typedef typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_type global_indices_array_type;
+    
 
     //! @name Constructors and destructor
     //@{
@@ -940,6 +959,17 @@ namespace Xpetra {
 
     //! Return a view of the global indices owned by this process.
     Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const { XPETRA_MONITOR("EpetraMapT::getLocalElementList"); return ArrayView< const long long >(map_->MyGlobalElements64(), map_->NumMyElements()); }
+
+    //! Return a view of the global indices owned by this process.
+    global_indices_array_device_type getMyGlobalIndicesDevice() const {  
+      XPETRA_MONITOR("EpetraMapT::getMyGlobalIndicesDevice"); 
+      Teuchos::ArrayView< const GlobalOrdinal > view = getLocalElementList();
+      if(view.size() == 0) 
+        return global_indices_array_device_type();
+      else
+        return Kokkos::View<const global_ordinal_type*,typename Node::device_type,Kokkos::MemoryUnmanaged>(view.data(),view.size());
+    }
+
     //@}
 
     //! @name Boolean tests

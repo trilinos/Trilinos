@@ -86,10 +86,11 @@ void check_particle_on_device()
 {
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals());
 
+  stk::topology t = stk::topology::PARTICLE;
+  constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::PARTICLE>::num_nodes;
+
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
-    stk::topology t = stk::topology::PARTICLE;
-
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_FALSE(t.is_shell());
@@ -113,9 +114,10 @@ void check_particle_on_device()
     NGP_EXPECT_EQ(t.base(),stk::topology::PARTICLE);
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
+  });
 
-    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::PARTICLE>::num_nodes;
-
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
 

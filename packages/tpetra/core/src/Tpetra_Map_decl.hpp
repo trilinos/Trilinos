@@ -765,6 +765,9 @@ namespace Tpetra {
                          Kokkos::LayoutLeft,
                          Kokkos::HostSpace> global_indices_array_type;
 
+    typedef Kokkos::View<const global_ordinal_type*,
+                         device_type> global_indices_array_device_type;
+    
   public:
     /// \brief Return a view of the global indices owned by this process.
     ///
@@ -786,6 +789,10 @@ namespace Tpetra {
     /// calling this if the calling process owns a very large number
     /// of global indices.
     global_indices_array_type getMyGlobalIndices () const;
+
+    /// \brief Return a view of the global indices owned by this process on the Map's device.
+    global_indices_array_device_type getMyGlobalIndicesDevice () const;
+
 
     /// \brief Return a NONOWNING view of the global indices owned by
     ///   this process.

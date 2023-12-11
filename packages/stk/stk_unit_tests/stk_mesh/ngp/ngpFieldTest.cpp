@@ -1609,6 +1609,38 @@ TEST_F(NgpFieldFixture, updateBucketPtrView)
   ngpField.update_bucket_pointer_view();
 }
 
+TEST_F(NgpFieldFixture, LateFieldUsage)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::Field<int> & stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  stk::io::fill_mesh("generated:1x1x1", get_bulk());
+
+  initialize_ngp_field(stkIntField);
+
+  get_meta().enable_late_fields();
+  stk::mesh::Field<int> & stkLateIntField = create_field<int>(stk::topology::ELEM_RANK, "lateIntField");
+
+  initialize_ngp_field(stkLateIntField);
+
+  int multiplier = 2;
+  modify_field_on_host(get_bulk(), stkIntField, multiplier);
+  modify_field_on_host(get_bulk(), stkLateIntField, multiplier);
+  check_field_on_host(get_bulk(), stkIntField, multiplier);
+  check_field_on_host(get_bulk(), stkLateIntField, multiplier);
+
+  sync_field_to_device(stkIntField);
+  sync_field_to_device(stkLateIntField);
+  modify_field_on_device(get_bulk(), stkIntField, multiplier);
+  modify_field_on_device(get_bulk(), stkLateIntField, multiplier);
+
+  sync_field_to_host(stkIntField);
+  sync_field_to_host(stkLateIntField);
+  check_field_on_host(get_bulk(), stkIntField, multiplier*multiplier);
+  check_field_on_host(get_bulk(), stkLateIntField, multiplier*multiplier);
+}
+
 //   -------------------------        -------------------------
 //   |       |       |       |        |       |       |       |
 //   |   1   |   2   |   3   |  ===>  |   1   |   2   |   3   |

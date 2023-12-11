@@ -16,8 +16,9 @@ class IntersectionPointFromNodalLevelsetInterfaceGeometry : public InterfaceGeom
 {
 public:
   virtual ~IntersectionPointFromNodalLevelsetInterfaceGeometry() {}
-  virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh, const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override {}
-  virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
+  virtual void prepare_to_decompose_elements(const stk::mesh::BulkData & mesh, const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override {}
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh, const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override {}
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override {}
 
@@ -27,7 +28,7 @@ public:
     { STK_ThrowRequireMsg(false, "Unimplemented"); std::vector<stk::mesh::Entity> empty; return empty; }
 
   virtual bool might_have_interior_or_face_intersections() const override { STK_ThrowRequireMsg(false, "Unimplemented"); return false; }
-  virtual bool snapped_elements_may_have_new_intersections() const { return false; }
+  virtual bool snapped_elements_may_have_new_intersections() const override { return false; }
 
   virtual void append_element_intersection_points(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains,
@@ -58,7 +59,7 @@ public:
     { STK_ThrowRequireMsg(false, "Unimplemented"); PhaseTag empty; return empty; }
 
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,
-      const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+      const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override
     { STK_ThrowRequireMsg(false, "Unimplemented"); static std::vector<IntersectionPoint> empty; return empty; }
 
   void set_nodal_levelset(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::EntityId> & nodeIds, const std::vector<double> & nodeLs);

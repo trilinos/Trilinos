@@ -262,6 +262,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool        scaleResidualHist = true;               clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
   bool        useStackedTimer   = false;              clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
+  std::string watchrProblemName = std::string("MueLu Setup-Solve ") + std::to_string(comm->getSize()) + " ranks";
+                                                      clp.setOption("watchr-problem-name",   &watchrProblemName,   "Problem name for Watchr plot headers");
 
   std::string equilibrate = "no" ;                    clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #ifdef HAVE_MUELU_CUDA
@@ -587,7 +589,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
           Teuchos::StackedTimer::OutputOptions options;
           options.output_fraction = options.output_histogram = options.output_minmax = true;
           stacked_timer->report(out2, comm, options);
-          auto xmlOut = stacked_timer->reportWatchrXML(std::string("MueLu Setup-Solve ") + std::to_string(comm->getSize()) + " ranks", comm);
+          auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
           if(xmlOut.length())
             std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
         }

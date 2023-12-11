@@ -68,6 +68,7 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node>
     typedef LocalOrdinal  local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node          node_type;
+    typedef typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type global_indices_array_device_type;
 
   private:
 
@@ -178,7 +179,9 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node>
     //! Return a view of the global indices owned by this process.
     virtual Teuchos::ArrayView<const GlobalOrdinal> getLocalElementList() const;
 
-
+    //! Return a view of the global indices owned by this process.
+    virtual global_indices_array_device_type getMyGlobalIndicesDevice() const;
+    
     //@}
 
 

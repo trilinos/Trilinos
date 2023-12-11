@@ -611,6 +611,9 @@ void MetaData::internal_declare_known_cell_topology_parts()
     register_topology(stk::topology::HEX_20);
     register_topology(stk::topology::HEX_27);
 
+    register_topology(stk::topology::SHELL_SIDE_BEAM_2);
+    register_topology(stk::topology::SHELL_SIDE_BEAM_3);
+
     register_topology(stk::topology::SHELL_TRI_3);
     register_topology(stk::topology::SHELL_TRI_6);
 

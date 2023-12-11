@@ -254,6 +254,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           dt = pamgen_pl.get<double>("dt");
         } else if (mesh_pl.get<std::string>("Source") == "Inline Mesh") {
           Teuchos::ParameterList & inline_gen_pl = mesh_pl.sublist("Inline Mesh");
+          if (inline_gen_pl.isType<double>("final time"))
+            finalTime = inline_gen_pl.get<double>("final time");
           if (inline_gen_pl.isType<double>("dt"))
             dt = inline_gen_pl.get<double>("dt");
           else {

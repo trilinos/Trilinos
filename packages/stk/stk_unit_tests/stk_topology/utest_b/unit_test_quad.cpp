@@ -112,10 +112,11 @@ void check_quad_4_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_quad4());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_quad4());
 
+  stk::topology t = stk::topology::QUAD_4;
+  constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_4>::num_nodes;
+
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
-    stk::topology t = stk::topology::QUAD_4;
-
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_FALSE(t.is_shell());
@@ -140,13 +141,14 @@ void check_quad_4_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_4>::num_nodes;
-
     check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+  });
 
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
 
@@ -234,10 +236,11 @@ void check_quad_6_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_quad6());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_quad6());
 
+  stk::topology t = stk::topology::QUAD_6;
+  constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_6>::num_nodes;
+
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
-    stk::topology t = stk::topology::QUAD_6;
-
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_FALSE(t.is_shell());
@@ -262,14 +265,15 @@ void check_quad_6_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_6>::num_nodes;
-
     check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+  });
 
-    printf("Reminder: we still need to enable permutation for QUAD_6\n");
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  {
+    Kokkos::printf("Reminder: we still need to enable permutation for QUAD_6\n");
     const bool enabledPermutation = false;
     if (enabledPermutation) {
       check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
@@ -356,10 +360,11 @@ void check_quad_8_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_quad8());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_quad8());
 
+  stk::topology t = stk::topology::QUAD_8;
+  constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_8>::num_nodes;
+
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
-    stk::topology t = stk::topology::QUAD_8;
-
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_FALSE(t.is_shell());
@@ -384,13 +389,14 @@ void check_quad_8_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_8>::num_nodes;
-
     check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+  });
 
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
 
@@ -474,10 +480,11 @@ void check_quad_9_on_device()
   OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_quad9());
   OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_quad9());
 
+  stk::topology t = stk::topology::QUAD_9;
+  constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_9>::num_nodes;
+ 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
   {
-    stk::topology t = stk::topology::QUAD_9;
-
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_FALSE(t.is_shell());
@@ -502,13 +509,14 @@ void check_quad_9_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::QUAD_9>::num_nodes;
-
     check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+  });
 
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
 

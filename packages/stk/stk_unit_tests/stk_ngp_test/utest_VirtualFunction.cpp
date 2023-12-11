@@ -60,20 +60,20 @@ class NgpDerived : public NgpBase
 
 struct SimpleStruct {
   KOKKOS_FUNCTION
-  void print() { printf("Printing from A located at %p\n", static_cast<void*>(this)); }
+  void print() { Kokkos::printf("Printing from A located at %p\n", static_cast<void*>(this)); }
 };
 
 struct BaseStruct {
   virtual void set_i(const int) = 0;
   KOKKOS_FUNCTION
-  virtual void print() { printf("Printing from base located at %p\n", static_cast<void*>(this)); }
+  virtual void print() { Kokkos::printf("Printing from base located at %p\n", static_cast<void*>(this)); }
 };
 
 struct ChildStruct : public BaseStruct {
   int i;
   virtual void set_i(const int _i) { i = _i; }
   KOKKOS_FUNCTION
-  virtual void print() { printf("Printing from child located at %p with i %i\n", static_cast<void*>(this), i); }
+  virtual void print() { Kokkos::printf("Printing from child located at %p with i %i\n", static_cast<void*>(this), i); }
 };
 
 }  // namespace ngp

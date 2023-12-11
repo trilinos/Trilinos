@@ -1810,7 +1810,12 @@ void BulkData::reallocate_field_data(stk::mesh::FieldBase & field)
   for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
     const std::vector<Bucket*>& buckets = this->buckets(rank);
     m_field_data_manager->reallocate_field_data(rank, buckets, field, field_set);
+    for (Bucket * bucket : buckets) {
+      bucket->grow_ngp_field_bucket_ids();
+      bucket->mark_for_modification();
+    }
   }
+  m_meshModification.increment_sync_count();
 }
 
 void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer) const

@@ -534,7 +534,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartSubset)
 
   std::string stderrString = testing::internal::GetCapturedStderr();
   if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part part_1 subset ordinals (39 ) does not match Part part_1 subset ordinals () on root processor\n");
+    EXPECT_EQ(stderrString, "[p1] Part part_1 subset ordinals (41 ) does not match Part part_1 subset ordinals () on root processor\n");
   }
 }
 

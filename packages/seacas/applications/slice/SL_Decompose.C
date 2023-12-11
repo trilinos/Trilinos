@@ -115,7 +115,7 @@ namespace {
     }
   }
 
-#ifdef USE_ZOLTAN
+#if USE_ZOLTAN
   template<typename INT>
     std::tuple<std::vector<double>,std::vector<double>,std::vector<double>> get_element_centroid(const Ioss::Region &region, IOSS_MAYBE_UNUSED INT dummy)
     {
@@ -335,8 +335,8 @@ namespace {
     /* Clean up */
     zz.LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
     zz.LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
-#endif
   }
+#endif
 
 #if USE_METIS
   int get_common_node_count(const Ioss::Region &region)

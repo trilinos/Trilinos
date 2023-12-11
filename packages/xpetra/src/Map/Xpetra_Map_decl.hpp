@@ -92,6 +92,9 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
+
+    typedef Kokkos::View<const global_ordinal_type*,typename Node::device_type> global_indices_array_device_type;
+    
     //! @name Constructor/Destructor Methods
     //@{
 
@@ -147,6 +150,9 @@ namespace Xpetra {
 
     //! Return a view of the global indices owned by this process.
     virtual Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const = 0;
+
+    //! Return a view of the global indices owned by this process on the Map's device.
+    virtual global_indices_array_device_type getMyGlobalIndicesDevice () const = 0;
 
     //@}
 

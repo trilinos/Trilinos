@@ -182,6 +182,10 @@ Teuchos::ArrayView< const GlobalOrdinal > TpetraMap<LocalOrdinal,GlobalOrdinal,N
 { XPETRA_MONITOR("TpetraMap::getLocalElementList"); return map_->getLocalElementList(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getMyGlobalIndicesDevice() const
+{ XPETRA_MONITOR("TpetraMap::getMyGlobalIndicesDevice"); return map_->getMyGlobalIndicesDevice(); }
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
 bool TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::isNodeLocalElement(LocalOrdinal localIndex) const
 { XPETRA_MONITOR("TpetraMap::isNodeLocalElement"); return map_->isNodeLocalElement(localIndex); }
 
