@@ -50,9 +50,10 @@
 /*! \file Teuchos_YamlParser_decl.hpp
     \brief Functions to convert between ParameterList and YAML
 
-YAML is a human-readable data serialization format. Teuchos provides a
-YAML parameter list interpreter. It produces Teuchos::ParameterList
-objects equivalent to those produced by the Teuchos XML helper functions.
+YAML is a human-readable data serialization format. In addition to
+supporting the yaml-cpp TPL, Teuchos provides an in-house YAML parameter
+list interpreter. It produces Teuchos::ParameterList objects equivalent
+to those produced by the Teuchos XML helper functions.
 
 Here is a simple example XML parameter list:
 \code{.xml}
@@ -140,12 +141,32 @@ and looks better in YAML itself.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_PtrDecl.hpp"
 #include "Teuchos_FileInputSource.hpp"
+#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#include "yaml-cpp/yaml.h"
+#endif // HAVE_TEUCHOSCORE_YAMLCPP
 
 #include <iostream>
 #include <string>
 
 namespace Teuchos
 {
+
+#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#define MAKE_EXCEPTION_TYPE(Name) \
+class Name : public Teuchos::ExceptionBase \
+{ \
+  public: \
+    Name(const std::string& arg) : ExceptionBase(arg) {} \
+};
+
+MAKE_EXCEPTION_TYPE(YamlKeyError)
+MAKE_EXCEPTION_TYPE(YamlScalarError)
+MAKE_EXCEPTION_TYPE(YamlSequenceError)
+MAKE_EXCEPTION_TYPE(YamlStructureError)
+MAKE_EXCEPTION_TYPE(YamlUndefinedNodeError)
+
+#undef MAKE_EXCEPTION_TYPE
+#endif // HAVE_TEUCHOSCORE_YAMLCPP
 
 std::string convertXmlToYaml(const std::string& xmlFileName); //returns filename of produced YAML file
 void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileName); //writes to given filename
@@ -160,6 +181,13 @@ namespace YAMLParameterList
   Teuchos::RCP<Teuchos::ParameterList> parseYamlStream(std::istream& yaml);
   void writeYamlStream(std::ostream& yamlFile, const Teuchos::ParameterList& pl);
   void writeYamlFile(const std::string& yamlFile, const Teuchos::ParameterList& pl);
+
+  #ifdef HAVE_TEUCHOSCORE_YAMLCPP
+  Teuchos::RCP<Teuchos::ParameterList> readParams(std::vector<::YAML::Node>& lists);
+  void processMapNode(const ::YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
+  void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
+  #endif // HAVE_TEUCHOSCORE_YAMLCPP
+
   void writeParameterList(const Teuchos::ParameterList& pl, std::ostream& yaml, int indentLevel);
   void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ostream& yaml, int indentLevel);    //throws if the entry's type is not supported
   void generalWriteString(const std::string& str, std::ostream& yaml);

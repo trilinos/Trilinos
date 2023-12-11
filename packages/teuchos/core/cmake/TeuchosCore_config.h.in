@@ -11,6 +11,8 @@
 
 #cmakedefine HAVE_TEUCHOSCORE_QT
 
+#cmakedefine HAVE_TEUCHOSCORE_YAMLCPP
+
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOSCORE_QD
 

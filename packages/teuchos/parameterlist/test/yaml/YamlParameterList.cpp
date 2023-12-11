@@ -309,5 +309,57 @@ namespace TeuchosTests
     TEST_EQUALITY(sublist.name(), "mycode->sublist");
   }
 
-} //namespace TeuchosTests
+#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+  TEUCHOS_UNIT_TEST(YAML, yamlcpp_parser)
+  {
+    RCP<ParameterList> pl = Teuchos::getParametersFromYamlString(
+        "mycode:\n"
+        "  list_of_2d_arrays:\n"
+        "    - [[1,2,3], [4,5,6]]\n"
+        "    - [[7,8,9], [10,11,12]]\n"
+        "  ragged_array:\n"
+        "    - [1,2,3]\n"
+        "    - [1,2,3,4]\n"
+        "  line_continuation: [\n"
+        "    1,2,3,\n"
+        "    4,5,6\n"
+        "  ]\n"
+        "  # allow unicode comments: ±\n"
+    );
 
+    using threeDarr_t = Teuchos::Array<Teuchos::Array<Teuchos::Array<int>>>;
+    threeDarr_t& list_of_arrs = pl->get<threeDarr_t>("list_of_2d_arrays");
+    threeDarr_t correct_list_of_arrs = {
+      {{1, 2, 3}, {4, 5, 6}},
+      {{7, 8, 9}, {10, 11, 12}}
+    };
+    for (int i=0; i<list_of_arrs.size(); i++) {
+      for (int j=0; j<list_of_arrs[i].size(); j++) {
+        for (int k=0; k<list_of_arrs[i][j].size(); k++) {
+          TEST_EQUALITY(correct_list_of_arrs[i][j][k], list_of_arrs[i][j][k]);
+        }
+      }
+    }
+
+    using twoDarr_t = Teuchos::Array<Teuchos::Array<int>>;
+    twoDarr_t ragged_arr = pl->get<twoDarr_t>("ragged_array");
+    int correct_ragged_arr = {
+      {1, 2, 3},
+      {1, 2, 3, 4}
+    };
+    for (int i=0; i<ragged_arr.size(); i++) {
+      for (int j=0; j<ragged_arr[i].size(); j++) {
+        TEST_EQUALITY(correct_ragged_arr[i][j], ragged_arr[i][j]);
+      }
+    }
+
+    using arr_t   = Teuchos::Array<int>;
+    arr_t arr = pl->get<arr_t>("line_continuation");
+    int correct_arr = {1, 2, 3, 4, 5, 6};
+    for (int i=0; i<arr.size(); i++) {
+      TEST_EQUALITY(correct_arr[i], arr[i]);
+    }
+  }
+#endif // HAVE_TEUCHOSCORE_YAMLCPP
+
+} //namespace TeuchosTests
