@@ -25,10 +25,10 @@ import trilinosprhelpers.sysinfo as sysinfo
 #==============================================================================
 
 def mock_nvidia_smi():
-    return """GPU 0: Tesla V100S-PCIE-32GB (UUID: GPU-somehash1)
-GPU 1: Tesla V100S-PCIE-32GB (UUID: GPU-somehash2)
-GPU 2: Tesla V100S-PCIE-32GB (UUID: GPU-somehash3)
-GPU 3: Tesla V100S-PCIE-32GB (UUID: GPU-somehash4)"""
+    return ["GPU 0: Tesla V100S-PCIE-32GB (UUID: GPU-somehash1)",
+            "GPU 1: Tesla V100S-PCIE-32GB (UUID: GPU-somehash2)",
+            "GPU 2: Tesla V100S-PCIE-32GB (UUID: GPU-somehash3)",
+            "GPU 3: Tesla V100S-PCIE-32GB (UUID: GPU-somehash4)"]
 
 def mock_which(thing_to_find):
     return os.path.join(os.getcwd(), thing_to_find)
@@ -70,6 +70,6 @@ class GpuUtilsTest(TestCase):
         Test that without nvidia-smi available the smi interface returns an empty list of output.
         """
         print("")
-        with patch("trilinosprhelpers.sysinfo.gpu_utils.which", side_effect=mock_which):
+        with patch("trilinosprhelpers.sysinfo.gpu_utils.which", return_value=None):
             ret = sysinfo.gpu_utils._nvidia_smi()
         self.assertEqual([], ret)
