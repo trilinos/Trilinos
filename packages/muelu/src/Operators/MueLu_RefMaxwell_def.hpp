@@ -735,8 +735,15 @@ namespace MueLu {
         TEUCHOS_ASSERT(rebalanceStriding*numProcsCoarseA11<=numProcs);
         TEUCHOS_ASSERT(rebalanceStriding*numProcsA22<=numProcs);
         if (rebalanceStriding*(numProcsCoarseA11+numProcsA22)>numProcs) {
-          GetOStream(Warnings0) << solverName_+"::compute(): Disabling striding = " << rebalanceStriding << ", since coareA11 needs " << numProcsCoarseA11
+          GetOStream(Warnings0) << solverName_+"::compute(): Disabling striding = " << rebalanceStriding << ", since coarseA11 needs " << numProcsCoarseA11
                                 << " procs and A22 needs " << numProcsA22 << " procs."<< std::endl;
+          rebalanceStriding = -1;
+        }
+        int lclBadMatrixDistribution = (coarseA11_->getLocalNumEntries() == 0) || (Dk_1_->getDomainMap()->getLocalNumElements() == 0);
+        int gblBadMatrixDistribution = false;
+        MueLu_maxAll(SM_Matrix_->getDomainMap()->getComm(), lclBadMatrixDistribution, gblBadMatrixDistribution);
+        if (gblBadMatrixDistribution) {
+          GetOStream(Warnings0) << solverName_+"::compute(): Disabling striding = " << rebalanceStriding << ", since coarseA11 has no entries on at least one rank or Dk_1's domain map has no entries on at least one rank."<< std::endl;
           rebalanceStriding = -1;
         }
       }
