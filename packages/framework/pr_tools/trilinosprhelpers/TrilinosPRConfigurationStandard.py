@@ -55,8 +55,6 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
             gc.write_cmake_fragment()
 
         # Execute the call to ctest.
-        # - NOTE: simple_testing.cmake can be found in the TFW_single_configure_support_scripts
-        #         repository.
         cmd = ['ctest',
                "-V",
                 "-S", f"{self.arg_ctest_driver}",
@@ -75,6 +73,9 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                f"-DCTEST_DROP_SITE:STRING={self.arg_ctest_drop_site}",
                 "-DUSE_EXPLICIT_TRILINOS_CACHEFILE:BOOL=" + "ON" if self.arg_use_explicit_cachefile else "OFF",
              ]
+
+        if self.arg_extra_configure_args:
+            cmd.append(f"-DEXTRA_CONFIGURE_ARGS:STRING={';'.join(self.arg_extra_configure_args)}")
 
         self.message( "--- ctest version:")
         if not self.args.dry_run:

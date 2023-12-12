@@ -173,7 +173,8 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             num_concurrent_tests=-1,
             ccache_enable=False,
             dry_run = False,
-            use_explicit_cachefile = False
+            use_explicit_cachefile = False,
+            extra_configure_args = ""
         )
         return output
 
