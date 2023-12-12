@@ -323,6 +323,17 @@ TEUCHOS_UNIT_TEST( ParameterList, setParametersWithModifier )
   pl2.setParametersNotAlreadySet(pl1);
   TEST_EQUALITY(*pl2.sublist("SubB").getModifier(), *modifier2);
   TEST_EQUALITY(pl1, pl2);
+  // Test that sublists with their modifiers and parameters are correctly
+  // overwritten in `setParameters`
+  pl1 = ParameterList();
+  pl1.sublist("SubA", modifier1).set("A", 1);
+  pl2 = ParameterList();
+  pl2.sublist("SubA", modifier2).set("B", 2);
+  pl2.setParameters(pl1);
+  // pl2 should look just like pl1 except with the extra "B" parameter
+  ParameterList pl_expected = ParameterList();
+  pl_expected.sublist("SubA", modifier1).set("B", 2).set("A", 1);
+  TEST_EQUALITY(pl_expected, pl2);
 }
 
 
