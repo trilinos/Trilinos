@@ -240,7 +240,7 @@ def parse_args():
 
     optional.add_argument("--extra-configure-args",
                           dest="extra_configure_args",
-                          action="store_true",
+                          action="store",
                           default="",
                           help="Extra arguments that will be passed to CMake for configuring Trilinos.")
 
